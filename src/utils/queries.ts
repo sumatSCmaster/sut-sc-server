@@ -31,7 +31,20 @@ const queries = {
   EXTERNAL_USER_COMPLETE: "",
 
   //BANKS
-  GET_ALL_BANKS: "SELECT * FROM BANCOS"
+  GET_ALL_BANKS: "SELECT * FROM BANCOS",
+
+  //OFFICIALS
+  GET_ALL_OFFICIALS:
+    "SELECT ur.*, cf.password FROM USUARIOS ur INNER JOIN CUENTAS_FUNCIONARIOS cf ON ur.id_usuario = cf.id_usuario",
+  INSERT_OFFICIAL:
+    "WITH funcionario AS (INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\
+    nacionalidad, rif, id_tipo_usuario) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id_usuario)\
+    INSERT INTO cuentas_funcionarios VALUES((SELECT id_usuario from funcionario), $8) RETURNING *)",
+  UPDATE_OFFICIAL: "",
+  DELETE_OFFICIAL:
+    "DELETE FROM USUARIOS usr USING CUENTAS_FUNCIONARIOS cf WHERE \
+    usr.id_usuario = cf.id_usuario AND usr.id_usuario = $1 \
+    AND cf.id_institucion = $2;"
 };
 
 export default queries;
