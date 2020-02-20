@@ -1,13 +1,16 @@
-import Pool from '@utils/Pool';
-import queries from '@utils/queries';
-import { compare } from 'bcryptjs';
-import { NestedSetNode } from 'ts-nested-set';
-import { stringify } from 'flatted/cjs';
-import { Usuario, Payloads } from 'sge'
+import Pool from "@utils/Pool";
+import queries from "@utils/queries";
+import { compare } from "bcryptjs";
+import { NestedSetNode } from "ts-nested-set";
+import { stringify } from "flatted/cjs";
+import { Usuario, Payloads } from "sge";
+import { fulfill } from "@utils/resolver";
 
 const pool = Pool.getInstance();
 
-export const getUserByUsername = async (username: string): Promise<Usuario | null> => {
+export const getUserByUsername = async (
+  username: string
+): Promise<Usuario | null> => {
   const client = await pool.connect();
   try {
     const result = await client.query(queries.GET_USER_BY_USERNAME, [username]);
@@ -23,7 +26,7 @@ export const getUserByUsername = async (username: string): Promise<Usuario | nul
         oficinas: []
       },
       oficina: {
-        id: res.id_oficina, 
+        id: res.id_oficina,
         descripcion: res.oficina_descripcion
       },
       indexIzq: res.index_izq,
@@ -39,23 +42,40 @@ export const getUserByUsername = async (username: string): Promise<Usuario | nul
       urlAvatar: res.url_avatar
     };
     return user;
-  } catch(e) {
+  } catch (e) {
     return null;
   } finally {
     client.release();
   }
 };
 
-export const createAdmin = async (user: Payloads.CrearAdmin): Promise<Usuario> => {
+export const createAdmin = async (
+  user: Payloads.CrearAdmin
+): Promise<Usuario> => {
   const client = await pool.connect();
   try {
-    client.query('BEGIN');
-    const res = (await client.query(queries.CREATE_ADMIN, 
-      [user.institucion, user.oficina, user.cargo, user.cedula, user.nombre, user.correo, user.telefono])).rows[0];
+    client.query("BEGIN");
+    const res = (
+      await client.query(queries.CREATE_ADMIN, [
+        user.institucion,
+        user.oficina,
+        user.cargo,
+        user.cedula,
+        user.nombre,
+        user.correo,
+        user.telefono
+      ])
+    ).rows[0];
     client.query(queries.ASSIGN_ALL_PERMISSIONS, [res.id_rol]);
-    client.query(queries.ADD_ACCOUNT, [res.cedula, user.username, user.password]);
-    client.query(queries.INIT_CONFIG, [stringify(new NestedSetNode(user.cargo))]);
-    client.query('COMMIT');
+    client.query(queries.ADD_ACCOUNT, [
+      res.cedula,
+      user.username,
+      user.password
+    ]);
+    // client.query(queries.INIT_CONFIG, [
+    //   stringify(new NestedSetNode(user.cargo))
+    // ]);
+    client.query("COMMIT");
     const usuario: Usuario = {
       cedula: res.cedula,
       nombre: res.nombre_completo,
@@ -79,43 +99,100 @@ export const createAdmin = async (user: Payloads.CrearAdmin): Promise<Usuario> =
       urlAvatar: res.url_avatar
     };
     return usuario;
-  } catch(e) {
-    client.query('ROLLBACK');
+  } catch (e) {
+    client.query("ROLLBACK");
     throw e;
   } finally {
     client.release();
   }
 };
 
-export const endWizard = async (): Promise<boolean> => {
-  const client = await pool.connect();
-  try {
-    const result = await client.query(queries.END_WIZARD);
-    return result.rowCount > 0;
-  } catch(e) {
-    throw e;
-  } finally {
-    client.release();
-  }
-}; 
+// export const endWizard = async (): Promise<boolean> => {
+//   const client = await pool.connect();
+//   try {
+//     const result = await client.query(queries.END_WIZARD);
+//     return result.rowCount > 0;
+//   } catch (e) {
+//     throw e;
+//   } finally {
+//     client.release();
+//   }
+// };
 
-export const comparePassword = (candidate: string, hash: string): Promise<boolean> => {
+export const comparePassword = (
+  candidate: string,
+  hash: string
+): Promise<boolean> => {
   return new Promise((res, rej) => {
     compare(candidate, hash, (err, isMatch) => {
-      if(err) rej(err);
+      if (err) rej(err);
       res(isMatch);
     });
   });
 };
 
-export const hasNotifications = async (id: string): Promise<boolean> => {
+export const getByGoogleID = async id => {
+  const client = await pool.connect();
+  const [err, data] = await fulfill(
+    client.query(queries.GET_BY_GOOGLE_ID, [id])
+  );
+  if (err) return err;
+  if (data) return { data: data.rows };
+};
+
+export const verifyExternalUser = async id => {
+  const client = await pool.connect();
+  const [err, data] = await fulfill(
+    client.query(queries.GET_EXTERNAL_USER, [id])
+  );
+  if (err) return err;
+  if (data) return { data: data.rows[0] };
+};
+
+export const initialExtUserSignUp = async user => {
   const client = await pool.connect();
   try {
-    const result = await client.query(queries.HAS_UNREAD_NOTIF, [id]);
-    return result.rowCount > 0;
-  } catch(e) {
-    throw e;
+    client.query("BEGIN");
+    const response = await client.query(queries.EXTERNAL_USER_INIT, [
+      user.name,
+      user.username
+    ]);
+    client.query(queries.INSERT_GOOGLE_USER, [
+      response.rows[0].id_usuario,
+      user.googleID
+    ]);
+    client.query("COMMIT");
+    return response.rows[0];
+  } catch (e) {
+    client.query("ROLLBACK");
+    return e;
   } finally {
     client.release();
   }
 };
+
+export const completeExtUserSignUp = async user => {
+  const client = await pool.connect();
+  try {
+    client.query("BEGIN");
+
+    client.query("COMMIT");
+  } catch (e) {
+    client.query("ROLLBACK");
+    return e;
+  } finally {
+    client.release();
+  }
+};
+
+// export const hasNotifications = async (id: string): Promise<boolean> => {
+//   const client = await pool.connect();
+//   try {
+//     const result = await client.query(queries.HAS_UNREAD_NOTIF, [id]);
+//     return result.rowCount > 0;
+//   } catch (e) {
+//     throw e;
+//   } finally {
+//     client.release();
+//   }
+// };

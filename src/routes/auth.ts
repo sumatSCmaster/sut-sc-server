@@ -3,7 +3,7 @@ import { generateToken } from "@utils/Strategies";
 import { authenticate } from "passport";
 import { createAdmin } from "@helpers/user";
 import * as authValidations from "@validations/auth";
-import { checkIfAdmin, getInit } from "@utils/user";
+import { checkIfAdmin } from "@utils/user";
 import { hashSync, genSaltSync } from "bcryptjs";
 import { checkResult } from "@validations/index";
 
@@ -20,7 +20,7 @@ router.post(
         status: 200,
         message: "Inicio de sesion exitoso.",
         token: generateToken(req.user),
-        init: await getInit(),
+        // init: await getInit(),
         admin: req.user.admin,
         user: req.user.user,
         hasNewNotifications: req.user.hasNewNotifications
@@ -72,6 +72,29 @@ router.post(
         status: 401,
         message: "Clave de administrador invalida"
       });
+    }
+  }
+);
+
+router.get(
+  "/google",
+  authenticate("google", {
+    scope: ["openid", "profile", "email"]
+  })
+);
+
+router.get(
+  "/google/callback",
+  authenticate("google", {
+    session: false,
+    failureRedirect: `${process.env.CLIENT_URL}/ingresar`
+  }),
+  async (req, res) => {
+    const token = generateToken(req.user);
+    if (req.user!["cedula"]) {
+      res.redirect(`${process.env.CLIENT_URL}/auth/${token}`);
+    } else {
+      res.redirect(`${process.env.CLIENT_URL}/signup/${token}`);
     }
   }
 );
