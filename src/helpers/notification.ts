@@ -2,7 +2,7 @@ import Pool from "@utils/Pool";
 import queries from "../utils/queries";
 import { getUsers } from "@config/socket";
 import { Notificacion, Tarea } from "sge";
-import twilio from "twilio";
+import twilio from "twilio";sigt
 
 const pool = Pool.getInstance();
 const users = getUsers();

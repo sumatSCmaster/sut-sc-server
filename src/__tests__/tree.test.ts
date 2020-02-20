@@ -1,5 +1,5 @@
 import { get, put } from "@utils/tests";
-import { Payloads } from 'sge';
+import { Payloads } from 'sigt';
 import { NestedSetNode } from "ts-nested-set";
 import { stringify } from 'flatted/cjs';
 

@@ -1,5 +1,5 @@
 import Pool from '@utils/Pool';
-import { Rol, Permiso } from 'sge';
+import { Rol, Permiso } from 'sigt';
 import queries from '@utils/queries';
 
 const pool = Pool.getInstance();

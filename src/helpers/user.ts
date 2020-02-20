@@ -3,7 +3,7 @@ import queries from '@utils/queries';
 import { compare } from 'bcryptjs';
 import { NestedSetNode } from 'ts-nested-set';
 import { stringify } from 'flatted/cjs';
-import { Usuario, Payloads } from 'sge'
+import { Usuario, Payloads } from 'sigt'
 
 const pool = Pool.getInstance();
 

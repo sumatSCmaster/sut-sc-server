@@ -71,6 +71,6 @@
     /* Advanced Options */
     "forceConsistentCasingInFileNames": true  /* Disallow inconsistently-cased references to the same file. */
   },
-  "include": ["./src/*.ts", "sge.d.ts", "./src/**/*.ts"],
+  "include": ["./src/*.ts", "sigt.d.ts", "./src/**/*.ts"],
   "exclude": ["node_modules"]
 }
