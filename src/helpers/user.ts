@@ -1,8 +1,7 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { compare } from 'bcryptjs';
-import { NestedSetNode } from 'ts-nested-set';
-import { Usuario, Payloads, Nacionalidad, IDsTipoUsuario } from 'sigt'
+import { Usuario, Payloads, Nacionalidad, IDsTipoUsuario } from '@interfaces/sigt'
 
 const pool = Pool.getInstance();
 

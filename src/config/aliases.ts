@@ -11,6 +11,7 @@ const validationsPath = !dev ? path.resolve(__dirname, '..', '..', 'build', 'val
 const middlewaresPath = !dev ? path.resolve(__dirname, '..', '..', 'build', 'middlewares') : path.resolve(__dirname, '..', 'middlewares');
 const configPath = !dev ? path.resolve(__dirname, '..', '..', 'build', 'config') : path.resolve(__dirname, '..', 'config');
 const rootPath = !dev ? path.resolve(__dirname, '..', '..', 'build') : path.resolve(__dirname, '..');
+const typesPath = !dev ? path.resolve(__dirname, '..', '..', 'build', 'interfaces') : path.resolve(__dirname, '..', 'interfaces');
 
 moduleAlias.addAliases({
   '@helpers': helpersPath,
@@ -18,5 +19,6 @@ moduleAlias.addAliases({
   '@validations': validationsPath,
   '@middlewares': middlewaresPath,
   '@config': configPath,
-  '@root': rootPath
+  '@root': rootPath,
+  '@interfaces': typesPath
 });

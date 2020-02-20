@@ -2,7 +2,7 @@ import { Strategy as JWT, ExtractJwt } from "passport-jwt";
 import { Strategy as Local, VerifyFunction } from "passport-local";
 import { getUserByUsername, comparePassword } from "@helpers/user";
 import { encode } from "jwt-simple";
-import { Usuario } from "sigt";
+import { Usuario } from "@interfaces/sigt";
 
 const optJwt = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
