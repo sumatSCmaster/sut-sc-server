@@ -1,4 +1,4 @@
-import { Router } from 'express';
+/* import { Router } from 'express';
 import { authenticate } from 'passport';
 import { getNotifications, markAllAsRead } from '@helpers/notification';
 
@@ -36,4 +36,4 @@ router.put('/markAsRead', authenticate('jwt'), async (req: any, res) => {
   }
 });
 
-export default router;
+export default router; */

@@ -7,7 +7,7 @@
     "definition": "./index.d.ts"
   },
   "scripts": {
-    "start": "tsc && node build/server.js",
+    "start": "tsc --listFiles && node build/server.js",
     "start:debug": "node --inspect=5858 -r ts-node/register -r tsconfig-paths/register src/server.ts",
     "dev": "nodemon",
     "build": "tsc",

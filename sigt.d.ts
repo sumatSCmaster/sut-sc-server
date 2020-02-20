@@ -1,7 +1,22 @@
 declare namespace sigt {
 
   enum Nacionalidad {
-    Venezolano = "V"
+    V = "Venezolano",
+    E = "Extranjero"
+  }
+
+  enum DescripcionesTipoUsuario {
+    Superuser = "Superuser",
+    Administrador = "Administrador",
+    Funcionario = "Funcionario",
+    UsuarioExterno = "Usuario externo",
+  }
+
+  enum IDsTipoUsuario {
+    Superuser = 1,
+    Administrador,
+    Funcionario,
+    UsuarioExterno
   }
 
   interface Usuario {
@@ -13,6 +28,7 @@ declare namespace sigt {
     telefonos: string[]
     nacionalidad: Nacionalidad
     rif?: string
+    tipo_usuario: TipoUsuario
     datos_google?: DatosGoogle
     cuenta_funcionario?: CuentaFuncionario 
   }
@@ -29,11 +45,11 @@ declare namespace sigt {
 
   interface TipoUsuario{
     id_tipo_usuario: number
-    descripcion: string
+    descripcion: DescripcionesTipoUsuario
   }
 
   namespace Payloads {
-    
+    type CrearSuperuser = Partial<Usuario>
   }
 }
 

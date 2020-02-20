@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { generateToken } from "@utils/Strategies";
 import { authenticate } from "passport";
-import { createAdmin } from "@helpers/user";
+//import { createAdmin } from "@helpers/user";
 import * as authValidations from "@validations/auth";
 import { checkIfAdmin, getInit } from "@utils/user";
 import { hashSync, genSaltSync } from "bcryptjs";
 import { checkResult } from "@validations/index";
+import { createSuperuser } from "@helpers/user";
 
 const router = Router();
 
@@ -15,15 +16,13 @@ router.post(
   authValidations.login,
   checkResult,
   async (req: any, res) => {
-    if (await checkIfAdmin(req.user.id)) {
+    if (await checkIfAdmin(req.user.cedula)) {
       res.status(200).json({
         status: 200,
         message: "Inicio de sesion exitoso.",
         token: generateToken(req.user),
-        init: await getInit(),
         admin: req.user.admin,
-        user: req.user.user,
-        hasNewNotifications: req.user.hasNewNotifications
+        user: req.user.user
       });
     } else {
       res.status(200).json({
@@ -31,24 +30,22 @@ router.post(
         message: "Inicio de sesion exitoso.",
         token: generateToken(req.user),
         admin: req.user.admin,
-        user: req.user.user,
-        hasNewNotifications: req.user.hasNewNotifications
+        user: req.user.user
       });
     }
   }
 );
 
 router.post(
-  "/createAdmin",
-  authValidations.createAdmin,
+  "/createSuperuser",
+  authValidations.createSuperuser,
   checkResult,
   async (req, res) => {
-    if (req.body.password === process.env.ADMIN_PASSWORD) {
+    if (req.body.password === process.env.SUPERUSER_CREATION_PASSWORD) {
       try {
-        req.body.usuario.rol = "Administrador";
         const salt = genSaltSync(10);
         req.body.usuario.password = hashSync(req.body.usuario.password, salt);
-        const user = await createAdmin({ ...req.body.usuario }).catch(e => {
+        const user = await createSuperuser({ ...req.body.usuario }).catch(e => {
           res.status(500).json({
             status: 500,
             message: e.detail
@@ -57,7 +54,7 @@ router.post(
         if (user) {
           res.status(200).json({
             status: 200,
-            message: "Administrador creado.",
+            message: "Superuser creado.",
             user
           });
         }
@@ -70,7 +67,7 @@ router.post(
     } else {
       res.status(401).json({
         status: 401,
-        message: "Clave de administrador invalida"
+        message: "Clave de creacion de superuser superuser invalida"
       });
     }
   }

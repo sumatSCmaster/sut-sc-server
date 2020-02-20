@@ -1,7 +1,6 @@
-import Pool from "@utils/Pool";
+/* import Pool from "@utils/Pool";
 import queries from "../utils/queries";
 import { getUsers } from "@config/socket";
-import { Notificacion, Tarea } from "sge";
 import twilio from "twilio";sigt
 
 const pool = Pool.getInstance();
@@ -135,3 +134,4 @@ const formatNotification = (n: any, target: Tarea | null): Notificacion => ({
     urlAvatar: n.url_avatar_receptor as string
   }
 });
+ */

@@ -25,14 +25,12 @@ const verifyLocal: VerifyFunction = async (
 ) => {
   const user: Usuario | null = await getUserByUsername(username);
   if (!user) return done(null, false, { message: "Bad Credentials" });
-  if (await comparePassword(password, user.password || "")) {
+  if (await comparePassword(password, user.cuenta_funcionario?.password || "")) {
     // const newNotifications = await hasNotifications(user.cedula);
     return done(null, {
       id: user.cedula,
-      admin: user.rol?.nombre === "Administrador",
-      left: user.indexIzq,
-      right: user.indexDer,
-      user: { ...user, password: undefined }
+      admin: user.tipo_usuario.descripcion === "Administrador",
+      user: { ...user, cuenta_funcionario: { id_usuario: user.id_usuario, password: undefined } }
       // hasNewNotifications: newNotifications
     });
   } else {
@@ -45,7 +43,7 @@ const LocalStrategy = new Local(optLocal, verifyLocal);
 const generateToken = (user: any) => {
   const timestamp = new Date().getTime();
   return encode(
-    { sub: user, ait: timestamp },
+    { sub: user, iat: timestamp },
     process.env.JWT_SECRET || "not a secret"
   );
 };

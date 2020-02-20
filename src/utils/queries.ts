@@ -1,18 +1,25 @@
 const queries = {
   // USUARIO
-  GET_USER_BY_USERNAME: 'SELECT * FROM usuarios WHERE username = $1;',
+  GET_USER_BY_USERNAME: 'SELECT * FROM usuarios WHERE nombre_de_usuario = $1;',
   GET_USER_BY_ID: 'SELECT * FROM datos_usuario WHERE cedula = $1',
-  CREATE_ADMIN: "WITH institucion_result AS (INSERT INTO institucion (descripcion) VALUES ($1) RETURNING id), \
-    oficina_result AS (INSERT INTO oficina (descripcion, id_institucion) VALUES ($2, (SELECT id FROM institucion_result)) RETURNING id), \
-    rol_result AS (INSERT INTO rol (nombre) VALUES ('Administrador') RETURNING id), \
-    cargo_result AS (INSERT INTO cargo (nombre, index_izq, index_der) VALUES($3, 0, 1) RETURNING id) \
-    INSERT INTO usuario(cedula, nombre_completo, correo_electronico, telefono, id_institucion, id_oficina, id_rol, id_cargo) \
-    VALUES ($4, $5, $6, $7, (SELECT id FROM institucion_result), (SELECT id FROM oficina_result), (SELECT id FROM rol_result), (SELECT id FROM cargo_result)) \
-    RETURNING *;",
+  GET_PHONES_FROM_USERNAME: 'SELECT numero FROM telefonos_usuarios tu \
+    INNER JOIN usuarios u ON tu.id_usuario = u.id_usuario \
+    WHERE u.nombre_de_usuario = $1;',
+  GET_USER_TYPE_FROM_USERNAME: 'SELECT tu.* FROM tipos_usuarios \
+    INNER JOIN usuarios u ON tu.id_usuario = u.id_usuario \
+    WHERE U.nombre_de_usuario = $1;',
+  GET_GOOGLE_DATA_FROM_USERNAME: 'SELECT dg.* FROM datos_google dg \
+    INNER JOIN usuarios u ON dg.id_usuario = u.id_usuario \
+    WHERE u.nombre_de_usuario = $1',
+  GET_OFFICIAL_DATA_FROM_USERNAME: 'SELECT cf.* FROM cuentas_funcionarios cf \
+    INNER JOIN usuarios u ON u.id_usuario = cf.id_usuario \
+    WHERE u.nombre_usuario = $1;',
+  CREATE_SUPERUSER: `INSERT INTO usuarios (nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, rif, id_tipo_usuario) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
   ASSIGN_ALL_PERMISSIONS: 'INSERT INTO rol_funcion(id_rol, id_funcion) SELECT $1, id FROM funcion;',
   ADD_ACCOUNT: 'INSERT INTO cuenta(id_usuario, username, password) VALUES($1, $2, $3);',
-  CHECK_IF_ADMIN: 'SELECT 1 FROM usuario u INNER JOIN rol r ON u.id_rol = r.id WHERE u.id_rol = \
-    (SELECT id FROM rol WHERE nombre = \'Administrador\') AND u.cedula = $1;',
+  CHECK_IF_ADMIN: 'SELECT 1 FROM usuarios u \
+    INNER JOIN tipos_usuarios tu ON tu.id_usuario = u.id_usuario \
+    WHERE tu.descripcion = \'Administrador\' AND u.cedula = $1',
   REGISTER_USER: 'INSERT INTO usuario(cedula, nombre_completo, correo_electronico, telefono, id_institucion, id_oficina, id_rol, id_cargo) \
     VALUES ($1, $2, $3, NULL, $4, $5, $6, $7) ON CONFLICT (cedula) DO NOTHING RETURNING *;',
   GET_ADMIN: 'SELECT u.cedula, u.nombre_completo FROM usuario u INNER JOIN rol r ON u.id_rol = r.id WHERE u.id_rol = \
