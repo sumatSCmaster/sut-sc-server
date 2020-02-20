@@ -33,6 +33,7 @@ export const getUserByUsername = async (username: string): Promise<Usuario | nul
     };
     return user;
   } catch(e) {
+    console.log(e)
     return null;
   } finally {
     client.release();
@@ -43,8 +44,9 @@ export const createSuperuser = async (user: Payloads.CrearSuperuser): Promise<Pa
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    const res = (await client.query(queries.CREATE_SUPERUSER, 
+    const res = (await client.query(queries.CREATE_USER, 
       [user.nombre_completo, user.nombre_de_usuario, user.direccion, user.cedula, user.nacionalidad, user.rif, IDsTipoUsuario.Superuser])).rows[0];
+    const res2 = (await client.query(queries.ADD_PASSWORD, [res.id_usuario, user.cuenta_funcionario?.password]))
     client.query('COMMIT');
     const usuario: Partial<Usuario> = {
       id_usuario: res.id_usuario,
@@ -63,6 +65,37 @@ export const createSuperuser = async (user: Payloads.CrearSuperuser): Promise<Pa
     client.release();
   }
 }; 
+
+export const createAdmin = async (user: Payloads.CrearAdmin): Promise<Partial<Usuario>> => {
+  const client = await pool.connect();
+  try {
+    client.query('BEGIN');
+    const res = (await client.query(queries.CREATE_USER, 
+      [user.nombre_completo, user.nombre_de_usuario, user.direccion, user.cedula, user.nacionalidad, user.rif, IDsTipoUsuario.Administrador])).rows[0];
+      console.log(IDsTipoUsuario.Administrador)
+      console.log('res', res)
+    const res2 = (await client.query(queries.ADD_PASSWORD, [res.id_usuario, user.cuenta_funcionario?.password]));
+    const res3 = (await Promise.all(user.telefonos.map((tlf) => client.query(queries.ADD_PHONE, [res.id_usuario, tlf]))));
+    console.log(res3)
+    client.query('COMMIT');
+    const usuario: Partial<Usuario> = {
+      id_usuario: res.id_usuario,
+      nombre_de_usuario: res.nombre_de_usuario,
+      nombre_completo: res.nombre_completo,
+      direccion: res.direccion,
+      cedula: res.cedula,
+      nacionalidad: Nacionalidad[res.nacionalidad],
+      telefonos: res3.map(result => result.rows[0])
+    };
+    return usuario;
+  } catch (e){
+    client.query('ROLLBACK');
+    console.log('AAAAAAAA', e)
+    throw e;
+  } finally {
+    client.release();
+  }
+}
 
 
 export const comparePassword = (candidate: string, hash: string): Promise<boolean> => {

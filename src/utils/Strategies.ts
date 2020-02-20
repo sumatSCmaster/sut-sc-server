@@ -24,12 +24,14 @@ const verifyLocal: VerifyFunction = async (
   done: any
 ) => {
   const user: Usuario | null = await getUserByUsername(username);
+  console.log(user)
   if (!user) return done(null, false, { message: "Bad Credentials" });
   if (await comparePassword(password, user.cuenta_funcionario?.password || "")) {
     // const newNotifications = await hasNotifications(user.cedula);
     return done(null, {
       id: user.cedula,
       admin: user.tipo_usuario.descripcion === "Administrador",
+      superuser: user.tipo_usuario.descripcion === "Superuser",
       user: { ...user, cuenta_funcionario: { id_usuario: user.id_usuario, password: undefined } }
       // hasNewNotifications: newNotifications
     });

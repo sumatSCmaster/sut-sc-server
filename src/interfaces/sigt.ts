@@ -49,4 +49,5 @@ export interface TipoUsuario{
 
 export namespace Payloads {
   export type CrearSuperuser = Partial<Usuario>
+  export type CrearAdmin = CrearSuperuser & {telefonos: number[]}
 }

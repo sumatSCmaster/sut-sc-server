@@ -3,20 +3,30 @@ import { generateToken } from "@utils/Strategies";
 import { authenticate } from "passport";
 //import { createAdmin } from "@helpers/user";
 import * as authValidations from "@validations/auth";
-import { checkIfAdmin, getInit } from "@utils/user";
+import { checkIfAdmin, getInit, checkIfSuperuser } from "@utils/user";
 import { hashSync, genSaltSync } from "bcryptjs";
 import { checkResult } from "@validations/index";
-import { createSuperuser } from "@helpers/user";
+import { createSuperuser, createAdmin } from "@helpers/user";
+import { isSuperuser, isAdmin } from "@middlewares/auth";
 
 const router = Router();
 
 router.post(
   "/login",
-  authenticate("local"),
   authValidations.login,
   checkResult,
+  authenticate("local"),
   async (req: any, res) => {
-    if (await checkIfAdmin(req.user.cedula)) {
+    if (await checkIfSuperuser(req.user.user.cedula)){
+      res.status(200).json({
+        status: 200,
+        message: "Inicio de sesion exitoso",
+        token: generateToken(req.user),
+        admin: req.user.admin,
+        superuser: true,
+        user: req.user.user
+      })
+    } else if (await checkIfAdmin(req.user.user.cedula)) {
       res.status(200).json({
         status: 200,
         message: "Inicio de sesion exitoso.",
@@ -37,6 +47,39 @@ router.post(
 );
 
 router.post(
+  '/createAdmin',
+  authenticate('jwt'),
+  isSuperuser,
+  authValidations.createAdmin,
+  checkResult,
+  async (req, res) => {
+    try{
+        const salt = genSaltSync(10);
+        req.body.usuario.cuenta_funcionario = {};
+        req.body.usuario.cuenta_funcionario.password = hashSync(req.body.password, salt);
+        const user = await createAdmin({ ...req.body.usuario }).catch(e => {
+          res.status(500).json({
+            status: 500,
+            message: e
+          });
+        });
+        if (user) {
+          res.status(200).json({
+            status: 200,
+            message: "Admin creado.",
+            user
+          });
+        }
+    } catch(e) {
+      res.status(500).json({
+        status: 500,
+        error: e
+      })
+    }
+  }
+)
+
+router.post(
   "/createSuperuser",
   authValidations.createSuperuser,
   checkResult,
@@ -44,11 +87,12 @@ router.post(
     if (req.body.password === process.env.SUPERUSER_CREATION_PASSWORD) {
       try {
         const salt = genSaltSync(10);
-        req.body.usuario.password = hashSync(req.body.usuario.password, salt);
+        req.body.usuario.cuenta_funcionario = {};
+        req.body.usuario.cuenta_funcionario.password = hashSync(req.body.password, salt);
         const user = await createSuperuser({ ...req.body.usuario }).catch(e => {
           res.status(500).json({
             status: 500,
-            message: e.detail
+            message: e
           });
         });
         if (user) {
@@ -72,5 +116,6 @@ router.post(
     }
   }
 );
+
 
 export default router;

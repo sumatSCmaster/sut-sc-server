@@ -8,3 +8,14 @@ export const isAdmin = async (req, res, next) => {
     });
   }
 };
+
+export const isSuperuser = async (req, res, next) => {
+  if (req.user.superuser) {
+    next();
+  } else {
+    res.status(401).json({
+      status: 401,
+      message: "Forbidden. Can only be accesed by superuser."
+    })
+  }
+}

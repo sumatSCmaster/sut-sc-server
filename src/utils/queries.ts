@@ -5,23 +5,28 @@ const queries = {
   GET_PHONES_FROM_USERNAME: 'SELECT numero FROM telefonos_usuarios tu \
     INNER JOIN usuarios u ON tu.id_usuario = u.id_usuario \
     WHERE u.nombre_de_usuario = $1;',
-  GET_USER_TYPE_FROM_USERNAME: 'SELECT tu.* FROM tipos_usuarios \
-    INNER JOIN usuarios u ON tu.id_usuario = u.id_usuario \
+  GET_USER_TYPE_FROM_USERNAME: 'SELECT tu.* FROM tipos_usuarios tu \
+    INNER JOIN usuarios u ON tu.id_tipo_usuario = u.id_tipo_usuario \
     WHERE U.nombre_de_usuario = $1;',
   GET_GOOGLE_DATA_FROM_USERNAME: 'SELECT dg.* FROM datos_google dg \
     INNER JOIN usuarios u ON dg.id_usuario = u.id_usuario \
     WHERE u.nombre_de_usuario = $1',
   GET_OFFICIAL_DATA_FROM_USERNAME: 'SELECT cf.* FROM cuentas_funcionarios cf \
     INNER JOIN usuarios u ON u.id_usuario = cf.id_usuario \
-    WHERE u.nombre_usuario = $1;',
-  CREATE_SUPERUSER: `INSERT INTO usuarios (nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, rif, id_tipo_usuario) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+    WHERE u.nombre_de_usuario = $1;',
+  CREATE_USER: `INSERT INTO usuarios (nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, rif, id_tipo_usuario) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
   ASSIGN_ALL_PERMISSIONS: 'INSERT INTO rol_funcion(id_rol, id_funcion) SELECT $1, id FROM funcion;',
   ADD_ACCOUNT: 'INSERT INTO cuenta(id_usuario, username, password) VALUES($1, $2, $3);',
+  ADD_PASSWORD: 'INSERT INTO cuentas_funcionarios (id_usuario, password) VALUES ($1, $2);',
   CHECK_IF_ADMIN: 'SELECT 1 FROM usuarios u \
-    INNER JOIN tipos_usuarios tu ON tu.id_usuario = u.id_usuario \
+    INNER JOIN tipos_usuarios tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
     WHERE tu.descripcion = \'Administrador\' AND u.cedula = $1',
+  CHECK_IF_SUPERUSER: 'SELECT 1 FROM usuarios u \
+  INNER JOIN tipos_usuarios tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
+  WHERE tu.descripcion = \'Superuser\' AND u.cedula = $1',
   REGISTER_USER: 'INSERT INTO usuario(cedula, nombre_completo, correo_electronico, telefono, id_institucion, id_oficina, id_rol, id_cargo) \
     VALUES ($1, $2, $3, NULL, $4, $5, $6, $7) ON CONFLICT (cedula) DO NOTHING RETURNING *;',
+  ADD_PHONE: 'INSERT INTO telefonos_usuarios (id_telefono, id_usuario, numero) VALUES (default, $1, $2) RETURNING *;',
   GET_ADMIN: 'SELECT u.cedula, u.nombre_completo FROM usuario u INNER JOIN rol r ON u.id_rol = r.id WHERE u.id_rol = \
     (SELECT id FROM rol WHERE nombre = \'Administrador\')',
   // CONFIG
