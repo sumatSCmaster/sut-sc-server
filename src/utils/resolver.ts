@@ -1,4 +1,4 @@
-const fulfill = async (promise): Promise<any[]> => {
+export const fulfill = async (promise): Promise<any[]> => {
   try {
     const response = await promise;
     return [null, response];

@@ -5,7 +5,7 @@ import session from "express-session";
 import passport from "passport";
 import cors from "cors";
 import router from "./routes";
-import { JwtStrategy, LocalStrategy } from "./utils/Strategies";
+import { JwtStrategy, LocalStrategy, GoogleStrategy } from "./utils/Strategies";
 
 require("dotenv").config();
 const app = express();
@@ -24,6 +24,7 @@ app.use(
 
 passport.use("jwt", JwtStrategy);
 passport.use(LocalStrategy);
+passport.use("google", GoogleStrategy);
 
 passport.serializeUser((user, done) => {
   done(null, JSON.stringify(user));
