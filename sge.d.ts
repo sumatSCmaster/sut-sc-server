@@ -1,26 +1,47 @@
 declare namespace sge {
-  interface Usuario {
-    cedula: string
-    nombre: string
-    correo: string
-    telefono: string
-    institucion: Institucion
-    oficina: Oficina
-    indexIzq: number
-    indexDer: number
-    cargo?: string
-    password?: string
-    username?: string
-    rol?: Rol
-    rating: number
-    tareasCalificadas: number
-    urlAvatar: string
+
+  /*
+ id_usuario        | integer           |           | not null | nextval('usuarios_id_usuario_seq'::regclass)
+ nombre_completo   | character varying |           |          | 
+ nombre_de_usuario | character varying |           |          | 
+ direccion         | character varying |           |          | 
+ cedula            | bigint            |           |          | 
+ nacionalidad      | character(1)      |           |          | 
+ rif               | character varying |           |          | 
+ id_tipo_usuario   | integer           |           |          | 
+
+  */
+
+  enum Nacionalidad {
+    Venezolano = "V"
   }
 
-  interface Institucion {
-    id: number
+  interface Usuario {
+    id_usuario: number
+    nombre_completo: string
+    nombre_de_usuario: string
+    direccion: string
+    cedula: string
+    telefonos: string[]
+    nacionalidad: Nacionalidad
+    rif?: string
+    datos_google?: DatosGoogle
+    cuenta_funcionario?: CuentaFuncionario 
+  }
+
+  interface DatosGoogle {
+    id_usuario: number,
+    id_google: string
+  }
+
+  interface CuentaFuncionario {
+    id_usuario: number,
+    password: string
+  }
+
+  interface TipoUsuario{
+    id_tipo_usuario: number
     descripcion: string
-    oficinas?: Oficina[]
   }
 
   interface Oficina {

@@ -1,6 +1,6 @@
 const queries = {
   // USUARIO
-  GET_USER_BY_USERNAME: 'SELECT * FROM datos_usuario WHERE username = $1;',
+  GET_USER_BY_USERNAME: 'SELECT * FROM usuarios WHERE username = $1;',
   GET_USER_BY_ID: 'SELECT * FROM datos_usuario WHERE cedula = $1',
   CREATE_ADMIN: "WITH institucion_result AS (INSERT INTO institucion (descripcion) VALUES ($1) RETURNING id), \
     oficina_result AS (INSERT INTO oficina (descripcion, id_institucion) VALUES ($2, (SELECT id FROM institucion_result)) RETURNING id), \
