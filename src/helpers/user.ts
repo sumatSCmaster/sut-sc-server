@@ -2,10 +2,14 @@ import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { compare } from 'bcryptjs';
 import { Usuario, Payloads, Nacionalidad, IDsTipoUsuario } from '@interfaces/sigt'
+import { fulfill } from "@utils/resolver";
+import { stringify } from "flatted/cjs";
 
 const pool = Pool.getInstance();
 
-export const getUserByUsername = async (username: string): Promise<Usuario | null> => {
+export const getUserByUsername = async (
+  username: string
+): Promise<Usuario | null> => {
   const client = await pool.connect();
   try {
     const result = await client.query(queries.GET_USER_BY_USERNAME, [username]);
@@ -32,8 +36,7 @@ export const getUserByUsername = async (username: string): Promise<Usuario | nul
       cuenta_funcionario: resOfficial
     };
     return user;
-  } catch(e) {
-    console.log(e)
+  } catch (e) {
     return null;
   } finally {
     client.release();
@@ -58,8 +61,8 @@ export const createSuperuser = async (user: Payloads.CrearSuperuser): Promise<Pa
 
     };
     return usuario;
-  } catch(e) {
-    client.query('ROLLBACK');
+  } catch (e) {
+    client.query("ROLLBACK");
     throw e;
   } finally {
     client.release();
@@ -97,24 +100,80 @@ export const createAdmin = async (user: Payloads.CrearAdmin): Promise<Partial<Us
   }
 }
 
-
-export const comparePassword = (candidate: string, hash: string): Promise<boolean> => {
+export const comparePassword = (
+  candidate: string,
+  hash: string
+): Promise<boolean> => {
   return new Promise((res, rej) => {
     compare(candidate, hash, (err, isMatch) => {
-      if(err) rej(err);
+      if (err) rej(err);
       res(isMatch);
     });
   });
 };
 
-export const hasNotifications = async (id: string): Promise<boolean> => {
+export const getByGoogleID = async id => {
+  const client = await pool.connect();
+  const [err, data] = await fulfill(
+    client.query(queries.GET_BY_GOOGLE_ID, [id])
+  );
+  if (err) return err;
+  if (data) return { data: data.rows };
+};
+
+export const verifyExternalUser = async id => {
+  const client = await pool.connect();
+  const [err, data] = await fulfill(
+    client.query(queries.GET_EXTERNAL_USER, [id])
+  );
+  if (err) return err;
+  if (data) return { data: data.rows[0] };
+};
+
+export const initialExtUserSignUp = async user => {
   const client = await pool.connect();
   try {
-    const result = await client.query(queries.HAS_UNREAD_NOTIF, [id]);
-    return result.rowCount > 0;
-  } catch(e) {
-    throw e;
+    client.query("BEGIN");
+    const response = await client.query(queries.EXTERNAL_USER_INIT, [
+      user.name,
+      user.username
+    ]);
+    client.query(queries.INSERT_GOOGLE_USER, [
+      response.rows[0].id_usuario,
+      user.googleID
+    ]);
+    client.query("COMMIT");
+    return response.rows[0];
+  } catch (e) {
+    client.query("ROLLBACK");
+    return e;
   } finally {
     client.release();
   }
 };
+
+export const completeExtUserSignUp = async user => {
+  const client = await pool.connect();
+  try {
+    client.query("BEGIN");
+
+    client.query("COMMIT");
+  } catch (e) {
+    client.query("ROLLBACK");
+    return e;
+  } finally {
+    client.release();
+  }
+};
+
+// export const hasNotifications = async (id: string): Promise<boolean> => {
+//   const client = await pool.connect();
+//   try {
+//     const result = await client.query(queries.HAS_UNREAD_NOTIF, [id]);
+//     return result.rowCount > 0;
+//   } catch (e) {
+//     throw e;
+//   } finally {
+//     client.release();
+//   }
+// };

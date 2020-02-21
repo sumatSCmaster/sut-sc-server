@@ -117,7 +117,16 @@ const queries = {
   CREATE_ACTIVITY: 'INSERT INTO actividad(id_proyecto, descripcion, duracion, status, fecha_inicio, fecha_fin, fecha_culminacion) \
     VALUES($1, $2, $3, 1, $4, $5, NULL) RETURNING *',
   INSERT_FILE: 'INSERT INTO proyecto_archivo(id_proyecto, url_archivo) VALUES($1, $2) RETURNING *',
-  GET_PROJECT_BY_ID: 'SELECT * FROM datos_proyecto WHERE id_proyecto = $1'
+  GET_PROJECT_BY_ID: 'SELECT * FROM datos_proyecto WHERE id_proyecto = $1',
+  GET_BY_GOOGLE_ID: "SELECT * FROM datos_google WHERE id_google = $1",
+  INSERT_GOOGLE_USER: "INSERT INTO datos_google VALUES ($1, $2)",
+  GET_EXTERNAL_USER: "SELECT * FROM usuarios WHERE id_usuario = $1",
+  EXTERNAL_USER_INIT:
+    "INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, id_tipo_usuario) VALUES ($1, $2, 3) RETURNING *",
+  EXTERNAL_USER_COMPLETE: "",
+
+  //BANKS
+  GET_ALL_BANKS: "SELECT * FROM BANCOS"
 };
 
 export default queries;

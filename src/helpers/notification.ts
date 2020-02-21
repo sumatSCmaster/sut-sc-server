@@ -6,83 +6,83 @@ import twilio from "twilio";sigt
 const pool = Pool.getInstance();
 const users = getUsers();
 
-export const getNotifications = async (id: string): Promise<Notificacion[]> => {
-  const client = await pool.connect();
-  try {
-    const result = await client.query(queries.GET_USER_NOTIFICATIONS, [id]);
-    return await Promise.all(
-      result.rows.map(
-        async r =>
-          //   formatNotification(r, r.tipo === 1 ?
-          //     // formatTask((await client.query(queries.GET_TASK_BY_ID, [r.target])).rows[0], []) : null))
-          r
-      )
-    );
-  } catch (e) {
-    throw e;
-  } finally {
-    client.release();
-  }
-};
+// export const getNotifications = async (id: string): Promise<Notificacion[]> => {
+//   const client = await pool.connect();
+//   try {
+//     const result = await client.query(queries.GET_USER_NOTIFICATIONS, [id]);
+//     return await Promise.all(
+//       result.rows.map(
+//         async r =>
+//           //   formatNotification(r, r.tipo === 1 ?
+//           //     // formatTask((await client.query(queries.GET_TASK_BY_ID, [r.target])).rows[0], []) : null))
+//           r
+//       )
+//     );
+//   } catch (e) {
+//     throw e;
+//   } finally {
+//     client.release();
+//   }
+// };
 
-export const markAllAsRead = async (id: string): Promise<boolean> => {
-  const client = await pool.connect();
-  try {
-    const result = await client.query(queries.MARK_ALL_AS_READ, [id]);
-    return !!result;
-  } catch (e) {
-    throw e;
-  } finally {
-    client.release();
-  }
-};
+// export const markAllAsRead = async (id: string): Promise<boolean> => {
+//   const client = await pool.connect();
+//   try {
+//     const result = await client.query(queries.MARK_ALL_AS_READ, [id]);
+//     return !!result;
+//   } catch (e) {
+//     throw e;
+//   } finally {
+//     client.release();
+//   }
+// };
 
-export const sendNotification = async (
-  sender: string,
-  receiver: string,
-  description: string,
-  target: Tarea | null,
-  type: number
-) => {
-  const client = await pool.connect();
-  try {
-    const result = (
-      await client.query(queries.CREATE_NOTIFICATION, [
-        sender,
-        receiver,
-        description,
-        target ? target.id : 0,
-        type
-      ])
-    ).rows[0];
-    const notif = await client.query(queries.GET_NOTIFICATION_BY_ID, [
-      result.id
-    ]);
-    const notification = formatNotification(notif.rows[0], target);
-    users
-      .get(notification.receptor.cedula)
-      ?.emit("SEND_NOTIFICATION", notification);
-  } catch (e) {
-    throw e;
-  } finally {
-    client.release();
-  }
-};
+// export const sendNotification = async (
+//   sender: string,
+//   receiver: string,
+//   description: string,
+//   target: Tarea | null,
+//   type: number
+// ) => {
+//   const client = await pool.connect();
+//   try {
+//     const result = (
+//       await client.query(queries.CREATE_NOTIFICATION, [
+//         sender,
+//         receiver,
+//         description,
+//         target ? target.id : 0,
+//         type
+//       ])
+//     ).rows[0];
+//     const notif = await client.query(queries.GET_NOTIFICATION_BY_ID, [
+//       result.id
+//     ]);
+//     const notification = formatNotification(notif.rows[0], target);
+//     users
+//       .get(notification.receptor.cedula)
+//       ?.emit("SEND_NOTIFICATION", notification);
+//   } catch (e) {
+//     throw e;
+//   } finally {
+//     client.release();
+//   }
+// };
 
-export const sendWhatsAppNotification = async (body: string) => {
-  const client = twilio(
-    process.env.TWILIO_ACCOUNT_SID,
-    process.env.TWILIO_AUTH_TOKEN
-  );
-  const message = await client.messages
-    .create({
-      to: "whatsapp:+584127645681",
-      body,
-      from: "whatsapp:+584127645682"
-    })
-    .catch(console.log);
-  console.log(message);
-};
+// export const sendWhatsAppNotification = async (body: string) => {
+//   const client = twilio(
+//     process.env.TWILIO_ACCOUNT_SID,
+//     process.env.TWILIO_AUTH_TOKEN
+//   );
+//   const message = await client.messages
+//     .create({
+//       to: "whatsapp:+584127645681",
+//       body,
+//       from: "whatsapp:+584127645682"
+//     })
+//     .catch(console.log);
+//   console.log(message);
+// };
 
 const formatNotification = (n: any, target: Tarea | null): Notificacion => ({
   id: n.id,

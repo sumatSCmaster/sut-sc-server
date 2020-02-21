@@ -117,5 +117,27 @@ router.post(
   }
 );
 
+router.get(
+  "/google",
+  authenticate("google", {
+    scope: ["openid", "profile", "email"]
+  })
+);
+
+router.get(
+  "/google/callback",
+  authenticate("google", {
+    session: false,
+    failureRedirect: `${process.env.CLIENT_URL}/ingresar`
+  }),
+  async (req, res) => {
+    const token = generateToken(req.user);
+    if (req.user!["cedula"]) {
+      res.redirect(`${process.env.CLIENT_URL}/auth/${token}`);
+    } else {
+      res.redirect(`${process.env.CLIENT_URL}/signup/${token}`);
+    }
+  }
+);
 
 export default router;

@@ -1,6 +1,13 @@
 import { Strategy as JWT, ExtractJwt } from "passport-jwt";
+import { OAuth2Strategy as Google } from "passport-google-oauth";
 import { Strategy as Local, VerifyFunction } from "passport-local";
-import { getUserByUsername, comparePassword } from "@helpers/user";
+import {
+  getUserByUsername,
+  comparePassword,
+  getByGoogleID,
+  verifyExternalUser,
+  initialExtUserSignUp
+} from "@helpers/user";
 import { encode } from "jwt-simple";
 import { Usuario } from "@interfaces/sigt";
 
@@ -9,9 +16,41 @@ const optJwt = {
   secretOrKey: process.env.JWT_SECRET || "not a secret"
 };
 
+const optGoogle = {
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_SECRET_ID,
+  callbackURL: "/auth/google/callback",
+  proxy: true
+};
+
 const JwtStrategy = new JWT(optJwt, async (payload, done) => {
   return done(null, payload.sub);
 });
+
+const GoogleStrategy = new Google(
+  optGoogle,
+  async (accessToken, refreshToken, profile, done) => {
+    let request = await getByGoogleID(profile.id);
+    if (request?.data.length > 0) {
+      const exists = await verifyExternalUser(request?.data[0].id_usuario);
+      console.log(exists);
+      return exists?.data ? done(null, exists?.data) : done(null);
+    }
+
+    const googleOpts = {
+      name: profile._json.name,
+      googleID: profile._json.sub,
+      username: profile._json.email
+    };
+
+    request = await initialExtUserSignUp(googleOpts);
+    if (request) {
+      return done(null, request);
+    } else {
+      return done(null);
+    }
+  }
+);
 
 const optLocal = {
   usernameField: "username",
@@ -50,4 +89,4 @@ const generateToken = (user: any) => {
   );
 };
 
-export { JwtStrategy, LocalStrategy, generateToken };
+export { JwtStrategy, LocalStrategy, generateToken, GoogleStrategy };

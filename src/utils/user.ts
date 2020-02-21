@@ -1,5 +1,5 @@
-import Pool from './Pool';
-import queries from './queries';
+import Pool from "./Pool";
+import queries from "./queries";
 
 const pool = Pool.getInstance();
 
@@ -8,7 +8,7 @@ export const checkIfAdmin = async (id: string) => {
   try {
     const result = await client.query(queries.CHECK_IF_ADMIN, [id]);
     return result.rowCount > 0;
-  } catch(e) {
+  } catch (e) {
     throw e;
   } finally {
     client.release();
