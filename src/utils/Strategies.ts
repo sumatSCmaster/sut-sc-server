@@ -9,7 +9,7 @@ import {
   initialExtUserSignUp
 } from "@helpers/user";
 import { encode } from "jwt-simple";
-import { Usuario } from "sge";
+import { Usuario } from "@interfaces/sigt";
 
 const optJwt = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -63,15 +63,15 @@ const verifyLocal: VerifyFunction = async (
   done: any
 ) => {
   const user: Usuario | null = await getUserByUsername(username);
+  console.log(user)
   if (!user) return done(null, false, { message: "Bad Credentials" });
-  if (await comparePassword(password, user.password || "")) {
+  if (await comparePassword(password, user.cuenta_funcionario?.password || "")) {
     // const newNotifications = await hasNotifications(user.cedula);
     return done(null, {
       id: user.cedula,
-      admin: user.rol?.nombre === "Administrador",
-      left: user.indexIzq,
-      right: user.indexDer,
-      user: { ...user, password: undefined }
+      admin: user.tipo_usuario.descripcion === "Administrador",
+      superuser: user.tipo_usuario.descripcion === "Superuser",
+      user: { ...user, cuenta_funcionario: { id_usuario: user.id_usuario, password: undefined } }
       // hasNewNotifications: newNotifications
     });
   } else {

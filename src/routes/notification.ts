@@ -1,6 +1,6 @@
-import { Router } from "express";
-import { authenticate } from "passport";
-// import { getNotifications, markAllAsRead } from '@helpers/notification';
+/* import { Router } from 'express';
+import { authenticate } from 'passport';
+import { getNotifications, markAllAsRead } from '@helpers/notification';
 
 const router = Router();
 
@@ -36,4 +36,4 @@ const router = Router();
 //   }
 // });
 
-export default router;
+export default router; */
