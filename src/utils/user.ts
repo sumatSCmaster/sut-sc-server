@@ -26,15 +26,3 @@ export const checkIfSuperuser = async (id: string) => {
     client.release();
   }
 }
-
-export const getInit = async () => {
-  const client = await pool.connect();
-  try {
-    const result = await client.query(queries.GET_INIT);
-    return result.rows[0].inicializado as boolean;
-  } catch (e) {
-    throw e;
-  } finally {
-    client.release();
-  }
-};
