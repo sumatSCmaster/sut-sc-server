@@ -48,7 +48,8 @@
       "@validations/*": ["src/validations/*"],
       "@middlewares/*": ["src/middlewares/*"],
       "@config/*": ["src/config/*"],
-      "@root/*": ["src/*"]
+      "@root/*": ["src/*"],
+      "@interfaces/*": ["src/interfaces/*"]
     },                           /* A series of entries which re-map imports to lookup locations relative to the 'baseUrl'. */
     // "rootDirs": [],                        /* List of root folders whose combined content represents the structure of the project at runtime. */
     // "typeRoots": [],                       /* List of folders to include type definitions from. */
@@ -71,6 +72,6 @@
     /* Advanced Options */
     "forceConsistentCasingInFileNames": true  /* Disallow inconsistently-cased references to the same file. */
   },
-  "include": ["./src/*.ts", "sge.d.ts", "./src/**/*.ts"],
+  "include": ["./src/*.ts", "./src/**/*.ts"],
   "exclude": ["node_modules"]
 }

@@ -2,3 +2,4 @@
 /build
 /avatar
 .vscode
+.env

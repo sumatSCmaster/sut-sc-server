@@ -7,7 +7,7 @@
     "definition": "./index.d.ts"
   },
   "scripts": {
-    "start": "tsc && node build/server.js",
+    "start": "tsc --listFiles && node build/server.js",
     "start:debug": "node --inspect=5858 -r ts-node/register -r tsconfig-paths/register src/server.ts",
     "dev": "nodemon",
     "build": "tsc",
@@ -32,6 +32,7 @@
     "multer": "^1.4.2",
     "nodemailer": "^6.4.2",
     "passport": "^0.4.1",
+    "passport-google-oauth": "^2.0.0",
     "passport-jwt": "^4.0.0",
     "passport-local": "^1.0.0",
     "pg": "^7.17.1",
