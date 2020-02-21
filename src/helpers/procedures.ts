@@ -6,7 +6,6 @@ const pool = Pool.getInstance();
 export const getAvailableProcedures = async (): Promise<Institucion[]> => {
   const client = await pool.connect();
   try {
-    client.query("BEGIN");
     const response = await client.query(queries.GET_ALL_INSTITUTION);
     const institution: Institucion[] = response.rows.map(el => {
       return {
@@ -16,10 +15,8 @@ export const getAvailableProcedures = async (): Promise<Institucion[]> => {
       };
     });
     const options = getProcedureByInstitution(institution, client);
-    client.query("COMMIT");
     return options;
   } catch (error) {
-    client.query("ROLLBACK");
     throw { status: 500, error };
   } finally {
     client.release();

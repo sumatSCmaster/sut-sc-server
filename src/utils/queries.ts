@@ -167,7 +167,9 @@ const queries = {
     "INSERT INTO proyecto_archivo(id_proyecto, url_archivo) VALUES($1, $2) RETURNING *",
   GET_PROJECT_BY_ID: "SELECT * FROM datos_proyecto WHERE id_proyecto = $1",
   GET_BY_GOOGLE_ID: "SELECT * FROM datos_google WHERE id_google = $1",
+  GET_BY_FACEBOOK_ID: "SELECT * FROM datos_google WHERE id_google = $1",
   INSERT_GOOGLE_USER: "INSERT INTO datos_google VALUES ($1, $2)",
+  INSERT_FACEOOK_USER: "INSERT INTO datos_facebook VALUES ($1, $2)",
   GET_EXTERNAL_USER: "SELECT * FROM usuarios WHERE id_usuario = $1",
   EXTERNAL_USER_INIT:
     "INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, id_tipo_usuario) VALUES ($1, $2, 4) RETURNING *",
