@@ -170,7 +170,7 @@ const queries = {
   INSERT_GOOGLE_USER: "INSERT INTO datos_google VALUES ($1, $2)",
   GET_EXTERNAL_USER: "SELECT * FROM usuarios WHERE id_usuario = $1",
   EXTERNAL_USER_INIT:
-    "INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, id_tipo_usuario) VALUES ($1, $2, 3) RETURNING *",
+    "INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, id_tipo_usuario) VALUES ($1, $2, 4) RETURNING *",
   EXTERNAL_USER_COMPLETE:
     "UPDATE USUARIOS SET direccion = $1, cedula = $2, nacionalidad = $3, rif=$4 WHERE id_usuario = $5 RETURNING *",
 
@@ -184,10 +184,10 @@ const queries = {
   GET_OFFICIAlS_BY_INSTITUTION:
     "SELECT usr.*, cf.password from USUARIOS usr INNER JOIN CUENTAS_FUNCIONARIOS cf ON\
     usr.id_usuario=cf.id_usuario WHERE cf.id_institucion = $1",
-  INSERT_OFFICIAL:
+  CREATE_OFFICIAL:
     "WITH funcionario AS (INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\
-    nacionalidad, rif, id_tipo_usuario) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id_usuario)\
-    INSERT INTO cuentas_funcionarios VALUES((SELECT id_usuario from funcionario), $8) RETURNING *)",
+    nacionalidad, rif, id_tipo_usuario) VALUES ($1, $2, $3, $4, $5, $6, 3) RETURNING id_usuario)\
+    INSERT INTO cuentas_funcionarios VALUES((SELECT id_usuario from funcionario), $7, $8) RETURNING *",
   UPDATE_OFFICIAL:
     "UPDATE funcionario SET nombre_completo = $1, nombre_de_usuario = $2, direccion = $3,\
     cedula = $4, nacionalidad = $5, rif = $6 WHERE id_usuario = $7\
@@ -198,7 +198,7 @@ const queries = {
     AND cf.id_institucion = $2;",
   GET_FIELDS_BY_PROCEDURE:
     "SELECT ct.*, camp.nombre, camp.tipo FROM campos_tramites ct INNER JOIN\
-     campos camp ON ct.id_campo = camp.id_campo WHERE ct.id_tipo_tramite = $1",
+     campos camp ON ct.id_campo = camp.id_campo WHERE ct.id_tipo_tramite = $1 ORDER BY ct.orden",
   GET_PROCEDURE_BY_INSTITUTION:
     "SELECT id_tipo_tramite, nombre_tramite, costo_base FROM tipos_tramites tt WHERE id_institucion = $1",
   GET_ALL_INSTITUTION: "SELECT * FROM INSTITUCIONES"

@@ -15,7 +15,7 @@ router.use("/auth", auth);
 //router.use("/notification", notification);
 router.use("/banks", banks);
 router.use("/officials", official);
-router.use("/institutions", institutions);
+// router.use("/institutions", institutions);
 
 router.get("/", (req, res) => {
   res.status(200).json({

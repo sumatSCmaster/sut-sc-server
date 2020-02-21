@@ -1,7 +1,7 @@
 import { Router } from "express";
 import {
-  getOfficialsByInstitution
-  // createOfficial,
+  getOfficialsByInstitution,
+  createOfficial
   // updateOfficial,
   // deleteOfficial
 } from "@helpers/officials";
@@ -12,18 +12,17 @@ const router = Router();
 
 router.get("/:institution", async (req: any, res) => {
   const { institution } = req.params;
-  console.log(institution);
   const [err, data] = await fulfill(getOfficialsByInstitution(institution));
   if (err) res.status(401).json(err);
   if (data) res.status(200).json(data);
 });
 
-// router.post("/", async (req, res) => {
-//   const { official } = req.body;
-//   const [err, data] = await fulfill(createOfficial(official));
-//   if (err) res.status(err.status).json(err);
-//   if (data) res.status(data.status).json(data);
-// });
+router.post("/", async (req, res) => {
+  const { official } = req.body;
+  const [err, data] = await fulfill(createOfficial(official));
+  if (err) res.status(err.status).json(err);
+  if (data) res.status(data.status).json(data);
+});
 
 // router.put("/:id", async (req, res) => {
 //   const { official } = req.body;
