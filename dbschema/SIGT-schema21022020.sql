@@ -201,6 +201,32 @@ ALTER SEQUENCE public.notificaciones_id_notificacion_seq OWNED BY public.notific
 
 
 --
+-- Name: operaciones_id_operacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.operaciones_id_operacion_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.operaciones_id_operacion_seq OWNER TO postgres;
+
+--
+-- Name: operaciones; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.operaciones (
+    id_operacion integer DEFAULT nextval('public.operaciones_id_operacion_seq'::regclass) NOT NULL,
+    nombre_op character varying
+);
+
+
+ALTER TABLE public.operaciones OWNER TO postgres;
+
+--
 -- Name: pagos; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -397,7 +423,7 @@ CREATE TABLE public.tipos_tramites (
     id_tipo_tramite integer NOT NULL,
     id_institucion integer,
     nombre_tramite character varying,
-    costo numeric
+    costo_base numeric
 );
 
 
@@ -562,6 +588,61 @@ ALTER SEQUENCE public.usuarios_id_usuario_seq OWNED BY public.usuarios.id_usuari
 
 
 --
+-- Name: variables_id_var_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.variables_id_var_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.variables_id_var_seq OWNER TO postgres;
+
+--
+-- Name: variables; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.variables (
+    id_var integer DEFAULT nextval('public.variables_id_var_seq'::regclass) NOT NULL,
+    nombre_variable character varying
+);
+
+
+ALTER TABLE public.variables OWNER TO postgres;
+
+--
+-- Name: variables_de_costo_id_variable_de_costo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.variables_de_costo_id_variable_de_costo_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.variables_de_costo_id_variable_de_costo_seq OWNER TO postgres;
+
+--
+-- Name: variables_de_costo; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.variables_de_costo (
+    id_variable_de_costo integer DEFAULT nextval('public.variables_de_costo_id_variable_de_costo_seq'::regclass) NOT NULL,
+    id_tipo_tramite integer,
+    id_operacion integer,
+    precedencia integer,
+    aumento numeric
+);
+
+
+ALTER TABLE public.variables_de_costo OWNER TO postgres;
+
+--
 -- Name: bancos id_banco; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -653,6 +734,300 @@ ALTER TABLE ONLY public.usuarios ALTER COLUMN id_usuario SET DEFAULT nextval('pu
 
 
 --
+-- Data for Name: bancos; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.bancos (id_banco, nombre) FROM stdin;
+1	Banco Occidental de Descuento
+2	Banesco
+\.
+
+
+--
+-- Data for Name: campos; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.campos (id_campo, nombre, tipo) FROM stdin;
+\.
+
+
+--
+-- Data for Name: campos_tramites; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.campos_tramites (id_campo, id_tipo_tramite) FROM stdin;
+\.
+
+
+--
+-- Data for Name: cuentas_funcionarios; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.cuentas_funcionarios (id_usuario, password, id_institucion) FROM stdin;
+\.
+
+
+--
+-- Data for Name: datos_google; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.datos_google (id_usuario, id_google) FROM stdin;
+\.
+
+
+--
+-- Data for Name: instituciones; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.instituciones (id_institucion, nombre_completo, nombre_corto) FROM stdin;
+\.
+
+
+--
+-- Data for Name: notificaciones; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.notificaciones (id_notificacion, id_tramite, emisor, receptor, descripcion, status, fecha) FROM stdin;
+\.
+
+
+--
+-- Data for Name: operaciones; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.operaciones (id_operacion, nombre_op) FROM stdin;
+\.
+
+
+--
+-- Data for Name: pagos; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.pagos (id_pago, id_tramite, referencia, monto, fecha_de_pago, aprobado, id_banco, fecha_de_aprobacion) FROM stdin;
+\.
+
+
+--
+-- Data for Name: pagos_manuales; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.pagos_manuales (id_pago, id_usuario_funcionario) FROM stdin;
+\.
+
+
+--
+-- Data for Name: parroquias; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.parroquias (id_parroquia, nombre) FROM stdin;
+\.
+
+
+--
+-- Data for Name: recaudos; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.recaudos (id_recaudo, descripcion) FROM stdin;
+\.
+
+
+--
+-- Data for Name: status_tramites; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.status_tramites (id_status_tramite, descripcion) FROM stdin;
+\.
+
+
+--
+-- Data for Name: telefonos_usuarios; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.telefonos_usuarios (id_telefono, id_usuario, numero) FROM stdin;
+\.
+
+
+--
+-- Data for Name: tipos_tramites; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.tipos_tramites (id_tipo_tramite, id_institucion, nombre_tramite, costo_base) FROM stdin;
+\.
+
+
+--
+-- Data for Name: tipos_tramites_recaudos; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.tipos_tramites_recaudos (id_tipo_tramite, id_recaudo) FROM stdin;
+\.
+
+
+--
+-- Data for Name: tipos_usuarios; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.tipos_usuarios (id_tipo_usuario, descripcion) FROM stdin;
+1	Superuser
+2	Administrador
+3	Funcionario
+4	Usuario externo
+\.
+
+
+--
+-- Data for Name: tramites; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.tramites (id_tramite, id_tipo_tramite, id_google, id_status_tramite, datos) FROM stdin;
+\.
+
+
+--
+-- Data for Name: tramites_archivos_recaudos; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.tramites_archivos_recaudos (id_tramite, url_archivo_recaudo) FROM stdin;
+\.
+
+
+--
+-- Data for Name: usuarios; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.usuarios (id_usuario, nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, rif, id_tipo_usuario) FROM stdin;
+\.
+
+
+--
+-- Data for Name: variables; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.variables (id_var, nombre_variable) FROM stdin;
+\.
+
+
+--
+-- Data for Name: variables_de_costo; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.variables_de_costo (id_variable_de_costo, id_tipo_tramite, id_operacion, precedencia, aumento) FROM stdin;
+\.
+
+
+--
+-- Name: bancos_id_banco_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.bancos_id_banco_seq', 2, true);
+
+
+--
+-- Name: campos_id_campo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.campos_id_campo_seq', 1, false);
+
+
+--
+-- Name: instituciones_id_institucion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.instituciones_id_institucion_seq', 1, false);
+
+
+--
+-- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.notificaciones_id_notificacion_seq', 1, false);
+
+
+--
+-- Name: operaciones_id_operacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.operaciones_id_operacion_seq', 1, true);
+
+
+--
+-- Name: pagos_id_pago_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.pagos_id_pago_seq', 1, false);
+
+
+--
+-- Name: parroquias_id_parroquia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.parroquias_id_parroquia_seq', 1, true);
+
+
+--
+-- Name: recaudos_id_recaudo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.recaudos_id_recaudo_seq', 1, false);
+
+
+--
+-- Name: status_tramites_id_status_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.status_tramites_id_status_tramite_seq', 1, false);
+
+
+--
+-- Name: telefonos_usuarios_id_telefono_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.telefonos_usuarios_id_telefono_seq', 4, true);
+
+
+--
+-- Name: tipos_tramites_id_tipo_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.tipos_tramites_id_tipo_tramite_seq', 1, false);
+
+
+--
+-- Name: tipos_usuarios_id_tipo_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.tipos_usuarios_id_tipo_usuario_seq', 1, false);
+
+
+--
+-- Name: tramites_id_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 1, false);
+
+
+--
+-- Name: usuarios_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 15, true);
+
+
+--
+-- Name: variables_de_costo_id_variable_de_costo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.variables_de_costo_id_variable_de_costo_seq', 1, false);
+
+
+--
+-- Name: variables_id_var_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.variables_id_var_seq', 1, false);
+
+
+--
 -- Name: bancos bancos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -706,6 +1081,14 @@ ALTER TABLE ONLY public.instituciones
 
 ALTER TABLE ONLY public.notificaciones
     ADD CONSTRAINT notificaciones_pkey PRIMARY KEY (id_notificacion);
+
+
+--
+-- Name: operaciones operacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.operaciones
+    ADD CONSTRAINT operacion_pkey PRIMARY KEY (id_operacion);
 
 
 --
@@ -794,6 +1177,22 @@ ALTER TABLE ONLY public.usuarios
 
 ALTER TABLE ONLY public.usuarios
     ADD CONSTRAINT usuarios_pkey PRIMARY KEY (id_usuario);
+
+
+--
+-- Name: variables_de_costo variable_de_costo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.variables_de_costo
+    ADD CONSTRAINT variable_de_costo_pkey PRIMARY KEY (id_variable_de_costo);
+
+
+--
+-- Name: variables variables_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.variables
+    ADD CONSTRAINT variables_pkey PRIMARY KEY (id_var);
 
 
 --
@@ -946,6 +1345,22 @@ ALTER TABLE ONLY public.tramites
 
 ALTER TABLE ONLY public.usuarios
     ADD CONSTRAINT usuarios_id_tipo_usuario_fkey FOREIGN KEY (id_tipo_usuario) REFERENCES public.tipos_usuarios(id_tipo_usuario);
+
+
+--
+-- Name: variables_de_costo variable_de_costo_id_operacion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.variables_de_costo
+    ADD CONSTRAINT variable_de_costo_id_operacion_fkey FOREIGN KEY (id_operacion) REFERENCES public.operaciones(id_operacion);
+
+
+--
+-- Name: variables_de_costo variable_de_costo_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.variables_de_costo
+    ADD CONSTRAINT variable_de_costo_id_tipo_tramite_fkey FOREIGN KEY (id_tipo_tramite) REFERENCES public.tipos_tramites(id_tipo_tramite);
 
 
 --
