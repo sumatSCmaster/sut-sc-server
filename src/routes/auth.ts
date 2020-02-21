@@ -13,6 +13,7 @@ const router = Router();
 
 router.post(
   "/login",
+  authValidations.isLogged,
   authValidations.login,
   checkResult,
   authenticate("local"),
@@ -45,6 +46,15 @@ router.post(
     }
   }
 );
+
+router.get(
+  "/logout",
+  authValidations.isAuth,
+  (req, res) => {
+    req.logout();
+    res.json({status: 200, message: "Sesión finalizada."})
+  }
+)
 
 router.post(
   '/createAdmin',
