@@ -171,7 +171,8 @@ const queries = {
   GET_EXTERNAL_USER: "SELECT * FROM usuarios WHERE id_usuario = $1",
   EXTERNAL_USER_INIT:
     "INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, id_tipo_usuario) VALUES ($1, $2, 3) RETURNING *",
-  EXTERNAL_USER_COMPLETE: "",
+  EXTERNAL_USER_COMPLETE:
+    "UPDATE USUARIOS SET direccion = $1, cedula = $2, nacionalidad = $3, rif=$4 WHERE id_usuario = $5 RETURNING *",
 
   //BANKS
   GET_ALL_BANKS: "SELECT * FROM BANCOS",
