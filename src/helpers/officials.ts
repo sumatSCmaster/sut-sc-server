@@ -1,6 +1,7 @@
 import Pool from "@utils/Pool";
 import queries from "@utils/queries";
 import { Usuario } from "@interfaces/sigt";
+import { Client } from "pg";
 const pool = Pool.getInstance();
 
 export const getOfficialsByInstitution = async (institution: string) => {
@@ -56,22 +57,54 @@ export const createOfficial = async (official: any) => {
   }
 };
 
-// export const updateOfficial = async (official: any, id: string) => {
-//   const client = await pool.connect();
+//TODO: verificar que el usuario pertenece a mi institucion
+export const updateOfficial = async (official: any, id: string) => {
+  const {
+    nombre,
+    username,
+    direccion,
+    cedula,
+    nacionalidad,
+    rif,
+    password
+  } = official;
+  const client = await pool.connect();
+  try {
+    client.query("BEGIN");
+    await client.query(queries.UPDATE_OFFICIAL, [
+      nombre,
+      username,
+      direccion,
+      cedula,
+      nacionalidad,
+      rif,
+      id,
+      password
+    ]);
+    client.query("COMMIT");
+    return { status: 200, message: "OK" };
+  } catch (e) {
+    client.query("ROLLBACK");
+    throw { status: 500, error: e };
+  } finally {
+    client.release();
+  }
+};
 
-//   try {
-//   } catch (e) {
-//   } finally {
-//     client.release();
-//   }
-// };
-
-// export const deleteOfficial = async (officialID: string) => {
-//   const client = await pool.connect();
-
-//   try {
-//   } catch (e) {
-//   } finally {
-//     client.release();
-//   }
-// };
+export const deleteOfficial = async (
+  officialID: string,
+  institution: number
+) => {
+  const client = await pool.connect();
+  try {
+    client.query("BEGIN");
+    await client.query(queries.DELETE_OFFICIAL, [officialID, institution]);
+    client.query("COMMIT");
+    return { status: 200, message: "OK" };
+  } catch (e) {
+    client.query("ROLLBACK");
+    throw { error: e, status: 500 };
+  } finally {
+    client.release();
+  }
+};

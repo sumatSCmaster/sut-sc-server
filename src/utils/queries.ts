@@ -189,9 +189,9 @@ const queries = {
     nacionalidad, rif, id_tipo_usuario) VALUES ($1, $2, $3, $4, $5, $6, 3) RETURNING id_usuario)\
     INSERT INTO cuentas_funcionarios VALUES((SELECT id_usuario from funcionario), $7, $8) RETURNING *",
   UPDATE_OFFICIAL:
-    "UPDATE funcionario SET nombre_completo = $1, nombre_de_usuario = $2, direccion = $3,\
-    cedula = $4, nacionalidad = $5, rif = $6 WHERE id_usuario = $7\
-    UPDATE cuentas_funcionario SET password = $8 WHERE id_usuario = $7",
+    "WITH updated AS (UPDATE usuarios SET nombre_completo = $1, nombre_de_usuario = $2, direccion = $3,\
+    cedula = $4, nacionalidad = $5, rif = $6 WHERE id_usuario = $7 RETURNING id_usuario)\
+    UPDATE cuentas_funcionarios SET password = $8 WHERE id_usuario = (SELECT id_usuario from updated)",
   DELETE_OFFICIAL:
     "DELETE FROM USUARIOS usr USING CUENTAS_FUNCIONARIOS cf WHERE\
     usr.id_usuario = cf.id_usuario AND usr.id_usuario = $1\
