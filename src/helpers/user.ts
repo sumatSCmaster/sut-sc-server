@@ -93,7 +93,6 @@ export const createAdmin = async (user: Payloads.CrearAdmin): Promise<Partial<Us
     return usuario;
   } catch (e){
     client.query('ROLLBACK');
-    console.log('AAAAAAAA', e)
     throw e;
   } finally {
     client.release();
