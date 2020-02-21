@@ -210,7 +210,7 @@ export const completeExtUserSignUp = async (user, id) => {
       id
     ]);
     client.query("COMMIT");
-    return { status: 201, message: "hola", user: response.rows[0] };
+    return { status: 201, user: response.rows[0] };
   } catch (error) {
     client.query("ROLLBACK");
     throw { status: 500, error };
