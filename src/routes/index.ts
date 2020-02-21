@@ -1,6 +1,7 @@
 import { Router } from "express";
 import auth from "./auth";
 import notification from "./notification";
+import official from "./officials";
 import banks from "./banks";
 import { authenticate } from "passport";
 import { isAdmin } from "@middlewares/auth";
@@ -12,6 +13,7 @@ router.use("/auth", auth);
 // router.use('/file', file);
 router.use("/notification", notification);
 router.use("/banks", banks);
+router.use("/officials", official);
 
 router.get("/", (req, res) => {
   res.status(200).json({

@@ -34,17 +34,25 @@ const queries = {
   GET_ALL_BANKS: "SELECT * FROM BANCOS",
 
   //OFFICIALS
-  GET_ALL_OFFICIALS:
-    "SELECT ur.*, cf.password FROM USUARIOS ur INNER JOIN CUENTAS_FUNCIONARIOS cf ON ur.id_usuario = cf.id_usuario",
+  GET_OFFICIAL:
+    "SELECT usr.*, cf.password from USUARIOS usr INNER JOIN CUENTAS_FUNCIONARIOS cf ON\
+     usr.id_usuario=cf.id_usuario WHERE usr.id_usuario=$1 AND cf.id_institucion = $2",
+  GET_OFFICIAlS_BY_INSTITUTION:
+    "SELECT usr.*, cf.password from USUARIOS usr INNER JOIN CUENTAS_FUNCIONARIOS cf ON\
+    usr.id_usuario=cf.id_usuario WHERE cf.id_institucion = $1",
   INSERT_OFFICIAL:
     "WITH funcionario AS (INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\
     nacionalidad, rif, id_tipo_usuario) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id_usuario)\
     INSERT INTO cuentas_funcionarios VALUES((SELECT id_usuario from funcionario), $8) RETURNING *)",
-  UPDATE_OFFICIAL: "",
+  UPDATE_OFFICIAL:
+    "UPDATE funcionario SET nombre_completo = $1, nombre_de_usuario = $2, direccion = $3,\
+    cedula = $4, nacionalidad = $5, rif = $6 WHERE id_usuario = $7\
+    UPDATE cuentas_funcionario SET password = $8 WHERE id_usuario = $7",
   DELETE_OFFICIAL:
-    "DELETE FROM USUARIOS usr USING CUENTAS_FUNCIONARIOS cf WHERE \
-    usr.id_usuario = cf.id_usuario AND usr.id_usuario = $1 \
-    AND cf.id_institucion = $2;"
+    "DELETE FROM USUARIOS usr USING CUENTAS_FUNCIONARIOS cf WHERE\
+    usr.id_usuario = cf.id_usuario AND usr.id_usuario = $1\
+    AND cf.id_institucion = $2;",
+  FORCE_ERROR: "SELET * FROM USUARIOS"
 };
 
 export default queries;
