@@ -7,6 +7,7 @@ export const createSuperuser = [
   check('usuario.direccion').exists().withMessage('Debe incluir la direccion del usuario').isString().withMessage('Direccion invalida'),
   check('usuario.nacionalidad').exists().withMessage('Debe incluir la nacionalidad del usuario').isString().withMessage('Nacionalidad invalida'),
   check('usuario.rif').exists().withMessage('Debe incluir el rif del usuario').isString().withMessage('RIF invalido'),
+  check('usuario.id_institucion').exists().withMessage('Debe especificar la institucion del usuario').isNumeric().withMessage('ID de institucion invalido'),
   check('password').exists().withMessage('Debe incluir clave de administrador')
 ];
 
@@ -18,6 +19,7 @@ export const createAdmin = [
   check('usuario.nacionalidad').exists().withMessage('Debe incluir la nacionalidad del usuario').isString().withMessage('Nacionalidad invalida'),
   check('usuario.rif').exists().withMessage('Debe incluir el rif del usuario').isString().withMessage('RIF invalido'),
   check('usuario.telefonos').exists().withMessage('Debe incluir los telefonos del usuario').isArray().withMessage('Telefonos invalidos'),
+  check('usuario.id_institucion').exists().withMessage('Debe especificar la institucion del usuario').isNumeric().withMessage('ID de institucion invalido'),  
   check('password').exists().withMessage('Debe incluir clave de administrador')
 ];
 

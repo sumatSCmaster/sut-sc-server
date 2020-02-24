@@ -37,8 +37,9 @@ export interface DatosGoogle {
 }
 
 export interface CuentaFuncionario {
-  id_usuario: number;
-  password: string;
+  id_usuario: number,
+  password: string,
+  id_institucion: number
 }
 
 export interface TipoUsuario {
@@ -69,6 +70,6 @@ export interface Campos {
 }
 
 export namespace Payloads {
-  export type CrearSuperuser = Partial<Usuario>;
-  export type CrearAdmin = CrearSuperuser & { telefonos: number[] };
+  export type CrearSuperuser = Partial<Usuario> & {telefonos: number[], id_institucion: number} 
+  export type CrearAdmin = CrearSuperuser 
 }

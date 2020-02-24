@@ -5,7 +5,8 @@ import {
   Usuario,
   Payloads,
   Nacionalidad,
-  IDsTipoUsuario
+  IDsTipoUsuario,
+  Institucion
 } from "@interfaces/sigt";
 import { fulfill } from "@utils/resolver";
 import { stringify } from "flatted/cjs";
@@ -63,23 +64,11 @@ export const createSuperuser = async (
 ): Promise<Partial<Usuario>> => {
   const client = await pool.connect();
   try {
-    client.query("BEGIN");
-    const res = (
-      await client.query(queries.CREATE_USER, [
-        user.nombre_completo,
-        user.nombre_de_usuario,
-        user.direccion,
-        user.cedula,
-        user.nacionalidad,
-        user.rif,
-        IDsTipoUsuario.Superuser
-      ])
-    ).rows[0];
-    const res2 = await client.query(queries.ADD_PASSWORD, [
-      res.id_usuario,
-      user.cuenta_funcionario?.password
-    ]);
-    client.query("COMMIT");
+    client.query('BEGIN');
+    const res = (await client.query(queries.CREATE_USER, 
+      [user.nombre_completo, user.nombre_de_usuario, user.direccion, user.cedula, user.nacionalidad, user.rif, IDsTipoUsuario.Superuser])).rows[0];
+    const res2 = (await client.query(queries.ADD_OFFICIAL_DATA, [res.id_usuario, user.cuenta_funcionario?.password, user.id_institucion]))
+    client.query('COMMIT');
     const usuario: Partial<Usuario> = {
       id_usuario: res.id_usuario,
       nombre_de_usuario: res.nombre_de_usuario,
@@ -102,31 +91,12 @@ export const createAdmin = async (
 ): Promise<Partial<Usuario>> => {
   const client = await pool.connect();
   try {
-    client.query("BEGIN");
-    const res = (
-      await client.query(queries.CREATE_USER, [
-        user.nombre_completo,
-        user.nombre_de_usuario,
-        user.direccion,
-        user.cedula,
-        user.nacionalidad,
-        user.rif,
-        IDsTipoUsuario.Administrador
-      ])
-    ).rows[0];
-    console.log(IDsTipoUsuario.Administrador);
-    console.log("res", res);
-    const res2 = await client.query(queries.ADD_PASSWORD, [
-      res.id_usuario,
-      user.cuenta_funcionario?.password
-    ]);
-    const res3 = await Promise.all(
-      user.telefonos.map(tlf =>
-        client.query(queries.ADD_PHONE, [res.id_usuario, tlf])
-      )
-    );
-    console.log(res3);
-    client.query("COMMIT");
+    client.query('BEGIN');
+    const res = (await client.query(queries.CREATE_USER, 
+      [user.nombre_completo, user.nombre_de_usuario, user.direccion, user.cedula, user.nacionalidad, user.rif, IDsTipoUsuario.Administrador])).rows[0];
+    const res2 = (await client.query(queries.ADD_OFFICIAL_DATA, [res.id_usuario, user.cuenta_funcionario?.password, user.id_institucion]));
+    const res3 = (await Promise.all(user.telefonos.map((tlf) => client.query(queries.ADD_PHONE, [res.id_usuario, tlf]))));
+    client.query('COMMIT');
     const usuario: Partial<Usuario> = {
       id_usuario: res.id_usuario,
       nombre_de_usuario: res.nombre_de_usuario,
@@ -144,6 +114,18 @@ export const createAdmin = async (
     client.release();
   }
 };
+
+export const addInstitute = async (user: Partial<Usuario>): Promise<Partial<Usuario> & { institucion: Institucion} > => {
+  const client = await pool.connect();
+  try{
+    const res = (await client.query(queries.GET_ADMIN_INSTITUTE, [user.id_usuario])).rows;
+    return { ...user , institucion: res[0] }
+  } catch (e) {
+    throw e;
+  } finally {
+    client.release();
+  }
+}
 
 export const comparePassword = (
   candidate: string,
