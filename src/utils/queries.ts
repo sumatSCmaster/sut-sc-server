@@ -18,7 +18,7 @@ const queries = {
     "SELECT cf.* FROM cuentas_funcionarios cf \
     INNER JOIN usuarios u ON u.id_usuario = cf.id_usuario \
     WHERE u.nombre_de_usuario = $1;",
-  CREATE_USER: `INSERT INTO usuarios (nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, rif, id_tipo_usuario) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+  CREATE_USER: `INSERT INTO usuarios (nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, rif, id_tipo_usuario, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
   ASSIGN_ALL_PERMISSIONS:
     "INSERT INTO rol_funcion(id_rol, id_funcion) SELECT $1, id FROM funcion;",
   ADD_PASSWORD:
@@ -27,7 +27,11 @@ const queries = {
     "SELECT i.* FROM instituciones i INNER JOIN cuentas_funcionarios cf ON i.id_institucion = cf.id_institucion \
     WHERE cf.id_usuario = $1;",
   ADD_OFFICIAL_DATA:
-    "INSERT INTO cuentas_funcionarios (id_usuario, password, id_institucion) VALUES ($1, $2, $3);",
+    "INSERT INTO cuentas_funcionarios (id_usuario, id_institucion) VALUES ($1, $2);",
+  CHECK_IF_OFFICIAL:
+    "SELECT 1 FROM usuarios u \
+    INNER JOIN tipos_usuarios tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
+    WHERE tu.descripcion = \'Funcionario\' AND u.cedula = $1",
   CHECK_IF_ADMIN:
     "SELECT 1 FROM usuarios u \
     INNER JOIN tipos_usuarios tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
@@ -58,7 +62,7 @@ const queries = {
 
   //OFFICIALS
   GET_OFFICIAL:
-    "SELECT usr.*, cf.password from USUARIOS usr INNER JOIN CUENTAS_FUNCIONARIOS cf ON\
+    "SELECT usr.* from USUARIOS usr INNER JOIN CUENTAS_FUNCIONARIOS cf ON\
      usr.id_usuario=cf.id_usuario WHERE usr.id_usuario=$1 AND cf.id_institucion = $2",
   GET_OFFICIALS_BY_INSTITUTION:
     "SELECT usr.id_usuario AS id, usr.nombre_completo AS nombreCompleto, usr.nombre_de_usuario AS nombreUsuario,\
@@ -67,12 +71,12 @@ const queries = {
       usr.id_usuario=cf.id_usuario WHERE cf.id_institucion = $1",
   CREATE_OFFICIAL:
     "WITH funcionario AS (INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\
-    nacionalidad, rif, id_tipo_usuario) VALUES ($1, $2, $3, $4, $5, $6, 3) RETURNING id_usuario)\
-    INSERT INTO cuentas_funcionarios VALUES((SELECT id_usuario from funcionario), $7, $8) RETURNING *",
+    nacionalidad, rif, id_tipo_usuario, password) VALUES ($1, $2, $3, $4, $5, $6, 3, $7) RETURNING id_usuario)\
+    INSERT INTO cuentas_funcionarios VALUES((SELECT id_usuario from funcionario), $8) RETURNING *",
   UPDATE_OFFICIAL:
     "WITH updated AS (UPDATE usuarios SET nombre_completo = $1, nombre_de_usuario = $2, direccion = $3,\
     cedula = $4, nacionalidad = $5, rif = $6 WHERE id_usuario = $7 RETURNING id_usuario)\
-    UPDATE cuentas_funcionarios SET password = $8 WHERE id_usuario = (SELECT id_usuario from updated)",
+    UPDATE usuarios SET password = $8 WHERE id_usuario = (SELECT id_usuario from updated)",
   DELETE_OFFICIAL:
     "DELETE FROM USUARIOS usr USING CUENTAS_FUNCIONARIOS cf WHERE\
     usr.id_usuario = cf.id_usuario AND usr.id_usuario = $1\

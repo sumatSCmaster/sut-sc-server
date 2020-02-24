@@ -39,9 +39,10 @@ export const getUserByUsername = async (
     const resGoogle = googleData.rows[0];
     const resOfficial = officialData.rows[0];
     const user: Usuario = {
-      id: resBase.id_usuario,
-      nombreCompleto: resBase.nombre_completo,
-      nombreUsuario: resBase.nombre_de_usuario,
+      id_usuario: resBase.id_usuario,
+      nombre_completo: resBase.nombre_completo,
+      nombre_de_usuario: resBase.nombre_de_usuario,
+      password: resBase.password,
       direccion: resBase.direccion,
       cedula: resBase.cedula,
       telefonos: resPhones.map(obj => obj.numero),
@@ -64,24 +65,11 @@ export const createSuperuser = async (
 ): Promise<Partial<Usuario>> => {
   const client = await pool.connect();
   try {
-    client.query("BEGIN");
-    const res = (
-      await client.query(queries.CREATE_USER, [
-        user.nombreCompleto,
-        user.nombreUsuario,
-        user.direccion,
-        user.cedula,
-        user.nacionalidad,
-        user.rif,
-        IDsTipoUsuario.Superuser
-      ])
-    ).rows[0];
-    const res2 = await client.query(queries.ADD_OFFICIAL_DATA, [
-      res.id_usuario,
-      user.cuentaFuncionario?.password,
-      user.institucion
-    ]);
-    client.query("COMMIT");
+    client.query('BEGIN');
+    const res = (await client.query(queries.CREATE_USER, 
+      [user.nombre_completo, user.nombre_de_usuario, user.direccion, user.cedula, user.nacionalidad, user.rif, IDsTipoUsuario.Superuser, user.password])).rows[0];
+    const res2 = (await client.query(queries.ADD_OFFICIAL_DATA, [res.id_usuario, user.id_institucion]))
+    client.query('COMMIT');
     const usuario: Partial<Usuario> = {
       id: res.id_usuario,
       nombreUsuario: res.nombre_de_usuario,
@@ -104,29 +92,12 @@ export const createAdmin = async (
 ): Promise<Partial<Usuario>> => {
   const client = await pool.connect();
   try {
-    client.query("BEGIN");
-    const res = (
-      await client.query(queries.CREATE_USER, [
-        user.nombreCompleto,
-        user.nombreUsuario,
-        user.direccion,
-        user.cedula,
-        user.nacionalidad,
-        user.rif,
-        IDsTipoUsuario.Administrador
-      ])
-    ).rows[0];
-    const res2 = await client.query(queries.ADD_OFFICIAL_DATA, [
-      res.id_usuario,
-      user.cuentaFuncionario?.password,
-      user.institucion
-    ]);
-    const res3 = await Promise.all(
-      user.telefonos.map(tlf =>
-        client.query(queries.ADD_PHONE, [res.id_usuario, tlf])
-      )
-    );
-    client.query("COMMIT");
+    client.query('BEGIN');
+    const res = (await client.query(queries.CREATE_USER, 
+      [user.nombre_completo, user.nombre_de_usuario, user.direccion, user.cedula, user.nacionalidad, user.rif, IDsTipoUsuario.Administrador, user.password])).rows[0];
+    const res2 = (await client.query(queries.ADD_OFFICIAL_DATA, [res.id_usuario, user.id_institucion]));
+    const res3 = (await Promise.all(user.telefonos.map((tlf) => client.query(queries.ADD_PHONE, [res.id_usuario, tlf]))));
+    client.query('COMMIT');
     const usuario: Partial<Usuario> = {
       id: res.id_usuario,
       nombreUsuario: res.nombre_de_usuario,

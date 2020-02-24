@@ -3,7 +3,7 @@ import { generateToken } from "@utils/Strategies";
 import { authenticate } from "passport";
 //import { createAdmin } from "@helpers/user";
 import * as authValidations from "@validations/auth";
-import { checkIfAdmin, checkIfSuperuser } from "@utils/user";
+import { checkIfAdmin, checkIfSuperuser, checkIfOfficial } from "@utils/user";
 import { hashSync, genSaltSync } from "bcryptjs";
 import { checkResult } from "@validations/index";
 import {
@@ -43,7 +43,8 @@ router.post(
         admin: req.user.admin,
         user: req.user.user
       });
-    } else {
+    } else if (await checkIfOfficial(req.user.user.cedula)) {
+      req.user.user = await addInstitute(req.user.user);
       res.status(200).json({
         status: 200,
         message: "Inicio de sesion exitoso.",
@@ -69,9 +70,8 @@ router.post(
   async (req, res) => {
     try {
       const salt = genSaltSync(10);
-      req.body.usuario.cuenta_funcionario = {};
-      req.body.usuario.cuenta_funcionario.password = hashSync(
-        req.body.password,
+      req.body.usuario.password = hashSync(
+        req.body.usuario.password,
         salt
       );
       const user = await createAdmin({ ...req.body.usuario }).catch(e => {
@@ -104,9 +104,8 @@ router.post(
     if (req.body.password === process.env.SUPERUSER_CREATION_PASSWORD) {
       try {
         const salt = genSaltSync(10);
-        req.body.usuario.cuenta_funcionario = {};
-        req.body.usuario.cuenta_funcionario.password = hashSync(
-          req.body.password,
+        req.body.usuario.password = hashSync(
+          req.body.usuario.password,
           salt
         );
         const user = await createSuperuser({ ...req.body.usuario }).catch(e => {
