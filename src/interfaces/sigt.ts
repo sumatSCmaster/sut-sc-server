@@ -18,32 +18,38 @@ export enum IDsTipoUsuario {
 }
 
 export interface Usuario {
-  id_usuario: number;
-  nombre_completo: string;
-  nombre_de_usuario: string;
+  id: number;
+  nombreCompleto: string;
+  nombreUsuario: string;
   direccion: string;
   cedula: string;
   telefonos: string[];
   nacionalidad: Nacionalidad;
   rif?: string;
-  tipo_usuario: TipoUsuario;
-  datos_google?: DatosGoogle;
-  cuenta_funcionario?: CuentaFuncionario;
+  tipoUsuario: TipoUsuario;
+  datosGoogle?: DatosGoogle;
+  cuentaFuncionario?: CuentaFuncionario;
+  datosFacebook?: DatosFacebook;
+}
+
+export interface DatosFacebook {
+  usuario: number;
+  id: string;
 }
 
 export interface DatosGoogle {
-  id_usuario: number;
-  id_google: string;
+  usuario: number;
+  id: string;
 }
 
 export interface CuentaFuncionario {
-  id_usuario: number,
-  password: string,
-  id_institucion: number
+  usuario: number;
+  password: string;
+  institucion: number;
 }
 
 export interface TipoUsuario {
-  id_tipo_usuario: number;
+  id: number;
   descripcion: DescripcionesTipoUsuario;
 }
 
@@ -70,6 +76,9 @@ export interface Campos {
 }
 
 export namespace Payloads {
-  export type CrearSuperuser = Partial<Usuario> & {telefonos: number[], id_institucion: number} 
-  export type CrearAdmin = CrearSuperuser 
+  export type CrearSuperuser = Partial<Usuario> & {
+    telefonos: number[];
+    institucion: number;
+  };
+  export type CrearAdmin = CrearSuperuser;
 }

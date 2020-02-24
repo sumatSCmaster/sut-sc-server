@@ -131,7 +131,7 @@ router.post(
     } else {
       res.status(401).json({
         status: 401,
-        message: "Clave de creacion de superuser superuser invalida"
+        message: "Clave de creacion de superuser invalida"
       });
     }
   }
@@ -188,25 +188,15 @@ router.post("/complete", authenticate("jwt"), async (req: any, res) => {
 });
 
 router.get("/user", authenticate("jwt"), async (req: any, res) => {
-  const {
-    id_usuario,
-    nombre_completo,
-    nombre_de_usuario,
-    direccion,
-    cedula,
-    nacionalidad,
-    rif,
-    id_tipo_usuario
-  } = req.user;
   const user = {
-    id: id_usuario,
-    nombreCompleto: nombre_completo,
-    nombreUsuario: nombre_de_usuario,
-    direccion,
-    cedula,
-    rif,
-    nacionalidad,
-    tipoUsuario: id_tipo_usuario
+    id: req.user.id_usuario,
+    nombreCompleto: req.user.nombre_completo,
+    nombreUsuario: req.user.nombre_de_usuario,
+    direccion: req.user.direccion,
+    cedula: req.user.cedula,
+    rif: req.user.rif,
+    nacionalidad: req.user.nacionalidad,
+    tipoUsuario: req.user.id_tipo_usuario
   };
   res.status(200).json({ user, status: 200 });
 });
