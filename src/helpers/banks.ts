@@ -9,5 +9,7 @@ export const getAllBanks = async () => {
     return { banks: response.rows };
   } catch (e) {
     return e;
+  } finally {
+    client.release();
   }
 };

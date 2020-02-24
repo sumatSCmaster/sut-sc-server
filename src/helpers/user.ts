@@ -162,6 +162,7 @@ export const getByGoogleID = async id => {
   const [err, data] = await fulfill(
     client.query(queries.GET_BY_GOOGLE_ID, [id])
   );
+  client.release();
   if (err) return err;
   if (data) return { data: data.rows };
 };
@@ -171,6 +172,7 @@ export const getByFacebookID = async id => {
   const [err, data] = await fulfill(
     client.query(queries.GET_BY_FACEBOOK_ID, [id])
   );
+  client.release();
   if (err) return err;
   if (data) return { data: data.rows };
 };
@@ -180,6 +182,7 @@ export const verifyExternalUser = async id => {
   const [err, data] = await fulfill(
     client.query(queries.GET_EXTERNAL_USER, [id])
   );
+  client.release();
   if (err) return err;
   if (data) return { data: data.rows[0] };
 };
