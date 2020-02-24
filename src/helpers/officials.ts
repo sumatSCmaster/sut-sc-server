@@ -50,7 +50,14 @@ export const createOfficial = async (official: any) => {
     return { status: 201, official: off.rows[0] };
   } catch (e) {
     client.query("ROLLBACK");
-    throw { status: 500, error: e };
+    throw {
+      status: 500,
+      error: e,
+      message:
+        e.code === "23505"
+          ? "La cedula seleccionada ya está en uso"
+          : "Error en la petición"
+    };
   } finally {
     client.release();
   }

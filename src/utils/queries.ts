@@ -31,8 +31,9 @@ const queries = {
   CHECK_IF_ADMIN:
     "SELECT 1 FROM usuarios u \
     INNER JOIN tipos_usuarios tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
-    WHERE tu.descripcion = \'Administrador\' AND u.cedula = $1",
-  CHECK_IF_SUPERUSER: "SELECT 1 FROM usuarios u \
+    WHERE tu.descripcion = 'Administrador' AND u.cedula = $1",
+  CHECK_IF_SUPERUSER:
+    "SELECT 1 FROM usuarios u \
   INNER JOIN tipos_usuarios tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
   WHERE tu.descripcion = 'Superuser' AND u.cedula = $1",
   ADD_PHONE:
@@ -53,7 +54,7 @@ const queries = {
     "UPDATE USUARIOS SET direccion = $1, cedula = $2, nacionalidad = $3, rif = $4, nombre_de_usuario = $5 WHERE id_usuario = $6 RETURNING *",
 
   //BANKS
-  GET_ALL_BANKS: "SELECT * FROM BANCOS",
+  GET_ALL_BANKS: "SELECT id_banco as id, nombre  FROM BANCOS",
 
   //OFFICIALS
   GET_OFFICIAL:

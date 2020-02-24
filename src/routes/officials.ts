@@ -22,7 +22,7 @@ router.post("/", async (req, res) => {
   const { official } = req.body;
   // const {id_institucion} = req.user;
   const [err, data] = await fulfill(createOfficial(official));
-  if (err) res.status(500).json({ error: err, status: 500 });
+  if (err) res.status(500).json(err);
   if (data) res.status(data.status).json(data);
 });
 
