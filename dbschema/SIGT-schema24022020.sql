@@ -117,6 +117,18 @@ CREATE TABLE public.cuentas_funcionarios (
 ALTER TABLE public.cuentas_funcionarios OWNER TO postgres;
 
 --
+-- Name: datos_facebook; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.datos_facebook (
+    id_usuario integer NOT NULL,
+    id_facebook character varying NOT NULL
+);
+
+
+ALTER TABLE public.datos_facebook OWNER TO postgres;
+
+--
 -- Name: datos_google; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -750,6 +762,9 @@ COPY public.bancos (id_banco, nombre) FROM stdin;
 --
 
 COPY public.campos (id_campo, nombre, tipo) FROM stdin;
+1	Nombre Completo	string
+2	Cedula	number
+3	Ganas de Vivir	number
 \.
 
 
@@ -758,6 +773,19 @@ COPY public.campos (id_campo, nombre, tipo) FROM stdin;
 --
 
 COPY public.campos_tramites (id_campo, id_tipo_tramite, orden, estado) FROM stdin;
+1	1	1	1
+1	1	1	2
+2	1	2	1
+2	1	2	2
+3	1	3	2
+3	1	3	1
+1	2	1	1
+1	2	1	2
+2	2	2	1
+2	2	2	2
+3	2	3	1
+1	3	1	1
+1	3	1	2
 \.
 
 
@@ -770,10 +798,21 @@ COPY public.cuentas_funcionarios (id_usuario, password, id_institucion) FROM std
 
 
 --
+-- Data for Name: datos_facebook; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.datos_facebook (id_usuario, id_facebook) FROM stdin;
+26	10222400398898672
+27	10222400398898672
+\.
+
+
+--
 -- Data for Name: datos_google; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.datos_google (id_usuario, id_google) FROM stdin;
+25	109134165731123584440
 \.
 
 
@@ -782,6 +821,8 @@ COPY public.datos_google (id_usuario, id_google) FROM stdin;
 --
 
 COPY public.instituciones (id_institucion, nombre_completo, nombre_corto) FROM stdin;
+1	Comandancia de Bomberos de Maracaibo	CMB
+2	HOLA MATENME	HMT
 \.
 
 
@@ -854,6 +895,10 @@ COPY public.telefonos_usuarios (id_telefono, id_usuario, numero) FROM stdin;
 --
 
 COPY public.tipos_tramites (id_tipo_tramite, id_institucion, nombre_tramite, costo_base) FROM stdin;
+1	1	primer tramite	200
+2	1	segundo tramite	201
+3	1	tercer tramite	200
+4	2	matenem	2000
 \.
 
 
@@ -898,6 +943,8 @@ COPY public.tramites_archivos_recaudos (id_tramite, url_archivo_recaudo) FROM st
 --
 
 COPY public.usuarios (id_usuario, nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, rif, id_tipo_usuario) FROM stdin;
+27	Luis Acurero	\N	\N	\N	\N	\N	4
+25	Luis Acurero	esternocleidomastoideo	adasdjiculo	2393333943	V	rijwewiw	4
 \.
 
 
@@ -935,7 +982,7 @@ SELECT pg_catalog.setval('public.campos_id_campo_seq', 1, false);
 -- Name: instituciones_id_institucion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.instituciones_id_institucion_seq', 2, true);
+SELECT pg_catalog.setval('public.instituciones_id_institucion_seq', 1, false);
 
 
 --
@@ -984,7 +1031,7 @@ SELECT pg_catalog.setval('public.status_tramites_id_status_tramite_seq', 1, fals
 -- Name: telefonos_usuarios_id_telefono_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.telefonos_usuarios_id_telefono_seq', 12, true);
+SELECT pg_catalog.setval('public.telefonos_usuarios_id_telefono_seq', 4, true);
 
 
 --
@@ -1012,7 +1059,7 @@ SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 1, false);
 -- Name: usuarios_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 24, true);
+SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 27, true);
 
 
 --
@@ -1282,7 +1329,7 @@ ALTER TABLE ONLY public.pagos_manuales
 --
 
 ALTER TABLE ONLY public.telefonos_usuarios
-    ADD CONSTRAINT telefonos_usuarios_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuarios(id_usuario) ON DELETE CASCADE;
+    ADD CONSTRAINT telefonos_usuarios_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuarios(id_usuario);
 
 
 --
