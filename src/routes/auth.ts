@@ -9,7 +9,8 @@ import { checkResult } from "@validations/index";
 import {
   createSuperuser,
   createAdmin,
-  completeExtUserSignUp
+  completeExtUserSignUp,
+  addInstitute
 } from "@helpers/user";
 import { isSuperuser, isAdmin } from "@middlewares/auth";
 import { fulfill } from "@utils/resolver";
@@ -34,6 +35,7 @@ router.post(
         user: req.user.user
       });
     } else if (await checkIfAdmin(req.user.user.cedula)) {
+      req.user.user = await addInstitute(req.user.user);
       res.status(200).json({
         status: 200,
         message: "Inicio de sesion exitoso.",

@@ -21,8 +21,6 @@ const queries = {
   CREATE_USER: `INSERT INTO usuarios (nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, rif, id_tipo_usuario) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
   ASSIGN_ALL_PERMISSIONS:
     "INSERT INTO rol_funcion(id_rol, id_funcion) SELECT $1, id FROM funcion;",
-  ADD_ACCOUNT:
-    "INSERT INTO cuenta(id_usuario, username, password) VALUES($1, $2, $3);",
   ADD_PASSWORD:
     "INSERT INTO cuentas_funcionarios (id_usuario, password) VALUES ($1, $2);",
   GET_ADMIN_INSTITUTE:
@@ -33,9 +31,8 @@ const queries = {
   CHECK_IF_ADMIN:
     "SELECT 1 FROM usuarios u \
     INNER JOIN tipos_usuarios tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
-    WHERE tu.descripcion = 'Administrador' AND u.cedula = $1",
-  CHECK_IF_SUPERUSER:
-    "SELECT 1 FROM usuarios u \
+    WHERE tu.descripcion = \'Administrador\' AND u.cedula = $1",
+  CHECK_IF_SUPERUSER: "SELECT 1 FROM usuarios u \
   INNER JOIN tipos_usuarios tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
   WHERE tu.descripcion = 'Superuser' AND u.cedula = $1",
   ADD_PHONE:
