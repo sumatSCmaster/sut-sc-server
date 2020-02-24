@@ -61,8 +61,10 @@ const queries = {
     "SELECT usr.*, cf.password from USUARIOS usr INNER JOIN CUENTAS_FUNCIONARIOS cf ON\
      usr.id_usuario=cf.id_usuario WHERE usr.id_usuario=$1 AND cf.id_institucion = $2",
   GET_OFFICIALS_BY_INSTITUTION:
-    "SELECT usr.*, cf.password from USUARIOS usr INNER JOIN CUENTAS_FUNCIONARIOS cf ON\
-    usr.id_usuario=cf.id_usuario WHERE cf.id_institucion = $1",
+    "SELECT usr.id_usuario AS id, usr.nombre_completo AS nombreCompleto, usr.nombre_de_usuario AS nombreUsuario,\
+    usr.direccion, usr.cedula, usr.nacionalidad, usr.rif, usr.id_tipo_usuario AS tipoUsuario,\
+     cf.password from USUARIOS usr INNER JOIN CUENTAS_FUNCIONARIOS cf ON\
+      usr.id_usuario=cf.id_usuario WHERE cf.id_institucion = $1",
   CREATE_OFFICIAL:
     "WITH funcionario AS (INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\
     nacionalidad, rif, id_tipo_usuario) VALUES ($1, $2, $3, $4, $5, $6, 3) RETURNING id_usuario)\

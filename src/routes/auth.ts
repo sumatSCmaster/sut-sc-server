@@ -179,8 +179,32 @@ router.post("/complete", authenticate("jwt"), async (req: any, res) => {
   const { user } = req.body;
   const { id_usuario } = req.user;
   const [error, data] = await fulfill(completeExtUserSignUp(user, id_usuario));
-  if (error) res.status(error.status).json(error);
+  if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(data.status).json(data);
+});
+
+router.get("/user", authenticate("jwt"), async (req: any, res) => {
+  const {
+    id_usuario,
+    nombre_completo,
+    nombre_de_usuario,
+    direccion,
+    cedula,
+    nacionalidad,
+    rif,
+    id_tipo_usuario
+  } = req.user;
+  const user = {
+    id: id_usuario,
+    nombreCompleto: nombre_completo,
+    nombreUsuario: nombre_de_usuario,
+    direccion,
+    cedula,
+    rif,
+    nacionalidad,
+    tipoUsuario: id_tipo_usuario
+  };
+  res.json({ user });
 });
 
 export default router;
