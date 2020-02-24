@@ -157,7 +157,7 @@ router.get(
   }
 );
 
-router.get("/facebook", authenticate("facebook", { scope: "read_stream" }));
+router.get("/facebook", authenticate("facebook"));
 
 router.get(
   "/facebook/callback",
