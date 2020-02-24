@@ -5,10 +5,9 @@ import { Strategy as Local, VerifyFunction } from "passport-local";
 import {
   getUserByUsername,
   comparePassword,
-  getByGoogleID,
   verifyExternalUser,
   initialExtUserSignUp,
-  getByFacebookID
+  getByOAuthID
 } from "@helpers/user";
 import { encode } from "jwt-simple";
 import { Usuario } from "@interfaces/sigt";
@@ -39,13 +38,12 @@ const JwtStrategy = new JWT(optJwt, async (payload, done) => {
 const GoogleStrategy = new Google(
   optGoogle,
   async (accessToken, refreshToken, profile, done) => {
-    let request = await getByGoogleID(profile.id);
+    let request = await getByOAuthID(profile.id);
     if (request?.err) {
       done(request.err);
     }
     if (request?.data.length > 0) {
       const exists = await verifyExternalUser(request?.data[0].id_usuario);
-      console.log(exists);
       return exists?.data ? done(null, exists?.data) : done(null);
     }
 
@@ -67,14 +65,12 @@ const GoogleStrategy = new Google(
 const FacebookStrategy = new Facebook(
   optFacebook,
   async (accessToken, refreshToken, profile, done) => {
-    console.log(profile);
-    let request = await getByFacebookID(profile.id);
+    let request = await getByOAuthID(profile.id);
     if (request?.err) {
       done(request.err);
     }
     if (request?.data.length > 0) {
       const exists = await verifyExternalUser(request?.data[0].id_usuario);
-      console.log(exists);
       return exists?.data ? done(null, exists?.data) : done(null);
     }
 

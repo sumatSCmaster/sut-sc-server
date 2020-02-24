@@ -13,6 +13,7 @@ import {
 } from "@helpers/user";
 import { isSuperuser, isAdmin } from "@middlewares/auth";
 import { fulfill } from "@utils/resolver";
+import e = require("express");
 
 const router = Router();
 
@@ -179,7 +180,8 @@ router.post("/complete", authenticate("jwt"), async (req: any, res) => {
   const { user } = req.body;
   const { id_usuario } = req.user;
   const [error, data] = await fulfill(completeExtUserSignUp(user, id_usuario));
-  if (error) res.status(500).json({ error, status: 500 });
+  console.log(error);
+  if (error) res.status(error.status).json(error);
   if (data) res.status(data.status).json(data);
 });
 
@@ -204,7 +206,7 @@ router.get("/user", authenticate("jwt"), async (req: any, res) => {
     nacionalidad,
     tipoUsuario: id_tipo_usuario
   };
-  res.json({ user });
+  res.status(200).json({ user, status: 200 });
 });
 
 export default router;

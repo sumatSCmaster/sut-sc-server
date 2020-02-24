@@ -43,8 +43,10 @@ const queries = {
   GET_ADMIN:
     "SELECT u.cedula, u.nombre_completo FROM usuario u INNER JOIN rol r ON u.id_rol = r.id WHERE u.id_rol = \
     (SELECT id FROM rol WHERE nombre = 'Administrador')",
-  GET_BY_GOOGLE_ID: "SELECT * FROM datos_google WHERE id_google = $1",
-  GET_BY_FACEBOOK_ID: "SELECT * FROM datos_facebook WHERE id_facebook = $1",
+  GET_OAUTH_USER:
+    "SELECT usr.* FROM USUARIOS usr LEFT JOIN datos_facebook df ON usr.id_usuario=df.id_usuario\
+  LEFT JOIN datos_google dg ON usr.id_usuario = dg.id_usuario\
+  WHERE dg.id_google = $1 OR df.id_facebook=$1",
   INSERT_GOOGLE_USER: "INSERT INTO datos_google VALUES ($1, $2)",
   INSERT_FACEBOOK_USER: "INSERT INTO datos_facebook VALUES ($1, $2)",
   GET_EXTERNAL_USER: "SELECT * FROM usuarios WHERE id_usuario = $1",

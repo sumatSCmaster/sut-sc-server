@@ -157,21 +157,9 @@ export const comparePassword = (
   });
 };
 
-export const getByGoogleID = async id => {
+export const getByOAuthID = async id => {
   const client = await pool.connect();
-  const [err, data] = await fulfill(
-    client.query(queries.GET_BY_GOOGLE_ID, [id])
-  );
-  client.release();
-  if (err) return err;
-  if (data) return { data: data.rows };
-};
-
-export const getByFacebookID = async id => {
-  const client = await pool.connect();
-  const [err, data] = await fulfill(
-    client.query(queries.GET_BY_FACEBOOK_ID, [id])
-  );
+  const [err, data] = await fulfill(client.query(queries.GET_OAUTH_USER, [id]));
   client.release();
   if (err) return err;
   if (data) return { data: data.rows };
@@ -224,7 +212,18 @@ export const completeExtUserSignUp = async (user, id) => {
       id
     ]);
     client.query("COMMIT");
-    return { status: 201, user: response.rows[0] };
+    const data = response.rows[0];
+    const user = {
+      id: data.id_usuario,
+      nombreCompleto: data.nombre_completo,
+      nombreUsuario: data.nombre_de_usuario,
+      direccion: data.direccion,
+      rif: data.rif,
+      nacionalidad: data.nacionalidad,
+      tipoUsuario: data.id_tipo_usuario,
+      cedula: data.cedula
+    };
+    return { status: 201, user };
   } catch (error) {
     client.query("ROLLBACK");
     throw { status: 500, error };
