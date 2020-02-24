@@ -18,10 +18,10 @@ export enum IDsTipoUsuario {
 }
 
 export interface Usuario {
-  id_usuario: number;
-  password: string
-  nombre_completo: string;
-  nombre_de_usuario: string;
+  id: number;
+  password?: string;
+  nombreCompleto: string;
+  nombreUsuario: string;
   direccion: string;
   cedula: string;
   telefonos: string[];
@@ -44,8 +44,8 @@ export interface DatosGoogle {
 }
 
 export interface CuentaFuncionario {
-  id_usuario: number,
-  id_institucion: number
+  id: number;
+  institucion: number;
 }
 
 export interface TipoUsuario {

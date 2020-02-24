@@ -10,7 +10,8 @@ import {
   createSuperuser,
   createAdmin,
   completeExtUserSignUp,
-  addInstitute
+  addInstitute,
+  signUpUser
 } from "@helpers/user";
 import { isSuperuser, isAdmin } from "@middlewares/auth";
 import { fulfill } from "@utils/resolver";
@@ -52,6 +53,14 @@ router.post(
         admin: req.user.admin,
         user: req.user.user
       });
+    } else {
+      res.status(200).json({
+        status: 200,
+        message: "Inicio de sesion exitoso.",
+        token: generateToken(req.user),
+        admin: req.user.admin,
+        user: req.user.user
+      });
     }
   }
 );
@@ -70,10 +79,7 @@ router.post(
   async (req, res) => {
     try {
       const salt = genSaltSync(10);
-      req.body.usuario.password = hashSync(
-        req.body.usuario.password,
-        salt
-      );
+      req.body.usuario.password = hashSync(req.body.usuario.password, salt);
       const user = await createAdmin({ ...req.body.usuario }).catch(e => {
         res.status(500).json({
           status: 500,
@@ -104,10 +110,7 @@ router.post(
     if (req.body.password === process.env.SUPERUSER_CREATION_PASSWORD) {
       try {
         const salt = genSaltSync(10);
-        req.body.usuario.password = hashSync(
-          req.body.usuario.password,
-          salt
-        );
+        req.body.usuario.password = hashSync(req.body.usuario.password, salt);
         const user = await createSuperuser({ ...req.body.usuario }).catch(e => {
           res.status(500).json({
             status: 500,
@@ -183,6 +186,8 @@ router.get(
 router.post("/complete", authenticate("jwt"), async (req: any, res) => {
   const { user } = req.body;
   const { id_usuario } = req.user;
+  const salt = genSaltSync(10);
+  user.password = hashSync(user.password, salt);
   const [error, data] = await fulfill(completeExtUserSignUp(user, id_usuario));
   console.log(error);
   if (error) res.status(error.status).json(error);
@@ -201,6 +206,15 @@ router.get("/user", authenticate("jwt"), async (req: any, res) => {
     tipoUsuario: req.user.id_tipo_usuario
   };
   res.status(200).json({ user, status: 200 });
+});
+
+router.post("/signup", async (req: any, res) => {
+  const { user } = req.body;
+  const salt = genSaltSync(10);
+  user.password = hashSync(user.password, salt);
+  const [error, data] = await fulfill(signUpUser(user));
+  if (error) res.status(error.status).json(error);
+  if (data) res.status(data.status).json(data);
 });
 
 export default router;
