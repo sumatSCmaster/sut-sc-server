@@ -150,12 +150,15 @@ router.get(
     session: false,
     failureRedirect: `${process.env.CLIENT_URL}/ingresar`
   }),
-  async (req, res) => {
+  async (req: any, res) => {
     const token = generateToken(req.user);
+    console.log(req.user);
     if (req.user!["cedula"]) {
       res.redirect(`${process.env.CLIENT_URL}/auth/${token}`);
     } else {
-      res.redirect(`${process.env.CLIENT_URL}/signup/${token}`);
+      res.redirect(
+        `${process.env.CLIENT_URL}/signup/oauth=${req.user.nombre_de_usuario}&token=${token}`
+      );
     }
   }
 );

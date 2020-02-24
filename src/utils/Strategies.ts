@@ -44,18 +44,24 @@ const GoogleStrategy = new Google(
     }
     if (request?.data.length > 0) {
       const exists = await verifyExternalUser(request?.data[0].id_usuario);
-      return exists?.data ? done(null, exists?.data) : done(null);
+      return exists?.data
+        ? done(null, {
+            ...exists?.data,
+            nombre_de_usuario: profile._json.email
+          })
+        : done(null);
     }
 
     const googleOpts = {
       name: profile._json.name,
       OAuthID: profile._json.sub,
-      provider: profile.provider
+      provider: profile.provider,
+      email: profile._json.email
     };
 
     request = await initialExtUserSignUp(googleOpts);
     if (request) {
-      return done(null, request);
+      return done(null, { ...request, nombre_de_usuario: googleOpts.email });
     } else {
       return done(null);
     }
