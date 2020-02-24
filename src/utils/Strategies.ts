@@ -7,7 +7,8 @@ import {
   comparePassword,
   getByGoogleID,
   verifyExternalUser,
-  initialExtUserSignUp
+  initialExtUserSignUp,
+  getByFacebookID
 } from "@helpers/user";
 import { encode } from "jwt-simple";
 import { Usuario } from "@interfaces/sigt";
@@ -39,6 +40,9 @@ const GoogleStrategy = new Google(
   optGoogle,
   async (accessToken, refreshToken, profile, done) => {
     let request = await getByGoogleID(profile.id);
+    if (request?.err) {
+      done(request.err);
+    }
     if (request?.data.length > 0) {
       const exists = await verifyExternalUser(request?.data[0].id_usuario);
       console.log(exists);
@@ -47,8 +51,8 @@ const GoogleStrategy = new Google(
 
     const googleOpts = {
       name: profile._json.name,
-      googleID: profile._json.sub,
-      username: profile._json.email
+      OAuthID: profile._json.sub,
+      provider: profile.provider
     };
 
     request = await initialExtUserSignUp(googleOpts);
@@ -64,25 +68,28 @@ const FacebookStrategy = new Facebook(
   optFacebook,
   async (accessToken, refreshToken, profile, done) => {
     console.log(profile);
-    // let request = await getByGoogleID(profile.id);
-    // if (request?.data.length > 0) {
-    //   const exists = await verifyExternalUser(request?.data[0].id_usuario);
-    //   console.log(exists);
-    //   return exists?.data ? done(null, exists?.data) : done(null);
-    // }
+    let request = await getByFacebookID(profile.id);
+    if (request?.err) {
+      done(request.err);
+    }
+    if (request?.data.length > 0) {
+      const exists = await verifyExternalUser(request?.data[0].id_usuario);
+      console.log(exists);
+      return exists?.data ? done(null, exists?.data) : done(null);
+    }
 
-    // const googleOpts = {
-    //   name: profile._json.name,
-    //   googleID: profile._json.sub,
-    //   username: profile._json.email
-    // };
+    const facebookOpts = {
+      name: profile._json.name,
+      OAuthID: profile._json.id,
+      provider: profile.provider
+    };
 
-    // request = await initialExtUserSignUp(googleOpts);
-    // if (request) {
-    //   return done(null, request);
-    // } else {
-    //   return done(null);
-    // }
+    request = await initialExtUserSignUp(facebookOpts);
+    if (request) {
+      return done(null, request);
+    } else {
+      return done(null);
+    }
   }
 );
 

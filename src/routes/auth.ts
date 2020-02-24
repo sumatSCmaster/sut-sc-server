@@ -3,7 +3,7 @@ import { generateToken } from "@utils/Strategies";
 import { authenticate } from "passport";
 //import { createAdmin } from "@helpers/user";
 import * as authValidations from "@validations/auth";
-import { checkIfAdmin, getInit, checkIfSuperuser } from "@utils/user";
+import { checkIfAdmin, checkIfSuperuser } from "@utils/user";
 import { hashSync, genSaltSync } from "bcryptjs";
 import { checkResult } from "@validations/index";
 import {
@@ -157,7 +157,7 @@ router.get(
   }
 );
 
-router.get("/facebook", authenticate("facebook"));
+router.get("/facebook", authenticate("facebook", { scope: "read_stream" }));
 
 router.get(
   "/facebook/callback",
