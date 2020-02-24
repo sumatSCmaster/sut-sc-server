@@ -1,12 +1,13 @@
 import { Strategy as JWT, ExtractJwt } from "passport-jwt";
 import { OAuth2Strategy as Google } from "passport-google-oauth";
+import { Strategy as Facebook } from "passport-facebook";
 import { Strategy as Local, VerifyFunction } from "passport-local";
 import {
   getUserByUsername,
   comparePassword,
-  getByGoogleID,
   verifyExternalUser,
-  initialExtUserSignUp
+  initialExtUserSignUp,
+  getByOAuthID
 } from "@helpers/user";
 import { encode } from "jwt-simple";
 import { Usuario } from "@interfaces/sigt";
@@ -23,6 +24,13 @@ const optGoogle = {
   proxy: true
 };
 
+const optFacebook = {
+  clientID: process.env.FACEBOOK_CLIENT_ID,
+  clientSecret: process.env.FACEBOOK_SECRET_ID,
+  callbackURL: "/auth/facebook/callback",
+  proxy: true
+};
+
 const JwtStrategy = new JWT(optJwt, async (payload, done) => {
   return done(null, payload.sub);
 });
@@ -30,20 +38,49 @@ const JwtStrategy = new JWT(optJwt, async (payload, done) => {
 const GoogleStrategy = new Google(
   optGoogle,
   async (accessToken, refreshToken, profile, done) => {
-    let request = await getByGoogleID(profile.id);
+    let request = await getByOAuthID(profile.id);
+    if (request?.err) {
+      done(request.err);
+    }
     if (request?.data.length > 0) {
       const exists = await verifyExternalUser(request?.data[0].id_usuario);
-      console.log(exists);
       return exists?.data ? done(null, exists?.data) : done(null);
     }
 
     const googleOpts = {
       name: profile._json.name,
-      googleID: profile._json.sub,
-      username: profile._json.email
+      OAuthID: profile._json.sub,
+      provider: profile.provider
     };
 
     request = await initialExtUserSignUp(googleOpts);
+    if (request) {
+      return done(null, request);
+    } else {
+      return done(null);
+    }
+  }
+);
+
+const FacebookStrategy = new Facebook(
+  optFacebook,
+  async (accessToken, refreshToken, profile, done) => {
+    let request = await getByOAuthID(profile.id);
+    if (request?.err) {
+      done(request.err);
+    }
+    if (request?.data.length > 0) {
+      const exists = await verifyExternalUser(request?.data[0].id_usuario);
+      return exists?.data ? done(null, exists?.data) : done(null);
+    }
+
+    const facebookOpts = {
+      name: profile._json.name,
+      OAuthID: profile._json.id,
+      provider: profile.provider
+    };
+
+    request = await initialExtUserSignUp(facebookOpts);
     if (request) {
       return done(null, request);
     } else {
@@ -63,15 +100,20 @@ const verifyLocal: VerifyFunction = async (
   done: any
 ) => {
   const user: Usuario | null = await getUserByUsername(username);
-  console.log(user)
+  console.log(user);
   if (!user) return done(null, false, { message: "Bad Credentials" });
-  if (await comparePassword(password, user.cuenta_funcionario?.password || "")) {
+  if (
+    await comparePassword(password, user.cuenta_funcionario?.password || "")
+  ) {
     // const newNotifications = await hasNotifications(user.cedula);
     return done(null, {
       id: user.cedula,
       admin: user.tipo_usuario.descripcion === "Administrador",
       superuser: user.tipo_usuario.descripcion === "Superuser",
-      user: { ...user, cuenta_funcionario: { id_usuario: user.id_usuario, password: undefined } }
+      user: {
+        ...user,
+        cuenta_funcionario: { id_usuario: user.id_usuario, password: undefined }
+      }
       // hasNewNotifications: newNotifications
     });
   } else {
@@ -89,4 +131,10 @@ const generateToken = (user: any) => {
   );
 };
 
-export { JwtStrategy, LocalStrategy, generateToken, GoogleStrategy };
+export {
+  JwtStrategy,
+  LocalStrategy,
+  generateToken,
+  GoogleStrategy,
+  FacebookStrategy
+};

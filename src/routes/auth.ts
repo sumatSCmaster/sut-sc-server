@@ -14,6 +14,7 @@ import {
 } from "@helpers/user";
 import { isSuperuser, isAdmin } from "@middlewares/auth";
 import { fulfill } from "@utils/resolver";
+import e = require("express");
 
 const router = Router();
 
@@ -159,12 +160,55 @@ router.get(
   }
 );
 
+router.get("/facebook", authenticate("facebook"));
+
+router.get(
+  "/facebook/callback",
+  authenticate("facebook", {
+    session: false,
+    failureRedirect: `${process.env.CLIENT_URL}/ingresar`
+  }),
+  async (req, res) => {
+    const token = generateToken(req.user);
+    if (req.user!["cedula"]) {
+      res.redirect(`${process.env.CLIENT_URL}/auth/${token}`);
+    } else {
+      res.redirect(`${process.env.CLIENT_URL}/signup/${token}`);
+    }
+  }
+);
+
 router.post("/complete", authenticate("jwt"), async (req: any, res) => {
   const { user } = req.body;
   const { id_usuario } = req.user;
   const [error, data] = await fulfill(completeExtUserSignUp(user, id_usuario));
+  console.log(error);
   if (error) res.status(error.status).json(error);
   if (data) res.status(data.status).json(data);
+});
+
+router.get("/user", authenticate("jwt"), async (req: any, res) => {
+  const {
+    id_usuario,
+    nombre_completo,
+    nombre_de_usuario,
+    direccion,
+    cedula,
+    nacionalidad,
+    rif,
+    id_tipo_usuario
+  } = req.user;
+  const user = {
+    id: id_usuario,
+    nombreCompleto: nombre_completo,
+    nombreUsuario: nombre_de_usuario,
+    direccion,
+    cedula,
+    rif,
+    nacionalidad,
+    tipoUsuario: id_tipo_usuario
+  };
+  res.status(200).json({ user, status: 200 });
 });
 
 export default router;

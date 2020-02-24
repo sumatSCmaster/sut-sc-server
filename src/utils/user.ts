@@ -17,7 +17,7 @@ export const checkIfAdmin = async (id: string) => {
 
 export const checkIfSuperuser = async (id: string) => {
   const client = await pool.connect();
-  try{
+  try {
     const result = await client.query(queries.CHECK_IF_SUPERUSER, [id]);
     return result.rowCount > 0;
   }catch(e){

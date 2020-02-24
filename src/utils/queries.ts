@@ -23,25 +23,34 @@ const queries = {
     "INSERT INTO rol_funcion(id_rol, id_funcion) SELECT $1, id FROM funcion;",
   ADD_PASSWORD:
     "INSERT INTO cuentas_funcionarios (id_usuario, password) VALUES ($1, $2);",
-  GET_ADMIN_INSTITUTE: 'SELECT i.* FROM instituciones i INNER JOIN cuentas_funcionarios cf ON i.id_institucion = cf.id_institucion \
-    WHERE cf.id_usuario = $1;',
-  ADD_OFFICIAL_DATA: 'INSERT INTO cuentas_funcionarios (id_usuario, password, id_institucion) VALUES ($1, $2, $3);',
-  CHECK_IF_ADMIN: "SELECT 1 FROM usuarios u \
+  GET_ADMIN_INSTITUTE:
+    "SELECT i.* FROM instituciones i INNER JOIN cuentas_funcionarios cf ON i.id_institucion = cf.id_institucion \
+    WHERE cf.id_usuario = $1;",
+  ADD_OFFICIAL_DATA:
+    "INSERT INTO cuentas_funcionarios (id_usuario, password, id_institucion) VALUES ($1, $2, $3);",
+  CHECK_IF_ADMIN:
+    "SELECT 1 FROM usuarios u \
     INNER JOIN tipos_usuarios tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
     WHERE tu.descripcion = \'Administrador\' AND u.cedula = $1",
   CHECK_IF_SUPERUSER: "SELECT 1 FROM usuarios u \
   INNER JOIN tipos_usuarios tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
   WHERE tu.descripcion = 'Superuser' AND u.cedula = $1",
-  ADD_PHONE: 'INSERT INTO telefonos_usuarios (id_telefono, id_usuario, numero) VALUES (default, $1, $2) RETURNING *;',
-  GET_ADMIN: 'SELECT u.cedula, u.nombre_completo FROM usuario u INNER JOIN rol r ON u.id_rol = r.id WHERE u.id_rol = \
-    (SELECT id FROM rol WHERE nombre = \'Administrador\')',
-  GET_BY_GOOGLE_ID: "SELECT * FROM datos_google WHERE id_google = $1",
+  ADD_PHONE:
+    "INSERT INTO telefonos_usuarios (id_telefono, id_usuario, numero) VALUES (default, $1, $2) RETURNING *;",
+  GET_ADMIN:
+    "SELECT u.cedula, u.nombre_completo FROM usuario u INNER JOIN rol r ON u.id_rol = r.id WHERE u.id_rol = \
+    (SELECT id FROM rol WHERE nombre = 'Administrador')",
+  GET_OAUTH_USER:
+    "SELECT usr.* FROM USUARIOS usr LEFT JOIN datos_facebook df ON usr.id_usuario=df.id_usuario\
+  LEFT JOIN datos_google dg ON usr.id_usuario = dg.id_usuario\
+  WHERE dg.id_google = $1 OR df.id_facebook=$1",
   INSERT_GOOGLE_USER: "INSERT INTO datos_google VALUES ($1, $2)",
+  INSERT_FACEBOOK_USER: "INSERT INTO datos_facebook VALUES ($1, $2)",
   GET_EXTERNAL_USER: "SELECT * FROM usuarios WHERE id_usuario = $1",
   EXTERNAL_USER_INIT:
-    "INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, id_tipo_usuario) VALUES ($1, $2, 4) RETURNING *",
+    "INSERT INTO USUARIOS (nombre_completo, id_tipo_usuario) VALUES ($1, 4) RETURNING *",
   EXTERNAL_USER_COMPLETE:
-    "UPDATE USUARIOS SET direccion = $1, cedula = $2, nacionalidad = $3, rif=$4 WHERE id_usuario = $5 RETURNING *",
+    "UPDATE USUARIOS SET direccion = $1, cedula = $2, nacionalidad = $3, rif = $4, nombre_de_usuario = $5 WHERE id_usuario = $6 RETURNING *",
 
   //BANKS
   GET_ALL_BANKS: "SELECT * FROM BANCOS",
@@ -50,9 +59,11 @@ const queries = {
   GET_OFFICIAL:
     "SELECT usr.*, cf.password from USUARIOS usr INNER JOIN CUENTAS_FUNCIONARIOS cf ON\
      usr.id_usuario=cf.id_usuario WHERE usr.id_usuario=$1 AND cf.id_institucion = $2",
-  GET_OFFICIAlS_BY_INSTITUTION:
-    "SELECT usr.*, cf.password from USUARIOS usr INNER JOIN CUENTAS_FUNCIONARIOS cf ON\
-    usr.id_usuario=cf.id_usuario WHERE cf.id_institucion = $1",
+  GET_OFFICIALS_BY_INSTITUTION:
+    "SELECT usr.id_usuario AS id, usr.nombre_completo AS nombreCompleto, usr.nombre_de_usuario AS nombreUsuario,\
+    usr.direccion, usr.cedula, usr.nacionalidad, usr.rif, usr.id_tipo_usuario AS tipoUsuario,\
+     cf.password from USUARIOS usr INNER JOIN CUENTAS_FUNCIONARIOS cf ON\
+      usr.id_usuario=cf.id_usuario WHERE cf.id_institucion = $1",
   CREATE_OFFICIAL:
     "WITH funcionario AS (INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\
     nacionalidad, rif, id_tipo_usuario) VALUES ($1, $2, $3, $4, $5, $6, 3) RETURNING id_usuario)\

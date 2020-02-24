@@ -7,7 +7,7 @@ const pool = Pool.getInstance();
 export const getOfficialsByInstitution = async (institution: string) => {
   const client = await pool.connect();
   try {
-    const response = await client.query(queries.GET_OFFICIAlS_BY_INSTITUTION, [
+    const response = await client.query(queries.GET_OFFICIALS_BY_INSTITUTION, [
       institution
     ]);
     return { status: 200, officials: response.rows };
@@ -42,7 +42,6 @@ export const createOfficial = async (official: any) => {
       password,
       institution
     ]);
-    console.log("uegue");
     const off = await client.query(queries.GET_OFFICIAL, [
       insert.rows[0].id_usuario,
       insert.rows[0].id_institucion
