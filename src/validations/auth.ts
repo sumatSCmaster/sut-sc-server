@@ -131,7 +131,7 @@ export const createOfficial = [
 ];
 
 export const login = [
-  check("username")
+  check("nombreUsuario")
     .exists()
     .withMessage("Debe incluir el nombre de usuario")
     .isString()

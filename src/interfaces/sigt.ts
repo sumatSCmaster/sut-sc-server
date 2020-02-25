@@ -1,3 +1,5 @@
+import { QueryResult } from "pg";
+
 export enum Nacionalidad {
   V = "Venezolano",
   E = "Extranjero"
@@ -15,6 +17,12 @@ export enum IDsTipoUsuario {
   Administrador,
   Funcionario,
   UsuarioExterno
+}
+
+export interface Seccion {
+  id: number;
+  nombre: string;
+  campos?: Campos[];
 }
 
 export interface Usuario {
@@ -64,7 +72,7 @@ export interface TramitesDisponibles {
   id: number;
   titulo: string;
   costo: number;
-  campos?: Campos[];
+  secciones?: Seccion[];
 }
 
 export interface Campos {
@@ -73,6 +81,12 @@ export interface Campos {
   status: string;
   nombre: string;
   tipo: string;
+}
+
+export interface ErrorEstandar {
+  message: string;
+  error: QueryResult<any>;
+  status: number;
 }
 
 export namespace Payloads {
