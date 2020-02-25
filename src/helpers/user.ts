@@ -10,6 +10,7 @@ import {
 } from "@interfaces/sigt";
 import { fulfill } from "@utils/resolver";
 import { stringify } from "flatted/cjs";
+import { errorMessageGenerator } from "./errors";
 
 const pool = Pool.getInstance();
 
@@ -215,7 +216,14 @@ export const initialExtUserSignUp = async user => {
 };
 
 export const completeExtUserSignUp = async (user, id) => {
-  const { username, direccion, cedula, nacionalidad, rif } = user;
+  const {
+    nombreUsuario,
+    password,
+    direccion,
+    cedula,
+    nacionalidad,
+    rif
+  } = user;
   const client = await pool.connect();
   try {
     client.query("BEGIN");
@@ -224,7 +232,8 @@ export const completeExtUserSignUp = async (user, id) => {
       cedula,
       nacionalidad,
       rif,
-      username,
+      nombreUsuario,
+      password,
       id
     ]);
     client.query("COMMIT");
@@ -243,7 +252,12 @@ export const completeExtUserSignUp = async (user, id) => {
     return { status: 201, user };
   } catch (error) {
     client.query("ROLLBACK");
-    throw { status: 500, error };
+    throw {
+      status: 500,
+      error,
+      message:
+        errorMessageGenerator(error) || "Error en la creación del usuario"
+    };
   } finally {
     client.release();
   }
@@ -285,11 +299,16 @@ export const signUpUser = async user => {
       telefonos: data.telefono,
       password: data.password
     };
-    return { status: 201, user };
+    return { status: 201, user, message: "Usuario registrado" };
   } catch (error) {
     client.query("ROLLBACK");
     console.log(error);
-    throw { error, status: 500 };
+    throw {
+      error,
+      status: 500,
+      message:
+        errorMessageGenerator(error) || "Error en la creación del usuario"
+    };
   } finally {
     client.release();
   }
