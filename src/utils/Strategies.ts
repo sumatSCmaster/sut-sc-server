@@ -105,6 +105,7 @@ const verifyLocal: VerifyFunction = async (
   password: string,
   done: any
 ) => {
+  console.log('username', username)
   const user: Usuario | null = await getUserByUsername(username);
   console.log(user);
   if (!user) return done(null, false, { message: "Bad Credentials" });

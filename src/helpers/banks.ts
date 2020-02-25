@@ -13,3 +13,15 @@ export const getAllBanks = async () => {
     client.release();
   }
 };
+
+export const validatePayments = async (body) => {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(queries.VALIDATE_PAYMENTS, [body]);
+    return res.rows;
+  } catch (e) {
+    throw e
+  } finally {
+    client.release();
+  }
+}
