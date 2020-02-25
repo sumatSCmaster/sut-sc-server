@@ -216,7 +216,14 @@ export const initialExtUserSignUp = async user => {
 };
 
 export const completeExtUserSignUp = async (user, id) => {
-  const { username, direccion, cedula, nacionalidad, rif } = user;
+  const {
+    nombreUsuario,
+    password,
+    direccion,
+    cedula,
+    nacionalidad,
+    rif
+  } = user;
   const client = await pool.connect();
   try {
     client.query("BEGIN");
@@ -225,7 +232,8 @@ export const completeExtUserSignUp = async (user, id) => {
       cedula,
       nacionalidad,
       rif,
-      username,
+      nombreUsuario,
+      password,
       id
     ]);
     client.query("COMMIT");

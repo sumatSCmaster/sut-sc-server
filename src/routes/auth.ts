@@ -164,7 +164,7 @@ router.get(
       res.redirect(`${process.env.CLIENT_URL}/auth/${token}`);
     } else {
       res.redirect(
-        `${process.env.CLIENT_URL}/signup/oauth=${req.user.nombre_de_usuario}&token=${token}`
+        `${process.env.CLIENT_URL}/signup?oauth=${req.user.nombre_de_usuario}&token=${token}`
       );
     }
   }

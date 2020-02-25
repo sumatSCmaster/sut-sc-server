@@ -12,6 +12,7 @@ import { fulfill } from "@utils/resolver";
 
 const router = Router();
 
+//TODO: añadir validacion de tipo de usuario
 router.get("/", authenticate("jwt"), async (req: any, res) => {
   console.log(req.user);
   const { id_institucion } = req.user.user.cuentaFuncionario;

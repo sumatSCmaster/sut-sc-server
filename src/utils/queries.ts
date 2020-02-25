@@ -55,7 +55,7 @@ const queries = {
   EXTERNAL_USER_INIT:
     "INSERT INTO USUARIOS (nombre_completo, id_tipo_usuario) VALUES ($1, 4) RETURNING *",
   EXTERNAL_USER_COMPLETE:
-    "UPDATE USUARIOS SET direccion = $1, cedula = $2, nacionalidad = $3, rif = $4, nombre_de_usuario = $5 WHERE id_usuario = $6 RETURNING *",
+    "UPDATE USUARIOS SET direccion = $1, cedula = $2, nacionalidad = $3, rif = $4, nombre_de_usuario = $5, password=$6 WHERE id_usuario = $7 RETURNING *",
   SIGN_UP_WITH_LOCAL_STRATEGY:
     "INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\
     nacionalidad,rif,id_tipo_usuario, password) VALUES ($1,$2,$3,$4,$5,$6,4,$7) RETURNING *",
