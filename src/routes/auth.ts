@@ -16,6 +16,7 @@ import {
 import { isSuperuser, isAdmin } from "@middlewares/auth";
 import { fulfill } from "@utils/resolver";
 import e = require("express");
+import { errorMessageGenerator } from "@helpers/errors";
 
 const router = Router();
 
@@ -83,7 +84,7 @@ router.post(
       const user = await createAdmin({ ...req.body.usuario }).catch(e => {
         res.status(500).json({
           status: 500,
-          message: e
+          message: errorMessageGenerator(e) || 'Error en la creación de un administrador'
         });
       });
       if (user) {
@@ -96,7 +97,7 @@ router.post(
     } catch (e) {
       res.status(500).json({
         status: 500,
-        error: e
+        message: errorMessageGenerator(e) || 'Error en la creación de un administrador'
       });
     }
   }
@@ -114,7 +115,7 @@ router.post(
         const user = await createSuperuser({ ...req.body.usuario }).catch(e => {
           res.status(500).json({
             status: 500,
-            message: e
+            message: errorMessageGenerator(e) || 'La creación del superusuario falló'
           });
         });
         if (user) {
@@ -127,7 +128,7 @@ router.post(
       } catch (e) {
         res.status(500).json({
           status: 500,
-          error: e
+          message: errorMessageGenerator(e) || 'La creación del superusuario falló'
         });
       }
     } else {
