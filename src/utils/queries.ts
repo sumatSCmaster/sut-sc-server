@@ -61,6 +61,7 @@ const queries = {
     nacionalidad,rif,id_tipo_usuario, password) VALUES ($1,$2,$3,$4,$5,$6,4,$7) RETURNING *",
   //BANKS
   GET_ALL_BANKS: "SELECT id_banco as id, nombre  FROM BANCOS",
+  VALIDATE_PAYMENTS: "SELECT validate_payments($1);",
 
   //OFFICIALS
   GET_OFFICIAL:
