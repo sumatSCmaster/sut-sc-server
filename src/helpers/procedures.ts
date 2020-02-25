@@ -1,6 +1,7 @@
 import Pool from "@utils/Pool";
 import queries from "@utils/queries";
 import { Institucion, TramitesDisponibles, Campos } from "@interfaces/sigt";
+import { errorMessageGenerator } from "./errors";
 const pool = Pool.getInstance();
 
 export const getAvailableProcedures = async (): Promise<Institucion[]> => {
@@ -17,7 +18,11 @@ export const getAvailableProcedures = async (): Promise<Institucion[]> => {
     const options = getProcedureByInstitution(institution, client);
     return options;
   } catch (error) {
-    throw { status: 500, error };
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || "Error al obtener los tramites"
+    };
   } finally {
     client.release();
   }

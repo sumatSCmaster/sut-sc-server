@@ -84,7 +84,9 @@ router.post(
       const user = await createAdmin({ ...req.body.usuario }).catch(e => {
         res.status(500).json({
           status: 500,
-          message: errorMessageGenerator(e) || 'Error en la creación de un administrador'
+          message:
+            errorMessageGenerator(e) ||
+            "Error en la creación de un administrador"
         });
       });
       if (user) {
@@ -97,7 +99,8 @@ router.post(
     } catch (e) {
       res.status(500).json({
         status: 500,
-        message: errorMessageGenerator(e) || 'Error en la creación de un administrador'
+        message:
+          errorMessageGenerator(e) || "Error en la creación de un administrador"
       });
     }
   }
@@ -115,7 +118,8 @@ router.post(
         const user = await createSuperuser({ ...req.body.usuario }).catch(e => {
           res.status(500).json({
             status: 500,
-            message: errorMessageGenerator(e) || 'La creación del superusuario falló'
+            message:
+              errorMessageGenerator(e) || "La creación del superusuario falló"
           });
         });
         if (user) {
@@ -128,7 +132,8 @@ router.post(
       } catch (e) {
         res.status(500).json({
           status: 500,
-          message: errorMessageGenerator(e) || 'La creación del superusuario falló'
+          message:
+            errorMessageGenerator(e) || "La creación del superusuario falló"
         });
       }
     } else {
@@ -155,7 +160,6 @@ router.get(
   }),
   async (req: any, res) => {
     const token = generateToken(req.user);
-    console.log(req.user);
     if (req.user!["cedula"]) {
       res.redirect(`${process.env.CLIENT_URL}/auth/${token}`);
     } else {
@@ -190,7 +194,6 @@ router.post("/complete", authenticate("jwt"), async (req: any, res) => {
   const salt = genSaltSync(10);
   user.password = hashSync(user.password, salt);
   const [error, data] = await fulfill(completeExtUserSignUp(user, id_usuario));
-  console.log(error);
   if (error) res.status(error.status).json(error);
   if (data) res.status(data.status).json(data);
 });
@@ -206,7 +209,7 @@ router.get("/user", authenticate("jwt"), async (req: any, res) => {
     nacionalidad: req.user.nacionalidad,
     tipoUsuario: req.user.id_tipo_usuario
   };
-  res.status(200).json({ user, status: 200 });
+  res.status(200).json({ user, status: 200, message: "Usuario obtenido" });
 });
 
 router.post("/signup", async (req: any, res) => {

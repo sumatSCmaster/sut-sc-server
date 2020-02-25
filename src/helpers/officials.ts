@@ -2,6 +2,7 @@ import Pool from "@utils/Pool";
 import queries from "@utils/queries";
 import { Usuario } from "@interfaces/sigt";
 import { Client } from "pg";
+import { errorMessageGenerator } from "./errors";
 const pool = Pool.getInstance();
 
 export const getOfficialsByInstitution = async (institution: string) => {
@@ -22,9 +23,17 @@ export const getOfficialsByInstitution = async (institution: string) => {
       delete official.tipousuario;
       return official;
     });
-    return { status: 200, funcionarios };
+    return {
+      status: 200,
+      funcionarios,
+      message: "Funcionarios obtenidos satisfactoriamente"
+    };
   } catch (e) {
-    throw { error: e, status: 500 };
+    throw {
+      error: e,
+      status: 500,
+      message: errorMessageGenerator(e) || "Error al obtener los funcionarios"
+    };
   } finally {
     client.release();
   }
@@ -69,17 +78,14 @@ export const createOfficial = async (official: any, institution: number) => {
       rif: off.rows[0].rif,
       password: off.rows[0].password
     };
-    return { status: 201, funcionario };
+    return { status: 201, funcionario, message: "Funcionario creado" };
   } catch (e) {
     client.query("ROLLBACK");
     console.log(e);
     throw {
       status: 500,
       error: e,
-      message:
-        e.code === "23505"
-          ? "La cedula seleccionada ya está en uso"
-          : "Error en la petición"
+      message: errorMessageGenerator(e) || "Error al crear un funcionario"
     };
   } finally {
     client.release();
@@ -111,10 +117,15 @@ export const updateOfficial = async (official: any, id: string) => {
       password
     ]);
     client.query("COMMIT");
-    return { status: 200, message: "OK" };
+    return { status: 200, message: "Funcionario actualizado" };
   } catch (e) {
     client.query("ROLLBACK");
-    throw { status: 500, error: e };
+    throw {
+      status: 500,
+      error: e,
+      message:
+        errorMessageGenerator(e) || "Error al actualizar datos del funcionario"
+    };
   } finally {
     client.release();
   }
@@ -129,10 +140,14 @@ export const deleteOfficial = async (
     client.query("BEGIN");
     await client.query(queries.DELETE_OFFICIAL, [officialID, institution]);
     client.query("COMMIT");
-    return { status: 200, message: "OK" };
+    return { status: 200, message: "Funcionario eliminado" };
   } catch (e) {
     client.query("ROLLBACK");
-    throw { error: e, status: 500 };
+    throw {
+      error: e,
+      status: 500,
+      message: errorMessageGenerator(e) || "Error al eliminar funcionario"
+    };
   } finally {
     client.release();
   }

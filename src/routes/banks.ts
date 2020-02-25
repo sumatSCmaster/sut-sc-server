@@ -8,17 +8,14 @@ const router = Router();
 //TODO: realizar estructura correcta en el helper, y tipificar
 router.get("/", async (req, res) => {
   const [err, data] = await fulfill(getAllBanks());
-  if (err) res.json({ status: 500, err });
-  if (data) res.json(data);
+  if (err) res.status(err.status).json(err);
+  if (data) res.status(data.status).json(data);
 });
 
-router.put(
-  "/validatePayments",
-  async (req, res) => {
-    const [err, data] = await fulfill(validatePayments(req.body));
-    if (err) res.json({ status: 500, message: errorMessageGenerator(err) });
-    if (data) res.json(data);
-  }
-)
+router.put("/validatePayments", async (req, res) => {
+  const [err, data] = await fulfill(validatePayments(req.body));
+  if (err) res.json({ status: 500, message: errorMessageGenerator(err) });
+  if (data) res.json(data);
+});
 
 export default router;
