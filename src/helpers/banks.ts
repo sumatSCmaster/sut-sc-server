@@ -18,7 +18,7 @@ export const validatePayments = async (body) => {
   const client = await pool.connect();
   try {
     const res = await client.query(queries.VALIDATE_PAYMENTS, [body]);
-    return res.rows;
+    return res.rows[0];
   } catch (e) {
     throw e
   } finally {
