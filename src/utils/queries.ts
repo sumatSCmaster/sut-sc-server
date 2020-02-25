@@ -70,7 +70,7 @@ const queries = {
   GET_OFFICIALS_BY_INSTITUTION:
     "SELECT usr.id_usuario AS id, usr.nombre_completo AS nombreCompleto, usr.nombre_de_usuario AS nombreUsuario,\
     usr.direccion, usr.cedula, usr.nacionalidad, usr.rif, usr.id_tipo_usuario AS tipoUsuario,\
-     cf.password from USUARIOS usr INNER JOIN CUENTAS_FUNCIONARIOS cf ON\
+     usr.password from USUARIOS usr INNER JOIN CUENTAS_FUNCIONARIOS cf ON\
       usr.id_usuario=cf.id_usuario WHERE cf.id_institucion = $1",
   CREATE_OFFICIAL:
     "WITH funcionario AS (INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\
@@ -85,7 +85,7 @@ const queries = {
     usr.id_usuario = cf.id_usuario AND usr.id_usuario = $1\
     AND cf.id_institucion = $2;",
   GET_FIELDS_BY_PROCEDURE:
-    "SELECT ct.*, camp.nombre, camp.tipo FROM campos_tramites ct INNER JOIN\
+    "SELECT ct.*, camp.nombre, camp.tipo, camp.validacion, camp.col FROM campos_tramites ct INNER JOIN\
      campos camp ON ct.id_campo = camp.id_campo WHERE ct.id_tipo_tramite = $1 ORDER BY ct.orden",
   GET_PROCEDURE_BY_INSTITUTION:
     "SELECT id_tipo_tramite, nombre_tramite, costo_base FROM tipos_tramites tt WHERE id_institucion = $1",

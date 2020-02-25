@@ -10,7 +10,19 @@ export const getOfficialsByInstitution = async (institution: string) => {
     const response = await client.query(queries.GET_OFFICIALS_BY_INSTITUTION, [
       institution
     ]);
-    return { status: 200, officials: response.rows };
+    const funcionarios = response.rows.map(el => {
+      const official = {
+        ...el,
+        nombreCompleto: el.nombrecompleto,
+        nombreUsuario: el.nombreusuario,
+        tipoUsuario: el.tipousuario
+      };
+      delete official.nombrecompleto;
+      delete official.nombreusuario;
+      delete official.tipousuario;
+      return official;
+    });
+    return { status: 200, funcionarios };
   } catch (e) {
     throw { error: e, status: 500 };
   } finally {
@@ -18,7 +30,7 @@ export const getOfficialsByInstitution = async (institution: string) => {
   }
 };
 
-export const createOfficial = async (official: any) => {
+export const createOfficial = async (official: any, institution: number) => {
   const {
     nombre,
     nombreUsuario,
@@ -26,8 +38,7 @@ export const createOfficial = async (official: any) => {
     cedula,
     nacionalidad,
     rif,
-    password,
-    institution
+    password
   } = official;
   const client = await pool.connect();
   try {
@@ -47,9 +58,21 @@ export const createOfficial = async (official: any) => {
       insert.rows[0].id_institucion
     ]);
     client.query("COMMIT");
-    return { status: 201, official: off.rows[0] };
+    const funcionario = {
+      id: off.rows[0].id_usuario,
+      nombreCompleto: off.rows[0].nombre_completo,
+      nombreUsuario: off.rows[0].nombre_de_usuario,
+      tipoUsuario: off.rows[0].id_tipo_usuario,
+      direccion: off.rows[0].direccion,
+      cedula: off.rows[0].cedula,
+      nacionalidad: off.rows[0].nacionalidad,
+      rif: off.rows[0].rif,
+      password: off.rows[0].password
+    };
+    return { status: 201, funcionario };
   } catch (e) {
     client.query("ROLLBACK");
+    console.log(e);
     throw {
       status: 500,
       error: e,
