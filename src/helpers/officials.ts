@@ -17,7 +17,7 @@ export const getOfficialsByInstitution = async (institution: string) => {
         nombreCompleto: el.nombrecompleto,
         nombreUsuario: el.nombreusuario,
         tipoUsuario: el.tipousuario,
-        prefixRif: el.rif.substring(0, 1),
+        prefixRif: el.rif.substring(0, 2),
         rif: el.rif.substring(2)
       };
       delete official.nombrecompleto;
@@ -49,6 +49,7 @@ export const createOfficial = async (official: any, institution: number) => {
     cedula,
     nacionalidad,
     rif,
+    telefono,
     password
   } = official;
   const client = await pool.connect();
@@ -62,6 +63,7 @@ export const createOfficial = async (official: any, institution: number) => {
       nacionalidad,
       rif,
       password,
+      telefono,
       institution
     ]);
     const off = await client.query(queries.GET_OFFICIAL, [
@@ -78,7 +80,8 @@ export const createOfficial = async (official: any, institution: number) => {
       cedula: off.rows[0].cedula,
       nacionalidad: off.rows[0].nacionalidad,
       rif: off.rows[0].rif,
-      password: off.rows[0].password
+      password: off.rows[0].password,
+      telefono: off.rows[0].telefono
     };
     return { status: 201, funcionario, message: "Funcionario creado" };
   } catch (e) {
@@ -102,7 +105,8 @@ export const updateOfficial = async (official: any, id: string) => {
     direccion,
     cedula,
     nacionalidad,
-    rif
+    rif,
+    telefono
   } = official;
   const client = await pool.connect();
   try {
@@ -114,6 +118,7 @@ export const updateOfficial = async (official: any, id: string) => {
       cedula,
       nacionalidad,
       rif,
+      telefono,
       id
     ]);
     client.query("COMMIT");
