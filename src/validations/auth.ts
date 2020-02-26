@@ -130,6 +130,11 @@ export const createOfficial = [
     .withMessage("Debe incluir una contraseña para el usuario")
 ];
 
+export const updateOfficial = createOfficial.slice(
+  0,
+  createOfficial.length - 1
+);
+
 export const login = [
   check("nombreUsuario")
     .exists()

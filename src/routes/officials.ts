@@ -5,7 +5,7 @@ import {
   updateOfficial,
   deleteOfficial
 } from "@helpers/officials";
-import { createOfficial as validateOfficial } from "@validations/auth";
+import * as validators from "@validations/auth";
 import { checkResult } from "@validations/index";
 import { authenticate } from "passport";
 import { fulfill } from "@utils/resolver";
@@ -33,7 +33,7 @@ router.get("/", authenticate("jwt"), async (req: any, res) => {
 router.post(
   "/",
   authenticate("jwt"),
-  validateOfficial,
+  validators.createOfficial,
   checkResult,
   async (req: any, res) => {
     const { id_institucion } = req.user.user.cuentaFuncionario;
@@ -56,7 +56,7 @@ router.post(
 router.put(
   "/:id",
   authenticate("jwt"),
-  validateOfficial,
+  validators.updateOfficial,
   checkResult,
   async (req, res) => {
     const { id_institucion } = req.user.user.cuentaFuncionario;
