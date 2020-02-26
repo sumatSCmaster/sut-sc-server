@@ -18,7 +18,7 @@ const queries = {
     "SELECT cf.* FROM cuentas_funcionarios cf \
     INNER JOIN usuarios u ON u.id_usuario = cf.id_usuario \
     WHERE u.nombre_de_usuario = $1;",
-  CREATE_USER: `INSERT INTO usuarios (nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, rif, id_tipo_usuario, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+  CREATE_USER: `INSERT INTO usuarios (nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, rif, id_tipo_usuario, password, telefono) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
   ASSIGN_ALL_PERMISSIONS:
     "INSERT INTO rol_funcion(id_rol, id_funcion) SELECT $1, id FROM funcion;",
   ADD_PASSWORD:

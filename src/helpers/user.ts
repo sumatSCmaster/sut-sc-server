@@ -20,9 +20,6 @@ export const getUserByUsername = async (
   const client = await pool.connect();
   try {
     const result = await client.query(queries.GET_USER_BY_USERNAME, [username]);
-    const phoneResults = await client.query(queries.GET_PHONES_FROM_USERNAME, [
-      username
-    ]);
     const typeResult = await client.query(queries.GET_USER_TYPE_FROM_USERNAME, [
       username
     ]);
@@ -35,7 +32,6 @@ export const getUserByUsername = async (
       [username]
     );
     const resBase = result.rows[0];
-    const resPhones = phoneResults.rows;
     const resType = typeResult.rows[0];
     const resGoogle = googleData.rows[0];
     const resOfficial = officialData.rows[0];
@@ -46,7 +42,7 @@ export const getUserByUsername = async (
       password: resBase.password,
       direccion: resBase.direccion,
       cedula: resBase.cedula,
-      telefonos: resPhones.map(obj => obj.numero),
+      telefono: resBase.telefono,
       nacionalidad: Nacionalidad[resBase.nacionalidad],
       rif: resBase.rif,
       tipoUsuario: resType,
@@ -76,7 +72,8 @@ export const createSuperuser = async (
         user.nacionalidad,
         user.rif,
         IDsTipoUsuario.Superuser,
-        user.password
+        user.password,
+        user.telefono
       ])
     ).rows[0];
     const res2 = await client.query(queries.ADD_OFFICIAL_DATA, [
@@ -116,18 +113,15 @@ export const createAdmin = async (
         user.nacionalidad,
         user.rif,
         IDsTipoUsuario.Administrador,
-        user.password
+        user.password,
+        user.telefono
       ])
     ).rows[0];
     const res2 = await client.query(queries.ADD_OFFICIAL_DATA, [
       res.id_usuario,
       user.institucion
     ]);
-    const res3 = await Promise.all(
-      user.telefonos.map(tlf =>
-        client.query(queries.ADD_PHONE, [res.id_usuario, tlf])
-      )
-    );
+    
     client.query("COMMIT");
     const usuario: Partial<Usuario> = {
       id: res.id_usuario,
@@ -136,7 +130,7 @@ export const createAdmin = async (
       direccion: res.direccion,
       cedula: res.cedula,
       nacionalidad: Nacionalidad[res.nacionalidad],
-      telefonos: res3.map(result => result.rows[0])
+      telefono: res.telefono
     };
     return usuario;
   } catch (e) {
@@ -247,7 +241,6 @@ export const completeExtUserSignUp = async (user, id) => {
       nacionalidad: data.nacionalidad,
       tipoUsuario: data.id_tipo_usuario,
       cedula: data.cedula,
-      telefonos: data.telefono
     };
     return { status: 201, user };
   } catch (error) {
@@ -296,7 +289,6 @@ export const signUpUser = async user => {
       nacionalidad: data.nacionalidad,
       tipoUsuario: data.id_tipo_usuario,
       cedula: data.cedula,
-      telefonos: data.telefono,
       password: data.password
     };
     return { status: 201, user, message: "Usuario registrado" };

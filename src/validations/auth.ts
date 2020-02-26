@@ -77,10 +77,10 @@ export const createAdmin = [
     .withMessage("Debe incluir el rif del usuario")
     .isString()
     .withMessage("RIF invalido"),
-  check("usuario.telefonos")
+  check("usuario.telefono")
     .exists()
-    .withMessage("Debe incluir los telefonos del usuario")
-    .isArray()
+    .withMessage("Debe incluir el telefono del usuario")
+    .isString()
     .withMessage("Telefonos invalidos"),
   check("usuario.institucion")
     .exists()

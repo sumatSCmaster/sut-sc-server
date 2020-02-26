@@ -32,7 +32,7 @@ export interface Usuario {
   nombreUsuario: string;
   direccion: string;
   cedula: string;
-  telefonos: string[];
+  telefono?: string;
   nacionalidad: Nacionalidad;
   rif?: string;
   tipoUsuario: TipoUsuario;
@@ -91,7 +91,6 @@ export interface ErrorEstandar {
 
 export namespace Payloads {
   export type CrearSuperuser = Partial<Usuario> & {
-    telefonos: number[];
     institucion: number;
   };
   export type CrearAdmin = CrearSuperuser;
