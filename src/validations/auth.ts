@@ -127,7 +127,7 @@ export const createOfficial = [
   check("funcionario.telefono")
     .exists()
     .withMessage("Debe incluir el telefono del usuario")
-    .isArray()
+    .isString()
     .withMessage("Telefono invalido"),
   check("funcionario.password")
     .exists()
