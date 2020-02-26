@@ -199,15 +199,22 @@ router.post("/complete", authenticate("jwt"), async (req: any, res) => {
 });
 
 router.get("/user", authenticate("jwt"), async (req: any, res) => {
+  console.log(req.user)
   const user = {
-    id: req.user.id_usuario,
-    nombreCompleto: req.user.nombre_completo,
-    nombreUsuario: req.user.nombre_de_usuario,
-    direccion: req.user.direccion,
+    id: req.user.user.id,
+    nombreCompleto: req.user.user.nombreCompleto,
+    nombreUsuario: req.user.user.nombreUsuario,
+    direccion: req.user.user.direccion,
     cedula: req.user.cedula,
     rif: req.user.rif,
-    nacionalidad: req.user.nacionalidad,
-    tipoUsuario: req.user.id_tipo_usuario
+    telefonos: req.user.user.telefonos,
+    nacionalidad: req.user.user.nacionalidad,
+    tipoUsuario: req.user.user.tipoUsuario,
+    institucion: req.user.user.telefonos,
+    cuentaFuncionario: req.user.user.cuentaFuncionario,
+    datosGoogle: req.user.user.datosGoogle,
+    datosFacebook: req.user.user.datosFacebook
+
   };
   res.status(200).json({ user, status: 200, message: "Usuario obtenido" });
 });
