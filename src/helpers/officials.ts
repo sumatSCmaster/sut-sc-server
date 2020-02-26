@@ -41,7 +41,7 @@ export const getOfficialsByInstitution = async (institution: string) => {
 
 export const createOfficial = async (official: any, institution: number) => {
   const {
-    nombre,
+    nombreCompleto,
     nombreUsuario,
     direccion,
     cedula,
@@ -53,7 +53,7 @@ export const createOfficial = async (official: any, institution: number) => {
   try {
     client.query("BEGIN");
     const insert = await client.query(queries.CREATE_OFFICIAL, [
-      nombre,
+      nombreCompleto,
       nombreUsuario,
       direccion,
       cedula,
@@ -95,7 +95,7 @@ export const createOfficial = async (official: any, institution: number) => {
 //TODO: verificar que el usuario pertenece a mi institucion
 export const updateOfficial = async (official: any, id: string) => {
   const {
-    nombre,
+    nombreCompleto,
     nombreUsuario,
     direccion,
     cedula,
@@ -107,7 +107,7 @@ export const updateOfficial = async (official: any, id: string) => {
   try {
     client.query("BEGIN");
     await client.query(queries.UPDATE_OFFICIAL, [
-      nombre,
+      nombreCompleto,
       nombreUsuario,
       direccion,
       cedula,

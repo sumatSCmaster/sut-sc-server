@@ -164,7 +164,7 @@ router.get(
       res.redirect(`${process.env.CLIENT_URL}/auth/${token}`);
     } else {
       res.redirect(
-        `${process.env.CLIENT_URL}/signup?oauth=${req.user.nombre_de_usuario}&token=${token}`
+        `${process.env.CLIENT_URL}/signup?oauth=${req.user.nombreUsuario}&token=${token}`
       );
     }
   }
@@ -199,7 +199,7 @@ router.post("/complete", authenticate("jwt"), async (req: any, res) => {
 });
 
 router.get("/user", authenticate("jwt"), async (req: any, res) => {
-  console.log(req.user)
+  console.log(req.user);
   const user = {
     id: req.user.user.id,
     nombreCompleto: req.user.user.nombreCompleto,
@@ -214,7 +214,6 @@ router.get("/user", authenticate("jwt"), async (req: any, res) => {
     cuentaFuncionario: req.user.user.cuentaFuncionario,
     datosGoogle: req.user.user.datosGoogle,
     datosFacebook: req.user.user.datosFacebook
-
   };
   res.status(200).json({ user, status: 200, message: "Usuario obtenido" });
 });

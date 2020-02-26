@@ -55,7 +55,7 @@ const queries = {
   EXTERNAL_USER_INIT:
     "INSERT INTO USUARIOS (nombre_completo, id_tipo_usuario) VALUES ($1, 4) RETURNING *",
   EXTERNAL_USER_COMPLETE:
-    "UPDATE USUARIOS SET direccion = $1, cedula = $2, nacionalidad = $3, rif = $4, nombre_de_usuario = $5, password=$6 WHERE id_usuario = $7 RETURNING *",
+    "UPDATE USUARIOS SET direccion = $1, cedula = $2, nacionalidad = $3, rif = $4, nombre_de_usuario = $5, password=$6, nombre_completo=$7 WHERE id_usuario = $8 RETURNING *",
   SIGN_UP_WITH_LOCAL_STRATEGY:
     "INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\
     nacionalidad,rif,id_tipo_usuario, password) VALUES ($1,$2,$3,$4,$5,$6,4,$7) RETURNING *",
@@ -69,8 +69,8 @@ const queries = {
      usr.id_usuario=cf.id_usuario WHERE usr.id_usuario=$1 AND cf.id_institucion = $2",
   GET_OFFICIALS_BY_INSTITUTION:
     "SELECT usr.id_usuario AS id, usr.nombre_completo AS nombreCompleto, usr.nombre_de_usuario AS nombreUsuario,\
-    usr.direccion, usr.cedula, usr.nacionalidad, usr.rif, usr.id_tipo_usuario AS tipoUsuario,\
-     usr.password from USUARIOS usr INNER JOIN CUENTAS_FUNCIONARIOS cf ON\
+    usr.direccion, usr.cedula, usr.nacionalidad, usr.rif, usr.id_tipo_usuario AS tipoUsuario\
+      from USUARIOS usr INNER JOIN CUENTAS_FUNCIONARIOS cf ON\
       usr.id_usuario=cf.id_usuario WHERE cf.id_institucion = $1",
   CREATE_OFFICIAL:
     "WITH funcionario AS (INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\

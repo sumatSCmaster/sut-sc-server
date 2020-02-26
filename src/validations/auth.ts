@@ -98,7 +98,7 @@ export const createOfficial = [
     .withMessage("Debe incluir la cedula del usuario")
     .isInt()
     .withMessage("Cedula invalida"),
-  check("funcionario.nombre")
+  check("funcionario.nombreCompleto")
     .exists()
     .withMessage("Debe incluir el nombre del usuario")
     .isString()
@@ -127,7 +127,7 @@ export const createOfficial = [
   // check('funcionario.telefonos').exists().withMessage('Debe incluir los telefonos del usuario').isArray().withMessage('Telefonos invalidos'),
   check("funcionario.password")
     .exists()
-    .withMessage("Debe incluir clave de administrador")
+    .withMessage("Debe incluir una contraseña para el usuario")
 ];
 
 export const login = [
