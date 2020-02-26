@@ -124,7 +124,7 @@ export const createAdmin = async (
       res.id_usuario,
       user.institucion
     ]);
-    
+
     client.query("COMMIT");
     const usuario: Partial<Usuario> = {
       id: res.id_usuario,
@@ -203,7 +203,7 @@ export const verifyExternalUser = async id => {
       nacionalidad: data.rows[0].nacionalidad,
       tipoUsuario: data.rows[0].id_tipo_usuario,
       cedula: data.rows[0].cedula,
-      telefonos: data.rows[0].telefono
+      telefono: data.rows[0].telefono
     };
 };
 
@@ -230,7 +230,7 @@ export const initialExtUserSignUp = async user => {
       nacionalidad: response.nacionalidad,
       tipoUsuario: response.id_tipo_usuario,
       cedula: response.cedula,
-      telefonos: response.telefono
+      telefono: response.telefono
     };
   } catch (e) {
     client.query("ROLLBACK");
@@ -273,7 +273,7 @@ export const completeExtUserSignUp = async (user, id) => {
       rif: data.rif,
       nacionalidad: data.nacionalidad,
       tipoUsuario: data.id_tipo_usuario,
-      cedula: data.cedula,
+      cedula: data.cedula
     };
     return { status: 201, user };
   } catch (error) {

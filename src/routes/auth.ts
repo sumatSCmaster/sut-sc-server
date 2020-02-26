@@ -207,10 +207,10 @@ router.get("/user", authenticate("jwt"), async (req: any, res) => {
     direccion: req.user.user.direccion,
     cedula: req.user.cedula,
     rif: req.user.rif,
-    telefonos: req.user.user.telefonos,
+    telefono: req.user.user.telefono,
     nacionalidad: req.user.user.nacionalidad,
     tipoUsuario: req.user.user.tipoUsuario,
-    institucion: req.user.user.telefonos,
+    institucion: req.user.user.institucion,
     cuentaFuncionario: req.user.user.cuentaFuncionario,
     datosGoogle: req.user.user.datosGoogle,
     datosFacebook: req.user.user.datosFacebook

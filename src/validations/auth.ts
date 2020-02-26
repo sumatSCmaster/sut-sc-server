@@ -81,7 +81,7 @@ export const createAdmin = [
     .exists()
     .withMessage("Debe incluir el telefono del usuario")
     .isString()
-    .withMessage("Telefonos invalidos"),
+    .withMessage("Telefono invalido"),
   check("usuario.institucion")
     .exists()
     .withMessage("Debe especificar la institucion del usuario")
@@ -124,7 +124,11 @@ export const createOfficial = [
     .withMessage("Debe incluir el rif del usuario")
     .isString()
     .withMessage("RIF invalido"),
-  // check('funcionario.telefonos').exists().withMessage('Debe incluir los telefonos del usuario').isArray().withMessage('Telefonos invalidos'),
+  check("funcionario.telefono")
+    .exists()
+    .withMessage("Debe incluir el telefono del usuario")
+    .isArray()
+    .withMessage("Telefono invalido"),
   check("funcionario.password")
     .exists()
     .withMessage("Debe incluir una contraseña para el usuario")
