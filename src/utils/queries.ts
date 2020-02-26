@@ -75,7 +75,7 @@ const queries = {
   CREATE_OFFICIAL:
     "WITH funcionario AS (INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\
     nacionalidad, rif, id_tipo_usuario, password, telefono) VALUES ($1, $2, $3, $4, $5, $6, 3, $7, $8) RETURNING id_usuario)\
-    INSERT INTO cuentas_funcionarios VALUES((SELECT id_usuario from funcionario), $8) RETURNING *",
+    INSERT INTO cuentas_funcionarios VALUES((SELECT id_usuario from funcionario), $9) RETURNING *",
   UPDATE_OFFICIAL:
     "UPDATE usuarios SET nombre_completo = $1, nombre_de_usuario = $2, direccion = $3,\
     cedula = $4, nacionalidad = $5, rif = $6, telefono =$7 WHERE id_usuario = $8 RETURNING id_usuario",
