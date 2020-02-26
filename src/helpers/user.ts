@@ -297,7 +297,8 @@ export const signUpUser = async user => {
     cedula,
     nacionalidad,
     rif,
-    password
+    password,
+    telefono
   } = user;
   const client = await pool.connect();
   try {
@@ -309,7 +310,8 @@ export const signUpUser = async user => {
       cedula,
       nacionalidad,
       rif,
-      password
+      password,
+      telefono
     ]);
     client.query("COMMIT");
     const data = response.rows[0];

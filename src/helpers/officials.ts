@@ -3,6 +3,7 @@ import queries from "@utils/queries";
 import { Usuario } from "@interfaces/sigt";
 import { Client } from "pg";
 import { errorMessageGenerator } from "./errors";
+import { genSaltSync, hashSync } from "bcryptjs";
 const pool = Pool.getInstance();
 
 export const getOfficialsByInstitution = async (institution: string) => {
@@ -53,6 +54,7 @@ export const createOfficial = async (official: any, institution: number) => {
     password
   } = official;
   const client = await pool.connect();
+  const salt = genSaltSync(10);
   try {
     client.query("BEGIN");
     const insert = await client.query(queries.CREATE_OFFICIAL, [
@@ -62,7 +64,7 @@ export const createOfficial = async (official: any, institution: number) => {
       cedula,
       nacionalidad,
       rif,
-      password,
+      hashSync(password, salt),
       telefono,
       institution
     ]);

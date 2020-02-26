@@ -58,7 +58,7 @@ const queries = {
     "UPDATE USUARIOS SET direccion = $1, cedula = $2, nacionalidad = $3, rif = $4, nombre_de_usuario = $5, password=$6, nombre_completo=$7 WHERE id_usuario = $8 RETURNING *",
   SIGN_UP_WITH_LOCAL_STRATEGY:
     "INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\
-    nacionalidad,rif,id_tipo_usuario, password) VALUES ($1,$2,$3,$4,$5,$6,4,$7) RETURNING *",
+    nacionalidad,rif,id_tipo_usuario, password, telefono) VALUES ($1,$2,$3,$4,$5,$6,4,$7, $8) RETURNING *",
   //BANKS
   GET_ALL_BANKS: "SELECT id_banco as id, nombre  FROM BANCOS",
   VALIDATE_PAYMENTS: "SELECT validate_payments($1);",
