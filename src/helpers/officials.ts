@@ -16,7 +16,9 @@ export const getOfficialsByInstitution = async (institution: string) => {
         ...el,
         nombreCompleto: el.nombrecompleto,
         nombreUsuario: el.nombreusuario,
-        tipoUsuario: el.tipousuario
+        tipoUsuario: el.tipousuario,
+        prefixRif: el.rif.substring(0, 1),
+        rif: el.rif.substring(2)
       };
       delete official.nombrecompleto;
       delete official.nombreusuario;
