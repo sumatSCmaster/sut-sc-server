@@ -29,11 +29,11 @@ export const getAvailableProcedures = async (): Promise<Institucion[]> => {
   }
 };
 
-const getFieldsBySection = async (section, client): Promise<Campos[] | any> => {
+const getFieldsBySection = async (section, tramiteId, client): Promise<Campos[] | any> => {
   return Promise.all(
     section.map(async el => {
       el.campos = (
-        await client.query(queries.GET_FIELDS_BY_SECTION, [el.id])
+        await client.query(queries.GET_FIELDS_BY_SECTION, [el.id, tramiteId])
       ).rows.map(ul => {
         const id = ul.id_campo;
         delete ul.id_tipo_tramite;
@@ -67,7 +67,7 @@ const getSectionByProcedure = async (
       const secciones = (
         await client.query(queries.GET_SECTIONS_BY_PROCEDURE, [tramite.id])
       ).rows;
-      tramite.secciones = await getFieldsBySection(secciones, client);
+      tramite.secciones = await getFieldsBySection(secciones, tramite.id, client);
       return tramite;
     })
   ).catch(error => {

@@ -89,7 +89,7 @@ const queries = {
   CAMPOS_TRAMITES ct RIGHT JOIN SECCIONES sect ON ct.id_seccion=sect.id_seccion WHERE ct.id_tipo_tramite=$1",
   GET_FIELDS_BY_SECTION:
     "SELECT ct.*, camp.nombre, camp.tipo, camp.validacion, camp.col FROM campos_tramites ct INNER JOIN\
-     campos camp ON ct.id_campo = camp.id_campo WHERE ct.id_seccion = $1 ORDER BY ct.orden",
+     campos camp ON ct.id_campo = camp.id_campo WHERE ct.id_seccion = $1 AND id_tipo_tramite = $2 ORDER BY ct.orden",
   GET_PROCEDURE_BY_INSTITUTION:
     "SELECT id_tipo_tramite, nombre_tramite, costo_base FROM tipos_tramites tt WHERE id_institucion = $1",
   GET_ALL_INSTITUTION: "SELECT * FROM INSTITUCIONES"
