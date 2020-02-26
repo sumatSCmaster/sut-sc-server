@@ -102,8 +102,7 @@ export const updateOfficial = async (official: any, id: string) => {
     direccion,
     cedula,
     nacionalidad,
-    rif,
-    password
+    rif
   } = official;
   const client = await pool.connect();
   try {
@@ -115,8 +114,7 @@ export const updateOfficial = async (official: any, id: string) => {
       cedula,
       nacionalidad,
       rif,
-      id,
-      password
+      id
     ]);
     client.query("COMMIT");
     return { status: 200, message: "Funcionario actualizado" };
