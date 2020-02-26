@@ -11,4 +11,6 @@ router.get("/", authenticate("jwt"), async (req, res) => {
   if (data) res.status(200).json({ status: 200, options: data });
 });
 
+router.post("/init", async (req, res) => {});
+
 export default router;

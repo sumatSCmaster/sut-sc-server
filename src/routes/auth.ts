@@ -190,10 +190,10 @@ router.get(
 
 router.post("/complete", authenticate("jwt"), async (req: any, res) => {
   const { user } = req.body;
-  const { id_usuario } = req.user;
+  const { id } = req.user;
   const salt = genSaltSync(10);
   user.password = hashSync(user.password, salt);
-  const [error, data] = await fulfill(completeExtUserSignUp(user, id_usuario));
+  const [error, data] = await fulfill(completeExtUserSignUp(user, id));
   if (error) res.status(error.status).json(error);
   if (data) res.status(data.status).json(data);
 });
@@ -201,19 +201,19 @@ router.post("/complete", authenticate("jwt"), async (req: any, res) => {
 router.get("/user", authenticate("jwt"), async (req: any, res) => {
   console.log(req.user);
   const user = {
-    id: req.user.user.id,
-    nombreCompleto: req.user.user.nombreCompleto,
-    nombreUsuario: req.user.user.nombreUsuario,
-    direccion: req.user.user.direccion,
+    id: req.user.id,
+    nombreCompleto: req.user.nombreCompleto,
+    nombreUsuario: req.user.nombreUsuario,
+    direccion: req.user.direccion,
     cedula: req.user.cedula,
     rif: req.user.rif,
-    telefono: req.user.user.telefono,
-    nacionalidad: req.user.user.nacionalidad,
-    tipoUsuario: req.user.user.tipoUsuario,
-    institucion: req.user.user.institucion,
-    cuentaFuncionario: req.user.user.cuentaFuncionario,
-    datosGoogle: req.user.user.datosGoogle,
-    datosFacebook: req.user.user.datosFacebook
+    telefono: req.user.telefono,
+    nacionalidad: req.user.nacionalidad,
+    tipoUsuario: req.user.tipoUsuario,
+    institucion: req.user.institucion,
+    cuentaFuncionario: req.user.cuentaFuncionario,
+    datosGoogle: req.user.datosGoogle,
+    datosFacebook: req.user.datosFacebook
   };
   res.status(200).json({ user, status: 200, message: "Usuario obtenido" });
 });

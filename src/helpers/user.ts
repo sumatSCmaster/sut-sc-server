@@ -248,6 +248,7 @@ export const completeExtUserSignUp = async (user, id) => {
     direccion,
     cedula,
     nacionalidad,
+    telefono,
     rif
   } = user;
   const client = await pool.connect();
@@ -261,6 +262,7 @@ export const completeExtUserSignUp = async (user, id) => {
       nombreUsuario,
       password,
       nombreCompleto,
+      telefono,
       id
     ]);
     client.query("COMMIT");
@@ -273,7 +275,8 @@ export const completeExtUserSignUp = async (user, id) => {
       rif: data.rif,
       nacionalidad: data.nacionalidad,
       tipoUsuario: data.id_tipo_usuario,
-      cedula: data.cedula
+      cedula: data.cedula,
+      telefono: data.telefono
     };
     return { status: 201, user };
   } catch (error) {
