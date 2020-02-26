@@ -61,9 +61,9 @@ router.put(
   async (req, res) => {
     const { id_institucion } = req.user.user.cuentaFuncionario;
     if (id_institucion) {
-      const { official } = req.body;
+      const { funcionario } = req.body;
       const { id } = req.params;
-      const [err, data] = await fulfill(updateOfficial(official, id));
+      const [err, data] = await fulfill(updateOfficial(funcionario, id));
       if (err) res.status(500).json(err);
       if (data) res.status(data.status).json(data);
     } else {
