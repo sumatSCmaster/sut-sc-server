@@ -16,7 +16,9 @@ export const getOfficialsByInstitution = async (institution: string) => {
         ...el,
         nombreCompleto: el.nombrecompleto,
         nombreUsuario: el.nombreusuario,
-        tipoUsuario: el.tipousuario
+        tipoUsuario: el.tipousuario,
+        prefixRif: el.rif.substring(0, 1),
+        rif: el.rif.substring(2)
       };
       delete official.nombrecompleto;
       delete official.nombreusuario;
@@ -41,7 +43,7 @@ export const getOfficialsByInstitution = async (institution: string) => {
 
 export const createOfficial = async (official: any, institution: number) => {
   const {
-    nombre,
+    nombreCompleto,
     nombreUsuario,
     direccion,
     cedula,
@@ -53,7 +55,7 @@ export const createOfficial = async (official: any, institution: number) => {
   try {
     client.query("BEGIN");
     const insert = await client.query(queries.CREATE_OFFICIAL, [
-      nombre,
+      nombreCompleto,
       nombreUsuario,
       direccion,
       cedula,
@@ -95,26 +97,24 @@ export const createOfficial = async (official: any, institution: number) => {
 //TODO: verificar que el usuario pertenece a mi institucion
 export const updateOfficial = async (official: any, id: string) => {
   const {
-    nombre,
+    nombreCompleto,
     nombreUsuario,
     direccion,
     cedula,
     nacionalidad,
-    rif,
-    password
+    rif
   } = official;
   const client = await pool.connect();
   try {
     client.query("BEGIN");
     await client.query(queries.UPDATE_OFFICIAL, [
-      nombre,
+      nombreCompleto,
       nombreUsuario,
       direccion,
       cedula,
       nacionalidad,
       rif,
-      id,
-      password
+      id
     ]);
     client.query("COMMIT");
     return { status: 200, message: "Funcionario actualizado" };

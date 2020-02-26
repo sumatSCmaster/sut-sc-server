@@ -45,7 +45,10 @@ export const getUserByUsername = async (
       telefono: resBase.telefono,
       nacionalidad: Nacionalidad[resBase.nacionalidad],
       rif: resBase.rif,
-      tipoUsuario: resType,
+      tipoUsuario: {
+        id: resType.id_tipo_usuario,
+        descripcion: resType.descripcion
+      },
       datosGoogle: resGoogle,
       cuentaFuncionario: resOfficial
     };
@@ -148,7 +151,14 @@ export const addInstitute = async (
   try {
     const res = (await client.query(queries.GET_ADMIN_INSTITUTE, [user.id]))
       .rows;
-    return { ...user, institucion: res[0] };
+    return {
+      ...user,
+      institucion: {
+        id: res[0].id_institucion,
+        nombreCompleto: res[0].nombre_completo,
+        nombreCorto: res[0].nombre_corto
+      }
+    };
   } catch (e) {
     throw e;
   } finally {
@@ -183,24 +193,45 @@ export const verifyExternalUser = async id => {
   );
   client.release();
   if (err) return err;
-  if (data) return { data: data.rows[0] };
+  if (data)
+    return {
+      id: data.rows[0].id_usuario,
+      nombreCompleto: data.rows[0].nombre_completo,
+      nombreUsuario: data.rows[0].nombre_de_usuario,
+      direccion: data.rows[0].direccion,
+      rif: data.rows[0].rif,
+      nacionalidad: data.rows[0].nacionalidad,
+      tipoUsuario: data.rows[0].id_tipo_usuario,
+      cedula: data.rows[0].cedula,
+      telefonos: data.rows[0].telefono
+    };
 };
 
 export const initialExtUserSignUp = async user => {
   const client = await pool.connect();
   try {
     client.query("BEGIN");
-    const response = await client.query(queries.EXTERNAL_USER_INIT, [
-      user.name
-    ]);
+    const response = (
+      await client.query(queries.EXTERNAL_USER_INIT, [user.name])
+    ).rows[0];
     client.query(
       user.provider === "facebook"
         ? queries.INSERT_FACEBOOK_USER
         : queries.INSERT_GOOGLE_USER,
-      [response.rows[0].id_usuario, user.OAuthID]
+      [response.id_usuario, user.OAuthID]
     );
     client.query("COMMIT");
-    return response.rows[0];
+    return {
+      id: response.id_usuario,
+      nombreCompleto: response.nombre_completo,
+      nombreUsuario: response.nombre_de_usuario,
+      direccion: response.direccion,
+      rif: response.rif,
+      nacionalidad: response.nacionalidad,
+      tipoUsuario: response.id_tipo_usuario,
+      cedula: response.cedula,
+      telefonos: response.telefono
+    };
   } catch (e) {
     client.query("ROLLBACK");
     return e;
@@ -211,6 +242,7 @@ export const initialExtUserSignUp = async user => {
 
 export const completeExtUserSignUp = async (user, id) => {
   const {
+    nombreCompleto,
     nombreUsuario,
     password,
     direccion,
@@ -228,6 +260,7 @@ export const completeExtUserSignUp = async (user, id) => {
       rif,
       nombreUsuario,
       password,
+      nombreCompleto,
       id
     ]);
     client.query("COMMIT");
