@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { getAvailableProcedures } from "@helpers/procedures";
+import * as validators from "@validations/auth";
+import { checkResult } from "@validations/index";
 import { authenticate } from "passport";
 import { fulfill } from "@utils/resolver";
 
@@ -11,6 +13,11 @@ router.get("/", authenticate("jwt"), async (req, res) => {
   if (data) res.status(200).json({ status: 200, options: data });
 });
 
-router.post("/init", async (req, res) => {});
+router.post(
+  "/init",
+  validators.isValidProcedure,
+  checkResult,
+  async (req, res) => {}
+);
 
 export default router;

@@ -113,3 +113,21 @@ const getProcedureByInstitution = async (
       "Error al obtener las instituciones";
   });
 };
+
+export const getFieldsForValidations = async idProcedure => {
+  const client = await pool.connect();
+  try {
+    const response = (
+      await client.query(queries.VALIDATE_FIELDS_FROM_PROCEDURE, [idProcedure])
+    ).rows;
+    return { fields: response };
+  } catch (error) {
+    throw {
+      status: 400,
+      error,
+      message: errorMessageGenerator(error) || "Error en los campos"
+    };
+  } finally {
+    client.release();
+  }
+};

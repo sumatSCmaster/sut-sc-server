@@ -27,40 +27,36 @@ router.post(
   checkResult,
   authenticate("local"),
   async (req: any, res) => {
-    if (await checkIfSuperuser(req.user.user.cedula)) {
+    if (await checkIfSuperuser(req.user.cedula)) {
       res.status(200).json({
         status: 200,
         message: "Inicio de sesion exitoso",
         token: generateToken(req.user),
-        admin: req.user.admin,
         superuser: true,
-        user: req.user.user
+        user: req.user
       });
-    } else if (await checkIfAdmin(req.user.user.cedula)) {
-      req.user.user = await addInstitute(req.user.user);
+    } else if (await checkIfAdmin(req.user.cedula)) {
+      req.user = await addInstitute(req.user);
       res.status(200).json({
         status: 200,
         message: "Inicio de sesion exitoso.",
         token: generateToken(req.user),
-        admin: req.user.admin,
-        user: req.user.user
+        user: req.user
       });
-    } else if (await checkIfOfficial(req.user.user.cedula)) {
-      req.user.user = await addInstitute(req.user.user);
+    } else if (await checkIfOfficial(req.user.cedula)) {
+      req.user = await addInstitute(req.user);
       res.status(200).json({
         status: 200,
         message: "Inicio de sesion exitoso.",
         token: generateToken(req.user),
-        admin: req.user.admin,
-        user: req.user.user
+        user: req.user
       });
     } else {
       res.status(200).json({
         status: 200,
         message: "Inicio de sesion exitoso.",
         token: generateToken(req.user),
-        admin: req.user.admin,
-        user: req.user.user
+        user: req.user
       });
     }
   }
@@ -224,7 +220,17 @@ router.post("/signup", async (req: any, res) => {
   user.password = hashSync(user.password, salt);
   const [error, data] = await fulfill(signUpUser(user));
   if (error) res.status(error.status).json(error);
-  if (data) res.status(data.status).json(data);
+  if (data) {
+    req.logIn(data.user, { session: false }, error => {
+      if (error) {
+        res.status(500).send({
+          message: "Error al iniciar sesion del usuario",
+          error
+        });
+      }
+      res.status(data.status).json(data);
+    });
+  }
 });
 
 export default router;

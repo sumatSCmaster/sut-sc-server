@@ -11,6 +11,7 @@ import {
 import { fulfill } from "@utils/resolver";
 import { stringify } from "flatted/cjs";
 import { errorMessageGenerator } from "./errors";
+import { generateToken } from "@utils/Strategies";
 
 const pool = Pool.getInstance();
 
@@ -45,10 +46,7 @@ export const getUserByUsername = async (
       telefono: resBase.telefono,
       nacionalidad: Nacionalidad[resBase.nacionalidad],
       rif: resBase.rif,
-      tipoUsuario: {
-        id: resType.id_tipo_usuario,
-        descripcion: resType.descripcion
-      },
+      tipoUsuario: resType.id_tipo_usuario,
       datosGoogle: resGoogle,
       cuentaFuncionario: resOfficial
     };
@@ -278,7 +276,7 @@ export const completeExtUserSignUp = async (user, id) => {
       cedula: data.cedula,
       telefono: data.telefono
     };
-    return { status: 201, user };
+    return { status: 201, user, token: generateToken(user) };
   } catch (error) {
     client.query("ROLLBACK");
     throw {
@@ -326,10 +324,14 @@ export const signUpUser = async user => {
       rif: data.rif,
       nacionalidad: data.nacionalidad,
       tipoUsuario: data.id_tipo_usuario,
-      cedula: data.cedula,
-      password: data.password
+      cedula: data.cedula
     };
-    return { status: 201, user, message: "Usuario registrado" };
+    return {
+      status: 201,
+      user,
+      message: "Usuario registrado",
+      token: generateToken(user)
+    };
   } catch (error) {
     client.query("ROLLBACK");
     console.log(error);

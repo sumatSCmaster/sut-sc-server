@@ -1,4 +1,25 @@
 import { check } from "express-validator";
+import { fulfill } from "@utils/resolver";
+import { getFieldsForValidations } from "@helpers/procedures";
+
+const validations = {
+  nombreCompleto: check("nombreCompleto")
+    .exists()
+    .withMessage("Debe incluir el nombre del usuario")
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage("El nombre no puede ser vacio"),
+  cedula: check("cedula")
+    .exists()
+    .withMessage("Debe incluir la cedula del usuario")
+    .isInt()
+    .withMessage("Cedula invalida"),
+  ganasDeVivir: check("ganasDeVivir")
+    .exists()
+    .withMessage("Debe incluir las ganas de vivir del usuario")
+    .isInt()
+    .withMessage("Ganas de Vivir invalidas")
+};
 
 export const createSuperuser = [
   check("usuario.cedula")
@@ -151,6 +172,17 @@ export const login = [
     .isString()
     .withMessage("Contraseña invalida")
 ];
+
+export const isValidProcedure = async (req, res, next) => {
+  const [error, data] = await fulfill(getFieldsForValidations(req.body.id));
+  if (error) res.status(error.status).json(error);
+  if (data) {
+    const validaciones = data.fields.map(el => {
+      return validations[el.validacion];
+    });
+    next(validaciones);
+  }
+};
 
 export const isLogged = (req, res, next) => {
   if (req.isAuthenticated()) {

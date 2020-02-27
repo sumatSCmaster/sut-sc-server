@@ -91,7 +91,10 @@ const queries = {
      campos camp ON ct.id_campo = camp.id_campo WHERE ct.id_seccion = $1 AND ct.id_tipo_tramite = $2 AND ct.estado=1 ORDER BY ct.orden",
   GET_PROCEDURE_BY_INSTITUTION:
     "SELECT id_tipo_tramite, nombre_tramite, costo_base FROM tipos_tramites tt WHERE id_institucion = $1",
-  GET_ALL_INSTITUTION: "SELECT * FROM INSTITUCIONES"
+  GET_ALL_INSTITUTION: "SELECT * FROM INSTITUCIONES",
+  VALIDATE_FIELDS_FROM_PROCEDURE:
+    "SELECT DISTINCT camp.validacion, camp.tipo FROM CAMPOS_TRAMITES ct INNER JOIN CAMPOS camp ON\
+     ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=1"
 };
 
 export default queries;
