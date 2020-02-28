@@ -180,7 +180,7 @@ router.get(
       res.redirect(`${process.env.CLIENT_URL}/auth/${token}`);
     } else {
       res.redirect(
-        `${process.env.CLIENT_URL}/registro?name=${req.user.nombreCompleto}&oauth=${req.user.nombreUsuario}&token=${token}`
+        `${process.env.CLIENT_URL}/registro?name=${req.user.nombreCompleto}&token=${token}`
       );
     }
   }
