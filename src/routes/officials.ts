@@ -15,7 +15,7 @@ const router = Router();
 //TODO: añadir validacion de tipo de usuario
 router.get("/", authenticate("jwt"), async (req: any, res) => {
   console.log(req.user);
-  const { id_institucion } = req.user.user.cuentaFuncionario;
+  const { id_institucion } = req.user.cuentaFuncionario;
   if (id_institucion) {
     const [err, data] = await fulfill(
       getOfficialsByInstitution(id_institucion)
@@ -36,7 +36,7 @@ router.post(
   validators.createOfficial,
   checkResult,
   async (req: any, res) => {
-    const { id_institucion } = req.user.user.cuentaFuncionario;
+    const { id_institucion } = req.user.cuentaFuncionario;
     if (id_institucion) {
       const { funcionario } = req.body;
       const [err, data] = await fulfill(
@@ -59,7 +59,7 @@ router.put(
   validators.updateOfficial,
   checkResult,
   async (req, res) => {
-    const { id_institucion } = req.user.user.cuentaFuncionario;
+    const { id_institucion } = req.user.cuentaFuncionario;
     if (id_institucion) {
       const { funcionario } = req.body;
       const { id } = req.params;
@@ -76,7 +76,7 @@ router.put(
 );
 
 router.delete("/:id", authenticate("jwt"), async (req: any, res) => {
-  const { id_institucion } = req.user.user.cuentaFuncionario;
+  const { id_institucion } = req.user.cuentaFuncionario;
   if (id_institucion) {
     const { id } = req.params;
     const [err, data] = await fulfill(deleteOfficial(id, id_institucion));
