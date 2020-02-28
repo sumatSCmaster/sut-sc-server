@@ -72,6 +72,11 @@ const queries = {
     usr.direccion, usr.cedula, usr.nacionalidad, usr.rif, usr.id_tipo_usuario AS tipoUsuario, usr.telefono\
       from USUARIOS usr INNER JOIN CUENTAS_FUNCIONARIOS cf ON\
       usr.id_usuario=cf.id_usuario WHERE cf.id_institucion = $1",
+  GET_ALL_OFFICIALS:
+    "SELECT usr.id_usuario AS id, usr.nombre_completo AS nombreCompleto, usr.nombre_de_usuario AS nombreUsuario,\
+      usr.direccion, usr.cedula, usr.nacionalidad, usr.rif, usr.id_tipo_usuario AS tipoUsuario, usr.telefono\
+        from USUARIOS usr INNER JOIN CUENTAS_FUNCIONARIOS cf ON\
+        usr.id_usuario=cf.id_usuario WHERE usr.id_tipo_usuario!=1",
   CREATE_OFFICIAL:
     "WITH funcionario AS (INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\
     nacionalidad, rif, id_tipo_usuario, password, telefono) VALUES ($1, $2, $3, $4, $5, $6, 3, $7, $8) RETURNING id_usuario)\
@@ -92,6 +97,10 @@ const queries = {
   GET_PROCEDURE_BY_INSTITUTION:
     "SELECT id_tipo_tramite, nombre_tramite, costo_base FROM tipos_tramites tt WHERE id_institucion = $1",
   GET_ALL_INSTITUTION: "SELECT * FROM INSTITUCIONES",
+  GET_ONE_INSTITUTION: "SELECT * FROM INSTITUCIONES WHERE id_institucion = $1",
+  GET_ONE_PROCEDURE: "SELECT * FROM tipos_tramites WHERE id_tipo_tramite = $1",
+  UPDATE_PROCEDURE_COST:
+    "UPDATE tipos_tramites SET costo_base = $2 WHERE id_tipo_tramite = $1 RETURNING *",
   VALIDATE_FIELDS_FROM_PROCEDURE:
     "SELECT DISTINCT camp.validacion, camp.tipo FROM CAMPOS_TRAMITES ct INNER JOIN CAMPOS camp ON\
      ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=1",

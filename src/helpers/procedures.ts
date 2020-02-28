@@ -29,6 +29,53 @@ export const getAvailableProcedures = async (): Promise<Institucion[]> => {
   }
 };
 
+export const getAvailableProceduresOfInstitution = async (id: string): Promise<Institucion> => {
+  const client = await pool.connect();
+  try{
+    const response = (await client.query(queries.GET_ONE_INSTITUTION, [id])).rows[0];
+    const institution: Institucion = {
+      id: response.id_institucion,
+      nombreCompleto: response.nombre_completo,
+      nombreCorto: response.nombre_corto
+    }
+    const options = await getProcedureByInstitution([institution], client);
+    return options[0];
+  } catch (error) {
+    throw {
+        status: 500,
+        error,
+        message: errorMessageGenerator(error) || "Error al obtener los tramites"
+    }
+  } finally {
+    client.release()
+  }
+}
+
+export const updateProcedureCost = async (id: string, newCost: string): Promise<Partial<TramitesDisponibles>> => {
+  const client = await pool.connect();
+  try{
+    client.query('BEGIN');
+    const response = (await client.query(queries.UPDATE_PROCEDURE_COST, [id, newCost])).rows[0];
+    const newProcedure = (await client.query(queries.GET_ONE_PROCEDURE, [id])).rows[0];
+    const procedure: TramitesDisponibles= {
+      id: newProcedure.id_tipo_tramite,
+      titulo: newProcedure.nombre_tramite,
+      costo: newProcedure.costo_base
+    }
+    client.query('COMMIT');
+    return procedure;
+  } catch (error) {
+    client.query('ROLLBACK');
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || "Error al obtener los tramites"
+    }
+  } finally {
+    client.release();
+  }
+}
+
 const getFieldsBySection = async (
   section,
   tramiteId,

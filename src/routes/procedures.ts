@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAvailableProcedures, procedureInit } from "@helpers/procedures";
+import { getAvailableProcedures, procedureInit, getAvailableProceduresOfInstitution, updateProcedureCost} from "@helpers/procedures";
 import { validate } from "@validations/auth";
 import { checkResult } from "@validations/index";
 import { authenticate } from "passport";
@@ -12,6 +12,20 @@ router.get("/", authenticate("jwt"), async (req, res) => {
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, options: data });
 });
+
+router.get("/:id", authenticate("jwt"), async (req, res) => {
+  const [error, data] = await fulfill(getAvailableProceduresOfInstitution(req.params["id"]));
+  if (error) res.status(500).json({ error, status: 500 });
+  if (data) res.status(200).json({ status: 200, options: data });
+});
+
+router.patch("/:id", authenticate("jwt"), async (req, res) => {
+  const [error, data] = await fulfill(updateProcedureCost(req.params["id"], req.body.costo));
+  console.log(error)
+  console.log(data)
+  if (error) res.status(500).json({ error, status: 500 });
+  if (data) res.status(200).json({ status: 200, options: data });
+})
 
 router.post(
   "/init",
