@@ -6,6 +6,8 @@ import banks from "./banks";
 import procedures from "./procedures";
 import { authenticate } from "passport";
 import { isAdmin } from "@middlewares/auth";
+import { fulfill } from "@utils/resolver";
+import { getAllInstitutions } from "@helpers/institutions";
 
 const router = Router();
 
@@ -21,6 +23,19 @@ router.get("/", (req, res) => {
     status: 200,
     message: "Ok"
   });
+});
+
+router.get("/institutions", authenticate("jwt"), async (req: any, res) => {
+  if (req.user.tipoUsuario === 1) {
+    const [err, data] = await fulfill(getAllInstitutions());
+    if (err) res.status(500).json(err);
+    if (data) res.status(200).json(data);
+  } else {
+    res.status(401).json({
+      message: "No tiene permisos de superusuario",
+      status: 401
+    });
+  }
 });
 
 export default router;
