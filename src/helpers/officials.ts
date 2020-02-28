@@ -42,6 +42,40 @@ export const getOfficialsByInstitution = async (institution: string) => {
   }
 };
 
+export const getAllOfficials = async () => {
+  const client = await pool.connect();
+  try {
+    const response = await client.query(queries.GET_ALL_OFFICIALS);
+    const funcionarios = response.rows.map(el => {
+      const official = {
+        ...el,
+        nombreCompleto: el.nombrecompleto,
+        nombreUsuario: el.nombreusuario,
+        tipoUsuario: el.tipousuario,
+        prefixRif: el.rif.substring(0, 2),
+        rif: el.rif.substring(2)
+      };
+      delete official.nombrecompleto;
+      delete official.nombreusuario;
+      delete official.tipousuario;
+      return official;
+    });
+    return {
+      status: 200,
+      funcionarios,
+      message: "Funcionarios obtenidos satisfactoriamente"
+    };
+  } catch (e) {
+    throw {
+      error: e,
+      status: 500,
+      message: errorMessageGenerator(e) || "Error al obtener los funcionarios"
+    };
+  } finally {
+    client.release();
+  }
+};
+
 export const createOfficial = async (official: any, institution: number) => {
   const {
     nombreCompleto,

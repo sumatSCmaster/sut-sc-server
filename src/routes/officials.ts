@@ -3,12 +3,14 @@ import {
   getOfficialsByInstitution,
   createOfficial,
   updateOfficial,
-  deleteOfficial
+  deleteOfficial,
+  getAllOfficials
 } from "@helpers/officials";
 import * as validators from "@validations/auth";
 import { checkResult } from "@validations/index";
 import { authenticate } from "passport";
 import { fulfill } from "@utils/resolver";
+import { isSuperuser } from "@middlewares/auth";
 
 const router = Router();
 
@@ -25,6 +27,20 @@ router.get("/", authenticate("jwt"), async (req: any, res) => {
   } else {
     res.status(401).json({
       message: "No tiene permisos para obtener los funcionarios.",
+      status: 401
+    });
+  }
+});
+
+router.get("/all", authenticate("jwt"), async (req: any, res) => {
+  console.log(req.user);
+  if (req.user.tipoUsuario === 1) {
+    const [err, data] = await fulfill(getAllOfficials());
+    if (err) res.status(500).json(err);
+    if (data) res.status(200).json(data);
+  } else {
+    res.status(401).json({
+      message: "No tiene permisos de superusuario",
       status: 401
     });
   }
