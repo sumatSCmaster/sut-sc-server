@@ -71,7 +71,7 @@ const queries = {
     "SELECT usr.id_usuario AS id, usr.nombre_completo AS nombreCompleto, usr.nombre_de_usuario AS nombreUsuario,\
     usr.direccion, usr.cedula, usr.nacionalidad, usr.rif, usr.id_tipo_usuario AS tipoUsuario, usr.telefono\
       from USUARIOS usr INNER JOIN CUENTAS_FUNCIONARIOS cf ON\
-      usr.id_usuario=cf.id_usuario WHERE cf.id_institucion = $1",
+      usr.id_usuario=cf.id_usuario WHERE cf.id_institucion = $1 AND usr.id_usuario != $2 AND usr.id_tipo_usuario!=1",
   GET_ALL_OFFICIALS:
     "SELECT usr.id_usuario AS id, usr.nombre_completo AS nombreCompleto, usr.nombre_de_usuario AS nombreUsuario,\
       usr.direccion, usr.cedula, usr.nacionalidad, usr.rif, usr.id_tipo_usuario AS tipoUsuario, usr.telefono\

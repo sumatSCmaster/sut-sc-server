@@ -6,11 +6,15 @@ import { errorMessageGenerator } from "./errors";
 import { genSaltSync, hashSync } from "bcryptjs";
 const pool = Pool.getInstance();
 
-export const getOfficialsByInstitution = async (institution: string) => {
+export const getOfficialsByInstitution = async (
+  institution: string,
+  id: number
+) => {
   const client = await pool.connect();
   try {
     const response = await client.query(queries.GET_OFFICIALS_BY_INSTITUTION, [
-      institution
+      institution,
+      id
     ]);
     const funcionarios = response.rows.map(el => {
       const official = {
