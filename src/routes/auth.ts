@@ -27,40 +27,36 @@ router.post(
   checkResult,
   authenticate("local"),
   async (req: any, res) => {
-    if (await checkIfSuperuser(req.user.user.cedula)) {
+    if (await checkIfSuperuser(req.user.cedula)) {
       res.status(200).json({
         status: 200,
         message: "Inicio de sesion exitoso",
         token: generateToken(req.user),
-        admin: req.user.admin,
         superuser: true,
-        user: req.user.user
+        user: req.user
       });
-    } else if (await checkIfAdmin(req.user.user.cedula)) {
-      req.user.user = await addInstitute(req.user.user);
+    } else if (await checkIfAdmin(req.user.cedula)) {
+      req.user = await addInstitute(req.user);
       res.status(200).json({
         status: 200,
         message: "Inicio de sesion exitoso.",
         token: generateToken(req.user),
-        admin: req.user.admin,
-        user: req.user.user
+        user: req.user
       });
-    } else if (await checkIfOfficial(req.user.user.cedula)) {
-      req.user.user = await addInstitute(req.user.user);
+    } else if (await checkIfOfficial(req.user.cedula)) {
+      req.user = await addInstitute(req.user);
       res.status(200).json({
         status: 200,
         message: "Inicio de sesion exitoso.",
         token: generateToken(req.user),
-        admin: req.user.admin,
-        user: req.user.user
+        user: req.user
       });
     } else {
       res.status(200).json({
         status: 200,
         message: "Inicio de sesion exitoso.",
         token: generateToken(req.user),
-        admin: req.user.admin,
-        user: req.user.user
+        user: req.user
       });
     }
   }
@@ -164,7 +160,7 @@ router.get(
       res.redirect(`${process.env.CLIENT_URL}/auth/${token}`);
     } else {
       res.redirect(
-        `${process.env.CLIENT_URL}/signup?oauth=${req.user.nombreUsuario}&token=${token}`
+        `${process.env.CLIENT_URL}/registro?name=${req.user.nombreCompleto}&oauth=${req.user.nombreUsuario}&token=${token}`
       );
     }
   }
@@ -178,22 +174,24 @@ router.get(
     session: false,
     failureRedirect: `${process.env.CLIENT_URL}/ingresar`
   }),
-  async (req, res) => {
+  async (req: any, res) => {
     const token = generateToken(req.user);
     if (req.user!["cedula"]) {
       res.redirect(`${process.env.CLIENT_URL}/auth/${token}`);
     } else {
-      res.redirect(`${process.env.CLIENT_URL}/signup/${token}`);
+      res.redirect(
+        `${process.env.CLIENT_URL}/registro?name=${req.user.nombreCompleto}&oauth=${req.user.nombreUsuario}&token=${token}`
+      );
     }
   }
 );
 
 router.post("/complete", authenticate("jwt"), async (req: any, res) => {
   const { user } = req.body;
-  const { id_usuario } = req.user;
+  const { id } = req.user;
   const salt = genSaltSync(10);
   user.password = hashSync(user.password, salt);
-  const [error, data] = await fulfill(completeExtUserSignUp(user, id_usuario));
+  const [error, data] = await fulfill(completeExtUserSignUp(user, id));
   if (error) res.status(error.status).json(error);
   if (data) res.status(data.status).json(data);
 });
@@ -201,19 +199,19 @@ router.post("/complete", authenticate("jwt"), async (req: any, res) => {
 router.get("/user", authenticate("jwt"), async (req: any, res) => {
   console.log(req.user);
   const user = {
-    id: req.user.user.id,
-    nombreCompleto: req.user.user.nombreCompleto,
-    nombreUsuario: req.user.user.nombreUsuario,
-    direccion: req.user.user.direccion,
+    id: req.user.id,
+    nombreCompleto: req.user.nombreCompleto,
+    nombreUsuario: req.user.nombreUsuario,
+    direccion: req.user.direccion,
     cedula: req.user.cedula,
     rif: req.user.rif,
-    telefono: req.user.user.telefono,
-    nacionalidad: req.user.user.nacionalidad,
-    tipoUsuario: req.user.user.tipoUsuario,
-    institucion: req.user.user.institucion,
-    cuentaFuncionario: req.user.user.cuentaFuncionario,
-    datosGoogle: req.user.user.datosGoogle,
-    datosFacebook: req.user.user.datosFacebook
+    telefono: req.user.telefono,
+    nacionalidad: req.user.nacionalidad,
+    tipoUsuario: req.user.tipoUsuario,
+    institucion: req.user.institucion,
+    cuentaFuncionario: req.user.cuentaFuncionario,
+    datosGoogle: req.user.datosGoogle,
+    datosFacebook: req.user.datosFacebook
   };
   res.status(200).json({ user, status: 200, message: "Usuario obtenido" });
 });
@@ -224,7 +222,17 @@ router.post("/signup", async (req: any, res) => {
   user.password = hashSync(user.password, salt);
   const [error, data] = await fulfill(signUpUser(user));
   if (error) res.status(error.status).json(error);
-  if (data) res.status(data.status).json(data);
+  if (data) {
+    req.logIn(data.user, { session: false }, error => {
+      if (error) {
+        res.status(500).send({
+          message: "Error al iniciar sesion del usuario",
+          error
+        });
+      }
+      res.status(data.status).json(data);
+    });
+  }
 });
 
 export default router;

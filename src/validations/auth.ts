@@ -1,4 +1,25 @@
-import { check } from "express-validator";
+import { check, validationResult } from "express-validator";
+import { fulfill } from "@utils/resolver";
+import { getFieldsForValidations } from "@helpers/procedures";
+
+const validations = {
+  nombre: check("tramite.datos.nombre")
+    .exists()
+    .withMessage("Debe incluir el nombre del usuario")
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage("El nombre no puede ser vacio"),
+  cedula: check("tramite.datos.cedula")
+    .exists()
+    .withMessage("Debe incluir la cedula del usuario")
+    .isInt()
+    .withMessage("Cedula invalida"),
+  ganasDeVivir: check("tramite.datos.ganasDeVivir")
+    .exists()
+    .withMessage("Debe incluir las ganas de vivir del usuario")
+    .isInt()
+    .withMessage("Ganas de Vivir invalidas")
+};
 
 export const createSuperuser = [
   check("usuario.cedula")
@@ -151,6 +172,22 @@ export const login = [
     .isString()
     .withMessage("Contraseña invalida")
 ];
+
+export const validate = () => {
+  return async (req, res, next) => {
+    const validaciones = await isValidProcedure(req, res);
+    await Promise.all(validaciones.map(validation => validation.run(req)));
+    next();
+  };
+};
+
+const isValidProcedure = async (req, res) => {
+  const [error, data] = await fulfill(
+    getFieldsForValidations(req.body.tramite.tipoTramite)
+  );
+  if (error) res.status(error.status).json(error);
+  if (data) return data.fields.map(el => validations[el.validacion]);
+};
 
 export const isLogged = (req, res, next) => {
   if (req.isAuthenticated()) {

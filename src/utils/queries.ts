@@ -55,7 +55,7 @@ const queries = {
   EXTERNAL_USER_INIT:
     "INSERT INTO USUARIOS (nombre_completo, id_tipo_usuario) VALUES ($1, 4) RETURNING *",
   EXTERNAL_USER_COMPLETE:
-    "UPDATE USUARIOS SET direccion = $1, cedula = $2, nacionalidad = $3, rif = $4, nombre_de_usuario = $5, password=$6, nombre_completo=$7 WHERE id_usuario = $8 RETURNING *",
+    "UPDATE USUARIOS SET direccion = $1, cedula = $2, nacionalidad = $3, rif = $4, nombre_de_usuario = $5, password=$6, nombre_completo=$7, telefono=$8 WHERE id_usuario = $9 RETURNING *",
   SIGN_UP_WITH_LOCAL_STRATEGY:
     "INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\
     nacionalidad,rif,id_tipo_usuario, password, telefono) VALUES ($1,$2,$3,$4,$5,$6,4,$7, $8) RETURNING *",
@@ -88,10 +88,15 @@ const queries = {
   CAMPOS_TRAMITES ct RIGHT JOIN SECCIONES sect ON ct.id_seccion=sect.id_seccion WHERE ct.id_tipo_tramite=$1",
   GET_FIELDS_BY_SECTION:
     "SELECT ct.*, camp.nombre, camp.tipo, camp.validacion, camp.col FROM campos_tramites ct INNER JOIN\
-     campos camp ON ct.id_campo = camp.id_campo WHERE ct.id_seccion = $1 AND id_tipo_tramite = $2 ORDER BY ct.orden",
+     campos camp ON ct.id_campo = camp.id_campo WHERE ct.id_seccion = $1 AND ct.id_tipo_tramite = $2 AND ct.estado=1 ORDER BY ct.orden",
   GET_PROCEDURE_BY_INSTITUTION:
     "SELECT id_tipo_tramite, nombre_tramite, costo_base FROM tipos_tramites tt WHERE id_institucion = $1",
-  GET_ALL_INSTITUTION: "SELECT * FROM INSTITUCIONES"
+  GET_ALL_INSTITUTION: "SELECT * FROM INSTITUCIONES",
+  VALIDATE_FIELDS_FROM_PROCEDURE:
+    "SELECT DISTINCT camp.validacion, camp.tipo FROM CAMPOS_TRAMITES ct INNER JOIN CAMPOS camp ON\
+     ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=1",
+  PROCEDURE_INIT:
+    "INSERT INTO TRAMITES (id_tipo_tramite, id_status_tramite, datos, id_usuario, fase) VALUES ($1, 1, $2, $3, 1) RETURNING *"
 };
 
 export default queries;

@@ -63,7 +63,7 @@ const GoogleStrategy = new Google(
     request = await initialExtUserSignUp(googleOpts);
     console.log(request);
     if (request) {
-      return done(null, { ...request });
+      return done(null, { ...request, nombreUsuario: googleOpts.email });
     } else {
       return done(null);
     }
@@ -79,7 +79,7 @@ const FacebookStrategy = new Facebook(
     }
     if (request?.data.length > 0) {
       const exists = await verifyExternalUser(request?.data[0].id_usuario);
-      return exists?.data ? done(null, exists?.data) : done(null);
+      return exists ? done(null, exists) : done(null);
     }
 
     const facebookOpts = {
@@ -109,29 +109,20 @@ const verifyLocal: VerifyFunction = async (
 ) => {
   console.log("username", username);
   const user: Usuario | null = await getUserByUsername(username);
-  console.log(user);
+  console.log("Estrategia local", user);
   if (!user) return done(null, false, { message: "Bad Credentials" });
   if (await comparePassword(password, user.password || "")) {
     if (user.tipoUsuario.descripcion === "Funcionario") {
       return done(null, {
-        id: user.cedula,
-        admin: false,
-        user: {
-          ...user,
-          password: undefined
-        }
+        ...user,
+        password: undefined
       });
     }
 
     // const newNotifications = await hasNotifications(user.cedula);
     return done(null, {
-      id: user.cedula,
-      admin: user.tipoUsuario.descripcion === "Administrador",
-      superuser: user.tipoUsuario.descripcion === "Superuser",
-      user: {
-        ...user,
-        password: undefined
-      }
+      ...user,
+      password: undefined
       // hasNewNotifications: newNotifications
     });
   } else {

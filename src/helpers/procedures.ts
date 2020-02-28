@@ -29,7 +29,11 @@ export const getAvailableProcedures = async (): Promise<Institucion[]> => {
   }
 };
 
-const getFieldsBySection = async (section, tramiteId, client): Promise<Campos[] | any> => {
+const getFieldsBySection = async (
+  section,
+  tramiteId,
+  client
+): Promise<Campos[] | any> => {
   return Promise.all(
     section.map(async el => {
       el.campos = (
@@ -67,7 +71,11 @@ const getSectionByProcedure = async (
       const secciones = (
         await client.query(queries.GET_SECTIONS_BY_PROCEDURE, [tramite.id])
       ).rows;
-      tramite.secciones = await getFieldsBySection(secciones, tramite.id, client);
+      tramite.secciones = await getFieldsBySection(
+        secciones,
+        tramite.id,
+        client
+      );
       return tramite;
     })
   ).catch(error => {
@@ -104,4 +112,43 @@ const getProcedureByInstitution = async (
       error.message ||
       "Error al obtener las instituciones";
   });
+};
+
+export const getFieldsForValidations = async idProcedure => {
+  const client = await pool.connect();
+  try {
+    const response = (
+      await client.query(queries.VALIDATE_FIELDS_FROM_PROCEDURE, [idProcedure])
+    ).rows;
+    return { fields: response };
+  } catch (error) {
+    throw {
+      status: 400,
+      error,
+      message: errorMessageGenerator(error) || "Error en los campos"
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const procedureInit = async (procedure, user) => {
+  const client = await pool.connect();
+  const { tipoTramite, datos } = procedure;
+  try {
+    const response = await client.query(queries.PROCEDURE_INIT, [
+      tipoTramite,
+      JSON.stringify(datos),
+      user
+    ]);
+    return { status: 201, message: "Tramite iniciado!" };
+  } catch (error) {
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || "Error al iniciar el tramite"
+    };
+  } finally {
+    client.release();
+  }
 };
