@@ -92,6 +92,9 @@ const queries = {
   GET_PROCEDURE_BY_INSTITUTION:
     "SELECT id_tipo_tramite, nombre_tramite, costo_base FROM tipos_tramites tt WHERE id_institucion = $1",
   GET_ALL_INSTITUTION: "SELECT * FROM INSTITUCIONES",
+  GET_ONE_INSTITUTION: "SELECT * FROM INSTITUCIONES WHERE id_institucion = $1",
+  GET_ONE_PROCEDURE: "SELECT * FROM tipos_tramites WHERE id_tipo_tramite = $1",
+  UPDATE_PROCEDURE_COST: "UPDATE tipos_tramites SET costo_base = $2 WHERE id_tipo_tramite = $1 RETURNING *",
   VALIDATE_FIELDS_FROM_PROCEDURE:
     "SELECT DISTINCT camp.validacion, camp.tipo FROM CAMPOS_TRAMITES ct INNER JOIN CAMPOS camp ON\
      ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=1",
