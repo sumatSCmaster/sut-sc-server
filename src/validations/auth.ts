@@ -14,11 +14,65 @@ const validations = {
     .withMessage("Debe incluir la cedula del usuario")
     .isInt()
     .withMessage("Cedula invalida"),
-  ganasDeVivir: check("tramite.datos.ganasDeVivir")
+  direccion: check("tramite.datos.direccion")
     .exists()
-    .withMessage("Debe incluir las ganas de vivir del usuario")
+    .withMessage("Debe incluir la direccion del usuario")
+    .isString()
+    .withMessage("Direccion invalida"),
+  puntoReferencia: check("tramite.datos.puntoReferencia")
+    .exists()
+    .withMessage(
+      "Debe incluir un punto de referencia para la direccion del usuario"
+    )
+    .isString()
+    .withMessage("Punto de referencia invalido"),
+  sector: check("tramite.datos.sector")
+    .exists()
+    .withMessage("Debe incluir un sector para la direccion del usuario")
+    .isString()
+    .withMessage("Sector invalido"),
+  parroquia: check("tramite.datos.parroquia")
+    .exists()
+    .withMessage("Debe incluir una parroquia para la direccion del usuario")
+    .isString()
+    .withMessage("Parroquia invalida"),
+  metrosCuadrados: check("tramite.datos.metrosCuadrados")
+    .exists()
+    .withMessage("Debe incluir la cedula del usuario")
     .isInt()
-    .withMessage("Ganas de Vivir invalidas")
+    .withMessage("Cedula invalida"),
+  correo: check("tramite.datos.correo")
+    .exists()
+    .withMessage("Debe incluir el correo del usuario")
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage("El correo no puede ser vacio"),
+  contacto: check("tramite.datos.contacto")
+    .exists()
+    .withMessage("Debe incluir el contacto del usuario")
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage("El contacto no puede ser vacio"),
+  horario: check("tramite.datos.horario")
+    .exists()
+    .withMessage("Debe incluir el horario disponible para la inspeccion")
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage("El horario es invalido"),
+  cedulaORif: check("tramite.datos.cedulaORif")
+    .exists()
+    .withMessage("Debe incluir la cedula o rif del usuario"),
+  nombreORazon: check("tramite.datos.nombreORazon")
+    .exists()
+    .withMessage("Debe incluir el nombre o razon social del usuario")
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage("El nombre o razon social no puede ser vacio"),
+  telefono: check("tramite.datos.telefono")
+    .exists()
+    .withMessage("Debe incluir la cedula del usuario")
+    .isInt()
+    .withMessage("Cedula invalida")
 };
 
 export const createSuperuser = [
@@ -140,11 +194,6 @@ export const createOfficial = [
     .withMessage("Debe incluir la nacionalidad del usuario")
     .isString()
     .withMessage("Nacionalidad invalida"),
-  check("funcionario.rif")
-    .exists()
-    .withMessage("Debe incluir el rif del usuario")
-    .isString()
-    .withMessage("RIF invalido"),
   check("funcionario.telefono")
     .exists()
     .withMessage("Debe incluir el telefono del usuario")
