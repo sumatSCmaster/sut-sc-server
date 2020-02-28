@@ -1,3 +1,4 @@
+import { QueryResult } from "pg";
 
 export enum Nacionalidad {
   V = "Venezolano",
@@ -8,7 +9,7 @@ export enum DescripcionesTipoUsuario {
   Superuser = "Superuser",
   Administrador = "Administrador",
   Funcionario = "Funcionario",
-  UsuarioExterno = "Usuario externo",
+  UsuarioExterno = "Usuario externo"
 }
 
 export enum IDsTipoUsuario {
@@ -18,36 +19,79 @@ export enum IDsTipoUsuario {
   UsuarioExterno
 }
 
+export interface Seccion {
+  id: number;
+  nombre: string;
+  campos?: Campos[];
+}
+
 export interface Usuario {
-  id_usuario: number
-  nombre_completo: string
-  nombre_de_usuario: string
-  direccion: string
-  cedula: string
-  telefonos: string[]
-  nacionalidad: Nacionalidad
-  rif?: string
-  tipo_usuario: TipoUsuario
-  datos_google?: DatosGoogle
-  cuenta_funcionario?: CuentaFuncionario 
+  id: number;
+  password?: string;
+  nombreCompleto: string;
+  nombreUsuario: string;
+  direccion: string;
+  cedula: string;
+  telefono?: string;
+  nacionalidad: Nacionalidad;
+  rif?: string;
+  tipoUsuario: TipoUsuario;
+  datosGoogle?: DatosGoogle;
+  cuentaFuncionario?: CuentaFuncionario;
+  datosFacebook?: DatosFacebook;
+}
+
+export interface DatosFacebook {
+  usuario: number;
+  id: string;
 }
 
 export interface DatosGoogle {
-  id_usuario: number,
-  id_google: string
+  usuario: number;
+  id: string;
 }
 
 export interface CuentaFuncionario {
-  id_usuario: number,
-  password: string
+  id: number;
+  institucion: number;
 }
 
-export interface TipoUsuario{
-  id_tipo_usuario: number
-  descripcion: DescripcionesTipoUsuario
+export interface TipoUsuario {
+  id: number;
+  descripcion: DescripcionesTipoUsuario;
+}
+
+export interface Institucion {
+  id: number;
+  nombreCompleto: string;
+  nombreCorto: string;
+  tramitesDisponibles?: TramitesDisponibles[];
+}
+
+export interface TramitesDisponibles {
+  id: number;
+  titulo: string;
+  costo: number;
+  secciones?: Seccion[];
+}
+
+export interface Campos {
+  id: number;
+  orden: number;
+  status: string;
+  nombre: string;
+  tipo: string;
+}
+
+export interface ErrorEstandar {
+  message: string;
+  error: QueryResult<any>;
+  status: number;
 }
 
 export namespace Payloads {
-  export type CrearSuperuser = Partial<Usuario>
-  export type CrearAdmin = CrearSuperuser & {telefonos: number[]}
+  export type CrearSuperuser = Partial<Usuario> & {
+    institucion: number;
+  };
+  export type CrearAdmin = CrearSuperuser;
 }

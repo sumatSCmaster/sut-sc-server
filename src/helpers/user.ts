@@ -1,9 +1,17 @@
-import Pool from '@utils/Pool';
-import queries from '@utils/queries';
-import { compare } from 'bcryptjs';
-import { Usuario, Payloads, Nacionalidad, IDsTipoUsuario } from '@interfaces/sigt'
+import Pool from "@utils/Pool";
+import queries from "@utils/queries";
+import { compare } from "bcryptjs";
+import {
+  Usuario,
+  Payloads,
+  Nacionalidad,
+  IDsTipoUsuario,
+  Institucion
+} from "@interfaces/sigt";
 import { fulfill } from "@utils/resolver";
 import { stringify } from "flatted/cjs";
+import { errorMessageGenerator } from "./errors";
+import { generateToken } from "@utils/Strategies";
 
 const pool = Pool.getInstance();
 
@@ -13,27 +21,34 @@ export const getUserByUsername = async (
   const client = await pool.connect();
   try {
     const result = await client.query(queries.GET_USER_BY_USERNAME, [username]);
-    const phoneResults = await client.query(queries.GET_PHONES_FROM_USERNAME, [username]);
-    const typeResult = await client.query(queries.GET_USER_TYPE_FROM_USERNAME, [username]);
-    const googleData = await client.query(queries.GET_GOOGLE_DATA_FROM_USERNAME, [username]);
-    const officialData = await client.query(queries.GET_OFFICIAL_DATA_FROM_USERNAME, [username]);
+    const typeResult = await client.query(queries.GET_USER_TYPE_FROM_USERNAME, [
+      username
+    ]);
+    const googleData = await client.query(
+      queries.GET_GOOGLE_DATA_FROM_USERNAME,
+      [username]
+    );
+    const officialData = await client.query(
+      queries.GET_OFFICIAL_DATA_FROM_USERNAME,
+      [username]
+    );
     const resBase = result.rows[0];
-    const resPhones = phoneResults.rows;
-    const resType = typeResult.rows[0]
+    const resType = typeResult.rows[0];
     const resGoogle = googleData.rows[0];
     const resOfficial = officialData.rows[0];
     const user: Usuario = {
-      id_usuario: resBase.id_usuario,
-      nombre_completo: resBase.nombre_completo,
-      nombre_de_usuario: resBase.nombre_de_usuario,
+      id: resBase.id_usuario,
+      nombreCompleto: resBase.nombre_completo,
+      nombreUsuario: resBase.nombre_de_usuario,
+      password: resBase.password,
       direccion: resBase.direccion,
       cedula: resBase.cedula,
-      telefonos: resPhones.map((obj) => obj.numero),
+      telefono: resBase.telefono,
       nacionalidad: Nacionalidad[resBase.nacionalidad],
       rif: resBase.rif,
-      tipo_usuario: resType,
-      datos_google: resGoogle,
-      cuenta_funcionario: resOfficial
+      tipoUsuario: resType.id_tipo_usuario,
+      datosGoogle: resGoogle,
+      cuentaFuncionario: resOfficial
     };
     return user;
   } catch (e) {
@@ -43,22 +58,37 @@ export const getUserByUsername = async (
   }
 };
 
-export const createSuperuser = async (user: Payloads.CrearSuperuser): Promise<Partial<Usuario>> => {
+export const createSuperuser = async (
+  user: Payloads.CrearSuperuser
+): Promise<Partial<Usuario>> => {
   const client = await pool.connect();
   try {
-    client.query('BEGIN');
-    const res = (await client.query(queries.CREATE_USER, 
-      [user.nombre_completo, user.nombre_de_usuario, user.direccion, user.cedula, user.nacionalidad, user.rif, IDsTipoUsuario.Superuser])).rows[0];
-    const res2 = (await client.query(queries.ADD_PASSWORD, [res.id_usuario, user.cuenta_funcionario?.password]))
-    client.query('COMMIT');
+    client.query("BEGIN");
+    const res = (
+      await client.query(queries.CREATE_USER, [
+        user.nombreCompleto,
+        user.nombreUsuario,
+        user.direccion,
+        user.cedula,
+        user.nacionalidad,
+        user.rif,
+        IDsTipoUsuario.Superuser,
+        user.password,
+        user.telefono
+      ])
+    ).rows[0];
+    const res2 = await client.query(queries.ADD_OFFICIAL_DATA, [
+      res.id_usuario,
+      user.institucion
+    ]);
+    client.query("COMMIT");
     const usuario: Partial<Usuario> = {
-      id_usuario: res.id_usuario,
-      nombre_de_usuario: res.nombre_de_usuario,
-      nombre_completo: res.nombre_completo,
+      id: res.id_usuario,
+      nombreUsuario: res.nombre_de_usuario,
+      nombreCompleto: res.nombre_completo,
       direccion: res.direccion,
       cedula: res.cedula,
-      nacionalidad: Nacionalidad[res.nacionalidad],
-
+      nacionalidad: Nacionalidad[res.nacionalidad]
     };
     return usuario;
   } catch (e) {
@@ -67,37 +97,72 @@ export const createSuperuser = async (user: Payloads.CrearSuperuser): Promise<Pa
   } finally {
     client.release();
   }
-}; 
+};
 
-export const createAdmin = async (user: Payloads.CrearAdmin): Promise<Partial<Usuario>> => {
+export const createAdmin = async (
+  user: Payloads.CrearAdmin
+): Promise<Partial<Usuario>> => {
   const client = await pool.connect();
   try {
-    client.query('BEGIN');
-    const res = (await client.query(queries.CREATE_USER, 
-      [user.nombre_completo, user.nombre_de_usuario, user.direccion, user.cedula, user.nacionalidad, user.rif, IDsTipoUsuario.Administrador])).rows[0];
-      console.log(IDsTipoUsuario.Administrador)
-      console.log('res', res)
-    const res2 = (await client.query(queries.ADD_PASSWORD, [res.id_usuario, user.cuenta_funcionario?.password]));
-    const res3 = (await Promise.all(user.telefonos.map((tlf) => client.query(queries.ADD_PHONE, [res.id_usuario, tlf]))));
-    console.log(res3)
-    client.query('COMMIT');
+    client.query("BEGIN");
+    const res = (
+      await client.query(queries.CREATE_USER, [
+        user.nombreCompleto,
+        user.nombreUsuario,
+        user.direccion,
+        user.cedula,
+        user.nacionalidad,
+        user.rif,
+        IDsTipoUsuario.Administrador,
+        user.password,
+        user.telefono
+      ])
+    ).rows[0];
+    const res2 = await client.query(queries.ADD_OFFICIAL_DATA, [
+      res.id_usuario,
+      user.institucion
+    ]);
+
+    client.query("COMMIT");
     const usuario: Partial<Usuario> = {
-      id_usuario: res.id_usuario,
-      nombre_de_usuario: res.nombre_de_usuario,
-      nombre_completo: res.nombre_completo,
+      id: res.id_usuario,
+      nombreUsuario: res.nombre_de_usuario,
+      nombreCompleto: res.nombre_completo,
       direccion: res.direccion,
       cedula: res.cedula,
       nacionalidad: Nacionalidad[res.nacionalidad],
-      telefonos: res3.map(result => result.rows[0])
+      telefono: res.telefono
     };
     return usuario;
-  } catch (e){
-    client.query('ROLLBACK');
+  } catch (e) {
+    client.query("ROLLBACK");
     throw e;
   } finally {
     client.release();
   }
-}
+};
+
+export const addInstitute = async (
+  user: Partial<Usuario>
+): Promise<Partial<Usuario> & { institucion: Institucion }> => {
+  const client = await pool.connect();
+  try {
+    const res = (await client.query(queries.GET_ADMIN_INSTITUTE, [user.id]))
+      .rows;
+    return {
+      ...user,
+      institucion: {
+        id: res[0].id_institucion,
+        nombreCompleto: res[0].nombre_completo,
+        nombreCorto: res[0].nombre_corto
+      }
+    };
+  } catch (e) {
+    throw e;
+  } finally {
+    client.release();
+  }
+};
 
 export const comparePassword = (
   candidate: string,
@@ -111,11 +176,10 @@ export const comparePassword = (
   });
 };
 
-export const getByGoogleID = async id => {
+export const getByOAuthID = async id => {
   const client = await pool.connect();
-  const [err, data] = await fulfill(
-    client.query(queries.GET_BY_GOOGLE_ID, [id])
-  );
+  const [err, data] = await fulfill(client.query(queries.GET_OAUTH_USER, [id]));
+  client.release();
   if (err) return err;
   if (data) return { data: data.rows };
 };
@@ -125,24 +189,47 @@ export const verifyExternalUser = async id => {
   const [err, data] = await fulfill(
     client.query(queries.GET_EXTERNAL_USER, [id])
   );
+  client.release();
   if (err) return err;
-  if (data) return { data: data.rows[0] };
+  if (data)
+    return {
+      id: data.rows[0].id_usuario,
+      nombreCompleto: data.rows[0].nombre_completo,
+      nombreUsuario: data.rows[0].nombre_de_usuario,
+      direccion: data.rows[0].direccion,
+      rif: data.rows[0].rif,
+      nacionalidad: data.rows[0].nacionalidad,
+      tipoUsuario: data.rows[0].id_tipo_usuario,
+      cedula: data.rows[0].cedula,
+      telefono: data.rows[0].telefono
+    };
 };
 
 export const initialExtUserSignUp = async user => {
   const client = await pool.connect();
   try {
     client.query("BEGIN");
-    const response = await client.query(queries.EXTERNAL_USER_INIT, [
-      user.name,
-      user.username
-    ]);
-    client.query(queries.INSERT_GOOGLE_USER, [
-      response.rows[0].id_usuario,
-      user.googleID
-    ]);
+    const response = (
+      await client.query(queries.EXTERNAL_USER_INIT, [user.name])
+    ).rows[0];
+    client.query(
+      user.provider === "facebook"
+        ? queries.INSERT_FACEBOOK_USER
+        : queries.INSERT_GOOGLE_USER,
+      [response.id_usuario, user.OAuthID]
+    );
     client.query("COMMIT");
-    return response.rows[0];
+    return {
+      id: response.id_usuario,
+      nombreCompleto: response.nombre_completo,
+      nombreUsuario: response.nombre_de_usuario,
+      direccion: response.direccion,
+      rif: response.rif,
+      nacionalidad: response.nacionalidad,
+      tipoUsuario: response.id_tipo_usuario,
+      cedula: response.cedula,
+      telefono: response.telefono
+    };
   } catch (e) {
     client.query("ROLLBACK");
     return e;
@@ -151,15 +238,109 @@ export const initialExtUserSignUp = async user => {
   }
 };
 
-export const completeExtUserSignUp = async user => {
+export const completeExtUserSignUp = async (user, id) => {
+  const {
+    nombreCompleto,
+    nombreUsuario,
+    password,
+    direccion,
+    cedula,
+    nacionalidad,
+    telefono,
+    rif
+  } = user;
   const client = await pool.connect();
   try {
     client.query("BEGIN");
-
+    const response = await client.query(queries.EXTERNAL_USER_COMPLETE, [
+      direccion,
+      cedula,
+      nacionalidad,
+      rif,
+      nombreUsuario,
+      password,
+      nombreCompleto,
+      telefono,
+      id
+    ]);
     client.query("COMMIT");
-  } catch (e) {
+    const data = response.rows[0];
+    const user: Usuario = {
+      id: data.id_usuario,
+      nombreCompleto: data.nombre_completo,
+      nombreUsuario: data.nombre_de_usuario,
+      direccion: data.direccion,
+      rif: data.rif,
+      nacionalidad: data.nacionalidad,
+      tipoUsuario: data.id_tipo_usuario,
+      cedula: data.cedula,
+      telefono: data.telefono
+    };
+    return { status: 201, user, token: generateToken(user) };
+  } catch (error) {
     client.query("ROLLBACK");
-    return e;
+    throw {
+      status: 500,
+      error,
+      message:
+        errorMessageGenerator(error) || "Error en la creación del usuario"
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const signUpUser = async user => {
+  const {
+    nombreCompleto,
+    nombreUsuario,
+    direccion,
+    cedula,
+    nacionalidad,
+    rif,
+    password,
+    telefono
+  } = user;
+  const client = await pool.connect();
+  try {
+    client.query("BEGIN");
+    const response = await client.query(queries.SIGN_UP_WITH_LOCAL_STRATEGY, [
+      nombreCompleto,
+      nombreUsuario,
+      direccion,
+      cedula,
+      nacionalidad,
+      rif,
+      password,
+      telefono
+    ]);
+    client.query("COMMIT");
+    const data = response.rows[0];
+    const user: Usuario = {
+      id: data.id_usuario,
+      nombreCompleto: data.nombre_completo,
+      nombreUsuario: data.nombre_de_usuario,
+      direccion: data.direccion,
+      rif: data.rif,
+      nacionalidad: data.nacionalidad,
+      tipoUsuario: data.id_tipo_usuario,
+      cedula: data.cedula
+    };
+    return {
+      status: 201,
+      user,
+      message: "Usuario registrado",
+      token: generateToken(user)
+    };
+  } catch (error) {
+    client.query("ROLLBACK");
+    console.log(error);
+    throw {
+      error,
+      status: 500,
+      message:
+        errorMessageGenerator(error) || "Error en la creación del usuario"
+    };
   } finally {
     client.release();
   }
