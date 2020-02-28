@@ -160,7 +160,7 @@ router.get(
       res.redirect(`${process.env.CLIENT_URL}/auth/${token}`);
     } else {
       res.redirect(
-        `${process.env.CLIENT_URL}/signup?oauth=${req.user.nombreUsuario}&token=${token}`
+        `${process.env.CLIENT_URL}/registro?name=${req.user.nombreCompleto}&oauth=${req.user.nombreUsuario}&token=${token}`
       );
     }
   }
@@ -174,12 +174,14 @@ router.get(
     session: false,
     failureRedirect: `${process.env.CLIENT_URL}/ingresar`
   }),
-  async (req, res) => {
+  async (req: any, res) => {
     const token = generateToken(req.user);
     if (req.user!["cedula"]) {
       res.redirect(`${process.env.CLIENT_URL}/auth/${token}`);
     } else {
-      res.redirect(`${process.env.CLIENT_URL}/signup/${token}`);
+      res.redirect(
+        `${process.env.CLIENT_URL}/registro?name=${req.user.nombreCompleto}&oauth=${req.user.nombreUsuario}&token=${token}`
+      );
     }
   }
 );

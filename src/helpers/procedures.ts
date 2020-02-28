@@ -131,3 +131,24 @@ export const getFieldsForValidations = async idProcedure => {
     client.release();
   }
 };
+
+export const procedureInit = async (procedure, user) => {
+  const client = await pool.connect();
+  const { tipoTramite, datos } = procedure;
+  try {
+    const response = await client.query(queries.PROCEDURE_INIT, [
+      tipoTramite,
+      JSON.stringify(datos),
+      user
+    ]);
+    return { status: 201, message: "Tramite iniciado!" };
+  } catch (error) {
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || "Error al iniciar el tramite"
+    };
+  } finally {
+    client.release();
+  }
+};

@@ -94,7 +94,9 @@ const queries = {
   GET_ALL_INSTITUTION: "SELECT * FROM INSTITUCIONES",
   VALIDATE_FIELDS_FROM_PROCEDURE:
     "SELECT DISTINCT camp.validacion, camp.tipo FROM CAMPOS_TRAMITES ct INNER JOIN CAMPOS camp ON\
-     ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=1"
+     ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=1",
+  PROCEDURE_INIT:
+    "INSERT INTO TRAMITES (id_tipo_tramite, id_status_tramite, datos, id_usuario, fase) VALUES ($1, 1, $2, $3, 1) RETURNING *"
 };
 
 export default queries;
