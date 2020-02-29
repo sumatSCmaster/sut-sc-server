@@ -126,7 +126,7 @@ const verifyLocal: VerifyFunction = async (
       // hasNewNotifications: newNotifications
     });
   } else {
-    return done(null, false);
+    return done(null, false, { message: "Usuario/Contraseña invalida" });
   }
 };
 

@@ -106,7 +106,7 @@ const queries = {
     "SELECT ct.*, camp.nombre, camp.tipo, camp.validacion, camp.col FROM campos_tramites ct INNER JOIN\
      campos camp ON ct.id_campo = camp.id_campo WHERE ct.id_seccion = $1 AND ct.id_tipo_tramite = $2 AND ct.estado=1 ORDER BY ct.orden",
   GET_PROCEDURE_BY_INSTITUTION:
-    "SELECT id_tipo_tramite, nombre_tramite, costo_base FROM tipos_tramites tt WHERE id_institucion = $1",
+    "SELECT id_tipo_tramite, nombre_tramite, costo_base, pago_previo FROM tipos_tramites tt WHERE id_institucion = $1",
   GET_ALL_INSTITUTION: "SELECT * FROM INSTITUCIONES",
   GET_ONE_INSTITUTION: "SELECT * FROM INSTITUCIONES WHERE id_institucion = $1",
   GET_ONE_PROCEDURE: "SELECT * FROM tipos_tramites WHERE id_tipo_tramite = $1",
@@ -116,7 +116,11 @@ const queries = {
     "SELECT DISTINCT camp.validacion, camp.tipo FROM CAMPOS_TRAMITES ct INNER JOIN CAMPOS camp ON\
      ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=1",
   PROCEDURE_INIT:
-    "INSERT INTO TRAMITES (id_tipo_tramite, id_status_tramite, datos, id_usuario, fase) VALUES ($1, 1, $2, $3, 1) RETURNING *"
+    "INSERT INTO TRAMITES (id_tipo_tramite, id_status_tramite, datos, id_usuario, fase) VALUES ($1, 1, $2, $3, 1) RETURNING *",
+  GET_TAKINGS_BY_PROCEDURE:
+    "SELECT rec.id_recaudo as id, rec.nombre_largo AS nombreCompleto, rec.nombre_corto AS nombreCorto\
+ FROM RECAUDOS rec LEFT JOIN tipos_tramites_recaudos ttr ON rec.id_recaudo=ttr.id_recaudo\
+ WHERE ttr.id_tipo_tramite=$1"
 };
 
 export default queries;
