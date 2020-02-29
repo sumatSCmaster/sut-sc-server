@@ -116,7 +116,16 @@ const queries = {
     "SELECT DISTINCT camp.validacion, camp.tipo FROM CAMPOS_TRAMITES ct INNER JOIN CAMPOS camp ON\
      ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=1",
   PROCEDURE_INIT:
-    "INSERT INTO TRAMITES (id_tipo_tramite, id_status_tramite, datos, id_usuario, fase) VALUES ($1, 1, $2, $3, 1) RETURNING *",
+    "SELECT insert_tramite($1, $2, $3);",
+  GET_PROCEDURE_STATES: 'SELECT id_tramite, tramites_eventos_fsm(event ORDER BY id_evento_tramite)  \
+  FROM eventos_tramite \
+  GROUP BY id_tramite;',
+  GET_PROCEDURE_STATE: 'SELECT id_tramite, tramites_eventos_fsm(event ORDER BY id_evento_tramite)  \
+  FROM eventos_tramite \
+  WHERE id_tramite = $1 \
+  GROUP BY id_tramite \
+  ;',
+  UPDATE_STATE: 'SELECT update_tramite_state($1, $2);',
   GET_TAKINGS_BY_PROCEDURE:
     "SELECT rec.id_recaudo as id, rec.nombre_largo AS nombreCompleto, rec.nombre_corto AS nombreCorto\
     FROM RECAUDOS rec LEFT JOIN tipos_tramites_recaudos ttr ON rec.id_recaudo=ttr.id_recaudo\
