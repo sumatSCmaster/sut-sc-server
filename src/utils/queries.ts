@@ -59,6 +59,17 @@ const queries = {
   SIGN_UP_WITH_LOCAL_STRATEGY:
     "INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\
     nacionalidad,rif,id_tipo_usuario, password, telefono) VALUES ($1,$2,$3,$4,$5,$6,4,$7, $8) RETURNING *",
+  EMAIL_EXISTS: 
+    "SELECT 1 FROM usuarios u WHERE nombre_de_usuario = $1;",
+  ADD_PASSWORD_RECOVERY:
+      "WITH usuario AS (SELECT id_usuario FROM usuarios WHERE nombre_de_usuario = $1) \
+       INSERT INTO recuperacion (id_usuario, token_recuperacion, usado) VALUES ((SELECT id_usuario FROM usuario), $2, false) RETURNING token_recuperacion;",
+  VALIDATE_TOKEN:
+      "SELECT 1 FROM recuperacion WHERE token_recuperacion = $1 AND usado = false AND CURRENT_TIMESTAMP - fecha_recuperacion < '20 minutes';",
+  DISABLE_TOKEN: "UPDATE recuperacion SET usado = true WHERE token_recuperacion = $1",
+  UPDATE_PASSWORD:
+      "WITH usuario AS (SELECT u.id_usuario FROM usuarios u INNER JOIN recuperacion r ON r.id_usuario = u.id_usuario WHERE token_recuperacion = $1) \
+         UPDATE usuarios SET password = $2 WHERE id_usuario = (SELECT id_usuario FROM usuario)",     
   //BANKS
   GET_ALL_BANKS: "SELECT id_banco as id, nombre  FROM BANCOS",
   VALIDATE_PAYMENTS: "SELECT validate_payments($1);",
@@ -79,8 +90,8 @@ const queries = {
         usr.id_usuario=cf.id_usuario WHERE usr.id_tipo_usuario!=1",
   CREATE_OFFICIAL:
     "WITH funcionario AS (INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\
-    nacionalidad, rif, id_tipo_usuario, password, telefono) VALUES ($1, $2, $3, $4, $5, $6, 3, $7, $8) RETURNING id_usuario)\
-    INSERT INTO cuentas_funcionarios VALUES((SELECT id_usuario from funcionario), $9) RETURNING *",
+    nacionalidad, id_tipo_usuario, password, telefono) VALUES ($1, $2, $3, $4, $5, 3, $6, $7) RETURNING id_usuario)\
+    INSERT INTO cuentas_funcionarios VALUES((SELECT id_usuario from funcionario), $8) RETURNING *",
   UPDATE_OFFICIAL:
     "UPDATE usuarios SET nombre_completo = $1, nombre_de_usuario = $2, direccion = $3,\
     cedula = $4, nacionalidad = $5, rif = $6, telefono =$7 WHERE id_usuario = $8 RETURNING id_usuario",

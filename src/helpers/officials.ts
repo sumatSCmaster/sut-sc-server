@@ -101,7 +101,6 @@ export const createOfficial = async (official: any, institution: number) => {
       direccion,
       cedula,
       nacionalidad,
-      rif,
       hashSync(password, salt),
       telefono,
       institution
@@ -119,7 +118,6 @@ export const createOfficial = async (official: any, institution: number) => {
       direccion: off.rows[0].direccion,
       cedula: off.rows[0].cedula,
       nacionalidad: off.rows[0].nacionalidad,
-      rif: off.rows[0].rif,
       password: off.rows[0].password,
       telefono: off.rows[0].telefono
     };

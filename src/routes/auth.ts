@@ -17,6 +17,7 @@ import { isSuperuser, isAdmin } from "@middlewares/auth";
 import { fulfill } from "@utils/resolver";
 import e = require("express");
 import { errorMessageGenerator } from "@helpers/errors";
+import { forgotPassword, recoverPassword } from "@helpers/auth";
 
 const router = Router();
 
@@ -234,5 +235,20 @@ router.post("/signup", async (req: any, res) => {
     });
   }
 });
+
+router.post("/forgotPassword", async (req, res) => {
+  const { email } = req.body;
+  const [error, result] = await fulfill(forgotPassword(email));
+  if (error) res.status(error.status).json(error);
+  if (result) res.status(result.status).json(result);
+});
+
+router.patch("/recoverPassword", async (req, res) => {
+  const { password, recvId } = req.body;
+  const [error, result] = await fulfill(recoverPassword(recvId, password));
+  console.log(error)
+  if (error) res.status(error.status).json(error);
+  if (result) res.status(result.status).json(result);
+})
 
 export default router;
