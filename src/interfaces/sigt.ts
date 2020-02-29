@@ -22,7 +22,7 @@ export enum IDsTipoUsuario {
 export interface Seccion {
   id: number;
   nombre: string;
-  campos?: Campos[];
+  campos?: Campo[];
 }
 
 export interface Usuario {
@@ -65,17 +65,25 @@ export interface Institucion {
   id: number;
   nombreCompleto: string;
   nombreCorto: string;
-  tramitesDisponibles?: TramitesDisponibles[];
+  tramitesDisponibles?: Tramite[];
 }
 
-export interface TramitesDisponibles {
+export interface Tramite {
   id: number;
   titulo: string;
   costo: number;
+  recaudos: Recaudo[] | null;
+  pagoPrevio: boolean;
   secciones?: Seccion[];
 }
 
-export interface Campos {
+export interface Recaudo {
+  id: number;
+  nombreCompleto: string;
+  nombreCorto: string;
+}
+
+export interface Campo {
   id: number;
   orden: number;
   status: string;
