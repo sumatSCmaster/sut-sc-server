@@ -108,8 +108,8 @@ const queries = {
     "INSERT INTO TRAMITES (id_tipo_tramite, id_status_tramite, datos, id_usuario, fase) VALUES ($1, 1, $2, $3, 1) RETURNING *",
   GET_TAKINGS_BY_PROCEDURE:
     "SELECT rec.id_recaudo as id, rec.nombre_largo AS nombreCompleto, rec.nombre_corto AS nombreCorto\
- FROM RECAUDOS rec LEFT JOIN tipos_tramites_recaudos ttr ON rec.id_recaudo=ttr.id_recaudo\
- WHERE ttr.id_tipo_tramite=$1"
+    FROM RECAUDOS rec LEFT JOIN tipos_tramites_recaudos ttr ON rec.id_recaudo=ttr.id_recaudo\
+    WHERE ttr.id_tipo_tramite=$1"
 };
 
 export default queries;

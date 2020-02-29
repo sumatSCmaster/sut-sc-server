@@ -3,6 +3,7 @@ import auth from "./auth";
 import official from "./officials";
 //import notification from "./notification";
 import banks from "./banks";
+import file from "./file";
 import procedures from "./procedures";
 import { authenticate } from "passport";
 import { isAdmin } from "@middlewares/auth";
@@ -15,7 +16,7 @@ router.use("/auth", auth);
 router.use("/banks", banks);
 router.use("/official", official);
 router.use("/procedures", procedures);
-// router.use('/file', file);
+router.use("/uploads", file);
 //router.use("/notification", notification);
 
 router.get("/", (req, res) => {
