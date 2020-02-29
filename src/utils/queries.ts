@@ -55,21 +55,21 @@ const queries = {
   EXTERNAL_USER_INIT:
     "INSERT INTO USUARIOS (nombre_completo, id_tipo_usuario) VALUES ($1, 4) RETURNING *",
   EXTERNAL_USER_COMPLETE:
-    "UPDATE USUARIOS SET direccion = $1, cedula = $2, nacionalidad = $3, rif = $4, nombre_de_usuario = $5, password=$6, nombre_completo=$7, telefono=$8 WHERE id_usuario = $9 RETURNING *",
+    "UPDATE USUARIOS SET direccion = $1, cedula = $2, nacionalidad = $3, nombre_de_usuario = $4, password=$5, nombre_completo=$6, telefono=$7 WHERE id_usuario = $8 RETURNING *",
   SIGN_UP_WITH_LOCAL_STRATEGY:
     "INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\
-    nacionalidad,rif,id_tipo_usuario, password, telefono) VALUES ($1,$2,$3,$4,$5,$6,4,$7, $8) RETURNING *",
-  EMAIL_EXISTS: 
-    "SELECT 1 FROM usuarios u WHERE nombre_de_usuario = $1;",
+    nacionalidad,id_tipo_usuario, password, telefono) VALUES ($1,$2,$3,$4,$5,4,$6, $7) RETURNING *",
+  EMAIL_EXISTS: "SELECT 1 FROM usuarios u WHERE nombre_de_usuario = $1;",
   ADD_PASSWORD_RECOVERY:
-      "WITH usuario AS (SELECT id_usuario FROM usuarios WHERE nombre_de_usuario = $1) \
+    "WITH usuario AS (SELECT id_usuario FROM usuarios WHERE nombre_de_usuario = $1) \
        INSERT INTO recuperacion (id_usuario, token_recuperacion, usado) VALUES ((SELECT id_usuario FROM usuario), $2, false) RETURNING token_recuperacion;",
   VALIDATE_TOKEN:
-      "SELECT 1 FROM recuperacion WHERE token_recuperacion = $1 AND usado = false AND CURRENT_TIMESTAMP - fecha_recuperacion < '20 minutes';",
-  DISABLE_TOKEN: "UPDATE recuperacion SET usado = true WHERE token_recuperacion = $1",
+    "SELECT 1 FROM recuperacion WHERE token_recuperacion = $1 AND usado = false AND CURRENT_TIMESTAMP - fecha_recuperacion < '20 minutes';",
+  DISABLE_TOKEN:
+    "UPDATE recuperacion SET usado = true WHERE token_recuperacion = $1",
   UPDATE_PASSWORD:
-      "WITH usuario AS (SELECT u.id_usuario FROM usuarios u INNER JOIN recuperacion r ON r.id_usuario = u.id_usuario WHERE token_recuperacion = $1) \
-         UPDATE usuarios SET password = $2 WHERE id_usuario = (SELECT id_usuario FROM usuario)",     
+    "WITH usuario AS (SELECT u.id_usuario FROM usuarios u INNER JOIN recuperacion r ON r.id_usuario = u.id_usuario WHERE token_recuperacion = $1) \
+         UPDATE usuarios SET password = $2 WHERE id_usuario = (SELECT id_usuario FROM usuario)",
   //BANKS
   GET_ALL_BANKS: "SELECT id_banco as id, nombre  FROM BANCOS",
   VALIDATE_PAYMENTS: "SELECT validate_payments($1);",
