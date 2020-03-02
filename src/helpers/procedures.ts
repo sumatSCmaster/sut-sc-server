@@ -202,7 +202,7 @@ export const getFieldsForValidations = async idProcedure => {
 
 export const procedureInit = async (procedure, user) => {
   const client = await pool.connect();
-  const { tipoTramite, datos, pago } = procedure;
+  const { tipoTramite, datos, pago, recaudos } = procedure;
   try {
     client.query("BEGIN");
     const response = (
@@ -222,6 +222,16 @@ export const procedureInit = async (procedure, user) => {
       response.id_tramite,
       nextState
     ]);
+
+    if (recaudos.length > 0) {
+      recaudos.map(async urlRecaudo => {
+        await client.query(queries.INSERT_TAKINGS_IN_PROCEDURE, [
+          response.id_tramite,
+          urlRecaudo
+        ]);
+      });
+    }
+
     if (pago) {
       await insertPaymentReference(pago, response.id_tramite, client);
     }
@@ -249,8 +259,11 @@ export const procedureInit = async (procedure, user) => {
     client.query("ROLLBACK");
     throw {
       status: 500,
-      error,
-      message: errorMessageGenerator(error) || "Error al iniciar el tramite"
+      ...error,
+      message:
+        errorMessageGenerator(error) ||
+        error.message ||
+        "Error al iniciar el tramite"
     };
   } finally {
     client.release();

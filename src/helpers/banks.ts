@@ -40,12 +40,18 @@ export const validatePayments = async body => {
 };
 
 export const insertPaymentReference = async (payment, procedureId, client) => {
-  const { referencia, banco, costo } = payment;
+  const { referencia, banco, costo, fecha } = payment;
   return await client
-    .query(queries.INSERT_PAYMENT, [procedureId, referencia, costo, banco])
+    .query(queries.INSERT_PAYMENT, [
+      procedureId,
+      referencia,
+      costo,
+      banco,
+      fecha
+    ])
     .catch(error => {
+      console.log(error);
       throw {
-        status: 500,
         error,
         message: errorMessageGenerator(error) || "Error al insertar el pago"
       };
