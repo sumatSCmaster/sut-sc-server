@@ -128,23 +128,26 @@ const queries = {
   FROM RECAUDOS rec LEFT JOIN tipos_tramites_recaudos ttr ON rec.id_recaudo=ttr.id_recaudo\
   WHERE ttr.id_tipo_tramite=$1",
   GET_ONE_PROCEDURE: "SELECT * FROM tipos_tramites WHERE id_tipo_tramite = $1",
-  GET_PROCEDURE_STATES: 'SELECT id_tramite, tramites_eventos_fsm(event ORDER BY id_evento_tramite)  \
-  FROM eventos_tramite \
-  GROUP BY id_tramite;',
-  GET_PROCEDURE_STATE: 'SELECT id_tramite, tramites_eventos_fsm(event ORDER BY id_evento_tramite)  \
-  FROM eventos_tramite \
-  WHERE id_tramite = $1 \
-  GROUP BY id_tramite \
-  ;',
-  VALIDATE_FIELDS_FROM_PROCEDURE:
-    "SELECT DISTINCT camp.validacion, camp.tipo FROM CAMPOS_TRAMITES ct INNER JOIN CAMPOS camp ON\
-     ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=1",  
-  UPDATE_STATE: 'SELECT update_tramite_state($1, $2);',
   UPDATE_PROCEDURE_COST:
     "UPDATE tipos_tramites SET costo_base = $2 WHERE id_tipo_tramite = $1 RETURNING *",
-  
-  //Parroquias
-  GET_PARROQUIAS: "SELECT * FROM parroquia;"
+  VALIDATE_FIELDS_FROM_PROCEDURE:
+    "SELECT DISTINCT camp.validacion, camp.tipo FROM CAMPOS_TRAMITES ct INNER JOIN CAMPOS camp ON\
+     ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=1",
+  PROCEDURE_INIT: "SELECT insert_tramite($1, $2, $3);", //tramite, datos, usuario
+  GET_PROCEDURE_STATES:
+    "SELECT id_tramite, tramites_eventos_fsm(event ORDER BY id_evento_tramite)  \
+  FROM eventos_tramite \
+  GROUP BY id_tramite;",
+  GET_PROCEDURE_STATE:
+    "SELECT id_tramite, tramites_eventos_fsm(event ORDER BY id_evento_tramite)  \
+  FROM eventos_tramite \
+  WHERE id_tramite = $1 \
+  GROUP BY id_tramite;", //tramite
+  UPDATE_STATE: "SELECT update_tramite_state($1, $2);", //tramite, evento
+  GET_TAKINGS_BY_PROCEDURE:
+    "SELECT rec.id_recaudo as id, rec.nombre_largo AS nombreCompleto, rec.nombre_corto AS nombreCorto\
+    FROM RECAUDOS rec LEFT JOIN tipos_tramites_recaudos ttr ON rec.id_recaudo=ttr.id_recaudo\
+    WHERE ttr.id_tipo_tramite=$1"
 };
 
 export default queries;

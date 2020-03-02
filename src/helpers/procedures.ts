@@ -1,6 +1,6 @@
 import Pool from "@utils/Pool";
 import queries from "@utils/queries";
-import { Institucion, Tramite, Campo } from "@interfaces/sigt";
+import { Institucion, TipoTramite, Campo } from "@interfaces/sigt";
 import { errorMessageGenerator } from "./errors";
 const pool = Pool.getInstance();
 
@@ -57,7 +57,7 @@ export const getAvailableProceduresOfInstitution = async (
 export const updateProcedureCost = async (
   id: string,
   newCost: string
-): Promise<Partial<Tramite>> => {
+): Promise<Partial<TipoTramite>> => {
   const client = await pool.connect();
   try {
     client.query("BEGIN");
@@ -66,7 +66,7 @@ export const updateProcedureCost = async (
     ).rows[0];
     const newProcedure = (await client.query(queries.GET_ONE_PROCEDURE, [id]))
       .rows[0];
-    const procedure: Partial<Tramite> = {
+    const procedure: Partial<TipoTramite> = {
       id: newProcedure.id_tipo_tramite,
       titulo: newProcedure.nombre_tramite,
       costo: newProcedure.costo_base,
@@ -117,10 +117,10 @@ const getFieldsBySection = async (
 const getSectionByProcedure = async (
   procedure,
   client
-): Promise<Tramite[] | any> => {
+): Promise<TipoTramite[] | any> => {
   return await Promise.all(
     procedure.map(async al => {
-      const tramite: Partial<Tramite> = {
+      const tramite: Partial<TipoTramite> = {
         id: al.id_tipo_tramite,
         titulo: al.nombre_tramite,
         costo: al.costo_base,
@@ -218,4 +218,48 @@ export const procedureInit = async (procedure, user) => {
   } finally {
     client.release();
   }
+};
+
+export const updateProcedure = async procedure => {
+  const client = await pool.connect();
+  try {
+  } catch (error) {
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || "Error al actualizar el tramite"
+    };
+  } finally {
+    client.release();
+  }
+};
+
+const getNextEventForProcedure = async procedure => {
+  const client = await pool.connect();
+  try {
+  } catch (error) {
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || "Error al obtener los eventos"
+    };
+  } finally {
+    client.release();
+  }
+};
+
+const switchcase = cases => defaultCase => key =>
+  cases.hasOwnProperty(key) ? cases[key] : defaultCase;
+
+const procedureEvents = switchcase({
+  iniciado: { 0: "validar_pa", 1: "enproceso_pd" },
+  validando: { 0: "enproceso_pa", 1: "finalizar" },
+  enproceso: { 0: "finalizar", 1: "ingresar_datos" },
+  datosingresados: { 0: null, 1: "validar_pd" },
+  finalizado: { 0: "completado", 1: "completado" }
+})({ 0: null, 1: null });
+
+const eventHandler = (prevState, isPrepaid) => {
+  const nextState = procedureEvents(prevState);
+  return isPrepaid ? nextState[0] : nextState[1];
 };

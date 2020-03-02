@@ -25,7 +25,8 @@ export const getAllInstitutions = async (): Promise<{
     throw {
       status: 500,
       error,
-      message: errorMessageGenerator(error) || "Error al obtener los tramites"
+      message:
+        errorMessageGenerator(error) || "Error al obtener las instituciones"
     };
   } finally {
     client.release();
