@@ -82,7 +82,15 @@ export interface Parroquia {
   nombre: string;
 }
 
-export interface Tramite {}
+export interface Tramite {
+  id: number;
+  status: string;
+  datos: object;
+  costo: number;
+  fechaCreacion: Date;
+  codigoTramite: string;
+  usuario: Usuario;
+}
 
 export interface Recaudo {
   id: number;
