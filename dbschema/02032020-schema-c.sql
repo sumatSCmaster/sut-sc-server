@@ -198,13 +198,15 @@ ALTER FUNCTION public.tramites_eventos_transicion(state text, event text) OWNER 
 -- Name: update_tramite_state(integer, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.update_tramite_state(_id_tramite integer, event text) RETURNS void
+CREATE FUNCTION public.update_tramite_state(_id_tramite integer, event text) RETURNS TABLE(state text)
     LANGUAGE plpgsql
     AS $$
 BEGIN
     INSERT INTO eventos_tramite values (default, _id_tramite, event, now());
     
-        RETURN;
+    
+
+        RETURN QUERY SELECT tramites_state.state FROM tramites_state WHERE id = _id_tramite;
         END;
         $$;
 
@@ -1128,6 +1130,7 @@ COPY public.cuentas_funcionarios (id_usuario, id_institucion) FROM stdin;
 48	2
 51	2
 53	2
+56	2
 \.
 
 
@@ -1154,6 +1157,9 @@ COPY public.datos_google (id_usuario, id_google) FROM stdin;
 COPY public.eventos_tramite (id_evento_tramite, id_tramite, event, "time") FROM stdin;
 37	26	iniciar	2020-03-02 07:26:53.20038-04
 38	27	iniciar	2020-03-02 07:27:02.682578-04
+41	27	validar_pa	2020-03-02 11:32:11.347864-04
+44	27	enproceso_pa	2020-03-02 11:32:42.848604-04
+45	27	finalizar	2020-03-02 11:32:52.344293-04
 \.
 
 
@@ -1326,6 +1332,7 @@ COPY public.usuarios (id_usuario, nombre_completo, nombre_de_usuario, direccion,
 48	lusia curero	funci	adasdjiculo	23933945	V	3	funci	\N
 51	Andres Marmol	serdnam2	por ahi	276373345	V	1	$2a$10$jFdBCuNe1/ZlDe1CY8bJauWlVmE/DyZqPA8OeZuqZTGaJtEoU5g3K	1
 53	lusia curero	marcia22@ethereal.email	adasdjiculo	2393945	V	3	$2a$10$26IjsCwlX/3UmmgoV/mAPeBHo2om9GlvtyOsZMKGFjVJ/RNFkTKlq	12311341
+56	Andres Marmol	hello	por ahi	22	V	1	$2a$10$XY7uDEFQqdz.qCaX8enD3ug8dMOXpBCmW1sBuTJgH0HbKji7NuQvS	\N
 \.
 
 
@@ -1363,7 +1370,7 @@ SELECT pg_catalog.setval('public.campos_id_campo_seq', 1, false);
 -- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.eventos_tramite_id_evento_tramite_seq', 38, true);
+SELECT pg_catalog.setval('public.eventos_tramite_id_evento_tramite_seq', 45, true);
 
 
 --
@@ -1447,7 +1454,7 @@ SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 27, true);
 -- Name: usuarios_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 53, true);
+SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 56, true);
 
 
 --

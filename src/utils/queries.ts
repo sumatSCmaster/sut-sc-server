@@ -123,6 +123,9 @@ const queries = {
     "SELECT rec.id_recaudo as id, rec.nombre_largo AS nombreCompleto, rec.nombre_corto AS nombreCorto\
   FROM RECAUDOS rec LEFT JOIN tipos_tramites_recaudos ttr ON rec.id_recaudo=ttr.id_recaudo\
   WHERE ttr.id_tipo_tramite=$1",
+  GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID: 'SELECT tramites_state.* FROM tramites_state inner join tipos_tramites on tramites_state.tipotramite = tipos_tramites.id_tipo_tramite \
+  INNER JOIN instituciones ON instituciones.id_institucion = tipos_tramites.id_institucion \
+  WHERE tipos_tramites.id_institucion = $1;',
   GET_ONE_PROCEDURE: "SELECT * FROM tipos_tramites WHERE id_tipo_tramite = $1",
   UPDATE_PROCEDURE_COST:
     "UPDATE tipos_tramites SET costo_base = $2 WHERE id_tipo_tramite = $1 RETURNING *",
@@ -138,7 +141,7 @@ const queries = {
   FROM eventos_tramite \
   WHERE id_tramite = $1 \
   GROUP BY id_tramite;", //tramite
-  UPDATE_STATE: "SELECT update_tramite_state($1, $2);", //tramite, evento
+  UPDATE_STATE: "SELECT update_tramite_state($1, $2) as state;", //tramite, evento
 
   //Parroquias
   GET_PARROQUIAS: "SELECT * FROM parroquia;"
