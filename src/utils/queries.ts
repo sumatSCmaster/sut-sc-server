@@ -10,7 +10,7 @@
 
 const queries = {
   // USUARIO
-  CREATE_USER: `INSERT INTO usuarios (nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, rif, id_tipo_usuario, password, telefono) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+  CREATE_USER: `INSERT INTO usuarios (nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, id_tipo_usuario, password, telefono) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
   ADD_PASSWORD:
     "INSERT INTO cuentas_funcionarios (id_usuario, password) VALUES ($1, $2);",
   ADD_OFFICIAL_DATA:
@@ -78,6 +78,7 @@ const queries = {
       UPDATE usuarios SET password = $2 WHERE id_usuario = (SELECT id_usuario FROM usuario)",
 
   //BANKS
+  INSERT_PAYMENT: 'INSERT INTO pagos (id_tramite, referencia, monto, id_banco) VALUES ($1, $2, $3, $4) RETURNING;',
   GET_ALL_BANKS: "SELECT id_banco as id, nombre  FROM BANCOS",
   VALIDATE_PAYMENTS: "SELECT validate_payments($1);",
 
@@ -123,6 +124,9 @@ const queries = {
     "SELECT rec.id_recaudo as id, rec.nombre_largo AS nombreCompleto, rec.nombre_corto AS nombreCorto\
   FROM RECAUDOS rec LEFT JOIN tipos_tramites_recaudos ttr ON rec.id_recaudo=ttr.id_recaudo\
   WHERE ttr.id_tipo_tramite=$1",
+  GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID: 'SELECT tramites_state.* FROM tramites_state inner join tipos_tramites on tramites_state.tipotramite = tipos_tramites.id_tipo_tramite \
+  INNER JOIN instituciones ON instituciones.id_institucion = tipos_tramites.id_institucion \
+  WHERE tipos_tramites.id_institucion = $1;',
   GET_ONE_PROCEDURE: "SELECT * FROM tipos_tramites WHERE id_tipo_tramite = $1",
   UPDATE_PROCEDURE_COST:
     "UPDATE tipos_tramites SET costo_base = $2 WHERE id_tipo_tramite = $1 RETURNING *",
@@ -140,7 +144,7 @@ const queries = {
   FROM eventos_tramite \
   WHERE id_tramite = $1 \
   GROUP BY id_tramite;", //tramite
-  UPDATE_STATE: "SELECT update_tramite_state($1, $2);", //tramite, evento
+  UPDATE_STATE: "SELECT update_tramite_state($1, $2) as state;", //tramite, evento
 
   //Parroquias
   GET_PARROQUIAS: "SELECT * FROM parroquia;"

@@ -105,11 +105,6 @@ export const createSuperuser = [
     .withMessage("Debe incluir la nacionalidad del usuario")
     .isString()
     .withMessage("Nacionalidad invalida"),
-  check("usuario.rif")
-    .exists()
-    .withMessage("Debe incluir el rif del usuario")
-    .isString()
-    .withMessage("RIF invalido"),
   check("usuario.institucion")
     .exists()
     .withMessage("Debe especificar la institucion del usuario")
@@ -150,11 +145,6 @@ export const createAdmin = [
     .withMessage("Debe incluir la nacionalidad del usuario")
     .isString()
     .withMessage("Nacionalidad invalida"),
-  check("usuario.rif")
-    .exists()
-    .withMessage("Debe incluir el rif del usuario")
-    .isString()
-    .withMessage("RIF invalido"),
   check("usuario.telefono")
     .exists()
     .withMessage("Debe incluir el telefono del usuario")
