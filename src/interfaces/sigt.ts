@@ -65,10 +65,10 @@ export interface Institucion {
   id: number;
   nombreCompleto: string;
   nombreCorto: string;
-  tramitesDisponibles?: Tramite[];
+  tramitesDisponibles?: TipoTramite[];
 }
 
-export interface Tramite {
+export interface TipoTramite {
   id: number;
   titulo: string;
   costo: number;
@@ -76,6 +76,13 @@ export interface Tramite {
   pagoPrevio: boolean;
   secciones?: Seccion[];
 }
+
+export interface Parroquia {
+  id: number;
+  nombre: string;
+}
+
+export interface Tramite {}
 
 export interface Recaudo {
   id: number;
