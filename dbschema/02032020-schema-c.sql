@@ -114,7 +114,7 @@ CREATE FUNCTION public.insert_tramite(_id_tipo_tramite integer, datos json, _id_
 DECLARE
     tramite tramites%ROWTYPE;
     BEGIN
-        INSERT INTO TRAMITES (id_tipo_tramite, id_status_tramite, datos, id_usuario) VALUES (_id_tipo_tramite, 1, datos, _id_usuario) RETURNING * into tramite;
+        INSERT INTO TRAMITES (id_tipo_tramite, datos, id_usuario) VALUES (_id_tipo_tramite, datos, _id_usuario) RETURNING * into tramite;
         
             INSERT INTO eventos_tramite values (default, tramite.id_tramite, 'iniciar', now());
             
