@@ -113,6 +113,7 @@ router.post(
         const salt = genSaltSync(10);
         req.body.usuario.password = hashSync(req.body.usuario.password, salt);
         const user = await createSuperuser({ ...req.body.usuario }).catch(e => {
+          console.log(e)
           res.status(500).json({
             status: 500,
             message:

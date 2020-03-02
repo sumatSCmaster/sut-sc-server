@@ -71,7 +71,6 @@ export const createSuperuser = async (
         user.direccion,
         user.cedula,
         user.nacionalidad,
-        user.rif,
         IDsTipoUsuario.Superuser,
         user.password,
         user.telefono
@@ -112,7 +111,6 @@ export const createAdmin = async (
         user.direccion,
         user.cedula,
         user.nacionalidad,
-        user.rif,
         IDsTipoUsuario.Administrador,
         user.password,
         user.telefono

@@ -10,7 +10,7 @@
 
 const queries = {
   // USUARIO
-  CREATE_USER: `INSERT INTO usuarios (nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, rif, id_tipo_usuario, password, telefono) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+  CREATE_USER: `INSERT INTO usuarios (nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, id_tipo_usuario, password, telefono) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
   ADD_PASSWORD:
     "INSERT INTO cuentas_funcionarios (id_usuario, password) VALUES ($1, $2);",
   ADD_OFFICIAL_DATA:
