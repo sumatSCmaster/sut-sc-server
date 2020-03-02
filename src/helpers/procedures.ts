@@ -208,6 +208,7 @@ export const procedureInit = async (procedure, user) => {
       JSON.stringify(datos),
       user
     ]);
+    console.log(response);
     return { status: 201, message: "Tramite iniciado!" };
   } catch (error) {
     throw {

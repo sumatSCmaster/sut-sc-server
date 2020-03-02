@@ -38,9 +38,9 @@ const validations = {
     .withMessage("Parroquia invalida"),
   metrosCuadrados: check("tramite.datos.metrosCuadrados")
     .exists()
-    .withMessage("Debe incluir la cedula del usuario")
+    .withMessage("Debe incluir los metros cuadrados de la residencia")
     .isInt()
-    .withMessage("Cedula invalida"),
+    .withMessage("Metros cuadrados invalidos"),
   correo: check("tramite.datos.correo")
     .exists()
     .withMessage("Debe incluir el correo del usuario")
