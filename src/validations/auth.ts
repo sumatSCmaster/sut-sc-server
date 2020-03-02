@@ -72,7 +72,10 @@ const validations = {
     .exists()
     .withMessage("Debe incluir la cedula del usuario")
     .isInt()
-    .withMessage("Cedula invalida")
+    .withMessage("Cedula invalida"),
+  ganasDeVivir: check("tramite.datos.ganasDeVivir")
+    .exists()
+    .withMessage("INSERTE GANASD VIVIR")
 };
 
 export const createSuperuser = [

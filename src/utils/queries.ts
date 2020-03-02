@@ -129,12 +129,14 @@ const queries = {
   VALIDATE_FIELDS_FROM_PROCEDURE:
     "SELECT DISTINCT camp.validacion, camp.tipo FROM CAMPOS_TRAMITES ct INNER JOIN CAMPOS camp ON\
      ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=1",
+  GET_PREPAID_STATUS_FOR_PROCEDURE:
+    "SELECT pago_previo FROM tipos_tramites WHERE id_tipo_tramite=$1",
   GET_PROCEDURE_STATES:
-    "SELECT id_tramite, tramites_eventos_fsm(event ORDER BY id_evento_tramite)  \
+    "SELECT id_tramite AS id, tramites_eventos_fsm(event ORDER BY id_evento_tramite) AS state  \
   FROM eventos_tramite \
   GROUP BY id_tramite;",
   GET_PROCEDURE_STATE:
-    "SELECT id_tramite, tramites_eventos_fsm(event ORDER BY id_evento_tramite)  \
+    "SELECT id_tramite AS id, tramites_eventos_fsm(event ORDER BY id_evento_tramite) AS state  \
   FROM eventos_tramite \
   WHERE id_tramite = $1 \
   GROUP BY id_tramite;", //tramite

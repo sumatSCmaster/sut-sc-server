@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { getAvailableProcedures, procedureInit, getAvailableProceduresOfInstitution, updateProcedureCost} from "@helpers/procedures";
+import {
+  getAvailableProcedures,
+  procedureInit,
+  getAvailableProceduresOfInstitution,
+  updateProcedureCost
+} from "@helpers/procedures";
 import { validate } from "@validations/auth";
 import { checkResult } from "@validations/index";
 import { authenticate } from "passport";
@@ -14,18 +19,22 @@ router.get("/", authenticate("jwt"), async (req, res) => {
 });
 
 router.get("/:id", authenticate("jwt"), async (req, res) => {
-  const [error, data] = await fulfill(getAvailableProceduresOfInstitution(req.params["id"]));
+  const [error, data] = await fulfill(
+    getAvailableProceduresOfInstitution(req.params["id"])
+  );
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, options: data });
 });
 
 router.patch("/:id", authenticate("jwt"), async (req, res) => {
-  const [error, data] = await fulfill(updateProcedureCost(req.params["id"], req.body.costo));
-  console.log(error)
-  console.log(data)
+  const [error, data] = await fulfill(
+    updateProcedureCost(req.params["id"], req.body.costo)
+  );
+  console.log(error);
+  console.log(data);
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, options: data });
-})
+});
 
 router.post(
   "/init",
@@ -36,7 +45,7 @@ router.post(
     const { id } = req.user;
     const { tramite } = req.body;
     const [error, data] = await fulfill(procedureInit(tramite, id));
-    if (error) res.status(500).json({ error, status: 500 });
+    if (error) res.status(500).json(error);
     if (data) res.status(data.status).json(data);
   }
 );

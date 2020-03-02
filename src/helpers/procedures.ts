@@ -1,7 +1,8 @@
 import Pool from "@utils/Pool";
 import queries from "@utils/queries";
-import { Institucion, TipoTramite, Campo } from "@interfaces/sigt";
+import { Institucion, TipoTramite, Campo, Tramite } from "@interfaces/sigt";
 import { errorMessageGenerator } from "./errors";
+import { insertPaymentReference } from "./banks";
 const pool = Pool.getInstance();
 
 export const getAvailableProcedures = async (): Promise<Institucion[]> => {
@@ -201,16 +202,51 @@ export const getFieldsForValidations = async idProcedure => {
 
 export const procedureInit = async (procedure, user) => {
   const client = await pool.connect();
-  const { tipoTramite, datos } = procedure;
+  const { tipoTramite, datos, pago } = procedure;
   try {
-    const response = await client.query(queries.PROCEDURE_INIT, [
-      tipoTramite,
-      JSON.stringify(datos),
-      user
+    client.query("BEGIN");
+    const response = (
+      await client.query(queries.PROCEDURE_INIT, [
+        tipoTramite,
+        JSON.stringify(datos),
+        user
+      ])
+    ).rows[0];
+    response.pago_previo = (
+      await client.query(queries.GET_PREPAID_STATUS_FOR_PROCEDURE, [
+        response.id_tipo_tramite
+      ])
+    ).rows[0].pago_previo;
+    const nextState = await getNextEventForProcedure(response, client);
+    const respState = await client.query(queries.UPDATE_STATE, [
+      response.id_tramite,
+      nextState
     ]);
-    console.log(response);
-    return { status: 201, message: "Tramite iniciado!" };
+    if (pago) {
+      await insertPaymentReference(pago, response.id_tramite, client);
+    }
+    const tramite: Partial<Tramite & {
+      tipoTramite: number;
+      consecutivo: number;
+    }> = {
+      id: response.id_tramite,
+      tipoTramite: response.id_tipo_tramite,
+      estado: respState.rows[0].state,
+      datos: response.datos,
+      costo: response.costo,
+      fechaCreacion: response.fecha_creacion,
+      codigoTramite: response.codigo_tramite,
+      consecutivo: response.consecutivo,
+      usuario: response.id_usuario
+    };
+    client.query("COMMIT");
+    return {
+      status: 201,
+      message: "Tramite iniciado!",
+      tramite
+    };
   } catch (error) {
+    client.query("ROLLBACK");
     throw {
       status: 500,
       error,
@@ -235,18 +271,12 @@ export const updateProcedure = async procedure => {
   }
 };
 
-const getNextEventForProcedure = async procedure => {
-  const client = await pool.connect();
-  try {
-  } catch (error) {
-    throw {
-      status: 500,
-      error,
-      message: errorMessageGenerator(error) || "Error al obtener los eventos"
-    };
-  } finally {
-    client.release();
-  }
+const getNextEventForProcedure = async (procedure, client) => {
+  const response = (
+    await client.query(queries.GET_PROCEDURE_STATE, [procedure.id_tramite])
+  ).rows[0];
+  const nextEvent = eventHandler(response.state, procedure.pago_previo);
+  return nextEvent;
 };
 
 const switchcase = cases => defaultCase => key =>
