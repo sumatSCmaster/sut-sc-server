@@ -18,9 +18,9 @@ const queries = {
   INSERT_GOOGLE_USER: "INSERT INTO datos_google VALUES ($1, $2)",
   INSERT_FACEBOOK_USER: "INSERT INTO datos_facebook VALUES ($1, $2)",
   EXTERNAL_USER_INIT:
-  "INSERT INTO USUARIOS (nombre_completo, id_tipo_usuario) VALUES ($1, 4) RETURNING *",
+    "INSERT INTO USUARIOS (nombre_completo, id_tipo_usuario) VALUES ($1, 4) RETURNING *",
   SIGN_UP_WITH_LOCAL_STRATEGY:
-  "INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\
+    "INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\
   nacionalidad,id_tipo_usuario, password, telefono) VALUES ($1,$2,$3,$4,$5,4,$6, $7) RETURNING *",
   ADD_PASSWORD_RECOVERY:
     "WITH usuario AS (SELECT id_usuario FROM usuarios WHERE nombre_de_usuario = $1) \
@@ -44,10 +44,10 @@ const queries = {
     INNER JOIN usuarios u ON u.id_usuario = cf.id_usuario \
     WHERE u.nombre_de_usuario = $1;",
   GET_ADMIN:
-  "SELECT u.cedula, u.nombre_completo FROM usuario u INNER JOIN rol r ON u.id_rol = r.id WHERE u.id_rol = \
+    "SELECT u.cedula, u.nombre_completo FROM usuario u INNER JOIN rol r ON u.id_rol = r.id WHERE u.id_rol = \
   (SELECT id FROM rol WHERE nombre = 'Administrador')",
   GET_OAUTH_USER:
-  "SELECT usr.* FROM USUARIOS usr LEFT JOIN datos_facebook df ON usr.id_usuario=df.id_usuario\
+    "SELECT usr.* FROM USUARIOS usr LEFT JOIN datos_facebook df ON usr.id_usuario=df.id_usuario\
   LEFT JOIN datos_google dg ON usr.id_usuario = dg.id_usuario\
   WHERE dg.id_google = $1 OR df.id_facebook=$1",
   GET_EXTERNAL_USER: "SELECT * FROM usuarios WHERE id_usuario = $1",
@@ -76,13 +76,11 @@ const queries = {
   UPDATE_PASSWORD:
     "WITH usuario AS (SELECT u.id_usuario FROM usuarios u INNER JOIN recuperacion r ON r.id_usuario = u.id_usuario WHERE token_recuperacion = $1) \
       UPDATE usuarios SET password = $2 WHERE id_usuario = (SELECT id_usuario FROM usuario)",
-  
 
   //BANKS
   GET_ALL_BANKS: "SELECT id_banco as id, nombre  FROM BANCOS",
   VALIDATE_PAYMENTS: "SELECT validate_payments($1);",
 
-  
   //OFFICIALS
   CREATE_OFFICIAL:
     "WITH funcionario AS (INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\
@@ -110,21 +108,19 @@ const queries = {
     "DELETE FROM USUARIOS usr USING CUENTAS_FUNCIONARIOS cf WHERE\
     usr.id_usuario = cf.id_usuario AND usr.id_usuario = $1\
     AND cf.id_institucion = $2;",
-  
-  
+
   //Tramites
-  PROCEDURE_INIT:
-    "SELECT * FROM insert_tramite($1, $2, $3);",
+  PROCEDURE_INIT: "SELECT * FROM insert_tramite($1, $2, $3);",
   GET_SECTIONS_BY_PROCEDURE:
-  "SELECT DISTINCT sect.id_seccion as id, sect.nombre FROM\
+    "SELECT DISTINCT sect.id_seccion as id, sect.nombre FROM\
   CAMPOS_TRAMITES ct RIGHT JOIN SECCIONES sect ON ct.id_seccion=sect.id_seccion WHERE ct.id_tipo_tramite=$1",
-  GET_PROCEDURE_BY_INSTITUTION: 
-   "SELECT id_tipo_tramite, nombre_tramite, costo_base, pago_previo FROM tipos_tramites tt WHERE id_institucion = $1",
+  GET_PROCEDURE_BY_INSTITUTION:
+    "SELECT id_tipo_tramite, nombre_tramite, costo_base, pago_previo FROM tipos_tramites tt WHERE id_institucion = $1",
   GET_FIELDS_BY_SECTION:
-  "SELECT ct.*, camp.nombre, camp.tipo, camp.validacion, camp.col FROM campos_tramites ct INNER JOIN\
+    "SELECT ct.*, camp.nombre, camp.tipo, camp.validacion, camp.col FROM campos_tramites ct INNER JOIN\
     campos camp ON ct.id_campo = camp.id_campo WHERE ct.id_seccion = $1 AND ct.id_tipo_tramite = $2 AND ct.estado=1 ORDER BY ct.orden",
   GET_TAKINGS_BY_PROCEDURE:
-  "SELECT rec.id_recaudo as id, rec.nombre_largo AS nombreCompleto, rec.nombre_corto AS nombreCorto\
+    "SELECT rec.id_recaudo as id, rec.nombre_largo AS nombreCompleto, rec.nombre_corto AS nombreCorto\
   FROM RECAUDOS rec LEFT JOIN tipos_tramites_recaudos ttr ON rec.id_recaudo=ttr.id_recaudo\
   WHERE ttr.id_tipo_tramite=$1",
   GET_ONE_PROCEDURE: "SELECT * FROM tipos_tramites WHERE id_tipo_tramite = $1",
@@ -133,7 +129,6 @@ const queries = {
   VALIDATE_FIELDS_FROM_PROCEDURE:
     "SELECT DISTINCT camp.validacion, camp.tipo FROM CAMPOS_TRAMITES ct INNER JOIN CAMPOS camp ON\
      ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=1",
-  PROCEDURE_INIT: "SELECT insert_tramite($1, $2, $3);", //tramite, datos, usuario
   GET_PROCEDURE_STATES:
     "SELECT id_tramite, tramites_eventos_fsm(event ORDER BY id_evento_tramite)  \
   FROM eventos_tramite \
@@ -144,10 +139,9 @@ const queries = {
   WHERE id_tramite = $1 \
   GROUP BY id_tramite;", //tramite
   UPDATE_STATE: "SELECT update_tramite_state($1, $2);", //tramite, evento
-  GET_TAKINGS_BY_PROCEDURE:
-    "SELECT rec.id_recaudo as id, rec.nombre_largo AS nombreCompleto, rec.nombre_corto AS nombreCorto\
-    FROM RECAUDOS rec LEFT JOIN tipos_tramites_recaudos ttr ON rec.id_recaudo=ttr.id_recaudo\
-    WHERE ttr.id_tipo_tramite=$1"
+
+  //Parroquias
+  GET_PARROQUIAS: "SELECT * FROM parroquia;"
 };
 
 export default queries;
