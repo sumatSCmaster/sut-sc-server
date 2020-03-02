@@ -78,6 +78,7 @@ const queries = {
       UPDATE usuarios SET password = $2 WHERE id_usuario = (SELECT id_usuario FROM usuario)",
 
   //BANKS
+  INSERT_PAYMENT: 'INSERT INTO pagos (id_tramite, referencia, monto, id_banco) VALUES ($1, $2, $3, $4) RETURNING;',
   GET_ALL_BANKS: "SELECT id_banco as id, nombre  FROM BANCOS",
   VALIDATE_PAYMENTS: "SELECT validate_payments($1);",
 
