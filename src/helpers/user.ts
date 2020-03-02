@@ -224,7 +224,6 @@ export const initialExtUserSignUp = async user => {
       nombreCompleto: response.nombre_completo,
       nombreUsuario: response.nombre_de_usuario,
       direccion: response.direccion,
-      rif: response.rif,
       nacionalidad: response.nacionalidad,
       tipoUsuario: response.id_tipo_usuario,
       cedula: response.cedula,
@@ -246,8 +245,7 @@ export const completeExtUserSignUp = async (user, id) => {
     direccion,
     cedula,
     nacionalidad,
-    telefono,
-    rif
+    telefono
   } = user;
   const client = await pool.connect();
   try {
@@ -256,7 +254,6 @@ export const completeExtUserSignUp = async (user, id) => {
       direccion,
       cedula,
       nacionalidad,
-      rif,
       nombreUsuario,
       password,
       nombreCompleto,
@@ -270,7 +267,6 @@ export const completeExtUserSignUp = async (user, id) => {
       nombreCompleto: data.nombre_completo,
       nombreUsuario: data.nombre_de_usuario,
       direccion: data.direccion,
-      rif: data.rif,
       nacionalidad: data.nacionalidad,
       tipoUsuario: data.id_tipo_usuario,
       cedula: data.cedula,
@@ -297,7 +293,6 @@ export const signUpUser = async user => {
     direccion,
     cedula,
     nacionalidad,
-    rif,
     password,
     telefono
   } = user;
@@ -310,7 +305,6 @@ export const signUpUser = async user => {
       direccion,
       cedula,
       nacionalidad,
-      rif,
       password,
       telefono
     ]);
@@ -321,7 +315,6 @@ export const signUpUser = async user => {
       nombreCompleto: data.nombre_completo,
       nombreUsuario: data.nombre_de_usuario,
       direccion: data.direccion,
-      rif: data.rif,
       nacionalidad: data.nacionalidad,
       tipoUsuario: data.id_tipo_usuario,
       cedula: data.cedula
