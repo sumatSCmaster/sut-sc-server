@@ -4,7 +4,7 @@ export const isAdmin = async (req, res, next) => {
   } else {
     res.status(401).json({
       status: 401,
-      message: "Forbidden. Can only be accesed by admin."
+      message: 'Forbidden. Can only be accesed by admin.',
     });
   }
 };
@@ -15,7 +15,7 @@ export const isSuperuser = async (req, res, next) => {
   } else {
     res.status(401).json({
       status: 401,
-      message: "Forbidden. Can only be accesed by superuser."
+      message: 'Forbidden. Can only be accesed by superuser.',
     });
   }
 };

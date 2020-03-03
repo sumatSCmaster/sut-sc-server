@@ -84,7 +84,7 @@ export interface Parroquia {
 
 export interface Tramite {
   id: number;
-  status: string;
+  estado: string;
   datos: object;
   costo: number;
   fechaCreacion: Date;
