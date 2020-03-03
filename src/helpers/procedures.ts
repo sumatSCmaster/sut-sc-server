@@ -129,14 +129,14 @@ const getProcedureByInstitution = async (institution, client): Promise<Instituci
     institution.map(async institucion => {
       const procedures = (await client.query(queries.GET_PROCEDURE_BY_INSTITUTION, [institucion.id])).rows;
       institucion.cuentasBancarias = (await client.query(queries.GET_BANK_ACCOUNTS_FOR_INSTITUTION, [institucion.id])).rows.map(cuenta => {
-        const documento = cuenta.documento.split(': ');
+        const documento = cuenta.documento.split(':');
         return {
           id: cuenta.id,
           institucion: cuenta.institucion,
           banco: cuenta.banco,
           numeroCuenta: cuenta.numerocuenta,
           nombreTitular: cuenta.nombretitular,
-          [documento[0]]: documento[1],
+          [documento[0]]: documento[1].trim(),
         };
       });
       institucion.tramitesDisponibles = await getSectionByProcedure(procedures, client);
@@ -169,9 +169,10 @@ export const procedureInit = async (procedure, user) => {
   try {
     client.query('BEGIN');
     const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify(datos), user])).rows[0];
-    response.pago_previo = (await client.query(queries.GET_PREPAID_STATUS_FOR_PROCEDURE, [response.id_tipo_tramite])).rows[0].pago_previo;
+    response.idTramite = response.id_tramite;
+    response.pagoPrevio = (await client.query(queries.GET_PREPAID_STATUS_FOR_PROCEDURE, [response.id_tipo_tramite])).rows[0].pago_previo;
     const nextState = await getNextEventForProcedure(response, client);
-    const respState = await client.query(queries.UPDATE_STATE, [response.id_tramite, nextState]);
+    const respState = await client.query(queries.UPDATE_STATE, [response.id_tramite, nextState, null]);
 
     if (recaudos.length > 0) {
       recaudos.map(async urlRecaudo => {
@@ -216,8 +217,35 @@ export const procedureInit = async (procedure, user) => {
 
 export const updateProcedure = async procedure => {
   const client = await pool.connect();
+  const { pago, datos } = procedure;
   try {
+    client.query('BEGIN');
+    if (!procedure.hasOwnProperty('pagoPrevio')) {
+      procedure.pagoPrevio = (await client.query(queries.GET_PREPAID_STATUS_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0].pago_previo;
+    }
+    const nextEvent = await getNextEventForProcedure(procedure, client);
+    if (pago) {
+      await insertPaymentReference(pago, procedure.idTramite, client);
+    }
+    await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null]);
+    const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
+    client.query('COMMIT');
+    const tramite: Partial<Tramite & {
+      tipoTramite: number;
+      consecutivo: number;
+    }> = {
+      id: response.id,
+      tipoTramite: response.tipotramite,
+      estado: response.state,
+      datos: response.datos,
+      costo: response.costo,
+      fechaCreacion: response.fechacreacion,
+      codigoTramite: response.codigotramite,
+      usuario: response.usuario,
+    };
+    return { status: 200, message: 'Trámite actualizado', tramite };
   } catch (error) {
+    client.query('ROLLBACK');
     throw {
       status: 500,
       error,
@@ -229,8 +257,8 @@ export const updateProcedure = async procedure => {
 };
 
 const getNextEventForProcedure = async (procedure, client) => {
-  const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.id_tramite])).rows[0];
-  const nextEvent = eventHandler(response.state, procedure.pago_previo);
+  const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
+  const nextEvent = eventHandler(response.state, procedure.pagoPrevio);
   return nextEvent;
 };
 

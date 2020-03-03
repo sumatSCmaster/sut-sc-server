@@ -1,6 +1,7 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { errorMessageGenerator } from './errors';
+import { updateProcedure } from './procedures';
 const pool = Pool.getInstance();
 
 export const getAllBanks = async () => {
@@ -26,10 +27,30 @@ export const getAllBanks = async () => {
 export const validatePayments = async body => {
   const client = await pool.connect();
   try {
+    client.query('BEGIN');
     const res = await client.query(queries.VALIDATE_PAYMENTS, [body]);
-    console.log(res.rows)
+    const data = await Promise.all(
+      res.rows[0].validate_payments.data.map(async el => {
+        const pagoValidado = {
+          id: el.id,
+          monto: el.monto,
+          idBanco: el.idbanco,
+          aprobado: el.aprobado,
+          idTramite: el.idtramite,
+          pagoPrevio: el.pagoprevio,
+          referencia: el.referencia,
+          fechaDePago: el.fechadepago,
+          codigoTramite: el.codigotramite,
+          fechaDeAprobacion: el.fechadeaprobacion,
+        };
+        await updateProcedure(pagoValidado);
+        return pagoValidado;
+      })
+    );
+    console.log(data);
+    client.query('COMMIT');
     return {
-      validatePayments: res.rows[0].validate_payments,
+      validatePayments: { data },
       message: 'Pago validado satisfactoriamente',
       status: 201,
     };

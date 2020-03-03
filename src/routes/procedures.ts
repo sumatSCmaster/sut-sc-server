@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAvailableProcedures, procedureInit, getAvailableProceduresOfInstitution, updateProcedureCost } from '@helpers/procedures';
+import { getAvailableProcedures, procedureInit, getAvailableProceduresOfInstitution, updateProcedureCost, updateProcedure } from '@helpers/procedures';
 import { validate } from '@validations/auth';
 import { checkResult } from '@validations/index';
 import { authenticate } from 'passport';
@@ -36,5 +36,15 @@ router.post('/init', validate(), checkResult, authenticate('jwt'), async (req: a
 });
 
 router.use("/instances", instances)
+
+//TODO: añadir validacion para que solo un funcionario o superior pueda realizar esta operacion
+//TODO: cambiar metodo validate() para que valide los campos esperados por la fase actual del tramite
+//TODO: refactorizar en la medida de lo posible.
+router.put('/update', validate(), checkResult, authenticate('jwt'), async (req: any, res) => {
+  const { tramite } = req.body;
+  const [error, data] = await fulfill(updateProcedure(tramite));
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+});
 
 export default router;
