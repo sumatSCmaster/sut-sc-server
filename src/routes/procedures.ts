@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getAvailableProcedures, procedureInit, getAvailableProceduresOfInstitution, updateProcedureCost, updateProcedure } from '@helpers/procedures';
-import { validate } from '@validations/auth';
+import { validate, isOfficial } from '@validations/auth';
 import { checkResult } from '@validations/index';
 import { authenticate } from 'passport';
 import { fulfill } from '@utils/resolver';
@@ -15,13 +15,13 @@ router.get('/', authenticate('jwt'), async (req, res) => {
   if (data) res.status(200).json({ status: 200, options: data });
 });
 
-router.get('/:id', authenticate('jwt'), async (req, res) => {
+router.get('/:id', isOfficial, authenticate('jwt'), async (req, res) => {
   const [error, data] = await fulfill(getAvailableProceduresOfInstitution(req.params['id']));
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, options: data });
 });
 
-router.patch('/:id', authenticate('jwt'), async (req, res) => {
+router.patch('/:id', isOfficial, authenticate('jwt'), async (req, res) => {
   const [error, data] = await fulfill(updateProcedureCost(req.params['id'], req.body.costo));
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, options: data });
@@ -35,12 +35,10 @@ router.post('/init', validate(), checkResult, authenticate('jwt'), async (req: a
   if (data) res.status(data.status).json(data);
 });
 
-router.use("/instances", instances)
+router.use('/instances', instances);
 
-//TODO: añadir validacion para que solo un funcionario o superior pueda realizar esta operacion
-//TODO: cambiar metodo validate() para que valide los campos esperados por la fase actual del tramite
 //TODO: refactorizar en la medida de lo posible.
-router.put('/update', validate(), checkResult, authenticate('jwt'), async (req: any, res) => {
+router.put('/update', isOfficial, validate(), checkResult, authenticate('jwt'), async (req: any, res) => {
   const { tramite } = req.body;
   const [error, data] = await fulfill(updateProcedure(tramite));
   if (error) res.status(500).json(error);

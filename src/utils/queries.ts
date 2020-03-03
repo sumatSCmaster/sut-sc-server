@@ -130,7 +130,7 @@ const queries = {
   UPDATE_PROCEDURE_COST: 'UPDATE tipos_tramites SET costo_base = $2 WHERE id_tipo_tramite = $1 RETURNING *',
   VALIDATE_FIELDS_FROM_PROCEDURE:
     'SELECT DISTINCT camp.validacion, camp.tipo FROM CAMPOS_TRAMITES ct INNER JOIN CAMPOS camp ON\
-     ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=1',
+     ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=$2',
   GET_PREPAID_STATUS_FOR_PROCEDURE: 'SELECT pago_previo FROM tipos_tramites WHERE id_tipo_tramite=$1',
   GET_PROCEDURE_STATES:
     'SELECT id_tramite AS id, tramites_eventos_fsm(event ORDER BY id_evento_tramite) AS state  \
@@ -142,7 +142,7 @@ const queries = {
   WHERE id_tramite = $1 \
   GROUP BY id_tramite;', //tramite
   UPDATE_STATE: 'SELECT update_tramite_state($1, $2, $3) as state;', //tramite, evento
-  UPDATE_PROCEDURE_INSTANCE_COST: "UPDATE tramites SET costo = $1 WHERE id_tramite = $2",
+  UPDATE_PROCEDURE_INSTANCE_COST: 'UPDATE tramites SET costo = $1 WHERE id_tramite = $2',
   GET_PROCEDURE_BY_ID: 'SELECT * FROM tramites_state WHERE id=$1',
 
   //Parroquias

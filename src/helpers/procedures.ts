@@ -147,10 +147,10 @@ const getProcedureByInstitution = async (institution, client): Promise<Instituci
   });
 };
 
-export const getFieldsForValidations = async idProcedure => {
+export const getFieldsForValidations = async (idProcedure, state) => {
   const client = await pool.connect();
   try {
-    const response = (await client.query(queries.VALIDATE_FIELDS_FROM_PROCEDURE, [idProcedure])).rows;
+    const response = (await client.query(queries.VALIDATE_FIELDS_FROM_PROCEDURE, [idProcedure, state])).rows;
     return { fields: response };
   } catch (error) {
     throw {

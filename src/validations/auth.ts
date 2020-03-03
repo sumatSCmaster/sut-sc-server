@@ -219,7 +219,7 @@ export const validate = () => {
 };
 
 const isValidProcedure = async (req, res) => {
-  const [error, data] = await fulfill(getFieldsForValidations(req.body.tramite.tipoTramite));
+  const [error, data] = await fulfill(getFieldsForValidations(req.body.tramite.tipoTramite, req.body.tramite.estado || 1));
   if (error) res.status(error.status).json(error);
   if (data) return data.fields.map(el => validations[el.validacion]);
 };
@@ -242,6 +242,16 @@ export const isAuth = (req, res, next) => {
     res.send({
       status: 400,
       response: 'Debe iniciar sesión primero',
+    });
+  }
+};
+
+export const isOfficial = (req, res, next) => {
+  if (req.user.tipoUsuario < 4) next();
+  else {
+    res.send({
+      status: 401,
+      response: 'No tiene permisos para realizar esta operación',
     });
   }
 };
