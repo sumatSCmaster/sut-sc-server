@@ -142,6 +142,7 @@ const queries = {
   WHERE id_tramite = $1 \
   GROUP BY id_tramite;', //tramite
   UPDATE_STATE: 'SELECT update_tramite_state($1, $2, $3) as state;', //tramite, evento
+  GET_PROCEDURE_BY_ID: 'SELECT * FROM tramites_state WHERE id=$1',
 
   //Parroquias
   GET_PARROQUIAS: 'SELECT * FROM parroquia;',
