@@ -1,5 +1,5 @@
-import Pool from "./Pool";
-import queries from "./queries";
+import Pool from './Pool';
+import queries from './queries';
 
 const pool = Pool.getInstance();
 
@@ -14,7 +14,6 @@ export const checkIfOfficial = async (id: string) => {
     client.release();
   }
 };
-
 
 export const checkIfAdmin = async (id: string) => {
   const client = await pool.connect();
@@ -33,9 +32,9 @@ export const checkIfSuperuser = async (id: string) => {
   try {
     const result = await client.query(queries.CHECK_IF_SUPERUSER, [id]);
     return result.rowCount > 0;
-  }catch(e){
+  } catch (e) {
     throw e;
   } finally {
     client.release();
   }
-}
+};

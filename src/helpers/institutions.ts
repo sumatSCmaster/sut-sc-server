@@ -1,7 +1,7 @@
-import Pool from "@utils/Pool";
-import queries from "@utils/queries";
-import { Institucion } from "@interfaces/sigt";
-import { errorMessageGenerator } from "./errors";
+import Pool from '@utils/Pool';
+import queries from '@utils/queries';
+import { Institucion } from '@interfaces/sigt';
+import { errorMessageGenerator } from './errors';
 const pool = Pool.getInstance();
 
 export const getAllInstitutions = async (): Promise<{
@@ -16,17 +16,16 @@ export const getAllInstitutions = async (): Promise<{
       return {
         id: el.id_institucion,
         nombreCompleto: el.nombre_completo,
-        nombreCorto: el.nombre_corto
+        nombreCorto: el.nombre_corto,
       };
     });
-    return { instituciones, status: 200, message: "Instituciones obtenidas" };
+    return { instituciones, status: 200, message: 'Instituciones obtenidas' };
   } catch (error) {
     console.log(error);
     throw {
       status: 500,
       error,
-      message:
-        errorMessageGenerator(error) || "Error al obtener las instituciones"
+      message: errorMessageGenerator(error) || 'Error al obtener las instituciones',
     };
   } finally {
     client.release();
