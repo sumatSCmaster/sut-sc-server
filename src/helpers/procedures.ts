@@ -128,7 +128,17 @@ const getProcedureByInstitution = async (institution, client): Promise<Instituci
   return Promise.all(
     institution.map(async institucion => {
       const procedures = (await client.query(queries.GET_PROCEDURE_BY_INSTITUTION, [institucion.id])).rows;
-      institucion.cuentasBancarias = (await client.query(queries.GET_BANK_ACCOUNTS_FOR_INSTITUTION, [institucion.id])).rows;
+      institucion.cuentasBancarias = (await client.query(queries.GET_BANK_ACCOUNTS_FOR_INSTITUTION, [institucion.id])).rows.map(cuenta => {
+        const documento = cuenta.documento.split(': ');
+        return {
+          id: cuenta.id,
+          institucion: cuenta.institucion,
+          banco: cuenta.banco,
+          numeroCuenta: cuenta.numerocuenta,
+          nombreTitular: cuenta.nombretitular,
+          [documento[0]]: documento[1],
+        };
+      });
       institucion.tramitesDisponibles = await getSectionByProcedure(procedures, client);
       return institucion;
     })
