@@ -27,6 +27,7 @@ export const validatePayments = async body => {
   const client = await pool.connect();
   try {
     const res = await client.query(queries.VALIDATE_PAYMENTS, [body]);
+    console.log(res.rows)
     return {
       validatePayments: res.rows[0].validate_payments,
       message: 'Pago validado satisfactoriamente',

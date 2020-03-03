@@ -5,6 +5,8 @@ import { checkResult } from '@validations/index';
 import { authenticate } from 'passport';
 import { fulfill } from '@utils/resolver';
 
+import instances from './procedureInstances';
+
 const router = Router();
 
 router.get('/', authenticate('jwt'), async (req, res) => {
@@ -32,5 +34,7 @@ router.post('/init', validate(), checkResult, authenticate('jwt'), async (req: a
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
+
+router.use("/instances", instances)
 
 export default router;

@@ -117,4 +117,9 @@ export namespace Payloads {
     institucion: number;
   };
   export type CrearAdmin = CrearSuperuser;
+
+  export type UpdateProcedureInstanceCost = {
+    id: number
+    costo: number
+  }
 }
