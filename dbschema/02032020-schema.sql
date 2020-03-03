@@ -93,7 +93,6 @@ SET default_table_access_method = heap;
 CREATE TABLE public.tramites (
     id_tramite integer NOT NULL,
     id_tipo_tramite integer,
-    id_status_tramite integer,
     datos json,
     costo numeric,
     fecha_creacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -115,7 +114,7 @@ CREATE FUNCTION public.insert_tramite(_id_tipo_tramite integer, datos json, _id_
 DECLARE
     tramite tramites%ROWTYPE;
     BEGIN
-        INSERT INTO TRAMITES (id_tipo_tramite, id_status_tramite, datos, id_usuario) VALUES (_id_tipo_tramite, 1, datos, _id_usuario) RETURNING * into tramite;
+        INSERT INTO TRAMITES (id_tipo_tramite, datos, id_usuario) VALUES (_id_tipo_tramite, datos, _id_usuario) RETURNING * into tramite;
         
             INSERT INTO eventos_tramite values (default, tramite.id_tramite, 'iniciar', now());
             
@@ -199,13 +198,15 @@ ALTER FUNCTION public.tramites_eventos_transicion(state text, event text) OWNER 
 -- Name: update_tramite_state(integer, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.update_tramite_state(_id_tramite integer, event text) RETURNS void
+CREATE FUNCTION public.update_tramite_state(_id_tramite integer, event text) RETURNS TABLE(state text)
     LANGUAGE plpgsql
     AS $$
 BEGIN
     INSERT INTO eventos_tramite values (default, _id_tramite, event, now());
     
-        RETURN;
+    
+
+        RETURN QUERY SELECT tramites_state.state FROM tramites_state WHERE id = _id_tramite;
         END;
         $$;
 
@@ -219,47 +220,49 @@ ALTER FUNCTION public.update_tramite_state(_id_tramite integer, event text) OWNE
 CREATE FUNCTION public.validate_payments(inputcsvjson jsonb, OUT outputjson jsonb) RETURNS jsonb
     LANGUAGE plpgsql
     AS $$
-DECLARE
-inputData jsonb;
-inputRow jsonb;
-inputBanco int;
-idPago int;
-dataPago jsonb;
-jsonArray jsonb[];
-BEGIN
-inputData := inputCsvJson->'data';
-inputBanco := (inputCsvJson->>'bank')::int;
-
-jsonArray := ARRAY[]::jsonb[];
-
---Iterar json 
-FOR inputRow IN
-    SELECT jsonb_array_elements FROM jsonb_array_elements(inputData)
-LOOP
---Validacion de pago por banco,fecha,monto,fecha_de_pago,aprobado
---Obtiene el id del pago
-SELECT id_pago::int into idPago FROM pagos
-WHERE aprobado = false
-AND id_banco = inputBanco
-AND referencia = (inputRow ->> 'Referencia') 
-AND monto = (inputRow ->> 'Monto')::numeric
-AND fecha_de_pago = (inputRow ->> 'Fecha')::timestamptz;
-
-IF idPago IS NOT NULL THEN
---aprueba el pago y guarda el momento en que se aprobo el pago
-    UPDATE pagos SET aprobado = true, fecha_de_aprobacion = (SELECT NOW()::timestamptz) WHERE id_pago = idPago;
---obtiene el resultado del row y lo convierte en json 
-select row_to_json(row)::jsonb into dataPago from (select * from pagos where id_pago = idPago) row;
---agrega el json de la row y lo almacena en el array
-jsonArray := array_append(jsonArray, dataPago);   
-END IF;
-
-END LOOP;
---devuelve el array de json
-outputJson := jsonb_build_object('data', jsonArray);
-RETURN;
-END;
-$$;
+  DECLARE
+  inputData jsonb;
+  inputRow jsonb;
+  inputBanco int;
+  idPago int;
+  dataPago jsonb;
+  jsonArray jsonb[];
+  BEGIN
+  inputData := inputCsvJson->'data';
+  inputBanco := (inputCsvJson->>'bank')::int;
+  
+  jsonArray := ARRAY[]::jsonb[];
+  
+  --Iterar json 
+  FOR inputRow IN
+      SELECT jsonb_array_elements FROM jsonb_array_elements(inputData)
+      LOOP
+      --Validacion de pago por banco,fecha,monto,fecha_de_pago,aprobado
+      --Obtiene el id del pago
+      SELECT id_pago::int into idPago FROM pagos
+      WHERE aprobado = false
+      AND id_banco = inputBanco
+      AND referencia = (inputRow ->> 'Referencia') 
+      AND monto = (inputRow ->> 'Monto')::numeric
+      AND fecha_de_pago = (inputRow ->> 'Fecha')::timestamptz;
+      
+      IF idPago IS NOT NULL THEN
+      --aprueba el pago y guarda el momento en que se aprobo el pago
+          UPDATE pagos SET aprobado = true, fecha_de_aprobacion = (SELECT NOW()::timestamptz) WHERE id_pago = idPago;
+          --obtiene el resultado del row y lo convierte en json 
+          select row_to_json(row)::jsonb into dataPago from (select pagos.*, tramites.codigo_tramite, tipos_tramites.pago_previo from pagos 
+          INNER JOIN tramites ON pagos.id_tramite = tramites.id_tramite 
+          INNER JOIN tipos_tramites ON tipos_tramites.id_tipo_tramite = tramites.id_tipo_tramite where pagos.id_pago = idPago) row;
+          --agrega el json de la row y lo almacena en el array
+          jsonArray := array_append(jsonArray, dataPago);   
+          END IF;
+          
+          END LOOP;
+          --devuelve el array de json
+          outputJson := jsonb_build_object('data', jsonArray);
+          RETURN;
+          END;
+          $$;
 
 
 ALTER FUNCTION public.validate_payments(inputcsvjson jsonb, OUT outputjson jsonb) OWNER TO postgres;
@@ -740,40 +743,6 @@ CREATE TABLE public.secciones (
 ALTER TABLE public.secciones OWNER TO postgres;
 
 --
--- Name: status_tramites; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.status_tramites (
-    id_status_tramite integer NOT NULL,
-    descripcion character varying
-);
-
-
-ALTER TABLE public.status_tramites OWNER TO postgres;
-
---
--- Name: status_tramites_id_status_tramite_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.status_tramites_id_status_tramite_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.status_tramites_id_status_tramite_seq OWNER TO postgres;
-
---
--- Name: status_tramites_id_status_tramite_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.status_tramites_id_status_tramite_seq OWNED BY public.status_tramites.id_status_tramite;
-
-
---
 -- Name: tipos_tramites; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -889,6 +858,28 @@ ALTER TABLE public.tramites_id_tramite_seq OWNER TO postgres;
 
 ALTER SEQUENCE public.tramites_id_tramite_seq OWNED BY public.tramites.id_tramite;
 
+
+--
+-- Name: tramites_state; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.tramites_state AS
+ SELECT t.id_tramite AS id,
+    t.datos,
+    t.id_tipo_tramite AS tipotramite,
+    t.costo,
+    t.fecha_creacion AS fechacreacion,
+    t.codigo_tramite AS codigotramite,
+    t.id_usuario AS usuario,
+    ev.state
+   FROM (public.tramites t
+     JOIN ( SELECT eventos_tramite.id_tramite,
+            public.tramites_eventos_fsm(eventos_tramite.event ORDER BY eventos_tramite.id_evento_tramite) AS state
+           FROM public.eventos_tramite
+          GROUP BY eventos_tramite.id_tramite) ev ON ((t.id_tramite = ev.id_tramite)));
+
+
+ALTER TABLE public.tramites_state OWNER TO postgres;
 
 --
 -- Name: usuarios; Type: TABLE; Schema: public; Owner: postgres
@@ -1058,13 +1049,6 @@ ALTER TABLE ONLY public.recuperacion ALTER COLUMN id_recuperacion SET DEFAULT ne
 
 
 --
--- Name: status_tramites id_status_tramite; Type: DEFAULT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.status_tramites ALTER COLUMN id_status_tramite SET DEFAULT nextval('public.status_tramites_id_status_tramite_seq'::regclass);
-
-
---
 -- Name: tipos_tramites id_tipo_tramite; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -1146,6 +1130,7 @@ COPY public.cuentas_funcionarios (id_usuario, id_institucion) FROM stdin;
 48	2
 51	2
 53	2
+56	2
 \.
 
 
@@ -1170,19 +1155,11 @@ COPY public.datos_google (id_usuario, id_google) FROM stdin;
 --
 
 COPY public.eventos_tramite (id_evento_tramite, id_tramite, event, "time") FROM stdin;
-10	17	iniciar	2020-02-29 11:02:42.303255-04
-16	17	validar_pa	2020-02-29 11:09:03.097576-04
-18	16	iniciar	2020-02-29 11:10:24.404237-04
-19	16	enproceso_pd	2020-02-29 11:10:34.235317-04
-22	18	iniciar	2020-02-29 12:00:01.56617-04
-29	18	validar_pa	2020-02-29 12:10:13.831408-04
-30	19	iniciar	2020-03-02 05:26:35.306277-04
-31	20	iniciar	2020-03-02 05:30:20.217357-04
-32	21	iniciar	2020-03-02 05:30:49.887065-04
-33	22	iniciar	2020-03-02 05:37:36.092636-04
-34	23	iniciar	2020-03-02 05:37:56.644824-04
-35	24	iniciar	2020-03-02 05:44:23.009666-04
-36	25	iniciar	2020-03-02 05:44:31.158727-04
+37	26	iniciar	2020-03-02 07:26:53.20038-04
+38	27	iniciar	2020-03-02 07:27:02.682578-04
+41	27	validar_pa	2020-03-02 11:32:11.347864-04
+44	27	enproceso_pa	2020-03-02 11:32:42.848604-04
+45	27	finalizar	2020-03-02 11:32:52.344293-04
 \.
 
 
@@ -1217,6 +1194,7 @@ COPY public.operaciones (id_operacion, nombre_op) FROM stdin;
 --
 
 COPY public.pagos (id_pago, id_tramite, referencia, monto, fecha_de_pago, aprobado, id_banco, fecha_de_aprobacion) FROM stdin;
+3	27	aaaa	200.00	\N	\N	1	\N
 \.
 
 
@@ -1295,23 +1273,14 @@ COPY public.secciones (id_seccion, nombre) FROM stdin;
 
 
 --
--- Data for Name: status_tramites; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.status_tramites (id_status_tramite, descripcion) FROM stdin;
-1	En Proceso
-\.
-
-
---
 -- Data for Name: tipos_tramites; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.tipos_tramites (id_tipo_tramite, id_institucion, nombre_tramite, costo_base, pago_previo) FROM stdin;
-1	1	primer tramite	200	\N
-2	1	segundo tramite	201	\N
-3	1	tercer tramite	200	\N
-4	2	matenem	2000	\N
+4	2	matenem	2000	t
+1	1	primer tramite	200	f
+2	1	segundo tramite	201	f
+3	1	tercer tramite	200	f
 \.
 
 
@@ -1339,9 +1308,9 @@ COPY public.tipos_usuarios (id_tipo_usuario, descripcion) FROM stdin;
 -- Data for Name: tramites; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.tramites (id_tramite, id_tipo_tramite, id_status_tramite, datos, costo, fecha_creacion, codigo_tramite, consecutivo, id_usuario) FROM stdin;
-24	4	1	{}	\N	2020-03-02 05:44:23.009666-04	HMT-02032020-4-0001	1	51
-25	4	1	{}	\N	2020-03-02 05:44:31.158727-04	HMT-02032020-4-0002	2	51
+COPY public.tramites (id_tramite, id_tipo_tramite, datos, costo, fecha_creacion, codigo_tramite, consecutivo, id_usuario) FROM stdin;
+26	4	{}	\N	2020-03-02 07:26:53.20038-04	HMT-02032020-4-0001	1	51
+27	4	{}	\N	2020-03-02 07:27:02.682578-04	HMT-02032020-4-0002	2	51
 \.
 
 
@@ -1364,6 +1333,7 @@ COPY public.usuarios (id_usuario, nombre_completo, nombre_de_usuario, direccion,
 48	lusia curero	funci	adasdjiculo	23933945	V	3	funci	\N
 51	Andres Marmol	serdnam2	por ahi	276373345	V	1	$2a$10$jFdBCuNe1/ZlDe1CY8bJauWlVmE/DyZqPA8OeZuqZTGaJtEoU5g3K	1
 53	lusia curero	marcia22@ethereal.email	adasdjiculo	2393945	V	3	$2a$10$26IjsCwlX/3UmmgoV/mAPeBHo2om9GlvtyOsZMKGFjVJ/RNFkTKlq	12311341
+56	Andres Marmol	hello	por ahi	22	V	1	$2a$10$XY7uDEFQqdz.qCaX8enD3ug8dMOXpBCmW1sBuTJgH0HbKji7NuQvS	\N
 \.
 
 
@@ -1401,7 +1371,7 @@ SELECT pg_catalog.setval('public.campos_id_campo_seq', 1, false);
 -- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.eventos_tramite_id_evento_tramite_seq', 36, true);
+SELECT pg_catalog.setval('public.eventos_tramite_id_evento_tramite_seq', 45, true);
 
 
 --
@@ -1429,7 +1399,7 @@ SELECT pg_catalog.setval('public.operaciones_id_operacion_seq', 1, true);
 -- Name: pagos_id_pago_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.pagos_id_pago_seq', 1, true);
+SELECT pg_catalog.setval('public.pagos_id_pago_seq', 3, true);
 
 
 --
@@ -1461,13 +1431,6 @@ SELECT pg_catalog.setval('public.recuperacion_id_recuperacion_seq', 7, true);
 
 
 --
--- Name: status_tramites_id_status_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
---
-
-SELECT pg_catalog.setval('public.status_tramites_id_status_tramite_seq', 1, true);
-
-
---
 -- Name: tipos_tramites_id_tipo_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -1485,14 +1448,14 @@ SELECT pg_catalog.setval('public.tipos_usuarios_id_tipo_usuario_seq', 1, false);
 -- Name: tramites_id_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 25, true);
+SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 27, true);
 
 
 --
 -- Name: usuarios_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 53, true);
+SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 56, true);
 
 
 --
@@ -1582,6 +1545,14 @@ ALTER TABLE ONLY public.operaciones
 
 
 --
+-- Name: pagos pagos_fecha_de_pago_referencia_id_banco_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.pagos
+    ADD CONSTRAINT pagos_fecha_de_pago_referencia_id_banco_key UNIQUE (fecha_de_pago, referencia, id_banco);
+
+
+--
 -- Name: pagos_manuales pagos_manuales_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1627,14 +1598,6 @@ ALTER TABLE ONLY public.recuperacion
 
 ALTER TABLE ONLY public.secciones
     ADD CONSTRAINT secciones_pk PRIMARY KEY (id_seccion);
-
-
---
--- Name: status_tramites status_tramites_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.status_tramites
-    ADD CONSTRAINT status_tramites_pkey PRIMARY KEY (id_status_tramite);
 
 
 --
@@ -1772,6 +1735,14 @@ ALTER TABLE ONLY public.datos_google
 
 
 --
+-- Name: eventos_tramite eventos_tramite_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.eventos_tramite
+    ADD CONSTRAINT eventos_tramite_id_tramite_fkey FOREIGN KEY (id_tramite) REFERENCES public.tramites(id_tramite) ON DELETE CASCADE;
+
+
+--
 -- Name: notificaciones notificaciones_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1849,14 +1820,6 @@ ALTER TABLE ONLY public.tipos_tramites_recaudos
 
 ALTER TABLE ONLY public.tramites_archivos_recaudos
     ADD CONSTRAINT tramites_archivos_recaudos_id_tramite_fkey FOREIGN KEY (id_tramite) REFERENCES public.tramites(id_tramite);
-
-
---
--- Name: tramites tramites_id_status_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.tramites
-    ADD CONSTRAINT tramites_id_status_tramite_fkey FOREIGN KEY (id_status_tramite) REFERENCES public.status_tramites(id_status_tramite);
 
 
 --
