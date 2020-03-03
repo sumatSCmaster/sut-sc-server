@@ -115,8 +115,11 @@ const queries = {
   CAMPOS_TRAMITES ct RIGHT JOIN SECCIONES sect ON ct.id_seccion=sect.id_seccion WHERE ct.id_tipo_tramite=$1',
   GET_PROCEDURE_BY_INSTITUTION: 'SELECT id_tipo_tramite, nombre_tramite, costo_base, pago_previo FROM tipos_tramites tt WHERE id_institucion = $1',
   GET_FIELDS_BY_SECTION:
-    'SELECT ct.*, camp.nombre, camp.tipo, camp.validacion, camp.col FROM campos_tramites ct INNER JOIN\
-    campos camp ON ct.id_campo = camp.id_campo WHERE ct.id_seccion = $1 AND ct.id_tipo_tramite = $2 AND ct.estado=1 ORDER BY ct.orden',
+    "SELECT ct.*, camp.nombre, camp.tipo, camp.validacion, camp.col FROM campos_tramites ct INNER JOIN\
+    campos camp ON ct.id_campo = camp.id_campo WHERE ct.id_seccion = $1 AND ct.id_tipo_tramite = $2 AND (ct.estado='iniciado' OR ct.estado = 'ingresardatos') ORDER BY ct.orden",
+  GET_FIELDS_BY_SECTION_FOR_OFFICIALS:
+    "SELECT ct.*, camp.nombre, camp.tipo, camp.validacion, camp.col FROM campos_tramites ct INNER JOIN\
+    campos camp ON ct.id_campo = camp.id_campo WHERE ct.id_seccion = $1 AND ct.id_tipo_tramite = $2 AND NOT (ct.estado='iniciado' OR ct.estado = 'ingresardatos') ORDER BY ct.orden",
   GET_TAKINGS_BY_PROCEDURE:
     'SELECT rec.id_recaudo as id, rec.nombre_largo AS nombreCompleto, rec.nombre_corto AS nombreCorto\
   FROM RECAUDOS rec LEFT JOIN tipos_tramites_recaudos ttr ON rec.id_recaudo=ttr.id_recaudo\
