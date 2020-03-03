@@ -112,8 +112,9 @@ const queries = {
   PROCEDURE_INIT: 'SELECT * FROM insert_tramite($1, $2, $3);',
   GET_SECTIONS_BY_PROCEDURE:
     'SELECT DISTINCT sect.id_seccion as id, sect.nombre FROM\
-  CAMPOS_TRAMITES ct RIGHT JOIN SECCIONES sect ON ct.id_seccion=sect.id_seccion WHERE ct.id_tipo_tramite=$1',
-  GET_PROCEDURE_BY_INSTITUTION: 'SELECT id_tipo_tramite, nombre_tramite, costo_base, pago_previo FROM tipos_tramites tt WHERE id_institucion = $1',
+  CAMPOS_TRAMITES ct RIGHT JOIN SECCIONES sect ON ct.id_seccion=sect.id_seccion WHERE ct.id_tipo_tramite=$1 ORDER BY sect.id_seccion',
+  GET_PROCEDURE_BY_INSTITUTION:
+    'SELECT id_tipo_tramite, nombre_tramite, costo_base, pago_previo FROM tipos_tramites tt WHERE id_institucion = $1 ORDER BY id_tipo_tramite',
   GET_FIELDS_BY_SECTION:
     "SELECT ct.*, camp.nombre, camp.tipo, camp.validacion, camp.col FROM campos_tramites ct INNER JOIN\
     campos camp ON ct.id_campo = camp.id_campo WHERE ct.id_seccion = $1 AND ct.id_tipo_tramite = $2 AND (ct.estado='iniciado' OR ct.estado = 'ingresardatos') ORDER BY ct.orden",
@@ -123,7 +124,7 @@ const queries = {
   GET_TAKINGS_BY_PROCEDURE:
     'SELECT rec.id_recaudo as id, rec.nombre_largo AS nombreCompleto, rec.nombre_corto AS nombreCorto\
   FROM RECAUDOS rec LEFT JOIN tipos_tramites_recaudos ttr ON rec.id_recaudo=ttr.id_recaudo\
-  WHERE ttr.id_tipo_tramite=$1',
+  WHERE ttr.id_tipo_tramite=$1 ORDER BY rec.id_recaudo',
   INSERT_TAKINGS_IN_PROCEDURE: 'INSERT INTO tramites_archivos_recaudos VALUES ($1,$2)',
   GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID:
     'SELECT tramites_state.* FROM tramites_state inner join tipos_tramites on tramites_state.tipotramite = tipos_tramites.id_tipo_tramite \

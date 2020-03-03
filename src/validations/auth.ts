@@ -71,9 +71,12 @@ const validations = {
     .withMessage('Debe incluir la cedula del usuario')
     .isInt()
     .withMessage('Cedula invalida'),
-  ganasDeVivir: check('tramite.datos.ganasDeVivir')
+  recaudos: check('tramite.recaudos')
     .exists()
-    .withMessage('INSERTE GANASD VIVIR'),
+    .withMessage('Debe incluir los recaudos')
+    .isArray()
+    .isLength({ min: 1 })
+    .withMessage('Debe poseer al menos un archivo de recaudos'),
 };
 
 export const createSuperuser = [
@@ -217,11 +220,14 @@ export const validate = () => {
     next();
   };
 };
-
 const isValidProcedure = async (req, res) => {
-  const [error, data] = await fulfill(getFieldsForValidations(req.body.tramite.tipoTramite, req.body.tramite.estado || 1));
+  const [error, data] = await fulfill(getFieldsForValidations(req.body.tramite.tipoTramite, req.body.tramite.estado || 'iniciado'));
   if (error) res.status(error.status).json(error);
-  if (data) return data.fields.map(el => validations[el.validacion]);
+  if (data) {
+    const arr = data.fields.map(el => validations[el.validacion]);
+    if (data.takings > 0) arr.push(validations['recaudos']);
+    return arr;
+  }
 };
 
 export const isLogged = (req, res, next) => {

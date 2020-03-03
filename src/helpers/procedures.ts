@@ -151,7 +151,8 @@ export const getFieldsForValidations = async (idProcedure, state) => {
   const client = await pool.connect();
   try {
     const response = (await client.query(queries.VALIDATE_FIELDS_FROM_PROCEDURE, [idProcedure, state])).rows;
-    return { fields: response };
+    const takings = (await client.query(queries.GET_TAKINGS_BY_PROCEDURE, idProcedure)).rowCount;
+    return { fields: response, takings };
   } catch (error) {
     throw {
       status: 400,
