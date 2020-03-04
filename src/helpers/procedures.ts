@@ -48,7 +48,7 @@ export const getAvailableProceduresOfInstitution = async (req: {
       nombreCorto: response.nombre_corto,
     };
     const options = await getProcedureByInstitution([institution], client);
-    const instanciasDeTramite = await getProcedureInstancesByInstitution(institution, client);
+    const instanciasDeTramite = await getProcedureInstancesByInstitution(institution, req.user.tipoUsuario, client);
     return { options, instanciasDeTramite };
   } catch (error) {
     throw {
@@ -207,9 +207,13 @@ const getProcedureInstances = async (user, client) => {
   }
 };
 
-const getProcedureInstancesByInstitution = async (institution, client) => {
+const getProcedureInstancesByInstitution = async (institution, tipoUsuario, client) => {
   try {
-    const response = (await client.query(queries.GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID, [institution.id])).rows;
+    const response = (
+      await client.query(tipoUsuario === 3 ? queries.GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION : queries.GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID, [
+        institution.id,
+      ])
+    ).rows;
     return response.map(el => {
       const tramite: Partial<Tramite & {
         tipoTramite: number;

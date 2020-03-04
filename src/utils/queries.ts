@@ -133,6 +133,11 @@ const queries = {
     nombrecorto FROM tramites_state inner join tipos_tramites on tramites_state.tipotramite = \
     tipos_tramites.id_tipo_tramite INNER JOIN instituciones ON instituciones.id_institucion = \
     tipos_tramites.id_institucion WHERE tipos_tramites.id_institucion = $1 ORDER BY tramites_state.fechacreacion;',
+  GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION:
+    "SELECT tramites_state.*, instituciones.nombre_completo AS nombrelargo, instituciones.nombre_corto AS \
+    nombrecorto FROM tramites_state inner join tipos_tramites on tramites_state.tipotramite = \
+    tipos_tramites.id_tipo_tramite INNER JOIN instituciones ON instituciones.id_institucion = \
+    tipos_tramites.id_institucion WHERE tipos_tramites.id_institucion = $1 AND tramites_state.state='enproceso' ORDER BY tramites_state.fechacreacion;",
   GET_ONE_PROCEDURE: 'SELECT * FROM tipos_tramites WHERE id_tipo_tramite = $1',
   UPDATE_PROCEDURE_COST: 'UPDATE tipos_tramites SET costo_base = $2 WHERE id_tipo_tramite = $1 RETURNING *',
   VALIDATE_FIELDS_FROM_PROCEDURE:
