@@ -3,6 +3,7 @@ import queries from '@utils/queries';
 import { Institucion, TipoTramite, Campo, Tramite } from '@interfaces/sigt';
 import { errorMessageGenerator } from './errors';
 import { insertPaymentReference } from './banks';
+import { PoolClient } from 'pg';
 const pool = Pool.getInstance();
 
 export const getAvailableProcedures = async (): Promise<Institucion[]> => {
@@ -30,8 +31,11 @@ export const getAvailableProcedures = async (): Promise<Institucion[]> => {
   }
 };
 
-export const getAvailableProceduresOfInstitution = async (id: string): Promise<Institucion> => {
-  const client = await pool.connect();
+export const getAvailableProceduresOfInstitution = async (req: { params: {[id: string]: number}, user: { tipoUsuario: number }} ): Promise<Institucion> => {
+  console.log(req.user)
+  const client: PoolClient & {tipoUsuario?: number} = await pool.connect(); //Para cascadear el tipousuario a la busqueda de campos
+  client.tipoUsuario = req.user.tipoUsuario;
+  const id = req.params['id'];
   try {
     const response = (await client.query(queries.GET_ONE_INSTITUTION, [id])).rows[0];
     const institution: Institucion = {
@@ -81,7 +85,7 @@ export const updateProcedureCost = async (id: string, newCost: string): Promise<
 const getFieldsBySection = async (section, tramiteId, client): Promise<Campo[] | any> => {
   return Promise.all(
     section.map(async el => {
-      el.campos = (await client.query(queries.GET_FIELDS_BY_SECTION, [el.id, tramiteId])).rows.map(ul => {
+      el.campos = (await client.query(client.tipoUsuario ? queries.GET_FIELDS_BY_SECTION_FOR_OFFICIALS : queries.GET_FIELDS_BY_SECTION, [el.id, tramiteId])).rows.map(ul => {
         const id = ul.id_campo;
         delete ul.id_tipo_tramite;
         delete ul.id_campo;
