@@ -6,7 +6,7 @@ import { insertPaymentReference } from './banks';
 import { PoolClient } from 'pg';
 const pool = Pool.getInstance();
 
-export const getAvailableProcedures = async (): Promise<Institucion[]> => {
+export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any }> => {
   const client = await pool.connect();
   try {
     const response = await client.query(queries.GET_ALL_INSTITUTION);
@@ -17,8 +17,9 @@ export const getAvailableProcedures = async (): Promise<Institucion[]> => {
         nombreCorto: el.nombre_corto,
       };
     });
-    const options = getProcedureByInstitution(institution, client);
-    return options;
+    const options: Institucion[] = await getProcedureByInstitution(institution, client);
+    const instanciasDeTramite = await getProcedureInstances(user, client);
+    return { options, instanciasDeTramite };
   } catch (error) {
     console.log(error);
     throw {
@@ -31,9 +32,12 @@ export const getAvailableProcedures = async (): Promise<Institucion[]> => {
   }
 };
 
-export const getAvailableProceduresOfInstitution = async (req: { params: {[id: string]: number}, user: { tipoUsuario: number }} ): Promise<Institucion> => {
-  console.log(req.user)
-  const client: PoolClient & {tipoUsuario?: number} = await pool.connect(); //Para cascadear el tipousuario a la busqueda de campos
+export const getAvailableProceduresOfInstitution = async (req: {
+  params: { [id: string]: number };
+  user: { tipoUsuario: number };
+}): Promise<{ options: Institucion; instanciasDeTramite: object[] }> => {
+  console.log(req.user);
+  const client: PoolClient & { tipoUsuario?: number } = await pool.connect(); //Para cascadear el tipousuario a la busqueda de campos
   client.tipoUsuario = req.user.tipoUsuario;
   const id = req.params['id'];
   try {
@@ -44,7 +48,8 @@ export const getAvailableProceduresOfInstitution = async (req: { params: {[id: s
       nombreCorto: response.nombre_corto,
     };
     const options = await getProcedureByInstitution([institution], client);
-    return options[0];
+    const instanciasDeTramite = await getProcedureInstancesByInstitution(institution, client);
+    return { options, instanciasDeTramite };
   } catch (error) {
     throw {
       status: 500,
@@ -85,7 +90,9 @@ export const updateProcedureCost = async (id: string, newCost: string): Promise<
 const getFieldsBySection = async (section, tramiteId, client): Promise<Campo[] | any> => {
   return Promise.all(
     section.map(async el => {
-      el.campos = (await client.query(client.tipoUsuario ? queries.GET_FIELDS_BY_SECTION_FOR_OFFICIALS : queries.GET_FIELDS_BY_SECTION, [el.id, tramiteId])).rows.map(ul => {
+      el.campos = (
+        await client.query(client.tipoUsuario ? queries.GET_FIELDS_BY_SECTION_FOR_OFFICIALS : queries.GET_FIELDS_BY_SECTION, [el.id, tramiteId])
+      ).rows.map(ul => {
         const id = ul.id_campo;
         delete ul.id_tipo_tramite;
         delete ul.id_campo;
@@ -165,6 +172,70 @@ export const getFieldsForValidations = async (idProcedure, state) => {
     };
   } finally {
     client.release();
+  }
+};
+
+const getProcedureInstances = async (user, client) => {
+  try {
+    const response = (await client.query(queries.GET_PROCEDURE_INSTANCES_FOR_USER, [user.id])).rows;
+    return response.map(el => {
+      const tramite: Partial<Tramite & {
+        tipoTramite: number;
+        consecutivo: number;
+        nombreLargo: string;
+        nombreCorto: string;
+      }> = {
+        id: el.id,
+        tipoTramite: el.tipotramite,
+        estado: el.state,
+        datos: el.datos,
+        costo: el.costo,
+        fechaCreacion: el.fechacreacion,
+        codigoTramite: el.codigotramite,
+        usuario: el.usuario,
+        nombreLargo: el.nombrelargo,
+        nombreCorto: el.nombrecorto,
+      };
+      return tramite;
+    });
+  } catch (error) {
+    throw {
+      status: 400,
+      error,
+      message: errorMessageGenerator(error) || 'Error al obtener instancias de tramite',
+    };
+  }
+};
+
+const getProcedureInstancesByInstitution = async (institution, client) => {
+  try {
+    const response = (await client.query(queries.GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID, [institution.id])).rows;
+    return response.map(el => {
+      const tramite: Partial<Tramite & {
+        tipoTramite: number;
+        consecutivo: number;
+        nombreLargo: string;
+        nombreCorto: string;
+      }> = {
+        id: el.id,
+        tipoTramite: el.tipotramite,
+        estado: el.state,
+        datos: el.datos,
+        costo: el.costo,
+        fechaCreacion: el.fechacreacion,
+        codigoTramite: el.codigotramite,
+        usuario: el.usuario,
+        nombreLargo: el.nombrelargo,
+        nombreCorto: el.nombrecorto,
+      };
+      return tramite;
+    });
+  } catch (error) {
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al obtener instancias de tramite',
+    };
   }
 };
 

@@ -129,9 +129,10 @@ const queries = {
   WHERE ttr.id_tipo_tramite=$1 ORDER BY rec.id_recaudo',
   INSERT_TAKINGS_IN_PROCEDURE: 'INSERT INTO tramites_archivos_recaudos VALUES ($1,$2)',
   GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID:
-    'SELECT tramites_state.* FROM tramites_state inner join tipos_tramites on tramites_state.tipotramite = tipos_tramites.id_tipo_tramite \
-  INNER JOIN instituciones ON instituciones.id_institucion = tipos_tramites.id_institucion \
-  WHERE tipos_tramites.id_institucion = $1;',
+    'SELECT tramites_state.*, instituciones.nombre_completo AS nombrelargo, instituciones.nombre_corto AS \
+    nombrecorto FROM tramites_state inner join tipos_tramites on tramites_state.tipotramite = \
+    tipos_tramites.id_tipo_tramite INNER JOIN instituciones ON instituciones.id_institucion = \
+    tipos_tramites.id_institucion WHERE tipos_tramites.id_institucion = $1 ORDER BY tramites_state.fechacreacion;',
   GET_ONE_PROCEDURE: 'SELECT * FROM tipos_tramites WHERE id_tipo_tramite = $1',
   UPDATE_PROCEDURE_COST: 'UPDATE tipos_tramites SET costo_base = $2 WHERE id_tipo_tramite = $1 RETURNING *',
   VALIDATE_FIELDS_FROM_PROCEDURE:
@@ -150,6 +151,11 @@ const queries = {
   UPDATE_STATE: 'SELECT update_tramite_state($1, $2, $3) as state;', //tramite, evento
   UPDATE_PROCEDURE_INSTANCE_COST: 'UPDATE tramites SET costo = $1 WHERE id_tramite = $2',
   GET_PROCEDURE_BY_ID: 'SELECT * FROM tramites_state WHERE id=$1',
+  GET_PROCEDURE_INSTANCES_FOR_USER:
+    'SELECT tramites_state.*, instituciones.nombre_completo AS nombrelargo, instituciones.nombre_corto AS\
+  nombrecorto FROM tramites_state inner join tipos_tramites on tramites_state.tipotramite =\
+  tipos_tramites.id_tipo_tramite INNER JOIN instituciones ON instituciones.id_institucion =\
+  tipos_tramites.id_institucion WHERE tramites_state.usuario = $! ORDER BY tramites_state.fechacreacion;',
 
   //Parroquias
   GET_PARROQUIAS: 'SELECT * FROM parroquia;',

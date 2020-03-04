@@ -10,17 +10,17 @@ import instances from './procedureInstances';
 const router = Router();
 
 router.get('/', authenticate('jwt'), async (req, res) => {
-  const [error, data] = await fulfill(getAvailableProcedures());
-  console.log(error)
+  const [error, data] = await fulfill(getAvailableProcedures(req.user));
+  console.log(error);
   if (error) res.status(500).json({ error, status: 500 });
-  if (data) res.status(200).json({ status: 200, options: data });
+  if (data) res.status(200).json({ status: 200, ...data });
 });
 
 router.get('/:id', authenticate('jwt'), isOfficial, async (req: any, res) => {
   const [error, data] = await fulfill(getAvailableProceduresOfInstitution(req));
-  console.log(error)
+  console.log(error);
   if (error) res.status(500).json({ error, status: 500 });
-  if (data) res.status(200).json({ status: 200, options: data });
+  if (data) res.status(200).json({ status: 200, ...data });
 });
 
 router.patch('/:id', authenticate('jwt'), isOfficial, async (req, res) => {
