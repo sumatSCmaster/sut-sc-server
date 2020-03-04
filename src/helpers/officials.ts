@@ -50,8 +50,6 @@ export const getAllOfficials = async () => {
         nombreCompleto: el.nombrecompleto,
         nombreUsuario: el.nombreusuario,
         tipoUsuario: el.tipousuario,
-        prefixRif: el.rif.substring(0, 2),
-        rif: el.rif.substring(2),
       };
       delete official.nombrecompleto;
       delete official.nombreusuario;
