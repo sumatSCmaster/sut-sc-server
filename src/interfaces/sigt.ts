@@ -118,8 +118,14 @@ export namespace Payloads {
   };
   export type CrearAdmin = CrearSuperuser;
 
+  export type ProcedureItems = {
+    nombre: string
+    costo: number
+  }
+
   export type UpdateProcedureInstanceCost = {
     id: number
     costo: number
+    items: ProcedureItems[]
   }
 }

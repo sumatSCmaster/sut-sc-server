@@ -110,6 +110,8 @@ const queries = {
 
   //Tramites
   PROCEDURE_INIT: 'SELECT * FROM insert_tramite($1, $2, $3);',
+  CREATE_RECEIPT: 'INSERT INTO facturas_tramites (id_factura, id_tramite) VALUES (default, $1) RETURNING *;',
+  ADD_ITEM_TO_RECEIPT: 'INSERT INTO detalles_facturas (id_detalle, id_factura, nombre, costo) VALUES (default, $1, $2, $3)',
   GET_SECTIONS_BY_PROCEDURE:
     'SELECT DISTINCT sect.id_seccion as id, sect.nombre FROM\
   CAMPOS_TRAMITES ct RIGHT JOIN SECCIONES sect ON ct.id_seccion=sect.id_seccion WHERE ct.id_tipo_tramite=$1 ORDER BY sect.id_seccion',
