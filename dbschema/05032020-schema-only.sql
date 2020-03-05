@@ -25,30 +25,30 @@ CREATE FUNCTION public.codigo_tramite() RETURNS trigger
     AS $$
 DECLARE
     valor int;
-        nombre_inst text;
-        BEGIN
-            SELECT COALESCE(MAX(consecutivo) + 1, 1) INTO NEW.consecutivo
-                FROM tramites t
-                    WHERE t.id_tipo_tramite = NEW.id_tipo_tramite
-                        AND CURRENT_DATE = DATE(t.fecha_creacion);
-                        
-                            SELECT i.nombre_corto INTO nombre_inst 
-                                FROM instituciones i
-                                    INNER JOIN tipos_tramites tt ON tt.id_institucion = i.id_institucion
-                                        WHERE tt.id_tipo_tramite = NEW.id_tipo_tramite;
-                                        
-                                            NEW.codigo_tramite = nombre_inst || '-' 
-                                                || to_char(current_date, 'DDMMYYYY') || '-' 
-                                                    || (NEW.id_tipo_tramite)::TEXT || '-'
-                                                        || lpad((NEW.consecutivo)::text, 4, '0');
-                                                        
-                                                            RAISE NOTICE '% % % %', nombre_inst, to_char(current_date, 'DDMMYYYY'), (NEW.id_tipo_tramite)::TEXT, lpad((NEW.consecutivo)::text, 4, '0');
-                                                            
-                                                                RETURN NEW;
-                                                                    
-                                                                    
-                                                                    END;
-                                                                    $$;
+    nombre_inst text;
+BEGIN
+    SELECT COALESCE(MAX(consecutivo) + 1, 1) INTO NEW.consecutivo
+    FROM public.tramites t
+    WHERE t.id_tipo_tramite = NEW.id_tipo_tramite
+    AND CURRENT_DATE = DATE(t.fecha_creacion);
+
+    SELECT i.nombre_corto INTO nombre_inst 
+    FROM public.instituciones i
+    INNER JOIN public.tipos_tramites tt ON tt.id_institucion = i.id_institucion
+    WHERE tt.id_tipo_tramite = NEW.id_tipo_tramite;
+
+    NEW.codigo_tramite = nombre_inst || '-' 
+    || to_char(current_date, 'DDMMYYYY') || '-' 
+    || (NEW.id_tipo_tramite)::TEXT || '-'
+    || lpad((NEW.consecutivo)::text, 4, '0');
+
+    RAISE NOTICE '% % % %', nombre_inst, to_char(current_date, 'DDMMYYYY'), (NEW.id_tipo_tramite)::TEXT, lpad((NEW.consecutivo)::text, 4, '0');
+
+    RETURN NEW;
+    
+
+END;
+$$;
 
 
 ALTER FUNCTION public.codigo_tramite() OWNER TO postgres;
@@ -63,9 +63,9 @@ CREATE FUNCTION public.eventos_tramite_trigger_func() RETURNS trigger
 DECLARE
   new_state text;
   BEGIN
-    SELECT tramites_eventos_fsm(event ORDER BY id_evento_tramite)
+    SELECT public.tramites_eventos_fsm(event ORDER BY id_evento_tramite)
       FROM (
-          SELECT id_evento_tramite, event FROM eventos_tramite WHERE id_tramite = new.id_tramite
+          SELECT id_evento_tramite, event FROM public.eventos_tramite WHERE id_tramite = new.id_tramite
               UNION
                   SELECT new.id_evento_tramite, new.event
                     ) s
