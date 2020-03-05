@@ -161,6 +161,11 @@ const queries = {
   nombrecorto FROM tramites_state inner join tipos_tramites on tramites_state.tipotramite =\
   tipos_tramites.id_tipo_tramite INNER JOIN instituciones ON instituciones.id_institucion =\
   tipos_tramites.id_institucion WHERE tramites_state.usuario = $1 ORDER BY tramites_state.fechacreacion;',
+  GET_ALL_PROCEDURE_INSTANCES:
+    'SELECT tramites_state.*, instituciones.nombre_completo AS nombrelargo, instituciones.nombre_corto AS\
+  nombrecorto FROM tramites_state inner join tipos_tramites on tramites_state.tipotramite =\
+  tipos_tramites.id_tipo_tramite INNER JOIN instituciones ON instituciones.id_institucion =\
+  tipos_tramites.id_institucion ORDER BY tramites_state.fechacreacion;',
 
   //Parroquias
   GET_PARROQUIAS: 'SELECT * FROM parroquia;',

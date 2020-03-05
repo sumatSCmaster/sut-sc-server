@@ -210,11 +210,7 @@ const getProcedureInstances = async (user, client) => {
 
 const getProcedureInstancesByInstitution = async (institution, tipoUsuario, client) => {
   try {
-    const response = (
-      await client.query(tipoUsuario === 3 ? queries.GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION : queries.GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID, [
-        institution.id,
-      ])
-    ).rows;
+    const response = (await client.query(procedureInstances(tipoUsuario), [institution.id])).rows;
     return response.map(el => {
       const tramite: Partial<Tramite & {
         tipoTramite: number;
@@ -357,3 +353,9 @@ const eventHandler = (prevState, isPrepaid) => {
   const nextState = procedureEvents(prevState);
   return isPrepaid ? nextState[0] : nextState[1];
 };
+
+const procedureInstances = switchcase({
+  1: queries.GET_ALL_PROCEDURE_INSTANCES,
+  2: queries.GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID,
+  3: queries.GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION,
+})(null);
