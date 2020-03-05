@@ -124,6 +124,7 @@ const getSectionByProcedure = async (procedure, client): Promise<TipoTramite[] |
           nombreCompleto: el.nombrecompleto,
           nombreCorto: el.nombrecorto,
           id: el.id,
+          fisico: el.fisico,
         };
       });
       return tramite;
@@ -256,8 +257,8 @@ export const procedureInit = async (procedure, user) => {
     const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify(datos), user])).rows[0];
     response.idTramite = response.id_tramite;
     response.pagoPrevio = (await client.query(queries.GET_PREPAID_STATUS_FOR_PROCEDURE, [response.id_tipo_tramite])).rows[0].pago_previo;
-    const nextState = await getNextEventForProcedure(response, client);
-    const respState = await client.query(queries.UPDATE_STATE, [response.id_tramite, nextState, null]);
+    const nextEvent = await getNextEventForProcedure(response, client);
+    const respState = await client.query(queries.UPDATE_STATE, [response.id_tramite, nextEvent, null]);
 
     if (recaudos.length > 0) {
       recaudos.map(async urlRecaudo => {
@@ -265,7 +266,7 @@ export const procedureInit = async (procedure, user) => {
       });
     }
 
-    if (pago) {
+    if (pago && nextEvent === 'validar_pa') {
       await insertPaymentReference(pago, response.id_tramite, client);
     }
     const tramite: Partial<Tramite & {
