@@ -130,12 +130,12 @@ const queries = {
   INSERT_TAKINGS_IN_PROCEDURE: 'INSERT INTO tramites_archivos_recaudos VALUES ($1,$2)',
   GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID:
     'SELECT tramites_state.*, instituciones.nombre_completo AS nombrelargo, instituciones.nombre_corto AS \
-    nombrecorto FROM tramites_state inner join tipos_tramites on tramites_state.tipotramite = \
+    nombrecorto, tipos_tramites.nombre_tramite AS nombretramitelargo, tipos_tramites.nombre_corto AS nombretramitecorto FROM tramites_state INNER JOIN tipos_tramites ON tramites_state.tipotramite = \
     tipos_tramites.id_tipo_tramite INNER JOIN instituciones ON instituciones.id_institucion = \
     tipos_tramites.id_institucion WHERE tipos_tramites.id_institucion = $1 ORDER BY tramites_state.fechacreacion;',
   GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION:
     "SELECT tramites_state.*, instituciones.nombre_completo AS nombrelargo, instituciones.nombre_corto AS \
-    nombrecorto FROM tramites_state inner join tipos_tramites on tramites_state.tipotramite = \
+    nombrecorto, tipos_tramites.nombre_tramite AS nombretramitelargo, tipos_tramites.nombre_corto AS nombretramitecorto FROM tramites_state INNER JOIN tipos_tramites ON tramites_state.tipotramite = \
     tipos_tramites.id_tipo_tramite INNER JOIN instituciones ON instituciones.id_institucion = \
     tipos_tramites.id_institucion WHERE tipos_tramites.id_institucion = $1 AND tramites_state.state='enproceso' ORDER BY tramites_state.fechacreacion;",
   GET_ONE_PROCEDURE: 'SELECT * FROM tipos_tramites WHERE id_tipo_tramite = $1',
@@ -158,12 +158,12 @@ const queries = {
   GET_PROCEDURE_BY_ID: 'SELECT * FROM tramites_state WHERE id=$1',
   GET_PROCEDURE_INSTANCES_FOR_USER:
     'SELECT tramites_state.*, instituciones.nombre_completo AS nombrelargo, instituciones.nombre_corto AS\
-  nombrecorto FROM tramites_state inner join tipos_tramites on tramites_state.tipotramite =\
+  nombrecorto, tipos_tramites.nombre_tramite AS nombretramitelargo, tipos_tramites.nombre_corto AS nombretramitecorto FROM tramites_state INNER JOIN tipos_tramites ON tramites_state.tipotramite =\
   tipos_tramites.id_tipo_tramite INNER JOIN instituciones ON instituciones.id_institucion =\
   tipos_tramites.id_institucion WHERE tramites_state.usuario = $1 ORDER BY tramites_state.fechacreacion;',
   GET_ALL_PROCEDURE_INSTANCES:
     'SELECT tramites_state.*, instituciones.nombre_completo AS nombrelargo, instituciones.nombre_corto AS\
-  nombrecorto FROM tramites_state inner join tipos_tramites on tramites_state.tipotramite =\
+  nombrecorto, tipos_tramites.nombre_tramite AS nombretramitelargo, tipos_tramites.nombre_corto AS nombretramitecorto FROM tramites_state INNER JOIN tipos_tramites ON tramites_state.tipotramite =\
   tipos_tramites.id_tipo_tramite INNER JOIN instituciones ON instituciones.id_institucion =\
   tipos_tramites.id_institucion ORDER BY tramites_state.fechacreacion;',
 

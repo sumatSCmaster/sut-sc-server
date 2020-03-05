@@ -178,13 +178,15 @@ export const getFieldsForValidations = async (idProcedure, state) => {
 
 const getProcedureInstances = async (user, client) => {
   try {
-    const response = (await client.query(queries.GET_PROCEDURE_INSTANCES_FOR_USER, [user.id])).rows;
+    const response = (await procedureInstanceHandler(user.tipoUsuario, user.id, client)).rows;
     return response.map(el => {
       const tramite: Partial<Tramite & {
         tipoTramite: number;
         consecutivo: number;
         nombreLargo: string;
         nombreCorto: string;
+        nombreTramiteLargo: string;
+        nombreTramiteCorto: string;
       }> = {
         id: el.id,
         tipoTramite: el.tipotramite,
@@ -196,6 +198,8 @@ const getProcedureInstances = async (user, client) => {
         usuario: el.usuario,
         nombreLargo: el.nombrelargo,
         nombreCorto: el.nombrecorto,
+        nombreTramiteLargo: el.nombretramitelargo,
+        nombreTramiteCorto: el.nombretramitecorto,
       };
       return tramite;
     });
@@ -210,13 +214,15 @@ const getProcedureInstances = async (user, client) => {
 
 const getProcedureInstancesByInstitution = async (institution, tipoUsuario, client) => {
   try {
-    const response = (await client.query(procedureInstances(tipoUsuario), [institution.id])).rows;
+    const response = (await procedureInstanceHandler(tipoUsuario, institution.id, client)).rows;
     return response.map(el => {
       const tramite: Partial<Tramite & {
         tipoTramite: number;
         consecutivo: number;
         nombreLargo: string;
         nombreCorto: string;
+        nombreTramiteLargo: string;
+        nombreTramiteCorto: string;
       }> = {
         id: el.id,
         tipoTramite: el.tipotramite,
@@ -228,6 +234,8 @@ const getProcedureInstancesByInstitution = async (institution, tipoUsuario, clie
         usuario: el.usuario,
         nombreLargo: el.nombrelargo,
         nombreCorto: el.nombrecorto,
+        nombreTramiteLargo: el.nombretramitelargo,
+        nombreTramiteCorto: el.nombretramitecorto,
       };
       return tramite;
     });
@@ -301,7 +309,7 @@ export const updateProcedure = async procedure => {
       procedure.pagoPrevio = (await client.query(queries.GET_PREPAID_STATUS_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0].pago_previo;
     }
     const nextEvent = await getNextEventForProcedure(procedure, client);
-    if (pago) {
+    if (pago && nextEvent === 'validar_pd') {
       await insertPaymentReference(pago, procedure.idTramite, client);
     }
     await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null]);
@@ -358,4 +366,9 @@ const procedureInstances = switchcase({
   1: queries.GET_ALL_PROCEDURE_INSTANCES,
   2: queries.GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID,
   3: queries.GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION,
+  4: queries.GET_PROCEDURE_INSTANCES_FOR_USER,
 })(null);
+
+const procedureInstanceHandler = (typeUser, payload, client) => {
+  return typeUser === 1 ? client.query(procedureInstances(typeUser)) : client.query(procedureInstances(typeUser), [payload]);
+};
