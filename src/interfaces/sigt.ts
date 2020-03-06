@@ -22,7 +22,7 @@ export enum IDsTipoUsuario {
 export interface Seccion {
   id: number;
   nombre: string;
-  campos?: Campos[];
+  campos?: Campo[];
 }
 
 export interface Usuario {
@@ -65,17 +65,40 @@ export interface Institucion {
   id: number;
   nombreCompleto: string;
   nombreCorto: string;
-  tramitesDisponibles?: TramitesDisponibles[];
+  tramitesDisponibles?: TipoTramite[];
 }
 
-export interface TramitesDisponibles {
+export interface TipoTramite {
   id: number;
   titulo: string;
   costo: number;
+  recaudos: Recaudo[] | null;
+  pagoPrevio: boolean;
   secciones?: Seccion[];
 }
 
-export interface Campos {
+export interface Parroquia {
+  id: number;
+  nombre: string;
+}
+
+export interface Tramite {
+  id: number;
+  estado: string;
+  datos: object;
+  costo: number;
+  fechaCreacion: Date;
+  codigoTramite: string;
+  usuario: Usuario;
+}
+
+export interface Recaudo {
+  id: number;
+  nombreCompleto: string;
+  nombreCorto: string;
+}
+
+export interface Campo {
   id: number;
   orden: number;
   status: string;
@@ -94,4 +117,15 @@ export namespace Payloads {
     institucion: number;
   };
   export type CrearAdmin = CrearSuperuser;
+
+  export type ProcedureItems = {
+    nombre: string
+    costo: number
+  }
+
+  export type UpdateProcedureInstanceCost = {
+    id: number
+    costo: number
+    items: ProcedureItems[]
+  }
 }
