@@ -131,6 +131,8 @@ const queries = {
     'SELECT rec.id_recaudo as id, rec.nombre_largo AS nombreCompleto, rec.nombre_corto AS nombreCorto,\
   ttr.fisico FROM RECAUDOS rec INNER JOIN tipos_tramites_recaudos ttr ON rec.id_recaudo=ttr.id_recaudo\
   WHERE ttr.id_tipo_tramite=$1 ORDER BY rec.id_recaudo',
+  GET_TAKINGS_OF_INSTANCES: 
+    'SELECT * FROM tramites_archivos_recaudos WHERE id_tramite IN ($1);',
   INSERT_TAKINGS_IN_PROCEDURE: 'INSERT INTO tramites_archivos_recaudos VALUES ($1,$2)',
   GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID:
     'SELECT tramites_state.*, instituciones.nombre_completo AS nombrelargo, instituciones.nombre_corto AS \

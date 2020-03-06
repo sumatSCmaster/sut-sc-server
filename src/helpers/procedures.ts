@@ -181,8 +181,8 @@ export const getFieldsForValidations = async (idProcedure, state) => {
 
 const getProcedureInstances = async (user, client) => {
   try {
-
     const response = (await procedureInstanceHandler(user.tipoUsuario, user.tipoUsuario !== 4 ? user.institucion.id : user.id, client)).rows;
+    const takings = (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [response.map(el => el.id).join(', ')]));
     return response.map(el => {
       const tramite: Partial<Tramite & {
         tipoTramite: number;
@@ -191,6 +191,7 @@ const getProcedureInstances = async (user, client) => {
         nombreCorto: string;
         nombreTramiteLargo: string;
         nombreTramiteCorto: string;
+        recaudos: string[]
       }> = {
         id: el.id,
         tipoTramite: el.tipotramite,
@@ -204,6 +205,7 @@ const getProcedureInstances = async (user, client) => {
         nombreCorto: el.nombrecorto,
         nombreTramiteLargo: el.nombretramitelargo,
         nombreTramiteCorto: el.nombretramitecorto,
+        recaudos: takings.filter(taking => taking.id_tramite === el.id ).map(taking => taking.url_archivo_recaudo)
       };
       return tramite;
     });
