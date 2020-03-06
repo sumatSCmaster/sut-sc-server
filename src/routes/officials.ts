@@ -73,7 +73,11 @@ router.delete('/:id', authenticate('jwt'), async (req: any, res) => {
   const { id_institucion } = req.user.cuentaFuncionario;
   if (id_institucion) {
     const { id } = req.params;
-    const [err, data] = await fulfill(deleteOfficial(id, id_institucion));
+    if(req.user.tipoUsuario !== 1){
+      const [err, data] = await fulfill(deleteOfficial(id, id_institucion));
+    }else{
+      const [err, data] = await fulfill(deleteOfficialSuperuser(id));
+    }
     if (err) res.status(500).json(err);
     if (data) res.status(data.status).json(data);
   } else {

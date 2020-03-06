@@ -108,7 +108,9 @@ const queries = {
   DELETE_OFFICIAL:
     'DELETE FROM USUARIOS usr USING CUENTAS_FUNCIONARIOS cf WHERE\
     usr.id_usuario = cf.id_usuario AND usr.id_usuario = $1\
-    AND cf.id_institucion = $2;',
+    AND cf.id_institucion = $2 RETURNING *;',
+  DELETE_OFFICIAL_AS_SUPERUSER:
+    'DELETE FROM usuarios WHERE usuarios.id_usuario = $1 RETURNING *;',
 
   //Tramites
   PROCEDURE_INIT: 'SELECT * FROM insert_tramite($1, $2, $3);',
