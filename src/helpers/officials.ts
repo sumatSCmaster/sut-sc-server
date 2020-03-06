@@ -138,7 +138,7 @@ export const deleteOfficial = async (officialID: string, institution: number) =>
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    await client.query(queries.DELETE_OFFICIAL, [officialID, institution]);
+    const res = await client.query(queries.DELETE_OFFICIAL, [officialID, institution]);
     client.query('COMMIT');
     return { status: 200, message: res.rowCount > 0 ? 'Funcionario eliminado' : 'No se encontro el funcionario' };
   } catch (e) {
