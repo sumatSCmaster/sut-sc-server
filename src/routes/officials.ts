@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getOfficialsByInstitution, createOfficial, updateOfficial, deleteOfficial, getAllOfficials } from '@helpers/officials';
+import { getOfficialsByInstitution, createOfficial, updateOfficial, deleteOfficial, getAllOfficials, deleteOfficialSuperuser } from '@helpers/officials';
 import * as validators from '@validations/auth';
 import { checkResult } from '@validations/index';
 import { authenticate } from 'passport';
@@ -73,10 +73,11 @@ router.delete('/:id', authenticate('jwt'), async (req: any, res) => {
   const { id_institucion } = req.user.cuentaFuncionario;
   if (id_institucion) {
     const { id } = req.params;
+    let err, data;
     if(req.user.tipoUsuario !== 1){
-      const [err, data] = await fulfill(deleteOfficial(id, id_institucion));
+      [err, data] = await fulfill(deleteOfficial(id, id_institucion));
     }else{
-      const [err, data] = await fulfill(deleteOfficialSuperuser(id));
+      [err, data] = await fulfill(deleteOfficialSuperuser(id));
     }
     if (err) res.status(500).json(err);
     if (data) res.status(data.status).json(data);
