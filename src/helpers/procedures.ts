@@ -1,6 +1,6 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
-import { Institucion, TipoTramite, Campo, Tramite } from '@interfaces/sigt';
+import { Institucion, TipoTramite, Campo, Tramite, Usuario } from '@interfaces/sigt';
 import { errorMessageGenerator } from './errors';
 import { insertPaymentReference } from './banks';
 import { PoolClient } from 'pg';
@@ -8,6 +8,7 @@ const pool = Pool.getInstance();
 
 export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any }> => {
   const client = await pool.connect();
+  console.log(user)
   try {
     const response = await client.query(queries.GET_ALL_INSTITUTION);
     const institution: Institucion[] = response.rows.map(el => {
@@ -130,6 +131,7 @@ const getSectionByProcedure = async (procedure, client): Promise<TipoTramite[] |
       return tramite;
     })
   ).catch(error => {
+    console.log(error)
     throw {
       message: errorMessageGenerator(error) || error.message || 'Error al obtener las secciones',
     };
@@ -179,7 +181,8 @@ export const getFieldsForValidations = async (idProcedure, state) => {
 
 const getProcedureInstances = async (user, client) => {
   try {
-    const response = (await procedureInstanceHandler(user.tipoUsuario, user.id, client)).rows;
+
+    const response = (await procedureInstanceHandler(user.tipoUsuario, user.tipoUsuario !== 4 ? user.institucion.id : user.id, client)).rows;
     return response.map(el => {
       const tramite: Partial<Tramite & {
         tipoTramite: number;
@@ -371,5 +374,6 @@ const procedureInstances = switchcase({
 })(null);
 
 const procedureInstanceHandler = (typeUser, payload, client) => {
+  console.log(typeUser, payload)
   return typeUser === 1 ? client.query(procedureInstances(typeUser)) : client.query(procedureInstances(typeUser), [payload]);
 };
