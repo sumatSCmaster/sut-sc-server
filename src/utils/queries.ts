@@ -24,7 +24,8 @@ const queries = {
        INSERT INTO recuperacion (id_usuario, token_recuperacion, usado) VALUES ((SELECT id_usuario FROM usuario), $2, false) RETURNING token_recuperacion;',
   GET_USER_BY_USERNAME: 'SELECT * FROM usuarios WHERE nombre_de_usuario = $1;',
   GET_USER_BY_ID: 'SELECT * FROM datos_usuario WHERE cedula = $1',
-  GET_USER_INFO_BY_ID: 'SELECT nombre_completo as "nombreCompleto", nombre_de_usuario AS "nombreUsuario", direccion, cedula, nacionalidad FROM usuarios WHERE id_usuario = $1;',
+  GET_USER_INFO_BY_ID:
+    'SELECT nombre_completo as "nombreCompleto", nombre_de_usuario AS "nombreUsuario", direccion, cedula, nacionalidad FROM usuarios WHERE id_usuario = $1;',
   GET_PHONES_FROM_USERNAME:
     'SELECT numero FROM telefonos_usuarios tu \
     INNER JOIN usuarios u ON tu.id_usuario = u.id_usuario \
@@ -101,7 +102,8 @@ const queries = {
     usr.id_usuario=cf.id_usuario WHERE usr.id_tipo_usuario!=1',
   GET_ALL_INSTITUTION: 'SELECT * FROM INSTITUCIONES',
   GET_ONE_INSTITUTION: 'SELECT * FROM INSTITUCIONES WHERE id_institucion = $1',
-  GET_ONE_INSTITUTION_INFO: 'SELECT id_institucion AS id, nombre_completo AS "nombreCompleto", nombre_corto AS "nombreCorto" FROM instituciones WHERE id_institucion = $1;',
+  GET_ONE_INSTITUTION_INFO:
+    'SELECT id_institucion AS id, nombre_completo AS "nombreCompleto", nombre_corto AS "nombreCorto" FROM instituciones WHERE id_institucion = $1;',
   UPDATE_OFFICIAL:
     'UPDATE usuarios SET nombre_completo = $1, nombre_de_usuario = $2, direccion = $3,\
     cedula = $4, nacionalidad = $5, rif = $6, telefono =$7 WHERE id_usuario = $8 RETURNING id_usuario',
@@ -109,8 +111,7 @@ const queries = {
     'DELETE FROM USUARIOS usr USING CUENTAS_FUNCIONARIOS cf WHERE\
     usr.id_usuario = cf.id_usuario AND usr.id_usuario = $1\
     AND cf.id_institucion = $2 RETURNING *;',
-  DELETE_OFFICIAL_AS_SUPERUSER:
-    'DELETE FROM usuarios WHERE usuarios.id_usuario = $1 RETURNING *;',
+  DELETE_OFFICIAL_AS_SUPERUSER: 'DELETE FROM usuarios WHERE usuarios.id_usuario = $1 RETURNING *;',
 
   //Tramites
   PROCEDURE_INIT: 'SELECT * FROM insert_tramite($1, $2, $3);',
@@ -131,8 +132,7 @@ const queries = {
     'SELECT rec.id_recaudo as id, rec.nombre_largo AS nombreCompleto, rec.nombre_corto AS nombreCorto,\
   ttr.fisico FROM RECAUDOS rec INNER JOIN tipos_tramites_recaudos ttr ON rec.id_recaudo=ttr.id_recaudo\
   WHERE ttr.id_tipo_tramite=$1 ORDER BY rec.id_recaudo',
-  GET_TAKINGS_OF_INSTANCES: 
-    'SELECT * FROM tramites_archivos_recaudos WHERE id_tramite = ANY( $1::int[] );',
+  GET_TAKINGS_OF_INSTANCES: 'SELECT * FROM tramites_archivos_recaudos WHERE id_tramite = ANY( $1::int[] );',
   INSERT_TAKINGS_IN_PROCEDURE: 'INSERT INTO tramites_archivos_recaudos VALUES ($1,$2)',
   GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID:
     'SELECT tramites_state.*, instituciones.nombre_completo AS nombrelargo, instituciones.nombre_corto AS \
@@ -145,7 +145,8 @@ const queries = {
     tipos_tramites.id_tipo_tramite INNER JOIN instituciones ON instituciones.id_institucion = \
     tipos_tramites.id_institucion WHERE tipos_tramites.id_institucion = $1 AND tramites_state.state='enproceso' ORDER BY tramites_state.fechacreacion;",
   GET_ONE_PROCEDURE: 'SELECT * FROM tipos_tramites WHERE id_tipo_tramite = $1',
-  GET_ONE_PROCEDURE_INFO: 'SELECT id_tipo_tramite as id, id_institucion AS "idInstitucion", nombre_tramite AS "nombre", costo_base as costo, nombre_corto as "nombreCorto"  FROM tipos_tramites WHERE id_tipo_tramite = $1;',
+  GET_ONE_PROCEDURE_INFO:
+    'SELECT id_tipo_tramite as id, id_institucion AS "idInstitucion", nombre_tramite AS "nombre", costo_base as costo, nombre_corto as "nombreCorto"  FROM tipos_tramites WHERE id_tipo_tramite = $1;',
   UPDATE_PROCEDURE_COST: 'UPDATE tipos_tramites SET costo_base = $2 WHERE id_tipo_tramite = $1 RETURNING *',
   VALIDATE_FIELDS_FROM_PROCEDURE:
     'SELECT DISTINCT camp.validacion, camp.tipo FROM CAMPOS_TRAMITES ct INNER JOIN CAMPOS camp ON\
@@ -162,18 +163,10 @@ const queries = {
   GROUP BY id_tramite;', //tramite
   UPDATE_STATE: 'SELECT update_tramite_state($1, $2, $3) as state;', //tramite, evento
   UPDATE_PROCEDURE_INSTANCE_COST: 'UPDATE tramites SET costo = $1 WHERE id_tramite = $2',
-  GET_PROCEDURE_BY_ID: 'SELECT * FROM tramites_state WHERE id=$1',
+  GET_PROCEDURE_BY_ID: 'SELECT * FROM tramites_state_with_resources WHERE id=$1',
   GET_CERTIFICATE_BY_PROCEDURE_ID: 'SELECT url_certificado AS "urlCertificado" FROM certificados WHERE id_tramite = $1',
-  GET_PROCEDURE_INSTANCES_FOR_USER:
-    'SELECT tramites_state.*, instituciones.nombre_completo AS nombrelargo, instituciones.nombre_corto AS\
-  nombrecorto, tipos_tramites.nombre_tramite AS nombretramitelargo, tipos_tramites.nombre_corto AS nombretramitecorto FROM tramites_state INNER JOIN tipos_tramites ON tramites_state.tipotramite =\
-  tipos_tramites.id_tipo_tramite INNER JOIN instituciones ON instituciones.id_institucion =\
-  tipos_tramites.id_institucion WHERE tramites_state.usuario = $1 ORDER BY tramites_state.fechacreacion;',
-  GET_ALL_PROCEDURE_INSTANCES:
-    'SELECT tramites_state.*, instituciones.nombre_completo AS nombrelargo, instituciones.nombre_corto AS\
-  nombrecorto, tipos_tramites.nombre_tramite AS nombretramitelargo, tipos_tramites.nombre_corto AS nombretramitecorto FROM tramites_state INNER JOIN tipos_tramites ON tramites_state.tipotramite =\
-  tipos_tramites.id_tipo_tramite INNER JOIN instituciones ON instituciones.id_institucion =\
-  tipos_tramites.id_institucion ORDER BY tramites_state.fechacreacion;',
+  GET_PROCEDURE_INSTANCES_FOR_USER: 'SELECT * FROM tramites_state_with_resources WHERE usuario = $1 ORDER BY fechacreacion;',
+  GET_ALL_PROCEDURE_INSTANCES: 'SELECT * FROM tramites_state_with_resources ORDER BY fechacreacion;',
 
   //Parroquias
   GET_PARROQUIAS: 'SELECT * FROM parroquia;',

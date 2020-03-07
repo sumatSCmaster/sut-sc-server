@@ -312,10 +312,7 @@ export const updateProcedure = async procedure => {
     await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null]);
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
     client.query('COMMIT');
-    const tramite: Partial<Tramite & {
-      tipoTramite: number;
-      consecutivo: number;
-    }> = {
+    const tramite: Partial<Tramite> = {
       id: response.id,
       tipoTramite: response.tipotramite,
       estado: response.state,
@@ -324,6 +321,10 @@ export const updateProcedure = async procedure => {
       fechaCreacion: response.fechacreacion,
       codigoTramite: response.codigotramite,
       usuario: response.usuario,
+      nombreLargo: response.nombrelargo,
+      nombreCorto: response.nombrecorto,
+      nombreTramiteLargo: response.nombretramitelargo,
+      nombreTramiteCorto: response.nombretramitecorto,
     };
     return { status: 200, message: 'Trámite actualizado', tramite };
   } catch (error) {
