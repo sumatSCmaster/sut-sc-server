@@ -41,8 +41,8 @@ router.get('/all', authenticate('jwt'), async (req: any, res) => {
 router.post('/', authenticate('jwt'), validators.createOfficial, checkResult, async (req: any, res) => {
   const { id_institucion } = req.user.cuentaFuncionario;
   if (id_institucion) {
-    const { funcionario } = req.body;
-    const [err, data] = await fulfill(createOfficial(funcionario, id_institucion));
+    const { usuario } = req.body;
+    const [err, data] = await fulfill(createOfficial(usuario, id_institucion));
     if (err) res.status(500).json(err);
     if (data) res.status(data.status).json(data);
   } else {

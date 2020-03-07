@@ -182,7 +182,7 @@ export const getFieldsForValidations = async (idProcedure, state) => {
 const getProcedureInstances = async (user, client) => {
   try {
 
-    const response = (await procedureInstanceHandler(user.tipoUsuario, user.tipoUsuario !== 4 ? user.institucion.id : user.id, client)).rows;
+    const response = (await procedureInstanceHandler(user.tipoUsuario, user.tipoUsuario !== 4 ? user.institucion ? user.institucion.id : 0 : user.id, client)).rows;
     return response.map(el => {
       const tramite: Partial<Tramite & {
         tipoTramite: number;

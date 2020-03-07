@@ -162,38 +162,38 @@ export const createAdmin = [
 ];
 
 export const createOfficial = [
-  check('funcionario.cedula')
+  check('usuario.cedula')
     .exists()
     .withMessage('Debe incluir la cedula del usuario')
     .isInt()
     .withMessage('Cedula invalida'),
-  check('funcionario.nombreCompleto')
+  check('usuario.nombreCompleto')
     .exists()
     .withMessage('Debe incluir el nombre del usuario')
     .isString()
     .isLength({ min: 1 })
     .withMessage('El nombre no puede ser vacio'),
-  check('funcionario.nombreUsuario')
+  check('usuario.nombreUsuario')
     .exists()
     .withMessage('Debe incluir el nombre de usuario')
     .isString()
     .withMessage('Nombre de usuario invalido'),
-  check('funcionario.direccion')
+  check('usuario.direccion')
     .exists()
     .withMessage('Debe incluir la direccion del usuario')
     .isString()
     .withMessage('Direccion invalida'),
-  check('funcionario.nacionalidad')
+  check('usuario.nacionalidad')
     .exists()
     .withMessage('Debe incluir la nacionalidad del usuario')
     .isString()
     .withMessage('Nacionalidad invalida'),
-  check('funcionario.telefono')
+  check('usuario.telefono')
     .exists()
     .withMessage('Debe incluir el telefono del usuario')
     .isString()
     .withMessage('Telefono invalido'),
-  check('funcionario.password')
+  check('usuario.password')
     .exists()
     .withMessage('Debe incluir una contraseña para el usuario'),
 ];
