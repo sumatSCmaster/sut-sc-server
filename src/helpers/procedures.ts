@@ -63,48 +63,87 @@ export const getAvailableProceduresOfInstitution = async (req: {
   }
 };
 
-export const updateProcedureCost = async (id: string, newCost: string): Promise<Partial<TipoTramite>> => {
-  const client = await pool.connect();
+const getProcedureInstances = async (user, client) => {
   try {
-    client.query('BEGIN');
-    const response = (await client.query(queries.UPDATE_PROCEDURE_COST, [id, newCost])).rows[0];
-    const newProcedure = (await client.query(queries.GET_ONE_PROCEDURE, [id])).rows[0];
-    const procedure: Partial<TipoTramite> = {
-      id: newProcedure.id_tipo_tramite,
-      titulo: newProcedure.nombre_tramite,
-      costo: newProcedure.costo_base,
-      pagoPrevio: newProcedure.pago_previo,
-    };
-    client.query('COMMIT');
-    return procedure;
+    const response = (await procedureInstanceHandler(user.tipoUsuario, user.tipoUsuario !== 4 ? (user.institucion ? user.institucion.id : 0) : user.id, client))
+      .rows;
+    const takings = (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [response.map(el => +el.id)])).rows;
+    return response.map(el => {
+      const tramite: Partial<Tramite> = {
+        id: el.id,
+        tipoTramite: el.tipotramite,
+        estado: el.state,
+        datos: el.datos,
+        costo: el.costo,
+        fechaCreacion: el.fechacreacion,
+        codigoTramite: el.codigotramite,
+        usuario: el.usuario,
+        nombreLargo: el.nombrelargo,
+        nombreCorto: el.nombrecorto,
+        nombreTramiteLargo: el.nombretramitelargo,
+        nombreTramiteCorto: el.nombretramitecorto,
+        recaudos: takings.filter(taking => taking.id_tramite === el.id).map(taking => taking.url_archivo_recaudo),
+      };
+      return tramite;
+    });
   } catch (error) {
-    client.query('ROLLBACK');
     throw {
-      status: 500,
+      status: 400,
       error,
-      message: errorMessageGenerator(error) || 'Error al obtener los tramites',
+      message: errorMessageGenerator(error) || 'Error al obtener instancias de tramite',
     };
-  } finally {
-    client.release();
   }
 };
 
-const getFieldsBySection = async (section, tramiteId, client): Promise<Campo[] | any> => {
+const getProcedureInstancesByInstitution = async (institution, tipoUsuario, client) => {
+  try {
+    const response = (await procedureInstanceHandler(tipoUsuario, institution.id, client)).rows;
+    return response.map(el => {
+      const tramite: Partial<Tramite> = {
+        id: el.id,
+        tipoTramite: el.tipotramite,
+        estado: el.state,
+        datos: el.datos,
+        costo: el.costo,
+        fechaCreacion: el.fechacreacion,
+        codigoTramite: el.codigotramite,
+        usuario: el.usuario,
+        nombreLargo: el.nombrelargo,
+        nombreCorto: el.nombrecorto,
+        nombreTramiteLargo: el.nombretramitelargo,
+        nombreTramiteCorto: el.nombretramitecorto,
+      };
+      return tramite;
+    });
+  } catch (error) {
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al obtener instancias de tramite',
+    };
+  }
+};
+
+const getProcedureByInstitution = async (institution, client): Promise<Institucion[] | any> => {
   return Promise.all(
-    section.map(async el => {
-      el.campos = (await fieldsBySectionHandler(client.tipoUsuario, [el.id, tramiteId], client)).rows.map(ul => {
-        const id = ul.id_campo;
-        delete ul.id_tipo_tramite;
-        delete ul.id_campo;
-        return { id, ...ul };
+    institution.map(async institucion => {
+      const procedures = (await client.query(queries.GET_PROCEDURE_BY_INSTITUTION, [institucion.id])).rows;
+      institucion.cuentasBancarias = (await client.query(queries.GET_BANK_ACCOUNTS_FOR_INSTITUTION, [institucion.id])).rows.map(cuenta => {
+        const documento = cuenta.documento.split(':');
+        return {
+          id: cuenta.id,
+          institucion: cuenta.institucion,
+          banco: cuenta.banco,
+          numeroCuenta: cuenta.numerocuenta,
+          nombreTitular: cuenta.nombretitular,
+          [documento[0]]: documento[1].trim(),
+        };
       });
-      return el;
+      institucion.tramitesDisponibles = await getSectionByProcedure(procedures, client);
+      return institucion;
     })
   ).catch(error => {
-    console.log(error);
-    throw {
-      message: errorMessageGenerator(error) || error.message || 'Error al obtener los campos',
-    };
+    throw errorMessageGenerator(error) || error.message || 'Error al obtener las instituciones';
   });
 };
 
@@ -141,27 +180,49 @@ const getSectionByProcedure = async (procedure, client): Promise<TipoTramite[] |
   });
 };
 
-const getProcedureByInstitution = async (institution, client): Promise<Institucion[] | any> => {
+const getFieldsBySection = async (section, tramiteId, client): Promise<Campo[] | any> => {
   return Promise.all(
-    institution.map(async institucion => {
-      const procedures = (await client.query(queries.GET_PROCEDURE_BY_INSTITUTION, [institucion.id])).rows;
-      institucion.cuentasBancarias = (await client.query(queries.GET_BANK_ACCOUNTS_FOR_INSTITUTION, [institucion.id])).rows.map(cuenta => {
-        const documento = cuenta.documento.split(':');
-        return {
-          id: cuenta.id,
-          institucion: cuenta.institucion,
-          banco: cuenta.banco,
-          numeroCuenta: cuenta.numerocuenta,
-          nombreTitular: cuenta.nombretitular,
-          [documento[0]]: documento[1].trim(),
-        };
+    section.map(async el => {
+      el.campos = (await fieldsBySectionHandler(client.tipoUsuario, [el.id, tramiteId], client)).rows.map(ul => {
+        const id = ul.id_campo;
+        delete ul.id_tipo_tramite;
+        delete ul.id_campo;
+        return { id, ...ul };
       });
-      institucion.tramitesDisponibles = await getSectionByProcedure(procedures, client);
-      return institucion;
+      return el;
     })
   ).catch(error => {
-    throw errorMessageGenerator(error) || error.message || 'Error al obtener las instituciones';
+    console.log(error);
+    throw {
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener los campos',
+    };
   });
+};
+
+export const updateProcedureCost = async (id: string, newCost: string): Promise<Partial<TipoTramite>> => {
+  const client = await pool.connect();
+  try {
+    client.query('BEGIN');
+    const response = (await client.query(queries.UPDATE_PROCEDURE_COST, [id, newCost])).rows[0];
+    const newProcedure = (await client.query(queries.GET_ONE_PROCEDURE, [id])).rows[0];
+    const procedure: Partial<TipoTramite> = {
+      id: newProcedure.id_tipo_tramite,
+      titulo: newProcedure.nombre_tramite,
+      costo: newProcedure.costo_base,
+      pagoPrevio: newProcedure.pago_previo,
+    };
+    client.query('COMMIT');
+    return procedure;
+  } catch (error) {
+    client.query('ROLLBACK');
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al obtener los tramites',
+    };
+  } finally {
+    client.release();
+  }
 };
 
 export const getFieldsForValidations = async (idProcedure, state) => {
@@ -182,115 +243,41 @@ export const getFieldsForValidations = async (idProcedure, state) => {
   }
 };
 
-const getProcedureInstances = async (user, client) => {
-  try {
-    const response = (await procedureInstanceHandler(user.tipoUsuario, user.tipoUsuario !== 4 ? (user.institucion ? user.institucion.id : 0) : user.id, client))
-      .rows;
-    const takings = (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [response.map(el => +el.id)])).rows;
-    return response.map(el => {
-      const tramite: Partial<Tramite & {
-        tipoTramite: number;
-        consecutivo: number;
-        nombreLargo: string;
-        nombreCorto: string;
-        nombreTramiteLargo: string;
-        nombreTramiteCorto: string;
-        recaudos: string[];
-      }> = {
-        id: el.id,
-        tipoTramite: el.tipotramite,
-        estado: el.state,
-        datos: el.datos,
-        costo: el.costo,
-        fechaCreacion: el.fechacreacion,
-        codigoTramite: el.codigotramite,
-        usuario: el.usuario,
-        nombreLargo: el.nombrelargo,
-        nombreCorto: el.nombrecorto,
-        nombreTramiteLargo: el.nombretramitelargo,
-        nombreTramiteCorto: el.nombretramitecorto,
-        recaudos: takings.filter(taking => taking.id_tramite === el.id).map(taking => taking.url_archivo_recaudo),
-      };
-      return tramite;
-    });
-  } catch (error) {
-    throw {
-      status: 400,
-      error,
-      message: errorMessageGenerator(error) || 'Error al obtener instancias de tramite',
-    };
-  }
-};
-
-const getProcedureInstancesByInstitution = async (institution, tipoUsuario, client) => {
-  try {
-    const response = (await procedureInstanceHandler(tipoUsuario, institution.id, client)).rows;
-    return response.map(el => {
-      const tramite: Partial<Tramite & {
-        tipoTramite: number;
-        consecutivo: number;
-        nombreLargo: string;
-        nombreCorto: string;
-        nombreTramiteLargo: string;
-        nombreTramiteCorto: string;
-      }> = {
-        id: el.id,
-        tipoTramite: el.tipotramite,
-        estado: el.state,
-        datos: el.datos,
-        costo: el.costo,
-        fechaCreacion: el.fechacreacion,
-        codigoTramite: el.codigotramite,
-        usuario: el.usuario,
-        nombreLargo: el.nombrelargo,
-        nombreCorto: el.nombrecorto,
-        nombreTramiteLargo: el.nombretramitelargo,
-        nombreTramiteCorto: el.nombretramitecorto,
-      };
-      return tramite;
-    });
-  } catch (error) {
-    throw {
-      status: 500,
-      error,
-      message: errorMessageGenerator(error) || 'Error al obtener instancias de tramite',
-    };
-  }
-};
-
 export const procedureInit = async (procedure, user) => {
   const client = await pool.connect();
   const { tipoTramite, datos, pago, recaudos } = procedure;
   try {
     client.query('BEGIN');
     const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify(datos), user])).rows[0];
-    response.idTramite = response.id_tramite;
-    response.pagoPrevio = (await client.query(queries.GET_PREPAID_STATUS_FOR_PROCEDURE, [response.id_tipo_tramite])).rows[0].pago_previo;
+    response.idTramite = response.id;
+    response.pagoPrevio = (await client.query(queries.GET_PREPAID_STATUS_FOR_PROCEDURE, [response.tipotramite])).rows[0].pago_previo;
     const nextEvent = await getNextEventForProcedure(response, client);
-    const respState = await client.query(queries.UPDATE_STATE, [response.id_tramite, nextEvent, null]);
+    const respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null]);
 
     if (recaudos.length > 0) {
       recaudos.map(async urlRecaudo => {
-        await client.query(queries.INSERT_TAKINGS_IN_PROCEDURE, [response.id_tramite, urlRecaudo]);
+        await client.query(queries.INSERT_TAKINGS_IN_PROCEDURE, [response.id, urlRecaudo]);
       });
     }
 
     if (pago && nextEvent === 'validar_pa') {
-      await insertPaymentReference(pago, response.id_tramite, client);
+      await insertPaymentReference(pago, response.id, client);
     }
-    const tramite: Partial<Tramite & {
-      tipoTramite: number;
-      consecutivo: number;
-    }> = {
-      id: response.id_tramite,
-      tipoTramite: response.id_tipo_tramite,
-      estado: respState.rows[0].state,
+    console.log(response);
+    const tramite: Partial<Tramite> = {
+      id: response.id,
+      tipoTramite: response.tipotramite,
+      estado: response.state,
       datos: response.datos,
       costo: response.costo,
-      fechaCreacion: response.fecha_creacion,
-      codigoTramite: response.codigo_tramite,
-      consecutivo: response.consecutivo,
-      usuario: response.id_usuario,
+      fechaCreacion: response.fechacreacion,
+      codigoTramite: response.codigotramite,
+      usuario: response.usuario,
+      nombreLargo: response.nombrelargo,
+      nombreCorto: response.nombrecorto,
+      nombreTramiteLargo: response.nombretramitelargo,
+      nombreTramiteCorto: response.nombretramitecorto,
+      recaudos,
     };
     client.query('COMMIT');
     return {

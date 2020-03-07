@@ -1,22 +1,22 @@
-import { QueryResult } from "pg";
+import { QueryResult } from 'pg';
 
 export enum Nacionalidad {
-  V = "Venezolano",
-  E = "Extranjero"
+  V = 'Venezolano',
+  E = 'Extranjero',
 }
 
 export enum DescripcionesTipoUsuario {
-  Superuser = "Superuser",
-  Administrador = "Administrador",
-  Funcionario = "Funcionario",
-  UsuarioExterno = "Usuario externo"
+  Superuser = 'Superuser',
+  Administrador = 'Administrador',
+  Funcionario = 'Funcionario',
+  UsuarioExterno = 'Usuario externo',
 }
 
 export enum IDsTipoUsuario {
   Superuser = 1,
   Administrador,
   Funcionario,
-  UsuarioExterno
+  UsuarioExterno,
 }
 
 export interface Seccion {
@@ -90,6 +90,13 @@ export interface Tramite {
   fechaCreacion: Date;
   codigoTramite: string;
   usuario: Usuario;
+  tipoTramite: number;
+  consecutivo?: number;
+  nombreLargo: string;
+  nombreCorto: string;
+  nombreTramiteLargo: string;
+  nombreTramiteCorto: string;
+  recaudos: string[];
 }
 
 export interface Recaudo {
@@ -119,13 +126,13 @@ export namespace Payloads {
   export type CrearAdmin = CrearSuperuser;
 
   export type ProcedureItems = {
-    nombre: string
-    costo: number
-  }
+    nombre: string;
+    costo: number;
+  };
 
   export type UpdateProcedureInstanceCost = {
-    id: number
-    costo: number
-    items: ProcedureItems[]
-  }
+    id: number;
+    costo: number;
+    items: ProcedureItems[];
+  };
 }
