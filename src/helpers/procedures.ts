@@ -7,8 +7,9 @@ import { PoolClient } from 'pg';
 const pool = Pool.getInstance();
 
 export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any }> => {
-  const client = await pool.connect();
-  console.log(user)
+  const client: any = await pool.connect();
+  client.tipoUsuario = user.tipoUsuario;
+  console.log(user);
   try {
     const response = await client.query(queries.GET_ALL_INSTITUTION);
     const institution: Institucion[] = response.rows.map(el => {
@@ -91,9 +92,7 @@ export const updateProcedureCost = async (id: string, newCost: string): Promise<
 const getFieldsBySection = async (section, tramiteId, client): Promise<Campo[] | any> => {
   return Promise.all(
     section.map(async el => {
-      el.campos = (
-        await client.query(client.tipoUsuario ? queries.GET_FIELDS_BY_SECTION_FOR_OFFICIALS : queries.GET_FIELDS_BY_SECTION, [el.id, tramiteId])
-      ).rows.map(ul => {
+      el.campos = (await fieldsBySectionHandler(client.tipoUsuario, [el.id, tramiteId], client)).rows.map(ul => {
         const id = ul.id_campo;
         delete ul.id_tipo_tramite;
         delete ul.id_campo;
@@ -131,7 +130,7 @@ const getSectionByProcedure = async (procedure, client): Promise<TipoTramite[] |
       return tramite;
     })
   ).catch(error => {
-    console.log(error)
+    console.log(error);
     throw {
       message: errorMessageGenerator(error) || error.message || 'Error al obtener las secciones',
     };
@@ -181,7 +180,8 @@ export const getFieldsForValidations = async (idProcedure, state) => {
 
 const getProcedureInstances = async (user, client) => {
   try {
-    const response = (await procedureInstanceHandler(user.tipoUsuario, user.tipoUsuario !== 4 ? user.institucion ? user.institucion.id : 0 : user.id, client)).rows;
+    const response = (await procedureInstanceHandler(user.tipoUsuario, user.tipoUsuario !== 4 ? (user.institucion ? user.institucion.id : 0) : user.id, client))
+      .rows;
     const takings = (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [response.map(el => +el.id)])).rows;
     return response.map(el => {
       const tramite: Partial<Tramite & {
@@ -191,7 +191,7 @@ const getProcedureInstances = async (user, client) => {
         nombreCorto: string;
         nombreTramiteLargo: string;
         nombreTramiteCorto: string;
-        recaudos: string[]
+        recaudos: string[];
       }> = {
         id: el.id,
         tipoTramite: el.tipotramite,
@@ -205,7 +205,7 @@ const getProcedureInstances = async (user, client) => {
         nombreCorto: el.nombrecorto,
         nombreTramiteLargo: el.nombretramitelargo,
         nombreTramiteCorto: el.nombretramitecorto,
-        recaudos: takings.filter(taking => taking.id_tramite === el.id ).map(taking => taking.url_archivo_recaudo)
+        recaudos: takings.filter(taking => taking.id_tramite === el.id).map(taking => taking.url_archivo_recaudo),
       };
       return tramite;
     });
@@ -376,6 +376,14 @@ const procedureInstances = switchcase({
 })(null);
 
 const procedureInstanceHandler = (typeUser, payload, client) => {
-  console.log(typeUser, payload)
+  console.log('tipo de usuario', typeUser, 'payload', payload);
   return typeUser === 1 ? client.query(procedureInstances(typeUser)) : client.query(procedureInstances(typeUser), [payload]);
+};
+
+const fieldsBySection = switchcase({
+  4: queries.GET_FIELDS_BY_SECTION,
+})(queries.GET_FIELDS_BY_SECTION_FOR_OFFICIALS);
+
+const fieldsBySectionHandler = (typeUser, payload, client) => {
+  return client.query(fieldsBySection(typeUser), [...payload]);
 };
