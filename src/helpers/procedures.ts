@@ -119,6 +119,10 @@ const getSectionByProcedure = async (procedure, client): Promise<TipoTramite[] |
       };
       const secciones = (await client.query(queries.GET_SECTIONS_BY_PROCEDURE, [tramite.id])).rows;
       tramite.secciones = await getFieldsBySection(secciones, tramite.id, client);
+      tramite.secciones = tramite.secciones?.filter(el => el.campos!.length > 0);
+      if (tramite.secciones!.length < 1) {
+        delete tramite.secciones;
+      }
       tramite.recaudos = (await client.query(queries.GET_TAKINGS_BY_PROCEDURE, [tramite.id])).rows.map(el => {
         return {
           nombreCompleto: el.nombrecompleto,
