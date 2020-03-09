@@ -1,0 +1,30 @@
+doctype html
+html(lang="es")
+  include head.pug
+  body
+    p Sr(a). #[span(class="resaltado") #{nombreCompletoUsuario}]
+    div
+      p La solicitud de #[span(class="resaltado") #{nombreTipoTramite}] 
+        | con numero de expediente #[span(class="resaltado") #{codigoTramite}] ha sido #[span(class="resaltado") #{status}] de manera satisfactoria.
+      p *** REGULACIÓN DEL USO DE CORREO ELECTRÓNICO DE #[span(class="resaltado") #{nombreCortoInstitucion}] HACIA INTERNET ***
+      ol
+        li  
+          | La información contenida en este correo electrónico y cualquier
+          | documento adjunto es propiedad exclusiva de #{nombreCortoInstitucion}, es de carácter
+          | confidencial y no podrá ser objecto de reproducción total o parcial ni
+          | transmitirse de forma alguna por ningún medio.
+        li 
+          | Sólo está permitido su recepción y uso a personas debidamente
+          | autorizadas.
+        li 
+          | Si usted recibió este correo por error por favor destrúyalo y/o elimine
+          | cualquier copia guardada en su sistema.
+        li 
+          | Usted no debe utilizar la información aquí contenida para otro
+          | propósito, ni compartirla con otras personas.
+        li 
+          | El incumplimiento de lo antes descrito será sancionado conforme a la
+          | Ley.
+      p Antes de imprimir ese mensaje, asegúrese de que es necesario. La conservación del medio ambiente está en nuestras manos.
+      p Atentamente
+      p #{nombreCortoInstitucion}
