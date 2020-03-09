@@ -151,7 +151,14 @@ const queries = {
   VALIDATE_FIELDS_FROM_PROCEDURE:
     'SELECT DISTINCT camp.validacion, camp.tipo FROM CAMPOS_TRAMITES ct INNER JOIN CAMPOS camp ON\
      ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=$2',
-  GET_PREPAID_STATUS_FOR_PROCEDURE: 'SELECT pago_previo FROM tipos_tramites WHERE id_tipo_tramite=$1',
+  VALIDATE_FIELDS_FROM_PROCEDURE_FOR_OFFICIAL:
+    'SELECT DISTINCT camp.validacion, camp.tipo FROM CAMPOS_TRAMITES ct INNER JOIN CAMPOS camp ON\
+     ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=$2',
+  GET_RESOURCES_FOR_PROCEDURE:
+    'SELECT DISTINCT tt.pago_previo, tt.costo_base, usr.nombre_completo as nombrecompleto, \
+    usr.nombre_de_usuario as nombreusuario FROM tipos_tramites tt INNER JOIN tramites tr ON\
+    tt.id_tipo_tramite=tr.id_tipo_tramite INNER JOIN usuarios usr ON tr.id_usuario=usr.id_usuario\
+    WHERE tt.id_tipo_tramite=$1',
   GET_PROCEDURE_STATES:
     'SELECT id_tramite AS id, tramites_eventos_fsm(event ORDER BY id_evento_tramite) AS state  \
   FROM eventos_tramite \
@@ -161,7 +168,7 @@ const queries = {
   FROM eventos_tramite \
   WHERE id_tramite = $1 \
   GROUP BY id_tramite;', //tramite
-  UPDATE_STATE: 'SELECT update_tramite_state($1, $2, $3) as state;', //tramite, evento
+  UPDATE_STATE: 'SELECT update_tramite_state($1, $2, $3, $4) as state;', //tramite, evento
   UPDATE_PROCEDURE_INSTANCE_COST: 'UPDATE tramites SET costo = $1 WHERE id_tramite = $2',
   GET_PROCEDURE_BY_ID: 'SELECT * FROM tramites_state_with_resources WHERE id=$1',
   GET_CERTIFICATE_BY_PROCEDURE_ID: 'SELECT url_certificado AS "urlCertificado" FROM certificados WHERE id_tramite = $1',
