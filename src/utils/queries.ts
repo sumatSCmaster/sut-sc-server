@@ -151,9 +151,6 @@ const queries = {
   VALIDATE_FIELDS_FROM_PROCEDURE:
     'SELECT DISTINCT camp.validacion, camp.tipo FROM CAMPOS_TRAMITES ct INNER JOIN CAMPOS camp ON\
      ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=$2',
-  VALIDATE_FIELDS_FROM_PROCEDURE_FOR_OFFICIAL:
-    'SELECT DISTINCT camp.validacion, camp.tipo FROM CAMPOS_TRAMITES ct INNER JOIN CAMPOS camp ON\
-     ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=$2',
   GET_RESOURCES_FOR_PROCEDURE:
     'SELECT DISTINCT tt.pago_previo, tt.costo_base, usr.nombre_completo as nombrecompleto, \
     usr.nombre_de_usuario as nombreusuario FROM tipos_tramites tt INNER JOIN tramites tr ON\

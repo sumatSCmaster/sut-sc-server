@@ -316,7 +316,7 @@ export const procedureInit = async (procedure, user) => {
 
 export const updateProcedure = async procedure => {
   const client = await pool.connect();
-  const { pago, datos } = procedure;
+  let { pago, datos } = procedure;
   try {
     client.query('BEGIN');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0];
@@ -324,8 +324,13 @@ export const updateProcedure = async procedure => {
       procedure.pagoPrevio = resources.pago_previo;
     }
     const nextEvent = await getNextEventForProcedure(procedure, client);
+    if (!nextEvent) return { status: 403, message: 'El tramite ya ha finalizado, no se puede modificar' };
     if (pago && nextEvent === 'validar_pd') {
       await insertPaymentReference(pago, procedure.idTramite, client);
+    }
+    if (datos) {
+      const prevData = (await client.query('SELECT datos FROM tramites WHERE id_tramite=$1', [procedure.idTramite])).rows[0];
+      if (!prevData.datos.usuario && !prevData.datos.funcionario) datos = { usuario: prevData.datos, funcionario: datos };
     }
     const respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, procedure.costo || null]);
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
@@ -380,7 +385,7 @@ const procedureEvents = switchcase({
   validando: { 0: 'enproceso_pa', 1: 'finalizar' },
   enproceso: { 0: 'finalizar', 1: 'ingresar_datos' },
   ingresardatos: { 0: null, 1: 'validar_pd' },
-  finalizado: { 0: 'completado', 1: 'completado' },
+  finalizado: { 0: null, 1: null },
 })({ 0: null, 1: null });
 
 const eventHandler = (prevState, isPrepaid) => {
