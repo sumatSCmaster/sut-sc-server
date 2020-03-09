@@ -97,6 +97,7 @@ export interface Tramite {
   nombreTramiteLargo: string;
   nombreTramiteCorto: string;
   recaudos: string[];
+  planilla: string;
 }
 
 export interface Recaudo {
