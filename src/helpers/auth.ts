@@ -4,17 +4,8 @@ import { errorMessageGenerator } from './errors';
 import { createTransport, createTestAccount } from 'nodemailer';
 import { v4 as uuidv4 } from 'uuid';
 import { genSalt, hash } from 'bcryptjs';
+import transporter from '@utils/mail';
 const pool = Pool.getInstance();
-
-let transporter = createTransport({
-  pool: true,
-  host: 'smtp.ethereal.email',
-  port: 587,
-  auth: {
-    user: 'marcia22@ethereal.email',
-    pass: 'ymY3GE7ZMkbYM4nDdP',
-  },
-});
 
 export const forgotPassword = async email => {
   const client = await pool.connect();
