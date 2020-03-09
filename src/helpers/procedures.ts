@@ -252,7 +252,6 @@ export const getFieldsForValidations = async (idProcedure, state) => {
 export const procedureInit = async (procedure, user) => {
   const client = await pool.connect();
   const { tipoTramite, datos, pago, recaudos } = procedure;
-  console.log(user);
   try {
     client.query('BEGIN');
     const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify(datos), user.id])).rows[0];
