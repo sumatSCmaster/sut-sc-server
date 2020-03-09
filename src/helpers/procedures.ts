@@ -331,6 +331,7 @@ export const updateProcedure = async procedure => {
     if (datos) {
       const prevData = (await client.query('SELECT datos FROM tramites WHERE id_tramite=$1', [procedure.idTramite])).rows[0];
       if (!prevData.datos.usuario && !prevData.datos.funcionario) datos = { usuario: prevData.datos, funcionario: datos };
+      else datos = prevData.datos;
     }
     const respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, procedure.costo || null]);
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
