@@ -77,6 +77,46 @@ const validations = {
     .isArray()
     .isLength({ min: 1 })
     .withMessage('Debe poseer al menos un archivo de recaudos'),
+  ubicadoEn: check('tramite.datos.ubicadoEn')
+    .exists()
+    .withMessage('Debe incluir la ubicacion')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir una ubicacion valida'),
+  rif: check('tramite.datos.rif')
+    .exists()
+    .withMessage('Debe incluir el rif de la ubicacion')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir un rif valido'),
+  razonSocial: check('tramite.datos.rif')
+    .exists()
+    .withMessage('Debe incluir la razon social')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir una razon social valida'),
+  tipoOcupacion: check('tramite.datos.tipoOcupacion')
+    .exists()
+    .withMessage('Debe incluir el tipo de ocupacion del establecimiento')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir un tipo de ocupacion del establecimiento'),
+  areaConstruccion: check('tramite.datos.areaConstruccion')
+    .exists()
+    .withMessage('Debe incluir el area de construccion')
+    .isInt()
+    .withMessage('Area de construccion invalida'),
+  numeroProyecto: check('tramite.datos.numeroProyecto')
+    .exists()
+    .withMessage('Debe incluir el numero del proyecto')
+    .isInt()
+    .withMessage('Debe incluir un numero de proyecto valido'),
+  fechaAprobacion: check('tramite.datos.fechaAprobacion')
+    .exists()
+    .withMessage('Debe incluir la fecha de aprobacion del proyecto')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir una fecha de aprobacion valida'),
 };
 
 export const createSuperuser = [
@@ -258,6 +298,16 @@ export const isOfficial = (req, res, next) => {
     res.send({
       status: 401,
       response: 'No tiene permisos para realizar esta operación',
+    });
+  }
+};
+
+export const isExternalUser = (req, res, next) => {
+  if (req.user.tipoUsuario === 4) next();
+  else {
+    res.send({
+      status: 401,
+      response: 'Sólo los usuarios externos pueden realizar esta operación',
     });
   }
 };
