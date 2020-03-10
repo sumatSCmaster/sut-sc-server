@@ -211,7 +211,7 @@ export const completeExtUserSignUp = async (user, id) => {
     ]);
     client.query('COMMIT');
     const data = response.rows[0];
-    const user: Usuario = {
+    const usuario: Usuario = {
       id: data.id_usuario,
       nombreCompleto: data.nombre_completo,
       nombreUsuario: data.nombre_de_usuario,
@@ -221,7 +221,7 @@ export const completeExtUserSignUp = async (user, id) => {
       cedula: data.cedula,
       telefono: data.telefono,
     };
-    return { status: 201, user, token: generateToken(user) };
+    return { status: 201, usuario, token: generateToken(user) };
   } catch (error) {
     client.query('ROLLBACK');
     throw {
@@ -250,7 +250,7 @@ export const signUpUser = async user => {
     ]);
     client.query('COMMIT');
     const data = response.rows[0];
-    const user: Usuario = {
+    const usuario: Usuario = {
       id: data.id_usuario,
       nombreCompleto: data.nombre_completo,
       nombreUsuario: data.nombre_de_usuario,
@@ -261,7 +261,7 @@ export const signUpUser = async user => {
     };
     return {
       status: 201,
-      user,
+      usuario,
       message: 'Usuario registrado',
       token: generateToken(user),
     };
