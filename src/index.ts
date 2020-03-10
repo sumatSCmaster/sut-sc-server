@@ -5,6 +5,7 @@ import session from 'express-session';
 import passport from 'passport';
 import cors from 'cors';
 import router from './routes';
+import { resolve } from 'path';
 import { JwtStrategy, LocalStrategy, GoogleStrategy, FacebookStrategy } from './utils/Strategies';
 
 require('dotenv').config();
@@ -21,6 +22,10 @@ app.use(
     secret: process.env.SESSION_SECRET || 'keyboard cat',
   })
 );
+
+if(process.env.NODE_ENV !== 'production'){
+  app.use(express.static(resolve(__dirname, '../archivos' )));
+}
 
 passport.use('jwt', JwtStrategy);
 passport.use(LocalStrategy);

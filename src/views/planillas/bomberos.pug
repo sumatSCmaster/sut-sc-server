@@ -1,0 +1,70 @@
+extends default
+
+block content
+  div#fecha
+    p 
+      b FECHA:
+      span &nbsp; #{fecha}
+    p 
+      b Codigo de Tramite:
+      span &nbsp; #{codigo}
+  div#planilla
+    div#table
+      div.th
+        p SOLICITUD DE INSPECCION
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p 
+            b Nombre o Razon Social:
+            span &nbsp; #{datos.nombreORazon}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Cedula o RIF:
+            span &nbsp; #{datos.cedulaORif}
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Punto de Referencia
+            span &nbsp; #{datos.puntoReferencia}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Direccion:
+            span &nbsp; #{datos.direccion}
+      div.tr
+        div.td(style={ width: '40%' }).border-bottom.border-right
+          p
+            b Sector
+            span &nbsp; #{datos.sector}
+        div.td(style={ width: '60%' }).border-bottom
+          p
+            b Parroquia:
+            span &nbsp; #{datos.parroquia}
+      div.th
+        p DATOS DEL SOLICITANTE
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Nombre
+            span &nbsp; #{datos.nombre}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Cedula:
+            span &nbsp; #{datos.cedula}
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Telefono:
+            span &nbsp; #{datos.telefono}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Correo:
+            span &nbsp; #{datos.correo}
+      div.tr
+        div.td(style={ width: '40%' }).border-right
+          p
+            b Contacto:
+            span &nbsp; #{datos.contacto}
+        div.td(style={ width: '60%' })
+          p
+            b Horario:
+            span &nbsp; #{datos.horario}

@@ -1,0 +1,197 @@
+html{
+  zoom: 0.63;
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+#wrapper {
+  width: 100%;
+  height: 100%;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+}
+
+#header, #footer {
+  width: 100%;
+  height: 100px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+#alcaldia, #logo {
+  width: 200px;
+  -o-object-fit: contain;
+     object-fit: contain;
+}
+
+.header-child {
+  border: 1px solid lightgray;
+  padding: 10;
+  -webkit-box-flex: 2;
+      -ms-flex: 2;
+          flex: 2;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;  
+  -webkit-box-pack: center;  
+      -ms-flex-pack: center;  
+          justify-content: center;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  text-align: center;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+}
+
+.header-child > p {
+  margin: 2;
+  font-family: Helvetica;
+  font-weight: bold;
+}
+
+.header-child:nth-child(1), .header-child:nth-child(3) {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+} 
+
+img#divider {
+  width: 100%;
+  height: 10px;
+}
+
+#content {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  background: url('../images/background.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  text-align: center;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+#content > p {
+  margin: 5px 0;
+  font-weight: bolder;
+  font-size: 22px;
+}
+
+#content > p:nth-child(1) {
+  text-decoration: underline;
+}
+
+#fecha {
+  width: 100%;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+  height: 20px;
+  margin: 10px 0px;
+}
+
+#fecha > p:nth-child(1) {
+  margin-left: 50px;
+}
+
+#fecha > p:nth-child(2) {
+  margin-right: 50px;
+}
+
+#planilla {
+  width: 90%;
+  height: 85%;
+}
+
+#table {
+  width: 100%;
+  max-height: 95%;
+  margin-top: 20px;
+  border: 2px solid #1287CA;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+}
+
+.all-border {
+  border: 1px solid #1287CA;
+}
+
+.border-right {
+  border-right: 1px solid #1287CA;
+}
+
+.border-bottom {
+  border-bottom: 1px solid #1287CA;
+}
+
+.th {
+  width: 100%;
+  background-color: #1287CA;
+  padding: 5px 0px;
+  font-size: 20px;
+}
+
+.th > p {
+  color: white;
+  font-weight: bolder;
+  margin: 0;
+}
+
+.tr {
+  width: 100%;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+.td > p {
+  margin: 0;
+  text-align: left;
+  padding: 10px;
+}
+
+#footer {
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  text-align: center;
+}
