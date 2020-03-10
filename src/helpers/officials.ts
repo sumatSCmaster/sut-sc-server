@@ -119,9 +119,20 @@ export const updateOfficial = async (official: any, id: string) => {
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    await client.query(queries.UPDATE_OFFICIAL, [nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, rif, telefono, id]);
+    const response = (await client.query(queries.UPDATE_OFFICIAL, [nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, rif, telefono, id])).rows[0];
     client.query('COMMIT');
-    return { status: 200, message: 'Funcionario actualizado' };
+    const funcionario = {
+      id: response.id_usuario,
+      nombreCompleto: response.nombre_completo,
+      nombreUsuario: response.nombre_de_usuario,
+      tipoUsuario: response.id_tipo_usuario,
+      direccion: response.direccion,
+      cedula: response.cedula,
+      nacionalidad: response.nacionalidad,
+      password: response.password,
+      telefono: response.telefono,
+    };
+    return { status: 200, funcionario, message: 'Funcionario actualizado' };
   } catch (e) {
     client.query('ROLLBACK');
     throw {

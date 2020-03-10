@@ -366,6 +366,7 @@ const createRequestForm = async (procedure, client): Promise<string> => {
     )
   ).rows[0];
   const procedureData = {
+    id: procedure.idTramite,
     fecha: tramite.fechacreacion,
     codigo: tramite.codigotramite,
     formato: tramite.formato,

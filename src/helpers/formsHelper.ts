@@ -10,7 +10,7 @@ const archivosDict = {
   SAGAS: 'sagas',
 };
 
-export const createForm = ({ fecha, codigo, formato, tramite, institucion, datos }) => {
+export const createForm = ({ fecha, codigo, formato, tramite, institucion, datos, id }) => {
   return new Promise((res, rej) => {
     console.log('marica ya', resolve(__dirname, `../views/planillas/${archivosDict[institucion]}.pug`));
     const html = renderFile(resolve(__dirname, `../views/planillas/${archivosDict[institucion]}.pug`), {
@@ -20,6 +20,7 @@ export const createForm = ({ fecha, codigo, formato, tramite, institucion, datos
       tramite,
       institucion,
       datos,
+      id,
       cache: false,
     });
     const dir = `${process.env.SERVER_URL}/archivos/${codigo}.pdf`;
