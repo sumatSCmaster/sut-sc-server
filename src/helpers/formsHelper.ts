@@ -12,6 +12,7 @@ const archivosDict = {
 
 export const createForm = ({ fecha, codigo, formato, tramite, institucion, datos }) => {
   return new Promise((res, rej) => {
+    console.log('marica ya', resolve(__dirname, `../views/planillas/${archivosDict[institucion]}.pug`));
     const html = renderFile(resolve(__dirname, `../views/planillas/${archivosDict[institucion]}.pug`), {
       fecha,
       codigo,

@@ -99,7 +99,7 @@ export const createOfficial = async (official: any, institution: number) => {
       password: off.rows[0].password,
       telefono: off.rows[0].telefono,
     };
-    return { status: 201, funcionario, message: 'Funcionario creado' };
+    return { status: 201, funcionarios: [funcionario], message: 'Funcionario creado' };
   } catch (e) {
     client.query('ROLLBACK');
     console.log(e);
