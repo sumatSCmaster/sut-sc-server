@@ -12,7 +12,6 @@ const archivosDict = {
 
 export const createForm = ({ fecha, codigo, formato, tramite, institucion, datos }) => {
   return new Promise((res, rej) => {
-    console.log('ola', 'file://' + resolve(__dirname, '../views/planillas/') + '/');
     const html = renderFile(resolve(__dirname, `../views/planillas/${archivosDict[institucion]}.pug`), {
       fecha,
       codigo,
@@ -23,7 +22,6 @@ export const createForm = ({ fecha, codigo, formato, tramite, institucion, datos
       cache: false,
     });
     const dir = `${process.env.SERVER_URL}/archivos/${codigo}.pdf`;
-    console.log(dir);
     if (dev) {
       pdf
         .create(html, { format: 'Letter', border: '5mm', header: { height: '75px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
