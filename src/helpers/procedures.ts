@@ -372,7 +372,6 @@ const createRequestForm = async (procedure, client): Promise<string> => {
     formato: tramite.formato,
     tramite: tramite.nombretramitelargo,
     institucion: tramite.nombrecorto,
-    id: tramite.id,
     datos: tramite.datos,
   };
   const form = (await createForm(procedureData)) as string;
