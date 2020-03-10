@@ -165,7 +165,7 @@ const queries = {
   FROM eventos_tramite \
   WHERE id_tramite = $1 \
   GROUP BY id_tramite;', //tramite
-  UPDATE_STATE: 'SELECT update_tramite_state($1, $2, $3, $4) as state;', //tramite, evento
+  UPDATE_STATE: 'SELECT update_tramite_state($1, $2, $3, $4, $5) as state;', //tramite, evento
   UPDATE_PROCEDURE_INSTANCE_COST: 'UPDATE tramites SET costo = $1 WHERE id_tramite = $2',
   GET_PROCEDURE_BY_ID: 'SELECT * FROM tramites_state_with_resources WHERE id=$1',
   GET_CERTIFICATE_BY_PROCEDURE_ID: 'SELECT url_certificado AS "urlCertificado" FROM certificados WHERE id_tramite = $1',

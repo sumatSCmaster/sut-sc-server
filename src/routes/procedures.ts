@@ -34,7 +34,6 @@ router.post('/init', validate(), checkResult, authenticate('jwt'), isExternalUse
   if (data) res.status(data.status).json(data);
 });
 
-//TODO: refactorizar en la medida de lo posible.
 router.put('/update', validate(), checkResult, authenticate('jwt'), isAuth, async (req: any, res) => {
   const { tramite } = req.body;
   const [error, data] = await fulfill(updateProcedure(tramite));

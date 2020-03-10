@@ -5,6 +5,7 @@ import { errorMessageGenerator } from './errors';
 import { insertPaymentReference } from './banks';
 import MailEmitter from './events/procedureUpdateState';
 import { PoolClient } from 'pg';
+import { createForm } from './formsHelper';
 const pool = Pool.getInstance();
 
 export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any }> => {
@@ -259,8 +260,8 @@ export const procedureInit = async (procedure, user) => {
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.tipotramite])).rows[0];
     response.pagoPrevio = resources.pago_previo;
     const nextEvent = await getNextEventForProcedure(response, client);
-    const respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, resources.costo_base || null]);
-
+    const dir = await createRequestForm(response, client);
+    const respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, resources.costo_base || null, dir]);
     if (recaudos.length > 0) {
       recaudos.map(async urlRecaudo => {
         await client.query(queries.INSERT_TAKINGS_IN_PROCEDURE, [response.id, urlRecaudo]);
@@ -275,7 +276,7 @@ export const procedureInit = async (procedure, user) => {
       tipoTramite: response.tipotramite,
       estado: respState.rows[0].state,
       datos: response.datos,
-      planilla: response.planilla,
+      planilla: dir,
       costo: +resources.costo_base,
       fechaCreacion: response.fechacreacion,
       codigoTramite: response.codigotramite,
@@ -287,15 +288,7 @@ export const procedureInit = async (procedure, user) => {
       recaudos,
     };
     client.query('COMMIT');
-    const mailData = {
-      codigoTramite: response.codigotramite,
-      emailUsuario: user.nombreusuario,
-      nombreCompletoUsuario: user.nombrecompleto,
-      nombreTipoTramite: response.nombretramitelargo,
-      nombreCortoInstitucion: response.nombrecorto,
-      status: respState.rows[0].state,
-    };
-    MailEmitter.emit('procedureEventUpdated', mailData);
+    sendEmail({ ...tramite, nombreUsuario: user.nombreUsuario, nombreCompletoUsuario: user.nombreCompleto, estado: respState.rows[0].state });
     return {
       status: 201,
       message: 'Tramite iniciado!',
@@ -332,7 +325,8 @@ export const updateProcedure = async procedure => {
       if (!prevData.datos.usuario && !prevData.datos.funcionario) datos = { usuario: prevData.datos, funcionario: datos };
       else datos = prevData.datos;
     }
-    const respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, procedure.costo || null]);
+    // const dir = await createRequestForm(procedure, client);
+    const respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, procedure.costo || null, null]);
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
     client.query('COMMIT');
     const tramite: Partial<Tramite> = {
@@ -350,15 +344,7 @@ export const updateProcedure = async procedure => {
       nombreTramiteLargo: response.nombretramitelargo,
       nombreTramiteCorto: response.nombretramitecorto,
     };
-    const mailData = {
-      codigoTramite: response.codigotramite,
-      emailUsuario: resources.nombreusuario,
-      nombreCompletoUsuario: resources.nombrecompleto,
-      nombreTipoTramite: response.nombreTramiteLargo,
-      nombreCortoInstitucion: response.nombrecorto,
-      status: respState.rows[0].state,
-    };
-    MailEmitter.emit('procedureEventUpdated', mailData);
+    sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
     return { status: 200, message: 'Trámite actualizado', tramite };
   } catch (error) {
     client.query('ROLLBACK');
@@ -370,6 +356,37 @@ export const updateProcedure = async procedure => {
   } finally {
     client.release();
   }
+};
+
+const createRequestForm = async (procedure, client): Promise<string> => {
+  const tramite = (
+    await client.query(
+      'SELECT tsr.*, ttr.formato FROM tramites_state_with_resources tsr INNER JOIN tipos_tramites ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
+      [procedure.idTramite]
+    )
+  ).rows[0];
+  const procedureData = {
+    fecha: tramite.fechacreacion,
+    codigo: tramite.codigotramite,
+    formato: tramite.formato,
+    tramite: tramite.nombretramitelargo,
+    institucion: tramite.nombrecorto,
+    datos: tramite.datos,
+  };
+  const form = (await createForm(procedureData)) as string;
+  return form;
+};
+
+const sendEmail = procedure => {
+  const mailData = {
+    codigoTramite: procedure.codigoTramite,
+    emailUsuario: procedure.nombreUsuario,
+    nombreCompletoUsuario: procedure.nombreCompletoUsuario,
+    nombreTipoTramite: procedure.nombreTramiteLargo,
+    nombreCortoInstitucion: procedure.nombreCorto,
+    status: procedure.estado,
+  };
+  MailEmitter.emit('procedureEventUpdated', mailData);
 };
 
 const getNextEventForProcedure = async (procedure, client) => {

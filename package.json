@@ -31,7 +31,6 @@
     "flatted": "^2.0.1",
     "gulp-typescript": "^6.0.0-alpha.1",
     "html-pdf": "^2.2.0",
-    "html-template-pdf": "^1.0.3",
     "jwt-simple": "^0.5.6",
     "lodash": "^4.17.15",
     "module-alias": "^2.2.2",
