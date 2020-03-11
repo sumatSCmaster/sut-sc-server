@@ -11,6 +11,9 @@ function defaultTask(cb) {
     .pipe(tsProject())
     .pipe(sourcemaps.write());
     result.pipe(gulp.dest(`${destBuildFolder}`));
+    gulp.src('./src/views/planillas/*.pug').pipe(gulp.dest(`./${destBuildFolder}/views/planillas`));
+    gulp.src('./src/views/planillas/css/*.css').pipe(gulp.dest(`./${destBuildFolder}/views/planillas/css`));
+    gulp.src('./src/views/planillas/images/*.png').pipe(gulp.dest(`./${destBuildFolder}/views/planillas/images`));
     return gulp.src('./src/views/*.{pug,css}').pipe(gulp.dest(`./${destBuildFolder}/views`));
 }
 
