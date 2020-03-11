@@ -88,7 +88,7 @@ export const createOfficial = async (official: any, institution: number) => {
     ]);
     const off = await client.query(queries.GET_OFFICIAL, [insert.rows[0].id_usuario, insert.rows[0].id_institucion]);
     client.query('COMMIT');
-    const funcionario = {
+    const usuario = {
       id: off.rows[0].id_usuario,
       nombreCompleto: off.rows[0].nombre_completo,
       nombreUsuario: off.rows[0].nombre_de_usuario,
@@ -99,7 +99,7 @@ export const createOfficial = async (official: any, institution: number) => {
       password: off.rows[0].password,
       telefono: off.rows[0].telefono,
     };
-    return { status: 201, funcionario, message: 'Funcionario creado' };
+    return { status: 201, usuario, message: 'Funcionario creado' };
   } catch (e) {
     client.query('ROLLBACK');
     console.log(e);
@@ -121,7 +121,7 @@ export const updateOfficial = async (official: any, id: string) => {
     client.query('BEGIN');
     const response = (await client.query(queries.UPDATE_OFFICIAL, [nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, telefono, id])).rows[0];
     client.query('COMMIT');
-    const funcionario = {
+    const usuario = {
       id: response.id_usuario,
       nombreCompleto: response.nombre_completo,
       nombreUsuario: response.nombre_de_usuario,
@@ -132,7 +132,7 @@ export const updateOfficial = async (official: any, id: string) => {
       password: response.password,
       telefono: response.telefono,
     };
-    return { status: 200, funcionario, message: 'Funcionario actualizado' };
+    return { status: 200, usuario, message: 'Funcionario actualizado' };
   } catch (e) {
     client.query('ROLLBACK');
     throw {
