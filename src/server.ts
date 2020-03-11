@@ -11,4 +11,4 @@ init(socket);
 async function x(){
     console.log(await createForm({fecha: Date.now(), codigo: 'codigo', formato: 'otamrof', tramite: 'tarmite', institucion: 'SAGAS', id: 1, datos: {}}))
 }
-// x()
+x()
