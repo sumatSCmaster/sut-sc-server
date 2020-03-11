@@ -6,6 +6,7 @@ import { insertPaymentReference } from './banks';
 import MailEmitter from './events/procedureUpdateState';
 import { PoolClient } from 'pg';
 import { createForm } from './formsHelper';
+import switchcase from '@utils/switch';
 const pool = Pool.getInstance();
 
 export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any }> => {
@@ -395,8 +396,6 @@ const getNextEventForProcedure = async (procedure, client) => {
   const nextEvent = eventHandler(response.state, procedure.pagoPrevio);
   return nextEvent;
 };
-
-const switchcase = cases => defaultCase => key => (cases.hasOwnProperty(key) ? cases[key] : defaultCase);
 
 const procedureEvents = switchcase({
   iniciado: { 0: 'validar_pa', 1: 'enproceso_pd' },

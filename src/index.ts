@@ -23,8 +23,8 @@ app.use(
   })
 );
 
-if(process.env.NODE_ENV !== 'production'){
-  app.use(express.static(resolve(__dirname, '../archivos' )));
+if (process.env.NODE_ENV !== 'production') {
+  app.use(express.static(resolve(__dirname, '../archivos')));
 }
 
 passport.use('jwt', JwtStrategy);
