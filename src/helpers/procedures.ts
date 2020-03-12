@@ -236,7 +236,7 @@ export const getFieldsForValidations = async (idProcedure, state) => {
     let takings = 0;
     const response = (await client.query(queries.VALIDATE_FIELDS_FROM_PROCEDURE, [idProcedure, state])).rows;
     if (state === 'iniciado') {
-      takings = (await client.query(queries.GET_TAKINGS_BY_PROCEDURE, [idProcedure])).rowCount;
+      takings = (await client.query(queries.GET_TAKINGS_FOR_VALIDATION, [idProcedure])).rowCount;
     }
     return { fields: response, takings };
   } catch (error) {
