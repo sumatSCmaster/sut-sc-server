@@ -140,6 +140,12 @@ const validations = {
     .withMessage('Debe incluir el aforo de la ubicacion')
     .isInt()
     .withMessage('Debe incluir un aforo valido'),
+  informe: check('tramite.datos.informe')
+    .exists()
+    .withMessage('Debe incluir el informe de la inspeccion')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir un informe de la inspeccion valido'),
 };
 
 export const createSuperuser = [

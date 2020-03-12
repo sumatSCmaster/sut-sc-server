@@ -5,6 +5,7 @@ import official from './officials';
 import banks from './banks';
 import file from './file';
 import procedures from './procedures';
+import affairs from './affairs';
 import { authenticate } from 'passport';
 import resources from './resources';
 import validateDoc from './validateDoc';
@@ -18,6 +19,7 @@ router.use('/official', official);
 router.use('/procedures', procedures);
 router.use('/uploads', file);
 router.use('/validateDoc', validateDoc);
+router.use('/affairs', affairs);
 router.use(resources);
 //router.use("/notification", notification);
 
