@@ -128,13 +128,16 @@ const queries = {
   GET_FIELDS_BY_SECTION_FOR_OFFICIALS:
     "SELECT ct.*, camp.nombre, camp.tipo, camp.validacion, camp.col FROM campos_tramites ct INNER JOIN\
     campos camp ON ct.id_campo = camp.id_campo WHERE ct.id_seccion = $1 AND ct.id_tipo_tramite = $2 AND NOT (ct.estado='iniciado' OR ct.estado = 'ingresardatos') ORDER BY ct.orden",
+  GET_FIELDS_FOR_SOCIAL_CASE:
+    'SELECT ct.*, camp.nombre, camp.tipo, camp.validacion, camp.col FROM campos_tramites ct INNER JOIN\
+  campos camp ON ct.id_campo = camp.id_campo WHERE ct.id_seccion = $1 AND ct.id_tipo_tramite = $2 ORDER BY ct.orden',
   GET_TAKINGS_BY_PROCEDURE:
     'SELECT rec.id_recaudo as id, rec.nombre_largo AS nombreCompleto, rec.nombre_corto AS nombreCorto,\
   ttr.fisico FROM RECAUDOS rec INNER JOIN tipos_tramites_recaudos ttr ON rec.id_recaudo=ttr.id_recaudo\
   WHERE ttr.id_tipo_tramite=$1 ORDER BY rec.id_recaudo',
   GET_TAKINGS_FOR_VALIDATION:
-    'SELECT rec.id_recaudo as id, rec.nombre_largo AS nombreCompleto, rec.nombre_corto AS nombreCorto,\
-ttr.fisico FROM RECAUDOS rec INNER JOIN tipos_tramites_recaudos ttr ON rec.id_recaudo=ttr.id_recaudo\
+    'SELECT rec.id_recaudo as id, rec.nombre_largo AS nombreCompleto, rec.nombre_corto AS nombreCorto, \
+ttr.fisico FROM RECAUDOS rec INNER JOIN tipos_tramites_recaudos ttr ON rec.id_recaudo=ttr.id_recaudo \
 WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_TAKINGS_OF_INSTANCES: 'SELECT * FROM tramites_archivos_recaudos WHERE id_tramite = ANY( $1::int[] );',
   INSERT_TAKINGS_IN_PROCEDURE: 'INSERT INTO tramites_archivos_recaudos VALUES ($1,$2)',

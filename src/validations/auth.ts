@@ -117,6 +117,18 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('Debe incluir una fecha de aprobacion valida'),
+  codigoPermisoConstruccion: check('tramite.datos.codigoPermisoConstruccion')
+    .exists()
+    .withMessage('Debe incluir el codigo de permiso de construccion del proyecto')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir un codigo de permiso de construcion valido'),
+  fechaPermisoConstruccion: check('tramite.datos.fechaPermisoConstruccion')
+    .exists()
+    .withMessage('Debe incluir la fecha del permiso de construccion')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir una fecha de permiso de construccion valida'),
 };
 
 export const createSuperuser = [

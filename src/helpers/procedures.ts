@@ -188,7 +188,7 @@ const getSectionByProcedure = async (procedure, client): Promise<TipoTramite[] |
 const getFieldsBySection = async (section, tramiteId, client): Promise<Campo[] | any> => {
   return Promise.all(
     section.map(async el => {
-      el.campos = (await fieldsBySectionHandler(client.tipoUsuario, [el.id, tramiteId], client)).rows.map(ul => {
+      el.campos = (await fieldsBySectionHandler(tramiteId === 0 ? 0 : client.tipoUsuario, [el.id, tramiteId], client)).rows.map(ul => {
         const id = ul.id_campo;
         delete ul.id_tipo_tramite;
         delete ul.id_campo;
@@ -397,6 +397,13 @@ const getNextEventForProcedure = async (procedure, client) => {
   return nextEvent;
 };
 
+//TODO: completar para casos sociales
+const getNextEventForSocialCase = async (procedure, client) => {
+  const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
+  const nextEvent = eventHandler(response.state, procedure.pagoPrevio);
+  return nextEvent;
+};
+
 const procedureEvents = switchcase({
   iniciado: { 0: 'validar_pa', 1: 'enproceso_pd' },
   validando: { 0: 'enproceso_pa', 1: 'finalizar' },
@@ -422,6 +429,7 @@ const procedureInstanceHandler = (typeUser, payload, client) => {
 };
 
 const fieldsBySection = switchcase({
+  0: queries.GET_FIELDS_FOR_SOCIAL_CASE,
   4: queries.GET_FIELDS_BY_SECTION,
 })(queries.GET_FIELDS_BY_SECTION_FOR_OFFICIALS);
 
