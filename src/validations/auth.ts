@@ -129,6 +129,12 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('Debe incluir una fecha de permiso de construccion valida'),
+  nombreObra: check('tramite.datos.nombreObra')
+    .exists()
+    .withMessage('Debe incluir el nombre de obra de la construccion')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir un nombre de obra de la construccion valido'),
 };
 
 export const createSuperuser = [
