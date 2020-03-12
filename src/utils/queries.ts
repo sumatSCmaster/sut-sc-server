@@ -172,6 +172,11 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   FROM eventos_tramite \
   WHERE id_tramite = $1 \
   GROUP BY id_tramite;', //tramite
+  GET_PROCEDURE_STATE_FOR_SOCIAL_CASE:
+    'SELECT id_caso AS id, casos_sociales_fsm(event ORDER BY id_evento_caso) AS state  \
+  FROM eventos_casos_sociales \
+  WHERE id_caso = $1 \
+  GROUP BY id_caso;', 
   UPDATE_STATE: 'SELECT update_tramite_state($1, $2, $3, $4, $5) as state;', //tramite, evento
   UPDATE_PROCEDURE_INSTANCE_COST: 'UPDATE tramites SET costo = $1 WHERE id_tramite = $2',
   GET_PROCEDURE_BY_ID: 'SELECT * FROM tramites_state_with_resources WHERE id=$1',
