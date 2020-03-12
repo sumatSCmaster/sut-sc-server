@@ -398,9 +398,9 @@ const getNextEventForProcedure = async (procedure, client) => {
 };
 
 //TODO: completar para casos sociales
-const getNextEventForSocialCase = async (procedure, client) => {
-  const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
-  const nextEvent = eventHandler(response.state, procedure.pagoPrevio);
+const getNextEventForSocialCase = async (affair, client) => {
+  const response = (await client.query(queries.GET_PROCEDURE_STATE_FOR_SOCIAL_CASE, [affair.idCaso])).rows[0];
+  const nextEvent = socialCaseHandler(response.state, affair.state);
   return nextEvent;
 };
 
@@ -426,6 +426,19 @@ const procedureInstances = switchcase({
 
 const procedureInstanceHandler = (typeUser, payload, client) => {
   return typeUser === 1 ? client.query(procedureInstances(typeUser)) : client.query(procedureInstances(typeUser), [payload]);
+};
+
+const socialCases = switchcase({
+  iniciado: { porrevisar: 'porrevisar', visto: 'visto', aprobado: 'aprobado', negado: 'negado' },
+  porrevisar: { visto: 'visto', aprobado: 'aprobado', negado: 'negado' },
+  visto: { aprobado: 'aprobado', negado: 'negado' },
+  aprobado: { atendido: 'atendido' },
+  negado: null,
+  atendido: null,
+})(null);
+
+const socialCaseHandler = (state, event) => {
+  return socialCases(state)[event];
 };
 
 const fieldsBySection = switchcase({
