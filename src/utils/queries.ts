@@ -115,7 +115,7 @@ const queries = {
 
   //Tramites
   PROCEDURE_INIT: 'SELECT * FROM insert_tramite($1, $2, $3);',
-  SOCIAL_CASE_INIT: 'SELECT * FROM insert_caso(0, $1, $2);', //datos, id usuario 
+  SOCIAL_CASE_INIT: 'SELECT * FROM insert_caso(0, $1, $2);', //datos, id usuario
   CREATE_RECEIPT: 'INSERT INTO facturas_tramites (id_factura, id_tramite) VALUES (default, $1) RETURNING *;',
   ADD_ITEM_TO_RECEIPT: 'INSERT INTO detalles_facturas (id_detalle, id_factura, nombre, costo) VALUES (default, $1, $2, $3)',
   GET_SECTIONS_BY_PROCEDURE:
@@ -142,6 +142,7 @@ ttr.fisico FROM RECAUDOS rec INNER JOIN tipos_tramites_recaudos ttr ON rec.id_re
 WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_TAKINGS_OF_INSTANCES: 'SELECT * FROM tramites_archivos_recaudos WHERE id_tramite = ANY( $1::int[] );',
   INSERT_TAKINGS_IN_PROCEDURE: 'INSERT INTO tramites_archivos_recaudos VALUES ($1,$2)',
+  GET_SOCIAL_CASES_INSTANCES: '',
   GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID:
     'SELECT tramites_state.*, instituciones.nombre_completo AS nombrelargo, instituciones.nombre_corto AS \
     nombrecorto, tipos_tramites.nombre_tramite AS nombretramitelargo, tipos_tramites.nombre_corto AS nombretramitecorto FROM tramites_state INNER JOIN tipos_tramites ON tramites_state.tipotramite = \
@@ -177,7 +178,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     'SELECT id_caso AS id, casos_sociales_fsm(event ORDER BY id_evento_caso) AS state  \
   FROM eventos_casos_sociales \
   WHERE id_caso = $1 \
-  GROUP BY id_caso;', 
+  GROUP BY id_caso;',
   UPDATE_STATE: 'SELECT update_tramite_state($1, $2, $3, $4, $5) as state;', //tramite, evento
   UPDATE_STATE_SOCIAL_CASE: 'SELECT update_caso_state($1, $2, $3) as state', //idcaso, event, datos
   UPDATE_PROCEDURE_INSTANCE_COST: 'UPDATE tramites SET costo = $1 WHERE id_tramite = $2',
