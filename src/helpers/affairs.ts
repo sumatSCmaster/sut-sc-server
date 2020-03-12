@@ -11,13 +11,10 @@ export const affairInit = async (affair, user) => {
   try {
     client.query('BEGIN');
     const response = (await client.query(queries.SOCIAL_CASE_INIT, [JSON.stringify(datos), user.id])).rows[0];
-    const nextEvent = await getNextEventForSocialCase(response, client);
-    const respState = await client.query(queries.UPDATE_STATE_SOCIAL_CASE, [response.id, nextEvent, null]);
-
     const tramite: Partial<Tramite> = {
       id: response.id,
       tipoTramite: response.tipotramite,
-      estado: respState.rows[0].state,
+      estado: response.state,
       datos: response.datos,
       fechaCreacion: response.fechacreacion,
       codigoTramite: response.codigotramite,
