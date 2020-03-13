@@ -1,7 +1,3 @@
-html{
-  zoom: 0.63;
-}
-
 body {
   width: 100%;
   height: 100%;
@@ -11,49 +7,34 @@ body {
 #wrapper {
   width: 100%;
   height: 100%;
-  display: -webkit-box;
-  display: -ms-flexbox;
   display: flex;
-  -webkit-box-orient: vertical;
-  -webkit-box-direction: normal;
-      -ms-flex-direction: column;
-          flex-direction: column;
+  flex-direction: column;
 }
 
 #header, #footer {
   width: 100%;
   height: 100px;
-  display: -webkit-box;
-  display: -ms-flexbox;
   display: flex;
 }
 
 #alcaldia, #logo {
   width: 200px;
-  -o-object-fit: contain;
-     object-fit: contain;
+  object-fit: contain;
 }
 
 .header-child {
   border: 1px solid lightgray;
   padding: 10;
-  -webkit-box-flex: 2;
-      -ms-flex: 2;
-          flex: 2;
-  display: -webkit-box;
-  display: -ms-flexbox;
+  flex: 2;
   display: flex;  
-  -webkit-box-pack: center;  
-      -ms-flex-pack: center;  
-          justify-content: center;
-  -webkit-box-align: center;
-      -ms-flex-align: center;
-          align-items: center;
+  justify-content: center;
+  align-items: center;
   text-align: center;
-  -webkit-box-orient: vertical;
-  -webkit-box-direction: normal;
-      -ms-flex-direction: column;
-          flex-direction: column;
+  flex-direction: column;
+}
+
+.margin {
+  margin-top: 100px;
 }
 
 .header-child > p {
@@ -63,9 +44,7 @@ body {
 }
 
 .header-child:nth-child(1), .header-child:nth-child(3) {
-  -webkit-box-flex: 1;
-      -ms-flex: 1;
-          flex: 1;
+  flex: 1;
 } 
 
 img#divider {
@@ -73,23 +52,18 @@ img#divider {
   height: 10px;
 }
 
+.divider{
+  height: 4px;
+  background-color: #1287CA;
+  border: none;
+}
+
 #content {
-  display: -webkit-box;
-  display: -ms-flexbox;
   display: flex;
-  -webkit-box-align: center;
-      -ms-flex-align: center;
-          align-items: center;
-  -webkit-box-pack: center;
-      -ms-flex-pack: center;
-          justify-content: center;
-  -webkit-box-orient: vertical;
-  -webkit-box-direction: normal;
-      -ms-flex-direction: column;
-          flex-direction: column;
-  -webkit-box-flex: 1;
-      -ms-flex: 1;
-          flex: 1;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  flex: 1;
   background: url('../images/background.png');
   background-repeat: no-repeat;
   background-position: center;
@@ -110,15 +84,9 @@ img#divider {
 
 #fecha {
   width: 100%;
-  display: -webkit-box;
-  display: -ms-flexbox;
   display: flex;
-  -webkit-box-align: center;
-      -ms-flex-align: center;
-          align-items: center;
-  -webkit-box-pack: justify;
-      -ms-flex-pack: justify;
-          justify-content: space-between;
+  align-items: center;
+  justify-content: space-between;
   height: 20px;
   margin: 10px 0px;
 }
@@ -135,21 +103,67 @@ img#divider {
   width: 90%;
   height: 85%;
 }
-
+#text-input {
+  text-align: justify;
+}
+#text-input  div {
+  display: flex;
+}
+#text-input div p{
+  margin: 0;
+  flex: 1;
+}
+#text-input div p + p{
+  text-align: end;
+}
 #table {
   width: 100%;
   max-height: 95%;
   margin-top: 20px;
   border: 2px solid #1287CA;
-  display: -webkit-box;
-  display: -ms-flexbox;
   display: flex;
-  -webkit-box-orient: vertical;
-  -webkit-box-direction: normal;
-      -ms-flex-direction: column;
-          flex-direction: column;
+  flex-direction: column;
 }
 
+#firma {
+  margin-top: 60px;
+  display: flex;
+  font-size: 14px;
+}
+
+.text-center {
+  text-align: center !important;
+}
+
+#firma + div {
+  font-size: 14px;
+  padding: 5% 30%;
+}
+
+#recaudos {
+  margin: 50px 0;
+  font-size: 14px;
+}
+#recaudos h3 {
+  margin: 0 ;
+}
+
+#recaudos ol, ul {
+  text-align: left;
+}
+#recaudos ul {
+  list-style-type: initial;
+}
+#recaudos ol li {
+  padding-left: 15px;
+  margin: 5px 0;
+}
+
+
+.item-firma {
+  flex: 1;
+  margin: 25px;
+}
 .all-border {
   border: 1px solid #1287CA;
 }
@@ -160,6 +174,10 @@ img#divider {
 
 .border-bottom {
   border-bottom: 1px solid #1287CA;
+}
+
+.underline{
+  text-decoration: underline;
 }
 
 .th {
@@ -177,8 +195,6 @@ img#divider {
 
 .tr {
   width: 100%;
-  display: -webkit-box;
-  display: -ms-flexbox;
   display: flex;
 }
 
@@ -189,9 +205,6 @@ img#divider {
 }
 
 #footer {
-  -webkit-box-orient: vertical;
-  -webkit-box-direction: normal;
-      -ms-flex-direction: column;
-          flex-direction: column;
+  flex-direction: column;
   text-align: center;
 }

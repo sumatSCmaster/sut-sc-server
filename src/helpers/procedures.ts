@@ -313,7 +313,7 @@ export const updateProcedure = async procedure => {
   try {
     client.query('BEGIN');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0];
-    console.log(resources)
+    console.log(resources);
     if (!procedure.hasOwnProperty('pagoPrevio')) {
       procedure.pagoPrevio = resources.pago_previo;
     }

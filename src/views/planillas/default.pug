@@ -1,18 +1,18 @@
 html
   head
     title Template
-    link(href='css/default.css' rel='stylesheet' type='text/css')
+    link(href='./views/css/default.css' rel='stylesheet' type='text/css')
   body
     div#wrapper
       block header
         div#header
           div.header-child
-            img#alcaldia(src='images/LogoAlcaldia.png')
+            img#alcaldia(src='./views/images/LogoAlcaldia.png')
           div.header-child
             - var nombre = ''
             - var rif = ''
             case institucion
-              when 'CBM'
+              when 'Bomberos'
                 - nombre = 'Instituto Autonomo Cuerpo de Bomberos del Municipio Maracaibo'
                 - rif = 'G-20003346-0'
               when 'SAGAS'
@@ -24,27 +24,27 @@ html
           div.header-child
             - var src = ''
             case institucion
-              when 'CBM'
-                - src = 'images/LogoBomberos.png'
+              when 'Bomberos'
+                - src = './views/images/LogoBomberos.png'
               when 'SAGAS' 
-                - src ='images/SAGAS.png'
+                - src ='./views/images/SAGAS.png'
               default
-                - src = 'images/LogoAlcaldia.png'
+                - src = './views/images/LogoAlcaldia.png'
             img#logo(src=src)
-        img#divider(src='images/Divider.png')
+        img#divider(src='./views/images/Divider.png')
       div#content
         p FORMATO #{formato}
         p SOLICITUD DE #{tramite.toUpperCase()}
         block content
       block footer
+        footer
         div#footer
           - var direccion = ''
           case institucion
-            when 'CBM'
+            when 'Bomberos'
               - direccion = 'Av. 8 (Santa Rita), Esq. Calle 86 (Antiguo FIME), Sede Comandancia General. Fax: (0261) 7988434. Telefonos: (0261) 7186058 / 7186065 / 7186066. Maracaibo, Estado Zulia.'
-            when 'SAGAS'  
               - direccion = 'Avenida 3E Entre Calles 72 y 73. Sector La Lago, Edificio Club de Leones. Teléfono: (0261) 7934400'
-          img#divider(src='images/Divider.png')
-          div(style={ display: '-webkit-flex', padding: '0px 50px' })
+          img#divider(src='./views/images/Divider.png')
+          div(style={ display: 'flex', padding: '0px 50px' })
             p #{direccion}
-            img(src='images/footer_logo.png')
+            img(src='./views/images/footer_logo.png')

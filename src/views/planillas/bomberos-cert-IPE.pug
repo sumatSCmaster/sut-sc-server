@@ -1,0 +1,35 @@
+extends default
+
+block content
+  div#fecha
+    p 
+      b FECHA:
+      | &nbsp; #{fecha}
+    p 
+      b Codigo de Tramite:
+      | &nbsp; #{codigo}
+  div
+    p
+      b CONSTANCIA DE INSPECCION
+  div#planilla
+    div#text-input
+      p &nbsp;!{datos.funcionario.informe}
+    div
+      p  
+        b “DISCIPLINA Y ABNEGACIÓN”
+        br
+        b p/ DIRECCIÓN DE PREVENCIÓN, FISCALIZACIÓN E INVESTIGACIÓN
+        br 
+        b Vto. Bno.
+    div#firma
+      div.item-firma
+        hr
+        b PRIMER TENIENTE (B): LCDO. JUAN MORALES 
+        br 
+        b Director de Prevención
+      div.item-firma
+        hr
+        b Capitán (B): Lcdo. ENGHERBERT ATENCIO 
+        br 
+        b Primer Comandante
+      

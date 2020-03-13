@@ -1,0 +1,42 @@
+extends default
+
+block content
+  div#fecha
+    p 
+      b Codigo de Tramite:
+      | &nbsp; #{codigo}
+    p 
+      b MARACAIBO, #{fecha}
+  div#planilla
+    div#text-input
+      p
+        | Ciudadano: (a)
+        br
+        | #{datos.usuario.nombre}
+      p.
+        Por atención a su solicitud Nº #{codigo} de #{fecha} y
+        cumplida las normas establecidas por esta entidad, SE APRUEBA EL PRESENTE PROYECTO para la 
+        Obra: #{datos.funcionario.nombreObra}, ubicado en #{datos.usuario.ubicadoEn}, Parroquia: #{datos.funcionario.parroquia}.
+      br
+      p
+        b OBSERVACIÓN:&nbsp;
+        | #{datos.funcionario.observaciones}
+      b Constancia válida por 1 Año
+    div
+      p 
+        b Atentamente,
+        br 
+        b P/ Servicio Autónomo Para El Suministro De Gas De Maracaibo.
+    div#firma
+      div.item-firma
+        b(style={'font-size': '16px !important'}) Héctor Bracho
+        br
+        b(style={'font-size': '16px !important'}) DIRECTOR GENERAL
+        br
+        b SERVICIO AUTONOMO PARA EL SUMINISTRO 
+        br
+        b DE GAS E INFRAESTRUCTURA DE MARACAIBO 
+        br
+        b SEGÚN RESOLUCIÓN Nº 0010 DE FECHA 19/12/2017
+        br
+        b GACETA MUNICIPAL Nº 306-17 DE FECHA 19/12/2017
