@@ -256,7 +256,7 @@ export const procedureInit = async (procedure, user) => {
   const { tipoTramite, datos, pago, recaudos } = procedure;
   try {
     client.query('BEGIN');
-    const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify(datos), user.id])).rows[0];
+    const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify({ usuario: datos }), user.id])).rows[0];
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.tipotramite])).rows[0];
     response.pagoPrevio = resources.pago_previo;
@@ -313,7 +313,7 @@ export const updateProcedure = async procedure => {
   try {
     client.query('BEGIN');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0];
-    console.log(resources)
+    console.log(resources);
     if (!procedure.hasOwnProperty('pagoPrevio')) {
       procedure.pagoPrevio = resources.pago_previo;
     }
@@ -324,7 +324,7 @@ export const updateProcedure = async procedure => {
     }
     if (datos) {
       const prevData = (await client.query('SELECT datos FROM tramites WHERE id_tramite=$1', [procedure.idTramite])).rows[0];
-      if (!prevData.datos.usuario && !prevData.datos.funcionario) datos = { usuario: prevData.datos, funcionario: datos };
+      if (!prevData.datos.funcionario) datos = { usuario: prevData.datos, funcionario: datos };
       else datos = prevData.datos;
     }
     // const dir = await createRequestForm(procedure, client);
