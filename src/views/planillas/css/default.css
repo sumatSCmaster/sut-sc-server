@@ -17,11 +17,11 @@ body {
   -webkit-flex-direction: column;
 }
 
-#pageHeader, #pageFooter {
-  width: 100%;
-  height: 100px;
-  display: flex;
-  display: -webkit-flex;
+.header, .footer {
+  width: 100% !important;
+  height: 100px !important;
+  display: flex !important;
+  display: -webkit-flex !important;
 }
 
 #alcaldia, #logo {
@@ -231,8 +231,8 @@ img#divider {
   padding: 10px;
 }
 
-#pageFooter {
-  -webkit-flex-direction: column;
-  flex-direction: column;
-  text-align: center;
+.footer {
+  -webkit-flex-direction: column !important;
+  flex-direction: column !important;
+  text-align: center !important;
 }
