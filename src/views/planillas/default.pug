@@ -5,7 +5,7 @@ html
   body
     div#wrapper
       block header
-        header#header
+        header#pageHeader
           div.header-child
             img#alcaldia(src='images/LogoAlcaldia.png')
           div.header-child
@@ -37,7 +37,7 @@ html
         p SOLICITUD DE #{tramite.toUpperCase()}
         block content
       block footer
-        footer#footer
+        footer#pageFooter
           - var direccion = ''
           case institucion
             when 'CBM'
