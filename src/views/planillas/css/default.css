@@ -33,6 +33,7 @@ body {
   border: 1px solid lightgray;
   padding: 10;
   flex: 2;
+  -webkit-flex: 2;
   display: flex;  
   display: -webkit-flex;
   justify-content: center;
@@ -56,6 +57,7 @@ body {
 
 .header-child:nth-child(1), .header-child:nth-child(3) {
   flex: 1;
+  -webkit-flex: 1;
 } 
 
 img#divider {
@@ -79,6 +81,7 @@ img#divider {
   flex-direction: column;
   -webkit-flex-direction: column;
   flex: 1;
+  -webkit-flex: 1;
   background: url('../images/background.png');
   background-repeat: no-repeat;
   background-position: center;
@@ -130,6 +133,7 @@ img#divider {
 #text-input div p{
   margin: 0;
   flex: 1;
+  -webkit-flex: 1;
 }
 #text-input div p + p{
   text-align: end;
@@ -183,6 +187,7 @@ img#divider {
 
 .item-firma {
   flex: 1;
+  -webkit-flex: 1;
   margin: 25px;
 }
 .all-border {
