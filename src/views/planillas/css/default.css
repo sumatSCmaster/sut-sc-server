@@ -1,3 +1,7 @@
+html {
+  zoom: 0.63;
+}
+
 body {
   width: 100%;
   height: 100%;
@@ -8,13 +12,16 @@ body {
   width: 100%;
   height: 100%;
   display: flex;
+  display: -webkit-flex;
   flex-direction: column;
+  -webkit-flex-direction: column;
 }
 
 #header, #footer {
   width: 100%;
   height: 100px;
   display: flex;
+  display: -webkit-flex;
 }
 
 #alcaldia, #logo {
@@ -27,10 +34,14 @@ body {
   padding: 10;
   flex: 2;
   display: flex;  
+  display: -webkit-flex;
   justify-content: center;
+  -webkit-justify-content: center;
   align-items: center;
+  -webkit-align-items: center;
   text-align: center;
   flex-direction: column;
+  -webkit-flex-direction: column;
 }
 
 .margin {
@@ -60,9 +71,13 @@ img#divider {
 
 #content {
   display: flex;
+  display: -webkit-flex;
   align-items: center;
+  -webkit-align-items: center;
   justify-content: center;
+  -webkit-justify-content: center;
   flex-direction: column;
+  -webkit-flex-direction: column;
   flex: 1;
   background: url('../images/background.png');
   background-repeat: no-repeat;
@@ -85,8 +100,11 @@ img#divider {
 #fecha {
   width: 100%;
   display: flex;
+  display: -webkit-flex;
   align-items: center;
+  -webkit-align-items: center;
   justify-content: space-between;
+  -webkit-justify-content: space-between;
   height: 20px;
   margin: 10px 0px;
 }
@@ -122,12 +140,15 @@ img#divider {
   margin-top: 20px;
   border: 2px solid #1287CA;
   display: flex;
+  display: -webkit-flex;
   flex-direction: column;
+  -webkit-flex-direction: column;
 }
 
 #firma {
   margin-top: 60px;
   display: flex;
+  display: -webkit-flex;
   font-size: 14px;
 }
 
@@ -205,6 +226,7 @@ img#divider {
 }
 
 #footer {
+  -webkit-flex-direction: column;
   flex-direction: column;
   text-align: center;
 }
