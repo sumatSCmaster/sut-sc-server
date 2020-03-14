@@ -15,13 +15,16 @@ export const getAvailableProcedures = async (user): Promise<{ options: Instituci
   console.log(user);
   try {
     const response = await client.query(queries.GET_ALL_INSTITUTION);
-    const institution: Institucion[] = response.rows.map(el => {
+    let institution: Institucion[] = response.rows.map(el => {
       return {
         id: el.id_institucion,
         nombreCompleto: el.nombre_completo,
         nombreCorto: el.nombre_corto,
       };
     });
+    if (user.tipoUsuario === 4) {
+      institution = institution.filter(el => el.id !== 0);
+    }
     const options: Institucion[] = await getProcedureByInstitution(institution, client);
     const instanciasDeTramite = await getProcedureInstances(user, client);
     return { options, instanciasDeTramite };
