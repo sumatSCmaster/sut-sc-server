@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.1
--- Dumped by pg_dump version 12.1
+-- Dumped from database version 12.2
+-- Dumped by pg_dump version 12.2
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -82,80 +82,6 @@ DECLARE
 
 ALTER FUNCTION public.eventos_tramite_trigger_func() OWNER TO postgres;
 
-SET default_tablespace = '';
-
-SET default_table_access_method = heap;
-
---
--- Name: tramites; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.tramites (
-    id_tramite integer NOT NULL,
-    id_tipo_tramite integer,
-    datos json,
-    costo numeric,
-    fecha_creacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    codigo_tramite character varying,
-    consecutivo integer,
-    id_usuario integer
-);
-
-
-ALTER TABLE public.tramites OWNER TO postgres;
-
---
--- Name: insert_tramite(integer, json, integer); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.insert_tramite(_id_tipo_tramite integer, datos json, _id_usuario integer) RETURNS SETOF public.tramites
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-    tramite tramites%ROWTYPE;
-    BEGIN
-        INSERT INTO TRAMITES (id_tipo_tramite, datos, id_usuario) VALUES (_id_tipo_tramite, datos, _id_usuario) RETURNING * into tramite;
-        
-            INSERT INTO eventos_tramite values (default, tramite.id_tramite, 'iniciar', now());
-            
-                RETURN QUERY SELECT * from tramites WHERE id_tramite = tramite.id_tramite;
-                
-                    RETURN;
-                    END;
-                    $$;
-
-
-ALTER FUNCTION public.insert_tramite(_id_tipo_tramite integer, datos json, _id_usuario integer) OWNER TO postgres;
-
---
--- Name: tramite_eventos_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.tramite_eventos_trigger_func() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-  new_state text;
-  BEGIN
-    SELECT tramite_eventos_fsm(event ORDER BY id)
-      FROM (
-          SELECT id, event FROM eventos_tramites WHERE id_evento_tramite = new.id_evento_tramite
-              UNION
-                  SELECT new.id, new.event
-                    ) s
-                      INTO new_state;
-                      
-                        IF new_state = 'error' THEN
-                            RAISE EXCEPTION 'evento invalido';
-                              END IF;
-                              
-                                RETURN new;
-                                END
-                                $$;
-
-
-ALTER FUNCTION public.tramite_eventos_trigger_func() OWNER TO postgres;
-
 --
 -- Name: tramites_eventos_transicion(text, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
@@ -200,10 +126,172 @@ CREATE FUNCTION public.tramites_eventos_transicion(state text, event text) RETUR
 ALTER FUNCTION public.tramites_eventos_transicion(state text, event text) OWNER TO postgres;
 
 --
--- Name: update_tramite_state(integer, text, json); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: tramites_eventos_fsm(text); Type: AGGREGATE; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.update_tramite_state(_id_tramite integer, event text, _datos json DEFAULT NULL::json) RETURNS TABLE(state text)
+CREATE AGGREGATE public.tramites_eventos_fsm(text) (
+    SFUNC = public.tramites_eventos_transicion,
+    STYPE = text,
+    INITCOND = 'creado'
+);
+
+
+ALTER AGGREGATE public.tramites_eventos_fsm(text) OWNER TO postgres;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: eventos_tramite; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.eventos_tramite (
+    id_evento_tramite integer NOT NULL,
+    id_tramite integer NOT NULL,
+    event text NOT NULL,
+    "time" timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.eventos_tramite OWNER TO postgres;
+
+--
+-- Name: instituciones; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.instituciones (
+    id_institucion integer NOT NULL,
+    nombre_completo character varying,
+    nombre_corto character varying
+);
+
+
+ALTER TABLE public.instituciones OWNER TO postgres;
+
+--
+-- Name: tipos_tramites; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.tipos_tramites (
+    id_tipo_tramite integer NOT NULL,
+    id_institucion integer,
+    nombre_tramite character varying,
+    costo_base numeric,
+    pago_previo boolean,
+    nombre_corto character varying,
+    formato character varying
+);
+
+
+ALTER TABLE public.tipos_tramites OWNER TO postgres;
+
+--
+-- Name: tramites; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.tramites (
+    id_tramite integer NOT NULL,
+    id_tipo_tramite integer,
+    datos json,
+    costo numeric,
+    fecha_creacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    codigo_tramite character varying,
+    consecutivo integer,
+    id_usuario integer,
+    url_planilla character varying
+);
+
+
+ALTER TABLE public.tramites OWNER TO postgres;
+
+--
+-- Name: tramites_state_with_resources; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.tramites_state_with_resources AS
+ SELECT t.id_tramite AS id,
+    t.datos,
+    t.id_tipo_tramite AS tipotramite,
+    t.costo,
+    t.fecha_creacion AS fechacreacion,
+    t.codigo_tramite AS codigotramite,
+    t.id_usuario AS usuario,
+    t.url_planilla AS planilla,
+    i.nombre_completo AS nombrelargo,
+    i.nombre_corto AS nombrecorto,
+    tt.nombre_tramite AS nombretramitelargo,
+    tt.nombre_corto AS nombretramitecorto,
+    ev.state
+   FROM (((public.tramites t
+     JOIN public.tipos_tramites tt ON ((t.id_tipo_tramite = tt.id_tipo_tramite)))
+     JOIN public.instituciones i ON ((i.id_institucion = tt.id_institucion)))
+     JOIN ( SELECT eventos_tramite.id_tramite,
+            public.tramites_eventos_fsm(eventos_tramite.event ORDER BY eventos_tramite.id_evento_tramite) AS state
+           FROM public.eventos_tramite
+          GROUP BY eventos_tramite.id_tramite) ev ON ((t.id_tramite = ev.id_tramite)));
+
+
+ALTER TABLE public.tramites_state_with_resources OWNER TO postgres;
+
+--
+-- Name: insert_tramite(integer, json, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.insert_tramite(_id_tipo_tramite integer, datos json, _id_usuario integer) RETURNS SETOF public.tramites_state_with_resources
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    tramite tramites%ROWTYPE;
+	response tramites_state_with_resources%ROWTYPE;
+    BEGIN
+        INSERT INTO TRAMITES (id_tipo_tramite, datos, id_usuario) VALUES (_id_tipo_tramite, datos, _id_usuario) RETURNING * into tramite;
+        
+            INSERT INTO eventos_tramite values (default, tramite.id_tramite, 'iniciar', now());
+            
+                RETURN QUERY SELECT * FROM tramites_state_with_resources WHERE id=tramite.id_tramite ORDER BY tramites_state_with_resources.fechacreacion;
+                
+                    RETURN;
+                    END;
+                    $$;
+
+
+ALTER FUNCTION public.insert_tramite(_id_tipo_tramite integer, datos json, _id_usuario integer) OWNER TO postgres;
+
+--
+-- Name: tramite_eventos_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.tramite_eventos_trigger_func() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  new_state text;
+  BEGIN
+    SELECT tramite_eventos_fsm(event ORDER BY id)
+      FROM (
+          SELECT id, event FROM eventos_tramites WHERE id_evento_tramite = new.id_evento_tramite
+              UNION
+                  SELECT new.id, new.event
+                    ) s
+                      INTO new_state;
+                      
+                        IF new_state = 'error' THEN
+                            RAISE EXCEPTION 'evento invalido';
+                              END IF;
+                              
+                                RETURN new;
+                                END
+                                $$;
+
+
+ALTER FUNCTION public.tramite_eventos_trigger_func() OWNER TO postgres;
+
+--
+-- Name: update_tramite_state(integer, text, json, numeric, character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.update_tramite_state(_id_tramite integer, event text, _datos json DEFAULT NULL::json, _costo numeric DEFAULT NULL::numeric, _url_planilla character varying DEFAULT NULL::character varying) RETURNS TABLE(state text)
     LANGUAGE plpgsql
     AS $$
   BEGIN
@@ -214,12 +302,17 @@ CREATE FUNCTION public.update_tramite_state(_id_tramite integer, event text, _da
                           IF _datos IS NOT NULL THEN
                                       UPDATE tramites SET datos = _datos WHERE id_tramite = _id_tramite;
                                               END IF;
-                                              
+						  IF _costo IS NOT NULL THEN
+                                      UPDATE tramites SET costo = _costo WHERE id_tramite = _id_tramite;
+                                              END IF;
+                          IF _url_planilla IS NOT NULL THEN
+                                      UPDATE tramites SET url_planilla = _url_planilla WHERE id_tramite = _id_tramite;
+                                              END IF;
                                                       END;
                                                               $$;
 
 
-ALTER FUNCTION public.update_tramite_state(_id_tramite integer, event text, _datos json) OWNER TO postgres;
+ALTER FUNCTION public.update_tramite_state(_id_tramite integer, event text, _datos json, _costo numeric, _url_planilla character varying) OWNER TO postgres;
 
 --
 -- Name: validate_payments(jsonb); Type: FUNCTION; Schema: public; Owner: postgres
@@ -251,7 +344,7 @@ CREATE FUNCTION public.validate_payments(inputcsvjson jsonb, OUT outputjson json
                                                                     WHERE aprobado = false
                                                                           AND id_banco = inputBanco
                                                                                 AND referencia = (inputRow ->> 'Referencia') 
-                                                                                      AND monto = (inputRow ->> 'Monto')::numeric
+                                                                                      AND monto <= (inputRow ->> 'Monto')::numeric
                                                                                             AND fecha_de_pago = (inputRow ->> 'Fecha')::timestamptz;
                                                                                                   
                                                                                                         IF idPago IS NOT NULL THEN
@@ -274,19 +367,6 @@ CREATE FUNCTION public.validate_payments(inputcsvjson jsonb, OUT outputjson json
 
 
 ALTER FUNCTION public.validate_payments(inputcsvjson jsonb, OUT outputjson jsonb) OWNER TO postgres;
-
---
--- Name: tramites_eventos_fsm(text); Type: AGGREGATE; Schema: public; Owner: postgres
---
-
-CREATE AGGREGATE public.tramites_eventos_fsm(text) (
-    SFUNC = public.tramites_eventos_transicion,
-    STYPE = text,
-    INITCOND = 'creado'
-);
-
-
-ALTER AGGREGATE public.tramites_eventos_fsm(text) OWNER TO postgres;
 
 --
 -- Name: bancos; Type: TABLE; Schema: public; Owner: postgres
@@ -483,20 +563,6 @@ ALTER SEQUENCE public.detalles_facturas_id_detalle_seq OWNED BY public.detalles_
 
 
 --
--- Name: eventos_tramite; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.eventos_tramite (
-    id_evento_tramite integer NOT NULL,
-    id_tramite integer NOT NULL,
-    event text NOT NULL,
-    "time" timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
-ALTER TABLE public.eventos_tramite OWNER TO postgres;
-
---
 -- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -551,19 +617,6 @@ ALTER TABLE public.facturas_tramites_id_factura_seq OWNER TO postgres;
 
 ALTER SEQUENCE public.facturas_tramites_id_factura_seq OWNED BY public.facturas_tramites.id_factura;
 
-
---
--- Name: instituciones; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.instituciones (
-    id_institucion integer NOT NULL,
-    nombre_completo character varying,
-    nombre_corto character varying
-);
-
-
-ALTER TABLE public.instituciones OWNER TO postgres;
 
 --
 -- Name: instituciones_bancos; Type: TABLE; Schema: public; Owner: postgres
@@ -896,21 +949,6 @@ ALTER SEQUENCE public.templates_certificados_id_template_certificado_seq OWNED B
 
 
 --
--- Name: tipos_tramites; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.tipos_tramites (
-    id_tipo_tramite integer NOT NULL,
-    id_institucion integer,
-    nombre_tramite character varying,
-    costo_base numeric,
-    pago_previo boolean
-);
-
-
-ALTER TABLE public.tipos_tramites OWNER TO postgres;
-
---
 -- Name: tipos_tramites_id_tipo_tramite_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -938,7 +976,8 @@ ALTER SEQUENCE public.tipos_tramites_id_tipo_tramite_seq OWNED BY public.tipos_t
 
 CREATE TABLE public.tipos_tramites_recaudos (
     id_tipo_tramite integer,
-    id_recaudo integer
+    id_recaudo integer,
+    fisico boolean
 );
 
 
@@ -1024,6 +1063,7 @@ CREATE VIEW public.tramites_state AS
     t.fecha_creacion AS fechacreacion,
     t.codigo_tramite AS codigotramite,
     t.id_usuario AS usuario,
+    t.url_planilla AS planilla,
     ev.state
    FROM (public.tramites t
      JOIN ( SELECT eventos_tramite.id_tramite,
@@ -1272,8 +1312,26 @@ COPY public.bancos (id_banco, nombre) FROM stdin;
 --
 
 COPY public.campos (id_campo, nombre, tipo, validacion, col) FROM stdin;
-1	Nombre Completo	string	nombre	8
-2	Cedula	number	cedula	4
+3	Direccion	string	direccion	12
+4	Punto de Referencia	string	puntoReferencia	12
+5	Sector	string	sector	8
+6	Parroquia	string	parroquia	8
+7	Metros Cuadrados	number	metrosCuadrados	8
+8	Nombre	string	nombre	12
+11	Correo Electronico	string	correo	12
+12	Contacto	string	contacto	12
+13	Horario	string	horario	12
+1	Cedula o Rif	number	cedulaORif	10
+2	Nombre o Razon Social	string	nombreORazon	14
+10	Telefono	number	telefono	12
+9	Cedula	number	cedula	12
+15	RIF	string	rif	12
+16	Ubicado en	string	ubicadoEn	12
+14	Razon Social	string	razonSocial	12
+17	Tipo de Ocupacion	string	tipoOcupacion	6
+19	Numero de Proyecto	number	numeroProyecto	6
+20	Fecha de Aprobacion	date	fechaAprobacion	6
+18	Area de Construccion	number	areaConstruccion	6
 \.
 
 
@@ -1282,17 +1340,65 @@ COPY public.campos (id_campo, nombre, tipo, validacion, col) FROM stdin;
 --
 
 COPY public.campos_tramites (id_campo, id_tipo_tramite, orden, estado, id_seccion) FROM stdin;
-1	1	1	iniciado	1
-1	1	1	iniciado	1
-2	1	2	iniciado	1
-2	1	2	iniciado	1
 1	2	1	iniciado	1
-1	2	1	iniciado	1
-2	2	2	iniciado	1
-2	2	2	iniciado	1
+2	2	1	iniciado	1
+3	2	1	iniciado	1
+4	2	1	iniciado	1
+5	2	1	iniciado	1
+6	2	1	iniciado	1
+7	2	1	iniciado	1
+8	2	1	iniciado	2
+9	2	1	iniciado	2
+10	2	1	iniciado	2
+11	2	1	iniciado	2
+12	2	1	iniciado	2
+13	2	1	iniciado	2
+1	1	1	iniciado	1
+2	1	1	iniciado	1
+3	1	1	iniciado	1
+4	1	1	iniciado	1
+5	1	1	iniciado	1
+6	1	1	iniciado	1
+7	1	1	iniciado	1
+8	1	1	iniciado	2
+9	1	1	iniciado	2
+10	1	1	iniciado	2
+11	1	1	iniciado	2
+12	1	1	iniciado	2
+13	1	1	iniciado	2
 1	3	1	iniciado	1
-1	3	1	iniciado	1
-1	1	1	iniciado	2
+2	3	1	iniciado	1
+3	3	1	iniciado	1
+4	3	1	iniciado	1
+5	3	1	iniciado	1
+6	3	1	iniciado	1
+7	3	1	iniciado	1
+8	3	1	iniciado	2
+9	3	1	iniciado	2
+10	3	1	iniciado	2
+11	3	1	iniciado	2
+12	3	1	iniciado	2
+13	3	1	iniciado	2
+1	4	1	iniciado	1
+2	4	1	iniciado	1
+3	4	1	iniciado	1
+4	4	1	iniciado	1
+5	4	1	iniciado	1
+6	4	1	iniciado	1
+7	4	1	iniciado	1
+8	4	1	iniciado	2
+9	4	1	iniciado	2
+10	4	1	iniciado	2
+11	4	1	iniciado	2
+12	4	1	iniciado	2
+13	4	1	iniciado	2
+14	2	1	enproceso	3
+15	2	1	enproceso	3
+16	2	1	enproceso	3
+17	2	1	enproceso	3
+18	2	1	enproceso	3
+19	2	1	enproceso	3
+20	2	1	enproceso	3
 \.
 
 
@@ -1356,6 +1462,94 @@ COPY public.eventos_tramite (id_evento_tramite, id_tramite, event, "time") FROM 
 45	27	finalizar	2020-03-02 11:32:52.344293-04
 46	26	enproceso_pd	2020-03-03 06:32:27.031194-04
 48	26	ingresar_datos	2020-03-03 06:34:16.098489-04
+49	26	validar_pd	2020-03-05 10:29:49.708723-04
+51	28	iniciar	2020-03-05 13:57:18.24176-04
+52	28	validar_pa	2020-03-05 13:57:18.24176-04
+55	30	iniciar	2020-03-05 13:58:07.415678-04
+56	30	validar_pa	2020-03-05 13:58:07.415678-04
+57	31	iniciar	2020-03-07 09:45:04.35627-04
+58	31	enproceso_pd	2020-03-07 09:45:04.35627-04
+59	32	iniciar	2020-03-07 14:16:12.489531-04
+60	32	enproceso_pd	2020-03-07 14:16:12.489531-04
+68	40	iniciar	2020-03-07 15:05:00.649404-04
+69	40	enproceso_pd	2020-03-07 15:05:00.649404-04
+70	41	iniciar	2020-03-07 15:06:54.009278-04
+71	41	enproceso_pd	2020-03-07 15:06:54.009278-04
+72	42	iniciar	2020-03-09 09:56:10.378497-04
+73	42	enproceso_pd	2020-03-09 09:56:10.378497-04
+74	43	iniciar	2020-03-09 09:56:56.65078-04
+75	43	enproceso_pd	2020-03-09 09:56:56.65078-04
+76	44	iniciar	2020-03-09 10:04:30.804034-04
+77	44	enproceso_pd	2020-03-09 10:04:30.804034-04
+78	45	iniciar	2020-03-09 10:05:28.942924-04
+79	45	enproceso_pd	2020-03-09 10:05:28.942924-04
+80	46	iniciar	2020-03-09 10:57:23.233766-04
+81	46	enproceso_pd	2020-03-09 10:57:23.233766-04
+82	47	iniciar	2020-03-09 10:58:27.222574-04
+83	47	enproceso_pd	2020-03-09 10:58:27.222574-04
+84	48	iniciar	2020-03-09 10:59:10.725166-04
+85	48	enproceso_pd	2020-03-09 10:59:10.725166-04
+86	49	iniciar	2020-03-09 10:59:49.837611-04
+87	49	enproceso_pd	2020-03-09 10:59:49.837611-04
+88	50	iniciar	2020-03-09 11:00:22.190243-04
+89	50	enproceso_pd	2020-03-09 11:00:22.190243-04
+90	51	iniciar	2020-03-09 11:01:27.830247-04
+91	51	enproceso_pd	2020-03-09 11:01:27.830247-04
+92	52	iniciar	2020-03-09 11:02:25.484971-04
+93	52	enproceso_pd	2020-03-09 11:02:25.484971-04
+94	53	iniciar	2020-03-09 11:02:39.986677-04
+95	53	enproceso_pd	2020-03-09 11:02:39.986677-04
+96	54	iniciar	2020-03-09 11:16:48.556884-04
+97	54	enproceso_pd	2020-03-09 11:16:48.556884-04
+98	55	iniciar	2020-03-09 11:36:13.888039-04
+99	55	enproceso_pd	2020-03-09 11:36:13.888039-04
+104	55	ingresar_datos	2020-03-09 11:45:29.596753-04
+105	55	validar_pd	2020-03-09 11:53:53.491184-04
+106	55	finalizar	2020-03-09 12:00:39.36388-04
+108	54	ingresar_datos	2020-03-09 12:31:01.928145-04
+109	54	validar_pd	2020-03-09 12:31:46.147496-04
+110	54	finalizar	2020-03-09 12:34:03.984581-04
+111	53	ingresar_datos	2020-03-09 12:35:49.737147-04
+112	53	validar_pd	2020-03-09 12:35:53.492654-04
+113	53	finalizar	2020-03-09 12:36:42.539038-04
+114	56	iniciar	2020-03-10 12:57:04.387519-04
+115	56	enproceso_pd	2020-03-10 12:57:04.387519-04
+116	57	iniciar	2020-03-10 12:57:11.436989-04
+117	57	enproceso_pd	2020-03-10 12:57:11.436989-04
+118	58	iniciar	2020-03-10 12:58:35.239723-04
+119	58	enproceso_pd	2020-03-10 12:58:35.239723-04
+120	59	iniciar	2020-03-10 13:05:26.138469-04
+121	59	enproceso_pd	2020-03-10 13:05:26.138469-04
+122	60	iniciar	2020-03-10 13:09:36.203046-04
+123	60	enproceso_pd	2020-03-10 13:09:36.203046-04
+124	61	iniciar	2020-03-10 13:10:10.180259-04
+125	61	enproceso_pd	2020-03-10 13:10:10.180259-04
+126	62	iniciar	2020-03-10 13:11:16.197787-04
+127	62	enproceso_pd	2020-03-10 13:11:16.197787-04
+128	63	iniciar	2020-03-10 13:14:03.105888-04
+129	63	enproceso_pd	2020-03-10 13:14:03.105888-04
+130	64	iniciar	2020-03-10 13:15:13.862168-04
+131	64	enproceso_pd	2020-03-10 13:15:13.862168-04
+132	65	iniciar	2020-03-10 13:16:42.95392-04
+133	65	enproceso_pd	2020-03-10 13:16:42.95392-04
+134	66	iniciar	2020-03-10 13:21:43.563048-04
+135	66	enproceso_pd	2020-03-10 13:21:43.563048-04
+136	67	iniciar	2020-03-10 13:22:45.670073-04
+137	67	enproceso_pd	2020-03-10 13:22:45.670073-04
+138	68	iniciar	2020-03-10 13:24:16.205025-04
+139	68	enproceso_pd	2020-03-10 13:24:16.205025-04
+141	70	iniciar	2020-03-10 13:27:54.13243-04
+142	70	enproceso_pd	2020-03-10 13:27:54.13243-04
+144	73	iniciar	2020-03-10 10:55:15.494258-04
+145	73	enproceso_pd	2020-03-10 10:55:15.494258-04
+146	74	iniciar	2020-03-10 10:57:11.289623-04
+147	74	enproceso_pd	2020-03-10 10:57:11.289623-04
+148	75	iniciar	2020-03-10 11:27:46.050249-04
+149	75	enproceso_pd	2020-03-10 11:27:46.050249-04
+150	76	iniciar	2020-03-10 11:28:35.225307-04
+151	76	enproceso_pd	2020-03-10 11:28:35.225307-04
+152	77	iniciar	2020-03-10 12:16:53.331279-04
+153	77	enproceso_pd	2020-03-10 12:16:53.331279-04
 \.
 
 
@@ -1373,8 +1567,8 @@ COPY public.facturas_tramites (id_factura, id_tramite) FROM stdin;
 --
 
 COPY public.instituciones (id_institucion, nombre_completo, nombre_corto) FROM stdin;
-1	Comandancia de Bomberos de Maracaibo	CMB
 2	HOLA MATENME	HMT
+1	Comandancia de Bomberos de Maracaibo	CBM
 \.
 
 
@@ -1408,6 +1602,8 @@ COPY public.operaciones (id_operacion, nombre_op) FROM stdin;
 
 COPY public.pagos (id_pago, id_tramite, referencia, monto, fecha_de_pago, aprobado, id_banco, fecha_de_aprobacion) FROM stdin;
 3	27	aaaa	200.00	2020-03-03	t	1	2020-03-03 08:00:36.078753-04
+4	28	439923932	200	2020-03-05	f	1	\N
+6	30	439923932	200	2020-03-06	f	1	\N
 \.
 
 
@@ -1453,6 +1649,9 @@ COPY public.parroquia (id, nombre) FROM stdin;
 --
 
 COPY public.recaudos (id_recaudo, nombre_largo, nombre_corto) FROM stdin;
+1	Fotocopia de la Cedula	Cedula
+2	Fotocopia del Rif	Rif
+3	Partida de Nacimiento	PartidaNacimiento
 \.
 
 
@@ -1474,6 +1673,7 @@ COPY public.recuperacion (id_recuperacion, id_usuario, token_recuperacion, usado
 COPY public.secciones (id_seccion, nombre) FROM stdin;
 1	Datos Personales
 2	Datos del Vehiculo
+3	Datos de Inspeccion
 \.
 
 
@@ -1489,11 +1689,11 @@ COPY public.templates_certificados (id_template_certificado, id_tipo_tramite, li
 -- Data for Name: tipos_tramites; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.tipos_tramites (id_tipo_tramite, id_institucion, nombre_tramite, costo_base, pago_previo) FROM stdin;
-4	2	matenem	2000	t
-1	1	primer tramite	200	f
-2	1	segundo tramite	201	f
-3	1	tercer tramite	200	f
+COPY public.tipos_tramites (id_tipo_tramite, id_institucion, nombre_tramite, costo_base, pago_previo, nombre_corto, formato) FROM stdin;
+4	2	matenem	2000	t	matenme	HMT-0001
+2	1	segundo tramite	201	f	tramite 2	CMB-002
+3	1	tercer tramite	200	f	tramite 3	CMB-003
+1	1	primer tramite	200.02	f	tramite 1	CMB-001
 \.
 
 
@@ -1501,7 +1701,16 @@ COPY public.tipos_tramites (id_tipo_tramite, id_institucion, nombre_tramite, cos
 -- Data for Name: tipos_tramites_recaudos; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.tipos_tramites_recaudos (id_tipo_tramite, id_recaudo) FROM stdin;
+COPY public.tipos_tramites_recaudos (id_tipo_tramite, id_recaudo, fisico) FROM stdin;
+1	1	t
+1	2	t
+1	3	t
+2	1	f
+2	2	f
+2	3	f
+3	1	t
+3	2	f
+3	3	f
 \.
 
 
@@ -1521,9 +1730,48 @@ COPY public.tipos_usuarios (id_tipo_usuario, descripcion) FROM stdin;
 -- Data for Name: tramites; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.tramites (id_tramite, id_tipo_tramite, datos, costo, fecha_creacion, codigo_tramite, consecutivo, id_usuario) FROM stdin;
-26	4	{"a": 1}	\N	2020-03-02 07:26:53.20038-04	HMT-02032020-4-0001	1	51
-27	4	{}	2000	2020-03-02 07:27:02.682578-04	HMT-02032020-4-0002	2	51
+COPY public.tramites (id_tramite, id_tipo_tramite, datos, costo, fecha_creacion, codigo_tramite, consecutivo, id_usuario, url_planilla) FROM stdin;
+27	4	{}	2000	2020-03-02 07:27:02.682578-04	HMT-02032020-4-0002	2	51	\N
+26	4	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	\N	2020-03-02 07:26:53.20038-04	HMT-02032020-4-0001	1	51	\N
+28	4	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	\N	2020-03-05 13:57:18.24176-04	HMT-05032020-4-0001	1	51	\N
+30	4	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	\N	2020-03-05 13:58:07.415678-04	HMT-05032020-4-0002	2	51	\N
+31	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	\N	2020-03-07 09:45:04.35627-04	CMB-07032020-1-0001	1	51	\N
+32	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	\N	2020-03-07 14:16:12.489531-04	CMB-07032020-1-0002	2	51	\N
+40	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	\N	2020-03-07 15:05:00.649404-04	CMB-07032020-1-0003	3	51	\N
+41	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	\N	2020-03-07 15:06:54.009278-04	CMB-07032020-1-0004	4	51	\N
+42	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	\N	2020-03-09 09:56:10.378497-04	CMB-09032020-1-0001	1	51	\N
+43	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	\N	2020-03-09 09:56:56.65078-04	CMB-09032020-1-0002	2	51	\N
+44	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	\N	2020-03-09 10:04:30.804034-04	CMB-09032020-1-0003	3	51	\N
+45	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	\N	2020-03-09 10:05:28.942924-04	CMB-09032020-1-0004	4	51	\N
+46	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200	2020-03-09 10:57:23.233766-04	CMB-09032020-1-0005	5	51	\N
+47	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200	2020-03-09 10:58:27.222574-04	CMB-09032020-1-0006	6	51	\N
+48	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200	2020-03-09 10:59:10.725166-04	CMB-09032020-1-0007	7	51	\N
+49	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200	2020-03-09 10:59:49.837611-04	CMB-09032020-1-0008	8	51	\N
+50	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200	2020-03-09 11:00:22.190243-04	CMB-09032020-1-0009	9	51	\N
+51	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200.00	2020-03-09 11:01:27.830247-04	CMB-09032020-1-0010	10	51	\N
+52	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200.00	2020-03-09 11:02:25.484971-04	CMB-09032020-1-0011	11	51	\N
+53	1	{"usuario":{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191},"funcionario":{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}}	2240	2020-03-09 11:02:39.986677-04	CMB-09032020-1-0012	12	51	\N
+54	1	{"usuario":{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191},"funcionario":{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}}	2240	2020-03-09 11:16:48.556884-04	CMB-09032020-1-0013	13	51	\N
+56	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200.02	2020-03-10 12:57:04.387519-04	CMB-10032020-1-0001	1	51	\N
+57	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200.02	2020-03-10 12:57:11.436989-04	CMB-10032020-1-0002	2	51	\N
+59	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200.02	2020-03-10 13:05:26.138469-04	CMB-10032020-1-0004	4	51	\N
+55	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	2240	2020-03-09 11:36:13.888039-04	CMB-09032020-1-0014	14	51	\N
+58	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200.02	2020-03-10 12:58:35.239723-04	CMB-10032020-1-0003	3	51	\N
+60	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200.02	2020-03-10 13:09:36.203046-04	CMB-10032020-1-0005	5	51	\N
+61	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200.02	2020-03-10 13:10:10.180259-04	CBM-10032020-1-0006	6	51	\N
+62	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200.02	2020-03-10 13:11:16.197787-04	CBM-10032020-1-0007	7	51	\N
+63	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200.02	2020-03-10 13:14:03.105888-04	CBM-10032020-1-0008	8	51	\N
+64	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200.02	2020-03-10 13:15:13.862168-04	CBM-10032020-1-0009	9	51	\N
+65	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200.02	2020-03-10 13:16:42.95392-04	CBM-10032020-1-0010	10	51	\N
+66	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200.02	2020-03-10 13:21:43.563048-04	CBM-10032020-1-0011	11	51	\N
+67	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200.02	2020-03-10 13:22:45.670073-04	CBM-10032020-1-0012	12	51	http://localhost:5000/archivos/CBM-10032020-1-0012.pdf
+68	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200.02	2020-03-10 13:24:16.205025-04	CBM-10032020-1-0013	13	51	http://localhost:5000/archivos/CBM-10032020-1-0013.pdf
+70	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200.02	2020-03-10 13:27:54.13243-04	CBM-10032020-1-0014	14	51	http://localhost:5000/archivos/CBM-10032020-1-0014.pdf
+73	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200.02	2020-03-10 10:55:15.494258-04	CBM-10032020-1-0015	15	57	http://localhost:5000/archivos/CBM-10032020-1-0015.pdf
+74	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200.02	2020-03-10 10:57:11.289623-04	CBM-10032020-1-0016	16	57	http://localhost:5000/CBM-10032020-1-0016.pdf
+77	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200.02	2020-03-10 12:16:53.331279-04	CBM-10032020-1-0019	19	57	http://localhost:5000/CBM-10032020-1-0019.pdf
+75	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200.02	2020-03-10 11:27:46.050249-04	CBM-10032020-1-0017	17	57	http://localhost:5000/CBM-10032020-1-0017.pdf
+76	1	{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":3423423,"sector":"rwwe","parroquia":"soltame","metrosCuadrados":200,"telefono":"23993299","puntoReferencia":"soltame ya","direccion":"aysiya","horario":"CUANTOS DATOS SONNNNNNNNNNNN","correo":"YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","nombreORazon":"8r48j4rj84r8j","contacto":"aeuefujujd","ganasDeVivir":1293191}	200.02	2020-03-10 11:28:35.225307-04	CBM-10032020-1-0018	18	57	http://localhost:5000/CBM-10032020-1-0018.pdf
 \.
 
 
@@ -1532,6 +1780,43 @@ COPY public.tramites (id_tramite, id_tipo_tramite, datos, costo, fecha_creacion,
 --
 
 COPY public.tramites_archivos_recaudos (id_tramite, url_archivo_recaudo) FROM stdin;
+31	http://localhost:5000/uploads/si.jpg
+32	http://localhost:5000/uploads/si.jpg
+40	http://localhost:5000/uploads/si.jpg
+41	http://localhost:5000/uploads/si.jpg
+42	http://localhost:5000/uploads/si.jpg
+43	http://localhost:5000/uploads/si.jpg
+44	http://localhost:5000/uploads/si.jpg
+45	http://localhost:5000/uploads/si.jpg
+46	http://localhost:5000/uploads/si.jpg
+47	http://localhost:5000/uploads/si.jpg
+48	http://localhost:5000/uploads/si.jpg
+49	http://localhost:5000/uploads/si.jpg
+50	http://localhost:5000/uploads/si.jpg
+51	http://localhost:5000/uploads/si.jpg
+52	http://localhost:5000/uploads/si.jpg
+53	http://localhost:5000/uploads/si.jpg
+54	http://localhost:5000/uploads/si.jpg
+55	http://localhost:5000/uploads/si.jpg
+56	http://localhost:5000/uploads/si.jpg
+57	http://localhost:5000/uploads/si.jpg
+58	http://localhost:5000/uploads/si.jpg
+59	http://localhost:5000/uploads/si.jpg
+60	http://localhost:5000/uploads/si.jpg
+61	http://localhost:5000/uploads/si.jpg
+62	http://localhost:5000/uploads/si.jpg
+63	http://localhost:5000/uploads/si.jpg
+64	http://localhost:5000/uploads/si.jpg
+65	http://localhost:5000/uploads/si.jpg
+66	http://localhost:5000/uploads/si.jpg
+67	http://localhost:5000/uploads/si.jpg
+68	http://localhost:5000/uploads/si.jpg
+70	http://localhost:5000/uploads/si.jpg
+73	a
+74	a
+75	a
+76	a
+77	a
 \.
 
 
@@ -1544,9 +1829,10 @@ COPY public.usuarios (id_usuario, nombre_completo, nombre_de_usuario, direccion,
 44	Andres Marmol	admin	por ahi	1	V	1	$2a$10$POACPsN.bjhjmAdLmGiQde0z2Z6maFW1paKvY98TW/cbrlFgo1X96	\N
 46	Andres Marmol	serdnam3	por ahi	123	V	2	$2a$10$j11SB/ieI5YlMWrct5aq0Oj6JrHcXqBhbUPgv6J88Z76zV3jC0YJi	\N
 48	lusia curero	funci	adasdjiculo	23933945	V	3	funci	\N
-51	Andres Marmol	serdnam2	por ahi	276373345	V	1	$2a$10$jFdBCuNe1/ZlDe1CY8bJauWlVmE/DyZqPA8OeZuqZTGaJtEoU5g3K	1
 53	lusia curero	marcia22@ethereal.email	adasdjiculo	2393945	V	3	$2a$10$26IjsCwlX/3UmmgoV/mAPeBHo2om9GlvtyOsZMKGFjVJ/RNFkTKlq	12311341
 56	Andres Marmol	hello	por ahi	22	V	1	$2a$10$XY7uDEFQqdz.qCaX8enD3ug8dMOXpBCmW1sBuTJgH0HbKji7NuQvS	\N
+51	Luis Acurero	13luismb@gmail.com	por ahi	26775497	V	2	$2a$10$jFdBCuNe1/ZlDe1CY8bJauWlVmE/DyZqPA8OeZuqZTGaJtEoU5g3K	1
+57	Andres Marmol	serdnam10	por ahi	27389532	V	4	$2a$10$nKfHMtT.YmaZbTnFalKDI.2iFO2DUiY3FHjuG5BtfJiPd91ZWfS3y	\N
 \.
 
 
@@ -1577,7 +1863,7 @@ SELECT pg_catalog.setval('public.bancos_id_banco_seq', 2, true);
 -- Name: campos_id_campo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.campos_id_campo_seq', 1, false);
+SELECT pg_catalog.setval('public.campos_id_campo_seq', 13, true);
 
 
 --
@@ -1598,7 +1884,7 @@ SELECT pg_catalog.setval('public.detalles_facturas_id_detalle_seq', 1, true);
 -- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.eventos_tramite_id_evento_tramite_seq', 48, true);
+SELECT pg_catalog.setval('public.eventos_tramite_id_evento_tramite_seq', 153, true);
 
 
 --
@@ -1640,7 +1926,7 @@ SELECT pg_catalog.setval('public.operaciones_id_operacion_seq', 1, true);
 -- Name: pagos_id_pago_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.pagos_id_pago_seq', 3, true);
+SELECT pg_catalog.setval('public.pagos_id_pago_seq', 6, true);
 
 
 --
@@ -1689,14 +1975,14 @@ SELECT pg_catalog.setval('public.tipos_usuarios_id_tipo_usuario_seq', 1, false);
 -- Name: tramites_id_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 27, true);
+SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 77, true);
 
 
 --
 -- Name: usuarios_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 56, true);
+SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 57, true);
 
 
 --

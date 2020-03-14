@@ -1,0 +1,49 @@
+extends default
+
+block content
+  div#fecha
+    p 
+      b FECHA:
+      | &nbsp; #{fecha}
+    p 
+      b Codigo de Tramite:
+      | &nbsp; #{codigo}
+  div#planilla
+    div#table
+      div.th
+        p DATOS DEL PROPIETARIO
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p 
+            b Propetario del Terreno:
+            span &nbsp; #{datos.usuario.nombre}
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Telefono: 
+            span &nbsp; #{datos.usuario.telefono}
+      div.tr
+        div.td(style={ width: '100%' }).border-bottom
+          p
+            b Ubicado en:
+            span &nbsp; #{datos.usuario.ubicadoEn}          
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Area de Construccion:
+            span &nbsp; #{datos.usuario.areaConstruccion}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Tipo de Ocupacion:
+            span &nbsp; #{datos.usuario.tipoOcupacion}
+    div#recaudos
+      h3 RECAUDOS
+      hr.divider
+      ol
+        li Documento  de Propiedad del Terreno Notariado y Registrado (copia).      
+        li Original y copia del Plano de Mensura Catastrado en tamaño original, firmado y sellado por la Dirección de Catastro, (Original solo para validar los datos, se devuelve al finalizar la revisión).
+        li Copia del RIF del Propietario.  
+        li Copia Cedula de Identidad Legible del Propietario. 
+        li Autorización Para Trámites a Terceros (si el caso lo amerita). 
+        li Copia Cedula Legible del Tramitante o Tercero (si el caso lo amerita). 
+        li El SAGAS solicitara al Tramitante o Propietario cualquier requisito que según el caso lo amerite, 
+          b Para complementar cualquier Soporte Legal. 

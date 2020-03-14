@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getAvailableProcedures, procedureInit, getAvailableProceduresOfInstitution, updateProcedureCost, updateProcedure } from '@helpers/procedures';
-import { validate, isOfficial } from '@validations/auth';
+import { validate, isOfficial, isExternalUser, isLogged, isAuth } from '@validations/auth';
 import { checkResult } from '@validations/index';
 import { authenticate } from 'passport';
 import { fulfill } from '@utils/resolver';
@@ -27,16 +27,14 @@ router.patch('/:id', authenticate('jwt'), isOfficial, async (req, res) => {
   if (data) res.status(200).json({ status: 200, options: data });
 });
 
-router.post('/init', validate(), checkResult, authenticate('jwt'), async (req: any, res) => {
-  const { id } = req.user;
+router.post('/init', validate(), checkResult, authenticate('jwt'), isExternalUser, async (req: any, res) => {
   const { tramite } = req.body;
-  const [error, data] = await fulfill(procedureInit(tramite, id));
+  const [error, data] = await fulfill(procedureInit(tramite, req.user));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
 
-//TODO: refactorizar en la medida de lo posible.
-router.put('/update', validate(), checkResult, authenticate('jwt'), isOfficial, async (req: any, res) => {
+router.put('/update', validate(), checkResult, authenticate('jwt'), isAuth, async (req: any, res) => {
   const { tramite } = req.body;
   const [error, data] = await fulfill(updateProcedure(tramite));
   if (error) res.status(500).json(error);

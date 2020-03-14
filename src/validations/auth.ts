@@ -77,6 +77,75 @@ const validations = {
     .isArray()
     .isLength({ min: 1 })
     .withMessage('Debe poseer al menos un archivo de recaudos'),
+  ubicadoEn: check('tramite.datos.ubicadoEn')
+    .exists()
+    .withMessage('Debe incluir la ubicacion')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir una ubicacion valida'),
+  rif: check('tramite.datos.rif')
+    .exists()
+    .withMessage('Debe incluir el rif de la ubicacion')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir un rif valido'),
+  razonSocial: check('tramite.datos.rif')
+    .exists()
+    .withMessage('Debe incluir la razon social')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir una razon social valida'),
+  tipoOcupacion: check('tramite.datos.tipoOcupacion')
+    .exists()
+    .withMessage('Debe incluir el tipo de ocupacion del establecimiento')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir un tipo de ocupacion del establecimiento'),
+  areaConstruccion: check('tramite.datos.areaConstruccion')
+    .exists()
+    .withMessage('Debe incluir el area de construccion')
+    .isInt()
+    .withMessage('Area de construccion invalida'),
+  numeroProyecto: check('tramite.datos.numeroProyecto')
+    .exists()
+    .withMessage('Debe incluir el numero del proyecto')
+    .isInt()
+    .withMessage('Debe incluir un numero de proyecto valido'),
+  fechaAprobacion: check('tramite.datos.fechaAprobacion')
+    .exists()
+    .withMessage('Debe incluir la fecha de aprobacion del proyecto')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir una fecha de aprobacion valida'),
+  codigoPermisoConstruccion: check('tramite.datos.codigoPermisoConstruccion')
+    .exists()
+    .withMessage('Debe incluir el codigo de permiso de construccion del proyecto')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir un codigo de permiso de construcion valido'),
+  fechaPermisoConstruccion: check('tramite.datos.fechaPermisoConstruccion')
+    .exists()
+    .withMessage('Debe incluir la fecha del permiso de construccion')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir una fecha de permiso de construccion valida'),
+  nombreObra: check('tramite.datos.nombreObra')
+    .exists()
+    .withMessage('Debe incluir el nombre de obra de la construccion')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir un nombre de obra de la construccion valido'),
+  aforo: check('tramite.datos.aforo')
+    .exists()
+    .withMessage('Debe incluir el aforo de la ubicacion')
+    .isInt()
+    .withMessage('Debe incluir un aforo valido'),
+  informe: check('tramite.datos.informe')
+    .exists()
+    .withMessage('Debe incluir el informe de la inspeccion')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir un informe de la inspeccion valido'),
 };
 
 export const createSuperuser = [
@@ -162,38 +231,38 @@ export const createAdmin = [
 ];
 
 export const createOfficial = [
-  check('funcionario.cedula')
+  check('usuario.cedula')
     .exists()
     .withMessage('Debe incluir la cedula del usuario')
     .isInt()
     .withMessage('Cedula invalida'),
-  check('funcionario.nombreCompleto')
+  check('usuario.nombreCompleto')
     .exists()
     .withMessage('Debe incluir el nombre del usuario')
     .isString()
     .isLength({ min: 1 })
     .withMessage('El nombre no puede ser vacio'),
-  check('funcionario.nombreUsuario')
+  check('usuario.nombreUsuario')
     .exists()
     .withMessage('Debe incluir el nombre de usuario')
     .isString()
     .withMessage('Nombre de usuario invalido'),
-  check('funcionario.direccion')
+  check('usuario.direccion')
     .exists()
     .withMessage('Debe incluir la direccion del usuario')
     .isString()
     .withMessage('Direccion invalida'),
-  check('funcionario.nacionalidad')
+  check('usuario.nacionalidad')
     .exists()
     .withMessage('Debe incluir la nacionalidad del usuario')
     .isString()
     .withMessage('Nacionalidad invalida'),
-  check('funcionario.telefono')
+  check('usuario.telefono')
     .exists()
     .withMessage('Debe incluir el telefono del usuario')
     .isString()
     .withMessage('Telefono invalido'),
-  check('funcionario.password')
+  check('usuario.password')
     .exists()
     .withMessage('Debe incluir una contraseña para el usuario'),
 ];
@@ -258,6 +327,16 @@ export const isOfficial = (req, res, next) => {
     res.send({
       status: 401,
       response: 'No tiene permisos para realizar esta operación',
+    });
+  }
+};
+
+export const isExternalUser = (req, res, next) => {
+  if (req.user.tipoUsuario === 4) next();
+  else {
+    res.send({
+      status: 401,
+      response: 'Sólo los usuarios externos pueden realizar esta operación',
     });
   }
 };

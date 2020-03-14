@@ -42,6 +42,7 @@ export const validatePayments = async body => {
           fechaDePago: el.fechadepago,
           codigoTramite: el.codigotramite,
           fechaDeAprobacion: el.fechadeaprobacion,
+          tipoTramite: el.tipotramite
         };
         await updateProcedure(pagoValidado);
         return pagoValidado;

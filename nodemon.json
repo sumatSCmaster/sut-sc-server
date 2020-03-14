@@ -1,12 +1,6 @@
 {
   "restartable": "rs",
-  "ignore": [
-    "**/*.test.ts",
-    "**/*.spec.ts",
-    ".git",
-    "node_modules",
-    ".vscode"
-  ],
+  "ignore": ["**/*.test.ts", "**/*.spec.ts", ".git", "node_modules", ".vscode"],
   "execMap": {
     "ts": "node --require ts-node/register"
   },

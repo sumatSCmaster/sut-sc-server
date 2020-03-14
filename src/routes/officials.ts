@@ -41,8 +41,8 @@ router.get('/all', authenticate('jwt'), async (req: any, res) => {
 router.post('/', authenticate('jwt'), validators.createOfficial, checkResult, async (req: any, res) => {
   const { id_institucion } = req.user.cuentaFuncionario;
   if (id_institucion) {
-    const { funcionario } = req.body;
-    const [err, data] = await fulfill(createOfficial(funcionario, id_institucion));
+    const { usuario } = req.body;
+    const [err, data] = await fulfill(createOfficial(usuario, id_institucion));
     if (err) res.status(500).json(err);
     if (data) res.status(data.status).json(data);
   } else {
@@ -56,9 +56,9 @@ router.post('/', authenticate('jwt'), validators.createOfficial, checkResult, as
 router.put('/:id', authenticate('jwt'), validators.updateOfficial, checkResult, async (req, res) => {
   const { id_institucion } = req.user.cuentaFuncionario;
   if (id_institucion) {
-    const { funcionario } = req.body;
+    const { usuario } = req.body;
     const { id } = req.params;
-    const [err, data] = await fulfill(updateOfficial(funcionario, id));
+    const [err, data] = await fulfill(updateOfficial(usuario, id));
     if (err) res.status(500).json(err);
     if (data) res.status(data.status).json(data);
   } else {
@@ -74,9 +74,9 @@ router.delete('/:id', authenticate('jwt'), async (req: any, res) => {
   if (id_institucion) {
     const { id } = req.params;
     let err, data;
-    if(req.user.tipoUsuario !== 1){
+    if (req.user.tipoUsuario !== 1) {
       [err, data] = await fulfill(deleteOfficial(id, id_institucion));
-    }else{
+    } else {
       [err, data] = await fulfill(deleteOfficialSuperuser(id));
     }
     if (err) res.status(500).json(err);
