@@ -313,6 +313,7 @@ export const procedureInit = async (procedure, user) => {
   }
 };
 
+//TODO: hacer que el front incluya el estado actual para hacer validaciones
 export const updateProcedure = async procedure => {
   const client = await pool.connect();
   let { pago, datos } = procedure;
