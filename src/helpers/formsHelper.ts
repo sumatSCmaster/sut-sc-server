@@ -1,5 +1,4 @@
 import { resolve } from 'path';
-import { access, unlink } from 'fs';
 import { renderFile } from 'pug';
 import * as pdf from 'html-pdf';
 import * as qr from 'qrcode';
@@ -26,7 +25,7 @@ export const createForm = async ({ fecha, codigo, formato, tramite, institucion,
     const pdfDir = resolve(__dirname, `../../archivos/${dir.split('/')[3].split('.')[0]}.pdf`);
     if (dev) {
       pdf
-        .create(html, { format: 'Letter', border: '5mm', header: { height: '100px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
+        .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
         .toFile(pdfDir, () => {
           res(dir);
         });

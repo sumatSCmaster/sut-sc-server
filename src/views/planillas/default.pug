@@ -5,7 +5,7 @@ html
   body
     div#wrapper
       block header
-        header#pageHeader.header
+        header#header
           div.header-child
             img#alcaldia(src='images/LogoAlcaldia.png')
           div.header-child
@@ -37,7 +37,7 @@ html
         p SOLICITUD DE #{tramite.toUpperCase()}
         block content
       block footer
-        footer#pageFooter.footer
+        footer#footer
           - var direccion = ''
           case institucion
             when 'CBM'
@@ -45,6 +45,6 @@ html
             when 'SAGAS'
               - direccion = 'Avenida 3E Entre Calles 72 y 73. Sector La Lago, Edificio Club de Leones. Teléfono: (0261) 7934400'
           img#divider(src='images/Divider.png')
-          div(style={ display: '-webkit-flex', padding: '0px 50px' })
+          div(style={ display: '-webkit-flex', padding: '10px 50px', '-webkit-justify-content': 'space-between' })
             p #{direccion}
             img(src='images/footer_logo.png')
