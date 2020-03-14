@@ -98,6 +98,7 @@ export interface Tramite {
   nombreTramiteCorto: string;
   recaudos: string[];
   planilla: string;
+  certificado: string;
 }
 
 export interface Recaudo {

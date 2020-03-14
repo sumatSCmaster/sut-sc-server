@@ -256,7 +256,7 @@ export const procedureInit = async (procedure, user) => {
   const { tipoTramite, datos, pago, recaudos } = procedure;
   try {
     client.query('BEGIN');
-    const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify(datos), user.id])).rows[0];
+    const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify({ usuario: datos }), user.id])).rows[0];
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.tipotramite])).rows[0];
     response.pagoPrevio = resources.pago_previo;
@@ -278,6 +278,7 @@ export const procedureInit = async (procedure, user) => {
       estado: respState.rows[0].state,
       datos: response.datos,
       planilla: dir,
+      certificado: response.url_certificado,
       costo: +resources.costo_base,
       fechaCreacion: response.fechacreacion,
       codigoTramite: response.codigotramite,
@@ -310,6 +311,7 @@ export const procedureInit = async (procedure, user) => {
 export const updateProcedure = async procedure => {
   const client = await pool.connect();
   let { pago, datos } = procedure;
+  let dir, respState;
   try {
     client.query('BEGIN');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0];
@@ -324,11 +326,15 @@ export const updateProcedure = async procedure => {
     }
     if (datos) {
       const prevData = (await client.query('SELECT datos FROM tramites WHERE id_tramite=$1', [procedure.idTramite])).rows[0];
-      if (!prevData.datos.usuario && !prevData.datos.funcionario) datos = { usuario: prevData.datos, funcionario: datos };
+      if (!prevData.datos.funcionario) datos = { usuario: prevData.datos, funcionario: datos };
       else datos = prevData.datos;
     }
-    // const dir = await createRequestForm(procedure, client);
-    const respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, procedure.costo || null, null]);
+    if (nextEvent === 'finalizar') {
+      dir = await createCertificate(procedure, client);
+      respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, datos || null, dir || null]);
+    } else {
+      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, procedure.costo || null, null]);
+    }
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
     client.query('COMMIT');
     const tramite: Partial<Tramite> = {
@@ -337,6 +343,7 @@ export const updateProcedure = async procedure => {
       estado: response.state,
       datos: response.datos,
       planilla: response.planilla,
+      certificado: dir,
       costo: response.costo,
       fechaCreacion: response.fechacreacion,
       codigoTramite: response.codigotramite,
@@ -363,7 +370,7 @@ export const updateProcedure = async procedure => {
 const createRequestForm = async (procedure, client): Promise<string> => {
   const tramite = (
     await client.query(
-      'SELECT tsr.*, ttr.formato FROM tramites_state_with_resources tsr INNER JOIN tipos_tramites ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
+      'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM tramites_state_with_resources tsr INNER JOIN tipos_tramites ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
       [procedure.idTramite]
     )
   ).rows[0];
@@ -375,8 +382,32 @@ const createRequestForm = async (procedure, client): Promise<string> => {
     tramite: tramite.nombretramitelargo,
     institucion: tramite.nombrecorto,
     datos: tramite.datos,
+    estado: tramite.state,
+    tipoTramite: tramite.tipotramite,
   };
-  const form = (await createForm(procedureData)) as string;
+  const form = (await createForm(procedureData, client)) as string;
+  return form;
+};
+
+const createCertificate = async (procedure, client): Promise<string> => {
+  const tramite = (
+    await client.query(
+      'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM tramites_state_with_resources tsr INNER JOIN tipos_tramites ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
+      [procedure.idTramite]
+    )
+  ).rows[0];
+  const procedureData = {
+    id: procedure.idTramite,
+    fecha: tramite.fechacreacion,
+    codigo: tramite.codigotramite,
+    formato: tramite.formato,
+    tramite: tramite.nombretramitelargo,
+    institucion: tramite.nombrecorto,
+    datos: tramite.datos,
+    estado: 'finalizado',
+    tipoTramite: tramite.tipotramite,
+  };
+  const form = (await createForm(procedureData, client)) as string;
   return form;
 };
 
