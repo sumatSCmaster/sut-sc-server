@@ -146,6 +146,12 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('Debe incluir un informe de la inspeccion valido'),
+  observaciones: check('tramite.datos.observaciones')
+    .exists()
+    .withMessage('Debe incluir las observaciones de la inspeccion')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir observaciones validas'),
 };
 
 export const createSuperuser = [
@@ -282,6 +288,123 @@ export const login = [
     .withMessage('Contraseña invalida'),
 ];
 
+export const createSocialCase = [
+  check('caso.datos.cedula')
+    .exists()
+    .withMessage('Debe incluir la cedula del usuario')
+    .isInt()
+    .withMessage('Cedula invalida'),
+  check('caso.datos.nombreCompleto')
+    .exists()
+    .withMessage('Debe incluir el nombre del usuario')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El nombre no puede ser vacio'),
+  check('caso.datos.email')
+    .exists()
+    .withMessage('Debe incluir el nombre de usuario')
+    .isString()
+    .withMessage('Nombre de usuario invalido'),
+  check('caso.datos.direccion')
+    .exists()
+    .withMessage('Debe incluir la direccion del usuario')
+    .isString()
+    .withMessage('Direccion invalida'),
+  check('caso.datos.nacionalidad')
+    .exists()
+    .withMessage('Debe incluir la nacionalidad del usuario')
+    .isString()
+    .withMessage('Nacionalidad invalida'),
+  check('caso.datos.telefono')
+    .exists()
+    .withMessage('Debe incluir el telefono del usuario')
+    .isString()
+    .withMessage('Telefono invalido'),
+  check('caso.datos.parroquia')
+    .exists()
+    .withMessage('Debe incluir una parroquia para la direccion del usuario')
+    .isString()
+    .withMessage('Parroquia invalida'),
+  check('caso.datos.edad')
+    .exists()
+    .withMessage('Debe incluir la edad  del usuario')
+    .isInt()
+    .withMessage('Edad invalida'),
+  check('caso.datos.sexo')
+    .exists()
+    .withMessage('Debe incluir el sexo del usuario')
+    .isBoolean()
+    .withMessage('Sexo invalido'),
+  check('caso.datos.poblacionIndigena')
+    .exists()
+    .withMessage('Debe indicar si el usuario pertenece a la poblacion indigena')
+    .isBoolean()
+    .withMessage('Dato invalido'),
+  check('caso.datos.etnia')
+    .exists()
+    .withMessage('Debe incluir la etnia del usuario')
+    .isString()
+    .withMessage('Etnia invalida'),
+  check('caso.datos.profesion')
+    .exists()
+    .withMessage('Debe incluir la profesion del usuario')
+    .isString()
+    .withMessage('Profesion invalida'),
+  check('caso.datos.oficio')
+    .exists()
+    .withMessage('Debe incluir el oficio del usuario')
+    .isString()
+    .withMessage('Oficio invalido'),
+  check('caso.datos.estadoCivil')
+    .exists()
+    .withMessage('Debe incluir el estado civil del usuario')
+    .isString()
+    .withMessage('Estado civil invalido'),
+  check('caso.datos.nivelInstruccion')
+    .exists()
+    .withMessage('Debe incluir el nivel de instruccion del usuario')
+    .isString()
+    .withMessage('Nivel de instruccion invalido'),
+  check('caso.datos.empleadoAlcaldia')
+    .exists()
+    .withMessage('Debe indicar si el usuarioes empleado de la alcaldia')
+    .isBoolean()
+    .withMessage('Dato invalido'),
+  check('caso.datos.tipoAyuda')
+    .exists()
+    .withMessage('Debe incluir el tipo de ayuda que solicita el usuario')
+    .isString()
+    .withMessage('Tipo de ayuda invalido'),
+  check('caso.datos.condicionLaboral')
+    .exists()
+    .withMessage('Debe incluir la condicion laboral del usuario')
+    .isString()
+    .withMessage('Condicion laboral invalida'),
+  check('caso.datos.fechaNacimiento')
+    .exists()
+    .withMessage('Debe incluir la fecha de nacimiento del usuario')
+    .isString()
+    .withMessage('Fecha de nacimiento invalida'),
+  check('caso.datos.razonDeSolicitud')
+    .exists()
+    .withMessage('Debe incluir la razon de solicitud del usuario')
+    .isString()
+    .withMessage('Razon de solicitud'),
+  check('caso.datos.patologiaActual')
+    .exists()
+    .withMessage('Debe incluir la patologia actual del usuario')
+    .isString()
+    .withMessage('Patologia invalida'),
+  check('caso.datos.areaDeSalud')
+    .exists()
+    .withMessage('Debe incluir el area de salud de la patologia del solicitante')
+    .isString()
+    .withMessage('Area de salud invalida'),
+  check('caso.datos.liderDeCalle')
+    .exists()
+    .withMessage('Debe incluir el lider de calle del solicitante'),
+];
+
 export const validate = () => {
   return async (req, res, next) => {
     const validaciones = await isValidProcedure(req, res);
@@ -337,6 +460,16 @@ export const isExternalUser = (req, res, next) => {
     res.send({
       status: 401,
       response: 'Sólo los usuarios externos pueden realizar esta operación',
+    });
+  }
+};
+
+export const isOfficialAdmin = (req, res, next) => {
+  if (req.user.tipoUsuario <= 2) next();
+  else {
+    res.send({
+      status: 401,
+      response: 'Sólo los funcionarios administradores o superior pueden realizar esta operación',
     });
   }
 };
