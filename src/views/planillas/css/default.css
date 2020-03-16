@@ -11,6 +11,10 @@ body {
   flex-direction: column;
 }
 
+#QR {
+  padding: 2px 0;
+}
+
 #header, #footer {
   width: 100%;
   height: 100px;

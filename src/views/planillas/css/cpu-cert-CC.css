@@ -1,0 +1,263 @@
+body {
+  font-family: Calibri, Helvetica, sans-serif;
+  font-size: 12px;
+}
+
+h1 {
+  font-size: 2em;
+  margin: 0;
+}
+h4 {
+  font-size: 1.7em;
+  margin: 0;
+}
+p {
+  margin: 0;
+}
+
+h3 {
+  font-size: 1.2em;
+  margin: 0;
+}
+
+.certificado {
+  border: double black 5px;
+  margin-top: 20px;
+}
+
+.datos-certificado table,
+th,
+td {
+  border-collapse: separate;
+  border-spacing: 0 15px;
+  text-transform: uppercase;
+}
+.datos-certificado th {
+  width: 25%;
+  text-align: left;
+}
+.datos-certificado td {
+  text-align: left;
+}
+
+.datos-certificado table {
+  word-wrap: break-word;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.funcionarios {
+  border-top: 1px solid slategray;
+}
+
+.funcionarios div {
+  padding: 3px;
+  border-right: slategray solid 1px;
+  height: 130px;
+  display: flex;
+  display: -webkit-flex;
+  align-items: center;
+  -webkit-align-items: center;
+  flex-direction: column;
+  -webkit-flex-direction: column;
+  justify-content: flex-end;
+  -webkit-justify-content: flex-end;
+}
+
+.funcionarios h4 {
+  font-size: 1em;
+  font-weight: normal;
+  margin: 0;
+}
+.funcionarios p {
+  align-self: flex-start;
+  -webkit-align-self: flex-start;
+}
+
+.sections div {
+  border-top: 1px solid slategray;
+  border-right: 1px solid slategray;
+  height: 55px;
+  display: flex;
+  display: -webkit-flex;
+  align-items: center;
+  -webkit-align-items: center;
+  flex-direction: column;
+  -webkit-flex-direction: column;
+  justify-content: space-around;
+  -webkit-justify-content: space-around;
+}
+
+.sections h6 {
+  font-size: 1em;
+  margin: 0;
+}
+.sections p {
+  font-weight: normal;
+}
+
+.nro-placa {
+  border-bottom: 1px solid slategray;
+}
+
+#QR {
+  padding: 2px 0;
+}
+
+#header_content > div {
+  margin: 0.5em 0;
+}
+
+.pageHeader p .dpto {
+  font-size: 1em;
+}
+.pageHeader p.dpto b {
+  font-size: 1.3em;
+}
+
+.pageHeader p.since {
+  font-size: 0.5em;
+  text-align: right;
+  margin-right: 4%;
+}
+
+.datos-certificado > div {
+  display: flex;
+  display: -webkit-flex;
+  flex-direction: column;
+  -webkit-flex-direction: column;
+  font-weight: normal;
+  padding: 13px;
+  text-align: center;
+  justify-content: space-between;
+  -webkit-justify-content: space-between;
+}
+
+.datos-certificado h4 {
+  font-size: 1.4em;
+}
+.datos-certificado img {
+  border: 1px solid lightgrey;
+  height: 260px;
+  width: 260px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.membrete-columns {
+  justify-content: space-between;
+  -webkit-justify-content: space-between;
+}
+
+.border-table table {
+  border-collapse: collapse;
+  word-wrap: break-word;
+  table-layout: fixed;
+}
+
+.border-table td,
+.border-table th {
+  text-align: center;
+  border: 1px solid slategray;
+}
+
+.datos-certificado table {
+  word-wrap: break-word;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.col {
+  display: flex;
+  display: -webkit-flex;
+  flex-direction: column;
+  -webkit-flex-direction: column;
+}
+
+.col div {
+  margin-bottom: 1em;
+}
+
+.croquis {
+  text-align: "center";
+  border-right: 1px solid slategray;
+}
+
+.nota {
+  border-top: 1px solid slategray;
+  text-align: justify;
+}
+
+.header-table {
+  text-align: center;
+  display: flex;
+  display: -webkit-flex;
+  align-items: stretch;
+  justify-content: center;
+  -webkit-align-items: center;
+  -webkit-justify-content: center;
+  border-bottom: 1px solid slategray;
+}
+
+#fecha-exp {
+  font-size: 1.2em;
+  text-align: center;
+}
+#tramite > h1 {
+  font-size: 2.5em;
+}
+#tramite > h4 {
+  font-size: 1.4em;
+}
+
+.row {
+  width: 100%;
+  display: flex;
+  display: -webkit-flex;
+  align-items: stretch;
+  -webkit-align-items: stretch;
+  flex-wrap: nowrap;
+  -webkit-flex-wrap: nowrap;
+}
+
+@media print {
+  .page {
+    page-break-after: always;
+  }
+
+  .este {
+    page-break-inside: avoid !important;
+  }
+}
+
+.underborder {
+  border-bottom: 1px solid slategray;
+}
+.alignCenter {
+  justify-content: center;
+  -webkit-justify-content: center;
+}
+
+.alignRight {
+  justify-content: flex-end;
+  -webkit-justify-content: flex-end;
+}
+
+.grow1 {
+  flex-grow: 1;
+  -webkit-flex-grow: 1;
+}
+
+.grow2 {
+  flex-grow: 2;
+  -webkit-flex-grow: 2;
+}
+.grow3 {
+  flex-grow: 2;
+  -webkit-flex-grow: 2;
+}
+
+.bg-light {
+  background-color: rgb(218, 238, 243);
+}
