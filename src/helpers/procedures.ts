@@ -321,7 +321,9 @@ export const updateProcedure = async procedure => {
   try {
     client.query('BEGIN');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0];
-    console.log(resources);
+    if (!procedure.hasOwnProperty('aprobado') && procedure.estado === 'validando') {
+      return { status: 403, message: 'No es posible actualizar este estado' };
+    }
     if (!procedure.hasOwnProperty('pagoPrevio')) {
       procedure.pagoPrevio = resources.pago_previo;
     }
