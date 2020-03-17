@@ -190,6 +190,15 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
 
   //Parroquias
   GET_PARROQUIAS: 'SELECT * FROM parroquia;',
+
+  //Inmuebles
+  GET_ALL_PROPERTIES: 'SELECT i.id_inmueble AS "idInmueble", i.cod_catastral AS "codCatastral", i.direccion,\
+  i.metros_construccion AS "metrosConstruccion", i.metros_terreno AS "metrosTerreno", i.fecha_creacion AS "fechaCreacion",i.fecha_actualizacion AS "fechaActualizacion",  \
+  i.fecha_ultimo_avaluo AS "fechaUltimoAvaluo" , p.nombre AS parroquia FROM inmueble_urbano i INNER JOIN parroquia p ON i.id_parroquia = p.id;',
+  GET_ONE_PROPERTY_BY_COD: 'SELECT i.id_inmueble AS "idInmueble", i.cod_catastral AS "codCatastral", i.direccion,\
+  i.metros_construccion AS "metrosConstruccion", i.metros_terreno AS "metrosTerreno", i.fecha_creacion AS "fechaCreacion",i.fecha_actualizacion AS "fechaActualizacion",  \
+  i.fecha_ultimo_avaluo AS "fechaUltimoAvaluo" , p.nombre AS parroquia FROM inmueble_urbano i INNER JOIN parroquia p ON i.id_parroquia = p.id WHERE i.cod_catastral = $1;',
+  GET_PROPERTY_OWNERS: 'SELECT p.id_propietario AS "idPropietario", razon_social AS "razonSocial", cedula, rif, email, pi.id_inmueble FROM propietario p INNER JOIN propietarios_inmuebles pi ON p.id_propietario = pi.id_propietario;'
 };
 
 export default queries;

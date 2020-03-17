@@ -9,6 +9,7 @@ import affairs from './affairs';
 import { authenticate } from 'passport';
 import resources from './resources';
 import validateDoc from './validateDoc';
+import properties from './properties';
 import { isAdmin } from '@middlewares/auth';
 
 const router = Router();
@@ -20,6 +21,7 @@ router.use('/procedures', procedures);
 router.use('/uploads', file);
 router.use('/validateDoc', validateDoc);
 router.use('/affairs', affairs);
+router.use('/properties', properties);
 router.use(resources);
 //router.use("/notification", notification);
 
