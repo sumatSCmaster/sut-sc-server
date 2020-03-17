@@ -180,6 +180,7 @@ router.get('/user', authenticate('jwt'), async (req: any, res) => {
     cuentaFuncionario: req.user.cuentaFuncionario,
     datosGoogle: req.user.datosGoogle,
     datosFacebook: req.user.datosFacebook,
+    permisos: req.user.permisos
   };
   res.status(200).json({ user, status: 200, message: 'Usuario obtenido' });
 });
