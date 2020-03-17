@@ -289,7 +289,7 @@ CREATE TABLE public.tipos_tramites (
     id_institucion integer,
     nombre_tramite character varying,
     costo_base numeric,
-    sufijo character varying,
+    pago_previo boolean,
     nombre_corto character varying,
     formato character varying,
     planilla character varying,
@@ -2243,18 +2243,18 @@ COPY public.templates_certificados (id_template_certificado, id_tipo_tramite, li
 -- Data for Name: tipos_tramites; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.tipos_tramites (id_tipo_tramite, id_institucion, nombre_tramite, costo_base, sufijo, nombre_corto, formato, planilla, certificado, utiliza_informacion_catastral) FROM stdin;
-0	0	Casos Sociales	\N	false	Casos Sociales	ABMM-001	\N	\N	\N
-6	2	Constancia de Servicio Residencial	500	true	Servicio Residencial	SAGAS-002	sagas-solt-CS	sagas-cert-CS	\N
-7	2	Constancia de Servicio Persona Juridica	500	true	Servicio Persona Juridica	SAGAS-003	sagas-solt-CS	sagas-cert-CS	\N
-2	1	Constancia de Habitabilidad	\N	false	Habitabilidad	CBM-002	bomberos-solt	bomberos-cert-HAB	\N
-3	1	Instalacion de Plantas Electricas	\N	false	Plantas Electricas	CBM-003	bomberos-solt	bomberos-cert-IPE	\N
-8	2	Permiso de Construccion	\N	false	Permiso de Construccion	SAGAS-004	sagas-solt-PC	sagas-cert-PC	\N
-1	1	Cumplimiento de Normas Tecnicas	\N	false	Normas Tecnicas	CBM-001	bomberos-solt	bomberos-cert-CCNT	\N
-10	2	Permiso de Habitabilidad con Instalaciones de Servicio de Gas	\N	false	Habitabilidad con Instalacion de Servicio de Gas	SAGAS-005	sagas-solt-Hab	sagas-cert-PH	\N
-11	2	Permiso de Habitabilidad sin Instalaciones de Servicio de Gas	\N	false	Habitabilidad sin Instalacion de Servicio de Gas	SAGAS-005	sagas-solt-Hab	sagas-cert-PH	\N
-12	2	Permiso de Condiciones Habitables con Instalaciones de Servicio de Gas	\N	false	Condiciones Habitables con Instalacion de Servicio de Gas	SAGAS-001	sagas-solt-CH	sagas-cert-PCH	\N
-13	2	Permiso de Condiciones Habitables sin Instalaciones de Servicio de Gas	\N	false	Condiciones Habitables sin Instalacion de Servicio de Gas	SAGAS-001	sagas-solt-CH	sagas-cert-PCH	\N
+COPY public.tipos_tramites (id_tipo_tramite, id_institucion, nombre_tramite, costo_base, pago_previo, nombre_corto, formato, planilla, certificado, utiliza_informacion_catastral) FROM stdin;
+0	0	Casos Sociales	\N	f	Casos Sociales	ABMM-001	\N	\N	\N
+6	2	Constancia de Servicio Residencial	500	t	Servicio Residencial	SAGAS-002	sagas-solt-CS	sagas-cert-CS	\N
+7	2	Constancia de Servicio Persona Juridica	500	t	Servicio Persona Juridica	SAGAS-003	sagas-solt-CS	sagas-cert-CS	\N
+2	1	Constancia de Habitabilidad	\N	f	Habitabilidad	CBM-002	bomberos-solt	bomberos-cert-HAB	\N
+3	1	Instalacion de Plantas Electricas	\N	f	Plantas Electricas	CBM-003	bomberos-solt	bomberos-cert-IPE	\N
+8	2	Permiso de Construccion	\N	f	Permiso de Construccion	SAGAS-004	sagas-solt-PC	sagas-cert-PC	\N
+1	1	Cumplimiento de Normas Tecnicas	\N	f	Normas Tecnicas	CBM-001	bomberos-solt	bomberos-cert-CCNT	\N
+10	2	Permiso de Habitabilidad con Instalaciones de Servicio de Gas	\N	f	Habitabilidad con Instalacion de Servicio de Gas	SAGAS-005	sagas-solt-Hab	sagas-cert-PH	\N
+11	2	Permiso de Habitabilidad sin Instalaciones de Servicio de Gas	\N	f	Habitabilidad sin Instalacion de Servicio de Gas	SAGAS-005	sagas-solt-Hab	sagas-cert-PH	\N
+12	2	Permiso de Condiciones Habitables con Instalaciones de Servicio de Gas	\N	f	Condiciones Habitables con Instalacion de Servicio de Gas	SAGAS-001	sagas-solt-CH	sagas-cert-PCH	\N
+13	2	Permiso de Condiciones Habitables sin Instalaciones de Servicio de Gas	\N	f	Condiciones Habitables sin Instalacion de Servicio de Gas	SAGAS-001	sagas-solt-CH	sagas-cert-PCH	\N
 \.
 
 
