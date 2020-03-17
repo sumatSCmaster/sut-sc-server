@@ -340,11 +340,6 @@ export const createSocialCase = [
     .withMessage('Debe indicar si el usuario pertenece a la poblacion indigena')
     .isBoolean()
     .withMessage('Dato invalido'),
-  check('caso.datos.etnia')
-    .exists()
-    .withMessage('Debe incluir la etnia del usuario')
-    .isString()
-    .withMessage('Etnia invalida'),
   check('caso.datos.profesion')
     .exists()
     .withMessage('Debe incluir la profesion del usuario')
@@ -367,7 +362,7 @@ export const createSocialCase = [
     .withMessage('Nivel de instruccion invalido'),
   check('caso.datos.empleadoAlcaldia')
     .exists()
-    .withMessage('Debe indicar si el usuarioes empleado de la alcaldia')
+    .withMessage('Debe indicar si el usuario es empleado de la alcaldia')
     .isBoolean()
     .withMessage('Dato invalido'),
   check('caso.datos.tipoAyuda')
@@ -375,6 +370,11 @@ export const createSocialCase = [
     .withMessage('Debe incluir el tipo de ayuda que solicita el usuario')
     .isString()
     .withMessage('Tipo de ayuda invalido'),
+  check('caso.datos.tipoAyudaDesc')
+    .exists()
+    .withMessage('Debe incluir la descripción del tipo de ayuda que solicita el usuario')
+    .isString()
+    .withMessage('Descripción de ayuda inválida'),
   check('caso.datos.condicionLaboral')
     .exists()
     .withMessage('Debe incluir la condicion laboral del usuario')
@@ -403,6 +403,9 @@ export const createSocialCase = [
   check('caso.datos.liderDeCalle')
     .exists()
     .withMessage('Debe incluir el lider de calle del solicitante'),
+  check('caso.datos.solicitante')
+    .exists()
+    .withMessage('Debe incluir la firma del solicitante'),
 ];
 
 export const validate = () => {

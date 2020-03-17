@@ -314,6 +314,16 @@ export const procedureInit = async (procedure, user) => {
 };
 
 //TODO: hacer que el front incluya el estado actual para hacer validaciones
+//TODO: validar los eventos del tramite, hacer switchcase de validaciones
+
+export const validateProcedure = async procedure => {};
+
+export const processProcedure = async procedure => {};
+
+export const addPaymentProcedure = async procedure => {};
+
+export const reviseProcedure = async procedure => {};
+
 export const updateProcedure = async procedure => {
   const client = await pool.connect();
   let { pago, datos } = procedure;
