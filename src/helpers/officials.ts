@@ -10,7 +10,6 @@ export const getOfficialsByInstitution = async (institution: string, id: number)
   const client = await pool.connect();
   try {
     const response = await client.query(queries.GET_OFFICIALS_BY_INSTITUTION, [institution, id]);
-    console.log(response.rows)
     const funcionarios = await Promise.all(response.rows.map(async el => {
       const official = {
         ...el,
@@ -19,13 +18,11 @@ export const getOfficialsByInstitution = async (institution: string, id: number)
         tipoUsuario: el.tipousuario,
         permisos: (await client.query(queries.GET_USER_PERMISSIONS, [el.id])).rows.map(row => +row.id_tipo_tramite) || []
       };
-      console.log('OFFI', official)
       delete official.nombrecompleto;
       delete official.nombreusuario;
       delete official.tipousuario;
       return official;
     }));
-    console.log('funci', funcionarios);
     return {
       status: 200,
       funcionarios,
@@ -134,8 +131,10 @@ export const updateOfficial = async (official: any, id: string) => {
   try {
     client.query('BEGIN');
     const response = (await client.query(queries.UPDATE_OFFICIAL, [nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, telefono, id])).rows[0];
-    await dropPermissions(id, client);
-    await addPermissions(id, permisos || [], client);
+    if(permisos !== undefined){
+      await dropPermissions(id, client);
+      await addPermissions(id, permisos, client);
+    }
     client.query('COMMIT');
     const usuario = {
       id: response.id_usuario,
@@ -147,6 +146,7 @@ export const updateOfficial = async (official: any, id: string) => {
       nacionalidad: response.nacionalidad,
       password: response.password,
       telefono: response.telefono,
+      permisos: (await client.query(queries.GET_USER_PERMISSIONS, [response.id_usuario])).rows.map(row => +row.id_tipo_tramite) || []
     };
     return { status: 200, usuario, message: 'Funcionario actualizado' };
   } catch (e) {
