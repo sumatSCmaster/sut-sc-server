@@ -468,6 +468,7 @@ export const isExternalUser = (req, res, next) => {
 };
 
 export const isOfficialAdmin = (req, res, next) => {
+  console.log(req.user.tipoUsuario);
   if (req.user.tipoUsuario <= 2) next();
   else {
     res.send({
