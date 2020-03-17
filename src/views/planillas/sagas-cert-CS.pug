@@ -8,6 +8,11 @@ block content
     p 
       b MARACAIBO, #{fecha}
   div#planilla
+    div.titleWithQR
+      p#title
+        b CONSTANCIA DE SERVICIO
+      .QR
+        img(src=datos.QR, alt='QR')
     div#text-input
       p
         | Ciudadano: (a)

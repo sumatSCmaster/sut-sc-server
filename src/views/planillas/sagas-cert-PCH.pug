@@ -8,6 +8,13 @@ block content
     p 
       b MARACAIBO, #{fecha}
   div#planilla
+    div.titleWithQR
+      p#title
+        b CONSTANCIA DE CONDICIONES HABITABLES DE INSTALACIONES DE GAS GLP 
+        br 
+        b EN EDIFICACIONES RESIDENCIALES Y COMERCIALES
+      .QR
+        img(src=datos.QR, alt='QR')
     div#text-input
       p
         | Ciudadano: (a)

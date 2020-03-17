@@ -8,10 +8,12 @@ block content
     p 
       b Codigo de Tramite:
       | &nbsp; #{codigo}
-  div
-    p
-      b CONSTANCIA DE HABITABILIDAD
   div#planilla
+    div.titleWithQR
+      p#title
+        b CONSTANCIA DE HABITABILIDAD
+      .QR
+        img(src=datos.QR, alt='QR')
     div#text-input
       p
         b Por medio de la presente se hace constar que, en inspección realizada en: 

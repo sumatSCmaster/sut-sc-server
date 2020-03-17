@@ -8,10 +8,12 @@ block content
     p 
       b Codigo de Tramite:
       | &nbsp; #{codigo}
-  div
-    p
-      b CONSTANCIA DE INSPECCION
   div#planilla
+    div.titleWithQR
+      p#title
+        b CONSTANCIA DE INSPECCION
+      .QR
+        img(src=datos.QR, alt='QR')
     div#text-input
       p &nbsp;!{datos.funcionario.informe}
     div
