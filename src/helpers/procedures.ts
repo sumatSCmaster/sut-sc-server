@@ -71,8 +71,13 @@ export const getAvailableProceduresOfInstitution = async (req: {
 
 const getProcedureInstances = async (user, client) => {
   try {
-    const response = (await procedureInstanceHandler(user.tipoUsuario, user.tipoUsuario !== 4 ? (user.institucion ? user.institucion.id : 0) : user.id, client))
-      .rows;
+    const response = (
+      await procedureInstanceHandler(
+        user.tipoUsuario === 2 && user.institucion.id === 0 ? 0 : user.tipoUsuario,
+        user.tipoUsuario !== 4 ? (user.institucion ? user.institucion.id : 0) : user.id,
+        client
+      )
+    ).rows;
     const takings = (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [response.map(el => +el.id)])).rows;
     return response.map(el => {
       const tramite: Partial<Tramite> = {
@@ -461,6 +466,7 @@ const eventHandler = (prevState, isPrepaid) => {
 };
 
 const procedureInstances = switchcase({
+  0: 'SELECT * FROM CASOS_SOCIALES_STATE WHERE tipotramite=$1',
   1: queries.GET_ALL_PROCEDURE_INSTANCES,
   2: queries.GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID,
   3: queries.GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION,
