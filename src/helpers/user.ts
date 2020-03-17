@@ -133,6 +133,21 @@ export const addInstitute = async (user: Partial<Usuario>): Promise<Partial<Usua
   }
 };
 
+export const addPermissions = async (user: Partial<Usuario>): Promise<Partial<Usuario> & { permisos: number[] }> => {
+  const client = await pool.connect();
+  try {
+    const res = (await client.query(queries.GET_USER_PERMISSIONS, [user.id])).rows;
+    return {
+      ...user,
+      permisos: res.map((row) => +row.id_tipo_tramite),
+    };
+  } catch (e) {
+    throw e;
+  } finally {
+    client.release();
+  }
+} 
+
 export const comparePassword = (candidate: string, hash: string): Promise<boolean> => {
   return new Promise((res, rej) => {
     compare(candidate, hash, (err, isMatch) => {

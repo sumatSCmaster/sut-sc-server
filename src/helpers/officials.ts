@@ -1,7 +1,7 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { Usuario } from '@interfaces/sigt';
-import { Client } from 'pg';
+import { Client, PoolClient } from 'pg';
 import { errorMessageGenerator } from './errors';
 import { genSaltSync, hashSync } from 'bcryptjs';
 const pool = Pool.getInstance();
@@ -70,8 +70,16 @@ export const getAllOfficials = async () => {
   }
 };
 
+async function dropPermissions(id, client: PoolClient){
+  return client.query(queries.DROP_OFFICIAL_PERMISSIONS, [id]);
+}
+
+async function addPermissions(id, permisos, client: PoolClient){
+  return Promise.all(permisos.map(perm => client.query(queries.ADD_OFFICIAL_PERMISSIONS, [id, perm])))
+}
+
 export const createOfficial = async (official: any, institution: number) => {
-  const { nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, rif, telefono, password } = official;
+  const { nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, rif, telefono, password, permisos } = official;
   const client = await pool.connect();
   const salt = genSaltSync(10);
   try {
@@ -87,9 +95,11 @@ export const createOfficial = async (official: any, institution: number) => {
       institution,
     ]);
     const off = await client.query(queries.GET_OFFICIAL, [insert.rows[0].id_usuario, insert.rows[0].id_institucion]);
+    const id = off.rows[0].id_usuario;
+    await addPermissions(id, permisos || [], client)
     client.query('COMMIT');
     const usuario = {
-      id: off.rows[0].id_usuario,
+      id,
       nombreCompleto: off.rows[0].nombre_completo,
       nombreUsuario: off.rows[0].nombre_de_usuario,
       tipoUsuario: off.rows[0].id_tipo_usuario,
@@ -115,11 +125,13 @@ export const createOfficial = async (official: any, institution: number) => {
 
 //TODO: verificar que el usuario pertenece a mi institucion
 export const updateOfficial = async (official: any, id: string) => {
-  const { nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, telefono } = official;
+  const { nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, telefono, permisos } = official;
   const client = await pool.connect();
   try {
     client.query('BEGIN');
     const response = (await client.query(queries.UPDATE_OFFICIAL, [nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, telefono, id])).rows[0];
+    await dropPermissions(id, client);
+    await addPermissions(id, permisos || [], client);
     client.query('COMMIT');
     const usuario = {
       id: response.id_usuario,

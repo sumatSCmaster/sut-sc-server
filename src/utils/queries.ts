@@ -13,6 +13,7 @@ const queries = {
   CREATE_USER: `INSERT INTO usuarios (nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, id_tipo_usuario, password, telefono) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
   ADD_PASSWORD: 'INSERT INTO cuentas_funcionarios (id_usuario, password) VALUES ($1, $2);',
   ADD_OFFICIAL_DATA: 'INSERT INTO cuentas_funcionarios (id_usuario, id_institucion) VALUES ($1, $2);',
+  ADD_OFFICIAL_PERMISSIONS: 'INSERT INTO permiso_de_acceso (id_usuario, id_tipo_tramite) VALUES ($1, $2)',
   INSERT_GOOGLE_USER: 'INSERT INTO datos_google VALUES ($1, $2)',
   INSERT_FACEBOOK_USER: 'INSERT INTO datos_facebook VALUES ($1, $2)',
   EXTERNAL_USER_INIT: 'INSERT INTO USUARIOS (nombre_completo, id_tipo_usuario) VALUES ($1, 4) RETURNING *',
@@ -42,6 +43,7 @@ const queries = {
     'SELECT cf.* FROM cuentas_funcionarios cf \
     INNER JOIN usuarios u ON u.id_usuario = cf.id_usuario \
     WHERE u.nombre_de_usuario = $1;',
+  GET_USER_PERMISSIONS: 'SELECT pa.id_tipo_tramite FROM permiso_de_acceso WHERE id_usuario = $1' ,
   GET_ADMIN:
     "SELECT u.cedula, u.nombre_completo FROM usuario u INNER JOIN rol r ON u.id_rol = r.id WHERE u.id_rol = \
   (SELECT id FROM rol WHERE nombre = 'Administrador')",
@@ -73,6 +75,7 @@ const queries = {
   UPDATE_PASSWORD:
     'WITH usuario AS (SELECT u.id_usuario FROM usuarios u INNER JOIN recuperacion r ON r.id_usuario = u.id_usuario WHERE token_recuperacion = $1) \
       UPDATE usuarios SET password = $2 WHERE id_usuario = (SELECT id_usuario FROM usuario)',
+  DROP_OFFICIAL_PERMISSIONS: 'DELETE FROM permiso_de_acceso WHERE id_usuario = $1;',
 
   //BANKS
   INSERT_PAYMENT: 'INSERT INTO pagos (id_tramite, referencia, monto, id_banco, fecha_de_pago) VALUES ($1, $2, $3, $4, $5) RETURNING *;',

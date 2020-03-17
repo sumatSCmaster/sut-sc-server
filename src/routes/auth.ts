@@ -6,7 +6,7 @@ import * as authValidations from '@validations/auth';
 import { checkIfAdmin, checkIfSuperuser, checkIfOfficial } from '@utils/user';
 import { hashSync, genSaltSync } from 'bcryptjs';
 import { checkResult } from '@validations/index';
-import { createSuperuser, createAdmin, completeExtUserSignUp, addInstitute, signUpUser } from '@helpers/user';
+import { createSuperuser, createAdmin, completeExtUserSignUp, addInstitute, signUpUser, addPermissions } from '@helpers/user';
 import { isSuperuser, isAdmin } from '@middlewares/auth';
 import { fulfill } from '@utils/resolver';
 import { errorMessageGenerator } from '@helpers/errors';
@@ -33,6 +33,7 @@ router.post('/login', authValidations.isLogged, authValidations.login, checkResu
     });
   } else if (await checkIfOfficial(req.user.cedula)) {
     req.user = await addInstitute(req.user);
+    req.user = await addPermissions(req.user)
     res.status(200).json({
       status: 200,
       message: 'Inicio de sesion exitoso.',
