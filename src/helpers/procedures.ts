@@ -71,8 +71,13 @@ export const getAvailableProceduresOfInstitution = async (req: {
 
 const getProcedureInstances = async (user, client) => {
   try {
-    const response = (await procedureInstanceHandler(user.tipoUsuario, user.tipoUsuario !== 4 ? (user.institucion ? user.institucion.id : 0) : user.id, client))
-      .rows;
+    const response = (
+      await procedureInstanceHandler(
+        user.tipoUsuario === 2 && user.institucion.id === 0 ? 0 : user.tipoUsuario,
+        user.tipoUsuario !== 4 ? (user.institucion ? user.institucion.id : 0) : user.id,
+        client
+      )
+    ).rows;
     const takings = (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [response.map(el => +el.id)])).rows;
     return response.map(el => {
       const tramite: Partial<Tramite> = {
@@ -264,7 +269,7 @@ export const procedureInit = async (procedure, user) => {
     const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify({ usuario: datos }), user.id])).rows[0];
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.tipotramite])).rows[0];
-    response.pagoPrevio = resources.pago_previo;
+    response.sufijo = resources.sufijo;
     const nextEvent = await getNextEventForProcedure(response, client);
     const dir = await createRequestForm(response, client);
     const respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, resources.costo_base || null, dir]);
@@ -323,6 +328,8 @@ export const processProcedure = async procedure => {};
 export const addPaymentProcedure = async procedure => {};
 
 export const reviseProcedure = async procedure => {};
+
+export const completeProcedure = async procedure => {};
 
 export const updateProcedure = async procedure => {
   const client = await pool.connect();
@@ -443,7 +450,10 @@ const sendEmail = procedure => {
 
 const getNextEventForProcedure = async (procedure, client) => {
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
-  const nextEvent = eventHandler(response.state, procedure.pagoPrevio);
+  console.log(procedure.sufijo);
+  console.log(response.state);
+  const nextEvent = procedureEventHandler(procedure.sufijo, response.state);
+  console.log(nextEvent);
   return nextEvent;
 };
 
@@ -460,7 +470,18 @@ const eventHandler = (prevState, isPrepaid) => {
   return isPrepaid ? nextState[0] : nextState[1];
 };
 
+const newProcedureEvents = switchcase({
+  pa: { iniciado: 'validar_pa', validando: 'enproceso_pa', enproceso: 'finalizar_pa' },
+  pd: { iniciado: 'enproceso_pd', enproceso: 'ingresardatos_pd', ingresardatos: 'validar_pd', validando: 'finalizar_pd' },
+  cr: { iniciado: 'validar_cr', validando: 'enproceso_cr', enproceso: 'revisar_cr', enrevision: 'finalizar_cr' },
+})(null);
+
+const procedureEventHandler = (suffix, state) => {
+  return newProcedureEvents(suffix)[state];
+};
+
 const procedureInstances = switchcase({
+  0: 'SELECT * FROM CASOS_SOCIALES_STATE WHERE tipotramite=$1',
   1: queries.GET_ALL_PROCEDURE_INSTANCES,
   2: queries.GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID,
   3: queries.GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION,
