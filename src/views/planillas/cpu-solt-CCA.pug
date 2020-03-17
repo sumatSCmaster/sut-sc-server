@@ -1,0 +1,158 @@
+extends default
+
+block content
+  div#fecha
+    p 
+      b FECHA:
+      span &nbsp; #{fecha}
+    p 
+      b Codigo de Tramite:
+      span &nbsp; #{codigo}
+  div#planilla
+    div.table                                  
+      div.th
+        p DATOS DEL SOLICITANTE
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Nombre:
+            span &nbsp; #{datos.nombre}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Cédula:
+            span &nbsp; #{datos.cedula}
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Telefono:
+            span &nbsp; #{datos.telefono}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Correo:
+            span &nbsp; #{datos.correo}
+      div.tr
+        div.td(style={ width: '50%' }).border-right
+          p
+            b Dirección:
+            span &nbsp; #{datos.contacto}
+        div.td(style={ width: '50%' })
+          p
+            b Parroquia:
+            span &nbsp; #{datos.parroquia}
+    div.table
+      if propietarios.length  > 1
+        div.th
+          p DATOS DE PROPIETARIOS         
+        each propietario in propietarios
+          div.tr
+            div.td(style={ width: '50%' }).border-bottom.border-right
+              p 
+                b Nombre o Razon Social:
+                span &nbsp; #{propietario.nombreORazon}
+            div.td(style={ width: '50%' }).border-bottom
+              p
+                b Cédula o RIF:
+                span &nbsp; #{propietario.cedulaORif}      
+      else
+        div.th
+          p DATOS DE PROPIETARIO
+        div.tr
+          div.td(style={ width: '50%' }).border-bottom.border-right
+            p 
+              b Nombre o Razon Social:
+              span &nbsp; #{datos.nombreORazon}
+          div.td(style={ width: '50%' }).border-bottom
+            p
+              b Cédula o RIF:
+              span &nbsp; #{datos.cedulaORif}
+        div.tr
+          div.td(style={ width: '50%' }).border-bottom.border-right
+            p
+              b Telefono:
+              span &nbsp; #{datos.telefono}
+          div.td(style={ width: '50%' }).border-bottom
+            p
+              b Correo:
+              span &nbsp; #{datos.correo}
+        div.tr
+          div.td(style={ width: '50%' }).border-right
+            p
+              b Dirección:
+              span &nbsp; #{datos.contacto}
+          div.td(style={ width: '50%' })
+            p
+              b Parroquia:
+              span &nbsp; #{datos.parroquia}            
+    div.table            
+      div.th
+        p DATOS DEL CONJUNTO RESIDENCIAL
+      div.tr
+        div.td(style={ width: '100%' }).border-bottom
+          p
+            b Nombre del conjunto residencial:
+            span &nbsp; #{apartamento.nombreDelConjunto}
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Cantidad de edificios en el conjunto:
+            span &nbsp; #{apartamento.cantidadDeEdif}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Nombre del edificio:
+            span &nbsp; #{apartamento.NombreDelEdif}              
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Cantidad de pisos del edificio:
+            span &nbsp; #{apartamento.cantidadDePisos}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Piso donde se encuentra el apartamento o Local:
+            span &nbsp; #{apartamento.pisoDondeSeEncuentra}            
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Cantidad de Apartamentos en el piso:
+            span &nbsp; #{apartamento.catidadDeAptEnPiso}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b N° del Apartamento:
+            span &nbsp; #{apartamento.nroDeApt}                                                          
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Nomenclatura del Edificio:
+            span &nbsp; #{apartamento.nomenclatura}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Dirección:
+            span &nbsp; #{apartamento.direccion}
+      div.tr            
+        div.td(style={ width: '50%' }).border-right
+          p
+            b Parroquia:
+            span &nbsp; #{apartamento.parroquia}
+        div.td(style={ width: '50%' })
+          p
+            b Municipio:
+            span &nbsp; #{apartamento.municipio}
+    div#recaudos
+      h3 REQUISITOS OBLIGATORIOS
+      hr.divider
+      ul
+        li Original del recibo de pago del trámite.
+        li Copia de la Cédula de Identidad del Propietario.
+        li Copia del documento de propiedad del inmueble y documento de condominio REGISTRADO.
+        li Si el trámite no lo realiza el Propietario, presentar un poder y copia de la Cédula de Identidad del mismo.
+        li Copia del pago de la factura de los Servicios Municipales (GAS, ASEO, INMUEBLE).
+        li Solvencia de inmuebles.
+        li Traer el timbre fiscal por un valor 0,02 Unidades Tributarias (UT).
+      hr.divider
+    div(style={'margin-bottom':'50px', 'font-size':'14px'})
+      h3 OBSERVACIONES GENERALES
+      ul
+        li Todos los recaudos deberán ser consignados en una carpeta marrón oficio con su respectivo gancho y separadores entre cada requisito.
+        li Solo se iniciara el proceso de revisión cuando los recaudos Estén Completos.
+        li El monto a pagar por concepto de tasas administrativas de conformidad con lo establecido en la Ordenanza sobre Tasas Administrativas por expedición de Licencias, Permisos, Ventas, Copias y Certificación de Documentos del Municipio Maracaibo serán.
+        li 0.50 PETROS equivalentes al valor del tramite.       
+                                
