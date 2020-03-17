@@ -43,7 +43,7 @@ const queries = {
     'SELECT cf.* FROM cuentas_funcionarios cf \
     INNER JOIN usuarios u ON u.id_usuario = cf.id_usuario \
     WHERE u.nombre_de_usuario = $1;',
-  GET_USER_PERMISSIONS: 'SELECT pa.id_tipo_tramite FROM permiso_de_acceso pa WHERE id_usuario = $1' ,
+  GET_USER_PERMISSIONS: 'SELECT pa.id_tipo_tramite FROM permiso_de_acceso pa WHERE id_usuario = $1',
   GET_ADMIN:
     "SELECT u.cedula, u.nombre_completo FROM usuario u INNER JOIN rol r ON u.id_rol = r.id WHERE u.id_rol = \
   (SELECT id FROM rol WHERE nombre = 'Administrador')",
@@ -195,13 +195,23 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_PARROQUIAS: 'SELECT * FROM parroquia;',
 
   //Inmuebles
-  GET_ALL_PROPERTIES: 'SELECT i.id_inmueble AS "idInmueble", i.cod_catastral AS "codCatastral", i.direccion,\
+  GET_ALL_PROPERTIES:
+    'SELECT i.id_inmueble AS "idInmueble", i.cod_catastral AS "codCatastral", i.direccion,\
   i.metros_construccion AS "metrosConstruccion", i.metros_terreno AS "metrosTerreno", i.fecha_creacion AS "fechaCreacion",i.fecha_actualizacion AS "fechaActualizacion",  \
   i.fecha_ultimo_avaluo AS "fechaUltimoAvaluo" , p.nombre AS parroquia FROM inmueble_urbano i INNER JOIN parroquia p ON i.id_parroquia = p.id;',
-  GET_ONE_PROPERTY_BY_COD: 'SELECT i.id_inmueble AS "idInmueble", i.cod_catastral AS "codCatastral", i.direccion,\
+  GET_ONE_PROPERTY_BY_COD:
+    'SELECT i.id_inmueble AS "idInmueble", i.cod_catastral AS "codCatastral", i.direccion,\
   i.metros_construccion AS "metrosConstruccion", i.metros_terreno AS "metrosTerreno", i.fecha_creacion AS "fechaCreacion",i.fecha_actualizacion AS "fechaActualizacion",  \
   i.fecha_ultimo_avaluo AS "fechaUltimoAvaluo" , p.nombre AS parroquia FROM inmueble_urbano i INNER JOIN parroquia p ON i.id_parroquia = p.id WHERE i.cod_catastral = $1;',
-  GET_PROPERTY_OWNERS: 'SELECT p.id_propietario AS "idPropietario", razon_social AS "razonSocial", cedula, rif, email, pi.id_inmueble FROM propietario p INNER JOIN propietarios_inmuebles pi ON p.id_propietario = pi.id_propietario;'
+  GET_PROPERTY_OWNERS:
+    'SELECT p.id_propietario AS "idPropietario", razon_social AS "razonSocial", cedula, rif, email, pi.id_inmueble FROM propietario p INNER JOIN propietarios_inmuebles pi ON p.id_propietario = pi.id_propietario;',
+  CREATE_PROPERTY:
+    'INSERT INTO inmueble_urbano (cod_catastral, direccion, id_parroquia, \
+    metros_construccion, metros_terreno, fecha_creacion, fecha_actualizacion, tipo_inmueble) \
+    VALUES ($1, $2, $3, $4, $5, now(), now(), $6) RETURNING id_inmueble',
+  GET_PROPERTY_BY_ID: 'SELECT * FROM inmueble_urbano_view WHERE id=$1',
+  CREATE_PROPERTY_OWNER: 'INSERT INTO propietario (razon_social, cedula, rif, email) VALUES ($1,$2,$3,$4) RETURNING *',
+  CREATE_PROPERTY_WITH_SIGNED_OWNER: 'INSERT INTO propietarios_inmuebles (id_propietario, id_inmueble) VALUES ($1, $2)',
 };
 
 export default queries;

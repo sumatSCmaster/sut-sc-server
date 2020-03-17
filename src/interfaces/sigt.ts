@@ -102,6 +102,19 @@ export interface Tramite {
   aprobado: boolean;
 }
 
+export interface Inmueble {
+  id: number;
+  codCatastral: string;
+  direccion: string;
+  parroquia: string;
+  metrosConstruccion: number;
+  metrosTerreno: number;
+  fechaCreacion: Date;
+  fechaActualizacion: Date;
+  fechaUltimoAvaluo: Date;
+  tipoInmueble: string;
+}
+
 export interface Recaudo {
   id: number;
   nombreCompleto: string;
