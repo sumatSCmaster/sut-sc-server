@@ -297,6 +297,7 @@ export const procedureInit = async (procedure, user) => {
       nombreCorto: response.nombrecorto,
       nombreTramiteLargo: response.nombretramitelargo,
       nombreTramiteCorto: response.nombretramitecorto,
+      aprobado: response.aprobado,
       recaudos,
     };
     client.query('COMMIT');
@@ -321,19 +322,8 @@ export const procedureInit = async (procedure, user) => {
 //TODO: hacer que el front incluya el estado actual para hacer validaciones
 //TODO: validar los eventos del tramite, hacer switchcase de validaciones
 
-export const validateProcedure = async procedure => {};
-
-export const processProcedure = async procedure => {};
-
-export const addPaymentProcedure = async procedure => {};
-
-export const reviseProcedure = async procedure => {};
-
-export const completeProcedure = async procedure => {};
-
-export const updateProcedure = async procedure => {
+export const validateProcedure = async procedure => {
   const client = await pool.connect();
-  let { pago, datos } = procedure;
   let dir, respState;
   try {
     client.query('BEGIN');
@@ -341,14 +331,60 @@ export const updateProcedure = async procedure => {
     if (!procedure.hasOwnProperty('aprobado') && procedure.estado === 'validando') {
       return { status: 403, message: 'No es posible actualizar este estado' };
     }
-    if (!procedure.hasOwnProperty('pagoPrevio')) {
-      procedure.pagoPrevio = resources.pago_previo;
+    if (!procedure.hasOwnProperty('sufijo')) {
+      procedure.sufijo = resources.sufijo;
     }
     const nextEvent = await getNextEventForProcedure(procedure, client);
-    if (!nextEvent) return { status: 403, message: 'El tramite ya ha finalizado, no se puede modificar' };
-    if (pago && nextEvent === 'validar_pd') {
-      await insertPaymentReference(pago, procedure.idTramite, client);
+    if (nextEvent.startsWith('finalizar')) {
+      dir = await createCertificate(procedure, client);
+      respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, null, dir || null, true]);
+    } else {
+      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, null, null, null]);
     }
+    const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
+    client.query('COMMIT');
+    const tramite: Partial<Tramite> = {
+      id: response.id,
+      tipoTramite: response.tipotramite,
+      estado: response.state,
+      datos: response.datos,
+      planilla: response.planilla,
+      certificado: dir,
+      costo: response.costo,
+      fechaCreacion: response.fechacreacion,
+      codigoTramite: response.codigotramite,
+      usuario: response.usuario,
+      nombreLargo: response.nombrelargo,
+      nombreCorto: response.nombrecorto,
+      nombreTramiteLargo: response.nombretramitelargo,
+      nombreTramiteCorto: response.nombretramitecorto,
+      aprobado: response.aprobado,
+    };
+    sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
+    return { status: 200, message: 'Trámite actualizado', tramite };
+  } catch (error) {
+    client.query('ROLLBACK');
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al actualizar el tramite',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const processProcedure = async procedure => {
+  const client = await pool.connect();
+  let { datos } = procedure;
+  let dir, respState;
+  try {
+    client.query('BEGIN');
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0];
+    if (!procedure.hasOwnProperty('sufijo')) {
+      procedure.sufijo = resources.sufijo;
+    }
+    const nextEvent = await getNextEventForProcedure(procedure, client);
     if (datos) {
       const prevData = (await client.query('SELECT datos FROM tramites WHERE id_tramite=$1', [procedure.idTramite])).rows[0];
       if (!prevData.datos.funcionario) datos = { usuario: prevData.datos, funcionario: datos };
@@ -356,7 +392,7 @@ export const updateProcedure = async procedure => {
     }
     if (nextEvent === 'finalizar') {
       dir = await createCertificate(procedure, client);
-      respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, datos || null, dir || null]);
+      respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, datos || null, dir || null, true]);
     } else {
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, procedure.costo || null, null]);
     }
@@ -377,6 +413,116 @@ export const updateProcedure = async procedure => {
       nombreCorto: response.nombrecorto,
       nombreTramiteLargo: response.nombretramitelargo,
       nombreTramiteCorto: response.nombretramitecorto,
+      aprobado: response.aprobado,
+    };
+    sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
+    return { status: 200, message: 'Trámite actualizado', tramite };
+  } catch (error) {
+    client.query('ROLLBACK');
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al actualizar el tramite',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const addPaymentProcedure = async procedure => {
+  const client = await pool.connect();
+  let { pago } = procedure;
+  try {
+    client.query('BEGIN');
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0];
+    if (!procedure.hasOwnProperty('sufijo')) {
+      procedure.sufijo = resources.sufijo;
+    }
+    const nextEvent = await getNextEventForProcedure(procedure, client);
+    if (pago && nextEvent.startsWith('validar')) {
+      await insertPaymentReference(pago, procedure.idTramite, client);
+    }
+
+    const respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, null, procedure.costo || null, null]);
+    const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
+    client.query('COMMIT');
+    const tramite: Partial<Tramite> = {
+      id: response.id,
+      tipoTramite: response.tipotramite,
+      estado: response.state,
+      datos: response.datos,
+      planilla: response.planilla,
+      certificado: null,
+      costo: response.costo,
+      fechaCreacion: response.fechacreacion,
+      codigoTramite: response.codigotramite,
+      usuario: response.usuario,
+      nombreLargo: response.nombrelargo,
+      nombreCorto: response.nombrecorto,
+      nombreTramiteLargo: response.nombretramitelargo,
+      nombreTramiteCorto: response.nombretramitecorto,
+      aprobado: response.aprobado,
+    };
+    sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
+    return { status: 200, message: 'Trámite actualizado', tramite };
+  } catch (error) {
+    client.query('ROLLBACK');
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al actualizar el tramite',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const reviseProcedure = async procedure => {
+  const client = await pool.connect();
+  const { revision } = procedure;
+  const { aprobado, observaciones } = revision;
+  let dir,
+    respState,
+    datos = null;
+  try {
+    client.query('BEGIN');
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0];
+    if (!procedure.hasOwnProperty('aprobado')) {
+      return { status: 403, message: 'No es posible actualizar este estado' };
+    }
+    if (!procedure.hasOwnProperty('sufijo')) {
+      procedure.sufijo = resources.sufijo;
+    }
+    const nextEvent = await getNextEventForProcedure(procedure, client);
+    if (observaciones && !aprobado) {
+      const prevData = (await client.query('SELECT datos FROM tramites WHERE id_tramite=$1', [procedure.idTramite])).rows[0];
+      prevData.datos.funcionario = { ...prevData.datos.funcionario, observaciones };
+      datos = prevData.datos;
+    }
+    if (nextEvent.startsWith('finalizar') && aprobado) {
+      dir = await createCertificate(procedure, client);
+      respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, datos || null, dir || null, aprobado]);
+    } else {
+      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, procedure.costo || null, null]);
+    }
+    const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
+    client.query('COMMIT');
+    const tramite: Partial<Tramite> = {
+      id: response.id,
+      tipoTramite: response.tipotramite,
+      estado: response.state,
+      datos: response.datos,
+      planilla: response.planilla,
+      certificado: dir,
+      costo: response.costo,
+      fechaCreacion: response.fechacreacion,
+      codigoTramite: response.codigotramite,
+      usuario: response.usuario,
+      nombreLargo: response.nombrelargo,
+      nombreCorto: response.nombrecorto,
+      nombreTramiteLargo: response.nombretramitelargo,
+      nombreTramiteCorto: response.nombretramitecorto,
+      aprobado: response.aprobado,
     };
     sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
     return { status: 200, message: 'Trámite actualizado', tramite };
@@ -450,34 +596,18 @@ const sendEmail = procedure => {
 
 const getNextEventForProcedure = async (procedure, client) => {
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
-  console.log(procedure.sufijo);
-  console.log(response.state);
   const nextEvent = procedureEventHandler(procedure.sufijo, response.state);
-  console.log(nextEvent);
   return nextEvent;
 };
 
 const procedureEvents = switchcase({
-  iniciado: { 0: 'validar_pa', 1: 'enproceso_pd' },
-  validando: { 0: 'enproceso_pa', 1: 'finalizar' },
-  enproceso: { 0: 'finalizar', 1: 'ingresar_datos' },
-  ingresardatos: { 0: null, 1: 'validar_pd' },
-  finalizado: { 0: null, 1: null },
-})({ 0: null, 1: null });
-
-const eventHandler = (prevState, isPrepaid) => {
-  const nextState = procedureEvents(prevState);
-  return isPrepaid ? nextState[0] : nextState[1];
-};
-
-const newProcedureEvents = switchcase({
   pa: { iniciado: 'validar_pa', validando: 'enproceso_pa', enproceso: 'finalizar_pa' },
   pd: { iniciado: 'enproceso_pd', enproceso: 'ingresardatos_pd', ingresardatos: 'validar_pd', validando: 'finalizar_pd' },
   cr: { iniciado: 'validar_cr', validando: 'enproceso_cr', enproceso: 'revisar_cr', enrevision: 'finalizar_cr' },
 })(null);
 
 const procedureEventHandler = (suffix, state) => {
-  return newProcedureEvents(suffix)[state];
+  return procedureEvents(suffix)[state];
 };
 
 const procedureInstances = switchcase({
@@ -499,4 +629,20 @@ const fieldsBySection = switchcase({
 
 const fieldsBySectionHandler = (typeUser, payload, client) => {
   return client.query(fieldsBySection(typeUser), [...payload]);
+};
+
+const updateProcedure = switchcase({
+  validando: null,
+  enproceso: processProcedure,
+  enrevision: reviseProcedure,
+  ingresardatos: addPaymentProcedure,
+  finalizado: null,
+})(null);
+
+export const updateProcedureHandler = async procedure => {
+  const client = await pool.connect();
+  const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
+  client.release();
+  const newProcedureState = updateProcedure(response.state);
+  return newProcedureState ? await newProcedureState(procedure) : { status: 500, message: 'No es posible actualizar el trámite' };
 };
