@@ -479,8 +479,7 @@ export const addPaymentProcedure = async procedure => {
 
 export const reviseProcedure = async procedure => {
   const client = await pool.connect();
-  const { revision } = procedure;
-  const { aprobado, observaciones } = revision;
+  const { aprobado, observaciones } = procedure.revision;
   let dir,
     respState,
     datos = null;
