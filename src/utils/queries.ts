@@ -43,7 +43,7 @@ const queries = {
     'SELECT cf.* FROM cuentas_funcionarios cf \
     INNER JOIN usuarios u ON u.id_usuario = cf.id_usuario \
     WHERE u.nombre_de_usuario = $1;',
-  GET_USER_PERMISSIONS: 'SELECT pa.id_tipo_tramite FROM permiso_de_acceso WHERE id_usuario = $1' ,
+  GET_USER_PERMISSIONS: 'SELECT pa.id_tipo_tramite FROM permiso_de_acceso pa WHERE id_usuario = $1' ,
   GET_ADMIN:
     "SELECT u.cedula, u.nombre_completo FROM usuario u INNER JOIN rol r ON u.id_rol = r.id WHERE u.id_rol = \
   (SELECT id FROM rol WHERE nombre = 'Administrador')",

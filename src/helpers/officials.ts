@@ -10,7 +10,8 @@ export const getOfficialsByInstitution = async (institution: string, id: number)
   const client = await pool.connect();
   try {
     const response = await client.query(queries.GET_OFFICIALS_BY_INSTITUTION, [institution, id]);
-    const funcionarios = response.rows.map(async el => {
+    console.log(response.rows)
+    const funcionarios = await Promise.all(response.rows.map(async el => {
       const official = {
         ...el,
         nombreCompleto: el.nombrecompleto,
@@ -18,11 +19,13 @@ export const getOfficialsByInstitution = async (institution: string, id: number)
         tipoUsuario: el.tipousuario,
         permisos: (await client.query(queries.GET_USER_PERMISSIONS, [el.id])).rows.map(row => +row.id_tipo_tramite) || []
       };
+      console.log('OFFI', official)
       delete official.nombrecompleto;
       delete official.nombreusuario;
       delete official.tipousuario;
       return official;
-    });
+    }));
+    console.log('funci', funcionarios);
     return {
       status: 200,
       funcionarios,
