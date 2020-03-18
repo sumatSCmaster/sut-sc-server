@@ -6,12 +6,10 @@ import banks from './banks';
 import file from './file';
 import procedures from './procedures';
 import affairs from './affairs';
-import { authenticate } from 'passport';
 import resources from './resources';
 import validateDoc from './validateDoc';
 import estates from './estates';
 import ordinance from './ordinance';
-import { isAdmin } from '@middlewares/auth';
 
 const router = Router();
 

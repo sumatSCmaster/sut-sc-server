@@ -16,29 +16,29 @@ block content
         div.td(style={ width: '50%' }).border-bottom.border-right
           p
             b Nombre:
-            span &nbsp; #{datos.nombre}
+            span &nbsp; #{datos.usuario.nombre}
         div.td(style={ width: '50%' }).border-bottom
           p
             b Cédula:
-            span &nbsp; #{datos.cedula}
+            span &nbsp; #{datos.usuario.cedula}
       div.tr
         div.td(style={ width: '50%' }).border-bottom.border-right
           p
             b Telefono:
-            span &nbsp; #{datos.telefono}
+            span &nbsp; #{datos.usuario.telefono}
         div.td(style={ width: '50%' }).border-bottom
           p
             b Correo:
-            span &nbsp; #{datos.correo}
+            span &nbsp; #{datos.usuario.correo}
       div.tr
         div.td(style={ width: '50%' }).border-right
           p
             b Dirección:
-            span &nbsp; #{datos.contacto}
+            span &nbsp; #{datos.usuario.contacto}
         div.td(style={ width: '50%' })
           p
             b Parroquia:
-            span &nbsp; #{datos.parroquia}
+            span &nbsp; #{datos.usuario.parroquia}
     div.table
       if propietarios.length  > 1
         div.th
@@ -48,11 +48,11 @@ block content
             div.td(style={ width: '50%' }).border-bottom.border-right
               p 
                 b Nombre o Razon Social:
-                span &nbsp; #{propietario.nombreORazon}
+                span &nbsp; #{datos.propietario.razonSocial}
             div.td(style={ width: '50%' }).border-bottom
               p
                 b Cédula o RIF:
-                span &nbsp; #{propietario.cedulaORif}      
+                span &nbsp; #{datos.propietario.cedulaORif}      
       else
         div.th
           p DATOS DE PROPIETARIO
@@ -60,29 +60,29 @@ block content
           div.td(style={ width: '50%' }).border-bottom.border-right
             p 
               b Nombre o Razon Social:
-              span &nbsp; #{datos.nombreORazon}
+              span &nbsp; #{datos.usuario.nombre}
           div.td(style={ width: '50%' }).border-bottom
             p
               b Cédula o RIF:
-              span &nbsp; #{datos.cedulaORif}
+              span &nbsp; #{datos.usuario.cedula}
         div.tr
           div.td(style={ width: '50%' }).border-bottom.border-right
             p
               b Telefono:
-              span &nbsp; #{datos.telefono}
+              span &nbsp; #{datos.usuario.telefono}
           div.td(style={ width: '50%' }).border-bottom
             p
               b Correo:
-              span &nbsp; #{datos.correo}
+              span &nbsp; #{datos.usuario.correo}
         div.tr
           div.td(style={ width: '50%' }).border-right
             p
               b Dirección:
-              span &nbsp; #{datos.contacto}
+              span &nbsp; #{datos.usuario.ubicacionEdificio}
           div.td(style={ width: '50%' })
             p
               b Parroquia:
-              span &nbsp; #{datos.parroquia}            
+              span &nbsp; #{datos.usuario.parroquia}            
     div.table            
       div.th
         p DATOS DEL CONJUNTO RESIDENCIAL
@@ -90,52 +90,52 @@ block content
         div.td(style={ width: '100%' }).border-bottom
           p
             b Nombre del conjunto residencial:
-            span &nbsp; #{apartamento.nombreDelConjunto}
+            span &nbsp; #{datos.usuario.nombreConjunto}
       div.tr
         div.td(style={ width: '50%' }).border-bottom.border-right
           p
             b Cantidad de edificios en el conjunto:
-            span &nbsp; #{apartamento.cantidadDeEdif}
+            span &nbsp; #{datos.usuario.cantidadEdificios}
         div.td(style={ width: '50%' }).border-bottom
           p
             b Nombre del edificio:
-            span &nbsp; #{apartamento.NombreDelEdif}              
+            span &nbsp; #{datos.usuario.nombreEdificio}              
       div.tr
         div.td(style={ width: '50%' }).border-bottom.border-right
           p
             b Cantidad de pisos del edificio:
-            span &nbsp; #{apartamento.cantidadDePisos}
+            span &nbsp; #{datos.usuario.cantidadPisos}
         div.td(style={ width: '50%' }).border-bottom
           p
             b Piso donde se encuentra el apartamento o Local:
-            span &nbsp; #{apartamento.pisoDondeSeEncuentra}            
+            span &nbsp; #{datos.usuario.pisoApto}            
       div.tr
         div.td(style={ width: '50%' }).border-bottom.border-right
           p
             b Cantidad de Apartamentos en el piso:
-            span &nbsp; #{apartamento.catidadDeAptEnPiso}
+            span &nbsp; #{datos.usuario.cantidadAptosPiso}
         div.td(style={ width: '50%' }).border-bottom
           p
             b N° del Apartamento:
-            span &nbsp; #{apartamento.nroDeApt}                                                          
+            span &nbsp; #{datos.usuario.numeroApto}                                                          
       div.tr
         div.td(style={ width: '50%' }).border-bottom.border-right
           p
             b Nomenclatura del Edificio:
-            span &nbsp; #{apartamento.nomenclatura}
+            span &nbsp; #{datos.usuario.nomenclaturaEdificio}
         div.td(style={ width: '50%' }).border-bottom
           p
             b Dirección:
-            span &nbsp; #{apartamento.direccion}
+            span &nbsp; #{datos.usuario.ubicacionEdificio}
       div.tr            
         div.td(style={ width: '50%' }).border-right
           p
             b Parroquia:
-            span &nbsp; #{apartamento.parroquia}
+            span &nbsp; #{datos.usuario.parroquiaEdificio}
         div.td(style={ width: '50%' })
           p
             b Municipio:
-            span &nbsp; #{apartamento.municipio}
+            span &nbsp; Maracaibo
     div#recaudos
       h3 REQUISITOS OBLIGATORIOS
       hr.divider
