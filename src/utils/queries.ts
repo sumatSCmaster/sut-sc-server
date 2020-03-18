@@ -164,7 +164,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
      ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=$2',
   GET_RESOURCES_FOR_PROCEDURE:
     'SELECT DISTINCT tt.sufijo, tt.costo_base, usr.nombre_completo as nombrecompleto, \
-    usr.nombre_de_usuario as nombreusuario FROM tipos_tramites tt INNER JOIN tramites tr ON\
+    usr.nombre_de_usuario as nombreusuario, tr.costo FROM tipos_tramites tt INNER JOIN tramites tr ON\
     tt.id_tipo_tramite=tr.id_tipo_tramite INNER JOIN usuarios usr ON tr.id_usuario=usr.id_usuario\
     WHERE tt.id_tipo_tramite=$1',
   GET_PROCEDURE_STATES:

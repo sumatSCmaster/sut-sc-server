@@ -264,22 +264,24 @@ export const getFieldsForValidations = async (idProcedure, state) => {
 export const procedureInit = async (procedure, user) => {
   const client = await pool.connect();
   const { tipoTramite, datos, pago, recaudos } = procedure;
+  let costo;
   try {
     client.query('BEGIN');
     const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify({ usuario: datos }), user.id])).rows[0];
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.tipotramite])).rows[0];
     response.sufijo = resources.sufijo;
+    costo = resources.sufijo === 'pd' ? null : procedure.costo || resources.costo_base;
     const nextEvent = await getNextEventForProcedure(response, client);
     const dir = await createRequestForm(response, client);
-    const respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, resources.costo_base || null, dir]);
+    const respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, costo, dir]);
     if (recaudos.length > 0) {
       recaudos.map(async urlRecaudo => {
         await client.query(queries.INSERT_TAKINGS_IN_PROCEDURE, [response.id, urlRecaudo]);
       });
     }
 
-    if (pago && nextEvent === 'validar_pa') {
+    if (pago && nextEvent.startsWith('validar')) {
       await insertPaymentReference(pago, response.id, client);
     }
     const tramite: Partial<Tramite> = {
@@ -289,7 +291,7 @@ export const procedureInit = async (procedure, user) => {
       datos: response.datos,
       planilla: dir,
       certificado: response.url_certificado,
-      costo: +resources.costo_base,
+      costo,
       fechaCreacion: response.fechacreacion,
       codigoTramite: response.codigotramite,
       usuario: response.usuario,
@@ -325,7 +327,7 @@ export const validateProcedure = async procedure => {
   try {
     client.query('BEGIN');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0];
-    if (!procedure.hasOwnProperty('aprobado') && procedure.estado === 'validando') {
+    if (!procedure.hasOwnProperty('aprobado')) {
       return { status: 403, message: 'No es posible actualizar este estado' };
     }
     if (!procedure.hasOwnProperty('sufijo')) {
@@ -437,6 +439,7 @@ export const addPaymentProcedure = async procedure => {
     }
     const nextEvent = await getNextEventForProcedure(procedure, client);
     if (pago && nextEvent.startsWith('validar')) {
+      pago.costo = resources.costo;
       await insertPaymentReference(pago, procedure.idTramite, client);
     }
 
