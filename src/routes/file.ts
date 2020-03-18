@@ -39,7 +39,7 @@ const uploadFile = (req, res, next) => {
 
 router.post('/:type', uploadFile, (req: any, res) => {
   const recaudos = req.files.map(file =>
-    switchcase({ production: `${process.env.AWS_ACCESS_URL}/${file.key}`, development: `${process.env.SERVER_URL}/uploads/takings/${file.filename}` })(
+    switchcase({ production: `${process.env.AWS_ACCESS_URL}/${file.key}`, development: `${process.env.SERVER_URL}/recaudos/${file.filename}` })(
       'No es un estado valido'
     )(process.env.NODE_ENV)
   );
