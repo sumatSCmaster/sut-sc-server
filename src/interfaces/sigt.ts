@@ -75,6 +75,7 @@ export interface TipoTramite {
   recaudos: Recaudo[] | null;
   pagoPrevio: boolean;
   secciones?: Seccion[];
+  sufijo?: string;
 }
 
 export interface Parroquia {

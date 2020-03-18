@@ -170,6 +170,7 @@ const getSectionByProcedure = async (procedure, client): Promise<TipoTramite[] |
         titulo: al.nombre_tramite,
         costo: al.costo_base,
         pagoPrevio: al.pago_previo,
+        sufijo: al.sufijo,
       };
       const secciones = (await client.query(queries.GET_SECTIONS_BY_PROCEDURE, [tramite.id])).rows;
       tramite.secciones = await getFieldsBySection(secciones, tramite.id, client);
