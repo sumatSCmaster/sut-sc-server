@@ -1,0 +1,73 @@
+extends default
+
+block css
+  link(rel="stylesheet", href="css/cpu-cert-CC.css")
+
+block content
+  main.certificado
+    header.pageHeader.row
+    .header-table
+      #fecha-exp(style='width: 30%;')
+        p
+          b EXP.:
+          |  #{codigo}
+        p
+          b FECHA:
+          |  #{fecha}
+      #tramite(style='width: 50%;')
+        h1 C&Oacute;DIGO CATASTRAL
+        h4 N&deg; #{datos.nroFicha}
+      div(style='width: 20%; padding: 2px 0;')
+        img(src=datos.QR, alt='QR')
+    .datos-certificado.row
+      .croquis.grow2
+        h4 CROQUIS DE UBICACI&Oacute;N
+        img(src=datos.croquis, alt='croquis')
+        p PLANO REFERENCIAL, Escala Gr&aacute;fica
+      .grow2(style='width: 60%')
+        table
+          each prop in datos.propietarios
+            tr
+              th(scope='row') Nombre: 
+              td #{prop.nombreCompleto}
+              th(scope='row') #{prop.cedula ? 'C.I.:' : 'RIF:'}
+              td #{prop.cedula ? prop.cedula : prop.rif ? prop.rif : ''}  
+          tr
+            th(scope='row') DATOS DE REGISTRO:
+            td(colspan=3) #{datos.datosRegistro}
+          tr
+          tr
+          tr
+            th(scope='row') CIRCUITO:
+            td(colspan=3) #{datos.circuito}
+          tr
+            th(scope='row') PARROQUIA:
+            td(colspan=3) #{datos.parroquia}
+          tr
+            th(scope='row') DIRECCION:
+            td(colspan=3) #{datos.direccion}
+          tr
+          tr
+          tr
+            th(scope='row') Terreno:
+            td  #{datos.areaTerreno} m²
+            th(scope='row') Construcción:
+            td  #{datos.areaConstruccion} m²
+          tr
+            th(scope='row') PLANO:
+            td(colspan=3) #{datos.plano}
+          tr
+          tr
+            th(scope='row') OBSERVACIONES:
+            td(colspan=3) #{datos.observaciones}
+    .funcionarios.row
+      .grow1
+        p.grow1 Aprobado:
+        h4 Ing. Marta Castillo
+        h4 Directora de Catastro
+      .grow1
+        p.grow1 Revisado:
+        h4 Jefe de Departamento
+      .grow1
+        p.grow1 Realizado:
+        h4 Analista de C&oacute;digo

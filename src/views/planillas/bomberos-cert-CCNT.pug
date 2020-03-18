@@ -9,6 +9,11 @@ block content
       b Codigo de Tramite:
       | &nbsp; #{codigo}
   div#planilla
+    div.titleWithQR
+      p#title
+        b CONSTANCIA DE CUMPLIMIENTO DE NORMAS TECNICAS
+      .QR
+        img(src=datos.QR, alt='QR')
     div#text-input
       div
         p Área: #{datos.funcionario.areaConstruccion}
