@@ -152,6 +152,24 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('Debe incluir observaciones validas'),
+  parroquiaEdificio: check('tramite.datos.parroquiaEdificio')
+    .exists()
+    .withMessage('Debe incluir la parroquia del edificio')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Parroquia del edificio invalida'),
+  tipoInmueble: check('tramite.datos.tipoInmueble')
+    .exists()
+    .withMessage('Debe incluir el tipo del inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Tipo del inmueble invalido'),
+  propietarios: check('tramite.datos.propietarios')
+    .exists()
+    .withMessage('Debe incluir los propietarios del inmueble')
+    .isArray()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir al menos un propietario de este inmueble'),
 };
 
 export const createSuperuser = [
@@ -407,6 +425,8 @@ export const createSocialCase = [
     .exists()
     .withMessage('Debe incluir la firma del solicitante'),
 ];
+
+export const createPersonalProperty = [];
 
 export const validate = () => {
   return async (req, res, next) => {
