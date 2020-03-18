@@ -9,7 +9,7 @@ import affairs from './affairs';
 import { authenticate } from 'passport';
 import resources from './resources';
 import validateDoc from './validateDoc';
-import properties from './properties';
+import estates from './estates';
 import ordinance from './ordinance';
 import { isAdmin } from '@middlewares/auth';
 
@@ -22,7 +22,7 @@ router.use('/procedures', procedures);
 router.use('/uploads', file);
 router.use('/validateDoc', validateDoc);
 router.use('/affairs', affairs);
-router.use('/properties', properties);
+router.use('/estates', estates);
 router.use('/ordinance', ordinance);
 router.use(resources);
 //router.use("/notification", notification);

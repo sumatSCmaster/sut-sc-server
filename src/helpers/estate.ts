@@ -6,11 +6,11 @@ import { Tramite, Inmueble } from '@root/interfaces/sigt';
 
 const pool = Pool.getInstance();
 
-export const getPropertiesInfo = async () => {
+export const getEstatesInfo = async () => {
   const client = await pool.connect();
   try {
-    const properties = (await client.query(queries.GET_ALL_PROPERTIES)).rows;
-    return await addOwners(properties, client);
+    const estates = (await client.query(queries.GET_ALL_PROPERTIES)).rows;
+    return await addOwners(estates, client);
   } catch (e) {
     throw {
       status: 500,
@@ -21,11 +21,11 @@ export const getPropertiesInfo = async () => {
   }
 };
 
-export const getPropertyInfoByCod = async (cod: string) => {
+export const getEstateInfoByCod = async (cod: string) => {
   const client = await pool.connect();
   try {
-    const property = (await client.query(queries.GET_ONE_PROPERTY_BY_COD, [cod])).rows;
-    const res = await addOwners(property, client);
+    const estate = (await client.query(queries.GET_ONE_PROPERTY_BY_COD, [cod])).rows;
+    const res = await addOwners(estate, client);
     console.log('one', res);
     return res;
   } catch (e) {
@@ -64,7 +64,7 @@ export const addOwners = async (properties, client: PoolClient) => {
   }
 };
 
-export const createPersonalProperty = async procedure => {
+export const createPersonalEstate = async procedure => {
   const client = await pool.connect();
   const { codCatastral, direccion, parroquia, metrosTerreno, metrosConstruccion, tipoInmueble } = procedure.datos.funcionario;
   const { propietarios } = procedure.datos.usuario;
