@@ -10,6 +10,7 @@ import { authenticate } from 'passport';
 import resources from './resources';
 import validateDoc from './validateDoc';
 import properties from './properties';
+import ordinance from './ordinance';
 import { isAdmin } from '@middlewares/auth';
 
 const router = Router();
@@ -22,6 +23,7 @@ router.use('/uploads', file);
 router.use('/validateDoc', validateDoc);
 router.use('/affairs', affairs);
 router.use('/properties', properties);
+router.use('/ordinance', ordinance);
 router.use(resources);
 //router.use("/notification", notification);
 
