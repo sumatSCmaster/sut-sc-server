@@ -537,6 +537,25 @@ DECLARE
 ALTER FUNCTION public.insert_tramite(_id_tipo_tramite integer, datos json, _id_usuario integer) OWNER TO postgres;
 
 --
+-- Name: tipos_tramites_costo_utmm_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.tipos_tramites_costo_utmm_trigger_func() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    nuevoCosto numeric;
+    BEGIN
+        nuevoCosto = NEW.valor_en_bs;
+        UPDATE tipos_tramites SET costo_base = (nuevoCosto * costo_utmm) WHERE costo_utmm IS NOT NULL;
+        RETURN NEW;
+    END
+$$;
+
+
+ALTER FUNCTION public.tipos_tramites_costo_utmm_trigger_func() OWNER TO postgres;
+
+--
 -- Name: tramite_eventos_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -3291,6 +3310,13 @@ CREATE TRIGGER eventos_casos_sociales_trigger BEFORE INSERT ON public.eventos_ca
 --
 
 CREATE TRIGGER eventos_tramite_trigger BEFORE INSERT ON public.eventos_tramite FOR EACH ROW EXECUTE FUNCTION public.eventos_tramite_trigger_func();
+
+
+--
+-- Name: valores tipos_tramites_costo_utmm_trig; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER tipos_tramites_costo_utmm_trig AFTER UPDATE ON public.valores FOR EACH ROW WHEN (((new.descripcion)::text = 'UTMM'::text)) EXECUTE FUNCTION public.tipos_tramites_costo_utmm_trigger_func();
 
 
 --
