@@ -497,3 +497,13 @@ export const isOfficialAdmin = (req, res, next) => {
     });
   }
 };
+
+export const isSuperuser = (req, res, next) => {
+  if (req.user.tipoUsuario === 1) next();
+  else {
+    res.send({
+      status: 401,
+      response: 'Sólo los superusuarios pueden realizar esta operacion'
+    })
+  }
+};
