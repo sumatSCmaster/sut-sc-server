@@ -15,8 +15,13 @@ export const diskStorage = (type: string): multer.StorageEngine =>
         cb(null, saveTo);
       },
       filename: (req: any, file, cb) => {
-        const hex = crypto.randomBytes(16);
-        cb(null, 1 + hex.toString('hex') + '.png');
+        console.log(file);
+        if (type.startsWith('tramites')) {
+          cb(null, `${file.originalname}`);
+        } else {
+          const hex = crypto.randomBytes(16);
+          cb(null, 1 + hex.toString('hex') + '.png');
+        }
       },
     }),
     production: multerS3({
