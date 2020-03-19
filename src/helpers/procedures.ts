@@ -71,7 +71,7 @@ export const getAvailableProceduresOfInstitution = async (req: {
 
 const getProcedureInstances = async (user, client) => {
   try {
-    const response = (
+    let response = (
       await procedureInstanceHandler(
         user.tipoUsuario === 2 && user.institucion.id === 0 ? 0 : user.tipoUsuario,
         user.tipoUsuario !== 4 ? (user.institucion ? user.institucion.id : 0) : user.id,
@@ -79,6 +79,10 @@ const getProcedureInstances = async (user, client) => {
       )
     ).rows;
     const takings = (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [response.map(el => +el.id)])).rows;
+    if(user.tipoUsuario === 3){
+      const permissions = (await client.query(queries.GET_USER_PERMISSIONS, [user.id])).rows.map(row => +row.id_tipo_tramite) || [];
+      response = response.filter((tram) => permissions.includes(tram.tipotramite) );
+    }
     return response.map(el => {
       const tramite: Partial<Tramite> = {
         id: el.id,
