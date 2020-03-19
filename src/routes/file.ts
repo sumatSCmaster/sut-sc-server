@@ -4,6 +4,7 @@ import multer = require('multer');
 import { diskStorage, photoFilter } from '@utils/multer';
 import path from 'path';
 import switchcase from '@utils/switch';
+import fs from 'fs';
 
 const router = Router();
 
@@ -54,11 +55,6 @@ router.post('/:type/:id?', uploadFile, (req: any, res) => {
   });
 });
 
-const typeMedia = type => file =>
-  switchcase({ production: `${process.env.AWS_ACCESS_URL}/${file.key}`, development: `${process.env.SERVER_URL}/${type}/${file.filename}` })(
-    'No es un estado valido'
-  );
-
 router.get('/:type/:name', (req, res) => {
   const { type, name } = req.params;
   try {
@@ -72,5 +68,17 @@ router.get('/:type/:name', (req, res) => {
     });
   }
 });
+
+router.delete('/:id', authenticate('jwt'), async (req, res) => {
+  const { file } = req.body;
+  if (!fs.existsSync(process.env.STORAGE_DIR + '/' + file)) res.status(500).json({ status: 500, message: 'El archivo no existe' });
+  fs.unlinkSync(process.env.STORAGE_DIR + '/' + file);
+  res.status(200).json({ status: 200, message: 'Eliminado satisfactoriamente' });
+});
+
+const typeMedia = type => file =>
+  switchcase({ production: `${process.env.AWS_ACCESS_URL}/${file.key}`, development: `${process.env.SERVER_URL}/${type}/${file.filename}` })(
+    'No es un estado valido'
+  );
 
 export default router;
