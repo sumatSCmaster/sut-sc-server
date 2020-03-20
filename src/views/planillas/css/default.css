@@ -1,3 +1,7 @@
+html {
+  zoom: 0.5;
+}
+
 body {
   width: 100%;
   height: 100%;
@@ -8,7 +12,7 @@ body {
   width: 100%;
   height: 100%;
   display: flex;
-  display: webkit-flex;
+  display: -webkit-flex;
   flex-direction: column;
   -webkit-flex-direction: column;
 }
@@ -18,6 +22,7 @@ body {
   width: 100%;
   height: 100px;
   display: flex;
+  display: -webkit-flex;
 }
 
 #alcaldia,
@@ -27,14 +32,18 @@ body {
 }
 
 .header-child {
-  border: 1px solid lightgray;
   padding: 10;
   flex: 2;
+  -webkit-flex: 2;
   display: flex;
+  display: -webkit-flex;
   justify-content: center;
+  -webkit-justify-content: center;
   align-items: center;
+  -webkit-align-items: center;
   text-align: center;
   flex-direction: column;
+  -webkit-flex-direction: column;
 }
 
 .margin {
@@ -50,6 +59,7 @@ body {
 .header-child:nth-child(1),
 .header-child:nth-child(3) {
   flex: 1;
+  -webkit-flex: 1;
 }
 
 .titleWithQR {
@@ -88,10 +98,15 @@ img#divider {
 
 #content {
   display: flex;
+  display: -webkit-flex;
   align-items: center;
+  -webkit-align-items: center;
   justify-content: center;
+  -webkit-justify-content: center;
   flex-direction: column;
+  -webkit-flex-direction: column;
   flex: 1;
+  -webkit-flex: 1;
   background: url('../images/background.png');
   background-repeat: no-repeat;
   background-position: center;
@@ -113,8 +128,11 @@ img#divider {
 #fecha {
   width: 100%;
   display: flex;
+  display: -webkit-flex;
   align-items: center;
+  -webkit-align-items: center;
   justify-content: space-between;
+  -webkit-justify-content: space-between;
   height: 20px;
   margin: 10px 0px;
 }
@@ -150,12 +168,15 @@ img#divider {
   margin-top: 20px;
   border: 2px solid #1287ca;
   display: flex;
+  display: -webkit-flex;
   flex-direction: column;
+  -webkit-flex-direction: column;
 }
 
 #firma {
   margin-top: 60px;
   display: flex;
+  display: -webkit-flex;
   font-size: 14px;
 }
 
@@ -190,6 +211,7 @@ ul {
 
 .item-firma {
   flex: 1;
+  -webkit-flex: 1;
   margin: 25px;
 }
 .all-border {
@@ -224,6 +246,7 @@ ul {
 .tr {
   width: 100%;
   display: flex;
+  display: -webkit-flex;
 }
 
 .td > p {
@@ -234,5 +257,6 @@ ul {
 
 #footer {
   flex-direction: column;
+  -webkit-flex-direction: column;
   text-align: center;
 }

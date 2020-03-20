@@ -40,19 +40,19 @@ block content
             b Parroquia:
             span &nbsp; #{datos.usuario.parroquia}
     div.table
-      if propietarios.length  > 1
+      if datos.usuario.propietarios.length  > 1
         div.th
           p DATOS DE PROPIETARIOS         
-        each propietario in propietarios
+        each propietario in datos.usuario.propietarios
           div.tr
             div.td(style={ width: '50%' }).border-bottom.border-right
               p 
                 b Nombre o Razon Social:
-                span &nbsp; #{datos.propietario.razonSocial}
+                span &nbsp; #{propietario.razonSocial}
             div.td(style={ width: '50%' }).border-bottom
               p
                 b Cédula o RIF:
-                span &nbsp; #{datos.propietario.cedulaORif}      
+                span &nbsp; #{propietario.nacionalidad}-#{propietario.cedulaORif}      
       else
         div.th
           p DATOS DE PROPIETARIO
@@ -60,29 +60,29 @@ block content
           div.td(style={ width: '50%' }).border-bottom.border-right
             p 
               b Nombre o Razon Social:
-              span &nbsp; #{datos.usuario.nombre}
+              span &nbsp; #{datos.usuario.propietarios[0].razonSocial}
           div.td(style={ width: '50%' }).border-bottom
             p
               b Cédula o RIF:
-              span &nbsp; #{datos.usuario.cedula}
+              span &nbsp; #{datos.usuario.propietarios[0].nacionalidad}-#{datos.usuario.propietarios[0].cedulaORif}
         div.tr
           div.td(style={ width: '50%' }).border-bottom.border-right
             p
               b Telefono:
-              span &nbsp; #{datos.usuario.telefono}
+              span &nbsp; #{datos.usuario.propietarios[0].telefono}
           div.td(style={ width: '50%' }).border-bottom
             p
-              b Correo:
-              span &nbsp; #{datos.usuario.correo}
+              b Correo: 
+              span &nbsp; #{datos.usuario.propietarios[0].correo}
         div.tr
           div.td(style={ width: '50%' }).border-right
             p
               b Dirección:
-              span &nbsp; #{datos.usuario.ubicacionEdificio}
+              span &nbsp; #{datos.usuario.propietarios[0].direccion}
           div.td(style={ width: '50%' })
             p
               b Parroquia:
-              span &nbsp; #{datos.usuario.parroquia}            
+              span &nbsp; #{datos.usuario.propietarios[0].parroquia}            
     div.table            
       div.th
         p DATOS DEL CONJUNTO RESIDENCIAL
