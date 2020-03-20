@@ -170,6 +170,85 @@ const validations = {
     .isArray()
     .isLength({ min: 1 })
     .withMessage('Debe incluir al menos un propietario de este inmueble'),
+  nombreConjunto: check('tramite.datos.nombreConjunto')
+    .exists()
+    .withMessage('Debe incluir el nombre del conjunto del inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El nombre de conjunto no puede ser vacio'),
+  cantidadEdificios: check('tramite.datos.cantidadEdificios')
+    .exists()
+    .withMessage('Debe incluir la cantidad de edificios del conjunto del inmueble')
+    .isInt()
+    .withMessage('Debe incluir una cantidad de edificios valida'),
+  nombreEdificio: check('tramite.datos.nombreEdificio')
+    .exists()
+    .withMessage('Debe incluir el nombre del edificio al que pertenece el inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El nombre del edificio no puede ser vacio'),
+  cantidadPisos: check('tramite.datos.cantidadPisos')
+    .exists()
+    .withMessage('Debe incluir la cantidad de pisos del edificio')
+    .isInt()
+    .withMessage('Debe incluir una cantidad de pisos valida'),
+  pisoApto: check('tramite.datos.pisoApto')
+    .exists()
+    .withMessage('Debe incluir el piso donde esta ubicado el inmueble')
+    .isInt()
+    .withMessage('Debe incluir un numero de piso valido para el inmueble'),
+  cantidadAptosPiso: check('tramite.datos.cantidadAptosPiso')
+    .exists()
+    .withMessage('Debe incluir la cantidad de apartamentos por piso del edificio')
+    .isInt()
+    .withMessage('Debe incluir una cantidad de apartamentos por piso valida'),
+  numeroApto: check('tramite.datos.numeroApto')
+    .exists()
+    .withMessage('Debe incluir el numero de apartamento del inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El numero de apartamento no puede ser vacio'),
+  nomenclaturaEdificio: check('tramite.datos.nomenclaturaEdificio')
+    .exists()
+    .withMessage('Debe incluir la nomenclatura del edificio')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('La nomenclatura del edificio no puede ser vacia'),
+  ubicacionEdificio: check('tramite.datos.ubicacionEdificio')
+    .exists()
+    .withMessage('Debe incluir la ubicacion del edificio')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('La ubicacion del edificio no puede ser vacia'),
+  datosRegistro: check('tramite.datos.datosRegistro')
+    .exists()
+    .withMessage('Debe incluir los datos de registro del inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Los datos de registro no pueden ser vacios'),
+  circuito: check('tramite.datos.circuito')
+    .exists()
+    .withMessage('Debe incluir el circuito del inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El circuito del inmueble no puede ser vacio'),
+  area: check('tramite.datos.area')
+    .exists()
+    .withMessage('Debe incluir el area del inmueble')
+    .isInt()
+    .withMessage('Debe incluir un area del inmueble valida'),
+  plano: check('tramite.datos.plano')
+    .exists()
+    .withMessage('Debe incluir el plano del inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El plano del inmueble no puede ser vacio'),
+  codCat: check('tramite.datos.codCat')
+    .exists()
+    .withMessage('Debe incluir el codigo catastral del inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El codigo catastral no puede ser vacio'),
 };
 
 export const createSuperuser = [

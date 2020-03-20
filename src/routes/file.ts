@@ -69,7 +69,7 @@ router.get('/:type/:name', (req, res) => {
   }
 });
 
-router.delete('/:id', authenticate('jwt'), async (req, res) => {
+router.put('/:id', authenticate('jwt'), async (req, res) => {
   const { file } = req.body;
   if (!fs.existsSync(process.env.STORAGE_DIR + '/' + file)) res.status(500).json({ status: 500, message: 'El archivo no existe' });
   fs.unlinkSync(process.env.STORAGE_DIR + '/' + file);
