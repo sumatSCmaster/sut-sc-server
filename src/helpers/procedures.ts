@@ -79,9 +79,9 @@ const getProcedureInstances = async (user, client) => {
       )
     ).rows;
     const takings = (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [response.map(el => +el.id)])).rows;
-    if(user.tipoUsuario === 3){
+    if (user.tipoUsuario === 3) {
       const permissions = (await client.query(queries.GET_USER_PERMISSIONS, [user.id])).rows.map(row => +row.id_tipo_tramite) || [];
-      response = response.filter((tram) => permissions.includes(tram.tipotramite) );
+      response = response.filter(tram => permissions.includes(tram.tipotramite));
     }
     return response.map(el => {
       const tramite: Partial<Tramite> = {
@@ -620,6 +620,7 @@ const procedureInstances = switchcase({
   2: queries.GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID,
   3: queries.GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION,
   4: queries.GET_PROCEDURE_INSTANCES_FOR_USER,
+  5: queries.GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID,
 })(null);
 
 const procedureInstanceHandler = (typeUser, payload, client) => {
