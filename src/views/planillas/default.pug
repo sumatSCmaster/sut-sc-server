@@ -57,6 +57,6 @@ html
             when 'CPU'
               - direccion = 'Av.3F con calle 81, Sector Valle Frío, Edif. CPU. Teléfono: 0414-3677150'
           img#divider(src=rutaCompleta+'images/Divider.png')
-          div(style={ display: '-webkit-flex', padding: '0px 50px' })
-            p #{direccion}
+          div(style={ display: '-webkit-flex', padding: '0px 50px', 'justify-content': 'center', '-webkit-justify-content': 'center' })
+            p(style={ display: '-webkit-flex', '-webkit-justify-content': 'center', '-webkit-align-items': 'center', 'margin': '0px 50px' }) #{direccion}
             img(src=rutaCompleta+'images/footer_logo.png')

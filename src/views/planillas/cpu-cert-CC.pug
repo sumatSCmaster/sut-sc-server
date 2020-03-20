@@ -1,7 +1,7 @@
 extends default
 
 block css
-  link(rel="stylesheet", href="css/cpu-cert-CC.css")
+  link(rel="stylesheet", href=rutaCompleta+"css/cpu-cert-CC.css")
 
 block content
   main.certificado
@@ -28,8 +28,8 @@ block content
         table
           each prop in datos.funcionario.propietarios
             tr
-              th(scope='row') Nombre: 
-              td #{prop.nombreCompleto}
+              th(scope='row') Raz&oacute;n Social: 
+              td #{prop.razonSocial}
               th(scope='row') Cedula o RIF
               td #{prop.cedulaORif}  
           tr
@@ -41,7 +41,7 @@ block content
             th(scope='row') CIRCUITO:
             td(colspan=3) #{datos.funcionario.circuito}
           tr
-            th(scope='row') PARROQUIA:
+            th(scope='row') PARROQU&Iacute;A:
             td(colspan=3) #{datos.funcionario.parroquia}
           tr
             th(scope='row') DIRECCION:
@@ -49,8 +49,11 @@ block content
           tr
           tr
           tr
-            th(scope='row') AREA:
-            td  #{datos.funcionario.area} m²
+            th(scope='row') &Aacute;REA DE CONSTRUCCI&Oacute;N:
+            td  #{datos.funcionario.areaConstruccion} m²
+          tr
+            th(scope='row') &Aacute;REA DE TERRENO:
+            td  #{datos.funcionario.areaTerreno} m²
           tr
             th(scope='row') PLANO:
             td(colspan=3) #{datos.funcionario.plano}
