@@ -212,7 +212,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   CREATE_PROPERTY:
     'INSERT INTO inmueble_urbano (cod_catastral, direccion, id_parroquia, \
     metros_construccion, metros_terreno, fecha_creacion, fecha_actualizacion, tipo_inmueble) \
-    VALUES ($1, $2, $3, $4, $5, now(), now(), $6) RETURNING id_inmueble',
+    VALUES ($1, $2, (SELECT id FROM parroquia WHERE nombre = $3 LIMIT 1), $4, $5, now(), now(), $6) RETURNING id_inmueble',
   GET_PROPERTY_BY_ID: 'SELECT * FROM inmueble_urbano_view WHERE id=$1',
   CREATE_PROPERTY_OWNER: 'INSERT INTO propietario (razon_social, cedula, rif, email) VALUES ($1,$2,$3,$4) RETURNING *',
   CREATE_PROPERTY_WITH_SIGNED_OWNER: 'INSERT INTO propietarios_inmuebles (id_propietario, id_inmueble) VALUES ($1, $2)',
