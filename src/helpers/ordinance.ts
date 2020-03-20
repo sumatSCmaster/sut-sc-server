@@ -18,7 +18,8 @@ export const getOrdinancesByProcedure = async (id) => {
             return {
                 descripcionOrdananza: row.descripcionOrdenanza,
                 tarifa: row.tarifaOrdenanza + ` ${row.valorDescripcion}`,
-                costoOrdenanza: costo + 'Bs.'
+                costoOrdenanza: costo + 'Bs.',
+                utilizaCodCat: row.utilizaCodcat
             }
         } );
         return {
@@ -56,7 +57,8 @@ export const getOrdinancesByProcedureWithCodCat = async (id, cod) => {
             return {
                 descripcionOrdananza: row.descripcionOrdenanza,
                 tarifa: row.tarifaOrdenanza + ` ${row.valorDescripcion}`,
-                costoOrdenanza: costo + 'Bs.'
+                costoOrdenanza: costo + 'Bs.',
+                utilizaCodCat: row.utilizaCodcat
             }
         })
         return {
