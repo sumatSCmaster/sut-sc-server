@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
 import { getEstatesInfo, getEstateInfoByCod, createPersonalEstate } from '@helpers/estate';
+import { authenticate } from 'passport';
 
 const router = Router();
 
@@ -16,7 +17,7 @@ router.get('/:cod', async (req, res) => {
   if (data) res.status(200).json({ status: 200, ...data });
 });
 
-router.post('/', async (req, res) => {
+router.post('/', authenticate('jwt'), async (req, res) => {
   const { tramite } = req.body;
   const [error, data] = await fulfill(createPersonalEstate(tramite));
   if (error) res.status(500).json(error);

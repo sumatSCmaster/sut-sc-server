@@ -232,11 +232,11 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('El circuito del inmueble no puede ser vacio'),
-  area: check('tramite.datos.area')
+  areaTerreno: check('tramite.datos.areaTerreno')
     .exists()
-    .withMessage('Debe incluir el area del inmueble')
+    .withMessage('Debe incluir el area del terreno del inmueble')
     .isInt()
-    .withMessage('Debe incluir un area del inmueble valida'),
+    .withMessage('Debe incluir un area del terreno del inmueble valida'),
   plano: check('tramite.datos.plano')
     .exists()
     .withMessage('Debe incluir el plano del inmueble')
@@ -371,7 +371,7 @@ export const createOfficial = [
     .withMessage('Debe incluir el telefono del usuario')
     .isString()
     .withMessage('Telefono invalido'),
-    check('usuario.tipoUsuario')
+  check('usuario.tipoUsuario')
     .exists()
     .withMessage('Debe incluir el tipo de usuario')
     .isNumeric()
@@ -379,7 +379,6 @@ export const createOfficial = [
   check('usuario.password')
     .exists()
     .withMessage('Debe incluir una contraseña para el usuario'),
-  
 ];
 
 export const updateOfficial = createOfficial.slice(0, createOfficial.length - 2);

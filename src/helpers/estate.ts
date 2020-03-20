@@ -27,7 +27,7 @@ export const getEstateInfoByCod = async (cod: string) => {
     const estate = (await client.query(queries.GET_ONE_PROPERTY_BY_COD, [cod])).rows;
     const res = await addOwners(estate, client);
     console.log('one', res);
-    return { data: res[0]};
+    return { data: res[0] };
   } catch (e) {
     throw {
       status: 500,
@@ -66,11 +66,11 @@ export const addOwners = async (properties, client: PoolClient) => {
 
 export const createPersonalEstate = async procedure => {
   const client = await pool.connect();
-  const { codCat, direccion, parroquia, metrosTerreno, metrosConstruccion, tipoInmueble } = procedure.datos.funcionario;
+  const { codCat, direccion, parroquia, areaTerreno, areaConstruccion, tipoInmueble } = procedure.datos.funcionario;
   const { propietarios } = procedure.datos.usuario;
   try {
     client.query('BEGIN');
-    const response = (await client.query(queries.CREATE_PROPERTY, [codCat, direccion, parroquia, metrosConstruccion, metrosTerreno, tipoInmueble])).rows[0];
+    const response = (await client.query(queries.CREATE_PROPERTY, [codCat, direccion, parroquia, areaConstruccion, areaTerreno, tipoInmueble])).rows[0];
     const inmueble = (await client.query(queries.GET_PROPERTY_BY_ID, [response.id_inmueble])).rows[0];
     Promise.all(
       propietarios.map(async el => {
