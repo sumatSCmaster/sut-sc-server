@@ -10,6 +10,7 @@ import resources from './resources';
 import validateDoc from './validateDoc';
 import estates from './estates';
 import ordinance from './ordinance';
+import values from './values';
 
 const router = Router();
 
@@ -22,6 +23,7 @@ router.use('/validateDoc', validateDoc);
 router.use('/affairs', affairs);
 router.use('/estates', estates);
 router.use('/ordinance', ordinance);
+router.use('/values', values);
 router.use(resources);
 //router.use("/notification", notification);
 
