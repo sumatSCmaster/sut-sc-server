@@ -113,7 +113,7 @@ const queries = {
     'SELECT id_institucion AS id, nombre_completo AS "nombreCompleto", nombre_corto AS "nombreCorto" FROM instituciones WHERE id_institucion = $1;',
   UPDATE_OFFICIAL:
     'UPDATE usuarios SET nombre_completo = $1, nombre_de_usuario = $2, direccion = $3,\
-    cedula = $4, nacionalidad = $5, telefono =$6 WHERE id_usuario = $7 RETURNING *',
+    cedula = $4, nacionalidad = $5, telefono =$6, id_tipo_usuario = $8 WHERE id_usuario = $7 RETURNING *',
   DELETE_OFFICIAL:
     'DELETE FROM USUARIOS usr USING CUENTAS_FUNCIONARIOS cf WHERE\
     usr.id_usuario = cf.id_usuario AND usr.id_usuario = $1\

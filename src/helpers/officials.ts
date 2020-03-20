@@ -127,11 +127,11 @@ export const createOfficial = async (official: any, institution: number) => {
 
 //TODO: verificar que el usuario pertenece a mi institucion
 export const updateOfficial = async (official: any, id: string) => {
-  const { nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, telefono, permisos } = official;
+  const { nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, telefono, permisos, tipoUsuario } = official;
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    const response = (await client.query(queries.UPDATE_OFFICIAL, [nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, telefono, id])).rows[0];
+    const response = (await client.query(queries.UPDATE_OFFICIAL, [nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, telefono, id, tipoUsuario])).rows[0];
     if(permisos !== undefined){
       await dropPermissions(id, client);
       await addPermissions(id, permisos, client);
