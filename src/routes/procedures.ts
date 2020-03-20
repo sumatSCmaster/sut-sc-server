@@ -1,8 +1,17 @@
 import { Router } from 'express';
-import { getAvailableProcedures, procedureInit, getAvailableProceduresOfInstitution, updateProcedureCost, updateProcedureHandler } from '@helpers/procedures';
+import {
+  getAvailableProcedures,
+  procedureInit,
+  getAvailableProceduresOfInstitution,
+  updateProcedureCost,
+  updateProcedureHandler,
+  createMockCertificate,
+} from '@helpers/procedures';
 import { validate, isOfficial, isExternalUser, isLogged, isAuth } from '@validations/auth';
 import { checkResult } from '@validations/index';
 import { authenticate } from 'passport';
+import { resolve } from 'path';
+
 import { fulfill } from '@utils/resolver';
 
 import instances from './procedureInstances';
@@ -39,6 +48,13 @@ router.put('/update', validate(), checkResult, authenticate('jwt'), isAuth, asyn
   const [error, data] = await fulfill(updateProcedureHandler(tramite));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
+});
+
+router.post('/mockCertificate', authenticate('jwt'), async (req: any, res) => {
+  const { tramite } = req.body;
+  const [error, data] = await fulfill(createMockCertificate(tramite));
+  if (error) res.status(500).json(error);
+  if (data) res.render(resolve(__dirname, `../views/planillas/${data.certificado}.pug`), data);
 });
 
 router.use('/instances', instances);

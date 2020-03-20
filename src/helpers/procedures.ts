@@ -598,6 +598,36 @@ const sendEmail = procedure => {
   MailEmitter.emit('procedureEventUpdated', mailData);
 };
 
+export const createMockCertificate = async procedure => {
+  const client = await pool.connect();
+  try {
+    const response = (await client.query('SELECT planilla, certificado, formato FROM tipos_tramites WHERE id_tipo_tramite=$1', [procedure.tipoTramite]))
+      .rows[0];
+    const datosCertificado = {
+      id: procedure.idTramite,
+      fecha: procedure.fechaCreacion,
+      codigo: procedure.codigoTramite,
+      formato: response.formato,
+      tramite: procedure.nombreTramiteLargo,
+      institucion: procedure.nombreCorto,
+      datos: procedure.datos,
+      estado: 'finalizado',
+      tipoTramite: procedure.tipoTramite,
+      certificado: response.certificado,
+      mock: true,
+    };
+    return datosCertificado;
+  } catch (error) {
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al actualizar el tramite',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 const getNextEventForProcedure = async (procedure, client) => {
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
   const nextEvent = procedureEventHandler(procedure.sufijo, response.state);
