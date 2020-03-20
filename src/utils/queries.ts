@@ -88,7 +88,7 @@ const queries = {
   //OFFICIALS
   CREATE_OFFICIAL:
     'WITH funcionario AS (INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\
-    nacionalidad, id_tipo_usuario, password, telefono) VALUES ($1, $2, $3, $4, $5, 3, $6, $7) RETURNING id_usuario)\
+    nacionalidad, id_tipo_usuario, password, telefono) VALUES ($1, $2, $3, $4, $5, $8, $6, $7) RETURNING id_usuario)\
     INSERT INTO cuentas_funcionarios VALUES((SELECT id_usuario from funcionario), $8) RETURNING *',
   GET_OFFICIAL:
     'SELECT usr.* from USUARIOS usr INNER JOIN CUENTAS_FUNCIONARIOS cf ON\
