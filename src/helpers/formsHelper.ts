@@ -31,7 +31,6 @@ export const createForm = async ({ fecha, codigo, formato, tramite, institucion,
           res(dir);
         });
     } else {
-      //TODO: arreglar la direccion para aws, si es certificado o no
       try {
         pdf
           .create(html, { format: 'Letter', border: '5mm', header: { height: '75px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
@@ -39,7 +38,7 @@ export const createForm = async ({ fecha, codigo, formato, tramite, institucion,
             if (err) {
               rej(err);
             } else {
-              const bucketParams = { Bucket: 'sut-maracaibo', Key: `${institucion}/planillas/${codigo}` };
+              const bucketParams = { Bucket: 'sut-maracaibo', Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}` };
               await S3Client.putObject({
                 ...bucketParams,
                 Body: buffer,

@@ -222,14 +222,14 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   //Ordenanzas
   ORDINANCES_WITHOUT_CODCAT_PROCEDURE:
     'SELECT v.descripcion AS "valorDescripcion", v.valor_en_bs AS "valorEnBs", \
-  o.descripcion AS "descripcionOrdenanza", o.tarifa AS "tarifaOrdenanza", t.id_tipo_tramite AS "tipoTramite",t.tasa, t.formula, tt.costo_base AS "costoBase" \
+  o.descripcion AS "descripcionOrdenanza", o.tarifa AS "tarifaOrdenanza", t.id_tipo_tramite AS "tipoTramite",t.tasa, t.formula, tt.costo_base AS "costoBase", t.utiliza_codcat AS "utilizaCodcat" \
   FROM valores v INNER JOIN ordenanzas o ON v.id_valor = o.id_valor \
   INNER JOIN tarifas_inspeccion t ON t.id_ordenanza = o.id_ordenanza \
   INNER JOIN tipos_tramites tt ON t.id_tipo_tramite = tt.id_tipo_tramite \
   WHERE t.id_tipo_tramite = $1 AND t.utiliza_codcat = false;',
   ORDINANCES_WITH_CODCAT_PROCEDURE:
     'SELECT v.descripcion AS "valorDescripcion", v.valor_en_bs AS "valorEnBs", \
-  o.descripcion AS "descripcionOrdenanza", o.tarifa AS "tarifaOrdenanza", t.id_tipo_tramite AS "tipoTramite",t.tasa, t.formula, tt.costo_base AS "costoBase" \
+  o.descripcion AS "descripcionOrdenanza", o.tarifa AS "tarifaOrdenanza", t.id_tipo_tramite AS "tipoTramite",t.tasa, t.formula, tt.costo_base AS "costoBase", t.utiliza_codcat AS "utilizaCodcat" \
   FROM valores v INNER JOIN ordenanzas o ON v.id_valor = o.id_valor \
   INNER JOIN tarifas_inspeccion t ON t.id_ordenanza = o.id_ordenanza \
   INNER JOIN tipos_tramites tt ON t.id_tipo_tramite = tt.id_tipo_tramite \
