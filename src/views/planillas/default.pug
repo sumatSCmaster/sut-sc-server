@@ -1,17 +1,14 @@
-- var rutaCompleta = ''
-if mock
-  - rutaCompleta = process.env.SERVER_URL + '/'
 html
   head
     title Template
-    link(href=rutaCompleta+'css/default.css' rel='stylesheet' type='text/css')
+    link(href='css/default.css' rel='stylesheet' type='text/css')
     block css
   body
     div#wrapper
       block header
         div#header
           div.header-child
-            img#alcaldia(src=rutaCompleta+'images/LogoAlcaldia.png')
+            img#alcaldia(src='images/LogoAlcaldia.png')
           div.header-child
             - var nombre = ''
             - var rif = ''
@@ -34,11 +31,11 @@ html
               when 'Bomberos'
                 - src = 'images/LogoBomberos.png'
               when 'SAGAS' 
-                - src =rutaCompleta+'images/SAGAS.png'
+                - src ='images/SAGAS.png'
               when 'CPU'
-                - src =rutaCompleta+'images/CPU.png'
+                - src ='images/CPU.png'
               default
-                - src = rutaCompleta+'images/LogoAlcaldia.png'
+                - src = 'images/LogoAlcaldia.png'
             img#logo(src=src)
         img#divider(src='images/Divider.png')
       div#content
@@ -56,7 +53,7 @@ html
               - direccion = 'Avenida 3E Entre Calles 72 y 73. Sector La Lago, Edificio Club de Leones. Teléfono: (0261) 7934400'
             when 'CPU'
               - direccion = 'Av.3F con calle 81, Sector Valle Frío, Edif. CPU. Teléfono: 0414-3677150'
-          img#divider(src=rutaCompleta+'images/Divider.png')
+          img#divider(src='images/Divider.png')
           div(style={ display: '-webkit-flex', padding: '0px 50px', 'justify-content': 'center', '-webkit-justify-content': 'center' })
             p(style={ display: '-webkit-flex', '-webkit-justify-content': 'center', '-webkit-align-items': 'center', 'margin': '0px 50px' }) #{direccion}
-            img(src=rutaCompleta+'images/footer_logo.png')
+            img(src='images/footer_logo.png')

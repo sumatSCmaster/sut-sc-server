@@ -7,6 +7,10 @@ import MailEmitter from './events/procedureUpdateState';
 import { PoolClient } from 'pg';
 import { createForm } from './formsHelper';
 import switchcase from '@utils/switch';
+import { renderFile } from 'pug';
+import { resolve } from 'path';
+import * as pdf from 'html-pdf';
+
 const pool = Pool.getInstance();
 
 export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any }> => {
@@ -287,6 +291,7 @@ export const procedureInit = async (procedure, user) => {
     }
 
     if (pago && nextEvent.startsWith('validar')) {
+      pago.costo = costo;
       await insertPaymentReference(pago, response.id, client);
     }
     const tramite: Partial<Tramite> = {
@@ -503,11 +508,11 @@ export const reviseProcedure = async procedure => {
       prevData.datos.funcionario = { ...prevData.datos.funcionario, observaciones };
       datos = prevData.datos;
     }
-    if (nextEvent.startsWith('finalizar') && aprobado) {
+    if (aprobado) {
       dir = await createCertificate(procedure, client);
-      respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, datos || null, dir || null, aprobado]);
+      respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, aprobado]);
     } else {
-      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, procedure.costo || null, null]);
+      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, procedure.costo || null, null]);
     }
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
     client.query('COMMIT');
@@ -618,9 +623,12 @@ export const createMockCertificate = async procedure => {
       estado: 'finalizado',
       tipoTramite: tramite.tipotramite,
       certificado: tramite.formatocertificado,
-      mock: true,
     };
-    return datosCertificado;
+    const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
+      ...datosCertificado,
+      cache: false,
+    });
+    return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
   } catch (error) {
     throw {
       status: 500,
@@ -641,7 +649,7 @@ const getNextEventForProcedure = async (procedure, client) => {
 const procedureEvents = switchcase({
   pa: { iniciado: 'validar_pa', validando: 'enproceso_pa', enproceso: 'finalizar_pa' },
   pd: { iniciado: 'enproceso_pd', enproceso: 'ingresardatos_pd', ingresardatos: 'validar_pd', validando: 'finalizar_pd' },
-  cr: { iniciado: 'validar_cr', validando: 'enproceso_cr', enproceso: 'revisar_cr', enrevision: 'finalizar_cr' },
+  cr: { iniciado: 'validar_cr', validando: 'enproceso_cr', enproceso: 'revisar_cr', enrevision: { true: 'finalizar_cr', false: 'rechazar_cr' } },
 })(null);
 
 const procedureEventHandler = (suffix, state) => {
