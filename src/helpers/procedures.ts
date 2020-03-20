@@ -604,7 +604,7 @@ export const createMockCertificate = async procedure => {
     const response = (await client.query('SELECT planilla, certificado, formato FROM tipos_tramites WHERE id_tipo_tramite=$1', [procedure.tipoTramite]))
       .rows[0];
     const datosCertificado = {
-      id: procedure.idTramite,
+      id: procedure.id,
       fecha: procedure.fechaCreacion,
       codigo: procedure.codigoTramite,
       formato: response.formato,
