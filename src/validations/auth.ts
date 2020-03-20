@@ -374,6 +374,11 @@ export const createOfficial = [
   check('usuario.password')
     .exists()
     .withMessage('Debe incluir una contraseña para el usuario'),
+  check('usuario.tipoUsuario')
+    .exists()
+    .withMessage('Debe incluir el tipo de usuario')
+    .isNumeric()
+    .withMessage('Tipo usuario debe ser un valor numerico')
 ];
 
 export const updateOfficial = createOfficial.slice(0, createOfficial.length - 1);
