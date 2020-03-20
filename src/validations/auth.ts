@@ -371,14 +371,15 @@ export const createOfficial = [
     .withMessage('Debe incluir el telefono del usuario')
     .isString()
     .withMessage('Telefono invalido'),
-  check('usuario.password')
-    .exists()
-    .withMessage('Debe incluir una contraseña para el usuario'),
-  check('usuario.tipoUsuario')
+    check('usuario.tipoUsuario')
     .exists()
     .withMessage('Debe incluir el tipo de usuario')
     .isNumeric()
-    .withMessage('Tipo usuario debe ser un valor numerico')
+    .withMessage('Tipo usuario debe ser un valor numerico'),
+  check('usuario.password')
+    .exists()
+    .withMessage('Debe incluir una contraseña para el usuario'),
+  
 ];
 
 export const updateOfficial = createOfficial.slice(0, createOfficial.length - 1);
