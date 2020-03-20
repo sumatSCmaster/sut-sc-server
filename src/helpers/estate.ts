@@ -67,7 +67,7 @@ export const addOwners = async (properties, client: PoolClient) => {
 export const createPersonalEstate = async procedure => {
   const client = await pool.connect();
   const { codCat, direccion, parroquia, areaTerreno, areaConstruccion, tipoInmueble } = procedure.datos.funcionario;
-  const { propietarios } = procedure.datos.usuario;
+  const { propietarios } = procedure.datos.funcionario;
   try {
     client.query('BEGIN');
     const response = (await client.query(queries.CREATE_PROPERTY, [codCat, direccion, parroquia, areaConstruccion, areaTerreno, tipoInmueble])).rows[0];
