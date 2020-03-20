@@ -27,7 +27,7 @@ export const getEstateInfoByCod = async (cod: string) => {
     const estate = (await client.query(queries.GET_ONE_PROPERTY_BY_COD, [cod])).rows;
     const res = await addOwners(estate, client);
     console.log('one', res);
-    return res;
+    return { data: res[0]};
   } catch (e) {
     throw {
       status: 500,
