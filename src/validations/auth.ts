@@ -249,6 +249,12 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('El codigo catastral no puede ser vacio'),
+  croquis: check('tramite.datos.croquis')
+    .exists()
+    .withMessage('Debe incluir el croquis del inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El croquis no puede ser vacio'),
 };
 
 export const createSuperuser = [
@@ -582,7 +588,7 @@ export const isSuperuser = (req, res, next) => {
   else {
     res.send({
       status: 401,
-      response: 'Sólo los superusuarios pueden realizar esta operacion'
-    })
+      response: 'Sólo los superusuarios pueden realizar esta operacion',
+    });
   }
 };
