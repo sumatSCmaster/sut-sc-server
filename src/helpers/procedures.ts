@@ -601,19 +601,23 @@ const sendEmail = procedure => {
 export const createMockCertificate = async procedure => {
   const client = await pool.connect();
   try {
-    const response = (await client.query('SELECT planilla, certificado, formato FROM tipos_tramites WHERE id_tipo_tramite=$1', [procedure.tipoTramite]))
-      .rows[0];
+    const tramite = (
+      await client.query(
+        'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado as formatoCertificado FROM tramites_state_with_resources tsr INNER JOIN tipos_tramites ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
+        [procedure]
+      )
+    ).rows[0];
     const datosCertificado = {
-      id: procedure.id,
-      fecha: procedure.fechaCreacion,
-      codigo: procedure.codigoTramite,
-      formato: response.formato,
-      tramite: procedure.nombreTramiteLargo,
-      institucion: procedure.nombreCorto,
-      datos: procedure.datos,
+      id: tramite.id,
+      fecha: tramite.fechacreacion,
+      codigo: tramite.codigotramite,
+      formato: tramite.formato,
+      tramite: tramite.nombretramitelargo,
+      institucion: tramite.nombrecorto,
+      datos: tramite.datos,
       estado: 'finalizado',
-      tipoTramite: procedure.tipoTramite,
-      certificado: response.certificado,
+      tipoTramite: tramite.tipotramite,
+      certificado: tramite.formatocertificado,
       mock: true,
     };
     return datosCertificado;

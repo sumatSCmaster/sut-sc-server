@@ -50,9 +50,9 @@ router.put('/update', validate(), checkResult, authenticate('jwt'), isAuth, asyn
   if (data) res.status(data.status).json(data);
 });
 
-router.post('/mockCertificate', authenticate('jwt'), async (req: any, res) => {
-  const { tramite } = req.body;
-  const [error, data] = await fulfill(createMockCertificate(tramite));
+router.get('/mockCertificate/:id', async (req: any, res) => {
+  const { id } = req.params;
+  const [error, data] = await fulfill(createMockCertificate(id));
   if (error) res.status(500).json(error);
   if (data) res.render(resolve(__dirname, `../views/planillas/${data.certificado}.pug`), data);
 });
