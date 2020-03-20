@@ -624,6 +624,7 @@ const procedureInstances = switchcase({
 })(null);
 
 const procedureInstanceHandler = (typeUser, payload, client) => {
+  console.log('user:', typeUser, 'payload:', payload);
   return typeUser === 1 ? client.query(procedureInstances(typeUser)) : client.query(procedureInstances(typeUser), [payload]);
 };
 

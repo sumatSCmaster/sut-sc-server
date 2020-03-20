@@ -3,7 +3,7 @@ import { generateToken } from '@utils/Strategies';
 import { authenticate } from 'passport';
 //import { createAdmin } from "@helpers/user";
 import * as authValidations from '@validations/auth';
-import { checkIfAdmin, checkIfSuperuser, checkIfOfficial } from '@utils/user';
+import { checkIfAdmin, checkIfSuperuser, checkIfOfficial, checkIfDirector } from '@utils/user';
 import { hashSync, genSaltSync } from 'bcryptjs';
 import { checkResult } from '@validations/index';
 import { createSuperuser, createAdmin, completeExtUserSignUp, addInstitute, signUpUser, addPermissions } from '@helpers/user';
@@ -33,7 +33,15 @@ router.post('/login', authValidations.isLogged, authValidations.login, checkResu
     });
   } else if (await checkIfOfficial(req.user.cedula)) {
     req.user = await addInstitute(req.user);
-    req.user = await addPermissions(req.user)
+    req.user = await addPermissions(req.user);
+    res.status(200).json({
+      status: 200,
+      message: 'Inicio de sesion exitoso.',
+      token: generateToken(req.user),
+      user: req.user,
+    });
+  } else if (await checkIfDirector(req.user.cedula)) {
+    req.user = await addInstitute(req.user);
     res.status(200).json({
       status: 200,
       message: 'Inicio de sesion exitoso.',
@@ -180,7 +188,7 @@ router.get('/user', authenticate('jwt'), async (req: any, res) => {
     cuentaFuncionario: req.user.cuentaFuncionario,
     datosGoogle: req.user.datosGoogle,
     datosFacebook: req.user.datosFacebook,
-    permisos: req.user.permisos
+    permisos: req.user.permisos,
   };
   res.status(200).json({ user, status: 200, message: 'Usuario obtenido' });
 });

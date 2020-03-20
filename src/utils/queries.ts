@@ -59,6 +59,10 @@ const queries = {
     "SELECT 1 FROM usuarios u \
     INNER JOIN tipos_usuarios tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
     WHERE tu.descripcion = 'Funcionario' AND u.cedula = $1",
+  CHECK_IF_DIRECTOR:
+    "SELECT 1 FROM usuarios u \
+    INNER JOIN tipos_usuarios tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
+    WHERE tu.descripcion = 'Director' AND u.cedula = $1",
   CHECK_IF_ADMIN:
     "SELECT 1 FROM usuarios u \
     INNER JOIN tipos_usuarios tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
@@ -213,13 +217,15 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   CREATE_PROPERTY_OWNER: 'INSERT INTO propietario (razon_social, cedula, rif, email) VALUES ($1,$2,$3,$4) RETURNING *',
   CREATE_PROPERTY_WITH_SIGNED_OWNER: 'INSERT INTO propietarios_inmuebles (id_propietario, id_inmueble) VALUES ($1, $2)',
   //Ordenanzas
-  ORDINANCES_WITHOUT_CODCAT_PROCEDURE: 'SELECT v.descripcion AS "valorDescripcion", v.valor_en_bs AS "valorEnBs", \
+  ORDINANCES_WITHOUT_CODCAT_PROCEDURE:
+    'SELECT v.descripcion AS "valorDescripcion", v.valor_en_bs AS "valorEnBs", \
   o.descripcion AS "descripcionOrdenanza", o.tarifa AS "tarifaOrdenanza", t.id_tipo_tramite AS "tipoTramite",t.tasa, t.formula, tt.costo_base AS "costoBase" \
   FROM valores v INNER JOIN ordenanzas o ON v.id_valor = o.id_valor \
   INNER JOIN tarifas_inspeccion t ON t.id_ordenanza = o.id_ordenanza \
   INNER JOIN tipos_tramites tt ON t.id_tipo_tramite = tt.id_tipo_tramite \
   WHERE t.id_tipo_tramite = $1 AND t.utiliza_codcat = false;',
-  ORDINANCES_WITH_CODCAT_PROCEDURE: 'SELECT v.descripcion AS "valorDescripcion", v.valor_en_bs AS "valorEnBs", \
+  ORDINANCES_WITH_CODCAT_PROCEDURE:
+    'SELECT v.descripcion AS "valorDescripcion", v.valor_en_bs AS "valorEnBs", \
   o.descripcion AS "descripcionOrdenanza", o.tarifa AS "tarifaOrdenanza", t.id_tipo_tramite AS "tipoTramite",t.tasa, t.formula, tt.costo_base AS "costoBase" \
   FROM valores v INNER JOIN ordenanzas o ON v.id_valor = o.id_valor \
   INNER JOIN tarifas_inspeccion t ON t.id_ordenanza = o.id_ordenanza \
@@ -227,7 +233,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   WHERE t.id_tipo_tramite = $1 AND t.utiliza_codcat = true;',
   //Valores
   GET_UTMM_VALUE: "SELECT valor_en_bs FROM valores WHERE descripcion = 'UTMM'",
-  UPDATE_UTMM_VALUE: "UPDATE valores SET valor_en_bs = $1 WHERE descripcion = 'UTMM' RETURNING valor_en_bs;"
+  UPDATE_UTMM_VALUE: "UPDATE valores SET valor_en_bs = $1 WHERE descripcion = 'UTMM' RETURNING valor_en_bs;",
 };
 
 export default queries;
