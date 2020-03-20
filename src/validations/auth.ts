@@ -382,7 +382,7 @@ export const createOfficial = [
   
 ];
 
-export const updateOfficial = createOfficial.slice(0, createOfficial.length - 1);
+export const updateOfficial = createOfficial.slice(0, createOfficial.length - 2);
 
 export const login = [
   check('nombreUsuario')
