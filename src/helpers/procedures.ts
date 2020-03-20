@@ -491,7 +491,7 @@ export const reviseProcedure = async procedure => {
   try {
     client.query('BEGIN');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0];
-    if (!procedure.hasOwnProperty('aprobado')) {
+    if (!procedure.hasOwnProperty('revision')) {
       return { status: 403, message: 'No es posible actualizar este estado' };
     }
     if (!procedure.hasOwnProperty('sufijo')) {
@@ -684,5 +684,6 @@ export const updateProcedureHandler = async procedure => {
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
   client.release();
   const newProcedureState = updateProcedure(response.state);
+  console.log(response.state);
   return newProcedureState ? await newProcedureState(procedure) : { status: 500, message: 'No es posible actualizar el trámite' };
 };
