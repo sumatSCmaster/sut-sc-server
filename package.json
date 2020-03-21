@@ -14,7 +14,8 @@
     "test": "cross-env NODE_ENV=test jest --runInBand --detectOpenHandles",
     "test:watch": "cross-env NODE_ENV=test jest --watch --runInBand --detectOpenHandles",
     "tsc": "tsc --traceResolution",
-    "poststart": "npm prune --production"
+    "poststart": "npm prune --production",
+    "postinstall": "gulp default"
   },
   "author": "",
   "license": "ISC",
