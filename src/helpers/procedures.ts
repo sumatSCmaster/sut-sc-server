@@ -10,6 +10,7 @@ import switchcase from '@utils/switch';
 import { renderFile } from 'pug';
 import { resolve } from 'path';
 import * as pdf from 'html-pdf';
+import * as qr from 'qrcode';
 
 const pool = Pool.getInstance();
 
@@ -673,6 +674,7 @@ export const createMockCertificate = async procedure => {
         [procedure]
       )
     ).rows[0];
+    const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${tramite.id}`, { errorCorrectionLevel: 'H' });
     const datosCertificado = {
       id: tramite.id,
       fecha: tramite.fechacreacion,
@@ -689,6 +691,7 @@ export const createMockCertificate = async procedure => {
       ...datosCertificado,
       cache: false,
       moment: require('moment'),
+      QR: linkQr
     });
     return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
   } catch (error) {
