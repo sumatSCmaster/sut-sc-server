@@ -217,7 +217,8 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     id_parroquia = (SELECT id FROM parroquia WHERE nombre = $3 LIMIT 1), fecha_actualizacion = now() \
     RETURNING id_inmueble',
   GET_PROPERTY_BY_ID: 'SELECT * FROM inmueble_urbano_view WHERE id=$1',
-  CREATE_PROPERTY_OWNER: 'INSERT INTO propietario (razon_social, cedula, rif, email) VALUES ($1,$2,$3,$4) ON CONFLICT DO UPDATE razon_social = $1 RETURNING *',
+  CREATE_PROPERTY_OWNER:
+    'INSERT INTO propietario (razon_social, cedula, rif, email) VALUES ($1,$2,$3,$4) ON CONFLICT (cedula, rif) DO UPDATE razon_social = $1 RETURNING *',
   CREATE_PROPERTY_WITH_SIGNED_OWNER: 'INSERT INTO propietarios_inmuebles (id_propietario, id_inmueble) VALUES ($1, $2)',
   //Ordenanzas
   ORDINANCES_WITHOUT_CODCAT_PROCEDURE:
@@ -234,6 +235,11 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   INNER JOIN tarifas_inspeccion t ON t.id_ordenanza = o.id_ordenanza \
   INNER JOIN tipos_tramites tt ON t.id_tipo_tramite = tt.id_tipo_tramite \
   WHERE t.id_tipo_tramite = $1 AND t.utiliza_codcat = true;',
+  CREATE_ORDINANCE_FOR_PROCEDURE:
+    'INSERT INTO ORDENANZAS_TRAMITES (id_tramite, id_tarifa, utmm, valor_cal, factor, factor_value) \
+    VALUES ($1, (SELECT id_tarifa FROM TARIFAS_INSPECCION trf INNER JOIN ORDENANZAS ord ON \
+      trf.id_ordenanza=ord.id_ordenanza WHERE trf.id_tipo_tramite=$2 AND ord.descripcion = $3 LIMIT 1), \
+      $4,$5,$6,$7) RETURNING *;',
   //Valores
   GET_UTMM_VALUE: "SELECT valor_en_bs FROM valores WHERE descripcion = 'UTMM'",
   UPDATE_UTMM_VALUE: "UPDATE valores SET valor_en_bs = $1 WHERE descripcion = 'UTMM' RETURNING valor_en_bs;",
