@@ -76,6 +76,7 @@ export interface TipoTramite {
   pagoPrevio: boolean;
   secciones?: Seccion[];
   sufijo?: string;
+  necesitaCodCat: boolean;
 }
 
 export interface Parroquia {
