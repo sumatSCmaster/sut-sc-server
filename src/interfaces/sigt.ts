@@ -102,7 +102,7 @@ export interface Tramite {
   planilla: string;
   certificado: string | null;
   aprobado: boolean;
-  bill: any
+  bill: any;
 }
 
 export interface Inmueble {
