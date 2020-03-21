@@ -39,8 +39,9 @@ html
             img#logo(src=src)
         img#divider(src='images/Divider.png')
       div#content
-        p FORMATO #{formato}
-        p SOLICITUD DE #{tramite.toUpperCase()}
+        if !datos.funcionario
+          p FORMATO #{formato}
+          p SOLICITUD DE #{tramite.toUpperCase()}
         block content
       block footer
         footer
