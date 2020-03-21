@@ -1,0 +1,59 @@
+extends default
+
+block content
+  div#fecha
+    p 
+      b FECHA:
+      | &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+    p 
+      b Codigo de Tramite:
+      | &nbsp; #{codigo}
+  div#planilla
+    div.titleWithQR
+      p#title
+        b CONSTANCIA DE CUMPLIMIENTO DE NORMAS TECNICAS
+      .QR
+        img#QR(src=QR, alt='QR')
+    div#text-input
+      div
+        p Área: #{datos.funcionario.areaConstruccion}
+        p Aforo: #{datos.funcionario.aforo}
+      p Ubicada en: #{datos.funcionario.ubicadoEn}.
+      div
+        p Sector: #{datos.funcionario.sector}.
+        p Parroquia: #{datos.funcionario.parroquia}.
+      p.
+        Se comprobó que Cumple con las normas de seguridad en materia de prevencion y proteccion de incendios, (Ley de los
+        Cuerpos de Bomberos y Bomberas y Administración de Emergencias de Carácter Civil, en concordancia con la Ordenanza Sobre
+        Protección Civil y Normas de Seguridad en General del Municipio Maracaibo y las Normas COVENIN vigentes).
+      p.text-center 
+        b ESTA CONSTANCIA DEBE SER RENOVADA TREINTA (30) DÍAS ANTES DE SU FECHA DE VENCIMIENTO
+      p 
+        b NOTA:&nbsp;
+        span.
+            Quien no exhiba la constancia original vigente, será sancionado con multa, según el art. 180 de la  ordenanza vigente,
+            de igual forma si las condiciones mínimas de seguridad antes aprobadas no se mantienen óptimas, este documento
+            automaticamente sera&nbsp;
+        b REVOCADO.
+      b VALIDO POR UN AÑO
+
+            
+    div
+      p  
+        b “DISCIPLINA Y ABNEGACIÓN”
+        br
+        b p/ DIRECCIÓN DE PREVENCIÓN, FISCALIZACIÓN E INVESTIGACIÓN
+        br
+        b Vto. Bno.
+    div#firma
+      div.item-firma
+        hr
+        b PRIMER TENIENTE (B): LCDO. JUAN MORALES 
+        br 
+        b Director de Prevención
+      div.item-firma
+        hr
+        b Capitán (B): Lcdo. ENGHERBERT ATENCIO 
+        br 
+        b Primer Comandante
+      

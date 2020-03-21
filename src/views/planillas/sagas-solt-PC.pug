@@ -1,0 +1,64 @@
+extends default
+
+block content
+  div#fecha
+    p 
+      b FECHA:
+      | &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+    p 
+      b Codigo de Tramite:
+      | &nbsp; #{codigo}
+  div#planilla
+    div.table
+      div.th
+        p DATOS DEL PROPIETARIO
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p 
+            b Propetario del Terreno:
+            span &nbsp; #{datos.usuario.nombre}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Telefono: 
+            span &nbsp; #{datos.usuario.telefono}
+      div.tr
+        div.td(style={ width: '100%' }).border-bottom
+          p
+            b Ubicado en:
+            span &nbsp; #{datos.usuario.ubicadoEn}          
+      div.tr
+        div.td(style={ width: '50%' }).border-right
+          p
+            b Area de Construccion:
+            span &nbsp; #{datos.usuario.areaConstruccion}
+        div.td(style={ width: '50%' })
+          p
+            b Tipo de Construcción:
+            span &nbsp; #{datos.usuario.tipoOcupacion}
+    div#recaudos
+      h3 RECAUDOS
+      hr.divider
+      ol
+        li CD con proyecto en digital (Auto Cad) para su revisión con el siguiente contenido: 
+          ul
+            li Planos del Proyecto de Instalaciones de Gas.
+            li Detalles del Proyecto de Instalaciones de Gas (Tanquilla Principal de Seccionamiento, Detalle de zanja, Detalle de Válvulas de Equipos, Detalle de Sistema de Regulación, Detalle de Ductos de Gas, Detalle de Venteo, Detalle de Soportes, Isometría de Gas, Especificaciones). 
+            li Capas cargadas de los Siguientes Servicios (Aguas Servidas, Aguas Blancas, Aguas De Lluvia, Electricidad U Otros Servicios. 
+            li Memoria descriptiva del proyecto de Gas. 
+            li Memoria de cálculo del sistema de Gas. 
+            li Especificaciones técnicas del Proyecto de Gas. 
+        li 03 Juegos de Planos del Proyecto de Gas Impresos de Cada Nivel de Arquitectura. 
+        li 03 Juegos de Planos de Detalles de Gas. 
+        li 03 Juegos de Memoria Descriptiva del Proyecto de Gas. 
+        li 03 Juegos de Memoria de Cálculo Del Proyecto de Gas. 
+        li 03 Juegos de Especificaciones Técnicas del Proyecto de Gas. 
+        li Todos los planos deben ser de 90cm. x 60cm. 
+        li Copia de 
+          b CONSTANCIA DE SERVICIO&nbsp;
+          | actualizada.                                                 
+        li Copia de 
+          b SOLVENCIA DEL CIDEZ&nbsp;
+          | del Ing. Proyectista de Gas y residente (vigente). 
+        li Copia de 
+          b MULTIFIRMAS&nbsp;
+          | expedidas por el Centro de Ingenieros del Estado Zulia para construcciones mayores de 200 metros cuadrados.

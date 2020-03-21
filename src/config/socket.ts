@@ -7,12 +7,12 @@ const users = new Map<string, Socket>();
 const connection = (socket: Socket) => {
   try {
     const user = decode(socket.handshake.query.token, process.env.JWT_SECRET || 'not a secret').sub;
-    users.set(user.id, socket);
-    console.log(`User connected: ${user.id}`);
+    users.set(user.cedula, socket);
+    console.log(`User connected: ${user.cedula}`);
     socket.on('disconnect', () => {
-      users.delete(user.id);
-    })
-  } catch(e) {
+      users.delete(user.cedula);
+    });
+  } catch (e) {
     throw e;
   }
 };
@@ -24,7 +24,7 @@ export const init = (instance: Socket): Socket => {
 };
 
 export const getIo = (): Socket => {
-  if(io) {
+  if (io) {
     return io;
   }
   throw new Error('Socket.io not initialized!');

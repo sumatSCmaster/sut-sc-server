@@ -1,60 +1,37 @@
 import { Router } from 'express';
 import auth from './auth';
-import tree from './tree';
-import institution from './institution';
-import role from './role';
-import invite from './invite';
-import task from './task';
+import official from './officials';
+//import notification from "./notification";
+import banks from './banks';
 import file from './file';
-import permission from './permission';
-import twilio from './twilio';
-import notification from './notification';
-import project from './project';
-import { authenticate  } from 'passport';
-import { isAdmin } from '@middlewares/auth';
-import { endWizard } from '@helpers/user';
+import procedures from './procedures';
+import affairs from './affairs';
+import resources from './resources';
+import validateDoc from './validateDoc';
+import estates from './estates';
+import ordinance from './ordinance';
+import values from './values';
 
 const router = Router();
 
 router.use('/auth', auth);
-router.use('/tree', tree);
-router.use('/institution', institution);
-router.use('/role', role);
-router.use('/invite', invite);
-router.use('/task', task);
-router.use('/file', file);
-router.use('/permission', permission);
-router.use('/twilio', twilio);
-router.use('/notification', notification);
-router.use('/project', project);
+router.use('/banks', banks);
+router.use('/official', official);
+router.use('/procedures', procedures);
+router.use('/uploads', file);
+router.use('/validateDoc', validateDoc);
+router.use('/affairs', affairs);
+router.use('/estates', estates);
+router.use('/ordinance', ordinance);
+router.use('/values', values);
+router.use(resources);
+//router.use("/notification", notification);
 
 router.get('/', (req, res) => {
   res.status(200).json({
     status: 200,
-    message: 'Ok'
-  })
-});
-
-router.put('/endWizard', authenticate('jwt'), isAdmin, async (req, res) => {
-  try {
-    const ended = await endWizard();
-    if(ended) {
-      res.status(200).json({
-        status: 200,
-        message: 'Wizard finalizado de manera exitosa.',
-      });
-    } else {
-      res.status(409).json({
-        status: 409,
-        message: 'Wizard ya esta terminado.'
-      });
-    }
-  } catch(e) {
-    res.status(500).json({
-      status: 500,
-      error: e
-    });
-  }
+    message: 'Ok',
+  });
 });
 
 export default router;

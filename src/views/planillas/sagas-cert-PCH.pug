@@ -1,0 +1,50 @@
+extends default
+
+block content
+  div#fecha
+    p 
+      b Codigo de Tramite:
+      | &nbsp; #{codigo}
+    p 
+      b MARACAIBO, #{moment(fecha).format('DD/MM/YYYY')}
+  div#planilla
+    div.titleWithQR
+      p#title
+        b CONSTANCIA DE CONDICIONES HABITABLES DE INSTALACIONES DE GAS GLP 
+        br 
+        b EN EDIFICACIONES RESIDENCIALES Y COMERCIALES
+      .QR
+        img#QR(src=QR, alt='QR')
+    div#text-input
+      p
+        | Ciudadano: (a)
+        br
+        | #{datos.usuario.nombre}
+      p.
+        A los fines del otorgamiento del Permiso de Condiciones Habitables de instalaciones de gas, 
+        del inmueble: #{datos.funcionario.nombreObra}, construido en terrenos de su propiedad ubicado 
+        en #{datos.funcionario.ubicadoEn}, Sector #{datos.funcionario.sector} Parroquia: #{datos.funcionario.parroquia}.
+      br
+      p.
+        Se efectuó inspección por el funcionario responsable para tal fin, verificándose que las instalaciones de gas GLP
+        cumplen con la normativa vigente, no se observaron modificaciones en la construcción, por lo cual se otorga el
+        permiso por haber cumplido con los requisitos exigidos.
+      b Constancia válida por 1 Año
+    div
+      p 
+        b Atentamente,
+        br
+        b P/ Servicio Autónomo Para El Suministro De Gas De Maracaibo.
+    div#firma
+      div.item-firma
+        b(style={'font-size': '16px !important'}) Héctor Bracho
+        br
+        b(style={'font-size': '16px !important'}) DIRECTOR GENERAL
+        br
+        b SERVICIO AUTONOMO PARA EL SUMINISTRO 
+        br
+        b DE GAS E INFRAESTRUCTURA DE MARACAIBO 
+        br
+        b SEGÚN RESOLUCIÓN Nº 0010 DE FECHA 19/12/2017
+        br
+        b GACETA MUNICIPAL Nº 306-17 DE FECHA 19/12/2017

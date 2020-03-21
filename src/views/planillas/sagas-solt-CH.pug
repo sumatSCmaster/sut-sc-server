@@ -1,0 +1,54 @@
+extends default
+
+block content
+  div#fecha
+    p 
+      b FECHA:
+      | &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+    p 
+      b Codigo de Tramite:
+      | &nbsp; #{codigo}
+  div#planilla
+    div.table
+      div.th
+        p DATOS DEL PROPIETARIO
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p 
+            b Propetario del Terreno:
+            span &nbsp; #{datos.usuario.nombre}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Telefono: 
+            span &nbsp; #{datos.usuario.telefono}
+      div.tr
+        div.td(style={ width: '100%' }).border-bottom
+          p
+            b Ubicado en:
+            span &nbsp; #{datos.usuario.ubicadoEn}          
+      div.tr
+        div.td(style={ width: '50%' }).border-right
+          p
+            b Area de Construccion:
+            span &nbsp; #{datos.usuario.areaConstruccion}
+        div.td(style={ width: '50%' })
+          p
+            b Tipo de Ocupacion:
+            span &nbsp; #{datos.usuario.tipoOcupacion}
+    div#recaudos
+      h3 RECAUDOS
+      hr.divider
+      ul
+        li Con Instalaciones De Servicio de Gas, consignar la siguiente Documentación. 
+          ol
+            li Copia Constancia de Servicio SAGAS Actualizada. 
+            li Copia de Variables Urbanas expedida por la Alcaldía de Maracaibo. 
+            li Tener en Expediente SAGAS, Inspecciones de las instalaciones de Gas. 
+            li Tener en Expediente SAGAS, Inspecciones de Pruebas de Hermeticidad Con Carta de Registro Original Firmada y Sellada.  
+            li Tener en Expediente SAGAS, Inspección Final de las Instalaciones de Gas.
+        li Sin Instalaciones De Servicio de Gas, consignar la siguiente Documentación.
+          ol
+            li Copia Constancia de Servicio SAGAS Actualizada. 
+            li Copia de Variables Urbanas expedida por la Alcaldía de Maracaibo. 
+            li Traer un Juego de Planos Impresos de Arquitectura. 
+            li Tener en Expediente SAGAS, Inspección Final de la Obra, Para Constatar que no Posee Servicio de Gas. 

@@ -1,111 +1,249 @@
+/*
+  Orden de secciones:
+  Creates
+  Reads
+    -Validaciones
+  Updates
+  Deletes
+
+*/
+
 const queries = {
   // USUARIO
-  GET_USER_BY_USERNAME: 'SELECT * FROM datos_usuario WHERE username = $1;',
+  CREATE_USER: `INSERT INTO usuarios (nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, id_tipo_usuario, password, telefono) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+  ADD_PASSWORD: 'INSERT INTO cuentas_funcionarios (id_usuario, password) VALUES ($1, $2);',
+  ADD_OFFICIAL_DATA: 'INSERT INTO cuentas_funcionarios (id_usuario, id_institucion) VALUES ($1, $2);',
+  ADD_OFFICIAL_PERMISSIONS: 'INSERT INTO permiso_de_acceso (id_usuario, id_tipo_tramite) VALUES ($1, $2)',
+  INSERT_GOOGLE_USER: 'INSERT INTO datos_google VALUES ($1, $2)',
+  INSERT_FACEBOOK_USER: 'INSERT INTO datos_facebook VALUES ($1, $2)',
+  EXTERNAL_USER_INIT: 'INSERT INTO USUARIOS (nombre_completo, id_tipo_usuario) VALUES ($1, 4) RETURNING *',
+  SIGN_UP_WITH_LOCAL_STRATEGY:
+    'INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\
+  nacionalidad,id_tipo_usuario, password, telefono) VALUES ($1,$2,$3,$4,$5,4,$6, $7) RETURNING *',
+  ADD_PASSWORD_RECOVERY:
+    'WITH usuario AS (SELECT id_usuario FROM usuarios WHERE nombre_de_usuario = $1) \
+       INSERT INTO recuperacion (id_usuario, token_recuperacion, usado) VALUES ((SELECT id_usuario FROM usuario), $2, false) RETURNING token_recuperacion;',
+  GET_USER_BY_USERNAME: 'SELECT * FROM usuarios WHERE nombre_de_usuario = $1;',
   GET_USER_BY_ID: 'SELECT * FROM datos_usuario WHERE cedula = $1',
-  CREATE_ADMIN: "WITH institucion_result AS (INSERT INTO institucion (descripcion) VALUES ($1) RETURNING id), \
-    oficina_result AS (INSERT INTO oficina (descripcion, id_institucion) VALUES ($2, (SELECT id FROM institucion_result)) RETURNING id), \
-    rol_result AS (INSERT INTO rol (nombre) VALUES ('Administrador') RETURNING id), \
-    cargo_result AS (INSERT INTO cargo (nombre, index_izq, index_der) VALUES($3, 0, 1) RETURNING id) \
-    INSERT INTO usuario(cedula, nombre_completo, correo_electronico, telefono, id_institucion, id_oficina, id_rol, id_cargo) \
-    VALUES ($4, $5, $6, $7, (SELECT id FROM institucion_result), (SELECT id FROM oficina_result), (SELECT id FROM rol_result), (SELECT id FROM cargo_result)) \
-    RETURNING *;",
-  ASSIGN_ALL_PERMISSIONS: 'INSERT INTO rol_funcion(id_rol, id_funcion) SELECT $1, id FROM funcion;',
-  ADD_ACCOUNT: 'INSERT INTO cuenta(id_usuario, username, password) VALUES($1, $2, $3);',
-  CHECK_IF_ADMIN: 'SELECT 1 FROM usuario u INNER JOIN rol r ON u.id_rol = r.id WHERE u.id_rol = \
-    (SELECT id FROM rol WHERE nombre = \'Administrador\') AND u.cedula = $1;',
-  REGISTER_USER: 'INSERT INTO usuario(cedula, nombre_completo, correo_electronico, telefono, id_institucion, id_oficina, id_rol, id_cargo) \
-    VALUES ($1, $2, $3, NULL, $4, $5, $6, $7) ON CONFLICT (cedula) DO NOTHING RETURNING *;',
-  GET_ADMIN: 'SELECT u.cedula, u.nombre_completo FROM usuario u INNER JOIN rol r ON u.id_rol = r.id WHERE u.id_rol = \
-    (SELECT id FROM rol WHERE nombre = \'Administrador\')',
-  // CONFIG
-  INIT_CONFIG: 'INSERT INTO config VALUES(FALSE, $1);',
-  GET_INIT: 'SELECT inicializado FROM config;',
-  END_WIZARD: 'UPDATE config SET inicializado = TRUE WHERE inicializado = FALSE RETURNING *',
-  // ARBOL
-  GET_TREE: 'SELECT arbol_jerarquico FROM config;',
-  CLEAR_INDEXES: 'UPDATE cargo SET index_izq = -1, index_der = -1 WHERE nombre != \'Administrador\';',
-  INSERT_POSITION: 'INSERT INTO cargo (index_izq, index_der, nombre) \
-  VALUES ($1, $2, $3) ON CONFLICT (nombre) \
-  DO UPDATE SET index_izq = $1, index_der = $2;',
-  SET_TREE: 'UPDATE config SET arbol_jerarquico = $1;',
-  GET_CHILDREN: 'SELECT id, nombre FROM cargo WHERE index_izq > $1 AND index_der < $2',
-  GET_CHILDREN_USERS: 'SELECT u.* FROM datos_usuario u INNER JOIN usuario x ON u.cedula = x.cedula INNER JOIN cargo c ON c.id = x.id_cargo \
-    WHERE c.index_izq > $1 AND c.index_der < $2 AND x.telefono IS NOT NULL;',
-  IS_UNDER_IN_TREE: 'WITH cargo_emisor AS (SELECT c.* FROM cargo c INNER JOIN usuario u ON u.id_cargo = c.id WHERE u.cedula = $1), \
-    cargo_responsable AS (SELECT c.* FROM cargo c INNER JOIN usuario u ON u.id_cargo = c.id WHERE u.cedula = $2) \
-    SELECT ((SELECT index_izq FROM cargo_responsable) > (SELECT index_izq FROM cargo_emisor) \
-    AND (SELECT index_der FROM cargo_responsable) < (SELECT index_der FROM cargo_emisor)) AS is_under',
-  // INSTITUCIONES
-  GET_ALL_INSTITUTIONS: 'SELECT * FROM institucion;',
-  DELETE_INSTITUTION: 'DELETE FROM institucion WHERE id = $1 RETURNING *;',
-  GET_INSTITUTION: 'SELECT * FROM institucion WHERE id = $1;',
-  CREATE_INSTITUTION: 'INSERT INTO institucion(descripcion) VALUES($1) RETURNING *;',
-  EDIT_INSTITUTION: 'UPDATE institucion SET descripcion = $1 WHERE id = $2 RETURNING *;',
-  // OFICINAS
-  GET_INSTITUTION_OFFICES: 'SELECT o.* FROM oficina o INNER JOIN institucion i ON i.id = o.id_institucion WHERE i.id = $1;',
-  CREATE_OFFICE: 'INSERT INTO oficina(descripcion, id_institucion) VALUES($1, $2) RETURNING *;',
-  EDIT_OFFICE: 'UPDATE oficina SET descripcion = $1, id_institucion = $4 WHERE id = $2 AND id_institucion = $3 RETURNING *;',
-  DELETE_OFFICE: 'DELETE FROM oficina WHERE id = $1 AND id_institucion = $2 RETURNING *;',
-  // ROLES
-  GET_ALL_ROLES: 'SELECT * FROM rol;',
-  GET_PERMISSIONS: 'SELECT f.* FROM funcion f INNER JOIN rol_funcion rf ON rf.id_funcion = f.id WHERE rf.id_rol = $1;',
-  DELETE_ROLE: 'DELETE FROM rol WHERE id = $1 AND id != (SELECT id FROM rol WHERE nombre = \'Administrador\') RETURNING *;',
-  EDIT_ROLE_WITH_PERMISSIONS: 'SELECT * FROM editar_rol($1, $2, $3);',
-  EDIT_ROLE_WIHOUT_PERMISSIONS: 'SELECT * FROM editar_rol($1, $2);',
-  CREATE_ROLE: 'SELECT * FROM crear_rol($1, $2);',
-  GET_ROLE_BY_ID: 'SELECT * FROM rol WHERE id = $1;',
-  // INVITACIONES
-  GET_ALL_INVITATIONS: 'SELECT i.*, u.nombre_completo FROM invitacion i INNER JOIN usuario u ON u.correo_electronico = i.correo',
-  CREATE_INVITATION: 'INSERT INTO invitacion(correo, token) VALUES($1, $2) ON CONFLICT (correo) \
-    DO NOTHING RETURNING *;',
-  DELETE_INVITATION: 'WITH inv AS (DELETE FROM invitacion WHERE id = $1 RETURNING *) \
-    DELETE FROM usuario WHERE correo_electronico = (SELECT correo FROM inv) AND telefono IS NULL RETURNING *',
-  ACCEPT_INVITATION: 'WITH invite AS (DELETE FROM invitacion WHERE token = $2 AND id = $1 RETURNING *), \
-    usuario_result AS (UPDATE usuario SET telefono = $3 WHERE correo_electronico = (SELECT correo FROM invite) RETURNING *) \
-    INSERT INTO cuenta(id_usuario, username, password) VALUES((SELECT cedula FROM usuario_result), $4, $5) RETURNING *;',
-  GET_INVITATION_DATA: 'SELECT cedula, nombre_completo as nombre FROM usuario WHERE cedula = $1',
-  CHECK_TOKEN: 'SELECT * FROM invitacion WHERE token = $1 AND id = $2;',
-  REFRESH_TOKEN: 'UPDATE invitacion SET token = $1 WHERE id = $2 RETURNING *;',
-  // TAREAS
-  GET_USER_TASKS: 'SELECT * FROM datos_tarea WHERE responsable = $1',
-  GET_SENT_TASKS: 'SELECT * FROM datos_tarea WHERE emisor = $1',
-  CREATE_TASK: 'INSERT INTO tarea(emisor, responsable, status, fecha_asignacion, fecha_entrega, descripcion, titulo) VALUES($1, $2, 1, NOW(), $3, $4, $5) RETURNING *',
-  GET_TASK_BY_ID: 'SELECT * FROM datos_tarea WHERE id = $1',
-  DELETE_TASK: 'DELETE FROM tarea WHERE id = $1',
-  CHECK_TASK: 'SELECT * FROM datos_tarea WHERE id = $1;',
-  UPDATE_TASK_STATUS: 'UPDATE tarea SET status = $1 WHERE id = $2 RETURNING id;',
-  UPDATE_TASK_INFO: 'WITH updated as (UPDATE tarea SET titulo = $1, descripcion = $2 WHERE id = $3) \
-    SELECT * FROM datos_tarea WHERE id = $3;',
-  GET_RATE_PENDING: 'SELECT * FROM datos_tarea WHERE status = 4 AND emisor = $1;',
-  RATE_TASK: 'SELECT * FROM calificar_tarea($1, $2);',
-  // COMENTARIOS
-  CAN_COMMENT: 'SELECT true AS can_comment FROM tarea WHERE (responsable = $1 OR emisor = $1) AND id = $2;',
-  GET_TASK_COMMENTS: 'SELECT * FROM comentario WHERE target = $1 AND tipo = 1',
-  CREATE_COMMENT: 'INSERT INTO comentario(emisor, target, tipo, descripcion, url_archivo) VALUES($1, $2, 1, $3, $4) RETURNING *;',
-  EDIT_COMMENT: 'UPDATE comentario SET descripcion = $1 WHERE id = $2 RETURNING *;',
-  CAN_EDIT_COMMENT: 'SELECT id FROM comentario WHERE target = $1 AND tipo = 1 AND emisor = $2',
-  DELETE_COMMENT: 'DELETE FROM comentario WHERE id = $1 RETURNING *;',
-  // PERMISOS
-  GET_ALL_PERMISSIONS: 'SELECT * FROM funcion;',
-  HAS_PERMISSION: 'SELECT * FROM rol_funcion WHERE id_rol = (SELECT id_rol FROM usuario WHERE cedula = $1) AND id_funcion = $2',
-  GET_USET_PERMISSIONS: 'SELECT id_funcion FROM rol_funcion WHERE id_rol = (SELECT id_rol FROM usuario WHERE cedula = $1);',
-  // NOTIFICACIONES
-  GET_USER_NOTIFICATIONS: 'SELECT * FROM datos_notificacion WHERE receptor = $1 ORDER BY fecha DESC LIMIT 100;',
-  CREATE_NOTIFICATION: 'INSERT INTO notificacion(emisor, receptor, descripcion, target, tipo) VALUES($1, $2, $3, $4, $5) RETURNING *;',
-  GET_NOTIFICATION_BY_ID: 'SELECT * FROM datos_notificacion WHERE id = $1;',
-  HAS_UNREAD_NOTIF: 'SELECT id FROM notificacion WHERE status = FALSE AND receptor = $1;',
-  MARK_ALL_AS_READ: 'UPDATE notificacion SET status = TRUE WHERE status = FALSE AND receptor = $1;',
-  // PROYECTOS
-  GET_ALL_PROJECTS: 'SELECT * FROM datos_proyecto',
-  GET_PROJECT_FILES: 'SELECT * FROM proyecto_archivo WHERE id_proyecto = $1;',
-  GET_PROJECT_ACTIVITIES: 'SELECT * FROM actividad WHERE id_proyecto = $1;',
-  CREATE_PROJECT: 'INSERT INTO proyecto(fecha_culminacion, status, id_institucion, responsable, nombre, direccion, id_parroquia, longitud, latitud,\
-    duracion_estimada, fecha_inicio, descripcion, costo_dolares, costo_bs, poblacion, cantidad)\
-    VALUES(NULL, 1, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *',
-  CREATE_ACTIVITY: 'INSERT INTO actividad(id_proyecto, descripcion, duracion, status, fecha_inicio, fecha_fin, fecha_culminacion) \
-    VALUES($1, $2, $3, 1, $4, $5, NULL) RETURNING *',
-  INSERT_FILE: 'INSERT INTO proyecto_archivo(id_proyecto, url_archivo) VALUES($1, $2) RETURNING *',
-  GET_PROJECT_BY_ID: 'SELECT * FROM datos_proyecto WHERE id_proyecto = $1'
+  GET_USER_INFO_BY_ID:
+    'SELECT nombre_completo as "nombreCompleto", nombre_de_usuario AS "nombreUsuario", direccion, cedula, nacionalidad FROM usuarios WHERE id_usuario = $1;',
+  GET_PHONES_FROM_USERNAME:
+    'SELECT numero FROM telefonos_usuarios tu \
+    INNER JOIN usuarios u ON tu.id_usuario = u.id_usuario \
+    WHERE u.nombre_de_usuario = $1;',
+  GET_USER_TYPE_FROM_USERNAME:
+    'SELECT tu.* FROM tipos_usuarios tu \
+    INNER JOIN usuarios u ON tu.id_tipo_usuario = u.id_tipo_usuario \
+    WHERE U.nombre_de_usuario = $1;',
+  GET_GOOGLE_DATA_FROM_USERNAME:
+    'SELECT dg.* FROM datos_google dg \
+    INNER JOIN usuarios u ON dg.id_usuario = u.id_usuario \
+    WHERE u.nombre_de_usuario = $1',
+  GET_OFFICIAL_DATA_FROM_USERNAME:
+    'SELECT cf.* FROM cuentas_funcionarios cf \
+    INNER JOIN usuarios u ON u.id_usuario = cf.id_usuario \
+    WHERE u.nombre_de_usuario = $1;',
+  GET_USER_PERMISSIONS: 'SELECT pa.id_tipo_tramite FROM permiso_de_acceso pa WHERE id_usuario = $1',
+  GET_ADMIN:
+    "SELECT u.cedula, u.nombre_completo FROM usuario u INNER JOIN rol r ON u.id_rol = r.id WHERE u.id_rol = \
+  (SELECT id FROM rol WHERE nombre = 'Administrador')",
+  GET_OAUTH_USER:
+    'SELECT usr.* FROM USUARIOS usr LEFT JOIN datos_facebook df ON usr.id_usuario=df.id_usuario\
+  LEFT JOIN datos_google dg ON usr.id_usuario = dg.id_usuario\
+  WHERE dg.id_google = $1 OR df.id_facebook=$1',
+  GET_EXTERNAL_USER: 'SELECT * FROM usuarios WHERE id_usuario = $1',
+  GET_ADMIN_INSTITUTE:
+    'SELECT i.* FROM instituciones i INNER JOIN cuentas_funcionarios cf ON i.id_institucion = cf.id_institucion \
+    WHERE cf.id_usuario = $1;',
+  CHECK_IF_OFFICIAL:
+    "SELECT 1 FROM usuarios u \
+    INNER JOIN tipos_usuarios tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
+    WHERE tu.descripcion = 'Funcionario' AND u.cedula = $1",
+  CHECK_IF_DIRECTOR:
+    "SELECT 1 FROM usuarios u \
+    INNER JOIN tipos_usuarios tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
+    WHERE tu.descripcion = 'Director' AND u.cedula = $1",
+  CHECK_IF_ADMIN:
+    "SELECT 1 FROM usuarios u \
+    INNER JOIN tipos_usuarios tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
+    WHERE tu.descripcion = 'Administrador' AND u.cedula = $1",
+  CHECK_IF_SUPERUSER:
+    "SELECT 1 FROM usuarios u \
+  INNER JOIN tipos_usuarios tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
+  WHERE tu.descripcion = 'Superuser' AND u.cedula = $1",
+  VALIDATE_TOKEN: "SELECT 1 FROM recuperacion WHERE token_recuperacion = $1 AND usado = false AND CURRENT_TIMESTAMP - fecha_recuperacion < '20 minutes';",
+  EMAIL_EXISTS: 'SELECT 1 FROM usuarios u WHERE nombre_de_usuario = $1;',
+  EXTERNAL_USER_COMPLETE:
+    'UPDATE USUARIOS SET direccion = $1, cedula = $2, nacionalidad = $3, nombre_de_usuario = $4, password=$5, nombre_completo=$6, telefono=$7 WHERE id_usuario = $8 RETURNING *',
+  DISABLE_TOKEN: 'UPDATE recuperacion SET usado = true WHERE token_recuperacion = $1',
+  UPDATE_PASSWORD:
+    'WITH usuario AS (SELECT u.id_usuario FROM usuarios u INNER JOIN recuperacion r ON r.id_usuario = u.id_usuario WHERE token_recuperacion = $1) \
+      UPDATE usuarios SET password = $2 WHERE id_usuario = (SELECT id_usuario FROM usuario)',
+  DROP_OFFICIAL_PERMISSIONS: 'DELETE FROM permiso_de_acceso WHERE id_usuario = $1;',
+
+  //BANKS
+  INSERT_PAYMENT: 'INSERT INTO pagos (id_tramite, referencia, monto, id_banco, fecha_de_pago) VALUES ($1, $2, $3, $4, $5) RETURNING *;',
+  GET_ALL_BANKS: 'SELECT id_banco as id, nombre  FROM BANCOS',
+  VALIDATE_PAYMENTS: 'SELECT validate_payments($1);',
+  GET_BANK_ACCOUNTS_FOR_INSTITUTION:
+    'SELECT id_instituciones_bancos AS id, id_institucion AS institucion, id_banco AS banco, \
+    numero_cuenta AS numerocuenta, nombre_titular AS nombretitular, documento_de_identificacion AS documento FROM instituciones_bancos WHERE id_institucion = $1',
+
+  //OFFICIALS
+  CREATE_OFFICIAL:
+    'WITH funcionario AS (INSERT INTO USUARIOS (nombre_completo, nombre_de_usuario, direccion, cedula,\
+    nacionalidad, id_tipo_usuario, password, telefono) VALUES ($1, $2, $3, $4, $5, $9, $6, $7) RETURNING id_usuario)\
+    INSERT INTO cuentas_funcionarios VALUES((SELECT id_usuario from funcionario), $8) RETURNING *',
+  GET_OFFICIAL:
+    'SELECT usr.* from USUARIOS usr INNER JOIN CUENTAS_FUNCIONARIOS cf ON\
+     usr.id_usuario=cf.id_usuario WHERE usr.id_usuario=$1 AND cf.id_institucion = $2',
+  GET_OFFICIALS_BY_INSTITUTION:
+    'SELECT usr.id_usuario AS id, usr.nombre_completo AS nombreCompleto, usr.nombre_de_usuario AS nombreUsuario,\
+    usr.direccion, usr.cedula, usr.nacionalidad, usr.id_tipo_usuario AS tipoUsuario, usr.telefono\
+    from USUARIOS usr INNER JOIN CUENTAS_FUNCIONARIOS cf ON\
+    usr.id_usuario=cf.id_usuario WHERE cf.id_institucion = $1 AND usr.id_usuario != $2 AND usr.id_tipo_usuario!=1',
+  GET_ALL_OFFICIALS:
+    'SELECT usr.id_usuario AS id, usr.nombre_completo AS nombreCompleto, usr.nombre_de_usuario AS nombreUsuario,\
+    usr.direccion, usr.cedula, usr.nacionalidad, usr.id_tipo_usuario AS tipoUsuario, usr.telefono\
+    from USUARIOS usr INNER JOIN CUENTAS_FUNCIONARIOS cf ON\
+    usr.id_usuario=cf.id_usuario WHERE usr.id_tipo_usuario!=1',
+  GET_ALL_INSTITUTION: 'SELECT * FROM INSTITUCIONES',
+  GET_ONE_INSTITUTION: 'SELECT * FROM INSTITUCIONES WHERE id_institucion = $1',
+  GET_ONE_INSTITUTION_INFO:
+    'SELECT id_institucion AS id, nombre_completo AS "nombreCompleto", nombre_corto AS "nombreCorto" FROM instituciones WHERE id_institucion = $1;',
+  UPDATE_OFFICIAL:
+    'UPDATE usuarios SET nombre_completo = $1, nombre_de_usuario = $2, direccion = $3,\
+    cedula = $4, nacionalidad = $5, telefono =$6, id_tipo_usuario = $8 WHERE id_usuario = $7 RETURNING *',
+  DELETE_OFFICIAL:
+    'DELETE FROM USUARIOS usr USING CUENTAS_FUNCIONARIOS cf WHERE\
+    usr.id_usuario = cf.id_usuario AND usr.id_usuario = $1\
+    AND cf.id_institucion = $2 RETURNING *;',
+  DELETE_OFFICIAL_AS_SUPERUSER: 'DELETE FROM usuarios WHERE usuarios.id_usuario = $1 RETURNING *;',
+
+  //Tramites
+  PROCEDURE_INIT: 'SELECT * FROM insert_tramite($1, $2, $3);',
+  SOCIAL_CASE_INIT: 'SELECT * FROM insert_caso(0, $1, $2);', //datos, id usuario
+  CREATE_RECEIPT: 'INSERT INTO facturas_tramites (id_factura, id_tramite) VALUES (default, $1) RETURNING *;',
+  ADD_ITEM_TO_RECEIPT: 'INSERT INTO detalles_facturas (id_detalle, id_factura, nombre, costo) VALUES (default, $1, $2, $3)',
+  GET_SECTIONS_BY_PROCEDURE:
+    'SELECT DISTINCT sect.id_seccion as id, sect.nombre FROM\
+  CAMPOS_TRAMITES ct RIGHT JOIN SECCIONES sect ON ct.id_seccion=sect.id_seccion WHERE ct.id_tipo_tramite=$1 ORDER BY sect.id_seccion',
+  GET_PROCEDURE_BY_INSTITUTION:
+    'SELECT id_tipo_tramite, nombre_tramite, costo_base, sufijo, pago_previo, utiliza_informacion_catastral FROM tipos_tramites tt WHERE id_institucion = $1 ORDER BY id_tipo_tramite',
+  GET_FIELDS_BY_SECTION:
+    "SELECT ct.*, camp.nombre, camp.tipo, camp.validacion, camp.col FROM campos_tramites ct INNER JOIN\
+    campos camp ON ct.id_campo = camp.id_campo WHERE ct.id_seccion = $1 AND ct.id_tipo_tramite = $2 AND (ct.estado='iniciado' OR ct.estado = 'ingresardatos') ORDER BY ct.orden",
+  GET_FIELDS_BY_SECTION_FOR_OFFICIALS:
+    "SELECT ct.*, camp.nombre, camp.tipo, camp.validacion, camp.col FROM campos_tramites ct INNER JOIN\
+    campos camp ON ct.id_campo = camp.id_campo WHERE ct.id_seccion = $1 AND ct.id_tipo_tramite = $2 AND NOT (ct.estado='iniciado' OR ct.estado = 'ingresardatos') ORDER BY ct.orden",
+  GET_FIELDS_FOR_SOCIAL_CASE:
+    'SELECT ct.*, camp.nombre, camp.tipo, camp.validacion, camp.col FROM campos_tramites ct INNER JOIN\
+  campos camp ON ct.id_campo = camp.id_campo WHERE ct.id_seccion = $1 AND ct.id_tipo_tramite = $2 ORDER BY ct.orden',
+  GET_TAKINGS_BY_PROCEDURE:
+    'SELECT rec.id_recaudo as id, rec.nombre_largo AS nombreCompleto, rec.nombre_corto AS nombreCorto,\
+  ttr.fisico FROM RECAUDOS rec INNER JOIN tipos_tramites_recaudos ttr ON rec.id_recaudo=ttr.id_recaudo\
+  WHERE ttr.id_tipo_tramite=$1 ORDER BY rec.id_recaudo',
+  GET_TAKINGS_FOR_VALIDATION:
+    'SELECT rec.id_recaudo as id, rec.nombre_largo AS nombreCompleto, rec.nombre_corto AS nombreCorto, \
+ttr.fisico FROM RECAUDOS rec INNER JOIN tipos_tramites_recaudos ttr ON rec.id_recaudo=ttr.id_recaudo \
+WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
+  GET_TAKINGS_OF_INSTANCES: 'SELECT * FROM tramites_archivos_recaudos WHERE id_tramite = ANY( $1::int[] );',
+  INSERT_TAKINGS_IN_PROCEDURE: 'INSERT INTO tramites_archivos_recaudos VALUES ($1,$2)',
+  GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID:
+    'SELECT tramites_state.*, instituciones.nombre_completo AS nombrelargo, instituciones.nombre_corto AS \
+    nombrecorto, tipos_tramites.nombre_tramite AS nombretramitelargo, tipos_tramites.nombre_corto AS nombretramitecorto, tipos_tramites.pago_previo AS "pagoPrevio" FROM tramites_state INNER JOIN tipos_tramites ON tramites_state.tipotramite = \
+    tipos_tramites.id_tipo_tramite INNER JOIN instituciones ON instituciones.id_institucion = \
+    tipos_tramites.id_institucion WHERE tipos_tramites.id_institucion = $1 ORDER BY tramites_state.fechacreacion;',
+  GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION:
+    'SELECT tramites_state.*, instituciones.nombre_completo AS nombrelargo, instituciones.nombre_corto AS \
+    nombrecorto, tipos_tramites.nombre_tramite AS nombretramitelargo, tipos_tramites.nombre_corto AS nombretramitecorto, tipos_tramites.pago_previo AS "pagoPrevio"  FROM tramites_state INNER JOIN tipos_tramites ON tramites_state.tipotramite = \
+    tipos_tramites.id_tipo_tramite INNER JOIN instituciones ON instituciones.id_institucion = \
+    tipos_tramites.id_institucion WHERE tipos_tramites.id_institucion = $1 AND tramites_state.state=\'enproceso\' ORDER BY tramites_state.fechacreacion;',
+  GET_ONE_PROCEDURE: 'SELECT * FROM tipos_tramites WHERE id_tipo_tramite = $1',
+  GET_ONE_PROCEDURE_INFO:
+    'SELECT id_tipo_tramite as id, id_institucion AS "idInstitucion", nombre_tramite AS "nombre", costo_base as costo, nombre_corto as "nombreCorto"  FROM tipos_tramites WHERE id_tipo_tramite = $1;',
+  UPDATE_PROCEDURE_COST: 'UPDATE tipos_tramites SET costo_base = $2 WHERE id_tipo_tramite = $1 RETURNING *',
+  VALIDATE_FIELDS_FROM_PROCEDURE:
+    'SELECT DISTINCT camp.validacion, camp.tipo FROM CAMPOS_TRAMITES ct INNER JOIN CAMPOS camp ON\
+     ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=$2',
+  GET_RESOURCES_FOR_PROCEDURE:
+    'SELECT DISTINCT tt.sufijo, tt.costo_base, usr.nombre_completo as nombrecompleto, \
+    usr.nombre_de_usuario as nombreusuario, tr.costo FROM tipos_tramites tt INNER JOIN tramites tr ON\
+    tt.id_tipo_tramite=tr.id_tipo_tramite INNER JOIN usuarios usr ON tr.id_usuario=usr.id_usuario\
+    WHERE tt.id_tipo_tramite=$1',
+  GET_PROCEDURE_STATES:
+    'SELECT id_tramite AS id, tramites_eventos_fsm(event ORDER BY id_evento_tramite) AS state  \
+  FROM eventos_tramite \
+  GROUP BY id_tramite;',
+  GET_PROCEDURE_STATE:
+    'SELECT id_tramite AS id, tramites_eventos_fsm(event ORDER BY id_evento_tramite) AS state  \
+  FROM eventos_tramite \
+  WHERE id_tramite = $1 \
+  GROUP BY id_tramite;', //tramite
+  GET_PROCEDURE_STATE_FOR_SOCIAL_CASE:
+    'SELECT id_caso AS id, casos_sociales_fsm(event ORDER BY id_evento_caso) AS state  \
+  FROM eventos_casos_sociales \
+  WHERE id_caso = $1 \
+  GROUP BY id_caso;',
+  UPDATE_STATE: 'SELECT update_tramite_state($1, $2, $3, $4, $5) as state;', //tramite, evento
+  COMPLETE_STATE: 'SELECT complete_tramite_state ($1,$2,$3,$4, $5) as state',
+  UPDATE_STATE_SOCIAL_CASE: 'SELECT update_caso_state($1, $2, $3) as state', //idcaso, event, datos
+  UPDATE_PROCEDURE_INSTANCE_COST: 'UPDATE tramites SET costo = $1 WHERE id_tramite = $2',
+  GET_PROCEDURE_BY_ID: 'SELECT * FROM tramites_state_with_resources WHERE id=$1',
+  GET_SOCIAL_CASE_BY_ID: 'SELECT * FROM casos_sociales_state WHERE id=$1',
+  GET_CERTIFICATE_BY_PROCEDURE_ID: 'SELECT certificado AS "urlCertificado" FROM tramites_state_with_resources WHERE id = $1',
+  GET_PROCEDURE_INSTANCES_FOR_USER: 'SELECT * FROM tramites_state_with_resources WHERE usuario = $1 ORDER BY fechacreacion;',
+  GET_ALL_PROCEDURE_INSTANCES: 'SELECT * FROM tramites_state_with_resources ORDER BY fechacreacion;',
+
+  //Parroquias
+  GET_PARROQUIAS: 'SELECT * FROM parroquia;',
+
+  //Inmuebles
+  GET_ALL_PROPERTIES:
+    'SELECT i.id_inmueble AS "idInmueble", i.cod_catastral AS "codCatastral", i.direccion,\
+  i.metros_construccion AS "metrosConstruccion", i.metros_terreno AS "metrosTerreno", i.fecha_creacion AS "fechaCreacion",i.fecha_actualizacion AS "fechaActualizacion",  \
+  i.fecha_ultimo_avaluo AS "fechaUltimoAvaluo" , p.nombre AS parroquia FROM inmueble_urbano i INNER JOIN parroquia p ON i.id_parroquia = p.id;',
+  GET_ONE_PROPERTY_BY_COD:
+    'SELECT i.id_inmueble AS "idInmueble", i.cod_catastral AS "codCatastral", i.direccion,\
+  i.metros_construccion AS "metrosConstruccion", i.metros_terreno AS "metrosTerreno", i.fecha_creacion AS "fechaCreacion",i.fecha_actualizacion AS "fechaActualizacion",  \
+  i.fecha_ultimo_avaluo AS "fechaUltimoAvaluo" , p.nombre AS parroquia FROM inmueble_urbano i INNER JOIN parroquia p ON i.id_parroquia = p.id WHERE i.cod_catastral = $1;',
+  GET_PROPERTY_OWNERS:
+    'SELECT p.id_propietario AS "idPropietario", razon_social AS "razonSocial", cedula, rif, email, pi.id_inmueble FROM propietario p INNER JOIN propietarios_inmuebles pi ON p.id_propietario = pi.id_propietario;',
+  CREATE_PROPERTY:
+    'INSERT INTO inmueble_urbano (cod_catastral, direccion, id_parroquia, \
+    metros_construccion, metros_terreno, fecha_creacion, fecha_actualizacion, tipo_inmueble) \
+    VALUES ($1, $2, (SELECT id FROM parroquia WHERE nombre = $3 LIMIT 1), $4, $5, now(), now(), $6)\
+    ON CONFLICT (cod_catastral) DO UPDATE SET metros_construccion = $4, metros_terreno = $5, \
+    id_parroquia = (SELECT id FROM parroquia WHERE nombre = $3 LIMIT 1), fecha_actualizacion = now() \
+    RETURNING id_inmueble',
+  GET_PROPERTY_BY_ID: 'SELECT * FROM inmueble_urbano_view WHERE id=$1',
+  CREATE_PROPERTY_OWNER:
+    'INSERT INTO propietario (razon_social, cedula, rif, email) VALUES ($1,$2,$3,$4) ON CONFLICT (cedula, rif) DO UPDATE razon_social = $1 RETURNING *',
+  CREATE_PROPERTY_WITH_SIGNED_OWNER: 'INSERT INTO propietarios_inmuebles (id_propietario, id_inmueble) VALUES ($1, $2)',
+  //Ordenanzas
+  ORDINANCES_WITHOUT_CODCAT_PROCEDURE:
+    'SELECT v.descripcion AS "valorDescripcion", v.valor_en_bs AS "valorEnBs", \
+  o.descripcion AS "descripcionOrdenanza", o.tarifa AS "tarifaOrdenanza", t.id_tipo_tramite AS "tipoTramite",t.tasa, t.formula, tt.costo_base AS "costoBase", t.utiliza_codcat AS "utilizaCodcat" \
+  FROM valores v INNER JOIN ordenanzas o ON v.id_valor = o.id_valor \
+  INNER JOIN tarifas_inspeccion t ON t.id_ordenanza = o.id_ordenanza \
+  INNER JOIN tipos_tramites tt ON t.id_tipo_tramite = tt.id_tipo_tramite \
+  WHERE t.id_tipo_tramite = $1 AND t.utiliza_codcat = false;',
+  ORDINANCES_WITH_CODCAT_PROCEDURE:
+    'SELECT v.descripcion AS "valorDescripcion", v.valor_en_bs AS "valorEnBs", \
+  o.descripcion AS "descripcionOrdenanza", o.tarifa AS "tarifaOrdenanza", t.id_tipo_tramite AS "tipoTramite",t.tasa, t.formula, tt.costo_base AS "costoBase", t.utiliza_codcat AS "utilizaCodcat" \
+  FROM valores v INNER JOIN ordenanzas o ON v.id_valor = o.id_valor \
+  INNER JOIN tarifas_inspeccion t ON t.id_ordenanza = o.id_ordenanza \
+  INNER JOIN tipos_tramites tt ON t.id_tipo_tramite = tt.id_tipo_tramite \
+  WHERE t.id_tipo_tramite = $1 AND t.utiliza_codcat = true;',
+  CREATE_ORDINANCE_FOR_PROCEDURE:
+    'INSERT INTO ORDENANZAS_TRAMITES (id_tramite, id_tarifa, utmm, valor_calc, factor, factor_value) \
+    VALUES ($1, (SELECT id_tarifa FROM TARIFAS_INSPECCION trf INNER JOIN ORDENANZAS ord ON \
+      trf.id_ordenanza=ord.id_ordenanza WHERE trf.id_tipo_tramite=$2 AND ord.descripcion = $3 LIMIT 1), \
+      $4,$5,$6,$7) RETURNING *;',
+  ORDINANCES_PROCEDURE_INSTANCES: 'SELECT * FROM ordenanzas_instancias_tramites WHERE "idTramite" = $1;',
+  //Valores
+  GET_UTMM_VALUE: "SELECT valor_en_bs FROM valores WHERE descripcion = 'UTMM'",
+  UPDATE_UTMM_VALUE: "UPDATE valores SET valor_en_bs = $1 WHERE descripcion = 'UTMM' RETURNING valor_en_bs;",
 };
 
 export default queries;

@@ -1,0 +1,58 @@
+extends default
+
+block content
+  div#fecha
+    p 
+      b Codigo de Tramite:
+      | &nbsp; #{codigo}
+    p 
+      b MARACAIBO, #{moment(fecha).format('DD/MM/YYYY')}
+  div#planilla
+    div.titleWithQR
+      p#title
+        b PERMISO DE APROBACION DE HABITABILIDAD DE INSTALACION DE GAS
+        br
+        b NATURAL EN EDIFICACIONES Y PARCELAMIENTOS
+      .QR
+        img#QR(src=QR, alt='QR')
+    div#text-input
+      p
+        | Ciudadano: (a)
+        br
+        | #{datos.usuario.nombre}
+      p.
+        A los fines del otorgamiento del Permiso de Habitabilidad Municipal para la Red de Gas de la Obra: #{datos.funcionario.nombreObra},
+        construido en terrenos de su propiedad, ubicado en el Sector #{datos.funcionario.sector}, #{datos.usuario.ubicadoEn}, Parroquia: 
+        #{datos.funcionario.parroquia}, Permiso de Construcción, #{datos.funcionario.codigoPermisoConstruccion}, #{moment(datos.funcionario.fechaPermisoConstruccion).format('DD/MM/YYYY')},
+        se efectuó inspección a dicha obra, verificándose que su construcción en lo referente a la instalación
+        de gas natural, se ejecutó de acuerdo a los planos y especificaciones del proyecto, aprobado por esta Entidad.
+      br
+      p.
+        Visto el procedimiento técnico seguido para otorgar el permiso avalado por el ingeniero responsable para tal fin,
+        se concede el referido permiso por haber cumplido los requisitos exigidos.
+      p
+        b NOTAS:&nbsp;SAGAS no se hace responsable de las modificaciones fuera del proyecto de construcción después de otorgar este permiso.
+    div
+      p 
+        b Atentamente,
+        br 
+        b P/ Servicio Autónomo Para El Suministro De Gas De Maracaibo.
+    div#firma
+      div.item-firma
+        b(style={'font-size': '16px !important'}) Héctor Bracho
+        br
+        b(style={'font-size': '16px !important'}) DIRECTOR GENERAL
+        br
+        b SERVICIO AUTONOMO PARA EL SUMINISTRO 
+        br
+        b DE GAS E INFRAESTRUCTURA DE MARACAIBO 
+        br
+        b SEGÚN RESOLUCIÓN Nº 0010 DE FECHA 19/12/2017
+        br
+        b GACETA MUNICIPAL Nº 306-17 DE FECHA 19/12/2017
+      div.item-firma(style={'font-size': '16px !important'})
+        b María Trinidad Gallardo
+        br
+        b Jefe de Proyectos de Gas e Infraestructura
+        br
+        b C.I.V. 46.693
