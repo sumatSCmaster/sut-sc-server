@@ -155,10 +155,10 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     tipos_tramites.id_tipo_tramite INNER JOIN instituciones ON instituciones.id_institucion = \
     tipos_tramites.id_institucion WHERE tipos_tramites.id_institucion = $1 ORDER BY tramites_state.fechacreacion;',
   GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION:
-    "SELECT tramites_state.*, instituciones.nombre_completo AS nombrelargo, instituciones.nombre_corto AS \
-    nombrecorto, tipos_tramites.nombre_tramite AS nombretramitelargo, tipos_tramites.nombre_corto AS nombretramitecorto, tipos_tramites.pago_previo AS \"pagoPrevio\"  FROM tramites_state INNER JOIN tipos_tramites ON tramites_state.tipotramite = \
+    'SELECT tramites_state.*, instituciones.nombre_completo AS nombrelargo, instituciones.nombre_corto AS \
+    nombrecorto, tipos_tramites.nombre_tramite AS nombretramitelargo, tipos_tramites.nombre_corto AS nombretramitecorto, tipos_tramites.pago_previo AS "pagoPrevio"  FROM tramites_state INNER JOIN tipos_tramites ON tramites_state.tipotramite = \
     tipos_tramites.id_tipo_tramite INNER JOIN instituciones ON instituciones.id_institucion = \
-    tipos_tramites.id_institucion WHERE tipos_tramites.id_institucion = $1 AND tramites_state.state='enproceso' ORDER BY tramites_state.fechacreacion;",
+    tipos_tramites.id_institucion WHERE tipos_tramites.id_institucion = $1 AND tramites_state.state=\'enproceso\' ORDER BY tramites_state.fechacreacion;',
   GET_ONE_PROCEDURE: 'SELECT * FROM tipos_tramites WHERE id_tipo_tramite = $1',
   GET_ONE_PROCEDURE_INFO:
     'SELECT id_tipo_tramite as id, id_institucion AS "idInstitucion", nombre_tramite AS "nombre", costo_base as costo, nombre_corto as "nombreCorto"  FROM tipos_tramites WHERE id_tipo_tramite = $1;',
@@ -236,7 +236,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   INNER JOIN tipos_tramites tt ON t.id_tipo_tramite = tt.id_tipo_tramite \
   WHERE t.id_tipo_tramite = $1 AND t.utiliza_codcat = true;',
   CREATE_ORDINANCE_FOR_PROCEDURE:
-    'INSERT INTO ORDENANZAS_TRAMITES (id_tramite, id_tarifa, utmm, valor_cal, factor, factor_value) \
+    'INSERT INTO ORDENANZAS_TRAMITES (id_tramite, id_tarifa, utmm, valor_calc, factor, factor_value) \
     VALUES ($1, (SELECT id_tarifa FROM TARIFAS_INSPECCION trf INNER JOIN ORDENANZAS ord ON \
       trf.id_ordenanza=ord.id_ordenanza WHERE trf.id_tipo_tramite=$2 AND ord.descripcion = $3 LIMIT 1), \
       $4,$5,$6,$7) RETURNING *;',
