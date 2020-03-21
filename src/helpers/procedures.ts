@@ -87,39 +87,45 @@ const getProcedureInstances = async (user, client: PoolClient) => {
       const permissions = (await client.query(queries.GET_USER_PERMISSIONS, [user.id])).rows.map(row => +row.id_tipo_tramite) || [];
       response = response.filter(tram => permissions.includes(tram.tipotramite));
     }
-    return Promise.all(
-      response.map(async el => {
-        let ordinances;
-        if (!el.pagoPrevio) {
-          ordinances = (await client.query(queries.ORDINANCES_PROCEDURE_INSTANCES, [el.id])).rows;
-        }
-        const tramite: Partial<Tramite> = {
-          id: el.id,
-          tipoTramite: el.tipotramite,
-          estado: el.state,
-          datos: el.datos,
-          planilla: el.planilla,
-          certificado: el.certificado,
-          costo: el.costo,
-          fechaCreacion: el.fechacreacion,
-          codigoTramite: el.codigotramite,
-          usuario: el.usuario,
-          nombreLargo: el.nombrelargo,
-          nombreCorto: el.nombrecorto,
-          nombreTramiteLargo: el.nombretramitelargo,
-          nombreTramiteCorto: el.nombretramitecorto,
-          recaudos: takings.filter(taking => taking.id_tramite === el.id).map(taking => taking.url_archivo_recaudo),
-          bill: !el.pagoPrevio
-            ? {
-                items: ordinances,
-                totalBs: ordinances.reduce((p, n) => p + +n.valorCalc, 0),
-                totalUtmm: ordinances.reduce((p, n) => p + +n.utmm, 0),
-              }
-            : undefined,
-        };
-        return tramite;
-      })
-    );
+    return Promise.all(response.map(async el => {
+      let ordinances;
+      if(!el.pagoPrevio){
+        ordinances = (await client.query(queries.ORDINANCES_PROCEDURE_INSTANCES, [el.id])).rows;
+      }
+      const tramite: Partial<Tramite> = {
+        id: el.id,
+        tipoTramite: el.tipotramite,
+        estado: el.state,
+        datos: el.datos,
+        planilla: el.planilla,
+        certificado: el.certificado,
+        costo: el.costo,
+        fechaCreacion: el.fechacreacion,
+        codigoTramite: el.codigotramite,
+        usuario: el.usuario,
+        nombreLargo: el.nombrelargo,
+        nombreCorto: el.nombrecorto,
+        nombreTramiteLargo: el.nombretramitelargo,
+        nombreTramiteCorto: el.nombretramitecorto,
+        recaudos: takings.filter(taking => taking.id_tramite === el.id).map(taking => taking.url_archivo_recaudo),
+        bill: !el.pagoPrevio ?  {
+          items: ordinances.map(ord => {
+            return {
+              id: ord.id,
+              idTramite: ord.idTramite,
+              ordenanza: ord.ordenanza,
+              factor: ord.factor,
+              factorValue: +ord.factorValue,
+              utmm: +ord.utmm,
+              valorCalc: +ord.valorCalc
+            }
+          }),
+          totalBs: ordinances.reduce((p, n) => p + +n.valorCalc ,0),
+          totalUtmm: ordinances.reduce((p, n) => p + +n.utmm ,0)
+        } : undefined
+      };
+      return tramite;
+    }));
   } catch (error) {
     throw {
       status: 400,
@@ -132,38 +138,44 @@ const getProcedureInstances = async (user, client: PoolClient) => {
 const getProcedureInstancesByInstitution = async (institution, tipoUsuario, client: PoolClient) => {
   try {
     const response = (await procedureInstanceHandler(tipoUsuario, institution.id, client)).rows;
-    return Promise.all(
-      response.map(async el => {
-        let ordinances;
-        if (!el.pagoPrevio) {
-          ordinances = (await client.query(queries.ORDINANCES_PROCEDURE_INSTANCES, [el.id])).rows;
-        }
-        const tramite: Partial<Tramite> = {
-          id: el.id,
-          tipoTramite: el.tipotramite,
-          estado: el.state,
-          datos: el.datos,
-          planilla: el.planilla,
-          certificado: el.certificado,
-          costo: el.costo,
-          fechaCreacion: el.fechacreacion,
-          codigoTramite: el.codigotramite,
-          usuario: el.usuario,
-          nombreLargo: el.nombrelargo,
-          nombreCorto: el.nombrecorto,
-          nombreTramiteLargo: el.nombretramitelargo,
-          nombreTramiteCorto: el.nombretramitecorto,
-          bill: !el.pagoPrevio
-            ? {
-                items: ordinances,
-                totalBs: ordinances.reduce((p, n) => p + +n.valorCalc, 0),
-                totalUtmm: ordinances.reduce((p, n) => p + +n.utmm, 0),
-              }
-            : undefined,
-        };
-        return tramite;
-      })
-    );
+    return Promise.all(response.map(async el => {
+      let ordinances;
+      if(!el.pagoPrevio){
+        ordinances = (await client.query(queries.ORDINANCES_PROCEDURE_INSTANCES, [el.id])).rows;
+      }
+      const tramite: Partial<Tramite> = {
+        id: el.id,
+        tipoTramite: el.tipotramite,
+        estado: el.state,
+        datos: el.datos,
+        planilla: el.planilla,
+        certificado: el.certificado,
+        costo: el.costo,
+        fechaCreacion: el.fechacreacion,
+        codigoTramite: el.codigotramite,
+        usuario: el.usuario,
+        nombreLargo: el.nombrelargo,
+        nombreCorto: el.nombrecorto,
+        nombreTramiteLargo: el.nombretramitelargo,
+        nombreTramiteCorto: el.nombretramitecorto,
+        bill: !el.pagoPrevio ?  {
+          items: ordinances.map(ord => {
+            return {
+              id: ord.id,
+              idTramite: ord.idTramite,
+              ordenanza: ord.ordenanza,
+              factor: ord.factor,
+              factorValue: +ord.factorValue,
+              utmm: +ord.utmm,
+              valorCalc: +ord.valorCalc
+            }
+          }),
+          totalBs: ordinances.reduce((p, n) => p + +n.valorCalc ,0),
+          totalUtmm: ordinances.reduce((p, n) => p + +n.utmm ,0)
+        } : undefined
+      };
+      return tramite;
+    }));
   } catch (error) {
     throw {
       status: 500,
@@ -691,9 +703,9 @@ const insertOrdinancesByProcedure = async (ordinances, id, type, client: PoolCli
         idTramite: response.id_tramite,
         ordenanza: el.ordenanza,
         factor: response.factor,
-        factorValue: response.factor_value,
-        utmm: response.utmm,
-        valorCalc: response.valor_calc,
+        factorValue: +response.factor_value,
+        utmm: +response.utmm,
+        valorCalc: +response.valor_calc,
       };
       return ordinance;
     })
