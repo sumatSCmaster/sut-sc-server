@@ -47,7 +47,7 @@ export const getAvailableProcedures = async (user): Promise<{ options: Instituci
 export const getAvailableProceduresOfInstitution = async (req: {
   params: { [id: string]: number };
   user: { tipoUsuario: number };
-}): Promise<{ options: Institucion; instanciasDeTramite: object[] }> => {
+}): Promise<{ options: Institucion; instanciasDeTramite }> => {
   console.log(req.user);
   const client: PoolClient & { tipoUsuario?: number } = await pool.connect(); //Para cascadear el tipousuario a la busqueda de campos
   client.tipoUsuario = req.user.tipoUsuario;
