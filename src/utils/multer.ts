@@ -15,7 +15,6 @@ export const diskStorage = (type: string): multer.StorageEngine =>
         cb(null, saveTo);
       },
       filename: (req: any, file, cb) => {
-        console.log(file);
         if (type.startsWith('tramites')) {
           cb(null, `${file.originalname}`);
         } else {
@@ -29,8 +28,12 @@ export const diskStorage = (type: string): multer.StorageEngine =>
       bucket: 'sut-maracaibo',
       acl: 'public-read',
       key: function(req, file, cb) {
-        const hex = crypto.randomBytes(16);
-        cb(null, `${type}/1${hex.toString('hex')}.png`);
+        if (type.startsWith('tramites')) {
+          cb(null, `${req.params.id}/${file.originalname}`);
+        } else {
+          const hex = crypto.randomBytes(16);
+          cb(null, 1 + hex.toString('hex') + '.png');
+        }
       },
     }),
   })(null)(process.env.NODE_ENV);
