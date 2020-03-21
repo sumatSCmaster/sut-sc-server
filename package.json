@@ -13,7 +13,8 @@
     "build": "gulp",
     "test": "cross-env NODE_ENV=test jest --runInBand --detectOpenHandles",
     "test:watch": "cross-env NODE_ENV=test jest --watch --runInBand --detectOpenHandles",
-    "tsc": "tsc --traceResolution"
+    "tsc": "tsc --traceResolution",
+    "poststart": "npm prune --production"
   },
   "author": "",
   "license": "ISC",
