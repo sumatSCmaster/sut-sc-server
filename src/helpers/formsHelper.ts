@@ -12,6 +12,7 @@ export const createForm = async ({ fecha, codigo, formato, tramite, institucion,
   const planilla = estado === 'iniciado' ? response.planilla : response.certificado;
   const dir = estado === 'iniciado' ? `${process.env.SERVER_URL}/${codigo}.pdf` : `${process.env.SERVER_URL}/${codigo}-certificado.pdf`;
   const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${id}`, { errorCorrectionLevel: 'H' });
+  console.log(datos)
   return new Promise(async (res, rej) => {
     const html = renderFile(resolve(__dirname, `../views/planillas/${planilla}.pug`), {
       fecha,
