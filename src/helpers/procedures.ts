@@ -386,7 +386,7 @@ export const validateProcedure = async procedure => {
 
 export const processProcedure = async procedure => {
   const client = await pool.connect();
-  let { datos } = procedure;
+  let { datos, bill } = procedure;
   let dir,
     respState,
     costo = null;
@@ -397,15 +397,17 @@ export const processProcedure = async procedure => {
       procedure.sufijo = resources.sufijo;
     }
     if (procedure.sufijo === 'pd') {
-      costo = procedure.bill.totalBs;
+      if (!bill) return { status: 400, message: 'Es necesario asignar un precio a un tramite postpago' };
+      costo = bill.totalBs;
     }
     const nextEvent = await getNextEventForProcedure(procedure, client);
     if (datos) {
       const prevData = (await client.query('SELECT datos FROM tramites WHERE id_tramite=$1', [procedure.idTramite])).rows[0];
-      if (!prevData.datos.funcionario) datos = { usuario: prevData.datos, funcionario: datos };
+      if (!prevData.datos.funcionario) datos = { usuario: prevData.datos.usuario, funcionario: datos };
+      else if (prevData.datos.funcionario) datos = { usuario: prevData.datos.usuario, funcionario: datos };
       else datos = prevData.datos;
     }
-    if (nextEvent.starsWith('finalizar')) {
+    if (nextEvent.startsWith('finalizar')) {
       dir = await createCertificate(procedure, client);
       respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, datos || null, dir || null, true]);
     } else {
@@ -434,6 +436,7 @@ export const processProcedure = async procedure => {
     return { status: 200, message: 'Trámite actualizado', tramite };
   } catch (error) {
     client.query('ROLLBACK');
+    console.log(error);
     throw {
       status: 500,
       error,
@@ -646,7 +649,7 @@ export const createMockCertificate = async procedure => {
   }
 };
 
-const getNextEventForProcedure = async (procedure, client) => {
+const getNextEventForProcedure = async (procedure, client): Promise<any> => {
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
   const nextEvent = procedureEventHandler(procedure.sufijo, response.state);
   return nextEvent;
