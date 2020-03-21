@@ -387,12 +387,17 @@ export const validateProcedure = async procedure => {
 export const processProcedure = async procedure => {
   const client = await pool.connect();
   let { datos } = procedure;
-  let dir, respState;
+  let dir,
+    respState,
+    costo = null;
   try {
     client.query('BEGIN');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0];
     if (!procedure.hasOwnProperty('sufijo')) {
       procedure.sufijo = resources.sufijo;
+    }
+    if (procedure.sufijo === 'pd') {
+      costo = procedure.bill.totalBs;
     }
     const nextEvent = await getNextEventForProcedure(procedure, client);
     if (datos) {
@@ -400,11 +405,11 @@ export const processProcedure = async procedure => {
       if (!prevData.datos.funcionario) datos = { usuario: prevData.datos, funcionario: datos };
       else datos = prevData.datos;
     }
-    if (nextEvent === 'finalizar') {
+    if (nextEvent.starsWith('finalizar')) {
       dir = await createCertificate(procedure, client);
       respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, datos || null, dir || null, true]);
     } else {
-      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, procedure.costo || null, null]);
+      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, costo || null, null]);
     }
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
     client.query('COMMIT');

@@ -77,7 +77,7 @@ router.post('/createAdmin', authenticate('jwt'), isSuperuser, authValidations.cr
       res.status(200).json({
         status: 200,
         message: 'Admin creado.',
-        usuario: user,
+        user,
       });
     }
   } catch (e) {
