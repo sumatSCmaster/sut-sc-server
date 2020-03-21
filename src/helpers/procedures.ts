@@ -584,7 +584,7 @@ export const reviseProcedure = async procedure => {
       dir = await createCertificate(procedure, client);
       respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, aprobado]);
     } else {
-      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, procedure.costo || null, null]);
+      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
     }
 
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
@@ -656,7 +656,7 @@ const createCertificate = async (procedure, client: PoolClient): Promise<string>
     formato: tramite.formato,
     tramite: tramite.nombretramitelargo,
     institucion: tramite.nombrecorto,
-    datos: procedure.datos,
+    datos: procedure.datos || tramite.datos,
     estado: 'finalizado',
     tipoTramite: tramite.tipotramite,
   };
