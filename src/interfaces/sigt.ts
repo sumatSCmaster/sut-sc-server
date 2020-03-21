@@ -75,6 +75,8 @@ export interface TipoTramite {
   recaudos: Recaudo[] | null;
   pagoPrevio: boolean;
   secciones?: Seccion[];
+  sufijo?: string;
+  necesitaCodCat: boolean;
 }
 
 export interface Parroquia {
@@ -98,7 +100,22 @@ export interface Tramite {
   nombreTramiteCorto: string;
   recaudos: string[];
   planilla: string;
-  certificado: string;
+  certificado: string | null;
+  aprobado: boolean;
+  bill: any;
+}
+
+export interface Inmueble {
+  id: number;
+  codCatastral: string;
+  direccion: string;
+  parroquia: string;
+  metrosConstruccion: number;
+  metrosTerreno: number;
+  fechaCreacion: Date;
+  fechaActualizacion: Date;
+  fechaUltimoAvaluo: Date;
+  tipoInmueble: string;
 }
 
 export interface Recaudo {

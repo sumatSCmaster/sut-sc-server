@@ -16,7 +16,7 @@ emitter.on('procedureEventUpdated', ({ codigoTramite, emailUsuario, nombreComple
             from: 'waku@wakusoftware.com',
             to: emailUsuario,
             subject: `ACTUALIZACION DE INFORMACION EXPEDIENTE N°${codigoTramite} ${nombreCortoInstitucion}`,
-            html: renderFile(resolve(viewsDir, 'main.pug'), {codigoTramite, nombreCompletoUsuario, nombreTipoTramite, nombreCortoInstitucion, status, cache: true})
+            html: renderFile(resolve(viewsDir, 'main.pug'), {codigoTramite, nombreCompletoUsuario, nombreTipoTramite, nombreCortoInstitucion, status, cache: true, moment: require('moment')})
         })
     });
 });

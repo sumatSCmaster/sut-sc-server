@@ -10,6 +10,8 @@ export const createForm = async ({ fecha, codigo, formato, tramite, institucion,
   const response = (await client.query('SELECT planilla, certificado FROM tipos_tramites WHERE id_tipo_tramite=$1', [tipoTramite])).rows[0];
   const planilla = estado === 'iniciado' ? response.planilla : response.certificado;
   const dir = estado === 'iniciado' ? `${process.env.SERVER_URL}/${codigo}.pdf` : `${process.env.SERVER_URL}/${codigo}-certificado.pdf`;
+  const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${id}`, { errorCorrectionLevel: 'H' });
+  console.log(datos)
   return new Promise(async (res, rej) => {
     const html = renderFile(resolve(__dirname, `../views/planillas/${planilla}.pug`), {
       fecha,
@@ -20,8 +22,10 @@ export const createForm = async ({ fecha, codigo, formato, tramite, institucion,
       datos,
       id,
       cache: false,
+      moment: require('moment'),
+      QR: linkQr
     });
-    const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${id}`, { errorCorrectionLevel: 'H' });
+    
     const pdfDir = resolve(__dirname, `../../archivos/${dir.split('/')[3].split('.')[0]}.pdf`);
     if (dev) {
       pdf
@@ -30,7 +34,6 @@ export const createForm = async ({ fecha, codigo, formato, tramite, institucion,
           res(dir);
         });
     } else {
-      //TODO: arreglar la direccion para aws, si es certificado o no
       try {
         pdf
           .create(html, { format: 'Letter', border: '5mm', header: { height: '75px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
@@ -38,7 +41,7 @@ export const createForm = async ({ fecha, codigo, formato, tramite, institucion,
             if (err) {
               rej(err);
             } else {
-              const bucketParams = { Bucket: 'sut-maracaibo', Key: `${institucion}/planillas/${codigo}` };
+              const bucketParams = { Bucket: 'sut-maracaibo', Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}` };
               await S3Client.putObject({
                 ...bucketParams,
                 Body: buffer,

@@ -4,14 +4,16 @@ block content
   div#fecha
     p 
       b FECHA:
-      | &nbsp; #{fecha}
+      | &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
     p 
       b Codigo de Tramite:
       | &nbsp; #{codigo}
-  div
-    p
-      b CONSTANCIA DE INSPECCION
   div#planilla
+    div.titleWithQR
+      p#title
+        b CONSTANCIA DE INSPECCION
+      .QR
+        img#QR(src=QR, alt='QR')
     div#text-input
       p &nbsp;!{datos.funcionario.informe}
     div

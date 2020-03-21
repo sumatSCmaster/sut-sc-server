@@ -20,7 +20,7 @@ router.get('/institutions', authenticate('jwt'), async (req: any, res) => {
   }
 });
 
-router.get('/parishes', authenticate('jwt'), async (req: any, res) => {
+router.get('/parishes', async (req: any, res) => {
   const [err, data] = await fulfill(getAllParishes());
   if (err) res.status(500).json(err);
   if (data) res.status(200).json(data);

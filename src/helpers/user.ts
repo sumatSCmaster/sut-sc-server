@@ -133,6 +133,21 @@ export const addInstitute = async (user: Partial<Usuario>): Promise<Partial<Usua
   }
 };
 
+export const addPermissions = async (user: Partial<Usuario>): Promise<Partial<Usuario> & { permisos: number[] }> => {
+  const client = await pool.connect();
+  try {
+    const res = (await client.query(queries.GET_USER_PERMISSIONS, [user.id])).rows;
+    return {
+      ...user,
+      permisos: res.map(row => +row.id_tipo_tramite),
+    };
+  } catch (e) {
+    throw e;
+  } finally {
+    client.release();
+  }
+};
+
 export const comparePassword = (candidate: string, hash: string): Promise<boolean> => {
   return new Promise((res, rej) => {
     compare(candidate, hash, (err, isMatch) => {
@@ -221,7 +236,7 @@ export const completeExtUserSignUp = async (user, id) => {
       cedula: data.cedula,
       telefono: data.telefono,
     };
-    return { status: 201, usuario, token: generateToken(user) };
+    return { status: 201, user: usuario, token: generateToken(user) };
   } catch (error) {
     client.query('ROLLBACK');
     throw {
@@ -261,7 +276,7 @@ export const signUpUser = async user => {
     };
     return {
       status: 201,
-      usuario,
+      user: usuario,
       message: 'Usuario registrado',
       token: generateToken(user),
     };

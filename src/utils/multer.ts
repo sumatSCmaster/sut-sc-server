@@ -11,12 +11,17 @@ export const diskStorage = (type: string): multer.StorageEngine =>
     development: multer.diskStorage({
       destination: (req, file, cb) => {
         const saveTo = path.join(process.env.STORAGE_DIR || '/', type);
-        if (!fs.existsSync(saveTo)) fs.mkdirSync(saveTo);
+        if (!fs.existsSync(saveTo)) fs.mkdirSync(saveTo, { recursive: true });
         cb(null, saveTo);
       },
       filename: (req: any, file, cb) => {
-        const hex = crypto.randomBytes(16);
-        cb(null, 1 + hex.toString('hex') + '.png');
+        console.log(file);
+        if (type.startsWith('tramites')) {
+          cb(null, `${file.originalname}`);
+        } else {
+          const hex = crypto.randomBytes(16);
+          cb(null, 1 + hex.toString('hex') + '.png');
+        }
       },
     }),
     production: multerS3({

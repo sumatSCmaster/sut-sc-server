@@ -152,6 +152,109 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('Debe incluir observaciones validas'),
+  parroquiaEdificio: check('tramite.datos.parroquiaEdificio')
+    .exists()
+    .withMessage('Debe incluir la parroquia del edificio')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Parroquia del edificio invalida'),
+  tipoInmueble: check('tramite.datos.tipoInmueble')
+    .exists()
+    .withMessage('Debe incluir el tipo del inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Tipo del inmueble invalido'),
+  propietarios: check('tramite.datos.propietarios')
+    .exists()
+    .withMessage('Debe incluir los propietarios del inmueble')
+    .isArray()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir al menos un propietario de este inmueble'),
+  nombreConjunto: check('tramite.datos.nombreConjunto')
+    .exists()
+    .withMessage('Debe incluir el nombre del conjunto del inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El nombre de conjunto no puede ser vacio'),
+  cantidadEdificios: check('tramite.datos.cantidadEdificios')
+    .exists()
+    .withMessage('Debe incluir la cantidad de edificios del conjunto del inmueble')
+    .isInt()
+    .withMessage('Debe incluir una cantidad de edificios valida'),
+  nombreEdificio: check('tramite.datos.nombreEdificio')
+    .exists()
+    .withMessage('Debe incluir el nombre del edificio al que pertenece el inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El nombre del edificio no puede ser vacio'),
+  cantidadPisos: check('tramite.datos.cantidadPisos')
+    .exists()
+    .withMessage('Debe incluir la cantidad de pisos del edificio')
+    .isInt()
+    .withMessage('Debe incluir una cantidad de pisos valida'),
+  pisoApto: check('tramite.datos.pisoApto')
+    .exists()
+    .withMessage('Debe incluir el piso donde esta ubicado el inmueble')
+    .isInt()
+    .withMessage('Debe incluir un numero de piso valido para el inmueble'),
+  cantidadAptosPiso: check('tramite.datos.cantidadAptosPiso')
+    .exists()
+    .withMessage('Debe incluir la cantidad de apartamentos por piso del edificio')
+    .isInt()
+    .withMessage('Debe incluir una cantidad de apartamentos por piso valida'),
+  numeroApto: check('tramite.datos.numeroApto')
+    .exists()
+    .withMessage('Debe incluir el numero de apartamento del inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El numero de apartamento no puede ser vacio'),
+  nomenclaturaEdificio: check('tramite.datos.nomenclaturaEdificio')
+    .exists()
+    .withMessage('Debe incluir la nomenclatura del edificio')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('La nomenclatura del edificio no puede ser vacia'),
+  ubicacionEdificio: check('tramite.datos.ubicacionEdificio')
+    .exists()
+    .withMessage('Debe incluir la ubicacion del edificio')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('La ubicacion del edificio no puede ser vacia'),
+  datosRegistro: check('tramite.datos.datosRegistro')
+    .exists()
+    .withMessage('Debe incluir los datos de registro del inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Los datos de registro no pueden ser vacios'),
+  circuito: check('tramite.datos.circuito')
+    .exists()
+    .withMessage('Debe incluir el circuito del inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El circuito del inmueble no puede ser vacio'),
+  areaTerreno: check('tramite.datos.areaTerreno')
+    .exists()
+    .withMessage('Debe incluir el area del terreno del inmueble')
+    .isInt()
+    .withMessage('Debe incluir un area del terreno del inmueble valida'),
+  plano: check('tramite.datos.plano')
+    .exists()
+    .withMessage('Debe incluir el plano del inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El plano del inmueble no puede ser vacio'),
+  codCat: check('tramite.datos.codCat')
+    .exists()
+    .withMessage('Debe incluir el codigo catastral del inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El codigo catastral no puede ser vacio'),
+  croquis: check('tramite.datos.croquis')
+    .exists()
+    .withMessage('Debe incluir el croquis del inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El croquis no puede ser vacio'),
 };
 
 export const createSuperuser = [
@@ -268,6 +371,11 @@ export const createOfficial = [
     .withMessage('Debe incluir el telefono del usuario')
     .isString()
     .withMessage('Telefono invalido'),
+  check('usuario.tipoUsuario')
+    .exists()
+    .withMessage('Debe incluir el tipo de usuario')
+    .isNumeric()
+    .withMessage('Tipo usuario debe ser un valor numerico'),
   check('usuario.password')
     .exists()
     .withMessage('Debe incluir una contraseña para el usuario'),
@@ -340,11 +448,6 @@ export const createSocialCase = [
     .withMessage('Debe indicar si el usuario pertenece a la poblacion indigena')
     .isBoolean()
     .withMessage('Dato invalido'),
-  check('caso.datos.etnia')
-    .exists()
-    .withMessage('Debe incluir la etnia del usuario')
-    .isString()
-    .withMessage('Etnia invalida'),
   check('caso.datos.profesion')
     .exists()
     .withMessage('Debe incluir la profesion del usuario')
@@ -367,7 +470,7 @@ export const createSocialCase = [
     .withMessage('Nivel de instruccion invalido'),
   check('caso.datos.empleadoAlcaldia')
     .exists()
-    .withMessage('Debe indicar si el usuarioes empleado de la alcaldia')
+    .withMessage('Debe indicar si el usuario es empleado de la alcaldia')
     .isBoolean()
     .withMessage('Dato invalido'),
   check('caso.datos.tipoAyuda')
@@ -375,6 +478,11 @@ export const createSocialCase = [
     .withMessage('Debe incluir el tipo de ayuda que solicita el usuario')
     .isString()
     .withMessage('Tipo de ayuda invalido'),
+  check('caso.datos.tipoAyudaDesc')
+    .exists()
+    .withMessage('Debe incluir la descripción del tipo de ayuda que solicita el usuario')
+    .isString()
+    .withMessage('Descripción de ayuda inválida'),
   check('caso.datos.condicionLaboral')
     .exists()
     .withMessage('Debe incluir la condicion laboral del usuario')
@@ -403,7 +511,12 @@ export const createSocialCase = [
   check('caso.datos.liderDeCalle')
     .exists()
     .withMessage('Debe incluir el lider de calle del solicitante'),
+  check('caso.datos.solicitante')
+    .exists()
+    .withMessage('Debe incluir la firma del solicitante'),
 ];
+
+export const createPersonalProperty = [];
 
 export const validate = () => {
   return async (req, res, next) => {
@@ -465,11 +578,22 @@ export const isExternalUser = (req, res, next) => {
 };
 
 export const isOfficialAdmin = (req, res, next) => {
+  console.log(req.user.tipoUsuario);
   if (req.user.tipoUsuario <= 2) next();
   else {
     res.send({
       status: 401,
       response: 'Sólo los funcionarios administradores o superior pueden realizar esta operación',
+    });
+  }
+};
+
+export const isSuperuser = (req, res, next) => {
+  if (req.user.tipoUsuario === 1) next();
+  else {
+    res.send({
+      status: 401,
+      response: 'Sólo los superusuarios pueden realizar esta operacion',
     });
   }
 };

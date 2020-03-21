@@ -6,8 +6,15 @@ block content
       b Codigo de Tramite:
       | &nbsp; #{codigo}
     p 
-      b MARACAIBO, #{fecha}
+      b MARACAIBO, #{moment(fecha).format('DD/MM/YYYY')}
   div#planilla
+    div.titleWithQR
+      p#title
+        b PERMISO DE APROBACION DE HABITABILIDAD DE INSTALACION DE GAS
+        br
+        b NATURAL EN EDIFICACIONES Y PARCELAMIENTOS
+      .QR
+        img#QR(src=QR, alt='QR')
     div#text-input
       p
         | Ciudadano: (a)
@@ -16,7 +23,7 @@ block content
       p.
         A los fines del otorgamiento del Permiso de Habitabilidad Municipal para la Red de Gas de la Obra: #{datos.funcionario.nombreObra},
         construido en terrenos de su propiedad, ubicado en el Sector #{datos.funcionario.sector}, #{datos.usuario.ubicadoEn}, Parroquia: 
-        #{datos.funcionario.parroquia}, Permiso de Construcción, #{datos.funcionario.codigoPermisoConstruccion}, #{datos.funcionario.fechaPermisoConstruccion},
+        #{datos.funcionario.parroquia}, Permiso de Construcción, #{datos.funcionario.codigoPermisoConstruccion}, #{moment(datos.funcionario.fechaPermisoConstruccion).format('DD/MM/YYYY')},
         se efectuó inspección a dicha obra, verificándose que su construcción en lo referente a la instalación
         de gas natural, se ejecutó de acuerdo a los planos y especificaciones del proyecto, aprobado por esta Entidad.
       br

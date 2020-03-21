@@ -4,14 +4,16 @@ block content
   div#fecha
     p 
       b FECHA:
-      | &nbsp; #{fecha}
+      | &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
     p 
       b Codigo de Tramite:
       | &nbsp; #{codigo}
-  div
-    p
-      b CONSTANCIA DE HABITABILIDAD
   div#planilla
+    div.titleWithQR
+      p#title
+        b CONSTANCIA DE HABITABILIDAD
+      .QR
+        img#QR(src=QR, alt='QR')
     div#text-input
       p
         b Por medio de la presente se hace constar que, en inspección realizada en: 
@@ -21,7 +23,7 @@ block content
       p Área de Construcción: #{datos.funcionario.areaConstruccion}
       div.margin
         p 
-          b Proyecto No. #{datos.funcionario.numeroProyecto}, aprobado con fecha: #{datos.funcionario.fechaAprobacion}
+          b Proyecto No. #{datos.funcionario.numeroProyecto}, aprobado con fecha: #{moment(datos.funcionario.fechaAprobacion).format('DD/MM/YYYY')}
           br
           b.
            NOTAS:

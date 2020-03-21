@@ -6,10 +6,11 @@ import banks from './banks';
 import file from './file';
 import procedures from './procedures';
 import affairs from './affairs';
-import { authenticate } from 'passport';
 import resources from './resources';
 import validateDoc from './validateDoc';
-import { isAdmin } from '@middlewares/auth';
+import estates from './estates';
+import ordinance from './ordinance';
+import values from './values';
 
 const router = Router();
 
@@ -20,6 +21,9 @@ router.use('/procedures', procedures);
 router.use('/uploads', file);
 router.use('/validateDoc', validateDoc);
 router.use('/affairs', affairs);
+router.use('/estates', estates);
+router.use('/ordinance', ordinance);
+router.use('/values', values);
 router.use(resources);
 //router.use("/notification", notification);
 

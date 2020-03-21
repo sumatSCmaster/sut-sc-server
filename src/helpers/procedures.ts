@@ -7,6 +7,11 @@ import MailEmitter from './events/procedureUpdateState';
 import { PoolClient } from 'pg';
 import { createForm } from './formsHelper';
 import switchcase from '@utils/switch';
+import { renderFile } from 'pug';
+import { resolve } from 'path';
+import * as pdf from 'html-pdf';
+import * as qr from 'qrcode';
+
 const pool = Pool.getInstance();
 
 export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any }> => {
@@ -43,7 +48,7 @@ export const getAvailableProcedures = async (user): Promise<{ options: Instituci
 export const getAvailableProceduresOfInstitution = async (req: {
   params: { [id: string]: number };
   user: { tipoUsuario: number };
-}): Promise<{ options: Institucion; instanciasDeTramite: object[] }> => {
+}): Promise<{ options: Institucion; instanciasDeTramite }> => {
   console.log(req.user);
   const client: PoolClient & { tipoUsuario?: number } = await pool.connect(); //Para cascadear el tipousuario a la busqueda de campos
   client.tipoUsuario = req.user.tipoUsuario;
@@ -69,31 +74,63 @@ export const getAvailableProceduresOfInstitution = async (req: {
   }
 };
 
-const getProcedureInstances = async (user, client) => {
+const getProcedureInstances = async (user, client: PoolClient) => {
   try {
-    const response = (await procedureInstanceHandler(user.tipoUsuario, user.tipoUsuario !== 4 ? (user.institucion ? user.institucion.id : 0) : user.id, client))
-      .rows;
+    let response = (
+      await procedureInstanceHandler(
+        user.tipoUsuario === 2 && user.institucion.id === 0 ? 0 : user.tipoUsuario,
+        user.tipoUsuario !== 4 ? (user.institucion ? user.institucion.id : 0) : user.id,
+        client
+      )
+    ).rows;
     const takings = (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [response.map(el => +el.id)])).rows;
-    return response.map(el => {
-      const tramite: Partial<Tramite> = {
-        id: el.id,
-        tipoTramite: el.tipotramite,
-        estado: el.state,
-        datos: el.datos,
-        planilla: el.planilla,
-        certificado: el.certificado,
-        costo: el.costo,
-        fechaCreacion: el.fechacreacion,
-        codigoTramite: el.codigotramite,
-        usuario: el.usuario,
-        nombreLargo: el.nombrelargo,
-        nombreCorto: el.nombrecorto,
-        nombreTramiteLargo: el.nombretramitelargo,
-        nombreTramiteCorto: el.nombretramitecorto,
-        recaudos: takings.filter(taking => taking.id_tramite === el.id).map(taking => taking.url_archivo_recaudo),
-      };
-      return tramite;
-    });
+    if (user.tipoUsuario === 3) {
+      const permissions = (await client.query(queries.GET_USER_PERMISSIONS, [user.id])).rows.map(row => +row.id_tipo_tramite) || [];
+      response = response.filter(tram => permissions.includes(tram.tipotramite));
+    }
+    return Promise.all(
+      response.map(async el => {
+        let ordinances;
+        if (!el.pagoPrevio) {
+          ordinances = (await client.query(queries.ORDINANCES_PROCEDURE_INSTANCES, [el.id])).rows;
+        }
+        const tramite: Partial<Tramite> = {
+          id: el.id,
+          tipoTramite: el.tipotramite,
+          estado: el.state,
+          datos: el.datos,
+          planilla: el.planilla,
+          certificado: el.certificado,
+          costo: el.costo,
+          fechaCreacion: el.fechacreacion,
+          codigoTramite: el.codigotramite,
+          usuario: el.usuario,
+          nombreLargo: el.nombrelargo,
+          nombreCorto: el.nombrecorto,
+          nombreTramiteLargo: el.nombretramitelargo,
+          nombreTramiteCorto: el.nombretramitecorto,
+          recaudos: takings.filter(taking => taking.id_tramite === el.id).map(taking => taking.url_archivo_recaudo),
+          bill: !el.pagoPrevio
+            ? {
+                items: ordinances.map(ord => {
+                  return {
+                    id: ord.id,
+                    idTramite: ord.idTramite,
+                    ordenanza: ord.ordenanza,
+                    factor: ord.factor,
+                    factorValue: +ord.factorValue,
+                    utmm: +ord.utmm,
+                    valorCalc: +ord.valorCalc,
+                  };
+                }),
+                totalBs: ordinances.reduce((p, n) => p + +n.valorCalc, 0),
+                totalUtmm: ordinances.reduce((p, n) => p + +n.utmm, 0),
+              }
+            : undefined,
+        };
+        return tramite;
+      })
+    );
   } catch (error) {
     throw {
       status: 400,
@@ -103,28 +140,51 @@ const getProcedureInstances = async (user, client) => {
   }
 };
 
-const getProcedureInstancesByInstitution = async (institution, tipoUsuario, client) => {
+const getProcedureInstancesByInstitution = async (institution, tipoUsuario, client: PoolClient) => {
   try {
     const response = (await procedureInstanceHandler(tipoUsuario, institution.id, client)).rows;
-    return response.map(el => {
-      const tramite: Partial<Tramite> = {
-        id: el.id,
-        tipoTramite: el.tipotramite,
-        estado: el.state,
-        datos: el.datos,
-        planilla: el.planilla,
-        certificado: el.certificado,
-        costo: el.costo,
-        fechaCreacion: el.fechacreacion,
-        codigoTramite: el.codigotramite,
-        usuario: el.usuario,
-        nombreLargo: el.nombrelargo,
-        nombreCorto: el.nombrecorto,
-        nombreTramiteLargo: el.nombretramitelargo,
-        nombreTramiteCorto: el.nombretramitecorto,
-      };
-      return tramite;
-    });
+    return Promise.all(
+      response.map(async el => {
+        let ordinances;
+        if (!el.pagoPrevio) {
+          ordinances = (await client.query(queries.ORDINANCES_PROCEDURE_INSTANCES, [el.id])).rows;
+        }
+        const tramite: Partial<Tramite> = {
+          id: el.id,
+          tipoTramite: el.tipotramite,
+          estado: el.state,
+          datos: el.datos,
+          planilla: el.planilla,
+          certificado: el.certificado,
+          costo: el.costo,
+          fechaCreacion: el.fechacreacion,
+          codigoTramite: el.codigotramite,
+          usuario: el.usuario,
+          nombreLargo: el.nombrelargo,
+          nombreCorto: el.nombrecorto,
+          nombreTramiteLargo: el.nombretramitelargo,
+          nombreTramiteCorto: el.nombretramitecorto,
+          bill: !el.pagoPrevio
+            ? {
+                items: ordinances.map(ord => {
+                  return {
+                    id: ord.id,
+                    idTramite: ord.idTramite,
+                    ordenanza: ord.ordenanza,
+                    factor: ord.factor,
+                    factorValue: +ord.factorValue,
+                    utmm: +ord.utmm,
+                    valorCalc: +ord.valorCalc,
+                  };
+                }),
+                totalBs: ordinances.reduce((p, n) => p + +n.valorCalc, 0),
+                totalUtmm: ordinances.reduce((p, n) => p + +n.utmm, 0),
+              }
+            : undefined,
+        };
+        return tramite;
+      })
+    );
   } catch (error) {
     throw {
       status: 500,
@@ -134,7 +194,7 @@ const getProcedureInstancesByInstitution = async (institution, tipoUsuario, clie
   }
 };
 
-const getProcedureByInstitution = async (institution, client): Promise<Institucion[] | any> => {
+const getProcedureByInstitution = async (institution, client: PoolClient): Promise<Institucion[] | any> => {
   return Promise.all(
     institution.map(async institucion => {
       const procedures = (await client.query(queries.GET_PROCEDURE_BY_INSTITUTION, [institucion.id])).rows;
@@ -157,7 +217,7 @@ const getProcedureByInstitution = async (institution, client): Promise<Instituci
   });
 };
 
-const getSectionByProcedure = async (procedure, client): Promise<TipoTramite[] | any> => {
+const getSectionByProcedure = async (procedure, client: PoolClient): Promise<TipoTramite[] | any> => {
   return await Promise.all(
     procedure.map(async al => {
       const tramite: Partial<TipoTramite> = {
@@ -165,6 +225,8 @@ const getSectionByProcedure = async (procedure, client): Promise<TipoTramite[] |
         titulo: al.nombre_tramite,
         costo: al.costo_base,
         pagoPrevio: al.pago_previo,
+        sufijo: al.sufijo,
+        necesitaCodCat: al.utiliza_informacion_catastral,
       };
       const secciones = (await client.query(queries.GET_SECTIONS_BY_PROCEDURE, [tramite.id])).rows;
       tramite.secciones = await getFieldsBySection(secciones, tramite.id, client);
@@ -259,22 +321,25 @@ export const getFieldsForValidations = async (idProcedure, state) => {
 export const procedureInit = async (procedure, user) => {
   const client = await pool.connect();
   const { tipoTramite, datos, pago, recaudos } = procedure;
+  let costo;
   try {
     client.query('BEGIN');
     const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify({ usuario: datos }), user.id])).rows[0];
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.tipotramite])).rows[0];
-    response.pagoPrevio = resources.pago_previo;
+    response.sufijo = resources.sufijo;
+    costo = resources.sufijo === 'pd' ? null : procedure.costo || resources.costo_base;
     const nextEvent = await getNextEventForProcedure(response, client);
     const dir = await createRequestForm(response, client);
-    const respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, resources.costo_base || null, dir]);
+    const respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, costo, dir]);
     if (recaudos.length > 0) {
       recaudos.map(async urlRecaudo => {
         await client.query(queries.INSERT_TAKINGS_IN_PROCEDURE, [response.id, urlRecaudo]);
       });
     }
 
-    if (pago && nextEvent === 'validar_pa') {
+    if (pago && nextEvent.startsWith('validar')) {
+      pago.costo = costo;
       await insertPaymentReference(pago, response.id, client);
     }
     const tramite: Partial<Tramite> = {
@@ -284,7 +349,7 @@ export const procedureInit = async (procedure, user) => {
       datos: response.datos,
       planilla: dir,
       certificado: response.url_certificado,
-      costo: +resources.costo_base,
+      costo,
       fechaCreacion: response.fechacreacion,
       codigoTramite: response.codigotramite,
       usuario: response.usuario,
@@ -292,6 +357,7 @@ export const procedureInit = async (procedure, user) => {
       nombreCorto: response.nombrecorto,
       nombreTramiteLargo: response.nombretramitelargo,
       nombreTramiteCorto: response.nombretramitecorto,
+      aprobado: response.aprobado,
       recaudos,
     };
     client.query('COMMIT');
@@ -313,32 +379,24 @@ export const procedureInit = async (procedure, user) => {
   }
 };
 
-export const updateProcedure = async procedure => {
+export const validateProcedure = async procedure => {
   const client = await pool.connect();
-  let { pago, datos } = procedure;
   let dir, respState;
   try {
     client.query('BEGIN');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0];
-    console.log(resources);
-    if (!procedure.hasOwnProperty('pagoPrevio')) {
-      procedure.pagoPrevio = resources.pago_previo;
+    if (!procedure.hasOwnProperty('aprobado')) {
+      return { status: 403, message: 'No es posible actualizar este estado' };
+    }
+    if (!procedure.hasOwnProperty('sufijo')) {
+      procedure.sufijo = resources.sufijo;
     }
     const nextEvent = await getNextEventForProcedure(procedure, client);
-    if (!nextEvent) return { status: 403, message: 'El tramite ya ha finalizado, no se puede modificar' };
-    if (pago && nextEvent === 'validar_pd') {
-      await insertPaymentReference(pago, procedure.idTramite, client);
-    }
-    if (datos) {
-      const prevData = (await client.query('SELECT datos FROM tramites WHERE id_tramite=$1', [procedure.idTramite])).rows[0];
-      if (!prevData.datos.funcionario) datos = { usuario: prevData.datos, funcionario: datos };
-      else datos = prevData.datos;
-    }
-    if (nextEvent === 'finalizar') {
+    if (nextEvent.startsWith('finalizar')) {
       dir = await createCertificate(procedure, client);
-      respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, datos || null, dir || null]);
+      respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, null, dir || null, true]);
     } else {
-      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, procedure.costo || null, null]);
+      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, null, null, null]);
     }
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
     client.query('COMMIT');
@@ -357,6 +415,7 @@ export const updateProcedure = async procedure => {
       nombreCorto: response.nombrecorto,
       nombreTramiteLargo: response.nombretramitelargo,
       nombreTramiteCorto: response.nombretramitecorto,
+      aprobado: response.aprobado,
     };
     sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
     return { status: 200, message: 'Trámite actualizado', tramite };
@@ -372,7 +431,197 @@ export const updateProcedure = async procedure => {
   }
 };
 
-const createRequestForm = async (procedure, client): Promise<string> => {
+export const processProcedure = async procedure => {
+  const client = await pool.connect();
+  let { datos, bill } = procedure;
+  let dir,
+    respState,
+    ordenanzas,
+    costo = null;
+  try {
+    client.query('BEGIN');
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0];
+    if (!procedure.hasOwnProperty('sufijo')) {
+      procedure.sufijo = resources.sufijo;
+    }
+
+    if (procedure.sufijo === 'pd') {
+      if (!bill) return { status: 400, message: 'Es necesario asignar un precio a un tramite postpago' };
+      costo = bill.totalBs;
+      ordenanzas = {
+        items: await insertOrdinancesByProcedure(bill.items, procedure.idTramite, procedure.tipoTramite, client),
+        totalBs: bill.totalBs,
+        totalUtmm: bill.totalUtmm,
+      };
+    }
+    const nextEvent = await getNextEventForProcedure(procedure, client);
+
+    if (datos) {
+      const prevData = (await client.query('SELECT datos FROM tramites WHERE id_tramite=$1', [procedure.idTramite])).rows[0];
+      if (!prevData.datos.funcionario) datos = { usuario: prevData.datos.usuario, funcionario: datos };
+      else if (prevData.datos.funcionario) datos = { usuario: prevData.datos.usuario, funcionario: datos };
+      else datos = prevData.datos;
+    }
+
+    if (nextEvent.startsWith('finalizar')) {
+      procedure.datos = datos;
+      dir = await createCertificate(procedure, client);
+      respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, datos || null, dir || null, true]);
+    } else {
+      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, costo || null, null]);
+    }
+
+    const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
+    client.query('COMMIT');
+    const tramite: Partial<Tramite> = {
+      id: response.id,
+      tipoTramite: response.tipotramite,
+      estado: response.state,
+      datos: response.datos,
+      planilla: response.planilla,
+      certificado: dir,
+      costo: response.costo,
+      fechaCreacion: response.fechacreacion,
+      codigoTramite: response.codigotramite,
+      usuario: response.usuario,
+      nombreLargo: response.nombrelargo,
+      nombreCorto: response.nombrecorto,
+      nombreTramiteLargo: response.nombretramitelargo,
+      nombreTramiteCorto: response.nombretramitecorto,
+      aprobado: response.aprobado,
+      bill: ordenanzas,
+    };
+    sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
+    return { status: 200, message: 'Trámite actualizado', tramite };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al actualizar el tramite',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const addPaymentProcedure = async procedure => {
+  const client = await pool.connect();
+  let { pago } = procedure;
+  try {
+    client.query('BEGIN');
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0];
+
+    if (!procedure.hasOwnProperty('sufijo')) {
+      procedure.sufijo = resources.sufijo;
+    }
+    const nextEvent = await getNextEventForProcedure(procedure, client);
+    if (pago && nextEvent.startsWith('validar')) {
+      pago.costo = resources.costo;
+      await insertPaymentReference(pago, procedure.idTramite, client);
+    }
+
+    const respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, null, procedure.costo || null, null]);
+    const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
+    client.query('COMMIT');
+    const tramite: Partial<Tramite> = {
+      id: response.id,
+      tipoTramite: response.tipotramite,
+      estado: response.state,
+      datos: response.datos,
+      planilla: response.planilla,
+      certificado: null,
+      costo: response.costo,
+      fechaCreacion: response.fechacreacion,
+      codigoTramite: response.codigotramite,
+      usuario: response.usuario,
+      nombreLargo: response.nombrelargo,
+      nombreCorto: response.nombrecorto,
+      nombreTramiteLargo: response.nombretramitelargo,
+      nombreTramiteCorto: response.nombretramitecorto,
+      aprobado: response.aprobado,
+    };
+    sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
+    return { status: 200, message: 'Trámite actualizado', tramite };
+  } catch (error) {
+    client.query('ROLLBACK');
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al actualizar el tramite',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const reviseProcedure = async procedure => {
+  const client = await pool.connect();
+  const { aprobado, observaciones } = procedure.revision;
+  let dir,
+    respState,
+    datos = null;
+  try {
+    client.query('BEGIN');
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0];
+
+    if (!procedure.hasOwnProperty('revision')) {
+      return { status: 403, message: 'No es posible actualizar este estado' };
+    }
+
+    if (!procedure.hasOwnProperty('sufijo')) {
+      procedure.sufijo = resources.sufijo;
+    }
+    const nextEvent = await getNextEventForProcedure(procedure, client);
+
+    if (observaciones && !aprobado) {
+      const prevData = (await client.query('SELECT datos FROM tramites WHERE id_tramite=$1', [procedure.idTramite])).rows[0];
+      prevData.datos.funcionario = { ...prevData.datos.funcionario, observaciones };
+      datos = prevData.datos;
+    }
+
+    if (aprobado) {
+      dir = await createCertificate(procedure, client);
+      respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, aprobado]);
+    } else {
+      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
+    }
+
+    const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
+    client.query('COMMIT');
+    const tramite: Partial<Tramite> = {
+      id: response.id,
+      tipoTramite: response.tipotramite,
+      estado: response.state,
+      datos: response.datos,
+      planilla: response.planilla,
+      certificado: dir,
+      costo: response.costo,
+      fechaCreacion: response.fechacreacion,
+      codigoTramite: response.codigotramite,
+      usuario: response.usuario,
+      nombreLargo: response.nombrelargo,
+      nombreCorto: response.nombrecorto,
+      nombreTramiteLargo: response.nombretramitelargo,
+      nombreTramiteCorto: response.nombretramitecorto,
+      aprobado: response.aprobado,
+    };
+    sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
+    return { status: 200, message: 'Trámite actualizado', tramite };
+  } catch (error) {
+    client.query('ROLLBACK');
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al actualizar el tramite',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+const createRequestForm = async (procedure, client: PoolClient): Promise<string> => {
   const tramite = (
     await client.query(
       'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM tramites_state_with_resources tsr INNER JOIN tipos_tramites ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
@@ -394,7 +643,7 @@ const createRequestForm = async (procedure, client): Promise<string> => {
   return form;
 };
 
-const createCertificate = async (procedure, client): Promise<string> => {
+const createCertificate = async (procedure, client: PoolClient): Promise<string> => {
   const tramite = (
     await client.query(
       'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM tramites_state_with_resources tsr INNER JOIN tipos_tramites ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
@@ -408,12 +657,71 @@ const createCertificate = async (procedure, client): Promise<string> => {
     formato: tramite.formato,
     tramite: tramite.nombretramitelargo,
     institucion: tramite.nombrecorto,
-    datos: tramite.datos,
+    datos: procedure.datos || tramite.datos,
     estado: 'finalizado',
     tipoTramite: tramite.tipotramite,
   };
   const form = (await createForm(procedureData, client)) as string;
   return form;
+};
+
+export const createMockCertificate = async procedure => {
+  const client = await pool.connect();
+  try {
+    const tramite = (
+      await client.query(
+        'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado as formatoCertificado FROM tramites_state_with_resources tsr INNER JOIN tipos_tramites ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
+        [procedure]
+      )
+    ).rows[0];
+    const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${tramite.id}`, { errorCorrectionLevel: 'H' });
+    const datosCertificado = {
+      id: tramite.id,
+      fecha: tramite.fechacreacion,
+      codigo: tramite.codigotramite,
+      formato: tramite.formato,
+      tramite: tramite.nombretramitelargo,
+      institucion: tramite.nombrecorto,
+      datos: tramite.datos,
+      estado: 'finalizado',
+      tipoTramite: tramite.tipotramite,
+      certificado: tramite.formatocertificado,
+    };
+    const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
+      ...datosCertificado,
+      cache: false,
+      moment: require('moment'),
+      QR: linkQr
+    });
+    return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
+  } catch (error) {
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al actualizar el tramite',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+const insertOrdinancesByProcedure = async (ordinances, id, type, client: PoolClient) => {
+  return Promise.all(
+    ordinances.map(async (el, key) => {
+      const response = (await client.query(queries.CREATE_ORDINANCE_FOR_PROCEDURE, [id, type, el.ordenanza, el.utmm, el.valorCalc, el.factor, el.factorValue]))
+        .rows[0];
+      const ordinance = {
+        id: key,
+        idTramite: response.id_tramite,
+        ordenanza: el.ordenanza,
+        factor: response.factor,
+        factorValue: +response.factor_value,
+        utmm: +response.utmm,
+        valorCalc: +response.valor_calc,
+      };
+      return ordinance;
+    })
+  );
 };
 
 const sendEmail = procedure => {
@@ -428,33 +736,33 @@ const sendEmail = procedure => {
   MailEmitter.emit('procedureEventUpdated', mailData);
 };
 
-const getNextEventForProcedure = async (procedure, client) => {
+const getNextEventForProcedure = async (procedure, client): Promise<any> => {
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
-  const nextEvent = eventHandler(response.state, procedure.pagoPrevio);
+  const nextEvent = procedureEventHandler(procedure.sufijo, response.state);
   return nextEvent;
 };
 
 const procedureEvents = switchcase({
-  iniciado: { 0: 'validar_pa', 1: 'enproceso_pd' },
-  validando: { 0: 'enproceso_pa', 1: 'finalizar' },
-  enproceso: { 0: 'finalizar', 1: 'ingresar_datos' },
-  ingresardatos: { 0: null, 1: 'validar_pd' },
-  finalizado: { 0: null, 1: null },
-})({ 0: null, 1: null });
+  pa: { iniciado: 'validar_pa', validando: 'enproceso_pa', enproceso: 'finalizar_pa' },
+  pd: { iniciado: 'enproceso_pd', enproceso: 'ingresardatos_pd', ingresardatos: 'validar_pd', validando: 'finalizar_pd' },
+  cr: { iniciado: 'validar_cr', validando: 'enproceso_cr', enproceso: 'revisar_cr', enrevision: { true: 'finalizar_cr', false: 'rechazar_cr' } },
+})(null);
 
-const eventHandler = (prevState, isPrepaid) => {
-  const nextState = procedureEvents(prevState);
-  return isPrepaid ? nextState[0] : nextState[1];
+const procedureEventHandler = (suffix, state) => {
+  return procedureEvents(suffix)[state];
 };
 
 const procedureInstances = switchcase({
+  0: 'SELECT * FROM CASOS_SOCIALES_STATE WHERE tipotramite=$1',
   1: queries.GET_ALL_PROCEDURE_INSTANCES,
   2: queries.GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID,
   3: queries.GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION,
   4: queries.GET_PROCEDURE_INSTANCES_FOR_USER,
+  5: queries.GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID,
 })(null);
 
 const procedureInstanceHandler = (typeUser, payload, client) => {
+  console.log('user:', typeUser, 'payload:', payload);
   return typeUser === 1 ? client.query(procedureInstances(typeUser)) : client.query(procedureInstances(typeUser), [payload]);
 };
 
@@ -465,4 +773,21 @@ const fieldsBySection = switchcase({
 
 const fieldsBySectionHandler = (typeUser, payload, client) => {
   return client.query(fieldsBySection(typeUser), [...payload]);
+};
+
+const updateProcedure = switchcase({
+  validando: null,
+  enproceso: processProcedure,
+  enrevision: reviseProcedure,
+  ingresardatos: addPaymentProcedure,
+  finalizado: null,
+})(null);
+
+export const updateProcedureHandler = async procedure => {
+  const client = await pool.connect();
+  const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
+  client.release();
+  const newProcedureState = updateProcedure(response.state);
+  console.log(response.state);
+  return newProcedureState ? await newProcedureState(procedure) : { status: 500, message: 'No es posible actualizar el trámite' };
 };

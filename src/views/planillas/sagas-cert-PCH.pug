@@ -6,8 +6,15 @@ block content
       b Codigo de Tramite:
       | &nbsp; #{codigo}
     p 
-      b MARACAIBO, #{fecha}
+      b MARACAIBO, #{moment(fecha).format('DD/MM/YYYY')}
   div#planilla
+    div.titleWithQR
+      p#title
+        b CONSTANCIA DE CONDICIONES HABITABLES DE INSTALACIONES DE GAS GLP 
+        br 
+        b EN EDIFICACIONES RESIDENCIALES Y COMERCIALES
+      .QR
+        img#QR(src=QR, alt='QR')
     div#text-input
       p
         | Ciudadano: (a)

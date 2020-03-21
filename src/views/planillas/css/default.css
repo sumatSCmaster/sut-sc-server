@@ -1,11 +1,16 @@
 html {
-  zoom: 0.50;
+  zoom: 0.5;
 }
 
 body {
   width: 100%;
   height: 100%;
   margin: 0;
+}
+
+#QR {
+  width: 120px;
+  object-fit: contain;
 }
 
 #wrapper {
@@ -17,14 +22,16 @@ body {
   -webkit-flex-direction: column;
 }
 
-#header, #footer {
+#header,
+#footer {
   width: 100%;
   height: 100px;
   display: flex;
   display: -webkit-flex;
 }
 
-#alcaldia, #logo {
+#alcaldia,
+#logo {
   width: 200px;
   object-fit: contain;
 }
@@ -33,7 +40,7 @@ body {
   padding: 10;
   flex: 2;
   -webkit-flex: 2;
-  display: flex;  
+  display: flex;
   display: -webkit-flex;
   justify-content: center;
   -webkit-justify-content: center;
@@ -54,19 +61,43 @@ body {
   font-weight: bold;
 }
 
-.header-child:nth-child(1), .header-child:nth-child(3) {
+.header-child:nth-child(1),
+.header-child:nth-child(3) {
   flex: 1;
   -webkit-flex: 1;
-} 
+}
+
+.titleWithQR {
+  display: flex;
+  display: -webkit-flex;
+  width: 90%;
+  margin-bottom: 20px;
+  align-items: center;
+  -webkit-align-items: center;
+}
+
+#title {
+  font-size: 20px;
+  flex-grow: 1;
+  -webkit-flex-grow: 1;
+  margin-left: 6%;
+}
+
+.QR {
+  padding: 2px 0;
+  width: 110px;
+  border: 1px solid lightgrey;
+  height: 110px;
+}
 
 img#divider {
   width: 100%;
   height: 10px;
 }
 
-.divider{
+.divider {
   height: 4px;
-  background-color: #1287CA;
+  background-color: #1287ca;
   border: none;
 }
 
@@ -75,8 +106,6 @@ img#divider {
   display: -webkit-flex;
   align-items: center;
   -webkit-align-items: center;
-  justify-content: center;
-  -webkit-justify-content: center;
   flex-direction: column;
   -webkit-flex-direction: column;
   flex: 1;
@@ -126,22 +155,22 @@ img#divider {
 #text-input {
   text-align: justify;
 }
-#text-input  div {
+#text-input div {
   display: flex;
 }
-#text-input div p{
+#text-input div p {
   margin: 0;
   flex: 1;
   -webkit-flex: 1;
 }
-#text-input div p + p{
+#text-input div p + p {
   text-align: end;
 }
-#table {
+.table {
   width: 100%;
   max-height: 95%;
   margin-top: 20px;
-  border: 2px solid #1287CA;
+  border: 2px solid #1287ca;
   display: flex;
   display: -webkit-flex;
   flex-direction: column;
@@ -169,10 +198,11 @@ img#divider {
   font-size: 14px;
 }
 #recaudos h3 {
-  margin: 0 ;
+  margin: 0;
 }
 
-#recaudos ol, ul {
+#recaudos ol,
+ul {
   text-align: left;
 }
 #recaudos ul {
@@ -183,31 +213,30 @@ img#divider {
   margin: 5px 0;
 }
 
-
 .item-firma {
   flex: 1;
   -webkit-flex: 1;
   margin: 25px;
 }
 .all-border {
-  border: 1px solid #1287CA;
+  border: 1px solid #1287ca;
 }
 
 .border-right {
-  border-right: 1px solid #1287CA;
+  border-right: 1px solid #1287ca;
 }
 
 .border-bottom {
-  border-bottom: 1px solid #1287CA;
+  border-bottom: 1px solid #1287ca;
 }
 
-.underline{
+.underline {
   text-decoration: underline;
 }
 
 .th {
   width: 100%;
-  background-color: #1287CA;
+  background-color: #1287ca;
   padding: 5px 0px;
   font-size: 20px;
 }
@@ -233,5 +262,6 @@ img#divider {
 #footer {
   -webkit-flex-direction: column;
   flex-direction: column;
+  -webkit-flex-direction: column;
   text-align: center;
 }

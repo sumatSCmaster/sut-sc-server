@@ -2,6 +2,7 @@
 /build
 /avatar
 /uploads
+/archivos
 .vscode
 .env
 *.pdf

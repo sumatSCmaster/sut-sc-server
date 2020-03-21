@@ -4,11 +4,16 @@ block content
   div#fecha
     p 
       b FECHA:
-      | &nbsp; #{fecha}
+      | &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
     p 
       b Codigo de Tramite:
       | &nbsp; #{codigo}
   div#planilla
+    div.titleWithQR
+      p#title
+        b CONSTANCIA DE CUMPLIMIENTO DE NORMAS TECNICAS
+      .QR
+        img#QR(src=QR, alt='QR')
     div#text-input
       div
         p Área: #{datos.funcionario.areaConstruccion}

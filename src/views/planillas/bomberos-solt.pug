@@ -4,12 +4,12 @@ block content
   div#fecha
     p 
       b FECHA:
-      span &nbsp; #{fecha}
+      span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
     p 
       b Codigo de Tramite:
       span &nbsp; #{codigo}
   div#planilla
-    div#table
+    div.table
       div.th
         p SOLICITUD DE INSPECCION
       div.tr

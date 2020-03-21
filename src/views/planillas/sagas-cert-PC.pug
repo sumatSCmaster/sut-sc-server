@@ -6,15 +6,22 @@ block content
       b Codigo de Tramite:
       | &nbsp; #{codigo}
     p 
-      b MARACAIBO, #{fecha}
+      b MARACAIBO, #{moment(fecha).format('DD/MM/YYYY')}
   div#planilla
+    div.titleWithQR
+      p#title
+        b PERMISO PARA CONSTRUCCION DE REDES DE GAS EN
+        br
+        b PARCELAMIENTOS Y CONJUNTO RESIDENCIALES
+      .QR
+        img#QR(src=QR, alt='QR')
     div#text-input
       p
         | Ciudadano: (a)
         br
         | #{datos.usuario.nombre}
       p.
-        Por atención a su solicitud Nº #{codigo} de #{fecha} y
+        Por atención a su solicitud Nº #{codigo} de #{moment(fecha).format('DD/MM/YYYY')} y
         cumplida las normas establecidas por esta entidad, SE APRUEBA EL PRESENTE PROYECTO para la 
         Obra: #{datos.funcionario.nombreObra}, ubicado en #{datos.usuario.ubicadoEn}, Parroquia: #{datos.funcionario.parroquia}.
       br

@@ -4,6 +4,7 @@ import multer = require('multer');
 import { diskStorage, photoFilter } from '@utils/multer';
 import path from 'path';
 import switchcase from '@utils/switch';
+import fs from 'fs';
 
 const router = Router();
 
@@ -22,6 +23,12 @@ const uploadFile = (req, res, next) => {
         fileFilter: photoFilter,
       }).array('recaudos')(req, res, next);
       break;
+    case 'procedures':
+      multer({
+        storage: diskStorage('tramites/' + req.params.id),
+        fileFilter: photoFilter,
+      }).array('media')(req, res, next);
+      break;
     default:
       res.status(500).json({
         status: 500,
@@ -37,16 +44,14 @@ const uploadFile = (req, res, next) => {
   // }
 };
 
-router.post('/:type', uploadFile, (req: any, res) => {
-  const recaudos = req.files.map(file =>
-    switchcase({ production: `${process.env.AWS_ACCESS_URL}/${file.key}`, development: `${process.env.SERVER_URL}/uploads/takings/${file.filename}` })(
-      'No es un estado valido'
-    )(process.env.NODE_ENV)
-  );
+router.post('/:type/:id?', uploadFile, (req: any, res) => {
+  const { id, type } = req.params;
+  console.log(req.files);
+  const media = req.files.map(file => typeMedia(id && type === 'procedures' ? `tramites/${id}` : 'recaudos')(file)(process.env.NODE_ENV));
   res.status(200).json({
     status: 200,
     message: 'Recaudos subidos de manera exitosa',
-    recaudos,
+    [id ? 'archivos' : 'recaudos']: media,
   });
 });
 
@@ -63,5 +68,17 @@ router.get('/:type/:name', (req, res) => {
     });
   }
 });
+
+router.put('/:id', authenticate('jwt'), async (req, res) => {
+  const { file } = req.body;
+  if (!fs.existsSync(process.env.STORAGE_DIR + '/' + file)) res.status(500).json({ status: 500, message: 'El archivo no existe' });
+  fs.unlinkSync(process.env.STORAGE_DIR + '/' + file);
+  res.status(200).json({ status: 200, message: 'Eliminado satisfactoriamente' });
+});
+
+const typeMedia = type => file =>
+  switchcase({ production: `${process.env.AWS_ACCESS_URL}/${file.key}`, development: `${process.env.SERVER_URL}/${type}/${file.filename}` })(
+    'No es un estado valido'
+  );
 
 export default router;
