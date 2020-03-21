@@ -47,7 +47,7 @@ export const getAvailableProcedures = async (user): Promise<{ options: Instituci
 export const getAvailableProceduresOfInstitution = async (req: {
   params: { [id: string]: number };
   user: { tipoUsuario: number };
-}): Promise<{ options: Institucion; instanciasDeTramite: object[] }> => {
+}): Promise<{ options: Institucion; instanciasDeTramite }> => {
   console.log(req.user);
   const client: PoolClient & { tipoUsuario?: number } = await pool.connect(); //Para cascadear el tipousuario a la busqueda de campos
   client.tipoUsuario = req.user.tipoUsuario;
@@ -87,7 +87,11 @@ const getProcedureInstances = async (user, client: PoolClient) => {
       const permissions = (await client.query(queries.GET_USER_PERMISSIONS, [user.id])).rows.map(row => +row.id_tipo_tramite) || [];
       response = response.filter(tram => permissions.includes(tram.tipotramite));
     }
-    return response.map(el => {
+    return Promise.all(response.map(async el => {
+      let ordinances;
+      if(!el.pagoPrevio){
+        ordinances = (await client.query(queries.ORDINANCES_PROCEDURE_INSTANCES, [el.id])).rows;
+      }
       const tramite: Partial<Tramite> = {
         id: el.id,
         tipoTramite: el.tipotramite,
@@ -104,9 +108,14 @@ const getProcedureInstances = async (user, client: PoolClient) => {
         nombreTramiteLargo: el.nombretramitelargo,
         nombreTramiteCorto: el.nombretramitecorto,
         recaudos: takings.filter(taking => taking.id_tramite === el.id).map(taking => taking.url_archivo_recaudo),
+        bill: !el.pagoPrevio ?  {
+          items: ordinances,
+          totalBs: ordinances.reduce((p, n) => p + +n.valorCalc ,0),
+          totalUtmm: ordinances.reduce((p, n) => p + +n.utmm ,0)
+        } : undefined
       };
       return tramite;
-    });
+    }));
   } catch (error) {
     throw {
       status: 400,
@@ -119,7 +128,11 @@ const getProcedureInstances = async (user, client: PoolClient) => {
 const getProcedureInstancesByInstitution = async (institution, tipoUsuario, client: PoolClient) => {
   try {
     const response = (await procedureInstanceHandler(tipoUsuario, institution.id, client)).rows;
-    return response.map(el => {
+    return Promise.all(response.map(async el => {
+      let ordinances;
+      if(!el.pagoPrevio){
+        ordinances = (await client.query(queries.ORDINANCES_PROCEDURE_INSTANCES, [el.id])).rows;
+      }
       const tramite: Partial<Tramite> = {
         id: el.id,
         tipoTramite: el.tipotramite,
@@ -135,9 +148,14 @@ const getProcedureInstancesByInstitution = async (institution, tipoUsuario, clie
         nombreCorto: el.nombrecorto,
         nombreTramiteLargo: el.nombretramitelargo,
         nombreTramiteCorto: el.nombretramitecorto,
+        bill: !el.pagoPrevio ?  {
+          items: ordinances,
+          totalBs: ordinances.reduce((p, n) => p + +n.valorCalc ,0),
+          totalUtmm: ordinances.reduce((p, n) => p + +n.utmm ,0)
+        } : undefined
       };
       return tramite;
-    });
+    }));
   } catch (error) {
     throw {
       status: 500,
