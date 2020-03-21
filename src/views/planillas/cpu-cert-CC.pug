@@ -13,7 +13,7 @@ block content
           |  #{codigo}
         p
           b FECHA:
-          |  #{fecha}
+          |  #{moment(fecha).format('DD/MM/YYYY')}
       #tramite(style='width: 50%;')
         h1 C&Oacute;DIGO CATASTRAL
         h4 N&deg; #{datos.funcionario.codCat.toUpperCase()}

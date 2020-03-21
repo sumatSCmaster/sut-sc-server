@@ -21,6 +21,7 @@ export const createForm = async ({ fecha, codigo, formato, tramite, institucion,
       datos,
       id,
       cache: false,
+      moment: require('moment')
     });
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${id}`, { errorCorrectionLevel: 'H' });
     const pdfDir = resolve(__dirname, `../../archivos/${dir.split('/')[3].split('.')[0]}.pdf`);

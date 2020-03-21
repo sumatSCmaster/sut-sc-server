@@ -4,7 +4,7 @@ block content
   div#fecha
     p 
       b FECHA:
-      | &nbsp; #{fecha}
+      | &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
     p 
       b Codigo de Tramite:
       | &nbsp; #{codigo}
@@ -23,7 +23,7 @@ block content
       p Área de Construcción: #{datos.funcionario.areaConstruccion}
       div.margin
         p 
-          b Proyecto No. #{datos.funcionario.numeroProyecto}, aprobado con fecha: #{datos.funcionario.fechaAprobacion}
+          b Proyecto No. #{datos.funcionario.numeroProyecto}, aprobado con fecha: #{moment(datos.funcionario.fechaAprobacion).format('DD/MM/YYYY')}
           br
           b.
            NOTAS:

@@ -6,7 +6,7 @@ block content
       b Codigo de Tramite:
       | &nbsp; #{codigo}
     p 
-      b MARACAIBO, #{fecha}
+      b MARACAIBO, #{moment(fecha).format('DD/MM/YYYY')}
   div#planilla
     div.titleWithQR
       p#title
@@ -19,7 +19,7 @@ block content
         br
         | #{datos.usuario.nombre}
       p.
-        La presente tiene como objeto comunicarles respecto a su solicitud de fecha #{fecha} para la realización  
+        La presente tiene como objeto comunicarles respecto a su solicitud de fecha #{moment(fecha).format('DD/MM/YYYY')} para la realización  
         de   las  Instalaciones  de  Gas   Doméstico  correspondiente a  la  obra:  #{datos.funcionario.nombreObra}, construirse
         en terreno de su propiedad, ubicado en el SECTOR #{datos.funcionario.sector}, #{datos.funcionario.ubicadoEn}, Parroquia: #{datos.funcionario.parroquia}, 
         que  EL SECTOR CUENTA CON LA RED DE DISTRIBUCIÓN DE GAS.

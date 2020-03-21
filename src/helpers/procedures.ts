@@ -636,6 +636,7 @@ export const createMockCertificate = async procedure => {
     const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
       ...datosCertificado,
       cache: false,
+      moment: require('moment')
     });
     return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
   } catch (error) {

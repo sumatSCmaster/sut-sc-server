@@ -6,7 +6,7 @@ block content
       b Codigo de Tramite:
       | &nbsp; #{codigo}
     p 
-      b MARACAIBO, #{fecha}
+      b MARACAIBO, #{moment(fecha).format('DD/MM/YYYY')}
   div#planilla
     div.titleWithQR
       p#title
