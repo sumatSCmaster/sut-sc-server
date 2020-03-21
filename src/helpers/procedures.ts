@@ -656,7 +656,7 @@ const createCertificate = async (procedure, client: PoolClient): Promise<string>
     formato: tramite.formato,
     tramite: tramite.nombretramitelargo,
     institucion: tramite.nombrecorto,
-    datos: tramite.datos,
+    datos: procedure.datos,
     estado: 'finalizado',
     tipoTramite: tramite.tipotramite,
   };
