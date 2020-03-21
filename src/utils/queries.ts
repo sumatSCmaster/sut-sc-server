@@ -151,12 +151,12 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   INSERT_TAKINGS_IN_PROCEDURE: 'INSERT INTO tramites_archivos_recaudos VALUES ($1,$2)',
   GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID:
     'SELECT tramites_state.*, instituciones.nombre_completo AS nombrelargo, instituciones.nombre_corto AS \
-    nombrecorto, tipos_tramites.nombre_tramite AS nombretramitelargo, tipos_tramites.nombre_corto AS nombretramitecorto FROM tramites_state INNER JOIN tipos_tramites ON tramites_state.tipotramite = \
+    nombrecorto, tipos_tramites.nombre_tramite AS nombretramitelargo, tipos_tramites.nombre_corto AS nombretramitecorto, tipos_tramites.pago_previo AS "pagoPrevio" FROM tramites_state INNER JOIN tipos_tramites ON tramites_state.tipotramite = \
     tipos_tramites.id_tipo_tramite INNER JOIN instituciones ON instituciones.id_institucion = \
     tipos_tramites.id_institucion WHERE tipos_tramites.id_institucion = $1 ORDER BY tramites_state.fechacreacion;',
   GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION:
     "SELECT tramites_state.*, instituciones.nombre_completo AS nombrelargo, instituciones.nombre_corto AS \
-    nombrecorto, tipos_tramites.nombre_tramite AS nombretramitelargo, tipos_tramites.nombre_corto AS nombretramitecorto FROM tramites_state INNER JOIN tipos_tramites ON tramites_state.tipotramite = \
+    nombrecorto, tipos_tramites.nombre_tramite AS nombretramitelargo, tipos_tramites.nombre_corto AS nombretramitecorto, tipos_tramites.pago_previo AS \"pagoPrevio\"  FROM tramites_state INNER JOIN tipos_tramites ON tramites_state.tipotramite = \
     tipos_tramites.id_tipo_tramite INNER JOIN instituciones ON instituciones.id_institucion = \
     tipos_tramites.id_institucion WHERE tipos_tramites.id_institucion = $1 AND tramites_state.state='enproceso' ORDER BY tramites_state.fechacreacion;",
   GET_ONE_PROCEDURE: 'SELECT * FROM tipos_tramites WHERE id_tipo_tramite = $1',
@@ -234,6 +234,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   INNER JOIN tarifas_inspeccion t ON t.id_ordenanza = o.id_ordenanza \
   INNER JOIN tipos_tramites tt ON t.id_tipo_tramite = tt.id_tipo_tramite \
   WHERE t.id_tipo_tramite = $1 AND t.utiliza_codcat = true;',
+  ORDINANCES_PROCEDURE_INSTANCES: 'SELECT * FROM ordenanzas_instancias_tramites WHERE "idTramite" = $1;',
   //Valores
   GET_UTMM_VALUE: "SELECT valor_en_bs FROM valores WHERE descripcion = 'UTMM'",
   UPDATE_UTMM_VALUE: "UPDATE valores SET valor_en_bs = $1 WHERE descripcion = 'UTMM' RETURNING valor_en_bs;",
