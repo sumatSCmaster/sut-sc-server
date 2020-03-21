@@ -46,7 +46,6 @@ const uploadFile = (req, res, next) => {
 
 router.post('/:type/:id?', uploadFile, (req: any, res) => {
   const { id, type } = req.params;
-  console.log(req.files);
   const media = req.files.map(file => typeMedia(id && type === 'procedures' ? `tramites/${id}` : 'recaudos')(file)(process.env.NODE_ENV));
   res.status(200).json({
     status: 200,
