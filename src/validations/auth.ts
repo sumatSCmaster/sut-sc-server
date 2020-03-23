@@ -371,11 +371,11 @@ export const createOfficial = [
     .withMessage('Debe incluir el telefono del usuario')
     .isString()
     .withMessage('Telefono invalido'),
-  check('usuario.tipoUsuario')
-    .exists()
-    .withMessage('Debe incluir el tipo de usuario')
-    .isNumeric()
-    .withMessage('Tipo usuario debe ser un valor numerico'),
+  // check('usuario.tipoUsuario')
+  //   .exists()
+  //   .withMessage('Debe incluir el tipo de usuario')
+  //   .isNumeric()
+  //   .withMessage('Tipo usuario debe ser un valor numerico'),
   check('usuario.password')
     .exists()
     .withMessage('Debe incluir una contraseña para el usuario'),
