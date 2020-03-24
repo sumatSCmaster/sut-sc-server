@@ -18,8 +18,10 @@ export const getOrdinancesByProcedure = async (id) => {
             return {
                 descripcionOrdananza: row.descripcionOrdenanza,
                 tarifa: row.tarifaOrdenanza + ` ${row.valorDescripcion}`,
-                costoOrdenanza: costo + 'Bs.',
-                utilizaCodCat: row.utilizaCodcat
+                costoOrdenanza: row.idVariable !== null ? costo + `Bs. por ${row.nombreVariable.toLowerCase()}`: costo + ' Bs.',
+                utilizaCodCat: row.utilizaCodcat,
+                utilizaVariable: row.idVariable !== null,
+                variable: row.nombreVariable ? row.nombreVariable : undefined
             }
         } );
         return {
@@ -57,8 +59,10 @@ export const getOrdinancesByProcedureWithCodCat = async (id, cod) => {
             return {
                 descripcionOrdananza: row.descripcionOrdenanza,
                 tarifa: row.tarifaOrdenanza + ` ${row.valorDescripcion}`,
-                costoOrdenanza: costo + 'Bs.',
-                utilizaCodCat: row.utilizaCodcat
+                costoOrdenanza: row.idVariable !== null ? costo + `Bs. por ${row.nombreVariable.toLowerCase()}`: costo + ' Bs.',
+                utilizaCodCat: row.utilizaCodcat,
+                utilizaVariable: row.idVariable !== null,
+                variable: row.nombreVariable ? row.nombreVariable : undefined
             }
         })
         return {
