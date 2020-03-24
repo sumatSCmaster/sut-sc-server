@@ -459,7 +459,7 @@ export const processProcedure = async procedure => {
     const nextEvent = await getNextEventForProcedure(procedure, client);
 
     if (datos) {
-      const prevData = (await client.query('SELECT datos FROM tramites WHERE id_tramite=$1', [procedure.idTramite])).rows[0];
+      const prevData = (await client.query('SELECT datos FROM tramite WHERE id_tramite=$1', [procedure.idTramite])).rows[0];
       if (!prevData.datos.funcionario) datos = { usuario: prevData.datos.usuario, funcionario: datos };
       else if (prevData.datos.funcionario) datos = { usuario: prevData.datos.usuario, funcionario: datos };
       else datos = prevData.datos;
@@ -578,7 +578,7 @@ export const reviseProcedure = async procedure => {
     const nextEvent = await getNextEventForProcedure(procedure, client);
 
     if (observaciones && !aprobado) {
-      const prevData = (await client.query('SELECT datos FROM tramites WHERE id_tramite=$1', [procedure.idTramite])).rows[0];
+      const prevData = (await client.query('SELECT datos FROM tramite WHERE id_tramite=$1', [procedure.idTramite])).rows[0];
       prevData.datos.funcionario = { ...prevData.datos.funcionario, observaciones };
       datos = prevData.datos;
     }
