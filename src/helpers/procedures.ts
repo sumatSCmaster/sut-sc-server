@@ -121,6 +121,7 @@ const getProcedureInstances = async (user, client: PoolClient) => {
                     factorValue: +ord.factorValue,
                     utmm: +ord.utmm,
                     valorCalc: +ord.valorCalc,
+                    cantidad_variable: ord.cantidadVariable
                   };
                 }),
                 totalBs: ordinances.reduce((p, n) => p + +n.valorCalc, 0),
@@ -175,6 +176,7 @@ const getProcedureInstancesByInstitution = async (institution, tipoUsuario, clie
                     factorValue: +ord.factorValue,
                     utmm: +ord.utmm,
                     valorCalc: +ord.valorCalc,
+                    cantidadVariable: ord.cantidadVariable
                   };
                 }),
                 totalBs: ordinances.reduce((p, n) => p + +n.valorCalc, 0),
@@ -708,7 +710,10 @@ export const createMockCertificate = async procedure => {
 const insertOrdinancesByProcedure = async (ordinances, id, type, client: PoolClient) => {
   return Promise.all(
     ordinances.map(async (el, key) => {
-      const response = (await client.query(queries.CREATE_ORDINANCE_FOR_PROCEDURE, [id, type, el.ordenanza, el.utmm, el.valorCalc, el.factor, el.factorValue]))
+      if(+el.factorValue * +el.cantidadVariable !== el.valorCalc ){
+        throw new Error('Error en validación del valor calculado');
+      }
+      const response = (await client.query(queries.CREATE_ORDINANCE_FOR_PROCEDURE, [id, type, el.ordenanza, el.utmm, el.valorCalc, el.factor, el.factorValue, el.cantidadVariable]))
         .rows[0];
       const ordinance = {
         id: key,

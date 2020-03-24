@@ -223,23 +223,27 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   //Ordenanzas
   ORDINANCES_WITHOUT_CODCAT_PROCEDURE:
     'SELECT v.descripcion AS "valorDescripcion", v.valor_en_bs AS "valorEnBs", \
-  o.descripcion AS "descripcionOrdenanza", o.tarifa AS "tarifaOrdenanza", t.id_tipo_tramite AS "tipoTramite",t.tasa, t.formula, tt.costo_base AS "costoBase", t.utiliza_codcat AS "utilizaCodcat" \
+  o.descripcion AS "descripcionOrdenanza", o.tarifa AS "tarifaOrdenanza", t.id_tipo_tramite AS "tipoTramite",t.tasa, t.formula, \
+  tt.costo_base AS "costoBase", t.utiliza_codcat AS "utilizaCodcat", vo.id_variable AS "idVariable", vo."nombreVariable", vo.nombre_plural AS "nombreVariablePlural" \
   FROM valores v INNER JOIN ordenanzas o ON v.id_valor = o.id_valor \
   INNER JOIN tarifas_inspeccion t ON t.id_ordenanza = o.id_ordenanza \
   INNER JOIN tipos_tramites tt ON t.id_tipo_tramite = tt.id_tipo_tramite \
+  INNER JOIN variables_ordenanzas vo ON vo.id_variable = t.id_variable \
   WHERE t.id_tipo_tramite = $1 AND t.utiliza_codcat = false;',
   ORDINANCES_WITH_CODCAT_PROCEDURE:
     'SELECT v.descripcion AS "valorDescripcion", v.valor_en_bs AS "valorEnBs", \
-  o.descripcion AS "descripcionOrdenanza", o.tarifa AS "tarifaOrdenanza", t.id_tipo_tramite AS "tipoTramite",t.tasa, t.formula, tt.costo_base AS "costoBase", t.utiliza_codcat AS "utilizaCodcat" \
+  o.descripcion AS "descripcionOrdenanza", o.tarifa AS "tarifaOrdenanza", t.id_tipo_tramite AS "tipoTramite",t.tasa, t.formula, \
+  tt.costo_base AS "costoBase", t.utiliza_codcat AS "utilizaCodcat", vo.id_variable AS "idVariable", vo."nombreVariable", vo.nombre_plural AS "nombreVariablePlural" \
   FROM valores v INNER JOIN ordenanzas o ON v.id_valor = o.id_valor \
   INNER JOIN tarifas_inspeccion t ON t.id_ordenanza = o.id_ordenanza \
   INNER JOIN tipos_tramites tt ON t.id_tipo_tramite = tt.id_tipo_tramite \
+  INNER JOIN variables_ordenanzas vo ON vo.id_variable = t.id_variable \
   WHERE t.id_tipo_tramite = $1 AND t.utiliza_codcat = true;',
   CREATE_ORDINANCE_FOR_PROCEDURE:
-    'INSERT INTO ORDENANZAS_TRAMITES (id_tramite, id_tarifa, utmm, valor_calc, factor, factor_value) \
+    'INSERT INTO ORDENANZAS_TRAMITES (id_tramite, id_tarifa, utmm, valor_calc, factor, factor_value, cantidad_variable) \
     VALUES ($1, (SELECT id_tarifa FROM TARIFAS_INSPECCION trf INNER JOIN ORDENANZAS ord ON \
       trf.id_ordenanza=ord.id_ordenanza WHERE trf.id_tipo_tramite=$2 AND ord.descripcion = $3 LIMIT 1), \
-      $4,$5,$6,$7) RETURNING *;',
+      $4,$5,$6,$7, $8) RETURNING *;',
   ORDINANCES_PROCEDURE_INSTANCES: 'SELECT * FROM ordenanzas_instancias_tramites WHERE "idTramite" = $1;',
   //Valores
   GET_UTMM_VALUE: "SELECT valor_en_bs FROM valores WHERE descripcion = 'UTMM'",
