@@ -16,9 +16,10 @@ export const getOrdinancesByProcedure = async (id) => {
             costo = row.formula === null ? (row.tarifaOrdenanza * row.valorEnBs * row.tasa) : (new Function(`use strict; return ${row.formula.replace(/\$\$TASA\$\$/g, row.tasa).replace(/\$\$TARIFA\$\$/g, row.tarifa)}`));
             total += costo;
             return {
-                descripcionOrdananza: row.descripcionOrdenanza,
+                id: row.id,
+                descripcionOrdenanza: row.descripcionOrdenanza,
                 tarifa: row.tarifaOrdenanza + ` ${row.valorDescripcion}`,
-                costoOrdenanza: row.idVariable !== null ? costo + `Bs. por ${row.nombreVariable.toLowerCase()}`: costo + ' Bs.',
+                costoOrdenanza: row.idVariable !== null ? +costo : +costo,
                 utilizaCodCat: row.utilizaCodcat,
                 utilizaVariable: row.idVariable !== null,
                 variable: row.nombreVariable ? row.nombreVariable : undefined
@@ -54,12 +55,14 @@ export const getOrdinancesByProcedureWithCodCat = async (id, cod) => {
         let costo;
         let { metrosConstruccion } = inmueble.rows[0];
         const calculated = ordenanzasByProcedure.rows.map((row) => {
-            costo = row.formula === null ? (row.tarifaOrdenanza * row.valorEnBs * row.tasa * metrosConstruccion) : (new Function(`use strict; return ${row.formula.replace(/\$\$TASA\$\$/g, row.tasa).replace(/\$\$TARIFA\$\$/g, row.tarifa)}`));
+            costo = row.formula === null ? (+row.tarifaOrdenanza * +row.valorEnBs * +row.tasa * +metrosConstruccion) : (new Function(`use strict; return ${row.formula.replace(/\$\$TASA\$\$/g, row.tasa).replace(/\$\$TARIFA\$\$/g, row.tarifa)}`));
             total += costo;
             return {
-                descripcionOrdananza: row.descripcionOrdenanza,
+                id: row.id,
+                descripcionOrdenanza: row.descripcionOrdenanza,
                 tarifa: row.tarifaOrdenanza + ` ${row.valorDescripcion}`,
-                costoOrdenanza: row.idVariable !== null ? costo + `Bs. por ${row.nombreVariable.toLowerCase()}`: costo + ' Bs.',
+                costoOrdenanza: (+row.tarifaOrdenanza * +row.valorEnBs * +row.tasa),
+                valorCalc: +costo ,
                 utilizaCodCat: row.utilizaCodcat,
                 utilizaVariable: row.idVariable !== null,
                 variable: row.nombreVariable ? row.nombreVariable : undefined
