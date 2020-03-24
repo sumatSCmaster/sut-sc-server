@@ -121,7 +121,7 @@ const getProcedureInstances = async (user, client: PoolClient) => {
                     factorValue: +ord.factorValue,
                     utmm: +ord.utmm,
                     valorCalc: +ord.valorCalc,
-                    cantidad_variable: ord.cantidadVariable
+                    cantidad_variable: ord.cantidadVariable,
                   };
                 }),
                 totalBs: ordinances.reduce((p, n) => p + +n.valorCalc, 0),
@@ -176,7 +176,7 @@ const getProcedureInstancesByInstitution = async (institution, tipoUsuario, clie
                     factorValue: +ord.factorValue,
                     utmm: +ord.utmm,
                     valorCalc: +ord.valorCalc,
-                    cantidadVariable: ord.cantidadVariable
+                    cantidadVariable: ord.cantidadVariable,
                   };
                 }),
                 totalBs: ordinances.reduce((p, n) => p + +n.valorCalc, 0),
@@ -330,7 +330,7 @@ export const procedureInit = async (procedure, user) => {
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.tipotramite])).rows[0];
     response.sufijo = resources.sufijo;
-    costo = resources.sufijo === 'pd' ? null : procedure.costo || resources.costo_base;
+    costo = resources.sufijo === 'pd' ? null : pago.costo || resources.costo_base;
     const nextEvent = await getNextEventForProcedure(response, client);
     const dir = await createRequestForm(response, client);
     const respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, costo, dir]);
@@ -693,7 +693,7 @@ export const createMockCertificate = async procedure => {
       ...datosCertificado,
       cache: false,
       moment: require('moment'),
-      QR: linkQr
+      QR: linkQr,
     });
     return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
   } catch (error) {
@@ -710,11 +710,21 @@ export const createMockCertificate = async procedure => {
 const insertOrdinancesByProcedure = async (ordinances, id, type, client: PoolClient) => {
   return Promise.all(
     ordinances.map(async (el, key) => {
-      if(+el.factorValue * +el.cantidadVariable !== el.valorCalc ){
+      if (+el.factorValue * +el.cantidadVariable !== el.valorCalc) {
         throw new Error('Error en validación del valor calculado');
       }
-      const response = (await client.query(queries.CREATE_ORDINANCE_FOR_PROCEDURE, [id, type, el.ordenanza, el.utmm, el.valorCalc, el.factor, el.factorValue, el.cantidadVariable]))
-        .rows[0];
+      const response = (
+        await client.query(queries.CREATE_ORDINANCE_FOR_PROCEDURE, [
+          id,
+          type,
+          el.ordenanza,
+          el.utmm,
+          el.valorCalc,
+          el.factor,
+          el.factorValue,
+          el.cantidadVariable,
+        ])
+      ).rows[0];
       const ordinance = {
         id: key,
         idTramite: response.id_tramite,
