@@ -1,0 +1,67 @@
+extends default
+
+block content
+  div#fecha
+    p 
+      b FECHA:
+      //- span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+    p 
+      b Codigo de Tramite:
+      span &nbsp; #{codigo}
+  div#planilla      
+    div.table                                  
+      div.th
+        p DATOS DEL INMUEBLE
+      // FIXME: Cambiar la estructura a la correcta  
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Tipo de inmueble:
+            span &nbsp; #{datos.funcionario.tipoInmueble}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Área del terreno:
+            span &nbsp; #{datos.funcionario.areaConstruccion}
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Área de construcción:
+            span &nbsp; #{datos.funcionario.areaConstruccion}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Tipo de construcción:
+            span &nbsp; #{datos.funcionario.correo}
+      div.tr
+        div.td(style={ width: '50%' }).border-right
+          p
+            b Sector:
+            span &nbsp; #{datos.funcionario.sector}
+        div.td(style={ width: '50%' })
+          p
+            b Valor fiscal:
+            span &nbsp; #{datos.funcionario.valor}   
+    div.table                                  
+      div.th
+        p VALOR FISCAL (BS. S.)
+      // FIXME: Cambiar la estructura a la correcta  
+      //- each data in values
+        div.tr
+          div.td(style={ width: '50%' }).border-bottom.border-right
+            p
+              b #{data.year}
+          div.td(style={ width: '50%' }).border-bottom
+            p
+              span &nbsp; #{data.value}                   
+    div#firma(style={'margin-bottom':'50px', 'padding-bottom': '20px'})
+      div.item-firma
+        hr
+        b Ing. Marta Castillo 
+        br 
+        b Directora de Catastro
+      div.item-firma
+        hr
+        b Jefe de Departamento 
+      div.item-firma
+        hr
+        b Estimador(a)
+        br
