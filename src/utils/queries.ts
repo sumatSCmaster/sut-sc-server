@@ -146,18 +146,18 @@ const queries = {
     'SELECT rec.id_recaudo as id, rec.nombre_largo AS nombreCompleto, rec.nombre_corto AS nombreCorto, \
 ttr.fisico FROM recaudo rec INNER JOIN tipo_tramite_recaudo ttr ON rec.id_recaudo=ttr.id_recaudo \
 WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
-  GET_TAKINGS_OF_INSTANCES: 'SELECT * FROM tramite_archivos_recaudo WHERE id_tramite = ANY( $1::int[] );',
-  INSERT_TAKINGS_IN_PROCEDURE: 'INSERT INTO tramite_archivos_recaudo VALUES ($1,$2)',
+  GET_TAKINGS_OF_INSTANCES: 'SELECT * FROM tramite_archivo_recaudo WHERE id_tramite = ANY( $1::int[] );',
+  INSERT_TAKINGS_IN_PROCEDURE: 'INSERT INTO tramite_archivo_recaudo VALUES ($1,$2)',
   GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID:
-    'SELECT tramite_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
-    nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, tipo_tramite.pago_previo AS "pagoPrevio" FROM tramite_state INNER JOIN tipo_tramite ON tramite_state.tipotramite = \
+    'SELECT tramites_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
+    nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, tipo_tramite.pago_previo AS "pagoPrevio" FROM tramites_state INNER JOIN tipo_tramite ON tramites_state.tipotramite = \
     tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = \
-    tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 ORDER BY tramite_state.fechacreacion;',
+    tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 ORDER BY tramites_state.fechacreacion;',
   GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION:
-    'SELECT tramite_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
-    nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, tipo_tramite.pago_previo AS "pagoPrevio"  FROM tramite_state INNER JOIN tipo_tramite ON tramite_state.tipotramite = \
+    'SELECT tramites_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
+    nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, tipo_tramite.pago_previo AS "pagoPrevio"  FROM tramites_state INNER JOIN tipo_tramite ON tramites_state.tipotramite = \
     tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = \
-    tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 AND tramite_state.state=\'enproceso\' ORDER BY tramite_state.fechacreacion;',
+    tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 AND tramites_state.state=\'enproceso\' ORDER BY tramites_state.fechacreacion;',
   GET_ONE_PROCEDURE: 'SELECT * FROM tipo_tramite WHERE id_tipo_tramite = $1',
   GET_ONE_PROCEDURE_INFO:
     'SELECT id_tipo_tramite as id, id_institucion AS "idInstitucion", nombre_tramite AS "nombre", costo_base as costo, nombre_corto as "nombreCorto"  FROM tipo_tramite WHERE id_tipo_tramite = $1;',
@@ -184,15 +184,15 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   FROM eventos_caso_social \
   WHERE id_caso = $1 \
   GROUP BY id_caso;',
-  UPDATE_STATE: 'SELECT update_tramite_state($1, $2, $3, $4, $5) as state;', //tramite, evento
-  COMPLETE_STATE: 'SELECT complete_tramite_state ($1,$2,$3,$4, $5) as state',
+  UPDATE_STATE: 'SELECT update_tramites_state($1, $2, $3, $4, $5) as state;', //tramite, evento
+  COMPLETE_STATE: 'SELECT complete_tramites_state ($1,$2,$3,$4, $5) as state',
   UPDATE_STATE_SOCIAL_CASE: 'SELECT update_caso_state($1, $2, $3) as state', //idcaso, event, datos
   UPDATE_PROCEDURE_INSTANCE_COST: 'UPDATE tramite SET costo = $1 WHERE id_tramite = $2',
-  GET_PROCEDURE_BY_ID: 'SELECT * FROM tramite_state_with_resources WHERE id=$1',
-  GET_SOCIAL_CASE_BY_ID: 'SELECT * FROM caso_social_state WHERE id=$1',
-  GET_CERTIFICATE_BY_PROCEDURE_ID: 'SELECT certificado AS "urlCertificado" FROM tramite_state_with_resources WHERE id = $1',
-  GET_PROCEDURE_INSTANCES_FOR_USER: 'SELECT * FROM tramite_state_with_resources WHERE usuario = $1 ORDER BY fechacreacion;',
-  GET_ALL_PROCEDURE_INSTANCES: 'SELECT * FROM tramite_state_with_resources ORDER BY fechacreacion;',
+  GET_PROCEDURE_BY_ID: 'SELECT * FROM tramites_state_with_resources WHERE id=$1',
+  GET_SOCIAL_CASE_BY_ID: 'SELECT * FROM casos_sociales_state WHERE id=$1',
+  GET_CERTIFICATE_BY_PROCEDURE_ID: 'SELECT certificado AS "urlCertificado" FROM tramites_state_with_resources WHERE id = $1',
+  GET_PROCEDURE_INSTANCES_FOR_USER: 'SELECT * FROM tramites_state_with_resources WHERE usuario = $1 ORDER BY fechacreacion;',
+  GET_ALL_PROCEDURE_INSTANCES: 'SELECT * FROM tramites_state_with_resources ORDER BY fechacreacion;',
 
   //parroquias
   GET_PARISHES: 'SELECT * FROM parroquia;',
