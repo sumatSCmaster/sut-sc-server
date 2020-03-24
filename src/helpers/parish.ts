@@ -11,7 +11,7 @@ export const getAllParishes = async (): Promise<{
 }> => {
   const client = await pool.connect();
   try {
-    const response = await client.query(queries.GET_PARROQUIAS);
+    const response = await client.query(queries.GET_PARISHES);
     const parroquias: Parroquia[] = response.rows;
     return { parroquias, status: 200, message: 'Parroquias obtenidas' };
   } catch (error) {

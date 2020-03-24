@@ -52,8 +52,7 @@ const queries = {
   LEFT JOIN datos_google dg ON usr.id_usuario = dg.id_usuario\
   WHERE dg.id_google = $1 OR df.id_facebook=$1',
   GET_EXTERNAL_USER: 'SELECT * FROM usuario WHERE id_usuario = $1',
-  GET_ADMIN_INSTITUTE:
-    'SELECT i.* FROM institucion i INNER JOIN cuenta_funcionario cf ON i.id_institucion = cf.id_institucion \
+  GET_ADMIN_INSTITUTE: 'SELECT i.* FROM institucion i INNER JOIN cuenta_funcionario cf ON i.id_institucion = cf.id_institucion \
     WHERE cf.id_usuario = $1;',
   CHECK_IF_OFFICIAL:
     "SELECT 1 FROM usuario u \
@@ -196,7 +195,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_ALL_PROCEDURE_INSTANCES: 'SELECT * FROM tramite_state_with_resources ORDER BY fechacreacion;',
 
   //parroquias
-  GET_parroquiaS: 'SELECT * FROM parroquia;',
+  GET_PARISHES: 'SELECT * FROM parroquia;',
 
   //Inmuebles
   GET_ALL_PROPERTIES:
