@@ -161,6 +161,7 @@ img#divider {
 #text-input div p {
   margin: 0;
   flex: 1;
+  -webkit-flex: 1;
 }
 #text-input div p + p {
   text-align: end;
@@ -259,6 +260,7 @@ ul {
 }
 
 #footer {
+  -webkit-flex-direction: column;
   flex-direction: column;
   -webkit-flex-direction: column;
   text-align: center;

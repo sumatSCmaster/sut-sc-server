@@ -6,14 +6,14 @@ html
   body
     div#wrapper
       block header
-        div#header
+        header#header
           div.header-child
             img#alcaldia(src='images/LogoAlcaldia.png')
           div.header-child
             - var nombre = ''
             - var rif = ''
             case institucion
-              when 'Bomberos'
+              when 'CBM'
                 - nombre = 'Instituto Autonomo Cuerpo de Bomberos del Municipio Maracaibo'
                 - rif = 'G-20003346-0'
               when 'SAGAS'
@@ -28,7 +28,7 @@ html
           div.header-child
             - var src = ''
             case institucion
-              when 'Bomberos'
+              when 'CBM'
                 - src = 'images/LogoBomberos.png'
               when 'SAGAS' 
                 - src ='images/SAGAS.png'
@@ -44,8 +44,7 @@ html
           p SOLICITUD DE #{tramite.toUpperCase()}
         block content
       block footer
-        footer
-        div#footer
+        footer#footer
           - var direccion = ''
           case institucion
             when 'Bomberos'

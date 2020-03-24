@@ -7,13 +7,15 @@
     "definition": "./index.d.ts"
   },
   "scripts": {
-    "start": "gulp && node build/server.js",
+    "start": "node build/server.js",
     "start:debug": "node --inspect=5858 -r ts-node/register -r tsconfig-paths/register src/server.ts",
     "dev": "nodemon",
     "build": "gulp",
     "test": "cross-env NODE_ENV=test jest --runInBand --detectOpenHandles",
     "test:watch": "cross-env NODE_ENV=test jest --watch --runInBand --detectOpenHandles",
-    "tsc": "tsc --traceResolution"
+    "tsc": "tsc --traceResolution",
+    "poststart": "npm prune --production",
+    "postinstall": "gulp default"
   },
   "author": "",
   "license": "ISC",
@@ -32,6 +34,8 @@
     "express-validator": "^6.3.1",
     "flatted": "^2.0.1",
     "gulp-typescript": "^6.0.0-alpha.1",
+    "gulp": "^4.0.2",
+    "gulp-sourcemaps": "^2.6.5",
     "html-pdf": "^2.2.0",
     "jwt-simple": "^0.5.6",
     "lodash": "^4.17.15",
@@ -51,6 +55,7 @@
     "qrcode": "^1.4.4",
     "socket.io": "^2.3.0",
     "ts-nested-set": "^1.0.7",
+    "typescript": "^3.7.4",
     "twilio": "^3.39.3",
     "uuid": "^7.0.1"
   },
@@ -74,15 +79,16 @@
     "@types/supertest": "^2.0.8",
     "@types/twilio": "^2.11.0",
     "cross-env": "^7.0.0",
-    "gulp": "^4.0.2",
-    "gulp-sourcemaps": "^2.6.5",
     "jest": "^25.1.0",
     "nodemon": "^2.0.2",
     "supertest": "^4.0.2",
     "ts-jest": "^25.2.0",
     "ts-node": "^8.6.1",
     "tsconfig-paths": "^3.9.0",
-    "tslint": "^5.20.1",
-    "typescript": "^3.7.4"
+    "tslint": "^5.20.1"
+  },
+  "engines": {
+    "node": "13.5.0",
+    "npm": "6.14.1"
   }
 }

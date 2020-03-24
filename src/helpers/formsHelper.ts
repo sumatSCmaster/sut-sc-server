@@ -1,5 +1,4 @@
 import { resolve } from 'path';
-import { access, unlink } from 'fs';
 import { renderFile } from 'pug';
 import * as pdf from 'html-pdf';
 import * as qr from 'qrcode';
@@ -12,7 +11,6 @@ export const createForm = async ({ fecha, codigo, formato, tramite, institucion,
   const planilla = estado === 'iniciado' ? response.planilla : response.certificado;
   const dir = estado === 'iniciado' ? `${process.env.SERVER_URL}/${codigo}.pdf` : `${process.env.SERVER_URL}/${codigo}-certificado.pdf`;
   const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${id}`, { errorCorrectionLevel: 'H' });
-  console.log(datos)
   return new Promise(async (res, rej) => {
     const html = renderFile(resolve(__dirname, `../views/planillas/${planilla}.pug`), {
       fecha,
@@ -37,7 +35,7 @@ export const createForm = async ({ fecha, codigo, formato, tramite, institucion,
     } else {
       try {
         pdf
-          .create(html, { format: 'Letter', border: '5mm', header: { height: '75px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
+          .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
           .toBuffer(async (err, buffer) => {
             if (err) {
               rej(err);
@@ -49,6 +47,7 @@ export const createForm = async ({ fecha, codigo, formato, tramite, institucion,
                 ACL: 'public-read',
                 ContentType: 'application/pdf',
               }).promise();
+              console.log(bucketParams);
               res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
             }
           });
