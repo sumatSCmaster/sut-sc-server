@@ -278,7 +278,7 @@ export const signUpUser = async user => {
       status: 201,
       user: usuario,
       message: 'Usuario registrado',
-      token: generateToken(user),
+      token: generateToken(usuario),
     };
   } catch (error) {
     client.query('ROLLBACK');
