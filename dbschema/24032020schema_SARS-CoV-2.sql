@@ -198,7 +198,7 @@ CREATE FUNCTION public.complete_tramite_state(_id_tramite integer, event text, _
     LANGUAGE plpgsql
     AS $$
   BEGIN
-          INSERT INTO eventos_tramite values (default, _id_tramite, event, now());
+          INSERT INTO evento_tramite values (default, _id_tramite, event, now());
           
                   RETURN QUERY SELECT tramites_state.state FROM tramites_state WHERE id = _id_tramite;
                   
@@ -283,7 +283,7 @@ DECLARE
 BEGIN
   SELECT caso_social_fsm(event ORDER BY id_evento_caso)
   FROM (
-    SELECT id_evento_caso, event FROM eventos_caso_social WHERE id_caso = new.id_caso
+    SELECT id_evento_caso, event FROM evento_caso_social WHERE id_caso = new.id_caso
     UNION
     SELECT new.id_evento_caso, new.event
   ) s
@@ -312,7 +312,7 @@ DECLARE
 BEGIN
   SELECT casos_sociales_fsm(event ORDER BY id_evento_caso)
   FROM (
-    SELECT id_evento_caso, event FROM eventos_casos_sociales WHERE id_caso = new.id_caso
+    SELECT id_evento_caso, event FROM evento_caso_social WHERE id_caso = new.id_caso
     UNION
     SELECT new.id_evento_caso, new.event
   ) s
@@ -341,7 +341,7 @@ DECLARE
   BEGIN
     SELECT public.tramites_eventos_fsm(event ORDER BY id_evento_tramite)
       FROM (
-          SELECT id_evento_tramite, event FROM public.eventos_tramite WHERE id_tramite = new.id_tramite
+          SELECT id_evento_tramite, event FROM public.evento_tramite WHERE id_tramite = new.id_tramite
               UNION
                   SELECT new.id_evento_tramite, new.event
                     ) s
@@ -485,7 +485,7 @@ DECLARE
     BEGIN
         INSERT INTO casos_sociales (id_tipo_tramite, datos, id_usuario) VALUES (_id_tipo_tramite, datos, _id_usuario) RETURNING * into caso;
         
-            INSERT INTO eventos_casos_sociales values (default, caso.id_caso, 'iniciar', now());
+            INSERT INTO evento_caso_social values (default, caso.id_caso, 'iniciar', now());
             
                 RETURN QUERY SELECT * FROM casos_sociales_state WHERE id=caso.id_caso ORDER BY casos_sociales_state.fechacreacion;
                 
@@ -641,7 +641,7 @@ DECLARE
     BEGIN
         INSERT INTO TRAMITES (id_tipo_tramite, datos, id_usuario) VALUES (_id_tipo_tramite, datos, _id_usuario) RETURNING * into tramite;
         
-            INSERT INTO eventos_tramite values (default, tramite.id_tramite, 'iniciar', now());
+            INSERT INTO evento_tramite values (default, tramite.id_tramite, 'iniciar', now());
             
                 RETURN QUERY SELECT * FROM tramites_state_with_resources WHERE id=tramite.id_tramite ORDER BY tramites_state_with_resources.fechacreacion;
                 
@@ -779,7 +779,7 @@ CREATE FUNCTION public.update_caso_state(_id_caso integer, event text, _datos js
     LANGUAGE plpgsql
     AS $$
   BEGIN
-          INSERT INTO eventos_caso_social values (default, _id_caso, event, now());
+          INSERT INTO evento_caso_social values (default, _id_caso, event, now());
           
                   RETURN QUERY SELECT caso_social_state.state FROM caso_social_state WHERE id = _id_caso;
                   
