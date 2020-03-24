@@ -8,50 +8,48 @@ block content
     p 
       b Codigo de Tramite:
       span &nbsp; #{codigo}
-  div#planilla      
-    div.table                                  
-      div.th
-        p DATOS DEL INMUEBLE
+  div#planilla
+    div#text-input
+      p Ciudadano:
+        br
+        b Lcdo. Jean Carlos Martinez
+        br
+        b Intendente Tributario Municipal
+        br
+        | Su Despacho.
+      h2(style={'text-align': 'center'}) DETERMINACIÓN DEL VALOR FISCAL DE INMUEBLES URBANOS
+      p 
+        b PROPIETARIO: 
+        | #{datos.funcionario.nombreORazon} 
+        b C.I. O RIF:
+        | #{datos.funcionario.cedulaORif} 
+        br
+        | En atención a su solicitud de determinación de impuesto sobre inmuebles urbanos, ubicados en: #{datos.funcionario.ubicadoEn} 
+        br
+        | Parroquia: #{datos.funcionario.parroquia} 
+        br
+        | Se le realizó la estimación del valor fiscal del inmueble arrojando lo siguiente:
+    table(style={ width: '100%', margin: '20px 0'}).table-normal                                  
       // FIXME: Cambiar la estructura a la correcta  
-      div.tr
-        div.td(style={ width: '50%' }).border-bottom.border-right
-          p
-            b Tipo de inmueble:
-            span &nbsp; #{datos.funcionario.tipoInmueble}
-        div.td(style={ width: '50%' }).border-bottom
-          p
-            b Área del terreno:
-            span &nbsp; #{datos.funcionario.areaConstruccion}
-      div.tr
-        div.td(style={ width: '50%' }).border-bottom.border-right
-          p
-            b Área de construcción:
-            span &nbsp; #{datos.funcionario.areaConstruccion}
-        div.td(style={ width: '50%' }).border-bottom
-          p
-            b Tipo de construcción:
-            span &nbsp; #{datos.funcionario.correo}
-      div.tr
-        div.td(style={ width: '50%' }).border-right
-          p
-            b Sector:
-            span &nbsp; #{datos.funcionario.sector}
-        div.td(style={ width: '50%' })
-          p
-            b Valor fiscal:
-            span &nbsp; #{datos.funcionario.valor}   
-    div.table                                  
-      div.th
-        p VALOR FISCAL (BS. S.)
+      tr
+        th Tipo de inmueble
+        th Área del terreno
+        th Tipo de construcción
+        th Sector
+        th Valor fiscal
+      tr        
+        td #{datos.funcionario.tipoInmueble}
+        td #{datos.funcionario.areaConstruccion}
+        td #{datos.funcionario.areaConstruccion}
+        td #{datos.funcionario.sector}
+        td #{datos.funcionario.valor}
+    table(style={ width: '50%', margin: '20px 0'}).table-normal
+      caption VALOR FISCAL (BS. S.)
       // FIXME: Cambiar la estructura a la correcta  
       //- each data in values
-        div.tr
-          div.td(style={ width: '50%' }).border-bottom.border-right
-            p
-              b #{data.year}
-          div.td(style={ width: '50%' }).border-bottom
-            p
-              span &nbsp; #{data.value}                   
+        tr  
+          td(style={ width: '50%', 'background-color': '#fadc68'}) #{data.value}
+          td(style={ width: '50%'}) #{data.value}                
     div#firma(style={'margin-bottom':'50px', 'padding-bottom': '20px'})
       div.item-firma
         hr
