@@ -197,6 +197,11 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   //parroquias
   GET_PARISHES: 'SELECT * FROM parroquia;',
 
+  //Valores fiscales
+  GET_SECTOR_BY_PARISH: 'SELECT id, descripcion FROM VALORES_FISCALES.SECTOR WHERE PARROQUIA_ID = (SELECT ID FROM PARROQUIA WHERE NOMBRE = $1)',
+  GET_YEARS: 'SELECT id, descripcion FROM VALORES_FISCALES.ANO',
+  GET_CONSTRUCTION_TYPES: 'SELECT id, descripcion FROM VALORES_FISCALES.TIPO_CONSTRUCCION',
+
   //Inmuebles
   GET_ALL_PROPERTIES:
     'SELECT i.id_inmueble AS "idInmueble", i.cod_catastral AS "codCatastral", i.direccion,\
