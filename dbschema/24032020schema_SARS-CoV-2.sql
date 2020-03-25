@@ -560,7 +560,7 @@ DECLARE
     BEGIN
         INSERT INTO tramite (id_tipo_tramite, datos, id_usuario) VALUES (_id_tipo_tramite, datos, _id_usuario) RETURNING * into tramite;
         
-            INSERT INTO eventos_tramite values (default, tramite.id_tramite, 'iniciar', now());
+            INSERT INTO evento_tramite values (default, tramite.id_tramite, 'iniciar', now());
             
                 RETURN QUERY SELECT * FROM tramites_state_with_resources WHERE id=tramite.id_tramite ORDER BY tramites_state_with_resources.fechacreacion;
                 
