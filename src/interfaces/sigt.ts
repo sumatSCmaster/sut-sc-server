@@ -9,14 +9,15 @@ export enum DescripcionesTipoUsuario {
   Superuser = 'Superuser',
   Administrador = 'Administrador',
   Funcionario = 'Funcionario',
-  UsuarioExterno = 'Usuario externo',
+  UsuarioExterno = 'Usuario Externo',
 }
 
 export enum IDsTipoUsuario {
   Superuser = 1,
-  Administrador,
-  Funcionario,
-  UsuarioExterno,
+  Administrador = 2,
+  Funcionario = 3,
+  UsuarioExterno = 4,
+  Director = 5,
 }
 
 export interface Seccion {

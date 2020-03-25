@@ -1,6 +1,7 @@
 import { check, validationResult } from 'express-validator';
 import { fulfill } from '@utils/resolver';
 import { getFieldsForValidations } from '@helpers/procedures';
+import { IDsTipoUsuario as userTypes } from '@interfaces/sigt';
 
 const validations = {
   nombre: check('tramite.datos.nombre')
@@ -558,7 +559,7 @@ export const isAuth = (req, res, next) => {
 };
 
 export const isOfficial = (req, res, next) => {
-  if (req.user.tipoUsuario < 4) next();
+  if (req.user.tipoUsuario !== userTypes.UsuarioExterno) next();
   else {
     res.send({
       status: 401,
@@ -568,7 +569,7 @@ export const isOfficial = (req, res, next) => {
 };
 
 export const isExternalUser = (req, res, next) => {
-  if (req.user.tipoUsuario === 4) next();
+  if (req.user.tipoUsuario === userTypes.UsuarioExterno) next();
   else {
     res.send({
       status: 401,
@@ -578,8 +579,7 @@ export const isExternalUser = (req, res, next) => {
 };
 
 export const isOfficialAdmin = (req, res, next) => {
-  console.log(req.user.tipoUsuario);
-  if (req.user.tipoUsuario <= 2) next();
+  if (req.user.tipoUsuario === (userTypes.Administrador || userTypes.Superuser)) next();
   else {
     res.send({
       status: 401,
@@ -589,7 +589,7 @@ export const isOfficialAdmin = (req, res, next) => {
 };
 
 export const isSuperuser = (req, res, next) => {
-  if (req.user.tipoUsuario === 1) next();
+  if (req.user.tipoUsuario === userTypes.Superuser) next();
   else {
     res.send({
       status: 401,
