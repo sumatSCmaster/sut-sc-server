@@ -243,7 +243,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     VALUES ($1, (SELECT id_tarifa FROM tarifa_inspeccion trf INNER JOIN ordenanza ord ON \
       trf.id_ordenanza=ord.id_ordenanza WHERE trf.id_tipo_tramite=$2 AND ord.descripcion = $3 LIMIT 1), \
       $4,$5,$6,$7, $8) RETURNING *;',
-  ORDINANCES_PROCEDURE_INSTANCES: 'SELECT * FROM ordenanza_instancias_tramite WHERE "idTramite" = $1;',
+  ORDINANCES_PROCEDURE_INSTANCES: 'SELECT * FROM ordenanzas_instancias_tramite WHERE "idTramite" = $1;',
   //valor
   GET_UTMM_VALUE: "SELECT valor_en_bs FROM valor WHERE descripcion = 'UTMM'",
   UPDATE_UTMM_VALUE: "UPDATE valor SET valor_en_bs = $1 WHERE descripcion = 'UTMM' RETURNING valor_en_bs;",

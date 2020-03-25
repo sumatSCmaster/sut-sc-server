@@ -327,19 +327,14 @@ export const procedureInit = async (procedure, user) => {
   try {
     client.query('BEGIN');
     const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify({ usuario: datos }), user.id])).rows[0];
-    console.log(1);
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.tipotramite])).rows[0];
-    console.log(2);
     response.sufijo = resources.sufijo;
     costo = resources.sufijo === 'pd' ? null : pago.costo || resources.costo_base;
     const nextEvent = await getNextEventForProcedure(response, client);
-    console.log(3);
 
     const dir = await createRequestForm(response, client);
-    console.log(4);
     const respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, costo, dir]);
-    console.log(5);
     if (recaudos.length > 0) {
       recaudos.map(async urlRecaudo => {
         await client.query(queries.INSERT_TAKINGS_IN_PROCEDURE, [response.id, urlRecaudo]);

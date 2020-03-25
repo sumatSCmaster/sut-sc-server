@@ -522,7 +522,6 @@ export const validate = () => {
   return async (req, res, next) => {
     const validaciones = await isValidProcedure(req, res);
     await Promise.all(validaciones.map(validation => validation.run(req)));
-    console.log('ola');
     next();
   };
 };
