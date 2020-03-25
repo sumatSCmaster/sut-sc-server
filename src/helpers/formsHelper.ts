@@ -7,7 +7,7 @@ import S3Client from '@utils/s3';
 const dev = process.env.NODE_ENV !== 'production';
 
 export const createForm = async ({ fecha, codigo, formato, tramite, institucion, id, datos, tipoTramite, estado }, client) => {
-  const response = (await client.query('SELECT planilla, certificado FROM tipos_tramites WHERE id_tipo_tramite=$1', [tipoTramite])).rows[0];
+  const response = (await client.query('SELECT planilla, certificado FROM tipo_tramite WHERE id_tipo_tramite=$1', [tipoTramite])).rows[0];
   const planilla = estado === 'iniciado' ? response.planilla : response.certificado;
   const dir = estado === 'iniciado' ? `${process.env.SERVER_URL}/${codigo}.pdf` : `${process.env.SERVER_URL}/${codigo}-certificado.pdf`;
   const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${id}`, { errorCorrectionLevel: 'H' });
@@ -22,9 +22,9 @@ export const createForm = async ({ fecha, codigo, formato, tramite, institucion,
       id,
       cache: false,
       moment: require('moment'),
-      QR: linkQr
+      QR: linkQr,
     });
-    
+
     const pdfDir = resolve(__dirname, `../../archivos/${dir.split('/')[3].split('.')[0]}.pdf`);
     if (dev) {
       pdf
@@ -40,7 +40,10 @@ export const createForm = async ({ fecha, codigo, formato, tramite, institucion,
             if (err) {
               rej(err);
             } else {
-              const bucketParams = { Bucket: 'sut-maracaibo', Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}` };
+              const bucketParams = {
+                Bucket: 'sut-maracaibo',
+                Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}`,
+              };
               await S3Client.putObject({
                 ...bucketParams,
                 Body: buffer,

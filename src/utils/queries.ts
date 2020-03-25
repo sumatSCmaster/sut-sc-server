@@ -171,11 +171,11 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     tt.id_tipo_tramite=tr.id_tipo_tramite INNER JOIN usuario usr ON tr.id_usuario=usr.id_usuario\
     WHERE tt.id_tipo_tramite=$1',
   GET_PROCEDURE_STATES:
-    'SELECT id_tramite AS id, tramite_eventos_fsm(event ORDER BY id_evento_tramite) AS state  \
+    'SELECT id_tramite AS id, tramite_evento_fsm(event ORDER BY id_evento_tramite) AS state  \
   FROM evento_tramite \
   GROUP BY id_tramite;',
   GET_PROCEDURE_STATE:
-    'SELECT id_tramite AS id, tramite_eventos_fsm(event ORDER BY id_evento_tramite) AS state  \
+    'SELECT id_tramite AS id, tramite_evento_fsm(event ORDER BY id_evento_tramite) AS state  \
   FROM evento_tramite \
   WHERE id_tramite = $1 \
   GROUP BY id_tramite;', //tramite
@@ -184,8 +184,8 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   FROM eventos_caso_social \
   WHERE id_caso = $1 \
   GROUP BY id_caso;',
-  UPDATE_STATE: 'SELECT update_tramites_state($1, $2, $3, $4, $5) as state;', //tramite, evento
-  COMPLETE_STATE: 'SELECT complete_tramites_state ($1,$2,$3,$4, $5) as state',
+  UPDATE_STATE: 'SELECT update_tramite_state($1, $2, $3, $4, $5) as state;', //tramite, evento
+  COMPLETE_STATE: 'SELECT complete_tramite_state ($1,$2,$3,$4, $5) as state',
   UPDATE_STATE_SOCIAL_CASE: 'SELECT update_caso_state($1, $2, $3) as state', //idcaso, event, datos
   UPDATE_PROCEDURE_INSTANCE_COST: 'UPDATE tramite SET costo = $1 WHERE id_tramite = $2',
   GET_PROCEDURE_BY_ID: 'SELECT * FROM tramites_state_with_resources WHERE id=$1',
