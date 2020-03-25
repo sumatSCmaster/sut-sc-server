@@ -24,18 +24,10 @@ router.get('/', authenticate('jwt'), async (req: any, res) => {
   }
 });
 
-router.get('/all', authenticate('jwt'), async (req: any, res) => {
-  console.log(req.user);
-  if (req.user.tipoUsuario === 1) {
-    const [err, data] = await fulfill(getAllOfficials());
-    if (err) res.status(500).json(err);
-    if (data) res.status(200).json(data);
-  } else {
-    res.status(401).json({
-      message: 'No tiene permisos de superusuario',
-      status: 401,
-    });
-  }
+router.get('/all', authenticate('jwt'), isSuperuser, async (req: any, res) => {
+  const [err, data] = await fulfill(getAllOfficials());
+  if (err) res.status(500).json(err);
+  if (data) res.status(200).json(data);
 });
 
 router.post('/', authenticate('jwt'), validators.createOfficial, checkResult, async (req: any, res) => {

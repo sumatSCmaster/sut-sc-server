@@ -10,19 +10,21 @@ export const getOfficialsByInstitution = async (institution: string, id: number)
   const client = await pool.connect();
   try {
     const response = await client.query(queries.GET_OFFICIALS_BY_INSTITUTION, [institution, id]);
-    const funcionarios = await Promise.all(response.rows.map(async el => {
-      const official = {
-        ...el,
-        nombreCompleto: el.nombrecompleto,
-        nombreUsuario: el.nombreusuario,
-        tipoUsuario: el.tipousuario,
-        permisos: (await client.query(queries.GET_USER_PERMISSIONS, [el.id])).rows.map(row => +row.id_tipo_tramite) || []
-      };
-      delete official.nombrecompleto;
-      delete official.nombreusuario;
-      delete official.tipousuario;
-      return official;
-    }));
+    const funcionarios = await Promise.all(
+      response.rows.map(async el => {
+        const official = {
+          ...el,
+          nombreCompleto: el.nombrecompleto,
+          nombreUsuario: el.nombreusuario,
+          tipoUsuario: el.tipousuario,
+          permisos: (await client.query(queries.GET_USER_PERMISSIONS, [el.id])).rows.map(row => +row.id_tipo_tramite) || [],
+        };
+        delete official.nombrecompleto;
+        delete official.nombreusuario;
+        delete official.tipousuario;
+        return official;
+      })
+    );
     return {
       status: 200,
       funcionarios,
@@ -71,16 +73,16 @@ export const getAllOfficials = async () => {
   }
 };
 
-async function dropPermissions(id, client: PoolClient){
+async function dropPermissions(id, client: PoolClient) {
   return client.query(queries.DROP_OFFICIAL_PERMISSIONS, [id]);
 }
 
-async function addPermissions(id, permisos, client: PoolClient){
-  return Promise.all(permisos.map(perm => client.query(queries.ADD_OFFICIAL_PERMISSIONS, [id, perm])))
+async function addPermissions(id, permisos, client: PoolClient) {
+  return Promise.all(permisos.map(perm => client.query(queries.ADD_OFFICIAL_PERMISSIONS, [id, perm])));
 }
 
 export const createOfficial = async (official: any, institution: number) => {
-  const { nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, rif, telefono, password, permisos, tipoUsuario } = official;
+  const { nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, telefono, password, permisos, tipoUsuario } = official;
   const client = await pool.connect();
   const salt = genSaltSync(10);
   try {
@@ -94,11 +96,11 @@ export const createOfficial = async (official: any, institution: number) => {
       hashSync(password, salt),
       telefono,
       institution,
-      tipoUsuario
+      tipoUsuario,
     ]);
     const off = await client.query(queries.GET_OFFICIAL, [insert.rows[0].id_usuario, insert.rows[0].id_institucion]);
     const id = off.rows[0].id_usuario;
-    await addPermissions(id, permisos || [], client)
+    await addPermissions(id, permisos || [], client);
     client.query('COMMIT');
     const usuario = {
       id,
@@ -131,8 +133,9 @@ export const updateOfficial = async (official: any, id: string) => {
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    const response = (await client.query(queries.UPDATE_OFFICIAL, [nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, telefono, id, tipoUsuario])).rows[0];
-    if(permisos !== undefined){
+    const response = (await client.query(queries.UPDATE_OFFICIAL, [nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, telefono, id, tipoUsuario]))
+      .rows[0];
+    if (permisos) {
       await dropPermissions(id, client);
       await addPermissions(id, permisos, client);
     }
@@ -147,7 +150,7 @@ export const updateOfficial = async (official: any, id: string) => {
       nacionalidad: response.nacionalidad,
       password: response.password,
       telefono: response.telefono,
-      permisos: (await client.query(queries.GET_USER_PERMISSIONS, [response.id_usuario])).rows.map(row => +row.id_tipo_tramite) || []
+      permisos: (await client.query(queries.GET_USER_PERMISSIONS, [response.id_usuario])).rows.map(row => +row.id_tipo_tramite) || [],
     };
     return { status: 200, usuario, message: 'Funcionario actualizado' };
   } catch (e) {

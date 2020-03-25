@@ -1,8 +1,8 @@
 import { QueryResult } from 'pg';
 
 export enum Nacionalidad {
-  V = 'Venezolano',
-  E = 'Extranjero',
+  V = 'V',
+  E = 'E',
 }
 
 export enum DescripcionesTipoUsuario {
