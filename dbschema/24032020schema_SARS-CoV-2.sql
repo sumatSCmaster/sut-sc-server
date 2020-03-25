@@ -198,7 +198,7 @@ CREATE FUNCTION public.complete_tramite_state(_id_tramite integer, event text, _
     LANGUAGE plpgsql
     AS $$
   BEGIN
-          INSERT INTO eventos_tramite values (default, _id_tramite, event, now());
+          INSERT INTO evento_tramite values (default, _id_tramite, event, now());
           
                   RETURN QUERY SELECT tramites_state.state FROM tramites_state WHERE id = _id_tramite;
                   
@@ -271,34 +271,6 @@ DECLARE
 
 ALTER FUNCTION public.evento_tramite_trigger_func() OWNER TO postgres;
 
---
--- Name: eventos_caso_social_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.eventos_caso_social_trigger_func() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-  new_state text;
-BEGIN
-  SELECT caso_social_fsm(event ORDER BY id_evento_caso)
-  FROM (
-    SELECT id_evento_caso, event FROM eventos_caso_social WHERE id_caso = new.id_caso
-    UNION
-    SELECT new.id_evento_caso, new.event
-  ) s
-  INTO new_state;
-
-  IF new_state = 'error' THEN
-    RAISE EXCEPTION 'evento invalido';
-  END IF;
-
-  RETURN new;
-END
-$$;
-
-
-ALTER FUNCTION public.eventos_caso_social_trigger_func() OWNER TO postgres;
 
 --
 -- Name: eventos_casos_sociales_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -312,7 +284,7 @@ DECLARE
 BEGIN
   SELECT casos_sociales_fsm(event ORDER BY id_evento_caso)
   FROM (
-    SELECT id_evento_caso, event FROM eventos_casos_sociales WHERE id_caso = new.id_caso
+    SELECT id_evento_caso, event FROM evento_caso_social WHERE id_caso = new.id_caso
     UNION
     SELECT new.id_evento_caso, new.event
   ) s
@@ -341,7 +313,7 @@ DECLARE
   BEGIN
     SELECT public.tramites_eventos_fsm(event ORDER BY id_evento_tramite)
       FROM (
-          SELECT id_evento_tramite, event FROM public.eventos_tramite WHERE id_tramite = new.id_tramite
+          SELECT id_evento_tramite, event FROM public.evento_tramite WHERE id_tramite = new.id_tramite
               UNION
                   SELECT new.id_evento_tramite, new.event
                     ) s
@@ -480,12 +452,12 @@ CREATE FUNCTION public.insert_caso(_id_tipo_tramite integer, datos json, _id_usu
     LANGUAGE plpgsql
     AS $$
 DECLARE
-    caso casos_sociales%ROWTYPE;
+    caso caso_social%ROWTYPE;
 	response casos_sociales_state%ROWTYPE;
     BEGIN
-        INSERT INTO casos_sociales (id_tipo_tramite, datos, id_usuario) VALUES (_id_tipo_tramite, datos, _id_usuario) RETURNING * into caso;
+        INSERT INTO caso_social (id_tipo_tramite, datos, id_usuario) VALUES (_id_tipo_tramite, datos, _id_usuario) RETURNING * into caso;
         
-            INSERT INTO eventos_casos_sociales values (default, caso.id_caso, 'iniciar', now());
+            INSERT INTO evento_caso_social values (default, caso.id_caso, 'iniciar', now());
             
                 RETURN QUERY SELECT * FROM casos_sociales_state WHERE id=caso.id_caso ORDER BY casos_sociales_state.fechacreacion;
                 
@@ -652,24 +624,6 @@ DECLARE
 
 ALTER FUNCTION public.insert_tramite(_id_tipo_tramite integer, datos json, _id_usuario integer) OWNER TO postgres;
 
---
--- Name: tipo_tramite_costo_utmm_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.tipo_tramite_costo_utmm_trigger_func() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-    nuevoCosto numeric;
-    BEGIN
-        nuevoCosto = NEW.valor_en_bs;
-        UPDATE tipo_tramite SET costo_base = (nuevoCosto * costo_utmm) WHERE costo_utmm IS NOT NULL;
-        RETURN NEW;
-    END
-$$;
-
-
-ALTER FUNCTION public.tipo_tramite_costo_utmm_trigger_func() OWNER TO postgres;
 
 --
 -- Name: tipos_tramites_costo_utmm_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -682,7 +636,7 @@ DECLARE
     nuevoCosto numeric;
     BEGIN
         nuevoCosto = NEW.valor_en_bs;
-        UPDATE tipos_tramites SET costo_base = (nuevoCosto * costo_utmm) WHERE costo_utmm IS NOT NULL;
+        UPDATE tipo_tramite SET costo_base = (nuevoCosto * costo_utmm) WHERE costo_utmm IS NOT NULL;
         RETURN NEW;
     END
 $$;
