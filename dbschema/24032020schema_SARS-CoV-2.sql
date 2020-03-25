@@ -26,52 +26,6 @@ CREATE SCHEMA valores_fiscales;
 ALTER SCHEMA valores_fiscales OWNER TO postgres;
 
 --
--- Name: caso_social_transicion(text, text); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.caso_social_transicion(state text, event text) RETURNS text
-    LANGUAGE sql
-    AS $$
-    SELECT CASE state
-        WHEN 'creado' THEN
-            CASE event
-                WHEN 'iniciar' THEN 'iniciado'
-                ELSE 'error'
-            END
-        WHEN 'iniciado' THEN
-            CASE event
-                WHEN 'visto' THEN 'visto'
-                WHEN 'aprobado' THEN 'aprobado'
-                WHEN 'negado' THEN 'negado'
-                WHEN 'porrevisar' THEN 'porrevisar'
-                ELSE 'error'
-            END
-        WHEN 'porrevisar' THEN
-            CASE event
-                WHEN 'visto' THEN 'visto'
-                WHEN 'aprobado' THEN 'aprobado'
-                WHEN 'negado' THEN 'negado'
-                ELSE 'error'
-            END
-        WHEN 'visto' THEN
-            CASE event
-                WHEN 'aprobado' THEN 'aprobado'
-                WHEN 'negado' THEN 'negado'
-                ELSE 'error'
-            END
-        WHEN 'aprobado' THEN
-            CASE event
-                WHEN 'atendido' THEN 'atendido'
-                ELSE 'error'
-            END
-        ELSE 'error'
-    END
-$$;
-
-
-ALTER FUNCTION public.caso_social_transicion(state text, event text) OWNER TO postgres;
-
---
 -- Name: casos_sociales_transicion(text, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -252,7 +206,7 @@ CREATE FUNCTION public.evento_tramite_trigger_func() RETURNS trigger
 DECLARE
   new_state text;
   BEGIN
-    SELECT public.tramite_eventos_fsm(event ORDER BY id_evento_tramite)
+    SELECT public.tramite_evento_fsm(event ORDER BY id_evento_tramite)
       FROM (
           SELECT id_evento_tramite, event FROM public.evento_tramite WHERE id_tramite = new.id_tramite
               UNION
@@ -282,7 +236,7 @@ CREATE FUNCTION public.eventos_casos_sociales_trigger_func() RETURNS trigger
 DECLARE
   new_state text;
 BEGIN
-  SELECT casos_sociales_fsm(event ORDER BY id_evento_caso)
+  SELECT caso_social_fsm(event ORDER BY id_evento_caso)
   FROM (
     SELECT id_evento_caso, event FROM evento_caso_social WHERE id_caso = new.id_caso
     UNION
@@ -311,7 +265,7 @@ CREATE FUNCTION public.eventos_tramite_trigger_func() RETURNS trigger
 DECLARE
   new_state text;
   BEGIN
-    SELECT public.tramites_eventos_fsm(event ORDER BY id_evento_tramite)
+    SELECT public.tramite_evento_fsm(event ORDER BY id_evento_tramite)
       FROM (
           SELECT id_evento_tramite, event FROM public.evento_tramite WHERE id_tramite = new.id_tramite
               UNION
@@ -330,18 +284,15 @@ DECLARE
 
 ALTER FUNCTION public.eventos_tramite_trigger_func() OWNER TO postgres;
 
---
--- Name: casos_sociales_fsm(text); Type: AGGREGATE; Schema: public; Owner: postgres
---
 
-CREATE AGGREGATE public.casos_sociales_fsm(text) (
+CREATE AGGREGATE public.caso_social_fsm(text) (
     SFUNC = public.casos_sociales_transicion,
     STYPE = text,
     INITCOND = 'creado'
 );
 
 
-ALTER AGGREGATE public.casos_sociales_fsm(text) OWNER TO postgres;
+ALTER AGGREGATE public.caso_social_fsm(text) OWNER TO postgres;
 
 SET default_tablespace = '';
 
@@ -437,7 +388,7 @@ CREATE VIEW public.casos_sociales_state AS
      JOIN public.tipo_tramite tt ON ((cs.id_tipo_tramite = tt.id_tipo_tramite)))
      JOIN public.institucion i ON ((i.id_institucion = tt.id_institucion)))
      JOIN ( SELECT evento_caso_social.id_caso,
-            public.casos_sociales_fsm(evento_caso_social.event ORDER BY evento_caso_social.id_evento_caso) AS state
+            public.caso_social_fsm(evento_caso_social.event ORDER BY evento_caso_social.id_evento_caso) AS state
            FROM public.evento_caso_social
           GROUP BY evento_caso_social.id_caso) ev ON ((cs.id_caso = ev.id_caso)));
 
@@ -520,18 +471,14 @@ $$;
 
 ALTER FUNCTION public.tramites_eventos_transicion(state text, event text) OWNER TO postgres;
 
---
--- Name: tramites_eventos_fsm(text); Type: AGGREGATE; Schema: public; Owner: postgres
---
-
-CREATE AGGREGATE public.tramites_eventos_fsm(text) (
+CREATE AGGREGATE public.tramite_evento_fsm(text) (
     SFUNC = public.tramites_eventos_transicion,
     STYPE = text,
     INITCOND = 'creado'
 );
 
 
-ALTER AGGREGATE public.tramites_eventos_fsm(text) OWNER TO postgres;
+ALTER AGGREGATE public.tramite_evento_fsm(text) OWNER TO postgres;
 
 --
 -- Name: evento_tramite; Type: TABLE; Schema: public; Owner: postgres
@@ -593,7 +540,7 @@ CREATE VIEW public.tramites_state_with_resources AS
      JOIN public.tipo_tramite tt ON ((t.id_tipo_tramite = tt.id_tipo_tramite)))
      JOIN public.institucion i ON ((i.id_institucion = tt.id_institucion)))
      JOIN ( SELECT evento_tramite.id_tramite,
-            public.tramites_eventos_fsm(evento_tramite.event ORDER BY evento_tramite.id_evento_tramite) AS state
+            public.tramite_evento_fsm(evento_tramite.event ORDER BY evento_tramite.id_evento_tramite) AS state
            FROM public.evento_tramite
           GROUP BY evento_tramite.id_tramite) ev ON ((t.id_tramite = ev.id_tramite)));
 
@@ -645,58 +592,6 @@ $$;
 ALTER FUNCTION public.tipos_tramites_costo_utmm_trigger_func() OWNER TO postgres;
 
 --
--- Name: tramite_eventos_transicion(text, text); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.tramite_eventos_transicion(state text, event text) RETURNS text
-    LANGUAGE sql
-    AS $$
-SELECT CASE state
-    WHEN 'creado' THEN
-        CASE event
-            WHEN 'iniciar' THEN 'iniciado'
-            ELSE 'error'
-        END
-    WHEN 'iniciado' THEN
-        CASE event
-            WHEN 'validar_pa' THEN 'validando'
-            WHEN 'validar_cr' THEN 'validando'
-            WHEN 'enproceso_pd' THEN 'enproceso'
-            ELSE 'error'
-        END
-    WHEN 'validando' THEN
-        CASE event
-            WHEN 'enproceso_pa' THEN 'enproceso'
-            WHEN 'enproceso_cr' THEN 'enproceso'
-            WHEN 'finalizar_pd' THEN 'finalizado'
-            ELSE 'error'
-        END
-    WHEN 'ingresardatos' THEN
-        CASE event
-            WHEN 'validar_pd' THEN 'validando'
-            ELSE 'error'
-        END
-    WHEN 'enproceso' THEN
-        CASE event
-            WHEN 'ingresardatos_pd' THEN 'ingresardatos'
-            WHEN 'finalizar_pa' THEN 'finalizado'
-            WHEN 'revisar_cr' THEN 'enrevision'
-            ELSE 'error'
-        END
-    WHEN 'enrevision' THEN
-        CASE event
-            WHEN 'finalizar_cr' THEN 'finalizado'
-            WHEN 'rechazar_cr' THEN 'enproceso'
-            ELSE 'error'        
-        END
-    ELSE 'error'
-END
-$$;
-
-
-ALTER FUNCTION public.tramite_eventos_transicion(state text, event text) OWNER TO postgres;
-
---
 -- Name: tramite_eventos_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -706,7 +601,7 @@ CREATE FUNCTION public.tramite_eventos_trigger_func() RETURNS trigger
 DECLARE
   new_state text;
   BEGIN
-    SELECT tramite_eventos_fsm(event ORDER BY id)
+    SELECT tramite_evento_fsm(event ORDER BY id)
       FROM (
           SELECT id, event FROM evento_tramite WHERE id_evento_tramite = new.id_evento_tramite
               UNION
@@ -1877,7 +1772,7 @@ CREATE VIEW public.tramites_state AS
     t.aprobado
    FROM (public.tramite t
      JOIN ( SELECT evento_tramite.id_tramite,
-            public.tramites_eventos_fsm(evento_tramite.event ORDER BY evento_tramite.id_evento_tramite) AS state
+            public.tramite_evento_fsm(evento_tramite.event ORDER BY evento_tramite.id_evento_tramite) AS state
            FROM public.evento_tramite
           GROUP BY evento_tramite.id_tramite) ev ON ((t.id_tramite = ev.id_tramite)));
 
