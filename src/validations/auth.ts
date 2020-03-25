@@ -256,12 +256,24 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('El croquis no puede ser vacio'),
-  indicarExiste: check('tramite.datos.indicarExiste')
+  tipoInmuebleSolvencia: check('tramite.datos.tipoInmuebleSolvencia')
     .exists()
-    .withMessage('Debe incluir el tipo de existencia del inmueble')
+    .withMessage('Debe incluir el tipo del inmueble para la solvencia')
     .isString()
     .isLength({ min: 1 })
-    .withMessage('El tipo de existencia del inmueble no puede ser vacio'),
+    .withMessage('El tipo de inmueble para la solvencia no puede ser vacio'),
+  modeloConstruccion: check('tramite.datos.modeloConstruccion')
+    .exists()
+    .withMessage('Debe incluir el modelo de construccion para la solvencia')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El modelo de construccion para la solvencia no puede ser vacio'),
+  valorFiscal: check('tramite.datos.valorFiscal')
+    .exists()
+    .withMessage('Debe incluir los valores fiscales del terreno para la solvencia')
+    .isArray()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir al menos un valor fiscal para este inmueble'),
 };
 
 export const createSuperuser = [

@@ -41,7 +41,8 @@ export const updateTaxValues = async taxes => {
   }
 };
 
-export const getTotalTaxForEstate = async estate => {
+export const getTotalTaxForEstate = async tramite => {
+  const { datos } = tramite;
   const client = await pool.connect();
   try {
   } catch (error) {
