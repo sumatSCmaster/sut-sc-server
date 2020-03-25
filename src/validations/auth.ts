@@ -256,6 +256,12 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('El croquis no puede ser vacio'),
+  indicarExiste: check('tramite.datos.indicarExiste')
+    .exists()
+    .withMessage('Debe incluir el tipo de existencia del inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El tipo de existencia del inmueble no puede ser vacio'),
 };
 
 export const createSuperuser = [
