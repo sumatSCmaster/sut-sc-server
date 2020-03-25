@@ -32,6 +32,7 @@ export const getOrdinancesByProcedure = async (id) => {
         }
     } catch(e) {
         throw {
+            error: e,
             status: 500,
             message: errorMessageGenerator(e) || 'Error al obtener ordenanzas'
         }

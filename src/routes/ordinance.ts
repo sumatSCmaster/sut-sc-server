@@ -6,6 +6,7 @@ const router = Router();
 
 router.get('/:id', async (req,res) => {
     const [error, data] = await fulfill(getOrdinancesByProcedure(req.params['id']));
+    console.log(error);
     if (error) res.status(500).json({ error, status: 500 });
     if (data) res.status(data.status).json({ ...data });
 });

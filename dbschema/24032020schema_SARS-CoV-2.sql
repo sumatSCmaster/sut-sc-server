@@ -198,15 +198,15 @@ CREATE FUNCTION public.complete_tramite_state(_id_tramite integer, event text, _
     LANGUAGE plpgsql
     AS $$
   BEGIN
-          INSERT INTO evento_tramite values (default, _id_tramite, event, now());
+          INSERT INTO eventos_tramite values (default, _id_tramite, event, now());
           
                   RETURN QUERY SELECT tramites_state.state FROM tramites_state WHERE id = _id_tramite;
                   
                           IF _datos IS NOT NULL THEN
-                                      UPDATE tramites SET datos = _datos WHERE id_tramite = _id_tramite;
+                                      UPDATE tramite SET datos = _datos WHERE id_tramite = _id_tramite;
                                               END IF;
                           IF _url_certificado IS NOT NULL THEN
-                                      UPDATE tramites SET url_certificado = _url_certificado WHERE id_tramite = _id_tramite;
+                                      UPDATE tramite SET url_certificado = _url_certificado WHERE id_tramite = _id_tramite;
                                               END IF;
                                                       END;
                                                               $$;
@@ -283,7 +283,7 @@ DECLARE
 BEGIN
   SELECT caso_social_fsm(event ORDER BY id_evento_caso)
   FROM (
-    SELECT id_evento_caso, event FROM evento_caso_social WHERE id_caso = new.id_caso
+    SELECT id_evento_caso, event FROM eventos_caso_social WHERE id_caso = new.id_caso
     UNION
     SELECT new.id_evento_caso, new.event
   ) s
@@ -312,7 +312,7 @@ DECLARE
 BEGIN
   SELECT casos_sociales_fsm(event ORDER BY id_evento_caso)
   FROM (
-    SELECT id_evento_caso, event FROM evento_caso_social WHERE id_caso = new.id_caso
+    SELECT id_evento_caso, event FROM eventos_casos_sociales WHERE id_caso = new.id_caso
     UNION
     SELECT new.id_evento_caso, new.event
   ) s
@@ -341,7 +341,7 @@ DECLARE
   BEGIN
     SELECT public.tramites_eventos_fsm(event ORDER BY id_evento_tramite)
       FROM (
-          SELECT id_evento_tramite, event FROM public.evento_tramite WHERE id_tramite = new.id_tramite
+          SELECT id_evento_tramite, event FROM public.eventos_tramite WHERE id_tramite = new.id_tramite
               UNION
                   SELECT new.id_evento_tramite, new.event
                     ) s
@@ -485,7 +485,7 @@ DECLARE
     BEGIN
         INSERT INTO casos_sociales (id_tipo_tramite, datos, id_usuario) VALUES (_id_tipo_tramite, datos, _id_usuario) RETURNING * into caso;
         
-            INSERT INTO evento_caso_social values (default, caso.id_caso, 'iniciar', now());
+            INSERT INTO eventos_casos_sociales values (default, caso.id_caso, 'iniciar', now());
             
                 RETURN QUERY SELECT * FROM casos_sociales_state WHERE id=caso.id_caso ORDER BY casos_sociales_state.fechacreacion;
                 
@@ -636,12 +636,12 @@ CREATE FUNCTION public.insert_tramite(_id_tipo_tramite integer, datos json, _id_
     LANGUAGE plpgsql
     AS $$
 DECLARE
-    tramite tramites%ROWTYPE;
+    tramite tramite%ROWTYPE;
 	response tramites_state_with_resources%ROWTYPE;
     BEGIN
-        INSERT INTO TRAMITES (id_tipo_tramite, datos, id_usuario) VALUES (_id_tipo_tramite, datos, _id_usuario) RETURNING * into tramite;
+        INSERT INTO tramite (id_tipo_tramite, datos, id_usuario) VALUES (_id_tipo_tramite, datos, _id_usuario) RETURNING * into tramite;
         
-            INSERT INTO evento_tramite values (default, tramite.id_tramite, 'iniciar', now());
+            INSERT INTO eventos_tramite values (default, tramite.id_tramite, 'iniciar', now());
             
                 RETURN QUERY SELECT * FROM tramites_state_with_resources WHERE id=tramite.id_tramite ORDER BY tramites_state_with_resources.fechacreacion;
                 
@@ -779,7 +779,7 @@ CREATE FUNCTION public.update_caso_state(_id_caso integer, event text, _datos js
     LANGUAGE plpgsql
     AS $$
   BEGIN
-          INSERT INTO evento_caso_social values (default, _id_caso, event, now());
+          INSERT INTO eventos_caso_social values (default, _id_caso, event, now());
           
                   RETURN QUERY SELECT caso_social_state.state FROM caso_social_state WHERE id = _id_caso;
                   
@@ -1247,7 +1247,7 @@ ALTER TABLE public.inmueble_urbano_view OWNER TO postgres;
 --
 
 CREATE TABLE public.institucion_banco (
-    id_instituciones_bancos integer NOT NULL,
+    id_institucion_banco integer NOT NULL,
     id_institucion integer NOT NULL,
     id_banco integer NOT NULL,
     numero_cuenta character varying,
@@ -1277,7 +1277,7 @@ ALTER TABLE public.instituciones_bancos_id_instituciones_bancos_seq OWNER TO pos
 -- Name: instituciones_bancos_id_instituciones_bancos_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public.instituciones_bancos_id_instituciones_bancos_seq OWNED BY public.institucion_banco.id_instituciones_bancos;
+ALTER SEQUENCE public.instituciones_bancos_id_instituciones_bancos_seq OWNED BY public.institucion_banco.id_institucion_banco;
 
 
 --
@@ -2380,10 +2380,10 @@ ALTER TABLE ONLY public.institucion ALTER COLUMN id_institucion SET DEFAULT next
 
 
 --
--- Name: institucion_banco id_instituciones_bancos; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: institucion_banco id_institucion_banco; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.institucion_banco ALTER COLUMN id_instituciones_bancos SET DEFAULT nextval('public.instituciones_bancos_id_instituciones_bancos_seq'::regclass);
+ALTER TABLE ONLY public.institucion_banco ALTER COLUMN id_institucion_banco SET DEFAULT nextval('public.instituciones_bancos_id_instituciones_bancos_seq'::regclass);
 
 
 --
@@ -2894,7 +2894,7 @@ COPY public.institucion (id_institucion, nombre_completo, nombre_corto) FROM std
 -- Data for Name: institucion_banco; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.institucion_banco (id_instituciones_bancos, id_institucion, id_banco, numero_cuenta, nombre_titular, documento_de_identificacion) FROM stdin;
+COPY public.institucion_banco (id_institucion_banco, id_institucion, id_banco, numero_cuenta, nombre_titular, documento_de_identificacion) FROM stdin;
 2	2	1	0116–0126–03–0018874177	SAGAS	rif:G-20005358-5
 3	3	1	0116–0126–06–0026593432	SEDEMAT	rif:G-20002908-0
 4	3	2	0134–0001–61–0013218667	SEDEMAT	rif:G-20002908-0
@@ -5653,7 +5653,7 @@ ALTER TABLE ONLY public.inmueble_urbano
 --
 
 ALTER TABLE ONLY public.institucion_banco
-    ADD CONSTRAINT instituciones_bancos_pkey PRIMARY KEY (id_instituciones_bancos);
+    ADD CONSTRAINT instituciones_bancos_pkey PRIMARY KEY (id_institucion_banco);
 
 
 --

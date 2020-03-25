@@ -222,12 +222,12 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   //ordenanza
   ORDINANCES_WITHOUT_CODCAT_PROCEDURE:
     'SELECT v.descripcion AS "valorDescripcion", v.valor_en_bs AS "valorEnBs", \
-  o.id_ordenanza as id o,.descripcion AS "descripcionOrdenanza", o.tarifa AS "tarifaOrdenanza", t.id_tipo_tramite AS "tipoTramite",t.tasa, t.formula, \
-  tt.costo_base AS "costoBase", t.utiliza_codcat AS "utilizaCodcat", vo.id_variable AS "idVariable", vo."nombreVariable", vo.nombre_plural AS "nombreVariablePlural" \
+  o.id_ordenanza as id ,o.descripcion AS "descripcionOrdenanza", o.tarifa AS "tarifaOrdenanza", t.id_tipo_tramite AS "tipoTramite",t.tasa, t.formula, \
+  tt.costo_base AS "costoBase", t.utiliza_codcat AS "utilizaCodcat", vo.id_variable AS "idVariable", vo.nombre as "nombreVariable", vo.nombre_plural AS "nombreVariablePlural" \
   FROM valor v INNER JOIN ordenanza o ON v.id_valor = o.id_valor \
   INNER JOIN tarifa_inspeccion t ON t.id_ordenanza = o.id_ordenanza \
   INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite \
-  INNER JOIN variable_ordenanza vo ON vo.id_variable = t.id_variable \
+  LEFT JOIN variable_ordenanza vo ON vo.id_variable = t.id_variable \
   WHERE t.id_tipo_tramite = $1 AND t.utiliza_codcat = false;',
   ORDINANCES_WITH_CODCAT_PROCEDURE:
     'SELECT v.descripcion AS "valorDescripcion", v.valor_en_bs AS "valorEnBs", \
@@ -236,7 +236,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   FROM valor v INNER JOIN ordenanza o ON v.id_valor = o.id_valor \
   INNER JOIN tarifa_inspeccion t ON t.id_ordenanza = o.id_ordenanza \
   INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite \
-  INNER JOIN variable_ordenanza vo ON vo.id_variable = t.id_variable \
+  LEFT JOIN variable_ordenanza vo ON vo.id_variable = t.id_variable \
   WHERE t.id_tipo_tramite = $1 AND t.utiliza_codcat = true;',
   CREATE_ORDINANCE_FOR_PROCEDURE:
     'INSERT INTO ordenanza_tramite (id_tramite, id_tarifa, utmm, valor_calc, factor, factor_value, cantidad_variable) \
