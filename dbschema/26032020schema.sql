@@ -178,7 +178,7 @@ CREATE FUNCTION public.complete_tramite_state(_id_tramite integer, event text, _
   BEGIN
           INSERT INTO evento_tramite values (default, _id_tramite, event, now());
           
-                  RETURN QUERY SELECT tramite_state.state FROM tramite_state WHERE id = _id_tramite;
+                  RETURN QUERY SELECT tramites_state.state FROM tramites_state WHERE id = _id_tramite;
                   
                           IF _datos IS NOT NULL THEN
                                       UPDATE tramite SET datos = _datos WHERE id_tramite = _id_tramite;
@@ -635,7 +635,7 @@ CREATE FUNCTION public.update_caso_state(_id_caso integer, event text, _datos js
   BEGIN
           INSERT INTO eventos_caso_social values (default, _id_caso, event, now());
           
-                  RETURN QUERY SELECT caso_social_state.state FROM caso_social_state WHERE id = _id_caso;
+                  RETURN QUERY SELECT casos_sociales_state.state FROM casos_sociales_state WHERE id = _id_caso;
                   
                           IF _datos IS NOT NULL THEN
                                       UPDATE caso_social SET datos = _datos WHERE id_caso = _id_caso;
@@ -656,7 +656,7 @@ CREATE FUNCTION public.update_tramite_state(_id_tramite integer, event text, _da
   BEGIN
           INSERT INTO evento_tramite values (default, _id_tramite, event, now());
           
-                  RETURN QUERY SELECT tramite_state.state FROM tramite_state WHERE id = _id_tramite;
+                  RETURN QUERY SELECT tramites_state.state FROM tramites_state WHERE id = _id_tramite;
                   
                           IF _datos IS NOT NULL THEN
                                       UPDATE tramite SET datos = _datos WHERE id_tramite = _id_tramite;
