@@ -116,12 +116,12 @@ const getProcedureInstances = async (user, client: PoolClient) => {
                   return {
                     id: ord.id,
                     idTramite: ord.idTramite,
+                    costoOrdenanza: +ord.costoOrdenanza,
                     ordenanza: ord.ordenanza,
                     factor: ord.factor,
                     factorValue: +ord.factorValue,
                     utmm: +ord.utmm,
-                    valorCalc: +ord.valorCalc,
-                    cantidad_variable: ord.cantidadVariable,
+                    valorCalc: +ord.valorCalc
                   };
                 }),
                 totalBs: ordinances.reduce((p, n) => p + +n.valorCalc, 0),
@@ -171,12 +171,12 @@ const getProcedureInstancesByInstitution = async (institution, tipoUsuario, clie
                   return {
                     id: ord.id,
                     idTramite: ord.idTramite,
+                    costoOrdenanza: +ord.costoOrdenanza,
                     ordenanza: ord.ordenanza,
                     factor: ord.factor,
                     factorValue: +ord.factorValue,
                     utmm: +ord.utmm,
-                    valorCalc: +ord.valorCalc,
-                    cantidadVariable: ord.cantidadVariable,
+                    valorCalc: +ord.valorCalc
                   };
                 }),
                 totalBs: ordinances.reduce((p, n) => p + +n.valorCalc, 0),
@@ -711,11 +711,23 @@ export const createMockCertificate = async procedure => {
 const insertOrdinancesByProcedure = async (ordinances, id, type, client: PoolClient) => {
   return Promise.all(
     ordinances.map(async (el, key) => {
-      if (+el.factorValue * +el.cantidadVariable !== el.valorCalc) {
-        throw new Error('Error en validación del valor calculado');
+      if (el.factor) {
+        if(el.valorCalc !== (el.costoOrdenanza * el.factorValue)){
+          throw new Error('Error en validación del valor calculado');
+        }
       }
-      const response = (await client.query(queries.CREATE_ORDINANCE_FOR_PROCEDURE, [id, type, el.ordenanza, el.utmm, el.valorCalc, el.factor, el.factorValue]))
-        .rows[0];
+      const response = (
+        await client.query(queries.CREATE_ORDINANCE_FOR_PROCEDURE, [
+          id,
+          type,
+          el.ordenanza,
+          el.utmm,
+          el.valorCalc,
+          el.factor,
+          el.factorValue,
+          el.costoOrdenanza
+        ])
+      ).rows[0];
       const ordinance = {
         id: key,
         idTramite: response.id_tramite,
