@@ -714,18 +714,8 @@ const insertOrdinancesByProcedure = async (ordinances, id, type, client: PoolCli
       if (+el.factorValue * +el.cantidadVariable !== el.valorCalc) {
         throw new Error('Error en validación del valor calculado');
       }
-      const response = (
-        await client.query(queries.CREATE_ORDINANCE_FOR_PROCEDURE, [
-          id,
-          type,
-          el.ordenanza,
-          el.utmm,
-          el.valorCalc,
-          el.factor,
-          el.factorValue,
-          el.cantidadVariable,
-        ])
-      ).rows[0];
+      const response = (await client.query(queries.CREATE_ORDINANCE_FOR_PROCEDURE, [id, type, el.ordenanza, el.utmm, el.valorCalc, el.factor, el.factorValue]))
+        .rows[0];
       const ordinance = {
         id: key,
         idTramite: response.id_tramite,

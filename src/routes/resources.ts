@@ -27,7 +27,7 @@ router.get('/parishes', async (req: any, res) => {
   if (data) res.status(200).json(data);
 });
 
-router.get('/taxValues', async (req: any, res) => {
+router.get('/taxValues/resources', async (req: any, res) => {
   const [err, data] = await fulfill(getDataForTaxValues());
   if (err) res.status(500).json(err);
   if (data) res.status(200).json(data);
