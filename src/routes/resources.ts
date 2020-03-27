@@ -4,7 +4,7 @@ import { errorMessageGenerator } from '@helpers/errors';
 import { authenticate } from 'passport';
 import { getAllInstitutions } from '@helpers/institutions';
 import { getAllParishes } from '@helpers/parish';
-import { getDataForTaxValues, getSectorByParish, getTotalTaxForEstate, updateTaxValues } from '@helpers/taxValues';
+import { getDataForTaxValues, getSectorByParish, updateTaxValues } from '@helpers/taxValues';
 
 const router = Router();
 
@@ -36,13 +36,6 @@ router.get('/taxValues/resources', async (req: any, res) => {
 router.get('/sector/:parish', async (req: any, res) => {
   const { parish } = req.params;
   const [err, data] = await fulfill(getSectorByParish(parish));
-  if (err) res.status(500).json(err);
-  if (data) res.status(200).json(data);
-});
-
-router.post('/taxValue', async (req: any, res) => {
-  const { valorFiscal } = req.body;
-  const [err, data] = await fulfill(getTotalTaxForEstate(valorFiscal));
   if (err) res.status(500).json(err);
   if (data) res.status(200).json(data);
 });

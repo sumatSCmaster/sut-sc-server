@@ -96,22 +96,6 @@ export const updateTaxValues = async taxes => {
   }
 };
 
-export const getTotalTaxForEstate = async tramite => {
-  const { datos } = tramite;
-  const client = await pool.connect();
-  try {
-  } catch (error) {
-    console.log(error);
-    throw {
-      status: 500,
-      error,
-      message: errorMessageGenerator(error) || 'Error al crear el codigo catastral',
-    };
-  } finally {
-    client.release();
-  }
-};
-
 export const getSectorByParish = async parish => {
   const client = await pool.connect();
   try {
