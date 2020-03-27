@@ -10,19 +10,19 @@ export const getDataForTaxValues = async () => {
   const anos = {};
   try {
     const data = (await client.query(queries.GET_YEARS)).rows;
-    Promise.all(
+    const parroquias = (await client.query(queries.GET_PARISHES)).rows;
+    const tiposConstruccion = (await client.query(queries.GET_CONSTRUCTION_TYPES)).rows;
+    await Promise.all(
       data.map(async el => {
         const year = el.descripcion;
         anos[year] = {
           id: el.id,
-          terreno: await getGroundsByYear(el.id, client),
-          construccion: await getConstructionsByYear(el.id, client),
+          parroquias: await getGroundsByYear(el.id, client),
+          construcciones: await getConstructionsByYear(el.id, client),
         };
       })
     );
-    const parroquias = (await client.query(queries.GET_PARISHES)).rows;
-    const tiposConstruccion = (await client.query(queries.GET_CONSTRUCTION_TYPES)).rows;
-    return { status: 200, message: 'Informacion inicial de valores fiscales obtenida', datos: { parroquias, anos, tiposConstruccion } };
+    return { status: 200, message: 'Informacion inicial de valores fiscales obtenida', datos: { parroquias, tiposConstruccion, anos } };
   } catch (error) {
     console.log(error);
     throw {
@@ -52,13 +52,30 @@ const getGroundsByYear = async (year: number, client: PoolClient) => {
       throw new Error(e);
     })
   ).rows;
-  return res.map(el => {
-    return {
-      id: +el.id,
-      valorFiscal: el.valorFiscal,
-      sector: { id: +el.idSector, descripcion: el.sector, parroquia: { id: +el.idParroquia, descripcion: el.parroquia } },
-    };
-  });
+  const parroquias = (await client.query(queries.GET_PARISHES)).rows;
+  return Promise.all(
+    parroquias.map(async parish => {
+      const sectores = (await client.query(queries.GET_SECTOR_BY_PARISH, [parish.nombre])).rows;
+      return {
+        id: +parish.id,
+        descripcion: parish.nombre,
+        sectores: sectores
+          .map(sector => {
+            const terreno = res.find(el => +el.idSector == +sector.id && +el.idParroquia == +parish.id);
+            if (!terreno) return null;
+            return {
+              id: +sector.id,
+              descripcion: sector.descripcion,
+              terreno: {
+                id: +terreno.id,
+                valorFiscal: terreno.valorFiscal,
+              },
+            };
+          })
+          .filter(el => el !== null),
+      };
+    })
+  );
 };
 
 export const updateTaxValues = async taxes => {
