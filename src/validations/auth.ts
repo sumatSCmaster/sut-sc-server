@@ -342,7 +342,9 @@ const validations = {
     .isArray()
     .isLength({ min: 1 })
     .withMessage('Debe incluir al menos un valor fiscal para este inmueble'),
-  estimacionSimple,
+  estimacionSimple: check('tramite.datos.estimacionSimple')
+    .exists()
+    .withMessage('Debe incluir la estimacion simple'),
 };
 
 export const createSuperuser = [
