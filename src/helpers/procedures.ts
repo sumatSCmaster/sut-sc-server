@@ -121,7 +121,7 @@ const getProcedureInstances = async (user, client: PoolClient) => {
                     factor: ord.factor,
                     factorValue: +ord.factorValue,
                     utmm: +ord.utmm,
-                    valorCalc: +ord.valorCalc
+                    valorCalc: +ord.valorCalc,
                   };
                 }),
                 totalBs: ordinances.reduce((p, n) => p + +n.valorCalc, 0),
@@ -176,7 +176,7 @@ const getProcedureInstancesByInstitution = async (institution, tipoUsuario, clie
                     factor: ord.factor,
                     factorValue: +ord.factorValue,
                     utmm: +ord.utmm,
-                    valorCalc: +ord.valorCalc
+                    valorCalc: +ord.valorCalc,
                   };
                 }),
                 totalBs: ordinances.reduce((p, n) => p + +n.valorCalc, 0),
@@ -701,7 +701,7 @@ export const createMockCertificate = async procedure => {
     throw {
       status: 500,
       error,
-      message: errorMessageGenerator(error) || 'Error al actualizar el tramite',
+      message: errorMessageGenerator(error) || 'Error al crear el certificado',
     };
   } finally {
     client.release();
@@ -712,7 +712,7 @@ const insertOrdinancesByProcedure = async (ordinances, id, type, client: PoolCli
   return Promise.all(
     ordinances.map(async (el, key) => {
       if (el.factor) {
-        if(el.valorCalc !== (el.costoOrdenanza * el.factorValue)){
+        if (el.valorCalc !== el.costoOrdenanza * el.factorValue) {
           throw new Error('Error en validación del valor calculado');
         }
       }
@@ -725,7 +725,7 @@ const insertOrdinancesByProcedure = async (ordinances, id, type, client: PoolCli
           el.valorCalc,
           el.factor,
           el.factorValue,
-          el.costoOrdenanza
+          el.costoOrdenanza,
         ])
       ).rows[0];
       const ordinance = {
