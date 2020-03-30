@@ -274,7 +274,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
       trf.id_ordenanza=ord.id_ordenanza WHERE trf.id_tipo_tramite=$2 AND ord.descripcion = $3 LIMIT 1), \
       $4,$5,$6,$7, $8) RETURNING *;',
   ORDINANCES_PROCEDURE_INSTANCES: 'SELECT * FROM ordenanzas_instancias_tramites WHERE "idTramite" = $1;',
-  GET_ORDINANCE_VARIABLES: 'SELECT * FROM variable_ordenanza;',
+  GET_ORDINANCE_VARIABLES: 'SELECT id_variable as id, nombre, nombre_plural as "nombrePlural" FROM variable_ordenanza;',
   UPDATE_ORDINANCE: 'UPDATE ordenanza SET tarifa = $2 WHERE id_ordenanza = $1 RETURNING *;',
   DISABLE_ORDINANCE: 'UPDATE ordenanza SET habilitado = false WHERE id_ordenanza = $1 RETURNING *;',
   //valor
