@@ -250,7 +250,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     "WITH ordenanzaTmp AS (INSERT INTO ordenanza (descripcion, tarifa, id_valor) VALUES ($1, $2, (SELECT id_valor FROM valor WHERE descripcion = 'UTMM')) RETURNING *) \
     INSERT INTO tarifa_inspeccion (id_ordenanza, id_tipo_tramite, utiliza_codcat, id_variable) VALUES ((SELECT id_ordenanza FROM ordenanzaTmp), \
     $3, $4, $5);",
-  ORDINANCES_BY_INSTITUTION: 'SELECT o.descripcion AS "nombreOrdenanza", o.tarifa AS "precioUtmm", ti.id_tipo_tramite AS "idTipoTramite", \
+  ORDINANCES_BY_INSTITUTION: 'SELECT o.id_ordenanza AS id, o.descripcion AS "nombreOrdenanza", o.tarifa AS "precioUtmm", ti.id_tipo_tramite AS "idTipoTramite", \
     ti.utiliza_codcat AS "utilizaCodcat", (ti.id_variable IS NOT NULL) AS "utilizaVariable", ti.id_variable AS "idVariable", vo.nombre AS "nombreVariable" \
     FROM ordenanza o \
     INNER JOIN tarifa_inspeccion ti ON o.id_ordenanza = ti.id_ordenanza \
