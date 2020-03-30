@@ -250,6 +250,14 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     "WITH ordenanzaTmp AS (INSERT INTO ordenanza (descripcion, tarifa, id_valor) VALUES ($1, $2, (SELECT id_valor FROM valor WHERE descripcion = 'UTMM')) RETURNING *) \
     INSERT INTO tarifa_inspeccion (id_ordenanza, id_tipo_tramite, utiliza_codcat, id_variable) VALUES ((SELECT id_ordenanza FROM ordenanzaTmp), \
     $3, $4, $5);",
+  ORDINANCES_BY_INSTITUTION: 'SELECT o.descripcion AS "nombreOrdenanza", o.tarifa AS "precioUtmm", ti.id_tipo_tramite AS "idTipoTramite", \
+    ti.utiliza_codcat AS "utilizaCodcat", (ti.id_variable IS NOT NULL) AS "utilizaVariable", ti.id_variable AS "idVariable", vo.nombre AS "nombreVariable" \
+    FROM ordenanza o \
+    INNER JOIN tarifa_inspeccion ti ON o.id_ordenanza = ti.id_ordenanza \
+    LEFT JOIN variable_ordenanza vo ON ti.id_variable = vo.id_variable \
+    INNER JOIN tipo_tramite tt ON tt.id_tipo_tramite = ti.id_tipo_tramite \
+    INNER JOIN institucion i ON i.id_institucion = tt.id_institucion \
+    WHERE i.id_institucion = $1',
   ORDINANCES_WITHOUT_CODCAT_PROCEDURE:
     'SELECT v.descripcion AS "valorDescripcion", v.valor_en_bs AS "valorEnBs", \
   o.id_ordenanza as id ,o.descripcion AS "descripcionOrdenanza", o.tarifa AS "tarifaOrdenanza", t.id_tarifa AS "idTarifa", t.id_tipo_tramite AS "tipoTramite", t.formula, \

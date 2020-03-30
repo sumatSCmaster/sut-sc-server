@@ -5,6 +5,24 @@ import { PoolClient } from 'pg';
 
 const pool = Pool.getInstance();
 
+export const getOrdinancesByInstitution = async (idInstitucion) => {
+    const client = await pool.connect();
+    try{
+        const res = await client.query(queries.ORDINANCES_BY_INSTITUTION, [idInstitucion]);
+        return {
+            status: 200,
+            ordenanzas: res.rows
+        }
+    } catch(e) {
+        throw {
+            status: 500,
+            message: errorMessageGenerator(e) || 'Error al obtener ordenanzs'
+        }
+    } finally {
+        client.release();
+    }
+}
+
 export const getOrdinancesByProcedure = async (id) => {
     const client = await pool.connect();
     try{

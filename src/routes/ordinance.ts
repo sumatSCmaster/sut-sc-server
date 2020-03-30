@@ -1,8 +1,23 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
-import { getOrdinancesByProcedure, getOrdinancesByProcedureWithCodCat, disableOrdinance, updateOrdinance, getVariables, createOrdinance } from '@helpers/ordinance';
+import { authenticate } from 'passport';
+import { getOrdinancesByProcedure, getOrdinancesByProcedureWithCodCat, disableOrdinance, updateOrdinance, getVariables, createOrdinance, getOrdinancesByInstitution } from '@helpers/ordinance';
 
 const router = Router();
+
+router.get('/', authenticate('jwt'), async (req: any, res) => {
+    const { cuentaFuncionario } = req.user;
+    if (cuentaFuncionario.id_institucion) {
+      const [err, data] = await fulfill(getOrdinancesByInstitution(cuentaFuncionario.id_institucion));
+      if (err) res.status(500).json(err);
+      if (data) res.status(200).json(data);
+    } else {
+      res.status(401).json({
+        message: 'No tiene permisos para obtener las ordenanzas.',
+        status: 401,
+      });
+    }
+  });
 
 router.get('/variables', async (req, res) => {
     const [error, data] = await fulfill(getVariables());
