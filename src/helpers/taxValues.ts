@@ -96,6 +96,36 @@ export const updateTaxValues = async taxes => {
   }
 };
 
+export const getTaxValuesToDate = async () => {
+  const client = await pool.connect();
+  const anos = {};
+  try {
+    const data = (await client.query(queries.GET_LAST_YEAR)).rows;
+    const parroquias = (await client.query(queries.GET_PARISHES)).rows;
+    const tiposConstruccion = (await client.query(queries.GET_CONSTRUCTION_TYPES)).rows;
+    await Promise.all(
+      data.map(async el => {
+        const year = el.descripcion;
+        anos[year] = {
+          id: el.id,
+          parroquias: await getGroundsByYear(el.id, client),
+          construcciones: await getConstructionsByYear(el.id, client),
+        };
+      })
+    );
+    return { status: 200, message: 'Informacion inicial de valores fiscales obtenida', datos: { parroquias, tiposConstruccion, anos } };
+  } catch (error) {
+    console.log(error);
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al crear el codigo catastral',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 export const getSectorByParish = async parish => {
   const client = await pool.connect();
   try {
