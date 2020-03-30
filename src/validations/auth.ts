@@ -3,6 +3,65 @@ import { fulfill } from '@utils/resolver';
 import { getFieldsForValidations } from '@helpers/procedures';
 import { IDsTipoUsuario as userTypes } from '@interfaces/sigt';
 
+const estimacionSimple = [
+  check('esTerreno')
+    .exists()
+    .withMessage('Debe indicar si el inmueble es terreno')
+    .isBoolean()
+    .withMessage('Indicador de terreno invalido'),
+  check('esConstruccion')
+    .exists()
+    .withMessage('Debe indicar si el inmueble es construccion')
+    .isBoolean()
+    .withMessage('Indicador de construccion invalido'),
+  check('valoresFiscales')
+    .exists()
+    .withMessage('Debe incluir los valores fiscales del inmueble')
+    .isArray()
+    .isLength({ min: 1, max: 4 })
+    .withMessage('Debe incluir valores fiscales validos'),
+  check('terreno')
+    .optional()
+    .if(check('esTerreno').exists())
+    .contains([
+      check('area')
+        .exists()
+        .withMessage('Debe incluir el area del terreno')
+        .isString()
+        .withMessage('Debe incluir un area del terreno valida'),
+      check('sector')
+        .exists()
+        .withMessage('Debe incluir el sector del terreno')
+        .isInt()
+        .withMessage('Debe incluir un sector del terreno valida'),
+      check('valorSector')
+        .exists()
+        .withMessage('Debe incluir el valor fiscal del sector')
+        .isString()
+        .withMessage('Debe incluir un valor fiscal valido para el sector'),
+    ]),
+  check('construccion')
+    .optional()
+    .if(check('esConstruccion').exists())
+    .contains([
+      check('area')
+        .exists()
+        .withMessage('Debe incluir el area de construccion')
+        .isString()
+        .withMessage('Debe incluir un area de construccion valida'),
+      check('sector')
+        .exists()
+        .withMessage('Debe incluir el secior del construccion')
+        .isInt()
+        .withMessage('Debe incluir un sector del construccion valida'),
+      check('valorSector')
+        .exists()
+        .withMessage('Debe incluir el valor fiscal del sector')
+        .isString()
+        .withMessage('Debe incluir un valor fiscal valido para el sector'),
+    ]),
+];
+
 const validations = {
   nombre: check('tramite.datos.nombre')
     .exists()
@@ -274,6 +333,10 @@ const validations = {
     .isArray()
     .isLength({ min: 1 })
     .withMessage('Debe incluir al menos un valor fiscal para este inmueble'),
+  estimacionSimple: check('tramite.datos.estimacionSimple')
+    .exists()
+    .withMessage('Debe incluir la estimacion simple')
+    .contains(estimacionSimple),
 };
 
 export const createSuperuser = [
