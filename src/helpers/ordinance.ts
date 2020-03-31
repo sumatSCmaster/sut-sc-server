@@ -171,10 +171,11 @@ export const getVariables = async () => {
 export const createOrdinance = async (ordinance) => {
     const client = await pool.connect();
     try{
-        const res = client.query(queries.CREATE_ORDINANCE, [ordinance.nombreOrdenanza, ordinance.precioUtmm, ordinance.idTipoTramite, ordinance.utilizaCodcat ? ordinance.utilizaCodCat : false, ordinance.utilizaVariable ? ordinance.idVariable : null]);
+        const res = await client.query(queries.CREATE_ORDINANCE, [ordinance.nombreOrdenanza, ordinance.precioUtmm, ordinance.idTipoTramite, ordinance.utilizaCodcat ? ordinance.utilizaCodCat : false, ordinance.utilizaVariable ? ordinance.idVariable : null]);
         return {
             status: 200,
-            message: 'Ordenanza creada'
+            message: 'Ordenanza creada',
+            ordenanza: res.rows[0]
         }
     } catch(e) {
         throw {
