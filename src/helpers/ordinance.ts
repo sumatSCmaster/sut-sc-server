@@ -140,6 +140,7 @@ export const updateOrdinance = async (idOrdenanza, newUtmm) => {
             message: 'No se halló la ordenanza deseada'
         }
     } catch(e) {
+        console.log(e)
         throw {
             status: 500,
             message: errorMessageGenerator(e) || 'Error al actualizar ordenanza'
