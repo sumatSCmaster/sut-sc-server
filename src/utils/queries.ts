@@ -270,9 +270,21 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   CREATE_PROPERTY_WITH_SIGNED_OWNER: 'INSERT INTO propietario_inmueble (id_propietario, id_inmueble) VALUES ($1, $2)',
   //ordenanza
   CREATE_ORDINANCE:
-    "WITH ordenanzaTmp AS (INSERT INTO ordenanza (descripcion, tarifa, id_valor) VALUES ($1, $2, (SELECT id_valor FROM valor WHERE descripcion = 'UTMM')) RETURNING *) \
-    INSERT INTO tarifa_inspeccion (id_ordenanza, id_tipo_tramite, utiliza_codcat, id_variable) VALUES ((SELECT id_ordenanza FROM ordenanzaTmp), \
-    $3, $4, $5);",
+    'WITH ordenanzaTmp AS (INSERT INTO ordenanza (descripcion, tarifa, id_valor) VALUES ($1, $2, (SELECT id_valor FROM valor WHERE descripcion = \'UTMM\')) RETURNING *) \
+    , tarifaTmp AS (INSERT INTO tarifa_inspeccion (id_ordenanza, id_tipo_tramite, utiliza_codcat, id_variable) VALUES ((SELECT id_ordenanza FROM ordenanzaTmp), \
+    $3, $4, $5) RETURNING *) \
+    SELECT o.id_ordenanza AS "id", o.descripcion AS "nombreOrdenanza", o.tarifa AS "precioUtmm", t.id_tipo_tramite AS "idTipoTramite", \
+    t.utiliza_codcat AS "utilizaCodcat", t.id_variable IS NOT NULL AS "utilizaVariable", t.id_variable AS "idVariable", v.nombre AS "nombreVariable" \
+    FROM ordenanzaTmp o INNER JOIN tarifaTmp t ON o.id_ordenanza = t.id_ordenanza \
+    LEFT JOIN variable_ordenanza v ON t.id_variable = v.id_variable',
+  ORDINANCES_BY_INSTITUTION: 'SELECT o.id_ordenanza AS id, o.descripcion AS "nombreOrdenanza", o.tarifa AS "precioUtmm", ti.id_tipo_tramite AS "idTipoTramite", \
+    ti.utiliza_codcat AS "utilizaCodcat", (ti.id_variable IS NOT NULL) AS "utilizaVariable", ti.id_variable AS "idVariable", vo.nombre AS "nombreVariable" \
+    FROM ordenanza o \
+    INNER JOIN tarifa_inspeccion ti ON o.id_ordenanza = ti.id_ordenanza \
+    LEFT JOIN variable_ordenanza vo ON ti.id_variable = vo.id_variable \
+    INNER JOIN tipo_tramite tt ON tt.id_tipo_tramite = ti.id_tipo_tramite \
+    INNER JOIN institucion i ON i.id_institucion = tt.id_institucion \
+    WHERE i.id_institucion = $1 AND o.habilitado = true',
   ORDINANCES_WITHOUT_CODCAT_PROCEDURE:
     'SELECT v.descripcion AS "valorDescripcion", v.valor_en_bs AS "valorEnBs", \
   o.id_ordenanza as id ,o.descripcion AS "descripcionOrdenanza", o.tarifa AS "tarifaOrdenanza", t.id_tarifa AS "idTarifa", t.id_tipo_tramite AS "tipoTramite", t.formula, \
@@ -297,8 +309,12 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
       trf.id_ordenanza=ord.id_ordenanza WHERE trf.id_tipo_tramite=$2 AND ord.descripcion = $3 LIMIT 1), \
       $4,$5,$6,$7, $8) RETURNING *;',
   ORDINANCES_PROCEDURE_INSTANCES: 'SELECT * FROM ordenanzas_instancias_tramites WHERE "idTramite" = $1;',
-  GET_ORDINANCE_VARIABLES: 'SELECT * FROM variable_ordenanza;',
-  UPDATE_ORDINANCE: 'UPDATE ordenanza SET tarifa = $2 WHERE id_ordenanza = $1 RETURNING *;',
+  GET_ORDINANCE_VARIABLES: 'SELECT id_variable as id, nombre, nombre_plural as "nombrePlural" FROM variable_ordenanza;',
+  UPDATE_ORDINANCE: 'WITH updateTmp AS (UPDATE ordenanza SET tarifa = $2 WHERE id_ordenanza = $1 RETURNING id_ordenanza as id, descripcion AS "nombreOrdenanza", tarifa AS "precioUtmm") \
+      SELECT o.id, "nombreOrdenanza", "precioUtmm", t.id_tipo_tramite AS "idTipoTramite", \
+      t.utiliza_codcat AS "utilizaCodcat", t.id_variable IS NOT NULL AS "utilizaVariable", t.id_variable AS "idVariable", v.nombre AS "nombreVariable" \
+      FROM updateTmp o INNER JOIN tarifa_inspeccion t ON o.id = t.id_ordenanza \
+      LEFT JOIN variable_ordenanza v ON t.id_variable = v.id_variable',
   DISABLE_ORDINANCE: 'UPDATE ordenanza SET habilitado = false WHERE id_ordenanza = $1 RETURNING *;',
   //valor
   GET_UTMM_VALUE: "SELECT valor_en_bs FROM valor WHERE descripcion = 'UTMM'",
