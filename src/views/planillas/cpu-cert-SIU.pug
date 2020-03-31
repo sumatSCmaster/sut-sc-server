@@ -39,7 +39,7 @@ block content
         th Sector
         th Valor fiscal
       tr        
-        td #{datos.funcionario.estimacionSimple.esTerreno && datos.funcionario.esConstruccion ? 'TERRENO CON CONSTRUCCIÓN' : datos.funcionario.estimacionSimple.esTerreno ? 'TERRENO' : 'CONSTRUCCIÓN'}
+        td #{datos.funcionario.estimacionSimple.esTerreno && datos.funcionario.estimacionSimple.esConstruccion ? 'TERRENO CON CONSTRUCCIÓN' : datos.funcionario.estimacionSimple.esTerreno ? 'TERRENO' : 'CONSTRUCCIÓN'}
         td #{datos.funcionario.estimacionSimple.esTerreno ? datos.funcionario.estimacionSimple.terreno.area : 'N/A'}
         td #{datos.funcionario.estimacionSimple.esConstruccion ? datos.funcionario.estimacionSimple.construccion.area : 'N/A'}
         td #{datos.funcionario.estimacionSimple.esConstruccion ? datos.funcionario.estimacionSimple.construccion.modelo : 'N/A'}
