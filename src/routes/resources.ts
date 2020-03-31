@@ -3,8 +3,7 @@ import { fulfill } from '@utils/resolver';
 import { errorMessageGenerator } from '@helpers/errors';
 import { authenticate } from 'passport';
 import { getAllInstitutions } from '@helpers/institutions';
-import { getAllParishes } from '@helpers/parish';
-import { getSectorByParish } from '@helpers/taxValues';
+import { getAllParishes, getSectorByParish } from '@helpers/parish';
 import { isSuperuser } from '@validations/auth';
 
 const router = Router();

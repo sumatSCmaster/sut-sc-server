@@ -25,3 +25,20 @@ export const getAllParishes = async (): Promise<{
     client.release();
   }
 };
+
+export const getSectorByParish = async parish => {
+  const client = await pool.connect();
+  try {
+    const sectores = (await client.query(queries.GET_SECTOR_BY_PARISH, [parish])).rows;
+    return { status: 200, message: 'Sectores obtenidos satisfactoriamente', sectores };
+  } catch (error) {
+    console.log(error);
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al crear el codigo catastral',
+    };
+  } finally {
+    client.release();
+  }
+};
