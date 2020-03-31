@@ -202,6 +202,16 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_YEARS: 'SELECT id, descripcion FROM VALORES_FISCALES.ANO ORDER BY DESCRIPCION DESC LIMIT 5',
   GET_LAST_YEAR: 'SELECT id, descripcion FROM VALORES_FISCALES.ANO ORDER BY DESCRIPCION DESC LIMIT 1',
   GET_CONSTRUCTION_TYPES: 'SELECT id, descripcion FROM VALORES_FISCALES.TIPO_CONSTRUCCION',
+  GET_GROUND_BY_ID:
+    'SELECT DISTINCT tr.valor_fiscal AS "valorFiscal", tr.id, tr.sector_id AS "idSector", se.descripcion AS \
+  sector, pa.id AS "idParroquia", pa.nombre AS parroquia FROM VALORES_FISCALES.TERRENO tr INNER \
+  JOIN VALORES_FISCALES.SECTOR se ON tr.sector_id = se.id INNER JOIN PARROQUIA pa ON se.parroquia_id \
+  = pa.id WHERE tr.id=$1 ORDER BY tr.sector_id',
+  GET_CONSTRUCTION_BY_ID:
+    'SELECT DISTINCT cr.valor_fiscal AS "valorFiscal", cr.id, cr.tipo_construccion_id AS \
+  "idTipoConstruccion", tc.descripcion AS "tipoConstruccion" FROM valores_fiscales.construccion cr INNER \
+  JOIN valores_fiscales.tipo_construccion tc ON tc.id = cr.tipo_construccion_id WHERE cr.id = $1 \
+  ORDER BY cr.tipo_construccion_id',
   GET_CONSTRUCTION_BY_YEAR:
     'SELECT DISTINCT cr.valor_fiscal AS "valorFiscal", cr.id, cr.tipo_construccion_id AS \
   "idTipoConstruccion", tc.descripcion AS "tipoConstruccion" FROM valores_fiscales.construccion cr INNER \
@@ -222,6 +232,19 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   "idTipoConstruccion", tc.descripcion AS "tipoConstruccion" FROM valores_fiscales.construccion cr INNER \
   JOIN valores_fiscales.tipo_construccion tc ON tc.id = cr.tipo_construccion_id WHERE tc.descripcion = $1 \
   ORDER BY cr.tipo_construccion_id',
+  UPDATE_GROUND_VALUES_BY_SECTOR:
+    'UPDATE valores_fiscales.terreno tr SET valor_fiscal = $1 WHERE \
+    ano_id=(SELECT id FROM valores_fiscales.ano WHERE descripcion = $2) AND sector_id = $3 RETURNING *',
+  UPDATE_GROUND_VALUES_BY_FACTOR:
+    'UPDATE valores_fiscales.terreno tr SET valor_fiscal = valor_fiscal * $1 WHERE \
+    ano_id=(SELECT id FROM valores_fiscales.ano WHERE descripcion = $2) RETURNING *',
+  UPDATE_CONSTRUCTION_VALUES_BY_MODEL:
+    'UPDATE valores_fiscales.construccion tr SET valor_fiscal = $1 WHERE \
+    ano_id=(SELECT id FROM valores_fiscales.ano WHERE descripcion = $2) AND \
+    tipo_construccion_id = $3 RETURNING *',
+  UPDATE_CONSTRUCTION_VALUES_BY_FACTOR:
+    'UPDATE valores_fiscales.construccion tr SET valor_fiscal = valor_fiscal * $1 WHERE \
+    ano_id=(SELECT id FROM valores_fiscales.ano WHERE descripcion = $2) RETURNING *',
 
   //Inmuebles
   GET_ALL_PROPERTIES:

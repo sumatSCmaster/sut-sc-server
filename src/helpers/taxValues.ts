@@ -78,18 +78,131 @@ const getGroundsByYear = async (year: number, client: PoolClient) => {
   );
 };
 
-export const updateTaxValues = async taxes => {
+export const updateGroundValuesByFactor = async ground => {
   const client = await pool.connect();
+  const year = new Date().getFullYear();
+  const { factor } = ground;
   try {
     client.query('BEGIN');
+    const response = (await client.query(queries.UPDATE_GROUND_VALUES_BY_FACTOR, [factor, year])).rows[0];
+    const anos = {
+      [year]: {
+        id: response.ano_id,
+        parroquias: await getGroundsByYear(response.ano_id, client),
+      },
+    };
     client.query('COMMIT');
+    return { status: 200, message: 'Valor fiscal de los terrenos actualizado!', anos };
   } catch (error) {
     client.query('ROLLBACK');
     console.log(error);
     throw {
       status: 500,
       error,
-      message: errorMessageGenerator(error) || 'Error al crear el codigo catastral',
+      message: errorMessageGenerator(error) || 'Error al actualizar el valor fiscal de los terrenos',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const updateConstructionValuesByFactor = async construction => {
+  const client = await pool.connect();
+  const year = new Date().getFullYear();
+  const { factor } = construction;
+  try {
+    client.query('BEGIN');
+    const response = (await client.query(queries.UPDATE_CONSTRUCTION_VALUES_BY_FACTOR, [factor, year])).rows[0];
+    const anos = {
+      [year]: {
+        id: response.ano_id,
+        construcciones: await getConstructionsByYear(response.ano_id, client),
+      },
+    };
+    client.query('COMMIT');
+    return { status: 200, message: 'Valor fiscal de las construcciones actualizado!', anos };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al actualizar el valor fiscal de las construcciones',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const updateGroundValuesBySector = async (ground, sector) => {
+  const client = await pool.connect();
+  const year = new Date().getFullYear();
+  const { valorFiscal } = ground;
+  try {
+    client.query('BEGIN');
+    const response = (await client.query(queries.UPDATE_GROUND_VALUES_BY_SECTOR, [valorFiscal, year, sector])).rows[0];
+    const ground = (await client.query(queries.GET_GROUND_BY_ID, [response.id])).rows[0];
+    const sectores = {
+      id: +ground.idSector,
+      descripcion: ground.sector,
+      terreno: {
+        id: +ground.id,
+        valorFiscal: ground.valorFiscal,
+      },
+    };
+    const parroquia = {
+      id: ground.idParroquia,
+      descripcion: ground.parroquia,
+      sectores: [sectores],
+    };
+    const anos = {
+      [year]: {
+        id: response.ano_id,
+        parroquia,
+      },
+    };
+    client.query('COMMIT');
+    return { status: 200, message: 'Valor fiscal del terreno actualizado!', anos };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al actualizar el valor fiscal del terreno',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const updateConstructionValuesByModel = async (construction, model) => {
+  const client = await pool.connect();
+  const year = new Date().getFullYear();
+  const { valorFiscal } = construction;
+  try {
+    client.query('BEGIN');
+    const response = (await client.query(queries.UPDATE_CONSTRUCTION_VALUES_BY_MODEL, [valorFiscal, year, model])).rows[0];
+    const construct = (await client.query(queries.GET_CONSTRUCTION_BY_ID, [response.id])).rows[0];
+    const anos = {
+      [year]: {
+        id: response.ano_id,
+        construccion: {
+          id: +construct.id,
+          valorFiscal: construct.valorFiscal,
+          tipoConstruccion: { id: +construct.idTipoConstruccion, modeloConstruccion: construct.tipoConstruccion },
+        },
+      },
+    };
+    client.query('COMMIT');
+    return { status: 200, message: 'Valor fiscal de la construccion actualizado!', anos };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al actualizar el valor fiscal de la construccion',
     };
   } finally {
     client.release();
@@ -113,13 +226,13 @@ export const getTaxValuesToDate = async () => {
         };
       })
     );
-    return { status: 200, message: 'Informacion inicial de valores fiscales obtenida', datos: { parroquias, tiposConstruccion, anos } };
+    return { status: 200, message: 'Valores fiscales obtenidos', datos: { parroquias, tiposConstruccion, anos } };
   } catch (error) {
     console.log(error);
     throw {
       status: 500,
       error,
-      message: errorMessageGenerator(error) || 'Error al crear el codigo catastral',
+      message: errorMessageGenerator(error) || 'Error al obtener los valores fiscales actualizados',
     };
   } finally {
     client.release();
