@@ -277,7 +277,8 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     t.utiliza_codcat AS "utilizaCodcat", t.id_variable IS NOT NULL AS "utilizaVariable", t.id_variable AS "idVariable", v.nombre AS "nombreVariable" \
     FROM ordenanzaTmp o INNER JOIN tarifaTmp t ON o.id_ordenanza = t.id_ordenanza \
     LEFT JOIN variable_ordenanza v ON t.id_variable = v.id_variable',
-  ORDINANCES_BY_INSTITUTION: 'SELECT o.id_ordenanza AS id, o.descripcion AS "nombreOrdenanza", o.tarifa AS "precioUtmm", ti.id_tipo_tramite AS "idTipoTramite", \
+  ORDINANCES_BY_INSTITUTION:
+    'SELECT o.id_ordenanza AS id, o.descripcion AS "nombreOrdenanza", o.tarifa AS "precioUtmm", ti.id_tipo_tramite AS "idTipoTramite", \
     ti.utiliza_codcat AS "utilizaCodcat", (ti.id_variable IS NOT NULL) AS "utilizaVariable", ti.id_variable AS "idVariable", vo.nombre AS "nombreVariable" \
     FROM ordenanza o \
     INNER JOIN tarifa_inspeccion ti ON o.id_ordenanza = ti.id_ordenanza \
@@ -310,7 +311,8 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
       $4,$5,$6,$7, $8) RETURNING *;',
   ORDINANCES_PROCEDURE_INSTANCES: 'SELECT * FROM ordenanzas_instancias_tramites WHERE "idTramite" = $1;',
   GET_ORDINANCE_VARIABLES: 'SELECT id_variable as id, nombre, nombre_plural as "nombrePlural" FROM variable_ordenanza;',
-  UPDATE_ORDINANCE: 'WITH updateTmp AS (UPDATE ordenanza SET tarifa = $2 WHERE id_ordenanza = $1 RETURNING id_ordenanza as id, descripcion AS "nombreOrdenanza", tarifa AS "precioUtmm") \
+  UPDATE_ORDINANCE:
+    'WITH updateTmp AS (UPDATE ordenanza SET tarifa = $2 WHERE id_ordenanza = $1 RETURNING id_ordenanza as id, descripcion AS "nombreOrdenanza", tarifa AS "precioUtmm") \
       SELECT o.id, "nombreOrdenanza", "precioUtmm", t.id_tipo_tramite AS "idTipoTramite", \
       t.utiliza_codcat AS "utilizaCodcat", t.id_variable IS NOT NULL AS "utilizaVariable", t.id_variable AS "idVariable", v.nombre AS "nombreVariable" \
       FROM updateTmp o INNER JOIN tarifa_inspeccion t ON o.id = t.id_ordenanza \
@@ -319,6 +321,13 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   //valor
   GET_UTMM_VALUE: "SELECT valor_en_bs FROM valor WHERE descripcion = 'UTMM'",
   UPDATE_UTMM_VALUE: "UPDATE valor SET valor_en_bs = $1 WHERE descripcion = 'UTMM' RETURNING valor_en_bs;",
+
+  //Estadisticas
+
+  GET_DAILY_STARTED_PROCEDURES: '',
+  GET_MONTHLY_COMPLETED_PROCEDURES: '',
+  GET_TOTAL_PROCEDURES: '',
+  GET_IN_PROCESS_PROCEDURES: '',
 };
 
 export default queries;

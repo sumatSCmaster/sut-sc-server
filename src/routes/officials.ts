@@ -30,35 +30,19 @@ router.get('/all', authenticate('jwt'), isSuperuser, async (req: any, res) => {
   if (data) res.status(200).json(data);
 });
 
-router.post('/', authenticate('jwt'), validators.createOfficial, checkResult, async (req: any, res) => {
-  const { id_institucion } = req.user.cuentaFuncionario;
-  if (id_institucion) {
-    const { usuario } = req.body;
-    const [err, data] = await fulfill(createOfficial(usuario, id_institucion));
-    if (err) res.status(500).json(err);
-    if (data) res.status(data.status).json(data);
-  } else {
-    res.status(401).json({
-      message: 'No tiene permisos para crear funcionarios.',
-      status: 401,
-    });
-  }
+router.post('/', authenticate('jwt'), validators.createOfficial, checkResult, validators.isOfficialAdmin, async (req: any, res) => {
+  const { usuario } = req.body;
+  const [err, data] = await fulfill(createOfficial(usuario));
+  if (err) res.status(500).json(err);
+  if (data) res.status(data.status).json(data);
 });
 
-router.put('/:id', authenticate('jwt'), validators.updateOfficial, checkResult, async (req, res) => {
-  const { id_institucion } = req.user.cuentaFuncionario;
-  if (id_institucion) {
-    const { usuario } = req.body;
-    const { id } = req.params;
-    const [err, data] = await fulfill(updateOfficial(usuario, id));
-    if (err) res.status(500).json(err);
-    if (data) res.status(data.status).json(data);
-  } else {
-    res.status(401).json({
-      message: 'No tiene permisos para editar funcionarios.',
-      status: 401,
-    });
-  }
+router.put('/:id', authenticate('jwt'), validators.updateOfficial, checkResult, validators.isOfficialAdmin, async (req, res) => {
+  const { usuario } = req.body;
+  const { id } = req.params;
+  const [err, data] = await fulfill(updateOfficial(usuario, id));
+  if (err) res.status(500).json(err);
+  if (data) res.status(data.status).json(data);
 });
 
 router.delete('/:id', authenticate('jwt'), async (req: any, res) => {
