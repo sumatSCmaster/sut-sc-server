@@ -104,6 +104,7 @@ export const createAdmin = async (user: Payloads.CrearAdmin): Promise<Partial<Us
       cedula: res.cedula,
       nacionalidad: Nacionalidad[res.nacionalidad],
       telefono: res.telefono,
+      tipoUsuario: res.id_tipo_usuario,
     };
     return usuario;
   } catch (e) {

@@ -12,7 +12,7 @@ const queries = {
   // USUARIO
   CREATE_USER: `INSERT INTO usuario (nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, id_tipo_usuario, password, telefono) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
   ADD_PASSWORD: 'INSERT INTO cuenta_funcionario (id_usuario, password) VALUES ($1, $2);',
-  ADD_OFFICIAL_DATA: 'INSERT INTO cuenta_funcionario (id_usuario, id_institucion) VALUES ($1, $2);',
+  ADD_OFFICIAL_DATA: 'INSERT INTO cuenta_funcionario (id_usuario, id_institucion) VALUES ($1, $2) RETURNING *;',
   ADD_OFFICIAL_PERMISSIONS: 'INSERT INTO permiso_de_acceso (id_usuario, id_tipo_tramite) VALUES ($1, $2)',
   INSERT_GOOGLE_USER: 'INSERT INTO datos_google VALUES ($1, $2)',
   INSERT_FACEBOOK_USER: 'INSERT INTO datos_facebook VALUES ($1, $2)',
