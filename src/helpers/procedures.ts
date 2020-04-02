@@ -78,7 +78,7 @@ const getProcedureInstances = async (user, client: PoolClient) => {
   try {
     let response = (
       await procedureInstanceHandler(
-        user.tipoUsuario === 2 && user.institucion.id === 0 ? 0 : user.tipoUsuario,
+        user.institucion.id === 0 ? 0 : user.tipoUsuario,
         user.tipoUsuario !== 4 ? (user.institucion ? user.institucion.id : 0) : user.id,
         client
       )

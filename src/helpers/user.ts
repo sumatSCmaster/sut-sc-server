@@ -81,7 +81,7 @@ export const createAdmin = async (user: Payloads.CrearAdmin): Promise<Partial<Us
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    const adminExists = (await client.query(queries.ADMIN_EXISTS, [user.institucion])).rowCount > 0;
+    const adminExists = user.institucion === 0 ? false : (await client.query(queries.ADMIN_EXISTS, [user.institucion])).rowCount > 0;
     if (adminExists) throw new Error('Ya existe un administrador para esta institucion');
     const res = (
       await client.query(queries.CREATE_USER, [
