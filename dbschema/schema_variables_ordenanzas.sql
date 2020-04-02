@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.1
--- Dumped by pg_dump version 12.1
+-- Dumped from database version 12.2
+-- Dumped by pg_dump version 12.2
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -322,7 +322,9 @@ CREATE TABLE public.tipos_tramites (
     formato character varying,
     planilla character varying,
     certificado character varying,
-    utiliza_informacion_catastral boolean
+    utiliza_informacion_catastral boolean,
+    pago_previo boolean,
+    costo_utmm numeric
 );
 
 
@@ -423,6 +425,7 @@ SELECT CASE state
     WHEN 'enrevision' THEN
         CASE event
             WHEN 'finalizar_cr' THEN 'finalizado'
+            WHEN 'rechazar_cr' THEN 'enproceso'
             ELSE 'error'        
         END
     ELSE 'error'
@@ -499,7 +502,8 @@ CREATE VIEW public.tramites_state_with_resources AS
     tt.nombre_tramite AS nombretramitelargo,
     tt.nombre_corto AS nombretramitecorto,
     ev.state,
-    t.aprobado
+    t.aprobado,
+    tt.pago_previo AS "pagoPrevio"
    FROM (((public.tramites t
      JOIN public.tipos_tramites tt ON ((t.id_tipo_tramite = tt.id_tipo_tramite)))
      JOIN public.instituciones i ON ((i.id_institucion = tt.id_institucion)))
@@ -534,6 +538,25 @@ DECLARE
 
 
 ALTER FUNCTION public.insert_tramite(_id_tipo_tramite integer, datos json, _id_usuario integer) OWNER TO postgres;
+
+--
+-- Name: tipos_tramites_costo_utmm_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.tipos_tramites_costo_utmm_trigger_func() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    nuevoCosto numeric;
+    BEGIN
+        nuevoCosto = NEW.valor_en_bs;
+        UPDATE tipos_tramites SET costo_base = (nuevoCosto * costo_utmm) WHERE costo_utmm IS NOT NULL;
+        RETURN NEW;
+    END
+$$;
+
+
+ALTER FUNCTION public.tipos_tramites_costo_utmm_trigger_func() OWNER TO postgres;
 
 --
 -- Name: tramite_eventos_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -1167,7 +1190,8 @@ ALTER TABLE public.operaciones OWNER TO postgres;
 CREATE TABLE public.ordenanzas (
     id_ordenanza integer NOT NULL,
     descripcion character varying NOT NULL,
-    tarifa character varying
+    tarifa character varying,
+    id_valor integer
 );
 
 
@@ -1193,6 +1217,83 @@ ALTER TABLE public.ordenanzas_id_ordenanza_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE public.ordenanzas_id_ordenanza_seq OWNED BY public.ordenanzas.id_ordenanza;
+
+
+--
+-- Name: ordenanzas_tramites; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.ordenanzas_tramites (
+    id_ordenanza_tramite integer NOT NULL,
+    id_tramite integer NOT NULL,
+    id_tarifa integer NOT NULL,
+    utmm numeric,
+    valor_calc numeric,
+    factor character varying,
+    factor_value numeric,
+    cantidad_variable integer
+);
+
+
+ALTER TABLE public.ordenanzas_tramites OWNER TO postgres;
+
+--
+-- Name: tarifas_inspeccion; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.tarifas_inspeccion (
+    id_tarifa integer NOT NULL,
+    id_ordenanza integer NOT NULL,
+    id_tipo_tramite integer NOT NULL,
+    tasa numeric,
+    formula character varying,
+    utiliza_codcat boolean,
+    id_variable integer
+);
+
+
+ALTER TABLE public.tarifas_inspeccion OWNER TO postgres;
+
+--
+-- Name: ordenanzas_instancias_tramites; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.ordenanzas_instancias_tramites AS
+ SELECT ot.id_ordenanza_tramite AS id,
+    ot.id_tramite AS "idTramite",
+    o.descripcion AS ordenanza,
+    ot.factor,
+    ot.factor_value AS "factorValue",
+    ot.utmm,
+    ot.valor_calc AS "valorCalc",
+    ot.cantidad_variable AS "cantidadVariable"
+   FROM ((public.ordenanzas_tramites ot
+     JOIN public.tarifas_inspeccion ti ON ((ot.id_tarifa = ti.id_tarifa)))
+     JOIN public.ordenanzas o ON ((o.id_ordenanza = ti.id_ordenanza)));
+
+
+ALTER TABLE public.ordenanzas_instancias_tramites OWNER TO postgres;
+
+--
+-- Name: ordenanzas_tramites_id_ordenanza_tramite_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.ordenanzas_tramites_id_ordenanza_tramite_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.ordenanzas_tramites_id_ordenanza_tramite_seq OWNER TO postgres;
+
+--
+-- Name: ordenanzas_tramites_id_ordenanza_tramite_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.ordenanzas_tramites_id_ordenanza_tramite_seq OWNED BY public.ordenanzas_tramites.id_ordenanza_tramite;
 
 
 --
@@ -1461,21 +1562,6 @@ CREATE TABLE public.secciones (
 ALTER TABLE public.secciones OWNER TO postgres;
 
 --
--- Name: tarifas_inspeccion; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.tarifas_inspeccion (
-    id_tarifa integer NOT NULL,
-    id_ordenanza integer NOT NULL,
-    id_tipo_tramite integer NOT NULL,
-    tasa numeric,
-    formula character varying
-);
-
-
-ALTER TABLE public.tarifas_inspeccion OWNER TO postgres;
-
---
 -- Name: tarifas_inspeccion_id_tarifa_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -1703,6 +1789,41 @@ ALTER SEQUENCE public.usuarios_id_usuario_seq OWNED BY public.usuarios.id_usuari
 
 
 --
+-- Name: valores; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.valores (
+    id_valor integer NOT NULL,
+    descripcion character varying NOT NULL,
+    valor_en_bs numeric NOT NULL
+);
+
+
+ALTER TABLE public.valores OWNER TO postgres;
+
+--
+-- Name: valores_id_valor_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.valores_id_valor_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.valores_id_valor_seq OWNER TO postgres;
+
+--
+-- Name: valores_id_valor_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.valores_id_valor_seq OWNED BY public.valores.id_valor;
+
+
+--
 -- Name: variables_id_var_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -1756,6 +1877,41 @@ CREATE TABLE public.variables_de_costo (
 
 
 ALTER TABLE public.variables_de_costo OWNER TO postgres;
+
+--
+-- Name: variables_ordenanzas; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.variables_ordenanzas (
+    id_variable integer NOT NULL,
+    nombre character varying NOT NULL,
+    nombre_plural character varying NOT NULL
+);
+
+
+ALTER TABLE public.variables_ordenanzas OWNER TO postgres;
+
+--
+-- Name: variables_ordenanzas_id_variable_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.variables_ordenanzas_id_variable_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.variables_ordenanzas_id_variable_seq OWNER TO postgres;
+
+--
+-- Name: variables_ordenanzas_id_variable_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.variables_ordenanzas_id_variable_seq OWNED BY public.variables_ordenanzas.id_variable;
+
 
 --
 -- Name: bancos id_banco; Type: DEFAULT; Schema: public; Owner: postgres
@@ -1846,6 +2002,13 @@ ALTER TABLE ONLY public.notificaciones ALTER COLUMN id_notificacion SET DEFAULT 
 --
 
 ALTER TABLE ONLY public.ordenanzas ALTER COLUMN id_ordenanza SET DEFAULT nextval('public.ordenanzas_id_ordenanza_seq'::regclass);
+
+
+--
+-- Name: ordenanzas_tramites id_ordenanza_tramite; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.ordenanzas_tramites ALTER COLUMN id_ordenanza_tramite SET DEFAULT nextval('public.ordenanzas_tramites_id_ordenanza_tramite_seq'::regclass);
 
 
 --
@@ -1940,6 +2103,20 @@ ALTER TABLE ONLY public.usuarios ALTER COLUMN id_usuario SET DEFAULT nextval('pu
 
 
 --
+-- Name: valores id_valor; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.valores ALTER COLUMN id_valor SET DEFAULT nextval('public.valores_id_valor_seq'::regclass);
+
+
+--
+-- Name: variables_ordenanzas id_variable; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.variables_ordenanzas ALTER COLUMN id_variable SET DEFAULT nextval('public.variables_ordenanzas_id_variable_seq'::regclass);
+
+
+--
 -- Data for Name: bancos; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -1975,7 +2152,6 @@ COPY public.campos (id_campo, nombre, tipo, validacion, col) FROM stdin;
 14	Razon Social	string	razonSocial	8
 16	Ubicado en	string	ubicadoEn	10
 21	Propietario del Terreno	string	nombre	14
-23	Observaciones	string	observaciones	24
 22	Nombre de la Obra	string	nombreObra	8
 24	Codigo de Permiso de Construcción	string	codigoPermisoConstruccion	7
 25	Fecha de Permiso de Construcción	string	fechaPermisoConstruccion	7
@@ -1984,7 +2160,6 @@ COPY public.campos (id_campo, nombre, tipo, validacion, col) FROM stdin;
 28	Propietarios	array	propietarios	24
 29	Nombre del Conjunto Residencial	string	nombreConjunto	12
 30	Cantidad de Edificios en el Conjunto	number	cantidadEdificios	6
-31	Cantidad de Edificios en el Conjunto	number	cantidadEdificios	6
 32	Nombre del Edificio	string	nombreEdificio	6
 33	Cantidad de Pisos del Edificio	number	cantidadPisos	6
 34	Piso donde se encuentra el apartamento o local	number	pisoApto	6
@@ -1993,6 +2168,15 @@ COPY public.campos (id_campo, nombre, tipo, validacion, col) FROM stdin;
 37	Nomenclatura del Edificio	string	nomenclaturaEdificio	8
 38	Parroquia	string	parroquiaEdificio	8
 39	Tipo de Inmueble	option	tipoInmueble	6
+40	Ubicacion del Edificio	string	ubicacionEdificio	8
+42	Circuito	string	circuito	6
+44	Plano	string	plano	6
+45	Croquis de Ubicación	image	croquis	12
+41	Datos del Registro	string	datosRegistro	10
+46	Código Catastral	string	codCat	12
+43	Area de Construcción	numeric	areaConstruccion	6
+47	Area de Terreno	numeric	areaTerreno	6
+23	Observaciones	string	observaciones	24
 \.
 
 
@@ -2054,139 +2238,71 @@ COPY public.campos_tramites (id_campo, id_tipo_tramite, orden, estado, id_seccio
 16	13	2	iniciado	4
 18	13	3	iniciado	4
 17	13	3	iniciado	4
-10	13	3	iniciado	4
 22	10	1	enproceso	6
 5	10	2	enproceso	6
-6	10	2	enproceso	6
 24	10	2	enproceso	6
-25	10	2	enproceso	6
 22	11	1	enproceso	6
 5	11	2	enproceso	6
-6	11	2	enproceso	6
 24	11	2	enproceso	6
-25	11	2	enproceso	6
 16	10	2	enproceso	6
 16	11	2	enproceso	6
 16	1	1	enproceso	7
-18	1	3	enproceso	7
 5	1	3	enproceso	7
-26	1	2	enproceso	7
 6	1	3	enproceso	7
-27	3	1	enproceso	8
-22	12	1	enproceso	7
-22	13	1	enproceso	7
-16	12	2	enproceso	7
 16	13	2	enproceso	7
 6	12	2	enproceso	7
-5	13	2	enproceso	7
-1	2	1	iniciado	1
 2	2	2	iniciado	1
-5	12	2	enproceso	7
-6	13	2	enproceso	7
 3	2	3	iniciado	1
 4	2	4	iniciado	1
 5	2	5	iniciado	1
 6	2	6	iniciado	1
-7	2	7	iniciado	1
-8	2	8	iniciado	2
 9	2	9	iniciado	2
-10	2	10	iniciado	2
 11	2	11	iniciado	2
 12	2	12	iniciado	2
+6	1	6	iniciado	1
+8	1	8	iniciado	2
+9	1	9	iniciado	2
+13	1	13	iniciado	2
+4	3	4	iniciado	1
+5	3	5	iniciado	1
+8	3	8	iniciado	2
+11	3	11	iniciado	2
+12	3	12	iniciado	2
+13	3	13	iniciado	2
+10	13	3	iniciado	4
+6	10	2	enproceso	6
+25	10	2	enproceso	6
+6	11	2	enproceso	6
+25	11	2	enproceso	6
+18	1	3	enproceso	7
+26	1	2	enproceso	7
+27	3	1	enproceso	8
+22	12	1	enproceso	7
+22	13	1	enproceso	7
+16	12	2	enproceso	7
+5	13	2	enproceso	7
+1	2	1	iniciado	1
+5	12	2	enproceso	7
+6	13	2	enproceso	7
+7	2	7	iniciado	1
+8	2	8	iniciado	2
+10	2	10	iniciado	2
 13	2	13	iniciado	2
 2	1	2	iniciado	1
 3	1	3	iniciado	1
 4	1	4	iniciado	1
 5	1	5	iniciado	1
-6	1	6	iniciado	1
 7	1	7	iniciado	1
-8	1	8	iniciado	2
-9	1	9	iniciado	2
 10	1	10	iniciado	2
 11	1	11	iniciado	2
 12	1	12	iniciado	2
-13	1	13	iniciado	2
 1	3	1	iniciado	1
 2	3	2	iniciado	1
 3	3	3	iniciado	1
-4	3	4	iniciado	1
-5	3	5	iniciado	1
 6	3	6	iniciado	1
 7	3	7	iniciado	1
-8	3	8	iniciado	2
 9	3	9	iniciado	2
 10	3	10	iniciado	2
-11	3	11	iniciado	2
-12	3	12	iniciado	2
-13	3	13	iniciado	2
-1	1	1	iniciado	1
-18	13	3	iniciado	4
-17	13	3	iniciado	4
-10	13	3	iniciado	4
-22	10	1	enproceso	6
-5	10	2	enproceso	6
-6	10	2	enproceso	6
-24	10	2	enproceso	6
-25	10	2	enproceso	6
-22	11	1	enproceso	6
-5	11	2	enproceso	6
-6	11	2	enproceso	6
-24	11	2	enproceso	6
-25	11	2	enproceso	6
-16	10	2	enproceso	6
-16	11	2	enproceso	6
-16	1	1	enproceso	7
-18	1	3	enproceso	7
-5	1	3	enproceso	7
-26	1	2	enproceso	7
-6	1	3	enproceso	7
-27	3	1	enproceso	8
-22	12	1	enproceso	7
-22	13	1	enproceso	7
-16	12	2	enproceso	7
-16	13	2	enproceso	7
-6	12	2	enproceso	7
-5	13	2	enproceso	7
-1	2	1	iniciado	1
-2	2	2	iniciado	1
-5	12	2	enproceso	7
-6	13	2	enproceso	7
-3	2	3	iniciado	1
-4	2	4	iniciado	1
-5	2	5	iniciado	1
-6	2	6	iniciado	1
-7	2	7	iniciado	1
-8	2	8	iniciado	2
-9	2	9	iniciado	2
-10	2	10	iniciado	2
-11	2	11	iniciado	2
-12	2	12	iniciado	2
-13	2	13	iniciado	2
-2	1	2	iniciado	1
-3	1	3	iniciado	1
-4	1	4	iniciado	1
-5	1	5	iniciado	1
-6	1	6	iniciado	1
-7	1	7	iniciado	1
-8	1	8	iniciado	2
-9	1	9	iniciado	2
-10	1	10	iniciado	2
-11	1	11	iniciado	2
-12	1	12	iniciado	2
-13	1	13	iniciado	2
-1	3	1	iniciado	1
-2	3	2	iniciado	1
-3	3	3	iniciado	1
-4	3	4	iniciado	1
-5	3	5	iniciado	1
-6	3	6	iniciado	1
-7	3	7	iniciado	1
-8	3	8	iniciado	2
-9	3	9	iniciado	2
-10	3	10	iniciado	2
-11	3	11	iniciado	2
-12	3	12	iniciado	2
-13	3	13	iniciado	2
 1	1	1	iniciado	1
 28	14	1	iniciado	9
 28	15	1	iniciado	9
@@ -2199,12 +2315,44 @@ COPY public.campos_tramites (id_campo, id_tipo_tramite, orden, estado, id_seccio
 9	15	2	iniciado	1
 10	15	3	iniciado	1
 11	15	4	iniciado	1
-3	15	5	iniciado	1
 6	15	6	iniciado	1
 16	14	1	iniciado	11
 38	14	2	iniciado	11
 39	14	3	iniciado	11
 3	14	7	iniciado	1
+29	15	2	iniciado	10
+30	15	3	iniciado	10
+32	15	5	iniciado	10
+33	15	6	iniciado	10
+34	15	7	iniciado	10
+35	15	8	iniciado	10
+36	15	9	iniciado	10
+37	15	10	iniciado	10
+38	15	17	iniciado	10
+3	15	7	iniciado	1
+40	15	15	iniciado	10
+28	14	1	enproceso	9
+41	14	1	enproceso	11
+42	14	2	enproceso	11
+6	14	3	enproceso	11
+3	14	4	enproceso	11
+43	14	5	enproceso	11
+44	14	6	enproceso	11
+46	14	1	enproceso	13
+45	14	1	enproceso	14
+28	15	1	enproceso	9
+41	15	1	enproceso	11
+42	15	2	enproceso	11
+6	15	3	enproceso	11
+3	15	4	enproceso	11
+43	15	5	enproceso	11
+44	15	6	enproceso	11
+46	15	1	enproceso	13
+45	15	1	enproceso	14
+47	14	5	enproceso	11
+47	15	5	enproceso	11
+23	14	7	enproceso	12
+23	15	7	enproceso	12
 \.
 
 
@@ -2213,7 +2361,6 @@ COPY public.campos_tramites (id_campo, id_tipo_tramite, orden, estado, id_seccio
 --
 
 COPY public.casos_sociales (id_caso, id_tipo_tramite, costo, datos, fecha_creacion, codigo_tramite, consecutivo, id_usuario, url_planilla) FROM stdin;
-1	0	\N	{"nombreCompleto":"Luis Acurero","cedula":26565455,"nacionalidad":"Venezolano","fechaNacimiento":"03/02/1997","edad":23,"sexo":true,"poblacionIndigena":false,"etnia":"Moreno","profesion":"Ingeniero de Computacion","oficio":"Bagre","estadoCivil":"Soltero","discapacidad":null,"nivelInstruccion":"Universitaria","condicionLaboral":"Empleado Privado","empleadoAlcaldia":false,"asignacionesEconomicas":null,"razonDeSolicitud":"Ninguna en particular","patologiaActual":"Full bagre","areaDeSalud":"Otros","direccion":"Calle 74 entre tal y tal","parroquia":"Olegario Villalobos","telefono":"04124423233","email":"13luismb@gmail.com","liderDeCalle":{"nombreCompleto":"Garbiel Tornps","telefono":"0412433234"},"menorDeEdad":{"nombreCompleto":"Emilio Barboza","cedula":"26565455","nacionalidad":"Venezolano","fechaNacimiento":"03/02/1997","edad":23,"sexo":true,"discapacidad":true,"estadoDiscapacidad":"Permanente","tipoDiscapacidad":"Mongolico","nivelEscolarizacion":"Basica","patologiaActual":"Full bagre","areaDeSalud":"Otros"},"tipoAyuda":"Alimentos","tipoAyudaDesc":"adksajkdas","solicitante":null}	2020-03-17 10:44:39.683776-04	ABMM-17032020-0-0001	1	66	\N
 \.
 
 
@@ -2236,6 +2383,9 @@ COPY public.cuentas_funcionarios (id_usuario, id_institucion) FROM stdin;
 59	2
 65	2
 66	0
+67	3
+68	3
+70	3
 \.
 
 
@@ -2277,45 +2427,6 @@ COPY public.eventos_casos_sociales (id_evento_caso, id_caso, event, "time") FROM
 --
 
 COPY public.eventos_tramite (id_evento_tramite, id_tramite, event, "time") FROM stdin;
-121	56	iniciar	2020-03-14 14:00:07.333991-04
-122	56	enproceso_pd	2020-03-14 14:00:07.333991-04
-123	57	iniciar	2020-03-14 14:00:20.060403-04
-124	57	enproceso_pd	2020-03-14 14:00:20.060403-04
-125	57	ingresar_datos	2020-03-14 14:00:35.893386-04
-126	57	validar_pd	2020-03-14 14:07:24.137671-04
-127	57	finalizar	2020-03-14 14:08:12.99913-04
-129	59	iniciar	2020-03-17 10:31:38.577115-04
-130	59	enproceso_pd	2020-03-17 10:31:38.577115-04
-131	60	iniciar	2020-03-17 10:33:03.93493-04
-132	60	enproceso_pd	2020-03-17 10:33:03.93493-04
-133	61	iniciar	2020-03-17 12:15:51.750206-04
-134	61	enproceso_pd	2020-03-17 12:15:51.750206-04
-137	61	ingresardatos_pd	2020-03-17 12:23:22.64871-04
-138	61	validar_pd	2020-03-17 12:25:27.386913-04
-139	62	iniciar	2020-03-17 12:30:01.004007-04
-140	62	enproceso_pd	2020-03-17 12:30:01.004007-04
-141	62	ingresardatos_pd	2020-03-17 12:30:17.183865-04
-142	62	validar_pd	2020-03-17 12:30:30.77296-04
-143	63	iniciar	2020-03-17 12:37:11.925175-04
-144	63	enproceso_pd	2020-03-17 12:37:11.925175-04
-146	65	iniciar	2020-03-17 12:42:24.618324-04
-147	65	enproceso_pd	2020-03-17 12:42:24.618324-04
-148	66	iniciar	2020-03-18 10:13:40.986267-04
-149	66	enproceso_pd	2020-03-18 10:13:40.986267-04
-150	66	ingresardatos_pd	2020-03-18 10:14:09.813976-04
-151	66	validar_pd	2020-03-18 10:14:24.969142-04
-152	66	finalizar_pd	2020-03-18 10:42:12.483364-04
-153	67	iniciar	2020-03-18 10:46:40.666964-04
-154	67	enproceso_pd	2020-03-18 10:46:40.666964-04
-155	68	iniciar	2020-03-18 10:48:10.510542-04
-156	68	enproceso_pd	2020-03-18 10:48:10.510542-04
-157	69	iniciar	2020-03-18 11:33:26.295013-04
-158	69	enproceso_pd	2020-03-18 11:33:26.295013-04
-159	70	iniciar	2020-03-18 11:35:44.727526-04
-160	70	enproceso_pd	2020-03-18 11:35:44.727526-04
-161	70	ingresardatos_pd	2020-03-18 11:37:14.010035-04
-162	70	validar_pd	2020-03-18 11:38:11.751293-04
-163	70	finalizar_pd	2020-03-18 11:38:29.739682-04
 \.
 
 
@@ -2332,12 +2443,7 @@ COPY public.facturas_tramites (id_factura, id_tramite) FROM stdin;
 --
 
 COPY public.inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, fecha_creacion, fecha_actualizacion, fecha_ultimo_avaluo, tipo_inmueble) FROM stdin;
-2	1923819U8SU8QS991	cerca d mi ksa	68	200	230	2020-03-17 15:28:09.131072-04	2020-03-17 15:28:09.131072-04	\N	\N
-3	18382JE8228881K	asdasdadasd	72	280	245.6	2020-03-17 17:03:39.010274-04	2020-03-17 17:03:39.010274-04	\N	Casa
-4	1882JE82282881K	asdasdadasd	72	280	245.6	2020-03-17 17:05:01.197116-04	2020-03-17 17:05:01.197116-04	\N	Casa
-5	8382JE82282881K	asdasdadasd	72	280	245.6	2020-03-17 17:05:48.724067-04	2020-03-17 17:05:48.724067-04	\N	Casa
-6	18382JE82282881	asdasdadasd	72	280	245.6	2020-03-17 17:06:40.248985-04	2020-03-17 17:06:40.248985-04	\N	Casa
-7	18382JE82281K	asdasdadasd	72	280	245.6	2020-03-17 17:11:26.293268-04	2020-03-17 17:11:26.293268-04	\N	Casa
+21	231315U01004083001001P0500	Calle 73 entre Av. 3E y 3F	60	200	300	2020-03-20 16:46:01.230084-04	2020-03-20 16:46:01.230084-04	\N	\N
 \.
 
 
@@ -2358,8 +2464,10 @@ COPY public.instituciones (id_institucion, nombre_completo, nombre_corto) FROM s
 --
 
 COPY public.instituciones_bancos (id_instituciones_bancos, id_institucion, id_banco, numero_cuenta, nombre_titular, documento_de_identificacion) FROM stdin;
-1	1	1	0116-0049-87-0001456787	Jose Sanchez	cedula:V-25.304.089
 2	2	1	0116–0126–03–0018874177	SAGAS	rif:G-20005358-5
+3	3	1	0116–0126–06–0026593432	SEDEMAT	rif:G-20002908-0
+4	3	2	0134–0001–61–0013218667	SEDEMAT	rif:G-20002908-0
+1	1	1	0116–0140–51–0014405090	CUERPO DE BOMBEROS DEL MUNICIPIO MARACAIBO	rif:G-20003346-0
 \.
 
 
@@ -2383,7 +2491,54 @@ COPY public.operaciones (id_operacion, nombre_op) FROM stdin;
 -- Data for Name: ordenanzas; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.ordenanzas (id_ordenanza, descripcion, tarifa) FROM stdin;
+COPY public.ordenanzas (id_ordenanza, descripcion, tarifa, id_valor) FROM stdin;
+1	Análisis, revisión, y aprobación de la memoria descriptiva, planos y proyecto de gas según normativa y especificaciones del servicio autónomo para el suministro de gas e infraestructura de Maracaibo (SAGAS)	25	2
+2	Certificación de planos indicativos de distribución interna de servicio, sistema de regulación, ductería, etc.	1.5	2
+3	Emisión del Permiso Construcción	20	2
+23	Inspección para otorgar el permiso de habitabilidad para edificaciones multifamiliares (COM)	0.2	2
+19	Inspección para otorgar el permiso de habitabilidad para edificaciones multifamiliares (COM)	0.1	2
+20	Inspección para otorgar el permiso de habitabilidad a mini locales comerciales y oficinas (COM)	30	2
+21	Inspección para otorgar el permiso de habitabilidad a locales comerciales, oficinas y centros industriales (COM)	0.2	2
+22	Emisión del permiso de habitabilidad (COM)	20	2
+24	Inspección para otorgar el permiso de condiciones habitables para mini locales comerciales (COM)	30	2
+13	Pre Inspección durante la ejecución de la obra, por unidad residencial para confirmar y testificar que la construcción se está realizando de acuerdo a las normas y especificaciones del Servicio Autónomo para el Suministro de Gas e Infraestructura de Maracaibo (SAGAS) (RES)	4	2
+14	Inspección final para otorgar el permiso de habitabilidad a viviendas (RES)	10	2
+15	Inspección de instalación y verifiación de una (1) prueba neumática de disco (24 horas) (RES)	4	2
+16	Comprobación y certifiación final de una (1) prueba neumática de disco (RES)	4	2
+17	Incorporación a la red de gas por vivienda (RES)	6	2
+18	Emisión del permiso de habitabilidad residencial (RES)	10	2
+4	Pre Inspección durante la ejecución de la obra, por unidad comercial para confirmar y testificar que la construcción se está realizando de acuerdo a las normas y especificaciones del Servicio Autónomo para el Suministro de Gas e Infraestructura de Maracaibo (SAGAS) (COM)	8	2
+5	Inspección final para otorgar el permiso de habitabilidad para edificaciones multifamiliares (COM)	0.2	2
+6	Inspeccion final para otorgar el permiso de habitabilidad a mini locales comerciales, y oficinas (COM)	30	2
+7	Inspección final para otorgar el permiso de habitabilidad a locales comerciales, oficinas y centros industriales (COM)	0.3	2
+8	Inspección final para otorgar el permiso de habitabilidad para centros asistenciales, educativos, plantas eléctricas u otros (COM)	20	2
+9	Inspección de instalación y verifiación de una (1) prueba neumática de disco (24 horas) (COM)	10	2
+10	Comprobación y certifiación final de una (1) prueba neumática de disco (COM)	10	2
+11	Incorporación a la red gas (COM)	10	2
+12	Emisión de permiso de habitabilidad (COM)	20	2
+25	Inspección para otorgar el permiso de condiciones habitables a locales comerciales, oficinas y centros industriales (COM)	0.3	2
+26	Inspección para otorgar el permiso de condiciones habitables para centros asistenciales, educativos, plantas eléctricas u otras (COM)	20	2
+27	Emisión del permiso de condiciones habitables comerciales (COM)	20	2
+28	Inspección para otorgar el permiso de condiciones habitables para viviendas (RES)	4	2
+29	Emisión del permiso de condiciones habitables residencial (RES)	10	2
+30	Inspección para desincorporación del sistema de cobro de tarifas residenciales (RES)	2	2
+31	Inspección para desincorporación del sistema de cobro de tarifas comerciales (RES)	10	2
+32	Desincorporación de la red de gas residencial (RES)	4	2
+33	Desincorporación de la red de gas comercial (RES)	12	2
+34	Cualquier otro tramite Documental que deba realizarse por ante el Servicio Autónomo para el Suministro de Gas e Infraestructura de Maracaibo (SAGAS) (RES)	5	2
+35	Certificación de Habitabilidad	0.2	2
+36	Inspección por emisión de constancias de cumplimiento de normas técnicas CCNT	0.2	2
+37	Constancias de inspección e instalación de generador o planta eléctica (uso doméstico)	10	2
+38	Constancias de inspección e instalación de generador o planta eléctica (uso comercial)	50	2
+39	Constancias de inspección e instalación de generador o planta eléctica (uso industrial)	100	2
+\.
+
+
+--
+-- Data for Name: ordenanzas_tramites; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.ordenanzas_tramites (id_ordenanza_tramite, id_tramite, id_tarifa, utmm, valor_calc, factor, factor_value, cantidad_variable) FROM stdin;
 \.
 
 
@@ -2392,11 +2547,6 @@ COPY public.ordenanzas (id_ordenanza, descripcion, tarifa) FROM stdin;
 --
 
 COPY public.pagos (id_pago, id_tramite, referencia, monto, fecha_de_pago, aprobado, id_banco, fecha_de_aprobacion) FROM stdin;
-22	57	123	1	2020-03-01	t	1	2020-03-14 14:08:12.99309-04
-23	61	13291391	\N	2020-02-19	f	1	\N
-25	62	132913491	\N	2020-02-19	f	1	\N
-27	66	132991	2240	2020-02-19	t	1	2020-03-18 10:42:12.233861-04
-28	70	1	2240	2020-02-02	t	1	2020-03-18 11:38:29.491964-04
 \.
 
 
@@ -2442,6 +2592,18 @@ COPY public.parroquia (id, nombre) FROM stdin;
 --
 
 COPY public.permiso_de_acceso (id_permiso, id_usuario, id_tipo_tramite) FROM stdin;
+1	68	14
+2	68	15
+3	65	6
+4	65	7
+5	65	8
+6	65	10
+7	65	11
+8	65	12
+9	65	13
+10	57	1
+11	57	2
+12	57	3
 \.
 
 
@@ -2460,6 +2622,14 @@ COPY public.propietario (id_propietario, razon_social, cedula, rif, email) FROM 
 8	Vivian Palacios	V26514270	V26514270	palaciosvivi14@gmail.com
 9	Luis Acurero	V26775497	V267754973	13luismb@gmail.com
 10	Vivian Palacios	V26514270	V26514270	palaciosvivi14@gmail.com
+11	asdasd	\N	\N	\N
+12	asdasd	\N	\N	\N
+13	asdasd	\N	\N	\N
+14	asdasd	\N	\N	\N
+15	asdasd	\N	\N	\N
+16	asdasd	\N	\N	\N
+17	asdasd	\N	\N	\N
+18	asdasd	\N	\N	\N
 \.
 
 
@@ -2468,8 +2638,7 @@ COPY public.propietario (id_propietario, razon_social, cedula, rif, email) FROM 
 --
 
 COPY public.propietarios_inmuebles (id_propietario_inmueble, id_propietario, id_inmueble) FROM stdin;
-1	9	7
-2	10	7
+9	17	21
 \.
 
 
@@ -2504,6 +2673,13 @@ COPY public.recaudos (id_recaudo, nombre_largo, nombre_corto) FROM stdin;
 27	Tener en Expediente SAGAS: Inspección Final de la Obra, para constatar que no posee Servicio de Gas	ExpSAGAS
 28	Copia de Permiso de Construcción SAGAS	ConstSAGAS
 29	Documento Notariado donde se especifica que el inmueble no contará con instalaciones del servicio de gas	DocNot
+30	Copia del Documento de Propiedad del Inmueble y Plano de Mensura Registrado	x
+31	Constancia de Nomenclatura emitido por la Oficina Municipal de Catastro (si no la menciona el documento)	x
+32	Para Urbanización, Villas y Conjuntos residenciales, consignar plano de parcelamiento.	x
+323	Para los Centros Comerciales presentar plano de distribución de locales con sus respectivas nomenclaturas del nivel donde se encuentra el local.	x
+33	Para los Centros Comerciales presentar plano de distribución de locales con sus respectivas nomenclaturas del nivel donde se encuentra el local.	x
+34	Si el trámite no lo realiza el Propietario, presentar un poder y copia de la Cédula de Identidad del mismo.	x
+35	Copia del pago de la factura de los Servicios Municipales (GAS, ASEO, INMUEBLE).	x
 \.
 
 
@@ -2531,6 +2707,9 @@ COPY public.secciones (id_seccion, nombre) FROM stdin;
 9	Datos de Propietario(s)
 10	Datos del Conjunto Residencial
 11	Datos del Inmueble y/o Parcela
+13	Código Catstral
+14	Planos
+12	Observaciones
 \.
 
 
@@ -2538,7 +2717,46 @@ COPY public.secciones (id_seccion, nombre) FROM stdin;
 -- Data for Name: tarifas_inspeccion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.tarifas_inspeccion (id_tarifa, id_ordenanza, id_tipo_tramite, tasa, formula) FROM stdin;
+COPY public.tarifas_inspeccion (id_tarifa, id_ordenanza, id_tipo_tramite, tasa, formula, utiliza_codcat, id_variable) FROM stdin;
+1	1	8	1	\N	f	\N
+3	3	8	1	\N	f	\N
+5	5	10	1	\N	t	\N
+6	6	10	1	\N	f	\N
+7	7	10	1	\N	t	\N
+8	8	10	1	\N	f	\N
+9	9	10	1	\N	f	\N
+10	10	10	1	\N	f	\N
+11	11	10	1	\N	f	\N
+12	12	10	1	\N	f	\N
+13	13	10	1	\N	f	\N
+14	14	10	1	\N	f	\N
+15	15	10	1	\N	f	\N
+16	16	10	1	\N	f	\N
+18	18	10	1	\N	f	\N
+19	19	11	1	\N	t	\N
+20	20	11	1	\N	f	\N
+21	21	11	1	\N	t	\N
+22	22	11	1	\N	f	\N
+23	23	12	1	\N	t	\N
+25	25	12	1	\N	t	\N
+27	27	12	1	\N	f	\N
+29	29	12	1	\N	f	\N
+30	30	12	1	\N	f	\N
+31	31	12	1	\N	f	\N
+34	34	12	1	\N	f	\N
+35	35	2	1	\N	t	\N
+36	36	1	1	\N	t	\N
+37	37	3	1	\N	f	\N
+38	38	3	1	\N	f	\N
+39	39	3	1	\N	f	\N
+2	2	8	1	\N	f	1
+4	4	10	1	\N	f	2
+17	17	10	1	\N	f	3
+24	24	12	1	\N	f	4
+26	26	12	1	\N	f	4
+28	28	12	1	\N	f	4
+32	32	12	1	\N	f	4
+33	33	12	1	\N	f	5
 \.
 
 
@@ -2554,20 +2772,20 @@ COPY public.templates_certificados (id_template_certificado, id_tipo_tramite, li
 -- Data for Name: tipos_tramites; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.tipos_tramites (id_tipo_tramite, id_institucion, nombre_tramite, costo_base, sufijo, nombre_corto, formato, planilla, certificado, utiliza_informacion_catastral) FROM stdin;
-6	2	Constancia de Servicio Residencial	500	pa	Servicio Residencial	SAGAS-002	sagas-solt-CS	sagas-cert-CS	\N
-7	2	Constancia de Servicio Persona Juridica	500	pa	Servicio Persona Juridica	SAGAS-003	sagas-solt-CS	sagas-cert-CS	\N
-2	1	Constancia de Habitabilidad	\N	pd	Habitabilidad	CBM-002	bomberos-solt	bomberos-cert-HAB	\N
-3	1	Instalacion de Plantas Electricas	\N	pd	Plantas Electricas	CBM-003	bomberos-solt	bomberos-cert-IPE	\N
-8	2	Permiso de Construccion	\N	pd	Permiso de Construccion	SAGAS-004	sagas-solt-PC	sagas-cert-PC	\N
-1	1	Cumplimiento de Normas Tecnicas	\N	pd	Normas Tecnicas	CBM-001	bomberos-solt	bomberos-cert-CCNT	\N
-10	2	Permiso de Habitabilidad con Instalaciones de Servicio de Gas	\N	pd	Habitabilidad con Instalacion de Servicio de Gas	SAGAS-005	sagas-solt-Hab	sagas-cert-PH	\N
-11	2	Permiso de Habitabilidad sin Instalaciones de Servicio de Gas	\N	pd	Habitabilidad sin Instalacion de Servicio de Gas	SAGAS-005	sagas-solt-Hab	sagas-cert-PH	\N
-12	2	Permiso de Condiciones Habitables con Instalaciones de Servicio de Gas	\N	pd	Condiciones Habitables con Instalacion de Servicio de Gas	SAGAS-001	sagas-solt-CH	sagas-cert-PCH	\N
-13	2	Permiso de Condiciones Habitables sin Instalaciones de Servicio de Gas	\N	pd	Condiciones Habitables sin Instalacion de Servicio de Gas	SAGAS-001	sagas-solt-CH	sagas-cert-PCH	\N
-0	0	Casos Sociales	\N	pa	Casos Sociales	ABMM-001	\N	\N	\N
-14	3	Codigo Catastral para Casas	500	cr	CC	CPU-OMCAT-001	\N	\N	f
-15	3	Codigo Catastral para Apartamentos	500	cr	CC	CPU-OMCAT-001	\N	\N	f
+COPY public.tipos_tramites (id_tipo_tramite, id_institucion, nombre_tramite, costo_base, sufijo, nombre_corto, formato, planilla, certificado, utiliza_informacion_catastral, pago_previo, costo_utmm) FROM stdin;
+0	0	Casos Sociales	\N	pa	Casos Sociales	ABMM-001	\N	\N	\N	t	\N
+14	3	Codigo Catastral para Casas	500	cr	CC	CPU-OMCAT-001	cpu-solt-CCC	cpu-cert-CC	f	t	\N
+15	3	Codigo Catastral para Apartamentos	500	cr	CC	CPU-OMCAT-001	cpu-solt-CCA	cpu-cert-CC	f	t	\N
+2	1	Constancia de Habitabilidad	40	pd	Habitabilidad	CBM-002	bomberos-solt	bomberos-cert-HAB	t	t	\N
+3	1	Instalacion de Plantas Electricas	100	pd	Plantas Electricas	CBM-003	bomberos-solt	bomberos-cert-IPE	f	t	\N
+1	1	Cumplimiento de Normas Tecnicas	50	pd	Normas Tecnicas	CBM-001	bomberos-solt	bomberos-cert-CCNT	t	t	\N
+8	2	Permiso de Construccion	\N	pd	Permiso de Construccion	SAGAS-004	sagas-solt-PC	sagas-cert-PC	f	f	\N
+10	2	Permiso de Habitabilidad con Instalaciones de Servicio de Gas	\N	pd	Habitabilidad con Instalacion de Servicio de Gas	SAGAS-005	sagas-solt-Hab	sagas-cert-PH	t	f	\N
+11	2	Permiso de Habitabilidad sin Instalaciones de Servicio de Gas	\N	pd	Habitabilidad sin Instalacion de Servicio de Gas	SAGAS-005	sagas-solt-Hab	sagas-cert-PH	t	f	\N
+12	2	Permiso de Condiciones Habitables con Instalaciones de Servicio de Gas	\N	pd	Condiciones Habitables con Instalacion de Servicio de Gas	SAGAS-001	sagas-solt-CH	sagas-cert-PCH	t	f	\N
+13	2	Permiso de Condiciones Habitables sin Instalaciones de Servicio de Gas	\N	pd	Condiciones Habitables sin Instalacion de Servicio de Gas	SAGAS-001	sagas-solt-CH	sagas-cert-PCH	t	f	\N
+6	2	Constancia de Servicio Residencial	1200000	pa	Servicio Residencial	SAGAS-002	sagas-solt-CS	sagas-cert-CS	t	t	6
+7	2	Constancia de Servicio Persona Juridica	4800000	pa	Servicio Persona Juridica	SAGAS-003	sagas-solt-CS	sagas-cert-CS	t	t	24
 \.
 
 
@@ -2619,6 +2837,20 @@ COPY public.tipos_tramites_recaudos (id_tipo_tramite, id_recaudo, fisico) FROM s
 13	26	t
 13	27	t
 13	29	t
+14	7	f
+14	30	t
+14	31	t
+14	32	t
+14	33	t
+14	34	t
+14	35	t
+15	7	f
+15	30	t
+15	31	t
+15	32	t
+15	33	t
+15	34	t
+15	35	t
 \.
 
 
@@ -2631,6 +2863,7 @@ COPY public.tipos_usuarios (id_tipo_usuario, descripcion) FROM stdin;
 2	Administrador
 3	Funcionario
 4	Usuario externo
+5	Director
 \.
 
 
@@ -2639,19 +2872,6 @@ COPY public.tipos_usuarios (id_tipo_usuario, descripcion) FROM stdin;
 --
 
 COPY public.tramites (id_tramite, id_tipo_tramite, datos, costo, fecha_creacion, codigo_tramite, consecutivo, id_usuario, url_planilla, url_certificado, aprobado) FROM stdin;
-56	8	{"usuario":{"nombre":"aaaaa","ubicadoEn":"asdasdasd","telefono":"1231231231","tipoOcupacion":"123123","areaConstruccion":"123123"}}	\N	2020-03-14 14:00:07.333991-04	SAGAS-14032020-8-0001	1	58	http://localhost:5000/SAGAS-14032020-8-0001.pdf	\N	\N
-57	8	{"usuario":{"usuario":{"nombre":"aaaaa","ubicadoEn":"asdasdasd","telefono":"1231231231","tipoOcupacion":"123123","areaConstruccion":"123123"}},"funcionario":{"nombreObra":"asdas","sector":"asdasd","parroquia":"asdasda","observaciones":"sdasd"}}	1	2020-03-14 14:00:20.060403-04	SAGAS-14032020-8-0002	2	58	http://localhost:5000/SAGAS-14032020-8-0002.pdf	http://localhost:5000/SAGAS-14032020-8-0002-certificado.pdf	\N
-59	1	{"usuario":{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":"3929232","parroquia":"Coquivacoa","metrosCuadrados":200,"telefono":"3453453","puntoReferencia":"frente ami casa","direccion":"auslio","sector":"soltame","horario":"de aki a mayana","correo":"matenmen@a1sda.com","nombreORazon":"lusia cureor","contacto":"mardisio"}}	\N	2020-03-17 10:31:38.577115-04	CBM-17032020-1-0001	1	58	http://localhost:5000/CBM-17032020-1-0001.pdf	\N	\N
-60	1	{"usuario":{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":"3929232","parroquia":"Coquivacoa","metrosCuadrados":200,"telefono":"3453453","puntoReferencia":"frente ami casa","direccion":"auslio","sector":"soltame","horario":"de aki a mayana","correo":"matenmen@a1sda.com","nombreORazon":"lusia cureor","contacto":"mardisio"}}	\N	2020-03-17 10:33:03.93493-04	CBM-17032020-1-0002	2	58	http://localhost:5000/CBM-17032020-1-0002.pdf	\N	\N
-62	1	{"usuario":{"usuario":{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":"3929232","parroquia":"Coquivacoa","metrosCuadrados":200,"telefono":"3453453","puntoReferencia":"frente ami casa","direccion":"auslio","sector":"soltame","horario":"de aki a mayana","correo":"matenmen@a1sda.com","nombreORazon":"lusia cureor","contacto":"mardisio"}},"funcionario":{"aforo":244,"areaConstruccion":342,"parroquia":"porahi","sector":"si","ubicadoEn":"cerca de alla"}}	2240	2020-03-17 12:30:01.004007-04	CBM-17032020-1-0004	4	58	http://localhost:5000/CBM-17032020-1-0004.pdf	\N	\N
-63	1	{"usuario":{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":"3929232","parroquia":"Coquivacoa","metrosCuadrados":200,"telefono":"3453453","puntoReferencia":"frente ami casa","direccion":"auslio","sector":"soltame","horario":"de aki a mayana","correo":"matenmen@a1sda.com","nombreORazon":"lusia cureor","contacto":"mardisio"}}	\N	2020-03-17 12:37:11.925175-04	CBM-17032020-1-0005	5	58	http://localhost:5000/CBM-17032020-1-0005.pdf	\N	\N
-61	1	{"usuario":{"usuario":{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":"3929232","parroquia":"Coquivacoa","metrosCuadrados":200,"telefono":"3453453","puntoReferencia":"frente ami casa","direccion":"auslio","sector":"soltame","horario":"de aki a mayana","correo":"matenmen@a1sda.com","nombreORazon":"lusia cureor","contacto":"mardisio"}},"funcionario":{"aforo":244,"areaConstruccion":342,"parroquia":"porahi","sector":"si","ubicadoEn":"cerca de alla"}}	2240	2020-03-17 12:15:51.750206-04	CBM-17032020-1-0003	3	58	http://localhost:5000/CBM-17032020-1-0003.pdf	\N	\N
-68	1	{"usuario":{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":"3929232","parroquia":"Coquivacoa","metrosCuadrados":200,"telefono":"3453453","puntoReferencia":"frente ami casa","direccion":"auslio","sector":"soltame","horario":"de aki a mayana","correo":"matenmen@a1sda.com","nombreORazon":"lusia cureor","contacto":"mardisio"}}	240567	2020-03-18 10:48:10.510542-04	CBM-18032020-1-0003	3	58	http://localhost:5000/CBM-18032020-1-0003.pdf	\N	f
-65	1	{"usuario":{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":"3929232","parroquia":"Coquivacoa","metrosCuadrados":200,"telefono":"3453453","puntoReferencia":"frente ami casa","direccion":"auslio","sector":"soltame","horario":"de aki a mayana","correo":"matenmen@a1sda.com","nombreORazon":"lusia cureor","contacto":"mardisio"}}	\N	2020-03-17 12:42:24.618324-04	CBM-17032020-1-0006	6	58	http://localhost:5000/CBM-17032020-1-0006.pdf	\N	f
-67	1	{"usuario":{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":"3929232","parroquia":"Coquivacoa","metrosCuadrados":200,"telefono":"3453453","puntoReferencia":"frente ami casa","direccion":"auslio","sector":"soltame","horario":"de aki a mayana","correo":"matenmen@a1sda.com","nombreORazon":"lusia cureor","contacto":"mardisio"}}	240567	2020-03-18 10:46:40.666964-04	CBM-18032020-1-0002	2	58	http://localhost:5000/CBM-18032020-1-0002.pdf	\N	f
-66	1	{"usuario":{"usuario":{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":"3929232","parroquia":"Coquivacoa","metrosCuadrados":200,"telefono":"3453453","puntoReferencia":"frente ami casa","direccion":"auslio","sector":"soltame","horario":"de aki a mayana","correo":"matenmen@a1sda.com","nombreORazon":"lusia cureor","contacto":"mardisio"}},"funcionario":{"aforo":244,"areaConstruccion":342,"parroquia":"porahi","sector":"si","ubicadoEn":"cerca de alla"}}	2240	2020-03-18 10:13:40.986267-04	CBM-18032020-1-0001	1	58	http://localhost:5000/CBM-18032020-1-0001.pdf	http://localhost:5000/CBM-18032020-1-0001-certificado.pdf	t
-69	1	{"usuario":{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":"3929232","parroquia":"Coquivacoa","metrosCuadrados":200,"telefono":"3453453","puntoReferencia":"frente ami casa","direccion":"auslio","sector":"soltame","horario":"de aki a mayana","correo":"matenmen@a1sda.com","nombreORazon":"lusia cureor","contacto":"mardisio"}}	\N	2020-03-18 11:33:26.295013-04	CBM-18032020-1-0004	4	58	http://localhost:5000/CBM-18032020-1-0004.pdf	\N	f
-70	1	{"usuario":{"usuario":{"cedula":123456,"nombre":"Luis Acurero","cedulaORif":"3929232","parroquia":"Coquivacoa","metrosCuadrados":200,"telefono":"3453453","puntoReferencia":"frente ami casa","direccion":"auslio","sector":"soltame","horario":"de aki a mayana","correo":"matenmen@a1sda.com","nombreORazon":"lusia cureor","contacto":"mardisio"}},"funcionario":{"aforo":244,"areaConstruccion":342,"parroquia":"porahi","sector":"si","ubicadoEn":"cerca de alla"}}	2240	2020-03-18 11:35:44.727526-04	CBM-18032020-1-0005	5	58	http://localhost:5000/CBM-18032020-1-0005.pdf	http://localhost:5000/CBM-18032020-1-0005-certificado.pdf	t
 \.
 
 
@@ -2660,17 +2880,6 @@ COPY public.tramites (id_tramite, id_tipo_tramite, datos, costo, fecha_creacion,
 --
 
 COPY public.tramites_archivos_recaudos (id_tramite, url_archivo_recaudo) FROM stdin;
-59	si
-60	si
-61	si
-62	si
-63	si
-65	si
-66	si
-67	si
-68	si
-69	si
-70	si
 \.
 
 
@@ -2681,11 +2890,24 @@ COPY public.tramites_archivos_recaudos (id_tramite, url_archivo_recaudo) FROM st
 COPY public.usuarios (id_usuario, nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, id_tipo_usuario, password, telefono) FROM stdin;
 55	Super Usuario	super@user.com	Super Usuario	1	V	1	$2a$10$VVT8CHvO3jEEoj/djKK4Z.CGPO9JAHw1NMUIK6QwM3BEwElf68kUW	\N
 56	Administrador Bomberos	admin@bomberos.com	Bomberos	1231231231	V	2	$2a$10$nqEy4iyMTQJLAN.BOQ2GuuWioAwRcnXY7ClFbJtmp4svHLg9os/8m	1231231231
-57	Funcionario Bomberos	funcionario@bomberos.com	Bomberos	123123123	V	3	$2a$10$fFZ3EHbzdimZ9tDvrGod9ureMPkROVtzScEd0pO/piaQh6RLmedMG	1231231233
 58	External User	external@user.com	Aqui	27139153	V	4	$2a$10$1az9AKXYIZ48FrTXXnb24.QT89PZuCTh2n0zabqVW7G8YyKinYNXe	4127645681
 59	Administrador SAGAS	admin@sagas.com	SAGAS	123123	V	2	$2a$10$.avdkJGtcLhgw/UydHdZf.QEeiSoAjUxRM/xLiTA1gQLUDkDy4lfm	1231231231
-65	Funcionario SAGAS	funcionario@sagas.com	SAGAS	123133333	V	3	$2a$10$Na8DEr4PxMVxAQXgeAGkR.DjVx7YX/8/FJIhPeePIrPzKItJvTscy	1231231231
 66	Administrador Alcaldia	admin@alcaldia.com	Alcaldia	99999999	V	2	$2a$10$OtCHXU7MOIa6a5K2dt.soOa4AvzrKvp5qY1RtYTaCQqpV2.KTsOyu	8123814877
+67	Administrador CPU	admin@cpu.com	CPU	1231234444	V	2	$2a$10$qEObA7PrDPq2vv/MsfcyFutEKZQuPdVxQnv.5cafIrxfaBnN/P0ba	1231239811
+68	Funcionario CPU	funcionario@cpu.com	CPU	1283190247	V	3	$2a$10$qLVJeDD5mKiXlhrNQEJDtOX9baIZcjY3zwMmepViWXp.VENHwaOda	9271092741
+70	Director CPU	director@cpu.com	CPU	27139154	V	5	$2a$10$yBVC5M9rGWV5i.i2Nyl1fOGg1FKV2HQ0keq3jPcOvrGXtrjEra.z.	1231231231
+65	Funcionario SAGAS	funcionario@sagas.com	SAGAS	123133333	V	3	$2a$10$Na8DEr4PxMVxAQXgeAGkR.DjVx7YX/8/FJIhPeePIrPzKItJvTscy	1231231231
+57	Funcionario Bomberos	funcionario@bomberos.com	Bomberos	123123123	V	3	$2a$10$fFZ3EHbzdimZ9tDvrGod9ureMPkROVtzScEd0pO/piaQh6RLmedMG	1231231233
+\.
+
+
+--
+-- Data for Name: valores; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.valores (id_valor, descripcion, valor_en_bs) FROM stdin;
+1	Bolivares	1
+2	UTMM	200000
 \.
 
 
@@ -2702,6 +2924,19 @@ COPY public.variables (id_var, nombre_variable) FROM stdin;
 --
 
 COPY public.variables_de_costo (id_variable_de_costo, id_tipo_tramite, id_operacion, precedencia, aumento) FROM stdin;
+\.
+
+
+--
+-- Data for Name: variables_ordenanzas; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.variables_ordenanzas (id_variable, nombre, nombre_plural) FROM stdin;
+1	Plano	Planos
+2	Pre Inspección	Pre Inspecciones
+4	Inspección	Inspecciones
+3	Vivienda	Viviendas
+5	Persona jurídica	Personas jurídicas
 \.
 
 
@@ -2751,7 +2986,7 @@ SELECT pg_catalog.setval('public.eventos_casos_sociales_id_evento_caso_seq', 1, 
 -- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.eventos_tramite_id_evento_tramite_seq', 163, true);
+SELECT pg_catalog.setval('public.eventos_tramite_id_evento_tramite_seq', 236, true);
 
 
 --
@@ -2765,7 +3000,7 @@ SELECT pg_catalog.setval('public.facturas_tramites_id_factura_seq', 1, false);
 -- Name: inmueble_urbano_id_inmueble_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.inmueble_urbano_id_inmueble_seq', 7, true);
+SELECT pg_catalog.setval('public.inmueble_urbano_id_inmueble_seq', 28, true);
 
 
 --
@@ -2800,14 +3035,21 @@ SELECT pg_catalog.setval('public.operaciones_id_operacion_seq', 1, true);
 -- Name: ordenanzas_id_ordenanza_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.ordenanzas_id_ordenanza_seq', 1, false);
+SELECT pg_catalog.setval('public.ordenanzas_id_ordenanza_seq', 39, true);
+
+
+--
+-- Name: ordenanzas_tramites_id_ordenanza_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.ordenanzas_tramites_id_ordenanza_tramite_seq', 1, false);
 
 
 --
 -- Name: pagos_id_pago_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.pagos_id_pago_seq', 28, true);
+SELECT pg_catalog.setval('public.pagos_id_pago_seq', 43, true);
 
 
 --
@@ -2821,21 +3063,21 @@ SELECT pg_catalog.setval('public.parroquias_id_seq', 1, false);
 -- Name: permiso_de_acceso_id_permiso_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.permiso_de_acceso_id_permiso_seq', 1, false);
+SELECT pg_catalog.setval('public.permiso_de_acceso_id_permiso_seq', 12, true);
 
 
 --
 -- Name: propietario_id_propietario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.propietario_id_propietario_seq', 10, true);
+SELECT pg_catalog.setval('public.propietario_id_propietario_seq', 18, true);
 
 
 --
 -- Name: propietarios_inmuebles_id_propietario_inmueble_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.propietarios_inmuebles_id_propietario_inmueble_seq', 2, true);
+SELECT pg_catalog.setval('public.propietarios_inmuebles_id_propietario_inmueble_seq', 10, true);
 
 
 --
@@ -2856,7 +3098,7 @@ SELECT pg_catalog.setval('public.recuperacion_id_recuperacion_seq', 1, false);
 -- Name: tarifas_inspeccion_id_tarifa_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.tarifas_inspeccion_id_tarifa_seq', 1, false);
+SELECT pg_catalog.setval('public.tarifas_inspeccion_id_tarifa_seq', 39, true);
 
 
 --
@@ -2884,14 +3126,21 @@ SELECT pg_catalog.setval('public.tipos_usuarios_id_tipo_usuario_seq', 1, false);
 -- Name: tramites_id_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 70, true);
+SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 92, true);
 
 
 --
 -- Name: usuarios_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 66, true);
+SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 70, true);
+
+
+--
+-- Name: valores_id_valor_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.valores_id_valor_seq', 2, true);
 
 
 --
@@ -2906,6 +3155,13 @@ SELECT pg_catalog.setval('public.variables_de_costo_id_variable_de_costo_seq', 1
 --
 
 SELECT pg_catalog.setval('public.variables_id_var_seq', 1, false);
+
+
+--
+-- Name: variables_ordenanzas_id_variable_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.variables_ordenanzas_id_variable_seq', 5, true);
 
 
 --
@@ -3034,6 +3290,14 @@ ALTER TABLE ONLY public.operaciones
 
 ALTER TABLE ONLY public.ordenanzas
     ADD CONSTRAINT ordenanzas_pkey PRIMARY KEY (id_ordenanza);
+
+
+--
+-- Name: ordenanzas_tramites ordenanzas_tramites_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.ordenanzas_tramites
+    ADD CONSTRAINT ordenanzas_tramites_pkey PRIMARY KEY (id_ordenanza_tramite);
 
 
 --
@@ -3181,11 +3445,27 @@ ALTER TABLE ONLY public.usuarios
 
 
 --
+-- Name: valores valores_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.valores
+    ADD CONSTRAINT valores_pkey PRIMARY KEY (id_valor);
+
+
+--
 -- Name: variables_de_costo variable_de_costo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.variables_de_costo
     ADD CONSTRAINT variable_de_costo_pkey PRIMARY KEY (id_variable_de_costo);
+
+
+--
+-- Name: variables_ordenanzas variables_ordenanzas_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.variables_ordenanzas
+    ADD CONSTRAINT variables_ordenanzas_pkey PRIMARY KEY (id_variable);
 
 
 --
@@ -3222,6 +3502,13 @@ CREATE TRIGGER eventos_casos_sociales_trigger BEFORE INSERT ON public.eventos_ca
 --
 
 CREATE TRIGGER eventos_tramite_trigger BEFORE INSERT ON public.eventos_tramite FOR EACH ROW EXECUTE FUNCTION public.eventos_tramite_trigger_func();
+
+
+--
+-- Name: valores tipos_tramites_costo_utmm_trig; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER tipos_tramites_costo_utmm_trig AFTER UPDATE ON public.valores FOR EACH ROW WHEN (((new.descripcion)::text = 'UTMM'::text)) EXECUTE FUNCTION public.tipos_tramites_costo_utmm_trigger_func();
 
 
 --
@@ -3361,6 +3648,30 @@ ALTER TABLE ONLY public.notificaciones
 
 
 --
+-- Name: ordenanzas ordenanzas_id_valor_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.ordenanzas
+    ADD CONSTRAINT ordenanzas_id_valor_fkey FOREIGN KEY (id_valor) REFERENCES public.valores(id_valor);
+
+
+--
+-- Name: ordenanzas_tramites ordenanzas_tramites_id_tarifa_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.ordenanzas_tramites
+    ADD CONSTRAINT ordenanzas_tramites_id_tarifa_fkey FOREIGN KEY (id_tarifa) REFERENCES public.tarifas_inspeccion(id_tarifa);
+
+
+--
+-- Name: ordenanzas_tramites ordenanzas_tramites_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.ordenanzas_tramites
+    ADD CONSTRAINT ordenanzas_tramites_id_tramite_fkey FOREIGN KEY (id_tramite) REFERENCES public.tramites(id_tramite);
+
+
+--
 -- Name: pagos pagos_id_banco_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3446,6 +3757,14 @@ ALTER TABLE ONLY public.tarifas_inspeccion
 
 ALTER TABLE ONLY public.tarifas_inspeccion
     ADD CONSTRAINT tarifas_inspeccion_id_tipo_tramite_fkey FOREIGN KEY (id_tipo_tramite) REFERENCES public.tipos_tramites(id_tipo_tramite);
+
+
+--
+-- Name: tarifas_inspeccion tarifas_inspeccion_id_variable_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tarifas_inspeccion
+    ADD CONSTRAINT tarifas_inspeccion_id_variable_fkey FOREIGN KEY (id_variable) REFERENCES public.variables_ordenanzas(id_variable);
 
 
 --

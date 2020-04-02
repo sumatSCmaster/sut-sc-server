@@ -11,7 +11,7 @@ export default class Pool {
     if (!Pool.instance) {
       const opt: PoolConfig = {
         connectionString: process.env.DATABASE_URL,
-        ssl: true
+        ssl: false,
       };
       Pool.instance = new PgPool(opt);
     }

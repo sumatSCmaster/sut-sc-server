@@ -116,6 +116,7 @@ const getProcedureInstances = async (user, client: PoolClient) => {
                   return {
                     id: ord.id,
                     idTramite: ord.idTramite,
+                    costoOrdenanza: +ord.costoOrdenanza,
                     ordenanza: ord.ordenanza,
                     factor: ord.factor,
                     factorValue: +ord.factorValue,
@@ -170,6 +171,7 @@ const getProcedureInstancesByInstitution = async (institution, tipoUsuario, clie
                   return {
                     id: ord.id,
                     idTramite: ord.idTramite,
+                    costoOrdenanza: +ord.costoOrdenanza,
                     ordenanza: ord.ordenanza,
                     factor: ord.factor,
                     factorValue: +ord.factorValue,
@@ -328,8 +330,9 @@ export const procedureInit = async (procedure, user) => {
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.tipotramite])).rows[0];
     response.sufijo = resources.sufijo;
-    costo = resources.sufijo === 'pd' ? null : procedure.costo || resources.costo_base;
+    costo = resources.sufijo === 'pd' ? null : pago.costo || resources.costo_base;
     const nextEvent = await getNextEventForProcedure(response, client);
+
     const dir = await createRequestForm(response, client);
     const respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, costo, dir]);
     if (recaudos.length > 0) {
@@ -457,7 +460,7 @@ export const processProcedure = async procedure => {
     const nextEvent = await getNextEventForProcedure(procedure, client);
 
     if (datos) {
-      const prevData = (await client.query('SELECT datos FROM tramites WHERE id_tramite=$1', [procedure.idTramite])).rows[0];
+      const prevData = (await client.query('SELECT datos FROM tramite WHERE id_tramite=$1', [procedure.idTramite])).rows[0];
       if (!prevData.datos.funcionario) datos = { usuario: prevData.datos.usuario, funcionario: datos };
       else if (prevData.datos.funcionario) datos = { usuario: prevData.datos.usuario, funcionario: datos };
       else datos = prevData.datos;
@@ -576,7 +579,7 @@ export const reviseProcedure = async procedure => {
     const nextEvent = await getNextEventForProcedure(procedure, client);
 
     if (observaciones && !aprobado) {
-      const prevData = (await client.query('SELECT datos FROM tramites WHERE id_tramite=$1', [procedure.idTramite])).rows[0];
+      const prevData = (await client.query('SELECT datos FROM tramite WHERE id_tramite=$1', [procedure.idTramite])).rows[0];
       prevData.datos.funcionario = { ...prevData.datos.funcionario, observaciones };
       datos = prevData.datos;
     }
@@ -624,7 +627,7 @@ export const reviseProcedure = async procedure => {
 const createRequestForm = async (procedure, client: PoolClient): Promise<string> => {
   const tramite = (
     await client.query(
-      'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM tramites_state_with_resources tsr INNER JOIN tipos_tramites ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
+      'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
       [procedure.idTramite]
     )
   ).rows[0];
@@ -646,7 +649,7 @@ const createRequestForm = async (procedure, client: PoolClient): Promise<string>
 const createCertificate = async (procedure, client: PoolClient): Promise<string> => {
   const tramite = (
     await client.query(
-      'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM tramites_state_with_resources tsr INNER JOIN tipos_tramites ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
+      'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
       [procedure.idTramite]
     )
   ).rows[0];
@@ -670,7 +673,7 @@ export const createMockCertificate = async procedure => {
   try {
     const tramite = (
       await client.query(
-        'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado as formatoCertificado FROM tramites_state_with_resources tsr INNER JOIN tipos_tramites ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
+        'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado as formatoCertificado FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
         [procedure]
       )
     ).rows[0];
@@ -691,14 +694,14 @@ export const createMockCertificate = async procedure => {
       ...datosCertificado,
       cache: false,
       moment: require('moment'),
-      QR: linkQr
+      QR: linkQr,
     });
     return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
   } catch (error) {
     throw {
       status: 500,
       error,
-      message: errorMessageGenerator(error) || 'Error al actualizar el tramite',
+      message: errorMessageGenerator(error) || 'Error al crear el certificado',
     };
   } finally {
     client.release();
@@ -708,8 +711,23 @@ export const createMockCertificate = async procedure => {
 const insertOrdinancesByProcedure = async (ordinances, id, type, client: PoolClient) => {
   return Promise.all(
     ordinances.map(async (el, key) => {
-      const response = (await client.query(queries.CREATE_ORDINANCE_FOR_PROCEDURE, [id, type, el.ordenanza, el.utmm, el.valorCalc, el.factor, el.factorValue]))
-        .rows[0];
+      if (el.factor) {
+        if (el.valorCalc !== el.costoOrdenanza * el.factorValue) {
+          throw new Error('Error en validación del valor calculado');
+        }
+      }
+      const response = (
+        await client.query(queries.CREATE_ORDINANCE_FOR_PROCEDURE, [
+          id,
+          type,
+          el.ordenanza,
+          el.utmm,
+          el.valorCalc,
+          el.factor,
+          el.factorValue,
+          el.costoOrdenanza,
+        ])
+      ).rows[0];
       const ordinance = {
         id: key,
         idTramite: response.id_tramite,

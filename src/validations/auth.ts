@@ -1,6 +1,75 @@
 import { check, validationResult } from 'express-validator';
 import { fulfill } from '@utils/resolver';
 import { getFieldsForValidations } from '@helpers/procedures';
+import { IDsTipoUsuario as userTypes } from '@interfaces/sigt';
+
+const estimacionSimple = [
+  check('tramite.datos.estimacionSimple')
+    .exists()
+    .withMessage('Debe incluir la estimacion simple'),
+  check('tramite.datos.estimacionSimple.esTerreno')
+    .exists()
+    .withMessage('Debe indicar si el inmueble es terreno')
+    .isBoolean()
+    .withMessage('Indicador de terreno invalido'),
+  check('tramite.datos.estimacionSimple.esConstruccion')
+    .exists()
+    .withMessage('Debe indicar si el inmueble es construccion')
+    .isBoolean()
+    .withMessage('Indicador de construccion invalido'),
+  check('tramite.datos.estimacionSimple.valoresFiscales')
+    .exists()
+    .withMessage('Debe incluir los valores fiscales del inmueble')
+    .isArray()
+    .isLength({ min: 1, max: 4 })
+    .withMessage('Debe incluir valores fiscales validos'),
+  check('tramite.datos.estimacionSimple.terreno')
+    .optional()
+    .if(check('tramite.datos.estimacionSimple.esTerreno').exists())
+    .not()
+    .isEmpty()
+    .withMessage('Debe incluir los datos del terreno'),
+  // .contains([
+  //   check('area')
+  //     .exists()
+  //     .withMessage('Debe incluir el area del terreno')
+  //     .isString()
+  //     .withMessage('Debe incluir un area del terreno valida'),
+  //   check('sector')
+  //     .exists()
+  //     .withMessage('Debe incluir el sector del terreno')
+  //     .isInt()
+  //     .withMessage('Debe incluir un sector del terreno valida'),
+  //   check('valorSector')
+  //     .exists()
+  //     .withMessage('Debe incluir el valor fiscal del sector')
+  //     .isString()
+  //     .withMessage('Debe incluir un valor fiscal valido para el sector'),
+  // ]),
+  check('tramite.datos.estimacionSimple.construccion')
+    .optional()
+    .if(check('tramite.datos.estimacionSimple.esConstruccion').exists())
+    .not()
+    .isEmpty()
+    .withMessage('Debe incluir los datos del terreno'),
+  // .contains([
+  //   check('area')
+  //     .exists()
+  //     .withMessage('Debe incluir el area de construccion')
+  //     .isString()
+  //     .withMessage('Debe incluir un area de construccion valida'),
+  //   check('sector')
+  //     .exists()
+  //     .withMessage('Debe incluir el secior del construccion')
+  //     .isInt()
+  //     .withMessage('Debe incluir un sector del construccion valida'),
+  //   check('valorSector')
+  //     .exists()
+  //     .withMessage('Debe incluir el valor fiscal del sector')
+  //     .isString()
+  //     .withMessage('Debe incluir un valor fiscal valido para el sector'),
+  // ]),
+];
 
 const validations = {
   nombre: check('tramite.datos.nombre')
@@ -255,6 +324,27 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('El croquis no puede ser vacio'),
+  tipoInmuebleSolvencia: check('tramite.datos.tipoInmuebleSolvencia')
+    .exists()
+    .withMessage('Debe incluir el tipo del inmueble para la solvencia')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El tipo de inmueble para la solvencia no puede ser vacio'),
+  modeloConstruccion: check('tramite.datos.modeloConstruccion')
+    .exists()
+    .withMessage('Debe incluir el modelo de construccion para la solvencia')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El modelo de construccion para la solvencia no puede ser vacio'),
+  valorFiscal: check('tramite.datos.valorFiscal')
+    .exists()
+    .withMessage('Debe incluir los valores fiscales del terreno para la solvencia')
+    .isArray()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir al menos un valor fiscal para este inmueble'),
+  estimacionSimple: check('tramite.datos.estimacionSimple')
+    .exists()
+    .withMessage('Debe incluir la estimacion simple'),
 };
 
 export const createSuperuser = [
@@ -558,7 +648,7 @@ export const isAuth = (req, res, next) => {
 };
 
 export const isOfficial = (req, res, next) => {
-  if (req.user.tipoUsuario < 4) next();
+  if (req.user.tipoUsuario !== userTypes.UsuarioExterno) next();
   else {
     res.send({
       status: 401,
@@ -568,7 +658,7 @@ export const isOfficial = (req, res, next) => {
 };
 
 export const isExternalUser = (req, res, next) => {
-  if (req.user.tipoUsuario === 4) next();
+  if (req.user.tipoUsuario === userTypes.UsuarioExterno) next();
   else {
     res.send({
       status: 401,
@@ -578,8 +668,7 @@ export const isExternalUser = (req, res, next) => {
 };
 
 export const isOfficialAdmin = (req, res, next) => {
-  console.log(req.user.tipoUsuario);
-  if (req.user.tipoUsuario <= 2) next();
+  if (req.user.tipoUsuario === (userTypes.Administrador || userTypes.Superuser)) next();
   else {
     res.send({
       status: 401,
@@ -589,7 +678,7 @@ export const isOfficialAdmin = (req, res, next) => {
 };
 
 export const isSuperuser = (req, res, next) => {
-  if (req.user.tipoUsuario === 1) next();
+  if (req.user.tipoUsuario === userTypes.Superuser) next();
   else {
     res.send({
       status: 401,

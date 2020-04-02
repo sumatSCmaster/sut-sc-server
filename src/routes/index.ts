@@ -9,6 +9,7 @@ import affairs from './affairs';
 import resources from './resources';
 import validateDoc from './validateDoc';
 import estates from './estates';
+import taxValues from './taxValues';
 import ordinance from './ordinance';
 import values from './values';
 
@@ -24,6 +25,7 @@ router.use('/affairs', affairs);
 router.use('/estates', estates);
 router.use('/ordinance', ordinance);
 router.use('/values', values);
+router.use('/taxValues', taxValues);
 router.use(resources);
 //router.use("/notification", notification);
 
