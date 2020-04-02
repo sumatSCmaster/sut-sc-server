@@ -70,6 +70,9 @@ const queries = {
     "SELECT 1 FROM usuario u \
   INNER JOIN tipo_usuario tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
   WHERE tu.descripcion = 'Superuser' AND u.cedula = $1",
+  ADMIN_EXISTS:
+    'SELECT * FROM usuario usr inner join cuenta_funcionario cf ON usr.id_usuario \
+  = cf.id_usuario WHERE id_tipo_usuario = 2 AND id_institucion = $1',
   VALIDATE_TOKEN: "SELECT 1 FROM recuperacion WHERE token_recuperacion = $1 AND usado = false AND CURRENT_TIMESTAMP - fecha_recuperacion < '20 minutes';",
   EMAIL_EXISTS: 'SELECT 1 FROM usuario u WHERE nombre_de_usuario = $1;',
   EXTERNAL_USER_COMPLETE:

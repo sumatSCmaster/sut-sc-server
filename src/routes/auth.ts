@@ -68,9 +68,10 @@ router.post('/createAdmin', authenticate('jwt'), isSuperuser, authValidations.cr
     const salt = genSaltSync(10);
     req.body.usuario.password = hashSync(req.body.usuario.password, salt);
     const user = await createAdmin({ ...req.body.usuario }).catch(e => {
+      console.log(e);
       res.status(500).json({
         status: 500,
-        message: errorMessageGenerator(e) || 'Error en la creación de un administrador',
+        message: errorMessageGenerator(e) || e.message,
       });
     });
     if (user) {
