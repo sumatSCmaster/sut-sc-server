@@ -3748,9 +3748,48 @@ COPY public.seccion (id_seccion, nombre) FROM stdin;
 -- Data for Name: tarifa_inspeccion; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.tarifa_inspeccion (id_tarifa, id_ordenanza, id_tipo_tramite, formula, utiliza_codcat, id_variable) FROM stdin;
-\.
 
+COPY public.tarifa_inspeccion (id_tarifa, id_ordenanza, id_tipo_tramite, formula, utiliza_codcat, id_variable) FROM stdin;
+1	1	8	\N	f	\N
+3	3	8	\N	f	\N
+5	5	10	\N	t	\N
+6	6	10	\N	f	\N
+7	7	10	\N	t	\N
+8	8	10	\N	f	\N
+9	9	10	\N	f	\N
+10	10	10	\N	f	\N
+11	11	10	\N	f	\N
+12	12	10	\N	f	\N
+13	13	10	\N	f	\N
+14	14	10	\N	f	\N
+15	15	10	\N	f	\N
+16	16	10	\N	f	\N
+18	18	10	\N	f	\N
+19	19	11	\N	t	\N
+20	20	11	\N	f	\N
+21	21	11	\N	t	\N
+22	22	11	\N	f	\N
+23	23	12	\N	t	\N
+25	25	12	\N	t	\N
+27	27	12	\N	f	\N
+29	29	12	\N	f	\N
+30	30	12	\N	f	\N
+31	31	12	\N	f	\N
+34	34	12	\N	f	\N
+35	35	2	\N	t	\N
+36	36	1	\N	t	\N
+37	37	3	\N	f	\N
+38	38	3	\N	f	\N
+39	39	3	\N	f	\N
+2	2	8	\N	f	1
+4	4	10	\N	f	2
+17	17	10	\N	f	3
+24	24	12	\N	f	4
+26	26	12	\N	f	4
+28	28	12	\N	f	4
+32	32	12	\N	f	4
+33	33	12	\N	f	5
+\.
 
 --
 -- Data for Name: template_certificado; Type: TABLE DATA; Schema: public; Owner: -

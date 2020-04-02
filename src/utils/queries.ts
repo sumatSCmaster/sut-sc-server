@@ -301,7 +301,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   ORDINANCES_WITH_CODCAT_PROCEDURE:
     'SELECT v.descripcion AS "valorDescripcion", v.valor_en_bs AS "valorEnBs", \
   o.id_ordenanza as id, o.descripcion AS "descripcionOrdenanza", o.tarifa AS "tarifaOrdenanza",t.id_tarifa AS "idTarifa" , t.id_tipo_tramite AS "tipoTramite",t.formula, \
-  tt.costo_base AS "costoBase", t.utiliza_codcat AS "utilizaCodcat", vo.id_variable AS "idVariable", vo."nombreVariable", vo.nombre_plural AS "nombreVariablePlural" \
+  tt.costo_base AS "costoBase", t.utiliza_codcat AS "utilizaCodcat", vo.id_variable AS "idVariable", vo.nombre as "nombreVariable", vo.nombre_plural AS "nombreVariablePlural" \
   FROM valor v INNER JOIN ordenanza o ON v.id_valor = o.id_valor \
   INNER JOIN tarifa_inspeccion t ON t.id_ordenanza = o.id_ordenanza \
   INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite \
