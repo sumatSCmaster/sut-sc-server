@@ -45,24 +45,17 @@ router.put('/:id', authenticate('jwt'), validators.updateOfficial, checkResult, 
   if (data) res.status(data.status).json(data);
 });
 
-router.delete('/:id', authenticate('jwt'), async (req: any, res) => {
-  const { id_institucion } = req.user.cuentaFuncionario;
-  if (id_institucion) {
-    const { id } = req.params;
-    let err, data;
-    if (req.user.tipoUsuario !== 1) {
-      [err, data] = await fulfill(deleteOfficial(id, id_institucion));
-    } else {
-      [err, data] = await fulfill(deleteOfficialSuperuser(id));
-    }
-    if (err) res.status(500).json(err);
-    if (data) res.status(data.status).json(data);
+router.delete('/:id', authenticate('jwt'), validators.isOfficialAdmin, async (req: any, res) => {
+  const { institucion } = req.user;
+  const { id } = req.params;
+  let err, data;
+  if (req.user.tipoUsuario !== 1) {
+    [err, data] = await fulfill(deleteOfficial(id, institucion.id));
   } else {
-    res.status(401).json({
-      message: 'No tiene permisos para editar funcionarios.',
-      status: 401,
-    });
+    [err, data] = await fulfill(deleteOfficialSuperuser(id));
   }
+  if (err) res.status(500).json(err);
+  if (data) res.status(data.status).json(data);
 });
 
 export default router;
