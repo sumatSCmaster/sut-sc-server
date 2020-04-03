@@ -37,8 +37,8 @@ export const getAvailableProcedures = async (user): Promise<{ options: Instituci
     console.log(error);
     throw {
       status: 500,
-      error,
-      message: errorMessageGenerator(error) || 'Error al obtener los tramites',
+      error: error || { ...error },
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener los tramites',
     };
   } finally {
     client.release();
@@ -78,7 +78,7 @@ const getProcedureInstances = async (user, client: PoolClient) => {
   try {
     let response = (
       await procedureInstanceHandler(
-        user.institucion.id === 0 ? 0 : user.tipoUsuario,
+        user.institucion && user.institucion.id === 0 ? 0 : user.tipoUsuario,
         user.tipoUsuario !== 4 ? (user.institucion ? user.institucion.id : 0) : user.id,
         client
       )
@@ -133,11 +133,7 @@ const getProcedureInstances = async (user, client: PoolClient) => {
       })
     );
   } catch (error) {
-    throw {
-      status: 400,
-      error,
-      message: errorMessageGenerator(error) || 'Error al obtener instancias de tramite',
-    };
+    throw new Error('Error al obtener instancias de tramite');
   }
 };
 
