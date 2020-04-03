@@ -612,7 +612,7 @@ CREATE FUNCTION public.update_caso_state(_id_caso integer, event text, _datos js
     LANGUAGE plpgsql
     AS $$
   BEGIN
-          INSERT INTO eventos_caso_social values (default, _id_caso, event, now());
+          INSERT INTO evento_caso_social values (default, _id_caso, event, now());
           
                   RETURN QUERY SELECT caso_social_state.state FROM caso_social_state WHERE id = _id_caso;
                   
