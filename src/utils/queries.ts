@@ -131,7 +131,7 @@ const queries = {
     'SELECT DISTINCT sect.id_seccion as id, sect.nombre FROM\
   campo_tramite ct RIGHT JOIN seccion sect ON ct.id_seccion=sect.id_seccion WHERE ct.id_tipo_tramite=$1 ORDER BY sect.id_seccion',
   GET_PROCEDURE_BY_INSTITUTION:
-    'SELECT id_tipo_tramite, nombre_tramite, costo_base, sufijo, pago_previo, utiliza_informacion_catastral FROM tipo_tramite tt WHERE id_institucion = $1 ORDER BY id_tipo_tramite',
+    'SELECT id_tipo_tramite, nombre_tramite, costo_base, sufijo, pago_previo, utiliza_informacion_catastral, costo_utmm FROM tipo_tramite tt WHERE id_institucion = $1 ORDER BY id_tipo_tramite',
   GET_FIELDS_BY_SECTION:
     "SELECT ct.*, camp.nombre, camp.tipo, camp.validacion, camp.col FROM campo_tramite ct INNER JOIN\
     campo camp ON ct.id_campo = camp.id_campo WHERE ct.id_seccion = $1 AND ct.id_tipo_tramite = $2 AND (ct.estado='iniciado' OR ct.estado = 'ingresardatos') ORDER BY ct.orden",
@@ -164,7 +164,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_ONE_PROCEDURE: 'SELECT * FROM tipo_tramite WHERE id_tipo_tramite = $1',
   GET_ONE_PROCEDURE_INFO:
     'SELECT id_tipo_tramite as id, id_institucion AS "idInstitucion", nombre_tramite AS "nombre", costo_base as costo, nombre_corto as "nombreCorto"  FROM tipo_tramite WHERE id_tipo_tramite = $1;',
-  UPDATE_PROCEDURE_COST: 'UPDATE tipo_tramite SET costo_base = $2 WHERE id_tipo_tramite = $1 RETURNING *',
+  UPDATE_PROCEDURE_COST: 'UPDATE tipo_tramite SET costo_utmm = $2, costo_base = $3 WHERE id_tipo_tramite = $1 RETURNING *',
   VALIDATE_FIELDS_FROM_PROCEDURE:
     'SELECT DISTINCT camp.validacion, camp.tipo FROM campo_tramite ct INNER JOIN campo camp ON\
      ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=$2',

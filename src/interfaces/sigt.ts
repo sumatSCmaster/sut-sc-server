@@ -78,6 +78,7 @@ export interface TipoTramite {
   secciones?: Seccion[];
   sufijo?: string;
   necesitaCodCat: boolean;
+  utmm?: number
 }
 
 export interface Parroquia {
