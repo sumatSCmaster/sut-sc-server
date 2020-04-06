@@ -668,7 +668,7 @@ export const isExternalUser = (req, res, next) => {
 };
 
 export const isOfficialAdmin = (req, res, next) => {
-  if (req.user.tipoUsuario === (userTypes.Administrador || userTypes.Superuser)) next();
+  if (req.user.tipoUsuario === userTypes.Administrador || req.user.tipoUsuario === userTypes.Superuser) next();
   else {
     res.send({
       status: 401,

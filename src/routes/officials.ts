@@ -9,19 +9,12 @@ import { isSuperuser } from '@middlewares/auth';
 const router = Router();
 
 //TODO: añadir validacion de tipo de usuario
-router.get('/', authenticate('jwt'), async (req: any, res) => {
+router.get('/', authenticate('jwt'), validators.isOfficial, async (req: any, res) => {
   console.log(req.user);
-  const { cuentaFuncionario, id } = req.user;
-  if (cuentaFuncionario.id_institucion) {
-    const [err, data] = await fulfill(getOfficialsByInstitution(cuentaFuncionario.id_institucion, id));
-    if (err) res.status(500).json(err);
-    if (data) res.status(200).json(data);
-  } else {
-    res.status(401).json({
-      message: 'No tiene permisos para obtener los funcionarios.',
-      status: 401,
-    });
-  }
+  const { institucion, id } = req.user;
+  const [err, data] = await fulfill(getOfficialsByInstitution(institucion.id, id));
+  if (err) res.status(500).json(err);
+  if (data) res.status(200).json(data);
 });
 
 router.get('/all', authenticate('jwt'), isSuperuser, async (req: any, res) => {
@@ -45,24 +38,17 @@ router.put('/:id', authenticate('jwt'), validators.updateOfficial, checkResult, 
   if (data) res.status(data.status).json(data);
 });
 
-router.delete('/:id', authenticate('jwt'), async (req: any, res) => {
-  const { id_institucion } = req.user.cuentaFuncionario;
-  if (id_institucion) {
-    const { id } = req.params;
-    let err, data;
-    if (req.user.tipoUsuario !== 1) {
-      [err, data] = await fulfill(deleteOfficial(id, id_institucion));
-    } else {
-      [err, data] = await fulfill(deleteOfficialSuperuser(id));
-    }
-    if (err) res.status(500).json(err);
-    if (data) res.status(data.status).json(data);
+router.delete('/:id', authenticate('jwt'), validators.isOfficialAdmin, async (req: any, res) => {
+  const { institucion } = req.user;
+  const { id } = req.params;
+  let err, data;
+  if (req.user.tipoUsuario !== 1) {
+    [err, data] = await fulfill(deleteOfficial(id, institucion.id));
   } else {
-    res.status(401).json({
-      message: 'No tiene permisos para editar funcionarios.',
-      status: 401,
-    });
+    [err, data] = await fulfill(deleteOfficialSuperuser(id));
   }
+  if (err) res.status(500).json(err);
+  if (data) res.status(data.status).json(data);
 });
 
 export default router;
