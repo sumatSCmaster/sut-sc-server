@@ -137,8 +137,8 @@ export interface Campo {
 export interface Notificacion {
   id: number;
   tramite: Tramite;
-  emisor: Usuario;
-  receptor: Usuario;
+  emisor: string;
+  receptor: string;
   descripcion: string;
   status: boolean;
   fechaCreacion: Date;

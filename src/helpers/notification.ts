@@ -3,6 +3,7 @@ import queries from '../utils/queries';
 import { getUsers } from '@config/socket';
 import twilio from 'twilio';
 import { Notificacion, Tramite } from '@root/interfaces/sigt';
+import { errorMessageGenerator } from './errors';
 
 const pool = Pool.getInstance();
 const users = getUsers();
@@ -10,20 +11,30 @@ const users = getUsers();
 export const getNotifications = async (id: string): Promise<Notificacion[] | any> => {
   const client = await pool.connect();
   try {
-  } catch (e) {
-    throw e;
+    const notificaciones = (await client.query(queries.GET_NOTIFICATIONS_FOR_USER, [id])).rows;
+    return { status: 200, message: 'Notificaciones retornadas de manera satisfactoria', notificaciones };
+  } catch (error) {
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al obtener las notificaciones del usuario',
+    };
   } finally {
     client.release();
   }
 };
 
-export const markAllAsRead = async (id: string): Promise<boolean> => {
+export const markAllAsRead = async (id: string): Promise<object> => {
   const client = await pool.connect();
   try {
     const result = await client.query(queries.MARK_ALL_AS_READ, [id]);
-    return !!result;
-  } catch (e) {
-    throw e;
+    return { status: 201, message: 'Todas las notificaciones han sido leidas', result: !!result };
+  } catch (error) {
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al marcar como leidas las notificaciones del usuario',
+    };
   } finally {
     client.release();
   }
