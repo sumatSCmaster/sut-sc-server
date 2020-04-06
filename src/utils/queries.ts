@@ -331,6 +331,18 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_MONTHLY_COMPLETED_PROCEDURES: '',
   GET_TOTAL_PROCEDURES: '',
   GET_IN_PROCESS_PROCEDURES: '',
+
+  //Notificaciones
+
+  GET_NON_NORMAL_OFFICIALS:
+    'SELECT * FROM USUARIO  usr INNER JOIN CUENTA_FUNCIONARIO cf ON usr.id_usuario = cf.id_usuario WHERE cf.id_institucion = $1 AND usr.id_tipo_usuario != 3',
+  GET_OFFICIALS_FOR_PROCEDURE:
+    'SELECT * FROM permiso_de_acceso pda INNER JOIN usuario usr ON pda.id_usuario=usr.id_usuario INNER JOIN CUENTA_FUNCIONARIO cf ON usr.id_usuario = cf.id_usuario WHERE id_institucion = $1 AND id_tipo_tramite = $2',
+  GET_SUPER_USER: 'SELECT * FROM USUARIO WHERE id_tipo_usuario = 1',
+  GET_PROCEDURE_CREATOR: 'SELECT * FROM USUARIO WHERE id_usuario = $1',
+  CREATE_NOTIFICATION: 'INSERT INTO notificacion (id_tramite, emisor, receptor, descripcion, status, fecha) VALUES ($1, $2, $3, $4, $5, now())',
+  MARK_ALL_AS_READ: 'UPDATE notificacion SET status = true WHERE receptor = $1',
+  GET_NOTIFICATION_BY_ID: '',
 };
 
 export default queries;

@@ -78,7 +78,7 @@ export interface TipoTramite {
   secciones?: Seccion[];
   sufijo?: string;
   necesitaCodCat: boolean;
-  utmm?: number
+  utmm?: number;
 }
 
 export interface Parroquia {
@@ -132,6 +132,16 @@ export interface Campo {
   status: string;
   nombre: string;
   tipo: string;
+}
+
+export interface Notificacion {
+  id: number;
+  tramite: Tramite;
+  emisor: Usuario;
+  receptor: Usuario;
+  descripcion: string;
+  status: boolean;
+  fechaCreacion: Date;
 }
 
 export interface ErrorEstandar {
