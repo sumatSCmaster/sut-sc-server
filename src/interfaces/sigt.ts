@@ -136,9 +136,9 @@ export interface Campo {
 
 export interface Notificacion {
   id: number;
-  tramite: Tramite;
+  tramite: Partial<Tramite>;
   emisor: string;
-  receptor: string;
+  receptor: string | null;
   descripcion: string;
   status: boolean;
   fechaCreacion: Date;

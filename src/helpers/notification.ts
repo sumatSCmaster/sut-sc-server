@@ -1,9 +1,10 @@
 import Pool from '@utils/Pool';
 import queries from '../utils/queries';
-import { getUsers } from '@config/socket';
+import { getUsers, getIo } from '@config/socket';
 import twilio from 'twilio';
 import { Notificacion, Tramite } from '@root/interfaces/sigt';
 import { errorMessageGenerator } from './errors';
+import { PoolClient } from 'pg';
 
 const pool = Pool.getInstance();
 const users = getUsers();
@@ -11,7 +12,56 @@ const users = getUsers();
 export const getNotifications = async (id: string): Promise<Notificacion[] | any> => {
   const client = await pool.connect();
   try {
-    const notificaciones = (await client.query(queries.GET_NOTIFICATIONS_FOR_USER, [id])).rows;
+    const response = (await client.query(queries.GET_NOTIFICATIONS_FOR_USER, [id])).rows;
+    const notificaciones = await Promise.all(
+      response.map(async el => {
+        const ordinances = (await client.query(queries.ORDINANCES_PROCEDURE_INSTANCES, [el.idTramite])).rows;
+        const tramite: Tramite = {
+          id: el.idTramite,
+          tipoTramite: el.tipoTramite,
+          codigoTramite: el.codigoTramite,
+          costo: el.costo,
+          nombreCorto: el.nombreCorto,
+          nombreLargo: el.nombreLargo,
+          nombreTramiteCorto: el.nombreTramiteCorto,
+          nombreTramiteLargo: el.nombreTramiteLargo,
+          datos: el.datos,
+          fechaCreacion: el.fechaCreacionTramite,
+          usuario: el.usuario,
+          planilla: el.planilla,
+          certificado: el.certificado,
+          estado: el.estado,
+          aprobado: el.aprobado,
+          recaudos: (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [el.idTramite])).rows
+            .filter(taking => taking.id_tramite === el.idTramite)
+            .map(taking => taking.url_archivo_recaudo),
+          bill: !el.pagoPrevio
+            ? {
+                items: ordinances.map(ord => {
+                  return {
+                    id: ord.id,
+                    idTramite: ord.idTramite,
+                    costoOrdenanza: +ord.costoOrdenanza,
+                    ordenanza: ord.ordenanza,
+                    factor: ord.factor,
+                    factorValue: +ord.factorValue,
+                    utmm: +ord.utmm,
+                    valorCalc: +ord.valorCalc,
+                  };
+                }),
+                totalBs: ordinances.reduce((p, n) => p + +n.valorCalc, 0),
+                totalUtmm: ordinances.reduce((p, n) => p + +n.utmm, 0),
+              }
+            : undefined,
+        };
+        const notificacion = {
+          id: el.id,
+          status: el.status,
+          fechaCreacion: el.fechaCreacion,
+        };
+        return formatNotification(el.emisor, el.receptor, el.descripcion, tramite, notificacion);
+      })
+    );
     return { status: 200, message: 'Notificaciones retornadas de manera satisfactoria', notificaciones };
   } catch (error) {
     throw {
@@ -40,18 +90,102 @@ export const markAllAsRead = async (id: string): Promise<object> => {
   }
 };
 
-export const sendNotification = async (sender: string, receiver: string, description: string, type: string, payload: Tramite) => {
+export const sendNotification = async (sender: string, description: string, type: string, payload: Partial<Tramite>) => {
   const client = await pool.connect();
   try {
-    const result = (await client.query(queries.CREATE_NOTIFICATION, [])).rows[0];
-    const notif = await client.query(queries.GET_NOTIFICATION_BY_ID, [result.id]);
-    // const notification = formatNotification(notif.rows[0], target);
-    // users.get(notification.receptor.cedula)?.emit('SEND_NOTIFICATION', notification);
+    type === 'CREATE' ? broadcastByExternalUser(sender, description, payload, client) : broadcastByOfficial(sender, description, payload, client);
   } catch (e) {
     throw e;
   } finally {
     client.release();
   }
+};
+
+const broadcastByExternalUser = async (sender: string, description: string, payload: Partial<Tramite>, client: PoolClient) => {
+  const socket = getIo();
+  try {
+    client.query('BEGIN');
+    const admins = (await client.query(queries.GET_NON_NORMAL_OFFICIALS, [payload.nombreCorto])).rows;
+    const superuser = (await client.query(queries.GET_SUPER_USER)).rows;
+    const permittedOfficials = (await client.query(queries.GET_OFFICIALS_FOR_PROCEDURE, [payload.nombreCorto, payload.tipoTramite])).rows;
+
+    const notification = await Promise.all(
+      superuser.map(async el => {
+        const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0];
+        const notification = (await client.query(queries.GET_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
+        const formattedNotif = formatNotification(sender, notification.receptor, description, payload, notification);
+        return formattedNotif;
+      })
+    );
+
+    await Promise.all(admins.map(async el => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0]));
+
+    await Promise.all(
+      permittedOfficials.map(async el => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0])
+    );
+
+    socket.broadcast.to(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
+    socket.broadcast.to(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
+    socket.broadcast.to(`tram:${payload.tipoTramite}`).emit('CREATE_PROCEDURE', payload);
+    socket.broadcast.to(`inst:${payload.nombreCorto}`).emit('CREATE_PROCEDURE', payload);
+
+    client.query('COMMIT');
+  } catch (error) {
+    client.query('ROLLBACK');
+    throw error;
+  }
+};
+
+const broadcastByOfficial = async (sender: string, description: string, payload: Partial<Tramite>, client: PoolClient) => {
+  const socket = getIo();
+  try {
+    client.query('BEGIN');
+    const user = (await client.query(queries.GET_PROCEDURE_CREATOR, [payload.usuario])).rows;
+    const admins = (await client.query(queries.GET_NON_NORMAL_OFFICIALS, [payload.nombreCorto])).rows;
+    const superuser = (await client.query(queries.GET_SUPER_USER)).rows;
+    const permittedOfficials = (await client.query(queries.GET_OFFICIALS_FOR_PROCEDURE, [payload.nombreCorto, payload.tipoTramite])).rows;
+
+    const notification = await Promise.all(
+      user.map(async el => {
+        const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0];
+        const notification = (await client.query(queries.GET_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
+        const formattedNotif = formatNotification(sender, notification.receptor, description, payload, notification);
+        users.get(notification.receptor)?.emit('SEND_NOTIFICATION', formattedNotif);
+        users.get(notification.receptor)?.emit('UPDATE_PROCEDURE', payload);
+        return formattedNotif;
+      })
+    );
+
+    await Promise.all(superuser.map(async el => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0]));
+
+    await Promise.all(admins.map(async el => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0]));
+
+    await Promise.all(
+      permittedOfficials.map(async el => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0])
+    );
+
+    socket.broadcast.to(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
+    socket.broadcast.to(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
+    socket.broadcast.to(`tram:${payload.tipoTramite}`).emit('UPDATE_PROCEDURE', payload);
+    socket.broadcast.to(`inst:${payload.nombreCorto}`).emit('UPDATE_PROCEDURE', payload);
+
+    client.query('COMMIT');
+  } catch (error) {
+    client.query('ROLLBACK');
+    throw error;
+  }
+};
+
+const formatNotification = (sender: string, receiver: string | null, description: string, payload: Partial<Tramite>, notification: any): Notificacion => {
+  return {
+    id: notification.id,
+    emisor: sender,
+    receptor: receiver,
+    tramite: payload,
+    descripcion: description,
+    status: notification.status,
+    fechaCreacion: notification.fechaCreacion,
+  };
 };
 
 // export const sendWhatsAppNotification = async (body: string) => {

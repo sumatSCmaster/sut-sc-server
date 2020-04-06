@@ -11,6 +11,7 @@ import { renderFile } from 'pug';
 import { resolve } from 'path';
 import * as pdf from 'html-pdf';
 import * as qr from 'qrcode';
+import { sendNotification } from './notification';
 
 const pool = Pool.getInstance();
 
@@ -274,7 +275,7 @@ export const updateProcedureCost = async (id: string, newCost: string): Promise<
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    const res = (await client.query(queries.GET_UTMM_VALUE)).rows[0]
+    const res = (await client.query(queries.GET_UTMM_VALUE)).rows[0];
     const response = (await client.query(queries.UPDATE_PROCEDURE_COST, [id, newCost, parseFloat(newCost) * parseFloat(res.valor_en_bs)])).rows[0];
     const newProcedure = (await client.query(queries.GET_ONE_PROCEDURE, [id])).rows[0];
     const procedure: Partial<TipoTramite> = {
@@ -363,6 +364,7 @@ export const procedureInit = async (procedure, user) => {
     };
     client.query('COMMIT');
     sendEmail({ ...tramite, nombreUsuario: user.nombreUsuario, nombreCompletoUsuario: user.nombreCompleto, estado: respState.rows[0].state });
+    sendNotification(user.cedula, 'Un trámite ha sido creado', 'Create', tramite);
     return {
       status: 201,
       message: 'Tramite iniciado!',
@@ -380,7 +382,7 @@ export const procedureInit = async (procedure, user) => {
   }
 };
 
-export const validateProcedure = async procedure => {
+export const validateProcedure = async (procedure, user) => {
   const client = await pool.connect();
   let dir, respState;
   try {
@@ -419,6 +421,7 @@ export const validateProcedure = async procedure => {
       aprobado: response.aprobado,
     };
     sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
+    sendNotification(user.cedula, 'Un trámite ha sido actualizado', 'Update', tramite);
     return { status: 200, message: 'Trámite actualizado', tramite };
   } catch (error) {
     client.query('ROLLBACK');
@@ -432,7 +435,7 @@ export const validateProcedure = async procedure => {
   }
 };
 
-export const processProcedure = async procedure => {
+export const processProcedure = async (procedure, user) => {
   const client = await pool.connect();
   let { datos, bill } = procedure;
   let dir,
@@ -493,6 +496,7 @@ export const processProcedure = async procedure => {
       bill: ordenanzas,
     };
     sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
+    sendNotification(user.cedula, 'Un trámite ha sido actualizado', 'Update', tramite);
     return { status: 200, message: 'Trámite actualizado', tramite };
   } catch (error) {
     client.query('ROLLBACK');
@@ -507,7 +511,7 @@ export const processProcedure = async procedure => {
   }
 };
 
-export const addPaymentProcedure = async procedure => {
+export const addPaymentProcedure = async (procedure, user) => {
   const client = await pool.connect();
   let { pago } = procedure;
   try {
@@ -544,6 +548,7 @@ export const addPaymentProcedure = async procedure => {
       aprobado: response.aprobado,
     };
     sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
+    sendNotification(user.cedula, 'Un trámite ha sido actualizado', 'Update', tramite);
     return { status: 200, message: 'Trámite actualizado', tramite };
   } catch (error) {
     client.query('ROLLBACK');
@@ -557,7 +562,7 @@ export const addPaymentProcedure = async procedure => {
   }
 };
 
-export const reviseProcedure = async procedure => {
+export const reviseProcedure = async (procedure, user) => {
   const client = await pool.connect();
   const { aprobado, observaciones } = procedure.revision;
   let dir,
@@ -609,6 +614,7 @@ export const reviseProcedure = async procedure => {
       aprobado: response.aprobado,
     };
     sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
+    sendNotification(user.cedula, 'Un trámite ha sido actualizado', 'Update', tramite);
     return { status: 200, message: 'Trámite actualizado', tramite };
   } catch (error) {
     client.query('ROLLBACK');
@@ -799,11 +805,11 @@ const updateProcedure = switchcase({
   finalizado: null,
 })(null);
 
-export const updateProcedureHandler = async procedure => {
+export const updateProcedureHandler = async (procedure, user) => {
   const client = await pool.connect();
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
   client.release();
   const newProcedureState = updateProcedure(response.state);
   console.log(response.state);
-  return newProcedureState ? await newProcedureState(procedure) : { status: 500, message: 'No es posible actualizar el trámite' };
+  return newProcedureState ? await newProcedureState(procedure, user) : { status: 500, message: 'No es posible actualizar el trámite' };
 };
