@@ -222,6 +222,7 @@ const getSectionByProcedure = async (procedure, client: PoolClient): Promise<Tip
         id: al.id_tipo_tramite,
         titulo: al.nombre_tramite,
         costo: al.costo_base,
+        utmm: al.costo_utmm,
         pagoPrevio: al.pago_previo,
         sufijo: al.sufijo,
         necesitaCodCat: al.utiliza_informacion_catastral,
@@ -273,7 +274,8 @@ export const updateProcedureCost = async (id: string, newCost: string): Promise<
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    const response = (await client.query(queries.UPDATE_PROCEDURE_COST, [id, newCost])).rows[0];
+    const res = (await client.query(queries.GET_UTMM_VALUE)).rows[0]
+    const response = (await client.query(queries.UPDATE_PROCEDURE_COST, [id, newCost, parseFloat(newCost) * parseFloat(res.valor_en_bs)])).rows[0];
     const newProcedure = (await client.query(queries.GET_ONE_PROCEDURE, [id])).rows[0];
     const procedure: Partial<TipoTramite> = {
       id: newProcedure.id_tipo_tramite,
