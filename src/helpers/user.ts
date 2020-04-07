@@ -296,6 +296,34 @@ export const signUpUser = async user => {
   }
 };
 
+export const updateUser = async (user) => {
+  const { id, direccion, nombreCompleto, telefono } = user;
+  const client = await pool.connect();
+  try{
+    const res = await client.query(queries.UPDATE_USER, [direccion, nombreCompleto, telefono, id]);
+    if(res.rowCount > 0){
+      return {
+        status: 200,
+        user: res.rows[0],
+        message: 'Usuario actualizado'
+      }
+    }else{
+      return {
+        status: 400,
+        message: 'Usuario no encontrado'
+      }
+    }
+  } catch(e) {
+    console.log(e)
+    throw {
+      status: 500,
+      message: errorMessageGenerator(e) || 'Error en la actualizacion del usuario'
+    }
+  } finally {
+    client.release();
+  }
+}
+
 // export const hasNotifications = async (id: string): Promise<boolean> => {
 //   const client = await pool.connect();
 //   try {

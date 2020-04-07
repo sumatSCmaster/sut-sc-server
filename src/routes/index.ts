@@ -13,6 +13,7 @@ import taxValues from './taxValues';
 import ordinance from './ordinance';
 import values from './values';
 import statistics from './statistics';
+import user from './user';
 
 const router = Router();
 
@@ -28,6 +29,7 @@ router.use('/ordinance', ordinance);
 router.use('/values', values);
 router.use('/taxValues', taxValues);
 router.use('/statistics', statistics);
+router.use('/user', user)
 router.use(resources);
 //router.use("/notification", notification);
 
