@@ -36,10 +36,11 @@ export interface Usuario {
   telefono?: string;
   nacionalidad: Nacionalidad;
   rif?: string;
-  tipoUsuario: TipoUsuario;
+  tipoUsuario: TipoUsuario | number;
   datosGoogle?: DatosGoogle;
   cuentaFuncionario?: CuentaFuncionario;
   datosFacebook?: DatosFacebook;
+  institucion?: Institucion;
 }
 
 export interface DatosFacebook {

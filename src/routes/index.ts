@@ -27,7 +27,7 @@ router.use('/estates', estates);
 router.use('/ordinance', ordinance);
 router.use('/values', values);
 router.use('/taxValues', taxValues);
-router.use('/statistics', statistics);
+router.use('/stats', statistics);
 router.use(resources);
 //router.use("/notification", notification);
 
