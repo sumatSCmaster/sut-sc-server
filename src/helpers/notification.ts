@@ -1,6 +1,6 @@
 import Pool from '@utils/Pool';
 import queries from '../utils/queries';
-import { getUsers, getIo } from '@config/socket';
+import { getUsers } from '@config/socket';
 import twilio from 'twilio';
 import { Notificacion, Tramite } from '@root/interfaces/sigt';
 import { errorMessageGenerator } from './errors';
@@ -14,9 +14,9 @@ export const getNotifications = async (id: string): Promise<Notificacion[] | any
   try {
     const response = (await client.query(queries.GET_NOTIFICATIONS_FOR_USER, [id])).rows;
     const notificaciones = await Promise.all(
-      response.map(async el => {
-        const ordinances = (await client.query(queries.ORDINANCES_PROCEDURE_INSTANCES, [el.idTramite])).rows;
-        const tramite: Tramite = {
+      response.map(async (el) => {
+        // const ordinances = (await client.query(queries.ORDINANCES_PROCEDURE_INSTANCES, [el.idTramite])).rows;
+        const tramite: Partial<Tramite> = {
           id: el.idTramite,
           tipoTramite: el.tipoTramite,
           codigoTramite: el.codigoTramite,
@@ -32,27 +32,27 @@ export const getNotifications = async (id: string): Promise<Notificacion[] | any
           certificado: el.certificado,
           estado: el.estado,
           aprobado: el.aprobado,
-          recaudos: (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [el.idTramite])).rows
-            .filter(taking => taking.id_tramite === el.idTramite)
-            .map(taking => taking.url_archivo_recaudo),
-          bill: !el.pagoPrevio
-            ? {
-                items: ordinances.map(ord => {
-                  return {
-                    id: ord.id,
-                    idTramite: ord.idTramite,
-                    costoOrdenanza: +ord.costoOrdenanza,
-                    ordenanza: ord.ordenanza,
-                    factor: ord.factor,
-                    factorValue: +ord.factorValue,
-                    utmm: +ord.utmm,
-                    valorCalc: +ord.valorCalc,
-                  };
-                }),
-                totalBs: ordinances.reduce((p, n) => p + +n.valorCalc, 0),
-                totalUtmm: ordinances.reduce((p, n) => p + +n.utmm, 0),
-              }
-            : undefined,
+          // recaudos: (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [el.idTramite])).rows
+          //   .filter((taking) => taking.id_tramite === el.idTramite)
+          //   .map((taking) => taking.url_archivo_recaudo),
+          // bill: !el.pagoPrevio
+          //   ? {
+          //       items: ordinances.map((ord) => {
+          //         return {
+          //           id: ord.id,
+          //           idTramite: ord.idTramite,
+          //           costoOrdenanza: +ord.costoOrdenanza,
+          //           ordenanza: ord.ordenanza,
+          //           factor: ord.factor,
+          //           factorValue: +ord.factorValue,
+          //           utmm: +ord.utmm,
+          //           valorCalc: +ord.valorCalc,
+          //         };
+          //       }),
+          //       totalBs: ordinances.reduce((p, n) => p + +n.valorCalc, 0),
+          //       totalUtmm: ordinances.reduce((p, n) => p + +n.utmm, 0),
+          //     }
+          //   : undefined,
         };
         const notificacion = {
           id: el.id,
@@ -102,7 +102,6 @@ export const sendNotification = async (sender: string, description: string, type
 };
 
 const broadcastByExternalUser = async (sender: string, description: string, payload: Partial<Tramite>, client: PoolClient) => {
-  const socket = getIo();
   try {
     client.query('BEGIN');
     const admins = (await client.query(queries.GET_NON_NORMAL_OFFICIALS, [payload.nombreCorto])).rows;
@@ -110,7 +109,7 @@ const broadcastByExternalUser = async (sender: string, description: string, payl
     const permittedOfficials = (await client.query(queries.GET_OFFICIALS_FOR_PROCEDURE, [payload.nombreCorto, payload.tipoTramite])).rows;
 
     const notification = await Promise.all(
-      superuser.map(async el => {
+      superuser.map(async (el) => {
         const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0];
         const notification = (await client.query(queries.GET_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
         const formattedNotif = formatNotification(sender, notification.receptor, description, payload, notification);
@@ -118,16 +117,16 @@ const broadcastByExternalUser = async (sender: string, description: string, payl
       })
     );
 
-    await Promise.all(admins.map(async el => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0]));
+    await Promise.all(admins.map(async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0]));
 
     await Promise.all(
-      permittedOfficials.map(async el => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0])
+      permittedOfficials.map(async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0])
     );
 
-    socket.broadcast.to(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
-    socket.broadcast.to(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
-    socket.broadcast.to(`tram:${payload.tipoTramite}`).emit('CREATE_PROCEDURE', payload);
-    socket.broadcast.to(`inst:${payload.nombreCorto}`).emit('CREATE_PROCEDURE', payload);
+    users.get(sender)?.broadcast.in(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
+    users.get(sender)?.broadcast.in(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
+    users.get(sender)?.broadcast.in(`tram:${payload.tipoTramite}`).emit('CREATE_PROCEDURE', payload);
+    users.get(sender)?.broadcast.in(`inst:${payload.nombreCorto}`).emit('CREATE_PROCEDURE', payload);
 
     client.query('COMMIT');
   } catch (error) {
@@ -137,7 +136,6 @@ const broadcastByExternalUser = async (sender: string, description: string, payl
 };
 
 const broadcastByOfficial = async (sender: string, description: string, payload: Partial<Tramite>, client: PoolClient) => {
-  const socket = getIo();
   try {
     client.query('BEGIN');
     const user = (await client.query(queries.GET_PROCEDURE_CREATOR, [payload.usuario])).rows;
@@ -146,7 +144,7 @@ const broadcastByOfficial = async (sender: string, description: string, payload:
     const permittedOfficials = (await client.query(queries.GET_OFFICIALS_FOR_PROCEDURE, [payload.nombreCorto, payload.tipoTramite])).rows;
 
     const notification = await Promise.all(
-      user.map(async el => {
+      user.map(async (el) => {
         const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0];
         const notification = (await client.query(queries.GET_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
         const formattedNotif = formatNotification(sender, notification.receptor, description, payload, notification);
@@ -156,18 +154,18 @@ const broadcastByOfficial = async (sender: string, description: string, payload:
       })
     );
 
-    await Promise.all(superuser.map(async el => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0]));
+    await Promise.all(superuser.map(async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0]));
 
-    await Promise.all(admins.map(async el => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0]));
+    await Promise.all(admins.map(async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0]));
 
     await Promise.all(
-      permittedOfficials.map(async el => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0])
+      permittedOfficials.map(async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0])
     );
 
-    socket.broadcast.to(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
-    socket.broadcast.to(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
-    socket.broadcast.to(`tram:${payload.tipoTramite}`).emit('UPDATE_PROCEDURE', payload);
-    socket.broadcast.to(`inst:${payload.nombreCorto}`).emit('UPDATE_PROCEDURE', payload);
+    users.get(sender)?.broadcast.to(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
+    users.get(sender)?.broadcast.to(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
+    users.get(sender)?.broadcast.to(`tram:${payload.tipoTramite}`).emit('UPDATE_PROCEDURE', payload);
+    users.get(sender)?.broadcast.to(`inst:${payload.nombreCorto}`).emit('UPDATE_PROCEDURE', payload);
 
     client.query('COMMIT');
   } catch (error) {

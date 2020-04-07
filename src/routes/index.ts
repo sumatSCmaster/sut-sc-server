@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import auth from './auth';
 import official from './officials';
-//import notification from "./notification";
+import notification from './notification';
 import banks from './banks';
 import file from './file';
 import procedures from './procedures';
@@ -27,9 +27,9 @@ router.use('/estates', estates);
 router.use('/ordinance', ordinance);
 router.use('/values', values);
 router.use('/taxValues', taxValues);
+router.use('/notification', notification);
 router.use('/statistics', statistics);
 router.use(resources);
-//router.use("/notification", notification);
 
 router.get('/', (req, res) => {
   res.status(200).json({

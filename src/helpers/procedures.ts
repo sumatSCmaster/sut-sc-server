@@ -21,7 +21,7 @@ export const getAvailableProcedures = async (user): Promise<{ options: Instituci
   console.log(user);
   try {
     const response = await client.query(queries.GET_ALL_INSTITUTION);
-    let institution: Institucion[] = response.rows.map(el => {
+    let institution: Institucion[] = response.rows.map((el) => {
       return {
         id: el.id_institucion,
         nombreCompleto: el.nombre_completo,
@@ -29,7 +29,7 @@ export const getAvailableProcedures = async (user): Promise<{ options: Instituci
       };
     });
     if (user.tipoUsuario === 4) {
-      institution = institution.filter(el => el.id !== 0);
+      institution = institution.filter((el) => el.id !== 0);
     }
     const options: Institucion[] = await getProcedureByInstitution(institution, client);
     const instanciasDeTramite = await getProcedureInstances(user, client);
@@ -84,13 +84,13 @@ const getProcedureInstances = async (user, client: PoolClient) => {
         client
       )
     ).rows;
-    const takings = (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [response.map(el => +el.id)])).rows;
+    const takings = (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [response.map((el) => +el.id)])).rows;
     if (user.tipoUsuario === 3) {
-      const permissions = (await client.query(queries.GET_USER_PERMISSIONS, [user.id])).rows.map(row => +row.id_tipo_tramite) || [];
-      response = response.filter(tram => permissions.includes(tram.tipotramite));
+      const permissions = (await client.query(queries.GET_USER_PERMISSIONS, [user.id])).rows.map((row) => +row.id_tipo_tramite) || [];
+      response = response.filter((tram) => permissions.includes(tram.tipotramite));
     }
     return Promise.all(
-      response.map(async el => {
+      response.map(async (el) => {
         let ordinances;
         if (!el.pagoPrevio) {
           ordinances = (await client.query(queries.ORDINANCES_PROCEDURE_INSTANCES, [el.id])).rows;
@@ -110,10 +110,10 @@ const getProcedureInstances = async (user, client: PoolClient) => {
           nombreCorto: el.nombrecorto,
           nombreTramiteLargo: el.nombretramitelargo,
           nombreTramiteCorto: el.nombretramitecorto,
-          recaudos: takings.filter(taking => taking.id_tramite === el.id).map(taking => taking.url_archivo_recaudo),
+          recaudos: takings.filter((taking) => taking.id_tramite === el.id).map((taking) => taking.url_archivo_recaudo),
           bill: !el.pagoPrevio
             ? {
-                items: ordinances.map(ord => {
+                items: ordinances.map((ord) => {
                   return {
                     id: ord.id,
                     idTramite: ord.idTramite,
@@ -142,7 +142,7 @@ const getProcedureInstancesByInstitution = async (institution, tipoUsuario, clie
   try {
     const response = (await procedureInstanceHandler(tipoUsuario, institution.id, client)).rows;
     return Promise.all(
-      response.map(async el => {
+      response.map(async (el) => {
         let ordinances;
         if (!el.pagoPrevio) {
           ordinances = (await client.query(queries.ORDINANCES_PROCEDURE_INSTANCES, [el.id])).rows;
@@ -164,7 +164,7 @@ const getProcedureInstancesByInstitution = async (institution, tipoUsuario, clie
           nombreTramiteCorto: el.nombretramitecorto,
           bill: !el.pagoPrevio
             ? {
-                items: ordinances.map(ord => {
+                items: ordinances.map((ord) => {
                   return {
                     id: ord.id,
                     idTramite: ord.idTramite,
@@ -195,9 +195,9 @@ const getProcedureInstancesByInstitution = async (institution, tipoUsuario, clie
 
 const getProcedureByInstitution = async (institution, client: PoolClient): Promise<Institucion[] | any> => {
   return Promise.all(
-    institution.map(async institucion => {
+    institution.map(async (institucion) => {
       const procedures = (await client.query(queries.GET_PROCEDURE_BY_INSTITUTION, [institucion.id])).rows;
-      institucion.cuentasBancarias = (await client.query(queries.GET_BANK_ACCOUNTS_FOR_INSTITUTION, [institucion.id])).rows.map(cuenta => {
+      institucion.cuentasBancarias = (await client.query(queries.GET_BANK_ACCOUNTS_FOR_INSTITUTION, [institucion.id])).rows.map((cuenta) => {
         const documento = cuenta.documento.split(':');
         return {
           id: cuenta.id,
@@ -211,14 +211,14 @@ const getProcedureByInstitution = async (institution, client: PoolClient): Promi
       institucion.tramitesDisponibles = await getSectionByProcedure(procedures, client);
       return institucion;
     })
-  ).catch(error => {
+  ).catch((error) => {
     throw errorMessageGenerator(error) || error.message || 'Error al obtener las instituciones';
   });
 };
 
 const getSectionByProcedure = async (procedure, client: PoolClient): Promise<TipoTramite[] | any> => {
   return await Promise.all(
-    procedure.map(async al => {
+    procedure.map(async (al) => {
       const tramite: Partial<TipoTramite> = {
         id: al.id_tipo_tramite,
         titulo: al.nombre_tramite,
@@ -230,11 +230,11 @@ const getSectionByProcedure = async (procedure, client: PoolClient): Promise<Tip
       };
       const secciones = (await client.query(queries.GET_SECTIONS_BY_PROCEDURE, [tramite.id])).rows;
       tramite.secciones = await getFieldsBySection(secciones, tramite.id, client);
-      tramite.secciones = tramite.secciones?.filter(el => el.campos!.length > 0);
+      tramite.secciones = tramite.secciones?.filter((el) => el.campos!.length > 0);
       if (tramite.secciones!.length < 1) {
         delete tramite.secciones;
       }
-      tramite.recaudos = (await client.query(queries.GET_TAKINGS_BY_PROCEDURE, [tramite.id])).rows.map(el => {
+      tramite.recaudos = (await client.query(queries.GET_TAKINGS_BY_PROCEDURE, [tramite.id])).rows.map((el) => {
         return {
           nombreCompleto: el.nombrecompleto,
           nombreCorto: el.nombrecorto,
@@ -244,7 +244,7 @@ const getSectionByProcedure = async (procedure, client: PoolClient): Promise<Tip
       });
       return tramite;
     })
-  ).catch(error => {
+  ).catch((error) => {
     console.log(error);
     throw {
       message: errorMessageGenerator(error) || error.message || 'Error al obtener las secciones',
@@ -254,8 +254,8 @@ const getSectionByProcedure = async (procedure, client: PoolClient): Promise<Tip
 
 const getFieldsBySection = async (section, tramiteId, client): Promise<Campo[] | any> => {
   return Promise.all(
-    section.map(async el => {
-      el.campos = (await fieldsBySectionHandler(tramiteId === 0 ? 0 : client.tipoUsuario, [el.id, tramiteId], client)).rows.map(ul => {
+    section.map(async (el) => {
+      el.campos = (await fieldsBySectionHandler(tramiteId === 0 ? 0 : client.tipoUsuario, [el.id, tramiteId], client)).rows.map((ul) => {
         const id = ul.id_campo;
         delete ul.id_tipo_tramite;
         delete ul.id_campo;
@@ -263,7 +263,7 @@ const getFieldsBySection = async (section, tramiteId, client): Promise<Campo[] |
       });
       return el;
     })
-  ).catch(error => {
+  ).catch((error) => {
     console.log(error);
     throw {
       message: errorMessageGenerator(error) || error.message || 'Error al obtener los campos',
@@ -335,7 +335,7 @@ export const procedureInit = async (procedure, user) => {
     const dir = await createRequestForm(response, client);
     const respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, costo, dir]);
     if (recaudos.length > 0) {
-      recaudos.map(async urlRecaudo => {
+      recaudos.map(async (urlRecaudo) => {
         await client.query(queries.INSERT_TAKINGS_IN_PROCEDURE, [response.id, urlRecaudo]);
       });
     }
@@ -364,7 +364,7 @@ export const procedureInit = async (procedure, user) => {
     };
     client.query('COMMIT');
     sendEmail({ ...tramite, nombreUsuario: user.nombreUsuario, nombreCompletoUsuario: user.nombreCompleto, estado: respState.rows[0].state });
-    sendNotification(user.cedula, 'Un trámite ha sido creado', 'Create', tramite);
+    sendNotification(user.cedula, 'Un trámite ha sido creado', 'CREATE', tramite);
     return {
       status: 201,
       message: 'Tramite iniciado!',
@@ -421,7 +421,7 @@ export const validateProcedure = async (procedure, user) => {
       aprobado: response.aprobado,
     };
     sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
-    sendNotification(user.cedula, 'Un trámite ha sido actualizado', 'Update', tramite);
+    sendNotification(user.cedula, 'Un trámite ha sido actualizado', 'UPDATE', tramite);
     return { status: 200, message: 'Trámite actualizado', tramite };
   } catch (error) {
     client.query('ROLLBACK');
@@ -496,7 +496,7 @@ export const processProcedure = async (procedure, user) => {
       bill: ordenanzas,
     };
     sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
-    sendNotification(user.cedula, 'Un trámite ha sido actualizado', 'Update', tramite);
+    sendNotification(user.cedula, 'Un trámite ha sido actualizado', 'UPDATE', tramite);
     return { status: 200, message: 'Trámite actualizado', tramite };
   } catch (error) {
     client.query('ROLLBACK');
@@ -548,7 +548,7 @@ export const addPaymentProcedure = async (procedure, user) => {
       aprobado: response.aprobado,
     };
     sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
-    sendNotification(user.cedula, 'Un trámite ha sido actualizado', 'Update', tramite);
+    sendNotification(user.cedula, 'Un trámite ha sido actualizado', 'UPDATE', tramite);
     return { status: 200, message: 'Trámite actualizado', tramite };
   } catch (error) {
     client.query('ROLLBACK');
@@ -614,7 +614,7 @@ export const reviseProcedure = async (procedure, user) => {
       aprobado: response.aprobado,
     };
     sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
-    sendNotification(user.cedula, 'Un trámite ha sido actualizado', 'Update', tramite);
+    sendNotification(user.cedula, 'Un trámite ha sido actualizado', 'UPDATE', tramite);
     return { status: 200, message: 'Trámite actualizado', tramite };
   } catch (error) {
     client.query('ROLLBACK');
@@ -672,7 +672,7 @@ const createCertificate = async (procedure, client: PoolClient): Promise<string>
   return form;
 };
 
-export const createMockCertificate = async procedure => {
+export const createMockCertificate = async (procedure) => {
   const client = await pool.connect();
   try {
     const tramite = (
@@ -746,7 +746,7 @@ const insertOrdinancesByProcedure = async (ordinances, id, type, client: PoolCli
   );
 };
 
-const sendEmail = procedure => {
+const sendEmail = (procedure) => {
   const mailData = {
     codigoTramite: procedure.codigoTramite,
     emailUsuario: procedure.nombreUsuario,
