@@ -148,8 +148,8 @@ const broadcastByOfficial = async (sender: string, description: string, payload:
         const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0];
         const notification = (await client.query(queries.GET_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
         const formattedNotif = formatNotification(sender, notification.receptor, description, payload, notification);
-        users.get(notification.receptor)?.emit('SEND_NOTIFICATION', formattedNotif);
-        users.get(notification.receptor)?.emit('UPDATE_PROCEDURE', payload);
+        users.get(el.cedula)?.emit('SEND_NOTIFICATION', formattedNotif);
+        users.get(el.cedula)?.emit('UPDATE_PROCEDURE', payload);
         return formattedNotif;
       })
     );
