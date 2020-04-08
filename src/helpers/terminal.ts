@@ -1,0 +1,79 @@
+import Pool from '@utils/Pool';
+import queries from '@utils/queries';
+import { errorMessageGenerator } from './errors';
+
+const pool = Pool.getInstance();
+
+export const getDestinations = async () => {
+    const client = await pool.connect();
+    try{
+        const res = await client.query(queries.TERMINAL_DESTINATIONS);
+        return {
+            status: 200,
+            destinos: res.rows
+        }
+    } catch(e) {
+        throw {
+            status: 500,
+            message: errorMessageGenerator(e) || 'Error al obtener destinos'
+        }
+    } finally {
+        client.release();
+    }
+}
+
+export const createDestination = async (dest) => {
+    const client = await pool.connect();
+    const { destino, tipo, monto, tasa } = dest
+    try{
+        const res = await client.query(queries.CREATE_TERMINAL_DESTINATION, [destino, tipo, monto, tasa]);
+        return {
+            status: 200,
+            destino: res.rows[0]
+        }
+    } catch(e) {
+        throw {
+            status: 500,
+            message: errorMessageGenerator(e) || 'Error al crear destino'
+        }
+    } finally {
+        client.release();
+    }
+}
+
+export const updateDestination = async (dest) => {
+    const client = await pool.connect();
+    const { destino, tipo, monto, tasa, id } = dest
+    try{
+        const res = await client.query(queries.UPDATE_TERMINAL_DESTINATION, [destino, tipo, monto, tasa, id]);
+        return {
+            status: 200,
+            destino: res.rows[0]
+        }
+    } catch(e) {
+        throw {
+            status: 500,
+            message: errorMessageGenerator(e) || 'Error al actualizar destino'
+        }
+    } finally {
+        client.release();
+    }
+}
+
+export const disableDestination = async (id) => {
+    const client = await pool.connect();
+    try{
+        const res = await client.query(queries.DISABLE_TERMINAL_DESTINATION, [id]);
+        return {
+            status: 200,
+            destino: res.rows[0]
+        }
+    } catch(e) {
+        throw {
+            status: 500,
+            message: errorMessageGenerator(e) || 'Error al deshabilitar destino'
+        }
+    } finally {
+        client.release();
+    }
+}

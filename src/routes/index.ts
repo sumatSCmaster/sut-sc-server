@@ -14,6 +14,7 @@ import ordinance from './ordinance';
 import values from './values';
 import statistics from './statistics';
 import user from './user';
+import destination from './terminal';
 
 const router = Router();
 
@@ -29,7 +30,8 @@ router.use('/ordinance', ordinance);
 router.use('/values', values);
 router.use('/taxValues', taxValues);
 router.use('/statistics', statistics);
-router.use('/user', user)
+router.use('/user', user);
+router.use('/destination', destination);
 router.use(resources);
 //router.use("/notification", notification);
 
