@@ -106,10 +106,10 @@ const broadcastByExternalUser = async (sender: string, description: string, payl
       )
     );
 
-    users.get(sender)?.broadcast.in(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
-    users.get(sender)?.broadcast.in(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
-    users.get(sender)?.broadcast.in(`tram:${payload.tipoTramite}`).emit('CREATE_PROCEDURE', payload);
-    users.get(sender)?.broadcast.in(`inst:${payload.nombreCorto}`).emit('CREATE_PROCEDURE', payload);
+    users.get(sender)?.in(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
+    users.get(sender)?.in(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
+    users.get(sender)?.in(`tram:${payload.tipoTramite}`).emit('CREATE_PROCEDURE', payload);
+    users.get(sender)?.in(`inst:${payload.nombreCorto}`).emit('CREATE_PROCEDURE', payload);
 
     client.query('COMMIT');
   } catch (error) {
@@ -151,10 +151,10 @@ const broadcastByOfficial = async (sender: string, description: string, payload:
       )
     );
 
-    users.get(sender)?.broadcast.to(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
-    users.get(sender)?.broadcast.to(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
-    users.get(sender)?.broadcast.to(`tram:${payload.tipoTramite}`).emit('UPDATE_PROCEDURE', payload);
-    users.get(sender)?.broadcast.to(`inst:${payload.nombreCorto}`).emit('UPDATE_PROCEDURE', payload);
+    users.get(sender)?.in(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
+    users.get(sender)?.in(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
+    users.get(sender)?.in(`tram:${payload.tipoTramite}`).emit('UPDATE_PROCEDURE', payload);
+    users.get(sender)?.in(`inst:${payload.nombreCorto}`).emit('UPDATE_PROCEDURE', payload);
 
     client.query('COMMIT');
   } catch (error) {
