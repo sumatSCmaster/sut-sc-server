@@ -326,12 +326,79 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_UTMM_VALUE: "SELECT valor_en_bs FROM valor WHERE descripcion = 'UTMM'",
   UPDATE_UTMM_VALUE: "UPDATE valor SET valor_en_bs = $1 WHERE descripcion = 'UTMM' RETURNING valor_en_bs;",
 
-  //Estadisticas
-
-  GET_DAILY_STARTED_PROCEDURES: '',
-  GET_MONTHLY_COMPLETED_PROCEDURES: '',
-  GET_TOTAL_PROCEDURES: '',
-  GET_IN_PROCESS_PROCEDURES: '',
+  //Estadisticas 
+  // OFFICIAL STATS
+  GET_PROC_TOTAL_COUNT: 'SELECT COUNT (*) FROM tramite t INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite WHERE tt.id_institucion = $1;',
+  GET_PROC_TOTAL_IN_MONTH: 
+    'SELECT COUNT (*) FROM tramite t INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite WHERE tt.id_institucion = $1 \
+    AND EXTRACT(MONTH FROM t.fecha_creacion) = $2;',
+  GET_PROC_TOTAL_BY_STATUS: 
+    'SELECT COUNT (*) FROM tramites_state_with_resources t INNER JOIN tipo_tramite tt ON t.tipotramite = tt.id_tipo_tramite WHERE tt.id_institucion = $1 \
+    AND t.state = $2',
+  GET_PROC_BY_DATE: 
+    'SELECT COUNT (*), fecha_creacion::date FROM tramite t INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite \
+    WHERE tt.id_institucion = $1 AND fecha_creacion::date > CURRENT_DATE - INTERVAL \'30 days\' GROUP BY fecha_creacion::date;',
+  GET_PROC_BY_STATUS_MONTHLY: 
+    'SELECT COUNT (*) FROM tramites_state_with_resources t INNER JOIN tipo_tramite tt ON t.tipotramite = tt.id_tipo_tramite \
+    WHERE tt.id_institucion = $1 AND EXTRACT(MONTH FROM t.fechacreacion) = $2 AND t.state = $3;',
+  GET_PROC_COUNT_BY_STATE: 
+    'SELECT COUNT (*), state FROM tramites_state_with_resources t INNER JOIN tipo_tramite tt \
+    ON tt.id_tipo_tramite = t.tipotramite WHERE tt.id_institucion = $1 GROUP BY state;',
+  GET_PROC_COUNT_LAST_20_DAYS: 
+    'SELECT COUNT (*), fechacreacion::date FROM tramites_state_with_resources t INNER JOIN tipo_tramite tt \
+    ON tt.id_tipo_tramite = t.tipotramite WHERE tt.id_institucion = $1 \
+    AND fechacreacion::date > CURRENT_DATE - INTERVAL \'20 days\' \
+    GROUP BY fechacreacion::date ORDER BY fechacreacion DESC;',
+  GET_PROC_COUNT_LAST_12_MONTHS:
+    'SELECT COUNT (*), EXTRACT(MONTH FROM fechacreacion::date) AS month, EXTRACT(YEAR FROM fechacreacion::date) \
+    AS year FROM tramites_state_with_resources t INNER JOIN tipo_tramite tt \
+    ON tt.id_tipo_tramite = t.tipotramite WHERE tt.id_institucion = $1 \
+    AND fechacreacion::date > CURRENT_DATE - INTERVAL \'12 months\' \
+    GROUP BY month, year;',
+  GET_PROC_COUNT_LAST_5_YEARS: 
+    'SELECT COUNT (*), EXTRACT(YEAR FROM fechacreacion::date) AS year FROM tramites_state_with_resources t \
+    INNER JOIN tipo_tramite tt ON tt.id_tipo_tramite = t.tipotramite WHERE tt.id_institucion = $1 \
+    AND fechacreacion::date > CURRENT_DATE - INTERVAL \'5 years\' GROUP BY year;',
+  // SUPER USER STATS
+  GET_SUPER_PROC_TOTAL_COUNT: 'SELECT COUNT (*) FROM tramite;',
+  GET_SUPER_PROC_TOTAL_IN_MONTH: 'SELECT COUNT (*) FROM tramite WHERE EXTRACT(MONTH FROM fecha_creacion) = $1;',
+  GET_SUPER_PROC_TOTAL_BY_STATUS: 'SELECT COUNT (*) FROM tramites_state_with_resources WHERE state = $1',
+  GET_SUPER_PROC_BY_DATE: 
+    'SELECT COUNT (*), fecha_creacion::date FROM tramite WHERE fecha_creacion::date > CURRENT_DATE - INTERVAL \'30 days\' GROUP BY fecha_creacion::date;',
+  GET_SUPER_PROC_BY_STATUS_MONTHLY: 'SELECT COUNT (*) FROM tramites_state_with_resources WHERE EXTRACT(MONTH FROM fechacreacion) = $1 AND state = $2;',
+  GET_SUPER_PROC_COUNT_BY_STATE: 'SELECT COUNT (*), state FROM tramites_state_with_resources GROUP BY state;',
+  GET_SUPER_PROC_COUNT_LAST_20_DAYS: 
+    'SELECT COUNT (*), fechacreacion::date FROM tramites_state_with_resources WHERE fechacreacion::date > CURRENT_DATE - INTERVAL \'20 days\' \
+    GROUP BY fechacreacion::date ORDER BY fechacreacion DESC;',
+  GET_SUPER_PROC_COUNT_LAST_12_MONTHS:
+    'SELECT COUNT (*), EXTRACT(MONTH FROM fechacreacion::date) AS month, EXTRACT(YEAR FROM fechacreacion::date) \
+    AS year FROM tramites_state_with_resources WHERE fechacreacion::date > CURRENT_DATE - INTERVAL \'12 months\' \
+    GROUP BY month, year;',
+  GET_SUPER_PROC_COUNT_LAST_5_YEARS: 
+    'SELECT COUNT (*), EXTRACT(YEAR FROM fechacreacion::date) AS year FROM tramites_state_with_resources \
+    WHERE fechacreacion::date > CURRENT_DATE - INTERVAL \'5 years\' GROUP BY year;',
+  // SOCIAL AFFAIRS STATS
+  GET_AFFAIR_TOTAL_COUNT: 'SELECT COUNT (*) FROM caso_social;',
+  GET_AFFAIR_TOTAL_IN_MONTH: 'SELECT COUNT (*) FROM caso_social WHERE EXTRACT(MONTH FROM fecha_creacion) = $1;',
+  GET_AFFAIR_TOTAL_BY_STATUS: 'SELECT COUNT (*) FROM casos_sociales_state WHERE state = $1',
+  GET_AFFAIR_BY_DATE: 
+    'SELECT COUNT (*), fecha_creacion::date FROM caso_social WHERE fecha_creacion::date > CURRENT_DATE - INTERVAL \'30 days\' GROUP BY fecha_creacion::date;',
+  GET_AFFAIR_BY_STATUS_MONTHLY: 'SELECT COUNT (*) FROM casos_sociales_state WHERE EXTRACT(MONTH FROM fechacreacion) = $1 AND state = $2;',
+  GET_AFFAIR_COUNT_BY_STATE: 'SELECT COUNT (*), state FROM casos_sociales_state GROUP BY state;',
+  GET_AFFAIR_COUNT_LAST_20_DAYS: 
+    'SELECT COUNT (*), fechacreacion::date FROM casos_sociales_state WHERE fechacreacion::date > CURRENT_DATE - INTERVAL \'20 days\' \
+    GROUP BY fechacreacion::date ORDER BY fechacreacion DESC;',
+  GET_AFFAIR_COUNT_LAST_12_MONTHS:
+    'SELECT COUNT (*), EXTRACT(MONTH FROM fechacreacion::date) AS month, EXTRACT(YEAR FROM fechacreacion::date) \
+    AS year FROM casos_sociales_state WHERE fechacreacion::date > CURRENT_DATE - INTERVAL \'12 months\' \
+    GROUP BY month, year;',
+  GET_AFFAIR_COUNT_LAST_5_YEARS: 
+    'SELECT COUNT (*), EXTRACT(YEAR FROM fechacreacion::date) AS year FROM casos_sociales_state \
+    WHERE fechacreacion::date > CURRENT_DATE - INTERVAL \'5 years\' GROUP BY year;',
+  // EXTERNAL USER STATS
+  GET_EXTERNAL_TOTAL_COUNT: 'SELECT COUNT(*) FROM tramite WHERE id_usuario = $1;',
+  GET_EXTERNAL_APPROVED_COUNT: 'SELECT COUNT(*) FROM tramites_state_with_resources WHERE usuario = $1 AND state = \'finalizado\' AND aprobado = TRUE;',
+  GET_EXTERNAL_REJECTED_COUNT: 'SELECT COUNT(*) FROM tramites_state_with_resources WHERE usuario = $1 AND state = \'finalizado\' AND aprobado = FALSE;'
 
   //Terminal
   TERMINAL_DESTINATIONS: 'SELECT id_operatividad_terminal AS id, destino, tipo, monto, tasa, monto_calculado AS "montoCalculado" FROM operatividad_terminal WHERE habilitado = true;',

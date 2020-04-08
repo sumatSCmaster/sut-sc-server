@@ -4,7 +4,7 @@ import { Strategy as Facebook } from 'passport-facebook';
 import { Strategy as Local, VerifyFunction } from 'passport-local';
 import { getUserByUsername, comparePassword, verifyExternalUser, initialExtUserSignUp, getByOAuthID } from '@helpers/user';
 import { encode } from 'jwt-simple';
-import { Usuario } from '@interfaces/sigt';
+import { Usuario, TipoUsuario } from '@interfaces/sigt';
 
 const optJwt = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -96,7 +96,7 @@ const verifyLocal: VerifyFunction = async (username: string, password: string, d
   console.log('Estrategia local', user);
   if (!user) return done(null, false, { message: 'Bad Credentials' });
   if (await comparePassword(password, user.password || '')) {
-    if (user.tipoUsuario.descripcion === 'Funcionario') {
+    if ((user.tipoUsuario as TipoUsuario).descripcion === 'Funcionario') {
       return done(null, {
         ...user,
         password: undefined,
