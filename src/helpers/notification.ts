@@ -30,29 +30,8 @@ export const getNotifications = async (id: string): Promise<Notificacion[] | any
           usuario: el.usuario,
           planilla: el.planilla,
           certificado: el.certificado,
-          estado: el.estado,
+          estado: el.estadoNotificacion,
           aprobado: el.aprobado,
-          // recaudos: (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [el.idTramite])).rows
-          //   .filter((taking) => taking.id_tramite === el.idTramite)
-          //   .map((taking) => taking.url_archivo_recaudo),
-          // bill: !el.pagoPrevio
-          //   ? {
-          //       items: ordinances.map((ord) => {
-          //         return {
-          //           id: ord.id,
-          //           idTramite: ord.idTramite,
-          //           costoOrdenanza: +ord.costoOrdenanza,
-          //           ordenanza: ord.ordenanza,
-          //           factor: ord.factor,
-          //           factorValue: +ord.factorValue,
-          //           utmm: +ord.utmm,
-          //           valorCalc: +ord.valorCalc,
-          //         };
-          //       }),
-          //       totalBs: ordinances.reduce((p, n) => p + +n.valorCalc, 0),
-          //       totalUtmm: ordinances.reduce((p, n) => p + +n.utmm, 0),
-          //     }
-          //   : undefined,
         };
         const notificacion = {
           id: el.id,
@@ -110,17 +89,21 @@ const broadcastByExternalUser = async (sender: string, description: string, payl
 
     const notification = await Promise.all(
       superuser.map(async (el) => {
-        const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0];
+        const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado])).rows[0];
         const notification = (await client.query(queries.GET_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
         const formattedNotif = formatNotification(sender, notification.receptor, description, payload, notification);
         return formattedNotif;
       })
     );
 
-    await Promise.all(admins.map(async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0]));
+    await Promise.all(
+      admins.map(async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado])).rows[0])
+    );
 
     await Promise.all(
-      permittedOfficials.map(async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0])
+      permittedOfficials.map(
+        async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado])).rows[0]
+      )
     );
 
     users.get(sender)?.broadcast.in(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
@@ -145,7 +128,7 @@ const broadcastByOfficial = async (sender: string, description: string, payload:
 
     const notification = await Promise.all(
       user.map(async (el) => {
-        const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0];
+        const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado])).rows[0];
         const notification = (await client.query(queries.GET_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
         const formattedNotif = formatNotification(sender, notification.receptor, description, payload, notification);
         users.get(el.cedula)?.emit('SEND_NOTIFICATION', formattedNotif);
@@ -154,12 +137,18 @@ const broadcastByOfficial = async (sender: string, description: string, payload:
       })
     );
 
-    await Promise.all(superuser.map(async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0]));
-
-    await Promise.all(admins.map(async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0]));
+    await Promise.all(
+      superuser.map(async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado])).rows[0])
+    );
 
     await Promise.all(
-      permittedOfficials.map(async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description])).rows[0])
+      admins.map(async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado])).rows[0])
+    );
+
+    await Promise.all(
+      permittedOfficials.map(
+        async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado])).rows[0]
+      )
     );
 
     users.get(sender)?.broadcast.to(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
