@@ -69,6 +69,8 @@ export const markAllAsRead = async (id: string): Promise<object> => {
   }
 };
 
+//TODO: validar el estado para ver a quien le van a llegar las notificaciones.
+//      Ademas, verificar por que no estan llegando todas las notificaciones
 export const sendNotification = async (sender: string, description: string, type: string, payload: Partial<Tramite>) => {
   const client = await pool.connect();
   try {
@@ -81,6 +83,7 @@ export const sendNotification = async (sender: string, description: string, type
 };
 
 const broadcastByExternalUser = async (sender: string, description: string, payload: Partial<Tramite>, client: PoolClient) => {
+  const socket = users.get(sender);
   try {
     client.query('BEGIN');
     const admins = (await client.query(queries.GET_NON_NORMAL_OFFICIALS, [payload.nombreCorto])).rows;
@@ -106,10 +109,10 @@ const broadcastByExternalUser = async (sender: string, description: string, payl
       )
     );
 
-    users.get(sender)?.in(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
-    users.get(sender)?.in(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
-    users.get(sender)?.in(`tram:${payload.tipoTramite}`).emit('CREATE_PROCEDURE', payload);
-    users.get(sender)?.in(`inst:${payload.nombreCorto}`).emit('CREATE_PROCEDURE', payload);
+    socket?.in(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
+    socket?.in(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
+    socket?.in(`tram:${payload.tipoTramite}`).emit('CREATE_PROCEDURE', payload);
+    socket?.in(`inst:${payload.nombreCorto}`).emit('CREATE_PROCEDURE', payload);
 
     client.query('COMMIT');
   } catch (error) {
@@ -119,6 +122,7 @@ const broadcastByExternalUser = async (sender: string, description: string, payl
 };
 
 const broadcastByOfficial = async (sender: string, description: string, payload: Partial<Tramite>, client: PoolClient) => {
+  const socket = users.get(sender);
   try {
     client.query('BEGIN');
     const user = (await client.query(queries.GET_PROCEDURE_CREATOR, [payload.usuario])).rows;
@@ -151,10 +155,10 @@ const broadcastByOfficial = async (sender: string, description: string, payload:
       )
     );
 
-    users.get(sender)?.in(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
-    users.get(sender)?.in(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
-    users.get(sender)?.in(`tram:${payload.tipoTramite}`).emit('UPDATE_PROCEDURE', payload);
-    users.get(sender)?.in(`inst:${payload.nombreCorto}`).emit('UPDATE_PROCEDURE', payload);
+    socket?.in(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
+    socket?.in(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
+    socket?.in(`tram:${payload.tipoTramite}`).emit('UPDATE_PROCEDURE', payload);
+    socket?.in(`inst:${payload.nombreCorto}`).emit('UPDATE_PROCEDURE', payload);
 
     client.query('COMMIT');
   } catch (error) {
