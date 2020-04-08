@@ -473,7 +473,9 @@ SELECT CASE state
         CASE event
             WHEN 'validar_pa' THEN 'validando'
             WHEN 'validar_cr' THEN 'validando'
+            WHEN 'validar_tl' THEN 'validando'
             WHEN 'enproceso_pd' THEN 'enproceso'
+            WHEN 'finalizar_tl' THEN 'finalizado'
             ELSE 'error'
         END
     WHEN 'validando' THEN
@@ -481,6 +483,7 @@ SELECT CASE state
             WHEN 'enproceso_pa' THEN 'enproceso'
             WHEN 'enproceso_cr' THEN 'enproceso'
             WHEN 'finalizar_pd' THEN 'finalizado'
+            WHEN 'finalizar_tl' THEN 'finalizado'
             ELSE 'error'
         END
     WHEN 'ingresardatos' THEN
@@ -550,7 +553,8 @@ CREATE TABLE public.tramite (
     id_usuario integer,
     url_planilla character varying,
     url_certificado character varying,
-    aprobado boolean DEFAULT false
+    aprobado boolean DEFAULT false,
+    fecha_culminacion timestamp with time zone
 );
 
 
@@ -576,7 +580,8 @@ CREATE VIEW public.tramites_state_with_resources AS
     tt.nombre_corto AS nombretramitecorto,
     ev.state,
     t.aprobado,
-    tt.pago_previo AS "pagoPrevio"
+    tt.pago_previo AS "pagoPrevio",
+    t.fecha_culminacion AS fechaculminacion
    FROM (((public.tramite t
      JOIN public.tipo_tramite tt ON ((t.id_tipo_tramite = tt.id_tipo_tramite)))
      JOIN public.institucion i ON ((i.id_institucion = tt.id_institucion)))
@@ -1856,11 +1861,46 @@ CREATE TABLE public.notificacion (
     receptor character varying,
     descripcion character varying,
     status boolean,
-    fecha timestamp with time zone
+    fecha timestamp with time zone,
+    estado character varying
 );
 
 
 ALTER TABLE public.notificacion OWNER TO postgres;
+
+--
+-- Name: notificacion_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.notificacion_view AS
+ SELECT n.id_notificacion AS id,
+    n.descripcion,
+    n.status,
+    n.fecha AS "fechaCreacion",
+    n.emisor,
+    n.receptor,
+    n.estado AS "estadoNotificacion",
+    t.id AS "idTramite",
+    t.datos,
+    t.tipotramite AS "tipoTramite",
+    t.costo,
+    t.fechacreacion AS "fechaCreacionTramite",
+    t.codigotramite AS "codigoTramite",
+    t.usuario,
+    t.planilla,
+    t.certificado,
+    t.nombrecorto AS "nombreCorto",
+    t.nombrelargo AS "nombreLargo",
+    t.nombretramitecorto AS "nombreTramiteCorto",
+    t.nombretramitelargo AS "nombreTramiteLargo",
+    t.state AS estado,
+    t.aprobado,
+    t."pagoPrevio"
+   FROM (public.notificacion n
+     JOIN public.tramites_state_with_resources t ON ((n.id_tramite = t.id)));
+
+
+ALTER TABLE public.notificacion_view OWNER TO postgres;
 
 --
 -- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -1909,6 +1949,46 @@ CREATE TABLE public.operacion (
 
 
 ALTER TABLE public.operacion OWNER TO postgres;
+
+--
+-- Name: operatividad_terminal; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.operatividad_terminal (
+    id_operatividad_terminal integer NOT NULL,
+    destino character varying NOT NULL,
+    tipo character varying NOT NULL,
+    monto numeric NOT NULL,
+    tasa numeric NOT NULL,
+    monto_calculado numeric GENERATED ALWAYS AS ((monto * tasa)) STORED,
+    habilitado boolean DEFAULT true,
+    CONSTRAINT operatividad_terminal_tipo_check CHECK (((tipo)::text = ANY (ARRAY['BUSCAMA'::text, 'BUSETA'::text, 'CARRO POR PUESTO'::text])))
+);
+
+
+ALTER TABLE public.operatividad_terminal OWNER TO postgres;
+
+--
+-- Name: operatividad_terminal_id_operatividad_terminal_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.operatividad_terminal_id_operatividad_terminal_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.operatividad_terminal_id_operatividad_terminal_seq OWNER TO postgres;
+
+--
+-- Name: operatividad_terminal_id_operatividad_terminal_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.operatividad_terminal_id_operatividad_terminal_seq OWNED BY public.operatividad_terminal.id_operatividad_terminal;
+
 
 --
 -- Name: ordenanza; Type: TABLE; Schema: public; Owner: postgres
@@ -2463,7 +2543,8 @@ CREATE VIEW public.tramites_state AS
     t.url_planilla AS planilla,
     t.url_certificado AS certificado,
     ev.state,
-    t.aprobado
+    t.aprobado,
+    t.fecha_culminacion AS fechaculminacion
    FROM (public.tramite t
      JOIN ( SELECT evento_tramite.id_tramite,
             public.tramite_evento_fsm(evento_tramite.event ORDER BY evento_tramite.id_evento_tramite) AS state
@@ -3212,6 +3293,13 @@ ALTER TABLE ONLY public.notificacion ALTER COLUMN id_notificacion SET DEFAULT ne
 
 
 --
+-- Name: operatividad_terminal id_operatividad_terminal; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.operatividad_terminal ALTER COLUMN id_operatividad_terminal SET DEFAULT nextval('public.operatividad_terminal_id_operatividad_terminal_seq'::regclass);
+
+
+--
 -- Name: ordenanza id_ordenanza; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -3781,7 +3869,7 @@ COPY public.institucion_banco (id_institucion_banco, id_institucion, id_banco, n
 -- Data for Name: notificacion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.notificacion (id_notificacion, id_tramite, emisor, receptor, descripcion, status, fecha) FROM stdin;
+COPY public.notificacion (id_notificacion, id_tramite, emisor, receptor, descripcion, status, fecha, estado) FROM stdin;
 \.
 
 
@@ -3790,6 +3878,17 @@ COPY public.notificacion (id_notificacion, id_tramite, emisor, receptor, descrip
 --
 
 COPY public.operacion (id_operacion, nombre_op) FROM stdin;
+\.
+
+
+--
+-- Data for Name: operatividad_terminal; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.operatividad_terminal (id_operatividad_terminal, destino, tipo, monto, tasa, habilitado) FROM stdin;
+1	Baruta	BUSETA	10000	0.1	t
+2	Barinas	CARRO POR PUESTO	10000	0.1	t
+3	Barinas	CARRO POR PUESTO	10000	0.1	f
 \.
 
 
@@ -4177,7 +4276,7 @@ COPY public.tipo_usuario (id_tipo_usuario, descripcion) FROM stdin;
 -- Data for Name: tramite; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.tramite (id_tramite, id_tipo_tramite, datos, costo, fecha_creacion, codigo_tramite, consecutivo, id_usuario, url_planilla, url_certificado, aprobado) FROM stdin;
+COPY public.tramite (id_tramite, id_tipo_tramite, datos, costo, fecha_creacion, codigo_tramite, consecutivo, id_usuario, url_planilla, url_certificado, aprobado, fecha_culminacion) FROM stdin;
 \.
 
 
@@ -6337,6 +6436,13 @@ SELECT pg_catalog.setval('public.notificaciones_id_notificacion_seq', 1, false);
 --
 
 SELECT pg_catalog.setval('public.operaciones_id_operacion_seq', 1, true);
+
+
+--
+-- Name: operatividad_terminal_id_operatividad_terminal_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.operatividad_terminal_id_operatividad_terminal_seq', 3, true);
 
 
 --
