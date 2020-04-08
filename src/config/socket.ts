@@ -12,13 +12,13 @@ const connection = (socket: Socket) => {
   try {
     const user = decode(socket.handshake.query.token, process.env.JWT_SECRET || 'not a secret').sub;
     users.set(user.cedula, socket);
-    if (user.tipoUsuario === 3 && user.recaudos && user.recaudos.length > 0) user.recaudos.map(el => socket.join(`tram:${el}`));
+    if (user.tipoUsuario === 3 && user.permisos && user.permisos.length > 0) user.permisos.map((el) => socket.join(`tram:${el}`));
     else if (user.institucion && user.tipoUsuario !== 3) socket.join(`inst:${user.institucion.nombreCorto}`);
 
     if (user.tipoUsuario === 1) {
-      pool.connect().then(r => {
-        r.query(queries.GET_ALL_INSTITUTION).then(institucion => {
-          institucion.rows.map(el => socket.join(`inst:${el.nombre_corto}`));
+      pool.connect().then((r) => {
+        r.query(queries.GET_ALL_INSTITUTION).then((institucion) => {
+          institucion.rows.map((el) => socket.join(`inst:${el.nombre_corto}`));
         });
       });
     }
