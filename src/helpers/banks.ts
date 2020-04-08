@@ -25,7 +25,7 @@ export const getAllBanks = async () => {
 };
 
 //TODO: enviar state actual de cada tramite que se valido
-export const validatePayments = async body => {
+export const validatePayments = async (body, user) => {
   const client = await pool.connect();
   try {
     client.query('BEGIN');
@@ -45,7 +45,7 @@ export const validatePayments = async body => {
           fechaDeAprobacion: el.fechadeaprobacion,
           tipoTramite: el.tipotramite,
         };
-        await validateProcedure(pagoValidado);
+        await validateProcedure(pagoValidado, user);
         return pagoValidado;
       })
     );

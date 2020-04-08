@@ -3,6 +3,7 @@ import queries from '@utils/queries';
 import { Institucion, TipoTramite, Tramite, Usuario } from '@interfaces/sigt';
 import { errorMessageGenerator } from './errors';
 import switchcase from '@utils/switch';
+import { sendNotification } from './notification';
 const pool = Pool.getInstance();
 
 export const affairInit = async (affair, user) => {
@@ -26,6 +27,7 @@ export const affairInit = async (affair, user) => {
       nombreTramiteCorto: response.nombretramitecorto,
     };
     client.query('COMMIT');
+    sendNotification(user.cedula, 'Un trámite ha sido actualizado', 'CREATE', caso);
     return {
       status: 201,
       message: 'Caso social iniciado',
@@ -43,7 +45,7 @@ export const affairInit = async (affair, user) => {
   }
 };
 
-export const updateAffair = async affair => {
+export const updateAffair = async (affair, user) => {
   const client = await pool.connect();
   let { estado, datos } = affair;
   try {
@@ -66,6 +68,7 @@ export const updateAffair = async affair => {
       nombreTramiteLargo: response.nombretramitelargo,
       nombreTramiteCorto: response.nombretramitecorto,
     };
+    sendNotification(user.cedula, 'Un trámite ha sido actualizado', 'UPDATE', caso);
     return { status: 200, message: 'Caso social actualizado', caso };
   } catch (error) {
     client.query('ROLLBACK');

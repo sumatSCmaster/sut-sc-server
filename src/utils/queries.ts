@@ -400,6 +400,25 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_EXTERNAL_APPROVED_COUNT: 'SELECT COUNT(*) FROM tramites_state_with_resources WHERE usuario = $1 AND state = \'finalizado\' AND aprobado = TRUE;',
   GET_EXTERNAL_REJECTED_COUNT: 'SELECT COUNT(*) FROM tramites_state_with_resources WHERE usuario = $1 AND state = \'finalizado\' AND aprobado = FALSE;'
 
+  //Notificaciones
+
+  GET_NON_NORMAL_OFFICIALS:
+    'SELECT * FROM USUARIO  usr INNER JOIN CUENTA_FUNCIONARIO cf ON usr.id_usuario = cf.id_usuario \
+    INNER JOIN institucion ins ON cf.id_institucion = ins.id_institucion WHERE \
+    ins.nombre_corto = $1 AND usr.id_tipo_usuario != 3',
+  GET_OFFICIALS_FOR_PROCEDURE:
+    'SELECT * FROM permiso_de_acceso pda INNER JOIN usuario usr ON pda.id_usuario=usr.id_usuario \
+    INNER JOIN CUENTA_FUNCIONARIO cf ON usr.id_usuario = cf.id_usuario INNER JOIN institucion ins \
+    ON cf.id_institucion = ins.id_institucion WHERE ins.nombre_corto =$1 AND id_tipo_tramite = $2',
+  GET_SUPER_USER: 'SELECT * FROM USUARIO WHERE id_tipo_usuario = 1',
+  GET_PROCEDURE_CREATOR: 'SELECT * FROM USUARIO WHERE id_usuario = $1',
+  CREATE_NOTIFICATION:
+    'INSERT INTO notificacion (id_tramite, emisor, receptor, descripcion, status, \
+    fecha, estado) VALUES ($1, $2, $3, $4, false, now(), $5) RETURNING id_notificacion',
+  MARK_ALL_AS_READ: 'UPDATE notificacion SET status = true WHERE receptor = $1',
+  GET_NOTIFICATION_BY_ID: 'SELECT * FROM notificacion_view WHERE id = $1',
+  GET_NOTIFICATIONS_FOR_USER: 'SELECT * FROM notificacion_view WHERE receptor = $1 ORDER BY "fechaCreacion"',
+
   //Terminal
   TERMINAL_DESTINATIONS: 'SELECT id_operatividad_terminal AS id, destino, tipo, monto, tasa, monto_calculado AS "montoCalculado" FROM operatividad_terminal WHERE habilitado = true;',
   CREATE_TERMINAL_DESTINATION: 'INSERT INTO operatividad_terminal (destino, tipo, monto, tasa) VALUES ($1, $2, $3, $4) RETURNING id_operatividad_terminal AS id, destino, tipo, monto, tasa, monto_calculado AS "montoCalculado"',

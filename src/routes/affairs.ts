@@ -17,7 +17,7 @@ router.post('/init', createSocialCase, checkResult, authenticate('jwt'), isOffic
 
 router.put('/update', authenticate('jwt'), isOfficialAdmin, async (req: any, res) => {
   const { caso } = req.body;
-  const [error, data] = await fulfill(updateAffair(caso));
+  const [error, data] = await fulfill(updateAffair(caso, req.user));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
