@@ -10,7 +10,6 @@ export const affairInit = async (affair, user) => {
   const client = await pool.connect();
   const { tipoTramite, datos } = affair;
   try {
-    console.log(datos);
     client.query('BEGIN');
     const response = (await client.query(queries.SOCIAL_CASE_INIT, [JSON.stringify(datos), user.id])).rows[0];
     const caso: Partial<Tramite> = {

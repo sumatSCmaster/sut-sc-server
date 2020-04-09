@@ -1,19 +1,21 @@
-import { Socket } from 'socket.io';
+import { Socket, Server } from 'socket.io';
 import { decode } from 'jwt-simple';
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 
 const pool = Pool.getInstance();
 
-let io: Socket;
+let io: Server;
 const users = new Map<string, Socket>();
 
 const connection = (socket: Socket) => {
   try {
     const user = decode(socket.handshake.query.token, process.env.JWT_SECRET || 'not a secret').sub;
-    users.set(user.cedula, socket);
-    if (user.tipoUsuario === 3 && user.permisos && user.permisos.length > 0) user.permisos.map((el) => socket.join(`tram:${el}`));
-    else if (user.institucion && user.tipoUsuario !== 3) socket.join(`inst:${user.institucion.nombreCorto}`);
+    if (user.tipoUsuario === 3 && user.permisos && user.permisos.length > 0) {
+      user.permisos.map((el) => socket.join(`tram:${el}`));
+    } else if (user.institucion && user.tipoUsuario !== 3) {
+      socket.join(`inst:${user.institucion.nombreCorto}`);
+    }
 
     if (user.tipoUsuario === 1) {
       pool.connect().then((r) => {
@@ -23,7 +25,7 @@ const connection = (socket: Socket) => {
       });
     }
 
-    console.log(`User connected: ${user.cedula}`);
+    users.set(user.cedula, socket);
     socket.on('disconnect', () => {
       users.delete(user.cedula);
       socket.leaveAll();
@@ -33,13 +35,13 @@ const connection = (socket: Socket) => {
   }
 };
 
-export const init = (instance: Socket): Socket => {
+export const init = (instance: Server): Server => {
   io = instance;
   io.on('connection', connection);
   return io;
 };
 
-export const getIo = (): Socket => {
+export const getIo = (): Server => {
   if (io) {
     return io;
   }

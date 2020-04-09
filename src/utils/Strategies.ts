@@ -36,7 +36,6 @@ const GoogleStrategy = new Google(optGoogle, async (accessToken, refreshToken, p
   }
   if (request?.data.length > 0) {
     const exists = await verifyExternalUser(request?.data[0].id_usuario);
-    console.log(exists);
     return exists
       ? done(null, {
           ...exists,
@@ -53,7 +52,6 @@ const GoogleStrategy = new Google(optGoogle, async (accessToken, refreshToken, p
   };
 
   request = await initialExtUserSignUp(googleOpts);
-  console.log(request);
   if (request) {
     return done(null, { ...request, nombreUsuario: googleOpts.email });
   } else {
@@ -91,9 +89,7 @@ const optLocal = {
 };
 
 const verifyLocal: VerifyFunction = async (username: string, password: string, done: any) => {
-  console.log('username', username);
   const user: Usuario | null = await getUserByUsername(username);
-  console.log('Estrategia local', user);
   if (!user) return done(null, false, { message: 'Bad Credentials' });
   if (await comparePassword(password, user.password || '')) {
     if ((user.tipoUsuario as TipoUsuario).descripcion === 'Funcionario') {

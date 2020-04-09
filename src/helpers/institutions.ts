@@ -12,7 +12,7 @@ export const getAllInstitutions = async (): Promise<{
   const client = await pool.connect();
   try {
     const response = await client.query(queries.GET_ALL_INSTITUTION);
-    const instituciones: Institucion[] = response.rows.map(el => {
+    const instituciones: Institucion[] = response.rows.map((el) => {
       return {
         id: el.id_institucion,
         nombreCompleto: el.nombre_completo,
@@ -21,7 +21,6 @@ export const getAllInstitutions = async (): Promise<{
     });
     return { instituciones, status: 200, message: 'Instituciones obtenidas' };
   } catch (error) {
-    console.log(error);
     throw {
       status: 500,
       error,

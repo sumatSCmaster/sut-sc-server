@@ -11,13 +11,13 @@ export const getOfficialsByInstitution = async (institution: string, id: number)
   try {
     const response = await client.query(queries.GET_OFFICIALS_BY_INSTITUTION, [institution, id]);
     const funcionarios = await Promise.all(
-      response.rows.map(async el => {
+      response.rows.map(async (el) => {
         const official = {
           ...el,
           nombreCompleto: el.nombrecompleto,
           nombreUsuario: el.nombreusuario,
           tipoUsuario: el.tipousuario,
-          permisos: (await client.query(queries.GET_USER_PERMISSIONS, [el.id])).rows.map(row => +row.id_tipo_tramite) || [],
+          permisos: (await client.query(queries.GET_USER_PERMISSIONS, [el.id])).rows.map((row) => +row.id_tipo_tramite) || [],
         };
         delete official.nombrecompleto;
         delete official.nombreusuario;
@@ -45,7 +45,7 @@ export const getAllOfficials = async () => {
   const client = await pool.connect();
   try {
     const response = await client.query(queries.GET_ALL_OFFICIALS);
-    const funcionarios = response.rows.map(el => {
+    const funcionarios = response.rows.map((el) => {
       const official = {
         ...el,
         nombreCompleto: el.nombrecompleto,
@@ -78,7 +78,7 @@ async function dropPermissions(id, client: PoolClient) {
 }
 
 async function addPermissions(id, permisos, client: PoolClient) {
-  return Promise.all(permisos.map(perm => client.query(queries.ADD_OFFICIAL_PERMISSIONS, [id, perm])));
+  return Promise.all(permisos.map((perm) => client.query(queries.ADD_OFFICIAL_PERMISSIONS, [id, perm])));
 }
 
 export const createOfficial = async (official: any) => {
@@ -116,7 +116,6 @@ export const createOfficial = async (official: any) => {
     return { status: 201, usuario, message: 'Funcionario creado' };
   } catch (e) {
     client.query('ROLLBACK');
-    console.log(e);
     throw {
       status: 500,
       error: e,
@@ -150,7 +149,7 @@ export const updateOfficial = async (official: any, id: string) => {
       nacionalidad: response.nacionalidad,
       password: response.password,
       telefono: response.telefono,
-      permisos: (await client.query(queries.GET_USER_PERMISSIONS, [response.id_usuario])).rows.map(row => +row.id_tipo_tramite) || [],
+      permisos: (await client.query(queries.GET_USER_PERMISSIONS, [response.id_usuario])).rows.map((row) => +row.id_tipo_tramite) || [],
     };
     return { status: 200, usuario, message: 'Funcionario actualizado' };
   } catch (e) {

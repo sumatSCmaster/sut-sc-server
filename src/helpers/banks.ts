@@ -31,7 +31,7 @@ export const validatePayments = async (body, user) => {
     client.query('BEGIN');
     const res = await client.query(queries.VALIDATE_PAYMENTS, [body]);
     const data = await Promise.all(
-      res.rows[0].validate_payments.data.map(async el => {
+      res.rows[0].validate_payments.data.map(async (el) => {
         const pagoValidado = {
           id: el.id,
           monto: el.monto,
@@ -49,7 +49,6 @@ export const validatePayments = async (body, user) => {
         return pagoValidado;
       })
     );
-    console.log(data);
     client.query('COMMIT');
     return {
       validatePayments: { data },
@@ -65,8 +64,7 @@ export const validatePayments = async (body, user) => {
 
 export const insertPaymentReference = async (payment, procedureId, client) => {
   const { referencia, banco, costo, fecha } = payment;
-  return await client.query(queries.INSERT_PAYMENT, [procedureId, referencia, costo, banco, fecha]).catch(error => {
-    console.log(error);
+  return await client.query(queries.INSERT_PAYMENT, [procedureId, referencia, costo, banco, fecha]).catch((error) => {
     throw {
       error,
       message: errorMessageGenerator(error) || 'Error al insertar el pago',

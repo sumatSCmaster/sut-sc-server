@@ -18,7 +18,6 @@ const pool = Pool.getInstance();
 export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any }> => {
   const client: any = await pool.connect();
   client.tipoUsuario = user.tipoUsuario;
-  console.log(user);
   try {
     const response = await client.query(queries.GET_ALL_INSTITUTION);
     let institution: Institucion[] = response.rows.map((el) => {
@@ -35,7 +34,6 @@ export const getAvailableProcedures = async (user): Promise<{ options: Instituci
     const instanciasDeTramite = await getProcedureInstances(user, client);
     return { options, instanciasDeTramite };
   } catch (error) {
-    console.log(error);
     throw {
       status: 500,
       error: error || { ...error },
@@ -50,7 +48,6 @@ export const getAvailableProceduresOfInstitution = async (req: {
   params: { [id: string]: number };
   user: { tipoUsuario: number };
 }): Promise<{ options: Institucion; instanciasDeTramite }> => {
-  console.log(req.user);
   const client: PoolClient & { tipoUsuario?: number } = await pool.connect(); //Para cascadear el tipousuario a la busqueda de campos
   client.tipoUsuario = req.user.tipoUsuario;
   const id = req.params['id'];
@@ -245,7 +242,6 @@ const getSectionByProcedure = async (procedure, client: PoolClient): Promise<Tip
       return tramite;
     })
   ).catch((error) => {
-    console.log(error);
     throw {
       message: errorMessageGenerator(error) || error.message || 'Error al obtener las secciones',
     };
@@ -264,7 +260,6 @@ const getFieldsBySection = async (section, tramiteId, client): Promise<Campo[] |
       return el;
     })
   ).catch((error) => {
-    console.log(error);
     throw {
       message: errorMessageGenerator(error) || error.message || 'Error al obtener los campos',
     };
@@ -308,7 +303,6 @@ export const getFieldsForValidations = async (idProcedure, state) => {
     }
     return { fields: response, takings };
   } catch (error) {
-    console.log(error);
     throw {
       status: 400,
       error,
@@ -500,7 +494,6 @@ export const processProcedure = async (procedure, user) => {
     return { status: 200, message: 'Trámite actualizado', tramite };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
     throw {
       status: 500,
       error,
@@ -785,7 +778,6 @@ const procedureInstances = switchcase({
 })(null);
 
 const procedureInstanceHandler = (typeUser, payload, client) => {
-  console.log('user:', typeUser, 'payload:', payload);
   return typeUser === 1 ? client.query(procedureInstances(typeUser)) : client.query(procedureInstances(typeUser), [payload]);
 };
 
@@ -811,6 +803,5 @@ export const updateProcedureHandler = async (procedure, user) => {
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
   client.release();
   const newProcedureState = updateProcedure(response.state);
-  console.log(response.state);
   return newProcedureState ? await newProcedureState(procedure, user) : { status: 500, message: 'No es posible actualizar el trámite' };
 };

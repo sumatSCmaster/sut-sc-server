@@ -50,7 +50,6 @@ export const createForm = async ({ fecha, codigo, formato, tramite, institucion,
                 ACL: 'public-read',
                 ContentType: 'application/pdf',
               }).promise();
-              console.log(bucketParams);
               res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
             }
           });

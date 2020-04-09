@@ -1,6 +1,6 @@
 import Pool from '@utils/Pool';
 import queries from '../utils/queries';
-import { getUsers } from '@config/socket';
+import { getUsers, getIo } from '@config/socket';
 import twilio from 'twilio';
 import { Notificacion, Tramite } from '@root/interfaces/sigt';
 import { errorMessageGenerator } from './errors';
@@ -103,16 +103,18 @@ const broadcastByExternalUser = async (sender: string, description: string, payl
       admins.map(async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado])).rows[0])
     );
 
-    await Promise.all(
-      permittedOfficials.map(
-        async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado])).rows[0]
-      )
-    );
+    if (payload.estado === 'enproceso') {
+      await Promise.all(
+        permittedOfficials.map(
+          async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado])).rows[0]
+        )
+      );
+      socket?.to(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
+      socket?.to(`tram:${payload.tipoTramite}`).emit('CREATE_PROCEDURE', payload);
+    }
 
-    socket?.in(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
-    socket?.in(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
-    socket?.in(`tram:${payload.tipoTramite}`).emit('CREATE_PROCEDURE', payload);
-    socket?.in(`inst:${payload.nombreCorto}`).emit('CREATE_PROCEDURE', payload);
+    socket?.to(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
+    socket?.to(`inst:${payload.nombreCorto}`).emit('CREATE_PROCEDURE', payload);
 
     client.query('COMMIT');
   } catch (error) {
@@ -122,7 +124,7 @@ const broadcastByExternalUser = async (sender: string, description: string, payl
 };
 
 const broadcastByOfficial = async (sender: string, description: string, payload: Partial<Tramite>, client: PoolClient) => {
-  const socket = users.get(sender);
+  const io = getIo();
   try {
     client.query('BEGIN');
     const user = (await client.query(queries.GET_PROCEDURE_CREATOR, [payload.usuario])).rows;
@@ -135,8 +137,9 @@ const broadcastByOfficial = async (sender: string, description: string, payload:
         const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado])).rows[0];
         const notification = (await client.query(queries.GET_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
         const formattedNotif = formatNotification(sender, notification.receptor, description, payload, notification);
-        users.get(el.cedula)?.emit('SEND_NOTIFICATION', formattedNotif);
-        users.get(el.cedula)?.emit('UPDATE_PROCEDURE', payload);
+        const userSocket = users.get(el.cedula);
+        userSocket?.emit('SEND_NOTIFICATION', formattedNotif);
+        userSocket?.emit('UPDATE_PROCEDURE', payload);
         return formattedNotif;
       })
     );
@@ -149,16 +152,18 @@ const broadcastByOfficial = async (sender: string, description: string, payload:
       admins.map(async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado])).rows[0])
     );
 
-    await Promise.all(
-      permittedOfficials.map(
-        async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado])).rows[0]
-      )
-    );
+    if (payload.estado === 'enproceso') {
+      await Promise.all(
+        permittedOfficials.map(
+          async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado])).rows[0]
+        )
+      );
+      io.in(`tram:${payload.tipoTramite}`).emit('UPDATE_PROCEDURE', payload);
+      io.in(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
+    }
 
-    socket?.in(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
-    socket?.in(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
-    socket?.in(`tram:${payload.tipoTramite}`).emit('UPDATE_PROCEDURE', payload);
-    socket?.in(`inst:${payload.nombreCorto}`).emit('UPDATE_PROCEDURE', payload);
+    io.in(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
+    io.in(`inst:${payload.nombreCorto}`).emit('UPDATE_PROCEDURE', payload);
 
     client.query('COMMIT');
   } catch (error) {

@@ -142,7 +142,7 @@ export const addPermissions = async (user: Partial<Usuario>): Promise<Partial<Us
     const res = (await client.query(queries.GET_USER_PERMISSIONS, [user.id])).rows;
     return {
       ...user,
-      permisos: res.map(row => +row.id_tipo_tramite),
+      permisos: res.map((row) => +row.id_tipo_tramite),
     };
   } catch (e) {
     throw e;
@@ -160,7 +160,7 @@ export const comparePassword = (candidate: string, hash: string): Promise<boolea
   });
 };
 
-export const getByOAuthID = async id => {
+export const getByOAuthID = async (id) => {
   const client = await pool.connect();
   const [err, data] = await fulfill(client.query(queries.GET_OAUTH_USER, [id]));
   client.release();
@@ -168,7 +168,7 @@ export const getByOAuthID = async id => {
   if (data) return { data: data.rows };
 };
 
-export const verifyExternalUser = async id => {
+export const verifyExternalUser = async (id) => {
   const client = await pool.connect();
   const [err, data] = await fulfill(client.query(queries.GET_EXTERNAL_USER, [id]));
   client.release();
@@ -187,7 +187,7 @@ export const verifyExternalUser = async id => {
     };
 };
 
-export const initialExtUserSignUp = async user => {
+export const initialExtUserSignUp = async (user) => {
   const client = await pool.connect();
   try {
     client.query('BEGIN');
@@ -252,7 +252,7 @@ export const completeExtUserSignUp = async (user, id) => {
   }
 };
 
-export const signUpUser = async user => {
+export const signUpUser = async (user) => {
   const { nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, password, telefono } = user;
   const client = await pool.connect();
   try {
@@ -285,7 +285,6 @@ export const signUpUser = async user => {
     };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
     throw {
       error,
       status: 500,
@@ -299,30 +298,29 @@ export const signUpUser = async user => {
 export const updateUser = async (user) => {
   const { id, direccion, nombreCompleto, telefono } = user;
   const client = await pool.connect();
-  try{
+  try {
     const res = await client.query(queries.UPDATE_USER, [direccion, nombreCompleto, telefono, id]);
-    if(res.rowCount > 0){
+    if (res.rowCount > 0) {
       return {
         status: 200,
         user: res.rows[0],
-        message: 'Usuario actualizado'
-      }
-    }else{
+        message: 'Usuario actualizado',
+      };
+    } else {
       return {
         status: 400,
-        message: 'Usuario no encontrado'
-      }
+        message: 'Usuario no encontrado',
+      };
     }
-  } catch(e) {
-    console.log(e)
+  } catch (e) {
     throw {
       status: 500,
-      message: errorMessageGenerator(e) || 'Error en la actualizacion del usuario'
-    }
+      message: errorMessageGenerator(e) || 'Error en la actualizacion del usuario',
+    };
   } finally {
     client.release();
   }
-}
+};
 
 // export const hasNotifications = async (id: string): Promise<boolean> => {
 //   const client = await pool.connect();
