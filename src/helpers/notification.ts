@@ -134,9 +134,10 @@ const broadcastByOfficial = async (sender: string, description: string, payload:
 
     const notification = await Promise.all(
       user.map(async (el) => {
-        const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado])).rows[0];
+        const userDesc = description.replace('un', 'su');
+        const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, userDesc, payload.estado])).rows[0];
         const notification = (await client.query(queries.GET_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
-        const formattedNotif = formatNotification(sender, notification.receptor, description, payload, notification);
+        const formattedNotif = formatNotification(sender, notification.receptor, userDesc, payload, notification);
         const userSocket = users.get(el.cedula);
         userSocket?.emit('SEND_NOTIFICATION', formattedNotif);
         userSocket?.emit('UPDATE_PROCEDURE', payload);

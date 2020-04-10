@@ -377,7 +377,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
     client.query('COMMIT');
 
     sendEmail({ ...tramite, nombreUsuario: user.nombreUsuario, nombreCompletoUsuario: user.nombreCompleto, estado: respState.rows[0].state });
-    sendNotification(user.cedula, 'Un trámite ha sido creado', 'CREATE', tramite);
+    sendNotification(user.cedula, `Un trámite de tipo ${tramite.nombreTramiteLargo} ha sido creado`, 'CREATE', tramite);
 
     return {
       status: 201,
@@ -436,7 +436,7 @@ export const validateProcedure = async (procedure, user: Usuario) => {
       aprobado: response.aprobado,
     };
     sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
-    sendNotification(user.cedula, 'Un trámite ha sido actualizado', 'UPDATE', tramite);
+    sendNotification(user.cedula, `Se ha validado el pago de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE', tramite);
     return { status: 200, message: 'Trámite actualizado', tramite };
   } catch (error) {
     client.query('ROLLBACK');
@@ -512,7 +512,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
       bill: ordenanzas,
     };
     sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
-    sendNotification(user.cedula, 'Un trámite ha sido actualizado', 'UPDATE', tramite);
+    sendNotification(user.cedula, `Se ha procesado un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE', tramite);
     return { status: 200, message: 'Trámite actualizado', tramite };
   } catch (error) {
     client.query('ROLLBACK');
@@ -564,7 +564,7 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
       aprobado: response.aprobado,
     };
     sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
-    sendNotification(user.cedula, 'Un trámite ha sido actualizado', 'UPDATE', tramite);
+    sendNotification(user.cedula, `Se añadieron los datos de pago de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE', tramite);
     return { status: 200, message: 'Trámite actualizado', tramite };
   } catch (error) {
     client.query('ROLLBACK');
@@ -631,7 +631,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       aprobado: response.aprobado,
     };
     sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
-    sendNotification(user.cedula, 'Un trámite ha sido actualizado', 'UPDATE', tramite);
+    sendNotification(user.cedula, `Se realizó la revisión de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE', tramite);
     return { status: 200, message: 'Trámite actualizado', tramite };
   } catch (error) {
     client.query('ROLLBACK');
