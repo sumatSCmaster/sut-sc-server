@@ -313,10 +313,10 @@ export const getFieldsForValidations = async (idProcedure, state) => {
   }
 };
 
-export const procedureInit = async (procedure, user) => {
+export const procedureInit = async (procedure, user: Usuario) => {
   const client = await pool.connect();
   const { tipoTramite, datos, pago, recaudos } = procedure;
-  let costo, respState, dir;
+  let costo, respState, dir, cert;
   try {
     client.query('BEGIN');
     const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify({ usuario: datos }), user.id])).rows[0];
@@ -332,22 +332,24 @@ export const procedureInit = async (procedure, user) => {
       });
     }
 
-    if (pago && nextEvent.startsWith('validar')) {
+    if (pago && resources.sufijo !== 'tl' && nextEvent.startsWith('validar')) {
       pago.costo = costo;
       await insertPaymentReference(pago, response.id, client);
     }
 
     if (resources.sufijo === 'tl') {
       const pointerEvent = user.tipoUsuario === 4;
-      respState = pointerEvent
-        ? async () => {
-            dir = await createRequestForm(response, client);
-            return await client.query(queries.UPDATE_STATE, [response.id, nextEvent[pointerEvent.toString()], null, costo, dir]);
-          }
-        : async () => {
-            dir = await createCertificate(response, client);
-            return await client.query(queries.COMPLETE_STATE, [response.idTramite, nextEvent[pointerEvent.toString()], null, dir || null, true]);
-          };
+      if (pointerEvent) {
+        if (pago) {
+          pago.costo = costo;
+          await insertPaymentReference(pago, response.id, client);
+        }
+        dir = await createRequestForm(response, client);
+        respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent[pointerEvent.toString()], null, costo, dir]);
+      } else {
+        cert = await createCertificate(response, client);
+        respState = await client.query(queries.COMPLETE_STATE, [response.idTramite, nextEvent[pointerEvent.toString()], null, dir || null, true]);
+      }
     } else {
       dir = await createRequestForm(response, client);
       respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, costo, dir]);
@@ -359,7 +361,7 @@ export const procedureInit = async (procedure, user) => {
       estado: respState.rows[0].state,
       datos: response.datos,
       planilla: dir,
-      certificado: response.url_certificado,
+      certificado: cert,
       costo,
       fechaCreacion: response.fechacreacion,
       fechaCulminacion: response.fechaculminacion,
@@ -394,7 +396,7 @@ export const procedureInit = async (procedure, user) => {
   }
 };
 
-export const validateProcedure = async (procedure, user) => {
+export const validateProcedure = async (procedure, user: Usuario) => {
   const client = await pool.connect();
   let dir, respState;
   try {
@@ -448,7 +450,7 @@ export const validateProcedure = async (procedure, user) => {
   }
 };
 
-export const processProcedure = async (procedure, user) => {
+export const processProcedure = async (procedure, user: Usuario) => {
   const client = await pool.connect();
   let { datos, bill } = procedure;
   let dir,
@@ -524,7 +526,7 @@ export const processProcedure = async (procedure, user) => {
   }
 };
 
-export const addPaymentProcedure = async (procedure, user) => {
+export const addPaymentProcedure = async (procedure, user: Usuario) => {
   const client = await pool.connect();
   let { pago } = procedure;
   try {
@@ -576,7 +578,7 @@ export const addPaymentProcedure = async (procedure, user) => {
   }
 };
 
-export const reviseProcedure = async (procedure, user) => {
+export const reviseProcedure = async (procedure, user: Usuario) => {
   const client = await pool.connect();
   const { aprobado, observaciones } = procedure.revision;
   let dir,

@@ -37,7 +37,7 @@ router.patch('/:id', authenticate('jwt'), isOfficial, async (req, res) => {
   if (data) res.status(200).json({ status: 200, options: data });
 });
 
-router.post('/init', validate(), checkResult, authenticate('jwt'), isExternalUser, async (req: any, res) => {
+router.post('/init', validate(), checkResult, authenticate('jwt'), async (req: any, res) => {
   const { tramite } = req.body;
   const [error, data] = await fulfill(procedureInit(tramite, req.user));
   if (error) res.status(500).json(error);
