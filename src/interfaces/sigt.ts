@@ -101,6 +101,7 @@ export interface Tramite {
   nombreCorto: string;
   nombreTramiteLargo: string;
   nombreTramiteCorto: string;
+  fechaCulminacion: Date;
   recaudos: string[];
   planilla: string;
   certificado: string | null;

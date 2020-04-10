@@ -316,7 +316,7 @@ export const getFieldsForValidations = async (idProcedure, state) => {
 export const procedureInit = async (procedure, user) => {
   const client = await pool.connect();
   const { tipoTramite, datos, pago, recaudos } = procedure;
-  let costo;
+  let costo, respState, dir;
   try {
     client.query('BEGIN');
     const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify({ usuario: datos }), user.id])).rows[0];
@@ -326,8 +326,6 @@ export const procedureInit = async (procedure, user) => {
     costo = resources.sufijo === 'pd' ? null : pago.costo || resources.costo_base;
     const nextEvent = await getNextEventForProcedure(response, client);
 
-    const dir = await createRequestForm(response, client);
-    const respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, costo, dir]);
     if (recaudos.length > 0) {
       recaudos.map(async (urlRecaudo) => {
         await client.query(queries.INSERT_TAKINGS_IN_PROCEDURE, [response.id, urlRecaudo]);
@@ -338,6 +336,23 @@ export const procedureInit = async (procedure, user) => {
       pago.costo = costo;
       await insertPaymentReference(pago, response.id, client);
     }
+
+    if (resources.sufijo === 'tl') {
+      const pointerEvent = user.tipoUsuario === 4;
+      respState = pointerEvent
+        ? async () => {
+            dir = await createRequestForm(response, client);
+            return await client.query(queries.UPDATE_STATE, [response.id, nextEvent[pointerEvent.toString()], null, costo, dir]);
+          }
+        : async () => {
+            dir = await createCertificate(response, client);
+            return await client.query(queries.COMPLETE_STATE, [response.idTramite, nextEvent[pointerEvent.toString()], null, dir || null, true]);
+          };
+    } else {
+      dir = await createRequestForm(response, client);
+      respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, costo, dir]);
+    }
+
     const tramite: Partial<Tramite> = {
       id: response.id,
       tipoTramite: response.tipotramite,
@@ -347,6 +362,7 @@ export const procedureInit = async (procedure, user) => {
       certificado: response.url_certificado,
       costo,
       fechaCreacion: response.fechacreacion,
+      fechaCulminacion: response.fechaculminacion,
       codigoTramite: response.codigotramite,
       usuario: response.usuario,
       nombreLargo: response.nombrelargo,
@@ -357,8 +373,10 @@ export const procedureInit = async (procedure, user) => {
       recaudos,
     };
     client.query('COMMIT');
+
     sendEmail({ ...tramite, nombreUsuario: user.nombreUsuario, nombreCompletoUsuario: user.nombreCompleto, estado: respState.rows[0].state });
     sendNotification(user.cedula, 'Un trámite ha sido creado', 'CREATE', tramite);
+
     return {
       status: 201,
       message: 'Tramite iniciado!',
@@ -406,6 +424,7 @@ export const validateProcedure = async (procedure, user) => {
       certificado: dir,
       costo: response.costo,
       fechaCreacion: response.fechacreacion,
+      fechaCulminacion: response.fechaculminacion,
       codigoTramite: response.codigotramite,
       usuario: response.usuario,
       nombreLargo: response.nombrelargo,
@@ -480,6 +499,7 @@ export const processProcedure = async (procedure, user) => {
       certificado: dir,
       costo: response.costo,
       fechaCreacion: response.fechacreacion,
+      fechaCulminacion: response.fechaculminacion,
       codigoTramite: response.codigotramite,
       usuario: response.usuario,
       nombreLargo: response.nombrelargo,
@@ -532,6 +552,7 @@ export const addPaymentProcedure = async (procedure, user) => {
       certificado: null,
       costo: response.costo,
       fechaCreacion: response.fechacreacion,
+      fechaCulminacion: response.fechaculminacion,
       codigoTramite: response.codigotramite,
       usuario: response.usuario,
       nombreLargo: response.nombrelargo,
@@ -598,6 +619,7 @@ export const reviseProcedure = async (procedure, user) => {
       certificado: dir,
       costo: response.costo,
       fechaCreacion: response.fechacreacion,
+      fechaCulminacion: response.fechaculminacion,
       codigoTramite: response.codigotramite,
       usuario: response.usuario,
       nombreLargo: response.nombrelargo,
