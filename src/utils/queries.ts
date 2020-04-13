@@ -426,9 +426,11 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   CREATE_TERMINAL_DESTINATION:
     'INSERT INTO operatividad_terminal (destino, tipo, monto, tasa) VALUES ($1, $2, $3, $4) RETURNING id_operatividad_terminal AS id, destino, tipo, monto, tasa, monto_calculado AS "montoCalculado"',
   UPDATE_TERMINAL_DESTINATION:
-    'UPDATE operatividad_terminal SET destino = $1, tipo = $2, monto = $3, tasa = $4 WHERE id_operatividad_terminal = $5 RETURNING id_operatividad_terminal AS id, destino, tipo, monto, tasa, monto_calculado AS "montoCalculado";',
+    'UPDATE operatividad_terminal SET destino = $1, tipo = $2, monto = $3, tasa = $4, habilitado = $5 WHERE id_operatividad_terminal = $6 RETURNING id_operatividad_terminal AS id, destino, tipo, monto, tasa, habilitado, monto_calculado AS "montoCalculado";',
   DISABLE_TERMINAL_DESTINATION:
-    'UPDATE operatividad_terminal SET habilitado = false WHERE id_operatividad_terminal = $1 RETURNING id_operatividad_terminal AS id, destino, tipo, monto, tasa, monto_calculado AS "montoCalculado";',
+    'UPDATE operatividad_terminal SET habilitado = false WHERE id_operatividad_terminal = $1 RETURNING id_operatividad_terminal AS id, destino, tipo, monto, tasa, habilitado, monto_calculado AS "montoCalculado"',
+  INCREASE_TERMINAL_DESTINATION_COSTS:
+    'UPDATE operatividad_terminal SET monto = monto * $1 RETURNING id_operatividad_terminal AS id, destino, tipo, monto, tasa, habilitado, monto_calculado AS "montoCalculado"'
 };
 
 export default queries;
