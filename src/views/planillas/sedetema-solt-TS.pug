@@ -1,6 +1,38 @@
 html
   head
     title Template
-    block css
+    link(href='css/sedetema-solt-TS.css' rel='stylesheet' type='text/css')
   body
-    div
+    #wrapper
+      #ticket-terminal
+        #watermark 
+          p POR REVISAR
+        #tasa-logo
+          img#logo(src='images/Terminal.png')
+          #tasa-wrapper
+            p#tasa TASA DE SALIDA
+            #monto
+              span Bs. #{datos.usuario.monto}
+        #fecha-destino
+          p Fecha: #{moment(datos.usuario.fechaTramite).format('DD/MM/YYYY')}
+          p Hora: #{moment(datos.usuario.fechaTramite).format('hh:mm a')}
+          p#overflowing Destino: #{datos.usuario.destino}
+          #footer
+            img#QR(src=QR)
+            p#terminal TERMINAL
+      #ticket-terminal
+        #watermark 
+          p POR REVISAR
+        #tasa-logo
+          img#logo(src='images/Terminal.png')
+          #tasa-wrapper
+            p#tasa TASA DE SALIDA
+            #monto
+              span Bs. #{datos.usuario.monto}
+        #fecha-destino
+          p Fecha: #{moment(datos.usuario.fechaTramite).format('DD/MM/YYYY')}
+          p Hora: #{moment(datos.usuario.fechaTramite).format('hh:mm a')}
+          p Destino: #{datos.usuario.destino}
+          #footer
+            img#QR(src=QR)
+            p#terminal USUARIO
