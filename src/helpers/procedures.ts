@@ -76,7 +76,7 @@ const getProcedureInstances = async (user, client: PoolClient) => {
   try {
     let response = (
       await procedureInstanceHandler(
-        user.institucion && user.institucion.id === 0 ? 0 : user.tipoUsuario,
+        user.institucion && user.institucion.id === 0 ? 0 : user.institucion.nombreCorto === 'SEDETEMA' ? 6 : user.tipoUsuario,
         user.tipoUsuario !== 4 ? (user.institucion ? user.institucion.id : 0) : user.id,
         client
       )
@@ -799,6 +799,7 @@ const procedureInstances = switchcase({
   3: queries.GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION,
   4: queries.GET_PROCEDURE_INSTANCES_FOR_USER,
   5: queries.GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID,
+  6: queries.GET_ALL_PROCEDURES_EXCEPT_VALIDATING_ONES,
 })(null);
 
 const procedureInstanceHandler = (typeUser, payload, client) => {
