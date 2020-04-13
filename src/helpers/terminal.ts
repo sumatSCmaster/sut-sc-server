@@ -43,9 +43,9 @@ export const createDestination = async (dest) => {
 
 export const updateDestination = async (dest) => {
     const client = await pool.connect();
-    const { destino, tipo, monto, tasa, id } = dest
+    const { destino, tipo, monto, tasa, id, habilitado } = dest
     try{
-        const res = await client.query(queries.UPDATE_TERMINAL_DESTINATION, [destino, tipo, monto, tasa, id]);
+        const res = await client.query(queries.UPDATE_TERMINAL_DESTINATION, [destino, tipo, monto, tasa, habilitado, id]);
         return {
             status: 200,
             destino: res.rows[0]
@@ -77,3 +77,22 @@ export const disableDestination = async (id) => {
         client.release();
     }
 }
+
+export const increaseCostAll = async (rate) => {
+    const client = await pool.connect();
+    try{
+        rate = rate >= 1.0 ? rate : rate + 1.0;
+        const res = await client.query(queries.INCREASE_TERMINAL_DESTINATION_COSTS, [rate]);
+        return {
+            status: 200,
+            destino: res.rows
+        }
+    } catch(e) {
+        throw {
+            status: 500,
+            message: errorMessageGenerator(e) || 'Error al incrementar costos de destinos'
+        }
+    } finally {
+        client.release();
+    }
+} 
