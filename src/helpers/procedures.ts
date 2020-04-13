@@ -323,7 +323,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.tipotramite])).rows[0];
     response.sufijo = resources.sufijo;
-    costo = resources.sufijo === 'pd' ? null : pago.costo || resources.costo_base;
+    costo = resources.sufijo === 'pd' || (resources.sufijo === 'tl' && user.tipoUsuario !== 4) ? null : pago.costo || resources.costo_base;
     const nextEvent = await getNextEventForProcedure(response, client);
 
     if (recaudos.length > 0) {
