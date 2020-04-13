@@ -74,7 +74,8 @@ export const getAvailableProceduresOfInstitution = async (req: {
 
 const getProcedureInstances = async (user, client: PoolClient) => {
   try {
-    let response = (
+    let response = //TODO: corregir el handler para que no sea tan forzado
+    (
       await procedureInstanceHandler(
         user.institucion && user.institucion.id === 0 ? 0 : user.institucion.nombreCorto === 'SEDETEMA' ? 6 : user.tipoUsuario,
         user.tipoUsuario !== 4 ? (user.institucion ? user.institucion.id : 0) : user.id,
