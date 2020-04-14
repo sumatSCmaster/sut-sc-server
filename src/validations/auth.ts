@@ -462,7 +462,7 @@ const isValidProcedure = async (req, res) => {
   if (error) res.status(error.status).json(error);
   if (data) {
     const arr = data.fields.map((el) => validations[el.validacion]);
-    if (data.takings > 0) arr.push(validations['recaudos']);
+    // if (data.takings > 0) arr.push(validations['recaudos']);
     return arr;
   }
 };

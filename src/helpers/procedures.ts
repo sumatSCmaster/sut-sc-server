@@ -315,7 +315,7 @@ export const getFieldsForValidations = async (idProcedure, state) => {
 
 export const procedureInit = async (procedure, user: Usuario) => {
   const client = await pool.connect();
-  const { tipoTramite, datos, pago, recaudos } = procedure;
+  const { tipoTramite, datos, pago } = procedure;
   let costo, respState, dir, cert;
   try {
     client.query('BEGIN');
@@ -325,12 +325,6 @@ export const procedureInit = async (procedure, user: Usuario) => {
     response.sufijo = resources.sufijo;
     costo = resources.sufijo === 'pd' || (resources.sufijo === 'tl' && user.tipoUsuario !== 4) ? null : pago.costo || resources.costo_base;
     const nextEvent = await getNextEventForProcedure(response, client);
-
-    if (recaudos.length > 0) {
-      recaudos.map(async (urlRecaudo) => {
-        await client.query(queries.INSERT_TAKINGS_IN_PROCEDURE, [response.id, urlRecaudo]);
-      });
-    }
 
     if (pago && resources.sufijo !== 'tl' && nextEvent.startsWith('validar')) {
       pago.costo = costo;
@@ -372,7 +366,6 @@ export const procedureInit = async (procedure, user: Usuario) => {
       nombreTramiteLargo: response.nombretramitelargo,
       nombreTramiteCorto: response.nombretramitecorto,
       aprobado: response.aprobado,
-      recaudos,
     };
     client.query('COMMIT');
 

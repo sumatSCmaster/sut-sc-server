@@ -5,6 +5,11 @@ import { diskStorage, photoFilter } from '@utils/multer';
 import path from 'path';
 import switchcase from '@utils/switch';
 import fs from 'fs';
+import Pool from '@utils/Pool';
+import { errorMessageGenerator } from '@helpers/errors';
+import queries from '@utils/queries';
+
+const pool = Pool.getInstance();
 
 const router = Router();
 
@@ -19,7 +24,7 @@ const uploadFile = (req, res, next) => {
       break;
     case 'takings':
       multer({
-        storage: diskStorage('recaudos'),
+        storage: diskStorage('tramites/' + req.params.id),
         fileFilter: photoFilter,
       }).array('recaudos')(req, res, next);
       break;
@@ -44,14 +49,32 @@ const uploadFile = (req, res, next) => {
   // }
 };
 
-router.post('/:type/:id?', uploadFile, (req: any, res) => {
+router.post('/:type/:id?', uploadFile, async (req: any, res) => {
   const { id, type } = req.params;
-  const media = req.files.map(file => typeMedia(id && type === 'procedures' ? `tramites/${id}` : 'recaudos')(file)(process.env.NODE_ENV));
-  res.status(200).json({
-    status: 200,
-    message: 'Recaudos subidos de manera exitosa',
-    [id ? 'archivos' : 'recaudos']: media,
-  });
+  const media = req.files.map((file) => typeMedia(`tramites/${id}`)(file)(process.env.NODE_ENV));
+  const client = await pool.connect();
+  try {
+    if (media.length > 0 && type === 'takings') {
+      const procedure = (await client.query('SELECT id FROM TRAMITES_STATE_WITH_RESOURCES WHERE codigotramite=$1', [id])).rows[0];
+      media.map(async (urlRecaudo) => {
+        await client.query(queries.INSERT_TAKINGS_IN_PROCEDURE, [procedure.id, urlRecaudo]);
+      });
+    }
+
+    res.status(200).json({
+      status: 200,
+      message: 'Recaudos subidos de manera exitosa',
+      [type === 'takings' ? 'recaudos' : 'archivos']: media,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || error.message || 'No se logró insertar los recaudos',
+    });
+  } finally {
+    client.release();
+  }
 });
 
 router.get('/:type/:name', (req, res) => {
@@ -75,7 +98,7 @@ router.put('/:id', authenticate('jwt'), async (req, res) => {
   res.status(200).json({ status: 200, message: 'Eliminado satisfactoriamente' });
 });
 
-const typeMedia = type => file =>
+const typeMedia = (type) => (file) =>
   switchcase({ production: `${process.env.AWS_ACCESS_URL}/${file.key}`, development: `${process.env.SERVER_URL}/${type}/${file.filename}` })(
     'No es un estado valido'
   );
