@@ -56,9 +56,13 @@ router.post('/:type/:id?', uploadFile, async (req: any, res) => {
   try {
     if (media.length > 0 && type === 'takings') {
       const procedure = (await client.query('SELECT id FROM TRAMITES_STATE_WITH_RESOURCES WHERE codigotramite=$1', [id])).rows[0];
-      media.map(async (urlRecaudo) => {
-        await client.query(queries.INSERT_TAKINGS_IN_PROCEDURE, [procedure.id, urlRecaudo]);
-      });
+      client.query('BEGIN');
+      await Promise.all(
+        media.map(async (urlRecaudo) => {
+          await client.query(queries.INSERT_TAKINGS_IN_PROCEDURE, [procedure.id, urlRecaudo]);
+        })
+      );
+      client.query('COMMIT');
     }
 
     res.status(200).json({

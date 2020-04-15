@@ -77,8 +77,6 @@ export const sendNotification = async (sender: string, description: string, type
     type === 'CREATE' ? broadcastByExternalUser(sender, description, payload, client) : broadcastByOfficial(sender, description, payload, client);
   } catch (e) {
     throw e;
-  } finally {
-    client.release();
   }
 };
 
