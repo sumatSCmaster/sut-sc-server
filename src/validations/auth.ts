@@ -339,12 +339,6 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('La fecha para apartar no puede ser vacia'),
-  horaApartado: check('tramite.datos.horaApartado')
-    .exists()
-    .withMessage('Debe incluir la hora para apartar')
-    .isString()
-    .isLength({ min: 1 })
-    .withMessage('La hora para apartar no puede ser vacia'),
 };
 
 export const createSuperuser = [
