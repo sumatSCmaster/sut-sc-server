@@ -332,7 +332,19 @@ const validations = {
     .isLength({ min: 1 })
     .withMessage('La fecha y hora no puede ser vacia'),
   numeroBohio: check('tramite.datos.numeroBohio').optional().isInt().isLength({ min: 1 }).withMessage('Debe incluir un numero de bohio valido'),
-  detallesBogio: check('tramite.datos.numeroBohio').optional().isString().isLength({ min: 1 }).withMessage('Debe incluir un detalle de bohio valido'),
+  detallesBohio: check('tramite.datos.numeroBohio').optional().isString().isLength({ min: 1 }).withMessage('Debe incluir un detalle de bohio valido'),
+  fechaApartado: check('tramite.datos.fechaApartado')
+    .exists()
+    .withMessage('Debe incluir la fecha para apartar')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('La fecha para apartar no puede ser vacia'),
+  horaApartado: check('tramite.datos.horaApartado')
+    .exists()
+    .withMessage('Debe incluir la hora para apartar')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('La hora para apartar no puede ser vacia'),
 };
 
 export const createSuperuser = [
