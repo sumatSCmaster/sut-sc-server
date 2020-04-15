@@ -331,6 +331,8 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('La fecha y hora no puede ser vacia'),
+  numeroBohio: check('tramite.datos.numeroBohio').optional().isInt().isLength({ min: 1 }).withMessage('Debe incluir un numero de bohio valido'),
+  detallesBogio: check('tramite.datos.numeroBohio').optional().isString().isLength({ min: 1 }).withMessage('Debe incluir un detalle de bohio valido'),
 };
 
 export const createSuperuser = [
