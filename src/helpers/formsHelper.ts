@@ -26,7 +26,7 @@ export const createForm = async ({ fecha, codigo, formato, tramite, institucion,
       QR: linkQr,
     });
 
-    const pdfDir = resolve(__dirname, `../../archivos/tramites/${codigo}/${dir.split('/')[3].split('.')[0]}.pdf`);
+    const pdfDir = resolve(__dirname, `../../archivos/tramites/${codigo}/${dir.split('/').pop()}`);
     if (dev) {
       pdf
         .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
