@@ -4,10 +4,10 @@ import { Institucion, TipoTramite, Tramite, Usuario } from '@interfaces/sigt';
 import { errorMessageGenerator } from './errors';
 import switchcase from '@utils/switch';
 import { sendNotification } from './notification';
-import { createForm } from './formsHelper';
 import { PoolClient } from 'pg';
 import { sendEmail } from './events/procedureUpdateState';
 import { insertPaymentReference } from './banks';
+import { createFiningForm, createFiningCertificate } from '@utils/forms';
 const pool = Pool.getInstance();
 
 export const finingInit = async (procedure, user: Usuario) => {
@@ -23,7 +23,7 @@ export const finingInit = async (procedure, user: Usuario) => {
     costo = resources.sufijo === 'ml' ? pago.costo || resources.costo_base : null;
     const nextEvent = await getNextEventForFining(response, client);
 
-    dir = await createRequestForm(response, client);
+    dir = await createFiningForm(response, client);
     respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, costo, dir]);
 
     const tramite: Partial<Tramite> = {
@@ -132,7 +132,7 @@ export const validateFining = async (procedure, user: Usuario) => {
     }
     const nextEvent = (await getNextEventForFining(procedure, client)) as string;
     if (nextEvent.startsWith('finalizar')) {
-      dir = await createCertificate(procedure, client);
+      dir = await createFiningCertificate(procedure, client);
       respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, null, dir || null, true]);
     } else {
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, null, null, null]);
@@ -170,50 +170,6 @@ export const validateFining = async (procedure, user: Usuario) => {
   } finally {
     client.release();
   }
-};
-
-const createRequestForm = async (procedure, client: PoolClient): Promise<string> => {
-  const tramite = (
-    await client.query(
-      'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
-      [procedure.idTramite]
-    )
-  ).rows[0];
-  const procedureData = {
-    id: procedure.idTramite,
-    fecha: tramite.fechacreacion,
-    codigo: tramite.codigotramite,
-    formato: tramite.formato,
-    tramite: tramite.nombretramitelargo,
-    institucion: tramite.nombrecorto,
-    datos: tramite.datos,
-    estado: tramite.state,
-    tipoTramite: tramite.tipotramite,
-  };
-  const form = (await createForm(procedureData, client)) as string;
-  return form;
-};
-
-const createCertificate = async (procedure, client: PoolClient): Promise<string> => {
-  const tramite = (
-    await client.query(
-      'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
-      [procedure.idTramite]
-    )
-  ).rows[0];
-  const procedureData = {
-    id: procedure.idTramite,
-    fecha: tramite.fechacreacion,
-    codigo: tramite.codigotramite,
-    formato: tramite.formato,
-    tramite: tramite.nombretramitelargo,
-    institucion: tramite.nombrecorto,
-    datos: procedure.datos || tramite.datos,
-    estado: 'finalizado',
-    tipoTramite: tramite.tipotramite,
-  };
-  const form = (await createForm(procedureData, client)) as string;
-  return form;
 };
 
 const getNextEventForFining = async (procedure, client): Promise<object | string> => {

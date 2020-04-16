@@ -54,6 +54,50 @@ export const createCertificate = async (procedure, client: PoolClient): Promise<
   return form;
 };
 
+export const createFiningForm = async (procedure, client: PoolClient): Promise<string> => {
+  const tramite = (
+    await client.query(
+      'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
+      [procedure.idTramite]
+    )
+  ).rows[0];
+  const procedureData = {
+    id: procedure.idTramite,
+    fecha: tramite.fechacreacion,
+    codigo: tramite.codigotramite,
+    formato: tramite.formato,
+    tramite: tramite.nombretramitelargo,
+    institucion: tramite.nombrecorto,
+    datos: tramite.datos,
+    estado: tramite.state,
+    tipoTramite: tramite.tipotramite,
+  };
+  const form = (await createForm(procedureData, client)) as string;
+  return form;
+};
+
+export const createFiningCertificate = async (procedure, client: PoolClient): Promise<string> => {
+  const tramite = (
+    await client.query(
+      'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
+      [procedure.idTramite]
+    )
+  ).rows[0];
+  const procedureData = {
+    id: procedure.idTramite,
+    fecha: tramite.fechacreacion,
+    codigo: tramite.codigotramite,
+    formato: tramite.formato,
+    tramite: tramite.nombretramitelargo,
+    institucion: tramite.nombrecorto,
+    datos: procedure.datos || tramite.datos,
+    estado: 'finalizado',
+    tipoTramite: tramite.tipotramite,
+  };
+  const form = (await createForm(procedureData, client)) as string;
+  return form;
+};
+
 export const createMockCertificate = async (procedure) => {
   const client = await pool.connect();
   try {

@@ -12,6 +12,7 @@ import estates from './estates';
 import taxValues from './taxValues';
 import ordinance from './ordinance';
 import values from './values';
+import fines from './fines';
 import statistics from './statistics';
 import user from './user';
 import destination from './terminal';
@@ -32,6 +33,7 @@ router.use('/taxValues', taxValues);
 router.use('/user', user);
 router.use('/destination', destination);
 router.use('/stats', statistics);
+router.use('/fines', fines);
 router.use('/notification', notification);
 router.use(resources);
 
