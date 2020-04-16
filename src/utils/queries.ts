@@ -180,7 +180,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     'SELECT DISTINCT tt.sufijo, tt.costo_base, usr.nombre_completo as nombrecompleto, \
     usr.nombre_de_usuario as nombreusuario, tr.costo FROM tipo_tramite tt INNER JOIN tramite tr ON\
     tt.id_tipo_tramite=tr.id_tipo_tramite INNER JOIN usuario usr ON tr.id_usuario=usr.id_usuario\
-    WHERE tt.id_tipo_tramite=$1',
+    WHERE tt.id_tipo_tramite=$1 AND tr.id_tramite = $2',
   GET_PROCEDURE_STATES:
     'SELECT id_tramite AS id, tramite_evento_fsm(event ORDER BY id_evento_tramite) AS state  \
   FROM evento_tramite \
@@ -443,19 +443,18 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_FINES_OFFICIAL: "SELECT * FROM multa_state WHERE nombrelargo = $1 AND state != 'validando' ORDER BY fechacreacion;",
   GET_FINES_EXTERNAL_USER: 'SELECT * FROM multa_state WHERE cedula = $1 AND nacionalidad = $2;',
   GET_RESOURCES_FOR_FINING:
-    'SELECT DISTINCT tt.sufijo, tt.costo_base, usr.nombre_completo as nombrecompleto, \
-  usr.nombre_de_usuario as nombreusuario, ml.costo FROM tipo_tramite tt INNER JOIN multa ml ON\
-  tt.id_tipo_tramite=ml.id_tipo_tramite INNER JOIN usuario usr ON tl.id_usuario=usr.id_usuario\
-  WHERE tt.id_tipo_tramite=$1',
+    'SELECT DISTINCT tt.sufijo, tt.costo_base,\
+  ml.costo FROM tipo_tramite tt INNER JOIN multa ml ON\
+  tt.id_tipo_tramite=ml.id_tipo_tramite WHERE tt.id_tipo_tramite=$1 AND ml.id_multa = $2',
   GET_FINING_BY_ID: 'SELECT * FROM multa_state WHERE id=$1',
   GET_FINING_STATE:
     'SELECT id_multa AS id, multa_fsm(event ORDER BY id_evento_multa) AS state \
   FROM evento_multa \
   WHERE id_multa = $1 \
   GROUP BY id_multa;',
-  FINING_INIT: 'SELECT * FROM insert_tramite($1, $2, $3, $4);',
+  FINING_INIT: 'SELECT * FROM insert_multa($1, $2, $3, $4, $5);',
   UPDATE_FINING: 'SELECT update_multa_state($1, $2, $3, $4, $5) as state;',
-  COMPLETE_FINING: 'SELECT complete_tramite_state ($1,$2,$3,$4, $5) as state',
+  COMPLETE_FINING: 'SELECT complete_multa_state ($1,$2,$3,$4, $5) as state',
 };
 
 export default queries;

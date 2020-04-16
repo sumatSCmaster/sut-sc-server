@@ -57,14 +57,14 @@ export const createCertificate = async (procedure, client: PoolClient): Promise<
 export const createFiningForm = async (procedure, client: PoolClient): Promise<string> => {
   const tramite = (
     await client.query(
-      'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
+      'SELECT mls.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM multa_state mls INNER JOIN tipo_tramite ttr ON mls.tipotramite=ttr.id_tipo_tramite WHERE mls.id=$1',
       [procedure.idTramite]
     )
   ).rows[0];
   const procedureData = {
     id: procedure.idTramite,
     fecha: tramite.fechacreacion,
-    codigo: tramite.codigotramite,
+    codigo: tramite.codigomulta,
     formato: tramite.formato,
     tramite: tramite.nombretramitelargo,
     institucion: tramite.nombrecorto,
@@ -79,7 +79,7 @@ export const createFiningForm = async (procedure, client: PoolClient): Promise<s
 export const createFiningCertificate = async (procedure, client: PoolClient): Promise<string> => {
   const tramite = (
     await client.query(
-      'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
+      'SELECT mls.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM multa_state mls INNER JOIN tipo_tramite ttr ON mls.tipotramite=ttr.id_tipo_tramite WHERE mls.id=$1',
       [procedure.idTramite]
     )
   ).rows[0];

@@ -12,27 +12,30 @@ const pool = Pool.getInstance();
 
 export const finingInit = async (procedure, user: Usuario) => {
   const client = await pool.connect();
-  const { tipoTramite, datos, pago } = procedure;
+  const { tipoTramite, datos, monto } = procedure;
   let costo, respState, dir, cert;
   try {
     client.query('BEGIN');
-    const response = (await client.query(queries.FINING_INIT, [tipoTramite, JSON.stringify({ funcionario: datos }), user.id])).rows[0];
+    dir = null;
+    const response = (
+      await client.query(queries.FINING_INIT, [tipoTramite, JSON.stringify({ usuario: datos }), procedure.nacionalidad, procedure.cedula, user.id])
+    ).rows[0];
     response.idTramite = response.id;
-    const resources = (await client.query(queries.GET_RESOURCES_FOR_FINING, [response.tipotramite])).rows[0];
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_FINING, [response.tipotramite, response.idTramite])).rows[0];
     response.sufijo = resources.sufijo;
-    costo = resources.sufijo === 'ml' ? pago.costo || resources.costo_base : null;
+    costo = resources.sufijo === 'ml' ? monto || resources.costo_base : null;
     const nextEvent = await getNextEventForFining(response, client);
-
-    dir = await createFiningForm(response, client);
+    const hasRequestForm = (await client.query('SELECT planilla FROM tipo_tramite WHERE id_tipo_tramite = $1', [response.tipotramite])).rows[0].planilla;
+    if (hasRequestForm) {
+      dir = await createFiningForm(response, client);
+    }
     respState = await client.query(queries.UPDATE_FINING, [response.id, nextEvent, null, costo, dir]);
-
-    const tramite: Partial<Tramite> = {
+    const tramite: Partial<Tramite & { boleta: string }> = {
       id: response.id,
       tipoTramite: response.tipotramite,
       estado: respState.rows[0].state,
       datos: response.datos,
-      planilla: dir,
-      certificado: cert,
+      boleta: dir,
       costo,
       fechaCreacion: response.fechacreacion,
       fechaCulminacion: response.fechaculminacion,
@@ -71,12 +74,14 @@ const addPaymentFining = async (procedure, user: Usuario) => {
   let { pago } = procedure;
   try {
     client.query('BEGIN');
-    const resources = (await client.query(queries.GET_RESOURCES_FOR_FINING, [procedure.tipoTramite])).rows[0];
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_FINING, [procedure.tipoTramite, procedure.idTramite])).rows[0];
 
     if (!procedure.hasOwnProperty('sufijo')) {
       procedure.sufijo = resources.sufijo;
     }
     const nextEvent = (await getNextEventForFining(procedure, client)) as string;
+
+    //TODO: arreglar validacion de pagos, no soporta multa
     if (pago && nextEvent.startsWith('validar')) {
       pago.costo = resources.costo;
       await insertPaymentReference(pago, procedure.idTramite, client);
@@ -85,12 +90,12 @@ const addPaymentFining = async (procedure, user: Usuario) => {
     const respState = await client.query(queries.UPDATE_FINING, [procedure.idTramite, nextEvent, null, procedure.costo || null, null]);
     const response = (await client.query(queries.GET_FINING_BY_ID, [procedure.idTramite])).rows[0];
     client.query('COMMIT');
-    const tramite: Partial<Tramite> = {
+    const tramite: Partial<Tramite & { boleta: string }> = {
       id: response.id,
       tipoTramite: response.tipotramite,
       estado: response.state,
       datos: response.datos,
-      planilla: response.planilla,
+      boleta: response.urlboleta,
       certificado: null,
       costo: response.costo,
       fechaCreacion: response.fechacreacion,
@@ -123,28 +128,31 @@ export const validateFining = async (procedure, user: Usuario) => {
   let dir, respState;
   try {
     client.query('BEGIN');
-    const resources = (await client.query(queries.GET_RESOURCES_FOR_FINING, [procedure.tipoTramite])).rows[0];
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_FINING, [procedure.tipoTramite, procedure.idTramite])).rows[0];
+
     if (!procedure.hasOwnProperty('aprobado')) {
       return { status: 403, message: 'No es posible actualizar este estado' };
     }
+
     if (!procedure.hasOwnProperty('sufijo')) {
       procedure.sufijo = resources.sufijo;
     }
+
     const nextEvent = (await getNextEventForFining(procedure, client)) as string;
     if (nextEvent.startsWith('finalizar')) {
       dir = await createFiningCertificate(procedure, client);
-      respState = await client.query(queries.COMPLETE_FINING, [procedure.idTramite, nextEvent, null, dir || null, true]);
+      respState = await client.query(queries.COMPLETE_FINING, [procedure.idTramite, nextEvent, null, dir, true]);
     } else {
       respState = await client.query(queries.UPDATE_FINING, [procedure.idTramite, nextEvent, null, null, null]);
     }
     const response = (await client.query(queries.GET_FINING_BY_ID, [procedure.idTramite])).rows[0];
     client.query('COMMIT');
-    const tramite: Partial<Tramite> = {
+    const tramite: Partial<Tramite & { boleta: string }> = {
       id: response.id,
       tipoTramite: response.tipotramite,
       estado: response.state,
       datos: response.datos,
-      planilla: response.planilla,
+      boleta: response.urlboleta,
       certificado: dir,
       costo: response.costo,
       fechaCreacion: response.fechacreacion,

@@ -11,7 +11,7 @@ import { createRequestForm, createCertificate } from '@utils/forms';
 
 const pool = Pool.getInstance();
 
-export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any, instanciasDeMulta: any }> => {
+export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any; instanciasDeMulta: any }> => {
   const client: any = await pool.connect();
   client.tipoUsuario = user.tipoUsuario;
   try {
@@ -71,7 +71,8 @@ export const getAvailableProceduresOfInstitution = async (req: {
 
 const getProcedureInstances = async (user, client: PoolClient) => {
   try {
-    let response = ( //TODO: corregir el handler para que no sea tan forzado
+    let response = //TODO: corregir el handler para que no sea tan forzado
+    (
       await procedureInstanceHandler(
         user.institucion && user.institucion.id === 0 ? 0 : user.institucion && user.institucion.nombreCorto === 'SEDETEMA' ? 6 : user.tipoUsuario,
         user.tipoUsuario !== 4 ? (user.institucion ? user.institucion.id : 0) : user.id,
@@ -134,13 +135,8 @@ const getProcedureInstances = async (user, client: PoolClient) => {
 
 const getFineInstances = async (user, client: PoolClient) => {
   try {
-    let response = (
-      await fineInstanceHandler(
-        user,
-        client
-      )
-    ).rows;
-    return response.map( (el) => {
+    let response = (await fineInstanceHandler(user, client)).rows;
+    return response.map((el) => {
       const multa = {
         id: el.id,
         datos: el.datos,
@@ -162,12 +158,12 @@ const getFineInstances = async (user, client: PoolClient) => {
       };
 
       return multa;
-    })
+    });
   } catch (error) {
-    console.log(error)
-    throw new Error('Error al obtener instancias de multa')
+    console.log(error);
+    throw new Error('Error al obtener instancias de multa');
   }
-}
+};
 
 const getProcedureInstancesByInstitution = async (institution, tipoUsuario, client: PoolClient) => {
   try {
@@ -356,7 +352,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
     client.query('BEGIN');
     const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify({ usuario: datos }), user.id])).rows[0];
     response.idTramite = response.id;
-    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.tipotramite])).rows[0];
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.tipotramite, procedure.idTramite])).rows[0];
     response.sufijo = resources.sufijo;
     costo = resources.sufijo === 'pd' || (resources.sufijo === 'tl' && user.tipoUsuario !== 4) ? null : pago.costo || resources.costo_base;
     const nextEvent = await getNextEventForProcedure(response, client);
@@ -429,7 +425,7 @@ export const validateProcedure = async (procedure, user: Usuario) => {
   let dir, respState;
   try {
     client.query('BEGIN');
-    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0];
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite, procedure.idTramite])).rows[0];
     if (!procedure.hasOwnProperty('aprobado')) {
       return { status: 403, message: 'No es posible actualizar este estado' };
     }
@@ -487,7 +483,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
     costo = null;
   try {
     client.query('BEGIN');
-    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0];
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite, procedure.idTramite])).rows[0];
     if (!procedure.hasOwnProperty('sufijo')) {
       procedure.sufijo = resources.sufijo;
     }
@@ -559,7 +555,7 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
   let { pago } = procedure;
   try {
     client.query('BEGIN');
-    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0];
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite, procedure.idTramite])).rows[0];
 
     if (!procedure.hasOwnProperty('sufijo')) {
       procedure.sufijo = resources.sufijo;
@@ -614,7 +610,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
     datos = null;
   try {
     client.query('BEGIN');
-    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0];
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite, procedure.idTramite])).rows[0];
 
     if (!procedure.hasOwnProperty('revision')) {
       return { status: 403, message: 'No es posible actualizar este estado' };
@@ -724,30 +720,29 @@ const procedureEventHandler = (suffix, state) => {
   return procedureEvents(suffix)[state];
 };
 
-const isSuperuser = ({tipoUsuario}) => {
+const isSuperuser = ({ tipoUsuario }) => {
   return tipoUsuario === 1;
-}
+};
 
-const isAdmin = ({tipoUsuario}) => {
+const isAdmin = ({ tipoUsuario }) => {
   return tipoUsuario === 2;
-}
+};
 
-const isOfficial = ({tipoUsuario}) => {
-  return tipoUsuario === 3
-}
+const isOfficial = ({ tipoUsuario }) => {
+  return tipoUsuario === 3;
+};
 
-const isDirector = ({tipoUsuario}) => {
+const isDirector = ({ tipoUsuario }) => {
   return tipoUsuario === 5;
-}
+};
 
 const isExternalUser = ({ tipoUsuario }) => {
   return tipoUsuario === 4;
-}
+};
 
 const belongsToAnInstitution = ({ institucion }) => {
   return institucion !== undefined;
-}
-
+};
 
 const procedureInstances = switchcase({
   0: 'SELECT * FROM CASOS_SOCIALES_STATE WHERE tipotramite=$1',
@@ -767,32 +762,28 @@ const fineInstances = switchcase({
   1: queries.GET_ALL_FINES,
   2: queries.GET_FINES_DIRECTOR_OR_ADMIN,
   3: queries.GET_FINES_OFFICIAL,
-  4: queries.GET_FINES_EXTERNAL_USER
+  4: queries.GET_FINES_EXTERNAL_USER,
 })(null);
 
 const fineInstanceHandler = (user, client) => {
   let query;
   let payload;
-  if(isSuperuser(user)){
+  if (isSuperuser(user)) {
     query = 1;
-  }else {
-    if(belongsToAnInstitution(user)){
-
-      if( isAdmin(user) || isDirector(user) ){
+  } else {
+    if (belongsToAnInstitution(user)) {
+      if (isAdmin(user) || isDirector(user)) {
         query = 2;
         payload = [user.institucion.nombreCompleto];
-      }else if( isOfficial(user) ){
-        query = 3
+      } else if (isOfficial(user)) {
+        query = 3;
         payload = [user.institucion.nombreCompleto];
       }
-
-    }else{
-
-      if(isExternalUser(user)){
+    } else {
+      if (isExternalUser(user)) {
         query = 4;
-        payload = [user.cedula, user.nacionalidad]
+        payload = [user.cedula, user.nacionalidad];
       }
-
     }
   }
   return query !== 1 ? client.query(fineInstances(query), payload) : client.query(fineInstances(query));

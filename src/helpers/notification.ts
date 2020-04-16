@@ -195,7 +195,12 @@ const notificationTypes = switchcase({
 })(null);
 
 const notificationHandler = async (sender: string, description: string, type: string, payload: Partial<Tramite>, client: PoolClient) => {
-  return await notificationTypes(type)(sender, description, payload, client);
+  const notificationSender = notificationTypes(type);
+  try {
+    if (notificationSender) return await notificationSender(sender, description, payload, client);
+  } catch (error) {
+    throw error;
+  }
 };
 
 // export const sendWhatsAppNotification = async (body: string) => {
