@@ -24,7 +24,13 @@ html
                 - rif = 'G-20005482-4'
               when 'SEDEPAR'
                 - nombre = 'Servicio Desconcentrado de Plazas y Parques'
-                - rif = 'G-20006426-9'                
+                - rif = 'G-20006426-9'
+              when 'IMA'
+                  - nombre = 'Instituto Municipal del Ambiente'
+                  - rif = 'G-20000199-2'
+              when 'POLIMARACAIBO'
+                  - nombre = 'Instituto Autónomo Policía del Municipio de Maracaibo'
+                  - rif = 'G-20001881-0'                                
             p Alcaldida Bolivariana de Maracaibo
             p #{nombre}
             p R.I.F.: #{rif}
@@ -38,7 +44,11 @@ html
               when 'CPU'
                 - src ='images/CPU.png'
               when 'SEDEPAR'
-                - src ='images/SEDEPAR.png'                
+                - src ='images/SEDEPAR.png'
+              when 'IMA'
+                - src ='../views/images/IMA.png' 
+              when 'POLIMARACAIBO'
+                - src ='../views/images/POLIMARACAIBO.png' 
               default
                 - src = 'images/LogoAlcaldia.png'
             img#logo(src=src)
