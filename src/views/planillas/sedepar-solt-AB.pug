@@ -20,7 +20,7 @@ block content
        div.td(style={ width: '50%' }).border-bottom
          p
            b Cédula:
-           span &nbsp; #{datos.usuario.cedula}
+           span &nbsp; #{datos.usuario.nacionalidad}-#{datos.usuario.cedula}
      div.tr
        div.td(style={ width: '50%' }).border-bottom.border-right
          p
@@ -33,26 +33,25 @@ block content
    div.table           
      div.th
        p DATOS DEL APARTADO
-     // FIXME: Cambiar la estructura a la correcta 
      div.tr
        div.td(style={ width: '50%' }).border-right
          p
            b Fecha de apartado:
-           span &nbsp; #{datos.usuario.fechaApartado}
+           span &nbsp; #{moment(datos.usuario.fechaApartado).format('DD/MM/YYYY')}
        div.td(style={ width: '50%' })
          p
            b Número del bohio:
-           span &nbsp; #{datos.usuario.NumeroBohio}             
+           span &nbsp; #{datos.usuario.numeroBohio}             
    if texto      
      div.details
        div
          p
            b Detalles del bohio:
-           | #{texto}
+           | #{datos.usuario.detallesBohio || 'N/A'}
    div#recaudos
      h3 REQUISITOS OBLIGATORIOS
      hr.divider
      ul
-       li Copia de la Cédula de Identidad del Solicitante.
+       li Fotocopia Legible de la Cédula de Identidad del Solicitante.
  
 

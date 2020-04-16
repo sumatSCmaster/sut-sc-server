@@ -11,7 +11,7 @@ import { createRequestForm, createCertificate } from '@utils/forms';
 
 const pool = Pool.getInstance();
 
-export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any }> => {
+export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any, instanciasDeMulta: any }> => {
   const client: any = await pool.connect();
   client.tipoUsuario = user.tipoUsuario;
   try {
@@ -28,7 +28,8 @@ export const getAvailableProcedures = async (user): Promise<{ options: Instituci
     }
     const options: Institucion[] = await getProcedureByInstitution(institution, client);
     const instanciasDeTramite = await getProcedureInstances(user, client);
-    return { options, instanciasDeTramite };
+    const instanciasDeMulta = await getFineInstances(user, client);
+    return { options, instanciasDeTramite, instanciasDeMulta };
   } catch (error) {
     throw {
       status: 500,
@@ -130,6 +131,43 @@ const getProcedureInstances = async (user, client: PoolClient) => {
     throw new Error('Error al obtener instancias de tramite');
   }
 };
+
+const getFineInstances = async (user, client: PoolClient) => {
+  try {
+    let response = (
+      await fineInstanceHandler(
+        user,
+        client
+      )
+    ).rows;
+    return response.map( (el) => {
+      const multa = {
+        id: el.id,
+        datos: el.datos,
+        estado: el.state,
+        tipoTramite: el.tipoTramite,
+        costo: el.costo,
+        fechaCreacion: el.fechacreacion,
+        codigoMulta: el.codigomulta,
+        certificado: el.urlcertificado,
+        boleta: el.urlboleta,
+        usuario: el.usuario,
+        cedula: el.cedula,
+        nacionalidad: el.nacionalidad,
+        aprobado: el.aprobado,
+        nombreTramiteLargo: el.nombretramitelargo,
+        nombreTramiteCorto: el.nombretramitecorto,
+        nombreLargo: el.nombrelargo,
+        nombreCorto: el.nombrecorto,
+      };
+
+      return multa;
+    })
+  } catch (error) {
+    console.log(error)
+    throw new Error('Error al obtener instancias de multa')
+  }
+}
 
 const getProcedureInstancesByInstitution = async (institution, tipoUsuario, client: PoolClient) => {
   try {
@@ -686,6 +724,31 @@ const procedureEventHandler = (suffix, state) => {
   return procedureEvents(suffix)[state];
 };
 
+const isSuperuser = ({tipoUsuario}) => {
+  return tipoUsuario === 1;
+}
+
+const isAdmin = ({tipoUsuario}) => {
+  return tipoUsuario === 2;
+}
+
+const isOfficial = ({tipoUsuario}) => {
+  return tipoUsuario === 3
+}
+
+const isDirector = ({tipoUsuario}) => {
+  return tipoUsuario === 5;
+}
+
+const isExternalUser = ({ tipoUsuario }) => {
+  return tipoUsuario === 4;
+}
+
+const belongsToAnInstitution = ({ institucion }) => {
+  return institucion !== undefined;
+}
+
+
 const procedureInstances = switchcase({
   0: 'SELECT * FROM CASOS_SOCIALES_STATE WHERE tipotramite=$1',
   1: queries.GET_ALL_PROCEDURE_INSTANCES,
@@ -698,6 +761,41 @@ const procedureInstances = switchcase({
 
 const procedureInstanceHandler = (typeUser, payload, client) => {
   return typeUser === 1 ? client.query(procedureInstances(typeUser)) : client.query(procedureInstances(typeUser), [payload]);
+};
+
+const fineInstances = switchcase({
+  1: queries.GET_ALL_FINES,
+  2: queries.GET_FINES_DIRECTOR_OR_ADMIN,
+  3: queries.GET_FINES_OFFICIAL,
+  4: queries.GET_FINES_EXTERNAL_USER
+})(null);
+
+const fineInstanceHandler = (user, client) => {
+  let query;
+  let payload;
+  if(isSuperuser(user)){
+    query = 1;
+  }else {
+    if(belongsToAnInstitution(user)){
+
+      if( isAdmin(user) || isDirector(user) ){
+        query = 2;
+        payload = [user.institucion.nombreCompleto];
+      }else if( isOfficial(user) ){
+        query = 3
+        payload = [user.institucion.nombreCompleto];
+      }
+
+    }else{
+
+      if(isExternalUser(user)){
+        query = 4;
+        payload = [user.cedula, user.nacionalidad]
+      }
+
+    }
+  }
+  return query !== 1 ? client.query(fineInstances(query), payload) : client.query(fineInstances(query));
 };
 
 const fieldsBySection = switchcase({
