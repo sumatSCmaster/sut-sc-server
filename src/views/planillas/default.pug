@@ -22,6 +22,9 @@ html
               when 'CPU'
                 - nombre = 'Centro de Procesamiento Urbano'
                 - rif = 'G-20005482-4'
+              when 'SEDEPAR'
+                - nombre = 'Servicio Desconcentrado de Plazas y Parques'
+                - rif = 'G-20006426-9'                
             p Alcaldida Bolivariana de Maracaibo
             p #{nombre}
             p R.I.F.: #{rif}
@@ -34,6 +37,8 @@ html
                 - src ='images/SAGAS.png'
               when 'CPU'
                 - src ='images/CPU.png'
+              when 'SEDEPAR'
+                - src ='images/SEDEPAR.png'                
               default
                 - src = 'images/LogoAlcaldia.png'
             img#logo(src=src)
