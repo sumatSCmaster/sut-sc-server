@@ -445,7 +445,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_RESOURCES_FOR_FINING:
     'SELECT DISTINCT tt.sufijo, tt.costo_base, usr.nombre_completo as nombrecompleto, \
   usr.nombre_de_usuario as nombreusuario, ml.costo FROM tipo_tramite tt INNER JOIN multa ml ON\
-  tt.id_tipo_tramite=ml.id_tipo_tramite INNER JOIN usuario usr ON tr.id_usuario=usr.id_usuario\
+  tt.id_tipo_tramite=ml.id_tipo_tramite INNER JOIN usuario usr ON tl.id_usuario=usr.id_usuario\
   WHERE tt.id_tipo_tramite=$1',
   GET_FINING_BY_ID: 'SELECT * FROM multa_state WHERE id=$1',
   GET_FINING_STATE:

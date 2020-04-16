@@ -16,15 +16,15 @@ export const finingInit = async (procedure, user: Usuario) => {
   let costo, respState, dir, cert;
   try {
     client.query('BEGIN');
-    const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify({ funcionario: datos }), user.id])).rows[0];
+    const response = (await client.query(queries.FINING_INIT, [tipoTramite, JSON.stringify({ funcionario: datos }), user.id])).rows[0];
     response.idTramite = response.id;
-    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.tipotramite])).rows[0];
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_FINING, [response.tipotramite])).rows[0];
     response.sufijo = resources.sufijo;
     costo = resources.sufijo === 'ml' ? pago.costo || resources.costo_base : null;
     const nextEvent = await getNextEventForFining(response, client);
 
     dir = await createFiningForm(response, client);
-    respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, costo, dir]);
+    respState = await client.query(queries.UPDATE_FINING, [response.id, nextEvent, null, costo, dir]);
 
     const tramite: Partial<Tramite> = {
       id: response.id,
@@ -71,7 +71,7 @@ const addPaymentFining = async (procedure, user: Usuario) => {
   let { pago } = procedure;
   try {
     client.query('BEGIN');
-    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0];
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_FINING, [procedure.tipoTramite])).rows[0];
 
     if (!procedure.hasOwnProperty('sufijo')) {
       procedure.sufijo = resources.sufijo;
@@ -82,8 +82,8 @@ const addPaymentFining = async (procedure, user: Usuario) => {
       await insertPaymentReference(pago, procedure.idTramite, client);
     }
 
-    const respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, null, procedure.costo || null, null]);
-    const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
+    const respState = await client.query(queries.UPDATE_FINING, [procedure.idTramite, nextEvent, null, procedure.costo || null, null]);
+    const response = (await client.query(queries.GET_FINING_BY_ID, [procedure.idTramite])).rows[0];
     client.query('COMMIT');
     const tramite: Partial<Tramite> = {
       id: response.id,
@@ -123,7 +123,7 @@ export const validateFining = async (procedure, user: Usuario) => {
   let dir, respState;
   try {
     client.query('BEGIN');
-    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite])).rows[0];
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_FINING, [procedure.tipoTramite])).rows[0];
     if (!procedure.hasOwnProperty('aprobado')) {
       return { status: 403, message: 'No es posible actualizar este estado' };
     }
@@ -133,11 +133,11 @@ export const validateFining = async (procedure, user: Usuario) => {
     const nextEvent = (await getNextEventForFining(procedure, client)) as string;
     if (nextEvent.startsWith('finalizar')) {
       dir = await createFiningCertificate(procedure, client);
-      respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, null, dir || null, true]);
+      respState = await client.query(queries.COMPLETE_FINING, [procedure.idTramite, nextEvent, null, dir || null, true]);
     } else {
-      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, null, null, null]);
+      respState = await client.query(queries.UPDATE_FINING, [procedure.idTramite, nextEvent, null, null, null]);
     }
-    const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
+    const response = (await client.query(queries.GET_FINING_BY_ID, [procedure.idTramite])).rows[0];
     client.query('COMMIT');
     const tramite: Partial<Tramite> = {
       id: response.id,
@@ -173,7 +173,7 @@ export const validateFining = async (procedure, user: Usuario) => {
 };
 
 const getNextEventForFining = async (procedure, client): Promise<object | string> => {
-  const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
+  const response = (await client.query(queries.GET_FINING_STATE, [procedure.idTramite])).rows[0];
   const nextEvent = fineEventHandler(procedure.sufijo, response.state);
   return nextEvent;
 };
@@ -192,7 +192,7 @@ const updateFining = switchcase({
 
 export const updateFiningHandler = async (procedure, user) => {
   const client = await pool.connect();
-  const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
+  const response = (await client.query(queries.GET_FINING_STATE, [procedure.idTramite])).rows[0];
   client.release();
   const newFiningState = updateFining(response.state);
   return newFiningState ? await newFiningState(procedure, user) : { status: 500, message: 'No es posible actualizar el estado del proceso de multa' };
