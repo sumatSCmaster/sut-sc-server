@@ -3283,7 +3283,6 @@ COPY public.campo (id_campo, nombre, tipo, validacion, col) FROM stdin;
 50	Numero de Bohío	number	numeroBohio	6
 51	Detalles del Bohío	string	detallesBohio	6
 52	Fecha del Apartado	date	fechaApartado	6
-53	Hora del Apartado	date	horaApartado	6
 \.
 
 
@@ -3474,9 +3473,11 @@ COPY public.campo_tramite (id_campo, id_tipo_tramite, orden, estado, id_seccion)
 10	18	3	iniciado	1
 11	18	4	iniciado	1
 50	18	3	iniciado	16
-51	18	4	iniciado	16
 52	18	1	iniciado	16
-53	18	2	iniciado	16
+51	18	4	iniciado	16
+51	18	2	enproceso	16
+52	18	3	enproceso	16
+50	18	1	enproceso	16
 \.
 
 
@@ -3514,6 +3515,10 @@ COPY public.cuenta_funcionario (id_usuario, id_institucion) FROM stdin;
 71	0
 72	4
 73	4
+75	5
+76	5
+77	7
+78	7
 \.
 
 
@@ -3586,6 +3591,8 @@ COPY public.institucion (id_institucion, nombre_completo, nombre_corto) FROM std
 3	Centro de Procesamiento Urbano	CPU
 4	Terminal de Pasajeros de Maracaibo	SEDETEMA
 5	Servicio Desconcentrado de Plazas y Parques	SEDEPAR
+6	Instituto Municipal de Ambiente	IMA
+7	Instituto Autónomo Policía del Municipio Maracaibo	PMM
 \.
 
 
@@ -3747,6 +3754,7 @@ COPY public.permiso_de_acceso (id_permiso, id_usuario, id_tipo_tramite) FROM std
 15	68	16
 16	71	0
 17	73	17
+18	75	18
 \.
 
 
@@ -3934,7 +3942,7 @@ COPY public.tipo_tramite (id_tipo_tramite, id_institucion, nombre_tramite, costo
 3	1	Instalacion de Plantas Electricas	\N	pd	Plantas Electricas	CBM-003	bomberos-solt	bomberos-cert-IPE	f	f	\N
 1	1	Cumplimiento de Normas Tecnicas	40000.0	pa	Normas Tecnicas	CBM-001	bomberos-solt	bomberos-cert-CCNT	t	t	0.2
 16	3	Solvencia de Inmuebles Urbanos	1200000	cr	SIU	CPU-OMCAT-002	cpu-solt-SIU	cpu-cert-SIU	f	t	6
-18	5	Apartado de Bohío	\N	pa	Apartado de Bohío	SEDEPAR-001	sedepar-solt-AB	sedepar-cert-AB	f	t	\N
+18	5	Apartado de Bohío	1000000	pa	Apartado de Bohío	SEDEPAR-001	sedepar-solt-AB	sedepar-cert-AB	f	t	5
 \.
 
 
@@ -4051,6 +4059,10 @@ COPY public.usuario (id_usuario, nombre_completo, nombre_de_usuario, direccion, 
 71	Funcionario Alcaldia	funcionario@alcaldia.com	Alcaldia	7878787855	V	3	$2a$10$4vosHs6BExfapyssBS5XUekAR9AUa2Be.mhjLuqqmr7i1aZCWUehu	7777777777
 72	Administrador Terminal	terminal@admin.com	Terminal	128488188	V	2	$2a$10$hIeSExSylu8RY2bVPk6dPeLzKIR7Wo0yNjvRyqxR/QwZqTYEEf4wq	1723817728
 73	Funcionario Terminal	funcionario@terminal.com	Terminal	1028124812	V	3	$2a$10$4oNhbsHJuAaFE.xY8bS1HOPakehWJmx6IkGbuaU57nBqro7iLsgg.	1092471093
+75	Funcionario SEDEPAR	funcionario@sedepar.com	SEDEPAR	1289417241	V	3	$2a$10$8.dFFea0jSaDPFYmH4GM9urNDgGy6SawTnqALfevVvQdzodEkR7fS	1974102937
+76	Administrador SEDEPAR	admin@sedepar.com	SEDEPAR	1294712034	V	2	$2a$10$mIBjS3jXMabi8XXohLECoeyKOUr.rZc8jlQXvdZcaSaZT88YLYLaG	8374198241
+77	Administrador Policia	admin@policia.com	Policia	1249712091	V	2	$2a$10$P.v8kW77Xzm1ecmVsuBVuu.5avlhiv8izDmK51hW2/Jj6q/j/beNi	1029471204
+78	Funcionario Policia	funcionario@policia.com	Policia	1293712049	V	3	$2a$10$e.DuvVSdwlr23z1I8B/STeX5V.8V3rhoeXgRWokiP.dEmf3A/eoPK	1927312029
 \.
 
 
@@ -6141,7 +6153,7 @@ SELECT pg_catalog.setval('public.eventos_casos_sociales_id_evento_caso_seq', 2, 
 -- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.eventos_tramite_id_evento_tramite_seq', 464, true);
+SELECT pg_catalog.setval('public.eventos_tramite_id_evento_tramite_seq', 469, true);
 
 
 --
@@ -6176,7 +6188,7 @@ SELECT pg_catalog.setval('public.instituciones_id_institucion_seq', 1, false);
 -- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.notificaciones_id_notificacion_seq', 95, true);
+SELECT pg_catalog.setval('public.notificaciones_id_notificacion_seq', 101, true);
 
 
 --
@@ -6211,7 +6223,7 @@ SELECT pg_catalog.setval('public.ordenanzas_tramites_id_ordenanza_tramite_seq', 
 -- Name: pagos_id_pago_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.pagos_id_pago_seq', 126, true);
+SELECT pg_catalog.setval('public.pagos_id_pago_seq', 128, true);
 
 
 --
@@ -6225,7 +6237,7 @@ SELECT pg_catalog.setval('public.parroquias_id_seq', 1, false);
 -- Name: permiso_de_acceso_id_permiso_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.permiso_de_acceso_id_permiso_seq', 17, true);
+SELECT pg_catalog.setval('public.permiso_de_acceso_id_permiso_seq', 18, true);
 
 
 --
@@ -6288,14 +6300,14 @@ SELECT pg_catalog.setval('public.tipos_usuarios_id_tipo_usuario_seq', 1, false);
 -- Name: tramites_id_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 211, true);
+SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 213, true);
 
 
 --
 -- Name: usuarios_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 73, true);
+SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 78, true);
 
 
 --
