@@ -1,21 +1,13 @@
 import { Router } from 'express';
-import {
-  getAvailableProcedures,
-  procedureInit,
-  getAvailableProceduresOfInstitution,
-  updateProcedureCost,
-  updateProcedureHandler,
-  createMockCertificate,
-} from '@helpers/procedures';
+import { getAvailableProcedures, procedureInit, getAvailableProceduresOfInstitution, updateProcedureCost, updateProcedureHandler } from '@helpers/procedures';
 import { validate, isOfficial, isExternalUser, isLogged, isAuth } from '@validations/auth';
 import { checkResult } from '@validations/index';
 import { authenticate } from 'passport';
-import { resolve } from 'path';
-import fs from 'fs';
 
 import { fulfill } from '@utils/resolver';
 
 import instances from './procedureInstances';
+import { createMockCertificate } from '@utils/forms';
 
 const router = Router();
 

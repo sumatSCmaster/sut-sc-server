@@ -2,6 +2,7 @@ import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { errorMessageGenerator } from './errors';
 import { validateProcedure } from './procedures';
+import { validateFining } from './fines';
 const pool = Pool.getInstance();
 
 export const getAllBanks = async () => {
@@ -45,7 +46,7 @@ export const validatePayments = async (body, user) => {
           fechaDeAprobacion: el.fechadeaprobacion,
           tipoTramite: el.tipotramite,
         };
-        await validateProcedure(pagoValidado, user);
+        el.sufijo !== 'ml' ? await validateProcedure(pagoValidado, user) : await validateFining(pagoValidado, user);
         return pagoValidado;
       })
     );

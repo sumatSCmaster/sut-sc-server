@@ -3,15 +3,11 @@ import queries from '@utils/queries';
 import { Institucion, TipoTramite, Campo, Tramite, Usuario } from '@interfaces/sigt';
 import { errorMessageGenerator } from './errors';
 import { insertPaymentReference } from './banks';
-import MailEmitter from './events/procedureUpdateState';
 import { PoolClient } from 'pg';
-import { createForm } from './formsHelper';
 import switchcase from '@utils/switch';
-import { renderFile } from 'pug';
-import { resolve } from 'path';
-import * as pdf from 'html-pdf';
-import * as qr from 'qrcode';
 import { sendNotification } from './notification';
+import { sendEmail } from './events/procedureUpdateState';
+import { createRequestForm, createCertificate } from '@utils/forms';
 
 const pool = Pool.getInstance();
 
@@ -74,7 +70,8 @@ export const getAvailableProceduresOfInstitution = async (req: {
 
 const getProcedureInstances = async (user, client: PoolClient) => {
   try {
-    let response = ( //TODO: corregir el handler para que no sea tan forzado
+    let response = //TODO: corregir el handler para que no sea tan forzado
+    (
       await procedureInstanceHandler(
         user.institucion && user.institucion.id === 0 ? 0 : user.institucion && user.institucion.nombreCorto === 'SEDETEMA' ? 6 : user.tipoUsuario,
         user.tipoUsuario !== 4 ? (user.institucion ? user.institucion.id : 0) : user.id,
@@ -237,7 +234,7 @@ const getSectionByProcedure = async (procedure, client: PoolClient): Promise<Tip
           nombreCorto: el.nombrecorto,
           id: el.id,
           fisico: el.fisico,
-          obligatorio: el.obligatorio
+          obligatorio: el.obligatorio,
         };
       });
       return tramite;
@@ -639,90 +636,6 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
   }
 };
 
-const createRequestForm = async (procedure, client: PoolClient): Promise<string> => {
-  const tramite = (
-    await client.query(
-      'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
-      [procedure.idTramite]
-    )
-  ).rows[0];
-  const procedureData = {
-    id: procedure.idTramite,
-    fecha: tramite.fechacreacion,
-    codigo: tramite.codigotramite,
-    formato: tramite.formato,
-    tramite: tramite.nombretramitelargo,
-    institucion: tramite.nombrecorto,
-    datos: tramite.datos,
-    estado: tramite.state,
-    tipoTramite: tramite.tipotramite,
-  };
-  const form = (await createForm(procedureData, client)) as string;
-  return form;
-};
-
-const createCertificate = async (procedure, client: PoolClient): Promise<string> => {
-  const tramite = (
-    await client.query(
-      'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
-      [procedure.idTramite]
-    )
-  ).rows[0];
-  const procedureData = {
-    id: procedure.idTramite,
-    fecha: tramite.fechacreacion,
-    codigo: tramite.codigotramite,
-    formato: tramite.formato,
-    tramite: tramite.nombretramitelargo,
-    institucion: tramite.nombrecorto,
-    datos: procedure.datos || tramite.datos,
-    estado: 'finalizado',
-    tipoTramite: tramite.tipotramite,
-  };
-  const form = (await createForm(procedureData, client)) as string;
-  return form;
-};
-
-export const createMockCertificate = async (procedure) => {
-  const client = await pool.connect();
-  try {
-    const tramite = (
-      await client.query(
-        'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado as formatoCertificado FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
-        [procedure]
-      )
-    ).rows[0];
-    const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${tramite.id}`, { errorCorrectionLevel: 'H' });
-    const datosCertificado = {
-      id: tramite.id,
-      fecha: tramite.fechacreacion,
-      codigo: tramite.codigotramite,
-      formato: tramite.formato,
-      tramite: tramite.nombretramitelargo,
-      institucion: tramite.nombrecorto,
-      datos: tramite.datos,
-      estado: 'finalizado',
-      tipoTramite: tramite.tipotramite,
-      certificado: tramite.formatocertificado,
-    };
-    const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
-      ...datosCertificado,
-      cache: false,
-      moment: require('moment'),
-      QR: linkQr,
-    });
-    return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
-  } catch (error) {
-    throw {
-      status: 500,
-      error,
-      message: errorMessageGenerator(error) || 'Error al crear el certificado',
-    };
-  } finally {
-    client.release();
-  }
-};
-
 const insertOrdinancesByProcedure = async (ordinances, id, type, client: PoolClient) => {
   return Promise.all(
     ordinances.map(async (el, key) => {
@@ -755,18 +668,6 @@ const insertOrdinancesByProcedure = async (ordinances, id, type, client: PoolCli
       return ordinance;
     })
   );
-};
-
-const sendEmail = (procedure) => {
-  const mailData = {
-    codigoTramite: procedure.codigoTramite,
-    emailUsuario: procedure.nombreUsuario,
-    nombreCompletoUsuario: procedure.nombreCompletoUsuario,
-    nombreTipoTramite: procedure.nombreTramiteLargo,
-    nombreCortoInstitucion: procedure.nombreCorto,
-    status: procedure.estado,
-  };
-  MailEmitter.emit('procedureEventUpdated', mailData);
 };
 
 const getNextEventForProcedure = async (procedure, client): Promise<any> => {
