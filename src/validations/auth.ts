@@ -339,6 +339,12 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('La fecha para apartar no puede ser vacia'),
+  numeroBohioFunc: check('tramite.datos.numeroBohioFunc')
+    .exists()
+    .withMessage('Debe incluir el numero de bohio')
+    .isInt()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir un numero de bohio valido'),
 };
 
 export const createSuperuser = [
