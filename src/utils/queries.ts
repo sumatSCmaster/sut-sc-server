@@ -437,6 +437,16 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     'UPDATE operatividad_terminal SET habilitado = false WHERE id_operatividad_terminal = $1 RETURNING id_operatividad_terminal AS id, destino, tipo, monto, tasa, habilitado, monto_calculado AS "montoCalculado"',
   INCREASE_TERMINAL_DESTINATION_COSTS:
     'UPDATE operatividad_terminal SET monto = monto * $1 RETURNING id_operatividad_terminal AS id, destino, tipo, monto, tasa, habilitado, monto_calculado AS "montoCalculado"',
+  //Multa
+  GET_ALL_FINES: 
+    'SELECT * FROM multa_state ORDER BY fechacreacion;',
+  GET_FINES_DIRECTOR_OR_ADMIN:
+    'SELECT * FROM multa_state WHERE nombrelargo = $1 ORDER BY fechacreacion;',
+  GET_FINES_OFFICIAL:
+    "SELECT * FROM multa_state WHERE nombrelargo = $1 AND state != 'validando' ORDER BY fechacreacion;",
+  GET_FINES_EXTERNAL_USER:
+    "SELECT * FROM multa_state WHERE cedula = $1 AND nacionalidad = $2;"
+  
 };
 
 export default queries;
