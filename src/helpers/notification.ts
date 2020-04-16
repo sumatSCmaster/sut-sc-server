@@ -5,6 +5,7 @@ import twilio from 'twilio';
 import { Notificacion, Tramite } from '@root/interfaces/sigt';
 import { errorMessageGenerator } from './errors';
 import { PoolClient } from 'pg';
+import switchcase from '@utils/switch';
 
 const pool = Pool.getInstance();
 const users = getUsers();
@@ -74,7 +75,7 @@ export const markAllAsRead = async (id: string): Promise<object> => {
 export const sendNotification = async (sender: string, description: string, type: string, payload: Partial<Tramite>) => {
   const client = await pool.connect();
   try {
-    type === 'CREATE' ? broadcastByExternalUser(sender, description, payload, client) : broadcastByOfficial(sender, description, payload, client);
+    notificationHandler(type, sender, description, payload, client);
   } catch (e) {
     throw e;
   }
@@ -181,6 +182,20 @@ const formatNotification = (sender: string, receiver: string | null, description
     status: notification.status,
     fechaCreacion: notification.fechaCreacion,
   };
+};
+
+//TODO: MUST BE FIXED, create methods for social case and fining
+const notificationTypes = switchcase({
+  CREATE_PROCEDURE: broadcastByExternalUser,
+  UPDATE_PROCEDURE: broadcastByOfficial,
+  CREATE_SOCIAL_AFFAIR: broadcastByOfficial,
+  UPDATE_SOCIAL_AFFAIR: broadcastByOfficial,
+  CREATE_FINING: broadcastByOfficial,
+  UPDATE_FINING: broadcastByExternalUser,
+})(null);
+
+const notificationHandler = async (sender: string, description: string, type: string, payload: Partial<Tramite>, client: PoolClient) => {
+  return await notificationTypes(type)(sender, description, payload, client);
 };
 
 // export const sendWhatsAppNotification = async (body: string) => {
