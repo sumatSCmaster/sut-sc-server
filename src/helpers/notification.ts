@@ -72,16 +72,16 @@ export const markAllAsRead = async (id: string): Promise<object> => {
 
 //TODO: validar el estado para ver a quien le van a llegar las notificaciones.
 //      Ademas, verificar por que no estan llegando todas las notificaciones
-export const sendNotification = async (sender: string, description: string, type: string, payload: Partial<Tramite | Multa>) => {
+export const sendNotification = async (sender: string, description: string, type: string, concept: string, payload: Partial<Tramite | Multa>) => {
   const client = await pool.connect();
   try {
-    notificationHandler(type, sender, description, payload, client);
+    notificationHandler(type, sender, description, payload, concept, client);
   } catch (e) {
     throw e;
   }
 };
 
-const broadcastByExternalUser = async (sender: string, description: string, payload: Partial<Tramite>, client: PoolClient) => {
+const broadcastByExternalUser = async (sender: string, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient) => {
   const socket = users.get(sender);
   try {
     client.query('BEGIN');
@@ -91,7 +91,7 @@ const broadcastByExternalUser = async (sender: string, description: string, payl
 
     const notification = await Promise.all(
       superuser.map(async (el) => {
-        const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado])).rows[0];
+        const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado, concept])).rows[0];
         const notification = (await client.query(queries.GET_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
         const formattedNotif = formatNotification(sender, notification.receptor, description, payload, notification);
         return formattedNotif;
@@ -99,13 +99,13 @@ const broadcastByExternalUser = async (sender: string, description: string, payl
     );
 
     await Promise.all(
-      admins.map(async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado])).rows[0])
+      admins.map(async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado, concept])).rows[0])
     );
 
     if (payload.estado === 'enproceso') {
       await Promise.all(
         permittedOfficials.map(
-          async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado])).rows[0]
+          async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado, concept])).rows[0]
         )
       );
       socket?.to(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
@@ -122,7 +122,7 @@ const broadcastByExternalUser = async (sender: string, description: string, payl
   }
 };
 
-const broadcastByOfficial = async (sender: string, description: string, payload: Partial<Tramite>, client: PoolClient) => {
+const broadcastByOfficial = async (sender: string, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient) => {
   const io = getIo();
   try {
     client.query('BEGIN');
@@ -134,7 +134,7 @@ const broadcastByOfficial = async (sender: string, description: string, payload:
     const notification = await Promise.all(
       user.map(async (el) => {
         const userDesc = description.replace('un', 'su');
-        const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, userDesc, payload.estado])).rows[0];
+        const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, userDesc, payload.estado, concept])).rows[0];
         const notification = (await client.query(queries.GET_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
         const formattedNotif = formatNotification(sender, notification.receptor, userDesc, payload, notification);
         const userSocket = users.get(el.cedula);
@@ -145,17 +145,19 @@ const broadcastByOfficial = async (sender: string, description: string, payload:
     );
 
     await Promise.all(
-      superuser.map(async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado])).rows[0])
+      superuser.map(
+        async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado, concept])).rows[0]
+      )
     );
 
     await Promise.all(
-      admins.map(async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado])).rows[0])
+      admins.map(async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado, concept])).rows[0])
     );
 
     if (payload.estado === 'enproceso') {
       await Promise.all(
         permittedOfficials.map(
-          async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado])).rows[0]
+          async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado, concept])).rows[0]
         )
       );
       io.in(`tram:${payload.tipoTramite}`).emit('UPDATE_PROCEDURE', payload);
@@ -200,7 +202,14 @@ const notificationTypes = switchcase({
   UPDATE_FINING: broadcastByExternalUser,
 })(null);
 
-const notificationHandler = async (sender: string, description: string, type: string, payload: Partial<Tramite | Multa>, client: PoolClient) => {
+const notificationHandler = async (
+  sender: string,
+  description: string,
+  type: string,
+  payload: Partial<Tramite | Multa>,
+  concept: string,
+  client: PoolClient
+) => {
   const notificationSender = notificationTypes(type);
   try {
     if (notificationSender) return await notificationSender(sender, description, payload, client);
