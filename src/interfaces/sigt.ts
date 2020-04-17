@@ -115,7 +115,7 @@ export interface Multa {
   datos: object;
   costo: number;
   fechaCreacion: Date;
-  codigoTramite: string;
+  codigoMulta: string;
   usuario: Usuario;
   tipoTramite: number;
   consecutivo?: number;
