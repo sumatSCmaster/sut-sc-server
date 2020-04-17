@@ -45,8 +45,16 @@ export const finingInit = async (procedure, user: Usuario) => {
     };
     client.query('COMMIT');
 
-    sendEmail({ ...multa, nombreUsuario: user.nombreUsuario, nombreCompletoUsuario: user.nombreCompleto, estado: respState.rows[0].state });
-    // sendNotification(user, `Se le ha asignado una multa al titular de la cédula ${multa.nacionalidad}-${multa.nacionalidad}`, 'CREATE_FINING', 'MULTA', multa);
+    const userExists = (await client.query(queries.CHECK_IF_USER_EXISTS, [multa.cedula, multa.nacionalidad])).rows;
+    if (userExists.length > 0) {
+      sendEmail({
+        ...multa,
+        nombreUsuario: userExists[0].nombre_de_usuario,
+        nombreCompletoUsuario: userExists[0].nombre_completo,
+        estado: respState.rows[0].state,
+      });
+    }
+    sendNotification(user, `Se le ha asignado una multa al titular de la cédula ${multa.nacionalidad}-${multa.nacionalidad}`, 'CREATE_FINING', 'MULTA', multa);
 
     return {
       status: 201,
@@ -106,8 +114,22 @@ const addPaymentFining = async (procedure, user: Usuario) => {
       cedula: response.cedula,
       nacionalidad: response.nacionalidad,
     };
-    sendEmail({ ...multa, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
-    // sendNotification(user, `Se añadieron los datos de pago para una multa asignada al titular de la cédula ${multa.nacionalidad}-${multa.nacionalidad}`, 'UPDATE_FINING', 'MULTA', multa);
+    const userExists = (await client.query(queries.CHECK_IF_USER_EXISTS, [multa.cedula, multa.nacionalidad])).rows;
+    if (userExists.length > 0) {
+      sendEmail({
+        ...multa,
+        nombreUsuario: userExists[0].nombre_de_usuario,
+        nombreCompletoUsuario: userExists[0].nombre_completo,
+        estado: respState.rows[0].state,
+      });
+    }
+    sendNotification(
+      user,
+      `Se añadieron los datos de pago para una multa asignada al titular de la cédula ${multa.nacionalidad}-${multa.nacionalidad}`,
+      'UPDATE_FINING',
+      'MULTA',
+      multa
+    );
     return { status: 200, message: 'Datos de pago para multa insertados', multa };
   } catch (error) {
     client.query('ROLLBACK');
@@ -165,8 +187,22 @@ export const validateFining = async (procedure, user: Usuario) => {
       cedula: response.cedula,
       nacionalidad: response.nacionalidad,
     };
-    sendEmail({ ...multa, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
-    // sendNotification(user, `Se ha validado el pago de una multa asignada al titular de la cédula ${multa.nacionalidad}-${multa.nacionalidad}`, 'UPDATE_FINING', 'MULTA', multa);
+    const userExists = (await client.query(queries.CHECK_IF_USER_EXISTS, [multa.cedula, multa.nacionalidad])).rows;
+    if (userExists.length > 0) {
+      sendEmail({
+        ...multa,
+        nombreUsuario: userExists[0].nombre_de_usuario,
+        nombreCompletoUsuario: userExists[0].nombre_completo,
+        estado: respState.rows[0].state,
+      });
+    }
+    sendNotification(
+      user,
+      `Se ha validado el pago de una multa asignada al titular de la cédula ${multa.nacionalidad}-${multa.nacionalidad}`,
+      'UPDATE_FINING',
+      'MULTA',
+      multa
+    );
     return { status: 200, message: 'Pago de multa validado', multa };
   } catch (error) {
     client.query('ROLLBACK');

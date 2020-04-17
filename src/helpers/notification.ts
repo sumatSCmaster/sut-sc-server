@@ -333,7 +333,7 @@ const broadcastForFiningInit = async (sender: Usuario, description: string, payl
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
   try {
     client.query('BEGIN');
-    const user = (await client.query(queries.GET_PROCEDURE_CREATOR, [payload.usuario])).rows;
+    const user = [{ nacionalidad: payload.nacionalidad, cedula: payload.cedula }];
     const admins = (await client.query(queries.GET_NON_NORMAL_OFFICIALS, [payload.nombreCorto])).rows;
     const superuser = (await client.query(queries.GET_SUPER_USER)).rows;
     const permittedOfficials = (await client.query(queries.GET_OFFICIALS_FOR_PROCEDURE, [payload.nombreCorto, payload.tipoTramite])).rows;
@@ -400,15 +400,15 @@ const broadcastForFiningUpdate = async (sender: Usuario, description: string, pa
 
   try {
     client.query('BEGIN');
-    const user = (await client.query(queries.GET_PROCEDURE_CREATOR, [payload.usuario])).rows;
+    const user = (await client.query(queries.GET_FINING_TARGET, [payload.id])).rows;
     const admins = (await client.query(queries.GET_NON_NORMAL_OFFICIALS, [payload.nombreCorto])).rows;
     const superuser = (await client.query(queries.GET_SUPER_USER)).rows;
     const permittedOfficials = (await client.query(queries.GET_OFFICIALS_FOR_PROCEDURE, [payload.nombreCorto, payload.tipoTramite])).rows;
 
-    if (payload.estado !== 'ingresardatos') {
+    if (payload.estado !== 'ingresardatos' && emisor !== `${user[0].nacionalidad}-${user[0].cedula}`) {
       await Promise.all(
         user.map(async (el) => {
-          const userDesc = description.replace('un', 'su');
+          const userDesc = `${description} por la institucion ${payload.nombreLargo}`;
           const result = (
             await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, userDesc, payload.estado, concept])
           ).rows[0];
