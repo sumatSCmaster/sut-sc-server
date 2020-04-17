@@ -109,6 +109,26 @@ export interface Tramite {
   bill: any;
 }
 
+export interface Multa {
+  id: number;
+  estado: string;
+  datos: object;
+  costo: number;
+  fechaCreacion: Date;
+  codigoTramite: string;
+  usuario: Usuario;
+  tipoTramite: number;
+  consecutivo?: number;
+  nombreLargo: string;
+  nombreCorto: string;
+  nombreTramiteLargo: string;
+  nombreTramiteCorto: string;
+  fechaCulminacion: Date;
+  boleta: string;
+  certificado: string | null;
+  aprobado: boolean;
+}
+
 export interface Inmueble {
   id: number;
   codCatastral: string;

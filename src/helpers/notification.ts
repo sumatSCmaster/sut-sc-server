@@ -2,7 +2,7 @@ import Pool from '@utils/Pool';
 import queries from '../utils/queries';
 import { getUsers, getIo } from '@config/socket';
 import twilio from 'twilio';
-import { Notificacion, Tramite } from '@root/interfaces/sigt';
+import { Notificacion, Tramite, Multa } from '@root/interfaces/sigt';
 import { errorMessageGenerator } from './errors';
 import { PoolClient } from 'pg';
 import switchcase from '@utils/switch';
@@ -72,7 +72,7 @@ export const markAllAsRead = async (id: string): Promise<object> => {
 
 //TODO: validar el estado para ver a quien le van a llegar las notificaciones.
 //      Ademas, verificar por que no estan llegando todas las notificaciones
-export const sendNotification = async (sender: string, description: string, type: string, payload: Partial<Tramite>) => {
+export const sendNotification = async (sender: string, description: string, type: string, payload: Partial<Tramite | Multa>) => {
   const client = await pool.connect();
   try {
     notificationHandler(type, sender, description, payload, client);
@@ -172,7 +172,13 @@ const broadcastByOfficial = async (sender: string, description: string, payload:
   }
 };
 
-const formatNotification = (sender: string, receiver: string | null, description: string, payload: Partial<Tramite>, notification: any): Notificacion => {
+const formatNotification = (
+  sender: string,
+  receiver: string | null,
+  description: string,
+  payload: Partial<Tramite | Multa>,
+  notification: any
+): Notificacion => {
   return {
     id: notification.id,
     emisor: sender,
@@ -194,7 +200,7 @@ const notificationTypes = switchcase({
   UPDATE_FINING: broadcastByExternalUser,
 })(null);
 
-const notificationHandler = async (sender: string, description: string, type: string, payload: Partial<Tramite>, client: PoolClient) => {
+const notificationHandler = async (sender: string, description: string, type: string, payload: Partial<Tramite | Multa>, client: PoolClient) => {
   const notificationSender = notificationTypes(type);
   try {
     if (notificationSender) return await notificationSender(sender, description, payload, client);

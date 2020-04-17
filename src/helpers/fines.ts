@@ -1,22 +1,20 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
-import { Institucion, TipoTramite, Tramite, Usuario } from '@interfaces/sigt';
+import { Institucion, TipoTramite, Usuario, Multa } from '@interfaces/sigt';
 import { errorMessageGenerator } from './errors';
 import switchcase from '@utils/switch';
 import { sendNotification } from './notification';
-import { PoolClient } from 'pg';
 import { sendEmail } from './events/procedureUpdateState';
 import { insertPaymentReference } from './banks';
-import { createFiningForm, createFiningCertificate } from '@utils/forms';
+import { createFiningCertificate } from '@utils/forms';
 const pool = Pool.getInstance();
 
 export const finingInit = async (procedure, user: Usuario) => {
   const client = await pool.connect();
   const { tipoTramite, datos, monto } = procedure;
-  let costo, respState, dir, cert;
+  let costo, respState;
   try {
     client.query('BEGIN');
-    dir = null;
     const response = (
       await client.query(queries.FINING_INIT, [tipoTramite, JSON.stringify({ usuario: datos }), procedure.nacionalidad, procedure.cedula, user.id])
     ).rows[0];
@@ -25,17 +23,13 @@ export const finingInit = async (procedure, user: Usuario) => {
     response.sufijo = resources.sufijo;
     costo = resources.sufijo === 'ml' ? monto || resources.costo_base : null;
     const nextEvent = await getNextEventForFining(response, client);
-    const hasRequestForm = (await client.query('SELECT planilla FROM tipo_tramite WHERE id_tipo_tramite = $1', [response.tipotramite])).rows[0].planilla;
-    if (hasRequestForm) {
-      dir = await createFiningForm(response, client);
-    }
-    respState = await client.query(queries.UPDATE_FINING, [response.id, nextEvent, null, costo, dir]);
-    const tramite: Partial<Tramite & { boleta: string }> = {
+
+    respState = await client.query(queries.UPDATE_FINING, [response.id, nextEvent, null, costo, null]);
+    const multa: Partial<Multa> = {
       id: response.id,
       tipoTramite: response.tipotramite,
       estado: respState.rows[0].state,
       datos: response.datos,
-      boleta: dir,
       costo,
       fechaCreacion: response.fechacreacion,
       fechaCulminacion: response.fechaculminacion,
@@ -49,20 +43,20 @@ export const finingInit = async (procedure, user: Usuario) => {
     };
     client.query('COMMIT');
 
-    sendEmail({ ...tramite, nombreUsuario: user.nombreUsuario, nombreCompletoUsuario: user.nombreCompleto, estado: respState.rows[0].state });
+    sendEmail({ ...multa, nombreUsuario: user.nombreUsuario, nombreCompletoUsuario: user.nombreCompleto, estado: respState.rows[0].state });
     // sendNotification(user.cedula, `Un trámite de tipo ${tramite.nombreTramiteLargo} ha sido creado`, 'CREATE_FINING', tramite);
 
     return {
       status: 201,
-      message: 'Tramite iniciado!',
-      tramite,
+      message: 'Multa asignada!',
+      multa,
     };
   } catch (error) {
     client.query('ROLLBACK');
     throw {
       status: 500,
       ...error,
-      message: errorMessageGenerator(error) || error.message || 'Error al iniciar el tramite',
+      message: errorMessageGenerator(error) || error.message || 'Error al asignar una multa',
     };
   } finally {
     client.release();
@@ -90,7 +84,7 @@ const addPaymentFining = async (procedure, user: Usuario) => {
     const respState = await client.query(queries.UPDATE_FINING, [procedure.idTramite, nextEvent, null, procedure.costo || null, null]);
     const response = (await client.query(queries.GET_FINING_BY_ID, [procedure.idTramite])).rows[0];
     client.query('COMMIT');
-    const tramite: Partial<Tramite & { boleta: string }> = {
+    const multa: Partial<Multa> = {
       id: response.id,
       tipoTramite: response.tipotramite,
       estado: response.state,
@@ -108,9 +102,9 @@ const addPaymentFining = async (procedure, user: Usuario) => {
       nombreTramiteCorto: response.nombretramitecorto,
       aprobado: response.aprobado,
     };
-    sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
+    sendEmail({ ...multa, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
     // sendNotification(user.cedula, `Se añadieron los datos de pago de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_FINING', tramite);
-    return { status: 200, message: 'Trámite actualizado', tramite };
+    return { status: 200, message: 'Trámite actualizado', multa };
   } catch (error) {
     client.query('ROLLBACK');
     throw {
@@ -147,7 +141,7 @@ export const validateFining = async (procedure, user: Usuario) => {
     }
     const response = (await client.query(queries.GET_FINING_BY_ID, [procedure.idTramite])).rows[0];
     client.query('COMMIT');
-    const tramite: Partial<Tramite & { boleta: string }> = {
+    const multa: Partial<Multa> = {
       id: response.id,
       tipoTramite: response.tipotramite,
       estado: response.state,
@@ -165,9 +159,9 @@ export const validateFining = async (procedure, user: Usuario) => {
       nombreTramiteCorto: response.nombretramitecorto,
       aprobado: response.aprobado,
     };
-    sendEmail({ ...tramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
+    sendEmail({ ...multa, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
     // sendNotification(user.cedula, `Se ha validado el pago de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_FINING', tramite);
-    return { status: 200, message: 'Trámite actualizado', tramite };
+    return { status: 200, message: 'Trámite actualizado', multa };
   } catch (error) {
     client.query('ROLLBACK');
     console.log(error);

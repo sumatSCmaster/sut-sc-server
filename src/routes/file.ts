@@ -34,6 +34,12 @@ const uploadFile = (req, res, next) => {
         fileFilter: photoFilter,
       }).array('media')(req, res, next);
       break;
+    case 'finings':
+      multer({
+        storage: diskStorage('tramites/' + req.params.id),
+        fileFilter: photoFilter,
+      }).array('recaudos')(req, res, next);
+      break;
     default:
       res.status(500).json({
         status: 500,
@@ -60,6 +66,17 @@ router.post('/:type/:id?', uploadFile, async (req: any, res) => {
       await Promise.all(
         media.map(async (urlRecaudo) => {
           await client.query(queries.INSERT_TAKINGS_IN_PROCEDURE, [procedure.id, urlRecaudo]);
+        })
+      );
+      client.query('COMMIT');
+    }
+
+    if (media.length > 0 && type === 'finings') {
+      const fining = (await client.query('SELECT id FROM multa_state WHERE codigomulta=$1', [id])).rows[0];
+      client.query('BEGIN');
+      await Promise.all(
+        media.map(async (urlRecaudo) => {
+          await client.query('UPDATE multa SET url_boleta =$1 WHERE id_multa = $2', [urlRecaudo, fining.id]);
         })
       );
       client.query('COMMIT');
