@@ -154,6 +154,40 @@ BEGIN
 
 
 --
+-- Name: codigo_multa(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.codigo_multa() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+ DECLARE
+     valor int;
+     nombre_inst text;
+BEGIN
+     SELECT COALESCE(MAX(consecutivo) + 1, 1) INTO NEW.consecutivo
+     FROM public.multa t
+     WHERE t.id_tipo_tramite = NEW.id_tipo_tramite
+     AND CURRENT_DATE = DATE(t.fecha_creacion);
+
+     SELECT i.nombre_corto INTO nombre_inst
+     FROM public.institucion i -- mirmachiti
+     INNER JOIN public.tipo_tramite tt ON tt.id_institucion = i.id_institucion
+     WHERE tt.id_tipo_tramite = NEW.id_tipo_tramite;
+
+     NEW.codigo_multa = nombre_inst || '-'
+     || to_char(current_date, 'DDMMYYYY') || '-'
+     || (NEW.id_tipo_tramite)::TEXT || '-'
+     || lpad((NEW.consecutivo)::text, 4, '0');
+
+     RAISE NOTICE '% % % %', nombre_inst, to_char(current_date, 'DDMMYYYY'), (NEW.id_tipo_tramite)::TEXT, lpad((NEW.consecutivo)::text, 4, '0'); 
+     RETURN NEW;                                                                                                                                 
+
+
+ END;
+$$;
+
+
+--
 -- Name: codigo_tramite(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -185,6 +219,29 @@ BEGIN
     
 
 END;
+$$;
+
+
+--
+-- Name: complete_multa_state(integer, text, json, character varying, boolean); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.complete_multa_state(_id_multa integer, event text, _datos json DEFAULT NULL::json, _url_certificado character varying DEFAULT NULL::character varying, _aprobado boolean DEFAULT NULL::boolean) RETURNS TABLE(state text)
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+        INSERT INTO evento_multa values (default, _id_multa, event, now());
+        RETURN QUERY SELECT multa_state.state FROM multa_state WHERE id = _id_multa;
+        IF _datos IS NOT NULL THEN
+                    UPDATE multa SET datos = _datos WHERE id_multa = _id_multa;
+                            END IF;
+        IF _url_certificado IS NOT NULL THEN
+                    UPDATE multa SET url_certificado = _url_certificado WHERE id_multa = _id_multa;
+                            END IF;
+        IF _aprobado IS NOT NULL THEN
+                    UPDATE multa SET aprobado = _aprobado WHERE id_multa = _id_multa;
+                            END IF;
+    END;
 $$;
 
 
@@ -254,6 +311,33 @@ BEGIN
     SELECT id_evento_caso, event FROM evento_caso_social WHERE id_caso = new.id_caso
     UNION
     SELECT new.id_evento_caso, new.event
+  ) s
+  INTO new_state;
+
+  IF new_state = 'error' THEN
+    RAISE EXCEPTION 'evento invalido';
+  END IF;
+
+  RETURN new;
+END
+$$;
+
+
+--
+-- Name: eventos_multa_trigger_func(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.eventos_multa_trigger_func() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  new_state text;
+BEGIN
+  SELECT public.multa_fsm(event ORDER BY id_evento_multa)
+  FROM (
+    SELECT id_evento_multa, event FROM evento_multa WHERE id_multa = new.id_multa
+    UNION
+    SELECT new.id_evento_multa, new.event
   ) s
   INTO new_state;
 
@@ -415,6 +499,137 @@ DECLARE
                     RETURN;
                     END;
                     $$;
+
+
+--
+-- Name: multa_transicion(text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.multa_transicion(state text, event text) RETURNS text
+    LANGUAGE sql
+    AS $$
+    SELECT CASE state
+        WHEN 'creado' THEN
+            CASE event
+                WHEN 'iniciar' THEN 'iniciado' 
+                ELSE 'error' -- siuuuu
+            END 
+        WHEN 'iniciado' THEN
+            CASE event
+                WHEN 'ingresardatos_ml' THEN 'ingresardatos'
+                ELSE 'error'
+            END
+        WHEN 'ingresardatos' THEN
+            CASE event
+                WHEN 'validar_ml' THEN 'validando'
+                ELSE 'error'
+            END
+        WHEN 'validando' THEN
+            CASE event
+                WHEN 'finalizar_ml' THEN 'finalizado'
+                ELSE 'error'
+            END
+        ELSE 'error' -- hmmmmmm
+    END -- yaaaaaaaaaaaaaaaaaaa
+$$;
+
+
+--
+-- Name: multa_fsm(text); Type: AGGREGATE; Schema: public; Owner: -
+--
+
+CREATE AGGREGATE public.multa_fsm(text) (
+    SFUNC = public.multa_transicion,
+    STYPE = text,
+    INITCOND = 'creado'
+);
+
+
+--
+-- Name: evento_multa; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.evento_multa (
+    id_evento_multa integer NOT NULL,
+    id_multa integer NOT NULL,
+    event character varying NOT NULL,
+    "time" timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+--
+-- Name: multa; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.multa (
+    id_multa integer NOT NULL,
+    id_tipo_tramite integer NOT NULL,
+    datos json,
+    costo numeric,
+    fecha_creacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    codigo_multa character varying,
+    consecutivo integer,
+    id_usuario integer,
+    cedula bigint,
+    nacionalidad character(1),
+    url_certificado character varying,
+    aprobado boolean DEFAULT false,
+    url_boleta character varying,
+    CONSTRAINT multa_nacionalidad_check CHECK ((nacionalidad = ANY (ARRAY['V'::bpchar, 'E'::bpchar])))
+);
+
+
+--
+-- Name: multa_state; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.multa_state AS
+ SELECT m.id_multa AS id,
+    m.datos,
+    m.id_tipo_tramite AS tipotramite,
+    m.costo,
+    m.fecha_creacion AS fechacreacion,
+    m.codigo_multa AS codigomulta,
+    m.url_certificado AS urlcertificado,
+    m.url_boleta AS urlboleta,
+    m.id_usuario AS usuario,
+    m.cedula,
+    m.nacionalidad,
+    m.aprobado,
+    tt.nombre_tramite AS nombretramitelargo,
+    tt.nombre_corto AS nombretramitecorto,
+    ev.state,
+    i.nombre_completo AS nombrelargo,
+    i.nombre_corto AS nombrecorto
+   FROM (((public.multa m
+     JOIN public.tipo_tramite tt ON ((m.id_tipo_tramite = tt.id_tipo_tramite)))
+     JOIN public.institucion i ON ((i.id_institucion = tt.id_institucion)))
+     JOIN ( SELECT evento_multa.id_multa,
+            public.multa_fsm((evento_multa.event)::text ORDER BY evento_multa.id_evento_multa) AS state
+           FROM public.evento_multa
+          GROUP BY evento_multa.id_multa) ev ON ((m.id_multa = ev.id_multa)));
+
+
+--
+-- Name: insert_multa(integer, json, character varying, bigint, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.insert_multa(_id_tipo_tramite integer, datos json, _nacionalidad character varying, _cedula bigint, _id_usuario integer) RETURNS SETOF public.multa_state
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    multa multa%ROWTYPE;
+	response multa_state%ROWTYPE;
+    BEGIN
+        INSERT INTO multa (id_tipo_tramite, datos, nacionalidad, cedula, id_usuario) VALUES (_id_tipo_tramite, datos, _nacionalidad, _cedula, _id_usuario) RETURNING * into multa;
+        
+        INSERT INTO evento_multa values (default, multa.id_multa, 'iniciar', now());
+            
+        RETURN QUERY SELECT * FROM multa_state WHERE id=multa.id_multa ORDER BY multa_state.fechacreacion;
+                
+        RETURN;
+    END;
+$$;
 
 
 --
@@ -630,6 +845,50 @@ CREATE FUNCTION public.update_caso_state(_id_caso integer, event text, _datos js
 
 
 --
+-- Name: update_multa_state(integer, text, json); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.update_multa_state(_id_multa integer, event text, _datos json DEFAULT NULL::json) RETURNS TABLE(state text)
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+        INSERT INTO evento_multa values (default, _id_multa, event, now());
+          
+        RETURN QUERY SELECT multa_state.state FROM multa_state WHERE id = _id_multa;
+                  
+        IF _datos IS NOT NULL THEN
+            UPDATE multa SET datos = _datos WHERE id_multa = _id_multa;
+        END IF;
+    END;
+$$;
+
+
+--
+-- Name: update_multa_state(integer, text, json, numeric, character varying); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.update_multa_state(_id_multa integer, event text, _datos json DEFAULT NULL::json, _costo numeric DEFAULT NULL::numeric, _url_boleta character varying DEFAULT NULL::character varying) RETURNS TABLE(state text)
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+        INSERT INTO evento_multa values (default, _id_multa, event, now());
+          
+        RETURN QUERY SELECT multa_state.state FROM multa_state WHERE id = _id_multa;
+                  
+        IF _datos IS NOT NULL THEN
+            UPDATE multa SET datos = _datos WHERE id_multa = _id_multa;
+        END IF;
+        IF _costo IS NOT NULL THEN
+            UPDATE multa SET costo = _costo WHERE id_multa = _id_multa;
+        END IF;
+        IF _url_boleta IS NOT NULL THEN
+            UPDATE multa SET url_boleta = _url_boleta WHERE id_multa = _id_multa;
+        END IF;
+    END;
+$$;
+
+
+--
 -- Name: update_tramite_state(integer, text, json, numeric, character varying); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -661,49 +920,60 @@ CREATE FUNCTION public.update_tramite_state(_id_tramite integer, event text, _da
 CREATE FUNCTION public.validate_payments(inputcsvjson jsonb, OUT outputjson jsonb) RETURNS jsonb
     LANGUAGE plpgsql
     AS $$
-    DECLARE
-      inputData jsonb;
-        inputRow jsonb;
-          inputBanco int;
-            idPago int;
-              dataPago jsonb;
-                jsonArray jsonb[];
-                  BEGIN
-                    inputData := inputCsvJson->'data';
-                      inputBanco := (inputCsvJson->>'bank')::int;
-                        
-                          jsonArray := ARRAY[]::jsonb[];
-                            
-                              --Iterar json 
-                                FOR inputRow IN
-                                      SELECT jsonb_array_elements FROM jsonb_array_elements(inputData)
-                                            LOOP
-                                                  --Validacion de pago por banco,fecha,monto,fecha_de_pago,aprobado
-                                                        --Obtiene el id del pago
-                                                              SELECT id_pago::int into idPago FROM pago
-                                                                    WHERE aprobado = false
-                                                                          AND id_banco = inputBanco
-                                                                                AND referencia = (inputRow ->> 'Referencia') 
-                                                                                      AND monto = (inputRow ->> 'Monto')::numeric
-                                                                                            AND fecha_de_pago = (inputRow ->> 'Fecha')::timestamptz;
-                                                                                                  
-                                                                                                        IF idPago IS NOT NULL THEN
-                                                                                                              --aprueba el pago y guarda el momento en que se aprobo el pago
-                                                                                                                        UPDATE pago SET aprobado = true, fecha_de_aprobacion = (SELECT NOW()::timestamptz) WHERE id_pago = idPago;
-                                                                                                                                  --obtiene el resultado del row y lo convierte en json 
-                                                                                                                                            select row_to_json(row)::jsonb into dataPago from (select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, pago.id_tramite AS idTramite, pago.referencia, pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, tramite.codigo_tramite AS codigoTramite, tipo_tramite.sufijo AS sufijo, tipo_tramite.id_tipo_tramite AS tipotramite  from pago 
-                                                                                                                                                      INNER JOIN tramite ON pago.id_tramite = tramite.id_tramite 
-                                                                                                                                                                INNER JOIN tipo_tramite ON tipo_tramite.id_tipo_tramite = tramite.id_tipo_tramite where pago.id_pago = idPago) row;
-                                                                                                                                                                          --agrega el json de la row y lo almacena en el array
-                                                                                                                                                                                    jsonArray := array_append(jsonArray, dataPago);   
-                                                                                                                                                                                              END IF;
-                                                                                                                                                                                                        
-                                                                                                                                                                                                                  END LOOP;
-                                                                                                                                                                                                                            --devuelve el array de json
-                                                                                                                                                                                                                                      outputJson := jsonb_build_object('data', jsonArray);
-                                                                                                                                                                                                                                                RETURN;
-                                                                                                                                                                                                                                                          END;
-                                                                                                                                                                                                                                                                    $$;
+DECLARE
+    inputData jsonb;
+    inputRow jsonb;
+    inputBanco int;
+    idPago int;
+    dataPago jsonb;
+    jsonArray jsonb[];
+BEGIN
+    inputData := inputCsvJson->'data';
+    inputBanco := (inputCsvJson->>'bank')::int;
+
+    jsonArray := ARRAY[]::jsonb[];
+
+    --Iterar json 
+    FOR inputRow IN
+        SELECT jsonb_array_elements FROM jsonb_array_elements(inputData)
+    LOOP
+    --Validacion de pago por banco,fecha,monto,fecha_de_pago,aprobado
+    --Obtiene el id del pago
+        SELECT id_pago::int into idPago FROM pago
+        WHERE aprobado = false
+        AND id_banco = inputBanco
+        AND referencia = (inputRow ->> 'Referencia') 
+        AND monto = (inputRow ->> 'Monto')::numeric
+        AND fecha_de_pago = (inputRow ->> 'Fecha')::timestamptz;
+
+        IF idPago IS NOT NULL THEN
+            --aprueba el pago y guarda el momento en que se aprobo el pago
+            UPDATE pago SET aprobado = true, fecha_de_aprobacion = (SELECT NOW()::timestamptz) WHERE id_pago = idPago;
+
+            --obtiene el resultado del row y lo convierte en json 
+            IF (SELECT concepto FROM pago WHERE id_pago = idPago) = 'TRAMITE' THEN
+                select row_to_json(row)::jsonb into dataPago from (select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, pago.id_procedimiento AS idProcedimiento, pago.referencia, pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, tramite.codigo_tramite AS codigoTramite, tipo_tramite.sufijo AS sufijo, tipo_tramite.id_tipo_tramite AS tipotramite  from pago 
+                INNER JOIN tramite ON pago.id_procedimiento = tramite.id_tramite 
+                INNER JOIN tipo_tramite ON tipo_tramite.id_tipo_tramite = tramite.id_tipo_tramite where pago.id_pago = idPago) row;
+            END IF;
+
+            IF (SELECT concepto FROM pago WHERE id_pago = idPago) = 'MULTA' THEN
+                select row_to_json(row)::jsonb into dataPago from (select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, pago.id_procedimiento AS idProcedimiento, pago.referencia, pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, multa.codigo_multa AS codigoMulta, tipo_tramite.sufijo AS sufijo, tipo_tramite.id_tipo_tramite AS tipotramite  from pago 
+                INNER JOIN multa ON pago.id_procedimiento = multa.id_multa 
+                INNER JOIN tipo_tramite ON tipo_tramite.id_tipo_tramite = multa.id_tipo_tramite where pago.id_pago = idPago) row;
+            END IF;
+            
+            
+            --agrega el json de la row y lo almacena en el array
+            jsonArray := array_append(jsonArray, dataPago);   
+        END IF;
+
+    END LOOP;
+    --devuelve el array de json
+    outputJson := jsonb_build_object('data', jsonArray);
+    RETURN;
+END;
+$$;
 
 
 --
@@ -1531,6 +1801,26 @@ ALTER SEQUENCE public.detalles_facturas_id_detalle_seq OWNED BY public.detalle_f
 
 
 --
+-- Name: evento_multa_id_evento_multa_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.evento_multa_id_evento_multa_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: evento_multa_id_evento_multa_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.evento_multa_id_evento_multa_seq OWNED BY public.evento_multa.id_evento_multa;
+
+
+--
 -- Name: eventos_casos_sociales_id_evento_caso_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -1722,26 +2012,83 @@ ALTER SEQUENCE public.instituciones_id_institucion_seq OWNED BY public.instituci
 
 
 --
+-- Name: multa_id_multa_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.multa_id_multa_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: multa_id_multa_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.multa_id_multa_seq OWNED BY public.multa.id_multa;
+
+
+--
 -- Name: notificacion; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.notificacion (
     id_notificacion integer NOT NULL,
-    id_tramite integer,
+    id_procedimiento integer,
     emisor character varying,
     receptor character varying,
     descripcion character varying,
     status boolean,
     fecha timestamp with time zone,
-    estado character varying
+    estado character varying,
+    concepto character varying DEFAULT 'TRAMITE'::character varying,
+    CONSTRAINT notificacion_concepto_check CHECK (((concepto)::text = ANY (ARRAY['TRAMITE'::text, 'MULTA'::text]))),
+    CONSTRAINT notificacion_concepto_check1 CHECK (((concepto)::text = ANY (ARRAY['TRAMITE'::text, 'MULTA'::text]))),
+    CONSTRAINT notificacion_concepto_check2 CHECK (((concepto)::text = ANY (ARRAY['TRAMITE'::text, 'MULTA'::text])))
 );
 
 
 --
--- Name: notificacion_view; Type: VIEW; Schema: public; Owner: -
+-- Name: notificacion_multa_view; Type: VIEW; Schema: public; Owner: -
 --
 
-CREATE VIEW public.notificacion_view AS
+CREATE VIEW public.notificacion_multa_view AS
+ SELECT n.id_notificacion AS id,
+    n.descripcion,
+    n.status,
+    n.fecha AS "fechaCreacion",
+    n.emisor,
+    n.receptor,
+    n.estado AS "estadoNotificacion",
+    m.id AS "idMulta",
+    m.datos,
+    m.tipotramite AS "tipoTramite",
+    m.costo,
+    m.fechacreacion AS "fechaCreacionTramite",
+    m.codigomulta AS "codigoMulta",
+    m.urlcertificado AS certificado,
+    m.urlboleta AS boleta,
+    m.usuario,
+    m.cedula,
+    m.nacionalidad,
+    m.nombrecorto AS "nombreCorto",
+    m.nombrelargo AS "nombreLargo",
+    m.nombretramitecorto AS "nombreTramiteCorto",
+    m.nombretramitelargo AS "nombreTramiteLargo",
+    m.state AS estado,
+    m.aprobado
+   FROM (public.notificacion n
+     JOIN public.multa_state m ON ((n.id_procedimiento = m.id)));
+
+
+--
+-- Name: notificacion_tramite_view; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.notificacion_tramite_view AS
  SELECT n.id_notificacion AS id,
     n.descripcion,
     n.status,
@@ -1766,7 +2113,7 @@ CREATE VIEW public.notificacion_view AS
     t.aprobado,
     t."pagoPrevio"
    FROM (public.notificacion n
-     JOIN public.tramites_state_with_resources t ON ((n.id_tramite = t.id)));
+     JOIN public.tramites_state_with_resources t ON ((n.id_procedimiento = t.id)));
 
 
 --
@@ -1954,13 +2301,16 @@ ALTER SEQUENCE public.ordenanzas_tramites_id_ordenanza_tramite_seq OWNED BY publ
 
 CREATE TABLE public.pago (
     id_pago integer NOT NULL,
-    id_tramite integer,
+    id_procedimiento integer,
     referencia character varying,
     monto numeric,
     fecha_de_pago date,
     aprobado boolean DEFAULT false,
     id_banco integer,
-    fecha_de_aprobacion timestamp with time zone
+    fecha_de_aprobacion timestamp with time zone,
+    concepto character varying DEFAULT 'TRAMITE'::character varying,
+    CONSTRAINT pago_concepto_check CHECK (((concepto)::text = ANY (ARRAY['TRAMITE'::text, 'MULTA'::text]))),
+    CONSTRAINT pago_concepto_check1 CHECK (((concepto)::text = ANY (ARRAY['TRAMITE'::text, 'MULTA'::text])))
 );
 
 
@@ -2973,6 +3323,13 @@ ALTER TABLE ONLY public.evento_caso_social ALTER COLUMN id_evento_caso SET DEFAU
 
 
 --
+-- Name: evento_multa id_evento_multa; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.evento_multa ALTER COLUMN id_evento_multa SET DEFAULT nextval('public.evento_multa_id_evento_multa_seq'::regclass);
+
+
+--
 -- Name: evento_tramite id_evento_tramite; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3005,6 +3362,13 @@ ALTER TABLE ONLY public.institucion ALTER COLUMN id_institucion SET DEFAULT next
 --
 
 ALTER TABLE ONLY public.institucion_banco ALTER COLUMN id_institucion_banco SET DEFAULT nextval('public.instituciones_bancos_id_instituciones_bancos_seq'::regclass);
+
+
+--
+-- Name: multa id_multa; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.multa ALTER COLUMN id_multa SET DEFAULT nextval('public.multa_id_multa_seq'::regclass);
 
 
 --
@@ -3519,6 +3883,8 @@ COPY public.cuenta_funcionario (id_usuario, id_institucion) FROM stdin;
 76	5
 77	7
 78	7
+79	6
+80	6
 \.
 
 
@@ -3552,6 +3918,14 @@ COPY public.detalle_factura (id_detalle, id_factura, nombre, costo) FROM stdin;
 
 COPY public.evento_caso_social (id_evento_caso, id_caso, event, "time") FROM stdin;
 2	2	iniciar	2020-04-02 20:34:14.992725-04
+\.
+
+
+--
+-- Data for Name: evento_multa; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.evento_multa (id_evento_multa, id_multa, event, "time") FROM stdin;
 \.
 
 
@@ -3611,10 +3985,18 @@ COPY public.institucion_banco (id_institucion_banco, id_institucion, id_banco, n
 
 
 --
+-- Data for Name: multa; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.multa (id_multa, id_tipo_tramite, datos, costo, fecha_creacion, codigo_multa, consecutivo, id_usuario, cedula, nacionalidad, url_certificado, aprobado, url_boleta) FROM stdin;
+\.
+
+
+--
 -- Data for Name: notificacion; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.notificacion (id_notificacion, id_tramite, emisor, receptor, descripcion, status, fecha, estado) FROM stdin;
+COPY public.notificacion (id_notificacion, id_procedimiento, emisor, receptor, descripcion, status, fecha, estado, concepto) FROM stdin;
 \.
 
 
@@ -3696,7 +4078,7 @@ COPY public.ordenanza_tramite (id_ordenanza_tramite, id_tramite, id_tarifa, utmm
 -- Data for Name: pago; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.pago (id_pago, id_tramite, referencia, monto, fecha_de_pago, aprobado, id_banco, fecha_de_aprobacion) FROM stdin;
+COPY public.pago (id_pago, id_procedimiento, referencia, monto, fecha_de_pago, aprobado, id_banco, fecha_de_aprobacion, concepto) FROM stdin;
 \.
 
 
@@ -3943,6 +4325,8 @@ COPY public.tipo_tramite (id_tipo_tramite, id_institucion, nombre_tramite, costo
 1	1	Cumplimiento de Normas Tecnicas	40000.0	pa	Normas Tecnicas	CBM-001	bomberos-solt	bomberos-cert-CCNT	t	t	0.2
 16	3	Solvencia de Inmuebles Urbanos	1200000	cr	SIU	CPU-OMCAT-002	cpu-solt-SIU	cpu-cert-SIU	f	t	6
 18	5	Apartado de Bohío	1000000	pa	Apartado de Bohío	SEDEPAR-001	sedepar-solt-AB	sedepar-cert-AB	f	t	5
+19	6	Multa	\N	ml	Multa	IMA-001	\N	ima-fine-solv	f	f	\N
+20	7	Multa	\N	ml	Multa	PMM-001	\N	pmm-fine-solv	f	f	\N
 \.
 
 
@@ -4063,6 +4447,8 @@ COPY public.usuario (id_usuario, nombre_completo, nombre_de_usuario, direccion, 
 76	Administrador SEDEPAR	admin@sedepar.com	SEDEPAR	1294712034	V	2	$2a$10$mIBjS3jXMabi8XXohLECoeyKOUr.rZc8jlQXvdZcaSaZT88YLYLaG	8374198241
 77	Administrador Policia	admin@policia.com	Policia	1249712091	V	2	$2a$10$P.v8kW77Xzm1ecmVsuBVuu.5avlhiv8izDmK51hW2/Jj6q/j/beNi	1029471204
 78	Funcionario Policia	funcionario@policia.com	Policia	1293712049	V	3	$2a$10$e.DuvVSdwlr23z1I8B/STeX5V.8V3rhoeXgRWokiP.dEmf3A/eoPK	1927312029
+79	Administrador IMA	admin@ima.com	IMA	1028310919	V	2	$2a$10$I2NhOoazRC2gF0pIdzNXrumPh0soj/9/KDA5dx1RqDNrow1fNzsbG	1923109472
+80	Funcionario IMA	funcionario@ima.com	IMA	1231740197	V	3	$2a$10$eAu/NEg9vEd5nKXbjSyemODqqLt2J1nO4joWhwbDpZopJAj7N0ZSW	1902741092
 \.
 
 
@@ -6143,6 +6529,13 @@ SELECT pg_catalog.setval('public.detalles_facturas_id_detalle_seq', 1, false);
 
 
 --
+-- Name: evento_multa_id_evento_multa_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.evento_multa_id_evento_multa_seq', 10, true);
+
+
+--
 -- Name: eventos_casos_sociales_id_evento_caso_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
@@ -6185,10 +6578,17 @@ SELECT pg_catalog.setval('public.instituciones_id_institucion_seq', 1, false);
 
 
 --
+-- Name: multa_id_multa_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.multa_id_multa_seq', 5, true);
+
+
+--
 -- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.notificaciones_id_notificacion_seq', 101, true);
+SELECT pg_catalog.setval('public.notificaciones_id_notificacion_seq', 104, true);
 
 
 --
@@ -6307,7 +6707,7 @@ SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 213, true);
 -- Name: usuarios_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 78, true);
+SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 80, true);
 
 
 --
@@ -6472,6 +6872,14 @@ ALTER TABLE ONLY public.datos_google
 
 
 --
+-- Name: evento_multa evento_multa_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.evento_multa
+    ADD CONSTRAINT evento_multa_pkey PRIMARY KEY (id_evento_multa);
+
+
+--
 -- Name: evento_tramite eventos_tramite_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6517,6 +6925,14 @@ ALTER TABLE ONLY public.institucion_banco
 
 ALTER TABLE ONLY public.institucion
     ADD CONSTRAINT instituciones_pkey PRIMARY KEY (id_institucion);
+
+
+--
+-- Name: multa multa_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.multa
+    ADD CONSTRAINT multa_pkey PRIMARY KEY (id_multa);
 
 
 --
@@ -6878,10 +7294,24 @@ CREATE TRIGGER codigos_casos_sociales_trigger BEFORE INSERT ON public.caso_socia
 
 
 --
+-- Name: multa codigos_multas_trigger; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER codigos_multas_trigger BEFORE INSERT ON public.multa FOR EACH ROW EXECUTE FUNCTION public.codigo_multa();
+
+
+--
 -- Name: evento_caso_social eventos_casos_sociales_trigger; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER eventos_casos_sociales_trigger BEFORE INSERT ON public.evento_caso_social FOR EACH ROW EXECUTE FUNCTION public.eventos_casos_sociales_trigger_func();
+
+
+--
+-- Name: evento_multa eventos_multa_trigger; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER eventos_multa_trigger BEFORE INSERT ON public.evento_multa FOR EACH ROW EXECUTE FUNCTION public.eventos_multa_trigger_func();
 
 
 --
@@ -6994,6 +7424,14 @@ ALTER TABLE ONLY public.detalle_factura
 
 
 --
+-- Name: evento_multa evento_multa_id_multa_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.evento_multa
+    ADD CONSTRAINT evento_multa_id_multa_fkey FOREIGN KEY (id_multa) REFERENCES public.multa(id_multa);
+
+
+--
 -- Name: evento_tramite eventos_tramite_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7034,11 +7472,19 @@ ALTER TABLE ONLY public.institucion_banco
 
 
 --
--- Name: notificacion notificaciones_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: multa multa_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.notificacion
-    ADD CONSTRAINT notificaciones_id_tramite_fkey FOREIGN KEY (id_tramite) REFERENCES public.tramite(id_tramite);
+ALTER TABLE ONLY public.multa
+    ADD CONSTRAINT multa_id_tipo_tramite_fkey FOREIGN KEY (id_tipo_tramite) REFERENCES public.tipo_tramite(id_tipo_tramite);
+
+
+--
+-- Name: multa multa_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.multa
+    ADD CONSTRAINT multa_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuario(id_usuario);
 
 
 --
@@ -7071,14 +7517,6 @@ ALTER TABLE ONLY public.ordenanza_tramite
 
 ALTER TABLE ONLY public.pago
     ADD CONSTRAINT pagos_id_banco_fkey FOREIGN KEY (id_banco) REFERENCES public.banco(id_banco);
-
-
---
--- Name: pago pagos_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.pago
-    ADD CONSTRAINT pagos_id_tramite_fkey FOREIGN KEY (id_tramite) REFERENCES public.tramite(id_tramite);
 
 
 --
