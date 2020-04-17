@@ -14,10 +14,10 @@ export const getNotifications = async (user: Usuario): Promise<Notificacion[] | 
   const client = await pool.connect();
   try {
     const id = `${user.nacionalidad}-${user.cedula}`;
-    const response = (await client.query(queries.GET_NOTIFICATIONS_FOR_USER, [id])).rows;
-    const notificaciones = await Promise.all(
-      response.map(async (el) => {
-        // const ordinances = (await client.query(queries.ORDINANCES_PROCEDURE_INSTANCES, [el.idTramite])).rows;
+    const respTramites = (await client.query(queries.GET_NOTIFICATIONS_FOR_USER, [id])).rows;
+    const respMultas = (await client.query(queries.GET_NOTIFICATIONS_FOR_USER, [id])).rows;
+    const tramites = await Promise.all(
+      respTramites.map(async (el) => {
         const tramite: Partial<Tramite> = {
           id: el.idTramite,
           tipoTramite: el.tipoTramite,
@@ -43,6 +43,36 @@ export const getNotifications = async (user: Usuario): Promise<Notificacion[] | 
         return formatNotification(el.emisor, el.receptor, el.descripcion, tramite, notificacion);
       })
     );
+
+    const multas = await Promise.all(
+      respMultas.map(async (el) => {
+        const multa: Partial<Multa> = {
+          id: el.idMulta,
+          tipoTramite: el.tipoTramite,
+          codigoMulta: el.codigoMulta,
+          costo: el.costo,
+          nombreCorto: el.nombreCorto,
+          nombreLargo: el.nombreLargo,
+          nombreTramiteCorto: el.nombreTramiteCorto,
+          nombreTramiteLargo: el.nombreTramiteLargo,
+          datos: el.datos,
+          fechaCreacion: el.fechaCreacionTramite,
+          usuario: el.usuario,
+          boleta: el.boleta,
+          certificado: el.certificado,
+          estado: el.estadoNotificacion,
+          aprobado: el.aprobado,
+        };
+        const notificacion = {
+          id: el.id,
+          status: el.status,
+          fechaCreacion: el.fechaCreacion,
+        };
+        return formatNotification(el.emisor, el.receptor, el.descripcion, multa, notificacion);
+      })
+    );
+
+    const notificaciones = [...tramites, ...multas].sort((a, b) => (a.fechaCreacion === b.fechaCreacion ? 0 : a.fechaCreacion > b.fechaCreacion ? -1 : 1));
     return { status: 200, message: 'Notificaciones retornadas de manera satisfactoria', notificaciones };
   } catch (error) {
     throw {
