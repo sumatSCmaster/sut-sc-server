@@ -1,0 +1,56 @@
+extends default
+ 
+block content
+ div#fecha
+   p
+     b FECHA:
+     span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+   p
+     b Código de Trámite:
+     span &nbsp; #{codigo}
+ div#planilla
+    // FIXME: Cambiar la estructura a la correcta
+   div
+     h2 CONSTANCIA DE PAGO DE MULTA
+   div.ticket(style={'margin':'2% 7.5%', 'border': '2px solid #3387ca'})
+     h2(style={'margin':'0', 'padding-left': '20px', 'padding-top': '20px', 'text-align':'start'})  Ciudadano:
+     div.ticket-data
+       div
+         p
+           b Nombre:
+           | #{datos.nombreORazon}
+         p
+           b Cedula:
+           | #{datos.cedulaORif}
+       div(style={'margin-left':'5%'})
+         p
+           b Correo:
+           | #{datos.correo}
+         p
+           b Teléfono:
+           | #{datos.telefono}
+      div(style={flex: '0.5', 'text-align': 'center'})
+        img#QR(src=QR)           
+   div           
+     div(style={'font-size':'20px', 'font-weight':'bold'}).row-constancy
+       div(style={'flex':'3', 'text-align':'start', }) Descripción
+       div(style={'flex':'1', 'text-align':'center'}) Fecha
+       div(style={'flex':'1', 'text-align':'center'}) Monto (UTMM)
+       div(style={'flex':'1', 'text-align':'center'}) Monto (Bs)
+     hr.divider
+     each multa in multas
+       div.row-constancy
+         div(style={'flex':'3', 'text-align':'start' }) #{multa.descripcion}
+         div(style={'flex':'1', 'text-align':'center' }) #{multa.fecha}
+         div(style={'flex':'1', 'text-align':'center' }) #{multa.utmm}
+         div(style={'flex':'1', 'text-align':'center' }) #{multa.bs}    
+     div.row-constancy
+       div(style={'flex':'4', 'text-align':'start' }) Total
+       div(style={'flex':'1', 'text-align':'center' }) #{datos.totalUtmm}
+       div(style={'flex':'1', 'text-align':'center' }) #{datos.totalBs}
+ 
+ div(style={'text-align':'start', 'width': '90%'})
+   p
+     b Nota:
+     |El precio de la Unidad Tributaria Municipal de Maracaibo (UTMM) es de X bs.
+
