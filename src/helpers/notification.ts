@@ -101,8 +101,6 @@ export const markAllAsRead = async (user: Usuario): Promise<object> => {
   }
 };
 
-//TODO: validar el estado para ver a quien le van a llegar las notificaciones.
-//      Ademas, verificar por que no estan llegando todas las notificaciones
 export const sendNotification = async (sender: Usuario, description: string, type: string, concept: string, payload: Partial<Tramite | Multa>) => {
   const client = await pool.connect();
   try {
@@ -113,7 +111,7 @@ export const sendNotification = async (sender: Usuario, description: string, typ
 };
 
 const broadcastForProcedureInit = async (sender: Usuario, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient) => {
-  const socket = users.get(sender.cedula);
+  const socket = users.get(`${sender.nacionalidad}-${sender.cedula}`);
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
 
   try {
