@@ -5,6 +5,7 @@ import { Strategy as Local, VerifyFunction } from 'passport-local';
 import { getUserByUsername, comparePassword, verifyExternalUser, initialExtUserSignUp, getByOAuthID } from '@helpers/user';
 import { encode } from 'jwt-simple';
 import { Usuario, TipoUsuario } from '@interfaces/sigt';
+import { hasNotifications } from '@helpers/user'
 
 const optJwt = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -36,6 +37,9 @@ const GoogleStrategy = new Google(optGoogle, async (accessToken, refreshToken, p
   }
   if (request?.data.length > 0) {
     const exists = await verifyExternalUser(request?.data[0].id_usuario);
+    if(exists){
+      exists.hasNewNotifications = await hasNotifications(exists.cedula);
+    }
     return exists
       ? done(null, {
           ...exists,
@@ -52,6 +56,7 @@ const GoogleStrategy = new Google(optGoogle, async (accessToken, refreshToken, p
   };
 
   request = await initialExtUserSignUp(googleOpts);
+  request.hasNewNotifications = await hasNotifications(request.cedula);
   if (request) {
     return done(null, { ...request, nombreUsuario: googleOpts.email });
   } else {
@@ -66,6 +71,9 @@ const FacebookStrategy = new Facebook(optFacebook, async (accessToken, refreshTo
   }
   if (request?.data.length > 0) {
     const exists = await verifyExternalUser(request?.data[0].id_usuario);
+    if(exists){
+      exists.hasNewNotifications = await hasNotifications(exists.cedula);
+    }
     return exists ? done(null, exists) : done(null);
   }
 
@@ -76,6 +84,7 @@ const FacebookStrategy = new Facebook(optFacebook, async (accessToken, refreshTo
   };
 
   request = await initialExtUserSignUp(facebookOpts);
+  request.hasNewNotifications = await hasNotifications(request.cedula);
   if (request) {
     return done(null, request);
   } else {
@@ -99,11 +108,11 @@ const verifyLocal: VerifyFunction = async (username: string, password: string, d
       });
     }
 
-    // const newNotifications = await hasNotifications(user.cedula);
+    const newNotifications = await hasNotifications(user.cedula);
     return done(null, {
       ...user,
       password: undefined,
-      // hasNewNotifications: newNotifications
+      hasNewNotifications: newNotifications
     });
   } else {
     return done(null, false, { message: 'Usuario/Contraseña invalida' });
