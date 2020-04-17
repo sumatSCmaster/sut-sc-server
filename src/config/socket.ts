@@ -25,9 +25,9 @@ const connection = (socket: Socket) => {
       });
     }
 
-    users.set(user.cedula, socket);
+    users.set(`${user.nacionalidad}-${user.cedula}`, socket);
     socket.on('disconnect', () => {
-      users.delete(user.cedula);
+      users.delete(`${user.nacionalidad}-${user.cedula}`);
       socket.leaveAll();
     });
   } catch (e) {

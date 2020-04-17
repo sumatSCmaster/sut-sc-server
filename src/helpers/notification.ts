@@ -10,9 +10,10 @@ import switchcase from '@utils/switch';
 const pool = Pool.getInstance();
 const users = getUsers();
 
-export const getNotifications = async (id: string): Promise<Notificacion[] | any> => {
+export const getNotifications = async (user: Usuario): Promise<Notificacion[] | any> => {
   const client = await pool.connect();
   try {
+    const id = `${user.nacionalidad}-${user.cedula}`;
     const response = (await client.query(queries.GET_NOTIFICATIONS_FOR_USER, [id])).rows;
     const notificaciones = await Promise.all(
       response.map(async (el) => {
@@ -83,6 +84,8 @@ export const sendNotification = async (sender: Usuario, description: string, typ
 
 const broadcastForProcedureInit = async (sender: Usuario, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient) => {
   const socket = users.get(sender.cedula);
+  const emisor = `${sender.nacionalidad}-${sender.cedula}`;
+
   try {
     client.query('BEGIN');
     const admins = (await client.query(queries.GET_NON_NORMAL_OFFICIALS, [payload.nombreCorto])).rows;
@@ -91,23 +94,29 @@ const broadcastForProcedureInit = async (sender: Usuario, description: string, p
 
     const notification = await Promise.all(
       superuser.map(async (el) => {
-        const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender.cedula, el.cedula, description, payload.estado, concept])).rows[0];
+        const result = (
+          await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
+        ).rows[0];
         const notification = (await client.query(queries.GET_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
-        const formattedNotif = formatNotification(sender, notification.receptor, description, payload, notification);
+        const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
         return formattedNotif;
       })
     );
 
     await Promise.all(
       admins.map(
-        async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender.cedula, el.cedula, description, payload.estado, concept])).rows[0]
+        async (el) =>
+          (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
+            .rows[0]
       )
     );
 
     if (payload.estado === 'enproceso') {
       await Promise.all(
         permittedOfficials.map(
-          async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender.cedula, el.cedula, description, payload.estado, concept])).rows[0]
+          async (el) =>
+            (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
+              .rows[0]
         )
       );
       socket?.to(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
@@ -126,6 +135,8 @@ const broadcastForProcedureInit = async (sender: Usuario, description: string, p
 
 const broadcastForProcedureUpdate = async (sender: Usuario, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient) => {
   const io = getIo();
+  const emisor = `${sender.nacionalidad}-${sender.cedula}`;
+
   try {
     client.query('BEGIN');
     const user = (await client.query(queries.GET_PROCEDURE_CREATOR, [payload.usuario])).rows;
@@ -133,35 +144,46 @@ const broadcastForProcedureUpdate = async (sender: Usuario, description: string,
     const superuser = (await client.query(queries.GET_SUPER_USER)).rows;
     const permittedOfficials = (await client.query(queries.GET_OFFICIALS_FOR_PROCEDURE, [payload.nombreCorto, payload.tipoTramite])).rows;
 
-    const notification = await Promise.all(
+    await Promise.all(
       user.map(async (el) => {
         const userDesc = description.replace('un', 'su');
-        const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender.cedula, el.cedula, userDesc, payload.estado, concept])).rows[0];
+        const result = (
+          await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, userDesc, payload.estado, concept])
+        ).rows[0];
         const notification = (await client.query(queries.GET_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
-        const formattedNotif = formatNotification(sender, notification.receptor, userDesc, payload, notification);
-        const userSocket = users.get(el.cedula);
+        const formattedNotif = formatNotification(emisor, notification.receptor, userDesc, payload, notification);
+        const userSocket = users.get(`${el.nacionalidad}-${el.cedula}`);
         userSocket?.emit('SEND_NOTIFICATION', formattedNotif);
         userSocket?.emit('UPDATE_PROCEDURE', payload);
         return formattedNotif;
       })
     );
 
-    await Promise.all(
-      superuser.map(
-        async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender.cedula, el.cedula, description, payload.estado, concept])).rows[0]
-      )
+    const notification = await Promise.all(
+      superuser.map(async (el) => {
+        const result = (
+          await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
+        ).rows[0];
+        const notification = (await client.query(queries.GET_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
+        const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
+        return formattedNotif;
+      })
     );
 
     await Promise.all(
       admins.map(
-        async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender.cedula, el.cedula, description, payload.estado, concept])).rows[0]
+        async (el) =>
+          (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
+            .rows[0]
       )
     );
 
     if (payload.estado === 'enproceso') {
       await Promise.all(
         permittedOfficials.map(
-          async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender.cedula, el.cedula, description, payload.estado, concept])).rows[0]
+          async (el) =>
+            (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
+              .rows[0]
         )
       );
       io.in(`tram:${payload.tipoTramite}`).emit('UPDATE_PROCEDURE', payload);
@@ -180,6 +202,8 @@ const broadcastForProcedureUpdate = async (sender: Usuario, description: string,
 
 const broadcastForAffairInit = async (sender: Usuario, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient) => {
   const io = getIo();
+  const emisor = `${sender.nacionalidad}-${sender.cedula}`;
+
   try {
     client.query('BEGIN');
     const admins = (await client.query(queries.GET_NON_NORMAL_OFFICIALS, [payload.nombreCorto])).rows;
@@ -187,20 +211,29 @@ const broadcastForAffairInit = async (sender: Usuario, description: string, payl
     const permittedOfficials = (await client.query(queries.GET_OFFICIALS_FOR_PROCEDURE, [payload.nombreCorto, payload.tipoTramite])).rows;
 
     const notification = await Promise.all(
-      superuser.map(
-        async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender.cedula, el.cedula, description, payload.estado, concept])).rows[0]
-      )
+      superuser.map(async (el) => {
+        const result = (
+          await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
+        ).rows[0];
+        const notification = (await client.query(queries.GET_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
+        const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
+        return formattedNotif;
+      })
     );
 
     await Promise.all(
       admins.map(
-        async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender.cedula, el.cedula, description, payload.estado, concept])).rows[0]
+        async (el) =>
+          (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
+            .rows[0]
       )
     );
 
     await Promise.all(
       permittedOfficials.map(
-        async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender.cedula, el.cedula, description, payload.estado, concept])).rows[0]
+        async (el) =>
+          (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
+            .rows[0]
       )
     );
     io.in(`tram:${payload.tipoTramite}`).emit('CREATE_PROCEDURE', payload);
@@ -218,6 +251,8 @@ const broadcastForAffairInit = async (sender: Usuario, description: string, payl
 
 const broadcastForAffairUpdate = async (sender: Usuario, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient) => {
   const io = getIo();
+  const emisor = `${sender.nacionalidad}-${sender.cedula}`;
+
   try {
     client.query('BEGIN');
     const admins = (await client.query(queries.GET_NON_NORMAL_OFFICIALS, [payload.nombreCorto])).rows;
@@ -225,20 +260,29 @@ const broadcastForAffairUpdate = async (sender: Usuario, description: string, pa
     const permittedOfficials = (await client.query(queries.GET_OFFICIALS_FOR_PROCEDURE, [payload.nombreCorto, payload.tipoTramite])).rows;
 
     const notification = await Promise.all(
-      superuser.map(
-        async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender.cedula, el.cedula, description, payload.estado, concept])).rows[0]
-      )
+      superuser.map(async (el) => {
+        const result = (
+          await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
+        ).rows[0];
+        const notification = (await client.query(queries.GET_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
+        const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
+        return formattedNotif;
+      })
     );
 
     await Promise.all(
       admins.map(
-        async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender.cedula, el.cedula, description, payload.estado, concept])).rows[0]
+        async (el) =>
+          (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
+            .rows[0]
       )
     );
 
     await Promise.all(
       permittedOfficials.map(
-        async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender.cedula, el.cedula, description, payload.estado, concept])).rows[0]
+        async (el) =>
+          (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
+            .rows[0]
       )
     );
     io.in(`tram:${payload.tipoTramite}`).emit('UPDATE_PROCEDURE', payload);
@@ -256,6 +300,7 @@ const broadcastForAffairUpdate = async (sender: Usuario, description: string, pa
 
 const broadcastForFiningInit = async (sender: Usuario, description: string, payload: Partial<Multa>, concept: string, client: PoolClient) => {
   const io = getIo();
+  const emisor = `${sender.nacionalidad}-${sender.cedula}`;
   try {
     client.query('BEGIN');
     const user = (await client.query(queries.GET_PROCEDURE_CREATOR, [payload.usuario])).rows;
@@ -263,41 +308,54 @@ const broadcastForFiningInit = async (sender: Usuario, description: string, payl
     const superuser = (await client.query(queries.GET_SUPER_USER)).rows;
     const permittedOfficials = (await client.query(queries.GET_OFFICIALS_FOR_PROCEDURE, [payload.nombreCorto, payload.tipoTramite])).rows;
 
-    const notification = await Promise.all(
+    await Promise.all(
       user.map(async (el) => {
         const userDesc = description.replace('un', 'su');
-        const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, userDesc, payload.estado, concept])).rows[0];
+        const result = (
+          await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, userDesc, payload.estado, concept])
+        ).rows[0];
         const notification = (await client.query(queries.GET_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
-        const formattedNotif = formatNotification(sender, notification.receptor, userDesc, payload, notification);
-        const userSocket = users.get(el.cedula);
+        const formattedNotif = formatNotification(emisor, notification.receptor, userDesc, payload, notification);
+        const userSocket = users.get(`${el.nacionalidad}-${el.cedula}`);
         userSocket?.emit('SEND_NOTIFICATION', formattedNotif);
         userSocket?.emit('UPDATE_PROCEDURE', payload);
         return formattedNotif;
       })
     );
 
+    const notification = await Promise.all(
+      superuser.map(async (el) => {
+        const result = (
+          await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
+        ).rows[0];
+        const notification = (await client.query(queries.GET_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
+        const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
+        return formattedNotif;
+      })
+    );
+
     await Promise.all(
-      superuser.map(
-        async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado, concept])).rows[0]
+      admins.map(
+        async (el) =>
+          (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
+            .rows[0]
       )
     );
 
-    await Promise.all(
-      admins.map(async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado, concept])).rows[0])
-    );
-
-    if (payload.estado === 'enproceso') {
+    if (payload.estado !== 'validando') {
       await Promise.all(
         permittedOfficials.map(
-          async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado, concept])).rows[0]
+          async (el) =>
+            (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
+              .rows[0]
         )
       );
-      io.in(`tram:${payload.tipoTramite}`).emit('UPDATE_PROCEDURE', payload);
+      io.in(`tram:${payload.tipoTramite}`).emit('CREATE_FINING', payload);
       io.in(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
     }
 
     io.in(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
-    io.in(`inst:${payload.nombreCorto}`).emit('UPDATE_PROCEDURE', payload);
+    io.in(`inst:${payload.nombreCorto}`).emit('CREATE_FINING', payload);
 
     client.query('COMMIT');
   } catch (error) {
@@ -308,6 +366,8 @@ const broadcastForFiningInit = async (sender: Usuario, description: string, payl
 
 const broadcastForFiningUpdate = async (sender: Usuario, description: string, payload: Partial<Multa>, concept: string, client: PoolClient) => {
   const io = getIo();
+  const emisor = `${sender.nacionalidad}-${sender.cedula}`;
+
   try {
     client.query('BEGIN');
     const user = (await client.query(queries.GET_PROCEDURE_CREATOR, [payload.usuario])).rows;
@@ -315,41 +375,54 @@ const broadcastForFiningUpdate = async (sender: Usuario, description: string, pa
     const superuser = (await client.query(queries.GET_SUPER_USER)).rows;
     const permittedOfficials = (await client.query(queries.GET_OFFICIALS_FOR_PROCEDURE, [payload.nombreCorto, payload.tipoTramite])).rows;
 
-    const notification = await Promise.all(
+    await Promise.all(
       user.map(async (el) => {
         const userDesc = description.replace('un', 'su');
-        const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, userDesc, payload.estado, concept])).rows[0];
+        const result = (
+          await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, userDesc, payload.estado, concept])
+        ).rows[0];
         const notification = (await client.query(queries.GET_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
-        const formattedNotif = formatNotification(sender, notification.receptor, userDesc, payload, notification);
-        const userSocket = users.get(el.cedula);
+        const formattedNotif = formatNotification(emisor, notification.receptor, userDesc, payload, notification);
+        const userSocket = users.get(`${el.nacionalidad}-${el.cedula}`);
         userSocket?.emit('SEND_NOTIFICATION', formattedNotif);
         userSocket?.emit('UPDATE_PROCEDURE', payload);
         return formattedNotif;
       })
     );
 
+    const notification = await Promise.all(
+      superuser.map(async (el) => {
+        const result = (
+          await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
+        ).rows[0];
+        const notification = (await client.query(queries.GET_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
+        const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
+        return formattedNotif;
+      })
+    );
+
     await Promise.all(
-      superuser.map(
-        async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado, concept])).rows[0]
+      admins.map(
+        async (el) =>
+          (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
+            .rows[0]
       )
     );
 
-    await Promise.all(
-      admins.map(async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado, concept])).rows[0])
-    );
-
-    if (payload.estado === 'enproceso') {
+    if (payload.estado !== 'validando') {
       await Promise.all(
         permittedOfficials.map(
-          async (el) => (await client.query(queries.CREATE_NOTIFICATION, [payload.id, sender, el.cedula, description, payload.estado, concept])).rows[0]
+          async (el) =>
+            (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
+              .rows[0]
         )
       );
-      io.in(`tram:${payload.tipoTramite}`).emit('UPDATE_PROCEDURE', payload);
+      io.in(`tram:${payload.tipoTramite}`).emit('UPDATE_FINING', payload);
       io.in(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
     }
 
     io.in(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
-    io.in(`inst:${payload.nombreCorto}`).emit('UPDATE_PROCEDURE', payload);
+    io.in(`inst:${payload.nombreCorto}`).emit('UPDATE_FINING', payload);
 
     client.query('COMMIT');
   } catch (error) {
@@ -359,7 +432,7 @@ const broadcastForFiningUpdate = async (sender: Usuario, description: string, pa
 };
 
 const formatNotification = (
-  sender: Usuario,
+  sender: string,
   receiver: string | null,
   description: string,
   payload: Partial<Tramite | Multa>,
@@ -367,7 +440,7 @@ const formatNotification = (
 ): Notificacion => {
   return {
     id: notification.id,
-    emisor: sender.cedula,
+    emisor: sender,
     receptor: receiver,
     tramite: payload,
     descripcion: description,

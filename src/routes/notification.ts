@@ -7,7 +7,7 @@ const router = Router();
 
 router.get('/', authenticate('jwt'), async (req: any, res) => {
   const { cedula } = req.user;
-  const [error, data] = await fulfill(getNotifications(cedula));
+  const [error, data] = await fulfill(getNotifications(req.user));
   if (error) res.status(500).json(error);
   if (data) res.status(200).json(data);
 });
