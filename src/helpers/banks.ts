@@ -3,6 +3,7 @@ import queries from '@utils/queries';
 import { errorMessageGenerator } from './errors';
 import { validateProcedure } from './procedures';
 import { validateFining } from './fines';
+import { PoolClient } from 'pg';
 const pool = Pool.getInstance();
 
 export const getAllBanks = async () => {
@@ -38,11 +39,11 @@ export const validatePayments = async (body, user) => {
           monto: el.monto,
           idBanco: el.idbanco,
           aprobado: el.aprobado,
-          idTramite: el.idtramite,
+          idTramite: el.idprocedimiento,
           pagoPrevio: el.pagoprevio,
           referencia: el.referencia,
           fechaDePago: el.fechadepago,
-          codigoTramite: el.codigotramite,
+          codigoTramite: el.codigotramite || el.codigomulta,
           fechaDeAprobacion: el.fechadeaprobacion,
           tipoTramite: el.tipotramite,
         };
@@ -63,12 +64,9 @@ export const validatePayments = async (body, user) => {
   }
 };
 
-export const insertPaymentReference = async (payment, procedureId, client) => {
-  const { referencia, banco, costo, fecha } = payment;
-  return await client.query(queries.INSERT_PAYMENT, [procedureId, referencia, costo, banco, fecha]).catch((error) => {
-    throw {
-      error,
-      message: errorMessageGenerator(error) || 'Error al insertar el pago',
-    };
+export const insertPaymentReference = async (payment: any, procedure: number, client: PoolClient) => {
+  const { referencia, banco, costo, fecha, concepto } = payment;
+  return await client.query(queries.INSERT_PAYMENT, [procedure, referencia, costo, banco, fecha, concepto]).catch((error) => {
+    throw error;
   });
 };

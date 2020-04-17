@@ -86,7 +86,7 @@ const queries = {
   DROP_OFFICIAL_PERMISSIONS: 'DELETE FROM permiso_de_acceso WHERE id_usuario = $1;',
 
   //BANKS
-  INSERT_PAYMENT: 'INSERT INTO pago (id_tramite, referencia, monto, id_banco, fecha_de_pago) VALUES ($1, $2, $3, $4, $5) RETURNING *;',
+  INSERT_PAYMENT: 'INSERT INTO pago (id_procedimiento, referencia, monto, id_banco, fecha_de_pago, concepto) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;',
   GET_ALL_BANKS: 'SELECT id_banco as id, nombre  FROM banco',
   VALIDATE_PAYMENTS: 'SELECT validate_payments($1);',
   GET_BANK_ACCOUNTS_FOR_INSTITUTION:
