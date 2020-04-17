@@ -46,7 +46,7 @@ export const finingInit = async (procedure, user: Usuario) => {
     client.query('COMMIT');
 
     sendEmail({ ...multa, nombreUsuario: user.nombreUsuario, nombreCompletoUsuario: user.nombreCompleto, estado: respState.rows[0].state });
-    // sendNotification(user, `Se le ha asignado una multa por parte de ${multa.nombreLargo}`, 'CREATE_FINING', 'MULTA', multa);
+    // sendNotification(user, `Se le ha asignado una multa al titular de la cédula ${multa.nacionalidad}-${multa.nacionalidad}`, 'CREATE_FINING', 'MULTA', multa);
 
     return {
       status: 201,

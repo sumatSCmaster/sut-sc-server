@@ -423,8 +423,10 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     'INSERT INTO notificacion (id_procedimiento, emisor, receptor, descripcion, status, \
     fecha, estado, concepto) VALUES ($1, $2, $3, $4, false, now(), $5, $6) RETURNING id_notificacion',
   MARK_ALL_AS_READ: 'UPDATE notificacion SET status = true WHERE receptor = $1',
-  GET_NOTIFICATION_BY_ID: 'SELECT * FROM notificacion_view WHERE id = $1',
-  GET_NOTIFICATIONS_FOR_USER: 'SELECT * FROM notificacion_view WHERE receptor = $1 ORDER BY "fechaCreacion"',
+  GET_PROCEDURE_NOTIFICATION_BY_ID: 'SELECT * FROM notificacion_tramite_view WHERE id = $1',
+  GET_FINING_NOTIFICATION_BY_ID: 'SELECT * FROM notificacion_multa_view WHERE id = $1',
+  GET_PROCEDURE_NOTIFICATIONS_FOR_USER: 'SELECT * FROM notificacion_tramite_view WHERE receptor = $1 ORDER BY "fechaCreacion"',
+  GET_FINING_NOTIFICATIONS_FOR_USER: 'SELECT * FROM notificacion_multa_view WHERE receptor = $1 ORDER BY "fechaCreacion"',
   GET_USER_HAS_NOTIFICATIONS: 'SELECT (COUNT(*) > 0) as "hasNotifications" FROM notificacion WHERE receptor = $1 ::varchar AND status = false',
 
   //Terminal
