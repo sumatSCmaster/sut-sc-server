@@ -425,6 +425,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   MARK_ALL_AS_READ: 'UPDATE notificacion SET status = true WHERE receptor = $1',
   GET_NOTIFICATION_BY_ID: 'SELECT * FROM notificacion_view WHERE id = $1',
   GET_NOTIFICATIONS_FOR_USER: 'SELECT * FROM notificacion_view WHERE receptor = $1 ORDER BY "fechaCreacion"',
+  GET_USER_HAS_NOTIFICATIONS: 'SELECT (COUNT(*) > 0) as "hasNotifications" FROM notificacion WHERE receptor = $1 ::varchar AND status = false',
 
   //Terminal
   TERMINAL_DESTINATIONS:
