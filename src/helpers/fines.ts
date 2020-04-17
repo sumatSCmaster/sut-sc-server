@@ -40,6 +40,8 @@ export const finingInit = async (procedure, user: Usuario) => {
       nombreTramiteLargo: response.nombretramitelargo,
       nombreTramiteCorto: response.nombretramitecorto,
       aprobado: response.aprobado,
+      cedula: response.cedula,
+      nacionalidad: response.nacionalidad,
     };
     client.query('COMMIT');
 
@@ -101,6 +103,8 @@ const addPaymentFining = async (procedure, user: Usuario) => {
       nombreTramiteLargo: response.nombretramitelargo,
       nombreTramiteCorto: response.nombretramitecorto,
       aprobado: response.aprobado,
+      cedula: response.cedula,
+      nacionalidad: response.nacionalidad,
     };
     sendEmail({ ...multa, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
     // sendNotification(user.cedula, `Se añadieron los datos de pago de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_FINING', 'MULTA', multa);
@@ -158,6 +162,8 @@ export const validateFining = async (procedure, user: Usuario) => {
       nombreTramiteLargo: response.nombretramitelargo,
       nombreTramiteCorto: response.nombretramitecorto,
       aprobado: response.aprobado,
+      cedula: response.cedula,
+      nacionalidad: response.nacionalidad,
     };
     sendEmail({ ...multa, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
     // sendNotification(user.cedula, `Se ha validado el pago de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_FINING', 'MULTA', multa);

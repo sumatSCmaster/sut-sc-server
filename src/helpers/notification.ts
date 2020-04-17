@@ -81,7 +81,7 @@ export const sendNotification = async (sender: string, description: string, type
   }
 };
 
-const broadcastByExternalUser = async (sender: string, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient) => {
+const broadcastForProcedureInit = async (sender: string, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient) => {
   const socket = users.get(sender);
   try {
     client.query('BEGIN');
@@ -122,7 +122,7 @@ const broadcastByExternalUser = async (sender: string, description: string, payl
   }
 };
 
-const broadcastByOfficial = async (sender: string, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient) => {
+const broadcastForProcedureUpdate = async (sender: string, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient) => {
   const io = getIo();
   try {
     client.query('BEGIN');
@@ -194,12 +194,12 @@ const formatNotification = (
 
 //TODO: MUST BE FIXED, create methods for social case and fining
 const notificationTypes = switchcase({
-  CREATE_PROCEDURE: broadcastByExternalUser,
-  UPDATE_PROCEDURE: broadcastByOfficial,
-  CREATE_SOCIAL_AFFAIR: broadcastByOfficial,
-  UPDATE_SOCIAL_AFFAIR: broadcastByOfficial,
-  CREATE_FINING: broadcastByOfficial,
-  UPDATE_FINING: broadcastByExternalUser,
+  CREATE_PROCEDURE: broadcastForProcedureInit,
+  UPDATE_PROCEDURE: broadcastForProcedureUpdate,
+  CREATE_SOCIAL_AFFAIR: broadcastForProcedureUpdate,
+  UPDATE_SOCIAL_AFFAIR: broadcastForProcedureUpdate,
+  CREATE_FINING: broadcastForProcedureUpdate,
+  UPDATE_FINING: broadcastForProcedureInit,
 })(null);
 
 const notificationHandler = async (

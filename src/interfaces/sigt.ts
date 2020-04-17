@@ -127,6 +127,8 @@ export interface Multa {
   boleta: string;
   certificado: string | null;
   aprobado: boolean;
+  cedula: string;
+  nacionalidad: string;
 }
 
 export interface Inmueble {
