@@ -351,7 +351,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
     client.query('BEGIN');
     const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify({ usuario: datos }), user.id])).rows[0];
     response.idTramite = response.id;
-    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.tipotramite, procedure.idTramite])).rows[0];
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.tipotramite, response.idTramite])).rows[0];
     response.sufijo = resources.sufijo;
     costo = resources.sufijo === 'pd' || (resources.sufijo === 'tl' && user.tipoUsuario !== 4) ? null : pago.costo || resources.costo_base;
     const nextEvent = await getNextEventForProcedure(response, client);
@@ -411,6 +411,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
     };
   } catch (error) {
     client.query('ROLLBACK');
+    console.log(error);
     throw {
       status: 500,
       ...error,

@@ -170,6 +170,7 @@ export const validateFining = async (procedure, user: Usuario) => {
     return { status: 200, message: 'Trámite actualizado', tramite };
   } catch (error) {
     client.query('ROLLBACK');
+    console.log(error);
     throw {
       status: 500,
       error,

@@ -47,10 +47,12 @@ export const validatePayments = async (body, user) => {
           fechaDeAprobacion: el.fechadeaprobacion,
           tipoTramite: el.tipotramite,
         };
+        console.log('ajajajaja puta');
         el.sufijo !== 'ml' ? await validateProcedure(pagoValidado, user) : await validateFining(pagoValidado, user);
         return pagoValidado;
       })
     );
+    console.log('ola jaja');
     client.query('COMMIT');
     return {
       validatePayments: { data },
@@ -58,6 +60,7 @@ export const validatePayments = async (body, user) => {
       status: 201,
     };
   } catch (e) {
+    console.log(e);
     throw e;
   } finally {
     client.release();
