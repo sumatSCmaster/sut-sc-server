@@ -38,7 +38,7 @@ const uploadFile = (req, res, next) => {
       multer({
         storage: diskStorage('tramites/' + req.params.id),
         fileFilter: photoFilter,
-      }).array('recaudos')(req, res, next);
+      }).array('boleta')(req, res, next);
       break;
     default:
       res.status(500).json({
