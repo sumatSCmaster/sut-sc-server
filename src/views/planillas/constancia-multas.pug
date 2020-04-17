@@ -22,13 +22,15 @@ block content
          p
            b Cedula:
            | #{datos.cedulaORif}
-       div           
+       div(style={'margin-left':'5%'})
          p
            b Correo:
            | #{datos.correo}
          p
            b Teléfono:
            | #{datos.telefono}
+      div(style={flex: '0.5', 'text-align': 'center'})
+        img#QR(src=QR)           
    div           
      div(style={'font-size':'20px', 'font-weight':'bold'}).row-constancy
        div(style={'flex':'3', 'text-align':'start', }) Descripción
