@@ -14,7 +14,7 @@ router.get('/', authenticate('jwt'), async (req: any, res) => {
 
 router.put('/markAsRead', authenticate('jwt'), async (req: any, res) => {
   const { cedula } = req.user;
-  const [error, data] = await fulfill(markAllAsRead(cedula));
+  const [error, data] = await fulfill(markAllAsRead(req.user));
   if (error) res.status(500).json(error);
   if (data) res.status(200).json(data);
 });

@@ -85,10 +85,10 @@ export const getNotifications = async (user: Usuario): Promise<Notificacion[] | 
   }
 };
 
-export const markAllAsRead = async (id: string): Promise<object> => {
+export const markAllAsRead = async (user: Usuario): Promise<object> => {
   const client = await pool.connect();
   try {
-    const result = await client.query(queries.MARK_ALL_AS_READ, [id]);
+    const result = await client.query(queries.MARK_ALL_AS_READ, [`${user.nacionalidad}-${user.cedula}`]);
     return { status: 201, message: 'Todas las notificaciones han sido leidas', result: !!result };
   } catch (error) {
     throw {
