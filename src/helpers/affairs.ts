@@ -26,7 +26,7 @@ export const affairInit = async (affair, user) => {
       nombreTramiteCorto: response.nombretramitecorto,
     };
     client.query('COMMIT');
-    sendNotification(user.cedula, 'Un trámite ha sido actualizado', 'CREATE_SOCIAL_AFFAIR', 'TRAMITE', caso);
+    sendNotification(user, 'Un trámite ha sido actualizado', 'CREATE_SOCIAL_AFFAIR', 'TRAMITE', caso);
     return {
       status: 201,
       message: 'Caso social iniciado',
@@ -67,7 +67,7 @@ export const updateAffair = async (affair, user) => {
       nombreTramiteLargo: response.nombretramitelargo,
       nombreTramiteCorto: response.nombretramitecorto,
     };
-    sendNotification(user.cedula, 'Un trámite ha sido actualizado', 'UPDATE_SOCIAL_AFFAIR', 'TRAMITE', caso);
+    sendNotification(user, 'Un trámite ha sido actualizado', 'UPDATE_SOCIAL_AFFAIR', 'TRAMITE', caso);
     return { status: 200, message: 'Caso social actualizado', caso };
   } catch (error) {
     client.query('ROLLBACK');
