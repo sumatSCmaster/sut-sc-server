@@ -68,6 +68,7 @@ export const createFiningForm = async (procedure, client: PoolClient): Promise<s
     formato: tramite.formato,
     tramite: tramite.nombretramitelargo,
     institucion: tramite.nombrecorto,
+    costo: tramite.costo,
     datos: tramite.datos,
     estado: tramite.state,
     tipoTramite: tramite.tipotramite,
@@ -83,9 +84,13 @@ export const createFiningCertificate = async (procedure, client: PoolClient): Pr
       [procedure.idTramite]
     )
   ).rows[0];
+  const costoFormateado = new Intl.NumberFormat('de-DE').format(parseFloat(multa.costo));
+  const UTMM = new Intl.NumberFormat('de-DE').format(parseFloat(multa.costo) / multa.datos.funcionario.utmm);
   const finingData = {
     id: procedure.idTramite,
     fecha: multa.fechacreacion,
+    costo: parseFloat(multa.costo),
+    costoFormateado,
     codigo: multa.codigomulta,
     formato: multa.formato,
     tramite: multa.nombretramitelargo,
@@ -93,6 +98,7 @@ export const createFiningCertificate = async (procedure, client: PoolClient): Pr
     datos: procedure.datos || multa.datos,
     estado: 'finalizado',
     tipoTramite: multa.tipotramite,
+    UTMM
   };
   const form = (await createForm(finingData, client)) as string;
   return form;
