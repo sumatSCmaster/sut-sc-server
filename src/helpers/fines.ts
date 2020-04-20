@@ -16,7 +16,7 @@ export const finingInit = async (procedure, user: Usuario) => {
   try {
     client.query('BEGIN');
     const response = (
-      await client.query(queries.FINING_INIT, [tipoTramite, JSON.stringify({ usuario: datos }), procedure.nacionalidad, procedure.cedula, user.id])
+      await client.query(queries.FINING_INIT, [tipoTramite, JSON.stringify({ funcionario: datos }), procedure.nacionalidad, procedure.cedula, user.id])
     ).rows[0];
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_FINING, [response.idTramite])).rows[0];
