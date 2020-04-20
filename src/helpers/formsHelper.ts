@@ -6,7 +6,7 @@ import S3Client from '@utils/s3';
 
 const dev = process.env.NODE_ENV !== 'production';
 
-export const createForm = async ({ fecha, codigo, formato, tramite, institucion, id, datos, tipoTramite, estado }, client) => {
+export const createForm = async ({ fecha, codigo, formato, tramite, institucion, id, datos, tipoTramite, estado, codigoFormateado = '', UTMM = '', costo = 0 }, client) => {
   const response = (await client.query('SELECT planilla, certificado FROM tipo_tramite WHERE id_tipo_tramite=$1', [tipoTramite])).rows[0];
   const planilla = estado === 'iniciado' ? response.planilla : response.certificado;
   const dir =
@@ -24,6 +24,9 @@ export const createForm = async ({ fecha, codigo, formato, tramite, institucion,
       cache: false,
       moment: require('moment'),
       QR: linkQr,
+      codigoFormateado,
+      UTMM,
+      costo
     });
 
     const pdfDir = resolve(__dirname, `../../archivos/tramites/${codigo}/${dir.split('/').pop()}`);
