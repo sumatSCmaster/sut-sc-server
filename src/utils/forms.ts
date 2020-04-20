@@ -77,24 +77,24 @@ export const createFiningForm = async (procedure, client: PoolClient): Promise<s
 };
 
 export const createFiningCertificate = async (procedure, client: PoolClient): Promise<string> => {
-  const tramite = (
+  const multa = (
     await client.query(
       'SELECT mls.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM multa_state mls INNER JOIN tipo_tramite ttr ON mls.tipotramite=ttr.id_tipo_tramite WHERE mls.id=$1',
       [procedure.idTramite]
     )
   ).rows[0];
-  const procedureData = {
+  const finingData = {
     id: procedure.idTramite,
-    fecha: tramite.fechacreacion,
-    codigo: tramite.codigotramite,
-    formato: tramite.formato,
-    tramite: tramite.nombretramitelargo,
-    institucion: tramite.nombrecorto,
-    datos: procedure.datos || tramite.datos,
+    fecha: multa.fechacreacion,
+    codigo: multa.codigomulta,
+    formato: multa.formato,
+    tramite: multa.nombretramitelargo,
+    institucion: multa.nombrecorto,
+    datos: procedure.datos || multa.datos,
     estado: 'finalizado',
-    tipoTramite: tramite.tipotramite,
+    tipoTramite: multa.tipotramite,
   };
-  const form = (await createForm(procedureData, client)) as string;
+  const form = (await createForm(finingData, client)) as string;
   return form;
 };
 
