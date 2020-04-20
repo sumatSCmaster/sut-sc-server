@@ -178,9 +178,9 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
      ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=$2',
   GET_RESOURCES_FOR_PROCEDURE:
     'SELECT DISTINCT tt.sufijo, tt.costo_base, usr.nombre_completo as nombrecompleto, \
-    usr.nombre_de_usuario as nombreusuario, tr.costo FROM tipo_tramite tt INNER JOIN tramite tr ON\
+    usr.nombre_de_usuario as nombreusuario, tr.costo, tt.planilla FROM tipo_tramite tt INNER JOIN tramite tr ON\
     tt.id_tipo_tramite=tr.id_tipo_tramite INNER JOIN usuario usr ON tr.id_usuario=usr.id_usuario\
-    WHERE tt.id_tipo_tramite=$1 AND tr.id_tramite = $2',
+    WHERE tr.id_tramite = $1',
   GET_PROCEDURE_STATES:
     'SELECT id_tramite AS id, tramite_evento_fsm(event ORDER BY id_evento_tramite) AS state  \
   FROM evento_tramite \

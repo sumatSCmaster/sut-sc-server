@@ -71,8 +71,7 @@ export const getAvailableProceduresOfInstitution = async (req: {
 
 const getProcedureInstances = async (user, client: PoolClient) => {
   try {
-    let response = //TODO: corregir el handler para que no sea tan forzado
-    (
+    let response = ( //TODO: corregir el handler para que no sea tan forzado
       await procedureInstanceHandler(
         user.institucion && user.institucion.id === 0 ? 0 : user.institucion && user.institucion.nombreCorto === 'SEDETEMA' ? 6 : user.tipoUsuario,
         user.tipoUsuario !== 4 ? (user.institucion ? user.institucion.id : 0) : user.id,
@@ -354,7 +353,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
     client.query('BEGIN');
     const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify({ usuario: datos }), user.id])).rows[0];
     response.idTramite = response.id;
-    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.tipotramite, response.idTramite])).rows[0];
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.idTramite])).rows[0];
     response.sufijo = resources.sufijo;
     costo = resources.sufijo === 'pd' || (resources.sufijo === 'tl' && user.tipoUsuario !== 4) ? null : pago.costo || resources.costo_base;
     const nextEvent = await getNextEventForProcedure(response, client);
@@ -380,7 +379,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
         respState = await client.query(queries.COMPLETE_STATE, [response.idTramite, nextEvent[pointerEvent.toString()], null, dir || null, true]);
       }
     } else {
-      dir = await createRequestForm(response, client);
+      if (resources.planilla) dir = await createRequestForm(response, client);
       respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, costo, dir]);
     }
 
@@ -430,7 +429,7 @@ export const validateProcedure = async (procedure, user: Usuario) => {
   let dir, respState;
   try {
     client.query('BEGIN');
-    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite, procedure.idTramite])).rows[0];
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.idTramite])).rows[0];
     if (!procedure.hasOwnProperty('aprobado')) {
       return { status: 403, message: 'No es posible actualizar este estado' };
     }
@@ -488,7 +487,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
     costo = null;
   try {
     client.query('BEGIN');
-    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite, procedure.idTramite])).rows[0];
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.idTramite])).rows[0];
     if (!procedure.hasOwnProperty('sufijo')) {
       procedure.sufijo = resources.sufijo;
     }
@@ -560,7 +559,7 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
   let { pago } = procedure;
   try {
     client.query('BEGIN');
-    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite, procedure.idTramite])).rows[0];
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.idTramite])).rows[0];
 
     if (!procedure.hasOwnProperty('sufijo')) {
       procedure.sufijo = resources.sufijo;
@@ -616,7 +615,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
     datos = null;
   try {
     client.query('BEGIN');
-    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.tipoTramite, procedure.idTramite])).rows[0];
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.idTramite])).rows[0];
 
     if (!procedure.hasOwnProperty('revision')) {
       return { status: 403, message: 'No es posible actualizar este estado' };
