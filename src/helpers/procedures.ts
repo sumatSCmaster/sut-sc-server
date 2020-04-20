@@ -268,6 +268,7 @@ const getSectionByProcedure = async (procedure, client: PoolClient): Promise<Tip
           id: el.id,
           fisico: el.fisico,
           obligatorio: el.obligatorio,
+          planilla: el.planilla,
         };
       });
       return tramite;
