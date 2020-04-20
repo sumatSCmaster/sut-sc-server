@@ -149,7 +149,7 @@ export const validateFining = async (procedure, user: Usuario) => {
   let dir, respState;
   try {
     client.query('BEGIN');
-    const resources = (await client.query(queries.GET_RESOURCES_FOR_FINING, [procedure.tipoTramite, procedure.idTramite])).rows[0];
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_FINING, [procedure.idTramite])).rows[0];
 
     if (!procedure.hasOwnProperty('aprobado')) {
       return { status: 403, message: 'No es posible actualizar este estado' };
