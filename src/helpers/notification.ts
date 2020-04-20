@@ -39,6 +39,7 @@ export const getNotifications = async (user: Usuario): Promise<Notificacion[] | 
           id: el.id,
           status: el.status,
           fechaCreacion: el.fechaCreacion,
+          concepto: el.concepto,
         };
         return formatNotification(el.emisor, el.receptor, el.descripcion, tramite, notificacion);
       })
@@ -476,6 +477,7 @@ const formatNotification = (
     descripcion: description,
     status: notification.status,
     fechaCreacion: notification.fechaCreacion,
+    concepto: notification.concepto,
   };
 };
 

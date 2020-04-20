@@ -166,6 +166,7 @@ export interface Notificacion {
   descripcion: string;
   status: boolean;
   fechaCreacion: Date;
+  concepto: string;
 }
 
 export interface ErrorEstandar {
