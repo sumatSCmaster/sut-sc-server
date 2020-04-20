@@ -1,0 +1,152 @@
+extends default
+
+block content
+  div#fecha
+    p 
+      b FECHA:
+      span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+    p 
+      b Codigo de Tramite:
+      span &nbsp; #{codigo}
+  div#planilla      
+    div.table                                  
+      div.th
+        p DATOS DEL SOLICITANTE
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Nombre:
+            span &nbsp; #{datos.usuario.nombre}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Cédula:
+            span &nbsp; #{datos.usuario.cedula}
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Telefono:
+            span &nbsp; #{datos.usuario.telefono}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Correo:
+            span &nbsp; #{datos.usuario.correo}
+      div.tr
+        div.td(style={ width: '50%' }).border-right
+          p
+            b Dirección:
+            span &nbsp; #{datos.usuario.direccion}
+        div.td(style={ width: '50%' })
+          p
+            b Parroquia:
+            span &nbsp; #{datos.usuario.parroquia}
+    div.table
+      if datos.usuario.propietarios.length  > 1
+        div.th
+          p DATOS DE PROPIETARIOS         
+        each propietario in datos.usuario.propietarios
+          div.tr
+            div.td(style={ width: '50%' }).border-bottom.border-right
+              p 
+                b Nombre o Razon Social:
+                span &nbsp; #{propietario.razonSocial}
+            div.td(style={ width: '50%' }).border-bottom
+              p
+                b Cédula o RIF:
+                span &nbsp; #{propietario.nacionalidad}-#{propietario.cedulaORif}      
+      else
+        div.th
+          p DATOS DE PROPIETARIO
+        div.tr
+          div.td(style={ width: '50%' }).border-bottom.border-right
+            p 
+              b Nombre o Razon Social:
+              span &nbsp; #{datos.usuario.propietarios[0].nombre}
+          div.td(style={ width: '50%' }).border-bottom
+            p
+              b Cédula o RIF:
+              span &nbsp; #{datos.usuario.propietarios[0].nacionalidad}-#{datos.usuario.propietarios[0].cedulaORif}
+        div.tr
+          div.td(style={ width: '50%' }).border-bottom.border-right
+            p
+              b Telefono:
+              span &nbsp; #{datos.usuario.propietarios[0].telefono}
+          div.td(style={ width: '50%' }).border-bottom
+            p
+              b Correo:
+              span &nbsp; #{datos.usuario.propietarios[0].correo}
+        div.tr
+          div.td(style={ width: '50%' }).border-right
+            p
+              b Dirección:
+              span &nbsp; #{datos.usuario.propietarios[0].direccion}
+          div.td(style={ width: '50%' })
+            p
+              b Parroquia:
+              span &nbsp; #{datos.usuario.propietarios[0].parroquia}            
+    div.table            
+      div.th
+        p DATOS DEL INMUEBLE Y/O PARCELA
+      div.tr
+        div.td(style={ width: '100%' }).border-bottom
+          p
+            b Dirección:
+            span &nbsp; #{datos.usuario.ubicadoEn}
+      div.tr            
+        div.td(style={ width: '50%' }).border-right
+          p
+            b Punto de Referencia:
+            span &nbsp; #{datos.usuario.parroquia}
+        div.td(style={ width: '50%' })
+          p
+            b Finalidad de la Solicitud:
+            span &nbsp; #{datos.usuario.tipoInmueble}
+    div.table            
+      div.th
+        p LINDEROS ACTUALES DEL INMUEBLE
+      div.tr            
+        div.td(style={ width: '50%' }).border-right
+          div.td(style={ width: '100%' }).border-bottom
+            p
+              b FRENTE:
+              span &nbsp; #{datos.usuario.parroquia}
+          div.td(style={ width: '100%' }).border-bottom
+            p
+              b FONDO:
+              span &nbsp; #{datos.usuario.parroquia}
+          div.td(style={ width: '100%' }).border-bottom
+            p
+              b DERECHA:
+              span &nbsp; #{datos.usuario.parroquia}
+          div.td(style={ width: '100%' })
+            p
+              b IZQUIERDA:
+              span &nbsp; #{datos.usuario.parroquia}                                
+        div.td(style={ width: '50%' })
+              p(style={'text-align':'justify'})
+                b Observaciones:
+                span &nbsp; #{texto}
+    div#recaudos
+      h3 REQUISITOS OBLIGATORIOS
+      hr.divider
+      ul
+        li Original del recibo de pago del trámite equivalente.
+        li Copia de la Cédula de Identidad del Propietario.
+        li Condiciones del Terreno:
+        ul(style={ 'padding-left': '15px' })
+          li Terreno Propio: Copia del documento de propiedad del inmueble registrado o Notariado.
+          li Terreno Ejido: Copia del documento de bienhechurías del inmueble Notariado o constancia de residencia emitida por el consejo comunal.
+        li Croquis de Ubicación a mano alzada o emitido por el departamento mapa digital de Dirección de Catastro (media UT).
+        li Si el trámite no lo realiza el Propietario, presentar un poder y copia de la Cédula de Identidad del mismo.
+        li Copia de pago de la factura de los servicios municipales (GAS, ASEO, INMUEBLE) Para Barrios Consolidados, Urbanizaciones y Locales Comerciales.
+      hr.divider
+    div(style={'margin-bottom':'50px', 'font-size':'14px'})
+      h3 OBSERVACIONES GENERALES
+      ul
+        li Todos los recaudos deberán ser consignados en una carpeta marrón oficio con su respectivo gancho y separadores entre cada requisito.
+        li Solo se iniciara el proceso de revisión cuando los recaudos Estén Completos.
+        li El monto a pagar por concepto de tasas administrativas de conformidad con lo establecido en la Ordenanza sobre Tasas Administrativas por expedición de Licencias, Permisos, Ventas, Copias y Certificación de Documentos del Municipio Maracaibo será:
+        ul(style={ 'padding-left': '15px' })
+          li Barrio Nuevo: 0.25 PETROS.
+          li Barrio Consolidados, Zonas Residenciales y locales comerciales 0.40 PETROS.
+          li Oficinas industriales y de servicios 0.40 PETROS.
+                                
