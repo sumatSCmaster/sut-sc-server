@@ -2467,7 +2467,8 @@ CREATE TABLE public.recaudo (
     id_recaudo integer NOT NULL,
     nombre_largo character varying,
     nombre_corto character varying,
-    obligatorio boolean DEFAULT false
+    obligatorio boolean DEFAULT false,
+    planilla text
 );
 
 
@@ -3967,6 +3968,7 @@ COPY public.institucion (id_institucion, nombre_completo, nombre_corto) FROM std
 5	Servicio Desconcentrado de Plazas y Parques	SEDEPAR
 6	Instituto Municipal de Ambiente	IMA
 7	Instituto Autónomo Policía del Municipio Maracaibo	PMM
+8	Instituto Municipal de Transporte Colectivo y Urbano de Pasajeros del Municipio Maracaibo	INTCUMA
 \.
 
 
@@ -3981,6 +3983,8 @@ COPY public.institucion_banco (id_institucion_banco, id_institucion, id_banco, n
 1	1	1	0116–0140–51–0014405090	CUERPO DE BOMBEROS DEL MUNICIPIO MARACAIBO	rif:G-20003346-0
 5	4	1	0116–0101–46–0030138515	SEDETEMA	rif:G-20012866-6
 6	5	1	0116–01–4054–0008937036	SEDEPAR	rif:G-20006426-9
+7	7	1	0116–0126–06–0026593432	SEDEMAT	rif:G-20002908-0
+8	7	2	0134–0001–61–0013218667	SEDEMAT	rif:G-20002908-0
 \.
 
 
@@ -4079,6 +4083,11 @@ COPY public.ordenanza_tramite (id_ordenanza_tramite, id_tramite, id_tarifa, utmm
 --
 
 COPY public.pago (id_pago, id_procedimiento, referencia, monto, fecha_de_pago, aprobado, id_banco, fecha_de_aprobacion, concepto) FROM stdin;
+129	6	123123123123	1	2020-04-20	t	1	2020-04-20 10:33:46.489012-04	MULTA
+130	8	1231231231231	200000	2020-04-20	t	1	2020-04-20 10:52:01.027017-04	MULTA
+131	9	1231231231236	400000	2020-04-20	t	1	2020-04-20 10:59:40.743998-04	MULTA
+132	10	12312312312311	200000	2020-04-20	t	1	2020-04-20 11:10:58.632442-04	MULTA
+133	11	1231231231235	200000	2020-04-20	t	1	2020-04-20 11:17:02.174255-04	MULTA
 \.
 
 
@@ -4179,41 +4188,46 @@ COPY public.propietario_inmueble (id_propietario_inmueble, id_propietario, id_in
 -- Data for Name: recaudo; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.recaudo (id_recaudo, nombre_largo, nombre_corto, obligatorio) FROM stdin;
-8	Autorización para Trámites a Terceros (si el caso lo amerita)	AutorizacionTramitesTerceros	f
-9	Copia de Cedula Legible del Tramitante o Tercero (si el caso lo amerita)	CedulaTercero	f
-4	Documento de Propiedad del Terreno Notariado y Registrado (copia)	DocumentoDePropiedad	t
-5	Original y copia del Plano de Mensura Catastrado en tamaño original, firmado y sellado por la Dirección de Catastro (original)	PlanoMensura	t
-6	Copia del RIF del Propietario	RIFPropietario	t
-7	Copia de Cedula de Identidad Legible del Propietario	CedulaPropietario	t
-10	Planos del Proyecto de Instalaciones de Gas (en CD)	PlanosInstalacionGas	t
-13	Memoria descriptiva del proyecto de Gas (en CD)	MemoriaDesc	t
-14	Memoria del cálculo del sistema de Gas (en CD)	MemoriaCalculo	t
-11	Detalles del Proyecto de Instalaciones de Gas (Tanquilla Principal de Seccionamiento, Detalle de zanja, Detalle de Válvulas de Equipos, Detalle de Sistema de Regulación, Detalle de Ductos de Gas, Detalle de Venteo, Detalle de Soportes, Isometría de Gas, Especificaciones) (en CD)	DetalleProyecto	t
-15	Especificaciones técnicas del Proyecto de Gas (en CD)	EspecificacionesTecnicas	t
-12	Capas cargadas de los Siguientes Servicios: Aguas Servidas, Aguas Blancas, Aguas de Lluvia, Electricidad u Otros Servicios (en CD)	CapasServicios	t
-21	Copia de Constancia de Servicio SAGAS actualizada	ConstanciaSAGAS	t
-22	Copia de Variables Urbanas expedida por la Alcaldía de Maracaibo	VariablesUrb	t
-26	Un (1) Juego de Planos Impresos de Arquitectura	PlanosArq	t
-16	3 Juegos de Planos del Proyecto de Gas Impresos de Cada Nivel de Arquitectura (90cm. x 60cm.)	JuegoPlanosCadaNivel	t
-18	3 Juegos de Planos de Detalles de Gas (90cm. x 60cm.)	JuegoPlanosDetallesGas	t
-19	3 Juegos de Memoria de Cálculo del Proyecto de Gas (90cm. x 60cm.)	JuegoPlanosProyectoGas	t
-20	3 Juegos de Especificaciones Técnicas del Proyecto de Gas (90cm x. 60cm.)	JuegoPlanosEspecificacionesProyectoGas	t
-17	3 Juegos de Planos de Detalles de Gas (90cm. x 60cm.)	JuegoPlanosDetallesGas	t
-23	Tener en Expediente SAGAS: Inspecciones de las instalaciones de Gas	ExpSAGASInstGas	t
-24	Tener en Expediente SAGAS: Inspecciones de Pruebas de Hermeticidad con Carta de Registro Original firmada y sellada	ExpSAGASHermeticidad	t
-25	Tener en Expediente SAGAS: Inspección Final de las Instalaciones de Gas	ExpSAGASInspFinal	t
-27	Tener en Expediente SAGAS: Inspección Final de la Obra, para constatar que no posee Servicio de Gas	ExpSAGASFinalObra	t
-28	Copia de Permiso de Construcción SAGAS	PermisoConstruccionSAGAS	t
-29	Documento Notariado donde se especifica que el inmueble no contará con instalaciones del servicio de gas	DocNotInstGas	t
-30	Copia del Documento de Propiedad del Inmueble y Plano de Mensura Registrado	DocPropiedadPlanoMensura	t
-35	Copia del pago de la factura de los Servicios Municipales (GAS, ASEO, INMUEBLE).	FacturaServiciosMunicipales	t
-31	Constancia de Nomenclatura emitido por la Oficina Municipal de Catastro (si no la menciona el documento)	ConstanciaNomenclatura	f
-32	Para Urbanización, Villas y Conjuntos residenciales, consignar plano de parcelamiento.	PlanoParcelamiento	f
-323	Para los Centros Comerciales presentar plano de distribución de locales con sus respectivas nomenclaturas del nivel donde se encuentra el local.	PlanoDistribucion	f
-33	Para los Centros Comerciales presentar plano de distribución de locales con sus respectivas nomenclaturas del nivel donde se encuentra el local.	PlanoDistribucion	f
-34	Si el trámite no lo realiza el Propietario, presentar un poder y copia de la Cédula de Identidad del mismo.	PoderCopiaCedulaTramitante	f
-36	Fotocopia Legible de la Cedula de Identidad del Solicitante	CedulaSolicitante	t
+COPY public.recaudo (id_recaudo, nombre_largo, nombre_corto, obligatorio, planilla) FROM stdin;
+8	Autorización para Trámites a Terceros (si el caso lo amerita)	AutorizacionTramitesTerceros	f	\N
+9	Copia de Cedula Legible del Tramitante o Tercero (si el caso lo amerita)	CedulaTercero	f	\N
+4	Documento de Propiedad del Terreno Notariado y Registrado (copia)	DocumentoDePropiedad	t	\N
+5	Original y copia del Plano de Mensura Catastrado en tamaño original, firmado y sellado por la Dirección de Catastro (original)	PlanoMensura	t	\N
+6	Copia del RIF del Propietario	RIFPropietario	t	\N
+7	Copia de Cedula de Identidad Legible del Propietario	CedulaPropietario	t	\N
+10	Planos del Proyecto de Instalaciones de Gas (en CD)	PlanosInstalacionGas	t	\N
+13	Memoria descriptiva del proyecto de Gas (en CD)	MemoriaDesc	t	\N
+14	Memoria del cálculo del sistema de Gas (en CD)	MemoriaCalculo	t	\N
+11	Detalles del Proyecto de Instalaciones de Gas (Tanquilla Principal de Seccionamiento, Detalle de zanja, Detalle de Válvulas de Equipos, Detalle de Sistema de Regulación, Detalle de Ductos de Gas, Detalle de Venteo, Detalle de Soportes, Isometría de Gas, Especificaciones) (en CD)	DetalleProyecto	t	\N
+15	Especificaciones técnicas del Proyecto de Gas (en CD)	EspecificacionesTecnicas	t	\N
+12	Capas cargadas de los Siguientes Servicios: Aguas Servidas, Aguas Blancas, Aguas de Lluvia, Electricidad u Otros Servicios (en CD)	CapasServicios	t	\N
+21	Copia de Constancia de Servicio SAGAS actualizada	ConstanciaSAGAS	t	\N
+22	Copia de Variables Urbanas expedida por la Alcaldía de Maracaibo	VariablesUrb	t	\N
+26	Un (1) Juego de Planos Impresos de Arquitectura	PlanosArq	t	\N
+16	3 Juegos de Planos del Proyecto de Gas Impresos de Cada Nivel de Arquitectura (90cm. x 60cm.)	JuegoPlanosCadaNivel	t	\N
+18	3 Juegos de Planos de Detalles de Gas (90cm. x 60cm.)	JuegoPlanosDetallesGas	t	\N
+19	3 Juegos de Memoria de Cálculo del Proyecto de Gas (90cm. x 60cm.)	JuegoPlanosProyectoGas	t	\N
+20	3 Juegos de Especificaciones Técnicas del Proyecto de Gas (90cm x. 60cm.)	JuegoPlanosEspecificacionesProyectoGas	t	\N
+17	3 Juegos de Planos de Detalles de Gas (90cm. x 60cm.)	JuegoPlanosDetallesGas	t	\N
+23	Tener en Expediente SAGAS: Inspecciones de las instalaciones de Gas	ExpSAGASInstGas	t	\N
+24	Tener en Expediente SAGAS: Inspecciones de Pruebas de Hermeticidad con Carta de Registro Original firmada y sellada	ExpSAGASHermeticidad	t	\N
+25	Tener en Expediente SAGAS: Inspección Final de las Instalaciones de Gas	ExpSAGASInspFinal	t	\N
+27	Tener en Expediente SAGAS: Inspección Final de la Obra, para constatar que no posee Servicio de Gas	ExpSAGASFinalObra	t	\N
+28	Copia de Permiso de Construcción SAGAS	PermisoConstruccionSAGAS	t	\N
+29	Documento Notariado donde se especifica que el inmueble no contará con instalaciones del servicio de gas	DocNotInstGas	t	\N
+30	Copia del Documento de Propiedad del Inmueble y Plano de Mensura Registrado	DocPropiedadPlanoMensura	t	\N
+35	Copia del pago de la factura de los Servicios Municipales (GAS, ASEO, INMUEBLE).	FacturaServiciosMunicipales	t	\N
+31	Constancia de Nomenclatura emitido por la Oficina Municipal de Catastro (si no la menciona el documento)	ConstanciaNomenclatura	f	\N
+32	Para Urbanización, Villas y Conjuntos residenciales, consignar plano de parcelamiento.	PlanoParcelamiento	f	\N
+323	Para los Centros Comerciales presentar plano de distribución de locales con sus respectivas nomenclaturas del nivel donde se encuentra el local.	PlanoDistribucion	f	\N
+33	Para los Centros Comerciales presentar plano de distribución de locales con sus respectivas nomenclaturas del nivel donde se encuentra el local.	PlanoDistribucion	f	\N
+34	Si el trámite no lo realiza el Propietario, presentar un poder y copia de la Cédula de Identidad del mismo.	PoderCopiaCedulaTramitante	f	\N
+36	Fotocopia Legible de la Cedula de Identidad del Solicitante	CedulaSolicitante	t	\N
+37	Comunicación solicitando la Renovación de la Certificación de Prestación de Servicio de Transporte, dirigida al Presidente del Instituto, y la misma debe contener: Nombre legal de la Organización, Sectores que se benefician con la prestación del servicio y Nombre y firma del Representante Legal de la Organización	ComunicacionRenovacion	t	\N
+38	Copia de la última Acta de Asamblea celebrada por la organización	ActaAsamblea	t	\N
+39	Planilla de Junta Directiva, referida a los datos de los miembros de la organización (formato digital e impreso ver anexo)	PlanillaJuntaDirectiva	t	PLANILLA DE JUNTA DIRECTIVA.xls
+40	Planilla de Registro de Unidades, referida a los datos de las unidades que presten servicio en la organización, y las mismas deben estar matriculadas como transporte público (formato digital e impreso ver anexo)	PlanillaRegistrosUnidades	t	PLANILLA DE REGISTRO DE UNIDADES.xls
+41	Copia de la última Certificación de Prestación de Servicio otorgada por la Institución	CertificacionDePrestacion	t	\N
 \.
 
 
@@ -4325,8 +4339,9 @@ COPY public.tipo_tramite (id_tipo_tramite, id_institucion, nombre_tramite, costo
 1	1	Cumplimiento de Normas Tecnicas	40000.0	pa	Normas Tecnicas	CBM-001	bomberos-solt	bomberos-cert-CCNT	t	t	0.2
 16	3	Solvencia de Inmuebles Urbanos	1200000	cr	SIU	CPU-OMCAT-002	cpu-solt-SIU	cpu-cert-SIU	f	t	6
 18	5	Apartado de Bohío	1000000	pa	Apartado de Bohío	SEDEPAR-001	sedepar-solt-AB	sedepar-cert-AB	f	t	5
-19	6	Multa	\N	ml	Multa	IMA-001	\N	ima-fine-solv	f	f	\N
-20	7	Multa	\N	ml	Multa	PMM-001	\N	pmm-fine-solv	f	f	\N
+19	6	Multa	\N	ml	Multa	IMA-001	\N	constancia-multas	f	f	\N
+20	7	Multa	\N	ml	Multa	PMM-001	\N	constancia-multas	f	f	\N
+21	8	Certificación para Prestar Servicio de Transporte Público Urbano	\N	pa	Servicio Transporte Público	INTCUMA-001	intcuma-solt-STP	intcuma-cert-STP	f	t	\N
 \.
 
 
@@ -6532,7 +6547,7 @@ SELECT pg_catalog.setval('public.detalles_facturas_id_detalle_seq', 1, false);
 -- Name: evento_multa_id_evento_multa_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.evento_multa_id_evento_multa_seq', 10, true);
+SELECT pg_catalog.setval('public.evento_multa_id_evento_multa_seq', 32, true);
 
 
 --
@@ -6581,14 +6596,14 @@ SELECT pg_catalog.setval('public.instituciones_id_institucion_seq', 1, false);
 -- Name: multa_id_multa_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.multa_id_multa_seq', 5, true);
+SELECT pg_catalog.setval('public.multa_id_multa_seq', 11, true);
 
 
 --
 -- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.notificaciones_id_notificacion_seq', 104, true);
+SELECT pg_catalog.setval('public.notificaciones_id_notificacion_seq', 167, true);
 
 
 --
@@ -6623,7 +6638,7 @@ SELECT pg_catalog.setval('public.ordenanzas_tramites_id_ordenanza_tramite_seq', 
 -- Name: pagos_id_pago_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.pagos_id_pago_seq', 128, true);
+SELECT pg_catalog.setval('public.pagos_id_pago_seq', 133, true);
 
 
 --
