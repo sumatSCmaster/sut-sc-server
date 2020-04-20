@@ -450,7 +450,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_RESOURCES_FOR_FINING:
     'SELECT DISTINCT tt.sufijo, tt.costo_base,\
   ml.costo FROM tipo_tramite tt INNER JOIN multa ml ON\
-  tt.id_tipo_tramite=ml.id_tipo_tramite WHERE tt.id_tipo_tramite=$1 AND ml.id_multa = $2',
+  tt.id_tipo_tramite=ml.id_tipo_tramite WHERE ml.id_multa = $1',
   GET_FINING_BY_ID: 'SELECT * FROM multa_state WHERE id=$1',
   GET_FINING_STATE:
     'SELECT id_multa AS id, multa_fsm(event ORDER BY id_evento_multa) AS state \

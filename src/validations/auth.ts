@@ -472,7 +472,7 @@ export const validate = () => {
   };
 };
 const isValidProcedure = async (req, res) => {
-  const [error, data] = await fulfill(getFieldsForValidations(req.body.tramite.tipoTramite, req.body.tramite.estado || 'iniciado'));
+  const [error, data] = await fulfill(getFieldsForValidations(req.body.tramite.idTramite));
   if (error) res.status(error.status).json(error);
   if (data) {
     const arr = data.fields.map((el) => validations[el.validacion]);

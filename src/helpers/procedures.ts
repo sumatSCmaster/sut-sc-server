@@ -324,13 +324,14 @@ export const updateProcedureCost = async (id: string, newCost: string): Promise<
   }
 };
 
-export const getFieldsForValidations = async (idProcedure, state) => {
+export const getFieldsForValidations = async (idProcedure) => {
   const client = await pool.connect();
   try {
     let takings = 0;
-    const response = (await client.query(queries.VALIDATE_FIELDS_FROM_PROCEDURE, [idProcedure, state])).rows;
-    if (state === 'iniciado') {
-      takings = (await client.query(queries.GET_TAKINGS_FOR_VALIDATION, [idProcedure])).rowCount;
+    const resources = (await client.query('SELECT state, tipotramite FROM tramites_state_with_resources WHERE id=$1', [idProcedure])).rows[0];
+    const response = (await client.query(queries.VALIDATE_FIELDS_FROM_PROCEDURE, [resources.tipotramite, resources.state])).rows;
+    if (resources.state === 'iniciado') {
+      takings = (await client.query(queries.GET_TAKINGS_FOR_VALIDATION, [resources.tipotramite])).rowCount;
     }
     return { fields: response, takings };
   } catch (error) {

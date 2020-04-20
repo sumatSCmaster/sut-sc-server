@@ -19,7 +19,7 @@ export const finingInit = async (procedure, user: Usuario) => {
       await client.query(queries.FINING_INIT, [tipoTramite, JSON.stringify({ usuario: datos }), procedure.nacionalidad, procedure.cedula, user.id])
     ).rows[0];
     response.idTramite = response.id;
-    const resources = (await client.query(queries.GET_RESOURCES_FOR_FINING, [response.tipotramite, response.idTramite])).rows[0];
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_FINING, [response.idTramite])).rows[0];
     response.sufijo = resources.sufijo;
     costo = resources.sufijo === 'ml' ? monto || resources.costo_base : null;
     const nextEvent = await getNextEventForFining(response, client);
@@ -78,7 +78,7 @@ const addPaymentFining = async (procedure, user: Usuario) => {
   let { pago } = procedure;
   try {
     client.query('BEGIN');
-    const resources = (await client.query(queries.GET_RESOURCES_FOR_FINING, [procedure.tipoTramite, procedure.idTramite])).rows[0];
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_FINING, [procedure.idTramite])).rows[0];
 
     if (!procedure.hasOwnProperty('sufijo')) {
       procedure.sufijo = resources.sufijo;
