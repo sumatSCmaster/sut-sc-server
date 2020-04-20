@@ -20,8 +20,9 @@ export const finingInit = async (procedure, user: Usuario) => {
     ).rows[0];
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_FINING, [response.idTramite])).rows[0];
+    const utmm = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     response.sufijo = resources.sufijo;
-    costo = resources.sufijo === 'ml' ? monto || resources.costo_base : null;
+    costo = resources.sufijo === 'ml' ? monto * utmm || resources.costo_base : null;
     const nextEvent = await getNextEventForFining(response, client);
 
     respState = await client.query(queries.UPDATE_FINING, [response.id, nextEvent, null, costo, null]);
