@@ -405,7 +405,7 @@ const broadcastForFiningUpdate = async (sender: Usuario, description: string, pa
     const superuser = (await client.query(queries.GET_SUPER_USER)).rows;
     const permittedOfficials = (await client.query(queries.GET_OFFICIALS_FOR_PROCEDURE, [payload.nombreCorto, payload.tipoTramite])).rows;
 
-    if (payload.estado !== 'ingresardatos' && emisor !== `${user[0].nacionalidad}-${user[0].cedula}`) {
+    if (payload.estado !== 'ingresardatos') {
       await Promise.all(
         user.map(async (el) => {
           const userDesc = `${description} por la institucion ${payload.nombreLargo}`;
@@ -453,6 +453,10 @@ const broadcastForFiningUpdate = async (sender: Usuario, description: string, pa
       socket?.to(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
     }
 
+    if (payload.estado === 'finalizado') {
+      socket?.emit('SEND_NOTIFICATION', notification[0]);
+      socket?.emit('UPDATE_FINING', payload);
+    }
     socket?.to(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
     socket?.to(`inst:${payload.nombreCorto}`).emit('UPDATE_FINING', payload);
 
