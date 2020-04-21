@@ -419,7 +419,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     ON cf.id_institucion = ins.id_institucion WHERE ins.nombre_corto =$1 AND id_tipo_tramite = $2',
   GET_SUPER_USER: 'SELECT * FROM USUARIO WHERE id_tipo_usuario = 1',
   GET_PROCEDURE_CREATOR: 'SELECT * FROM USUARIO WHERE id_usuario = $1',
-  GET_FINING_TARGET: 'SELECT cedula, nacionalidad FROM notificacion_multa_view WHERE "idMulta"=$1',
+  GET_FINING_TARGET: 'SELECT cedula, nacionalidad FROM multa_state WHERE id=$1',
   CHECK_IF_USER_EXISTS: 'SELECT * FROM usuario WHERE cedula = $1 AND nacionalidad = $2',
   CREATE_NOTIFICATION:
     'INSERT INTO notificacion (id_procedimiento, emisor, receptor, descripcion, status, \

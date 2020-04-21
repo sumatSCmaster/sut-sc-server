@@ -324,17 +324,19 @@ export const updateProcedureCost = async (id: string, newCost: string): Promise<
   }
 };
 
-export const getFieldsForValidations = async (idProcedure) => {
+export const getFieldsForValidations = async ({ id, type }) => {
   const client = await pool.connect();
+  let resources;
   try {
     let takings = 0;
-    const resources = (await client.query('SELECT state, tipotramite FROM tramites_state_with_resources WHERE id=$1', [idProcedure])).rows[0];
-    const response = (await client.query(queries.VALIDATE_FIELDS_FROM_PROCEDURE, [resources.tipotramite, resources.state])).rows;
+    if (id) resources = (await client.query('SELECT state, tipotramite FROM tramites_state_with_resources WHERE id=$1', [id])).rows[0];
+    const response = (await client.query(queries.VALIDATE_FIELDS_FROM_PROCEDURE, [resources.tipotramite || type, resources.state || 'iniciado'])).rows;
     if (resources.state === 'iniciado') {
       takings = (await client.query(queries.GET_TAKINGS_FOR_VALIDATION, [resources.tipotramite])).rowCount;
     }
     return { fields: response, takings };
   } catch (error) {
+    console.log(error);
     throw {
       status: 400,
       error,

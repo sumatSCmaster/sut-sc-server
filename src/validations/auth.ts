@@ -345,6 +345,42 @@ const validations = {
     .isInt()
     .isLength({ min: 1 })
     .withMessage('Debe incluir un numero de bohio valido'),
+  nombreOrganizacion: check('tramite.datos.nombreOrganizacion')
+    .exists()
+    .withMessage('Debe incluir el nombre de la organizacion')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El nombre de la organizacion no puede ser vacio'),
+  tipoSociedad: check('tramite.datos.tipoSociedad')
+    .exists()
+    .withMessage('Debe incluir el tipo de sociedad')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El tipo de sociedad no puede ser vacio'),
+  tipoTransporte: check('tramite.datos.tipoTransporte')
+    .exists()
+    .withMessage('Debe incluir el tipo de transporte')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El tipo de transporte no puede ser vacio'),
+  nombreRepresentante: check('tramite.datos.nombreRepresentante')
+    .exists()
+    .withMessage('Debe incluir el nombre del representante')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El nombre del representante no puede ser vacio'),
+  cedulaRepresentante: check('tramite.datos.cedulaRepresentante')
+    .exists()
+    .withMessage('Debe incluir la cedula del representante')
+    .isInt()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir una cedula valida para el representante'),
+  telefonoRepresentante: check('tramite.datos.telefonoRepresentante')
+    .exists()
+    .withMessage('Debe incluir el numero de telefono del representante')
+    .isInt()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir un numero de telefono valido para el representante'),
 };
 
 export const createSuperuser = [
@@ -472,7 +508,7 @@ export const validate = () => {
   };
 };
 const isValidProcedure = async (req, res) => {
-  const [error, data] = await fulfill(getFieldsForValidations(req.body.tramite.idTramite));
+  const [error, data] = await fulfill(getFieldsForValidations({ id: req.body.tramite.idTramite, type: req.body.tramite.tipoTramite }));
   if (error) res.status(error.status).json(error);
   if (data) {
     const arr = data.fields.map((el) => validations[el.validacion]);
