@@ -40,18 +40,21 @@ html
               when 'CBM'
                 - src = 'images/LogoBomberos.png'
               when 'SAGAS' 
-                - src ='images/SAGAS.png'
+                - src = 'images/SAGAS.png'
               when 'CPU'
-                - src ='images/CPU.png'
+                - src = 'images/CPU.png'
               when 'SEDEPAR'
-                - src ='images/SEDEPAR.png'
+                - src = 'images/SEDEPAR.png'
               when 'IMA'
-                - src ='images/IMA.png' 
+                - src = 'images/IMA.png' 
               when 'PMM'
-                - src ='images/POLIMARACAIBO.png' 
+                - src = 'images/POLIMARACAIBO.png' 
               default
                 - src = 'images/LogoAlcaldia.png'
-            img#logo(src=src)
+            if institucion === 'PMM'
+              img#logo(src=src, style={width:'100px !important'})
+            else
+              img#logo(src=src)
         img#divider(src='images/Divider.png')
       div#content
         if !datos.funcionario
