@@ -68,6 +68,7 @@ export const getNotifications = async (user: Usuario): Promise<Notificacion[] | 
           id: el.id,
           status: el.status,
           fechaCreacion: el.fechaCreacion,
+          concepto: el.concepto,
         };
         return formatNotification(el.emisor, el.receptor, el.descripcion, multa, notificacion);
       })
@@ -328,7 +329,7 @@ const broadcastForAffairUpdate = async (sender: Usuario, description: string, pa
 };
 
 const broadcastForFiningInit = async (sender: Usuario, description: string, payload: Partial<Multa>, concept: string, client: PoolClient) => {
-  const io = getIo();
+  const socket = users.get(`${sender.nacionalidad}-${sender.cedula}`);
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
   try {
     client.query('BEGIN');
@@ -379,12 +380,12 @@ const broadcastForFiningInit = async (sender: Usuario, description: string, payl
               .rows[0]
         )
       );
-      io.in(`tram:${payload.tipoTramite}`).emit('CREATE_FINING', payload);
-      io.in(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
+      socket?.to(`tram:${payload.tipoTramite}`).emit('CREATE_FINING', payload);
+      socket?.to(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
     }
 
-    io.in(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
-    io.in(`inst:${payload.nombreCorto}`).emit('CREATE_FINING', payload);
+    socket?.to(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
+    socket?.to(`inst:${payload.nombreCorto}`).emit('CREATE_FINING', payload);
 
     client.query('COMMIT');
   } catch (error) {
@@ -394,7 +395,7 @@ const broadcastForFiningInit = async (sender: Usuario, description: string, payl
 };
 
 const broadcastForFiningUpdate = async (sender: Usuario, description: string, payload: Partial<Multa>, concept: string, client: PoolClient) => {
-  const io = getIo();
+  const socket = users.get(`${sender.nacionalidad}-${sender.cedula}`);
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
 
   try {
@@ -448,12 +449,12 @@ const broadcastForFiningUpdate = async (sender: Usuario, description: string, pa
               .rows[0]
         )
       );
-      io.in(`tram:${payload.tipoTramite}`).emit('UPDATE_FINING', payload);
-      io.in(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
+      socket?.to(`tram:${payload.tipoTramite}`).emit('UPDATE_FINING', payload);
+      socket?.to(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
     }
 
-    io.in(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
-    io.in(`inst:${payload.nombreCorto}`).emit('UPDATE_FINING', payload);
+    socket?.to(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
+    socket?.to(`inst:${payload.nombreCorto}`).emit('UPDATE_FINING', payload);
 
     client.query('COMMIT');
   } catch (error) {
