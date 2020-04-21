@@ -71,7 +71,8 @@ export const getAvailableProceduresOfInstitution = async (req: {
 
 const getProcedureInstances = async (user, client: PoolClient) => {
   try {
-    let response = ( //TODO: corregir el handler para que no sea tan forzado
+    let response = //TODO: corregir el handler para que no sea tan forzado
+    (
       await procedureInstanceHandler(
         user.institucion && user.institucion.id === 0 ? 0 : user.institucion && user.institucion.nombreCorto === 'SEDETEMA' ? 6 : user.tipoUsuario,
         user.tipoUsuario !== 4 ? (user.institucion ? user.institucion.id : 0) : user.id,
@@ -326,14 +327,18 @@ export const updateProcedureCost = async (id: string, newCost: string): Promise<
 
 export const getFieldsForValidations = async ({ id, type }) => {
   const client = await pool.connect();
-  let resources;
+  let response;
   try {
     let takings = 0;
-    if (id) resources = (await client.query('SELECT state, tipotramite FROM tramites_state_with_resources WHERE id=$1', [id])).rows[0];
-    const response = (await client.query(queries.VALIDATE_FIELDS_FROM_PROCEDURE, [resources.tipotramite || type, resources.state || 'iniciado'])).rows;
-    if (resources.state === 'iniciado') {
-      takings = (await client.query(queries.GET_TAKINGS_FOR_VALIDATION, [resources.tipotramite])).rowCount;
+    if (id) {
+      const resources = (await client.query('SELECT state, tipotramite FROM tramites_state_with_resources WHERE id=$1', [id])).rows[0];
+      response = (await client.query(queries.VALIDATE_FIELDS_FROM_PROCEDURE, [resources.tipotramite, resources.state])).rows;
+    } else {
+      response = (await client.query(queries.VALIDATE_FIELDS_FROM_PROCEDURE, [type, 'iniciado'])).rows;
     }
+    // if (resources.state === 'iniciado') {
+    //   takings = (await client.query(queries.GET_TAKINGS_FOR_VALIDATION, [resources.tipotramite])).rowCount;
+    // }
     return { fields: response, takings };
   } catch (error) {
     console.log(error);
