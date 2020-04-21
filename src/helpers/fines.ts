@@ -55,7 +55,7 @@ export const finingInit = async (procedure, user: Usuario) => {
         estado: respState.rows[0].state,
       });
     }
-    sendNotification(user, `Se le ha asignado una multa al titular de la cédula ${multa.nacionalidad}-${multa.nacionalidad}`, 'CREATE_FINING', 'MULTA', multa);
+    sendNotification(user, `Se le ha asignado una multa al titular de la cédula ${multa.nacionalidad}-${multa.cedula}`, 'CREATE_FINING', 'MULTA', multa);
 
     return {
       status: 201,
@@ -126,7 +126,7 @@ const addPaymentFining = async (procedure, user: Usuario) => {
     }
     sendNotification(
       user,
-      `Se añadieron los datos de pago para una multa asignada al titular de la cédula ${multa.nacionalidad}-${multa.nacionalidad}`,
+      `Se añadieron los datos de pago para una multa asignada al titular de la cédula ${multa.nacionalidad}-${multa.cedula}`,
       'UPDATE_FINING',
       'MULTA',
       multa
@@ -199,7 +199,7 @@ export const validateFining = async (procedure, user: Usuario) => {
     }
     sendNotification(
       user,
-      `Se ha validado el pago de una multa asignada al titular de la cédula ${multa.nacionalidad}-${multa.nacionalidad}`,
+      `Se ha validado el pago de una multa asignada al titular de la cédula ${multa.nacionalidad}-${multa.cedula}`,
       'UPDATE_FINING',
       'MULTA',
       multa
