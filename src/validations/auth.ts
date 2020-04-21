@@ -381,6 +381,42 @@ const validations = {
     .isInt()
     .isLength({ min: 1 })
     .withMessage('Debe incluir un numero de telefono valido para el representante'),
+  finalidad: check('tramite.datos.finalidad')
+    .exists()
+    .withMessage('Debe incluir la finalidad')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('La finalidad no puede ser vacia'),
+  frente: check('tramite.datos.frente')
+    .exists()
+    .withMessage('Debe incluir el frente')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El frente no puede ser vacio'),
+  linderoFrente: check('tramite.datos.linderoFrente')
+    .exists()
+    .withMessage('Debe incluir el lindero del frente')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El lindero del frente no puede ser vacio'),
+  linderoFondo: check('tramite.datos.linderoFondo')
+    .exists()
+    .withMessage('Debe incluir el lindero del fondo')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El lindero del fondo no puede ser vacio'),
+  linderoDerecha: check('tramite.datos.linderoDerecha')
+    .exists()
+    .withMessage('Debe incluir el lindero de la derecha')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El lindero de la derecha no puede ser vacio'),
+  linderoIzquierda: check('tramite.datos.linderoIzquierda')
+    .exists()
+    .withMessage('Debe incluir el lindero de la izquierda')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El lindero de la izquierda no puede ser vacio'),
 };
 
 export const createSuperuser = [
