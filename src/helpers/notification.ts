@@ -405,7 +405,7 @@ const broadcastForFiningUpdate = async (sender: Usuario, description: string, pa
     const superuser = (await client.query(queries.GET_SUPER_USER)).rows;
     const permittedOfficials = (await client.query(queries.GET_OFFICIALS_FOR_PROCEDURE, [payload.nombreCorto, payload.tipoTramite])).rows;
 
-    if (payload.estado !== 'ingresardatos') {
+    if (payload.estado !== 'ingresardatos' && emisor !== `${user[0].nacionalidad}-${user[0].cedula}`) {
       await Promise.all(
         user.map(async (el) => {
           const userDesc = `${description} por la institucion ${payload.nombreLargo}`;
