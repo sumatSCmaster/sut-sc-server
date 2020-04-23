@@ -95,11 +95,11 @@ block content
         div.td(style={ width: '50%' }).border-right
           p
             b Punto de Referencia:
-            span &nbsp; #{datos.usuario.parroquia}
+            span &nbsp; #{datos.usuario.puntoReferencia}
         div.td(style={ width: '50%' })
           p
             b Finalidad de la Solicitud:
-            span &nbsp; #{datos.usuario.tipoInmueble}
+            span &nbsp; #{datos.usuario.finalidad}
     div.table            
       div.th
         p LINDEROS ACTUALES DEL INMUEBLE
@@ -108,23 +108,23 @@ block content
           div.td(style={ width: '100%' }).border-bottom
             p
               b FRENTE:
-              span &nbsp; #{datos.usuario.parroquia}
+              span &nbsp; #{datos.usuario.linderoFrente}
           div.td(style={ width: '100%' }).border-bottom
             p
               b FONDO:
-              span &nbsp; #{datos.usuario.parroquia}
+              span &nbsp; #{datos.usuario.linderoFondo}
           div.td(style={ width: '100%' }).border-bottom
             p
               b DERECHA:
-              span &nbsp; #{datos.usuario.parroquia}
+              span &nbsp; #{datos.usuario.linderoDerecha}
           div.td(style={ width: '100%' })
             p
               b IZQUIERDA:
-              span &nbsp; #{datos.usuario.parroquia}                                
+              span &nbsp; #{datos.usuario.linderoIzquierda}                                
         div.td(style={ width: '50%' })
               p(style={'text-align':'justify'})
                 b Observaciones:
-                span &nbsp; #{texto}
+                span &nbsp; #{datos.usuario.observaciones}
     div#recaudos
       h3 REQUISITOS OBLIGATORIOS
       hr.divider
@@ -144,9 +144,4 @@ block content
       ul
         li Todos los recaudos deberán ser consignados en una carpeta marrón oficio con su respectivo gancho y separadores entre cada requisito.
         li Solo se iniciara el proceso de revisión cuando los recaudos Estén Completos.
-        li El monto a pagar por concepto de tasas administrativas de conformidad con lo establecido en la Ordenanza sobre Tasas Administrativas por expedición de Licencias, Permisos, Ventas, Copias y Certificación de Documentos del Municipio Maracaibo será:
-        ul(style={ 'padding-left': '15px' })
-          li Barrio Nuevo: 0.25 PETROS.
-          li Barrio Consolidados, Zonas Residenciales y locales comerciales 0.40 PETROS.
-          li Oficinas industriales y de servicios 0.40 PETROS.
-                                
+        li El monto a pagar por concepto de tasas administrativas de conformidad con lo establecido en la Ordenanza sobre Tasas Administrativas por expedición de Licencias, Permisos, Ventas, Copias y Certificación de Documentos del Municipio Maracaibo será de 0.4 UTMM
