@@ -10,10 +10,10 @@ block content
       #fecha-exp(style='width: 30%;')
         p
           b EXP.:
-          |  #{codigo}
+          | #{codigo}
         p
           b FECHA:
-          |  #{moment(fecha).format('DD/MM/YYYY')}
+          | #{moment(fecha).format('DD/MM/YYYY')}
       #tramite(style='width: 50%;')
         h1 NOMENCLATURA
       div(style='width: 20%; padding: 2px 0;')
@@ -28,57 +28,57 @@ block content
           div
             h1 N&deg; DE PLACA: 
           .grow2
-            h1 ${form.nro_placa}
+            h1 #{datos.funcionario.numeroPlaca}
         table
           tr
             th(scope='row') DIRECCI&Oacute;N:
-            td ${form.direccion}
+            td #{datos.funcionario.ubicadoEn}
           tr
             th(scope='row') SITIO:
-            td ${form.sitio}
+            td #{datos.funcionario.sitio}
           tr
             th(scope='row') PARROQUIA:
-            td ${form.parroquia_descripcion}
+            td #{datos.funcionario.parroquiaEdificio}
           tr
             th(scope='row') OBSERVACIONES:
-            td ${form.observaciones}
+            td #{datos.funcionario.observaciones || 'N/A'}
         .nota.row
           p
             b NOTA:
-            |               EL OTORGAMIENTO DE LA PRESENTE CONSTANCIA DE NOMENCLATURA NO ACREDITA EL RECONOCIMIENTO DE LA PROPIEDAD
-            |               O POSESI&Oacute;N DEL INMUEBLE SOLICITADO Y SOLO SE EMITE PARA LA TRAMITACI&Oacute;N DE LOS SERVICIOS P&Uacute;BLICOS.
+            | EL OTORGAMIENTO DE LA PRESENTE CONSTANCIA DE NOMENCLATURA NO ACREDITA EL RECONOCIMIENTO DE LA PROPIEDAD
+            | O POSESI&Oacute;N DEL INMUEBLE SOLICITADO Y SOLO SE EMITE PARA LA TRAMITACI&Oacute;N DE LOS SERVICIOS P&Uacute;BLICOS.
     .sections.row
       .grow2
       .grow1
         h6 Edo:
-        p ${form.edo || &quot;N/A&quot; }
+        p #{datos.funcionario.codigoNomenclatura.edo || 'N/A' }
       .grow1
         h6 Mun:
-        p ${form.mun || &quot;N/A&quot; }
+        p #{datos.funcionario.codigoNomenclatura.mun || 'N/A' }
       .grow1
         h6 Parr:
-        p ${form.parr || &quot;N/A&quot; }
+        p #{datos.funcionario.codigoNomenclatura.parr || 'N/A' }
       .grow1
         h6 Amb:
-        p ${form.amb || &quot;N/A&quot; }
+        p #{datos.funcionario.codigoNomenclatura.amb || 'N/A' }
       .grow1
         h6 Sec:
-        p ${form.sec || &quot;N/A&quot; }
+        p #{datos.funcionario.codigoNomenclatura.sec || 'N/A' }
       .grow1
         h6 Man:
-        p ${form.man || &quot;N/A&quot; }
+        p #{datos.funcionario.codigoNomenclatura.man || 'N/A' }
       .grow1
         h6 Parc:
-        p ${form.parc || &quot;N/A&quot; }
+        p #{datos.funcionario.codigoNomenclatura.parc || 'N/A' }
       .grow1
         h6 Subp:
-        p ${form.subp || &quot;N/A&quot; }
+        p #{datos.funcionario.codigoNomenclatura.subp || 'N/A' }
       .grow1
         h6 Niv:
-        p ${form.niv || &quot;N/A&quot; }
+        p #{datos.funcionario.codigoNomenclatura.niv || 'N/A' }
       .grow1
         h6 Uni:
-        p ${form.uni || &quot;N/A&quot; }
+        p #{datos.funcionario.codigoNomenclatura.uni || 'N/A' }
     .funcionarios.row
       .grow1
         p.grow1 Aprobado:
