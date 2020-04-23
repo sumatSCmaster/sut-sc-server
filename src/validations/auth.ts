@@ -417,6 +417,14 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('El lindero de la izquierda no puede ser vacio'),
+  sitio: check('tramite.datos.sitio').exists().withMessage('Debe incluir el sitio').isString().isLength({ min: 1 }).withMessage('El sitio no puede ser vacio'),
+  codigoNomenclatura: check('tramite.datos.codigoNomenclatura').exists().withMessage('Debe incluir el codigo de nomenclatura'),
+  numeroPlaca: check('tramite.datos.numeroPlaca')
+    .exists()
+    .withMessage('Debe incluir el numero de la placa')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El numero de placa no puede ser vacio'),
 };
 
 export const createSuperuser = [
