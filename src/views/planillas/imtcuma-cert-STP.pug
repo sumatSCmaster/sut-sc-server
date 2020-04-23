@@ -17,10 +17,10 @@ block content
         div
           p
             b Nombre:&nbsp;
-            | #{datos.funcionario.nombreCompleto}
+            | #{datos.usuario.nombre}
           p
             b Cedula:&nbsp;
-            | #{datos.funcionario.nacionalidad}-#{datos.funcionario.cedula}
+            | #{datos.usuario.nacionalidad}-#{datos.usuario.cedula}
         div(style={'margin-left':'5%'})
           p
             b Dirección:&nbsp;
@@ -34,13 +34,11 @@ block content
       div(style={'font-size':'20px', 'font-weight':'bold'}).row-constancy
         div(style={'text-align':'start', }) Descripción
         div(style={'text-align':'center'}) Fecha
-        div(style={'text-align':'center'}) Monto (UTMM)
         div(style={'text-align':'center'}) Monto (Bs)
       hr.divider
       div.row-constancy
-        div(style={'text-align':'start' }) #{datos.funcionario.motivo}
+        div(style={'text-align':'start' }) Pago de #{tramite}
         div(style={'text-align':'center' }) #{moment(fecha).format('DD/MM/YYYY')}
-        div(style={'text-align':'center' }) #{datos.funcionario.utmm}
         div(style={'text-align':'center' }) #{costoFormateado}    
   div(style={'text-align':'start', 'width': '90%'})
     div#recaudos
@@ -48,4 +46,4 @@ block content
       hr.divider
       ul
         li El precio de la Unidad Tributaria Municipal de Maracaibo (UTMM) para la fecha es de Bs. #{UTMM}
-        li Para retirar el certificado se debe de dirigir a IMTCUMA con esta constancia.
+        li <b>Para retirar el certificado se debe de dirigir a IMTCUMA con esta constancia.</b>
