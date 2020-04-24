@@ -366,6 +366,38 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     "SELECT COUNT (*), EXTRACT(YEAR FROM fechacreacion::date) AS year FROM tramites_state_with_resources t \
     INNER JOIN tipo_tramite tt ON tt.id_tipo_tramite = t.tipotramite WHERE tt.id_institucion = $1 \
     AND fechacreacion::date > CURRENT_DATE - INTERVAL '5 years' GROUP BY year;",
+  // OFFICIAL FINING STATS
+  GET_FINE_TOTAL_COUNT: 'SELECT COUNT (*) FROM multa t INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite WHERE tt.id_institucion = $1;',
+  GET_FINE_TOTAL_IN_MONTH:
+    'SELECT COUNT (*) FROM multa t INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite WHERE tt.id_institucion = $1 \
+    AND EXTRACT(MONTH FROM t.fecha_creacion) = $2;',
+  GET_FINE_TOTAL_BY_STATUS:
+    'SELECT COUNT (*) FROM multa_state t INNER JOIN tipo_tramite tt ON t.tipotramite = tt.id_tipo_tramite WHERE tt.id_institucion = $1 \
+    AND t.state = $2',
+  GET_FINE_BY_DATE:
+    "SELECT COUNT (*), fecha_creacion::date FROM multa t INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite \
+    WHERE tt.id_institucion = $1 AND fecha_creacion::date > CURRENT_DATE - INTERVAL '30 days' GROUP BY fecha_creacion::date;",
+  GET_FINE_BY_STATUS_MONTHLY:
+    'SELECT COUNT (*) FROM multa_state t INNER JOIN tipo_tramite tt ON t.tipotramite = tt.id_tipo_tramite \
+    WHERE tt.id_institucion = $1 AND EXTRACT(MONTH FROM t.fechacreacion) = $2 AND t.state = $3;',
+  GET_FINE_COUNT_BY_STATE:
+    'SELECT COUNT (*), state FROM multa_state t INNER JOIN tipo_tramite tt \
+    ON tt.id_tipo_tramite = t.tipotramite WHERE tt.id_institucion = $1 GROUP BY state;',
+  GET_FINE_COUNT_LAST_20_DAYS:
+    "SELECT COUNT (*), fechacreacion::date FROM multa_state t INNER JOIN tipo_tramite tt \
+    ON tt.id_tipo_tramite = t.tipotramite WHERE tt.id_institucion = $1 \
+    AND fechacreacion::date > CURRENT_DATE - INTERVAL '20 days' \
+    GROUP BY fechacreacion::date ORDER BY fechacreacion DESC;",
+  GET_FINE_COUNT_LAST_12_MONTHS:
+    "SELECT COUNT (*), EXTRACT(MONTH FROM fechacreacion::date) AS month, EXTRACT(YEAR FROM fechacreacion::date) \
+    AS year FROM multa_state t INNER JOIN tipo_tramite tt \
+    ON tt.id_tipo_tramite = t.tipotramite WHERE tt.id_institucion = $1 \
+    AND fechacreacion::date > CURRENT_DATE - INTERVAL '12 months' \
+    GROUP BY month, year;",
+  GET_FINE_COUNT_LAST_5_YEARS:
+    "SELECT COUNT (*), EXTRACT(YEAR FROM fechacreacion::date) AS year FROM multa_state t \
+    INNER JOIN tipo_tramite tt ON tt.id_tipo_tramite = t.tipotramite WHERE tt.id_institucion = $1 \
+    AND fechacreacion::date > CURRENT_DATE - INTERVAL '5 years' GROUP BY year;",
   // SUPER USER STATS
   GET_SUPER_PROC_TOTAL_COUNT: 'SELECT COUNT (*) FROM tramite;',
   GET_SUPER_PROC_TOTAL_IN_MONTH: 'SELECT COUNT (*) FROM tramite WHERE EXTRACT(MONTH FROM fecha_creacion) = $1;',
