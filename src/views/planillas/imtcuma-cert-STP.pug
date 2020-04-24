@@ -1,0 +1,49 @@
+extends default
+ 
+block content
+  div#fecha
+    p
+      b FECHA:
+      span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+    p
+      b Código de Tramite:
+      span &nbsp; #{codigo}
+  div#planilla
+    div
+      h2 CONSTANCIA DE PAGO DE #{tramite.toUpperCase()}
+    div.ticket(style={'margin':'2% 7.5%', 'border': '2px solid #3387ca'})
+      h2(style={'margin':'0', 'padding-left': '20px', 'padding-top': '20px', 'text-align':'start'}) Ciudadano:
+      div.ticket-data
+        div
+          p
+            b Nombre:&nbsp;
+            | #{datos.usuario.nombre}
+          p
+            b Cedula:&nbsp;
+            | #{datos.usuario.nacionalidad}-#{datos.usuario.cedula}
+        div(style={'margin-left':'5%'})
+          p
+            b Dirección:&nbsp;
+            | #{datos.funcionario.direccion}
+          p
+            b Teléfono:&nbsp;
+            | #{datos.funcionario.telefono}
+        div(style={flex: '0.5', 'text-align': 'center'})
+          img#QR(src=QR style={'margin-bottom': '10px'})
+    div           
+      div(style={'font-size':'20px', 'font-weight':'bold'}).row-constancy
+        div(style={'text-align':'start', }) Descripción
+        div(style={'text-align':'center'}) Fecha
+        div(style={'text-align':'center'}) Monto (Bs)
+      hr.divider
+      div.row-constancy
+        div(style={'text-align':'start' }) Pago de #{tramite}
+        div(style={'text-align':'center' }) #{moment(fecha).format('DD/MM/YYYY')}
+        div(style={'text-align':'center' }) #{costoFormateado}    
+  div(style={'text-align':'start', 'width': '90%'})
+    div#recaudos
+      h3 OBSERVACIONES GENERALES
+      hr.divider
+      ul
+        li El precio de la Unidad Tributaria Municipal de Maracaibo (UTMM) para la fecha es de Bs. #{UTMM}
+        li <b>Para retirar el certificado se debe de dirigir a IMTCUMA con esta constancia.</b>

@@ -15,7 +15,6 @@ export const getAllParishes = async (): Promise<{
     const parroquias: Parroquia[] = response.rows;
     return { parroquias, status: 200, message: 'Parroquias obtenidas' };
   } catch (error) {
-    console.log(error);
     throw {
       status: 500,
       error,
@@ -26,13 +25,12 @@ export const getAllParishes = async (): Promise<{
   }
 };
 
-export const getSectorByParish = async parish => {
+export const getSectorByParish = async (parish) => {
   const client = await pool.connect();
   try {
     const sectores = (await client.query(queries.GET_SECTOR_BY_PARISH, [parish])).rows;
     return { status: 200, message: 'Sectores obtenidos satisfactoriamente', sectores };
   } catch (error) {
-    console.log(error);
     throw {
       status: 500,
       error,

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import auth from './auth';
 import official from './officials';
-//import notification from "./notification";
+import notification from './notification';
 import banks from './banks';
 import file from './file';
 import procedures from './procedures';
@@ -12,7 +12,10 @@ import estates from './estates';
 import taxValues from './taxValues';
 import ordinance from './ordinance';
 import values from './values';
+import fines from './fines';
 import statistics from './statistics';
+import user from './user';
+import destination from './terminal';
 
 const router = Router();
 
@@ -27,9 +30,12 @@ router.use('/estates', estates);
 router.use('/ordinance', ordinance);
 router.use('/values', values);
 router.use('/taxValues', taxValues);
-router.use('/statistics', statistics);
+router.use('/user', user);
+router.use('/destination', destination);
+router.use('/stats', statistics);
+router.use('/fines', fines);
+router.use('/notification', notification);
 router.use(resources);
-//router.use("/notification", notification);
 
 router.get('/', (req, res) => {
   res.status(200).json({

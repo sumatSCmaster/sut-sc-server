@@ -4,9 +4,7 @@ import { getFieldsForValidations } from '@helpers/procedures';
 import { IDsTipoUsuario as userTypes } from '@interfaces/sigt';
 
 const estimacionSimple = [
-  check('tramite.datos.estimacionSimple')
-    .exists()
-    .withMessage('Debe incluir la estimacion simple'),
+  check('tramite.datos.estimacionSimple').exists().withMessage('Debe incluir la estimacion simple'),
   check('tramite.datos.estimacionSimple.esTerreno')
     .exists()
     .withMessage('Debe indicar si el inmueble es terreno')
@@ -78,26 +76,14 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('El nombre no puede ser vacio'),
-  cedula: check('tramite.datos.cedula')
-    .exists()
-    .withMessage('Debe incluir la cedula del usuario')
-    .isInt()
-    .withMessage('Cedula invalida'),
-  direccion: check('tramite.datos.direccion')
-    .exists()
-    .withMessage('Debe incluir la direccion del usuario')
-    .isString()
-    .withMessage('Direccion invalida'),
+  cedula: check('tramite.datos.cedula').exists().withMessage('Debe incluir la cedula del usuario').isInt().withMessage('Cedula invalida'),
+  direccion: check('tramite.datos.direccion').exists().withMessage('Debe incluir la direccion del usuario').isString().withMessage('Direccion invalida'),
   puntoReferencia: check('tramite.datos.puntoReferencia')
     .exists()
     .withMessage('Debe incluir un punto de referencia para la direccion del usuario')
     .isString()
     .withMessage('Punto de referencia invalido'),
-  sector: check('tramite.datos.sector')
-    .exists()
-    .withMessage('Debe incluir un sector para la direccion del usuario')
-    .isString()
-    .withMessage('Sector invalido'),
+  sector: check('tramite.datos.sector').exists().withMessage('Debe incluir un sector para la direccion del usuario').isString().withMessage('Sector invalido'),
   parroquia: check('tramite.datos.parroquia')
     .exists()
     .withMessage('Debe incluir una parroquia para la direccion del usuario')
@@ -126,20 +112,14 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('El horario es invalido'),
-  cedulaORif: check('tramite.datos.cedulaORif')
-    .exists()
-    .withMessage('Debe incluir la cedula o rif del usuario'),
+  cedulaORif: check('tramite.datos.cedulaORif').exists().withMessage('Debe incluir la cedula o rif del usuario'),
   nombreORazon: check('tramite.datos.nombreORazon')
     .exists()
     .withMessage('Debe incluir el nombre o razon social del usuario')
     .isString()
     .isLength({ min: 1 })
     .withMessage('El nombre o razon social no puede ser vacio'),
-  telefono: check('tramite.datos.telefono')
-    .exists()
-    .withMessage('Debe incluir la cedula del usuario')
-    .isInt()
-    .withMessage('Cedula invalida'),
+  telefono: check('tramite.datos.telefono').exists().withMessage('Debe incluir la cedula del usuario').isInt().withMessage('Cedula invalida'),
   recaudos: check('tramite.recaudos')
     .exists()
     .withMessage('Debe incluir los recaudos')
@@ -204,11 +184,7 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('Debe incluir un nombre de obra de la construccion valido'),
-  aforo: check('tramite.datos.aforo')
-    .exists()
-    .withMessage('Debe incluir el aforo de la ubicacion')
-    .isInt()
-    .withMessage('Debe incluir un aforo valido'),
+  aforo: check('tramite.datos.aforo').exists().withMessage('Debe incluir el aforo de la ubicacion').isInt().withMessage('Debe incluir un aforo valido'),
   informe: check('tramite.datos.informe')
     .exists()
     .withMessage('Debe incluir el informe de la inspeccion')
@@ -342,232 +318,204 @@ const validations = {
     .isArray()
     .isLength({ min: 1 })
     .withMessage('Debe incluir al menos un valor fiscal para este inmueble'),
-  estimacionSimple: check('tramite.datos.estimacionSimple')
+  estimacionSimple: check('tramite.datos.estimacionSimple').exists().withMessage('Debe incluir la estimacion simple'),
+  destino: check('tramite.datos.destino')
     .exists()
-    .withMessage('Debe incluir la estimacion simple'),
+    .withMessage('Debe incluir el destino')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El destino no puede ser vacio'),
+  fechaHora: check('tramite.datos.fechaHora')
+    .exists()
+    .withMessage('Debe incluir la fecha y hora')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('La fecha y hora no puede ser vacia'),
+  numeroBohio: check('tramite.datos.numeroBohio').optional().isInt().isLength({ min: 1 }).withMessage('Debe incluir un numero de bohio valido'),
+  detallesBohio: check('tramite.datos.numeroBohio').optional().isString().isLength({ min: 1 }).withMessage('Debe incluir un detalle de bohio valido'),
+  fechaApartado: check('tramite.datos.fechaApartado')
+    .exists()
+    .withMessage('Debe incluir la fecha para apartar')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('La fecha para apartar no puede ser vacia'),
+  numeroBohioFunc: check('tramite.datos.numeroBohioFunc')
+    .exists()
+    .withMessage('Debe incluir el numero de bohio')
+    .isInt()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir un numero de bohio valido'),
+  nombreOrganizacion: check('tramite.datos.nombreOrganizacion')
+    .exists()
+    .withMessage('Debe incluir el nombre de la organizacion')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El nombre de la organizacion no puede ser vacio'),
+  tipoSociedad: check('tramite.datos.tipoSociedad')
+    .exists()
+    .withMessage('Debe incluir el tipo de sociedad')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El tipo de sociedad no puede ser vacio'),
+  tipoTransporte: check('tramite.datos.tipoTransporte')
+    .exists()
+    .withMessage('Debe incluir el tipo de transporte')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El tipo de transporte no puede ser vacio'),
+  nombreRepresentante: check('tramite.datos.nombreRepresentante')
+    .exists()
+    .withMessage('Debe incluir el nombre del representante')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El nombre del representante no puede ser vacio'),
+  cedulaRepresentante: check('tramite.datos.cedulaRepresentante')
+    .exists()
+    .withMessage('Debe incluir la cedula del representante')
+    .isInt()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir una cedula valida para el representante'),
+  telefonoRepresentante: check('tramite.datos.telefonoRepresentante')
+    .exists()
+    .withMessage('Debe incluir el numero de telefono del representante')
+    .isInt()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir un numero de telefono valido para el representante'),
+  finalidad: check('tramite.datos.finalidad')
+    .exists()
+    .withMessage('Debe incluir la finalidad')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('La finalidad no puede ser vacia'),
+  frente: check('tramite.datos.frente')
+    .exists()
+    .withMessage('Debe incluir el frente')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El frente no puede ser vacio'),
+  linderoFrente: check('tramite.datos.linderoFrente')
+    .exists()
+    .withMessage('Debe incluir el lindero del frente')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El lindero del frente no puede ser vacio'),
+  linderoFondo: check('tramite.datos.linderoFondo')
+    .exists()
+    .withMessage('Debe incluir el lindero del fondo')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El lindero del fondo no puede ser vacio'),
+  linderoDerecha: check('tramite.datos.linderoDerecha')
+    .exists()
+    .withMessage('Debe incluir el lindero de la derecha')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El lindero de la derecha no puede ser vacio'),
+  linderoIzquierda: check('tramite.datos.linderoIzquierda')
+    .exists()
+    .withMessage('Debe incluir el lindero de la izquierda')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El lindero de la izquierda no puede ser vacio'),
+  sitio: check('tramite.datos.sitio').exists().withMessage('Debe incluir el sitio').isString().isLength({ min: 1 }).withMessage('El sitio no puede ser vacio'),
+  codigoNomenclatura: check('tramite.datos.codigoNomenclatura').exists().withMessage('Debe incluir el codigo de nomenclatura'),
+  numeroPlaca: check('tramite.datos.numeroPlaca')
+    .exists()
+    .withMessage('Debe incluir el numero de la placa')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El numero de placa no puede ser vacio'),
 };
 
 export const createSuperuser = [
-  check('usuario.cedula')
-    .exists()
-    .withMessage('Debe incluir la cedula del usuario')
-    .isInt()
-    .withMessage('Cedula invalida'),
+  check('usuario.cedula').exists().withMessage('Debe incluir la cedula del usuario').isInt().withMessage('Cedula invalida'),
   check('usuario.nombreCompleto')
     .exists()
     .withMessage('Debe incluir el nombre del usuario')
     .isString()
     .isLength({ min: 1 })
     .withMessage('El nombre no puede ser vacio'),
-  check('usuario.nombreUsuario')
-    .exists()
-    .withMessage('Debe incluir el nombre de usuario')
-    .isString()
-    .withMessage('Nombre de usuario invalido'),
-  check('usuario.direccion')
-    .exists()
-    .withMessage('Debe incluir la direccion del usuario')
-    .isString()
-    .withMessage('Direccion invalida'),
-  check('usuario.nacionalidad')
-    .exists()
-    .withMessage('Debe incluir la nacionalidad del usuario')
-    .isString()
-    .withMessage('Nacionalidad invalida'),
-  check('usuario.institucion')
-    .exists()
-    .withMessage('Debe especificar la institucion del usuario')
-    .isNumeric()
-    .withMessage('ID de institucion invalido'),
-  check('usuario.password')
-    .exists()
-    .withMessage('Debe incluir clave del superusuario a crear'),
-  check('password')
-    .exists()
-    .withMessage('Debe incluir clave de creacion de superuser'),
+  check('usuario.nombreUsuario').exists().withMessage('Debe incluir el nombre de usuario').isString().withMessage('Nombre de usuario invalido'),
+  check('usuario.direccion').exists().withMessage('Debe incluir la direccion del usuario').isString().withMessage('Direccion invalida'),
+  check('usuario.nacionalidad').exists().withMessage('Debe incluir la nacionalidad del usuario').isString().withMessage('Nacionalidad invalida'),
+  check('usuario.institucion').exists().withMessage('Debe especificar la institucion del usuario').isNumeric().withMessage('ID de institucion invalido'),
+  check('usuario.password').exists().withMessage('Debe incluir clave del superusuario a crear'),
+  check('password').exists().withMessage('Debe incluir clave de creacion de superuser'),
 ];
 
 export const createAdmin = [
-  check('usuario.cedula')
-    .exists()
-    .withMessage('Debe incluir la cedula del usuario')
-    .isInt()
-    .withMessage('Cedula invalida'),
+  check('usuario.cedula').exists().withMessage('Debe incluir la cedula del usuario').isInt().withMessage('Cedula invalida'),
   check('usuario.nombreCompleto')
     .exists()
     .withMessage('Debe incluir el nombre del usuario')
     .isString()
     .isLength({ min: 1 })
     .withMessage('El nombre no puede ser vacio'),
-  check('usuario.nombreUsuario')
-    .exists()
-    .withMessage('Debe incluir el nombre de usuario')
-    .isString()
-    .withMessage('Nombre de usuario invalido'),
-  check('usuario.direccion')
-    .exists()
-    .withMessage('Debe incluir la direccion del usuario')
-    .isString()
-    .withMessage('Direccion invalida'),
-  check('usuario.nacionalidad')
-    .exists()
-    .withMessage('Debe incluir la nacionalidad del usuario')
-    .isString()
-    .withMessage('Nacionalidad invalida'),
-  check('usuario.telefono')
-    .exists()
-    .withMessage('Debe incluir el telefono del usuario')
-    .isString()
-    .withMessage('Telefono invalido'),
-  check('usuario.institucion')
-    .exists()
-    .withMessage('Debe especificar la institucion del usuario')
-    .isNumeric()
-    .withMessage('ID de institucion invalido'),
-  check('usuario.password')
-    .exists()
-    .withMessage('Debe incluir clave de administrador'),
+  check('usuario.nombreUsuario').exists().withMessage('Debe incluir el nombre de usuario').isString().withMessage('Nombre de usuario invalido'),
+  check('usuario.direccion').exists().withMessage('Debe incluir la direccion del usuario').isString().withMessage('Direccion invalida'),
+  check('usuario.nacionalidad').exists().withMessage('Debe incluir la nacionalidad del usuario').isString().withMessage('Nacionalidad invalida'),
+  check('usuario.telefono').exists().withMessage('Debe incluir el telefono del usuario').isString().withMessage('Telefono invalido'),
+  check('usuario.institucion').exists().withMessage('Debe especificar la institucion del usuario').isNumeric().withMessage('ID de institucion invalido'),
+  check('usuario.password').exists().withMessage('Debe incluir clave de administrador'),
 ];
 
 export const createOfficial = [
-  check('usuario.cedula')
-    .exists()
-    .withMessage('Debe incluir la cedula del usuario')
-    .isInt()
-    .withMessage('Cedula invalida'),
+  check('usuario.cedula').exists().withMessage('Debe incluir la cedula del usuario').isInt().withMessage('Cedula invalida'),
   check('usuario.nombreCompleto')
     .exists()
     .withMessage('Debe incluir el nombre del usuario')
     .isString()
     .isLength({ min: 1 })
     .withMessage('El nombre no puede ser vacio'),
-  check('usuario.nombreUsuario')
-    .exists()
-    .withMessage('Debe incluir el nombre de usuario')
-    .isString()
-    .withMessage('Nombre de usuario invalido'),
-  check('usuario.direccion')
-    .exists()
-    .withMessage('Debe incluir la direccion del usuario')
-    .isString()
-    .withMessage('Direccion invalida'),
-  check('usuario.nacionalidad')
-    .exists()
-    .withMessage('Debe incluir la nacionalidad del usuario')
-    .isString()
-    .withMessage('Nacionalidad invalida'),
-  check('usuario.telefono')
-    .exists()
-    .withMessage('Debe incluir el telefono del usuario')
-    .isString()
-    .withMessage('Telefono invalido'),
+  check('usuario.nombreUsuario').exists().withMessage('Debe incluir el nombre de usuario').isString().withMessage('Nombre de usuario invalido'),
+  check('usuario.direccion').exists().withMessage('Debe incluir la direccion del usuario').isString().withMessage('Direccion invalida'),
+  check('usuario.nacionalidad').exists().withMessage('Debe incluir la nacionalidad del usuario').isString().withMessage('Nacionalidad invalida'),
+  check('usuario.telefono').exists().withMessage('Debe incluir el telefono del usuario').isString().withMessage('Telefono invalido'),
   // check('usuario.tipoUsuario')
   //   .exists()
   //   .withMessage('Debe incluir el tipo de usuario')
   //   .isNumeric()
   //   .withMessage('Tipo usuario debe ser un valor numerico'),
-  check('usuario.password')
-    .exists()
-    .withMessage('Debe incluir una contraseña para el usuario'),
+  check('usuario.password').exists().withMessage('Debe incluir una contraseña para el usuario'),
 ];
 
 export const updateOfficial = createOfficial.slice(0, createOfficial.length - 1);
 
 export const login = [
-  check('nombreUsuario')
-    .exists()
-    .withMessage('Debe incluir el nombre de usuario')
-    .isString()
-    .withMessage('Nombre de usuario invalido'),
-  check('password')
-    .exists()
-    .withMessage('Debe incluir la contraseña')
-    .isString()
-    .withMessage('Contraseña invalida'),
+  check('nombreUsuario').exists().withMessage('Debe incluir el nombre de usuario').isString().withMessage('Nombre de usuario invalido'),
+  check('password').exists().withMessage('Debe incluir la contraseña').isString().withMessage('Contraseña invalida'),
 ];
 
 export const createSocialCase = [
-  check('caso.datos.cedula')
-    .exists()
-    .withMessage('Debe incluir la cedula del usuario')
-    .isInt()
-    .withMessage('Cedula invalida'),
+  check('caso.datos.cedula').exists().withMessage('Debe incluir la cedula del usuario').isInt().withMessage('Cedula invalida'),
   check('caso.datos.nombreCompleto')
     .exists()
     .withMessage('Debe incluir el nombre del usuario')
     .isString()
     .isLength({ min: 1 })
     .withMessage('El nombre no puede ser vacio'),
-  check('caso.datos.email')
-    .exists()
-    .withMessage('Debe incluir el nombre de usuario')
-    .isString()
-    .withMessage('Nombre de usuario invalido'),
-  check('caso.datos.direccion')
-    .exists()
-    .withMessage('Debe incluir la direccion del usuario')
-    .isString()
-    .withMessage('Direccion invalida'),
-  check('caso.datos.nacionalidad')
-    .exists()
-    .withMessage('Debe incluir la nacionalidad del usuario')
-    .isString()
-    .withMessage('Nacionalidad invalida'),
-  check('caso.datos.telefono')
-    .exists()
-    .withMessage('Debe incluir el telefono del usuario')
-    .isString()
-    .withMessage('Telefono invalido'),
-  check('caso.datos.parroquia')
-    .exists()
-    .withMessage('Debe incluir una parroquia para la direccion del usuario')
-    .isString()
-    .withMessage('Parroquia invalida'),
-  check('caso.datos.edad')
-    .exists()
-    .withMessage('Debe incluir la edad  del usuario')
-    .isInt()
-    .withMessage('Edad invalida'),
-  check('caso.datos.sexo')
-    .exists()
-    .withMessage('Debe incluir el sexo del usuario')
-    .isBoolean()
-    .withMessage('Sexo invalido'),
+  check('caso.datos.email').exists().withMessage('Debe incluir el nombre de usuario').isString().withMessage('Nombre de usuario invalido'),
+  check('caso.datos.direccion').exists().withMessage('Debe incluir la direccion del usuario').isString().withMessage('Direccion invalida'),
+  check('caso.datos.nacionalidad').exists().withMessage('Debe incluir la nacionalidad del usuario').isString().withMessage('Nacionalidad invalida'),
+  check('caso.datos.telefono').exists().withMessage('Debe incluir el telefono del usuario').isString().withMessage('Telefono invalido'),
+  check('caso.datos.parroquia').exists().withMessage('Debe incluir una parroquia para la direccion del usuario').isString().withMessage('Parroquia invalida'),
+  check('caso.datos.edad').exists().withMessage('Debe incluir la edad  del usuario').isInt().withMessage('Edad invalida'),
+  check('caso.datos.sexo').exists().withMessage('Debe incluir el sexo del usuario').isBoolean().withMessage('Sexo invalido'),
   check('caso.datos.poblacionIndigena')
     .exists()
     .withMessage('Debe indicar si el usuario pertenece a la poblacion indigena')
     .isBoolean()
     .withMessage('Dato invalido'),
-  check('caso.datos.profesion')
-    .exists()
-    .withMessage('Debe incluir la profesion del usuario')
-    .isString()
-    .withMessage('Profesion invalida'),
-  check('caso.datos.oficio')
-    .exists()
-    .withMessage('Debe incluir el oficio del usuario')
-    .isString()
-    .withMessage('Oficio invalido'),
-  check('caso.datos.estadoCivil')
-    .exists()
-    .withMessage('Debe incluir el estado civil del usuario')
-    .isString()
-    .withMessage('Estado civil invalido'),
+  check('caso.datos.profesion').exists().withMessage('Debe incluir la profesion del usuario').isString().withMessage('Profesion invalida'),
+  check('caso.datos.oficio').exists().withMessage('Debe incluir el oficio del usuario').isString().withMessage('Oficio invalido'),
+  check('caso.datos.estadoCivil').exists().withMessage('Debe incluir el estado civil del usuario').isString().withMessage('Estado civil invalido'),
   check('caso.datos.nivelInstruccion')
     .exists()
     .withMessage('Debe incluir el nivel de instruccion del usuario')
     .isString()
     .withMessage('Nivel de instruccion invalido'),
-  check('caso.datos.empleadoAlcaldia')
-    .exists()
-    .withMessage('Debe indicar si el usuario es empleado de la alcaldia')
-    .isBoolean()
-    .withMessage('Dato invalido'),
-  check('caso.datos.tipoAyuda')
-    .exists()
-    .withMessage('Debe incluir el tipo de ayuda que solicita el usuario')
-    .isString()
-    .withMessage('Tipo de ayuda invalido'),
+  check('caso.datos.empleadoAlcaldia').exists().withMessage('Debe indicar si el usuario es empleado de la alcaldia').isBoolean().withMessage('Dato invalido'),
+  check('caso.datos.tipoAyuda').exists().withMessage('Debe incluir el tipo de ayuda que solicita el usuario').isString().withMessage('Tipo de ayuda invalido'),
   check('caso.datos.tipoAyudaDesc')
     .exists()
     .withMessage('Debe incluir la descripción del tipo de ayuda que solicita el usuario')
@@ -583,27 +531,15 @@ export const createSocialCase = [
     .withMessage('Debe incluir la fecha de nacimiento del usuario')
     .isString()
     .withMessage('Fecha de nacimiento invalida'),
-  check('caso.datos.razonDeSolicitud')
-    .exists()
-    .withMessage('Debe incluir la razon de solicitud del usuario')
-    .isString()
-    .withMessage('Razon de solicitud'),
-  check('caso.datos.patologiaActual')
-    .exists()
-    .withMessage('Debe incluir la patologia actual del usuario')
-    .isString()
-    .withMessage('Patologia invalida'),
+  check('caso.datos.razonDeSolicitud').exists().withMessage('Debe incluir la razon de solicitud del usuario').isString().withMessage('Razon de solicitud'),
+  check('caso.datos.patologiaActual').exists().withMessage('Debe incluir la patologia actual del usuario').isString().withMessage('Patologia invalida'),
   check('caso.datos.areaDeSalud')
     .exists()
     .withMessage('Debe incluir el area de salud de la patologia del solicitante')
     .isString()
     .withMessage('Area de salud invalida'),
-  check('caso.datos.liderDeCalle')
-    .exists()
-    .withMessage('Debe incluir el lider de calle del solicitante'),
-  check('caso.datos.solicitante')
-    .exists()
-    .withMessage('Debe incluir la firma del solicitante'),
+  check('caso.datos.liderDeCalle').exists().withMessage('Debe incluir el lider de calle del solicitante'),
+  check('caso.datos.solicitante').exists().withMessage('Debe incluir la firma del solicitante'),
 ];
 
 export const createPersonalProperty = [];
@@ -611,16 +547,16 @@ export const createPersonalProperty = [];
 export const validate = () => {
   return async (req, res, next) => {
     const validaciones = await isValidProcedure(req, res);
-    await Promise.all(validaciones.map(validation => validation.run(req)));
+    await Promise.all(validaciones.map((validation) => validation.run(req)));
     next();
   };
 };
 const isValidProcedure = async (req, res) => {
-  const [error, data] = await fulfill(getFieldsForValidations(req.body.tramite.tipoTramite, req.body.tramite.estado || 'iniciado'));
+  const [error, data] = await fulfill(getFieldsForValidations({ id: req.body.tramite.idTramite, type: req.body.tramite.tipoTramite }));
   if (error) res.status(error.status).json(error);
   if (data) {
-    const arr = data.fields.map(el => validations[el.validacion]);
-    if (data.takings > 0) arr.push(validations['recaudos']);
+    const arr = data.fields.map((el) => validations[el.validacion]);
+    // if (data.takings > 0) arr.push(validations['recaudos']);
     return arr;
   }
 };

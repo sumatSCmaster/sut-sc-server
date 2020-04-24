@@ -1,0 +1,44 @@
+html
+  head
+    title Template
+    link(href='css/sedetema-solt-TS.css' rel='stylesheet' type='text/css')
+  body
+    #wrapper
+      #ticket-terminal
+        #watermark 
+          p PAGADO
+        #tasa-logo
+          img#logo(src='images/Terminal.png')
+          #tasa-wrapper
+            p#tasa TASA DE SALIDA
+            #monto
+              span Bs. #{datos.usuario.monto}
+        #fecha-destino
+          p <b>Fecha:</b> #{moment(datos.usuario.fechaTramite).format('DD/MM/YYYY')}
+          p <b>Hora:</b> #{moment(datos.usuario.fechaTramite).format('hh:mm a')}
+          P <b>Método de Pago:</b> #{datos.usuario.metodo}
+          if datos.usuario.metodo === 'Punto'
+            p <b>Referencia:</b> #{datos.usuario.referencia}
+          p#overflowing <b>Destino:</b> #{datos.usuario.destino}
+          #footer
+            img#QR(src=QR)
+            p#terminal TERMINAL
+      #ticket-terminal
+        #watermark 
+          p PAGADO
+        #tasa-logo
+          img#logo(src='images/Terminal.png')
+          #tasa-wrapper
+            p#tasa TASA DE SALIDA
+            #monto
+              span Bs. #{datos.usuario.monto}
+        #fecha-destino
+          p <b>Fecha:</b> #{moment(datos.usuario.fechaTramite).format('DD/MM/YYYY')}
+          p <b>Hora:</b> #{moment(datos.usuario.fechaTramite).format('hh:mm a')}
+          p <b>Destino:</b> #{datos.usuario.destino}
+          P <b>Método de Pago:</b> #{datos.usuario.metodo}
+          if datos.usuario.metodo === 'Punto'
+            p <b>Referencia:</b> #{datos.usuario.referencia}
+          #footer
+            img#QR(src=QR)
+            p#terminal USUARIO

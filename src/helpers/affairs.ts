@@ -3,13 +3,13 @@ import queries from '@utils/queries';
 import { Institucion, TipoTramite, Tramite, Usuario } from '@interfaces/sigt';
 import { errorMessageGenerator } from './errors';
 import switchcase from '@utils/switch';
+import { sendNotification } from './notification';
 const pool = Pool.getInstance();
 
 export const affairInit = async (affair, user) => {
   const client = await pool.connect();
   const { tipoTramite, datos } = affair;
   try {
-    console.log(datos);
     client.query('BEGIN');
     const response = (await client.query(queries.SOCIAL_CASE_INIT, [JSON.stringify(datos), user.id])).rows[0];
     const caso: Partial<Tramite> = {
@@ -26,6 +26,7 @@ export const affairInit = async (affair, user) => {
       nombreTramiteCorto: response.nombretramitecorto,
     };
     client.query('COMMIT');
+    sendNotification(user, `Se ha iniciado un caso social para la persona ${response.datos.nombreCompleto}`, 'CREATE_SOCIAL_AFFAIR', 'TRAMITE', caso);
     return {
       status: 201,
       message: 'Caso social iniciado',
@@ -43,7 +44,7 @@ export const affairInit = async (affair, user) => {
   }
 };
 
-export const updateAffair = async affair => {
+export const updateAffair = async (affair, user) => {
   const client = await pool.connect();
   let { estado, datos } = affair;
   try {
@@ -66,6 +67,13 @@ export const updateAffair = async affair => {
       nombreTramiteLargo: response.nombretramitelargo,
       nombreTramiteCorto: response.nombretramitecorto,
     };
+    sendNotification(
+      user,
+      `Se ha actualizado el estado de un caso social para la persona ${response.datos.nombreCompleto}`,
+      'UPDATE_SOCIAL_AFFAIR',
+      'TRAMITE',
+      caso
+    );
     return { status: 200, message: 'Caso social actualizado', caso };
   } catch (error) {
     client.query('ROLLBACK');

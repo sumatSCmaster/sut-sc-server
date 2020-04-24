@@ -1,0 +1,93 @@
+extends default
+
+block css
+  link(rel="stylesheet", href="css/cpu-cert-CC.css")
+
+block content
+  main.certificado
+    header.pageHeader.row
+    .header-table
+      #fecha-exp(style='width: 30%;')
+        p
+          b EXP.:
+          | #{codigo}
+        p
+          b FECHA:
+          | #{moment(fecha).format('DD/MM/YYYY')}
+      #tramite(style='width: 50%;')
+        h1 NOMENCLATURA
+      div(style='width: 20%; padding: 2px 0;')
+        img#QR(src=QR, alt='QR')
+    .datos-certificado.row
+      .croquis.grow2
+        h4 CROQUIS DE UBICACI&Oacute;N
+        img(src=datos.funcionario.croquis, alt='croquis', style={ width: '400px', 'object-fit': 'contain' })
+        p PLANO REFERENCIAL, Escala Gr&aacute;fica
+      .grow2(style='width: 60%')
+        .nro-placa.row
+          div
+            h1 N&deg; DE PLACA: 
+          .grow2
+            h1 #{datos.funcionario.numeroPlaca}
+        table
+          tr
+            th(scope='row') DIRECCI&Oacute;N:
+            td #{datos.funcionario.ubicadoEn}
+          tr
+            th(scope='row') SITIO:
+            td #{datos.funcionario.sitio}
+          tr
+            th(scope='row') PARROQUIA:
+            td #{datos.funcionario.parroquiaEdificio}
+          tr
+            th(scope='row') OBSERVACIONES:
+            td #{datos.funcionario.observaciones || 'N/A'}
+        .nota.row
+          p
+            b NOTA:
+            | EL OTORGAMIENTO DE LA PRESENTE CONSTANCIA DE NOMENCLATURA NO ACREDITA EL RECONOCIMIENTO DE LA PROPIEDAD
+            | O POSESI&Oacute;N DEL INMUEBLE SOLICITADO Y SOLO SE EMITE PARA LA TRAMITACI&Oacute;N DE LOS SERVICIOS P&Uacute;BLICOS.
+    .sections.row
+      .grow2
+      .grow1
+        h6 Edo:
+        p #{datos.funcionario.codigoNomenclatura.edo || 'N/A' }
+      .grow1
+        h6 Mun:
+        p #{datos.funcionario.codigoNomenclatura.mun || 'N/A' }
+      .grow1
+        h6 Parr:
+        p #{datos.funcionario.codigoNomenclatura.parr || 'N/A' }
+      .grow1
+        h6 Amb:
+        p #{datos.funcionario.codigoNomenclatura.amb || 'N/A' }
+      .grow1
+        h6 Sec:
+        p #{datos.funcionario.codigoNomenclatura.sec || 'N/A' }
+      .grow1
+        h6 Man:
+        p #{datos.funcionario.codigoNomenclatura.man || 'N/A' }
+      .grow1
+        h6 Parc:
+        p #{datos.funcionario.codigoNomenclatura.parc || 'N/A' }
+      .grow1
+        h6 Subp:
+        p #{datos.funcionario.codigoNomenclatura.subp || 'N/A' }
+      .grow1
+        h6 Niv:
+        p #{datos.funcionario.codigoNomenclatura.niv || 'N/A' }
+      .grow1
+        h6 Uni:
+        p #{datos.funcionario.codigoNomenclatura.uni || 'N/A' }
+    .funcionarios.row
+      .grow1
+        p.grow1 Aprobado:
+        h4 Ing. Marta Castillo
+        h4 Directora de Catastro
+      .grow1
+        p.grow1 Revisado:
+        h4 Jefe de Departamento
+      .grow1
+        p.grow1 Realizado:
+        h4 Analista de Codigo
+        

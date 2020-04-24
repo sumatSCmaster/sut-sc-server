@@ -1,0 +1,54 @@
+extends default
+ 
+block header
+ 
+block content
+ div.ticket
+   div#header
+     div.header-child
+       img#alcaldia(src='images/LogoAlcaldia.png')
+     div.header-child(style={'text-align':'center'})
+       p Alcaldia Bolivariana de Maracaibo
+       p Servicio Desconcentrado de Plazas y Parques
+       p R.I.F.: G-20006426-9
+     div.header-child
+       img#alcaldia(src='images/SEDEPAR.png')
+   img#divider(src='images/Divider.png')
+   div.ticket-data
+     div
+       p
+         h2 Datos del Solicitante
+       p
+         b Nombre:
+         | #{datos.usuario.nombre}
+       p
+         b Cedula:
+         | #{datos.usuario.nacionalidad}-#{datos.usuario.cedula}
+       p
+         b Correo:
+         | #{datos.usuario.correo}
+       p
+         b Teléfono:
+         | #{datos.usuario.telefono}         
+     div(style={'margin-left':'5%'})
+       p
+         h2 Datos del Apartado
+       p
+         b Fecha de apartado:
+         | #{moment(datos.usuario.fechaApartado).format('DD/MM/YYYY')}
+       p
+         b Fecha de emisión:
+         | #{moment(new Date()).format('DD/MM/YYYY')}                  
+       p
+         b Número del bohio:
+         | #{datos.funcionario.numeroBohio}
+     div(style={flex: '0.5', 'text-align': 'center'})
+       img#QR(src=QR)
+   if texto      
+     div.details
+       div
+         p
+           b Detalles del bohio:
+           | #{datos.funcionario.detallesBohio || 'N/A'}
+block footer
+

@@ -13,7 +13,7 @@ export const getDataForTaxValues = async () => {
     const parroquias = (await client.query(queries.GET_PARISHES)).rows;
     const tiposConstruccion = (await client.query(queries.GET_CONSTRUCTION_TYPES)).rows;
     await Promise.all(
-      data.map(async el => {
+      data.map(async (el) => {
         const year = el.descripcion;
         anos[year] = {
           id: el.id,
@@ -24,7 +24,6 @@ export const getDataForTaxValues = async () => {
     );
     return { status: 200, message: 'Informacion inicial de valores fiscales obtenida', datos: { parroquias, tiposConstruccion, anos } };
   } catch (error) {
-    console.log(error);
     throw {
       status: 500,
       error,
@@ -43,7 +42,7 @@ export const getTaxValuesToDate = async () => {
     const parroquias = (await client.query(queries.GET_PARISHES)).rows;
     const tiposConstruccion = (await client.query(queries.GET_CONSTRUCTION_TYPES)).rows;
     await Promise.all(
-      data.map(async el => {
+      data.map(async (el) => {
         const year = el.descripcion;
         anos[year] = {
           id: el.id,
@@ -54,7 +53,6 @@ export const getTaxValuesToDate = async () => {
     );
     return { status: 200, message: 'Valores fiscales obtenidos', datos: { parroquias, tiposConstruccion, anos } };
   } catch (error) {
-    console.log(error);
     throw {
       status: 500,
       error,
@@ -67,31 +65,31 @@ export const getTaxValuesToDate = async () => {
 
 const getConstructionsByYear = async (year: number, client: PoolClient) => {
   const res = (
-    await client.query(queries.GET_CONSTRUCTION_BY_YEAR, [year]).catch(e => {
+    await client.query(queries.GET_CONSTRUCTION_BY_YEAR, [year]).catch((e) => {
       throw new Error(e);
     })
   ).rows;
-  return res.map(el => {
+  return res.map((el) => {
     return { id: +el.id, valorFiscal: el.valorFiscal, tipoConstruccion: { id: +el.idTipoConstruccion, modeloConstruccion: el.tipoConstruccion } };
   });
 };
 
 const getGroundsByYear = async (year: number, client: PoolClient) => {
   const res = (
-    await client.query(queries.GET_GROUNDS_BY_YEAR, [year]).catch(e => {
+    await client.query(queries.GET_GROUNDS_BY_YEAR, [year]).catch((e) => {
       throw new Error(e);
     })
   ).rows;
   const parroquias = (await client.query(queries.GET_PARISHES)).rows;
   return Promise.all(
-    parroquias.map(async parish => {
+    parroquias.map(async (parish) => {
       const sectores = (await client.query(queries.GET_SECTOR_BY_PARISH, [parish.nombre])).rows;
       return {
         id: +parish.id,
         descripcion: parish.nombre,
         sectores: sectores
-          .map(sector => {
-            const terreno = res.find(el => +el.idSector == +sector.id && +el.idParroquia == +parish.id);
+          .map((sector) => {
+            const terreno = res.find((el) => +el.idSector == +sector.id && +el.idParroquia == +parish.id);
             if (!terreno) return null;
             return {
               id: +sector.id,
@@ -102,13 +100,13 @@ const getGroundsByYear = async (year: number, client: PoolClient) => {
               },
             };
           })
-          .filter(el => el !== null),
+          .filter((el) => el !== null),
       };
     })
   );
 };
 
-export const updateGroundValuesByFactor = async ground => {
+export const updateGroundValuesByFactor = async (ground) => {
   const client = await pool.connect();
   const year = new Date().getFullYear();
   const { factor } = ground;
@@ -125,7 +123,6 @@ export const updateGroundValuesByFactor = async ground => {
     return { status: 200, message: 'Valor fiscal de los terrenos actualizado!', anos };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
     throw {
       status: 500,
       error,
@@ -136,7 +133,7 @@ export const updateGroundValuesByFactor = async ground => {
   }
 };
 
-export const updateConstructionValuesByFactor = async construction => {
+export const updateConstructionValuesByFactor = async (construction) => {
   const client = await pool.connect();
   const year = new Date().getFullYear();
   const { factor } = construction;
@@ -153,7 +150,6 @@ export const updateConstructionValuesByFactor = async construction => {
     return { status: 200, message: 'Valor fiscal de las construcciones actualizado!', anos };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
     throw {
       status: 500,
       error,
@@ -195,7 +191,6 @@ export const updateGroundValuesBySector = async (ground, sector) => {
     return { status: 200, message: 'Valor fiscal del terreno actualizado!', anos };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
     throw {
       status: 500,
       error,
@@ -228,7 +223,6 @@ export const updateConstructionValuesByModel = async (construction, model) => {
     return { status: 200, message: 'Valor fiscal de la construccion actualizado!', anos };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
     throw {
       status: 500,
       error,

@@ -22,6 +22,18 @@ html
               when 'CPU'
                 - nombre = 'Centro de Procesamiento Urbano'
                 - rif = 'G-20005482-4'
+              when 'SEDEPAR'
+                - nombre = 'Servicio Desconcentrado de Plazas y Parques'
+                - rif = 'G-20006426-9'
+              when 'IMA'
+                - nombre = 'Instituto Municipal del Ambiente'
+                - rif = 'G-20000199-2'
+              when 'PMM'
+                - nombre = 'Instituto Autónomo Policía del Municipio de Maracaibo'
+                - rif = 'G-20001881-0'
+              when 'IMTCUMA'
+                - nombre = 'Instituto Municipal de Transporte Colectivo y Urbano de Pasajeros del Municipio Maracaibo'
+                - rif = ''                                                  
             p Alcaldida Bolivariana de Maracaibo
             p #{nombre}
             p R.I.F.: #{rif}
@@ -31,12 +43,23 @@ html
               when 'CBM'
                 - src = 'images/LogoBomberos.png'
               when 'SAGAS' 
-                - src ='images/SAGAS.png'
+                - src = 'images/SAGAS.png'
               when 'CPU'
-                - src ='images/CPU.png'
+                - src = 'images/CPU.png'
+              when 'SEDEPAR'
+                - src = 'images/SEDEPAR.png'
+              when 'IMA'
+                - src = 'images/IMA.png' 
+              when 'PMM'
+                - src = 'images/POLIMARACAIBO.png' 
+              when 'IMTCUMA'
+                - src = 'images/imtcuma.png'                 
               default
                 - src = 'images/LogoAlcaldia.png'
-            img#logo(src=src)
+            if institucion === 'PMM'
+              img#logo(src=src, style={width:'100px !important'})
+            else
+              img#logo(src=src)
         img#divider(src='images/Divider.png')
       div#content
         if !datos.funcionario

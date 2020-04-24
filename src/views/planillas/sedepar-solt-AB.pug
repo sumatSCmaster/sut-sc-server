@@ -1,0 +1,57 @@
+extends default
+ 
+block content
+ div#fecha
+   p
+     b FECHA:
+     span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+   p
+     b Código de Trámite:
+     span &nbsp; #{codigo}
+ div#planilla
+   div.table                                 
+     div.th
+       p DATOS DEL SOLICITANTE
+     div.tr
+       div.td(style={ width: '50%' }).border-bottom.border-right
+         p
+           b Nombre:
+           span &nbsp; #{datos.usuario.nombre}
+       div.td(style={ width: '50%' }).border-bottom
+         p
+           b Cédula:
+           span &nbsp; #{datos.usuario.nacionalidad}-#{datos.usuario.cedula}
+     div.tr
+       div.td(style={ width: '50%' }).border-bottom.border-right
+         p
+           b Teléfono:
+           span &nbsp; #{datos.usuario.telefono}
+       div.td(style={ width: '50%' }).border-bottom
+         p
+           b Correo:
+           span &nbsp; #{datos.usuario.correo}      
+   div.table           
+     div.th
+       p DATOS DEL APARTADO
+     div.tr
+       div.td(style={ width: '50%' }).border-right
+         p
+           b Fecha de apartado:
+           span &nbsp; #{moment(datos.usuario.fechaApartado).format('DD/MM/YYYY')}
+       div.td(style={ width: '50%' })
+         p
+           b Número del bohio:
+           span &nbsp; #{datos.usuario.numeroBohio}             
+   if texto      
+     div.details
+       div
+         p
+           b Detalles del bohio:
+           | #{datos.usuario.detallesBohio || 'N/A'}
+   div#recaudos
+     h3 REQUISITOS OBLIGATORIOS
+     hr.divider
+     ul
+       li Fotocopia Legible de la Cédula de Identidad del Solicitante.
+ 
+

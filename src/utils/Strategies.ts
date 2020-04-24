@@ -4,7 +4,8 @@ import { Strategy as Facebook } from 'passport-facebook';
 import { Strategy as Local, VerifyFunction } from 'passport-local';
 import { getUserByUsername, comparePassword, verifyExternalUser, initialExtUserSignUp, getByOAuthID } from '@helpers/user';
 import { encode } from 'jwt-simple';
-import { Usuario } from '@interfaces/sigt';
+import { Usuario, TipoUsuario } from '@interfaces/sigt';
+import { hasNotifications } from '@helpers/user';
 
 const optJwt = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -36,7 +37,9 @@ const GoogleStrategy = new Google(optGoogle, async (accessToken, refreshToken, p
   }
   if (request?.data.length > 0) {
     const exists = await verifyExternalUser(request?.data[0].id_usuario);
-    console.log(exists);
+    if (exists) {
+      exists.hasNewNotifications = await hasNotifications(`${exists.nacionalidad}-${exists.cedula}`);
+    }
     return exists
       ? done(null, {
           ...exists,
@@ -53,7 +56,7 @@ const GoogleStrategy = new Google(optGoogle, async (accessToken, refreshToken, p
   };
 
   request = await initialExtUserSignUp(googleOpts);
-  console.log(request);
+  request.hasNewNotifications = await hasNotifications(`${request.nacionalidad}-${request.cedula}`);
   if (request) {
     return done(null, { ...request, nombreUsuario: googleOpts.email });
   } else {
@@ -68,6 +71,9 @@ const FacebookStrategy = new Facebook(optFacebook, async (accessToken, refreshTo
   }
   if (request?.data.length > 0) {
     const exists = await verifyExternalUser(request?.data[0].id_usuario);
+    if (exists) {
+      exists.hasNewNotifications = await hasNotifications(`${exists.nacionalidad}-${exists.cedula}`);
+    }
     return exists ? done(null, exists) : done(null);
   }
 
@@ -78,6 +84,7 @@ const FacebookStrategy = new Facebook(optFacebook, async (accessToken, refreshTo
   };
 
   request = await initialExtUserSignUp(facebookOpts);
+  request.hasNewNotifications = await hasNotifications(`${request.nacionalidad}-${request.cedula}`);
   if (request) {
     return done(null, request);
   } else {
@@ -91,23 +98,21 @@ const optLocal = {
 };
 
 const verifyLocal: VerifyFunction = async (username: string, password: string, done: any) => {
-  console.log('username', username);
   const user: Usuario | null = await getUserByUsername(username);
-  console.log('Estrategia local', user);
   if (!user) return done(null, false, { message: 'Bad Credentials' });
   if (await comparePassword(password, user.password || '')) {
-    if (user.tipoUsuario.descripcion === 'Funcionario') {
+    if ((user.tipoUsuario as TipoUsuario).descripcion === 'Funcionario') {
       return done(null, {
         ...user,
         password: undefined,
       });
     }
 
-    // const newNotifications = await hasNotifications(user.cedula);
+    const newNotifications = await hasNotifications(`${user.nacionalidad}-${user.cedula}`);
     return done(null, {
       ...user,
       password: undefined,
-      // hasNewNotifications: newNotifications
+      hasNewNotifications: newNotifications,
     });
   } else {
     return done(null, false, { message: 'Usuario/Contraseña invalida' });

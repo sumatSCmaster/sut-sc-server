@@ -67,8 +67,7 @@ router.post('/createAdmin', authenticate('jwt'), isSuperuser, authValidations.cr
   try {
     const salt = genSaltSync(10);
     req.body.usuario.password = hashSync(req.body.usuario.password, salt);
-    const user = await createAdmin({ ...req.body.usuario }).catch(e => {
-      console.log(e);
+    const user = await createAdmin({ ...req.body.usuario }).catch((e) => {
       res.status(500).json({
         status: 500,
         message: errorMessageGenerator(e) || e.message,
@@ -94,8 +93,7 @@ router.post('/createSuperuser', authValidations.createSuperuser, checkResult, as
     try {
       const salt = genSaltSync(10);
       req.body.usuario.password = hashSync(req.body.usuario.password, salt);
-      const user = await createSuperuser({ ...req.body.usuario }).catch(e => {
-        console.log(e);
+      const user = await createSuperuser({ ...req.body.usuario }).catch((e) => {
         res.status(500).json({
           status: 500,
           message: errorMessageGenerator(e) || 'La creación del superusuario falló',
@@ -174,7 +172,6 @@ router.post('/complete', authenticate('jwt'), async (req: any, res) => {
 });
 
 router.get('/user', authenticate('jwt'), async (req: any, res) => {
-  console.log(req.user);
   const user = {
     id: req.user.id,
     nombreCompleto: req.user.nombreCompleto,
@@ -201,7 +198,7 @@ router.post('/signup', async (req: any, res) => {
   const [error, data] = await fulfill(signUpUser(user));
   if (error) res.status(error.status).json(error);
   if (data) {
-    req.logIn(data.user, { session: false }, error => {
+    req.logIn(data.user, { session: false }, (error) => {
       if (error) {
         res.status(500).send({
           message: 'Error al iniciar sesion del usuario',
@@ -223,7 +220,6 @@ router.post('/forgotPassword', async (req, res) => {
 router.patch('/recoverPassword', async (req, res) => {
   const { password, recvId } = req.body;
   const [error, result] = await fulfill(recoverPassword(recvId, password));
-  console.log(error);
   if (error) res.status(error.status).json(error);
   if (result) res.status(result.status).json(result);
 });

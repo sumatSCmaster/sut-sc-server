@@ -36,10 +36,11 @@ export interface Usuario {
   telefono?: string;
   nacionalidad: Nacionalidad;
   rif?: string;
-  tipoUsuario: TipoUsuario;
+  tipoUsuario: TipoUsuario | number;
   datosGoogle?: DatosGoogle;
   cuentaFuncionario?: CuentaFuncionario;
   datosFacebook?: DatosFacebook;
+  institucion?: Institucion;
 }
 
 export interface DatosFacebook {
@@ -78,7 +79,7 @@ export interface TipoTramite {
   secciones?: Seccion[];
   sufijo?: string;
   necesitaCodCat: boolean;
-  utmm?: number
+  utmm?: number;
 }
 
 export interface Parroquia {
@@ -100,11 +101,34 @@ export interface Tramite {
   nombreCorto: string;
   nombreTramiteLargo: string;
   nombreTramiteCorto: string;
+  fechaCulminacion: Date;
   recaudos: string[];
   planilla: string;
   certificado: string | null;
   aprobado: boolean;
   bill: any;
+}
+
+export interface Multa {
+  id: number;
+  estado: string;
+  datos: object;
+  costo: number;
+  fechaCreacion: Date;
+  codigoMulta: string;
+  usuario: Usuario;
+  tipoTramite: number;
+  consecutivo?: number;
+  nombreLargo: string;
+  nombreCorto: string;
+  nombreTramiteLargo: string;
+  nombreTramiteCorto: string;
+  fechaCulminacion: Date;
+  boleta: string;
+  certificado: string | null;
+  aprobado: boolean;
+  cedula: string;
+  nacionalidad: string;
 }
 
 export interface Inmueble {
@@ -132,6 +156,17 @@ export interface Campo {
   status: string;
   nombre: string;
   tipo: string;
+}
+
+export interface Notificacion {
+  id: number;
+  tramite: Partial<Tramite>;
+  emisor: string;
+  receptor: string | null;
+  descripcion: string;
+  status: boolean;
+  fechaCreacion: Date;
+  concepto: string;
 }
 
 export interface ErrorEstandar {

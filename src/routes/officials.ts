@@ -10,7 +10,6 @@ const router = Router();
 
 //TODO: añadir validacion de tipo de usuario
 router.get('/', authenticate('jwt'), validators.isOfficial, async (req: any, res) => {
-  console.log(req.user);
   const { institucion, id } = req.user;
   const [err, data] = await fulfill(getOfficialsByInstitution(institucion.id, id));
   if (err) res.status(500).json(err);

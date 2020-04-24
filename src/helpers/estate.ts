@@ -26,7 +26,6 @@ export const getEstateInfoByCod = async (cod: string) => {
   try {
     const estate = (await client.query(queries.GET_ONE_PROPERTY_BY_COD, [cod])).rows;
     const res = await addOwners(estate, client);
-    console.log('one', res);
     return { data: res[0] };
   } catch (e) {
     throw {
@@ -52,7 +51,7 @@ export const addOwners = async (properties, client: PoolClient) => {
       }
       return prev;
     }, {});
-    return localProperties.map(prop => {
+    return localProperties.map((prop) => {
       prop.propietarios = ownersSplit[prop.idInmueble];
       return prop;
     });
@@ -64,7 +63,7 @@ export const addOwners = async (properties, client: PoolClient) => {
   }
 };
 
-export const createPersonalEstate = async procedure => {
+export const createPersonalEstate = async (procedure) => {
   const client = await pool.connect();
   const { codCat, direccion, parroquia, areaTerreno, areaConstruccion, tipoInmueble } = procedure.datos.funcionario;
   const { propietarios } = procedure.datos.funcionario;
@@ -73,7 +72,7 @@ export const createPersonalEstate = async procedure => {
     const response = (await client.query(queries.CREATE_PROPERTY, [codCat, direccion, parroquia, areaConstruccion, areaTerreno, tipoInmueble])).rows[0];
     const inmueble = (await client.query(queries.GET_PROPERTY_BY_ID, [response.id_inmueble])).rows[0];
     Promise.all(
-      propietarios.map(async el => {
+      propietarios.map(async (el) => {
         const owner = (await client.query(queries.CREATE_PROPERTY_OWNER, [el.razonSocial, el.cedula, el.rif, el.email])).rows[0];
         await client.query(queries.CREATE_PROPERTY_WITH_SIGNED_OWNER, [owner.id_propietario, inmueble.id]);
       })
@@ -82,7 +81,6 @@ export const createPersonalEstate = async procedure => {
     return { status: 200, message: 'Código catastral creado satisfactoriamente', inmueble };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
     throw {
       status: 500,
       error,

@@ -265,11 +265,13 @@ ul {
   -webkit-flex-direction: column;
   text-align: center;
 }
-.table-normal{
+
+.table-normal {
   border-collapse: collapse;
   border: 1px solid #707f90;
   text-align: center;
 }
+
 .table-normal tr, td, th {
   border: 1px solid #707f90;
 }
@@ -278,4 +280,50 @@ ul {
   border: 1px solid #707f90;
   border-bottom: 0;
   background-color: #fadc68;
+}
+
+.ticket {
+  border: 2px solid black;
+  width: 75%;
+  margin-top: 50px;
+}
+
+.ticket-data {
+  display: flex;
+  display: -webkit-flex;
+  padding: 20px 30px;
+}
+
+.ticket-data div {
+  flex: 1;
+  -webkit-flex: 1;
+  text-align: start;
+}
+
+.header-ticket {
+  display: flex;
+  display: -webkit-flex;
+  margin: 5px;
+}
+
+.header-ticket div {
+  flex: 1;
+  -webkit-flex: 1;
+}
+
+.details {
+  text-align: justify;
+  padding: 5px 20px;
+}
+
+.row-constancy {
+  padding: 10px 20px;
+  display: -webkit-flex;
+  display: flex;
+  font-size: 16px;
+}
+
+.row-constancy > div {
+  flex: 1;
+  -webkit-flex: 1; 
 }
