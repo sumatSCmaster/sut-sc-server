@@ -330,7 +330,7 @@ export const getFieldsForValidations = async ({ id, type }) => {
   try {
     let takings = 0;
     if (id) {
-      const resources = (await client.query('SELECT state, tipotramite FROM tramites_state_with_resources WHERE id=$1', [id])).rows[0];
+      const resources = (await client.query(queries.GET_STATE_AND_TYPE_OF_PROCEDURE, [id])).rows[0];
       response = (await client.query(queries.VALIDATE_FIELDS_FROM_PROCEDURE, [resources.tipotramite, resources.state])).rows;
     } else {
       response = (await client.query(queries.VALIDATE_FIELDS_FROM_PROCEDURE, [type, 'iniciado'])).rows;
@@ -510,7 +510,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
     const nextEvent = await getNextEventForProcedure(procedure, client);
 
     if (datos) {
-      const prevData = (await client.query('SELECT datos FROM tramite WHERE id_tramite=$1', [procedure.idTramite])).rows[0];
+      const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
       if (!prevData.datos.funcionario) datos = { usuario: prevData.datos.usuario, funcionario: datos };
       else if (prevData.datos.funcionario) datos = { usuario: prevData.datos.usuario, funcionario: datos };
       else datos = prevData.datos;
@@ -633,7 +633,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
     const nextEvent = await getNextEventForProcedure(procedure, client);
 
     if (observaciones && !aprobado) {
-      const prevData = (await client.query('SELECT datos FROM tramite WHERE id_tramite=$1', [procedure.idTramite])).rows[0];
+      const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
       prevData.datos.funcionario = { ...prevData.datos.funcionario, observaciones };
       datos = prevData.datos;
     }
@@ -764,7 +764,7 @@ const belongsToSedetama = ({ institucion }) => {
 }
 
 const procedureInstances = switchcase({
-  0: 'SELECT * FROM CASOS_SOCIALES_STATE WHERE tipotramite=$1',
+  0: queries.GET_SOCIAL_CASES_STATE,
   1: queries.GET_ALL_PROCEDURE_INSTANCES,
   2: queries.GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID,
   3: queries.GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION,

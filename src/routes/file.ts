@@ -61,7 +61,7 @@ router.post('/:type/:id?', uploadFile, async (req: any, res) => {
   const client = await pool.connect();
   try {
     if (media.length > 0 && type === 'takings') {
-      const procedure = (await client.query('SELECT id FROM TRAMITES_STATE_WITH_RESOURCES WHERE codigotramite=$1', [id])).rows[0];
+      const procedure = (await client.query(queries.GET_ID_FROM_PROCEDURE_STATE_BY_CODE, [id])).rows[0];
       client.query('BEGIN');
       await Promise.all(
         media.map(async (urlRecaudo) => {
@@ -72,11 +72,11 @@ router.post('/:type/:id?', uploadFile, async (req: any, res) => {
     }
 
     if (media.length > 0 && type === 'finings') {
-      const fining = (await client.query('SELECT id FROM multa_state WHERE codigomulta=$1', [id])).rows[0];
+      const fining = (await client.query(queries.GET_FINING_ID_FROM_FINING_STATE_BY_CODE, [id])).rows[0];
       client.query('BEGIN');
       await Promise.all(
         media.map(async (urlRecaudo) => {
-          await client.query('UPDATE multa SET url_boleta =$1 WHERE id_multa = $2', [urlRecaudo, fining.id]);
+          await client.query(queries.UPDATE_FINING_BALLOT, [urlRecaudo, fining.id]);
         })
       );
       client.query('COMMIT');
