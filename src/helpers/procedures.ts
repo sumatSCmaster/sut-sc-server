@@ -74,8 +74,7 @@ const getProcedureInstances = async (user, client: PoolClient) => {
     let response = //TODO: corregir el handler para que no sea tan forzado
     (
       await procedureInstanceHandler(
-        user.institucion && user.institucion.id === 0 ? 0 : user.institucion && user.institucion.nombreCorto === 'SEDETEMA' ? 6 : user.tipoUsuario,
-        user.tipoUsuario !== 4 ? (user.institucion ? user.institucion.id : 0) : user.id,
+        user,
         client
       )
     ).rows;
@@ -167,7 +166,7 @@ const getFineInstances = async (user, client: PoolClient) => {
 
 const getProcedureInstancesByInstitution = async (institution, tipoUsuario, client: PoolClient) => {
   try {
-    const response = (await procedureInstanceHandler(tipoUsuario, institution.id, client)).rows;
+    const response = (await procedureInstanceHandlerByInstitution(tipoUsuario, institution.id, client)).rows;
     return Promise.all(
       response.map(async (el) => {
         let ordinances;
@@ -756,6 +755,14 @@ const belongsToAnInstitution = ({ institucion }) => {
   return institucion !== undefined;
 };
 
+const handlesSocialCases = ({ institucion }) => {
+  return institucion.id === 0;
+}
+
+const belongsToSedetama = ({ institucion }) => {
+  return institucion.nombreCorto === 'SEDETAMA';
+}
+
 const procedureInstances = switchcase({
   0: 'SELECT * FROM CASOS_SOCIALES_STATE WHERE tipotramite=$1',
   1: queries.GET_ALL_PROCEDURE_INSTANCES,
@@ -766,9 +773,47 @@ const procedureInstances = switchcase({
   6: queries.GET_ALL_PROCEDURES_EXCEPT_VALIDATING_ONES,
 })(null);
 
-const procedureInstanceHandler = (typeUser, payload, client) => {
-  return typeUser === 1 ? client.query(procedureInstances(typeUser)) : client.query(procedureInstances(typeUser), [payload]);
+const procedureInstanceHandler = (user, client) => {
+  let query;
+  let payload;
+  if(isSuperuser(user)){
+    query = 1;
+  }else{
+
+    if( belongsToAnInstitution(user) ){
+      if( handlesSocialCases(user) ){
+        query = 0;
+        payload = 0;
+      }else if( belongsToSedetama(user) ){
+        query = 6;
+        payload = user.institucion.id;
+      }
+    }
+
+    if( isExternalUser(user) ){
+      query = 4;
+      payload = user.id;
+    }
+  }
+
+  if(query === 1){
+    return client.query(procedureInstances(query))
+  }else{
+    return client.query(procedureInstances(query), [payload])
+  }
 };
+
+const procedureInstanceHandlerByInstitution = (tipoUsuario, idInstitucion, client) => {
+  let query;
+  query = tipoUsuario;
+  
+
+  if(query === 1){
+    return client.query(procedureInstances(query))
+  }else{
+    return client.query(procedureInstances(query), [idInstitucion])
+  }
+}
 
 const fineInstances = switchcase({
   1: queries.GET_ALL_FINES,
