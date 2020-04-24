@@ -50,7 +50,6 @@ export const validatePayments = async (body, user) => {
         return pagoValidado;
       })
     );
-    console.log('ola jaja');
     client.query('COMMIT');
     return {
       validatePayments: { data },

@@ -26,11 +26,14 @@ html
                 - nombre = 'Servicio Desconcentrado de Plazas y Parques'
                 - rif = 'G-20006426-9'
               when 'IMA'
-                  - nombre = 'Instituto Municipal del Ambiente'
-                  - rif = 'G-20000199-2'
+                - nombre = 'Instituto Municipal del Ambiente'
+                - rif = 'G-20000199-2'
               when 'PMM'
-                  - nombre = 'Instituto Autónomo Policía del Municipio de Maracaibo'
-                  - rif = 'G-20001881-0'                                
+                - nombre = 'Instituto Autónomo Policía del Municipio de Maracaibo'
+                - rif = 'G-20001881-0'
+              when 'IMTCUMA'
+                - nombre = 'Instituto Municipal de Transporte Colectivo y Urbano de Pasajeros del Municipio Maracaibo'
+                - rif = ''                                                  
             p Alcaldida Bolivariana de Maracaibo
             p #{nombre}
             p R.I.F.: #{rif}
@@ -49,6 +52,8 @@ html
                 - src = 'images/IMA.png' 
               when 'PMM'
                 - src = 'images/POLIMARACAIBO.png' 
+              when 'IMTCUMA'
+                - src = 'images/imtcuma.png'                 
               default
                 - src = 'images/LogoAlcaldia.png'
             if institucion === 'PMM'

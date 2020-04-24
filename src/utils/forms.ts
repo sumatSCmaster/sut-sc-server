@@ -39,6 +39,8 @@ export const createCertificate = async (procedure, client: PoolClient): Promise<
       [procedure.idTramite]
     )
   ).rows[0];
+  const UTMM = new Intl.NumberFormat('de-DE').format((await client.query('SELECT valor_en_bs AS valor FROM valor WHERE descripcion = \'UTMM\'')).rows[0].valor);
+  const costoFormateado = new Intl.NumberFormat('de-DE').format(parseFloat(tramite.datos.funcionario.costo));
   const procedureData = {
     id: procedure.idTramite,
     fecha: tramite.fechacreacion,
@@ -49,6 +51,8 @@ export const createCertificate = async (procedure, client: PoolClient): Promise<
     datos: procedure.datos || tramite.datos,
     estado: 'finalizado',
     tipoTramite: tramite.tipotramite,
+    UTMM,
+    costoFormateado
   };
   const form = (await createForm(procedureData, client)) as string;
   return form;
