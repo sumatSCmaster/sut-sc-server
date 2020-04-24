@@ -71,8 +71,7 @@ export const getAvailableProceduresOfInstitution = async (req: {
 
 const getProcedureInstances = async (user, client: PoolClient) => {
   try {
-    let response = //TODO: corregir el handler para que no sea tan forzado
-    (
+    let response = ( //TODO: corregir el handler para que no sea tan forzado
       await procedureInstanceHandler(
         user.institucion && user.institucion.id === 0 ? 0 : user.institucion && user.institucion.nombreCorto === 'SEDETEMA' ? 6 : user.tipoUsuario,
         user.tipoUsuario !== 4 ? (user.institucion ? user.institucion.id : 0) : user.id,
@@ -269,6 +268,7 @@ const getSectionByProcedure = async (procedure, client: PoolClient): Promise<Tip
           fisico: el.fisico,
           obligatorio: el.obligatorio,
           planilla: el.planilla,
+          extension: el.extension,
         };
       });
       return tramite;
