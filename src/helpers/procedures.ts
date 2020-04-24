@@ -73,8 +73,7 @@ const getProcedureInstances = async (user, client: PoolClient) => {
   try {
     let response = ( //TODO: corregir el handler para que no sea tan forzado
       await procedureInstanceHandler(
-        user.institucion && user.institucion.id === 0 ? 0 : user.institucion && user.institucion.nombreCorto === 'SEDETEMA' ? 6 : user.tipoUsuario,
-        user.tipoUsuario !== 4 ? (user.institucion ? user.institucion.id : 0) : user.id,
+        user,
         client
       )
     ).rows;
@@ -166,7 +165,7 @@ const getFineInstances = async (user, client: PoolClient) => {
 
 const getProcedureInstancesByInstitution = async (institution, tipoUsuario, client: PoolClient) => {
   try {
-    const response = (await procedureInstanceHandler(tipoUsuario, institution.id, client)).rows;
+    const response = (await procedureInstanceHandlerByInstitution(tipoUsuario, institution.id, client)).rows;
     return Promise.all(
       response.map(async (el) => {
         let ordinances;
@@ -331,7 +330,7 @@ export const getFieldsForValidations = async ({ id, type }) => {
   try {
     let takings = 0;
     if (id) {
-      const resources = (await client.query('SELECT state, tipotramite FROM tramites_state_with_resources WHERE id=$1', [id])).rows[0];
+      const resources = (await client.query(queries.GET_STATE_AND_TYPE_OF_PROCEDURE, [id])).rows[0];
       response = (await client.query(queries.VALIDATE_FIELDS_FROM_PROCEDURE, [resources.tipotramite, resources.state])).rows;
     } else {
       response = (await client.query(queries.VALIDATE_FIELDS_FROM_PROCEDURE, [type, 'iniciado'])).rows;
@@ -511,7 +510,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
     const nextEvent = await getNextEventForProcedure(procedure, client);
 
     if (datos) {
-      const prevData = (await client.query('SELECT datos FROM tramite WHERE id_tramite=$1', [procedure.idTramite])).rows[0];
+      const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
       if (!prevData.datos.funcionario) datos = { usuario: prevData.datos.usuario, funcionario: datos };
       else if (prevData.datos.funcionario) datos = { usuario: prevData.datos.usuario, funcionario: datos };
       else datos = prevData.datos;
@@ -634,7 +633,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
     const nextEvent = await getNextEventForProcedure(procedure, client);
 
     if (observaciones && !aprobado) {
-      const prevData = (await client.query('SELECT datos FROM tramite WHERE id_tramite=$1', [procedure.idTramite])).rows[0];
+      const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
       prevData.datos.funcionario = { ...prevData.datos.funcionario, observaciones };
       datos = prevData.datos;
     }
@@ -756,8 +755,16 @@ const belongsToAnInstitution = ({ institucion }) => {
   return institucion !== undefined;
 };
 
+const handlesSocialCases = ({ institucion }) => {
+  return institucion.id === 0;
+}
+
+const belongsToSedetama = ({ institucion }) => {
+  return institucion.nombreCorto === 'SEDETAMA';
+}
+
 const procedureInstances = switchcase({
-  0: 'SELECT * FROM CASOS_SOCIALES_STATE WHERE tipotramite=$1',
+  0: queries.GET_SOCIAL_CASES_STATE,
   1: queries.GET_ALL_PROCEDURE_INSTANCES,
   2: queries.GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID,
   3: queries.GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION,
@@ -766,9 +773,47 @@ const procedureInstances = switchcase({
   6: queries.GET_ALL_PROCEDURES_EXCEPT_VALIDATING_ONES,
 })(null);
 
-const procedureInstanceHandler = (typeUser, payload, client) => {
-  return typeUser === 1 ? client.query(procedureInstances(typeUser)) : client.query(procedureInstances(typeUser), [payload]);
+const procedureInstanceHandler = (user, client) => {
+  let query;
+  let payload;
+  if(isSuperuser(user)){
+    query = 1;
+  }else{
+
+    if( belongsToAnInstitution(user) ){
+      if( handlesSocialCases(user) ){
+        query = 0;
+        payload = 0;
+      }else if( belongsToSedetama(user) ){
+        query = 6;
+        payload = user.institucion.id;
+      }
+    }
+
+    if( isExternalUser(user) ){
+      query = 4;
+      payload = user.id;
+    }
+  }
+
+  if(query === 1){
+    return client.query(procedureInstances(query))
+  }else{
+    return client.query(procedureInstances(query), [payload])
+  }
 };
+
+const procedureInstanceHandlerByInstitution = (tipoUsuario, idInstitucion, client) => {
+  let query;
+  query = tipoUsuario;
+  
+
+  if(query === 1){
+    return client.query(procedureInstances(query))
+  }else{
+    return client.query(procedureInstances(query), [idInstitucion])
+  }
+}
 
 const fineInstances = switchcase({
   1: queries.GET_ALL_FINES,

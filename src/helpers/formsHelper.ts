@@ -3,11 +3,12 @@ import { renderFile } from 'pug';
 import * as pdf from 'html-pdf';
 import * as qr from 'qrcode';
 import S3Client from '@utils/s3';
+import queries from '@utils/queries';
 
 const dev = process.env.NODE_ENV !== 'production';
 
 export const createForm = async ({ fecha, codigo, formato, tramite, institucion, id, datos, tipoTramite, estado, costoFormateado = '', UTMM = '', costo = 0 }, client) => {
-  const response = (await client.query('SELECT planilla, certificado FROM tipo_tramite WHERE id_tipo_tramite=$1', [tipoTramite])).rows[0];
+  const response = (await client.query(queries.GET_PLANILLA_AND_CERTIFICATE_TYPE_PROCEDURE, [tipoTramite])).rows[0];
   const planilla = estado === 'iniciado' ? response.planilla : response.certificado;
   const dir =
     estado === 'iniciado' ? `${process.env.SERVER_URL}/tramites/${codigo}/planilla.pdf` : `${process.env.SERVER_URL}/tramites/${codigo}/certificado.pdf`;

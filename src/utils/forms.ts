@@ -13,7 +13,7 @@ const pool = Pool.getInstance();
 export const createRequestForm = async (procedure, client: PoolClient): Promise<string> => {
   const tramite = (
     await client.query(
-      'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
+      queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION,
       [procedure.idTramite]
     )
   ).rows[0];
@@ -35,11 +35,11 @@ export const createRequestForm = async (procedure, client: PoolClient): Promise<
 export const createCertificate = async (procedure, client: PoolClient): Promise<string> => {
   const tramite = (
     await client.query(
-      'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
+      queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION,
       [procedure.idTramite]
     )
   ).rows[0];
-  const UTMM = new Intl.NumberFormat('de-DE').format((await client.query('SELECT valor_en_bs AS valor FROM valor WHERE descripcion = \'UTMM\'')).rows[0].valor);
+  const UTMM = new Intl.NumberFormat('de-DE').format((await client.query(queries.GET_UTMM_VALUE_FORMAT)).rows[0].valor);
   const costoFormateado = new Intl.NumberFormat('de-DE').format(parseFloat(tramite.datos.funcionario.costo));
   const procedureData = {
     id: procedure.idTramite,
@@ -61,7 +61,7 @@ export const createCertificate = async (procedure, client: PoolClient): Promise<
 export const createFiningForm = async (procedure, client: PoolClient): Promise<string> => {
   const tramite = (
     await client.query(
-      'SELECT mls.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM multa_state mls INNER JOIN tipo_tramite ttr ON mls.tipotramite=ttr.id_tipo_tramite WHERE mls.id=$1',
+      queries.GET_FINING_STATE_AND_TYPE_INFORMATION,
       [procedure.idTramite]
     )
   ).rows[0];
@@ -84,7 +84,7 @@ export const createFiningForm = async (procedure, client: PoolClient): Promise<s
 export const createFiningCertificate = async (procedure, client: PoolClient): Promise<string> => {
   const multa = (
     await client.query(
-      'SELECT mls.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado FROM multa_state mls INNER JOIN tipo_tramite ttr ON mls.tipotramite=ttr.id_tipo_tramite WHERE mls.id=$1',
+      queries.GET_FINING_STATE_AND_TYPE_INFORMATION,
       [procedure.idTramite]
     )
   ).rows[0];
@@ -113,7 +113,7 @@ export const createMockCertificate = async (procedure) => {
   try {
     const tramite = (
       await client.query(
-        'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado as formatoCertificado FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
+        queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION_MOCK,
         [procedure]
       )
     ).rows[0];
