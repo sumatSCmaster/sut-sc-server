@@ -778,19 +778,22 @@ const procedureInstanceHandler = (user, client) => {
   let payload;
   if(isSuperuser(user)){
     query = 1;
-  }else{
+  } else {
 
-    if( belongsToAnInstitution(user) ){
-      if( handlesSocialCases(user) ){
+    if(belongsToAnInstitution(user)){
+      if(handlesSocialCases(user)){
         query = 0;
         payload = 0;
-      }else if( belongsToSedetama(user) ){
+      }else if(belongsToSedetama(user)){
         query = 6;
+        payload = user.institucion.id;
+      } else {
+        query = user.tipoUsuario;
         payload = user.institucion.id;
       }
     }
 
-    if( isExternalUser(user) ){
+    if(isExternalUser(user)){
       query = 4;
       payload = user.id;
     }
@@ -798,9 +801,8 @@ const procedureInstanceHandler = (user, client) => {
 
   if(query === 1){
     return client.query(procedureInstances(query))
-  }else{
-    return client.query(procedureInstances(query), [payload])
   }
+  return client.query(procedureInstances(query), [payload])
 };
 
 const procedureInstanceHandlerByInstitution = (tipoUsuario, idInstitucion, client) => {
