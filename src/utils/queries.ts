@@ -164,10 +164,12 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_PROCEDURE_DATA: 'SELECT datos FROM tramite WHERE id_tramite=$1',
   GET_SOCIAL_CASES_STATE: 'SELECT * FROM CASOS_SOCIALES_STATE WHERE tipotramite=$1',
   GET_ID_FROM_PROCEDURE_STATE_BY_CODE: 'SELECT id FROM TRAMITES_STATE_WITH_RESOURCES WHERE codigotramite=$1',
-  GET_PROCEDURE_STATE_AND_TYPE_INFORMATION: 'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado \
+  GET_PROCEDURE_STATE_AND_TYPE_INFORMATION:
+    'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado \
   FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
-  GET_PROCEDURE_STATE_AND_TYPE_INFORMATION_MOCK: 'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado as formatoCertificado \
-  FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',         
+  GET_PROCEDURE_STATE_AND_TYPE_INFORMATION_MOCK:
+    'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado as formatoCertificado, ttr.planilla_rechazo as formatoRechazo \
+  FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
   GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID:
     'SELECT tramites_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
     nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, \
@@ -222,7 +224,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   COMPLETE_STATE: 'SELECT complete_tramite_state ($1,$2,$3,$4, $5) as state',
   UPDATE_STATE_SOCIAL_CASE: 'SELECT update_caso_state($1, $2, $3) as state', //idcaso, event, datos
   UPDATE_PROCEDURE_INSTANCE_COST: 'UPDATE tramite SET costo = $1 WHERE id_tramite = $2',
- 
+
   //parroquias
   GET_PARISHES: 'SELECT * FROM parroquia;',
 
@@ -277,7 +279,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
 
   //Inmuebles
   CREATE_PROPERTY:
-  'INSERT INTO inmueble_urbano (cod_catastral, direccion, id_parroquia, \
+    'INSERT INTO inmueble_urbano (cod_catastral, direccion, id_parroquia, \
   metros_construccion, metros_terreno, fecha_creacion, fecha_actualizacion, tipo_inmueble) \
   VALUES ($1, $2, (SELECT id FROM parroquia WHERE nombre = $3 LIMIT 1), $4, $5, now(), now(), $6)\
   ON CONFLICT (cod_catastral) DO UPDATE SET metros_construccion = $4, metros_terreno = $5, \
@@ -285,7 +287,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   RETURNING id_inmueble',
   CREATE_PROPERTY_WITH_SIGNED_OWNER: 'INSERT INTO propietario_inmueble (id_propietario, id_inmueble) VALUES ($1, $2)',
   CREATE_PROPERTY_OWNER:
-  'INSERT INTO propietario (razon_social, cedula, rif, email) VALUES ($1,$2,$3,$4) ON CONFLICT (cedula, rif) DO UPDATE razon_social = $1 RETURNING *',
+    'INSERT INTO propietario (razon_social, cedula, rif, email) VALUES ($1,$2,$3,$4) ON CONFLICT (cedula, rif) DO UPDATE razon_social = $1 RETURNING *',
   GET_ALL_PROPERTIES:
     'SELECT i.id_inmueble AS "idInmueble", i.cod_catastral AS "codCatastral", i.direccion,\
   i.metros_construccion AS "metrosConstruccion", i.metros_terreno AS "metrosTerreno", i.fecha_creacion AS "fechaCreacion", \
@@ -302,8 +304,6 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     FROM propietario p INNER JOIN propietario_inmueble pi ON p.id_propietario = pi.id_propietario;',
   GET_PROPERTY_BY_ID: 'SELECT * FROM inmueble_urbano_view WHERE id=$1',
 
-
-
   //ordenanza
   CREATE_ORDINANCE:
     'WITH ordenanzaTmp AS (INSERT INTO ordenanza (descripcion, tarifa, id_valor) \
@@ -314,7 +314,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     t.utiliza_codcat AS "utilizaCodcat", t.id_variable IS NOT NULL AS "utilizaVariable", t.id_variable AS "idVariable", v.nombre AS "nombreVariable" \
     FROM ordenanzaTmp o INNER JOIN tarifaTmp t ON o.id_ordenanza = t.id_ordenanza \
     LEFT JOIN variable_ordenanza v ON t.id_variable = v.id_variable',
-    CREATE_ORDINANCE_FOR_PROCEDURE:
+  CREATE_ORDINANCE_FOR_PROCEDURE:
     'INSERT INTO ordenanza_tramite (id_tramite, id_tarifa, utmm, valor_calc, factor, factor_value, costo_ordenanza) \
     VALUES ($1, (SELECT id_tarifa FROM tarifa_inspeccion trf INNER JOIN ordenanza ord ON \
       trf.id_ordenanza=ord.id_ordenanza WHERE trf.id_tipo_tramite=$2 AND ord.descripcion = $3 LIMIT 1), \
@@ -363,7 +363,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
 
   //valor
   GET_UTMM_VALUE: "SELECT valor_en_bs FROM valor WHERE descripcion = 'UTMM'",
-  GET_UTMM_VALUE_FORMAT: 'SELECT valor_en_bs AS valor FROM valor WHERE descripcion = \'UTMM\'',
+  GET_UTMM_VALUE_FORMAT: "SELECT valor_en_bs AS valor FROM valor WHERE descripcion = 'UTMM'",
   UPDATE_UTMM_VALUE: "UPDATE valor SET valor_en_bs = $1 WHERE descripcion = 'UTMM' RETURNING valor_en_bs;",
 
   //Estadisticas
@@ -511,8 +511,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   DISABLE_TERMINAL_DESTINATION:
     'UPDATE operatividad_terminal SET habilitado = false WHERE id_operatividad_terminal = $1 \
     RETURNING id_operatividad_terminal AS id, destino, tipo, monto, tasa, habilitado, monto_calculado AS "montoCalculado"',
-  
-  
+
   //Multa
   FINING_INIT: 'SELECT * FROM insert_multa($1, $2, $3, $4, $5);',
   GET_ALL_FINES: 'SELECT * FROM multa_state ORDER BY fechacreacion;',
@@ -530,7 +529,8 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   FROM evento_multa \
   WHERE id_multa = $1 \
   GROUP BY id_multa;',
-  GET_FINING_STATE_AND_TYPE_INFORMATION: 'SELECT mls.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado \
+  GET_FINING_STATE_AND_TYPE_INFORMATION:
+    'SELECT mls.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado \
   FROM multa_state mls INNER JOIN tipo_tramite ttr ON mls.tipotramite=ttr.id_tipo_tramite WHERE mls.id=$1',
   UPDATE_FINING: 'SELECT update_multa_state($1, $2, $3, $4, $5) as state;',
   UPDATE_FINING_BALLOT: 'UPDATE multa SET url_boleta =$1 WHERE id_multa = $2',
