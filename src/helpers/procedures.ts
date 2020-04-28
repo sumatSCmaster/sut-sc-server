@@ -71,12 +71,7 @@ export const getAvailableProceduresOfInstitution = async (req: {
 
 const getProcedureInstances = async (user, client: PoolClient) => {
   try {
-    let response = ( //TODO: corregir el handler para que no sea tan forzado
-      await procedureInstanceHandler(
-        user,
-        client
-      )
-    ).rows;
+    let response = (await procedureInstanceHandler(user, client)).rows; //TODO: corregir el handler para que no sea tan forzado
     const takings = (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [response.map((el) => +el.id)])).rows;
     if (user.tipoUsuario === 3) {
       const permissions = (await client.query(queries.GET_USER_PERMISSIONS, [user.id])).rows.map((row) => +row.id_tipo_tramite) || [];
@@ -498,7 +493,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
       procedure.sufijo = resources.sufijo;
     }
 
-    if (procedure.sufijo === 'pd') {
+    if (procedure.sufijo === 'pd' || procedure.sufijo === 'ompu') {
       if (!bill) return { status: 400, message: 'Es necesario asignar un precio a un tramite postpago' };
       costo = bill.totalBs;
       ordenanzas = {
@@ -516,12 +511,22 @@ export const processProcedure = async (procedure, user: Usuario) => {
       else datos = prevData.datos;
     }
 
-    if (nextEvent.startsWith('finalizar')) {
-      procedure.datos = datos;
-      dir = await createCertificate(procedure, client);
-      respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, datos || null, dir || null, true]);
+    if (procedure.sufijo == 'ompu') {
+      const { aprobado } = procedure;
+      if (aprobado) {
+        respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
+        await client.query('UPDATE TRAMITE SET aprobado=$1 WHERE id_tramite=$2', [aprobado, procedure.idTramite]);
+      } else {
+        respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
+      }
     } else {
-      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, costo || null, null]);
+      if (nextEvent.startsWith('finalizar')) {
+        procedure.datos = datos;
+        dir = await createCertificate(procedure, client);
+        respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, datos || null, dir || null, true]);
+      } else {
+        respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, costo || null, null]);
+      }
     }
 
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
@@ -725,6 +730,13 @@ const procedureEvents = switchcase({
   pd: { iniciado: 'enproceso_pd', enproceso: 'ingresardatos_pd', ingresardatos: 'validar_pd', validando: 'finalizar_pd' },
   cr: { iniciado: 'validar_cr', validando: 'enproceso_cr', enproceso: 'revisar_cr', enrevision: { true: 'finalizar_cr', false: 'rechazar_cr' } },
   tl: { iniciado: { true: 'validar_tl', false: 'finalizar_tl' }, validando: 'finalizar_tl' },
+  ompu: {
+    iniciado: 'enproceso_ompu',
+    enproceso: { true: 'aprobar_ompu', false: 'rechazar_ompu' },
+    enrevision: { true: 'ingresardatos_ompu', false: 'rechazar_ompu' },
+    ingresardatos: 'validar_ompu',
+    validando: 'finalizar_ompu',
+  },
 })(null);
 
 const procedureEventHandler = (suffix, state) => {
@@ -757,11 +769,11 @@ const belongsToAnInstitution = ({ institucion }) => {
 
 const handlesSocialCases = ({ institucion }) => {
   return institucion.id === 0;
-}
+};
 
 const belongsToSedetama = ({ institucion }) => {
   return institucion.nombreCorto === 'SEDETAMA';
-}
+};
 
 const procedureInstances = switchcase({
   0: queries.GET_SOCIAL_CASES_STATE,
@@ -776,44 +788,44 @@ const procedureInstances = switchcase({
 const procedureInstanceHandler = (user, client) => {
   let query;
   let payload;
-  if(isSuperuser(user)){
+  if (isSuperuser(user)) {
     query = 1;
-  }else{
-
-    if( belongsToAnInstitution(user) ){
-      if( handlesSocialCases(user) ){
+  } else {
+    if (belongsToAnInstitution(user)) {
+      if (handlesSocialCases(user)) {
         query = 0;
         payload = 0;
-      }else if( belongsToSedetama(user) ){
+      } else if (belongsToSedetama(user)) {
         query = 6;
+        payload = user.institucion.id;
+      } else {
+        query = user.tipoUsuario;
         payload = user.institucion.id;
       }
     }
 
-    if( isExternalUser(user) ){
+    if (isExternalUser(user)) {
       query = 4;
       payload = user.id;
     }
   }
 
-  if(query === 1){
-    return client.query(procedureInstances(query))
-  }else{
-    return client.query(procedureInstances(query), [payload])
+  if (query === 1) {
+    return client.query(procedureInstances(query));
   }
+  return client.query(procedureInstances(query), [payload]);
 };
 
 const procedureInstanceHandlerByInstitution = (tipoUsuario, idInstitucion, client) => {
   let query;
   query = tipoUsuario;
-  
 
-  if(query === 1){
-    return client.query(procedureInstances(query))
-  }else{
-    return client.query(procedureInstances(query), [idInstitucion])
+  if (query === 1) {
+    return client.query(procedureInstances(query));
+  } else {
+    return client.query(procedureInstances(query), [idInstitucion]);
   }
-}
+};
 
 const fineInstances = switchcase({
   1: queries.GET_ALL_FINES,

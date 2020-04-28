@@ -11,12 +11,7 @@ import { errorMessageGenerator } from '@helpers/errors';
 const pool = Pool.getInstance();
 
 export const createRequestForm = async (procedure, client: PoolClient): Promise<string> => {
-  const tramite = (
-    await client.query(
-      queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION,
-      [procedure.idTramite]
-    )
-  ).rows[0];
+  const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION, [procedure.idTramite])).rows[0];
   const procedureData = {
     id: procedure.idTramite,
     fecha: tramite.fechacreacion,
@@ -33,14 +28,9 @@ export const createRequestForm = async (procedure, client: PoolClient): Promise<
 };
 
 export const createCertificate = async (procedure, client: PoolClient): Promise<string> => {
-  const tramite = (
-    await client.query(
-      queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION,
-      [procedure.idTramite]
-    )
-  ).rows[0];
+  const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION, [procedure.idTramite])).rows[0];
   const UTMM = new Intl.NumberFormat('de-DE').format((await client.query(queries.GET_UTMM_VALUE_FORMAT)).rows[0].valor);
-  const costoFormateado = new Intl.NumberFormat('de-DE').format(parseFloat(tramite.datos.funcionario.costo));
+  const costoFormateado = tramite.datos?.funcionario?.costo ? new Intl.NumberFormat('de-DE').format(parseFloat(tramite.datos?.funcionario?.costo)) : '0';
   const procedureData = {
     id: procedure.idTramite,
     fecha: tramite.fechacreacion,
@@ -52,19 +42,14 @@ export const createCertificate = async (procedure, client: PoolClient): Promise<
     estado: 'finalizado',
     tipoTramite: tramite.tipotramite,
     UTMM,
-    costoFormateado
+    costoFormateado,
   };
   const form = (await createForm(procedureData, client)) as string;
   return form;
 };
 
 export const createFiningForm = async (procedure, client: PoolClient): Promise<string> => {
-  const tramite = (
-    await client.query(
-      queries.GET_FINING_STATE_AND_TYPE_INFORMATION,
-      [procedure.idTramite]
-    )
-  ).rows[0];
+  const tramite = (await client.query(queries.GET_FINING_STATE_AND_TYPE_INFORMATION, [procedure.idTramite])).rows[0];
   const procedureData = {
     id: procedure.idTramite,
     fecha: tramite.fechacreacion,
@@ -82,12 +67,7 @@ export const createFiningForm = async (procedure, client: PoolClient): Promise<s
 };
 
 export const createFiningCertificate = async (procedure, client: PoolClient): Promise<string> => {
-  const multa = (
-    await client.query(
-      queries.GET_FINING_STATE_AND_TYPE_INFORMATION,
-      [procedure.idTramite]
-    )
-  ).rows[0];
+  const multa = (await client.query(queries.GET_FINING_STATE_AND_TYPE_INFORMATION, [procedure.idTramite])).rows[0];
   const costoFormateado = new Intl.NumberFormat('de-DE').format(parseFloat(multa.costo));
   const UTMM = new Intl.NumberFormat('de-DE').format(parseFloat(multa.costo) / multa.datos.funcionario.utmm);
   const finingData = {
@@ -102,7 +82,7 @@ export const createFiningCertificate = async (procedure, client: PoolClient): Pr
     datos: procedure.datos || multa.datos,
     estado: 'finalizado',
     tipoTramite: multa.tipotramite,
-    UTMM
+    UTMM,
   };
   const form = (await createForm(finingData, client)) as string;
   return form;
@@ -111,12 +91,7 @@ export const createFiningCertificate = async (procedure, client: PoolClient): Pr
 export const createMockCertificate = async (procedure) => {
   const client = await pool.connect();
   try {
-    const tramite = (
-      await client.query(
-        queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION_MOCK,
-        [procedure]
-      )
-    ).rows[0];
+    const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION_MOCK, [procedure])).rows[0];
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${tramite.id}`, { errorCorrectionLevel: 'H' });
     const datosCertificado = {
       id: tramite.id,
@@ -128,7 +103,7 @@ export const createMockCertificate = async (procedure) => {
       datos: tramite.datos,
       estado: 'finalizado',
       tipoTramite: tramite.tipotramite,
-      certificado: tramite.formatocertificado,
+      certificado: tramite.aprobado ? tramite.formatocertificado : tramite.formatorechazo,
     };
     const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
       ...datosCertificado,
