@@ -40,7 +40,7 @@ export const createCertificate = async (procedure, client: PoolClient): Promise<
     )
   ).rows[0];
   const UTMM = new Intl.NumberFormat('de-DE').format((await client.query(queries.GET_UTMM_VALUE_FORMAT)).rows[0].valor);
-  const costoFormateado = new Intl.NumberFormat('de-DE').format(parseFloat(tramite.datos.funcionario.costo));
+  const costoFormateado = tramite.datos?.funcionario?.costo ? new Intl.NumberFormat('de-DE').format(parseFloat(tramite.datos?.funcionario?.costo)) : '0';
   const procedureData = {
     id: procedure.idTramite,
     fecha: tramite.fechacreacion,
