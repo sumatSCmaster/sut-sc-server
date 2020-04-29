@@ -486,6 +486,30 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('La direccion del plantel no puede ser vacia'),
+  direccionEmpresa: check('tramite.datos.direccionEmpresa')
+    .exists()
+    .withMessage('Debe incluir la direccion de la empresa')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('La direccion de la empresa no puede ser vacia'),
+  parroquiaEmpresa: check('tramite.datos.parroquiaEmpresa')
+    .exists()
+    .withMessage('Debe incluir la parroquia de la empresa')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('La parroquia de la empresa no puede ser vacia'),
+  telefonoEmpresa: check('tramite.datos.telefonoEmpresa')
+    .exists()
+    .withMessage('Debe incluir el telefono de la empresa')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El telefono de la empresa no puede ser vacio'),
+  correoEmpresa: check('tramite.datos.correoEmpresa')
+    .exists()
+    .withMessage('Debe incluir el correo de la empresa')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El correo de la empresa no puede ser vacio'),
 };
 
 export const createSuperuser = [
