@@ -26,7 +26,7 @@ export const affairInit = async (affair, user) => {
       nombreTramiteCorto: response.nombretramitecorto,
     };
     client.query('COMMIT');
-    sendNotification(user, `Se ha iniciado un caso social para la persona ${response.datos.nombreCompleto}`, 'CREATE_SOCIAL_AFFAIR', 'TRAMITE', caso);
+    await sendNotification(user, `Se ha iniciado un caso social para la persona ${response.datos.nombreCompleto}`, 'CREATE_SOCIAL_AFFAIR', 'TRAMITE', caso);
     return {
       status: 201,
       message: 'Caso social iniciado',
@@ -67,7 +67,7 @@ export const updateAffair = async (affair, user) => {
       nombreTramiteLargo: response.nombretramitelargo,
       nombreTramiteCorto: response.nombretramitecorto,
     };
-    sendNotification(
+    await sendNotification(
       user,
       `Se ha actualizado el estado de un caso social para la persona ${response.datos.nombreCompleto}`,
       'UPDATE_SOCIAL_AFFAIR',
