@@ -480,6 +480,12 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('El nivel educativo no puede ser vacio'),
+  direccionPlantel: check('tramite.datos.direccionPlantel')
+    .exists()
+    .withMessage('Debe incluir la direccion del plantel')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('La direccion del plantel no puede ser vacia'),
 };
 
 export const createSuperuser = [
