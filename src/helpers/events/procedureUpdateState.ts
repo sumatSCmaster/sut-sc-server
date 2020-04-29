@@ -10,14 +10,30 @@ const emitter = new MailProcedureEventEmitter();
 
 const viewsDir = resolve(__dirname, '../../views');
 
-emitter.on('procedureEventUpdated', ({ codigoTramite, emailUsuario, nombreCompletoUsuario, nombreTipoTramite, nombreCortoInstitucion, status }) => {
+const statesMap = {
+  'creado': 'creada',
+  'iniciado': 'iniciada',
+  'validando': 'puesta en validación',
+  'ingresardatos': 'puesta en espera por ingreso de datos',
+  'enproceso': 'puesta en proceso',
+  'enrevision': 'puesta en revisión',
+  'porrevisar': 'puesta en espera para una revisión',
+  'visto': 'vista',
+  'aprobado': 'aprobada',
+  'negado': 'aprobado',
+  'atendido': 'atendida',
+  'finalizado': 'finalizada'
+}
+
+emitter.on('procedureEventUpdated', ({ codigo, emailUsuario, nombreCompletoUsuario, nombreTipoTramite, nombreCortoInstitucion, status }) => {
   setImmediate(() => {
+    status = statesMap[status] ? statesMap[status] : status;
     transporter.sendMail({
       from: 'waku@wakusoftware.com',
       to: emailUsuario,
-      subject: `ACTUALIZACION DE INFORMACION EXPEDIENTE N°${codigoTramite} ${nombreCortoInstitucion}`,
-      html: renderFile(resolve(viewsDir, 'main.pug'), {
-        codigoTramite,
+      subject: `ACTUALIZACION DE INFORMACION EXPEDIENTE N°${codigo} ${nombreCortoInstitucion}`,
+      html: renderFile(resolve(viewsDir, nombreTipoTramite !== 'Multa' ? 'main.pug' : 'main_multa.pug'), {
+        codigo,
         nombreCompletoUsuario,
         nombreTipoTramite,
         nombreCortoInstitucion,
@@ -42,3 +58,5 @@ export const sendEmail = (procedure) => {
 };
 
 export default emitter;
+
+
