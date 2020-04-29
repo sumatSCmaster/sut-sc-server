@@ -425,6 +425,61 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('El numero de placa no puede ser vacio'),
+  denominacion: check('tramite.datos.denominacion')
+    .exists()
+    .withMessage('Debe incluir la denominacion del inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('La denominacion no puede ser vacia'),
+  actividadComercial: check('tramite.datos.actividadComercial')
+    .exists()
+    .withMessage('Debe incluir la actividad comercial')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('La actvividad comercial no puede ser vacia'),
+  direccionInmueble: check('tramite.datos.direccionInmueble')
+    .exists()
+    .withMessage('Debe incluir la direccion del inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('La direccion del inmueble no puede ser vacia'),
+  parroquiaInmueble: check('tramite.datos.parroquiaInmueble')
+    .exists()
+    .withMessage('Debe incluir la parroquia del inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('La parroquia del inmueble no puede ser vacia'),
+  telefonoInmueble: check('tramite.datos.telefonoInmueble')
+    .exists()
+    .withMessage('Debe incluir el telefono del inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El telefono del inmueble no puede ser vacio'),
+  correoInmueble: check('tramite.datos.correoInmueble')
+    .exists()
+    .withMessage('Debe incluir el correo del inmueble')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El correo del inmueble no puede ser vacio'),
+  nombreInstitucion: check('tramite.datos.nombreInstitucion')
+    .exists()
+    .withMessage('Debe incluir el nombre de la institucion')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El nombre de la institucion no puede ser vacio'),
+  representanteInstitucion: check('tramite.datos.representanteInstitucion')
+    .exists()
+    .withMessage('Debe incluir el representante de la institucion')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El representante de la institucion no puede ser vacio'),
+  turno: check('tramite.datos.turno').exists().withMessage('Debe incluir el turno').isString().isLength({ min: 1 }).withMessage('El turno no puede ser vacio'),
+  nivelEducativo: check('tramite.datos.nivelEducativo')
+    .exists()
+    .withMessage('Debe incluir el nivel educativo')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El nivel educativo no puede ser vacio'),
 };
 
 export const createSuperuser = [
