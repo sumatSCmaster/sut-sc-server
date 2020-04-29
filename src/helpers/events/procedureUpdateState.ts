@@ -47,7 +47,7 @@ emitter.on('procedureEventUpdated', ({ codigo, emailUsuario, nombreCompletoUsuar
 
 export const sendEmail = (procedure) => {
   const mailData = {
-    codigoTramite: procedure.codigoTramite,
+    codigo: procedure.codigo,
     emailUsuario: procedure.nombreUsuario,
     nombreCompletoUsuario: procedure.nombreCompletoUsuario,
     nombreTipoTramite: procedure.nombreTramiteLargo,
