@@ -1,0 +1,124 @@
+extends default
+//- UNIDADES EDUCATIVAS
+//- FIXME: REVISAR ESTRUCTURA 
+block content
+  div#fecha
+    p
+      b FECHA:
+        span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+    p
+      b Código de Tramite:
+        span &nbsp; #{codigo}
+  div#planilla
+    div.table                                 
+      div.th
+        p DATOS DEL SOLICITANTE
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Nombre:
+            span &nbsp; #{datos.usuario.nombre}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Cédula:
+            span &nbsp; #{datos.usuario.cedula}
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Teléfono:
+            span &nbsp; #{datos.usuario.telefono}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Correo:
+            span &nbsp; #{datos.usuario.correo}
+      div.tr
+        div.td(style={ width: '50%' }).border-right
+          p
+            b Dirección:
+            span &nbsp; #{datos.usuario.direccion}
+        div.td(style={ width: '50%' })
+          p
+            b Parroquia:
+            span &nbsp; #{datos.usuario.parroquia}
+    div.table
+      div.th
+        p DATOS DE PROPIETARIO
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Nombre o Razón Social:
+            span &nbsp; #{datos.usuario.razonSocial}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Cédula o RIF:
+            span &nbsp; #{datos.usuario.nacionalidad}-#{datos.usuario.cedulaORif}
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Teléfono:
+            span &nbsp; #{datos.usuario.telefono}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Correo:
+            span &nbsp; #{datos.usuario.correo}
+      div.tr
+        div.td(style={ width: '50%' }).border-right
+          p
+            b Dirección:
+            span &nbsp; #{datos.usuario.direccion}
+        div.td(style={ width: '50%' })
+          p
+            b Parroquia:
+            span &nbsp; #{datos.usuario.parroquia}
+    div.table           
+      div.th
+        p DATOS DEL INMUEBLE Y/O PARCELA
+      div.tr           
+        div.td(style={ width: '50%' }).border-right.border-bottom
+          p
+            b Nombre de la Institución:
+            span &nbsp; #{datos.usuario.parroquia}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Representante Legal o Director del Plantel:
+            span &nbsp; #{datos.usuario.tipoInmueble}
+      div.tr           
+        div.td(style={ width: '50%' }).border-right.border-bottom
+          p
+            b Nivel Educativo:
+            span &nbsp; #{datos.usuario.parroquia}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Turno:
+            span &nbsp; #{datos.usuario.tipoInmueble}
+      div.tr           
+        div.td(style={ width: '50%' }).border-right
+          p
+            b Dirección:
+            span &nbsp; #{datos.usuario.parroquia}
+        div.td(style={ width: '50%' })
+          p
+            b Parroquia:
+            span &nbsp; #{datos.usuario.tipoInmueble}               
+    div#recaudos
+      h3 REQUISITOS OBLIGATORIOS
+      hr.divider
+      ul      
+        li Original y copia de la solicitud, formato CPU-OMPU-AU-004 llenado en su totalidad.
+        li Copia del Documento de Propiedad Copia del documento de Propiedad o Contrato de Arrendamiento (a nombre de la empresa) notariado o visado por el colegio de Abogados
+        li Copia de la Constancia de Cumplimiento de Normas Técnicas del Local, emitida por el Instituto Autónomo Cuerpo de Bomberos del Municipio Maracaibo.
+        li Constancia de Nomenclatura expedida por la Oficina Municipal de Catastro (en caso de que el documento de registro no lo especifique).
+        li Dos (2) fotografías de la Fachada del Inmueble.
+        li Una (1) Copia del Registro de Comercio (Acta Constitutiva – Estatutos).
+        li Original del Visto Bueno emitido por la Asociación de Vecinos del sector y/o Consejo comunal.
+        li Plano de Distribución Interna del local con medidas a escala incluyendo la ubicación de los puestos de estacionamiento (Impreso y Digital en un cd Avalado por un Arquitecto).
+        li En caso de poseer Conformidad de Uso otorgada en años anteriores, deberá consignar copia de la misma.
+        li Original y copia de la Solvencia de Inmuebles Urbanos o en su defecto la resolución de Exoneración respectiva emitida por SEDEMAT.
+        li Croquis de Ubicación indicando puntos de referencia.
+    hr.divider
+    div(style={'margin-bottom':'50px', 'font-size':'14px'})
+      h3 OBSERVACIONES GENERALES
+      ul
+        li Todos los recaudos deberán ser consignados en una carpeta marrón oficio con su respectivo gancho y separadores entre cada requisito.
+ 
+
