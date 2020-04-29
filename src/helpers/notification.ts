@@ -123,31 +123,32 @@ const broadcastForProcedureInit = async (sender: Usuario, description: string, p
     const permittedOfficials = (await client.query(queries.GET_OFFICIALS_FOR_PROCEDURE, [payload.nombreCorto, payload.tipoTramite])).rows;
 
     const notification = await Promise.all(
-      superuser.map(async (el) => {
-        const result = (
-          await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
-        ).rows[0];
-        const notification = (await client.query(queries.GET_PROCEDURE_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
-        const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
-        return formattedNotif;
-      })
-    );
-
-    await Promise.all(
-      admins.map(
-        async (el) =>
-          (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
-            .rows[0]
-      )
+      superuser
+        .concat(admins)
+        .filter((el) => emisor !== `${el.nacionalidad}-${el.cedula}`)
+        .map(async (el) => {
+          if (!el) return null;
+          const result = (
+            await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
+          ).rows[0];
+          const notification = (await client.query(queries.GET_PROCEDURE_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
+          const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
+          return formattedNotif;
+        })
+        .filter((el) => el)
     );
 
     if (payload.estado === 'enproceso') {
       await Promise.all(
-        permittedOfficials.map(
-          async (el) =>
-            (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
-              .rows[0]
-        )
+        permittedOfficials
+          .filter((el) => emisor !== `${el.nacionalidad}-${el.cedula}`)
+          .map(async (el) =>
+            el
+              ? (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
+                  .rows[0]
+              : null
+          )
+          .filter((el) => el)
       );
       socket?.to(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
       socket?.to(`tram:${payload.tipoTramite}`).emit('CREATE_PROCEDURE', payload);
@@ -175,46 +176,50 @@ const broadcastForProcedureUpdate = async (sender: Usuario, description: string,
     const permittedOfficials = (await client.query(queries.GET_OFFICIALS_FOR_PROCEDURE, [payload.nombreCorto, payload.tipoTramite])).rows;
 
     await Promise.all(
-      user.map(async (el) => {
-        const userDesc = description.replace('un', 'su');
-        const result = (
-          await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, userDesc, payload.estado, concept])
-        ).rows[0];
-        const notification = (await client.query(queries.GET_PROCEDURE_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
-        const formattedNotif = formatNotification(emisor, notification.receptor, userDesc, payload, notification);
-        const userSocket = users.get(`${el.nacionalidad}-${el.cedula}`);
-        userSocket?.emit('SEND_NOTIFICATION', formattedNotif);
-        userSocket?.emit('UPDATE_PROCEDURE', payload);
-        return formattedNotif;
-      })
+      user
+        .filter((el) => emisor !== `${el.nacionalidad}-${el.cedula}`)
+        .map(async (el) => {
+          if (!el) return null;
+          const userDesc = description.replace('un', 'su');
+          const result = (
+            await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, userDesc, payload.estado, concept])
+          ).rows[0];
+          const notification = (await client.query(queries.GET_PROCEDURE_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
+          const formattedNotif = formatNotification(emisor, notification.receptor, userDesc, payload, notification);
+          const userSocket = users.get(`${el.nacionalidad}-${el.cedula}`);
+          userSocket?.emit('SEND_NOTIFICATION', formattedNotif);
+          userSocket?.emit('UPDATE_PROCEDURE', payload);
+          return formattedNotif;
+        })
     );
 
     const notification = await Promise.all(
-      superuser.map(async (el) => {
-        const result = (
-          await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
-        ).rows[0];
-        const notification = (await client.query(queries.GET_PROCEDURE_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
-        const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
-        return formattedNotif;
-      })
-    );
-
-    await Promise.all(
-      admins.map(
-        async (el) =>
-          (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
-            .rows[0]
-      )
+      superuser
+        .concat(admins)
+        .filter((el) => emisor !== `${el.nacionalidad}-${el.cedula}`)
+        .map(async (el) => {
+          if (!el) return null;
+          const result = (
+            await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
+          ).rows[0];
+          const notification = (await client.query(queries.GET_PROCEDURE_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
+          const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
+          return formattedNotif;
+        })
+        .filter((el) => el)
     );
 
     if (payload.estado === 'enproceso') {
       await Promise.all(
-        permittedOfficials.map(
-          async (el) =>
-            (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
-              .rows[0]
-        )
+        permittedOfficials
+          .filter((el) => emisor !== `${el.nacionalidad}-${el.cedula}`)
+          .map(async (el) =>
+            el
+              ? (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
+                  .rows[0]
+              : null
+          )
+          .filter((el) => el)
       );
       io.in(`tram:${payload.tipoTramite}`).emit('UPDATE_PROCEDURE', payload);
       io.in(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
@@ -241,31 +246,22 @@ const broadcastForAffairInit = async (sender: Usuario, description: string, payl
     const permittedOfficials = (await client.query(queries.GET_OFFICIALS_FOR_PROCEDURE, [payload.nombreCorto, payload.tipoTramite])).rows;
 
     const notification = await Promise.all(
-      superuser.map(async (el) => {
-        const result = (
-          await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
-        ).rows[0];
-        const notification = (await client.query(queries.GET_PROCEDURE_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
-        const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
-        return formattedNotif;
-      })
+      superuser
+        .concat(admins)
+        .concat(permittedOfficials)
+        .filter((el) => emisor !== `${el.nacionalidad}-${el.cedula}`)
+        .map(async (el) => {
+          if (!el) return null;
+          const result = (
+            await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
+          ).rows[0];
+          const notification = (await client.query(queries.GET_PROCEDURE_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
+          const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
+          return formattedNotif;
+        })
+        .filter((el) => el)
     );
 
-    await Promise.all(
-      admins.map(
-        async (el) =>
-          (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
-            .rows[0]
-      )
-    );
-
-    await Promise.all(
-      permittedOfficials.map(
-        async (el) =>
-          (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
-            .rows[0]
-      )
-    );
     io.in(`tram:${payload.tipoTramite}`).emit('CREATE_PROCEDURE', payload);
     io.in(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
 
@@ -290,31 +286,22 @@ const broadcastForAffairUpdate = async (sender: Usuario, description: string, pa
     const permittedOfficials = (await client.query(queries.GET_OFFICIALS_FOR_PROCEDURE, [payload.nombreCorto, payload.tipoTramite])).rows;
 
     const notification = await Promise.all(
-      superuser.map(async (el) => {
-        const result = (
-          await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
-        ).rows[0];
-        const notification = (await client.query(queries.GET_PROCEDURE_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
-        const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
-        return formattedNotif;
-      })
+      superuser
+        .concat(admins)
+        .concat(permittedOfficials)
+        .filter((el) => emisor !== `${el.nacionalidad}-${el.cedula}`)
+        .map(async (el) => {
+          if (!el) return null;
+          const result = (
+            await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
+          ).rows[0];
+          const notification = (await client.query(queries.GET_PROCEDURE_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
+          const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
+          return formattedNotif;
+        })
+        .filter((el) => el)
     );
 
-    await Promise.all(
-      admins.map(
-        async (el) =>
-          (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
-            .rows[0]
-      )
-    );
-
-    await Promise.all(
-      permittedOfficials.map(
-        async (el) =>
-          (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
-            .rows[0]
-      )
-    );
     io.in(`tram:${payload.tipoTramite}`).emit('UPDATE_PROCEDURE', payload);
     io.in(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
 
@@ -354,31 +341,32 @@ const broadcastForFiningInit = async (sender: Usuario, description: string, payl
     );
 
     const notification = await Promise.all(
-      superuser.map(async (el) => {
-        const result = (
-          await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
-        ).rows[0];
-        const notification = (await client.query(queries.GET_FINING_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
-        const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
-        return formattedNotif;
-      })
-    );
-
-    await Promise.all(
-      admins.map(
-        async (el) =>
-          (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
-            .rows[0]
-      )
+      superuser
+        .concat(admins)
+        .filter((el) => emisor !== `${el.nacionalidad}-${el.cedula}`)
+        .map(async (el) => {
+          if (!el) return null;
+          const result = (
+            await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
+          ).rows[0];
+          const notification = (await client.query(queries.GET_FINING_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
+          const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
+          return formattedNotif;
+        })
+        .filter((el) => el)
     );
 
     if (payload.estado !== 'validando') {
       await Promise.all(
-        permittedOfficials.map(
-          async (el) =>
-            (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
-              .rows[0]
-        )
+        permittedOfficials
+          .filter((el) => emisor !== `${el.nacionalidad}-${el.cedula}`)
+          .map(async (el) =>
+            el
+              ? (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
+                  .rows[0]
+              : null
+          )
+          .filter((el) => el)
       );
       socket?.to(`tram:${payload.tipoTramite}`).emit('CREATE_FINING', payload);
       socket?.to(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
@@ -423,31 +411,32 @@ const broadcastForFiningUpdate = async (sender: Usuario, description: string, pa
     }
 
     const notification = await Promise.all(
-      superuser.map(async (el) => {
-        const result = (
-          await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
-        ).rows[0];
-        const notification = (await client.query(queries.GET_FINING_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
-        const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
-        return formattedNotif;
-      })
-    );
-
-    await Promise.all(
-      admins.map(
-        async (el) =>
-          (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
-            .rows[0]
-      )
+      superuser
+        .concat(admins)
+        .filter((el) => emisor !== `${el.nacionalidad}-${el.cedula}`)
+        .map(async (el) => {
+          if (!el) return null;
+          const result = (
+            await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
+          ).rows[0];
+          const notification = (await client.query(queries.GET_FINING_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
+          const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
+          return formattedNotif;
+        })
+        .filter((el) => el)
     );
 
     if (payload.estado !== 'validando') {
       await Promise.all(
-        permittedOfficials.map(
-          async (el) =>
-            (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
-              .rows[0]
-        )
+        permittedOfficials
+          .filter((el) => emisor !== `${el.nacionalidad}-${el.cedula}`)
+          .map(async (el) =>
+            el
+              ? (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept]))
+                  .rows[0]
+              : null
+          )
+          .filter((el) => el)
       );
       socket?.to(`tram:${payload.tipoTramite}`).emit('UPDATE_FINING', payload);
       socket?.to(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
