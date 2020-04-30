@@ -346,6 +346,14 @@ export const getFieldsForValidations = async ({ id, type }) => {
   }
 };
 
+const isNotPrepaidProcedure = ({ suffix, user }: { suffix: string; user: Usuario }) => {
+  const condition = false;
+  if (suffix === 'pd') return !condition;
+  if (suffix === 'ompu') return !condition;
+  if (suffix === 'tl' && user.tipoUsuario !== 4) return !condition;
+  return condition;
+};
+
 export const procedureInit = async (procedure, user: Usuario) => {
   const client = await pool.connect();
   const { tipoTramite, datos, pago } = procedure;
@@ -356,7 +364,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.idTramite])).rows[0];
     response.sufijo = resources.sufijo;
-    costo = resources.sufijo === 'pd' || (resources.sufijo === 'tl' && user.tipoUsuario !== 4) ? null : pago.costo || resources.costo_base;
+    costo = isNotPrepaidProcedure({ suffix: resources.sufijo, user }) ? null : pago.costo || resources.costo_base;
     const nextEvent = await getNextEventForProcedure(response, client);
 
     if (pago && resources.sufijo !== 'tl' && nextEvent.startsWith('validar')) {
