@@ -1,6 +1,5 @@
 extends default
-//- CENTROS COMERCIALES 
-//- FIXME: REVISAR ESTRUCTURA
+
 block content
   div#fecha
     p
@@ -46,30 +45,27 @@ block content
       div.tr
         div.td(style={ width: '50%' }).border-bottom.border-right
           p
-            b Nombre o Razón Social:
-            span &nbsp; #{datos.usuario.razonSocial}
+            b Denominación o Razón Social:
+            span &nbsp; #{datos.usuario.denominacion}
         div.td(style={ width: '50%' }).border-bottom
-          p
-            b Cédula o RIF:
-            span &nbsp; #{datos.usuario.nacionalidad}-#{datos.usuario.cedulaORif}
-      div.tr
-        div.td(style={ width: '50%' }).border-bottom.border-right
-          p
-            b Teléfono:
-            span &nbsp; #{datos.usuario.telefono}
-        div.td(style={ width: '50%' }).border-bottom
-          p
-            b Correo:
-            span &nbsp; #{datos.usuario.correo}
-      div.tr
-        div.td(style={ width: '50%' }).border-right
           p
             b Dirección:
-            span &nbsp; #{datos.usuario.direccion}
-        div.td(style={ width: '50%' })
+            span &nbsp; #{datos.usuario.direccionEmpresa}
+            
+      div.tr
+        div.td(style={ width: '50%' }).border-right.border-bottom
           p
             b Parroquia:
             span &nbsp; #{datos.usuario.parroquia}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Teléfono:
+            span &nbsp; #{datos.usuario.telefonoEmpresa}
+      div.tr
+        div.td(style={ width: '50%' }).border-right
+          p
+            b Correo:
+            span &nbsp; #{datos.usuario.correoEmpresa}
     div.table           
       div.th
         p DATOS DEL INMUEBLE Y/O PARCELA
@@ -77,25 +73,20 @@ block content
         div.td(style={ width: '100%' }).border-bottom
           p
             b Dirección:
-            span &nbsp; #{datos.usuario.ubicadoEn}
+            span &nbsp; #{datos.usuario.direccionInmueble}
       div.tr           
         div.td(style={ width: '50%' }).border-right
           p
             b Parroquia:
-            span &nbsp; #{datos.usuario.parroquia}
-        div.td(style={ width: '25%' }).border-right
+            span &nbsp; #{datos.usuario.parroquiaInmueble}
+        div.td(style={ width: '50%' })
           p
             b Tipo de inmueble:
             span &nbsp; #{datos.usuario.tipoInmueble}
-        div.td(style={ width: '25%' })
-          p
-            b Área:
-            span &nbsp; #{datos.usuario.area}
     div#recaudos
       h3 REQUISITOS OBLIGATORIOS
       hr.divider
       ul
-        li Original y copia de la solicitud, formato CPU-OMPU-AU-004 llenado en su totalidad.
         li Copia del Documento de Propiedad Copia del documento de Propiedad o Contrato de Arrendamiento (a nombre de la empresa) notariado o visado por el colegio de Abogados
         li Copia de la Constancia de Cumplimiento de Normas Técnicas del Local, emitida por el Instituto Autónomo Cuerpo de Bomberos del Municipio Maracaibo.
         li Una (01) Copia del Registro de Comercio – Acta Constitutiva.
