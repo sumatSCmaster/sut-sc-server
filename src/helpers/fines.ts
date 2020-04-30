@@ -50,6 +50,7 @@ export const finingInit = async (procedure, user: Usuario) => {
     if (userExists.length > 0) {
       sendEmail({
         ...multa,
+        codigo: multa.codigoMulta,
         nombreUsuario: userExists[0].nombre_de_usuario,
         nombreCompletoUsuario: userExists[0].nombre_completo,
         estado: respState.rows[0].state,
@@ -119,6 +120,7 @@ const addPaymentFining = async (procedure, user: Usuario) => {
     if (userExists.length > 0) {
       sendEmail({
         ...multa,
+        codigo: multa.codigoMulta,
         nombreUsuario: userExists[0].nombre_de_usuario,
         nombreCompletoUsuario: userExists[0].nombre_completo,
         estado: respState.rows[0].state,
@@ -192,6 +194,7 @@ export const validateFining = async (procedure, user: Usuario) => {
     if (userExists.length > 0) {
       sendEmail({
         ...multa,
+        codigo: multa.codigoMulta,
         nombreUsuario: userExists[0].nombre_de_usuario,
         nombreCompletoUsuario: userExists[0].nombre_completo,
         estado: respState.rows[0].state,

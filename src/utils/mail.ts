@@ -1,13 +1,14 @@
 import { createTransport } from 'nodemailer';
 
 const transporter = createTransport({
-  pool: true,
-  host: 'smtp.ethereal.email',
-  port: 587,
+  host: process.env.MAIL_SERVER as string,
+  port: Number(process.env.MAIL_PORT),
+  secure: true,
   auth: {
-    user: 'marcia22@ethereal.email',
-    pass: 'ymY3GE7ZMkbYM4nDdP',
+    user: process.env.MAIL_ADDRESS,
+    pass: process.env.MAIL_PASSWORD,
   },
 });
+
 
 export default transporter;
