@@ -121,11 +121,12 @@ const broadcastForProcedureInit = async (sender: Usuario, description: string, p
     const admins = (await client.query(queries.GET_NON_NORMAL_OFFICIALS, [payload.nombreCorto])).rows;
     const superuser = (await client.query(queries.GET_SUPER_USER)).rows;
     const permittedOfficials = (await client.query(queries.GET_OFFICIALS_FOR_PROCEDURE, [payload.nombreCorto, payload.tipoTramite])).rows;
-    const officials = payload.estado === 'enproceso' ? superuser.concat(admins).concat(permittedOfficials) : superuser.concat(admins);
+    const officials = (payload.estado === 'enproceso' ? superuser.concat(admins).concat(permittedOfficials) : superuser.concat(admins)).filter(
+      (el) => emisor !== `${el.nacionalidad}-${el.cedula}`
+    );
 
     const notification = await Promise.all(
       officials
-        .filter((el) => emisor !== `${el.nacionalidad}-${el.cedula}`)
         .map(async (el) => {
           if (!el) return null;
           const result = (
