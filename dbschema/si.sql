@@ -448,7 +448,8 @@ CREATE TABLE public.tipo_tramite (
     certificado character varying,
     utiliza_informacion_catastral boolean,
     pago_previo boolean,
-    costo_utmm numeric
+    costo_utmm numeric,
+    planilla_rechazo text
 );
 
 
@@ -633,6 +634,24 @@ $$;
 
 
 --
+-- Name: insert_notificacion_trigger_func(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.insert_notificacion_trigger_func() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF NEW.receptor = NEW.emisor THEN
+    RETURN NULL;
+  ELSE
+    RETURN NEW;
+  END IF;
+  
+END
+$$;
+
+
+--
 -- Name: tramites_eventos_transicion(text, text); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -651,6 +670,7 @@ SELECT CASE state
             WHEN 'validar_cr' THEN 'validando'
             WHEN 'validar_tl' THEN 'validando'
             WHEN 'enproceso_pd' THEN 'enproceso'
+            WHEN 'enproceso_ompu' THEN 'enproceso' 
             WHEN 'finalizar_tl' THEN 'finalizado'
             ELSE 'error'
         END
@@ -660,11 +680,13 @@ SELECT CASE state
             WHEN 'enproceso_cr' THEN 'enproceso'
             WHEN 'finalizar_pd' THEN 'finalizado'
             WHEN 'finalizar_tl' THEN 'finalizado'
+            WHEN 'finalizar_ompu' THEN 'finalizado'
             ELSE 'error'
         END
     WHEN 'ingresardatos' THEN
         CASE event
             WHEN 'validar_pd' THEN 'validando'
+            WHEN 'validar_ompu' THEN 'validando'
             ELSE 'error'
         END
     WHEN 'enproceso' THEN
@@ -672,12 +694,16 @@ SELECT CASE state
             WHEN 'ingresardatos_pd' THEN 'ingresardatos'
             WHEN 'finalizar_pa' THEN 'finalizado'
             WHEN 'revisar_cr' THEN 'enrevision'
+            WHEN 'rechazar_ompu' THEN 'enrevision'
+            WHEN 'aprobar_ompu' THEN 'enrevision'
             ELSE 'error'
         END
     WHEN 'enrevision' THEN
         CASE event
             WHEN 'finalizar_cr' THEN 'finalizado'
             WHEN 'rechazar_cr' THEN 'enproceso'
+            WHEN 'ingresardatos_ompu' THEN 'ingresardatos'
+            WHEN 'rechazar_ompu' THEN 'enproceso'
             ELSE 'error'        
         END
     ELSE 'error'
@@ -2063,6 +2089,7 @@ CREATE VIEW public.notificacion_multa_view AS
     n.emisor,
     n.receptor,
     n.estado AS "estadoNotificacion",
+    n.concepto,
     m.id AS "idMulta",
     m.datos,
     m.tipotramite AS "tipoTramite",
@@ -2096,6 +2123,7 @@ CREATE VIEW public.notificacion_tramite_view AS
     n.emisor,
     n.receptor,
     n.estado AS "estadoNotificacion",
+    n.concepto,
     t.id AS "idTramite",
     t.datos,
     t.tipotramite AS "tipoTramite",
@@ -2468,7 +2496,8 @@ CREATE TABLE public.recaudo (
     nombre_largo character varying,
     nombre_corto character varying,
     obligatorio boolean DEFAULT false,
-    planilla text
+    planilla text,
+    extension text DEFAULT 'image/*'::text
 );
 
 
@@ -3647,7 +3676,37 @@ COPY public.campo (id_campo, nombre, tipo, validacion, col) FROM stdin;
 49	Estimación Simple	object	estimacionSimple	24
 50	Numero de Bohío	number	numeroBohio	6
 51	Detalles del Bohío	string	detallesBohio	6
+78	Dirección del Plantel	string	direccionPlantel	12
 52	Fecha del Apartado	date	fechaApartado	6
+56	Nombre	string	nombreRepresentante	8
+57	Cedula	string	cedulaRepresentante	8
+58	Telefono	string	telefonoRepresentante	8
+53	Nombre Legal de la Organización	string	nombreOrganizacion	8
+54	Tipo de Sociedad	string	tipoSociedad	8
+55	Tipo de Transporte	string	tipoTransporte	8
+59	Finalidad de la Solicitud	string	finalidad	6
+60	Calle o Avenida de su Frente	string	frente	6
+61	Frente	string	linderoFrente	6
+62	Fondo	string	linderoFondo	6
+63	Derecha	string	linderoDerecha	6
+64	Izquierda	string	linderoIzquierda	6
+65	Sitio	string	sitio	6
+67	Numero de Placa	string	numeroPlaca	8
+66	Código de Nomenclatura	string	codigoNomenclatura	24
+68	Denominación o Razón Social	string	denominacion	8
+69	Actividad Comercial	string	actividadComercial	8
+70	Dirección del Inmueble	string	direccionInmueble	8
+72	Teléfono	string	telefonoInmueble	8
+73	Correo electrónico	string	correoInmueble	8
+74	Nombre de la Institución	string	nombreInstitucion	8
+75	Representante Legal o Director de la Institución	string	representanteInstitucion	12
+76	Turno	option	turno	4
+77	Nivel Educativo	string	nivelEducativo	8
+71	Parroquía	string	parroquiaInmueble	8
+79	Dirección de la Empresa	string	direccionEmpresa	8
+80	Parroquia	string	parroquiaEmpresa	8
+81	Teléfono	string	telefonoEmpresa	8
+82	Correo Electrónico	string	correoEmpresa	8
 \.
 
 
@@ -3684,15 +3743,12 @@ COPY public.campo_tramite (id_campo, id_tipo_tramite, orden, estado, id_seccion)
 22	8	1	enproceso	5
 5	8	2	enproceso	5
 6	8	2	enproceso	5
-23	8	3	enproceso	5
 22	6	1	enproceso	5
 5	6	2	enproceso	5
 6	6	2	enproceso	5
-23	6	3	enproceso	5
 22	7	1	enproceso	5
 5	7	2	enproceso	5
 6	7	2	enproceso	5
-23	7	3	enproceso	5
 21	11	1	iniciado	4
 16	11	2	iniciado	4
 18	11	3	iniciado	4
@@ -3792,6 +3848,8 @@ COPY public.campo_tramite (id_campo, id_tipo_tramite, orden, estado, id_seccion)
 33	15	6	iniciado	10
 34	15	7	iniciado	10
 35	15	8	iniciado	10
+23	6	4	enproceso	5
+23	7	4	enproceso	5
 36	15	9	iniciado	10
 37	15	10	iniciado	10
 38	15	17	iniciado	10
@@ -3838,11 +3896,105 @@ COPY public.campo_tramite (id_campo, id_tipo_tramite, orden, estado, id_seccion)
 10	18	3	iniciado	1
 11	18	4	iniciado	1
 50	18	3	iniciado	16
+8	25	1	iniciado	1
 52	18	1	iniciado	16
 51	18	4	iniciado	16
 51	18	2	enproceso	16
 52	18	3	enproceso	16
 50	18	1	enproceso	16
+8	21	1	iniciado	1
+9	21	2	iniciado	1
+10	21	3	iniciado	1
+11	21	4	iniciado	1
+6	21	6	iniciado	1
+3	21	7	iniciado	1
+53	21	1	iniciado	17
+54	21	2	iniciado	17
+55	21	3	iniciado	17
+56	21	1	iniciado	18
+57	21	2	iniciado	18
+58	21	3	iniciado	18
+8	21	1	enproceso	1
+9	21	2	enproceso	1
+10	21	3	enproceso	1
+11	21	4	enproceso	1
+6	21	6	enproceso	1
+3	21	7	enproceso	1
+53	21	1	enproceso	17
+54	21	2	enproceso	17
+55	21	3	enproceso	17
+56	21	1	enproceso	18
+57	21	2	enproceso	18
+58	21	3	enproceso	18
+8	22	1	iniciado	1
+9	22	2	iniciado	1
+10	22	3	iniciado	1
+11	22	4	iniciado	1
+6	22	6	iniciado	1
+3	22	7	iniciado	1
+28	22	1	enproceso	9
+28	22	1	iniciado	9
+4	22	2	iniciado	11
+16	22	1	iniciado	11
+9	25	2	iniciado	1
+59	22	3	iniciado	11
+60	22	4	iniciado	11
+61	22	1	iniciado	19
+62	22	2	iniciado	19
+63	22	3	iniciado	19
+64	22	4	iniciado	19
+23	22	5	iniciado	19
+66	22	1	enproceso	20
+67	22	2	enproceso	20
+16	22	1	enproceso	11
+38	22	2	enproceso	11
+65	22	3	enproceso	11
+23	22	4	enproceso	11
+45	22	1	enproceso	14
+23	8	4	enproceso	5
+15	8	3	enproceso	5
+15	6	3	enproceso	5
+15	7	3	enproceso	5
+8	23	1	iniciado	1
+9	23	2	iniciado	1
+10	23	3	iniciado	1
+11	23	4	iniciado	1
+6	23	6	iniciado	1
+3	23	7	iniciado	1
+28	23	1	iniciado	9
+8	24	1	iniciado	1
+9	24	2	iniciado	1
+10	24	3	iniciado	1
+11	24	4	iniciado	1
+6	24	6	iniciado	1
+3	24	7	iniciado	1
+28	24	1	iniciado	9
+10	25	3	iniciado	1
+11	25	4	iniciado	1
+6	25	6	iniciado	1
+3	25	7	iniciado	1
+68	23	1	iniciado	21
+69	23	2	iniciado	21
+70	23	3	iniciado	21
+71	23	4	iniciado	21
+72	23	5	iniciado	21
+73	23	6	iniciado	21
+74	24	1	iniciado	22
+75	24	2	iniciado	22
+76	24	3	iniciado	22
+77	24	4	iniciado	22
+72	24	5	iniciado	22
+73	24	6	iniciado	22
+78	24	7	iniciado	22
+71	24	8	iniciado	22
+70	25	1	iniciado	11
+71	25	2	iniciado	11
+39	25	3	iniciado	11
+68	25	1	iniciado	21
+79	25	2	iniciado	21
+80	25	3	iniciado	21
+81	25	10	iniciado	21
+82	25	11	iniciado	21
 \.
 
 
@@ -3886,6 +4038,8 @@ COPY public.cuenta_funcionario (id_usuario, id_institucion) FROM stdin;
 78	7
 79	6
 80	6
+81	8
+82	8
 \.
 
 
@@ -3968,7 +4122,7 @@ COPY public.institucion (id_institucion, nombre_completo, nombre_corto) FROM std
 5	Servicio Desconcentrado de Plazas y Parques	SEDEPAR
 6	Instituto Municipal de Ambiente	IMA
 7	Instituto Autónomo Policía del Municipio Maracaibo	PMM
-8	Instituto Municipal de Transporte Colectivo y Urbano de Pasajeros del Municipio Maracaibo	INTCUMA
+8	Instituto Municipal de Transporte Colectivo y Urbano de Pasajeros del Municipio Maracaibo	IMTCUMA
 \.
 
 
@@ -3985,6 +4139,9 @@ COPY public.institucion_banco (id_institucion_banco, id_institucion, id_banco, n
 6	5	1	0116–01–4054–0008937036	SEDEPAR	rif:G-20006426-9
 7	7	1	0116–0126–06–0026593432	SEDEMAT	rif:G-20002908-0
 8	7	2	0134–0001–61–0013218667	SEDEMAT	rif:G-20002908-0
+11	8	1	0116–0126–06–0026593432	SEDEMAT	rif:G-20002908-0
+12	8	2	0134–0001–61–0013218667	SEDEMAT	rif:G-20002908-0
+9	6	1	0116–0126–0600–22777792	INSTITUTO MUNICIPAL DE AMBIENTE	rif:G-20000537-8
 \.
 
 
@@ -4067,6 +4224,14 @@ COPY public.ordenanza (id_ordenanza, descripcion, tarifa, id_valor, habilitado) 
 37	Constancias de inspección e instalación de generador o planta eléctica (uso doméstico)	10	2	t
 38	Constancias de inspección e instalación de generador o planta eléctica (uso comercial)	50	2	t
 39	Constancias de inspección e instalación de generador o planta eléctica (uso industrial)	100	2	t
+40	Sociedad Civil, Cooperativas y OSP - Carro por Puesto (CPP)	20	2	t
+41	Sociedad Civil, Cooperativas y OSP - Micro Bus (MB)	25	2	t
+42	Sociedad Civil, Cooperativas y OSP - Autobús (AB)	30	2	t
+43	Sociedad Civil, Cooperativas y OSP - Mixta	35	2	t
+44	Sociedad Mercantil (Organización) - Carro por Puesto (CPP)	25	2	t
+45	Sociedad Mercantil (Organización) - Micro Bus (MB)	30	2	t
+46	Sociedad Mercantil (Organización) - Autobús (AB)	35	2	t
+47	Sociedad Mercantil (Organización) - Mixta	40	2	t
 \.
 
 
@@ -4083,11 +4248,6 @@ COPY public.ordenanza_tramite (id_ordenanza_tramite, id_tramite, id_tarifa, utmm
 --
 
 COPY public.pago (id_pago, id_procedimiento, referencia, monto, fecha_de_pago, aprobado, id_banco, fecha_de_aprobacion, concepto) FROM stdin;
-129	6	123123123123	1	2020-04-20	t	1	2020-04-20 10:33:46.489012-04	MULTA
-130	8	1231231231231	200000	2020-04-20	t	1	2020-04-20 10:52:01.027017-04	MULTA
-131	9	1231231231236	400000	2020-04-20	t	1	2020-04-20 10:59:40.743998-04	MULTA
-132	10	12312312312311	200000	2020-04-20	t	1	2020-04-20 11:10:58.632442-04	MULTA
-133	11	1231231231235	200000	2020-04-20	t	1	2020-04-20 11:17:02.174255-04	MULTA
 \.
 
 
@@ -4140,12 +4300,14 @@ COPY public.permiso_de_acceso (id_permiso, id_usuario, id_tipo_tramite) FROM std
 10	57	1
 11	57	2
 12	57	3
-13	68	14
-14	68	15
-15	68	16
 16	71	0
 17	73	17
 18	75	18
+19	82	21
+20	68	14
+21	68	15
+22	68	16
+23	68	22
 \.
 
 
@@ -4188,46 +4350,70 @@ COPY public.propietario_inmueble (id_propietario_inmueble, id_propietario, id_in
 -- Data for Name: recaudo; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.recaudo (id_recaudo, nombre_largo, nombre_corto, obligatorio, planilla) FROM stdin;
-8	Autorización para Trámites a Terceros (si el caso lo amerita)	AutorizacionTramitesTerceros	f	\N
-9	Copia de Cedula Legible del Tramitante o Tercero (si el caso lo amerita)	CedulaTercero	f	\N
-4	Documento de Propiedad del Terreno Notariado y Registrado (copia)	DocumentoDePropiedad	t	\N
-5	Original y copia del Plano de Mensura Catastrado en tamaño original, firmado y sellado por la Dirección de Catastro (original)	PlanoMensura	t	\N
-6	Copia del RIF del Propietario	RIFPropietario	t	\N
-7	Copia de Cedula de Identidad Legible del Propietario	CedulaPropietario	t	\N
-10	Planos del Proyecto de Instalaciones de Gas (en CD)	PlanosInstalacionGas	t	\N
-13	Memoria descriptiva del proyecto de Gas (en CD)	MemoriaDesc	t	\N
-14	Memoria del cálculo del sistema de Gas (en CD)	MemoriaCalculo	t	\N
-11	Detalles del Proyecto de Instalaciones de Gas (Tanquilla Principal de Seccionamiento, Detalle de zanja, Detalle de Válvulas de Equipos, Detalle de Sistema de Regulación, Detalle de Ductos de Gas, Detalle de Venteo, Detalle de Soportes, Isometría de Gas, Especificaciones) (en CD)	DetalleProyecto	t	\N
-15	Especificaciones técnicas del Proyecto de Gas (en CD)	EspecificacionesTecnicas	t	\N
-12	Capas cargadas de los Siguientes Servicios: Aguas Servidas, Aguas Blancas, Aguas de Lluvia, Electricidad u Otros Servicios (en CD)	CapasServicios	t	\N
-21	Copia de Constancia de Servicio SAGAS actualizada	ConstanciaSAGAS	t	\N
-22	Copia de Variables Urbanas expedida por la Alcaldía de Maracaibo	VariablesUrb	t	\N
-26	Un (1) Juego de Planos Impresos de Arquitectura	PlanosArq	t	\N
-16	3 Juegos de Planos del Proyecto de Gas Impresos de Cada Nivel de Arquitectura (90cm. x 60cm.)	JuegoPlanosCadaNivel	t	\N
-18	3 Juegos de Planos de Detalles de Gas (90cm. x 60cm.)	JuegoPlanosDetallesGas	t	\N
-19	3 Juegos de Memoria de Cálculo del Proyecto de Gas (90cm. x 60cm.)	JuegoPlanosProyectoGas	t	\N
-20	3 Juegos de Especificaciones Técnicas del Proyecto de Gas (90cm x. 60cm.)	JuegoPlanosEspecificacionesProyectoGas	t	\N
-17	3 Juegos de Planos de Detalles de Gas (90cm. x 60cm.)	JuegoPlanosDetallesGas	t	\N
-23	Tener en Expediente SAGAS: Inspecciones de las instalaciones de Gas	ExpSAGASInstGas	t	\N
-24	Tener en Expediente SAGAS: Inspecciones de Pruebas de Hermeticidad con Carta de Registro Original firmada y sellada	ExpSAGASHermeticidad	t	\N
-25	Tener en Expediente SAGAS: Inspección Final de las Instalaciones de Gas	ExpSAGASInspFinal	t	\N
-27	Tener en Expediente SAGAS: Inspección Final de la Obra, para constatar que no posee Servicio de Gas	ExpSAGASFinalObra	t	\N
-28	Copia de Permiso de Construcción SAGAS	PermisoConstruccionSAGAS	t	\N
-29	Documento Notariado donde se especifica que el inmueble no contará con instalaciones del servicio de gas	DocNotInstGas	t	\N
-30	Copia del Documento de Propiedad del Inmueble y Plano de Mensura Registrado	DocPropiedadPlanoMensura	t	\N
-35	Copia del pago de la factura de los Servicios Municipales (GAS, ASEO, INMUEBLE).	FacturaServiciosMunicipales	t	\N
-31	Constancia de Nomenclatura emitido por la Oficina Municipal de Catastro (si no la menciona el documento)	ConstanciaNomenclatura	f	\N
-32	Para Urbanización, Villas y Conjuntos residenciales, consignar plano de parcelamiento.	PlanoParcelamiento	f	\N
-323	Para los Centros Comerciales presentar plano de distribución de locales con sus respectivas nomenclaturas del nivel donde se encuentra el local.	PlanoDistribucion	f	\N
-33	Para los Centros Comerciales presentar plano de distribución de locales con sus respectivas nomenclaturas del nivel donde se encuentra el local.	PlanoDistribucion	f	\N
-34	Si el trámite no lo realiza el Propietario, presentar un poder y copia de la Cédula de Identidad del mismo.	PoderCopiaCedulaTramitante	f	\N
-36	Fotocopia Legible de la Cedula de Identidad del Solicitante	CedulaSolicitante	t	\N
-37	Comunicación solicitando la Renovación de la Certificación de Prestación de Servicio de Transporte, dirigida al Presidente del Instituto, y la misma debe contener: Nombre legal de la Organización, Sectores que se benefician con la prestación del servicio y Nombre y firma del Representante Legal de la Organización	ComunicacionRenovacion	t	\N
-38	Copia de la última Acta de Asamblea celebrada por la organización	ActaAsamblea	t	\N
-39	Planilla de Junta Directiva, referida a los datos de los miembros de la organización (formato digital e impreso ver anexo)	PlanillaJuntaDirectiva	t	PLANILLA DE JUNTA DIRECTIVA.xls
-40	Planilla de Registro de Unidades, referida a los datos de las unidades que presten servicio en la organización, y las mismas deben estar matriculadas como transporte público (formato digital e impreso ver anexo)	PlanillaRegistrosUnidades	t	PLANILLA DE REGISTRO DE UNIDADES.xls
-41	Copia de la última Certificación de Prestación de Servicio otorgada por la Institución	CertificacionDePrestacion	t	\N
+COPY public.recaudo (id_recaudo, nombre_largo, nombre_corto, obligatorio, planilla, extension) FROM stdin;
+8	Autorización para Trámites a Terceros (si el caso lo amerita)	AutorizacionTramitesTerceros	f	\N	image/*
+9	Copia de Cedula Legible del Tramitante o Tercero (si el caso lo amerita)	CedulaTercero	f	\N	image/*
+61	Original del Visto Bueno emitido por la Asociación de Vecinos del sector y/o Consejo comunal	VistoBueno	t	\N	image/*
+62	Plano de Distribución Interna del local con medidas a escala incluyendo la ubicación de los puestos de estacionamiento (Impreso y Digital en un CD, Avalado por un Arquitecto)	VistoBueno	t	\N	image/*
+63	En caso de poseer Conformidad de Uso otorgada en años anteriores, deberá consignar copia de la misma	ConformidadUso	f	\N	image/*
+64	Original y copia de la Solvencia de Inmuebles Urbanos o en su defecto la resolución de Exoneración respectiva emitida por SEDEMAT.	VistoBueno	t	\N	image/*
+65	Solvencia de Inmuebles Urbanos del Local	Solvencia	f	\N	image/*
+66	Plano de Distribución Interna del Local con medidas a escala (Impreso y Digital en CD, Avalado por un Arquitecto formato 2010 ACAD)	Planos	f	\N	image/*
+4	Documento de Propiedad del Terreno Notariado y Registrado (copia)	DocumentoDePropiedad	t	\N	image/*
+5	Original y copia del Plano de Mensura Catastrado en tamaño original, firmado y sellado por la Dirección de Catastro (original)	PlanoMensura	t	\N	image/*
+6	Copia del RIF del Propietario	RIFPropietario	t	\N	image/*
+7	Copia de Cedula de Identidad Legible del Propietario	CedulaPropietario	t	\N	image/*
+10	Planos del Proyecto de Instalaciones de Gas (en CD)	PlanosInstalacionGas	t	\N	image/*
+13	Memoria descriptiva del proyecto de Gas (en CD)	MemoriaDesc	t	\N	image/*
+14	Memoria del cálculo del sistema de Gas (en CD)	MemoriaCalculo	t	\N	image/*
+11	Detalles del Proyecto de Instalaciones de Gas (Tanquilla Principal de Seccionamiento, Detalle de zanja, Detalle de Válvulas de Equipos, Detalle de Sistema de Regulación, Detalle de Ductos de Gas, Detalle de Venteo, Detalle de Soportes, Isometría de Gas, Especificaciones) (en CD)	DetalleProyecto	t	\N	image/*
+15	Especificaciones técnicas del Proyecto de Gas (en CD)	EspecificacionesTecnicas	t	\N	image/*
+12	Capas cargadas de los Siguientes Servicios: Aguas Servidas, Aguas Blancas, Aguas de Lluvia, Electricidad u Otros Servicios (en CD)	CapasServicios	t	\N	image/*
+21	Copia de Constancia de Servicio SAGAS actualizada	ConstanciaSAGAS	t	\N	image/*
+22	Copia de Variables Urbanas expedida por la Alcaldía de Maracaibo	VariablesUrb	t	\N	image/*
+26	Un (1) Juego de Planos Impresos de Arquitectura	PlanosArq	t	\N	image/*
+16	3 Juegos de Planos del Proyecto de Gas Impresos de Cada Nivel de Arquitectura (90cm. x 60cm.)	JuegoPlanosCadaNivel	t	\N	image/*
+18	3 Juegos de Planos de Detalles de Gas (90cm. x 60cm.)	JuegoPlanosDetallesGas	t	\N	image/*
+19	3 Juegos de Memoria de Cálculo del Proyecto de Gas (90cm. x 60cm.)	JuegoPlanosProyectoGas	t	\N	image/*
+20	3 Juegos de Especificaciones Técnicas del Proyecto de Gas (90cm x. 60cm.)	JuegoPlanosEspecificacionesProyectoGas	t	\N	image/*
+17	3 Juegos de Planos de Detalles de Gas (90cm. x 60cm.)	JuegoPlanosDetallesGas	t	\N	image/*
+23	Tener en Expediente SAGAS: Inspecciones de las instalaciones de Gas	ExpSAGASInstGas	t	\N	image/*
+24	Tener en Expediente SAGAS: Inspecciones de Pruebas de Hermeticidad con Carta de Registro Original firmada y sellada	ExpSAGASHermeticidad	t	\N	image/*
+25	Tener en Expediente SAGAS: Inspección Final de las Instalaciones de Gas	ExpSAGASInspFinal	t	\N	image/*
+27	Tener en Expediente SAGAS: Inspección Final de la Obra, para constatar que no posee Servicio de Gas	ExpSAGASFinalObra	t	\N	image/*
+28	Copia de Permiso de Construcción SAGAS	PermisoConstruccionSAGAS	t	\N	image/*
+29	Documento Notariado donde se especifica que el inmueble no contará con instalaciones del servicio de gas	DocNotInstGas	t	\N	image/*
+30	Copia del Documento de Propiedad del Inmueble y Plano de Mensura Registrado	DocPropiedadPlanoMensura	t	\N	image/*
+35	Copia del pago de la factura de los Servicios Municipales (GAS, ASEO, INMUEBLE).	FacturaServiciosMunicipales	t	\N	image/*
+31	Constancia de Nomenclatura emitido por la Oficina Municipal de Catastro (si no la menciona el documento)	ConstanciaNomenclatura	f	\N	image/*
+32	Para Urbanización, Villas y Conjuntos residenciales, consignar plano de parcelamiento.	PlanoParcelamiento	f	\N	image/*
+57	Plano de Distribución Interna del local con medidas a escala incluyendo la ubicación de los puestos de estacionamiento (Impreso Avalado por un Arquitecto y Digital en versión AutoCAD 2010 en un CD)	PlanoDist	t	\N	image/*
+33	Para los Centros Comerciales presentar plano de distribución de locales con sus respectivas nomenclaturas del nivel donde se encuentra el local.	PlanoDistribucion	f	\N	image/*
+34	Si el trámite no lo realiza el Propietario, presentar un poder y copia de la Cédula de Identidad del mismo.	PoderCopiaCedulaTramitante	f	\N	image/*
+36	Fotocopia Legible de la Cedula de Identidad del Solicitante	CedulaSolicitante	t	\N	image/*
+37	Comunicación solicitando la Renovación de la Certificación de Prestación de Servicio de Transporte, dirigida al Presidente del Instituto, y la misma debe contener: Nombre legal de la Organización, Sectores que se benefician con la prestación del servicio y Nombre y firma del Representante Legal de la Organización	ComunicacionRenovacion	t	\N	image/*
+38	Copia de la última Acta de Asamblea celebrada por la organización	ActaAsamblea	t	\N	image/*
+41	Copia de la última Certificación de Prestación de Servicio otorgada por la Institución	CertificacionDePrestacion	t	\N	image/*
+44	Para terreno ejido: Copia del documento de bienhechurías del inmueble notariado o constancia de residencia emitida por el consejo comunal.	Bienhechurias	f	\N	image/*
+53	Original y Copia de la Constancia de Cumplimiento de Normas Tecnicas emitida por el Instituto Autonomo Cuerpo de Bomberos del Municipio Maracaibo	CCNT	t	\N	image/*
+42	Copia de Pago de Servicios Municipales para Barrios Consolidados, Urbanizaciones y Locales Comerciales	PagosMunicipales	f	\N	image/*
+43	Para terreno propio: Copia del documento de propiedad del inmueble registrado y notariado	DocumentoPropiedad	f	\N	image/*
+45	Copia del documento de propiedad del inmueble	DocumentoPropiedad	t	\N	image/*
+46	Si el inmueble pertenece a una sucesión presentar copia de la planilla sucesoral y RIF	PlanillaSucesorial	f	\N	image/*
+47	Si el inmueble pertenece a una persona jurídica presentar copia del RIF.	CopiaRif	f	\N	image/*
+48	Si es un parcelamiento u urbanización presentar documento, relación de parcelas vendidas y Constancia de Habitabilidad	DeTodo	f	\N	image/*
+49	Copia de Nomenclatura emitido por la Oficina Municipal de Catastro	Nomenclatura	t	\N	image/*
+39	Planilla de Junta Directiva, referida a los datos de los miembros de la organización (formato digital e impreso ver anexo)	PlanillaJuntaDirectiva	t	http://localhost:5000/recaudos/PLANILLA_DE_JUNTA_DIRECTIVA.xls	.xlsx .xls .csv
+40	Planilla de Registro de Unidades, referida a los datos de las unidades que presten servicio en la organización, y las mismas deben estar matriculadas como transporte público (formato digital e impreso ver anexo)	PlanillaRegistrosUnidades	t	http://localhost:5000/recaudos/PLANILLA_DE_REGISTRO_DE_UNIDADES.xls	.xlsx .xls .csv
+50	Copia del documento de propiedad o contrato de arrendamiento a nombre de la empresa notariado o visado por el Colegio de Abogados	DocPropiedad	t	\N	image/*
+51	Croquis de Ubicacion con Punto de Referencia	Croquis	t	\N	image/*
+54	Dos (2) fotografias de la fachada del inmueble	Fachada	t	\N	image/*
+55	Dos (2) copias del Registro de Comercio (Acta Constitutiva - Estatutos)	RegistroComercio	t	\N	image/*
+56	Copia del Recibo de CORPOELEC	ReciboCorpoelec	f	\N	image/*
+58	Original y copia de Solvencia Municipal sobre Inmueble Urbano vigente	Solvencia	t	\N	image/*
+60	Fotocopia legible de la Cedula de Identidad del Propietario del Inmueble	CedulaPropietario	t	\N	image/*
+59	En caso de que el establecimiento comercial posea renta de licores anterior debe presentar copia de la misma	Licores	f	\N	image/*
+52	Constancia de Nomenclatura expedida por la Oficina Municipal de Catastro (en caso de que el documento de registro no lo especifique)	ConstanciaNomenclatura	f	\N	image/*
 \.
 
 
@@ -4260,6 +4446,12 @@ COPY public.seccion (id_seccion, nombre) FROM stdin;
 12	Observaciones
 15	Estimación Simple
 16	Datos del Apartado
+17	Datos de la Organización
+18	Datos del Representante Legal de la Organización
+19	Linderos Actuales del Inmueble
+20	Datos de Nomenclatura
+21	Datos de la Empresa
+22	Datos de la Unidad Educativa
 \.
 
 
@@ -4307,6 +4499,14 @@ COPY public.tarifa_inspeccion (id_tarifa, id_ordenanza, id_tipo_tramite, formula
 28	28	12	\N	f	4
 32	32	12	\N	f	4
 33	33	12	\N	f	5
+40	40	21	\N	f	\N
+41	41	21	\N	f	\N
+42	42	21	\N	f	\N
+43	43	21	\N	f	\N
+44	44	21	\N	f	\N
+45	45	21	\N	f	\N
+46	46	21	\N	f	\N
+47	47	21	\N	f	\N
 \.
 
 
@@ -4322,26 +4522,30 @@ COPY public.template_certificado (id_template_certificado, id_tipo_tramite, link
 -- Data for Name: tipo_tramite; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.tipo_tramite (id_tipo_tramite, id_institucion, nombre_tramite, costo_base, sufijo, nombre_corto, formato, planilla, certificado, utiliza_informacion_catastral, pago_previo, costo_utmm) FROM stdin;
-8	2	Permiso de Construccion	\N	pd	Permiso de Construccion	SAGAS-004	sagas-solt-PC	sagas-cert-PC	f	f	\N
-10	2	Permiso de Habitabilidad con Instalaciones de Servicio de Gas	\N	pd	Habitabilidad con Instalacion de Servicio de Gas	SAGAS-005	sagas-solt-Hab	sagas-cert-PH	t	f	\N
-11	2	Permiso de Habitabilidad sin Instalaciones de Servicio de Gas	\N	pd	Habitabilidad sin Instalacion de Servicio de Gas	SAGAS-005	sagas-solt-Hab	sagas-cert-PH	t	f	\N
-12	2	Permiso de Condiciones Habitables con Instalaciones de Servicio de Gas	\N	pd	Condiciones Habitables con Instalacion de Servicio de Gas	SAGAS-001	sagas-solt-CH	sagas-cert-PCH	t	f	\N
-13	2	Permiso de Condiciones Habitables sin Instalaciones de Servicio de Gas	\N	pd	Condiciones Habitables sin Instalacion de Servicio de Gas	SAGAS-001	sagas-solt-CH	sagas-cert-PCH	t	f	\N
-7	2	Constancia de Servicio Persona Juridica	4800000	pa	Servicio Persona Juridica	SAGAS-003	sagas-solt-CS	sagas-cert-CS	t	t	24
-6	2	Constancia de Servicio Residencial	1200000	pa	Servicio Residencial	SAGAS-002	sagas-solt-CS	sagas-cert-CS	t	t	6
-0	0	Casos Sociales	\N	pa	Casos Sociales	ABMM-001	\N	\N	\N	f	\N
-17	4	Tasa de Salida de Pasajeros	\N	tl	Tasa de Salida	SEDETEMA-001	sedetema-solt-TS	sedetema-cert-TS	f	t	\N
-14	3	Codigo Catastral para Casas	1200000	cr	CC	CPU-OMCAT-001	cpu-solt-CCC	cpu-cert-CC	f	t	6
-15	3	Codigo Catastral para Apartamentos	1200000	cr	CC	CPU-OMCAT-001	cpu-solt-CCA	cpu-cert-CC	f	t	6
-2	1	Constancia de Habitabilidad	40000.0	pa	Habitabilidad	CBM-002	bomberos-solt	bomberos-cert-HAB	t	t	0.2
-3	1	Instalacion de Plantas Electricas	\N	pd	Plantas Electricas	CBM-003	bomberos-solt	bomberos-cert-IPE	f	f	\N
-1	1	Cumplimiento de Normas Tecnicas	40000.0	pa	Normas Tecnicas	CBM-001	bomberos-solt	bomberos-cert-CCNT	t	t	0.2
-16	3	Solvencia de Inmuebles Urbanos	1200000	cr	SIU	CPU-OMCAT-002	cpu-solt-SIU	cpu-cert-SIU	f	t	6
-18	5	Apartado de Bohío	1000000	pa	Apartado de Bohío	SEDEPAR-001	sedepar-solt-AB	sedepar-cert-AB	f	t	5
-19	6	Multa	\N	ml	Multa	IMA-001	\N	constancia-multas	f	f	\N
-20	7	Multa	\N	ml	Multa	PMM-001	\N	constancia-multas	f	f	\N
-21	8	Certificación para Prestar Servicio de Transporte Público Urbano	\N	pa	Servicio Transporte Público	INTCUMA-001	intcuma-solt-STP	intcuma-cert-STP	f	t	\N
+COPY public.tipo_tramite (id_tipo_tramite, id_institucion, nombre_tramite, costo_base, sufijo, nombre_corto, formato, planilla, certificado, utiliza_informacion_catastral, pago_previo, costo_utmm, planilla_rechazo) FROM stdin;
+8	2	Permiso de Construccion	\N	pd	Permiso de Construccion	SAGAS-004	sagas-solt-PC	sagas-cert-PC	f	f	\N	\N
+10	2	Permiso de Habitabilidad con Instalaciones de Servicio de Gas	\N	pd	Habitabilidad con Instalacion de Servicio de Gas	SAGAS-005	sagas-solt-Hab	sagas-cert-PH	t	f	\N	\N
+11	2	Permiso de Habitabilidad sin Instalaciones de Servicio de Gas	\N	pd	Habitabilidad sin Instalacion de Servicio de Gas	SAGAS-005	sagas-solt-Hab	sagas-cert-PH	t	f	\N	\N
+12	2	Permiso de Condiciones Habitables con Instalaciones de Servicio de Gas	\N	pd	Condiciones Habitables con Instalacion de Servicio de Gas	SAGAS-001	sagas-solt-CH	sagas-cert-PCH	t	f	\N	\N
+13	2	Permiso de Condiciones Habitables sin Instalaciones de Servicio de Gas	\N	pd	Condiciones Habitables sin Instalacion de Servicio de Gas	SAGAS-001	sagas-solt-CH	sagas-cert-PCH	t	f	\N	\N
+7	2	Constancia de Servicio Persona Juridica	4800000	pa	Servicio Persona Juridica	SAGAS-003	sagas-solt-CS	sagas-cert-CS	t	t	24	\N
+6	2	Constancia de Servicio Residencial	1200000	pa	Servicio Residencial	SAGAS-002	sagas-solt-CS	sagas-cert-CS	t	t	6	\N
+0	0	Casos Sociales	\N	pa	Casos Sociales	ABMM-001	\N	\N	\N	f	\N	\N
+17	4	Tasa de Salida de Pasajeros	\N	tl	Tasa de Salida	SEDETEMA-001	sedetema-solt-TS	sedetema-cert-TS	f	t	\N	\N
+14	3	Codigo Catastral para Casas	1200000	cr	CC	CPU-OMCAT-001	cpu-solt-CCC	cpu-cert-CC	f	t	6	\N
+15	3	Codigo Catastral para Apartamentos	1200000	cr	CC	CPU-OMCAT-001	cpu-solt-CCA	cpu-cert-CC	f	t	6	\N
+2	1	Constancia de Habitabilidad	40000.0	pa	Habitabilidad	CBM-002	bomberos-solt	bomberos-cert-HAB	t	t	0.2	\N
+3	1	Instalacion de Plantas Electricas	\N	pd	Plantas Electricas	CBM-003	bomberos-solt	bomberos-cert-IPE	f	f	\N	\N
+1	1	Cumplimiento de Normas Tecnicas	40000.0	pa	Normas Tecnicas	CBM-001	bomberos-solt	bomberos-cert-CCNT	t	t	0.2	\N
+16	3	Solvencia de Inmuebles Urbanos	1200000	cr	SIU	CPU-OMCAT-002	cpu-solt-SIU	cpu-cert-SIU	f	t	6	\N
+18	5	Apartado de Bohío	1000000	pa	Apartado de Bohío	SEDEPAR-001	sedepar-solt-AB	sedepar-cert-AB	f	t	5	\N
+19	6	Multa	\N	ml	Multa	IMA-001	\N	constancia-multas	f	f	\N	\N
+20	7	Multa	\N	ml	Multa	PMM-001	\N	constancia-multas	f	f	\N	\N
+25	3	Conformidad de la Edificación y Uso Locales en Centros Comerciales	\N	ompu	Uso Conforme: Locales	CPU-OMPU-AU-004	cpu-solt-UC-CC	cpu-cert-UC-CC	f	f	\N	cpu-rechazo
+23	3	Conformidad de la Edificación y Uso Licencia a las Actividades Económicas Comerciales e Industriales	\N	ompu	Uso Conforme: Actividades Comerciales	CPU-OMPU-AU-001	cpu-solt-UC-AE	cpu-cert-UC-AE	t	f	\N	cpu-rechazo
+22	3	Constancia de Nomenclatura	80000	cr	NM	CPU-OMCAT-003	cpu-solt-NM	cpu-cert-NM	f	t	0.4	\N
+21	8	Certificación para Prestar Servicio de Transporte Público Urbano	\N	pd	Servicio Transporte Público	IMTCUMA-001	\N	imtcuma-cert-STP	f	f	\N	\N
+24	3	Conformidad de la Edificación y Uso Unidades Educativas	\N	ompu	Uso Conforme: Unidades Educativas	CPU-OMPU-AU-003	cpu-solt-UC-UE	cpu-cert-UC-UE	t	f	\N	cpu-rechazo
 \.
 
 
@@ -4408,6 +4612,51 @@ COPY public.tipo_tramite_recaudo (id_tipo_tramite, id_recaudo, fisico) FROM stdi
 15	34	t
 15	35	t
 18	36	f
+21	37	f
+21	38	f
+21	39	f
+21	40	f
+21	41	f
+22	7	f
+22	42	f
+22	43	f
+22	44	f
+22	34	f
+16	7	f
+16	45	f
+16	46	t
+16	47	f
+16	48	t
+16	49	f
+16	35	t
+23	50	t
+23	51	f
+23	52	f
+23	53	t
+23	54	f
+23	55	t
+23	56	f
+23	57	t
+23	58	t
+23	59	t
+23	8	f
+23	9	f
+23	60	f
+24	50	t
+24	53	t
+24	52	f
+24	54	f
+24	55	t
+24	51	f
+24	61	t
+24	62	t
+24	63	f
+24	64	t
+25	50	t
+25	53	t
+25	55	t
+25	65	t
+25	66	t
 \.
 
 
@@ -4454,7 +4703,6 @@ COPY public.usuario (id_usuario, nombre_completo, nombre_de_usuario, direccion, 
 70	Director CPU	director@cpu.com	CPU	27139154	V	5	$2a$10$yBVC5M9rGWV5i.i2Nyl1fOGg1FKV2HQ0keq3jPcOvrGXtrjEra.z.	1231231231
 65	Funcionario SAGAS	funcionario@sagas.com	SAGAS	123133333	V	3	$2a$10$Na8DEr4PxMVxAQXgeAGkR.DjVx7YX/8/FJIhPeePIrPzKItJvTscy	1231231231
 57	Funcionario Bomberos	funcionario@bomberos.com	Bomberos	123123123	V	3	$2a$10$fFZ3EHbzdimZ9tDvrGod9ureMPkROVtzScEd0pO/piaQh6RLmedMG	1231231233
-68	Funcionario CPU	funcionario@cpu.com	CPU	1283190247	V	3	$2a$10$qLVJeDD5mKiXlhrNQEJDtOX9baIZcjY3zwMmepViWXp.VENHwaOda	9271092741
 71	Funcionario Alcaldia	funcionario@alcaldia.com	Alcaldia	7878787855	V	3	$2a$10$4vosHs6BExfapyssBS5XUekAR9AUa2Be.mhjLuqqmr7i1aZCWUehu	7777777777
 72	Administrador Terminal	terminal@admin.com	Terminal	128488188	V	2	$2a$10$hIeSExSylu8RY2bVPk6dPeLzKIR7Wo0yNjvRyqxR/QwZqTYEEf4wq	1723817728
 73	Funcionario Terminal	funcionario@terminal.com	Terminal	1028124812	V	3	$2a$10$4oNhbsHJuAaFE.xY8bS1HOPakehWJmx6IkGbuaU57nBqro7iLsgg.	1092471093
@@ -4464,6 +4712,9 @@ COPY public.usuario (id_usuario, nombre_completo, nombre_de_usuario, direccion, 
 78	Funcionario Policia	funcionario@policia.com	Policia	1293712049	V	3	$2a$10$e.DuvVSdwlr23z1I8B/STeX5V.8V3rhoeXgRWokiP.dEmf3A/eoPK	1927312029
 79	Administrador IMA	admin@ima.com	IMA	1028310919	V	2	$2a$10$I2NhOoazRC2gF0pIdzNXrumPh0soj/9/KDA5dx1RqDNrow1fNzsbG	1923109472
 80	Funcionario IMA	funcionario@ima.com	IMA	1231740197	V	3	$2a$10$eAu/NEg9vEd5nKXbjSyemODqqLt2J1nO4joWhwbDpZopJAj7N0ZSW	1902741092
+81	Administrador INTCUMA	admin@intcuma.com	INTCUMA	1239812938	V	2	$2a$10$mHlp3WfgE.99gg2i2wSI2OrL29UABov9Lo4iylvngFZTwAi2gmBOa	9132801238
+82	Funcionario INTCUMA	funcionario@intcuma.com	INTCUMA	1023102938	V	3	$2a$10$qVi/NuT7X1ELSfz5mpM8e.OrMKAuSqJLPQ4H45/SB/WiwUw2TkA2i	1829038123
+68	Funcionario CPU	funcionario@cpu.com	CPU	1283190247	V	3	$2a$10$qLVJeDD5mKiXlhrNQEJDtOX9baIZcjY3zwMmepViWXp.VENHwaOda	9271092741
 \.
 
 
@@ -6547,7 +6798,7 @@ SELECT pg_catalog.setval('public.detalles_facturas_id_detalle_seq', 1, false);
 -- Name: evento_multa_id_evento_multa_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.evento_multa_id_evento_multa_seq', 32, true);
+SELECT pg_catalog.setval('public.evento_multa_id_evento_multa_seq', 36, true);
 
 
 --
@@ -6561,7 +6812,7 @@ SELECT pg_catalog.setval('public.eventos_casos_sociales_id_evento_caso_seq', 2, 
 -- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.eventos_tramite_id_evento_tramite_seq', 469, true);
+SELECT pg_catalog.setval('public.eventos_tramite_id_evento_tramite_seq', 543, true);
 
 
 --
@@ -6596,14 +6847,14 @@ SELECT pg_catalog.setval('public.instituciones_id_institucion_seq', 1, false);
 -- Name: multa_id_multa_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.multa_id_multa_seq', 11, true);
+SELECT pg_catalog.setval('public.multa_id_multa_seq', 12, true);
 
 
 --
 -- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.notificaciones_id_notificacion_seq', 167, true);
+SELECT pg_catalog.setval('public.notificaciones_id_notificacion_seq', 282, true);
 
 
 --
@@ -6624,21 +6875,21 @@ SELECT pg_catalog.setval('public.operatividad_terminal_id_operatividad_terminal_
 -- Name: ordenanzas_id_ordenanza_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.ordenanzas_id_ordenanza_seq', 39, true);
+SELECT pg_catalog.setval('public.ordenanzas_id_ordenanza_seq', 47, true);
 
 
 --
 -- Name: ordenanzas_tramites_id_ordenanza_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.ordenanzas_tramites_id_ordenanza_tramite_seq', 1, false);
+SELECT pg_catalog.setval('public.ordenanzas_tramites_id_ordenanza_tramite_seq', 2, true);
 
 
 --
 -- Name: pagos_id_pago_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.pagos_id_pago_seq', 133, true);
+SELECT pg_catalog.setval('public.pagos_id_pago_seq', 151, true);
 
 
 --
@@ -6652,7 +6903,7 @@ SELECT pg_catalog.setval('public.parroquias_id_seq', 1, false);
 -- Name: permiso_de_acceso_id_permiso_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.permiso_de_acceso_id_permiso_seq', 18, true);
+SELECT pg_catalog.setval('public.permiso_de_acceso_id_permiso_seq', 23, true);
 
 
 --
@@ -6687,7 +6938,7 @@ SELECT pg_catalog.setval('public.recuperacion_id_recuperacion_seq', 1, false);
 -- Name: tarifas_inspeccion_id_tarifa_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.tarifas_inspeccion_id_tarifa_seq', 39, true);
+SELECT pg_catalog.setval('public.tarifas_inspeccion_id_tarifa_seq', 47, true);
 
 
 --
@@ -6715,14 +6966,14 @@ SELECT pg_catalog.setval('public.tipos_usuarios_id_tipo_usuario_seq', 1, false);
 -- Name: tramites_id_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 213, true);
+SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 248, true);
 
 
 --
 -- Name: usuarios_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 80, true);
+SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 82, true);
 
 
 --
@@ -7334,6 +7585,13 @@ CREATE TRIGGER eventos_multa_trigger BEFORE INSERT ON public.evento_multa FOR EA
 --
 
 CREATE TRIGGER eventos_tramite_trigger BEFORE INSERT ON public.evento_tramite FOR EACH ROW EXECUTE FUNCTION public.eventos_tramite_trigger_func();
+
+
+--
+-- Name: notificacion insert_notificaciones_trigger; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER insert_notificaciones_trigger BEFORE INSERT ON public.notificacion FOR EACH ROW EXECUTE FUNCTION public.insert_notificacion_trigger_func();
 
 
 --
