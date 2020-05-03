@@ -25,7 +25,7 @@ block content
         img(src=datos.funcionario.croquis, alt='croquis', style={ width: '400px', 'object-fit': 'contain' })
         p PLANO REFERENCIAL, Escala Gr&aacute;fica
       .grow2(style='width: 60%')
-        table
+        table(style='border: none')
           each prop in datos.funcionario.propietarios
             tr
               th(scope='row') Raz&oacute;n Social: 
