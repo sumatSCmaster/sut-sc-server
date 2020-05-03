@@ -103,7 +103,7 @@ export const createMockCertificate = async (procedure) => {
       datos: tramite.datos,
       estado: 'finalizado',
       tipoTramite: tramite.tipotramite,
-      certificado: tramite.aprobado ? tramite.formatocertificado : tramite.formatorechazo,
+      certificado: tramite.sufijo === 'ompu' ? (tramite.aprobado ? tramite.formatocertificado : tramite.formatorechazo) : tramite.formatocertificado,
     };
     const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
       ...datosCertificado,
