@@ -190,7 +190,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 AND tramites_state.state!=\'validando\' ORDER BY tramites_state.fechacreacion;',
   GET_RESOURCES_FOR_PROCEDURE:
     'SELECT DISTINCT tt.sufijo, tt.costo_base, usr.nombre_completo as nombrecompleto, \
-    usr.nombre_de_usuario as nombreusuario, tr.costo, tt.planilla FROM tipo_tramite tt INNER JOIN tramite tr ON\
+    usr.nombre_de_usuario as nombreusuario, tr.costo, tt.planilla, tr.id_tipo_tramite AS "tipoTramite" FROM tipo_tramite tt INNER JOIN tramite tr ON\
     tt.id_tipo_tramite=tr.id_tipo_tramite INNER JOIN usuario usr ON tr.id_usuario=usr.id_usuario\
     WHERE tr.id_tramite = $1',
   GET_PROCEDURE_STATES:
