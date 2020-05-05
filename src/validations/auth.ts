@@ -332,7 +332,7 @@ const validations = {
     .isLength({ min: 1 })
     .withMessage('La fecha y hora no puede ser vacia'),
   numeroBohio: check('tramite.datos.numeroBohio').optional().isInt().isLength({ min: 1 }).withMessage('Debe incluir un numero de bohio valido'),
-  detallesBohio: check('tramite.datos.numeroBohio').optional().isString().isLength({ min: 1 }).withMessage('Debe incluir un detalle de bohio valido'),
+  detallesBohio: check('tramite.datos.detallesBohio').optional().isString().isLength({ min: 1 }).withMessage('Debe incluir un detalle de bohio valido'),
   fechaApartado: check('tramite.datos.fechaApartado')
     .exists()
     .withMessage('Debe incluir la fecha para apartar')
@@ -510,6 +510,36 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('El correo de la empresa no puede ser vacio'),
+  nombreEmpresaComercio: check('tramite.datos.nombreEmpresaComercio')
+    .exists()
+    .withMessage('Debe incluir el nombre de la empresa o comercio')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El nombre de la empresa o comercio no puede ser vacio'),
+  distribucion: check('tramite.datos.distribucion')
+    .exists()
+    .withMessage('Debe incluir la distribucion')
+    .isArray()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir una distribucion valida'),
+  planoConstruccion: check('tramite.datos.planoConstruccion')
+    .exists()
+    .withMessage('Debe incluir el plano de construccion')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El plano de construccion no puede ser vacio'),
+  metrosCuadradosConstruccion: check('tramite.datos.metrosCuadradosConstruccion')
+    .exists()
+    .withMessage('Debe incluir los metros cuadrados de la construccion')
+    .isInt()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir metros cuadrados validos para la construccion'),
+  usoConforme: check('tramite.datos.usoConforme')
+    .exists()
+    .withMessage('Debe incluir el uso conforme')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El uso conforme no puede ser vacio'),
 };
 
 export const createSuperuser = [
@@ -631,6 +661,7 @@ export const createPersonalProperty = [];
 
 export const validate = () => {
   return async (req, res, next) => {
+    if (req.body.tramite.hasOwnProperty('aprobado') && !req.body.tramite.aprobado) next();
     const validaciones = await isValidProcedure(req, res);
     await Promise.all(validaciones.map((validation) => validation.run(req)));
     next();
