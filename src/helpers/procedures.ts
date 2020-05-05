@@ -638,7 +638,7 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
       nombreCompletoUsuario: resources.nombrecompleto,
       estado: respState.rows[0].state,
     });
-    await sendNotification(user, `Se añadieron los datos de pago de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite);
+    sendNotification(user, `Se añadieron los datos de pago de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite);
     return { status: 200, message: 'Datos de pago de trámite añadidos', tramite };
   } catch (error) {
     client.query('ROLLBACK');
