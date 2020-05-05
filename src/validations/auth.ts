@@ -661,7 +661,7 @@ export const createPersonalProperty = [];
 
 export const validate = () => {
   return async (req, res, next) => {
-    if (req.body.tramite.hasOwnProperty('aprobado') && !req.body.tramite.aprobado) next();
+    if (req.body.tramite.hasOwnProperty('aprobado') && !req.body.tramite.aprobado) return next();
     const validaciones = await isValidProcedure(req, res);
     await Promise.all(validaciones.map((validation) => validation.run(req)));
     next();
