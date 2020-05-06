@@ -56,7 +56,7 @@ block content
             td  #{datos.funcionario.areaTerreno} m²
           tr
             th(scope='row') PLANO:
-            td(colspan=3) #{datos.funcionario.plano}
+            td(colspan=3) #{datos.funcionario.croquis || datos.funcionario.plano}
           tr
           tr
             th(scope='row') OBSERVACIONES:
