@@ -113,10 +113,25 @@ router.get('/:type/:name', (req, res) => {
 });
 
 router.put('/:id', authenticate('jwt'), async (req, res) => {
-  const { file } = req.body;
-  if (!fs.existsSync(process.env.STORAGE_DIR + '/' + file)) res.status(500).json({ status: 500, message: 'El archivo no existe' });
-  fs.unlinkSync(process.env.STORAGE_DIR + '/' + file);
-  res.status(200).json({ status: 200, message: 'Eliminado satisfactoriamente' });
+  const client = await pool.connect();
+  const { file, prop } = req.body;
+  const { id } = req.params;
+  try {
+    client.query('BEGIN');
+    if (!fs.existsSync(process.env.STORAGE_DIR + '/' + file)) res.status(500).json({ status: 500, message: 'El archivo no existe' });
+    const procedure = (await client.query(queries.GET_PROCEDURE_BY_ID, [id])).rows[0];
+    const { datos } = procedure;
+    delete datos[prop];
+    await client.query('UPDATE tramite SET datos=$1 WHERE id_tramite =$2', [JSON.stringify(datos), id]);
+    fs.unlinkSync(process.env.STORAGE_DIR + '/' + file);
+    client.query('COMMIT');
+    res.status(200).json({ status: 200, message: 'Eliminado satisfactoriamente' });
+  } catch (e) {
+    client.query('ROLLBACK');
+    res.status(500).json({ status: 500, message: 'Error al eliminar el archivo', error: e });
+  } finally {
+    client.release();
+  }
 });
 
 const typeMedia = (type) => (file) =>
