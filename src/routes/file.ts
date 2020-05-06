@@ -121,7 +121,7 @@ router.put('/:id', authenticate('jwt'), async (req, res) => {
     if (!fs.existsSync(process.env.STORAGE_DIR + '/' + file)) res.status(500).json({ status: 500, message: 'El archivo no existe' });
     const procedure = (await client.query(queries.GET_PROCEDURE_BY_ID, [id])).rows[0];
     const { datos } = procedure;
-    delete datos[prop];
+    delete datos.funcionario[prop];
     await client.query('UPDATE tramite SET datos=$1 WHERE id_tramite =$2', [JSON.stringify(datos), id]);
     fs.unlinkSync(process.env.STORAGE_DIR + '/' + file);
     client.query('COMMIT');
