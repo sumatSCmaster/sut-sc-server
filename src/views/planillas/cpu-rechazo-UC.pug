@@ -19,7 +19,7 @@ block content
           div(style='text-align: right;')
             span(style='color: red') Nº Exp: #{codigo}
             br
-            span(style='color: red') Fecha: #{fecha}
+            span(style='color: red') Fecha: #{moment(fecha).format('DD/MM/YYYY')}
       #informe
         p
           | !{datos.funcionario.informe}
