@@ -39,7 +39,7 @@ export const diskStorage = (type: string): multer.StorageEngine =>
   })(null)(process.env.NODE_ENV);
 
 export const photoFilter = (req, file, cb) => {
-  if (!file.originalname.match(/\.(jpg|jpeg|png|gif|xls)$/)) {
+  if (!file.originalname.match(/\.(jpg|jpeg|png|gif|xls|xlsx)$/)) {
     req.res.status(409).json({
       status: 409,
       message: 'File must be photo or xls',
