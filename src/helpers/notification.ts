@@ -163,6 +163,7 @@ const broadcastForProcedureInit = async (sender: Usuario, description: string, p
 const broadcastForProcedureUpdate = async (sender: Usuario, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient) => {
   const io = getIo();
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
+  const socket = users.get(emisor);
 
   try {
     client.query('BEGIN');
@@ -208,12 +209,12 @@ const broadcastForProcedureUpdate = async (sender: Usuario, description: string,
     );
 
     if (payload.estado === 'enproceso') {
-      io.in(`tram:${payload.tipoTramite}`).emit('UPDATE_PROCEDURE', payload);
-      io.in(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
+      socket?.to(`tram:${payload.tipoTramite}`).emit('UPDATE_PROCEDURE', payload);
+      socket?.to(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
     }
 
-    io.in(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
-    io.in(`inst:${payload.nombreCorto}`).emit('UPDATE_PROCEDURE', payload);
+    socket?.to(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
+    io?.in(`inst:${payload.nombreCorto}`).emit('UPDATE_PROCEDURE', payload);
 
     client.query('COMMIT');
   } catch (error) {

@@ -534,12 +534,8 @@ export const processProcedure = async (procedure, user: Usuario) => {
 
     if (procedure.sufijo === 'ompu') {
       const { aprobado } = procedure;
-      if (aprobado) {
-        respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
-        await client.query('UPDATE TRAMITE SET aprobado=$1 WHERE id_tramite=$2', [aprobado, procedure.idTramite]);
-      } else {
-        respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
-      }
+      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
+      await client.query(queries.UPDATE_APPROVED_STATE_FOR_PROCEDURE, [aprobado, procedure.idTramite]);
     } else {
       if (nextEvent.startsWith('finalizar')) {
         procedure.datos = datos;
