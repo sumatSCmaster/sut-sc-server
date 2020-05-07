@@ -1,0 +1,28 @@
+extends default
+
+block css
+  link(rel="stylesheet", href="css/cpu-cert-UC.css")
+
+block content
+  main.conformidad-de-uso.col
+    h1.beauty-3D-text CONFORMIDAD DE USO
+    .col
+      h3 #{form.nombre_empresa}
+      h3 RIF. #{form.rif_empresa}
+      p
+        | #{form.uso_conforme}, Ubicado en #{form.direccion}, Parroquia #{form.parroquia_descripcion}
+    .row
+      .images.grow1.col.border-element
+        div
+          img.grow1(src=form.plano_de_zonificacion, alt='croquis')
+        p Croquis de ubicacion
+      .images.grow1.col.border-element
+        div
+          img.grow1(src=form.plano_de_construccion)
+        p Plano de Construccion
+        p Area de Construccion: #{form.plano_de_mensura.area} m²
+      .grow1.border-element
+        h5 Distribucion: 
+        div(style='text-align: left;')
+          ul
+            li 1 area cantd 2

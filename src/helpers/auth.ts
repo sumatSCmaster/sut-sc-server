@@ -5,6 +5,8 @@ import { createTransport, createTestAccount } from 'nodemailer';
 import { v4 as uuidv4 } from 'uuid';
 import { genSalt, hash } from 'bcryptjs';
 import transporter from '@utils/mail';
+import { addInstitute, addPermissions } from './user';
+import { Usuario } from '@root/interfaces/sigt';
 const pool = Pool.getInstance();
 
 export const forgotPassword = async email => {
@@ -61,6 +63,44 @@ export const recoverPassword = async (recoverToken, password) => {
     client.release();
   }
 };
+
+export async function getUserData(id, tipoUsuario){
+  const client = await pool.connect();
+  try{
+    const userData = (await (client.query(queries.GET_USER_INFO_BY_ID, [id]))).rows[0];
+
+    let user: Partial<Usuario> = {
+      id,
+      tipoUsuario,
+      nombreCompleto: userData.nombreCompleto,
+      nombreUsuario: userData.nombreUsuario,
+      direccion: userData.direccion,
+      cedula: userData.cedula,
+      nacionalidad: userData.nacionalidad,
+      telefono: userData.telefono
+
+    }
+    if(tipoUsuario !== 4){
+      const officialData = await client.query(queries.GET_OFFICIAL_DATA_FROM_USERNAME, [user.nombreUsuario]);
+      user = await addInstitute(user);
+      user.cuentaFuncionario = officialData.rows[0];
+      if(tipoUsuario === 3){
+        user = await addPermissions(user);
+      }
+    }
+    return user;
+  } catch(e){
+    throw {
+      error: e,
+      status: 500
+    }
+  } finally {
+    client.release();
+  }
+  
+
+  
+}
 
 async function ola() {
   console.log(await transporter.verify());

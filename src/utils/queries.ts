@@ -27,7 +27,7 @@ const queries = {
   GET_USER_BY_USERNAME: 'SELECT * FROM usuario WHERE nombre_de_usuario = $1;',
   GET_USER_BY_ID: 'SELECT * FROM datos_usuario WHERE cedula = $1',
   GET_USER_INFO_BY_ID:
-    'SELECT nombre_completo as "nombreCompleto", nombre_de_usuario AS "nombreUsuario", direccion, cedula, nacionalidad FROM usuario WHERE id_usuario = $1;',
+    'SELECT nombre_completo as "nombreCompleto", nombre_de_usuario AS "nombreUsuario", direccion, cedula, nacionalidad, telefono FROM usuario WHERE id_usuario = $1;',
   GET_PHONES_FROM_USERNAME:
     'SELECT numero FROM telefonos_usuario tu \
     INNER JOIN usuario u ON tu.id_usuario = u.id_usuario \
@@ -40,6 +40,10 @@ const queries = {
     'SELECT dg.* FROM datos_google dg \
     INNER JOIN usuario u ON dg.id_usuario = u.id_usuario \
     WHERE u.nombre_de_usuario = $1',
+  GET_FACEBOOK_DATA_FROM_USERNAME:
+    'SELECT df.* FROM datos_facebook dg \
+    INNER JOIN usuario u ON df.id_usuario = u.id_usuario \
+    WHERE u.nombre_de_usuario = $1;',
   GET_OFFICIAL_DATA_FROM_USERNAME:
     'SELECT cf.* FROM cuenta_funcionario cf \
     INNER JOIN usuario u ON u.id_usuario = cf.id_usuario \
