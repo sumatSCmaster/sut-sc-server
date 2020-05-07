@@ -191,7 +191,7 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('Debe incluir un informe de la inspeccion valido'),
-  observaciones: check('tramite.datos.observaciones').optional().isString().isLength({ min: 1 }).withMessage('Debe incluir observaciones validas'),
+  observaciones: check('tramite.datos.observaciones').optional().isString().withMessage('Debe incluir observaciones validas'),
   parroquiaEdificio: check('tramite.datos.parroquiaEdificio')
     .exists()
     .withMessage('Debe incluir la parroquia del edificio')
