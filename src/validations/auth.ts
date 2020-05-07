@@ -192,7 +192,7 @@ const validations = {
     .isLength({ min: 1 })
     .withMessage('Debe incluir un informe de la inspeccion valido'),
   observaciones: check('tramite.datos.observaciones')
-    .exists()
+    .optional()
     .withMessage('Debe incluir las observaciones de la inspeccion')
     .isString()
     .isLength({ min: 1 })
