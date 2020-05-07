@@ -184,7 +184,7 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('Debe incluir un nombre de obra de la construccion valido'),
-  aforo: check('tramite.datos.aforo').exists().withMessage('Debe incluir el aforo de la ubicacion').isInt().withMessage('Debe incluir un aforo valido'),
+  aforo: check('tramite.datos.aforo').exists().withMessage('Debe incluir el aforo de la ubicacion').isString().withMessage('Debe incluir un aforo valido'),
   informe: check('tramite.datos.informe')
     .exists()
     .withMessage('Debe incluir el informe de la inspeccion')

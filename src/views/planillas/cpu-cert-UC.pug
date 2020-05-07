@@ -7,22 +7,23 @@ block content
   main.conformidad-de-uso.col
     h1.beauty-3D-text CONFORMIDAD DE USO
     .col
-      h3 #{form.nombre_empresa}
-      h3 RIF. #{form.rif_empresa}
+      h3 #{datos.funcionario.nombreEmpresaComercio}
+      h3 RIF. #{datos.funcionario.rif}
       p
-        | #{form.uso_conforme}, Ubicado en #{form.direccion}, Parroquia #{form.parroquia_descripcion}
+        | #{datos.funcionario.usoConforme}, Ubicado en #{datos.funcionario.direccionEmpresa}, Parroquia #{datos.funcionario.parroquiaEmpresa}
     .row
       .images.grow1.col.border-element
         div
-          img.grow1(src=form.plano_de_zonificacion, alt='croquis')
+          img.grow1(src=datos.funcionario.croquis, alt='croquis')
         p Croquis de ubicacion
       .images.grow1.col.border-element
         div
-          img.grow1(src=form.plano_de_construccion)
+          img.grow1(src=datos.funcionario.planoConstruccion)
         p Plano de Construccion
-        p Area de Construccion: #{form.plano_de_mensura.area} m²
+        p Area de Construccion: #{datos.funcionario.metrosCuadradosConstruccion ? datos.funcionario.metrosCuadradosConstruccion + 'm²' : 'N/A'}
       .grow1.border-element
         h5 Distribucion: 
         div(style='text-align: left;')
           ul
-            li 1 area cantd 2
+            each dist in datos.funcionario.distribucion
+              li #{dist.cantidad === '1' ? 'Un' : written(dist.cantidad, { lang: 'es' }).charAt(0).toUpperCase() + written(dist.cantidad, { lang: 'es' }).slice(1)} (#{dist.cantidad}) #{dist.descripcion}
