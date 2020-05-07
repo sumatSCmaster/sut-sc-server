@@ -164,7 +164,7 @@ ttr.fisico FROM recaudo rec INNER JOIN tipo_tramite_recaudo ttr ON rec.id_recaud
 WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_TAKINGS_OF_INSTANCES: 'SELECT * FROM tramite_archivo_recaudo WHERE id_tramite = ANY( $1::int[] );',
   GET_PLANILLA_AND_CERTIFICATE_TYPE_PROCEDURE: 'SELECT planilla, certificado, planilla_rechazo, sufijo FROM tipo_tramite WHERE id_tipo_tramite=$1',
-  GET_APPROVED_STATE_FOR_PROCEDURE: 'SELECT aprobado FROM tramite WHERE id_tramite =$2',
+  GET_APPROVED_STATE_FOR_PROCEDURE: 'SELECT aprobado FROM tramite WHERE id_tramite =$1',
   GET_STATE_AND_TYPE_OF_PROCEDURE: 'SELECT state, tipotramite FROM tramites_state_with_resources WHERE id=$1',
   GET_PROCEDURE_DATA: 'SELECT datos FROM tramite WHERE id_tramite=$1',
   GET_SOCIAL_CASES_STATE: 'SELECT * FROM CASOS_SOCIALES_STATE WHERE tipotramite=$1',
