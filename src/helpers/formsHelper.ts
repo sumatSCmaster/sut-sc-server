@@ -4,6 +4,7 @@ import * as pdf from 'html-pdf';
 import * as qr from 'qrcode';
 import S3Client from '@utils/s3';
 import queries from '@utils/queries';
+const  written = require('written-number');
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -27,7 +28,8 @@ export const createForm = async ({ fecha, codigo, formato, tramite, institucion,
       QR: linkQr,
       costoFormateado,
       UTMM,
-      costo
+      costo,
+      written
     });
 
     const pdfDir = resolve(__dirname, `../../archivos/tramites/${codigo}/${dir.split('/').pop()}`);

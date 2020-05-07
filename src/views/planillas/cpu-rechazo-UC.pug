@@ -10,9 +10,9 @@ block content
         .large
           | Atención, 
           br
-          b(style='color: red') #{form.solicitante.nombre_completo}
+          b(style='color: red') #{datos.usuario.nombre}
           br
-          b(style='color: red') C.I: #{form.solicitante.cedula}
+          b(style='color: red') C.I.: #{datos.usuario.nacionalidad}-#{datos.usuario.cedula}
           br
           | Representante.-
         .flex
@@ -22,7 +22,7 @@ block content
             span(style='color: red') Fecha: #{fecha}
       #informe
         p
-          | #{form.informe_rechazo}
+          | !{datos.funcionario.informe}
       .should-break-page
         p(style='margin-top:100px; width: 100%; text-align: center;')
           | Atentamente,
