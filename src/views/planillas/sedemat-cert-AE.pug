@@ -1,0 +1,215 @@
+extends default
+block css
+  link(rel="stylesheet", href="css/sedemat.css")
+block content
+  div#fecha
+    p 
+      b FECHA:
+      span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+    p 
+      b Codigo de Tramite:
+      span &nbsp; #{codigo}
+  div.titleWithQR
+    p#title
+      b ACTIVIDADES ECONÓMICAS
+    .QR
+      img#QR(src=QR, alt='QR')
+  div#planilla
+    div(style={'margin-bottom':'25px'})
+      div.table(style={'width':'90%', 'font-size':'16px', 'font-weight': 'bold'})
+        div.tr
+          div(style={'width':'15%'}).td.border-right.border-bottom.center
+            p 
+              b Nro. Solicitud
+          div(style={'width':'20%'}).td.border-right.border-bottom.center
+            p
+              b Nro. Planilla
+          div(style={'width':'15%'}).td.border-right.border-bottom.center
+            p
+              b MOTIVO
+          div(style={'width':'15%'}).td.border-right.border-bottom.center
+            p
+              b Porción
+          div(style={'width':'20%'}).td.border-right.border-bottom.center
+            p
+              b Liquidador
+          div(style={'width':'15%'}).td.border-bottom.center
+            p
+              b Cajero
+        div.tr
+          div(style={'width':'15%'}).td.border-right.center
+            p  asda
+          div(style={'width':'20%'}).td.border-right.center
+            p  asda
+          div(style={'width':'15%'}).td.border-right.center
+            p  asd
+          div(style={'width':'15%'}).td.border-right.center
+            p  ads
+          div(style={'width':'20%'}).td.border-right.center
+            p  asd
+          div(style={'width':'15%'}).td.center
+            p  ads
+    div.table(style={'font-size':'16px'})
+      div.tr
+        div.td(style={'width':'5%'}).border-right.border-bottom.center
+          p
+            b RAMO:
+        div.td(style={'width':'60%'}).border-right.border-bottom
+          p
+        div.td(style={'width':'5%'}).border-right.border-bottom.center
+          p
+            b RIF:
+        div(style={'width':'15%'}).td.border-right.border-bottom
+          p 
+        div.td(style={'width':'5%'}).border-right.border-bottom.center
+          p
+            b REF:
+        div(style={'width':'15%'}).td.border-bottom
+          p
+      div.tr
+        div(style={'width':'10%'}).td.border-right.border-bottom.center
+          p
+            b RAZÓN SOCIAL:
+        div(style={'width':'90%'}).td.border-bottom
+          p
+      div.tr
+        div(style={'width':'10%'}).td.border-right.border-bottom.center
+          p
+            b DIRECCIÓN:
+        div(style={'width':'90%'}).td.border-bottom
+          p
+      div.tr
+        div(style={'width':'10%'}).td.border-right.center
+          p
+            b FECHA CREACIÓN:
+        div(style={'width':'25%'}).td.border-right
+          p
+        div(style={'width':'10%'}).td.border-right.center
+          p
+            b FECHA LIQUIDACIÓN:      
+        div(style={'width':'25%'}).td.border-right
+          p
+        div(style={'width':'10%'}).td.border-right.center
+          p
+            b FECHA LIQUIDACIÓN:         
+        div(style={'width':'20%'}).td
+          p
+    div.table
+      div.tr
+        div(style={'width':'10%'}).th.border-right.border-bottom.center
+          p
+            b CÓDIGO
+        div(style={'width':'40%'}).th.border-right.border-bottom.center
+          p
+            b DESCRIPCIÓN
+        div(style={'width':'15%'}).th.border-right.border-bottom.center
+          p
+            b MONTO DECLARADO
+        div(style={'width':'10%'}).th.border-right.border-bottom.center
+          p
+            b ALICUOTA
+        div(style={'width':'10%'}).th.border-right.border-bottom.center
+          p
+            b MIN. TRIB
+        div(style={'width':'15%'}).th.border-bottom.center
+          p
+            b IMPUESTO     
+      div.tr
+        div(style={'width':'10%'}).td.border-right.border-bottom.center
+          p a
+        div(style={'width':'40%'}).td.border-right.border-bottom.center
+          p a
+        div(style={'width':'15%'}).td.border-right.border-bottom.center
+          p a
+        div(style={'width':'10%'}).td.border-right.border-bottom.center
+          p a
+        div(style={'width':'10%'}).td.border-right.border-bottom.center
+          p a
+        div(style={'width':'15%'}).td.border-bottom.center
+          p a
+      div.tr
+        div(style={'width':'100%'}).td.border-bottom.center
+          p
+            b TRAMITES INTERNOS
+      div.tr
+        div(style={'width':'80%'}).td.border-right.border-bottom.center
+          p
+            b CONCEPTO
+        div(style={'width':'20%'}).td.border-bottom.center
+          p
+            b IMPUESTO
+      div.tr
+        div(style={'width':'80%'}).td.border-right
+          p SOLVENCIA DE ACTIVIDADES ECONÓMICAS
+        div(style={'width':'20%'}).td.center
+          p 1.000.000
+    div(style={'text-align': '-webkit-right'})
+      div(style={'width':'50%','border-bottom':0}).table
+        div.tr
+          div(style={'width':'60%'}).td.border-right.border-bottom.center
+            p
+              b Total Impuestos Determinado:
+          div(style={'width':'40%'}).td.border-bottom
+            p
+        div.tr
+          div(style={'width':'60%'}).td.border-right.border-bottom.center
+            p
+              b Tramites Internos:
+          div(style={'width':'40%'}).td.border-bottom
+            p
+        div.tr
+          div(style={'width':'60%'}).td.border-right.border-bottom.center
+            p
+              b Total Tasa Renovacion Licencia:
+          div(style={'width':'40%'}).td.border-bottom
+            p
+        div.tr
+          div(style={'width':'60%'}).td.border-right.border-bottom.center
+            p
+              b Menos Anticipos y Retenciones:
+          div(style={'width':'40%'}).td.border-bottom
+            p
+        div.tr
+          div(style={'width':'60%'}).td.border-right.border-bottom.center
+            p
+              b Intereses de Mora:
+          div(style={'width':'40%'}).td.border-bottom
+            p
+        div.tr
+          div(style={'width':'60%'}).td.border-right.center
+            p
+              b Monto Total Planilla:
+          div(style={'width':'40%'}).td
+            p
+      div(style={'margin':0}).table
+        div.tr
+          div(style={'width':'20%'}).td.border-bottom.border-right
+            p
+              b OBSERVACIÓN:
+          div(style={'width':'80%'}).td.border-bottom
+            p
+        div.tr
+          div(style={'width':'20%'}).td.border-bottom.border-right
+            p
+              b ESTATUS:
+          div(style={'width':'80%'}).td.border-bottom
+            p
+        div(style={'background-color':'rgba(0,0,0,0.2)'}).tr
+          div(style={'width':'33%'}).td.border-right.center
+            p
+              b Total Liquidado:
+              span &nbsp; #{datos.nombreORazon}
+          div(style={'width':'33%'}).td.border-right.center
+            p
+              b Total Recaudado:
+              span &nbsp; #{datos.nombreORazon}
+          div(style={'width':'33%'}).td.center
+            p
+              b Total Credito Fiscal:
+              span &nbsp; #{datos.nombreORazon}
+    div(style={'text-align': 'justify', 'margin-top':'40px'})
+      p.
+       "JURO QUE SON VERDADEROS TODOS LOS DATOS SUMINISTRADOS EN ESTE FORMULARIO, QUE HAN SIDO ELABORADOS O EXAMINADOS
+        POR MI Y QUE CONTIENEN UNA DECLARACIÓN COMPLETA DE LAS VENTAS Y/O ELEMENTOS REPRESENTATIVOS DEL MOVIMIENTO
+        ECONÓMICO DEL NEGOCIO CORRESPONDIENDO AL PERIODO ECONÓMICO"
+        

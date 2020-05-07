@@ -103,8 +103,14 @@ export const markAllAsRead = async (user: Usuario): Promise<object> => {
   }
 };
 
-export const sendNotification = async (sender: Usuario, description: string, type: string, concept: string, payload: Partial<Tramite | Multa>) => {
-  const client = await pool.connect();
+export const sendNotification = async (
+  sender: Usuario,
+  description: string,
+  type: string,
+  concept: string,
+  payload: Partial<Tramite | Multa>,
+  client: PoolClient
+) => {
   try {
     notificationHandler(sender, description, type, payload, concept, client);
   } catch (e) {
@@ -121,11 +127,12 @@ const broadcastForProcedureInit = async (sender: Usuario, description: string, p
     const admins = (await client.query(queries.GET_NON_NORMAL_OFFICIALS, [payload.nombreCorto])).rows;
     const superuser = (await client.query(queries.GET_SUPER_USER)).rows;
     const permittedOfficials = (await client.query(queries.GET_OFFICIALS_FOR_PROCEDURE, [payload.nombreCorto, payload.tipoTramite])).rows;
-    const officials = payload.estado === 'enproceso' ? superuser.concat(admins).concat(permittedOfficials) : superuser.concat(admins);
+    const officials = (payload.estado === 'enproceso' ? superuser.concat(admins).concat(permittedOfficials) : superuser.concat(admins)).filter(
+      (el) => emisor !== `${el.nacionalidad}-${el.cedula}`
+    );
 
     const notification = await Promise.all(
       officials
-        .filter((el) => emisor !== `${el.nacionalidad}-${el.cedula}`)
         .map(async (el) => {
           if (!el) return null;
           const result = (
@@ -156,6 +163,7 @@ const broadcastForProcedureInit = async (sender: Usuario, description: string, p
 const broadcastForProcedureUpdate = async (sender: Usuario, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient) => {
   const io = getIo();
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
+  const socket = users.get(emisor);
 
   try {
     client.query('BEGIN');
@@ -201,12 +209,12 @@ const broadcastForProcedureUpdate = async (sender: Usuario, description: string,
     );
 
     if (payload.estado === 'enproceso') {
-      io.in(`tram:${payload.tipoTramite}`).emit('UPDATE_PROCEDURE', payload);
-      io.in(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
+      socket?.to(`tram:${payload.tipoTramite}`).emit('UPDATE_PROCEDURE', payload);
+      socket?.to(`tram:${payload.tipoTramite}`).emit('SEND_NOTIFICATION', notification[0]);
     }
 
-    io.in(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
-    io.in(`inst:${payload.nombreCorto}`).emit('UPDATE_PROCEDURE', payload);
+    socket?.to(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
+    io?.in(`inst:${payload.nombreCorto}`).emit('UPDATE_PROCEDURE', payload);
 
     client.query('COMMIT');
   } catch (error) {

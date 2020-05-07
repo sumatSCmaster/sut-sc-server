@@ -410,10 +410,16 @@ export const procedureInit = async (procedure, user: Usuario) => {
       nombreTramiteCorto: response.nombretramitecorto,
       aprobado: response.aprobado,
     };
+    await sendNotification(user, `Un trámite de tipo ${tramite.nombreTramiteLargo} ha sido creado`, 'CREATE_PROCEDURE', 'TRAMITE', tramite, client);
     client.query('COMMIT');
 
-    sendEmail({ ...tramite, codigo: tramite.codigoTramite, nombreUsuario: user.nombreUsuario, nombreCompletoUsuario: user.nombreCompleto, estado: respState.rows[0].state });
-    await sendNotification(user, `Un trámite de tipo ${tramite.nombreTramiteLargo} ha sido creado`, 'CREATE_PROCEDURE', 'TRAMITE', tramite);
+    sendEmail({
+      ...tramite,
+      codigo: tramite.codigoTramite,
+      nombreUsuario: user.nombreUsuario,
+      nombreCompletoUsuario: user.nombreCompleto,
+      estado: respState.rows[0].state,
+    });
 
     return {
       status: 201,
@@ -453,7 +459,6 @@ export const validateProcedure = async (procedure, user: Usuario) => {
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, null, null, null]);
     }
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
-    client.query('COMMIT');
     const tramite: Partial<Tramite> = {
       id: response.id,
       tipoTramite: response.tipotramite,
@@ -472,8 +477,15 @@ export const validateProcedure = async (procedure, user: Usuario) => {
       nombreTramiteCorto: response.nombretramitecorto,
       aprobado: response.aprobado,
     };
-    sendEmail({ ...tramite, codigo: tramite.codigoTramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
-    await sendNotification(user, `Se ha validado el pago de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite);
+    await sendNotification(user, `Se ha validado el pago de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
+    client.query('COMMIT');
+    sendEmail({
+      ...tramite,
+      codigo: tramite.codigoTramite,
+      nombreUsuario: resources.nombreusuario,
+      nombreCompletoUsuario: resources.nombrecompleto,
+      estado: respState.rows[0].state,
+    });
     return { status: 200, message: 'Pago del tramite validado', tramite };
   } catch (error) {
     client.query('ROLLBACK');
@@ -497,6 +509,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
   try {
     client.query('BEGIN');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.idTramite])).rows[0];
+    procedure.tipoTramite = resources.tipoTramite;
     if (!procedure.hasOwnProperty('sufijo')) {
       procedure.sufijo = resources.sufijo;
     }
@@ -519,14 +532,10 @@ export const processProcedure = async (procedure, user: Usuario) => {
       else datos = prevData.datos;
     }
 
-    if (procedure.sufijo == 'ompu') {
+    if (procedure.sufijo === 'ompu') {
       const { aprobado } = procedure;
-      if (aprobado) {
-        respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
-        await client.query('UPDATE TRAMITE SET aprobado=$1 WHERE id_tramite=$2', [aprobado, procedure.idTramite]);
-      } else {
-        respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
-      }
+      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
+      await client.query(queries.UPDATE_APPROVED_STATE_FOR_PROCEDURE, [aprobado, procedure.idTramite]);
     } else {
       if (nextEvent.startsWith('finalizar')) {
         procedure.datos = datos;
@@ -538,7 +547,6 @@ export const processProcedure = async (procedure, user: Usuario) => {
     }
 
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
-    client.query('COMMIT');
     const tramite: Partial<Tramite> = {
       id: response.id,
       tipoTramite: response.tipotramite,
@@ -558,11 +566,20 @@ export const processProcedure = async (procedure, user: Usuario) => {
       aprobado: response.aprobado,
       bill: ordenanzas,
     };
-    sendEmail({ ...tramite, codigo: tramite.codigoTramite,  nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
-    await sendNotification(user, `Se ha procesado un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite);
+
+    await sendNotification(user, `Se ha procesado un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
+    client.query('COMMIT');
+    sendEmail({
+      ...tramite,
+      codigo: tramite.codigoTramite,
+      nombreUsuario: resources.nombreusuario,
+      nombreCompletoUsuario: resources.nombrecompleto,
+      estado: respState.rows[0].state,
+    });
     return { status: 200, message: 'Tramite procesado', tramite };
   } catch (error) {
     client.query('ROLLBACK');
+    console.log(error);
     throw {
       status: 500,
       error,
@@ -590,9 +607,8 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
       await insertPaymentReference(pago, procedure.idTramite, client);
     }
 
-    const respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, null, procedure.costo || null, null]);
+    const respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, null, resources.costo || null, null]);
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
-    client.query('COMMIT');
     const tramite: Partial<Tramite> = {
       id: response.id,
       tipoTramite: response.tipotramite,
@@ -611,8 +627,22 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
       nombreTramiteCorto: response.nombretramitecorto,
       aprobado: response.aprobado,
     };
-    sendEmail({ ...tramite, codigo: tramite.codigoTramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
-    await sendNotification(user, `Se añadieron los datos de pago de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite);
+    await sendNotification(
+      user,
+      `Se añadieron los datos de pago de un trámite de tipo ${tramite.nombreTramiteLargo}`,
+      'UPDATE_PROCEDURE',
+      'TRAMITE',
+      tramite,
+      client
+    );
+    client.query('COMMIT');
+    sendEmail({
+      ...tramite,
+      codigo: tramite.codigoTramite,
+      nombreUsuario: resources.nombreusuario,
+      nombreCompletoUsuario: resources.nombrecompleto,
+      estado: respState.rows[0].state,
+    });
     return { status: 200, message: 'Datos de pago de trámite añadidos', tramite };
   } catch (error) {
     client.query('ROLLBACK');
@@ -651,15 +681,23 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       datos = prevData.datos;
     }
 
-    if (aprobado) {
-      dir = await createCertificate(procedure, client);
-      respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, aprobado]);
+    if (procedure.sufijo === 'ompu') {
+      if (aprobado) {
+        dir = await createCertificate(procedure, client);
+        respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, dir, null]);
+      } else {
+        respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
+      }
     } else {
-      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
+      if (aprobado) {
+        dir = await createCertificate(procedure, client);
+        respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, aprobado]);
+      } else {
+        respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
+      }
     }
 
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
-    client.query('COMMIT');
     const tramite: Partial<Tramite> = {
       id: response.id,
       tipoTramite: response.tipotramite,
@@ -678,8 +716,15 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       nombreTramiteCorto: response.nombretramitecorto,
       aprobado: response.aprobado,
     };
-    sendEmail({ ...tramite, codigo: tramite.codigoTramite, nombreUsuario: resources.nombreusuario, nombreCompletoUsuario: resources.nombrecompleto, estado: respState.rows[0].state });
-    await sendNotification(user, `Se realizó la revisión de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite);
+    await sendNotification(user, `Se realizó la revisión de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
+    client.query('COMMIT');
+    sendEmail({
+      ...tramite,
+      codigo: tramite.codigoTramite,
+      nombreUsuario: resources.nombreusuario,
+      nombreCompletoUsuario: resources.nombrecompleto,
+      estado: respState.rows[0].state,
+    });
     return { status: 200, message: 'Trámite revisado', tramite };
   } catch (error) {
     client.query('ROLLBACK');

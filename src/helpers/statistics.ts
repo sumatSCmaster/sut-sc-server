@@ -55,7 +55,7 @@ const getSuperUserStats = async () => {
     const monthCount = (await client.query(queries.GET_SUPER_PROC_TOTAL_IN_MONTH, [new Date().getMonth() + 1])).rows[0].count;
     const lastMonthCount = (await client.query(queries.GET_SUPER_PROC_TOTAL_IN_MONTH, [parseInt(moment(Date.now()).subtract(1, 'months').format('MM'))]))
       .rows[0].count;
-    const receivedMonthGains = (((monthCount - lastMonthCount) / monthCount) * 100).toFixed(2);
+    const receivedMonthGains = isFiniteNumber((((monthCount - lastMonthCount) / monthCount) * 100).toFixed(2));
     // GRAFICO 2
     const totalToAttend = (await client.query(queries.GET_SUPER_PROC_TOTAL_BY_STATUS, ['enproceso'])).rows[0].count;
     const receivedByDate = (await client.query(queries.GET_SUPER_PROC_BY_DATE)).rows.map((r) => ({
@@ -71,12 +71,12 @@ const getSuperUserStats = async () => {
     );
     // GRAFICO 3
     const totalCompleted = (await client.query(queries.GET_SUPER_PROC_TOTAL_BY_STATUS, ['finalizado'])).rows[0].count;
-    const percentageCompleted = ((totalCompleted * 100) / totalCount).toFixed(2);
+    const percentageCompleted = isFiniteNumber(((totalCompleted * 100) / totalCount).toFixed(2));
     const monthCompleted = (await client.query(queries.GET_SUPER_PROC_BY_STATUS_MONTHLY, [new Date().getMonth() + 1, 'finalizado'])).rows[0].count;
     const lastMonthCompleted = (
       await client.query(queries.GET_SUPER_PROC_BY_STATUS_MONTHLY, [parseInt(moment(Date.now()).subtract(1, 'months').format('MM')), 'finalizado'])
     ).rows[0].count;
-    const completedMonthGains = (((monthCompleted - lastMonthCompleted) / monthCompleted) * 100).toFixed(2);
+    const completedMonthGains = isFiniteNumber((((monthCompleted - lastMonthCompleted) / monthCompleted) * 100).toFixed(2));
     // GRAFICO 4
     const countByStatus = (await client.query(queries.GET_SUPER_PROC_COUNT_BY_STATE)).rows.map((r) => ({
       x: getNoiceState(r.state),
@@ -184,7 +184,7 @@ const getMayoraltyStats = async () => {
     const monthCount = (await client.query(queries.GET_AFFAIR_TOTAL_IN_MONTH, [new Date().getMonth() + 1])).rows[0].count;
     const lastMonthCount = (await client.query(queries.GET_AFFAIR_TOTAL_IN_MONTH, [parseInt(moment(Date.now()).subtract(1, 'months').format('MM'))])).rows[0]
       .count;
-    const receivedMonthGains = (((monthCount - lastMonthCount) / monthCount) * 100).toFixed(2);
+    const receivedMonthGains = isFiniteNumber((((monthCount - lastMonthCount) / monthCount) * 100).toFixed(2));
     // GRAFICO 2
     const totalToAttend = (await client.query(queries.GET_AFFAIR_TOTAL_BY_STATUS, ['enproceso'])).rows[0].count;
     const receivedByDate = (await client.query(queries.GET_AFFAIR_BY_DATE)).rows.map((r) => ({
@@ -200,12 +200,12 @@ const getMayoraltyStats = async () => {
     );
     // GRAFICO 3
     const totalCompleted = (await client.query(queries.GET_AFFAIR_TOTAL_BY_STATUS, ['atendido'])).rows[0].count;
-    const percentageCompleted = ((totalCompleted * 100) / totalCount).toFixed(2);
+    const percentageCompleted = isFiniteNumber(((totalCompleted * 100) / totalCount).toFixed(2));
     const monthCompleted = (await client.query(queries.GET_AFFAIR_BY_STATUS_MONTHLY, [new Date().getMonth() + 1, 'atendido'])).rows[0].count;
     const lastMonthCompleted = (
       await client.query(queries.GET_AFFAIR_BY_STATUS_MONTHLY, [parseInt(moment(Date.now()).subtract(1, 'months').format('MM')), 'atendido'])
     ).rows[0].count;
-    const completedMonthGains = (((monthCompleted - lastMonthCompleted) / monthCompleted) * 100).toFixed(2);
+    const completedMonthGains = isFiniteNumber((((monthCompleted - lastMonthCompleted) / monthCompleted) * 100).toFixed(2));
     // GRAFICO 4
     const countByStatus = (await client.query(queries.GET_AFFAIR_COUNT_BY_STATE)).rows.map((r) => ({
       x: getNoiceState(r.state),
@@ -287,7 +287,7 @@ const getOfficialStats = async (institution: number | undefined) => {
     const monthCount = (await client.query(queries.GET_PROC_TOTAL_IN_MONTH, [institution, new Date().getMonth() + 1])).rows[0].count;
     const lastMonthCount = (await client.query(queries.GET_PROC_TOTAL_IN_MONTH, [institution, parseInt(moment(Date.now()).subtract(1, 'months').format('MM'))]))
       .rows[0].count;
-    const receivedMonthGains = (((monthCount - lastMonthCount) / monthCount) * 100).toFixed(2);
+    const receivedMonthGains = isFiniteNumber((((monthCount - lastMonthCount) / monthCount) * 100).toFixed(2));
     // GRAFICO 2
     const totalToAttend = (await client.query(queries.GET_PROC_TOTAL_BY_STATUS, [institution, 'enproceso'])).rows[0].count;
     const receivedByDate = (await client.query(queries.GET_PROC_BY_DATE, [institution])).rows.map((r) => ({
@@ -303,12 +303,12 @@ const getOfficialStats = async (institution: number | undefined) => {
     );
     // GRAFICO 3
     const totalCompleted = (await client.query(queries.GET_PROC_TOTAL_BY_STATUS, [institution, 'finalizado'])).rows[0].count;
-    const percentageCompleted = ((totalCompleted * 100) / totalCount).toFixed(2);
+    const percentageCompleted = isFiniteNumber(((totalCompleted * 100) / totalCount).toFixed(2));
     const monthCompleted = (await client.query(queries.GET_PROC_BY_STATUS_MONTHLY, [institution, new Date().getMonth() + 1, 'finalizado'])).rows[0].count;
     const lastMonthCompleted = (
       await client.query(queries.GET_PROC_BY_STATUS_MONTHLY, [institution, parseInt(moment(Date.now()).subtract(1, 'months').format('MM')), 'finalizado'])
     ).rows[0].count;
-    const completedMonthGains = (((monthCompleted - lastMonthCompleted) / monthCompleted) * 100).toFixed(2);
+    const completedMonthGains = isFiniteNumber((((monthCompleted - lastMonthCompleted) / monthCompleted) * 100).toFixed(2));
     // GRAFICO 4
     const countByStatus = (await client.query(queries.GET_PROC_COUNT_BY_STATE, [institution])).rows.map((r) => ({
       x: getNoiceState(r.state),
@@ -390,7 +390,7 @@ const getOfficialFiningStats = async (institution: number | undefined) => {
     const monthCount = (await client.query(queries.GET_FINE_TOTAL_IN_MONTH, [institution, new Date().getMonth() + 1])).rows[0].count;
     const lastMonthCount = (await client.query(queries.GET_FINE_TOTAL_IN_MONTH, [institution, parseInt(moment(Date.now()).subtract(1, 'months').format('MM'))]))
       .rows[0].count;
-    const receivedMonthGains = (((monthCount - lastMonthCount) / monthCount) * 100).toFixed(2);
+    const receivedMonthGains = isFiniteNumber((((monthCount - lastMonthCount) / monthCount) * 100).toFixed(2));
     // GRAFICO 2
     const totalToAttend = (await client.query(queries.GET_FINE_TOTAL_BY_STATUS, [institution, 'enproceso'])).rows[0].count;
     const receivedByDate = (await client.query(queries.GET_FINE_BY_DATE, [institution])).rows.map((r) => ({
@@ -406,12 +406,12 @@ const getOfficialFiningStats = async (institution: number | undefined) => {
     );
     // GRAFICO 3
     const totalCompleted = (await client.query(queries.GET_FINE_TOTAL_BY_STATUS, [institution, 'finalizado'])).rows[0].count;
-    const percentageCompleted = ((totalCompleted * 100) / totalCount).toFixed(2);
+    const percentageCompleted = isFiniteNumber(((totalCompleted * 100) / totalCount).toFixed(2));
     const monthCompleted = (await client.query(queries.GET_FINE_BY_STATUS_MONTHLY, [institution, new Date().getMonth() + 1, 'finalizado'])).rows[0].count;
     const lastMonthCompleted = (
       await client.query(queries.GET_FINE_BY_STATUS_MONTHLY, [institution, parseInt(moment(Date.now()).subtract(1, 'months').format('MM')), 'finalizado'])
     ).rows[0].count;
-    const completedMonthGains = (((monthCompleted - lastMonthCompleted) / monthCompleted) * 100).toFixed(2);
+    const completedMonthGains = isFiniteNumber((((monthCompleted - lastMonthCompleted) / monthCompleted) * 100).toFixed(2));
     // GRAFICO 4
     const countByStatus = (await client.query(queries.GET_FINE_COUNT_BY_STATE, [institution])).rows.map((r) => ({
       x: getNoiceState(r.state),
@@ -509,3 +509,7 @@ const formatStats = (struct) => ({
     yearly: struct.fixedLast5Years,
   },
 });
+
+const isFiniteNumber = (expression) => {
+  return isFinite(expression) ? expression : 0;
+};

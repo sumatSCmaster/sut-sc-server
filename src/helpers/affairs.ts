@@ -25,8 +25,15 @@ export const affairInit = async (affair, user) => {
       nombreTramiteLargo: response.nombretramitelargo,
       nombreTramiteCorto: response.nombretramitecorto,
     };
+    await sendNotification(
+      user,
+      `Se ha iniciado un caso social para la persona ${response.datos.nombreCompleto}`,
+      'CREATE_SOCIAL_AFFAIR',
+      'TRAMITE',
+      caso,
+      client
+    );
     client.query('COMMIT');
-    await sendNotification(user, `Se ha iniciado un caso social para la persona ${response.datos.nombreCompleto}`, 'CREATE_SOCIAL_AFFAIR', 'TRAMITE', caso);
     return {
       status: 201,
       message: 'Caso social iniciado',
@@ -51,7 +58,6 @@ export const updateAffair = async (affair, user) => {
     client.query('BEGIN');
     const respState = await client.query(queries.UPDATE_STATE_SOCIAL_CASE, [affair.id, estado, datos || null]);
     const response = (await client.query(queries.GET_SOCIAL_CASE_BY_ID, [affair.id])).rows[0];
-    client.query('COMMIT');
     const caso: Partial<Tramite> = {
       id: response.id,
       tipoTramite: response.tipotramite,
@@ -72,8 +78,10 @@ export const updateAffair = async (affair, user) => {
       `Se ha actualizado el estado de un caso social para la persona ${response.datos.nombreCompleto}`,
       'UPDATE_SOCIAL_AFFAIR',
       'TRAMITE',
-      caso
+      caso,
+      client
     );
+    client.query('COMMIT');
     return { status: 200, message: 'Caso social actualizado', caso };
   } catch (error) {
     client.query('ROLLBACK');

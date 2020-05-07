@@ -184,19 +184,14 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('Debe incluir un nombre de obra de la construccion valido'),
-  aforo: check('tramite.datos.aforo').exists().withMessage('Debe incluir el aforo de la ubicacion').isInt().withMessage('Debe incluir un aforo valido'),
+  aforo: check('tramite.datos.aforo').exists().withMessage('Debe incluir el aforo de la ubicacion').isString().withMessage('Debe incluir un aforo valido'),
   informe: check('tramite.datos.informe')
     .exists()
     .withMessage('Debe incluir el informe de la inspeccion')
     .isString()
     .isLength({ min: 1 })
     .withMessage('Debe incluir un informe de la inspeccion valido'),
-  observaciones: check('tramite.datos.observaciones')
-    .exists()
-    .withMessage('Debe incluir las observaciones de la inspeccion')
-    .isString()
-    .isLength({ min: 1 })
-    .withMessage('Debe incluir observaciones validas'),
+  observaciones: check('tramite.datos.observaciones').optional().isString().withMessage('Debe incluir observaciones validas'),
   parroquiaEdificio: check('tramite.datos.parroquiaEdificio')
     .exists()
     .withMessage('Debe incluir la parroquia del edificio')
@@ -332,7 +327,7 @@ const validations = {
     .isLength({ min: 1 })
     .withMessage('La fecha y hora no puede ser vacia'),
   numeroBohio: check('tramite.datos.numeroBohio').optional().isInt().isLength({ min: 1 }).withMessage('Debe incluir un numero de bohio valido'),
-  detallesBohio: check('tramite.datos.numeroBohio').optional().isString().isLength({ min: 1 }).withMessage('Debe incluir un detalle de bohio valido'),
+  detallesBohio: check('tramite.datos.detallesBohio').optional().isString().isLength({ min: 1 }).withMessage('Debe incluir un detalle de bohio valido'),
   fechaApartado: check('tramite.datos.fechaApartado')
     .exists()
     .withMessage('Debe incluir la fecha para apartar')
@@ -387,12 +382,7 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('La finalidad no puede ser vacia'),
-  frente: check('tramite.datos.frente')
-    .exists()
-    .withMessage('Debe incluir el frente')
-    .isString()
-    .isLength({ min: 1 })
-    .withMessage('El frente no puede ser vacio'),
+  frente: check('tramite.datos.frente').optional().isString().withMessage('El frente no puede ser vacio'),
   linderoFrente: check('tramite.datos.linderoFrente')
     .exists()
     .withMessage('Debe incluir el lindero del frente')
@@ -510,6 +500,36 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('El correo de la empresa no puede ser vacio'),
+  nombreEmpresaComercio: check('tramite.datos.nombreEmpresaComercio')
+    .exists()
+    .withMessage('Debe incluir el nombre de la empresa o comercio')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El nombre de la empresa o comercio no puede ser vacio'),
+  distribucion: check('tramite.datos.distribucion')
+    .exists()
+    .withMessage('Debe incluir la distribucion')
+    .isArray()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir una distribucion valida'),
+  planoConstruccion: check('tramite.datos.planoConstruccion')
+    .exists()
+    .withMessage('Debe incluir el plano de construccion')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El plano de construccion no puede ser vacio'),
+  metrosCuadradosConstruccion: check('tramite.datos.metrosCuadradosConstruccion')
+    .exists()
+    .withMessage('Debe incluir los metros cuadrados de la construccion')
+    .isInt()
+    .isLength({ min: 1 })
+    .withMessage('Debe incluir metros cuadrados validos para la construccion'),
+  usoConforme: check('tramite.datos.usoConforme')
+    .exists()
+    .withMessage('Debe incluir el uso conforme')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('El uso conforme no puede ser vacio'),
 };
 
 export const createSuperuser = [
@@ -631,6 +651,7 @@ export const createPersonalProperty = [];
 
 export const validate = () => {
   return async (req, res, next) => {
+    if (req.body.tramite.hasOwnProperty('aprobado') && !req.body.tramite.aprobado) return next();
     const validaciones = await isValidProcedure(req, res);
     await Promise.all(validaciones.map((validation) => validation.run(req)));
     next();

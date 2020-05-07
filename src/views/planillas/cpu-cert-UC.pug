@@ -1,0 +1,29 @@
+extends default
+
+block css
+  link(rel="stylesheet", href="css/cpu-cert-UC.css")
+
+block content
+  main.conformidad-de-uso.col
+    h1.beauty-3D-text CONFORMIDAD DE USO
+    .col
+      h3 #{datos.funcionario.nombreEmpresaComercio}
+      h3 RIF. #{datos.funcionario.rif}
+      p
+        | #{datos.funcionario.usoConforme}, Ubicado en #{datos.funcionario.direccionEmpresa}, Parroquia #{datos.funcionario.parroquiaEmpresa}
+    .row
+      .images.grow1.col.border-element
+        div
+          img.grow1(src=datos.funcionario.croquis, alt='croquis')
+        p Croquis de ubicacion
+      .images.grow1.col.border-element
+        div
+          img.grow1(src=datos.funcionario.planoConstruccion)
+        p Plano de Construccion
+        p Area de Construccion: #{datos.funcionario.metrosCuadradosConstruccion ? datos.funcionario.metrosCuadradosConstruccion + 'm²' : 'N/A'}
+      .grow1.border-element
+        h5 Distribucion: 
+        div(style='text-align: left;')
+          ul
+            each dist in datos.funcionario.distribucion
+              li #{dist.cantidad === '1' ? 'Un' : written(dist.cantidad, { lang: 'es' }).charAt(0).toUpperCase() + written(dist.cantidad, { lang: 'es' }).slice(1)} (#{dist.cantidad}) #{dist.descripcion}

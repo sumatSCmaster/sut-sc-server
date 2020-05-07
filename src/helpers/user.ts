@@ -203,7 +203,6 @@ export const initialExtUserSignUp = async (user) => {
       tipoUsuario: response.id_tipo_usuario,
       cedula: response.cedula,
       telefono: response.telefono,
-      
     };
   } catch (e) {
     client.query('ROLLBACK');
@@ -277,6 +276,7 @@ export const signUpUser = async (user) => {
       nacionalidad: data.nacionalidad,
       tipoUsuario: data.id_tipo_usuario,
       cedula: data.cedula,
+      telefono: data.telefono,
     };
     return {
       status: 201,
@@ -323,18 +323,17 @@ export const updateUser = async (user) => {
   }
 };
 
-
 export const hasNotifications = async (cedula) => {
   const client = await pool.connect();
-  try{
+  try {
     return (await client.query(queries.GET_USER_HAS_NOTIFICATIONS, [cedula])).rows[0].hasNotifications;
-  } catch (e){
+  } catch (e) {
     throw {
       status: 500,
       e,
       message: errorMessageGenerator(e) || 'Error al obtener estado de notificaciones del usuario',
-    }
+    };
   } finally {
     client.release();
   }
-}
+};

@@ -7,6 +7,7 @@ import { resolve } from 'path';
 import * as pdf from 'html-pdf';
 import * as qr from 'qrcode';
 import { errorMessageGenerator } from '@helpers/errors';
+const  written = require('written-number');
 
 const pool = Pool.getInstance();
 
@@ -103,13 +104,14 @@ export const createMockCertificate = async (procedure) => {
       datos: tramite.datos,
       estado: 'finalizado',
       tipoTramite: tramite.tipotramite,
-      certificado: tramite.aprobado ? tramite.formatocertificado : tramite.formatorechazo,
+      certificado: tramite.sufijo === 'ompu' ? (tramite.aprobado ? tramite.formatocertificado : tramite.formatorechazo) : tramite.formatocertificado,
     };
     const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
       ...datosCertificado,
       cache: false,
       moment: require('moment'),
       QR: linkQr,
+      written
     });
     return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
   } catch (error) {
