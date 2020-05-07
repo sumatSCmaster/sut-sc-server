@@ -382,7 +382,7 @@ const validations = {
     .isString()
     .isLength({ min: 1 })
     .withMessage('La finalidad no puede ser vacia'),
-  frente: check('tramite.datos.frente').optional().isString().isLength({ min: 1 }).withMessage('El frente no puede ser vacio'),
+  frente: check('tramite.datos.frente').optional().isString().withMessage('El frente no puede ser vacio'),
   linderoFrente: check('tramite.datos.linderoFrente')
     .exists()
     .withMessage('Debe incluir el lindero del frente')
