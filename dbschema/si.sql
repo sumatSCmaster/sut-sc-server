@@ -3707,6 +3707,11 @@ COPY public.campo (id_campo, nombre, tipo, validacion, col) FROM stdin;
 80	Parroquia	string	parroquiaEmpresa	8
 81	Teléfono	string	telefonoEmpresa	8
 82	Correo Electrónico	string	correoEmpresa	8
+83	Nombre de la Empresa o Comercio	string	nombreEmpresaComercio	8
+86	Distribución	object	distribucion	24
+87	Plano de Construcción	image	planoConstruccion	12
+85	Area de Construcción (m²)	number	metrosCuadradosConstruccion	8
+84	Uso Conforme	string	usoConforme	14
 \.
 
 
@@ -3717,7 +3722,6 @@ COPY public.campo (id_campo, nombre, tipo, validacion, col) FROM stdin;
 COPY public.campo_tramite (id_campo, id_tipo_tramite, orden, estado, id_seccion) FROM stdin;
 21	10	1	iniciado	4
 16	10	2	iniciado	4
-18	10	3	iniciado	4
 17	10	3	iniciado	4
 10	10	3	iniciado	4
 14	2	1	enproceso	3
@@ -3751,17 +3755,14 @@ COPY public.campo_tramite (id_campo, id_tipo_tramite, orden, estado, id_seccion)
 6	7	2	enproceso	5
 21	11	1	iniciado	4
 16	11	2	iniciado	4
-18	11	3	iniciado	4
 17	11	3	iniciado	4
 10	11	3	iniciado	4
 21	12	1	iniciado	4
 16	12	2	iniciado	4
-18	12	3	iniciado	4
 17	12	3	iniciado	4
 10	12	3	iniciado	4
 21	13	1	iniciado	4
 16	13	2	iniciado	4
-18	13	3	iniciado	4
 17	13	3	iniciado	4
 22	10	1	enproceso	6
 5	10	2	enproceso	6
@@ -3995,6 +3996,32 @@ COPY public.campo_tramite (id_campo, id_tipo_tramite, orden, estado, id_seccion)
 80	25	3	iniciado	21
 81	25	10	iniciado	21
 82	25	11	iniciado	21
+83	23	1	enproceso	23
+15	23	2	enproceso	23
+79	23	3	enproceso	23
+80	23	4	enproceso	23
+84	23	5	enproceso	23
+85	23	6	enproceso	23
+86	23	1	enproceso	24
+45	23	1	enproceso	25
+87	23	2	enproceso	25
+83	24	1	enproceso	23
+15	24	2	enproceso	23
+79	24	3	enproceso	23
+80	24	4	enproceso	23
+84	24	5	enproceso	23
+85	24	6	enproceso	23
+86	24	1	enproceso	24
+45	24	1	enproceso	25
+87	24	2	enproceso	25
+83	25	1	enproceso	23
+15	25	2	enproceso	23
+79	25	3	enproceso	23
+80	25	4	enproceso	23
+84	25	5	enproceso	23
+86	25	1	enproceso	24
+45	25	1	enproceso	25
+87	25	2	enproceso	25
 \.
 
 
@@ -4089,6 +4116,40 @@ COPY public.evento_multa (id_evento_multa, id_multa, event, "time") FROM stdin;
 --
 
 COPY public.evento_tramite (id_evento_tramite, id_tramite, event, "time") FROM stdin;
+583	255	iniciar	2020-05-07 10:57:09.720038-04
+584	255	validar_pa	2020-05-07 10:57:09.720038-04
+586	257	iniciar	2020-05-07 10:57:38.168622-04
+587	257	validar_pa	2020-05-07 10:57:38.168622-04
+588	258	iniciar	2020-05-07 10:57:53.919855-04
+589	258	enproceso_pd	2020-05-07 10:57:53.919855-04
+590	259	iniciar	2020-05-07 10:58:28.363512-04
+591	259	validar_pa	2020-05-07 10:58:28.363512-04
+592	260	iniciar	2020-05-07 10:58:51.901449-04
+593	260	validar_pa	2020-05-07 10:58:51.901449-04
+594	261	iniciar	2020-05-07 10:58:59.049063-04
+595	261	enproceso_pd	2020-05-07 10:58:59.049063-04
+596	262	iniciar	2020-05-07 11:00:56.334025-04
+597	262	enproceso_pd	2020-05-07 11:00:56.334025-04
+598	263	iniciar	2020-05-07 11:01:07.212907-04
+599	263	enproceso_pd	2020-05-07 11:01:07.212907-04
+600	264	iniciar	2020-05-07 11:01:52.832256-04
+601	264	enproceso_pd	2020-05-07 11:01:52.832256-04
+602	265	iniciar	2020-05-07 11:02:07.106868-04
+603	265	enproceso_pd	2020-05-07 11:02:07.106868-04
+604	266	iniciar	2020-05-07 11:03:00.239298-04
+605	266	enproceso_pd	2020-05-07 11:03:00.239298-04
+606	267	iniciar	2020-05-07 11:03:37.842654-04
+607	267	validar_cr	2020-05-07 11:03:37.842654-04
+608	268	iniciar	2020-05-07 11:46:05.315309-04
+609	268	validar_cr	2020-05-07 11:46:05.315309-04
+610	269	iniciar	2020-05-07 11:46:32.804564-04
+611	269	validar_cr	2020-05-07 11:46:32.804564-04
+612	270	iniciar	2020-05-07 11:47:09.713907-04
+613	270	validar_cr	2020-05-07 11:47:09.713907-04
+614	271	iniciar	2020-05-07 11:48:02.25006-04
+615	271	validar_tl	2020-05-07 11:48:02.25006-04
+617	273	iniciar	2020-05-07 11:48:23.471532-04
+618	273	validar_pa	2020-05-07 11:48:23.471532-04
 \.
 
 
@@ -4123,6 +4184,7 @@ COPY public.institucion (id_institucion, nombre_completo, nombre_corto) FROM std
 6	Instituto Municipal de Ambiente	IMA
 7	Instituto Autónomo Policía del Municipio Maracaibo	PMM
 8	Instituto Municipal de Transporte Colectivo y Urbano de Pasajeros del Municipio Maracaibo	IMTCUMA
+9	Servicio Desconcentrado Municipal de Administración Tributaria	SEDEMAT
 \.
 
 
@@ -4158,6 +4220,21 @@ COPY public.multa (id_multa, id_tipo_tramite, datos, costo, fecha_creacion, codi
 --
 
 COPY public.notificacion (id_notificacion, id_procedimiento, emisor, receptor, descripcion, status, fecha, estado, concepto) FROM stdin;
+412	255	V-27139153	V-1	Un trámite de tipo Cumplimiento de Normas Tecnicas ha sido creado	f	2020-05-07 10:57:13.617386-04	validando	TRAMITE
+413	255	V-27139153	V-1	Un trámite de tipo Cumplimiento de Normas Tecnicas ha sido creado	f	2020-05-07 10:57:13.617386-04	validando	TRAMITE
+414	255	V-27139153	V-1231231231	Un trámite de tipo Cumplimiento de Normas Tecnicas ha sido creado	f	2020-05-07 10:57:13.617386-04	validando	TRAMITE
+432	263	V-27139153	V-1	Un trámite de tipo Permiso de Habitabilidad sin Instalaciones de Servicio de Gas ha sido creado	f	2020-05-07 11:01:07.728089-04	enproceso	TRAMITE
+433	263	V-27139153	V-123123	Un trámite de tipo Permiso de Habitabilidad sin Instalaciones de Servicio de Gas ha sido creado	f	2020-05-07 11:01:07.728089-04	enproceso	TRAMITE
+434	263	V-27139153	V-123133333	Un trámite de tipo Permiso de Habitabilidad sin Instalaciones de Servicio de Gas ha sido creado	f	2020-05-07 11:01:07.728089-04	enproceso	TRAMITE
+435	264	V-27139153	V-1	Un trámite de tipo Permiso de Condiciones Habitables con Instalaciones de Servicio de Gas ha sido creado	f	2020-05-07 11:01:53.330397-04	enproceso	TRAMITE
+436	264	V-27139153	V-123123	Un trámite de tipo Permiso de Condiciones Habitables con Instalaciones de Servicio de Gas ha sido creado	f	2020-05-07 11:01:53.330397-04	enproceso	TRAMITE
+437	264	V-27139153	V-123133333	Un trámite de tipo Permiso de Condiciones Habitables con Instalaciones de Servicio de Gas ha sido creado	f	2020-05-07 11:01:53.330397-04	enproceso	TRAMITE
+438	266	V-27139153	V-1	Un trámite de tipo Permiso de Condiciones Habitables sin Instalaciones de Servicio de Gas ha sido creado	f	2020-05-07 11:03:00.859148-04	enproceso	TRAMITE
+439	266	V-27139153	V-123123	Un trámite de tipo Permiso de Condiciones Habitables sin Instalaciones de Servicio de Gas ha sido creado	f	2020-05-07 11:03:00.859148-04	enproceso	TRAMITE
+440	266	V-27139153	V-123133333	Un trámite de tipo Permiso de Condiciones Habitables sin Instalaciones de Servicio de Gas ha sido creado	f	2020-05-07 11:03:00.859148-04	enproceso	TRAMITE
+444	268	V-27139153	V-1	Un trámite de tipo Constancia de Nomenclatura ha sido creado	f	2020-05-07 11:46:05.980597-04	validando	TRAMITE
+445	268	V-27139153	V-1231234444	Un trámite de tipo Constancia de Nomenclatura ha sido creado	f	2020-05-07 11:46:05.980597-04	validando	TRAMITE
+446	268	V-27139153	V-27139154	Un trámite de tipo Constancia de Nomenclatura ha sido creado	f	2020-05-07 11:46:05.980597-04	validando	TRAMITE
 \.
 
 
@@ -4232,6 +4309,16 @@ COPY public.ordenanza (id_ordenanza, descripcion, tarifa, id_valor, habilitado) 
 45	Sociedad Mercantil (Organización) - Micro Bus (MB)	30	2	t
 46	Sociedad Mercantil (Organización) - Autobús (AB)	35	2	t
 47	Sociedad Mercantil (Organización) - Mixta	40	2	t
+48	Inspección	0.8	2	t
+49	Inspección	0.8	2	t
+50	Inspección	6	2	t
+51	Constancia/Certificación	60	2	t
+52	Constancia/Certificación	0.02	2	t
+53	Edificación cuenta con CVUF	2	2	t
+54	Edificación no cuenta con CVUF	4	2	t
+55	Constancia/Certificación	0.05	2	t
+56	Edificación cuenta con CVUF	2	2	t
+57	Edificación no cuenta con CVUF	4	2	t
 \.
 
 
@@ -4248,6 +4335,18 @@ COPY public.ordenanza_tramite (id_ordenanza_tramite, id_tramite, id_tarifa, utmm
 --
 
 COPY public.pago (id_pago, id_procedimiento, referencia, monto, fecha_de_pago, aprobado, id_banco, fecha_de_aprobacion, concepto) FROM stdin;
+152	14	123123123123	1200000	2020-05-01	f	2	\N	MULTA
+153	254	123123	1200000	2020-05-05	t	1	2020-05-05 16:15:22.038124-04	TRAMITE
+154	255	123123123	8000000	2020-05-07	f	1	\N	TRAMITE
+156	257	123123123123	8000000	2020-05-07	f	1	\N	TRAMITE
+157	259	1231234	240000000	2020-05-07	f	1	\N	TRAMITE
+158	260	1	960000000	2020-05-07	f	1	\N	TRAMITE
+159	267	132	1200000	2020-05-07	f	1	\N	TRAMITE
+160	268	3	80000	2020-05-07	f	1	\N	TRAMITE
+161	269	4	1200000	2020-05-07	f	1	\N	TRAMITE
+162	270	5	1200000	2020-05-07	f	1	\N	TRAMITE
+163	271	6	1000.0	2020-05-07	f	1	\N	TRAMITE
+165	273	67	1000000	2020-05-07	f	1	\N	TRAMITE
 \.
 
 
@@ -4304,10 +4403,13 @@ COPY public.permiso_de_acceso (id_permiso, id_usuario, id_tipo_tramite) FROM std
 17	73	17
 18	75	18
 19	82	21
-20	68	14
-21	68	15
-22	68	16
-23	68	22
+24	68	14
+25	68	15
+26	68	16
+27	68	22
+28	68	23
+29	68	24
+30	68	25
 \.
 
 
@@ -4403,8 +4505,7 @@ COPY public.recaudo (id_recaudo, nombre_largo, nombre_corto, obligatorio, planil
 47	Si el inmueble pertenece a una persona jurídica presentar copia del RIF.	CopiaRif	f	\N	image/*
 48	Si es un parcelamiento u urbanización presentar documento, relación de parcelas vendidas y Constancia de Habitabilidad	DeTodo	f	\N	image/*
 49	Copia de Nomenclatura emitido por la Oficina Municipal de Catastro	Nomenclatura	t	\N	image/*
-39	Planilla de Junta Directiva, referida a los datos de los miembros de la organización (formato digital e impreso ver anexo)	PlanillaJuntaDirectiva	t	http://localhost:5000/recaudos/PLANILLA_DE_JUNTA_DIRECTIVA.xls	.xlsx .xls .csv
-40	Planilla de Registro de Unidades, referida a los datos de las unidades que presten servicio en la organización, y las mismas deben estar matriculadas como transporte público (formato digital e impreso ver anexo)	PlanillaRegistrosUnidades	t	http://localhost:5000/recaudos/PLANILLA_DE_REGISTRO_DE_UNIDADES.xls	.xlsx .xls .csv
+40	Planilla de Registro de Unidades, referida a los datos de las unidades que presten servicio en la organización, y las mismas deben estar matriculadas como transporte público (formato digital e impreso ver anexo)	PlanillaRegistrosUnidades	t	http://localhost:5000/recaudos/PLANILLA_DE_REGISTRO_DE_UNIDADES.xls	.xls
 50	Copia del documento de propiedad o contrato de arrendamiento a nombre de la empresa notariado o visado por el Colegio de Abogados	DocPropiedad	t	\N	image/*
 51	Croquis de Ubicacion con Punto de Referencia	Croquis	t	\N	image/*
 54	Dos (2) fotografias de la fachada del inmueble	Fachada	t	\N	image/*
@@ -4414,6 +4515,7 @@ COPY public.recaudo (id_recaudo, nombre_largo, nombre_corto, obligatorio, planil
 60	Fotocopia legible de la Cedula de Identidad del Propietario del Inmueble	CedulaPropietario	t	\N	image/*
 59	En caso de que el establecimiento comercial posea renta de licores anterior debe presentar copia de la misma	Licores	f	\N	image/*
 52	Constancia de Nomenclatura expedida por la Oficina Municipal de Catastro (en caso de que el documento de registro no lo especifique)	ConstanciaNomenclatura	f	\N	image/*
+39	Planilla de Junta Directiva, referida a los datos de los miembros de la organización (formato digital e impreso ver anexo)	PlanillaJuntaDirectiva	t	http://localhost:5000/recaudos/PLANILLA_DE_JUNTA_DIRECTIVA.xls	.xls
 \.
 
 
@@ -4452,6 +4554,9 @@ COPY public.seccion (id_seccion, nombre) FROM stdin;
 20	Datos de Nomenclatura
 21	Datos de la Empresa
 22	Datos de la Unidad Educativa
+23	Datos de la Empresa o Comercio
+24	Distribución
+25	Croquis y Plano
 \.
 
 
@@ -4507,6 +4612,16 @@ COPY public.tarifa_inspeccion (id_tarifa, id_ordenanza, id_tipo_tramite, formula
 45	45	21	\N	f	\N
 46	46	21	\N	f	\N
 47	47	21	\N	f	\N
+48	48	23	\N	f	\N
+49	49	24	\N	f	\N
+50	50	25	\N	f	\N
+51	51	25	\N	f	\N
+52	52	24	\N	t	\N
+53	53	24	\N	f	\N
+54	54	24	\N	f	\N
+55	55	23	\N	t	\N
+56	56	23	\N	f	\N
+57	57	23	\N	f	\N
 \.
 
 
@@ -4678,6 +4793,23 @@ COPY public.tipo_usuario (id_tipo_usuario, descripcion) FROM stdin;
 --
 
 COPY public.tramite (id_tramite, id_tipo_tramite, datos, costo, fecha_creacion, codigo_tramite, consecutivo, id_usuario, url_planilla, url_certificado, aprobado, fecha_culminacion) FROM stdin;
+270	15	{"usuario":{"nombre":"External User","cedula":"27139153","telefono":"4127645681","correo":"external@user.com","parroquia":"CECILIO ACOSTA","direccion":"Aqui","propietarios":[{"razonSocial":"asdasd","cedulaORif":"1241241241","nacionalidad":"V","telefono":"1241241241","direccion":"asdasdasd","correo":"asd@asd.asd","parroquia":"BOLIVAR"}],"nombreConjunto":"asd","cantidadEdificios":"1","nombreEdificio":"asd","cantidadPisos":"123123","pisoApto":"123123","cantidadAptosPiso":"1231","numeroApto":"123123","nomenclaturaEdificio":"asdasd","ubicacionEdificio":"asd","parroquiaEdificio":"IDELFONSO VASQUEZ","nacionalidad":"V","codCat":null}}	1200000	2020-05-07 11:47:09.713907-04	CPU-07052020-15-0001	1	58	http://localhost:5000/tramites/CPU-07052020-15-0001/planilla.pdf	\N	f	\N
+266	13	{"usuario":{"nombre":"External User","ubicadoEn":"asdasdasd","telefono":"4127645681","tipoOcupacion":"123123","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]}}}	\N	2020-05-07 11:03:00.239298-04	SAGAS-07052020-13-0002	2	58	http://localhost:5000/tramites/SAGAS-07052020-13-0002/planilla.pdf	\N	f	\N
+268	22	{"usuario":{"nombre":"External User","cedula":"27139153","telefono":"4127645681","correo":"external@user.com","parroquia":"CACIQUE MARA","direccion":"Aqui","propietarios":[{"razonSocial":"asdasd","nacionalidad":"V","cedulaORif":"1241241241","telefono":"1241241241","direccion":"asdasdasd","correo":"asd@asd.asd","parroquia":"BOLIVAR"}],"ubicadoEn":"asdasdasd","puntoReferencia":"asd","finalidad":"Mismo Número","frente":"","linderoFrente":"a","linderoFondo":"b","linderoDerecha":"c","linderoIzquierda":"d","nacionalidad":"V","codCat":null}}	80000	2020-05-07 11:46:05.315309-04	CPU-07052020-22-0001	1	58	http://localhost:5000/tramites/CPU-07052020-22-0001/planilla.pdf	\N	f	\N
+267	16	{"usuario":{"nombre":"External User","cedula":"27139153","telefono":"4127645681","correo":"external@user.com","parroquia":"CACIQUE MARA","direccion":"Aqui","propietarios":[{"razonSocial":"asdasd","cedulaORif":"1241241241","nacionalidad":"V","telefono":"1241241241","direccion":"asdasdasd","correo":"asd@asd.asd","parroquia":"BOLIVAR"}],"ubicadoEn":"asdasdasd","parroquiaEdificio":"BOLIVAR","tipoInmuebleSolvencia":"terreno","nacionalidad":"V","codCat":null}}	1200000	2020-05-07 11:03:37.842654-04	CPU-07052020-16-0001	1	58	http://localhost:5000/tramites/CPU-07052020-16-0001/planilla.pdf	\N	f	\N
+269	14	{"usuario":{"nombre":"External User","cedula":"27139153","telefono":"4127645681","correo":"external@user.com","parroquia":"CACIQUE MARA","direccion":"Aqui","propietarios":[{"razonSocial":"asdasd","cedulaORif":"1241241241","nacionalidad":"V","telefono":"1241241241","direccion":"asdasdasd","correo":"asd@asd.asd","parroquia":"BOLIVAR"}],"ubicadoEn":"asdasdasd","parroquiaEdificio":"CACIQUE MARA","tipoInmueble":"asdasd","nacionalidad":"V","codCat":null}}	1200000	2020-05-07 11:46:32.804564-04	CPU-07052020-14-0001	1	58	http://localhost:5000/tramites/CPU-07052020-14-0001/planilla.pdf	\N	f	\N
+273	18	{"usuario":{"nombre":"External User","cedula":"27139153","telefono":"4127645681","correo":"external@user.com","fechaApartado":"2020-05-15T15:48:06.719Z","numeroBohio":"1","nacionalidad":"V","codCat":null}}	1000000	2020-05-07 11:48:23.471532-04	SEDEPAR-07052020-18-0001	1	58	http://localhost:5000/tramites/SEDEPAR-07052020-18-0001/planilla.pdf	\N	f	\N
+262	10	{"usuario":{"nombre":"External User","ubicadoEn":"asdasdasd","telefono":"4127645681","tipoOcupacion":"123123","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]}}}	\N	2020-05-07 11:00:56.334025-04	SAGAS-07052020-10-0001	1	58	http://localhost:5000/tramites/SAGAS-07052020-10-0001/planilla.pdf	\N	f	\N
+255	1	{"usuario":{"cedulaORif":"27139153","nombreORazon":"Gabriel Trompiz","direccion":"Aqui","puntoReferencia":"ASD","sector":"123","parroquia":"BOLIVAR","nombre":"External User","cedula":"27139153","telefono":"4127645681","correo":"external@user.com","contacto":"si","horario":"no","prefix":"V","nacionalidad":"V","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]}}}	8000000	2020-05-07 10:57:09.720038-04	CBM-07052020-1-0001	1	58	http://localhost:5000/tramites/CBM-07052020-1-0001/planilla.pdf	\N	f	\N
+259	6	{"usuario":{"nombre":"External User","ubicadoEn":"asdasdasd","telefono":"4127645681","tipoOcupacion":"123123","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]}}}	240000000	2020-05-07 10:58:28.363512-04	SAGAS-07052020-6-0001	1	58	http://localhost:5000/tramites/SAGAS-07052020-6-0001/planilla.pdf	\N	f	\N
+257	2	{"usuario":{"cedulaORif":"27139153","nombreORazon":"Gabriel Trompiz","direccion":"Aqui","puntoReferencia":"asd","sector":"123","parroquia":"BOLIVAR","nombre":"External User","cedula":"27139153","telefono":"4127645681","correo":"external@user.com","contacto":"asd","horario":"asd","prefix":"V","nacionalidad":"V","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]}}}	8000000	2020-05-07 10:57:38.168622-04	CBM-07052020-2-0001	1	58	http://localhost:5000/tramites/CBM-07052020-2-0001/planilla.pdf	\N	f	\N
+258	3	{"usuario":{"cedulaORif":"27139153","nombreORazon":"Gabriel Trompiz","direccion":"Aqui","puntoReferencia":"asd","sector":"asd","parroquia":"BOLIVAR","nombre":"External User","cedula":"27139153","telefono":"4127645681","correo":"external@user.com","contacto":"123","horario":"asd","prefix":"V","nacionalidad":"V","codCat":null}}	\N	2020-05-07 10:57:53.919855-04	CBM-07052020-3-0001	1	58	http://localhost:5000/tramites/CBM-07052020-3-0001/planilla.pdf	\N	f	\N
+260	7	{"usuario":{"nombre":"External User","ubicadoEn":"asdasdasd","telefono":"4127645681","tipoOcupacion":"123123","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]}}}	960000000	2020-05-07 10:58:51.901449-04	SAGAS-07052020-7-0001	1	58	http://localhost:5000/tramites/SAGAS-07052020-7-0001/planilla.pdf	\N	f	\N
+261	8	{"usuario":{"nombre":"External User","ubicadoEn":"asdasdasd","telefono":"4127645681","tipoOcupacion":"123123","areaConstruccion":"123123","codCat":null}}	\N	2020-05-07 10:58:59.049063-04	SAGAS-07052020-8-0001	1	58	http://localhost:5000/tramites/SAGAS-07052020-8-0001/planilla.pdf	\N	f	\N
+263	11	{"usuario":{"nombre":"External User","ubicadoEn":"asdasdasd","telefono":"4127645681","tipoOcupacion":"123123","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]}}}	\N	2020-05-07 11:01:07.212907-04	SAGAS-07052020-11-0001	1	58	http://localhost:5000/tramites/SAGAS-07052020-11-0001/planilla.pdf	\N	f	\N
+264	12	{"usuario":{"nombre":"External User","ubicadoEn":"asdasdasd","telefono":"4127645681","tipoOcupacion":"123123","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]}}}	\N	2020-05-07 11:01:52.832256-04	SAGAS-07052020-12-0001	1	58	http://localhost:5000/tramites/SAGAS-07052020-12-0001/planilla.pdf	\N	f	\N
+265	13	{"usuario":{"nombre":"External User","ubicadoEn":"asdasdasd","telefono":"4127645681","tipoOcupacion":"123123","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]}}}	\N	2020-05-07 11:02:07.106868-04	SAGAS-07052020-13-0001	1	58	http://localhost:5000/tramites/SAGAS-07052020-13-0001/planilla.pdf	\N	f	\N
+271	17	{"usuario":{"cedula":"1231231231","nombreCompleto":"Gabriel Trompiz","destino":"Baruta","metodo":"Transferencia","monto":"1.000","fechaTramite":"2020-05-07T15:48:02.205Z"}}	1000.0	2020-05-07 11:48:02.25006-04	SEDETEMA-07052020-17-0001	1	58	http://localhost:5000/tramites/SEDETEMA-07052020-17-0001/planilla.pdf	\N	f	\N
 \.
 
 
@@ -4686,6 +4818,21 @@ COPY public.tramite (id_tramite, id_tipo_tramite, datos, costo, fecha_creacion, 
 --
 
 COPY public.tramite_archivo_recaudo (id_tramite, url_archivo_recaudo) FROM stdin;
+259	http://localhost:5000/tramites/SAGAS-07052020-6-0001/RIFPropietario.png
+259	http://localhost:5000/tramites/SAGAS-07052020-6-0001/CedulaPropietario.png
+260	http://localhost:5000/tramites/SAGAS-07052020-7-0001/RIFPropietario.png
+260	http://localhost:5000/tramites/SAGAS-07052020-7-0001/CedulaPropietario.png
+262	http://localhost:5000/tramites/SAGAS-07052020-10-0001/ConstanciaSAGAS.png
+263	http://localhost:5000/tramites/SAGAS-07052020-11-0001/ConstanciaSAGAS.png
+264	http://localhost:5000/tramites/SAGAS-07052020-12-0001/ConstanciaSAGAS.png
+266	http://localhost:5000/tramites/SAGAS-07052020-13-0002/ConstanciaSAGAS.png
+267	http://localhost:5000/tramites/CPU-07052020-16-0001/CedulaPropietario.png
+267	http://localhost:5000/tramites/CPU-07052020-16-0001/DocumentoPropiedad.png
+267	http://localhost:5000/tramites/CPU-07052020-16-0001/Nomenclatura.png
+268	http://localhost:5000/tramites/CPU-07052020-22-0001/CedulaPropietario.png
+269	http://localhost:5000/tramites/CPU-07052020-14-0001/CedulaPropietario.png
+270	http://localhost:5000/tramites/CPU-07052020-15-0001/CedulaPropietario.png
+273	http://localhost:5000/tramites/SEDEPAR-07052020-18-0001/CedulaSolicitante.png
 \.
 
 
@@ -6798,7 +6945,7 @@ SELECT pg_catalog.setval('public.detalles_facturas_id_detalle_seq', 1, false);
 -- Name: evento_multa_id_evento_multa_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.evento_multa_id_evento_multa_seq', 36, true);
+SELECT pg_catalog.setval('public.evento_multa_id_evento_multa_seq', 41, true);
 
 
 --
@@ -6812,7 +6959,7 @@ SELECT pg_catalog.setval('public.eventos_casos_sociales_id_evento_caso_seq', 2, 
 -- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.eventos_tramite_id_evento_tramite_seq', 543, true);
+SELECT pg_catalog.setval('public.eventos_tramite_id_evento_tramite_seq', 618, true);
 
 
 --
@@ -6847,14 +6994,14 @@ SELECT pg_catalog.setval('public.instituciones_id_institucion_seq', 1, false);
 -- Name: multa_id_multa_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.multa_id_multa_seq', 12, true);
+SELECT pg_catalog.setval('public.multa_id_multa_seq', 14, true);
 
 
 --
 -- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.notificaciones_id_notificacion_seq', 282, true);
+SELECT pg_catalog.setval('public.notificaciones_id_notificacion_seq', 456, true);
 
 
 --
@@ -6875,21 +7022,21 @@ SELECT pg_catalog.setval('public.operatividad_terminal_id_operatividad_terminal_
 -- Name: ordenanzas_id_ordenanza_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.ordenanzas_id_ordenanza_seq', 47, true);
+SELECT pg_catalog.setval('public.ordenanzas_id_ordenanza_seq', 57, true);
 
 
 --
 -- Name: ordenanzas_tramites_id_ordenanza_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.ordenanzas_tramites_id_ordenanza_tramite_seq', 2, true);
+SELECT pg_catalog.setval('public.ordenanzas_tramites_id_ordenanza_tramite_seq', 15, true);
 
 
 --
 -- Name: pagos_id_pago_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.pagos_id_pago_seq', 151, true);
+SELECT pg_catalog.setval('public.pagos_id_pago_seq', 165, true);
 
 
 --
@@ -6903,7 +7050,7 @@ SELECT pg_catalog.setval('public.parroquias_id_seq', 1, false);
 -- Name: permiso_de_acceso_id_permiso_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.permiso_de_acceso_id_permiso_seq', 23, true);
+SELECT pg_catalog.setval('public.permiso_de_acceso_id_permiso_seq', 30, true);
 
 
 --
@@ -6938,7 +7085,7 @@ SELECT pg_catalog.setval('public.recuperacion_id_recuperacion_seq', 1, false);
 -- Name: tarifas_inspeccion_id_tarifa_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.tarifas_inspeccion_id_tarifa_seq', 47, true);
+SELECT pg_catalog.setval('public.tarifas_inspeccion_id_tarifa_seq', 57, true);
 
 
 --
@@ -6966,7 +7113,7 @@ SELECT pg_catalog.setval('public.tipos_usuarios_id_tipo_usuario_seq', 1, false);
 -- Name: tramites_id_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 248, true);
+SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 273, true);
 
 
 --
