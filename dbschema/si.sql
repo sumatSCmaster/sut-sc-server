@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.1 (Ubuntu 12.1-1.pgdg19.04+1)
--- Dumped by pg_dump version 12.1 (Ubuntu 12.1-1.pgdg19.04+1)
+-- Dumped from database version 12.2
+-- Dumped by pg_dump version 12.2
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2196,8 +2196,8 @@ CREATE TABLE public.operatividad_terminal (
     tipo character varying NOT NULL,
     monto numeric NOT NULL,
     tasa numeric NOT NULL,
-    monto_calculado numeric GENERATED ALWAYS AS ((monto * tasa)) STORED,
     habilitado boolean DEFAULT true,
+    monto_calculado numeric GENERATED ALWAYS AS (round((monto * tasa), 2)) STORED,
     CONSTRAINT operatividad_terminal_tipo_check CHECK (((tipo)::text = ANY (ARRAY['BUSCAMA'::text, 'BUSETA'::text, 'CARRO POR PUESTO'::text])))
 );
 
@@ -4251,9 +4251,75 @@ COPY public.operacion (id_operacion, nombre_op) FROM stdin;
 --
 
 COPY public.operatividad_terminal (id_operatividad_terminal, destino, tipo, monto, tasa, habilitado) FROM stdin;
-1	Baruta	BUSETA	10000	0.1	t
-2	Barinas	CARRO POR PUESTO	666999	0.1	t
-3	Bachaquero	CARRO POR PUESTO	42069	0.1	t
+9	Caracas	BUSCAMA	610400	0.1	t
+10	Puerto La Cruz	BUSCAMA	831200	0.1	t
+11	Maracay	BUSCAMA	475690	0.1	t
+12	Valencia	BUSCAMA	437520	0.1	t
+13	San Cristóbal	BUSCAMA	416000	0.1	t
+14	San Antonio Táchira	BUSCAMA	434560	0.1	t
+15	El Vigía	BUSCAMA	407520	0.1	t
+16	Mérida	BUSCAMA	359840	0.1	t
+17	El Chivo	BUSCAMA	320800	0.1	t
+18	Santa Bárbara	BUSCAMA	363280	0.1	t
+19	La Fría	BUSCAMA	357440	0.1	t
+20	Barinas	BUSCAMA	482640	0.1	t
+21	Barquisimeto	BUSCAMA	234990	0.1	t
+22	Puerto La Cruz	BUSETA	675350	0.1	t
+23	Santa Bárbara	BUSETA	295165	0.1	t
+24	Punto FIjo	BUSETA	196350	0.1	t
+25	Barquisimeto	BUSETA	184635	0.1	t
+26	El Vigía	BUSETA	331110	0.1	t
+27	Mérida	BUSETA	292370	0.1	t
+28	Mene de Mauroa	BUSETA	41265	0.1	t
+29	Carora	BUSETA	130625	0.1	t
+30	El Chivo	BUSETA	260650	0.1	t
+31	Trujillo	BUSETA	128700	0.1	t
+32	Cacigua	BUSETA	165000	0.1	t
+33	Valencia	BUSETA	355485	0.1	t
+34	Maracay	BUSETA	387530	0.1	t
+35	Caracas	BUSETA	495950	0.1	t
+36	Valera	BUSETA	120395	0.1	t
+37	Boconó	BUSETA	163350	0.1	t
+38	Caja Seca	BUSETA	143605	0.1	t
+39	La Villa	BUSETA	37845	0.1	t
+40	Machiques	BUSETA	56700	0.1	t
+41	Paraguaipoa	BUSETA	45900	0.1	t
+42	Perijá	BUSETA	79650	0.1	t
+43	Barinas	BUSETA	39215	0.1	t
+44	La Fría	BUSETA	290420	0.1	t
+45	Ojeda	BUSETA	40140	0.1	t
+46	Mene Grande	BUSETA	76500	0.1	t
+47	Los Filuos	BUSETA	50400	0.1	t
+48	Paraguachón	BUSETA	53100	0.1	t
+49	Dabajuro	BUSETA	66150	0.1	t
+50	San Felipe	BUSETA	283075	0.1	t
+51	San Cristóbal	BUSETA	338000	0.1	t
+52	San Antonio Táchira	BUSETA	353080	0.1	t
+53	Paraguachón	CARRO POR PUESTO	106200	0.1	t
+54	Paraguaipoa	CARRO POR PUESTO	91800	0.1	t
+55	Barquisimeto	CARRO POR PUESTO	36927	0.1	t
+56	Ojeda	CARRO POR PUESTO	80280	0.0560538116592	t
+58	Santa Rita	CARRO POR PUESTO	22000	0.113636363636	t
+59	Moján	CARRO POR PUESTO	59400	0.1	t
+60	La Villa	CARRO POR PUESTO	75600	0.1	t
+61	Punto Fijo	CARRO POR PUESTO	392700	0.1	t
+62	Santa Bárbara	CARRO POR PUESTO	676000	0.1	t
+63	San Cristóbal	CARRO POR PUESTO	676000	0.1	t
+64	Coro	CARRO POR PUESTO	295900	0.1	t
+65	Caja Seca	CARRO POR PUESTO	287210	0.1	t
+66	Mene Grande	CARRO POR PUESTO	153000	0.1	t
+67	Valera	CARRO POR PUESTO	240790	0.1	t
+68	Mene Mauroa	CARRO POR PUESTO	82530	0.1	t
+69	Dabajuro	CARRO POR PUESTO	132300	0.1	t
+70	Casigua El Cubo	CARRO POR PUESTO	330000	0.1	t
+71	El Vigía	CARRO POR PUESTO	662220	0.1	t
+72	Carrasquero	CARRO POR PUESTO	70200	0.1	t
+73	Filuos	CARRO POR PUESTO	100800	0.1	t
+74	Nueva Lucha	CARRO POR PUESTO	22000	0.1	t
+75	Santa Cruz	CARRO POR PUESTO	22000	0.1	t
+76	Machiques	CARRO POR PUESTO	113400	0.1	t
+77	Sinamaica	CARRO POR PUESTO	46000	0.1	t
+57	Cabimas	CARRO POR PUESTO	34000	0.0882352941176	t
 \.
 
 
@@ -7015,7 +7081,7 @@ SELECT pg_catalog.setval('public.operaciones_id_operacion_seq', 1, true);
 -- Name: operatividad_terminal_id_operatividad_terminal_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.operatividad_terminal_id_operatividad_terminal_seq', 3, true);
+SELECT pg_catalog.setval('public.operatividad_terminal_id_operatividad_terminal_seq', 77, true);
 
 
 --
