@@ -1,0 +1,52 @@
+.border-right {
+  border-right: 1px solid #000;
+}
+
+.border-bottom {
+  border-bottom: 1px solid #000;
+}
+
+.underline {
+  text-decoration: underline;
+}
+.all-border {
+  border: 1px solid #000;
+}
+.th {
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  padding: 5px 0px;
+  font-size: 20px;
+}
+
+.th > p {
+  font-weight: bolder;
+  margin: 0;
+}
+
+.tr {
+  width: 100%;
+  display: flex;
+  display: -webkit-flex;
+}
+.center > p{
+  text-align: center !important;
+}
+.end > p{
+  text-align: end !important;
+}
+.td > p {
+  margin: 0;
+  text-align: left;
+  padding: 10px;
+}
+.table {
+  width: calc(100% - 4px);
+  max-height: 95%;
+  margin-top: 20px;
+  border: 2px solid #000;
+  display: flex;
+  display: -webkit-flex;
+  flex-direction: column;
+  -webkit-flex-direction: column;
+}
