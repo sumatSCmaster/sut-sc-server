@@ -27,7 +27,7 @@ export const diskStorage = (type: string): multer.StorageEngine =>
       s3: S3Client,
       bucket: 'sut-maracaibo',
       acl: 'public-read',
-      key: function(req, file, cb) {
+      key: function (req, file, cb) {
         if (type.startsWith('tramites')) {
           cb(null, `${req.params.id}/${file.originalname}`);
         } else {
@@ -39,10 +39,10 @@ export const diskStorage = (type: string): multer.StorageEngine =>
   })(null)(process.env.NODE_ENV);
 
 export const photoFilter = (req, file, cb) => {
-  if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
+  if (!file.originalname.match(/\.(jpg|jpeg|png|gif|xls)$/)) {
     req.res.status(409).json({
       status: 409,
-      message: 'File must be photo',
+      message: 'File must be photo or xls',
     });
   }
   cb(null, true);
