@@ -10,7 +10,7 @@ import { createSuperuser, createAdmin, completeExtUserSignUp, addInstitute, sign
 import { isSuperuser, isAdmin } from '@middlewares/auth';
 import { fulfill } from '@utils/resolver';
 import { errorMessageGenerator } from '@helpers/errors';
-import { forgotPassword, recoverPassword } from '@helpers/auth';
+import { forgotPassword, recoverPassword, getUserData } from '@helpers/auth';
 
 const router = Router();
 
@@ -172,22 +172,7 @@ router.post('/complete', authenticate('jwt'), async (req: any, res) => {
 });
 
 router.get('/user', authenticate('jwt'), async (req: any, res) => {
-  const user = {
-    id: req.user.id,
-    nombreCompleto: req.user.nombreCompleto,
-    nombreUsuario: req.user.nombreUsuario,
-    direccion: req.user.direccion,
-    cedula: req.user.cedula,
-    rif: req.user.rif,
-    telefono: req.user.telefono,
-    nacionalidad: req.user.nacionalidad,
-    tipoUsuario: req.user.tipoUsuario,
-    institucion: req.user.institucion,
-    cuentaFuncionario: req.user.cuentaFuncionario,
-    datosGoogle: req.user.datosGoogle,
-    datosFacebook: req.user.datosFacebook,
-    permisos: req.user.permisos,
-  };
+  const user = await getUserData(req.user.id, req.user.tipoUsuario);
   res.status(200).json({ user, status: 200, message: 'Usuario obtenido' });
 });
 
