@@ -681,11 +681,20 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       datos = prevData.datos;
     }
 
-    if (aprobado) {
-      dir = await createCertificate(procedure, client);
-      respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, aprobado]);
+    if (procedure.sufijo === 'ompu') {
+      if (aprobado) {
+        dir = await createCertificate(procedure, client);
+        respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, dir, null]);
+      } else {
+        respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
+      }
     } else {
-      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
+      if (aprobado) {
+        dir = await createCertificate(procedure, client);
+        respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, aprobado]);
+      } else {
+        respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
+      }
     }
 
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
