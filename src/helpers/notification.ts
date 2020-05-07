@@ -103,14 +103,18 @@ export const markAllAsRead = async (user: Usuario): Promise<object> => {
   }
 };
 
-export const sendNotification = async (sender: Usuario, description: string, type: string, concept: string, payload: Partial<Tramite | Multa>) => {
-  const client = await pool.connect();
+export const sendNotification = async (
+  sender: Usuario,
+  description: string,
+  type: string,
+  concept: string,
+  payload: Partial<Tramite | Multa>,
+  client: PoolClient
+) => {
   try {
     notificationHandler(sender, description, type, payload, concept, client);
   } catch (e) {
     throw e;
-  } finally {
-    client.release();
   }
 };
 
