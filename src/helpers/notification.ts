@@ -109,6 +109,8 @@ export const sendNotification = async (sender: Usuario, description: string, typ
     notificationHandler(sender, description, type, payload, concept, client);
   } catch (e) {
     throw e;
+  } finally {
+    client.release();
   }
 };
 

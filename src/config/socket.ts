@@ -22,6 +22,7 @@ const connection = (socket: Socket) => {
         r.query(queries.GET_ALL_INSTITUTION).then((institucion) => {
           institucion.rows.map((el) => socket.join(`inst:${el.nombre_corto}`));
         });
+        r.release();
       });
     }
 
