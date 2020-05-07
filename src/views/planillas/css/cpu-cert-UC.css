@@ -1,0 +1,62 @@
+.conformidad-de-uso {
+  text-align: center;
+}
+
+.footer_CU {
+  text-align: center;
+  align-items: flex-end;
+  -webkit-align-items: flex-end;
+}
+.col > div {
+  margin-bottom: 10px;
+}
+
+.border-element {
+  border: 1px solid slategray;
+}
+
+.pageHeader {
+  font-size: 10px;
+}
+
+.pageHeader img.logo_cpu {
+  width: 65%;
+}
+
+.pageHeader img.logo_dpto {
+  width: 65%;
+}
+
+.certificado-background {
+  background: url("../../images/background.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.beauty-3D-text {
+  margin: 10px 0;
+  text-transform: uppercase;
+  font-family: verdana;
+  font-size: 2.7em;
+  font-weight: 700;
+  color: #e5e5e5;
+  text-shadow: 0 1px 0 hsl(174, 5%, 80%), 0 2px 0 hsl(174, 5%, 75%),
+    0 3px 0 hsl(174, 5%, 70%), 0 4px 0 hsl(174, 5%, 66%),
+    0 5px 0 hsl(174, 5%, 64%), 0 0 5px rgba(0, 0, 0, 0.05),
+    0 1px 3px rgba(0, 0, 0, 0.2), 0 3px 5px rgba(0, 0, 0, 0.2),
+    0 5px 10px rgba(0, 0, 0, 0.2), 0 10px 10px rgba(0, 0, 0, 0.2);
+}
+
+.page {
+  margin: 10px 0;
+}
+.images {
+  align-items: center;
+}
+.images img {
+  margin: 2px;
+  max-height: 210px;
+  max-width: 230px;
+  object-fit: contain;
+}
