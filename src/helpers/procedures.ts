@@ -578,7 +578,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
       nombreCompletoUsuario: resources.nombrecompleto,
       estado: respState.rows[0].state,
     });
-    await sendNotification(user, `Se ha procesado un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite);
+    sendNotification(user, `Se ha procesado un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite);
     return { status: 200, message: 'Tramite procesado', tramite };
   } catch (error) {
     client.query('ROLLBACK');
