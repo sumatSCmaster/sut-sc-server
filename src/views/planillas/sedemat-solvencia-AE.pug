@@ -1,0 +1,54 @@
+extends default
+block css
+  link(rel="stylesheet", href="../views/css/sedemat.css")
+block content
+  div#fecha
+    p 
+      b FECHA:
+      span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+    p 
+      b Código de Trámite:
+      span &nbsp; #{codigo}
+  div#planilla.solvencia
+    div.center
+      p 
+        b El Intendente Municipal Tributario hace constar que
+    div
+      p 
+        b El Contribuyente:
+        span &nbsp; #{datos.nombre}
+    div.flex
+      p
+        b R.I.M:
+        span &nbsp; #{datos.cedula}
+      p
+        b C.I./R.I.F:
+        span &nbsp; #{datos.cedula}
+    div
+      p
+        b Dirección:
+        span &nbsp; #{datos.direccion}
+      p
+        b Representante Legal:
+        span &nbsp; #{datos.nombre}
+      p
+        b Se encuentra solvente con el impuesto a las Actividades Económicas hasta el:
+        span
+    div.flex
+      p
+        b Mes del año
+      p
+        b Esta solvencia es valida hasta el
+    div
+      p
+        b Maracaibo,
+        span &nbsp; #{fecha}
+    div(style={'margin-top':"160px"}).flex.center
+      div(style={height:"180px"})
+        img(src=QR, alt='QR', style={height:"100%"})
+      div.item-firma
+        hr(style={border:"1px solid black"})
+        br
+        b Intendente Municipal Tributario
+      div(style={height:"200px"})
+        img(src='images/AE-Logo.png', alt='logo', style={height:"100%"})
