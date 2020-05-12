@@ -17,6 +17,13 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: impuesto; Type: SCHEMA; Schema: -; Owner: -
+--
+
+CREATE SCHEMA impuesto;
+
+
+--
 -- Name: timetable; Type: SCHEMA; Schema: -; Owner: -
 --
 
@@ -1634,6 +1641,358 @@ BEGIN
   RETURN true;
 END;
 $_$;
+
+
+--
+-- Name: actividad_economica; Type: TABLE; Schema: impuesto; Owner: -
+--
+
+CREATE TABLE impuesto.actividad_economica (
+    id_actividad_economica integer NOT NULL,
+    numero_referencia integer,
+    descripcion character varying,
+    alicuota numeric,
+    id_tipo_actividad integer,
+    ut numeric
+);
+
+
+--
+-- Name: actividad_economica_exoneracion; Type: TABLE; Schema: impuesto; Owner: -
+--
+
+CREATE TABLE impuesto.actividad_economica_exoneracion (
+    id_actividad_economica_exoneracion integer NOT NULL,
+    id_plazo_exoneracion integer,
+    id_actividad_economica integer
+);
+
+
+--
+-- Name: actividad_economica_exoneraci_id_actividad_economica_exoner_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+--
+
+CREATE SEQUENCE impuesto.actividad_economica_exoneraci_id_actividad_economica_exoner_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: actividad_economica_exoneraci_id_actividad_economica_exoner_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+--
+
+ALTER SEQUENCE impuesto.actividad_economica_exoneraci_id_actividad_economica_exoner_seq OWNED BY impuesto.actividad_economica_exoneracion.id_actividad_economica_exoneracion;
+
+
+--
+-- Name: actividad_economica_id_actividad_economica_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+--
+
+CREATE SEQUENCE impuesto.actividad_economica_id_actividad_economica_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: actividad_economica_id_actividad_economica_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+--
+
+ALTER SEQUENCE impuesto.actividad_economica_id_actividad_economica_seq OWNED BY impuesto.actividad_economica.id_actividad_economica;
+
+
+--
+-- Name: factor; Type: TABLE; Schema: impuesto; Owner: -
+--
+
+CREATE TABLE impuesto.factor (
+    id_factor integer NOT NULL,
+    descripcion character varying,
+    valor numeric
+);
+
+
+--
+-- Name: factor_id_factor_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+--
+
+CREATE SEQUENCE impuesto.factor_id_factor_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: factor_id_factor_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+--
+
+ALTER SEQUENCE impuesto.factor_id_factor_seq OWNED BY impuesto.factor.id_factor;
+
+
+--
+-- Name: liquidacion; Type: TABLE; Schema: impuesto; Owner: -
+--
+
+CREATE TABLE impuesto.liquidacion (
+    id_liquidacion integer NOT NULL,
+    id_solicitud integer,
+    id_procedimiento integer,
+    fecha date,
+    monto numeric,
+    certificado character varying,
+    recibo character varying
+);
+
+
+--
+-- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+--
+
+CREATE SEQUENCE impuesto.liquidacion_id_liquidacion_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+--
+
+ALTER SEQUENCE impuesto.liquidacion_id_liquidacion_seq OWNED BY impuesto.liquidacion.id_liquidacion;
+
+
+--
+-- Name: plazo_exoneracion; Type: TABLE; Schema: impuesto; Owner: -
+--
+
+CREATE TABLE impuesto.plazo_exoneracion (
+    id_plazo_exoneracion integer NOT NULL,
+    fecha_inicio date,
+    fecha_fin date
+);
+
+
+--
+-- Name: plazo_exoneracion_id_plazo_exoneracion_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+--
+
+CREATE SEQUENCE impuesto.plazo_exoneracion_id_plazo_exoneracion_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: plazo_exoneracion_id_plazo_exoneracion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+--
+
+ALTER SEQUENCE impuesto.plazo_exoneracion_id_plazo_exoneracion_seq OWNED BY impuesto.plazo_exoneracion.id_plazo_exoneracion;
+
+
+--
+-- Name: procedimiento; Type: TABLE; Schema: impuesto; Owner: -
+--
+
+CREATE TABLE impuesto.procedimiento (
+    id_procedimiento integer NOT NULL,
+    descripcion character varying,
+    planilla_certificado character varying,
+    planilla_recibo character varying
+);
+
+
+--
+-- Name: procedimiento_exoneracion; Type: TABLE; Schema: impuesto; Owner: -
+--
+
+CREATE TABLE impuesto.procedimiento_exoneracion (
+    id_procedimiento_exoneracion integer NOT NULL,
+    id_plazo_exoneracion integer,
+    id_procedimiento integer,
+    id_tipo_contribuyente integer
+);
+
+
+--
+-- Name: procedimiento_exoneracion_id_procedimiento_exoneracion_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+--
+
+CREATE SEQUENCE impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: procedimiento_exoneracion_id_procedimiento_exoneracion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+--
+
+ALTER SEQUENCE impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq OWNED BY impuesto.procedimiento_exoneracion.id_procedimiento_exoneracion;
+
+
+--
+-- Name: procedimiento_id_procedimiento_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+--
+
+CREATE SEQUENCE impuesto.procedimiento_id_procedimiento_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: procedimiento_id_procedimiento_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+--
+
+ALTER SEQUENCE impuesto.procedimiento_id_procedimiento_seq OWNED BY impuesto.procedimiento.id_procedimiento;
+
+
+--
+-- Name: solicitud; Type: TABLE; Schema: impuesto; Owner: -
+--
+
+CREATE TABLE impuesto.solicitud (
+    id_solicitud integer NOT NULL,
+    id_usuario integer,
+    documento character varying,
+    rim character varying,
+    aprobado boolean,
+    fecha date,
+    monto_total numeric
+);
+
+
+--
+-- Name: solicitud_id_solicitud_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+--
+
+CREATE SEQUENCE impuesto.solicitud_id_solicitud_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: solicitud_id_solicitud_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+--
+
+ALTER SEQUENCE impuesto.solicitud_id_solicitud_seq OWNED BY impuesto.solicitud.id_solicitud;
+
+
+--
+-- Name: tabulador_gas; Type: TABLE; Schema: impuesto; Owner: -
+--
+
+CREATE TABLE impuesto.tabulador_gas (
+    id_tabulador_gas integer NOT NULL,
+    id_actividad_economica integer,
+    monto numeric
+);
+
+
+--
+-- Name: tabulador_gas_id_tabulador_gas_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+--
+
+CREATE SEQUENCE impuesto.tabulador_gas_id_tabulador_gas_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tabulador_gas_id_tabulador_gas_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+--
+
+ALTER SEQUENCE impuesto.tabulador_gas_id_tabulador_gas_seq OWNED BY impuesto.tabulador_gas.id_tabulador_gas;
+
+
+--
+-- Name: tipo_actividad_economica; Type: TABLE; Schema: impuesto; Owner: -
+--
+
+CREATE TABLE impuesto.tipo_actividad_economica (
+    id_tipo_actividad integer NOT NULL,
+    descripcion character varying
+);
+
+
+--
+-- Name: tipo_actividad_economica_id_tipo_actividad_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+--
+
+CREATE SEQUENCE impuesto.tipo_actividad_economica_id_tipo_actividad_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tipo_actividad_economica_id_tipo_actividad_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+--
+
+ALTER SEQUENCE impuesto.tipo_actividad_economica_id_tipo_actividad_seq OWNED BY impuesto.tipo_actividad_economica.id_tipo_actividad;
+
+
+--
+-- Name: tipo_contribuyente; Type: TABLE; Schema: impuesto; Owner: -
+--
+
+CREATE TABLE impuesto.tipo_contribuyente (
+    id_tipo_contribuyente integer NOT NULL,
+    descripcion integer
+);
+
+
+--
+-- Name: tipo_contribuyente_id_tipo_contribuyente_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+--
+
+CREATE SEQUENCE impuesto.tipo_contribuyente_id_tipo_contribuyente_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tipo_contribuyente_id_tipo_contribuyente_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+--
+
+ALTER SEQUENCE impuesto.tipo_contribuyente_id_tipo_contribuyente_seq OWNED BY impuesto.tipo_contribuyente.id_tipo_contribuyente;
 
 
 --
@@ -3311,6 +3670,83 @@ ALTER SEQUENCE valores_fiscales.tipo_construccion_id_seq OWNED BY valores_fiscal
 
 
 --
+-- Name: actividad_economica id_actividad_economica; Type: DEFAULT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.actividad_economica ALTER COLUMN id_actividad_economica SET DEFAULT nextval('impuesto.actividad_economica_id_actividad_economica_seq'::regclass);
+
+
+--
+-- Name: actividad_economica_exoneracion id_actividad_economica_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.actividad_economica_exoneracion ALTER COLUMN id_actividad_economica_exoneracion SET DEFAULT nextval('impuesto.actividad_economica_exoneraci_id_actividad_economica_exoner_seq'::regclass);
+
+
+--
+-- Name: factor id_factor; Type: DEFAULT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.factor ALTER COLUMN id_factor SET DEFAULT nextval('impuesto.factor_id_factor_seq'::regclass);
+
+
+--
+-- Name: liquidacion id_liquidacion; Type: DEFAULT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.liquidacion ALTER COLUMN id_liquidacion SET DEFAULT nextval('impuesto.liquidacion_id_liquidacion_seq'::regclass);
+
+
+--
+-- Name: plazo_exoneracion id_plazo_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.plazo_exoneracion ALTER COLUMN id_plazo_exoneracion SET DEFAULT nextval('impuesto.plazo_exoneracion_id_plazo_exoneracion_seq'::regclass);
+
+
+--
+-- Name: procedimiento id_procedimiento; Type: DEFAULT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.procedimiento ALTER COLUMN id_procedimiento SET DEFAULT nextval('impuesto.procedimiento_id_procedimiento_seq'::regclass);
+
+
+--
+-- Name: procedimiento_exoneracion id_procedimiento_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.procedimiento_exoneracion ALTER COLUMN id_procedimiento_exoneracion SET DEFAULT nextval('impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq'::regclass);
+
+
+--
+-- Name: solicitud id_solicitud; Type: DEFAULT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.solicitud ALTER COLUMN id_solicitud SET DEFAULT nextval('impuesto.solicitud_id_solicitud_seq'::regclass);
+
+
+--
+-- Name: tabulador_gas id_tabulador_gas; Type: DEFAULT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.tabulador_gas ALTER COLUMN id_tabulador_gas SET DEFAULT nextval('impuesto.tabulador_gas_id_tabulador_gas_seq'::regclass);
+
+
+--
+-- Name: tipo_actividad_economica id_tipo_actividad; Type: DEFAULT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.tipo_actividad_economica ALTER COLUMN id_tipo_actividad SET DEFAULT nextval('impuesto.tipo_actividad_economica_id_tipo_actividad_seq'::regclass);
+
+
+--
+-- Name: tipo_contribuyente id_tipo_contribuyente; Type: DEFAULT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.tipo_contribuyente ALTER COLUMN id_tipo_contribuyente SET DEFAULT nextval('impuesto.tipo_contribuyente_id_tipo_contribuyente_seq'::regclass);
+
+
+--
 -- Name: banco id_banco; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3609,6 +4045,314 @@ ALTER TABLE ONLY valores_fiscales.terreno ALTER COLUMN id SET DEFAULT nextval('v
 --
 
 ALTER TABLE ONLY valores_fiscales.tipo_construccion ALTER COLUMN id SET DEFAULT nextval('valores_fiscales.tipo_construccion_id_seq'::regclass);
+
+
+--
+-- Data for Name: actividad_economica; Type: TABLE DATA; Schema: impuesto; Owner: -
+--
+
+COPY impuesto.actividad_economica (id_actividad_economica, numero_referencia, descripcion, alicuota, id_tipo_actividad, ut) FROM stdin;
+1	2029001	Transporte Terrestre de Carga refrigerada.	2.00	\N	5.0000
+2	2030001	Almacenamiento de productos, materiales, insumos, equipos, maquinarias.	2.00	\N	4.0000
+3	2031001	Almacenamiento Refrigerado.	3.50	\N	4.0000
+4	2032001	Transporte Aéreo y Marítimo de Carga.	3.50	\N	6.0000
+5	2033001	Servicio de encomiendas.	3.00	\N	6.0000
+6	2034001	Transporte terrestre de pasajeros.	1.00	\N	4.0000
+7	2035001	Transporte Lacustre o Marítimo de pasajeros.	3.00	\N	4.0000
+8	2036001	Transporte aéreo de pasajeros.	3.00	\N	4.0000
+9	2037001	Transporte de personal.	1.00	\N	4.0000
+10	2038001	Empresas de transporte de valores y vigilancia.	2.50	\N	4.0000
+11	2039001	Agencias Funerarias y Capillas Velatorias.	1.00	\N	4.0000
+12	2040001	Reproducciones fotostáticas, heliografías y afines.	1.00	\N	2.0000
+13	2041001	Intermediación en contratos de arrendamiento y compra- venta de inmuebles. 	5.00	\N	6.0000
+14	2042001	Arrendamiento de inmuebles.	5.00	\N	5.0000
+15	2043002	Arrendamiento de Fondos de Comercio.	5.00	\N	5.0000
+16	2044001	Alquiler de Lanchas, Gabarras y Similares.	3.00	\N	6.0000
+17	2045001	Alquiler de Vehículos.	3.00	\N	5.0000
+18	2046001	Servicio de Estacionamiento Vehicular en Centros Comerciales y Judicial.	1.50	\N	5.0000
+19	2047001	Venta e Implementación de Software.	2.00	\N	4.0000
+20	30640012	Distribución y venta de vehículos y motos (usados).	4.00	\N	4.0000
+21	1001001	Preparación y envasado de carnes, excepto embutidos y productos marinos.	2.00	\N	5.0000
+22	1002001	Procesamiento y envasado de productos marinos.	3.00	\N	5.0000
+23	1003001	Fabricación y procesamiento de productos lácteos y sus derivados.	2.00	\N	3.0000
+24	1004001	Industria de bebidas alcohólicas (cerveza, ron, whisky, vino) y no alcohólicas refrescos, maltas y otras bebidas no alcohólicas, distribuidos en envases retornables o biodegradables, excepto jugos de frutas y vegetales	4.00	\N	8.0000
+25	1005001	Industria de bebidas alcohólicas (cerveza, ron, whisky, vino) y no alcohólicas refrescos, maltas y otras bebidas no alcohólicas, distribuidos en envases no retornables o no biodegradables.	6.00	\N	8.0000
+26	1006001	Elaboración de alimentos para consumo animal.	2.50	\N	3.0000
+27	1007001	Elaboración y envasado de embutidos de cualquier tipo, excepto productos marinos.	3.00	\N	5.0000
+28	1009001	Fabricación de aceites y grasas para consumo humano.	1.50	\N	5.0000
+29	1010001	Molienda, elaboración, preparación y limpieza de productos para obtener harina y cereales.	2.50	\N	5.0000
+30	1011001	Fabricación de pan y pastelería en todas sus formas.	2.00	\N	4.0000
+31	1012001	Industria de pastas alimenticias en todas sus formas.	2.00	\N	4.0000
+32	1013001	Fabricación de galletas y confitería.	2.00	\N	5.0000
+33	1014001	Industria de sal.	1.00	\N	5.0000
+34	1015001	Industria de azúcar, papelón, condimentos y vinagre.	1.00	\N	3.0000
+35	1016001	Industria de productos de café, cacao, chocolate, té y similares.	2.50	\N	5.0000
+36	1017001	Tratamiento y envasado retornable de aguas y fabricación de hielo.	2.00	\N	5.0000
+37	1018001	Industrias de tabaco y sus derivados.	6.00	\N	7.0000
+38	1019001	Industrias textiles.	2.00	\N	4.0000
+39	1020001	Fabricación de colchones.	3.00	\N	5.0000
+40	1021001	Industrias gráficas litográficas, tipográficas, de imprentas y sellos de caucho.	2.00	\N	5.0000
+41	1022001	Fabricación y recuperación de pulpa y otras fibras para hacer papel o cartón, envases y similares de papel y cartón, mantelería, servilletas, papel sanitario y otros de pulpa, papel y cartón.	2.50	\N	5.0000
+42	1023001	Industrias de producción de madera, Aserraderos y productos de madera.	2.50	\N	5.0000
+43	1024001	Industrias de productos químicos.	2.00	\N	5.0000
+44	1025001	Fabricación de productos farmacéuticos,\tlaboratorio farmacológico, medicamentos y cosméticos.	2.00	\N	5.0000
+45	1026001	Industrias para la preparación de asfalto de cualquier tipo.	3.00	\N	5.0000
+46	1027001	Fabricación de productos de plásticos, cauchos y goma.	3.00	\N	4.0000
+47	1028001	Fabricación de láminas de mármol, granito, silestone y similares en cualquiera de sus formatos.	3.50	\N	5.0000
+48	20270012	Puestos de Comida Callejera (Empanadas, Tequeños, Pastelitos, Mandocas y Similares, excluye Franquicias)	2.00	\N	4.0000
+49	2028001	Transporte Terrestre de Carga no refrigerada.	2.00	\N	4.0000
+50	2048001	Talleres de reparación y mantenimiento general de vehículos de cualquier tipo.	2.00	\N	3.0000
+51	1029001	Fabricación   de   cemento,   concreto   premezclado,  placas prefabricadas y bloques de cemento. Fábrica de objetos de barro, loza y porcelana, cerámica, productos de arcilla para la construcción y alfarería, cal y yeso. Bloques de arcilla.  Productos de hormigón, granzones, granzoncillo y similares. Explotación de arcilla, arena y minerales.	2.50	\N	4.0000
+52	1030001	Fábrica de vidrio y fibra de vidrio y manufacturas de vidrios para carros y otros vidrios en general. Fábrica de espejos. Fabricación de refractarios y similares.	2.50	\N	5.0000
+53	1031001	Industrias de productos metalúrgicos y fundiciones en general.	2.00	\N	5.0000
+54	1032001	Fabricación de maquinarias para la industria.	1.50	\N	5.0000
+55	1033001	Diques y astilleros para la construcción, reparación y mantenimiento de embarcaciones.	3.50	\N	5.0000
+56	1034001	Fabricación de producto oftalmológicos, cristales oftálmicos, lentes intraoculares.	2.00	\N	4.0000
+57	1035001	Fabricación de placas, rótulos, letreros y anuncios, copas, trofeos, vallas, avisos y anuncios públicos.	2.00	\N	5.0000
+58	1036001	Fabricación de productos de seguridad industrial.	2.00	\N	5.0000
+59	1037001	Industria de la Construcción.	1.00	\N	4.0000
+60	1038001	Plantas de procesamiento y envasado de gas de cualquier tipo.	2.00	\N	4.0000
+61	1039001	Empresas Desarrolladoras de Software.	2.00	\N	5.0000
+62	1040001	Industria del calzado.	2.00	\N	3.0000
+63	1041001	Fabricación de pinturas de cualquier tipo.	2.50	\N	5.0000
+64	1042001	Fábricas de muebles de cualquier tipo.	2.00	\N	3.0000
+65	1043001	Fabricación de ventanas, puertas y rejas de cualquier tipo y uso.	3.00	\N	4.0000
+66	1044001	Fabricación de helados.	2.00	\N	4.0000
+67	1045001	Otros productos metálicos, cavas, recipientes, urnas y similares.	2.00	\N	5.0000
+68	1046001	Fabricación de toldos, persianas, mamparas, carpas, lámparas y similares.	3.00	\N	5.0000
+69	1047001	Fabricación de blindados para vehículos y vehículos blindados modificados.	4.00	\N	6.0000
+70	1048001	Otras industrias no especificadas.	6.00	\N	8.0000
+71	2001001	Bingos, casinos y demás casas o establecimientos de juegos de azar.	10.00	\N	8.0000
+72	2002001	Empresas de espectáculos, recreación y esparcimiento.	3.00	\N	4.0000
+73	2003001	Empresas de publicidad.	3.50	\N	5.0000
+74	2004001	Salas de Cine.	3.00	\N	3.0000
+75	2005001	Servicio de telecomunicaciones.	1.00	\N	3.0000
+76	2006001	Distribución de electricidad.	1.00	\N	3.0000
+77	2007001	Servicios para la construcción o ejecución de obras.	3.50	\N	5.0000
+78	2008001	Arrendamiento y Servicios de mantenimiento, conservación y limpieza de naves, aeronaves y similares.	3.50	\N	5.0000
+79	2009001	Arrendamiento de equipos y maquinarias con o sin operador.	3.50	\N	5.0000
+80	2010001	Servicio y mantenimiento de jardines, ornatos y similares.	2.00	\N	3.0000
+81	2011001	Servicios aduaneros y agencias de aduanales.	3.50	\N	4.0000
+82	2012001	Servicio para el Suministro de Personal, vigilancia, mantenimiento y similares.	3.00	\N	4.0000
+83	2013001	Servicios de clínica, incluye: hotelería, farmacia, laboratorio, imágenes, estudios, alquileres de equipos, acompañante, comidas, y similares.	1.50	\N	4.0000
+84	2014001	Servicio de emergencia pre-pagada.	2.00	\N	5.0000
+85	2015001	Servicios de radiografías, radioscopias, ecógramas, resonancias magnéticas, centro de diagnósticos e imágenes, laboratorios, electrocardiogramas y otros asociados a la salud.	1.50	\N	4.0000
+86	2016001	Servicio de Alquiler de Ambulancia y alquiler de equipos médicos.	1.50	\N	3.0000
+87	2017001	Clínicas veterinarias y spa para mascotas.	2.00	\N	3.0000
+88	2018001	Bancos, empresas de seguros y reaseguros, casas de cambio y otras instituciones financieras.	6.00	\N	4.0000
+89	2019001	Corretaje de Seguros	3.00	\N	4.0000
+90	2020001	Bar, Discotecas, cervecerías, tascas, cafés.	3.00	\N	5.0000
+91	2021001	Restaurantes, fuentes de soda, pizzerías, heladerías y similares.	2.00	\N	4.0000
+92	2022001	Salas para fiestas y juegos infantiles, reuniones, recepciones.	2.00	\N	4.0000
+93	2023001	Hoteles.	2.00	\N	6.0000
+94	20230011	Hoteles 1 y 2 estrellas	2.00	\N	3.0000
+95	20230012	Hoteles 3 y 4 estrellas	2.00	\N	4.0000
+96	20230013	Hoteles 5 estrellas o mas 	2.00	\N	6.0000
+97	2024002	Posadas, pensiones.	1.00	\N	3.0000
+98	2025003	Moteles.	4.50	\N	6.0000
+99	2026001	Restaurantes Tipo franquicia, Franquicias de Comida y Cadena de Restaurantes.	2.50	\N	5.0000
+100	2027001	Puestos de Comida Callejera (Ventas de Parrillas, Perro calientes, Hamburguesas, Arepas, Empanadas, Tequeños, Pastelitos, Mandocas y Similares, excluye Franquicias).	3.00	\N	5.0000
+101	20270011	Puestos de Comida Callejera (Ventas de Parrillas, Perro calientes, Hamburguesas, Arepas excluye Franquicias)	3.00	\N	5.0000
+102	2049002	Talleres de adecuación, reparación y fabricación de productos metalúrgicos.	2.00	\N	4.0000
+103	2050001	Servicios de mantenimiento, reconstrucción e instalación de transformadores eléctricos, tendidos eléctricos, instalación de postes, interruptores y demás implementos y equipos para el servicio eléctrico.	1.50	\N	3.0000
+104	2051001	Servicios de reparación y mantenimiento de equipos, celulares, artefactos eléctricos y electrodomésticos.	2.00	\N	3.0000
+105	2052001	Reparación y Mantenimiento de Equipos Tecnológicos, Calibración y o Mantenimiento de Fuentes Radioactivas y similares.	3.00	\N	4.0000
+106	2053001	Lavado y engrase de vehículos, cambio de aceite, aútolavado y similares.	3.00	\N	4.0000
+107	2054001	Servicio de grúas.	2.00	\N	4.0000
+108	2055001	Tintorerías y lavanderías.	2.50	\N	4.0000
+109	2056001	Barberías, Salones de belleza, spa, estéticas y peluquerías (sin licor)	2.00	\N	3.0000
+110	2057001	Barberías, Salones de belleza, spa, estéticas y peluquerías (con licor)	3.00	\N	4.0000
+111	2058001	Gimnasios.	3.00	\N	4.0000
+112	2059001	Casa de Empeño.	6.00	\N	4.0000
+113	2060001	Servicio de deshuese, despresado, troceado y corte de Animales.	3.00	\N	4.0000
+114	2061001	Servicio de Mantenimiento, Limpieza y Aseo al Comercio e Industria.	3.50	\N	5.0000
+115	2062001	Servicio de Fumigación y desinfección.	2.50	\N	5.0000
+116	2063001	Servicio de Tapicería.	2.00	\N	4.0000
+117	2064001	Servicio de Reparación y Mantenimiento de Equipos de Refrigeración en general.	3.00	\N	3.0000
+118	2065001	Servicio de Rectificación de Motores.	2.50	\N	5.0000
+119	2066001	Servicio de Montaje, Alineación, Balanceo y reparación de cauchos.	2.00	\N	4.0000
+120	2067001	Oficinas cobranzas, administración de condominios y  similares	3.00	\N	4.0000
+121	2068001	Servicios Petroleros, entendidos por tales, aquellos contratados para la Exploración, Explotación, Extracción, Mantenimiento, Transporte y Refinación de Hidrocarburos. Suministro de Equipos y Herramientas, excluye Servicios prestados en el Lago de Maracaibo.	4.50	\N	5.0000
+122	2069002	Servicios a la Industria Petrolera no conexos a la Exploración, Explotación, Extracción, Mantenimiento, Transporte y Refinación de Hidrocarburos.	4.50	\N	5.0000
+123	2070003	Servicios y construcciones ejecutados en el Lago de Maracaibo (sobre o bajo sus aguas, o en el lecho del lago).	3.00	\N	6.0000
+124	2071001	Comisionistas y Consignatarios (Intermediario, Agentes, Representantes, Concesionarios) y similares.	8.00	\N	5.0000
+125	2072001	Comisión por Venta de Boleto Aéreo, Terrestre y Marítimo.	3.00	\N	5.0000
+126	2073001	Servicio de Laboratorio Medico	2.00	\N	3.0000
+127	2074001	Servicio de Consultorio Medico Odontologico	2.00	\N	4.0000
+128	2075001	Transporte Urbano inscrito en el Instituto Municipal de Transporte	1.00	\N	2.0000
+129	2076001	Servicio por honorarios Profesionales	2.00	\N	4.0000
+130	2077001	Otros servicios no especificados.	4.00	\N	8.0000
+131	3001001	Cadenas de supermercados, hipermercados, megatiendas, multitiendas y minimarket.	1.50	\N	6.0000
+132	3002001	Venta de materiales, equipos, herramientas e insumos para la exploración, explotación, extracción, mantenimiento, transporte y refinación de hidrocarburos.	4.00	\N	5.0000
+133	3003002	Venta de materiales, equipos, herramientas e insumos a la industria Petrolera no conexos a la exploración, explotación, extracción, mantenimiento, transporte y refinación de Hidrocarburos.	4.00	\N	5.0000
+134	3004001	Distribución  y Venta de gas de cualquier tipo.	2.00	\N	3.0000
+135	3005001	Estaciones de servicio para el expendio de combustible.	1.00	\N	1.0000
+203	3070001	Venta y reparación de Bicicletas, repuestos y accesorios.	3.00	\N	2.0000
+204	3071001	Distribución y venta de aceite de todo tipo para vehículos y maquinarias, vendidos en pipas y similares.	3.00	\N	3.0000
+136	3006001	Cadena de Tiendas de Ventas al Mayor o detal de Insumos Comerciales, Mega tiendas y Multitiendas. Incluye todos aquellos establecimientos o tiendas donde concurran los siguientes requisitos: a) Que ejerzan simultáneamente tres (3) o más aforos; y b) Que realicen ventas al mayor y detal.	3.50	\N	5.0000
+137	3007001	Abastos, bodegas y pequeños detales de víveres.	2.00	\N	2.0000
+138	3008001	Distribución y venta de productos químicos.	3.00	\N	3.0000
+139	3009001	Distribución de productos farmacéuticos.	2.50	\N	4.0000
+140	3010001	Farmacias.	2.00	\N	3.0000
+141	3011001	Distribución de pinturas, lacas, barnices y materiales aislantes.	3.50	\N	4.0000
+142	3012001	Detal de pinturas, lacas, barnices y materiales aislantes.	3.00	\N	3.0000
+143	3013001	Distribución y venta de alimentos para animales.	2.00	\N	3.0000
+144	3014001	Venta de desecho de cebada, cereal y afrecho.	4.00	\N	4.0000
+145	3015001	Venta y Distribución de productos para el agro, avícola, pesquero y similares.	2.00	\N	3.0000
+146	3016001	Distribución de víveres, aceites y grasas comestibles, presentados en envases retornables.	2.50	\N	3.0000
+147	3017002	Distribución de víveres, aceites y grasas comestibles, presentados en envases no retornables.	3.00	\N	3.0000
+148	3018001	Distribución de helados y productos similares, presentados en envases retornables o biodegradables.	3.50	\N	2.0000
+149	3019002	Distribución de helados y productos similares, presentados en envases no retornables ni biodegradables.	5.00	\N	3.0000
+150	3020001	Venta de helados, pastelería, cyber y refresquería al detal.	2.00	\N	3.0000
+151	3021001	Distribución de carnes de cualquier tipo, excepto embutidos.	2.00	\N	2.0000
+152	3022001	Venta de carnes, Charcutería y pescadería.	2.00	\N	3.0000
+153	3023001	Distribución de embutidos de cualquier tipo empacados en plásticos.	3.00	\N	3.0000
+154	3024001	Boutique y sastrería.	4.00	\N	4.0000
+155	30240011	Boutique	3.00	\N	3.0000
+156	30240012	Sastrería	2.00	\N	2.0000
+157	3025001	Comercialización al detal de pan.	2.00	\N	2.0000
+158	3026001	Mayorista de confiterías.	3.00	\N	3.0000
+159	3027001	Distribuidor de productos lácteos, jugos de frutas y Vegetales, presentados en envases biodegradables.	2.00	\N	3.0000
+160	3028001	Distribuidor de productos lácteos y jugos de frutas y Vegetales, presentados en envases, plásticos, vidrio, metal y tetra pack.	4.00	\N	3.0000
+161	3029001	Distribución de bebidas alcohólicas y no alcohólicas, presentadas en envases o empaques retornables o biodegradables, excepto jugos de frutas y vegetales.	3.00	\N	5.0000
+162	3030002	Distribución de bebidas alcohólicas y no alcohólicas, presentados en envases plásticos, vidrio, metal y tetra pack.	5.00	\N	5.0000
+163	3031001	Venta de productos alimenticios, bebidas alcohólicas, no alcohólicas y gaseosas en vehículos automotores (sólo ruteros).	1.50	\N	3.0000
+164	3032001	Distribución al mayor y detal de agua presentados en envases o empaques retornables o biodegradables.	2.20	\N	3.0000
+165	3033002	Distribución al mayor y detal de agua presentada en envases o empaques plásticos o no biodegradables.	3.50	\N	4.0000
+166	3034001	Licorerías (Depósito de licores).	4.00	\N	5.0000
+167	3035001	Venta de frutas, verduras y hortalizas.	2.00	\N	2.0000
+168	3036001	Venta de equipos médicos y quirúrgicos.	2.00	\N	3.0000
+169	3037001	Artículos ortopédicos.	1.00	\N	2.0000
+170	3038001	Laboratorio Dental, implantes y prótesis dentales, bracket, retenedores.	2.50	\N	3.0000
+171	3039001	Artículos de lujo, pieles, joyas, reparación de prendas y relojes.	5.00	\N	5.0000
+172	3040001	Venta de artículos de peluquerías (cepillos, tintes, secadores y otros productos relacionados).	2.00	\N	3.0000
+173	3041001	Artículos religiosos.	1.00	\N	1.0000
+174	3042001	Floristerías y viveros.	3.00	\N	2.0000
+175	3043001	Jugueterías, quincallas, bazares y similares, artículos deportivos  y fotográficos.	3.00	\N	3.0000
+176	3044001	Papelerías, revistas y artículos de oficina.	3.00	\N	3.0000
+177	3045002	Venta de libros.	1.00	\N	1.0000
+178	3046001	Venta de utensilios y enseres para la limpieza (Lampazos, escobas, rastrillos y similares).	3.00	\N	3.0000
+179	3047001	Venta de Persianas, Alfombras, Cortinas, telas, cueros, semi-cueros y demás artículos para Tapicerías.	3.00	\N	3.0000
+180	3048001	Venta de Lencerías.	3.00	\N	3.0000
+181	3049001	Venta al Mayor y Detal de Artículos de Seguridad  Industrial (botas, guantes, cascos, mascarillas, lentes de seguridad y todo lo relacionado con la seguridad industrial).	3.00	\N	4.0000
+182	3050001	Ventas de muebles.	3.00	\N	3.0000
+183	3051001	Ventas de electrodomésticos.	2.00	\N	4.0000
+184	3052001	Venta de repuestos y materiales electrónicos y eléctricos.	2.50	\N	4.0000
+185	3053002	Venta de celulares, equipos de telecomunicaciones, accesorios y repuestos.	3.00	\N	4.0000
+186	3054001	Ferreterías, tornillerías y cerrajerías.	3.00	\N	3.0000
+187	3055001	Distribución y ventas  de cemento de cualquier tipo, bloques, arenas, granzón y demás materiales similares.	2.00	\N	3.0000
+188	3056001	Distribución y venta productos de arcilla para la construcción y alfarería, cal y yeso. Bloques de arcilla. Productos de hormigón, granzones, granzoncillo y similares.	3.00	\N	3.0000
+189	3057001	Distribución y Venta de Madera de cualquier tipo y demás materiales para carpintería.	2.00	\N	3.0000
+190	3058001	Distribución y venta de productos de hierro.	2.00	\N	4.0000
+191	3059001	Distribución y Venta de mármol, granitos y silestone en cualquiera de sus formatos.	5.00	\N	6.0000
+192	3060001	Distribución y Venta de cerámicas en cualquiera de sus formatos.	3.00	\N	4.0000
+193	3061001	Distribución y venta de calzados, carteras y otros artículos de cuero.	3.00	\N	3.0000
+194	3062001	Cosméticos, perfumes y artículos de tocador.	3.00	\N	3.0000
+195	3063001	Ópticas y Tiendas de artículos de oftalmología.	2.00	\N	3.0000
+196	3064001	Distribución y venta de vehículos, motos, nuevos y usados.	5.00	\N	6.0000
+197	30640011	Distribución y venta de vehículos y motos (nuevos).	5.00	\N	4.0000
+198	3065001	Venta de maquinarias industriales, agrícolas, similares y repuestos para las mismas.	2.50	\N	3.0000
+199	3066001	Venta al detal de motores nuevos, accesorios, repuestos para vehículos de cualquier tipo.	4.00	\N	4.0000
+200	3067001	Ventas de cauchos y acumuladores de energía.	3.00	\N	4.0000
+201	3068001	Importadoras de motores, repuestos usados y chiveras.	5.00	\N	4.0000
+202	3069001	Importadoras de electrodomésticos usados y repuestos usados para electrodomésticos.	4.00	\N	3.0000
+205	3072002	Distribución y ventas de lubricantes de todo tipo: aditivos, grasas y productos similares para vehículos y maquinaria  en envases sellado de plásticos, vidrio, metal o tetra pack.	2.00	\N	3.0000
+206	3073001	Ventas de fuentes radioactivas y similares.	3.50	\N	5.0000
+207	3074001	Distribución y venta de cartuchos para impresoras, fotocopiadoras y similares.	3.00	\N	3.0000
+208	3075001	Distribución y venta de Vidrio para vehículos.	3.00	\N	3.0000
+209	3076001	Distribución y venta de vidrio templado.	4.00	\N	3.0000
+210	3077001	Venta de vidrio, excepto para vehículos y vidrio templado.	2.00	\N	3.0000
+211	3078001	Distribución de Productos de Tabaco.	6.00	\N	5.0000
+212	3079001	Tienda de Instrumentos musicales.	3.00	\N	3.0000
+213	3080001	Venta de transformadores, plantas eléctricas, tendidos eléctricos, postes, interruptores y demás implementos y equipos eléctricos y mecánicos.	3.00	\N	3.0000
+214	3081001	Acopio o recolección de envases plásticos, cartones, vidrio, materiales metálicos con fines de reciclaje	6.00	\N	4.0000
+215	3082001	Distribución y venta de billetes de loterías.	5.00	\N	5.0000
+216	3083001	Parley	5.00	\N	6.0000
+217	3084001	Peñas Hipicas	4.00	\N	4.0000
+218	3085001	Otras actividades comerciales no especificadas.	6.00	\N	5.0000
+219	4001001	Pequeños Empresarios	0.50	\N	1.0000
+220	1008001	Industrias de jugos, sopas, salsas, mermeladas, postres y otros de frutas y vegetales.	2.00	\N	5.0000
+\.
+
+
+--
+-- Data for Name: actividad_economica_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: -
+--
+
+COPY impuesto.actividad_economica_exoneracion (id_actividad_economica_exoneracion, id_plazo_exoneracion, id_actividad_economica) FROM stdin;
+\.
+
+
+--
+-- Data for Name: factor; Type: TABLE DATA; Schema: impuesto; Owner: -
+--
+
+COPY impuesto.factor (id_factor, descripcion, valor) FROM stdin;
+\.
+
+
+--
+-- Data for Name: liquidacion; Type: TABLE DATA; Schema: impuesto; Owner: -
+--
+
+COPY impuesto.liquidacion (id_liquidacion, id_solicitud, id_procedimiento, fecha, monto, certificado, recibo) FROM stdin;
+\.
+
+
+--
+-- Data for Name: plazo_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: -
+--
+
+COPY impuesto.plazo_exoneracion (id_plazo_exoneracion, fecha_inicio, fecha_fin) FROM stdin;
+\.
+
+
+--
+-- Data for Name: procedimiento; Type: TABLE DATA; Schema: impuesto; Owner: -
+--
+
+COPY impuesto.procedimiento (id_procedimiento, descripcion, planilla_certificado, planilla_recibo) FROM stdin;
+\.
+
+
+--
+-- Data for Name: procedimiento_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: -
+--
+
+COPY impuesto.procedimiento_exoneracion (id_procedimiento_exoneracion, id_plazo_exoneracion, id_procedimiento, id_tipo_contribuyente) FROM stdin;
+\.
+
+
+--
+-- Data for Name: solicitud; Type: TABLE DATA; Schema: impuesto; Owner: -
+--
+
+COPY impuesto.solicitud (id_solicitud, id_usuario, documento, rim, aprobado, fecha, monto_total) FROM stdin;
+\.
+
+
+--
+-- Data for Name: tabulador_gas; Type: TABLE DATA; Schema: impuesto; Owner: -
+--
+
+COPY impuesto.tabulador_gas (id_tabulador_gas, id_actividad_economica, monto) FROM stdin;
+\.
+
+
+--
+-- Data for Name: tipo_actividad_economica; Type: TABLE DATA; Schema: impuesto; Owner: -
+--
+
+COPY impuesto.tipo_actividad_economica (id_tipo_actividad, descripcion) FROM stdin;
+\.
+
+
+--
+-- Data for Name: tipo_contribuyente; Type: TABLE DATA; Schema: impuesto; Owner: -
+--
+
+COPY impuesto.tipo_contribuyente (id_tipo_contribuyente, descripcion) FROM stdin;
+\.
 
 
 --
@@ -6973,6 +7717,83 @@ M50	50
 
 
 --
+-- Name: actividad_economica_exoneraci_id_actividad_economica_exoner_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+--
+
+SELECT pg_catalog.setval('impuesto.actividad_economica_exoneraci_id_actividad_economica_exoner_seq', 1, false);
+
+
+--
+-- Name: actividad_economica_id_actividad_economica_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+--
+
+SELECT pg_catalog.setval('impuesto.actividad_economica_id_actividad_economica_seq', 220, true);
+
+
+--
+-- Name: factor_id_factor_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+--
+
+SELECT pg_catalog.setval('impuesto.factor_id_factor_seq', 1, false);
+
+
+--
+-- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+--
+
+SELECT pg_catalog.setval('impuesto.liquidacion_id_liquidacion_seq', 1, false);
+
+
+--
+-- Name: plazo_exoneracion_id_plazo_exoneracion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+--
+
+SELECT pg_catalog.setval('impuesto.plazo_exoneracion_id_plazo_exoneracion_seq', 1, false);
+
+
+--
+-- Name: procedimiento_exoneracion_id_procedimiento_exoneracion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+--
+
+SELECT pg_catalog.setval('impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq', 1, false);
+
+
+--
+-- Name: procedimiento_id_procedimiento_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+--
+
+SELECT pg_catalog.setval('impuesto.procedimiento_id_procedimiento_seq', 1, false);
+
+
+--
+-- Name: solicitud_id_solicitud_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+--
+
+SELECT pg_catalog.setval('impuesto.solicitud_id_solicitud_seq', 1, false);
+
+
+--
+-- Name: tabulador_gas_id_tabulador_gas_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+--
+
+SELECT pg_catalog.setval('impuesto.tabulador_gas_id_tabulador_gas_seq', 1, false);
+
+
+--
+-- Name: tipo_actividad_economica_id_tipo_actividad_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+--
+
+SELECT pg_catalog.setval('impuesto.tipo_actividad_economica_id_tipo_actividad_seq', 1, false);
+
+
+--
+-- Name: tipo_contribuyente_id_tipo_contribuyente_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+--
+
+SELECT pg_catalog.setval('impuesto.tipo_contribuyente_id_tipo_contribuyente_seq', 1, false);
+
+
+--
 -- Name: bancos_id_banco_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
@@ -7292,6 +8113,94 @@ SELECT pg_catalog.setval('valores_fiscales.terreno_id_seq', 1315, true);
 --
 
 SELECT pg_catalog.setval('valores_fiscales.tipo_construccion_id_seq', 50, true);
+
+
+--
+-- Name: actividad_economica_exoneracion actividad_economica_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.actividad_economica_exoneracion
+    ADD CONSTRAINT actividad_economica_exoneracion_pkey PRIMARY KEY (id_actividad_economica_exoneracion);
+
+
+--
+-- Name: actividad_economica actividad_economica_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.actividad_economica
+    ADD CONSTRAINT actividad_economica_pkey PRIMARY KEY (id_actividad_economica);
+
+
+--
+-- Name: factor factor_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.factor
+    ADD CONSTRAINT factor_pkey PRIMARY KEY (id_factor);
+
+
+--
+-- Name: liquidacion liquidacion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.liquidacion
+    ADD CONSTRAINT liquidacion_pkey PRIMARY KEY (id_liquidacion);
+
+
+--
+-- Name: plazo_exoneracion plazo_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.plazo_exoneracion
+    ADD CONSTRAINT plazo_exoneracion_pkey PRIMARY KEY (id_plazo_exoneracion);
+
+
+--
+-- Name: procedimiento_exoneracion procedimiento_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.procedimiento_exoneracion
+    ADD CONSTRAINT procedimiento_exoneracion_pkey PRIMARY KEY (id_procedimiento_exoneracion);
+
+
+--
+-- Name: procedimiento procedimiento_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.procedimiento
+    ADD CONSTRAINT procedimiento_pkey PRIMARY KEY (id_procedimiento);
+
+
+--
+-- Name: solicitud solicitud_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.solicitud
+    ADD CONSTRAINT solicitud_pkey PRIMARY KEY (id_solicitud);
+
+
+--
+-- Name: tabulador_gas tabulador_gas_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.tabulador_gas
+    ADD CONSTRAINT tabulador_gas_pkey PRIMARY KEY (id_tabulador_gas);
+
+
+--
+-- Name: tipo_actividad_economica tipo_actividad_economica_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.tipo_actividad_economica
+    ADD CONSTRAINT tipo_actividad_economica_pkey PRIMARY KEY (id_tipo_actividad);
+
+
+--
+-- Name: tipo_contribuyente tipo_contribuyente_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.tipo_contribuyente
+    ADD CONSTRAINT tipo_contribuyente_pkey PRIMARY KEY (id_tipo_contribuyente);
 
 
 --
@@ -7819,6 +8728,86 @@ CREATE TRIGGER tipos_tramites_costo_utmm_trig AFTER UPDATE ON public.valor FOR E
 --
 
 CREATE TRIGGER trig_task_chain_fixer BEFORE DELETE ON timetable.base_task FOR EACH ROW EXECUTE FUNCTION timetable.trig_chain_fixer();
+
+
+--
+-- Name: actividad_economica_exoneracion actividad_economica_exoneracion_id_actividad_economica_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.actividad_economica_exoneracion
+    ADD CONSTRAINT actividad_economica_exoneracion_id_actividad_economica_fkey FOREIGN KEY (id_actividad_economica) REFERENCES impuesto.actividad_economica(id_actividad_economica);
+
+
+--
+-- Name: actividad_economica_exoneracion actividad_economica_exoneracion_id_plazo_exoneracion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.actividad_economica_exoneracion
+    ADD CONSTRAINT actividad_economica_exoneracion_id_plazo_exoneracion_fkey FOREIGN KEY (id_plazo_exoneracion) REFERENCES impuesto.plazo_exoneracion(id_plazo_exoneracion);
+
+
+--
+-- Name: actividad_economica actividad_economica_id_tipo_actividad_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.actividad_economica
+    ADD CONSTRAINT actividad_economica_id_tipo_actividad_fkey FOREIGN KEY (id_tipo_actividad) REFERENCES impuesto.tipo_actividad_economica(id_tipo_actividad);
+
+
+--
+-- Name: liquidacion liquidacion_id_procedimiento_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.liquidacion
+    ADD CONSTRAINT liquidacion_id_procedimiento_fkey FOREIGN KEY (id_procedimiento) REFERENCES impuesto.procedimiento(id_procedimiento);
+
+
+--
+-- Name: liquidacion liquidacion_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.liquidacion
+    ADD CONSTRAINT liquidacion_id_solicitud_fkey FOREIGN KEY (id_solicitud) REFERENCES impuesto.solicitud(id_solicitud);
+
+
+--
+-- Name: procedimiento_exoneracion procedimiento_exoneracion_id_plazo_exoneracion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.procedimiento_exoneracion
+    ADD CONSTRAINT procedimiento_exoneracion_id_plazo_exoneracion_fkey FOREIGN KEY (id_plazo_exoneracion) REFERENCES impuesto.plazo_exoneracion(id_plazo_exoneracion);
+
+
+--
+-- Name: procedimiento_exoneracion procedimiento_exoneracion_id_procedimiento_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.procedimiento_exoneracion
+    ADD CONSTRAINT procedimiento_exoneracion_id_procedimiento_fkey FOREIGN KEY (id_procedimiento) REFERENCES impuesto.procedimiento(id_procedimiento);
+
+
+--
+-- Name: procedimiento_exoneracion procedimiento_exoneracion_id_tipo_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.procedimiento_exoneracion
+    ADD CONSTRAINT procedimiento_exoneracion_id_tipo_contribuyente_fkey FOREIGN KEY (id_tipo_contribuyente) REFERENCES impuesto.tipo_contribuyente(id_tipo_contribuyente);
+
+
+--
+-- Name: solicitud solicitud_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.solicitud
+    ADD CONSTRAINT solicitud_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuario(id_usuario);
+
+
+--
+-- Name: tabulador_gas tabulador_gas_id_actividad_economica_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+--
+
+ALTER TABLE ONLY impuesto.tabulador_gas
+    ADD CONSTRAINT tabulador_gas_id_actividad_economica_fkey FOREIGN KEY (id_actividad_economica) REFERENCES impuesto.actividad_economica(id_actividad_economica);
 
 
 --
