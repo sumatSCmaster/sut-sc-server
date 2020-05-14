@@ -4,6 +4,7 @@ import { errorMessageGenerator } from './errors';
 import { validateProcedure } from './procedures';
 import { validateFining } from './fines';
 import { PoolClient } from 'pg';
+import switchcase from '@utils/switch';
 const pool = Pool.getInstance();
 
 export const getAllBanks = async () => {
@@ -46,7 +47,7 @@ export const validatePayments = async (body, user) => {
           fechaDeAprobacion: el.fechadeaprobacion,
           tipoTramite: el.tipotramite,
         };
-        el.sufijo !== 'ml' ? await validateProcedure(pagoValidado, user) : await validateFining(pagoValidado, user);
+        await validationHandler({ concept: el.concepto, body: pagoValidado, user });
         return pagoValidado;
       })
     );
@@ -69,4 +70,11 @@ export const insertPaymentReference = async (payment: any, procedure: number, cl
   return await client.query(queries.INSERT_PAYMENT, [procedure, referencia, costo, banco, fecha, concepto]).catch((error) => {
     throw error;
   });
+};
+
+const validateCases = switchcase({ IMPUESTO: validateFining, TRAMITE: validateProcedure, MULTA: validateFining })(null);
+
+const validationHandler = async ({ concept, body, user }) => {
+  const executedMethod = await validateCases(concept);
+  return executedMethod ? await executedMethod(body, user) : { status: 400, message: 'No existe un caso de validacion definido con este concepto' };
 };
