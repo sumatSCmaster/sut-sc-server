@@ -541,6 +541,46 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   UPDATE_FINING: 'SELECT update_multa_state($1, $2, $3, $4, $5) as state;',
   UPDATE_FINING_BALLOT: 'UPDATE multa SET url_boleta =$1 WHERE id_multa = $2',
   COMPLETE_FINING: 'SELECT complete_multa_state ($1,$2,$3,$4, $5) as state',
+
+  gtic: {
+    NATURAL_CONTRIBUTOR_EXISTS: 'SELECT * FROM tb004_contribuyente WHERE nu_cedula = $1',
+    JURIDICAL_CONTRIBUTOR_EXISTS: 'SELECT * FROM tb004_contribuyente WHERE tx_rif = $1 AND nu_referencia = $2;',
+    CONTRIBUTOR_ECONOMIC_ACTIVITIES: 'WITH ultima_ordenanza AS (SELECT co_ordenanza FROM tb035_anio_ordenanza WHERE nu_anio = EXTRACT(year from CURRENT_timestamp) ORDER BY co_ordenanza DESC LIMIT 1) \
+    SELECT * FROM tb041_contrib_act ca \
+    INNER JOIN tb039_ae_actividad ae ON ca.nu_ref_actividad = ae.nu_ref_actividad \
+    INNER JOIN (SELECT MAX(co_ordenanza) as co_ordenanza, nu_anio FROM tb035_anio_ordenanza GROUP BY nu_anio order by co_ordenanza) ao ON ao.co_ordenanza = ae.co_ordenanza \
+    WHERE co_contribuyente = $1 \
+    AND ca.co_ordenanza = (SELECT co_ordenanza FROM ultima_ordenanza) \
+    AND ao.co_ordenanza = (SELECT co_ordenanza FROM ultima_ordenanza);',
+    GET_ACTIVE_ECONOMIC_ACTIVITIES_SETTLEMENT: 'SELECT * FROM tb079_liquidacion WHERE co_tipo_solicitud = 87 AND co_estatus = 1 AND co_contribuyente = $1 ORDER BY co_liquidacion DESC',
+    GET_ACTIVE_MUNICIPAL_SERVICES_SETTLEMENT: 'SELECT * FROM tb079_liquidacion WHERE co_tipo_solicitud = 175 AND co_estatus = 1 AND co_contribuyente = $1 ORDER BY co_liquidacion DESC',
+    GET_ACTIVE_URBAN_ESTATE_SETTLEMENT: 'SELECT * FROM tb079_liquidacion WHERE co_tipo_solicitud = 445 AND co_estatus = 1 AND co_contribuyente = $1 ORDER BY co_liquidacion DESC',
+    GET_ACTIVE_PUBLICITY_SETTLEMENT: 'SELECT * FROM tb079_liquidacion WHERE co_tipo_solicitud = 97 AND co_estatus = 1 AND co_contribuyente = $1 ORDER BY co_liquidacion DESC',
+    GET_PAID_ECONOMIC_ACTIVITIES_SETTLEMENT: 'SELECT * FROM tb079_liquidacion WHERE co_tipo_solicitud = 87 AND co_estatus = 2 AND co_contribuyente = $1 ORDER BY co_liquidacion DESC',
+    GET_PAID_MUNICIPAL_SERVICES_SETTLEMENT: 'SELECT * FROM tb079_liquidacion WHERE co_tipo_solicitud = 175 AND co_estatus = 2 AND co_contribuyente = $1 ORDER BY co_liquidacion DESC',
+    GET_PAID_URBAN_ESTATE_SETTLEMENT: 'SELECT * FROM tb079_liquidacion WHERE co_tipo_solicitud = 445 AND co_estatus = 2 AND co_contribuyente = $1 ORDER BY co_liquidacion DESC',
+    GET_PAID_PUBLICITY_SETTLEMENT: 'SELECT * FROM tb079_liquidacion WHERE co_tipo_solicitud = 97 AND co_estatus = 2 AND co_contribuyente = $1 ORDER BY co_liquidacion DESC',
+    GET_MAX_GAS_TARIFF_BY_CONTRIBUTOR: 'WITH ultima_ordenanza AS (SELECT co_ordenanza FROM tb035_anio_ordenanza WHERE nu_anio = EXTRACT(year from CURRENT_timestamp) ORDER BY co_ordenanza DESC LIMIT 1) \
+    SELECT * FROM tb041_contrib_act ca \
+    INNER JOIN tb039_ae_actividad ae ON ca.nu_ref_actividad = ae.nu_ref_actividad \
+    INNER JOIN (SELECT MAX(co_ordenanza) as co_ordenanza, nu_anio FROM tb035_anio_ordenanza GROUP BY nu_anio order by co_ordenanza) ao ON ao.co_ordenanza = ae.co_ordenanza \
+    INNER JOIN tb045_gas_actividad ga ON ga.nu_ref_actividad = ae.nu_ref_actividad \
+    WHERE co_contribuyente = 209567 \
+    AND ca.co_ordenanza = (SELECT co_ordenanza FROM ultima_ordenanza) \
+    AND ao.co_ordenanza = (SELECT co_ordenanza FROM ultima_ordenanza) AND fecha_hasta IS NULL ORDER BY nu_tarifa DESC LIMIT 1;',
+    GET_MAX_CLEANING_TARIFF_BY_CONTRIBUTOR: 'WITH ultima_ordenanza AS (SELECT co_ordenanza FROM tb035_anio_ordenanza WHERE nu_anio = EXTRACT(year from CURRENT_timestamp) ORDER BY co_ordenanza DESC LIMIT 1) \
+    SELECT * FROM tb041_contrib_act ca \
+    INNER JOIN tb039_ae_actividad ae ON ca.nu_ref_actividad = ae.nu_ref_actividad \
+    INNER JOIN (SELECT MAX(co_ordenanza) as co_ordenanza, nu_anio FROM tb035_anio_ordenanza GROUP BY nu_anio order by co_ordenanza) ao ON ao.co_ordenanza = ae.co_ordenanza \
+    INNER JOIN tb030_aseo_actividad ga ON ga.nu_ref_actividad = ae.nu_ref_actividad \
+    WHERE co_contribuyente = 209567 \
+    AND ca.co_ordenanza = (SELECT co_ordenanza FROM ultima_ordenanza) \
+    AND ao.co_ordenanza = (SELECT co_ordenanza FROM ultima_ordenanza) AND fecha_hasta IS NULL ORDER BY nu_tarifa DESC LIMIT 1;',
+    GET_ESTATES_BY_CONTRIBUTOR: 'SELECT * FROM (SELECT * FROM tb071_contrib_inmueble WHERE in_activo = 1) ci INNER JOIN tb070_inmueble i INNER JOIN tb067_im_tipo_inmueble ti ON i.co_tp_inmueble = ti.co_tp_inmueble ON ci.co_inmueble = i.co_inmueble WHERE co_contribuyente = $1;',
+    GET_PUBLICITY_ARTICLES: 'SELECT * FROM tb104_art_propaganda;',
+    GET_PUBLICITY_SUBARTICLES: 'SELECT * FROM tb102_medio_propaganda where CO_ARTICULO is not null;'
+
+  }
 };
 
 export default queries;
