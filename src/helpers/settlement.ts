@@ -7,10 +7,16 @@ import switchcase from '@utils/switch';
 const gticPool = GticPool.getInstance();
 const pool = Pool.getInstance();
 
-export const getSettlements = async () => {
+export const getSettlements = async ({ document, reference }) => {
   const client = await pool.connect();
   const gtic = await gticPool.connect();
   try {
+    const contributor = (reference
+      ? await gtic.query(queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS, [document, reference])
+      : await gtic.query(queries.gtic.NATURAL_CONTRIBUTOR_EXISTS, [document])
+    ).rows[0];
+    if (!contributor) return { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
+    return {};
   } catch (error) {
     throw {
       status: 500,
