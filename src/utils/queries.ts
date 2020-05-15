@@ -590,7 +590,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     AND ca.co_ordenanza = (SELECT co_ordenanza FROM ultima_ordenanza) \
     AND ao.co_ordenanza = (SELECT co_ordenanza FROM ultima_ordenanza) AND fecha_hasta IS NULL ORDER BY nu_tarifa DESC LIMIT 1;',
 
-    GET_ESTATES_BY_CONTRIBUTOR: 'SELECT * FROM (SELECT * FROM tb071_contrib_inmueble WHERE in_activo = 1) ci INNER JOIN tb070_inmueble i INNER JOIN tb067_im_tipo_inmueble ti ON i.co_tp_inmueble = ti.co_tp_inmueble ON ci.co_inmueble = i.co_inmueble WHERE co_contribuyente = $1;',
+    GET_ESTATES_BY_CONTRIBUTOR: 'SELECT * FROM (SELECT * FROM tb071_contrib_inmueble WHERE in_activo = 1) ci INNER JOIN tb070_inmueble i INNER JOIN tb067_im_tipo_inmueble ti ON i.co_tp_inmueble = ti.co_tp_inmueble ON ci.co_inmueble = i.co_inmueble INNER JOIN tb076_avaluo_inmueble ai ai.co_inmueble = i.co_inmueble WHERE co_contribuyente = $1;',
     GET_PUBLICITY_ARTICLES: 'SELECT * FROM tb104_art_propaganda;',
     GET_PUBLICITY_SUBARTICLES: 'SELECT * FROM tb102_medio_propaganda where CO_ARTICULO is not null;',
 
