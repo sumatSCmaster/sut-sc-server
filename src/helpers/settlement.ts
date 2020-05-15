@@ -52,7 +52,7 @@ export const getSettlements = async ({ document, reference }) => {
         const date = addMonths(new Date(lastSMPayment.toDate()), index);
         return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
       });
-      SM = Promise.all(
+      SM = await Promise.all(
         estates.map(async (el) => {
           const tarifaAseo =
             el.tx_tipo_inmueble === 'COMERCIAL'
@@ -73,13 +73,15 @@ export const getSettlements = async ({ document, reference }) => {
       if (!lastIU) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
       const lastIUPayment = moment(lastIU.fe_liquidacion);
       const dateInterpolationIU = Math.floor(now.diff(lastIUPayment, 'M'));
-      const debtIU = new Array(dateInterpolationIU).fill({ month: null, year: null }).map((value, index) => {
-        const date = addMonths(new Date(lastIUPayment.toDate()), index);
-        return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
-      });
-      IU = estates.map((el) => {
-        return { direccionInmueble: el.tx_direccion_inmueble, ultimoAvaluo: el.nu_monto, impuestoInmueble: (el.nu_monto * 0.01) / 12, deuda: debtIU };
-      });
+      if (dateInterpolationIU > 0) {
+        const debtIU = new Array(dateInterpolationIU).fill({ month: null, year: null }).map((value, index) => {
+          const date = addMonths(new Date(lastIUPayment.toDate()), index);
+          return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
+        });
+        IU = estates.map((el) => {
+          return { direccionInmueble: el.tx_direccion_inmueble, ultimoAvaluo: el.nu_monto, impuestoInmueble: (el.nu_monto * 0.01) / 12, deuda: debtIU };
+        });
+      }
     }
 
     let debtPP;
@@ -88,40 +90,47 @@ export const getSettlements = async ({ document, reference }) => {
     if (lastPP) {
       const lastPPPayment = moment(lastPP.fe_liquidacion);
       const dateInterpolationPP = Math.floor(now.diff(lastPPPayment, 'M'));
-      debtPP = new Array(dateInterpolationPP).fill({ month: null, year: null }).map((value, index) => {
-        const date = addMonths(new Date(lastPPPayment.toDate()), index);
-        return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
-      });
+      if (dateInterpolationPP > 0) {
+        debtPP = new Array(dateInterpolationPP).fill({ month: null, year: null }).map((value, index) => {
+          const date = addMonths(new Date(lastPPPayment.toDate()), index);
+          return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
+        });
+      }
     } else {
       debtPP = new Array(1).fill({ month: null, year: null }).map((value) => {
         const date = addMonths(new Date(), -1);
         return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
       });
     }
-    const publicityArticles = (await gtic.query(queries.gtic.GET_PUBLICITY_ARTICLES)).rows;
-    const publicitySubarticles = (await gtic.query(queries.gtic.GET_PUBLICITY_SUBARTICLES)).rows;
-    PP = {
-      deuda: debtPP,
-      articulos: publicityArticles.map((el) => {
-        return {
-          id: el.co_articulo,
-          nombreArticulo: el.tx_articulo,
-          subarticulos: Promise.all(
-            publicitySubarticles
-              .filter((al) => el.co_articulo === al.co_articulo)
-              .map(async (el) => {
-                const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-                return {
-                  id: el.co_medio,
-                  nombreSubarticulo: el.tx_medio,
-                  parametro: el.parametro,
-                  costo: el.ut_medio * UTMM,
-                };
-              })
-          ),
-        };
-      }),
-    };
+    if (debtPP) {
+      console.log(debtPP);
+      const publicityArticles = (await gtic.query(queries.gtic.GET_PUBLICITY_ARTICLES)).rows;
+      const publicitySubarticles = (await gtic.query(queries.gtic.GET_PUBLICITY_SUBARTICLES)).rows;
+      PP = {
+        deuda: debtPP,
+        articulos: await Promise.all(
+          publicityArticles.map(async (el) => {
+            return {
+              id: el.co_articulo,
+              nombreArticulo: el.tx_articulo,
+              subarticulos: await Promise.all(
+                publicitySubarticles
+                  .filter((al) => el.co_articulo === al.co_articulo)
+                  .map(async (el) => {
+                    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+                    return {
+                      id: el.co_medio,
+                      nombreSubarticulo: el.tx_medio,
+                      parametro: el.parametro,
+                      costo: el.ut_medio * UTMM,
+                    };
+                  })
+              ),
+            };
+          })
+        ),
+      };
+    }
     //buscar las cuestiones de publicidad e indexarlas correctamente
     //patras
     return {
