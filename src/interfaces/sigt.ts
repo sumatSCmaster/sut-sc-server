@@ -150,6 +150,47 @@ export interface Recaudo {
   nombreCorto: string;
 }
 
+export interface ActividadEconomica {
+  nombreActividad: string;
+  idContribuyente: number;
+  alicuota: number;
+  costoSolvencia: number;
+  deuda: Fecha[];
+}
+
+export interface Publicidad {
+  articulos: {
+    id: number;
+    nombreArticulo: string;
+    subarticulos: {
+      id: number;
+      nombreSubarticulo: string;
+      parametro: string;
+      costo: number;
+    };
+  };
+  deuda: Fecha[];
+}
+
+export interface ServicioMunicipal {
+  direccionInmueble: string;
+  tarifaAseo: string;
+  tarifaGas: string;
+  deuda: Fecha[];
+}
+
+export interface InmuebleUrbano {
+  direccionInmueble: string;
+  ultimoAvaluo: string;
+  impuestoInmueble: number;
+  deuda: Fecha[];
+}
+
+export interface Fecha {
+  month: string;
+  year: number;
+}
+
 export interface Campo {
   id: number;
   orden: number;

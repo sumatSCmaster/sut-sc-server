@@ -19,6 +19,7 @@ export const getSettlements = async ({ document, reference }) => {
     ).rows[0];
     if (!contributor) return { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
     const now = moment(new Date());
+    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     if (contributor.nu_referencia) {
       const economicActivities = (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [contributor.co_contribuyente])).rows;
       if (economicActivities.length === 0) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
@@ -33,6 +34,7 @@ export const getSettlements = async ({ document, reference }) => {
             nombreActividad: el.tx_actividad,
             idContribuyente: el.co_contribuyente,
             alicuota: el.nu_porc_alicuota / 100,
+            costoSolvencia: UTMM * 2,
             deuda: new Array(dateInterpolation).fill({ month: null, year: null }).map((value, index) => {
               const date = addMonths(new Date(lastEAPayment.toDate()), index);
               return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
@@ -117,7 +119,6 @@ export const getSettlements = async ({ document, reference }) => {
                 publicitySubarticles
                   .filter((al) => el.co_articulo === al.co_articulo)
                   .map(async (el) => {
-                    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
                     return {
                       id: el.co_medio,
                       nombreSubarticulo: el.tx_medio,
@@ -131,8 +132,6 @@ export const getSettlements = async ({ document, reference }) => {
         ),
       };
     }
-    //buscar las cuestiones de publicidad e indexarlas correctamente
-    //patras
     return {
       status: 200,
       message: 'Impuestos obtenidos satisfactoriamente',
@@ -162,7 +161,6 @@ export const getSettlements = async ({ document, reference }) => {
 
 export const insertSettlements = async () => {
   const client = await pool.connect();
-  const gtic = await gticPool.connect();
   try {
   } catch (error) {
     client.query('ROLLBACK');
@@ -173,15 +171,14 @@ export const insertSettlements = async () => {
     };
   } finally {
     client.release();
-    gtic.release();
   }
 };
 
-function addMonths(date, months): Date {
+const addMonths = (date, months): Date => {
   const d = date.getDate();
   date.setMonth(date.getMonth() + +months);
   if (date.getDate() != d) {
     date.setDate(0);
   }
   return date;
-}
+};
