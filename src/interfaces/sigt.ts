@@ -191,6 +191,12 @@ export interface Fecha {
   year: number;
 }
 
+export interface Impuesto {
+  tipoImpuesto: string;
+  fechaCancelada: Date;
+  monto: number;
+}
+
 export interface Campo {
   id: number;
   orden: number;

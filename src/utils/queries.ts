@@ -542,9 +542,20 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   UPDATE_FINING_BALLOT: 'UPDATE multa SET url_boleta =$1 WHERE id_multa = $2',
   COMPLETE_FINING: 'SELECT complete_multa_state ($1,$2,$3,$4, $5) as state',
 
+  //IMPUESTOS SEDEMAT
+
+  CREATE_TAX_PAYMENT_APPLICATION:
+    'INSERT INTO impuesto.solicitud (id_usuario, documento, rim, nacionalidad, aprobado, fecha, monto_total) \
+    VALUES ($1, $2, $3, $4, false, now(), $5) RETURNING *',
+  CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION:
+    'INSERT INTO impuesto.liquidacion (id_solicitud, id_procedimiento, fecha, monto) VALUES \
+    ($1, (SELECT id_procedimiento FROM impuesto.procedimiento WHERE descripcion = $2), $3, $4) RETURNING *',
+
   gtic: {
-    NATURAL_CONTRIBUTOR_EXISTS: 'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2;',
-    JURIDICAL_CONTRIBUTOR_EXISTS: 'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE tx_rif = $1 AND nu_referencia = $2 AND tx_tp_doc = $3',
+    NATURAL_CONTRIBUTOR_EXISTS:
+      'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2;',
+    JURIDICAL_CONTRIBUTOR_EXISTS:
+      'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE tx_rif = $1 AND nu_referencia = $2 AND tx_tp_doc = $3',
     CONTRIBUTOR_ECONOMIC_ACTIVITIES:
       'WITH ultima_ordenanza AS (SELECT co_ordenanza FROM tb035_anio_ordenanza WHERE nu_anio = EXTRACT(year from CURRENT_timestamp) ORDER BY co_ordenanza DESC LIMIT 1) \
     SELECT * FROM tb041_contrib_act ca \

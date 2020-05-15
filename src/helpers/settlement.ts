@@ -3,6 +3,7 @@ import queries from '@utils/queries';
 import { errorMessageGenerator } from './errors';
 import { PoolClient } from 'pg';
 import GticPool from '@utils/GticPool';
+import { insertPaymentReference } from './banks';
 import moment from 'moment';
 import switchcase from '@utils/switch';
 const gticPool = GticPool.getInstance();
@@ -159,9 +160,35 @@ export const getSettlements = async ({ document, reference, type }) => {
   }
 };
 
-export const insertSettlements = async () => {
+//TODO: hacer funciones y views en la DB
+//TODO: estructurar correctamente la solicitud y las liquidaciones
+//TODO: crear la interfaz de la solicitud y las liquidaciones
+//TODO: añadir las instancias de liquidacion en get /proceduree
+
+export const insertSettlements = async ({ process, user }) => {
   const client = await pool.connect();
+  const { pago, impuestos } = process;
   try {
+    client.query('BEGIN');
+    const application = (
+      await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, process.documento, process.rim, process.nacionalidad, process.totalPagoImpuestos])
+    ).rows[0];
+    if (!pago) return { status: 403, message: 'Debe incluir el pago de la solicitud' };
+    pago.concepto = 'IMPUESTO';
+    await insertPaymentReference(pago, application.id_solicitud, client);
+    const settlement = await Promise.all(
+      impuestos.map(async (el) => {
+        const liquidacion = (
+          await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [application.id_solicitud, el.tipoImpuesto, el.fechaCancelada, el.monto])
+        ).rows[0];
+        return liquidacion;
+      })
+    );
+
+    const solicitud = {};
+
+    client.query('COMMIT');
+    return { status: 201, message: 'Liquidaciones de impuestos creadas satisfactoriamente', solicitud };
   } catch (error) {
     client.query('ROLLBACK');
     throw {

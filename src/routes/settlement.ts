@@ -14,8 +14,8 @@ router.get('/', authenticate('jwt'), async (req, res) => {
 });
 
 router.post('/init', authenticate('jwt'), async (req: any, res) => {
-  const {} = req.body;
-  const [error, data] = await fulfill(insertSettlements());
+  const { procedimiento } = req.body;
+  const [error, data] = await fulfill(insertSettlements({ process: procedimiento, user: req.user }));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
