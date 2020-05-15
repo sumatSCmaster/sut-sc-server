@@ -6,9 +6,9 @@ import { getSettlements, insertSettlements } from '@helpers/settlement';
 const router = Router();
 
 router.get('/', authenticate('jwt'), async (req, res) => {
-  const { doc, ref } = req.query;
+  const { doc, ref, pref } = req.query;
   console.log(doc, ref);
-  const [err, data] = await fulfill(getSettlements({ document: doc, reference: ref }));
+  const [err, data] = await fulfill(getSettlements({ document: doc, reference: ref, type: pref }));
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
 });
