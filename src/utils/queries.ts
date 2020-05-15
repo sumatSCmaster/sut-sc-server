@@ -543,9 +543,8 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   COMPLETE_FINING: 'SELECT complete_multa_state ($1,$2,$3,$4, $5) as state',
 
   gtic: {
-    NATURAL_CONTRIBUTOR_EXISTS:
-      'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE tx_rif = $1 AND nu_referencia = $2 AND tx_tp_doc = $3',
-    JURIDICAL_CONTRIBUTOR_EXISTS: 'SELECT * FROM tb004_contribuyente WHERE tx_rif = $1 AND nu_referencia = $2;',
+    NATURAL_CONTRIBUTOR_EXISTS: 'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2;',
+    JURIDICAL_CONTRIBUTOR_EXISTS: 'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE tx_rif = $1 AND nu_referencia = $2 AND tx_tp_doc = $3',
     CONTRIBUTOR_ECONOMIC_ACTIVITIES:
       'WITH ultima_ordenanza AS (SELECT co_ordenanza FROM tb035_anio_ordenanza WHERE nu_anio = EXTRACT(year from CURRENT_timestamp) ORDER BY co_ordenanza DESC LIMIT 1) \
     SELECT * FROM tb041_contrib_act ca \
