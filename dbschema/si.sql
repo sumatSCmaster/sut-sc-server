@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.2
--- Dumped by pg_dump version 12.2
+-- Dumped from database version 12.1
+-- Dumped by pg_dump version 12.1
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -565,26 +565,27 @@ CREATE TABLE impuesto.liquidacion (
     id_liquidacion integer NOT NULL,
     id_solicitud integer,
     id_procedimiento integer,
-    fecha date,
     monto numeric,
     certificado character varying,
-    recibo character varying
+    recibo character varying,
+    mes character varying,
+    anio integer
 );
 
 
 ALTER TABLE impuesto.liquidacion OWNER TO postgres;
 
 --
--- Name: insert_liquidacion(integer, character varying, character varying, numeric); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: insert_liquidacion(integer, character varying, character varying, integer, numeric); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.insert_liquidacion(_id_solicitud integer, _descripcion character varying, _fecha character varying, _monto numeric) RETURNS SETOF impuesto.liquidacion
+CREATE FUNCTION public.insert_liquidacion(_id_solicitud integer, _descripcion character varying, _mes character varying, _anio integer, _monto numeric) RETURNS SETOF impuesto.liquidacion
     LANGUAGE plpgsql
     AS $$
 DECLARE
     liquidacion impuesto.liquidacion%ROWTYPE;
     BEGIN
-        INSERT INTO impuesto.liquidacion (id_solicitud, id_procedimiento, fecha, monto) VALUES (_id_solicitud, (SELECT id_procedimiento FROM impuesto.procedimiento WHERE descripcion = _descripcion), _fecha, _monto) RETURNING * INTO liquidacion;
+        INSERT INTO impuesto.liquidacion (id_solicitud, id_procedimiento, mes, anio, monto) VALUES (_id_solicitud, (SELECT id_procedimiento FROM impuesto.procedimiento WHERE descripcion = _descripcion), _mes, _anio, _monto) RETURNING * INTO liquidacion;
             
         RETURN QUERY SELECT * FROM impuesto.liquidacion WHERE id_liquidacion=liquidacion.id_liquidacion;
 
@@ -593,7 +594,7 @@ DECLARE
 $$;
 
 
-ALTER FUNCTION public.insert_liquidacion(_id_solicitud integer, _descripcion character varying, _fecha character varying, _monto numeric) OWNER TO postgres;
+ALTER FUNCTION public.insert_liquidacion(_id_solicitud integer, _descripcion character varying, _mes character varying, _anio integer, _monto numeric) OWNER TO postgres;
 
 --
 -- Name: multa_transicion(text, text); Type: FUNCTION; Schema: public; Owner: postgres
@@ -770,7 +771,8 @@ CREATE TABLE impuesto.solicitud (
     aprobado boolean,
     fecha date,
     monto_total numeric,
-    nacionalidad character varying
+    nacionalidad character varying,
+    pagado boolean DEFAULT false
 );
 
 
@@ -784,11 +786,11 @@ CREATE FUNCTION public.insert_solicitud(_id_usuario integer, _documento characte
     LANGUAGE plpgsql
     AS $$
 DECLARE
-    solicitud impuesto.solicitud%ROWTYPE;
+    solicitudRow impuesto.solicitud%ROWTYPE;
     BEGIN
-        INSERT INTO impuesto.solicitud (id_usuario, documento, rim, nacionalidad, aprobado, fecha, monto_total) VALUES (_id_usuario, _documento, _rim, _nacionalidad, false, now(), _monto_total) RETURNING * INTO solicitud;
+        INSERT INTO impuesto.solicitud (id_usuario, documento, rim, nacionalidad, aprobado, fecha, monto_total) VALUES (_id_usuario, _documento, _rim, _nacionalidad, false, now(), _monto_total) RETURNING * INTO solicitudRow;
             
-        RETURN QUERY SELECT * FROM impuesto.solicitud WHERE id_solicitud=solicitud.id_tramite;
+        RETURN QUERY SELECT * FROM impuesto.solicitud WHERE id_solicitud=solicitudRow.id_solicitud;
 
         RETURN;
     END;
@@ -4694,7 +4696,7 @@ COPY impuesto.factor (id_factor, descripcion, valor) FROM stdin;
 -- Data for Name: liquidacion; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.liquidacion (id_liquidacion, id_solicitud, id_procedimiento, fecha, monto, certificado, recibo) FROM stdin;
+COPY impuesto.liquidacion (id_liquidacion, id_solicitud, id_procedimiento, monto, certificado, recibo, mes, anio) FROM stdin;
 \.
 
 
@@ -4711,6 +4713,10 @@ COPY impuesto.plazo_exoneracion (id_plazo_exoneracion, fecha_inicio, fecha_fin) 
 --
 
 COPY impuesto.procedimiento (id_procedimiento, descripcion, planilla_certificado, planilla_recibo) FROM stdin;
+1	AE	\N	\N
+2	SM	\N	\N
+3	IU	\N	\N
+4	PP	\N	\N
 \.
 
 
@@ -4726,7 +4732,7 @@ COPY impuesto.procedimiento_exoneracion (id_procedimiento_exoneracion, id_plazo_
 -- Data for Name: solicitud; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.solicitud (id_solicitud, id_usuario, documento, rim, aprobado, fecha, monto_total, nacionalidad) FROM stdin;
+COPY impuesto.solicitud (id_solicitud, id_usuario, documento, rim, aprobado, fecha, monto_total, nacionalidad, pagado) FROM stdin;
 \.
 
 
@@ -8161,7 +8167,7 @@ SELECT pg_catalog.setval('impuesto.procedimiento_exoneracion_id_procedimiento_ex
 -- Name: procedimiento_id_procedimiento_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.procedimiento_id_procedimiento_seq', 1, false);
+SELECT pg_catalog.setval('impuesto.procedimiento_id_procedimiento_seq', 4, true);
 
 
 --
