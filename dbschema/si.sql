@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.1
--- Dumped by pg_dump version 12.1
+-- Dumped from database version 12.2
+-- Dumped by pg_dump version 12.2
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -558,6 +558,44 @@ DECLARE
 ALTER FUNCTION public.insert_caso(_id_tipo_tramite integer, datos json, _id_usuario integer) OWNER TO postgres;
 
 --
+-- Name: liquidacion; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.liquidacion (
+    id_liquidacion integer NOT NULL,
+    id_solicitud integer,
+    id_procedimiento integer,
+    fecha date,
+    monto numeric,
+    certificado character varying,
+    recibo character varying
+);
+
+
+ALTER TABLE impuesto.liquidacion OWNER TO postgres;
+
+--
+-- Name: insert_liquidacion(integer, character varying, character varying, numeric); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.insert_liquidacion(_id_solicitud integer, _descripcion character varying, _fecha character varying, _monto numeric) RETURNS SETOF impuesto.liquidacion
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    liquidacion impuesto.liquidacion%ROWTYPE;
+    BEGIN
+        INSERT INTO impuesto.liquidacion (id_solicitud, id_procedimiento, fecha, monto) VALUES (_id_solicitud, (SELECT id_procedimiento FROM impuesto.procedimiento WHERE descripcion = _descripcion), _fecha, _monto) RETURNING * INTO liquidacion;
+            
+        RETURN QUERY SELECT * FROM impuesto.liquidacion WHERE id_liquidacion=liquidacion.id_liquidacion;
+
+        RETURN;
+    END;
+$$;
+
+
+ALTER FUNCTION public.insert_liquidacion(_id_solicitud integer, _descripcion character varying, _fecha character varying, _monto numeric) OWNER TO postgres;
+
+--
 -- Name: multa_transicion(text, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -719,6 +757,45 @@ $$;
 
 
 ALTER FUNCTION public.insert_notificacion_trigger_func() OWNER TO postgres;
+
+--
+-- Name: solicitud; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.solicitud (
+    id_solicitud integer NOT NULL,
+    id_usuario integer,
+    documento character varying,
+    rim character varying,
+    aprobado boolean,
+    fecha date,
+    monto_total numeric,
+    nacionalidad character varying
+);
+
+
+ALTER TABLE impuesto.solicitud OWNER TO postgres;
+
+--
+-- Name: insert_solicitud(integer, character varying, character varying, character varying, numeric); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.insert_solicitud(_id_usuario integer, _documento character varying, _rim character varying, _nacionalidad character varying, _monto_total numeric) RETURNS SETOF impuesto.solicitud
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    solicitud impuesto.solicitud%ROWTYPE;
+    BEGIN
+        INSERT INTO impuesto.solicitud (id_usuario, documento, rim, nacionalidad, aprobado, fecha, monto_total) VALUES (_id_usuario, _documento, _rim, _nacionalidad, false, now(), _monto_total) RETURNING * INTO solicitud;
+            
+        RETURN QUERY SELECT * FROM impuesto.solicitud WHERE id_solicitud=solicitud.id_tramite;
+
+        RETURN;
+    END;
+$$;
+
+
+ALTER FUNCTION public.insert_solicitud(_id_usuario integer, _documento character varying, _rim character varying, _nacionalidad character varying, _monto_total numeric) OWNER TO postgres;
 
 --
 -- Name: tramites_eventos_transicion(text, text); Type: FUNCTION; Schema: public; Owner: postgres
@@ -1860,23 +1937,6 @@ ALTER SEQUENCE impuesto.factor_id_factor_seq OWNED BY impuesto.factor.id_factor;
 
 
 --
--- Name: liquidacion; Type: TABLE; Schema: impuesto; Owner: postgres
---
-
-CREATE TABLE impuesto.liquidacion (
-    id_liquidacion integer NOT NULL,
-    id_solicitud integer,
-    id_procedimiento integer,
-    fecha date,
-    monto numeric,
-    certificado character varying,
-    recibo character varying
-);
-
-
-ALTER TABLE impuesto.liquidacion OWNER TO postgres;
-
---
 -- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -2004,24 +2064,6 @@ ALTER TABLE impuesto.procedimiento_id_procedimiento_seq OWNER TO postgres;
 
 ALTER SEQUENCE impuesto.procedimiento_id_procedimiento_seq OWNED BY impuesto.procedimiento.id_procedimiento;
 
-
---
--- Name: solicitud; Type: TABLE; Schema: impuesto; Owner: postgres
---
-
-CREATE TABLE impuesto.solicitud (
-    id_solicitud integer NOT NULL,
-    id_usuario integer,
-    documento character varying,
-    rim character varying,
-    aprobado boolean,
-    fecha date,
-    monto_total numeric,
-    nacionalidad character varying
-);
-
-
-ALTER TABLE impuesto.solicitud OWNER TO postgres;
 
 --
 -- Name: solicitud_id_solicitud_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
