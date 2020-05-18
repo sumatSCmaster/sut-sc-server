@@ -1,6 +1,6 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
-import { Institucion, TipoTramite, Campo, Tramite, Usuario } from '@interfaces/sigt';
+import { Institucion, TipoTramite, Campo, Tramite, Usuario, Liquidacion } from '@interfaces/sigt';
 import { errorMessageGenerator } from './errors';
 import { insertPaymentReference } from './banks';
 import { PoolClient } from 'pg';
@@ -11,7 +11,7 @@ import { createRequestForm, createCertificate } from '@utils/forms';
 
 const pool = Pool.getInstance();
 
-export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any; instanciasDeMulta: any }> => {
+export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any; instanciasDeMulta: any, instanciasDeImpuestos: any }> => {
   const client: any = await pool.connect();
   client.tipoUsuario = user.tipoUsuario;
   try {
@@ -29,7 +29,8 @@ export const getAvailableProcedures = async (user): Promise<{ options: Instituci
     const options: Institucion[] = await getProcedureByInstitution(institution, client);
     const instanciasDeTramite = await getProcedureInstances(user, client);
     const instanciasDeMulta = await getFineInstances(user, client);
-    return { options, instanciasDeTramite, instanciasDeMulta };
+    const instanciasDeImpuestos = await getSettlementInstances(user, client);
+    return { options, instanciasDeTramite, instanciasDeMulta, instanciasDeImpuestos };
   } catch (error) {
     throw {
       status: 500,
@@ -155,6 +156,27 @@ const getFineInstances = async (user, client: PoolClient) => {
   } catch (error) {
     console.log(error);
     throw new Error('Error al obtener instancias de multa');
+  }
+};
+
+const getSettlementInstances = async (user, client: PoolClient) => {
+  try {
+    let response = (await client.query(queries.GET_SETTLEMENT_INSTANCES, user.id)).rows;
+    return response.map((el) => {
+      const liquidacion: Liquidacion = {
+        id: el.id_liquidacion,
+        tipoProcedimiento: el.descripcion,
+        fecha: { month: el.mes, year: el.anio },
+        monto: el.monto,
+        certificado: el.certificado,
+        recibo: el.recibo
+      };
+
+      return liquidacion;
+    });
+  } catch (error) {
+    console.log(error);
+    throw new Error('Error al obtener instancias de liquidacion');
   }
 };
 
