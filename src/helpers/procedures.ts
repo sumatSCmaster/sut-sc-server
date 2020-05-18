@@ -161,7 +161,7 @@ const getFineInstances = async (user, client: PoolClient) => {
 
 const getSettlementInstances = async (user, client: PoolClient) => {
   try {
-    let response = (await client.query(queries.GET_SETTLEMENT_INSTANCES, user.id)).rows;
+    let response = (await client.query(queries.GET_SETTLEMENT_INSTANCES, [user.id])).rows;
     return response.map((el) => {
       const liquidacion: Liquidacion = {
         id: el.id_liquidacion,
