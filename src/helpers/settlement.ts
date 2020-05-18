@@ -6,7 +6,7 @@ import GticPool from '@utils/GticPool';
 import { insertPaymentReference } from './banks';
 import moment from 'moment';
 import switchcase from '@utils/switch';
-import { Liquidacion, Solicitud } from '@root/interfaces/sigt';
+import { Liquidacion, Solicitud, Usuario } from '@root/interfaces/sigt';
 const gticPool = GticPool.getInstance();
 const pool = Pool.getInstance();
 
@@ -162,9 +162,6 @@ export const getSettlements = async ({ document, reference, type }) => {
   }
 };
 
-//TODO: hacer funciones y views en la DB
-//TODO: estructurar correctamente la solicitud y las liquidaciones
-//TODO: crear la interfaz de la solicitud y las liquidaciones
 //TODO: añadir las instancias de liquidacion en get /proceduree
 
 export const insertSettlements = async ({ process, user }) => {
@@ -176,8 +173,6 @@ export const insertSettlements = async ({ process, user }) => {
       await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, process.documento, process.rim, process.nacionalidad, process.totalPagoImpuestos])
     ).rows[0];
     if (!pago) return { status: 403, message: 'Debe incluir el pago de la solicitud' };
-    pago.concepto = 'IMPUESTO';
-    await insertPaymentReference(pago, application.id_solicitud, client);
     const settlement: Liquidacion[] = await Promise.all(
       impuestos.map(async (el) => {
         const liquidacion = (
@@ -227,10 +222,39 @@ export const insertSettlements = async ({ process, user }) => {
   }
 };
 
-export const addPayment = (payment) => {
+export const getApplicationsAndSettlements = async ({ user }: { user: Usuario }) => {
+  const client = await pool.connect();
   try {
   } catch (error) {
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al crear liquidaciones',
+    };
   } finally {
+    client.release();
+  }
+};
+
+export const addTaxApplicationPayment = async ({ payment, application }) => {
+  const client = await pool.connect();
+  try {
+    client.query('BEGIN');
+    if (!payment.monto) return { status: 403, message: 'Debe incluir el monto a ser pagado' };
+    payment.concepto = 'IMPUESTO';
+    await insertPaymentReference(payment, application, client);
+    await client.query(queries.UPDATE_PAID_STATE_FOR_TAX_PAYMENT_APPLICATION, [application]);
+    client.query('COMMIT');
+    return { status: 201, message: 'Pago añadido para la solicitud declarada' };
+  } catch (error) {
+    client.query('ROLLBACK');
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al crear liquidaciones',
+    };
+  } finally {
+    client.release();
   }
 };
 
