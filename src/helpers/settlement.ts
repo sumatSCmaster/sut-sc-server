@@ -204,7 +204,7 @@ export const insertSettlements = async ({ process, user }) => {
       aprobado: application.aprobado,
       pagado: application.pagado,
       fecha: application.fecha,
-      monto: application.monto,
+      monto: application.monto_total,
       liquidaciones: settlement,
     };
 
@@ -225,11 +225,39 @@ export const insertSettlements = async ({ process, user }) => {
 export const getApplicationsAndSettlements = async ({ user }: { user: Usuario }) => {
   const client = await pool.connect();
   try {
+    const applications: Solicitud[] = await Promise.all(
+      (await client.query(queries.GET_APPLICATION_INSTANCES_BY_USER, [user.id])).rows.map(async (el) => {
+        return {
+          id: el.id_solicitud,
+          usuario: user,
+          documento: el.documento,
+          rim: el.rim,
+          nacionalidad: el.nacionalidad,
+          aprobado: el.aprobado,
+          pagado: el.pagado,
+          fecha: el.fecha,
+          monto: el.monto_total,
+          liquidaciones: await Promise.all(
+            (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows.map((el) => {
+              return {
+                id: el.id,
+                tipoProcedimiento: el.tipoProcedimiento,
+                fecha: { month: el.mes, year: el.anio },
+                monto: el.monto,
+                certificado: el.certificado,
+                recibo: el.recibo,
+              };
+            })
+          ),
+        };
+      })
+    );
+    return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', solicitudes: applications };
   } catch (error) {
     throw {
       status: 500,
       error,
-      message: errorMessageGenerator(error) || 'Error al crear liquidaciones',
+      message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
     };
   } finally {
     client.release();
