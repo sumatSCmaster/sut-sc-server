@@ -6,6 +6,7 @@ import GticPool from '@utils/GticPool';
 import { insertPaymentReference } from './banks';
 import moment from 'moment';
 import switchcase from '@utils/switch';
+import { Liquidacion, Solicitud } from '@root/interfaces/sigt';
 const gticPool = GticPool.getInstance();
 const pool = Pool.getInstance();
 
@@ -177,16 +178,40 @@ export const insertSettlements = async ({ process, user }) => {
     if (!pago) return { status: 403, message: 'Debe incluir el pago de la solicitud' };
     pago.concepto = 'IMPUESTO';
     await insertPaymentReference(pago, application.id_solicitud, client);
-    const settlement = await Promise.all(
+    const settlement: Liquidacion[] = await Promise.all(
       impuestos.map(async (el) => {
         const liquidacion = (
-          await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [application.id_solicitud, el.tipoImpuesto, el.fechaCancelada, el.monto])
+          await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+            application.id_solicitud,
+            el.tipoImpuesto,
+            el.fechaCancelada.month,
+            el.fechaCancelada.year,
+            el.monto,
+          ])
         ).rows[0];
-        return liquidacion;
+        return {
+          id: liquidacion.id,
+          tipoProcedimiento: el.tipoProcedimiento,
+          fecha: { month: liquidacion.mes, year: liquidacion.anio },
+          monto: liquidacion.monto,
+          certificado: liquidacion.certificado,
+          recibo: liquidacion.recibo,
+        };
       })
     );
 
-    const solicitud = {};
+    const solicitud: Solicitud = {
+      id: application.id_solicitud,
+      usuario: user,
+      documento: application.documento,
+      rim: application.rim,
+      nacionalidad: application.nacionalidad,
+      aprobado: application.aprobado,
+      pagado: application.pagado,
+      fecha: application.fecha,
+      monto: application.monto,
+      liquidaciones: settlement,
+    };
 
     client.query('COMMIT');
     return { status: 201, message: 'Liquidaciones de impuestos creadas satisfactoriamente', solicitud };
@@ -199,6 +224,13 @@ export const insertSettlements = async ({ process, user }) => {
     };
   } finally {
     client.release();
+  }
+};
+
+export const addPayment = (payment) => {
+  try {
+  } catch (error) {
+  } finally {
   }
 };
 

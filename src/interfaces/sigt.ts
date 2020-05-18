@@ -159,6 +159,29 @@ export interface ActividadEconomica {
   deuda: Fecha[];
 }
 
+export interface Solicitud {
+  id: number;
+  usuario: Usuario;
+  documento: string;
+  rim?: string;
+  nacionalidad: string;
+  aprobado: boolean;
+  fecha: Date;
+  monto: number;
+  pagado: boolean;
+  liquidaciones: Liquidacion[];
+}
+
+export interface Liquidacion {
+  id: number;
+  tipoProcedimiento: string;
+  fecha: Fecha;
+  monto: number;
+  certificado?: string;
+  recibo?: string;
+  multas?: any;
+}
+
 export interface Publicidad {
   articulos: {
     id: number;

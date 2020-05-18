@@ -544,12 +544,9 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
 
   //IMPUESTOS SEDEMAT
 
-  CREATE_TAX_PAYMENT_APPLICATION:
-    'INSERT INTO impuesto.solicitud (id_usuario, documento, rim, nacionalidad, aprobado, fecha, monto_total) \
-    VALUES ($1, $2, $3, $4, false, now(), $5) RETURNING *',
-  CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION:
-    'INSERT INTO impuesto.liquidacion (id_solicitud, id_procedimiento, fecha, monto) VALUES \
-    ($1, (SELECT id_procedimiento FROM impuesto.procedimiento WHERE descripcion = $2), $3, $4) RETURNING *',
+  CREATE_TAX_PAYMENT_APPLICATION: 'SELECT * FROM insert_solicitud($1, $2, $3, $4, $5)',
+  CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION: 'SELECT * FROM insert_liquidacion($1,$2,$3,$4)',
+  UPDATE_PAID_STATE_FOR_TAX_PAYMENT_APPLICATION: 'UPDATE impuesto.solicitud SET pagado = true WHERE id_solicitud = $1',
 
   gtic: {
     NATURAL_CONTRIBUTOR_EXISTS:
