@@ -151,6 +151,7 @@ export interface Recaudo {
 }
 
 export interface ActividadEconomica {
+  id: string;
   nombreActividad: string;
   idContribuyente: number;
   alicuota: number;

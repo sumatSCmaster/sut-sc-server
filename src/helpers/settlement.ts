@@ -32,6 +32,7 @@ export const getSettlements = async ({ document, reference, type }) => {
       if (dateInterpolation !== 0) {
         AE = economicActivities.map((el) => {
           return {
+            id: el.nu_ref_actividad,
             nombreActividad: el.tx_actividad,
             idContribuyente: el.co_contribuyente,
             alicuota: el.nu_porc_alicuota / 100,
