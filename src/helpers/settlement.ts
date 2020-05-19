@@ -34,7 +34,7 @@ export const getSettlements = async ({ document, reference, type }) => {
       const dateInterpolation = Math.floor(now.diff(EADate, 'M'));
       montoAcarreado.AE = {
         monto: lastEA.mo_pendiente ? lastEA.mo_pendiente : 0,
-        fecha: { month: lastEAPayment.month(), year: lastEAPayment.year() },
+        fecha: { month: lastEAPayment.toDate().toLocaleString('es-ES', { month: 'long' }), year: lastEAPayment.year() },
       };
       if (dateInterpolation !== 0) {
         AE = economicActivities.map((el) => {
@@ -62,7 +62,7 @@ export const getSettlements = async ({ document, reference, type }) => {
       const dateInterpolationSM = Math.floor(now.diff(SMDate, 'M'));
       montoAcarreado.SM = {
         monto: lastSM.mo_pendiente ? lastSM.mo_pendiente : 0,
-        fecha: { month: lastSMPayment.month(), year: lastSMPayment.year() },
+        fecha: { month: lastSMPayment.toDate().toLocaleString('es-ES', { month: 'long' }), year: lastSMPayment.year() },
       };
       const debtSM = new Array(dateInterpolationSM).fill({ month: null, year: null }).map((value, index) => {
         const date = addMonths(new Date(lastSMPayment.toDate()), index);
@@ -92,7 +92,7 @@ export const getSettlements = async ({ document, reference, type }) => {
       const dateInterpolationIU = Math.floor(now.diff(IUDate, 'M'));
       montoAcarreado.IU = {
         monto: lastIU.mo_pendiente ? lastIU.mo_pendiente : 0,
-        fecha: { month: lastIUPayment.month(), year: lastIUPayment.year() },
+        fecha: { month: lastIUPayment.toDate().toLocaleString('es-ES', { month: 'long' }), year: lastIUPayment.year() },
       };
       if (dateInterpolationIU > 0) {
         const debtIU = new Array(dateInterpolationIU).fill({ month: null, year: null }).map((value, index) => {
@@ -114,7 +114,7 @@ export const getSettlements = async ({ document, reference, type }) => {
       const dateInterpolationPP = Math.floor(now.diff(PPDate, 'M'));
       montoAcarreado.PP = {
         monto: lastPP.mo_pendiente ? lastPP.mo_pendiente : 0,
-        fecha: { month: lastPPPayment.month(), year: lastPPPayment.year() },
+        fecha: { month: lastPPPayment.toDate().toLocaleString('es-ES', { month: 'long' }), year: lastPPPayment.year() },
       };
       if (dateInterpolationPP > 0) {
         debtPP = new Array(dateInterpolationPP).fill({ month: null, year: null }).map((value, index) => {
