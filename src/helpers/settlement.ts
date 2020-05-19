@@ -13,6 +13,7 @@ const pool = Pool.getInstance();
 export const getSettlements = async ({ document, reference, type }) => {
   const client = await pool.connect();
   const gtic = await gticPool.connect();
+  const montoAcarreado: any = {};
   let AE, SM, IU, PP;
   try {
     const contributor = (reference
@@ -29,7 +30,12 @@ export const getSettlements = async ({ document, reference, type }) => {
       if (!lastEA) lastEA = (await gtic.query(queries.gtic.GET_PAID_ECONOMIC_ACTIVITIES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
       if (!lastEA) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
       const lastEAPayment = moment(lastEA.fe_liquidacion);
-      const dateInterpolation = Math.floor(now.diff(lastEAPayment, 'M'));
+      const EADate = moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
+      const dateInterpolation = Math.floor(now.diff(EADate, 'M'));
+      montoAcarreado.AE = {
+        monto: lastEA.mo_pendiente ? lastEA.mo_pendiente : 0,
+        fecha: { month: lastEAPayment.month(), year: lastEAPayment.year() },
+      };
       if (dateInterpolation !== 0) {
         AE = economicActivities.map((el) => {
           return {
@@ -52,7 +58,12 @@ export const getSettlements = async ({ document, reference, type }) => {
       if (!lastSM) lastSM = (await gtic.query(queries.gtic.GET_PAID_MUNICIPAL_SERVICES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
       if (!lastSM) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
       const lastSMPayment = moment(lastSM.fe_liquidacion);
-      const dateInterpolationSM = Math.floor(now.diff(lastSMPayment, 'M'));
+      const SMDate = moment([lastSMPayment.year(), lastSMPayment.month(), 1]);
+      const dateInterpolationSM = Math.floor(now.diff(SMDate, 'M'));
+      montoAcarreado.SM = {
+        monto: lastSM.mo_pendiente ? lastSM.mo_pendiente : 0,
+        fecha: { month: lastSMPayment.month(), year: lastSMPayment.year() },
+      };
       const debtSM = new Array(dateInterpolationSM).fill({ month: null, year: null }).map((value, index) => {
         const date = addMonths(new Date(lastSMPayment.toDate()), index);
         return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
@@ -77,7 +88,12 @@ export const getSettlements = async ({ document, reference, type }) => {
       if (!lastIU) lastIU = (await gtic.query(queries.gtic.GET_PAID_URBAN_ESTATE_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
       if (!lastIU) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
       const lastIUPayment = moment(lastIU.fe_liquidacion);
-      const dateInterpolationIU = Math.floor(now.diff(lastIUPayment, 'M'));
+      const IUDate = moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
+      const dateInterpolationIU = Math.floor(now.diff(IUDate, 'M'));
+      montoAcarreado.IU = {
+        monto: lastIU.mo_pendiente ? lastIU.mo_pendiente : 0,
+        fecha: { month: lastIUPayment.month(), year: lastIUPayment.year() },
+      };
       if (dateInterpolationIU > 0) {
         const debtIU = new Array(dateInterpolationIU).fill({ month: null, year: null }).map((value, index) => {
           const date = addMonths(new Date(lastIUPayment.toDate()), index);
@@ -94,7 +110,12 @@ export const getSettlements = async ({ document, reference, type }) => {
     if (!lastPP) lastPP = (await gtic.query(queries.gtic.GET_PAID_PUBLICITY_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
     if (lastPP) {
       const lastPPPayment = moment(lastPP.fe_liquidacion);
-      const dateInterpolationPP = Math.floor(now.diff(lastPPPayment, 'M'));
+      const PPDate = moment([lastPPPayment.year(), lastPPPayment.month(), 1]);
+      const dateInterpolationPP = Math.floor(now.diff(PPDate, 'M'));
+      montoAcarreado.PP = {
+        monto: lastPP.mo_pendiente ? lastPP.mo_pendiente : 0,
+        fecha: { month: lastPPPayment.month(), year: lastPPPayment.year() },
+      };
       if (dateInterpolationPP > 0) {
         debtPP = new Array(dateInterpolationPP).fill({ month: null, year: null }).map((value, index) => {
           const date = addMonths(new Date(lastPPPayment.toDate()), index);
@@ -113,26 +134,22 @@ export const getSettlements = async ({ document, reference, type }) => {
       const publicitySubarticles = (await gtic.query(queries.gtic.GET_PUBLICITY_SUBARTICLES)).rows;
       PP = {
         deuda: debtPP,
-        articulos: await Promise.all(
-          publicityArticles.map(async (el) => {
-            return {
-              id: el.co_articulo,
-              nombreArticulo: el.tx_articulo,
-              subarticulos: await Promise.all(
-                publicitySubarticles
-                  .filter((al) => el.co_articulo === al.co_articulo)
-                  .map(async (el) => {
-                    return {
-                      id: el.co_medio,
-                      nombreSubarticulo: el.tx_medio,
-                      parametro: el.parametro,
-                      costo: el.ut_medio * UTMM,
-                    };
-                  })
-              ),
-            };
-          })
-        ),
+        articulos: publicityArticles.map((el) => {
+          return {
+            id: el.co_articulo,
+            nombreArticulo: el.tx_articulo,
+            subarticulos: publicitySubarticles
+              .filter((al) => el.co_articulo === al.co_articulo)
+              .map((el) => {
+                return {
+                  id: el.co_medio,
+                  nombreSubarticulo: el.tx_medio,
+                  parametro: el.parametro,
+                  costo: el.ut_medio * UTMM,
+                };
+              }),
+          };
+        }),
       };
     }
     return {
@@ -147,6 +164,7 @@ export const getSettlements = async ({ document, reference, type }) => {
         SM,
         IU,
         PP,
+        montoAcarreado,
       },
     };
   } catch (error) {
