@@ -35,7 +35,7 @@ export const getSettlements = async ({ document, reference, type }) => {
       const dateInterpolation = Math.floor(now.diff(EADate, 'M'));
       montoAcarreado.AE = {
         monto: lastEA.mo_pendiente ? parseFloat(lastEA.mo_pendiente) : 0,
-        fecha: { month: pastMonthEA.toDate().toLocaleString('es-ES', { month: 'long' }), year: lastEAPayment.year() },
+        fecha: { month: pastMonthEA.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthEA.year() },
       };
       if (dateInterpolation !== 0) {
         AE = economicActivities.map((el) => {
@@ -64,7 +64,7 @@ export const getSettlements = async ({ document, reference, type }) => {
       const dateInterpolationSM = Math.floor(now.diff(SMDate, 'M'));
       montoAcarreado.SM = {
         monto: lastSM.mo_pendiente ? parseFloat(lastSM.mo_pendiente) : 0,
-        fecha: { month: pastMonthSM.toDate().toLocaleString('es-ES', { month: 'long' }), year: lastSMPayment.year() },
+        fecha: { month: pastMonthSM.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthSM.year() },
       };
       const debtSM = new Array(dateInterpolationSM).fill({ month: null, year: null }).map((value, index) => {
         const date = addMonths(new Date(lastSMPayment.toDate()), index);
@@ -95,7 +95,7 @@ export const getSettlements = async ({ document, reference, type }) => {
       const dateInterpolationIU = Math.floor(now.diff(IUDate, 'M'));
       montoAcarreado.IU = {
         monto: lastIU.mo_pendiente ? lastIU.mo_pendiente : 0,
-        fecha: { month: pastMonthIU.toDate().toLocaleString('es-ES', { month: 'long' }), year: lastIUPayment.year() },
+        fecha: { month: pastMonthIU.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthIU.year() },
       };
       if (dateInterpolationIU > 0) {
         const debtIU = new Array(dateInterpolationIU).fill({ month: null, year: null }).map((value, index) => {
@@ -118,7 +118,7 @@ export const getSettlements = async ({ document, reference, type }) => {
       const dateInterpolationPP = Math.floor(now.diff(PPDate, 'M'));
       montoAcarreado.PP = {
         monto: lastPP.mo_pendiente ? lastPP.mo_pendiente : 0,
-        fecha: { month: pastMonthPP.toDate().toLocaleString('es-ES', { month: 'long' }), year: lastPPPayment.year() },
+        fecha: { month: pastMonthPP.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthPP.year() },
       };
       if (dateInterpolationPP > 0) {
         debtPP = new Array(dateInterpolationPP).fill({ month: null, year: null }).map((value, index) => {
