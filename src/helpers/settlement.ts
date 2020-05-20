@@ -82,7 +82,7 @@ export const getSettlements = async ({ document, reference, type }) => {
             el.tx_tipo_inmueble === 'COMERCIAL'
               ? (await gtic.query(queries.gtic.GET_MAX_GAS_TARIFF_BY_CONTRIBUTOR)).rows[0].nu_tarifa
               : (await gtic.query(queries.gtic.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].nu_tarifa;
-          return { direccionInmueble: el.tx_direccion_inmueble, tarifaAseo, tarifaGas, deuda: debtSM };
+          return { tipoInmueble: el.tx_tipo_inmueble, direccionInmueble: el.tx_direccion_inmueble, tarifaAseo, tarifaGas, deuda: debtSM };
         })
       );
 
@@ -183,8 +183,6 @@ export const getSettlements = async ({ document, reference, type }) => {
     gtic.release();
   }
 };
-
-//TODO: añadir las instancias de liquidacion en get /proceduree
 
 export const insertSettlements = async ({ process, user }) => {
   const client = await pool.connect();

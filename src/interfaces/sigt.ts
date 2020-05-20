@@ -198,6 +198,7 @@ export interface Publicidad {
 
 export interface ServicioMunicipal {
   direccionInmueble: string;
+  tipoInmueble: string;
   tarifaAseo: string;
   tarifaGas: string;
   deuda: Fecha[];
