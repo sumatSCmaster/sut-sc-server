@@ -73,16 +73,16 @@ export const getSettlements = async ({ document, reference, type }) => {
       SM = await Promise.all(
         estates.map(async (el) => {
           const tarifaAseo =
-            el.tx_tipo_inmueble === 'COMERCIAL'
+            el.tx_tp_inmueble === 'COMERCIAL'
               ? el.nu_metro_cuadrado && el.nu_metro_cuadrado !== 0
                 ? 0.15 * el.nu_metro_cuadrado
                 : (await gtic.query(queries.gtic.GET_MAX_CLEANING_TARIFF_BY_CONTRIBUTOR)).rows[0].nu_tarifa
               : (await gtic.query(queries.gtic.GET_RESIDENTIAL_CLEANING_TARIFF)).rows[0].nu_tarifa;
           const tarifaGas =
-            el.tx_tipo_inmueble === 'COMERCIAL'
+            el.tx_tp_inmueble === 'COMERCIAL'
               ? (await gtic.query(queries.gtic.GET_MAX_GAS_TARIFF_BY_CONTRIBUTOR)).rows[0].nu_tarifa
               : (await gtic.query(queries.gtic.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].nu_tarifa;
-          return { tipoInmueble: el.tx_tipo_inmueble, direccionInmueble: el.tx_direccion_inmueble, tarifaAseo, tarifaGas, deuda: debtSM };
+          return { tipoInmueble: el.tx_tp_inmueble, direccionInmueble: el.tx_direccion, tarifaAseo, tarifaGas, deuda: debtSM };
         })
       );
 
@@ -103,7 +103,7 @@ export const getSettlements = async ({ document, reference, type }) => {
           return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
         });
         IU = estates.map((el) => {
-          return { direccionInmueble: el.tx_direccion_inmueble, ultimoAvaluo: el.nu_monto, impuestoInmueble: (el.nu_monto * 0.01) / 12, deuda: debtIU };
+          return { direccionInmueble: el.tx_direccion, ultimoAvaluo: el.nu_monto, impuestoInmueble: (el.nu_monto * 0.01) / 12, deuda: debtIU };
         });
       }
     }
