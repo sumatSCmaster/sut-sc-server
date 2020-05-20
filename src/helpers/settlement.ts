@@ -94,7 +94,7 @@ export const getSettlements = async ({ document, reference, type }) => {
       const IUDate = moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
       const dateInterpolationIU = Math.floor(now.diff(IUDate, 'M'));
       montoAcarreado.IU = {
-        monto: lastIU.mo_pendiente ? lastIU.mo_pendiente : 0,
+        monto: lastIU.mo_pendiente ? parseFloat(lastIU.mo_pendiente) : 0,
         fecha: { month: pastMonthIU.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthIU.year() },
       };
       if (dateInterpolationIU > 0) {
@@ -117,7 +117,7 @@ export const getSettlements = async ({ document, reference, type }) => {
       const PPDate = moment([lastPPPayment.year(), lastPPPayment.month(), 1]);
       const dateInterpolationPP = Math.floor(now.diff(PPDate, 'M'));
       montoAcarreado.PP = {
-        monto: lastPP.mo_pendiente ? lastPP.mo_pendiente : 0,
+        monto: lastPP.mo_pendiente ? parseFloat(lastPP.mo_pendiente) : 0,
         fecha: { month: pastMonthPP.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthPP.year() },
       };
       if (dateInterpolationPP > 0) {
