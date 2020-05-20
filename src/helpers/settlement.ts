@@ -30,11 +30,12 @@ export const getSettlements = async ({ document, reference, type }) => {
       if (!lastEA) lastEA = (await gtic.query(queries.gtic.GET_PAID_ECONOMIC_ACTIVITIES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
       if (!lastEA) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
       const lastEAPayment = moment(lastEA.fe_liquidacion);
+      const pastMonthEA = moment(lastEA.fe_liquidacion).subtract(1, 'M');
       const EADate = moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
       const dateInterpolation = Math.floor(now.diff(EADate, 'M'));
       montoAcarreado.AE = {
         monto: lastEA.mo_pendiente ? parseFloat(lastEA.mo_pendiente) : 0,
-        fecha: { month: lastEAPayment.month(-1).toDate().toLocaleString('es-ES', { month: 'long' }), year: lastEAPayment.year() },
+        fecha: { month: pastMonthEA.toDate().toLocaleString('es-ES', { month: 'long' }), year: lastEAPayment.year() },
       };
       if (dateInterpolation !== 0) {
         AE = economicActivities.map((el) => {
@@ -58,11 +59,12 @@ export const getSettlements = async ({ document, reference, type }) => {
       if (!lastSM) lastSM = (await gtic.query(queries.gtic.GET_PAID_MUNICIPAL_SERVICES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
       if (!lastSM) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
       const lastSMPayment = moment(lastSM.fe_liquidacion);
+      const pastMonthSM = moment(lastSM.fe_liquidacion).subtract(1, 'M');
       const SMDate = moment([lastSMPayment.year(), lastSMPayment.month(), 1]);
       const dateInterpolationSM = Math.floor(now.diff(SMDate, 'M'));
       montoAcarreado.SM = {
         monto: lastSM.mo_pendiente ? parseFloat(lastSM.mo_pendiente) : 0,
-        fecha: { month: lastSMPayment.month(-1).toDate().toLocaleString('es-ES', { month: 'long' }), year: lastSMPayment.year() },
+        fecha: { month: pastMonthSM.toDate().toLocaleString('es-ES', { month: 'long' }), year: lastSMPayment.year() },
       };
       const debtSM = new Array(dateInterpolationSM).fill({ month: null, year: null }).map((value, index) => {
         const date = addMonths(new Date(lastSMPayment.toDate()), index);
@@ -88,11 +90,12 @@ export const getSettlements = async ({ document, reference, type }) => {
       if (!lastIU) lastIU = (await gtic.query(queries.gtic.GET_PAID_URBAN_ESTATE_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
       if (!lastIU) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
       const lastIUPayment = moment(lastIU.fe_liquidacion);
+      const pastMonthIU = moment(lastIU.fe_liquidacion).subtract(1, 'M');
       const IUDate = moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
       const dateInterpolationIU = Math.floor(now.diff(IUDate, 'M'));
       montoAcarreado.IU = {
         monto: lastIU.mo_pendiente ? lastIU.mo_pendiente : 0,
-        fecha: { month: lastIUPayment.month(-1).toDate().toLocaleString('es-ES', { month: 'long' }), year: lastIUPayment.year() },
+        fecha: { month: pastMonthIU.toDate().toLocaleString('es-ES', { month: 'long' }), year: lastIUPayment.year() },
       };
       if (dateInterpolationIU > 0) {
         const debtIU = new Array(dateInterpolationIU).fill({ month: null, year: null }).map((value, index) => {
@@ -110,11 +113,12 @@ export const getSettlements = async ({ document, reference, type }) => {
     if (!lastPP) lastPP = (await gtic.query(queries.gtic.GET_PAID_PUBLICITY_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
     if (lastPP) {
       const lastPPPayment = moment(lastPP.fe_liquidacion);
+      const pastMonthPP = moment(lastPP.fe_liquidacion).subtract(1, 'M');
       const PPDate = moment([lastPPPayment.year(), lastPPPayment.month(), 1]);
       const dateInterpolationPP = Math.floor(now.diff(PPDate, 'M'));
       montoAcarreado.PP = {
         monto: lastPP.mo_pendiente ? lastPP.mo_pendiente : 0,
-        fecha: { month: lastPPPayment.month(-1).toDate().toLocaleString('es-ES', { month: 'long' }), year: lastPPPayment.year() },
+        fecha: { month: pastMonthPP.toDate().toLocaleString('es-ES', { month: 'long' }), year: lastPPPayment.year() },
       };
       if (dateInterpolationPP > 0) {
         debtPP = new Array(dateInterpolationPP).fill({ month: null, year: null }).map((value, index) => {
