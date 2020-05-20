@@ -76,11 +76,11 @@ export const getSettlements = async ({ document, reference, type }) => {
             el.tx_tp_inmueble === 'COMERCIAL'
               ? el.nu_metro_cuadrado && el.nu_metro_cuadrado !== 0
                 ? 0.15 * el.nu_metro_cuadrado
-                : (await gtic.query(queries.gtic.GET_MAX_CLEANING_TARIFF_BY_CONTRIBUTOR)).rows[0].nu_tarifa
+                : (await gtic.query(queries.gtic.GET_MAX_CLEANING_TARIFF_BY_CONTRIBUTOR, [contributor.co_contribuyente])).rows[0].nu_tarifa
               : (await gtic.query(queries.gtic.GET_RESIDENTIAL_CLEANING_TARIFF)).rows[0].nu_tarifa;
           const tarifaGas =
             el.tx_tp_inmueble === 'COMERCIAL'
-              ? (await gtic.query(queries.gtic.GET_MAX_GAS_TARIFF_BY_CONTRIBUTOR)).rows[0].nu_tarifa
+              ? (await gtic.query(queries.gtic.GET_MAX_GAS_TARIFF_BY_CONTRIBUTOR, [contributor.co_contribuyente])).rows[0].nu_tarifa
               : (await gtic.query(queries.gtic.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].nu_tarifa;
           return { tipoInmueble: el.tx_tp_inmueble, direccionInmueble: el.tx_direccion, tarifaAseo, tarifaGas, deuda: debtSM };
         })
