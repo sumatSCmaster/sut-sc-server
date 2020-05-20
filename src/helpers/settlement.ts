@@ -33,7 +33,7 @@ export const getSettlements = async ({ document, reference, type }) => {
       const EADate = moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
       const dateInterpolation = Math.floor(now.diff(EADate, 'M'));
       montoAcarreado.AE = {
-        monto: lastEA.mo_pendiente ? lastEA.mo_pendiente : 0,
+        monto: lastEA.mo_pendiente ? parseFloat(lastEA.mo_pendiente) : 0,
         fecha: { month: lastEAPayment.month(-1).toDate().toLocaleString('es-ES', { month: 'long' }), year: lastEAPayment.year() },
       };
       if (dateInterpolation !== 0) {
@@ -61,7 +61,7 @@ export const getSettlements = async ({ document, reference, type }) => {
       const SMDate = moment([lastSMPayment.year(), lastSMPayment.month(), 1]);
       const dateInterpolationSM = Math.floor(now.diff(SMDate, 'M'));
       montoAcarreado.SM = {
-        monto: lastSM.mo_pendiente ? lastSM.mo_pendiente : 0,
+        monto: lastSM.mo_pendiente ? parseFloat(lastSM.mo_pendiente) : 0,
         fecha: { month: lastSMPayment.month(-1).toDate().toLocaleString('es-ES', { month: 'long' }), year: lastSMPayment.year() },
       };
       const debtSM = new Array(dateInterpolationSM).fill({ month: null, year: null }).map((value, index) => {
