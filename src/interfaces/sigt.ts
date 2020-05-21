@@ -191,6 +191,7 @@ export interface Publicidad {
       nombreSubarticulo: string;
       parametro: string;
       costo: number;
+      costoAlto?: number;
     };
   };
   deuda: Fecha[];

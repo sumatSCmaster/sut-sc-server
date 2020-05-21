@@ -150,6 +150,7 @@ export const getSettlements = async ({ document, reference, type }) => {
                   nombreSubarticulo: el.tx_medio,
                   parametro: el.parametro,
                   costo: +el.ut_medio * UTMM,
+                  costoAlto: el.parametro === 'BANDA' ? (+el.ut_medio + 2) * UTMM : undefined,
                 };
               }),
           };
