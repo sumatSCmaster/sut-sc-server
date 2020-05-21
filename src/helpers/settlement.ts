@@ -21,6 +21,7 @@ export const getSettlements = async ({ document, reference, type }) => {
       : await gtic.query(queries.gtic.NATURAL_CONTRIBUTOR_EXISTS, [document, type])
     ).rows[0];
     if (!contributor) return { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
+    console.log(contributor);
     const now = moment(new Date());
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     if (contributor.nu_referencia) {
@@ -129,27 +130,26 @@ export const getSettlements = async ({ document, reference, type }) => {
     } else {
       debtPP = new Array(1).fill({ month: null, year: null }).map((value) => {
         const date = addMonths(new Date(), -1);
-        return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
+        return { month: date.toLocaleString('ES', { month: 'long' }), year: date.getFullYear() };
       });
     }
     if (debtPP) {
-      console.log(debtPP);
       const publicityArticles = (await gtic.query(queries.gtic.GET_PUBLICITY_ARTICLES)).rows;
       const publicitySubarticles = (await gtic.query(queries.gtic.GET_PUBLICITY_SUBARTICLES)).rows;
       PP = {
         deuda: debtPP,
         articulos: publicityArticles.map((el) => {
           return {
-            id: el.co_articulo,
+            id: +el.co_articulo,
             nombreArticulo: el.tx_articulo,
             subarticulos: publicitySubarticles
-              .filter((al) => el.co_articulo === al.co_articulo)
+              .filter((al) => +el.co_articulo === al.co_articulo)
               .map((el) => {
                 return {
-                  id: el.co_medio,
+                  id: +el.co_medio,
                   nombreSubarticulo: el.tx_medio,
                   parametro: el.parametro,
-                  costo: el.ut_medio * UTMM,
+                  costo: +el.ut_medio * UTMM,
                 };
               }),
           };
@@ -168,7 +168,7 @@ export const getSettlements = async ({ document, reference, type }) => {
         SM,
         IU,
         PP,
-        montoAcarreado,
+        montoAcarreado: addMissingCarriedAmounts(montoAcarreado),
       },
     };
   } catch (error) {
@@ -304,6 +304,14 @@ export const addTaxApplicationPayment = async ({ payment, application }) => {
   } finally {
     client.release();
   }
+};
+
+const addMissingCarriedAmounts = (amountObject) => {
+  if (!amountObject.hasOwnProperty('AE')) amountObject.AE = { monto: 0 };
+  if (!amountObject.hasOwnProperty('SM')) amountObject.SM = { monto: 0 };
+  if (!amountObject.hasOwnProperty('IU')) amountObject.IU = { monto: 0 };
+  if (!amountObject.hasOwnProperty('PP')) amountObject.PP = { monto: 0 };
+  return amountObject;
 };
 
 const addMonths = (date, months): Date => {
