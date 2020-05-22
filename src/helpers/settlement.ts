@@ -358,7 +358,6 @@ const mesesCardinal = {
 };
 const createSolvencyForApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
-    
     const isJuridical = application.tipoContribuyente === 'JURIDICO';
     const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
     const payloadContribuyente = isJuridical
@@ -369,6 +368,7 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-AE.pug`), {
         moment: require('moment'),
+        tramite: 'PAGO DE IMPUESTOS',
         datos: {
           contribuyente: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente + datosContribuyente.ap_contribuyente,
           rim: application.rim,
@@ -388,7 +388,7 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
         pdf
           .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
           .toFile(pdfDir, async () => {
-            await pool.query(queries.UPDATE_CERTIFICATE_SETTLEMENT, [dir, application.idLiquidacion])
+            await pool.query(queries.UPDATE_CERTIFICATE_SETTLEMENT, [dir, application.idLiquidacion]);
             res(dir);
           });
       } else {
@@ -426,14 +426,14 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
 const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
     const isJuridical = application.tipoContribuyente === 'JURIDICO';
-    const queryContribuyente = isJuridical? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
-    const payloadContribuyente = isJuridical ? [application.documento, application.rim, application.nacionalidad] : [application.nacionalidad, application.nacionalidad]
-    const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0]
+    const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
+    const payloadContribuyente = isJuridical
+      ? [application.documento, application.rim, application.nacionalidad]
+      : [application.nacionalidad, application.nacionalidad];
+    const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
-    if(application.tipoLiquidacion === 'SM'){
-
-    }else if(application.tipoLiquidacion === 'IU'){
-
+    if (application.tipoLiquidacion === 'SM') {
+    } else if (application.tipoLiquidacion === 'IU') {
     }
   } catch (error) {
     throw error;
@@ -457,6 +457,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
 
     const certAE = {
       fecha: moment().format('YYYY-MM-DD'),
+      tramite: 'PAGO DE IMPUESTOS',
       moment: require('moment'),
       datos: {
         QR: linkQr,
