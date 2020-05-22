@@ -1,6 +1,6 @@
 extends default
 block css
-  link(rel="stylesheet", href="../views/css/sedemat.css")
+  link(rel="stylesheet", href="css/sedemat.css")
 block content
   div#fecha
     p 
@@ -10,37 +10,24 @@ block content
     div.center
       p 
         b El Intendente Municipal Tributario hace constar que
-    div
+    div(style={'text-align': 'justify'})
       p 
         b El Contribuyente:
-        span &nbsp; #{datos.contribuyente}
-    div.flex
-      p
+        span &nbsp; #{datos.contribuyente} &nbsp;
         b R.I.M:
-        span &nbsp; #{datos.rim}
-      p
+        span &nbsp; #{datos.rim} &nbsp;
         b C.I./R.I.F:
-        span &nbsp; #{datos.cedulaORif}
-    div
-      p
+        span &nbsp; #{datos.cedulaORif} &nbsp;
         b Dirección:
-        span &nbsp; #{datos.direccion}
-      p
+        span &nbsp; #{datos.direccion} &nbsp;
         b Representante Legal:
-        span &nbsp; #{datos.representanteLegal}
-      p
+        span &nbsp; #{datos.representanteLegal} &nbsp;
         b Se encuentra solvente con el impuesto a las Actividades Económicas hasta el:
-        span #{datos.periodo}
-    div.flex
-      p
+        span &nbsp; #{datos.periodo} &nbsp;
         b Mes del año
-        span #{datos.anio}
-
-      p
+        span &nbsp; #{datos.anio} &nbsp;
         b Esta solvencia es valida hasta el
-        span #{datos.fecha}
-    div
-      p
+        span &nbsp; #{datos.fecha}, &nbsp;
         b Maracaibo,
         span &nbsp; #{datos.fechaLetra}
     div(style={'margin-top':"160px"}).flex.center
