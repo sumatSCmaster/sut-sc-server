@@ -187,13 +187,12 @@ export const getSettlements = async ({ document, reference, type }) => {
 
 export const insertSettlements = async ({ process, user }) => {
   const client = await pool.connect();
-  const { pago, impuestos } = process;
+  const { impuestos } = process;
   try {
     client.query('BEGIN');
     const application = (
       await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, process.documento, process.rim, process.nacionalidad, process.totalPagoImpuestos])
     ).rows[0];
-    if (!pago) return { status: 403, message: 'Debe incluir el pago de la solicitud' };
     const settlement: Liquidacion[] = await Promise.all(
       impuestos.map(async (el) => {
         const liquidacion = (
@@ -307,12 +306,141 @@ export const addTaxApplicationPayment = async ({ payment, application }) => {
   }
 };
 
+export const createCertificateForApplication = async ({ settlement, media, user }) => {
+  const client = await pool.connect();
+  const gtic = await gticPool.connect();
+  try {
+    client.query('BEGIN');
+    const applicationView = (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement])).rows[0];
+    if (applicationView[media]) return { status: 200, message: 'Certificado generado satisfactoriamente', media: applicationView[media] };
+    const dir = await certificateCreationHandler(applicationView.tipoLiquidacion, media, {
+      gticPool: gtic,
+      pool: client,
+      user,
+      application: applicationView,
+    });
+    client.query('COMMIT');
+    return { status: 200, message: 'Certificado generado satisfactoriamente', media: dir };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al obtener los impuestos',
+    };
+  } finally {
+    client.release();
+    gtic.release();
+  }
+};
+
+const createSolvencyForApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
+  try {
+  } catch (error) {
+    throw error;
+  }
+};
+
+const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
+  try {
+  } catch (error) {
+    throw error;
+  }
+};
+
+const createReceiptForAEApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
+  try {
+  } catch (error) {
+    throw error;
+  }
+};
+
+const createReceiptForPPApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
+  try {
+  } catch (error) {
+    throw error;
+  }
+};
+
+const certificateCreationSnippet = () => {
+  // const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${id}`, { errorCorrectionLevel: 'H' });
+  // return new Promise(async (res, rej) => {
+  //   const html = renderFile(resolve(__dirname, `../views/planillas/${planilla}.pug`), {
+  //     fecha,
+  //     codigo,
+  //     formato,
+  //     tramite,
+  //     institucion,
+  //     datos,
+  //     id,
+  //     cache: false,
+  //     moment: require('moment'),
+  //     QR: linkQr,
+  //     costoFormateado,
+  //     UTMM,
+  //     costo,
+  //     written,
+  //   });
+  //   const pdfDir = resolve(__dirname, `../../archivos/tramites/${codigo}/${dir.split('/').pop()}`);
+  //   if (dev) {
+  //     pdf
+  //       .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
+  //       .toFile(pdfDir, () => {
+  //         res(dir);
+  //       });
+  //   } else {
+  //     try {
+  //       pdf
+  //         .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
+  //         .toBuffer(async (err, buffer) => {
+  //           if (err) {
+  //             rej(err);
+  //           } else {
+  //             const bucketParams = {
+  //               Bucket: 'sut-maracaibo',
+  //               Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}`,
+  //             };
+  //             await S3Client.putObject({
+  //               ...bucketParams,
+  //               Body: buffer,
+  //               ACL: 'public-read',
+  //               ContentType: 'application/pdf',
+  //             }).promise();
+  //             res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+  //           }
+  //         });
+  //     } catch (e) {
+  //       throw e;
+  //     } finally {
+  //     }
+  //   }
+  // });
+};
+
 const addMissingCarriedAmounts = (amountObject) => {
   if (!amountObject.hasOwnProperty('AE')) amountObject.AE = { monto: 0 };
   if (!amountObject.hasOwnProperty('SM')) amountObject.SM = { monto: 0 };
   if (!amountObject.hasOwnProperty('IU')) amountObject.IU = { monto: 0 };
   if (!amountObject.hasOwnProperty('PP')) amountObject.PP = { monto: 0 };
   return amountObject;
+};
+
+const certificateCases = switchcase({
+  AE: { recibo: createReceiptForAEApplication, solvencia: createSolvencyForApplication },
+  SM: { recibo: createReceiptForSMOrIUApplication },
+  IU: { recibo: createReceiptForSMOrIUApplication },
+  PP: { recibo: createReceiptForPPApplication },
+})(null);
+
+const certificateCreationHandler = async (process, media, payload: CertificatePayload) => {
+  try {
+    const result = certificateCases(process)[media];
+    if (result) return await result(payload);
+    throw new Error('No se encontró el tipo de certificado seleccionado');
+  } catch (e) {
+    throw e;
+  }
 };
 
 const addMonths = (date, months): Date => {
@@ -323,3 +451,10 @@ const addMonths = (date, months): Date => {
   }
   return date;
 };
+
+interface CertificatePayload {
+  gticPool: PoolClient;
+  pool: PoolClient;
+  user: Usuario;
+  application: object;
+}

@@ -1,7 +1,13 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
 import { authenticate } from 'passport';
-import { getSettlements, insertSettlements, getApplicationsAndSettlements, addTaxApplicationPayment } from '@helpers/settlement';
+import {
+  getSettlements,
+  insertSettlements,
+  getApplicationsAndSettlements,
+  addTaxApplicationPayment,
+  createCertificateForApplication,
+} from '@helpers/settlement';
 
 const router = Router();
 
@@ -22,6 +28,19 @@ router.get('/instances', authenticate('jwt'), async (req: any, res) => {
 router.post('/init', authenticate('jwt'), async (req: any, res) => {
   const { procedimiento } = req.body;
   const [error, data] = await fulfill(insertSettlements({ process: procedimiento, user: req.user }));
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+});
+
+router.post('/:id/:certificate', authenticate('jwt'), async (req: any, res) => {
+  const { id, certificate } = req.params;
+  const [error, data] = await fulfill(
+    createCertificateForApplication({
+      settlement: id,
+      media: certificate,
+      user: req.user,
+    })
+  );
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
