@@ -16,7 +16,7 @@ export const getSettlements = async ({ document, reference, type, user }) => {
   const montoAcarreado: any = {};
   let AE, SM, IU, PP;
   try {
-    const currentApplicationExists = (await client.query(queries.CURRENT_APPLICATION_EXISTS, [user.id])).rows;
+    const currentApplicationExists = (await client.query(queries.CURRENT_APPLICATION_EXISTS, [document, reference, type])).rows;
     if (currentApplicationExists.length > 0) return { status: 409, message: 'Ya existe una declaracion de impuestos para este mes' };
     const contributor = (reference
       ? await gtic.query(queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS, [document, reference, type])
