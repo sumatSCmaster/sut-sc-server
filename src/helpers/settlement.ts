@@ -295,7 +295,7 @@ export const addTaxApplicationPayment = async ({ payment, application }) => {
     await insertPaymentReference(payment, application, client);
     await client.query(queries.UPDATE_PAID_STATE_FOR_TAX_PAYMENT_APPLICATION, [application]);
     client.query('COMMIT');
-    return { status: 201, message: 'Pago añadido para la solicitud declarada' };
+    return { status: 200, message: 'Pago añadido para la solicitud declarada' };
   } catch (error) {
     client.query('ROLLBACK');
     throw {
