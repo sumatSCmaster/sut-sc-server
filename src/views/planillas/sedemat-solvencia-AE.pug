@@ -16,21 +16,21 @@ block content
     div
       p 
         b El Contribuyente:
-        span &nbsp; #{datos.nombre}
+        span &nbsp; #{datos.contribuyente}
     div.flex
       p
         b R.I.M:
-        span &nbsp; #{datos.cedula}
+        span &nbsp; #{datos.rim}
       p
         b C.I./R.I.F:
-        span &nbsp; #{datos.cedula}
+        span &nbsp; #{datos.cedulaORif}
     div
       p
         b Dirección:
         span &nbsp; #{datos.direccion}
       p
         b Representante Legal:
-        span &nbsp; #{datos.nombre}
+        span &nbsp; #{datos.represanteLegal}
       p
         b Se encuentra solvente con el impuesto a las Actividades Económicas hasta el:
         span
@@ -42,7 +42,7 @@ block content
     div
       p
         b Maracaibo,
-        span &nbsp; #{fecha}
+        span &nbsp; #{datos.fecha}
     div(style={'margin-top':"160px"}).flex.center
       div(style={height:"180px"})
         img(src=QR, alt='QR', style={height:"100%"})
