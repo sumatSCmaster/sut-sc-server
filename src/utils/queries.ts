@@ -561,7 +561,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   UPDATE_RECEIPT_FOR_SETTLEMENTS: 'UPDATE impuesto.liquidacion SET recibo = $1 WHERE id_procedimiento = $2 AND id_solicitud = $3',
   CURRENT_APPLICATION_EXISTS:
     'SELECT * FROM impuesto.solicitud WHERE documento = $1 AND rim = $2 AND nacionalidad = $3 AND aprobado = false AND (EXTRACT(month FROM fecha::date) = EXTRACT(month FROM now()::date));',
-
+  UPDATE_CERTIFICATE_SETTLEMENT: 'UPDATE impuesto.liquidacion SET certificado = $1 WHERE id_liquidacion = $2;',
   gtic: {
     NATURAL_CONTRIBUTOR_EXISTS:
       'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2;',
