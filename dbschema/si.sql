@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.1
--- Dumped by pg_dump version 12.1
+-- Dumped from database version 12.2
+-- Dumped by pg_dump version 12.2
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -1160,7 +1160,14 @@ BEGIN
                 INNER JOIN multa ON pago.id_procedimiento = multa.id_multa 
                 INNER JOIN tipo_tramite ON tipo_tramite.id_tipo_tramite = multa.id_tipo_tramite where pago.id_pago = idPago) row;
             END IF;
-            
+
+            IF (SELECT concepto FROM pago WHERE id_pago = idPago) = 'IMPUESTO' THEN
+                UPDATE impuesto.solicitud SET aprobado = true WHERE id_solicitud = (SELECT id_procedimiento FROM pago WHERE id_pago = idPago);
+
+                select row_to_json(row)::jsonb into dataPago from (select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, pago.id_procedimiento AS idProcedimiento, pago.referencia, pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, solicitud.documento, solicitud.rim, solicitud.aprobado, solicitud.monto_total from pago 
+                INNER JOIN impuesto.solicitud ON pago.id_procedimiento = solicitud.id_solicitud 
+                where pago.id_pago = idPago) row;
+            END IF;
             
             --agrega el json de la row y lo almacena en el array
             jsonArray := array_append(jsonArray, dataPago);   
