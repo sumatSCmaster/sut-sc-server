@@ -14,200 +14,200 @@ block content
       b ACTIVIDADES ECONÓMICAS
     .QR
       img#QR(src=QR, alt='QR')
-  div#planilla
-    div(style={'margin-bottom':'25px'})
+  div#planilla(style={'font-size':'13px'})
+    div(style={'margin-bottom':'20px'})
       div.table(style={'width':'90%', 'font-size':'16px', 'font-weight': 'bold'})
         div.tr
-          div(style={'width':'15%'}).td.border-right.border-bottom.center
+          div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
             p 
               b Nro. Solicitud
-          div(style={'width':'20%'}).td.border-right.border-bottom.center
+          div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
             p
               b Nro. Planilla
-          div(style={'width':'15%'}).td.border-right.border-bottom.center
+          div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
             p
               b MOTIVO
-          div(style={'width':'15%'}).td.border-right.border-bottom.center
+          div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
             p
               b Porción
-          div(style={'width':'20%'}).td.border-right.border-bottom.center
+          div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
             p
               b Liquidador
-          div(style={'width':'15%'}).td.border-bottom.center
+          div(style={'-webkit-flex': 1}).td.border-bottom.center
             p
               b Cajero
         div.tr
-          div(style={'width':'15%'}).td.border-right.center
+          div(style={'-webkit-flex': 1}).td.border-right.center
             p  #{datos.nroSolicitud}
-          div(style={'width':'20%'}).td.border-right.center
+          div(style={'-webkit-flex': 1}).td.border-right.center
             p  #{datos.nroPlanilla}
-          div(style={'width':'15%'}).td.border-right.center
+          div(style={'-webkit-flex': 1}).td.border-right.center
             p  #{datos.motivo}
-          div(style={'width':'15%'}).td.border-right.center
+          div(style={'-webkit-flex': 1}).td.border-right.center
             p  #{datos.porcion}
-          div(style={'width':'20%'}).td.border-right.center
+          div(style={'-webkit-flex': 1}).td.border-right.center
             p  USUARIO WEB
-          div(style={'width':'15%'}).td.center
+          div(style={'-webkit-flex': 1}).td.center
             p  
-    div.table(style={'font-size':'16px'})
+    div.table(style={'font-size':'14px'})
       div.tr
-        div.td(style={'width':'10%'}).border-right.border-bottom.center
+        div.td(style={'-webkit-flex': 1}).border-right.border-bottom.center
           p
             b RAMO:
-        div.td(style={'width':'55%'}).border-right.border-bottom
+        div.td(style={'-webkit-flex': 5}).border-right.border-bottom
           p #{datos.categoria}
-        div.td(style={'width':'5%'}).border-right.border-bottom.center
+        div.td(style={'-webkit-flex': 0.5}).border-right.border-bottom.center
           p
             b RIF:
-        div(style={'width':'15%'}).td.border-right.border-bottom
+        div(style={'-webkit-flex': 1.5}).td.border-right.border-bottom
           p   #{datos.rif}
-        div.td(style={'width':'6%'}).border-right.border-bottom.center
+        div.td(style={'-webkit-flex': 0.5}).border-right.border-bottom.center
           p
             b REF:
-        div(style={'width':'14%'}).td.border-bottom
+        div(style={'-webkit-flex': 1.5}).td.border-bottom
           p #{datos.ref}
       div.tr
-        div(style={'width':'15%'}).td.border-right.border-bottom.center
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
           p
             b RAZÓN SOCIAL:
-        div(style={'width':'85%'}).td.border-bottom
+        div(style={'-webkit-flex': 8}).td.border-bottom
           p #{datos.razonSocial}
       div.tr
-        div(style={'width':'15%'}).td.border-right.border-bottom.center
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
           p
             b DIRECCIÓN:
-        div(style={'width':'85%'}).td.border-bottom
+        div(style={'-webkit-flex': 8}).td.border-bottom
           p #{datos.direccion}
       div.tr
-        div(style={'width':'15%'}).td.border-right.center
+        div(style={'-webkit-flex': 2}).td.border-right.center
           p
             b FECHA CREACIÓN:
-        div(style={'width':'20%'}).td.border-right
+        div(style={'-webkit-flex': 1.5}).td.border-right.center
           p #{datos.fechaCre}
-        div(style={'width':'15%'}).td.border-right.center
+        div(style={'-webkit-flex': 2}).td.border-right.center
           p
             b FECHA LIQUIDACIÓN:      
-        div(style={'width':'20%'}).td.border-right
+        div(style={'-webkit-flex': 1.5}).td.border-right.center
           p #{datos.fechaLiq}
-        div(style={'width':'15%'}).td.border-right.center
+        div(style={'-webkit-flex': 1.5}).td.border-right.center
           p
             b FECHA VENCIMIENTO:         
-        div(style={'width':'15%'}).td
+        div(style={'-webkit-flex': 1.5}).td.center
           p #{datos.fechaVenc}
     div.table
       div.tr
-        div(style={'width':'10%'}).th.border-right.border-bottom.center
+        div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
           p
             b CÓDIGO
-        div(style={'width':'35%'}).th.border-right.border-bottom.center
+        div(style={'-webkit-flex': 3.5}).th.border-right.border-bottom.center
           p
             b DESCRIPCIÓN
-        div(style={'width':'15%'}).th.border-right.border-bottom.center
+        div(style={'-webkit-flex': 1.5}).th.border-right.border-bottom.center
           p
             b MONTO DECLARADO
-        div(style={'width':'15%'}).th.border-right.border-bottom.center
+        div(style={'-webkit-flex': 1.5}).th.border-right.border-bottom.center
           p
             b ALICUOTA
-        div(style={'width':'10%'}).th.border-right.border-bottom.center
+        div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
           p
             b MIN. TRIB
-        div(style={'width':'15%'}).th.border-bottom.center
+        div(style={'-webkit-flex': 1.5}).th.border-bottom.center
           p
             b IMPUESTO     
       div.tr
-        div(style={'width':'10%'}).td.border-right.border-bottom.center
+        div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
           p #{datos.codigo}
-        div(style={'width':'35%'}).td.border-right.border-bottom.center
+        div(style={'-webkit-flex': 3.5}).td.border-right.border-bottom.center
           p #{datos.descripcion}
-        div(style={'width':'15%'}).td.border-right.border-bottom.center
+        div(style={'-webkit-flex': 1.5}).td.border-right.border-bottom.center
           p #{datos.montoDeclarado}
-        div(style={'width':'15%'}).td.border-right.border-bottom.center
+        div(style={'-webkit-flex': 1.5}).td.border-right.border-bottom.center
           p #{datos.alicuota}
-        div(style={'width':'10%'}).td.border-right.border-bottom.center
+        div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
           p #{datos.minTrib}
-        div(style={'width':'15%'}).td.border-bottom.center
+        div(style={'-webkit-flex': 1.5}).td.border-bottom.center
           p #{datos.impuesto}
       div.tr
-        div(style={'width':'100%'}).td.border-bottom.center
+        div(style={'-webkit-flex': 1}).td.border-bottom.center
           p
             b TRAMITES INTERNOS
       div.tr
-        div(style={'width':'80%'}).td.border-right.border-bottom.center
+        div(style={'-webkit-flex': 8}).td.border-right.border-bottom.center
           p
             b CONCEPTO
-        div(style={'width':'20%'}).td.border-bottom.center
+        div(style={'-webkit-flex': 2}).td.border-bottom.center
           p
             b IMPUESTO
       div.tr
-        div(style={'width':'80%'}).td.border-right
+        div(style={'-webkit-flex': 8}).td.border-right
           p SOLVENCIA DE ACTIVIDADES ECONÓMICAS
-        div(style={'width':'20%'}).td.center
+        div(style={'-webkit-flex': 2}).td.center
           p 1.000.000
     div(style={'text-align': '-webkit-right'})
-      div(style={'width':'50%','border-bottom':0}).table
+      div(style={'width': '50%','border-bottom':0}).table
         div.tr
-          div(style={'width':'60%'}).td.border-right.border-bottom.center
+          div(style={'-webkit-flex': 6}).td.border-right.border-bottom.center
             p
               b Total Impuestos Determinado:
-          div(style={'width':'40%'}).td.border-bottom
+          div(style={'-webkit-flex': 4}).td.border-bottom
             p #{datos.totalImpuestoDet}
         div.tr
-          div(style={'width':'60%'}).td.border-right.border-bottom.center
+          div(style={'-webkit-flex': 6}).td.border-right.border-bottom.center
             p
               b Tramites Internos:
-          div(style={'width':'40%'}).td.border-bottom
+          div(style={'-webkit-flex': 4}).td.border-bottom
             p #{datos.tramitesInternos}
         div.tr
-          div(style={'width':'60%'}).td.border-right.border-bottom.center
+          div(style={'-webkit-flex': 6}).td.border-right.border-bottom.center
             p
               b Total Tasa Renovacion Licencia:
-          div(style={'width':'40%'}).td.border-bottom
+          div(style={'-webkit-flex': 4}).td.border-bottom
             p #{datos.totalTasaRev}
         div.tr
-          div(style={'width':'60%'}).td.border-right.border-bottom.center
+          div(style={'-webkit-flex': 6}).td.border-right.border-bottom.center
             p
               b Menos Anticipos y Retenciones:
-          div(style={'width':'40%'}).td.border-bottom
+          div(style={'-webkit-flex': 4}).td.border-bottom
             p #{datos.anticipoYRetenciones}
         div.tr
-          div(style={'width':'60%'}).td.border-right.border-bottom.center
+          div(style={'-webkit-flex': 6}).td.border-right.border-bottom.center
             p
               b Intereses de Mora:
-          div(style={'width':'40%'}).td.border-bottom
+          div(style={'-webkit-flex': 4}).td.border-bottom
             p #{datos.interesMora}
         div.tr
-          div(style={'width':'60%'}).td.border-right.center
+          div(style={'-webkit-flex': 6}).td.border-right.center
             p
               b Monto Total Planilla:
-          div(style={'width':'40%'}).td
+          div(style={'-webkit-flex': 4}).td
             p #{datos.montoTotal}
       div(style={'margin':0}).table
         div.tr
-          div(style={'width':'20%'}).td.border-bottom.border-right
+          div(style={'-webkit-flex': 2}).td.border-bottom.border-right
             p
               b OBSERVACIÓN:
-          div(style={'width':'80%'}).td.border-bottom
+          div(style={'-webkit-flex': 8}).td.border-bottom
             p #{datos.observacion}
         div.tr
-          div(style={'width':'20%'}).td.border-bottom.border-right
+          div(style={'-webkit-flex': 2}).td.border-bottom.border-right
             p
               b ESTATUS:
-          div(style={'width':'80%'}).td.border-bottom
+          div(style={'-webkit-flex': 8}).td.border-bottom
             p #{datos.estatus}
         div(style={'background-color':'rgba(0,0,0,0.2)'}).tr
-          div(style={'width':'33%'}).td.border-right.center
+          div(style={'-webkit-flex': 1}).td.border-right.center
             p
               b Total Liquidado:
               span &nbsp; #{datos.totalLiq}
-          div(style={'width':'33%'}).td.border-right.center
+          div(style={'-webkit-flex': 1}).td.border-right.center
             p
               b Total Recaudado:
               span &nbsp; #{datos.totalRecaudado}
-          div(style={'width':'33%'}).td.center
+          div(style={'-webkit-flex': 1}).td.center
             p
               b Total Credito Fiscal:
               span &nbsp; #{datos.totalCred}
-    div(style={'text-align': 'justify', 'margin':'40px 0'})
+    div(style={'text-align': 'justify', 'margin-top':'10px', 'font-size':'12px'})
       p.
        "JURO QUE SON VERDADEROS TODOS LOS DATOS SUMINISTRADOS EN ESTE FORMULARIO, QUE HAN SIDO ELABORADOS O EXAMINADOS
         POR MI Y QUE CONTIENEN UNA DECLARACIÓN COMPLETA DE LAS VENTAS Y/O ELEMENTOS REPRESENTATIVOS DEL MOVIMIENTO
