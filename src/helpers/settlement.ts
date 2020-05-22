@@ -358,6 +358,7 @@ const mesesCardinal = {
 };
 const createSolvencyForApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
+    
     const isJuridical = application.tipoContribuyente === 'JURIDICO';
     const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
     const payloadContribuyente = isJuridical
@@ -386,7 +387,8 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
       if (dev) {
         pdf
           .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
-          .toFile(pdfDir, () => {
+          .toFile(pdfDir, async () => {
+            await pool.query(queries.UPDATE_CERTIFICATE_SETTLEMENT, [dir, application.idLiquidacion])
             res(dir);
           });
       } else {
