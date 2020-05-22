@@ -377,7 +377,7 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
           representanteLegal: datosContribuyente.nb_representante_legal,
           periodo: mesesCardinal[application.mes],
           anio: application.anio,
-          fecha: moment(),
+          fecha: moment().format('YYYY-DD-MM'),
           fechaLetra: `${moment().date()} de ${application.mes} de ${application.anio}`,
           QR: linkQr,
         },
@@ -499,7 +499,8 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
       if (dev) {
         pdf
           .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
-          .toFile(pdfDir, () => {
+          .toFile(pdfDir, async () => {
+            await pool.query(queries.UPDATE_RECEIPT_FOR_SETTLEMENTS, [dir, application.idProcedimiento, application.id]);
             res(dir);
           });
       } else {
