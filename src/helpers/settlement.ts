@@ -343,79 +343,79 @@ export const createCertificateForApplication = async ({ settlement, media, user 
   }
 };
 const mesesCardinal = {
-  'Enero': 'Primer',
-  'Febrero': 'Segundo',
-  'Marzo': 'Tercer',
-  'Abril': 'Cuarto',
-  'Mayo': 'Quinto',
-  'Junio': 'Sexto',
-  'Julio': 'Séptimo',
-  'Agosto': 'Octavo',
-  'Septiembre': 'Noveno',
-  'Octubre': 'Décimo',
-  'Noviembre': 'Undécimo',
-  'Diciembre': 'Duodécimo'
-}
+  Enero: 'Primer',
+  Febrero: 'Segundo',
+  Marzo: 'Tercer',
+  Abril: 'Cuarto',
+  Mayo: 'Quinto',
+  Junio: 'Sexto',
+  Julio: 'Séptimo',
+  Agosto: 'Octavo',
+  Septiembre: 'Noveno',
+  Octubre: 'Décimo',
+  Noviembre: 'Undécimo',
+  Diciembre: 'Duodécimo',
+};
 const createSolvencyForApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
-  const isJuridical = application.tipoContribuyente === 'JURIDICO';
-  const queryContribuyente = isJuridical? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
-  const payloadContribuyente = isJuridical ? [application.documento, application.rim, application.nacionalidad] : [application.nacionalidad, application.nacionalidad]
-  const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0]
-  const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
-  return new Promise(async (res, rej) => {
-    const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-AE.pug`), {
-      moment: require('moment'),
-      datos: {
-        contribuyente: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente + datosContribuyente.ap_contribuyente,
-        rim: application.rim,
-        cedulaORif: application.nacionalidad + '-' + application.documento,
-        direccion: datosContribuyente.tx_direccion,
-        representanteLegal: datosContribuyente.nb_representante_legal,
-        periodo: mesesCardinal[application.mes],
-        anio: application.anio,
-        fecha: moment(),
-        fechaLetra: `${moment().date()} de ${application.mes} de ${application.anio}`,
-        QR: linkQr
+    const isJuridical = application.tipoContribuyente === 'JURIDICO';
+    const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
+    const payloadContribuyente = isJuridical
+      ? [application.documento, application.rim, application.nacionalidad]
+      : [application.nacionalidad, application.nacionalidad];
+    const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
+    const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+    return new Promise(async (res, rej) => {
+      const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-AE.pug`), {
+        moment: require('moment'),
+        datos: {
+          contribuyente: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente + datosContribuyente.ap_contribuyente,
+          rim: application.rim,
+          cedulaORif: application.nacionalidad + '-' + application.documento,
+          direccion: datosContribuyente.tx_direccion,
+          representanteLegal: datosContribuyente.nb_representante_legal,
+          periodo: mesesCardinal[application.mes],
+          anio: application.anio,
+          fecha: moment(),
+          fechaLetra: `${moment().date()} de ${application.mes} de ${application.anio}`,
+          QR: linkQr,
+        },
+      });
+      const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`);
+      const dir = `${process.env.SERVER_URL}/archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`;
+      if (dev) {
+        pdf
+          .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
+          .toFile(pdfDir, () => {
+            res(dir);
+          });
+      } else {
+        // try {
+        //   pdf
+        //     .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
+        //     .toBuffer(async (err, buffer) => {
+        //       if (err) {
+        //         rej(err);
+        //       } else {
+        //         const bucketParams = {
+        //           Bucket: 'sut-maracaibo',
+        //           Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}`,
+        //         };
+        //         await S3Client.putObject({
+        //           ...bucketParams,
+        //           Body: buffer,
+        //           ACL: 'public-read',
+        //           ContentType: 'application/pdf',
+        //         }).promise();
+        //         res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+        //       }
+        //     });
+        // } catch (e) {
+        //   throw e;
+        // } finally {
+        // }
       }
-
     });
-    const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`);
-    const dir = `${process.env.SERVER_URL}/archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`
-    if (dev) {
-      pdf
-        .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
-        .toFile(pdfDir, () => {
-          res(dir);
-        });
-    } else {
-      // try {
-      //   pdf
-      //     .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
-      //     .toBuffer(async (err, buffer) => {
-      //       if (err) {
-      //         rej(err);
-      //       } else {
-      //         const bucketParams = {
-      //           Bucket: 'sut-maracaibo',
-      //           Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}`,
-      //         };
-      //         await S3Client.putObject({
-      //           ...bucketParams,
-      //           Body: buffer,
-      //           ACL: 'public-read',
-      //           ContentType: 'application/pdf',
-      //         }).promise();
-      //         res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
-      //       }
-      //     });
-      // } catch (e) {
-      //   throw e;
-      // } finally {
-      // }
-    }
-  });
-
   } catch (error) {
     throw error;
   }
@@ -423,7 +423,6 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
 
 const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
-
   } catch (error) {
     throw error;
   }
@@ -431,6 +430,92 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
 
 const createReceiptForAEApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
+    const isJuridical = application.tipoContribuyente === 'JURIDICO';
+    const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
+    const payloadContribuyente = isJuridical
+      ? [application.documento, application.rim, application.nacionalidad]
+      : [application.nacionalidad, application.nacionalidad];
+    const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
+    const economicActivities = (await gticPool.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [datosContribuyente.co_contribuyente])).rows[0];
+    const applicationInfo = (await gticPool.query(queries.gtic.GET_INFO_FOR_AE_CERTIFICATE)).rows[0];
+    const UTMM = (await pool.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const impuesto = UTMM * 2;
+    const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+    moment.locale('es');
+
+    const certAE = {
+      fecha: moment().format('YYYY-MM-DD'),
+      moment: require('moment'),
+      datos: {
+        QR: linkQr,
+        nroSolicitud: application.id,
+        nroPlanilla: new Date().getTime().toString().slice(7),
+        motivo: `D${application.mes.substr(0, 3).toUpperCase()}${application.anio}`,
+        porcion: '1/1',
+        categoria: applicationInfo.tx_ramo,
+        rif: `${application.nacionalidad}-${application.documento}`,
+        ref: application.rim,
+        razonSocial: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente + datosContribuyente.ap_contribuyente,
+        direccion: datosContribuyente.tx_direccion,
+        fechaCre: application.fechaCreacion,
+        fechaLiq: moment().format('YYYY-MM-DD'),
+        fechaVenc: moment().year(application.anio).month(application.month).date(31).format('YYYY-MM-DD'),
+        codigo: economicActivities.nu_ref_actividad,
+        descripcion: economicActivities.tx_actividad,
+        montoDeclarado: application.montoLiquidacion / (economicActivities.nu_porc_alicuota / 100),
+        alicuota: economicActivities.nu_porc_alicuota / 100,
+        minTrib: Math.floor(economicActivities.nu_ut),
+        impuesto: application.montoLiquidacion - impuesto,
+        totalImpuestoDet: application.montoLiquidacion - impuesto,
+        tramitesInternos: impuesto,
+        totalTasaRev: 0.0,
+        anticipoYRetenciones: 0.0,
+        interesMora: 0.0,
+        montoTotal: application.totalSolicitud,
+        observacion: 'Pago por Impuesto de Actividad Economica - VIA WEB',
+        estatus: 'PAGADO',
+        totalLiq: application.montoLiquidacion,
+        totalRecaudado: 0.0,
+        totalCred: 0.0,
+      },
+    };
+    return new Promise(async (res, rej) => {
+      const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-AE.pug`), certAE);
+      const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
+      const dir = `${process.env.SERVER_URL}/archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
+      if (dev) {
+        pdf
+          .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
+          .toFile(pdfDir, () => {
+            res(dir);
+          });
+      } else {
+        // try {
+        //   pdf
+        //     .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
+        //     .toBuffer(async (err, buffer) => {
+        //       if (err) {
+        //         rej(err);
+        //       } else {
+        //         const bucketParams = {
+        //           Bucket: 'sut-maracaibo',
+        //           Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}`,
+        //         };
+        //         await S3Client.putObject({
+        //           ...bucketParams,
+        //           Body: buffer,
+        //           ACL: 'public-read',
+        //           ContentType: 'application/pdf',
+        //         }).promise();
+        //         res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+        //       }
+        //     });
+        // } catch (e) {
+        //   throw e;
+        // } finally {
+        // }
+      }
+    });
   } catch (error) {
     throw error;
   }
