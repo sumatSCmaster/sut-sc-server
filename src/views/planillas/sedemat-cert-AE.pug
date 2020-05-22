@@ -38,62 +38,62 @@ block content
               b Cajero
         div.tr
           div(style={'width':'15%'}).td.border-right.center
-            p  asda
+            p  #{datos.nroSolicitud}
           div(style={'width':'20%'}).td.border-right.center
-            p  asda
+            p  #{datos.nroPlanilla}
           div(style={'width':'15%'}).td.border-right.center
-            p  asd
+            p  #{datos.motivo}
           div(style={'width':'15%'}).td.border-right.center
-            p  ads
+            p  #{datos.porcion}
           div(style={'width':'20%'}).td.border-right.center
-            p  asd
+            p  #{datos.usuario}
           div(style={'width':'15%'}).td.center
-            p  ads
+            p  
     div.table(style={'font-size':'16px'})
       div.tr
         div.td(style={'width':'5%'}).border-right.border-bottom.center
           p
             b RAMO:
         div.td(style={'width':'60%'}).border-right.border-bottom
-          p
+          p #{datos.categoria}
         div.td(style={'width':'5%'}).border-right.border-bottom.center
           p
             b RIF:
         div(style={'width':'15%'}).td.border-right.border-bottom
-          p 
+          p   #{datos.rif}
         div.td(style={'width':'5%'}).border-right.border-bottom.center
           p
             b REF:
         div(style={'width':'15%'}).td.border-bottom
-          p
+          p #{datos.ref}
       div.tr
         div(style={'width':'10%'}).td.border-right.border-bottom.center
           p
             b RAZÓN SOCIAL:
         div(style={'width':'90%'}).td.border-bottom
-          p
+          p #{datos.razonSocial}
       div.tr
         div(style={'width':'10%'}).td.border-right.border-bottom.center
           p
             b DIRECCIÓN:
         div(style={'width':'90%'}).td.border-bottom
-          p
+          p #{datos.direccion}
       div.tr
         div(style={'width':'10%'}).td.border-right.center
           p
             b FECHA CREACIÓN:
         div(style={'width':'25%'}).td.border-right
-          p
+          p #{datos.fechaCre}
         div(style={'width':'10%'}).td.border-right.center
           p
             b FECHA LIQUIDACIÓN:      
         div(style={'width':'25%'}).td.border-right
-          p
+          p #{datos.fechaLiq}
         div(style={'width':'10%'}).td.border-right.center
           p
             b FECHA VENCIMIENTO:         
         div(style={'width':'20%'}).td
-          p
+          p #{datos.fechaVenc}
     div.table
       div.tr
         div(style={'width':'10%'}).th.border-right.border-bottom.center
@@ -116,17 +116,17 @@ block content
             b IMPUESTO     
       div.tr
         div(style={'width':'10%'}).td.border-right.border-bottom.center
-          p a
+          p #{datos.codigo}
         div(style={'width':'40%'}).td.border-right.border-bottom.center
-          p a
+          p #{datos.descripcion}
         div(style={'width':'15%'}).td.border-right.border-bottom.center
-          p a
+          p #{datos.montoDeclarado}
         div(style={'width':'10%'}).td.border-right.border-bottom.center
-          p a
+          p #{datos.alicuota}
         div(style={'width':'10%'}).td.border-right.border-bottom.center
-          p a
+          p #{datos.minTrib}
         div(style={'width':'15%'}).td.border-bottom.center
-          p a
+          p #{datos.impuesto}
       div.tr
         div(style={'width':'100%'}).td.border-bottom.center
           p
@@ -150,63 +150,63 @@ block content
             p
               b Total Impuestos Determinado:
           div(style={'width':'40%'}).td.border-bottom
-            p
+            p #{datos.totalImpuestoDet}
         div.tr
           div(style={'width':'60%'}).td.border-right.border-bottom.center
             p
               b Tramites Internos:
           div(style={'width':'40%'}).td.border-bottom
-            p
+            p #{datos.tramitesInternos}
         div.tr
           div(style={'width':'60%'}).td.border-right.border-bottom.center
             p
               b Total Tasa Renovacion Licencia:
           div(style={'width':'40%'}).td.border-bottom
-            p
+            p #{datos.totalTasaRev}
         div.tr
           div(style={'width':'60%'}).td.border-right.border-bottom.center
             p
               b Menos Anticipos y Retenciones:
           div(style={'width':'40%'}).td.border-bottom
-            p
+            p #{datos.anticipoYRetenciones}
         div.tr
           div(style={'width':'60%'}).td.border-right.border-bottom.center
             p
               b Intereses de Mora:
           div(style={'width':'40%'}).td.border-bottom
-            p
+            p #{datos.interesMora}
         div.tr
           div(style={'width':'60%'}).td.border-right.center
             p
               b Monto Total Planilla:
           div(style={'width':'40%'}).td
-            p
+            p #{datos.montoTotal}
       div(style={'margin':0}).table
         div.tr
           div(style={'width':'20%'}).td.border-bottom.border-right
             p
               b OBSERVACIÓN:
           div(style={'width':'80%'}).td.border-bottom
-            p
+            p #{datos.observacion}
         div.tr
           div(style={'width':'20%'}).td.border-bottom.border-right
             p
               b ESTATUS:
           div(style={'width':'80%'}).td.border-bottom
-            p
+            p #{datos.estatus}
         div(style={'background-color':'rgba(0,0,0,0.2)'}).tr
           div(style={'width':'33%'}).td.border-right.center
             p
               b Total Liquidado:
-              span &nbsp; #{datos.nombreORazon}
+              span &nbsp; #{datos.totalLiq}
           div(style={'width':'33%'}).td.border-right.center
             p
               b Total Recaudado:
-              span &nbsp; #{datos.nombreORazon}
+              span &nbsp; #{datos.totalRecaudado}
           div(style={'width':'33%'}).td.center
             p
               b Total Credito Fiscal:
-              span &nbsp; #{datos.nombreORazon}
+              span &nbsp; #{datos.totalCred}
     div(style={'text-align': 'justify', 'margin-top':'40px'})
       p.
        "JURO QUE SON VERDADEROS TODOS LOS DATOS SUMINISTRADOS EN ESTE FORMULARIO, QUE HAN SIDO ELABORADOS O EXAMINADOS
