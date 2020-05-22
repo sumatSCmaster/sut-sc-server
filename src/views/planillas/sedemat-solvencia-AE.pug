@@ -13,23 +13,25 @@ block content
     div(style={'text-align': 'justify'})
       p 
         b El Contribuyente:
-        span &nbsp; #{datos.contribuyente} &nbsp;
+        span &nbsp;#{datos.contribuyente},&nbsp;
         b R.I.M:
-        span &nbsp; #{datos.rim} &nbsp;
+        span &nbsp;#{datos.rim},&nbsp;
         b C.I./R.I.F:
-        span &nbsp; #{datos.cedulaORif} &nbsp;
+        span &nbsp;#{datos.cedulaORif},&nbsp;
         b Dirección:
-        span &nbsp; #{datos.direccion} &nbsp;
+        span &nbsp;#{datos.direccion}.&nbsp;
         b Representante Legal:
-        span &nbsp; #{datos.representanteLegal} &nbsp;
+        span &nbsp;#{datos.representanteLegal}.&nbsp;
         b Se encuentra solvente con el impuesto a las Actividades Económicas hasta el:
-        span &nbsp; #{datos.periodo} &nbsp;
+        span &nbsp;#{datos.periodo}&nbsp;
         b Mes del año
-        span &nbsp; #{datos.anio} &nbsp;
+        span &nbsp;#{datos.anio}&nbsp;
         b Esta solvencia es valida hasta el
-        span &nbsp; #{datos.fecha}, &nbsp;
+        span &nbsp;#{datos.fecha}.
+        br
+        br
         b Maracaibo,
-        span &nbsp; #{datos.fechaLetra}
+        span &nbsp; #{datos.fechaLetra}.
     div(style={'margin-top':"160px"}).flex.center
       div(style={height:"180px"})
         img(src=QR, alt='QR', style={height:"100%"})
