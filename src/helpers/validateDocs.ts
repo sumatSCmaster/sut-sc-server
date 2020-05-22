@@ -52,7 +52,7 @@ export const validateSedematById = async (id: string) => {
       
       response.message = 'Liquidacion encontrada';
       response.status = 200;
-      response.data = res.rows;
+      response.data = res.rows[0];
       return response;
     } else {
       response.message = 'Liquidacion no encontrada';

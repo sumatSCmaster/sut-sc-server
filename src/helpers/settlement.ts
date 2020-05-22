@@ -296,12 +296,12 @@ export const addTaxApplicationPayment = async ({ payment, application }) => {
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    if (!payment.costo) return { status: 403, message: 'Debe incluir el monto a ser pagado' };
+    if (!payment.monto) return { status: 403, message: 'Debe incluir el monto a ser pagado' };
     payment.concepto = 'IMPUESTO';
     await insertPaymentReference(payment, application, client);
     await client.query(queries.UPDATE_PAID_STATE_FOR_TAX_PAYMENT_APPLICATION, [application]);
     client.query('COMMIT');
-    return { status: 200, message: 'Pago añadido para la solicitud declarada' };
+    return { status: 201, message: 'Pago añadido para la solicitud declarada' };
   } catch (error) {
     client.query('ROLLBACK');
     throw {
@@ -358,62 +358,25 @@ const mesesCardinal = {
 };
 const createSolvencyForApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
-    const isJuridical = application.tipoContribuyente === 'JURIDICO';
-    const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
-    const payloadContribuyente = isJuridical
-      ? [application.documento, application.rim, application.nacionalidad]
-      : [application.nacionalidad, application.nacionalidad];
-    const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
-    const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
-    return new Promise(async (res, rej) => {
-      const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-AE.pug`), {
-        moment: require('moment'),
-        datos: {
-          contribuyente: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente + datosContribuyente.ap_contribuyente,
-          rim: application.rim,
-          cedulaORif: application.nacionalidad + '-' + application.documento,
-          direccion: datosContribuyente.tx_direccion,
-          representanteLegal: datosContribuyente.nb_representante_legal,
-          periodo: mesesCardinal[application.mes],
-          anio: application.anio,
-          fecha: moment(),
-          fechaLetra: `${moment().date()} de ${application.mes} de ${application.anio}`,
-          QR: linkQr,
-        },
-      });
-      const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`);
-      const dir = `${process.env.SERVER_URL}/archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`;
-      if (dev) {
-        pdf
-          .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
-          .toFile(pdfDir, () => {
-            res(dir);
-          });
-      } else {
-        // try {
-        //   pdf
-        //     .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
-        //     .toBuffer(async (err, buffer) => {
-        //       if (err) {
-        //         rej(err);
-        //       } else {
-        //         const bucketParams = {
-        //           Bucket: 'sut-maracaibo',
-        //           Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}`,
-        //         };
-        //         await S3Client.putObject({
-        //           ...bucketParams,
-        //           Body: buffer,
-        //           ACL: 'public-read',
-        //           ContentType: 'application/pdf',
-        //         }).promise();
-        //         res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
-        //       }
-        //     });
-        // } catch (e) {
-        //   throw e;
-        // } finally {
-        // }
+  const isJuridical = application.tipoContribuyente === 'JURIDICO';
+  const queryContribuyente = isJuridical? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
+  const payloadContribuyente = isJuridical ? [application.documento, application.rim, application.nacionalidad] : [application.nacionalidad, application.nacionalidad]
+  const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0]
+  const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.idLiquidacion}`, { errorCorrectionLevel: 'H' });
+  return new Promise(async (res, rej) => {
+    const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-AE.pug`), {
+      moment: require('moment'),
+      datos: {
+        contribuyente: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente + datosContribuyente.ap_contribuyente,
+        rim: application.rim,
+        cedulaORif: application.nacionalidad + '-' + application.documento,
+        direccion: datosContribuyente.tx_direccion,
+        representanteLegal: datosContribuyente.nb_representante_legal,
+        periodo: mesesCardinal[application.mes],
+        anio: application.anio,
+        fecha: moment(),
+        fechaLetra: `${moment().date()} de ${application.mes} de ${application.anio}`,
+        QR: linkQr
       }
     });
   } catch (error) {
@@ -423,6 +386,16 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
 
 const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
+    const isJuridical = application.tipoContribuyente === 'JURIDICO';
+    const queryContribuyente = isJuridical? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
+    const payloadContribuyente = isJuridical ? [application.documento, application.rim, application.nacionalidad] : [application.nacionalidad, application.nacionalidad]
+    const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0]
+    const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+    if(application.tipoLiquidacion === 'SM'){
+
+    }else if(application.tipoLiquidacion === 'IU'){
+
+    }
   } catch (error) {
     throw error;
   }
