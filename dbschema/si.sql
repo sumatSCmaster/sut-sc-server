@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.2
--- Dumped by pg_dump version 12.2
+-- Dumped from database version 12.1
+-- Dumped by pg_dump version 12.1
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -583,11 +583,11 @@ CREATE FUNCTION public.insert_liquidacion(_id_solicitud integer, _descripcion ch
     LANGUAGE plpgsql
     AS $$
 DECLARE
-    liquidacion impuesto.liquidacion%ROWTYPE;
+    liquidacionRow impuesto.liquidacion%ROWTYPE;
     BEGIN
-        INSERT INTO impuesto.liquidacion (id_solicitud, id_procedimiento, mes, anio, monto) VALUES (_id_solicitud, (SELECT id_procedimiento FROM impuesto.procedimiento WHERE descripcion = _descripcion), _mes, _anio, _monto) RETURNING * INTO liquidacion;
+        INSERT INTO impuesto.liquidacion (id_solicitud, id_procedimiento, mes, anio, monto) VALUES (_id_solicitud, (SELECT id_procedimiento FROM impuesto.procedimiento WHERE descripcion = _descripcion), _mes, _anio, _monto) RETURNING * INTO liquidacionRow;
             
-        RETURN QUERY SELECT * FROM impuesto.liquidacion WHERE id_liquidacion=liquidacion.id_liquidacion;
+        RETURN QUERY SELECT * FROM impuesto.liquidacion WHERE id_liquidacion=liquidacionRow.id_liquidacion;
 
         RETURN;
     END;
@@ -768,7 +768,7 @@ CREATE TABLE impuesto.solicitud (
     id_usuario integer,
     documento character varying,
     rim character varying,
-    aprobado boolean,
+    aprobado boolean DEFAULT false,
     fecha date,
     monto_total numeric,
     nacionalidad character varying,
@@ -1160,14 +1160,7 @@ BEGIN
                 INNER JOIN multa ON pago.id_procedimiento = multa.id_multa 
                 INNER JOIN tipo_tramite ON tipo_tramite.id_tipo_tramite = multa.id_tipo_tramite where pago.id_pago = idPago) row;
             END IF;
-
-            IF (SELECT concepto FROM pago WHERE id_pago = idPago) = 'IMPUESTO' THEN
-                UPDATE impuesto.solicitud SET aprobado = true WHERE id_solicitud = (SELECT id_procedimiento FROM pago WHERE id_pago = idPago);
-
-                select row_to_json(row)::jsonb into dataPago from (select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, pago.id_procedimiento AS idProcedimiento, pago.referencia, pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, solicitud.documento, solicitud.rim, solicitud.aprobado, solicitud.monto_total from pago 
-                INNER JOIN impuesto.solicitud ON pago.id_procedimiento = solicitud.id_solicitud 
-                where pago.id_pago = idPago) row;
-            END IF;
+            
             
             --agrega el json de la row y lo almacena en el array
             jsonArray := array_append(jsonArray, dataPago);   
@@ -2095,6 +2088,41 @@ ALTER TABLE impuesto.solicitud_id_solicitud_seq OWNER TO postgres;
 
 ALTER SEQUENCE impuesto.solicitud_id_solicitud_seq OWNED BY impuesto.solicitud.id_solicitud;
 
+
+--
+-- Name: solicitud_view; Type: VIEW; Schema: impuesto; Owner: postgres
+--
+
+CREATE VIEW impuesto.solicitud_view AS
+ SELECT s.id_solicitud AS id,
+    s.id_usuario AS usuario,
+    s.documento,
+    s.rim,
+    s.nacionalidad,
+        CASE
+            WHEN (s.rim IS NULL) THEN 'NATURAL'::text
+            ELSE 'JURIDICO'::text
+        END AS "tipoContribuyente",
+    s.aprobado,
+    s.pagado,
+    s.fecha AS "fechaCreacion",
+    s.monto_total AS "totalSolicitud",
+    l.id_liquidacion AS "idLiquidacion",
+    l.monto AS "montoLiquidacion",
+    l.recibo,
+    l.certificado,
+    l.mes,
+    l.anio,
+    pr.id_procedimiento AS "idProcedimiento",
+    pr.descripcion AS "tipoLiquidacion",
+    pr.planilla_certificado AS "planillaSolvencia",
+    pr.planilla_recibo AS "planillaRecibo"
+   FROM ((impuesto.solicitud s
+     JOIN impuesto.liquidacion l ON ((s.id_solicitud = l.id_solicitud)))
+     JOIN impuesto.procedimiento pr ON ((l.id_procedimiento = pr.id_procedimiento)));
+
+
+ALTER TABLE impuesto.solicitud_view OWNER TO postgres;
 
 --
 -- Name: tabulador_gas; Type: TABLE; Schema: impuesto; Owner: postgres
@@ -4704,6 +4732,8 @@ COPY impuesto.factor (id_factor, descripcion, valor) FROM stdin;
 --
 
 COPY impuesto.liquidacion (id_liquidacion, id_solicitud, id_procedimiento, monto, certificado, recibo, mes, anio) FROM stdin;
+1	1	1	139191	\N	\N	Mayo	2020
+2	1	2	139191	\N	\N	Mayo	2020
 \.
 
 
@@ -4740,6 +4770,7 @@ COPY impuesto.procedimiento_exoneracion (id_procedimiento_exoneracion, id_plazo_
 --
 
 COPY impuesto.solicitud (id_solicitud, id_usuario, documento, rim, aprobado, fecha, monto_total, nacionalidad, pagado) FROM stdin;
+1	58	26775497	DJADF8844	f	2020-05-18	13933300000	V	f
 \.
 
 
@@ -8153,7 +8184,7 @@ SELECT pg_catalog.setval('impuesto.factor_id_factor_seq', 1, false);
 -- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.liquidacion_id_liquidacion_seq', 1, false);
+SELECT pg_catalog.setval('impuesto.liquidacion_id_liquidacion_seq', 2, true);
 
 
 --
@@ -8181,7 +8212,7 @@ SELECT pg_catalog.setval('impuesto.procedimiento_id_procedimiento_seq', 4, true)
 -- Name: solicitud_id_solicitud_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.solicitud_id_solicitud_seq', 1, false);
+SELECT pg_catalog.setval('impuesto.solicitud_id_solicitud_seq', 1, true);
 
 
 --
