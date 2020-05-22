@@ -7,8 +7,14 @@ import { insertPaymentReference } from './banks';
 import moment from 'moment';
 import switchcase from '@utils/switch';
 import { Liquidacion, Solicitud, Usuario } from '@root/interfaces/sigt';
+import { resolve } from 'path';
+import { renderFile } from 'pug';
+import * as pdf from 'html-pdf';
+import * as qr from 'qrcode';
 const gticPool = GticPool.getInstance();
 const pool = Pool.getInstance();
+
+const dev = process.env.NODE_ENV !== 'production';
 
 export const getSettlements = async ({ document, reference, type, user }) => {
   const client = await pool.connect();
@@ -336,9 +342,80 @@ export const createCertificateForApplication = async ({ settlement, media, user 
     gtic.release();
   }
 };
-
+const mesesCardinal = {
+  'Enero': 'Primer',
+  'Febrero': 'Segundo',
+  'Marzo': 'Tercer',
+  'Abril': 'Cuarto',
+  'Mayo': 'Quinto',
+  'Junio': 'Sexto',
+  'Julio': 'Séptimo',
+  'Agosto': 'Octavo',
+  'Septiembre': 'Noveno',
+  'Octubre': 'Décimo',
+  'Noviembre': 'Undécimo',
+  'Diciembre': 'Duodécimo'
+}
 const createSolvencyForApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
+  const isJuridical = application.tipoContribuyente === 'JURIDICO';
+  const queryContribuyente = isJuridical? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
+  const payloadContribuyente = isJuridical ? [application.documento, application.rim, application.nacionalidad] : [application.nacionalidad, application.nacionalidad]
+  const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0]
+  const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+  return new Promise(async (res, rej) => {
+    const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-AE.pug`), {
+      moment: require('moment'),
+      datos: {
+        contribuyente: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente + datosContribuyente.ap_contribuyente,
+        rim: application.rim,
+        cedulaORif: application.nacionalidad + '-' + application.documento,
+        direccion: datosContribuyente.tx_direccion,
+        representanteLegal: datosContribuyente.nb_representante_legal,
+        periodo: mesesCardinal[application.mes],
+        anio: application.anio,
+        fecha: moment(),
+        fechaLetra: `${moment().date()} de ${application.mes} de ${application.anio}`,
+        QR: linkQr
+      }
+
+    });
+    const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`);
+    const dir = `${process.env.SERVER_URL}/archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`
+    if (dev) {
+      pdf
+        .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
+        .toFile(pdfDir, () => {
+          res(dir);
+        });
+    } else {
+      // try {
+      //   pdf
+      //     .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
+      //     .toBuffer(async (err, buffer) => {
+      //       if (err) {
+      //         rej(err);
+      //       } else {
+      //         const bucketParams = {
+      //           Bucket: 'sut-maracaibo',
+      //           Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}`,
+      //         };
+      //         await S3Client.putObject({
+      //           ...bucketParams,
+      //           Body: buffer,
+      //           ACL: 'public-read',
+      //           ContentType: 'application/pdf',
+      //         }).promise();
+      //         res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+      //       }
+      //     });
+      // } catch (e) {
+      //   throw e;
+      // } finally {
+      // }
+    }
+  });
+
   } catch (error) {
     throw error;
   }
@@ -346,6 +423,7 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
 
 const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
+
   } catch (error) {
     throw error;
   }
@@ -458,5 +536,5 @@ interface CertificatePayload {
   gticPool: PoolClient;
   pool: PoolClient;
   user: Usuario;
-  application: object;
+  application: any;
 }
