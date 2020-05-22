@@ -11,7 +11,9 @@ import { createRequestForm, createCertificate } from '@utils/forms';
 
 const pool = Pool.getInstance();
 
-export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any; instanciasDeMulta: any, instanciasDeImpuestos: any }> => {
+export const getAvailableProcedures = async (
+  user
+): Promise<{ options: Institucion[]; instanciasDeTramite: any; instanciasDeMulta: any; instanciasDeImpuestos: any }> => {
   const client: any = await pool.connect();
   client.tipoUsuario = user.tipoUsuario;
   try {
@@ -163,13 +165,15 @@ const getSettlementInstances = async (user, client: PoolClient) => {
   try {
     let response = (await client.query(queries.GET_SETTLEMENT_INSTANCES, [user.id])).rows;
     return response.map((el) => {
-      const liquidacion: Liquidacion = {
+      const liquidacion: Liquidacion & { pagado: string; aprobado: string } = {
         id: el.id_liquidacion,
         tipoProcedimiento: el.descripcion,
         fecha: { month: el.mes, year: el.anio },
         monto: el.monto,
         certificado: el.certificado,
-        recibo: el.recibo
+        recibo: el.recibo,
+        pagado: el.pagado,
+        aprobado: el.aprobado,
       };
 
       return liquidacion;
