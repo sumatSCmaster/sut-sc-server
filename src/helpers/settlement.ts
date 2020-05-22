@@ -383,7 +383,7 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
         },
       });
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`);
-      const dir = `${process.env.SERVER_URL}/archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`;
+      const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`;
       if (dev) {
         pdf
           .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
@@ -470,9 +470,9 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
         ref: application.rim,
         razonSocial: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente + datosContribuyente.ap_contribuyente,
         direccion: datosContribuyente.tx_direccion,
-        fechaCre: application.fechaCreacion,
+        fechaCre: moment(application.fechaCreacion).format('YYYY-MM-DD'),
         fechaLiq: moment().format('YYYY-MM-DD'),
-        fechaVenc: moment().year(application.anio).month(application.month).date(31).format('YYYY-MM-DD'),
+        fechaVenc: moment().date(31).format('YYYY-MM-DD'),
         codigo: economicActivities.nu_ref_actividad,
         descripcion: economicActivities.tx_actividad,
         montoDeclarado: application.montoLiquidacion / (economicActivities.nu_porc_alicuota / 100),
@@ -484,7 +484,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
         totalTasaRev: 0.0,
         anticipoYRetenciones: 0.0,
         interesMora: 0.0,
-        montoTotal: application.totalSolicitud,
+        montoTotal: application.montoLiquidacion,
         observacion: 'Pago por Impuesto de Actividad Economica - VIA WEB',
         estatus: 'PAGADO',
         totalLiq: application.montoLiquidacion,
@@ -495,7 +495,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-AE.pug`), certAE);
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
-      const dir = `${process.env.SERVER_URL}/archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
+      const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
       if (dev) {
         pdf
           .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
