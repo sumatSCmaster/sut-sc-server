@@ -42,3 +42,30 @@ export const validateDocById = async (id: string) => {
     client.release();
   }
 };
+
+export const validateSedematById = async (id: string) => {
+  const client = await pool.connect();
+  const response = { message: '', status: 0, data: {} };
+  try {
+    const res = await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [id]);
+    if (res.rowCount !== 0) {
+      
+      response.message = 'Liquidacion encontrada';
+      response.status = 200;
+      response.data = res.rows;
+      return response;
+    } else {
+      response.message = 'Liquidacion no encontrada';
+      response.status = 404;
+    }
+    return response;
+  } catch (e) {
+    throw {
+      status: 500,
+      error: e,
+      message: errorMessageGenerator(e) || 'Error al obtener informacion de validacion',
+    };
+  } finally {
+    client.release();
+  }
+}

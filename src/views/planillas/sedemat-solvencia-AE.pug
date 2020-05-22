@@ -6,9 +6,6 @@ block content
     p 
       b FECHA:
       span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
-    p 
-      b Código de Trámite:
-      span &nbsp; #{codigo}
   div#planilla.solvencia
     div.center
       p 
@@ -30,19 +27,22 @@ block content
         span &nbsp; #{datos.direccion}
       p
         b Representante Legal:
-        span &nbsp; #{datos.represanteLegal}
+        span &nbsp; #{datos.representanteLegal}
       p
         b Se encuentra solvente con el impuesto a las Actividades Económicas hasta el:
-        span
+        span #{datos.periodo}
     div.flex
       p
         b Mes del año
+        span #{datos.anio}
+
       p
         b Esta solvencia es valida hasta el
+        span #{datos.fecha}
     div
       p
         b Maracaibo,
-        span &nbsp; #{datos.fecha}
+        span &nbsp; #{datos.fechaLetra}
     div(style={'margin-top':"160px"}).flex.center
       div(style={height:"180px"})
         img(src=QR, alt='QR', style={height:"100%"})
