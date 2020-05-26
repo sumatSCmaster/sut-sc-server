@@ -369,6 +369,7 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
       const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-AE.pug`), {
         moment: require('moment'),
         tramite: 'PAGO DE IMPUESTOS',
+        institucion: 'SEDEMAT',
         datos: {
           contribuyente: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente + datosContribuyente.ap_contribuyente,
           rim: application.rim,
