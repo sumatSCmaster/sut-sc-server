@@ -297,6 +297,7 @@ export const addTaxApplicationPayment = async ({ payment, application }) => {
   try {
     client.query('BEGIN');
     if (!payment.costo) return { status: 403, message: 'Debe incluir el monto a ser pagado' };
+    const solicitud = (await client.query('SELECT * FROM impuesto.solicitud WHERE id_solicitud = $1', [application])).rows[0];
     payment.concepto = 'IMPUESTO';
     await insertPaymentReference(payment, application, client);
     await client.query(queries.UPDATE_PAID_STATE_FOR_TAX_PAYMENT_APPLICATION, [application]);
