@@ -36,7 +36,7 @@ html
                 - rif = '' 
               when 'SEDEMAT'
                   - nombre = 'Servicio Desconcentrado Municipal de Administración Tributaria'
-                  - rif = 'G-20002908-0'                                                                 
+                  - rif = 'G-20002908-0'
             p Alcaldida Bolivariana de Maracaibo
             p #{nombre}
             p R.I.F.: #{rif}
@@ -67,9 +67,10 @@ html
               img#logo(src=src)
         img#divider(src='images/Divider.png')
       div#content
-        if !datos.funcionario
-          p FORMATO #{formato}
-          p SOLICITUD DE #{tramite.toUpperCase()}
+        block title                                                                 
+          if !datos.funcionario
+            p FORMATO #{formato}
+            p SOLICITUD DE #{tramite.toUpperCase()}
         block content
       block footer
         footer#footer

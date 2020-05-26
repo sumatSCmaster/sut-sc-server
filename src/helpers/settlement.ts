@@ -377,7 +377,7 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
           representanteLegal: datosContribuyente.nb_representante_legal,
           periodo: mesesCardinal[application.mes],
           anio: application.anio,
-          fecha: moment().format('YYYY-DD-MM'),
+          fecha: moment().format('DD-MM-YYYY'),
           fechaLetra: `${moment().date()} de ${application.mes} de ${application.anio}`,
           QR: linkQr,
         },
