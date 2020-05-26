@@ -1,42 +1,85 @@
 extends default
 block css
   link(rel="stylesheet", href="css/sedemat.css")
+block header
+  div(style={display:'-webkit-flex', 'align-items': 'center'})
+    div(style={'-webkit-flex': 3, 'text-align':'start'})
+      img(src="images/sedematLogo.png", alt="sedemat" style={width:'50%'})
+    div(style={'-webkit-flex': 1})
+      div(style={'margin':'15px 0'})
+        h3(style={'margin': '0 auto'}) SOLVENCIA MUNICIPAL 
+        h3(style={'margin': '0 auto'}) N A.E.- #{codigo}
+      div(style={'border':'1px solid grey'})
+        div.tr(style={'font-size': '12px'})
+          div(style={'-webkit-flex': 1})
+            .td(style={'-webkit-flex': 1,'border-color':'grey'}).center.border-right.border-bottom
+              p(style={'margin': '0 auto','padding':'0'})
+                b Mes
+            .td(style={'-webkit-flex': 1}).center
+              p(style={'margin': '0 auto','padding':'auto 15px', 'font-size':'20px','border-right':'1px solid grey'}) 
+                b #{moment().format('MM')}                
+          div(style={'-webkit-flex': 1})
+            .td(style={'-webkit-flex': 1}).center
+              p(style={'margin': '0 auto','padding':'0','border-bottom':'1px solid grey'})
+                b Año
+            .td(style={'-webkit-flex': 1}).center
+              p(style={'margin': '0 auto', 'padding':'auto 0', 'font-size':'20px'}) 
+                b #{datos.anio}
+block title
 block content
-  div#fecha
-    p 
-      b FECHA:
-      span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
   div#planilla.solvencia
-    div.center
+    div(style={'margin-bottom':'5%','margin-toP':'10%'}).center
       p 
         b El Intendente Municipal Tributario hace constar que
     div
-      p 
-        b El Contribuyente:
-        span &nbsp;#{datos.contribuyente}.&nbsp;
-        b R.I.M:
-        span &nbsp;#{datos.rim},&nbsp;
-        b C.I./R.I.F:
-        span &nbsp;#{datos.cedulaORif},&nbsp;
-        b Dirección:
-        span &nbsp;#{datos.direccion}.&nbsp;
-        b Representante Legal:
-        span &nbsp;#{datos.representanteLegal}.&nbsp;
-        b Se encuentra solvente con el impuesto a las Actividades Económicas hasta el:
-        span &nbsp;#{datos.periodo}&nbsp;
-        b Mes del año
-        span &nbsp;#{datos.anio}&nbsp;
-        b Esta solvencia es valida hasta el
-        span &nbsp;#{datos.fecha}.
-        br
-        br
-        b Maracaibo,
-        span &nbsp; #{datos.fechaLetra}.
-    div(style={'margin-top':"160px"}).flex.center
+      .tr
+        .td
+          p
+            b El Contribuyente:
+            span &nbsp;#{datos.contribuyente}.&nbsp;
+      .tr
+        .td
+          p
+            b R.I.M:
+            span &nbsp;#{datos.rim},&nbsp;
+        .td
+          p
+            b C.I./R.I.F:
+            span &nbsp;#{datos.cedulaORif}.&nbsp;
+      .tr
+        .td
+          p
+            b Dirección:
+            span &nbsp;#{datos.direccion}.&nbsp;
+      .tr
+        .td
+          p
+            b Representante Legal:
+            span &nbsp;#{datos.representanteLegal}.&nbsp;
+      .tr
+        .td
+          p
+            b Se encuentra solvente con el impuesto a las Actividades Económicas hasta el:
+            span &nbsp;#{datos.periodo}&nbsp;
+      .tr
+        .td
+          p
+            b Mes del año
+            span &nbsp;#{datos.anio}&nbsp;
+        .td
+          p
+            b Esta solvencia es valida hasta el
+            span &nbsp;#{datos.fecha}.
+      .tr
+        .td
+          p
+            b Maracaibo,
+            span &nbsp; #{datos.fechaLetra}.
+    div(style={'margin-top':"40%"}).flex.center
       div(style={height:"180px"})
         img(src=QR, alt='QR', style={height:"100%"})
       div.item-firma
-        hr(style={border:"1px solid black"})
+        hr
         br
         b Intendente Municipal Tributario
       div(style={height:"200px"})

@@ -364,11 +364,13 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
       ? [application.documento, application.rim, application.nacionalidad]
       : [application.nacionalidad, application.nacionalidad];
     const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
-    const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+    const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-AE.pug`), {
         moment: require('moment'),
         tramite: 'PAGO DE IMPUESTOS',
+        institucion: 'SEDEMAT',
+        QR: linkQr,
         datos: {
           contribuyente: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente + datosContribuyente.ap_contribuyente,
           rim: application.rim,
@@ -377,9 +379,8 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
           representanteLegal: datosContribuyente.nb_representante_legal,
           periodo: mesesCardinal[application.mes],
           anio: application.anio,
-          fecha: moment().format('YYYY-DD-MM'),
+          fecha: moment().format('DD-MM-YYYY'),
           fechaLetra: `${moment().date()} de ${application.mes} de ${application.anio}`,
-          QR: linkQr,
         },
       });
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`);
@@ -431,7 +432,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       ? [application.documento, application.rim, application.nacionalidad]
       : [application.nacionalidad, application.nacionalidad];
     const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
-    const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+    const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     if (application.tipoLiquidacion === 'SM') {
     } else if (application.tipoLiquidacion === 'IU') {
     }
@@ -452,15 +453,15 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
     const applicationInfo = (await gticPool.query(queries.gtic.GET_INFO_FOR_AE_CERTIFICATE)).rows[0];
     const UTMM = (await pool.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const impuesto = UTMM * 2;
-    const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+    const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     moment.locale('es');
 
     const certAE = {
       fecha: moment().format('YYYY-MM-DD'),
       tramite: 'PAGO DE IMPUESTOS',
       moment: require('moment'),
+      QR: linkQr,
       datos: {
-        QR: linkQr,
         nroSolicitud: application.id,
         nroPlanilla: new Date().getTime().toString().slice(7),
         motivo: `D${application.mes.substr(0, 3).toUpperCase()}${application.anio}`,
@@ -496,6 +497,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
       const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-AE.pug`), certAE);
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
       const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
+      const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
       if (dev) {
         pdf
           .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
