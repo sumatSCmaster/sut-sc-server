@@ -214,7 +214,7 @@ export const insertSettlements = async ({ process, user }) => {
         ).rows[0];
         return {
           id: liquidacion.id,
-          tipoProcedimiento: el.tipoProcedimiento,
+          tipoProcedimiento: el.tipoImpuesto,
           fecha: { month: liquidacion.mes, year: liquidacion.anio },
           monto: liquidacion.monto,
           certificado: liquidacion.certificado,
@@ -296,12 +296,12 @@ export const addTaxApplicationPayment = async ({ payment, application }) => {
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    if (!payment.monto) return { status: 403, message: 'Debe incluir el monto a ser pagado' };
+    if (!payment.costo) return { status: 403, message: 'Debe incluir el monto a ser pagado' };
     payment.concepto = 'IMPUESTO';
     await insertPaymentReference(payment, application, client);
     await client.query(queries.UPDATE_PAID_STATE_FOR_TAX_PAYMENT_APPLICATION, [application]);
     client.query('COMMIT');
-    return { status: 201, message: 'Pago añadido para la solicitud declarada' };
+    return { status: 200, message: 'Pago añadido para la solicitud declarada' };
   } catch (error) {
     client.query('ROLLBACK');
     throw {
@@ -475,19 +475,19 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
         fechaVenc: moment().date(31).format('YYYY-MM-DD'),
         codigo: economicActivities.nu_ref_actividad,
         descripcion: economicActivities.tx_actividad,
-        montoDeclarado: application.montoLiquidacion / (economicActivities.nu_porc_alicuota / 100),
+        montoDeclarado: (application.montoLiquidacion / (economicActivities.nu_porc_alicuota / 100)).toFixed(2),
         alicuota: economicActivities.nu_porc_alicuota / 100,
         minTrib: Math.floor(economicActivities.nu_ut),
-        impuesto: application.montoLiquidacion - impuesto,
-        totalImpuestoDet: application.montoLiquidacion - impuesto,
+        impuesto: application.montoLiquidacion,
+        totalImpuestoDet: application.montoLiquidacion,
         tramitesInternos: impuesto,
         totalTasaRev: 0.0,
         anticipoYRetenciones: 0.0,
         interesMora: 0.0,
-        montoTotal: application.montoLiquidacion,
+        montoTotal: application.montoLiquidacion + impuesto,
         observacion: 'Pago por Impuesto de Actividad Economica - VIA WEB',
         estatus: 'PAGADO',
-        totalLiq: application.montoLiquidacion,
+        totalLiq: application.montoLiquidacion + impuesto,
         totalRecaudado: 0.0,
         totalCred: 0.0,
       },

@@ -43,9 +43,12 @@ export const validatePayments = async (body, user) => {
           pagoPrevio: el.pagoprevio,
           referencia: el.referencia,
           fechaDePago: el.fechadepago,
-          codigoTramite: el.codigotramite || el.codigomulta,
+          codigoTramite: el.codigotramite,
+          codigoMulta: el.codigomulta,
           fechaDeAprobacion: el.fechadeaprobacion,
           tipoTramite: el.tipotramite,
+          documento: el.documento,
+          nacionalidad: el.nacionalidad
         };
         await validationHandler({ concept: el.concepto, body: pagoValidado, user });
         return pagoValidado;
