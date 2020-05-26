@@ -4,7 +4,7 @@ import { errorMessageGenerator } from './errors';
 import { PoolClient } from 'pg';
 import GticPool from '@utils/GticPool';
 import { insertPaymentReference } from './banks';
-import moment from 'moment';
+import moment, { Moment } from 'moment';
 import switchcase from '@utils/switch';
 import { Liquidacion, Solicitud, Usuario } from '@root/interfaces/sigt';
 import { resolve } from 'path';
@@ -298,8 +298,20 @@ export const addTaxApplicationPayment = async ({ payment, application }) => {
     client.query('BEGIN');
     if (!payment.costo) return { status: 403, message: 'Debe incluir el monto a ser pagado' };
     const solicitud = (await client.query('SELECT * FROM impuesto.solicitud WHERE id_solicitud = $1', [application])).rows[0];
-    payment.concepto = 'IMPUESTO';
-    await insertPaymentReference(payment, application, client);
+    const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i);
+    if (pagoSum < solicitud.monto_total) return { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
+    payment.map(async (el) => {
+      const nearbyHolidays = (
+        await client.query("SELECT * FROM impuesto.dias_feriados WHERE dia BETWEEN $1::date AND ($1::date + interval '7 days');", [el.fecha])
+      ).rows;
+      const paymentDate = checkIfWeekend(moment(el.fecha));
+      if (nearbyHolidays.length > 0) {
+        while (nearbyHolidays.find((el) => el.dia === paymentDate.format('YYYY-MM-DD'))) paymentDate.add({ days: 1 });
+      }
+      el.fecha = paymentDate;
+      el.concepto = 'IMPUESTO';
+      await insertPaymentReference(el, application, client);
+    });
     await client.query(queries.UPDATE_PAID_STATE_FOR_TAX_PAYMENT_APPLICATION, [application]);
     client.query('COMMIT');
     return { status: 200, message: 'Pago añadido para la solicitud declarada' };
@@ -598,6 +610,12 @@ const certificateCreationSnippet = () => {
   //     }
   //   }
   // });
+};
+
+const checkIfWeekend = (date: Moment) => {
+  if (date.isoWeekday() === 6) date.add({ days: 2 });
+  if (date.isoWeekday() === 7) date.add({ days: 1 });
+  return date;
 };
 
 const addMissingCarriedAmounts = (amountObject) => {
