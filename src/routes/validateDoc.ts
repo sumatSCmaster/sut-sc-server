@@ -5,7 +5,7 @@ import { validateDocById, validateSedematById } from '@helpers/validateDocs';
 
 const router = Router();
 
-router.get('/sedemat/:id', async (req, res) => {
+router.get('/validarSedemat/:id', async (req, res) => {
   const [err, data] = await fulfill(validateSedematById(req.params['id']));
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
