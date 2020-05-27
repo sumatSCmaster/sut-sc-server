@@ -560,13 +560,13 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   UPDATE_PAID_STATE_FOR_TAX_PAYMENT_APPLICATION: 'UPDATE impuesto.solicitud SET pagado = true WHERE id_solicitud = $1',
   UPDATE_RECEIPT_FOR_SETTLEMENTS: 'UPDATE impuesto.liquidacion SET recibo = $1 WHERE id_procedimiento = $2 AND id_solicitud = $3',
   CURRENT_AE_APPLICATION_EXISTS:
-    "SELECT * FROM impuesto.solicitud_view WHERE documento = $1 AND rim = $2 AND nacionalidad = $3 AND aprobado = false AND tipoLiquidacion = 'AE' AND (EXTRACT(month FROM fecha::date) = EXTRACT(month FROM now()::date));",
+    "SELECT * FROM impuesto.solicitud_view WHERE documento = $1 AND rim = $2 AND nacionalidad = $3 AND aprobado = false AND \"tipoLiquidacion\" = 'AE' AND (EXTRACT(month FROM \"fechaCreacion\"::date) = EXTRACT(month FROM now()::date));",
   CURRENT_SM_APPLICATION_EXISTS:
-    "SELECT * FROM impuesto.solicitud_view WHERE documento = $1 AND rim = $2 AND nacionalidad = $3 AND aprobado = false AND tipoLiquidacion = 'SM' AND (EXTRACT(month FROM fecha::date) = EXTRACT(month FROM now()::date));",
+    "SELECT * FROM impuesto.solicitud_view WHERE documento = $1 AND rim = $2 AND nacionalidad = $3 AND aprobado = false AND \"tipoLiquidacion\" = 'SM' AND (EXTRACT(month FROM \"fechaCreacion\"::date) = EXTRACT(month FROM now()::date));",
   CURRENT_IU_APPLICATION_EXISTS:
-    "SELECT * FROM impuesto.solicitud_view WHERE documento = $1 AND rim = $2 AND nacionalidad = $3 AND aprobado = false AND tipoLiquidacion = 'IU' AND (EXTRACT(month FROM fecha::date) = EXTRACT(month FROM now()::date));",
+    "SELECT * FROM impuesto.solicitud_view WHERE documento = $1 AND rim = $2 AND nacionalidad = $3 AND aprobado = false AND \"tipoLiquidacion\" = 'IU' AND (EXTRACT(month FROM \"fechaCreacion\"::date) = EXTRACT(month FROM now()::date));",
   CURRENT_PP_APPLICATION_EXISTS:
-    "SELECT * FROM impuesto.solicitud_view WHERE documento = $1 AND rim = $2 AND nacionalidad = $3 AND aprobado = false AND tipoLiquidacion = 'PP' AND (EXTRACT(month FROM fecha::date) = EXTRACT(month FROM now()::date));",
+    "SELECT * FROM impuesto.solicitud_view WHERE documento = $1 AND rim = $2 AND nacionalidad = $3 AND aprobado = false AND \"tipoLiquidacion\" = 'PP' AND (EXTRACT(month FROM \"fechaCreacion\"::date) = EXTRACT(month FROM now()::date));",
   UPDATE_CERTIFICATE_SETTLEMENT: 'UPDATE impuesto.liquidacion SET certificado = $1 WHERE id_liquidacion = $2;',
 
   //Dias feriados
