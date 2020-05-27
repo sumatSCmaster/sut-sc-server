@@ -17,6 +17,7 @@ import settlement from './settlement';
 import statistics from './statistics';
 import user from './user';
 import destination from './terminal';
+import holiday from './holidays';
 
 const router = Router();
 
@@ -37,6 +38,7 @@ router.use('/stats', statistics);
 router.use('/fines', fines);
 router.use('/notification', notification);
 router.use('/settlements', settlement);
+router.use('/holiday', holiday);
 router.use(resources);
 
 router.get('/', (req, res) => {
