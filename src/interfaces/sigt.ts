@@ -242,6 +242,12 @@ export interface Notificacion {
   concepto: string;
 }
 
+export interface DiaFeriado {
+  id?: number;
+  dia: Date;
+  descripcion: string;
+}
+
 export interface ErrorEstandar {
   message: string;
   error: QueryResult<any>;

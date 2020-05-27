@@ -562,6 +562,14 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   CURRENT_APPLICATION_EXISTS:
     'SELECT * FROM impuesto.solicitud WHERE documento = $1 AND rim = $2 AND nacionalidad = $3 AND aprobado = false AND (EXTRACT(month FROM fecha::date) = EXTRACT(month FROM now()::date));',
   UPDATE_CERTIFICATE_SETTLEMENT: 'UPDATE impuesto.liquidacion SET certificado = $1 WHERE id_liquidacion = $2;',
+
+
+  //Dias feriados
+  GET_HOLIDAYS: 'SELECT id_dia_feriado as id, dia, descripcion \
+  FROM impuesto.dias_feriados \
+  WHERE EXTRACT(year from dia) IN (EXTRACT(year from CURRENT_TIMESTAMP), EXTRACT(year from CURRENT_TIMESTAMP) + 1 );',
+  CREATE_HOLIDAY: 'INSERT INTO impuesto.dias_feriados (dia, descripcion) VALUES ($1, $2) RETURNING id_dia_feriado AS id, dia, descripcion;',
+
   gtic: {
     NATURAL_CONTRIBUTOR_EXISTS:
       'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2;',
