@@ -306,7 +306,7 @@ export const addTaxApplicationPayment = async ({ payment, application }) => {
       ).rows;
       const paymentDate = checkIfWeekend(moment(el.fecha));
       if (nearbyHolidays.length > 0) {
-        while (nearbyHolidays.find((el) => el.dia === paymentDate.format('YYYY-MM-DD'))) paymentDate.add({ days: 1 });
+        while (nearbyHolidays.find((el) => moment(el.dia).format('YYYY-MM-DD') === paymentDate.format('YYYY-MM-DD'))) paymentDate.add({ days: 1 });
       }
       el.fecha = paymentDate;
       el.concepto = 'IMPUESTO';
