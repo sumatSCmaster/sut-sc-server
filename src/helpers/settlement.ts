@@ -310,11 +310,11 @@ export const addTaxApplicationPayment = async ({ payment, application }) => {
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    if (!payment.costo) return { status: 403, message: 'Debe incluir el monto a ser pagado' };
     const solicitud = (await client.query('SELECT * FROM impuesto.solicitud WHERE id_solicitud = $1', [application])).rows[0];
     const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i);
     if (pagoSum < solicitud.monto_total) return { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
     payment.map(async (el) => {
+      if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
       const nearbyHolidays = (
         await client.query("SELECT * FROM impuesto.dias_feriados WHERE dia BETWEEN $1::date AND ($1::date + interval '7 days');", [el.fecha])
       ).rows;
