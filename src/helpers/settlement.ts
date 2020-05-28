@@ -240,13 +240,17 @@ export const insertSettlements = async ({ process, user }) => {
             el.monto,
           ])
         ).rows[0];
-        await Promise.all(
-          el.desglose.map(async (al) => {
-            const insert = breakdownCaseHandler(el.tipoImpuesto, al, liquidacion.id);
-            const result = (await client.query(insert.query, insert.payload)).rows[0];
-            return result;
-          })
-        );
+
+        if (el.desglose) {
+          await Promise.all(
+            el.desglose.map(async (al) => {
+              const insert = breakdownCaseHandler(el.tipoImpuesto, al, liquidacion.id);
+              const result = (await client.query(insert.query, insert.payload)).rows[0];
+              return result;
+            })
+          );
+        }
+
         return {
           id: liquidacion.id,
           tipoProcedimiento: el.tipoImpuesto,

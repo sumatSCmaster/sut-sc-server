@@ -198,6 +198,7 @@ export interface Publicidad {
 }
 
 export interface ServicioMunicipal {
+  id: string;
   direccionInmueble: string;
   tipoInmueble: string;
   tarifaAseo: string;
@@ -206,6 +207,7 @@ export interface ServicioMunicipal {
 }
 
 export interface InmuebleUrbano {
+  id: string;
   direccionInmueble: string;
   ultimoAvaluo: string;
   impuestoInmueble: number;
