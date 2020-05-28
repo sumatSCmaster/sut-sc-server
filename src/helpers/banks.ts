@@ -48,7 +48,7 @@ export const validatePayments = async (body, user) => {
           fechaDeAprobacion: el.fechadeaprobacion,
           tipoTramite: el.tipotramite,
           documento: el.documento,
-          nacionalidad: el.nacionalidad
+          nacionalidad: el.nacionalidad,
         };
         await validationHandler({ concept: el.concepto, body: pagoValidado, user });
         return pagoValidado;
@@ -70,9 +70,15 @@ export const validatePayments = async (body, user) => {
 
 export const insertPaymentReference = async (payment: any, procedure: number, client: PoolClient) => {
   const { referencia, banco, costo, fecha, concepto } = payment;
-  return await client.query(queries.INSERT_PAYMENT, [procedure, referencia, costo, banco, fecha, concepto]).catch((error) => {
-    throw error;
-  });
+  try {
+    return await client.query(queries.INSERT_PAYMENT, [procedure, referencia, costo, banco, fecha, concepto]);
+  } catch (e) {
+    throw {
+      status: 500,
+      error: e,
+      message: errorMessageGenerator(e) || 'Error al insertar el pago',
+    };
+  }
 };
 
 const validateCases = switchcase({ IMPUESTO: validateFining, TRAMITE: validateProcedure, MULTA: validateFining })(null);
