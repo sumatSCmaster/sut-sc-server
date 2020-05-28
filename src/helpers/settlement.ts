@@ -98,7 +98,7 @@ export const getSettlements = async ({ document, reference, type, user }) => {
               el.tx_tp_inmueble === 'COMERCIAL'
                 ? (await gtic.query(queries.gtic.GET_MAX_GAS_TARIFF_BY_CONTRIBUTOR, [contributor.co_contribuyente])).rows[0].nu_tarifa
                 : (await gtic.query(queries.gtic.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].nu_tarifa;
-            return { tipoInmueble: el.tx_tp_inmueble, direccionInmueble: el.tx_direccion, tarifaAseo, tarifaGas, deuda: debtSM };
+            return { id: el.co_inmueble, tipoInmueble: el.tx_tp_inmueble, direccionInmueble: el.tx_direccion, tarifaAseo, tarifaGas, deuda: debtSM };
           })
         );
       }
@@ -122,7 +122,13 @@ export const getSettlements = async ({ document, reference, type, user }) => {
             return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
           });
           IU = estates.map((el) => {
-            return { direccionInmueble: el.tx_direccion, ultimoAvaluo: el.nu_monto, impuestoInmueble: (el.nu_monto * 0.01) / 12, deuda: debtIU };
+            return {
+              id: el.co_inmueble,
+              direccionInmueble: el.tx_direccion,
+              ultimoAvaluo: el.nu_monto,
+              impuestoInmueble: (el.nu_monto * 0.01) / 12,
+              deuda: debtIU,
+            };
           });
         }
       }
