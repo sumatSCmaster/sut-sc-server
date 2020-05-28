@@ -152,6 +152,7 @@ export interface Recaudo {
 
 export interface ActividadEconomica {
   id: string;
+  minimoTributable: number;
   nombreActividad: string;
   idContribuyente: number;
   alicuota: number;

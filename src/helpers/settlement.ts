@@ -55,6 +55,7 @@ export const getSettlements = async ({ document, reference, type, user }) => {
         AE = economicActivities.map((el) => {
           return {
             id: el.nu_ref_actividad,
+            minimoTributable: Math.round(el.nu_ut) * UTMM,
             nombreActividad: el.tx_actividad,
             idContribuyente: el.co_contribuyente,
             alicuota: el.nu_porc_alicuota / 100,
