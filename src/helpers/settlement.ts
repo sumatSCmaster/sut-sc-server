@@ -313,7 +313,7 @@ export const addTaxApplicationPayment = async ({ payment, application }) => {
     const solicitud = (await client.query('SELECT * FROM impuesto.solicitud WHERE id_solicitud = $1', [application])).rows[0];
     const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i);
     if (pagoSum < solicitud.monto_total) return { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
-    payment.map(async (el) => {
+    await Promise.all(payment.map(async (el) => {
       if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
       const nearbyHolidays = (
         await client.query("SELECT * FROM impuesto.dias_feriados WHERE dia BETWEEN $1::date AND ($1::date + interval '7 days');", [el.fecha])
@@ -324,10 +324,8 @@ export const addTaxApplicationPayment = async ({ payment, application }) => {
       }
       el.fecha = paymentDate;
       el.concepto = 'IMPUESTO';
-      await insertPaymentReference(el, application, client).catch((e) => {
-        throw e;
-      });
-    });
+      await insertPaymentReference(el, application, client);
+    }));
     await client.query(queries.UPDATE_PAID_STATE_FOR_TAX_PAYMENT_APPLICATION, [application]);
     client.query('COMMIT');
     return { status: 200, message: 'Pago añadido para la solicitud declarada' };

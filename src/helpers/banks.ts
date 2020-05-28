@@ -73,11 +73,7 @@ export const insertPaymentReference = async (payment: any, procedure: number, cl
   try {
     return await client.query(queries.INSERT_PAYMENT, [procedure, referencia, costo, banco, fecha, concepto]);
   } catch (e) {
-    throw {
-      status: 500,
-      error: e,
-      message: errorMessageGenerator(e) || 'Error al insertar el pago',
-    };
+    throw e;
   }
 };
 
