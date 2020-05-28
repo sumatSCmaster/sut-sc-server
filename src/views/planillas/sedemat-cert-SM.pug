@@ -118,17 +118,17 @@ block content
           div(style={'-webkit-flex': 2}).th.border-bottom.center
             p
               b IMPUESTO 
-        div.tr
-          div(style={'-webkit-flex': 5.5}).td.border-right
-            p 
-              span &nbsp; #{datos.direccion}
-          div(style={'-webkit-flex': 2.5}).td.border-right
-            p 
-              span &nbsp; #{datos.periodos}
-          div(style={'-webkit-flex': 2}).td
-            p 
-              span &nbsp; #{datos.impuesto}
-            
+        each item in datos.items
+          div.tr
+            div(style={'-webkit-flex': 5.5}).td.border-right
+              p 
+                span &nbsp; #{item.direccion}
+            div(style={'-webkit-flex': 2.5}).td.border-right
+              p 
+                span &nbsp; #{item.periodos}
+            div(style={'-webkit-flex': 2}).td
+              p 
+                span &nbsp; #{item.impuesto}
       div(style={'width':'45%','margin-top':0, 'border':'none'}).table
         div.tr
           div(style={'-webkit-flex': 5.5}).td.border-right.end
