@@ -324,7 +324,9 @@ export const addTaxApplicationPayment = async ({ payment, application }) => {
       }
       el.fecha = paymentDate;
       el.concepto = 'IMPUESTO';
-      await insertPaymentReference(el, application, client);
+      await insertPaymentReference(el, application, client).catch((e) => {
+        throw e;
+      });
     });
     await client.query(queries.UPDATE_PAID_STATE_FOR_TAX_PAYMENT_APPLICATION, [application]);
     client.query('COMMIT');
