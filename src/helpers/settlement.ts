@@ -9,12 +9,23 @@ import switchcase from '@utils/switch';
 import { Liquidacion, Solicitud, Usuario } from '@root/interfaces/sigt';
 import { resolve } from 'path';
 import { renderFile } from 'pug';
+import { writeFile } from 'fs';
 import * as pdf from 'html-pdf';
 import * as qr from 'qrcode';
+import * as pdftk from 'node-pdftk';
+import { query } from 'express-validator';
 const gticPool = GticPool.getInstance();
 const pool = Pool.getInstance();
 
 const dev = process.env.NODE_ENV !== 'production';
+
+const idTiposSolicitud = {
+  AE: 87,
+  SM: 175,
+  IU: 445,
+  PP: 97
+}
+const formatCurrency = (number: number) => new Intl.NumberFormat('de-DE').format(number);
 
 export const getSettlements = async ({ document, reference, type, user }) => {
   const client = await pool.connect();
@@ -479,6 +490,7 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
   }
 };
 
+
 const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
     const isJuridical = application.tipoContribuyente === 'JURIDICO';
@@ -487,14 +499,125 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       ? [application.documento, application.rim, application.nacionalidad]
       : [application.nacionalidad, application.nacionalidad];
     const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
+    const inmueblesContribuyente = (await gticPool.query(queries.gtic.GET_ESTATES_BY_CONTRIBUTOR, [datosContribuyente.co_contribuente])).rows
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+    let certInfo;
+    let motivo;
+    let ramo;
+    let certInfoArray:any[] = []; 
     if (application.tipoLiquidacion === 'SM') {
+      motivo = (await gticPool.query(queries.gtic.GET_MOTIVE_BY_TYPE_ID, [idTiposSolicitud.SM])).rows[0];
+      ramo = (await gticPool.query(queries.gtic.GET_BRANCH_BY_TYPE_ID, [idTiposSolicitud.SM])).rows[0];
+      const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID('SM'))).rows;
+      
+      for(const el of inmueblesContribuyente) {
+        certInfo = {
+          QR: linkQr,
+          moment: require('moment'),
+          fecha: moment().format('DD-MM-YYYY'),
+          propietario: {
+            rif: `${application.nacionalidad}-${application.documento}`,
+            denomComercial: datosContribuyente.tx_denom_comercial,
+            direccion: datosContribuyente.tx_direccion,
+          },
+          datos: {
+            nroSolicitud: 856535, //TODO: Reemplazar con el valor de co_solicitud creado en GTIC
+            nroPlanilla: 10010111, //TODO: Ver donde se guarda esto
+            motivo: motivo.tx_motivo,
+            nroFactura: `${application.anio}-${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
+            tipoTramite: `${ramo.nb_ramo} - ${ramo.tx_ramo}`,
+            cuentaOContrato: el.cuenta_contrato,
+            tipoInmueble: el.tx_tp_inmueble,
+            fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
+            fechaLiq: moment(application.fechaCreacion).format('DD/MM/YYYY'),
+            fechaVenc: moment(application).endOf('month').format('DD/MM/YYYY'),
+            razonSocial: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente.trim() + datosContribuyente.ap_contribuyente.trim(),
+            items: breakdownData.map((row) => {
+              return {
+                direccion: el.direccion,
+                periodos: `${row.mes} ${row.anio}`.toUpperCase(),
+                impuesto: row.monto_gas ? +row.monto_gas + +row.monto_aseo : row.monto_aseo
+              }
+            }),
+            totalIva: `${formatCurrency(breakdownData.map(row => row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo).reduce((prev, next) => prev + next, 0) * 0.16)} Bs.S`,
+            totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
+            totalIvaPagar: `${formatCurrency(breakdownData.map(row => row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo).reduce((prev, next) => prev + next, 0) * 0.16)} Bs.S`,
+            montoTotalImpuesto: `${formatCurrency(breakdownData.map(row => row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo).reduce((prev, next) => prev + next) * 0.16)} Bs.S`,
+            interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
+            estatus: 'PAGADO',
+            observacion: 'Pago por Servicios Municipales',
+            totalLiq: `${formatCurrency(breakdownData.map(row => row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo).reduce((prev, next) => prev + next) * 0.16)} Bs.S`,
+            totalRecaudado: `${formatCurrency(breakdownData.map(row => row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo).reduce((prev, next) => prev + next) * 0.16)} Bs.S`,
+            totalCred: `0.00 Bs.S` // TODO: Credito fiscal
+          }
+        }
+        certInfoArray.push({ ...certInfo })
+      };
+      
     } else if (application.tipoLiquidacion === 'IU') {
     }
+    return new Promise(async (res, rej) => {
+      let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-AE.pug`), certInfo))
+      const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
+      const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
+      const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+      if (dev) {
+        let buffersArray = await Promise.all(certInfoArray.map((html) => {
+          return new Promise((res, rej) => {
+            pdf
+              .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
+              .toBuffer((err, buffer) => {
+                if(err){
+                  rej(err);
+                }else{
+                  res(buffer);
+                }
+              })
+          })
+        }));
+        
+        pdftk
+          .input({
+            ...buffersArray
+          } as any)
+          .cat(`${Object.keys(buffersArray).join(' ')}`)
+          .output(pdfDir)
+          .then(buffer => {
+            res(pdfDir)
+          })
+        
+      } else {
+        // try {
+        //   pdf
+        //     .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
+        //     .toBuffer(async (err, buffer) => {
+        //       if (err) {
+        //         rej(err);
+        //       } else {
+        //         const bucketParams = {
+        //           Bucket: 'sut-maracaibo',
+        //           Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}`,
+        //         };
+        //         await S3Client.putObject({
+        //           ...bucketParams,
+        //           Body: buffer,
+        //           ACL: 'public-read',
+        //           ContentType: 'application/pdf',
+        //         }).promise();
+        //         res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+        //       }
+        //     });
+        // } catch (e) {
+        //   throw e;
+        // } finally {
+        // }
+      }
+    });
   } catch (error) {
     throw error;
   }
 };
+
 
 const createReceiptForAEApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
