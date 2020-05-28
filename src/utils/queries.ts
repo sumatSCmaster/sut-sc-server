@@ -572,7 +572,6 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   CREATE_TAX_PAYMENT_APPLICATION: 'SELECT * FROM insert_solicitud($1, $2, $3, $4, $5)',
   CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION: 'SELECT * FROM insert_liquidacion($1,$2,$3,$4,$5)',
   UPDATE_PAID_STATE_FOR_TAX_PAYMENT_APPLICATION: 'UPDATE impuesto.solicitud SET pagado = true WHERE id_solicitud = $1',
-  UPDATE_RECEIPT_FOR_SETTLEMENTS: 'UPDATE impuesto.liquidacion SET recibo = $1 WHERE id_procedimiento = $2 AND id_solicitud = $3',
   CURRENT_AE_APPLICATION_EXISTS:
     'SELECT * FROM impuesto.solicitud_view WHERE documento = $1 AND rim = $2 AND nacionalidad = $3 AND aprobado = false AND "tipoLiquidacion" = \'AE\' AND (EXTRACT(month FROM "fechaCreacion"::date) = EXTRACT(month FROM now()::date));',
   CURRENT_SM_APPLICATION_EXISTS:
@@ -581,15 +580,12 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     'SELECT * FROM impuesto.solicitud_view WHERE documento = $1 AND rim = $2 AND nacionalidad = $3 AND aprobado = false AND "tipoLiquidacion" = \'IU\' AND (EXTRACT(month FROM "fechaCreacion"::date) = EXTRACT(month FROM now()::date));',
   CURRENT_PP_APPLICATION_EXISTS:
     'SELECT * FROM impuesto.solicitud_view WHERE documento = $1 AND rim = $2 AND nacionalidad = $3 AND aprobado = false AND "tipoLiquidacion" = \'PP\' AND (EXTRACT(month FROM "fechaCreacion"::date) = EXTRACT(month FROM now()::date));',
-  CREATE_TAX_PAYMENT_APPLICATION: 'SELECT * FROM insert_solicitud($1, $2, $3, $4, $5, $6)',
-  CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION: 'SELECT * FROM insert_liquidacion($1,$2,$3,$4,$5)',
   CREATE_AE_BREAKDOWN_FOR_SETTLEMENT: 'INSERT INTO impuesto.ae_desglose (id_liquidacion, id_aforo, monto_declarado) VALUES ($1, $2, $3) RETURNING *',
   CREATE_SM_BREAKDOWN_FOR_SETTLEMENT:
     'INSERT INTO impuesto.sm_desglose (id_liquidacion, id_inmueble, monto_aseo, monto_gas) VALUES ($1, $2, $3, $4) RETURNING *',
   CREATE_IU_BREAKDOWN_FOR_SETTLEMENT: 'INSERT INTO impuesto.iu_desglose (id_liquidacion, id_inmueble, monto) VALUES ($1, $2, $3) RETURNING *',
   CREATE_PP_BREAKDOWN_FOR_SETTLEMENT:
     'INSERT INTO impuesto.pp_desglose (id_liquidacion, id_subarticulo, monto, cantidad) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-  UPDATE_PAID_STATE_FOR_TAX_PAYMENT_APPLICATION: 'UPDATE impuesto.solicitud SET pagado = true WHERE id_solicitud = $1',
   UPDATE_RECEIPT_FOR_SETTLEMENTS: 'UPDATE impuesto.liquidacion SET recibo = $1 WHERE id_procedimiento = $2 AND id_solicitud = $3',
   UPDATE_CERTIFICATE_SETTLEMENT: 'UPDATE impuesto.liquidacion SET certificado = $1 WHERE id_liquidacion = $2;',
 
