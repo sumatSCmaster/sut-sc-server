@@ -183,6 +183,7 @@ export const getSettlements = async ({ document, reference, type, user }) => {
       status: 200,
       message: 'Impuestos obtenidos satisfactoriamente',
       impuesto: {
+        contribuyente: contributor.co_contribuyente,
         razonSocial: contributor.tx_razon_social || `${contributor.nb_contribuyente} ${contributor.ap_contribuyente}`,
         siglas: contributor.tx_siglas,
         rim: contributor.nu_referencia,
@@ -213,7 +214,14 @@ export const insertSettlements = async ({ process, user }) => {
   try {
     client.query('BEGIN');
     const application = (
-      await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, process.documento, process.rim, process.nacionalidad, process.totalPagoImpuestos])
+      await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [
+        user.id,
+        process.documento,
+        process.rim,
+        process.nacionalidad,
+        process.totalPagoImpuestos,
+        process.contribuyente,
+      ])
     ).rows[0];
     const settlement: Liquidacion[] = await Promise.all(
       impuestos.map(async (el) => {
@@ -226,6 +234,13 @@ export const insertSettlements = async ({ process, user }) => {
             el.monto,
           ])
         ).rows[0];
+        await Promise.all(
+          el.desglose.map(async (al) => {
+            const insert = breakdownCaseHandler(el.tipoImpuesto, al, liquidacion.id);
+            const result = (await client.query(insert.query, insert.payload)).rows[0];
+            return result;
+          })
+        );
         return {
           id: liquidacion.id,
           tipoProcedimiento: el.tipoImpuesto,
@@ -310,22 +325,22 @@ export const addTaxApplicationPayment = async ({ payment, application }) => {
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    const solicitud = (await client.query('SELECT * FROM impuesto.solicitud WHERE id_solicitud = $1', [application])).rows[0];
+    const solicitud = (await client.query(queries.GET_APPLICATION_BY_ID, [application])).rows[0];
     const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i);
     if (pagoSum < solicitud.monto_total) return { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
-    await Promise.all(payment.map(async (el) => {
-      if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
-      const nearbyHolidays = (
-        await client.query("SELECT * FROM impuesto.dias_feriados WHERE dia BETWEEN $1::date AND ($1::date + interval '7 days');", [el.fecha])
-      ).rows;
-      const paymentDate = checkIfWeekend(moment(el.fecha));
-      if (nearbyHolidays.length > 0) {
-        while (nearbyHolidays.find((el) => moment(el.dia).format('YYYY-MM-DD') === paymentDate.format('YYYY-MM-DD'))) paymentDate.add({ days: 1 });
-      }
-      el.fecha = paymentDate;
-      el.concepto = 'IMPUESTO';
-      await insertPaymentReference(el, application, client);
-    }));
+    await Promise.all(
+      payment.map(async (el) => {
+        if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
+        const nearbyHolidays = (await client.query(queries.GET_HOLIDAYS_BASED_ON_PAYMENT_DATE, [el.fecha])).rows;
+        const paymentDate = checkIfWeekend(moment(el.fecha));
+        if (nearbyHolidays.length > 0) {
+          while (nearbyHolidays.find((el) => moment(el.dia).format('YYYY-MM-DD') === paymentDate.format('YYYY-MM-DD'))) paymentDate.add({ days: 1 });
+        }
+        el.fecha = paymentDate;
+        el.concepto = 'IMPUESTO';
+        await insertPaymentReference(el, application, client);
+      })
+    );
     await client.query(queries.UPDATE_PAID_STATE_FOR_TAX_PAYMENT_APPLICATION, [application]);
     client.query('COMMIT');
     return { status: 200, message: 'Pago añadido para la solicitud declarada' };
@@ -646,6 +661,24 @@ const certificateCases = switchcase({
   IU: { recibo: createReceiptForSMOrIUApplication },
   PP: { recibo: createReceiptForPPApplication },
 })(null);
+
+const breakdownCases = switchcase({
+  AE: queries.CREATE_AE_BREAKDOWN_FOR_SETTLEMENT,
+  SM: queries.CREATE_SM_BREAKDOWN_FOR_SETTLEMENT,
+  IU: queries.CREATE_IU_BREAKDOWN_FOR_SETTLEMENT,
+  PP: queries.CREATE_PP_BREAKDOWN_FOR_SETTLEMENT,
+})(null);
+
+const breakdownCaseHandler = (settlementType, breakdown, settlement) => {
+  const query = breakdownCases(settlementType);
+  const payload = switchcase({
+    AE: [settlement, breakdown.aforo, breakdown.montoDeclarado],
+    SM: [settlement, breakdown.inmueble, breakdown.montoAseo, breakdown.montoGas],
+    IU: [settlement, breakdown.inmueble, breakdown.monto],
+    PP: [settlement, breakdown.subarticulo, breakdown.cantidad, breakdown.monto],
+  })(null)(settlementType);
+  return { query, payload };
+};
 
 const certificateCreationHandler = async (process, media, payload: CertificatePayload) => {
   try {
