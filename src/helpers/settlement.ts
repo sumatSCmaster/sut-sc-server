@@ -247,6 +247,7 @@ export const insertSettlements = async ({ process, user }) => {
         if (el.desglose) {
           await Promise.all(
             el.desglose.map(async (al) => {
+              console.log(el.tipoImpuesto, el.fechaCancelada.month)
               const insert = breakdownCaseHandler(el.tipoImpuesto, al, liquidacion.id_liquidacion);
               const result = (await client.query(insert.query, insert.payload)).rows[0];
               return result;
