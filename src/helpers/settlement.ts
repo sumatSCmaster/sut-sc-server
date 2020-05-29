@@ -823,7 +823,7 @@ const breakdownCaseHandler = (settlementType, breakdown, settlement) => {
     AE: [settlement, breakdown.aforo, breakdown.montoDeclarado],
     SM: [settlement, breakdown.inmueble, breakdown.montoAseo, breakdown.montoGas],
     IU: [settlement, breakdown.inmueble, breakdown.monto],
-    PP: [settlement, breakdown.subarticulo, breakdown.cantidad, breakdown.monto],
+    PP: [settlement, breakdown.subarticulo, breakdown.monto, breakdown.cantidad],
   })(null)(settlementType);
   return { query, payload };
 };
