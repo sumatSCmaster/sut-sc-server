@@ -258,7 +258,7 @@ export const insertSettlements = async ({ process, user }) => {
         if (el.desglose) {
           await Promise.all(
             el.desglose.map(async (al) => {
-              console.log(el.tipoImpuesto, el.fechaCancelada.month)
+              console.log(el.tipoImpuesto, el.fechaCancelada.month);
               const insert = breakdownCaseHandler(el.tipoImpuesto, al, liquidacion.id_liquidacion);
               const result = (await client.query(insert.query, insert.payload)).rows[0];
               return result;
@@ -293,7 +293,7 @@ export const insertSettlements = async ({ process, user }) => {
     client.query('COMMIT');
     return { status: 201, message: 'Liquidaciones de impuestos creadas satisfactoriamente', solicitud };
   } catch (error) {
-    console.log(error)
+    console.log(error);
     client.query('ROLLBACK');
     throw {
       status: 500,
@@ -500,7 +500,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       ? [application.documento, application.rim, application.nacionalidad]
       : [application.nacionalidad, application.nacionalidad];
     const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
-    const inmueblesContribuyente = (await gticPool.query(queries.gtic.GET_ESTATES_BY_CONTRIBUTOR, [datosContribuyente.co_contribuente])).rows;
+    const inmueblesContribuyente = (await gticPool.query(queries.gtic.GET_ESTATES_BY_CONTRIBUTOR, [datosContribuyente.co_contribuyente])).rows;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     let certInfo;
     let motivo;
