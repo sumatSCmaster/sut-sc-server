@@ -23,8 +23,8 @@ const idTiposSolicitud = {
   AE: 87,
   SM: 175,
   IU: 445,
-  PP: 97
-}
+  PP: 97,
+};
 const formatCurrency = (number: number) => new Intl.NumberFormat('de-DE').format(number);
 
 export const getSettlements = async ({ document, reference, type, user }) => {
@@ -373,7 +373,7 @@ export const addTaxApplicationPayment = async ({ payment, application }) => {
     throw {
       status: 500,
       error,
-      message: errorMessageGenerator(error) || 'Error al crear liquidaciones',
+      message: errorMessageGenerator(error) || 'Error al insertar referencias de pago',
     };
   } finally {
     client.release();
@@ -490,7 +490,6 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
   }
 };
 
-
 const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
     const isJuridical = application.tipoContribuyente === 'JURIDICO';
@@ -499,18 +498,18 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       ? [application.documento, application.rim, application.nacionalidad]
       : [application.nacionalidad, application.nacionalidad];
     const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
-    const inmueblesContribuyente = (await gticPool.query(queries.gtic.GET_ESTATES_BY_CONTRIBUTOR, [datosContribuyente.co_contribuente])).rows
+    const inmueblesContribuyente = (await gticPool.query(queries.gtic.GET_ESTATES_BY_CONTRIBUTOR, [datosContribuyente.co_contribuente])).rows;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     let certInfo;
     let motivo;
     let ramo;
-    let certInfoArray:any[] = []; 
+    let certInfoArray: any[] = [];
     if (application.tipoLiquidacion === 'SM') {
       motivo = (await gticPool.query(queries.gtic.GET_MOTIVE_BY_TYPE_ID, [idTiposSolicitud.SM])).rows[0];
       ramo = (await gticPool.query(queries.gtic.GET_BRANCH_BY_TYPE_ID, [idTiposSolicitud.SM])).rows[0];
       const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID('SM'))).rows;
-      
-      for(const el of inmueblesContribuyente) {
+
+      for (const el of inmueblesContribuyente) {
         certInfo = {
           QR: linkQr,
           moment: require('moment'),
@@ -531,61 +530,73 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
             fechaLiq: moment(application.fechaCreacion).format('DD/MM/YYYY'),
             fechaVenc: moment(application).endOf('month').format('DD/MM/YYYY'),
-            razonSocial: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente.trim() + datosContribuyente.ap_contribuyente.trim(),
+            razonSocial: isJuridical
+              ? datosContribuyente.tx_razon_social
+              : datosContribuyente.nb_contribuyente.trim() + datosContribuyente.ap_contribuyente.trim(),
             items: breakdownData.map((row) => {
               return {
                 direccion: el.direccion,
                 periodos: `${row.mes} ${row.anio}`.toUpperCase(),
-                impuesto: row.monto_gas ? +row.monto_gas + +row.monto_aseo : row.monto_aseo
-              }
+                impuesto: row.monto_gas ? +row.monto_gas + +row.monto_aseo : row.monto_aseo,
+              };
             }),
-            totalIva: `${formatCurrency(breakdownData.map(row => row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo).reduce((prev, next) => prev + next, 0) * 0.16)} Bs.S`,
+            totalIva: `${formatCurrency(
+              breakdownData.map((row) => (row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo)).reduce((prev, next) => prev + next, 0) * 0.16
+            )} Bs.S`,
             totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
-            totalIvaPagar: `${formatCurrency(breakdownData.map(row => row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo).reduce((prev, next) => prev + next, 0) * 0.16)} Bs.S`,
-            montoTotalImpuesto: `${formatCurrency(breakdownData.map(row => row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo).reduce((prev, next) => prev + next) * 0.16)} Bs.S`,
+            totalIvaPagar: `${formatCurrency(
+              breakdownData.map((row) => (row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo)).reduce((prev, next) => prev + next, 0) * 0.16
+            )} Bs.S`,
+            montoTotalImpuesto: `${formatCurrency(
+              breakdownData.map((row) => (row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo)).reduce((prev, next) => prev + next) * 0.16
+            )} Bs.S`,
             interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
             estatus: 'PAGADO',
             observacion: 'Pago por Servicios Municipales',
-            totalLiq: `${formatCurrency(breakdownData.map(row => row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo).reduce((prev, next) => prev + next) * 0.16)} Bs.S`,
-            totalRecaudado: `${formatCurrency(breakdownData.map(row => row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo).reduce((prev, next) => prev + next) * 0.16)} Bs.S`,
-            totalCred: `0.00 Bs.S` // TODO: Credito fiscal
-          }
-        }
-        certInfoArray.push({ ...certInfo })
-      };
-      
+            totalLiq: `${formatCurrency(
+              breakdownData.map((row) => (row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo)).reduce((prev, next) => prev + next) * 0.16
+            )} Bs.S`,
+            totalRecaudado: `${formatCurrency(
+              breakdownData.map((row) => (row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo)).reduce((prev, next) => prev + next) * 0.16
+            )} Bs.S`,
+            totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
+          },
+        };
+        certInfoArray.push({ ...certInfo });
+      }
     } else if (application.tipoLiquidacion === 'IU') {
     }
     return new Promise(async (res, rej) => {
-      let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-AE.pug`), certInfo))
+      let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-AE.pug`), certInfo));
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
       const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
       const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
       if (dev) {
-        let buffersArray = await Promise.all(certInfoArray.map((html) => {
-          return new Promise((res, rej) => {
-            pdf
-              .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
-              .toBuffer((err, buffer) => {
-                if(err){
-                  rej(err);
-                }else{
-                  res(buffer);
-                }
-              })
+        let buffersArray = await Promise.all(
+          certInfoArray.map((html) => {
+            return new Promise((res, rej) => {
+              pdf
+                .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
+                .toBuffer((err, buffer) => {
+                  if (err) {
+                    rej(err);
+                  } else {
+                    res(buffer);
+                  }
+                });
+            });
           })
-        }));
-        
+        );
+
         pdftk
           .input({
-            ...buffersArray
+            ...buffersArray,
           } as any)
           .cat(`${Object.keys(buffersArray).join(' ')}`)
           .output(pdfDir)
-          .then(buffer => {
-            res(pdfDir)
-          })
-        
+          .then((buffer) => {
+            res(pdfDir);
+          });
       } else {
         // try {
         //   pdf
@@ -617,7 +628,6 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     throw error;
   }
 };
-
 
 const createReceiptForAEApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
