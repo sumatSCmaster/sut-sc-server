@@ -1,0 +1,78 @@
+extends default
+block css
+  link(rel="stylesheet", href="css/sedemat.css")
+block header
+  header#header
+    div.header-child
+      img#alcaldia(src='images/LogoAlcaldia.png')
+    div.header-child
+        p Alcaldida Bolivariana de Maracaibo
+        p Servicio Desconcentrado Municipal de Administración Tributaria
+        p R.I.F.: G-20002908-0
+    div.header-child
+      img#logo(src='images/sedemat.png')
+  img#divider(src='images/Divider.png')
+  div#content
+  div#pageHeader
+    .table
+      .tr
+        .th.center.border-bottom
+          p
+            b DATOS DEL CONTRIBUYENTE
+      .tr
+        div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
+          p Nombre o Razón Social
+        div(style={'-webkit-flex':'7'}).td.border-bottom
+          p #{datos.nombreORazon}
+      .tr
+        div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
+          p RIF
+        div(style={'-webkit-flex':'7'}).td.border-bottom
+          p #{datos.cedulaORif}
+      .tr
+        div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
+          p Referencia
+        div(style={'-webkit-flex':'7'}).td.border-bottom
+          p #{datos.ref}
+      .tr
+        div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
+          p Dirección
+        div(style={'-webkit-flex':'7'}).td.border-bottom
+          p #{datos.direccion}
+      .tr
+        div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
+          p Teléfóno
+        div(style={'-webkit-flex':'7'}).td.border-bottom
+          p #{datos.telefono}
+    div(style={'margin-top':'20px'}).table
+      .tr
+        .th.center.border-bottom
+          p
+            b ESTADO DE CUENTA DEL CONTRIBUYENTE
+      .tr
+        div(style={'-webkit-flex':'1.5'}).th.center.border-right
+          p
+            b PLANILLA
+        div(style={'-webkit-flex':'1.5'}).th.center.border-right
+          p
+            b SOLICITUD
+        div(style={'-webkit-flex':'1'}).th.center.border-right
+          p
+            b PORCIÓN
+        div(style={'-webkit-flex':'1.5'}).th.center.border-right
+          p
+            b FECHA LIQ.
+        div(style={'-webkit-flex':'1'}).th.center.border-right
+          p
+            b FECHA DE VENC.
+        div(style={'-webkit-flex':'1.5'}).th.center.border-right
+          p
+            b MOTIVO
+        div(style={'-webkit-flex':'1'}).th.center.border-right
+          p
+            b Estado
+        div(style={'-webkit-flex':'2'}).th.center
+          p
+            b MONTO PORCIÓN                                                                                
+block title
+block content

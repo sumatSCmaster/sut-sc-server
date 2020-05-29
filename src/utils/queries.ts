@@ -585,7 +585,8 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     'INSERT INTO impuesto.sm_desglose (id_liquidacion, id_inmueble, monto_aseo, monto_gas) VALUES ($1, $2, $3, $4) RETURNING *',
   CREATE_IU_BREAKDOWN_FOR_SETTLEMENT: 'INSERT INTO impuesto.iu_desglose (id_liquidacion, id_inmueble, monto) VALUES ($1, $2, $3) RETURNING *',
   CREATE_PP_BREAKDOWN_FOR_SETTLEMENT:
-    'INSERT INTO impuesto.pp_desglose (id_liquidacion, id_subarticulo, monto, cantidad) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+    'INSERT INTO impuesto.pp_desglose (id_liquidacion, id_subarticulo, monto, cantidad) VALUES ($1, $2, $3, $4) RETURNING *',
+  UPDATE_PAID_STATE_FOR_TAX_PAYMENT_APPLICATION: 'UPDATE impuesto.solicitud SET pagado = true WHERE id_solicitud = $1',
   UPDATE_RECEIPT_FOR_SETTLEMENTS: 'UPDATE impuesto.liquidacion SET recibo = $1 WHERE id_procedimiento = $2 AND id_solicitud = $3',
   UPDATE_CERTIFICATE_SETTLEMENT: 'UPDATE impuesto.liquidacion SET certificado = $1 WHERE id_liquidacion = $2;',
 
