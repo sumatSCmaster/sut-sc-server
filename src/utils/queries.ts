@@ -569,7 +569,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     };
     return `SELECT * FROM impuesto.${type[typePick].table} d INNER JOIN impuesto.liquidacion l ON d.id_liquidacion = l.id_liquidacion WHERE id_liquidacion = $1;`;
   },
-  CREATE_TAX_PAYMENT_APPLICATION: 'SELECT * FROM insert_solicitud($1, $2, $3, $4, $5)',
+  CREATE_TAX_PAYMENT_APPLICATION: 'SELECT * FROM insert_solicitud($1, $2, $3, $4, $5, $6)',
   CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION: 'SELECT * FROM insert_liquidacion($1,$2,$3,$4,$5)',
   CURRENT_AE_APPLICATION_EXISTS:
     'SELECT * FROM impuesto.solicitud_view WHERE documento = $1 AND rim = $2 AND nacionalidad = $3 AND aprobado = false AND "tipoLiquidacion" = \'AE\' AND (EXTRACT(month FROM "fechaCreacion"::date) = EXTRACT(month FROM now()::date));',
