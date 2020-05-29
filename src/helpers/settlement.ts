@@ -247,7 +247,7 @@ export const insertSettlements = async ({ process, user }) => {
         if (el.desglose) {
           await Promise.all(
             el.desglose.map(async (al) => {
-              const insert = breakdownCaseHandler(el.tipoImpuesto, al, liquidacion.id);
+              const insert = breakdownCaseHandler(el.tipoImpuesto, al, liquidacion.id_liquidacion);
               const result = (await client.query(insert.query, insert.payload)).rows[0];
               return result;
             })
@@ -255,7 +255,7 @@ export const insertSettlements = async ({ process, user }) => {
         }
 
         return {
-          id: liquidacion.id,
+          id: liquidacion.id_liquidacion,
           tipoProcedimiento: el.tipoImpuesto,
           fecha: { month: liquidacion.mes, year: liquidacion.anio },
           monto: liquidacion.monto,
@@ -281,6 +281,7 @@ export const insertSettlements = async ({ process, user }) => {
     client.query('COMMIT');
     return { status: 201, message: 'Liquidaciones de impuestos creadas satisfactoriamente', solicitud };
   } catch (error) {
+    console.log(error)
     client.query('ROLLBACK');
     throw {
       status: 500,
