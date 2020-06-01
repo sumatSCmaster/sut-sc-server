@@ -106,50 +106,53 @@ block content
         div(style={'-webkit-flex': 8}).td
           p 
             span &nbsp; #{datos.propietario.direccion}
-    div(style={'text-align': '-webkit-right'})  
-      div.table
-        div.tr
-          div(style={'-webkit-flex': 5.5}).th.border-bottom.center.border-right
-            p
-              b DIRECCIÓN
-          div(style={'-webkit-flex': 2.5}).th.border-bottom.center.border-right
-            p
-              b PERIODOS
-          div(style={'-webkit-flex': 2}).th.border-bottom.center
-            p
-              b IMPUESTO 
-        div.tr
-          div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
-            p 
-              span &nbsp; #{datos.items[0].direccion}
-          each item in datos.items
-            div(style={'-webkit-flex': 2.5}).td.border-right.border-bottom
-              p 
-                span &nbsp; #{item.periodos}
-            div(style={'-webkit-flex': 2}).td.border-bottom
-              p 
-                span &nbsp; #{item.impuesto}
+    div(style={'text-align': '-webkit-right'}) 
+      div(style={'display':'-webkit-flex'})
+        div.table(style={'-webkit-flex': 5.5})
+          div.tr
+            div(style={'-webkit-flex': 5.5}).th.center.border-right
+              p
+                b DIRECCIÓN
+            div(style={'-webkit-flex': 2.5}).th.center.border-right
+              p
+                b PERIODOS
+            div(style={'-webkit-flex': 2}).th.center
+              p
+                b IMPUESTO                 
+          div(style={'display':'-webkit-flex'})
+            div(style={'-webkit-flex': 5.5}).tr
+              div(style={'align-self':'center', 'text-align':'justify', 'border-top':'1px solid #000'}).td.border-right
+                p 
+                  span &nbsp; #{datos.items[0].direccion}
+            each item in datos.items
+              div(style={'-webkit-flex': 4.5}).tr
+                div(style={'-webkit-flex': 5.5, 'padding':'0 2px', 'border-top':'1px solid #000'}).td.border-right.center
+                  p 
+                    span &nbsp; #{item.periodos}
+                div(style={'-webkit-flex': 4.5,'border-top':'1px solid #000'}).td.center
+                  p 
+                    span &nbsp; #{item.impuesto}
       div(style={'width':'45%','margin-top':0, 'border':'none'}).table
         div.tr
-          div(style={'-webkit-flex': 5.5}).td.border-right.end
+          div(style={'-webkit-flex': 5.5, 'padding':'0 2px'}).td.border-right.end
             p
               b TOTAL IVA (16%)
           div(style={'-webkit-flex': 4.5}).td.border-bottom.border-right
             p #{datos.totalIva}
         div.tr
-          div(style={'-webkit-flex': 5.5}).td.border-right.end
+          div(style={'-webkit-flex': 5.5, 'padding':'0 2px'}).td.border-right.end
             p
               b TOTAL RETENCION IVA (75%):
           div(style={'-webkit-flex': 4.5}).td.border-bottom.border-right
             p #{datos.totalRetencionIva}
         div.tr
-          div(style={'-webkit-flex': 5.5}).td.border-right.end
+          div(style={'-webkit-flex': 5.5, 'padding':'0 2px'}).td.border-right.end
             p
               b TOTAL IVA A PAGAR:
           div(style={'-webkit-flex': 4.5}).td.border-bottom.border-right
             p #{datos.totalIvaPagar}
         div.tr
-          div(style={'-webkit-flex': 5.5}).td.border-right.end
+          div(style={'-webkit-flex': 5.5, 'padding':'0 2px'}).td.border-right.end
             p
               b TOTAL IMPUESTO A PAGAR:
           div(style={'-webkit-flex': 4.5}).td.border-right
@@ -189,5 +192,3 @@ block content
           p
             b Total Credito Fiscal:
             span &nbsp; #{datos.totalCred}
-
-      

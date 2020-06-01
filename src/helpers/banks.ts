@@ -77,7 +77,7 @@ export const insertPaymentReference = async (payment: any, procedure: number, cl
   }
 };
 
-const validateCases = switchcase({ IMPUESTO: validateFining, TRAMITE: validateProcedure, MULTA: validateFining })(null);
+const validateCases = switchcase({ IMPUESTO: ()=>{ }, TRAMITE: validateProcedure, MULTA: validateFining })(null);
 
 const validationHandler = async ({ concept, body, user }) => {
   const executedMethod = await validateCases(concept);
