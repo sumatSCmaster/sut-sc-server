@@ -1,78 +1,195 @@
 extends default
 block css
   link(rel="stylesheet", href="css/sedemat.css")
-block header
-  header#header
-    div.header-child
-      img#alcaldia(src='images/LogoAlcaldia.png')
-    div.header-child
-        p Alcaldida Bolivariana de Maracaibo
-        p Servicio Desconcentrado Municipal de Administración Tributaria
-        p R.I.F.: G-20002908-0
-    div.header-child
-      img#logo(src='images/sedemat.png')
-  img#divider(src='images/Divider.png')
-  div#content
-  div#pageHeader
-    .table
-      .tr
-        .th.center.border-bottom
-          p
-            b DATOS DEL CONTRIBUYENTE
-      .tr
-        div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
-          p Nombre o Razón Social
-        div(style={'-webkit-flex':'7'}).td.border-bottom
-          p #{datos.nombreORazon}
-      .tr
-        div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
-          p RIF
-        div(style={'-webkit-flex':'7'}).td.border-bottom
-          p #{datos.cedulaORif}
-      .tr
-        div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
-          p Referencia
-        div(style={'-webkit-flex':'7'}).td.border-bottom
-          p #{datos.ref}
-      .tr
-        div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
-          p Dirección
-        div(style={'-webkit-flex':'7'}).td.border-bottom
-          p #{datos.direccion}
-      .tr
-        div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
-          p Teléfóno
-        div(style={'-webkit-flex':'7'}).td.border-bottom
-          p #{datos.telefono}
-    div(style={'margin-top':'20px'}).table
-      .tr
-        .th.center.border-bottom
-          p
-            b ESTADO DE CUENTA DEL CONTRIBUYENTE
-      .tr
-        div(style={'-webkit-flex':'1.5'}).th.center.border-right
-          p
-            b PLANILLA
-        div(style={'-webkit-flex':'1.5'}).th.center.border-right
-          p
-            b SOLICITUD
-        div(style={'-webkit-flex':'1'}).th.center.border-right
-          p
-            b PORCIÓN
-        div(style={'-webkit-flex':'1.5'}).th.center.border-right
-          p
-            b FECHA LIQ.
-        div(style={'-webkit-flex':'1'}).th.center.border-right
-          p
-            b FECHA DE VENC.
-        div(style={'-webkit-flex':'1.5'}).th.center.border-right
-          p
-            b MOTIVO
-        div(style={'-webkit-flex':'1'}).th.center.border-right
-          p
-            b Estado
-        div(style={'-webkit-flex':'2'}).th.center
-          p
-            b MONTO PORCIÓN                                                                                
 block title
 block content
+  div#fecha
+    p 
+      b FECHA:
+      span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+    p 
+      b Codigo de Tramite:
+      span &nbsp; #{codigo}
+  div.titleWithQR
+    p#title
+      b #{titulo}
+    .QR
+      img#QR(src=QR, alt='QR')
+  div#planilla
+    div(style={'margin-bottom':'20px'})
+      div.table(style={'width':'90%', 'font-size':'16px', 'font-weight': 'bold'})
+        div.tr
+          div(style={'-webkit-flex': 1.5}).td.border-right.border-bottom.center
+            p 
+              b Nro. Solicitud
+          div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+            p
+              b Nro. Planilla
+          div(style={'-webkit-flex': 1.5}).td.border-right.border-bottom.center
+            p
+              b MOTIVO
+          div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+            p
+              b Liquidador
+          div(style={'-webkit-flex': 1.5}).td.border-bottom.center.border-right
+            p
+              b Cajero
+          div(style={'-webkit-flex': 1.5}).td.border-bottom.center
+            p
+              b Nº Factura
+        div.tr
+          div(style={'-webkit-flex': 1.5}).td.border-right.center
+            p #{datos.nroSolicitud}
+          div(style={'-webkit-flex': 2}).td.border-right.center
+            p #{datos.nroPlanilla}
+          div(style={'-webkit-flex': 1.5}).td.border-right.center
+            p #{datos.motivo}
+          div(style={'-webkit-flex': 2}).td.border-right.center
+            p  USUARIO WEB
+          div(style={'-webkit-flex': 1.5}).td.border-right.center
+            p
+          div(style={'-webkit-flex': 1.5}).td.center
+            p  #{datos.nroFactura}
+    div.table(style={'font-size':'16px'})
+      div.tr
+        div.td(style={'-webkit-flex': 8}).border-right.border-bottom
+          p
+            b Tipo De Trámite:
+            span &nbsp; #{datos.tipoTramite}
+        div.td(style={'-webkit-flex': 2}).border-bottom
+          p
+            b Cuenta/Contrato.:
+            span &nbsp; #{datos.cuentaOContrato}
+      div.tr
+        div(style={'-webkit-flex': 3}).td.border-right
+          p
+            b Tipo Inmueble:
+            span &nbsp; #{datos.tipoInmueble}
+        div(style={'-webkit-flex': 1}).td.border-right.center
+          p
+            b FECHA CREACIÓN:
+        div(style={'-webkit-flex': 1}).td.border-right
+          p #{datos.fechaCre}
+        div(style={'-webkit-flex': 1.5}).td.border-right.center
+          p
+            b FECHA LIQUIDACIÓN:          
+        div(style={'-webkit-flex': 1}).td.border-right
+          p #{datos.fechaLiq}
+        div(style={'-webkit-flex': 1.5}).td.border-right.center
+          p
+            b FECHA VENCIMIENTO:         
+        div(style={'-webkit-flex': 1}).td
+          p #{datos.fechaVenc}
+    div.table
+      div.tr
+        div(style={'-webkit-flex': 1}).th.border-bottom.center
+          p
+            b PROPIETARIO DEL INMUEBLE Y SOLICITANTE   
+      div.tr
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p Razón Social:
+        div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
+          p #{datos.propietario.razonSocial}
+        div(style={'-webkit-flex': 2.5}).td.border-bottom
+          p 
+            b RIF.:
+            span &nbsp; #{datos.propietario.rif}
+      div.tr
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p Denom. Comercial:
+        div(style={'-webkit-flex': 8}).td.border-bottom
+          p 
+            span &nbsp; #{datos.propietario.denomComercial}
+      div.tr
+        div(style={'-webkit-flex': 2}).td.border-right.center
+          p Dirección:
+        div(style={'-webkit-flex': 8}).td
+          p 
+            span &nbsp; #{datos.propietario.direccion}
+    div(style={'text-align': '-webkit-right'}) 
+      div(style={'display':'flex'})
+        div.table(style={'border-right':'none','-webkit-flex': 5.5})
+          div.tr
+            div(style={'-webkit-flex': 5.5}).th.border-bottom.center
+              p
+                b DIRECCIÓN
+          div(style={'height':'100%'}).tr
+            div(style={'-webkit-flex': 5.5, 'align-self':'center'}).td
+              p 
+                span &nbsp; #{datos.items[0].direccion}
+        div(style={'border-bottom':'none','-webkit-flex': 4.5}).table
+          div.tr
+            div(style={'-webkit-flex': 2.5}).th.border-bottom.center.border-right
+              p
+                b PERIODOS
+            div(style={'-webkit-flex': 2}).th.border-bottom.center
+              p
+                b IMPUESTO 
+          each item in datos.items
+            div.tr
+              div(style={'-webkit-flex': 2.5}).td.border-right.border-bottom
+                p 
+                  span &nbsp; #{item.periodos}
+              div(style={'-webkit-flex': 2}).td.border-bottom
+                p 
+                  span &nbsp; #{item.impuesto}
+      div(style={'width':'45%','margin-top':0, 'border':'none'}).table
+        div.tr
+          div(style={'-webkit-flex': 5.5}).td.border-right.end
+            p
+              b TOTAL IVA (16%)
+          div(style={'-webkit-flex': 4.5}).td.border-bottom.border-right
+            p #{datos.totalIva}
+        div.tr
+          div(style={'-webkit-flex': 5.5}).td.border-right.end
+            p
+              b TOTAL RETENCION IVA (75%):
+          div(style={'-webkit-flex': 4.5}).td.border-bottom.border-right
+            p #{datos.totalRetencionIva}
+        div.tr
+          div(style={'-webkit-flex': 5.5}).td.border-right.end
+            p
+              b TOTAL IVA A PAGAR:
+          div(style={'-webkit-flex': 4.5}).td.border-bottom.border-right
+            p #{datos.totalIvaPagar}
+        div.tr
+          div(style={'-webkit-flex': 5.5}).td.border-right.end
+            p
+              b TOTAL IMPUESTO A PAGAR:
+          div(style={'-webkit-flex': 4.5}).td.border-right
+            p #{datos.montoTotalImpuesto}
+        div.tr
+          div(style={'-webkit-flex': 4}).td.end
+            p
+              b Intereses Moratorios:
+          div(style={'-webkit-flex': 6}).td.all-border 
+            p #{datos.interesMoratorio}
+    div.table
+      div.tr
+        div(style={'-webkit-flex': 2}).th.border-bottom.border-right
+          p
+            b Estatus:
+        div(style={'-webkit-flex': 8}).th.border-bottom
+          p #{datos.estatus}
+      div.tr
+        div(style={'-webkit-flex': 1}).th.border-bottom
+          p
+            b OBSERVACIONES
+      div.tr
+        div(style={'-webkit-flex': 1}).td
+          p
+            span &nbsp; #{datos.observacion}
+    div.table
+      div(style={'background-color':'rgba(0,0,0,0.2)'}).tr
+        div(style={'-webkit-flex': 1}).td.border-right.center
+          p
+            b Total Liquidado:
+            span &nbsp; #{datos.totalLiq}
+        div(style={'-webkit-flex': 1}).td.border-right.center
+          p
+            b Total Recaudado:
+            span &nbsp; #{datos.totalRecaudado}
+        div(style={'-webkit-flex': 1}).td.center
+          p
+            b Total Credito Fiscal:
+            span &nbsp; #{datos.totalCred}
