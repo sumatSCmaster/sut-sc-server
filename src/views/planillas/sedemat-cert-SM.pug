@@ -118,15 +118,15 @@ block content
           div(style={'-webkit-flex': 2}).th.border-bottom.center
             p
               b IMPUESTO 
-        each item in datos.items
-          div.tr
-            div(style={'-webkit-flex': 5.5}).td.border-right
-              p 
-                span &nbsp; #{item.direccion}
-            div(style={'-webkit-flex': 2.5}).td.border-right
+        div.tr
+          div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
+            p 
+              span &nbsp; #{datos.items[0].direccion}
+          each item in datos.items
+            div(style={'-webkit-flex': 2.5}).td.border-right.border-bottom
               p 
                 span &nbsp; #{item.periodos}
-            div(style={'-webkit-flex': 2}).td
+            div(style={'-webkit-flex': 2}).td.border-bottom
               p 
                 span &nbsp; #{item.impuesto}
       div(style={'width':'45%','margin-top':0, 'border':'none'}).table
@@ -159,7 +159,7 @@ block content
             p
               b Intereses Moratorios:
           div(style={'-webkit-flex': 6}).td.all-border 
-            p #{dato.interesMoratorio}
+            p #{datos.interesMoratorio}
     div.table
       div.tr
         div(style={'-webkit-flex': 2}).th.border-bottom.border-right
