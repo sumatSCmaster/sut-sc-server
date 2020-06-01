@@ -86,7 +86,7 @@ block content
           p
             b PROPIETARIO DEL INMUEBLE Y SOLICITANTE   
       div.tr
-        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+        div(style={'-webkit-flex': 2, padding:'0 1px'}).td.border-right.border-bottom.center
           p Razón Social:
         div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
           p #{datos.propietario.razonSocial}
@@ -124,14 +124,16 @@ block content
               div(style={'align-self':'center', 'text-align':'justify', 'border-top':'1px solid #000'}).td.border-right
                 p 
                   span &nbsp; #{datos.items[0].direccion}
-            each item in datos.items
-              div(style={'-webkit-flex': 4.5}).tr
-                div(style={'-webkit-flex': 5.5, 'padding':'0 2px', 'border-top':'1px solid #000'}).td.border-right.center
-                  p 
-                    span &nbsp; #{item.periodos}
-                div(style={'-webkit-flex': 4.5,'border-top':'1px solid #000'}).td.center
-                  p 
-                    span &nbsp; #{item.impuesto}
+            div(style={'-webkit-flex': 2.5}).border-right
+              each item in datos.items
+                  div(style={'border-top':'1px solid #000'}).td.center
+                    p 
+                      span &nbsp; #{item.periodos}
+            div(style={'-webkit-flex': 2})
+              each item in datos.items                      
+                  div(style={'border-top':'1px solid #000'}).td.center
+                    p 
+                      span &nbsp; #{item.impuesto}
       div(style={'width':'45%','margin-top':0, 'border':'none'}).table
         div.tr
           div(style={'-webkit-flex': 5.5, 'padding':'0 2px'}).td.border-right.end
