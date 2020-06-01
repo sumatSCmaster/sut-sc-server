@@ -496,7 +496,6 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
 const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
     console.log('culo')
-    await pool.query('BEGIN')
     const isJuridical = application.tipoContribuyente === 'JURIDICO';
     const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
     const payloadContribuyente = isJuridical
@@ -514,6 +513,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       motivo = (await gticPool.query(queries.gtic.GET_MOTIVE_BY_TYPE_ID, [idTiposSolicitud.SM])).rows[0];
       ramo = (await gticPool.query(queries.gtic.GET_BRANCH_BY_TYPE_ID, [idTiposSolicitud.SM])).rows[0];
       const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID('SM'), [application.id])).rows;
+      const totalIva = breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0) * 0.16;
+      const totalMonto = breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0);
       console.log('culo2')
       console.log(breakdownData)
       for (const el of inmueblesContribuyente) {
@@ -550,23 +551,23 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               };
             }),
             totalIva: `${formatCurrency(
-              breakdownData.map((row) => (row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo)).reduce((prev, next) => prev + next, 0) * 0.16
+              totalIva
             )} Bs.S`,
             totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
             totalIvaPagar: `${formatCurrency(
-              breakdownData.map((row) => (row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo)).reduce((prev, next) => prev + next, 0) * 0.16
+              totalIva
             )} Bs.S`,
             montoTotalImpuesto: `${formatCurrency(
-              (breakdownData.map((row) => (row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo)).reduce((prev, next) => prev + next, 0)) + (breakdownData.map((row) => (row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo)).reduce((prev, next) => prev + next, 0) * 0.16)
+              (totalMonto) + (totalIva)
             )} Bs.S`,
             interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
             estatus: 'PAGADO',
             observacion: 'Pago por Servicios Municipales',
             totalLiq: `${formatCurrency(
-              (breakdownData.map((row) => (row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo)).reduce((prev, next) => prev + next, 0)) + (breakdownData.map((row) => (row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo)).reduce((prev, next) => prev + next, 0) * 0.16)
+              (totalMonto) + (totalIva)
             )} Bs.S`,
             totalRecaudado: `${formatCurrency(
-              (breakdownData.map((row) => (row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo)).reduce((prev, next) => prev + next, 0)) + (breakdownData.map((row) => (row.monto_gas ? +row.monto_gas + +row.monto_aseo : +row.monto_aseo)).reduce((prev, next) => prev + next, 0) * 0.16)
+              (totalMonto) + (totalIva)
             )} Bs.S`,
             totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
           },
@@ -576,6 +577,72 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
         certInfoArray.push({ ...certInfo });
       }
     } else if (application.tipoLiquidacion === 'IU') {
+      motivo = (await gticPool.query(queries.gtic.GET_MOTIVE_BY_TYPE_ID, [idTiposSolicitud.IU])).rows[0];
+      ramo = (await gticPool.query(queries.gtic.GET_BRANCH_BY_TYPE_ID, [idTiposSolicitud.IU])).rows[0];
+      const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID('IU'), [application.id])).rows;
+      const totalIva = breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0) * 0.16;
+      const totalMonto = breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0);
+      console.log('culo2')
+      console.log(breakdownData)
+      for (const el of inmueblesContribuyente) {
+        console.log('AAAAAAAAAAAAAAAAAAA')
+        certInfo = {
+          QR: linkQr,
+          moment: require('moment'),
+          fecha: moment().format('DD-MM-YYYY'),
+          
+          datos: {
+            nroSolicitud: 856535, //TODO: Reemplazar con el valor de co_solicitud creado en GTIC
+            nroPlanilla: 10010111, //TODO: Ver donde se guarda esto
+            motivo: motivo.tx_motivo,
+            nroFactura: `${application.anio}-${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
+            tipoTramite: `${ramo.nb_ramo} - ${ramo.tx_ramo}`,
+            cuentaOContrato: el.cuenta_contrato,
+            tipoInmueble: el.tx_tp_inmueble,
+            fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
+            fechaLiq: moment(application.fechaCreacion).format('DD/MM/YYYY'),
+            fechaVenc: moment(application.fechaCreacion).endOf('month').format('DD/MM/YYYY'),
+            propietario: {
+              rif: `${application.nacionalidad}-${application.documento}`,
+              denomComercial: datosContribuyente.tx_denom_comercial,
+              direccion: datosContribuyente.tx_direccion,
+              razonSocial: isJuridical
+                ? datosContribuyente.tx_razon_social
+                : datosContribuyente.nb_contribuyente.trim() + datosContribuyente.ap_contribuyente.trim(),
+            },
+            items: breakdownData.map((row) => {
+              return {
+                direccion: el.direccion_inmueble,
+                periodos: `${row.mes} ${row.anio}`.toUpperCase(),
+                impuesto: row.monto,
+              };
+            }),
+            totalIva: `${formatCurrency(
+              totalIva
+            )} Bs.S`,
+            totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
+            totalIvaPagar: `${formatCurrency(
+              totalIva //TODO: Retencion
+            )} Bs.S`,
+            montoTotalImpuesto: `${formatCurrency(
+              (totalMonto) + (totalIva)
+            )} Bs.S`,
+            interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
+            estatus: 'PAGADO',
+            observacion: 'Pago por Servicios Municipales',
+            totalLiq: `${formatCurrency(
+              (totalMonto) + (totalIva)
+            )} Bs.S`,
+            totalRecaudado: `${formatCurrency(
+              (totalMonto) + (totalIva)
+            )} Bs.S`,
+            totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
+          },
+        };
+        console.log('bbbBBBBBBBBBBBBB')
+        console.log(certInfo)
+        certInfoArray.push({ ...certInfo });
+      }
     }
     
     return new Promise(async (res, rej) => {
@@ -606,7 +673,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
         );
         console.log(buffersArray)
         if(buffersArray.length === 1){
-          mkdir(dirname(pdfDir),{ recursive: true}, (e) => {
+          mkdir(dirname(pdfDir),{ recursive: true }, (e) => {
             if(e){
               console.log(e)
               rej(e)
@@ -617,13 +684,25 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                   rej(err)
                 }else{
                   console.log('suicidio')
-                  await pool.query('COMMIT')
-                  res(pdfDir)
+                  res(dir)
                 }
                 
               } )
             }
           })
+        }else{
+          pdftk
+          .input({
+            ...buffersArray,
+          } as any)
+          .cat(`${Object.keys(buffersArray).join(' ')}`)
+          .output(pdfDir)
+          .then((buffer) => {
+            res(dir);
+          }).catch((e) => {
+            console.log(e)
+            rej(e)
+          });
         }
         
         
@@ -664,7 +743,6 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       }
     });
   } catch (error) {
-    await pool.query('ROLLBACK')
     throw error;
   }
 };
