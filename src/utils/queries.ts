@@ -550,6 +550,8 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_SETTLEMENT_INSTANCES:
     'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.procedimiento ON procedimiento.id_procedimiento = l.id_procedimiento WHERE s.id_usuario = $1;',
   GET_APPLICATION_VIEW_BY_SETTLEMENT: 'SELECT * FROM impuesto.solicitud_view WHERE "idLiquidacion" = $1',
+  GET_LAST_FINE_FOR_LATE_APPLICATION:
+    'SELECT * FROM impuesto.multa ml INNER JOIN impuesto.solicitud sl ON ml.id_solicitud = sl.id_solicitud WHERE contribuyente = $1 ORDER BY sl.fecha DESC LIMIT 1',
   GET_FIRST_MONTH_OF_SETTLEMENT_PAYMENT:
     'SELECT * FROM impuesto.liquidacion WHERE id_procedimiento = $1 AND id_solicitud = $2 ORDER BY id_liquidacion LIMIT 1;',
   GET_LAST_MONTH_OF_SETTLEMENT_PAYMENT:
@@ -567,8 +569,8 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
         column: 'id_inmueble',
       },
       IU: {
-        table: 'iu_desglose'
-      }
+        table: 'iu_desglose',
+      },
     };
     return `SELECT * FROM impuesto.${type[typePick].table} d INNER JOIN impuesto.liquidacion l ON d.id_liquidacion = l.id_liquidacion INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud WHERE l.id_solicitud = $1;`;
   },
@@ -587,6 +589,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     'INSERT INTO impuesto.sm_desglose (id_liquidacion, id_inmueble, monto_aseo, monto_gas) VALUES ($1, $2, $3, $4) RETURNING *',
   CREATE_IU_BREAKDOWN_FOR_SETTLEMENT: 'INSERT INTO impuesto.iu_desglose (id_liquidacion, id_inmueble, monto) VALUES ($1, $2, $3) RETURNING *',
   CREATE_PP_BREAKDOWN_FOR_SETTLEMENT: 'INSERT INTO impuesto.pp_desglose (id_liquidacion, id_subarticulo, monto, cantidad) VALUES ($1, $2, $3, $4) RETURNING *',
+  CREATE_FINING_FOR_LATE_APPLICATION: 'INSERT INTO impuesto.multa (id_solicitud, id_tipo_multa, mes, anio, monto) VALUES ($1, 1, $2, $3, $4) RETURNING *',
   UPDATE_PAID_STATE_FOR_TAX_PAYMENT_APPLICATION: 'UPDATE impuesto.solicitud SET pagado = true WHERE id_solicitud = $1',
   UPDATE_RECEIPT_FOR_SETTLEMENTS: 'UPDATE impuesto.liquidacion SET recibo = $1 WHERE id_procedimiento = $2 AND id_solicitud = $3',
   UPDATE_CERTIFICATE_SETTLEMENT: 'UPDATE impuesto.liquidacion SET certificado = $1 WHERE id_liquidacion = $2;',

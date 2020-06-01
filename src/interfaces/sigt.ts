@@ -171,7 +171,10 @@ export interface Solicitud {
   monto: number;
   pagado: boolean;
   liquidaciones: Liquidacion[];
+  multas?: any;
 }
+
+export interface MultaImpuesto {}
 
 export interface Liquidacion {
   id: number;
@@ -180,7 +183,6 @@ export interface Liquidacion {
   monto: number;
   certificado?: string;
   recibo?: string;
-  multas?: any;
 }
 
 export interface Publicidad {
