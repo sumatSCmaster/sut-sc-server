@@ -238,7 +238,7 @@ export const insertSettlements = async ({ process, user }) => {
   let finingMonths, finingAmount;
   try {
     client.query('BEGIN');
-    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0];
+    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const application = (
       await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [
         user.id,
