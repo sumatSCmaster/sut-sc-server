@@ -279,8 +279,13 @@ export const insertSettlements = async ({ process, user }) => {
                 finingAmount,
               ])
             ).rows[0];
+            const fine = {
+              id: multa.id_multa,
+              fecha: { month: multa.mes, year: multa.anio },
+              monto: +multa.monto * UTMM,
+            };
             finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
-            return multa;
+            return fine;
           });
         if (now.date() > 10) {
           const multa = (
@@ -291,8 +296,13 @@ export const insertSettlements = async ({ process, user }) => {
               finingAmount,
             ])
           ).rows[0];
+          const fine = {
+            id: multa.id_multa,
+            fecha: { month: multa.mes, year: multa.anio },
+            monto: +multa.monto * UTMM,
+          };
           finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
-          finingMonths.push(multa);
+          finingMonths.push(fine);
         }
       } else {
         finingAmount = 10;
@@ -309,7 +319,12 @@ export const insertSettlements = async ({ process, user }) => {
               ])
             ).rows[0];
             finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
-            return multa;
+            const fine = {
+              id: multa.id_multa,
+              fecha: { month: multa.mes, year: multa.anio },
+              monto: +multa.monto * UTMM,
+            };
+            return fine;
           });
         if (now.date() > 10) {
           const multa = (
@@ -320,8 +335,13 @@ export const insertSettlements = async ({ process, user }) => {
               finingAmount,
             ])
           ).rows[0];
+          const fine = {
+            id: multa.id_multa,
+            fecha: { month: multa.mes, year: multa.anio },
+            monto: +multa.monto * UTMM,
+          };
           finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
-          finingMonths.push(multa);
+          finingMonths.push(fine);
         }
       }
     }
@@ -596,11 +616,14 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       motivo = (await gticPool.query(queries.gtic.GET_MOTIVE_BY_TYPE_ID, [idTiposSolicitud.SM])).rows[0];
       ramo = (await gticPool.query(queries.gtic.GET_BRANCH_BY_TYPE_ID, [idTiposSolicitud.SM])).rows[0];
       const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID('SM'), [application.id])).rows;
-      const totalIva = +breakdownData.map((row) => row.monto_gas ? +row.monto_aseo + +row.monto_gas : +row.monto_aseo).reduce((prev, next) => prev + next, 0) * 0.16;
-      const totalMonto = +breakdownData.map((row) => row.monto_gas ? +row.monto_aseo + +row.monto_gas : +row.monto_aseo).reduce((prev, next) => prev + next, 0);
+      const totalIva =
+        +breakdownData.map((row) => (row.monto_gas ? +row.monto_aseo + +row.monto_gas : +row.monto_aseo)).reduce((prev, next) => prev + next, 0) * 0.16;
+      const totalMonto = +breakdownData
+        .map((row) => (row.monto_gas ? +row.monto_aseo + +row.monto_gas : +row.monto_aseo))
+        .reduce((prev, next) => prev + next, 0);
       console.log('culo2');
       console.log(breakdownData);
-      console.log(totalIva, totalMonto)
+      console.log(totalIva, totalMonto);
       for (const el of inmueblesContribuyente) {
         console.log('AAAAAAAAAAAAAAAAAAA');
         certInfo = {
@@ -658,7 +681,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       const totalMonto = +breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0);
       console.log('culo2');
       console.log(breakdownData);
-      console.log(totalIva, totalMonto)
+      console.log(totalIva, totalMonto);
       for (const el of inmueblesContribuyente) {
         console.log('AAAAAAAAAAAAAAAAAAA');
         certInfo = {
