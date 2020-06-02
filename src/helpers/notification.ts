@@ -451,6 +451,8 @@ const notificationTypes = switchcase({
   UPDATE_SOCIAL_AFFAIR: broadcastForAffairUpdate,
   CREATE_FINING: broadcastForFiningInit,
   UPDATE_FINING: broadcastForFiningUpdate,
+  CREATE_APPLICATION: broadcastForAffairInit,
+  UPDATE_APPLICATION: broadcastForFiningInit,
 })(null);
 
 const notificationHandler = async (
