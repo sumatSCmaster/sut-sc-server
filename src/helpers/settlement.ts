@@ -269,22 +269,28 @@ export const insertSettlements = async ({ process, user }) => {
         const proposedFiningDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month();
         const finingDate = moment().month(lastSavedFine.mes).month() < proposedFiningDate ? moment().month(lastSavedFine.mes).month() : proposedFiningDate;
         finingMonths = new Array(now.month() - finingDate).fill({});
-        if (finingMonths.length > 0){
+        if (finingMonths.length > 0) {
           let counter = finingDate;
-          finingMonths = await Promise.all(finingMonths.map((el, i) => {
-            const multa = (
-              Promise.resolve(client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
-                application.id_solicitud,
-                moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
-                now.year(),
-                finingAmount,
-              ])
-              )).then(el => el.rows[0])
+          finingMonths = await Promise.all(
+            finingMonths.map((el, i) => {
+              const multa = Promise.resolve(
+                client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
+                  application.id_solicitud,
+                  moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
+                  now.year(),
+                  finingAmount,
+                ])
+              )
+                .then((el) => el.rows[0])
+                .then((data) => {
+                  return { id: data.id_multa, fecha: { month: data.mes, year: data.anio }, monto: +data.monto * UTMM };
+                });
               counter++;
               finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
               return multa;
-            }));
-          }
+            })
+          );
+        }
         if (now.date() > 10) {
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
@@ -306,22 +312,28 @@ export const insertSettlements = async ({ process, user }) => {
         finingAmount = 10;
         const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month();
         finingMonths = new Array(now.month() - finingDate).fill({});
-        if (finingMonths.length > 0){
+        if (finingMonths.length > 0) {
           let counter = finingDate;
-          finingMonths = await Promise.all(finingMonths.map((el, i) => {
-            const multa = (
-              Promise.resolve(client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
-                application.id_solicitud,
-                moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
-                now.year(),
-                finingAmount,
-              ])
-              )).then(el => el.rows[0])
+          finingMonths = await Promise.all(
+            finingMonths.map((el, i) => {
+              const multa = Promise.resolve(
+                client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
+                  application.id_solicitud,
+                  moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
+                  now.year(),
+                  finingAmount,
+                ])
+              )
+                .then((el) => el.rows[0])
+                .then((data) => {
+                  return { id: data.id_multa, fecha: { month: data.mes, year: data.anio }, monto: +data.monto * UTMM };
+                });
               counter++;
               finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
               return multa;
-            }));
-          }
+            })
+          );
+        }
         if (now.date() > 10) {
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
@@ -646,17 +658,24 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 ? datosContribuyente.tx_razon_social
                 : datosContribuyente.nb_contribuyente.trim() + datosContribuyente.ap_contribuyente.trim(),
             },
-            items: breakdownData.filter((row) => row.id_inmueble === +el.co_inmueble).map((row) => {
-              return {
-                direccion: el.direccion_inmueble,
-                periodos: `${row.mes} ${row.anio}`.toUpperCase(),
-                impuesto: row.monto_gas ? formatCurrency(+row.monto_gas + +row.monto_aseo) : formatCurrency(row.monto_aseo),
-              };
-            }),
+            items: breakdownData
+              .filter((row) => row.id_inmueble === +el.co_inmueble)
+              .map((row) => {
+                return {
+                  direccion: el.direccion_inmueble,
+                  periodos: `${row.mes} ${row.anio}`.toUpperCase(),
+                  impuesto: row.monto_gas ? formatCurrency(+row.monto_gas + +row.monto_aseo) : formatCurrency(row.monto_aseo),
+                };
+              }),
             totalIva: `${formatCurrency(totalIva)} Bs.S`,
             totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
             totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
-            montoTotalImpuesto: `${formatCurrency(+breakdownData.filter((row) => row.id_inmueble === +el.co_inmueble).map((row) => row.monto_gas ? +row.monto_aseo + +row.monto_gas : +row.monto_aseo).reduce((prev, next) => prev + next, 0)     + totalIva)} Bs.S`,
+            montoTotalImpuesto: `${formatCurrency(
+              +breakdownData
+                .filter((row) => row.id_inmueble === +el.co_inmueble)
+                .map((row) => (row.monto_gas ? +row.monto_aseo + +row.monto_gas : +row.monto_aseo))
+                .reduce((prev, next) => prev + next, 0) + totalIva
+            )} Bs.S`,
             interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
             estatus: 'PAGADO',
             observacion: 'Pago por Servicios Municipales',
@@ -704,19 +723,26 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 ? datosContribuyente.tx_razon_social
                 : datosContribuyente.nb_contribuyente.trim() + datosContribuyente.ap_contribuyente.trim(),
             },
-            items: breakdownData.filter((row) => row.id_inmueble === +el.co_inmueble).map((row) => {
-              return {
-                direccion: el.direccion_inmueble,
-                periodos: `${row.mes} ${row.anio}`.toUpperCase(),
-                impuesto: formatCurrency(row.monto),
-              };
-            }),
+            items: breakdownData
+              .filter((row) => row.id_inmueble === +el.co_inmueble)
+              .map((row) => {
+                return {
+                  direccion: el.direccion_inmueble,
+                  periodos: `${row.mes} ${row.anio}`.toUpperCase(),
+                  impuesto: formatCurrency(row.monto),
+                };
+              }),
             totalIva: `${formatCurrency(totalIva)} Bs.S`,
             totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
             totalIvaPagar: `${formatCurrency(
               totalIva //TODO: Retencion
             )} Bs.S`,
-            montoTotalImpuesto: `${formatCurrency(+breakdownData.filter((row) => row.id_inmueble === +el.co_inmueble).map((row) => row.monto).reduce((prev, next) => prev + next, 0) + totalIva)} Bs.S`,
+            montoTotalImpuesto: `${formatCurrency(
+              +breakdownData
+                .filter((row) => row.id_inmueble === +el.co_inmueble)
+                .map((row) => row.monto)
+                .reduce((prev, next) => prev + next, 0) + totalIva
+            )} Bs.S`,
             interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
             estatus: 'PAGADO',
             observacion: 'Pago por Servicios Municipales',
@@ -734,13 +760,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     return new Promise(async (res, rej) => {
       try {
         console.log('XD');
-        console.log(inmueblesContribuyente[0])
+        console.log(inmueblesContribuyente[0]);
         let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-SM.pug`), certInfo));
         console.log('auxilio');
         const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/SM/${application.idLiquidacion}/recibo.pdf`);
         const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/SM/${application.idLiquidacion}/recibo.pdf`;
         const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
-        
+
         if (dev) {
           let buffersArray = await Promise.all(
             htmlArray.map((html) => {
@@ -765,13 +791,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             })
           );
           console.log(buffersArray);
-          
+
           mkdir(dirname(pdfDir), { recursive: true }, (e) => {
             if (e) {
               console.log(e);
               rej(e);
             } else {
-              if(buffersArray.length === 1){
+              if (buffersArray.length === 1) {
                 writeFile(pdfDir, buffersArray[0], async (err) => {
                   if (err) {
                     console.log(err);
@@ -785,27 +811,27 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 let letter = 'A';
                 let reduced: any = buffersArray.reduce((prev: any, next) => {
                   prev[letter] = next;
-                  let codePoint = letter.codePointAt(0) 
-                  if(codePoint !== undefined){
-                    letter = String.fromCodePoint(++codePoint)
+                  let codePoint = letter.codePointAt(0);
+                  if (codePoint !== undefined) {
+                    letter = String.fromCodePoint(++codePoint);
                   }
                   return prev;
                 }, {});
-                console.log('red', reduced)
-                console.log('ke', Object.keys(reduced).join(' '))
+                console.log('red', reduced);
+                console.log('ke', Object.keys(reduced).join(' '));
                 pdftk.configure({
                   bin: '/snap/bin/pdftk',
                   tempDir: '/home/eabs/Documents/repos/sigt-server/node_modules/node-pdftk/node-pdftk-tmp/',
                   Promise: Promise,
-                  ignoreWarnings: true
-                })
+                  ignoreWarnings: true,
+                });
                 pdftk
                   .input(reduced)
                   .cat(`${Object.keys(reduced).join(' ')}`)
                   .output('/home/eabs/Documents/xd.pdf', pdfDir)
                   .then((buffer) => {
-                    console.log('finalbuf', buffer)
-                    res(dir)
+                    console.log('finalbuf', buffer);
+                    res(dir);
                   })
                   .catch((e) => {
                     console.log(e);
@@ -814,7 +840,6 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               }
             }
           });
-
         } else {
           // try {
           //   pdf
