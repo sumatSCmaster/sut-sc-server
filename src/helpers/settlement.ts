@@ -264,24 +264,27 @@ export const insertSettlements = async ({ process, user }) => {
             : -1
         );
       const lastSavedFine = (await client.query(queries.GET_LAST_FINE_FOR_LATE_APPLICATION, [process.contribuyente])).rows[0];
-      if (lastSavedFine.anio === now.year()) {
+      if (lastSavedFine && lastSavedFine.anio === now.year()) {
         finingAmount = lastSavedFine.monto;
         const proposedFiningDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month();
         const finingDate = moment().month(lastSavedFine.mes).month() < proposedFiningDate ? moment().month(lastSavedFine.mes).month() : proposedFiningDate;
         finingMonths = new Array(now.month() - finingDate).fill({});
-        if (finingMonths.length > 0)
-          finingMonths.map(async (el, i) => {
+        if (finingMonths.length > 0){
+          let counter = finingDate;
+          finingMonths = await Promise.all(finingMonths.map((el, i) => {
             const multa = (
-              await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
+              Promise.resolve(client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
                 application.id_solicitud,
-                moment().month(i).toDate().toLocaleDateString('ES', { month: 'long' }),
+                moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
                 now.year(),
                 finingAmount,
               ])
-            ).rows[0];
-            finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
-            return multa;
-          });
+              )).then(el => el.rows[0])
+              counter++;
+              finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
+              return multa;
+            }));
+          }
         if (now.date() > 10) {
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
@@ -298,19 +301,22 @@ export const insertSettlements = async ({ process, user }) => {
         finingAmount = 10;
         const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month();
         finingMonths = new Array(now.month() - finingDate).fill({});
-        if (finingMonths.length > 0)
-          finingMonths.map(async (el, i) => {
+        if (finingMonths.length > 0){
+          let counter = finingDate;
+          finingMonths = await Promise.all(finingMonths.map((el, i) => {
             const multa = (
-              await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
+              Promise.resolve(client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
                 application.id_solicitud,
-                moment().month(i).toDate().toLocaleDateString('ES', { month: 'long' }),
+                moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
                 now.year(),
                 finingAmount,
               ])
-            ).rows[0];
-            finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
-            return multa;
-          });
+              )).then(el => el.rows[0])
+              counter++;
+              finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
+              return multa;
+            }));
+          }
         if (now.date() > 10) {
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
