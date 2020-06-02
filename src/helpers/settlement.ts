@@ -6,7 +6,7 @@ import GticPool from '@utils/GticPool';
 import { insertPaymentReference } from './banks';
 import moment, { Moment } from 'moment';
 import switchcase from '@utils/switch';
-import { Liquidacion, Solicitud, Usuario } from '@root/interfaces/sigt';
+import { Liquidacion, Solicitud, Usuario, MultaImpuesto } from '@root/interfaces/sigt';
 import { resolve } from 'path';
 import { renderFile } from 'pug';
 import { writeFile, mkdir } from 'fs';
@@ -235,7 +235,7 @@ export const insertSettlements = async ({ process, user }) => {
   //Esto hay que sacarlo de db
   const augment = 10;
   const maxFining = 100;
-  let finingMonths, finingAmount;
+  let finingMonths: MultaImpuesto[] | undefined, finingAmount;
   try {
     client.query('BEGIN');
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;

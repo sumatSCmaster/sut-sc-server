@@ -171,10 +171,14 @@ export interface Solicitud {
   monto: number;
   pagado: boolean;
   liquidaciones: Liquidacion[];
-  multas?: any;
+  multas?: MultaImpuesto[];
 }
 
-export interface MultaImpuesto {}
+export interface MultaImpuesto {
+  id: number;
+  fecha: Fecha;
+  monto: number;
+}
 
 export interface Liquidacion {
   id: number;
