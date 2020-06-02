@@ -106,7 +106,7 @@ block content
         div(style={'-webkit-flex': 8}).td
           p 
             span &nbsp; #{datos.propietario.direccion}
-    div(style={'text-align': '-webkit-right'}) 
+    div
       div(style={'display':'-webkit-flex'})
         div.table(style={'-webkit-flex': 5.5})
           div.tr
@@ -126,46 +126,46 @@ block content
                   span &nbsp; #{datos.items[0].direccion}
             div(style={'-webkit-flex': 2.5}).border-right
               each item in datos.items
-                  div(style={'border-top':'1px solid #000'}).td.center
+                  div(style={'border-top':'1px solid #000'}).td.center.break-page
                     p 
                       span &nbsp; #{item.periodos}
             div(style={'-webkit-flex': 2})
               each item in datos.items                      
-                  div(style={'border-top':'1px solid #000'}).td.center
+                  div(style={'border-top':'1px solid #000'}).td.center.break-page
                     p 
                       span &nbsp; #{item.impuesto}
-      div(style={'width':'45%','margin-top':0, 'border':'none'}).table
+      div(style={'margin-top':'20px'}).table.break-page
         div.tr
-          div(style={'-webkit-flex': 5.5, 'padding':'0 2px'}).td.border-right.end
+          div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
             p
               b TOTAL IVA (16%)
-          div(style={'-webkit-flex': 4.5}).td.border-bottom.border-right
+          div(style={'-webkit-flex': 4.5}).td.border-bottom.end
             p #{datos.totalIva}
-        div.tr
-          div(style={'-webkit-flex': 5.5, 'padding':'0 2px'}).td.border-right.end
+        div.tr              
+          div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
             p
-              b TOTAL RETENCION IVA (75%):
-          div(style={'-webkit-flex': 4.5}).td.border-bottom.border-right
+              b TOTAL RETENCION IVA (75%)
+          div(style={'-webkit-flex': 4.5}).td.border-bottom.end
             p #{datos.totalRetencionIva}
-        div.tr
-          div(style={'-webkit-flex': 5.5, 'padding':'0 2px'}).td.border-right.end
+        div.tr            
+          div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
             p
-              b TOTAL IVA A PAGAR:
-          div(style={'-webkit-flex': 4.5}).td.border-bottom.border-right
+              b TOTAL IVA A PAGAR
+          div(style={'-webkit-flex': 4.5}).td.border-bottom.end
             p #{datos.totalIvaPagar}
         div.tr
-          div(style={'-webkit-flex': 5.5, 'padding':'0 2px'}).td.border-right.end
+          div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
             p
-              b TOTAL IMPUESTO A PAGAR:
-          div(style={'-webkit-flex': 4.5}).td.border-right
+              b TOTAL IMPUESTO A PAGAR
+          div(style={'-webkit-flex': 4.5}).td.border-bottom.end
             p #{datos.montoTotalImpuesto}
-        div.tr
-          div(style={'-webkit-flex': 4}).td.end
+        div.tr            
+          div(style={'-webkit-flex': 5.5}).td.border-right
             p
-              b Intereses Moratorios:
-          div(style={'-webkit-flex': 6}).td.all-border 
+              b Intereses Moratorios
+          div(style={'-webkit-flex': 4.5}).td.end
             p #{datos.interesMoratorio}
-    div.table
+    div.table.break-page
       div.tr
         div(style={'-webkit-flex': 2}).th.border-bottom.border-right
           p
@@ -180,7 +180,7 @@ block content
         div(style={'-webkit-flex': 1}).td
           p
             span &nbsp; #{datos.observacion}
-    div.table
+    div.table.break-page
       div(style={'background-color':'rgba(0,0,0,0.2)'}).tr
         div(style={'-webkit-flex': 1}).td.border-right.center
           p
@@ -194,3 +194,4 @@ block content
           p
             b Total Credito Fiscal:
             span &nbsp; #{datos.totalCred}
+block footer
