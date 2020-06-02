@@ -264,29 +264,27 @@ export const insertSettlements = async ({ process, user }) => {
             : -1
         );
       const lastSavedFine = (await client.query(queries.GET_LAST_FINE_FOR_LATE_APPLICATION, [process.contribuyente])).rows[0];
-      if (lastSavedFine.anio === now.year()) {
+      if (lastSavedFine && lastSavedFine.anio === now.year()) {
         finingAmount = lastSavedFine.monto;
         const proposedFiningDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month();
         const finingDate = moment().month(lastSavedFine.mes).month() < proposedFiningDate ? moment().month(lastSavedFine.mes).month() : proposedFiningDate;
         finingMonths = new Array(now.month() - finingDate).fill({});
-        if (finingMonths.length > 0)
-          finingMonths.map(async (el, i) => {
+        if (finingMonths.length > 0){
+          let counter = finingDate;
+          finingMonths = await Promise.all(finingMonths.map((el, i) => {
             const multa = (
-              await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
+              Promise.resolve(client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
                 application.id_solicitud,
-                moment().month(i).toDate().toLocaleDateString('ES', { month: 'long' }),
+                moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
                 now.year(),
                 finingAmount,
               ])
-            ).rows[0];
-            const fine = {
-              id: multa.id_multa,
-              fecha: { month: multa.mes, year: multa.anio },
-              monto: +multa.monto * UTMM,
-            };
-            finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
-            return fine;
-          });
+              )).then(el => el.rows[0])
+              counter++;
+              finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
+              return multa;
+            }));
+          }
         if (now.date() > 10) {
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
@@ -308,24 +306,22 @@ export const insertSettlements = async ({ process, user }) => {
         finingAmount = 10;
         const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month();
         finingMonths = new Array(now.month() - finingDate).fill({});
-        if (finingMonths.length > 0)
-          finingMonths.map(async (el, i) => {
+        if (finingMonths.length > 0){
+          let counter = finingDate;
+          finingMonths = await Promise.all(finingMonths.map((el, i) => {
             const multa = (
-              await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
+              Promise.resolve(client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
                 application.id_solicitud,
-                moment().month(i).toDate().toLocaleDateString('ES', { month: 'long' }),
+                moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
                 now.year(),
                 finingAmount,
               ])
-            ).rows[0];
-            finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
-            const fine = {
-              id: multa.id_multa,
-              fecha: { month: multa.mes, year: multa.anio },
-              monto: +multa.monto * UTMM,
-            };
-            return fine;
-          });
+              )).then(el => el.rows[0])
+              counter++;
+              finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
+              return multa;
+            }));
+          }
         if (now.date() > 10) {
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
@@ -650,17 +646,17 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 ? datosContribuyente.tx_razon_social
                 : datosContribuyente.nb_contribuyente.trim() + datosContribuyente.ap_contribuyente.trim(),
             },
-            items: breakdownData.map((row) => {
+            items: breakdownData.filter((row) => row.id_inmueble === +el.co_inmueble).map((row) => {
               return {
                 direccion: el.direccion_inmueble,
                 periodos: `${row.mes} ${row.anio}`.toUpperCase(),
-                impuesto: row.monto_gas ? +row.monto_gas + +row.monto_aseo : row.monto_aseo,
+                impuesto: row.monto_gas ? formatCurrency(+row.monto_gas + +row.monto_aseo) : formatCurrency(row.monto_aseo),
               };
             }),
             totalIva: `${formatCurrency(totalIva)} Bs.S`,
             totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
             totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
-            montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+            montoTotalImpuesto: `${formatCurrency(+breakdownData.filter((row) => row.id_inmueble === +el.co_inmueble).map((row) => row.monto_gas ? +row.monto_aseo + +row.monto_gas : +row.monto_aseo).reduce((prev, next) => prev + next, 0)     + totalIva)} Bs.S`,
             interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
             estatus: 'PAGADO',
             observacion: 'Pago por Servicios Municipales',
@@ -708,11 +704,11 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 ? datosContribuyente.tx_razon_social
                 : datosContribuyente.nb_contribuyente.trim() + datosContribuyente.ap_contribuyente.trim(),
             },
-            items: breakdownData.map((row) => {
+            items: breakdownData.filter((row) => row.id_inmueble === +el.co_inmueble).map((row) => {
               return {
                 direccion: el.direccion_inmueble,
                 periodos: `${row.mes} ${row.anio}`.toUpperCase(),
-                impuesto: row.monto,
+                impuesto: formatCurrency(row.monto),
               };
             }),
             totalIva: `${formatCurrency(totalIva)} Bs.S`,
@@ -720,7 +716,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             totalIvaPagar: `${formatCurrency(
               totalIva //TODO: Retencion
             )} Bs.S`,
-            montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+            montoTotalImpuesto: `${formatCurrency(+breakdownData.filter((row) => row.id_inmueble === +el.co_inmueble).map((row) => row.monto).reduce((prev, next) => prev + next, 0) + totalIva)} Bs.S`,
             interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
             estatus: 'PAGADO',
             observacion: 'Pago por Servicios Municipales',
@@ -738,11 +734,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     return new Promise(async (res, rej) => {
       try {
         console.log('XD');
+        console.log(inmueblesContribuyente[0])
         let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-SM.pug`), certInfo));
         console.log('auxilio');
         const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/SM/${application.idLiquidacion}/recibo.pdf`);
         const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/SM/${application.idLiquidacion}/recibo.pdf`;
         const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+        
         if (dev) {
           let buffersArray = await Promise.all(
             htmlArray.map((html) => {
@@ -767,12 +765,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             })
           );
           console.log(buffersArray);
-          if (buffersArray.length === 1) {
-            mkdir(dirname(pdfDir), { recursive: true }, (e) => {
-              if (e) {
-                console.log(e);
-                rej(e);
-              } else {
+          
+          mkdir(dirname(pdfDir), { recursive: true }, (e) => {
+            if (e) {
+              console.log(e);
+              rej(e);
+            } else {
+              if(buffersArray.length === 1){
                 writeFile(pdfDir, buffersArray[0], async (err) => {
                   if (err) {
                     console.log(err);
@@ -782,23 +781,40 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                     res(dir);
                   }
                 });
+              } else {
+                let letter = 'A';
+                let reduced: any = buffersArray.reduce((prev: any, next) => {
+                  prev[letter] = next;
+                  let codePoint = letter.codePointAt(0) 
+                  if(codePoint !== undefined){
+                    letter = String.fromCodePoint(++codePoint)
+                  }
+                  return prev;
+                }, {});
+                console.log('red', reduced)
+                console.log('ke', Object.keys(reduced).join(' '))
+                pdftk.configure({
+                  bin: '/snap/bin/pdftk',
+                  tempDir: '/home/eabs/Documents/repos/sigt-server/node_modules/node-pdftk/node-pdftk-tmp/',
+                  Promise: Promise,
+                  ignoreWarnings: true
+                })
+                pdftk
+                  .input(reduced)
+                  .cat(`${Object.keys(reduced).join(' ')}`)
+                  .output('/home/eabs/Documents/xd.pdf', pdfDir)
+                  .then((buffer) => {
+                    console.log('finalbuf', buffer)
+                    res(dir)
+                  })
+                  .catch((e) => {
+                    console.log(e);
+                    rej(e);
+                  });
               }
-            });
-          } else {
-            pdftk
-              .input({
-                ...buffersArray,
-              } as any)
-              .cat(`${Object.keys(buffersArray).join(' ')}`)
-              .output(pdfDir)
-              .then((buffer) => {
-                res(dir);
-              })
-              .catch((e) => {
-                console.log(e);
-                rej(e);
-              });
-          }
+            }
+          });
+
         } else {
           // try {
           //   pdf

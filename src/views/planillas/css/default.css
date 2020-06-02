@@ -351,3 +351,9 @@ ul {
   flex: 1;
   -webkit-flex: 1; 
 }
+
+@media print {
+  .break-page {
+    page-break-inside: avoid !important;
+  }
+}
