@@ -238,7 +238,7 @@ const getApplicationsAndSettlementsById = async ({ id, user }) => {
       (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows.map(async (el) => {
         return {
           id: el.id_solicitud,
-          usuario: user,
+          usuario: typeof user === 'object' ? user : { id: user },
           documento: el.documento,
           contribuyente: el.contribuyente,
           rim: el.rim,
@@ -532,6 +532,7 @@ export const insertSettlements = async ({ process, user }) => {
   }
 };
 
+//TODO: revisar mayana
 export const addTaxApplicationPayment = async ({ payment, application, user }) => {
   const client = await pool.connect();
   try {

@@ -482,7 +482,7 @@ const broadcastForApplicationUpdate = async (
 
   try {
     client.query('BEGIN');
-    const user = (await client.query(queries.GET_FINING_TARGET, [payload.id])).rows;
+    const user = (await client.query(queries.GET_APPLICATION_CREATOR, [payload.usuario?.id])).rows;
     const admins = (await client.query(queries.GET_NON_NORMAL_OFFICIALS, [payload.nombreCorto])).rows;
     const superuser = (await client.query(queries.GET_SUPER_USER)).rows;
     // const permittedOfficials = (
