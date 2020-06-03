@@ -164,6 +164,7 @@ export interface Solicitud {
   id: number;
   usuario: Usuario;
   documento: string;
+  contribuyente: string;
   rim?: string;
   nacionalidad: string;
   aprobado: boolean;

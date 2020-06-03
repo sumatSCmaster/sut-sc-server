@@ -15,6 +15,7 @@ import * as pdf from 'html-pdf';
 import * as qr from 'qrcode';
 import * as pdftk from 'node-pdftk';
 import { query } from 'express-validator';
+import { sendNotification } from './notification';
 const gticPool = GticPool.getInstance();
 const pool = Pool.getInstance();
 
@@ -229,6 +230,112 @@ export const getSettlements = async ({ document, reference, type, user }) => {
   }
 };
 
+const getApplicationsAndSettlementsById = async ({ id, user }) => {
+  const client = await pool.connect();
+  try {
+    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const application: Solicitud = await Promise.all(
+      (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows.map(async (el) => {
+        return {
+          id: el.id_solicitud,
+          usuario: user,
+          documento: el.documento,
+          contribuyente: el.contribuyente,
+          rim: el.rim,
+          nacionalidad: el.nacionalidad,
+          aprobado: el.aprobado,
+          pagado: el.pagado,
+          fecha: el.fecha,
+          monto: el.monto_total,
+          liquidaciones: await Promise.all(
+            (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows.map((el) => {
+              return {
+                id: el.id,
+                tipoProcedimiento: el.tipoProcedimiento,
+                fecha: { month: el.mes, year: el.anio },
+                monto: el.monto,
+                certificado: el.certificado,
+                recibo: el.recibo,
+              };
+            })
+          ),
+          multas: await Promise.all(
+            (await client.query(queries.GET_FINES_BY_APPLICATION, [el.id_solicitud])).rows.map((el) => {
+              return {
+                id: el.id_multa,
+                fecha: { month: el.mes, year: el.anio },
+                monto: +el.monto * UTMM,
+              };
+            })
+          ),
+        };
+      })
+    )[0];
+    return application;
+  } catch (error) {
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const getApplicationsAndSettlements = async ({ user }: { user: Usuario }) => {
+  const client = await pool.connect();
+  try {
+    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const applications: Solicitud[] = await Promise.all(
+      (await client.query(queries.GET_APPLICATION_INSTANCES_BY_USER, [user.id])).rows.map(async (el) => {
+        return {
+          id: el.id_solicitud,
+          usuario: user,
+          documento: el.documento,
+          contribuyente: el.contribuyente,
+          rim: el.rim,
+          nacionalidad: el.nacionalidad,
+          aprobado: el.aprobado,
+          pagado: el.pagado,
+          fecha: el.fecha,
+          monto: el.monto_total,
+          liquidaciones: await Promise.all(
+            (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows.map((el) => {
+              return {
+                id: el.id,
+                tipoProcedimiento: el.tipoProcedimiento,
+                fecha: { month: el.mes, year: el.anio },
+                monto: el.monto,
+                certificado: el.certificado,
+                recibo: el.recibo,
+              };
+            })
+          ),
+          multas: await Promise.all(
+            (await client.query(queries.GET_FINES_BY_APPLICATION, [el.id_solicitud])).rows.map((el) => {
+              return {
+                id: el.id_multa,
+                fecha: { month: el.mes, year: el.anio },
+                monto: +el.monto * UTMM,
+              };
+            })
+          ),
+        };
+      })
+    );
+    return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', solicitudes: applications };
+  } catch (error) {
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 export const insertSettlements = async ({ process, user }) => {
   const client = await pool.connect();
   const { impuestos } = process;
@@ -392,6 +499,7 @@ export const insertSettlements = async ({ process, user }) => {
       id: application.id_solicitud,
       usuario: user,
       documento: application.documento,
+      contribuyente: application.contribuyente,
       rim: application.rim,
       nacionalidad: application.nacionalidad,
       aprobado: application.aprobado,
@@ -401,7 +509,14 @@ export const insertSettlements = async ({ process, user }) => {
       liquidaciones: settlement,
       multas: finingMonths,
     };
-
+    await sendNotification(
+      user,
+      `Se ha iniciado una solicitud para el contribuyente con el documento de identidad: ${solicitud.nacionalidad}-${solicitud.documento}`,
+      'CREATE_APPLICATION',
+      'IMPUESTO',
+      { ...solicitud, estado: 'ingresardatos', nombreCorto: 'SEDEMAT' },
+      client
+    );
     client.query('COMMIT');
     return { status: 201, message: 'Liquidaciones de impuestos creadas satisfactoriamente', solicitud };
   } catch (error) {
@@ -417,57 +532,7 @@ export const insertSettlements = async ({ process, user }) => {
   }
 };
 
-export const getApplicationsAndSettlements = async ({ user }: { user: Usuario }) => {
-  const client = await pool.connect();
-  try {
-    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-    const applications: Solicitud[] = await Promise.all(
-      (await client.query(queries.GET_APPLICATION_INSTANCES_BY_USER, [user.id])).rows.map(async (el) => {
-        return {
-          id: el.id_solicitud,
-          usuario: user,
-          documento: el.documento,
-          rim: el.rim,
-          nacionalidad: el.nacionalidad,
-          aprobado: el.aprobado,
-          pagado: el.pagado,
-          fecha: el.fecha,
-          monto: el.monto_total,
-          liquidaciones: await Promise.all(
-            (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows.map((el) => {
-              return {
-                id: el.id,
-                tipoProcedimiento: el.tipoProcedimiento,
-                fecha: { month: el.mes, year: el.anio },
-                monto: el.monto,
-                certificado: el.certificado,
-                recibo: el.recibo,
-              };
-            })
-          ),
-          multas: await Promise.all((await client.query(queries.GET_FINES_BY_APPLICATION, [el.id_solicitud])).rows.map(el => {
-            return {
-              id: el.id_multa,
-              fecha: {month: el.mes, year: el.anio},
-              monto: +el.monto * UTMM
-            }
-          })),
-        };
-      })
-    );
-    return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', solicitudes: applications };
-  } catch (error) {
-    throw {
-      status: 500,
-      error,
-      message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
-    };
-  } finally {
-    client.release();
-  }
-};
-
-export const addTaxApplicationPayment = async ({ payment, application }) => {
+export const addTaxApplicationPayment = async ({ payment, application, user }) => {
   const client = await pool.connect();
   try {
     client.query('BEGIN');
@@ -488,6 +553,15 @@ export const addTaxApplicationPayment = async ({ payment, application }) => {
       })
     );
     await client.query(queries.UPDATE_PAID_STATE_FOR_TAX_PAYMENT_APPLICATION, [application]);
+    const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
+    await sendNotification(
+      user,
+      `Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.nacionalidad}-${applicationInstance.documento}`,
+      'UPDATE_APPLICATION',
+      'IMPUESTO',
+      { ...applicationInstance, estado: 'validando', nombreCorto: 'SEDEMAT' },
+      client
+    );
     client.query('COMMIT');
     return { status: 200, message: 'Pago añadido para la solicitud declarada' };
   } catch (error) {
@@ -496,6 +570,33 @@ export const addTaxApplicationPayment = async ({ payment, application }) => {
       status: 500,
       error,
       message: errorMessageGenerator(error) || 'Error al insertar referencias de pago',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const validateApplication = async (body, user) => {
+  const client = await pool.connect();
+  try {
+    client.query('BEGIN');
+    const solicitud = (await client.query(queries.GET_APPLICATION_BY_ID, [body.idTramite])).rows[0];
+    const applicationInstance = await getApplicationsAndSettlementsById({ id: body.idTramite, user: solicitud.id_usuario });
+    await sendNotification(
+      user,
+      `Se ha finalizado una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.nacionalidad}-${applicationInstance.documento}`,
+      'UPDATE_APPLICATION',
+      'IMPUESTO',
+      { ...applicationInstance, estado: 'finalizado', nombreCorto: 'SEDEMAT' },
+      client
+    );
+    client.query('COMMIT');
+  } catch (error) {
+    client.query('ROLLBACK');
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al validar el pago',
     };
   } finally {
     client.release();
@@ -991,57 +1092,50 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
     let ramo = (await gticPool.query(queries.gtic.GET_BRANCH_BY_TYPE_ID, [idTiposSolicitud.PP])).rows[0];
     const subarticulos = (await gticPool.query(queries.gtic.GET_PUBLICITY_SUBARTICLES)).rows;
     const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID('PP'), [application.id])).rows;
-    const totalIva =
-      +breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0) * 0.16;
-    const totalMonto = +breakdownData
-      .map((row) => row.monto)
-      .reduce((prev, next) => prev + next, 0);
+    const totalIva = +breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0) * 0.16;
+    const totalMonto = +breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0);
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-PP.pug`), {
         QR: linkQr,
-          moment: require('moment'),
-          fecha: moment().format('DD-MM-YYYY'),
+        moment: require('moment'),
+        fecha: moment().format('DD-MM-YYYY'),
 
-          datos: {
-            nroSolicitud: 856535, //TODO: Reemplazar con el valor de co_solicitud creado en GTIC
-            nroPlanilla: 10010111, //TODO: Ver donde se guarda esto
-            motivo: motivo.tx_motivo,
-            nroFactura: `${application.anio}-${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
-            tipoTramite: `${ramo.nb_ramo} - ${ramo.tx_ramo}`,
-            fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
-            fechaLiq: moment(application.fechaCreacion).format('DD/MM/YYYY'),
-            fechaVenc: moment(application.fechaCreacion).endOf('month').format('DD/MM/YYYY'),
-            propietario: {
-              rif: `${application.nacionalidad}-${application.documento}`,
-              denomComercial: datosContribuyente.tx_denom_comercial,
-              razonSocial: isJuridical
-                ? datosContribuyente.tx_razon_social
-                : datosContribuyente.nb_contribuyente.trim() + datosContribuyente.ap_contribuyente.trim(),
-            },
-            items: breakdownData
-              .map((row) => {
-                return {
-                  articulo: subarticulos.find((el) => +el.co_medio === row.id_subarticulo),
-                  periodos: `${row.mes} ${row.anio}`.toUpperCase(),
-                  impuesto: formatCurrency(row.monto),
-                };
-              }),
-            totalIva: `${formatCurrency(totalIva)} Bs.S`,
-            totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
-            totalIvaPagar: `${formatCurrency(
-              totalIva //TODO: Retencion
-            )} Bs.S`,
-            montoTotalImpuesto: `${formatCurrency(
-              +breakdownData
-                .map((row) => row.monto)
-                .reduce((prev, next) => prev + next, 0) + totalIva
-            )} Bs.S`,
-            interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
-            estatus: 'PAGADO',
-            observacion: 'Pago por Servicios Municipales',
-            totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
-            totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
-            totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
+        datos: {
+          nroSolicitud: 856535, //TODO: Reemplazar con el valor de co_solicitud creado en GTIC
+          nroPlanilla: 10010111, //TODO: Ver donde se guarda esto
+          motivo: motivo.tx_motivo,
+          nroFactura: `${application.anio}-${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
+          tipoTramite: `${ramo.nb_ramo} - ${ramo.tx_ramo}`,
+          fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
+          fechaLiq: moment(application.fechaCreacion).format('DD/MM/YYYY'),
+          fechaVenc: moment(application.fechaCreacion).endOf('month').format('DD/MM/YYYY'),
+          propietario: {
+            rif: `${application.nacionalidad}-${application.documento}`,
+            denomComercial: datosContribuyente.tx_denom_comercial,
+            razonSocial: isJuridical
+              ? datosContribuyente.tx_razon_social
+              : datosContribuyente.nb_contribuyente.trim() + datosContribuyente.ap_contribuyente.trim(),
+          },
+          items: breakdownData.map((row) => {
+            return {
+              articulo: subarticulos.find((el) => +el.co_medio === row.id_subarticulo),
+              periodos: `${row.mes} ${row.anio}`.toUpperCase(),
+              impuesto: formatCurrency(row.monto),
+            };
+          }),
+          totalIva: `${formatCurrency(totalIva)} Bs.S`,
+          totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
+          totalIvaPagar: `${formatCurrency(
+            totalIva //TODO: Retencion
+          )} Bs.S`,
+          montoTotalImpuesto: `${formatCurrency(+breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0) + totalIva)} Bs.S`,
+          interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
+          estatus: 'PAGADO',
+          observacion: 'Pago por Servicios Municipales',
+          totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+          totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+          totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
+        },
       });
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/PP/${application.idLiquidacion}/recibo.pdf`);
       const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/PP/${application.idLiquidacion}/recibo.pdf`;
