@@ -1096,7 +1096,7 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
     const totalIva = +breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0) * 0.16;
     const totalMonto = +breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0);
     return new Promise(async (res, rej) => {
-      const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-PP.pug`), {
+      const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-PP.pug`), {
         QR: linkQr,
         moment: require('moment'),
         fecha: moment().format('DD-MM-YYYY'),
