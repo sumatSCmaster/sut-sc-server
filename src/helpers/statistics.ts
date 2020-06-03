@@ -526,18 +526,18 @@ const getOfficialApplicationStats = async (institution: number | undefined) => {
           y: 0,
         }
     );
-    // GRAFICO 3
-    const totalCompleted = (await client.query(queries.GET_FINE_TOTAL_BY_STATUS, [institution, 'finalizado'])).rows[0].count;
+    // GRAFICO 3 - LISTO
+    const totalCompleted = (await client.query(queries.GET_COMPLETED_APPLICATION_TOTAL)).rows[0].count;
     const percentageCompleted = isFiniteNumber(((totalCompleted * 100) / totalCount).toFixed(2));
-    const monthCompleted = (await client.query(queries.GET_FINE_BY_STATUS_MONTHLY, [institution, new Date().getMonth() + 1, 'finalizado'])).rows[0].count;
+    const monthCompleted = (await client.query(queries.GET_MONTHLY_COMPLETED_APPLICATION_TOTAL, [new Date().getMonth() + 1])).rows[0].count;
     const lastMonthCompleted = (
-      await client.query(queries.GET_FINE_BY_STATUS_MONTHLY, [institution, parseInt(moment(Date.now()).subtract(1, 'months').format('MM')), 'finalizado'])
+      await client.query(queries.GET_MONTHLY_COMPLETED_APPLICATION_TOTAL, [parseInt(moment(Date.now()).subtract(1, 'months').format('MM'))])
     ).rows[0].count;
     const completedMonthGains = isFiniteNumber((((monthCompleted - lastMonthCompleted) / monthCompleted) * 100).toFixed(2));
-    // GRAFICO 4
-    const countByStatus = (await client.query(queries.GET_FINE_COUNT_BY_STATE, [institution])).rows.map((r) => ({
-      x: getNoiceState(r.state),
-      y: parseInt(r.count),
+    // GRAFICO 4 - LISTO
+    const countByStatus = (await client.query(queries.GET_RAISED_MONEY_BY_BRANCH)).rows.map((r) => ({
+      x: getNoiceSettlement(r.tipoLiquidacion),
+      y: parseInt(r.sum),
     }));
     // GRAFICO 5
     const last20Days = (await client.query(queries.GET_FINE_COUNT_LAST_20_DAYS, [institution])).rows.map((r) => ({
