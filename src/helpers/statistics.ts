@@ -513,9 +513,9 @@ const getOfficialApplicationStats = async (institution: number | undefined) => {
       .rows[0].count;
     const receivedMonthGains = isFiniteNumber((((monthCount - lastMonthCount) / monthCount) * 100).toFixed(2));
 
-    // GRAFICO 2
-    const totalToAttend = (await client.query(queries.GET_FINE_TOTAL_BY_STATUS, [institution, 'enproceso'])).rows[0].count;
-    const receivedByDate = (await client.query(queries.GET_FINE_BY_DATE, [institution])).rows.map((r) => ({
+    // GRAFICO 2 - LISTO
+    const totalToAttend = (await client.query(queries.GET_PENDING_SETTLEMENT_TOTAL)).rows[0].count;
+    const receivedByDate = (await client.query(queries.GET_SETTLEMENTS_BY_DAY)).rows.map((r) => ({
       x: moment(r.fecha_creacion).format('DD-MM-YYYY'),
       y: r.count,
     }));

@@ -475,6 +475,10 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     WHERE fechacreacion::date > CURRENT_DATE - INTERVAL '5 years' GROUP BY year;",
   GET_APPLICATION_TOTAL_COUNT: 'SELECT COUNT (*) FROM impuesto.solicitud;',
   GET_APPLICATION_TOTAL_IN_MONTH: 'SELECT COUNT (*) FROM impuesto.solicitud WHERE EXTRACT(MONTH FROM fecha) = $1',
+  GET_PENDING_SETTLEMENT_TOTAL:
+    'SELECT COUNT (*) FROM impuesto.solicitud sl INNER JOIN impuesto.liquidacion li ON sl.id_solicitud = li.id_solicitud WHERE sl.pagado = true AND sl.aprobado = false',
+  GET_SETTLEMENTS_BY_DAY:
+    "SELECT COUNT (*), sl.fecha::date AS fecha_creacion FROM impuesto.solicitud sl INNER JOIN impuesto.liquidacion li ON sl.id_solicitud = li.id_solicitud AND sl.fecha::date > CURRENT_DATE - INTERVAL '30 days' GROUP BY sl.fecha::date;",
 
   // EXTERNAL USER STATS
   GET_EXTERNAL_TOTAL_COUNT: 'SELECT COUNT(*) FROM tramite WHERE id_usuario = $1;',
