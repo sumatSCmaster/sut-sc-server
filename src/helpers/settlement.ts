@@ -1132,7 +1132,7 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
           montoTotalImpuesto: `${formatCurrency(+breakdownData.map((row) => row.monto).reduce((prev, next) => +prev + +next, 0) + +totalIva)} Bs.S`,
           interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
           estatus: 'PAGADO',
-          observacion: 'Pago por Servicios Municipales',
+          observacion: 'Pago por Publicidad y Propaganda',
           totalLiq: `${formatCurrency(+totalMonto + +totalIva)} Bs.S`,
           totalRecaudado: `${formatCurrency(+totalMonto + +totalIva)} Bs.S`,
           totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
