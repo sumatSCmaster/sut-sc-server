@@ -2,7 +2,7 @@ import Pool from '@utils/Pool';
 import queries from '../utils/queries';
 import { getUsers, getIo } from '@config/socket';
 import twilio from 'twilio';
-import { Notificacion, Tramite, Multa, Usuario } from '@root/interfaces/sigt';
+import { Notificacion, Tramite, Multa, Usuario, Solicitud } from '@root/interfaces/sigt';
 import { errorMessageGenerator } from './errors';
 import { PoolClient } from 'pg';
 import switchcase from '@utils/switch';
@@ -424,11 +424,125 @@ const broadcastForFiningUpdate = async (sender: Usuario, description: string, pa
   }
 };
 
+//FIXME: esto se va a descontrolaaaaarrrrrrr, el que se quedo pegao se quedo pegao
+const broadcastForApplicationInit = async (
+  sender: Usuario,
+  description: string,
+  payload: Partial<Solicitud & { nombreCorto: string; estado: string }>,
+  concept: string,
+  client: PoolClient
+) => {
+  const socket = users.get(`${sender.nacionalidad}-${sender.cedula}`);
+  const emisor = `${sender.nacionalidad}-${sender.cedula}`;
+
+  try {
+    client.query('BEGIN');
+    const admins = (await client.query(queries.GET_NON_NORMAL_OFFICIALS, [payload.nombreCorto])).rows;
+    const superuser = (await client.query(queries.GET_SUPER_USER)).rows;
+    // const permittedOfficials = (
+    //   await client.query(
+    //     'SELECT * FROM USUARIO usr INNER JOIN CUENTA_FUNCIONARIO cf ON usr.id_usuario = cf.id_usuario INNER JOIN institucion i ON cf.id_institucion = i.id_institucion WHERE usr.id_tipo_usuario = 3 AND i.id_institucion = 9;'
+    //   )
+    // ).rows;
+    const officials = superuser.concat(admins).filter((el) => emisor !== `${el.nacionalidad}-${el.cedula}`);
+
+    const notification = await Promise.all(
+      officials
+        .map(async (el) => {
+          if (!el) return null;
+          const result = (
+            await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
+          ).rows[0];
+          const notification = (await client.query(queries.GET_PROCEDURE_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
+          const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
+          return formattedNotif;
+        })
+        .filter((el) => el)
+    );
+
+    socket?.to(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
+    socket?.to(`inst:${payload.nombreCorto}`).emit('CREATE_APPLICATION', payload);
+
+    client.query('COMMIT');
+  } catch (error) {
+    client.query('ROLLBACK');
+    throw error;
+  }
+};
+
+const broadcastForApplicationUpdate = async (
+  sender: Usuario,
+  description: string,
+  payload: Partial<Solicitud & { nombreCorto: string; estado: string }>,
+  concept: string,
+  client: PoolClient
+) => {
+  const socket = users.get(`${sender.nacionalidad}-${sender.cedula}`);
+  const emisor = `${sender.nacionalidad}-${sender.cedula}`;
+
+  try {
+    client.query('BEGIN');
+    const user = (await client.query(queries.GET_FINING_TARGET, [payload.id])).rows;
+    const admins = (await client.query(queries.GET_NON_NORMAL_OFFICIALS, [payload.nombreCorto])).rows;
+    const superuser = (await client.query(queries.GET_SUPER_USER)).rows;
+    // const permittedOfficials = (
+    //   await client.query(
+    //     'SELECT * FROM USUARIO usr INNER JOIN CUENTA_FUNCIONARIO cf ON usr.id_usuario = cf.id_usuario INNER JOIN institucion i ON cf.id_institucion = i.id_institucion WHERE usr.id_tipo_usuario = 3 AND i.id_institucion = 9;'
+    //   )
+    // ).rows;
+    const officials = superuser.concat(admins);
+
+    if (payload.estado === 'finalizado' && emisor !== `${user[0].nacionalidad}-${user[0].cedula}`) {
+      await Promise.all(
+        user.map(async (el) => {
+          const result = (
+            await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
+          ).rows[0];
+          const notification = (await client.query(queries.GET_FINING_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
+          const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
+          const userSocket = users.get(`${el.nacionalidad}-${el.cedula}`);
+          userSocket?.emit('SEND_NOTIFICATION', formattedNotif);
+          userSocket?.emit('UPDATE_FINING', payload);
+          return formattedNotif;
+        })
+      );
+    }
+
+    const notification = await Promise.all(
+      officials
+        .filter((el) => emisor !== `${el.nacionalidad}-${el.cedula}`)
+        .map(async (el) => {
+          if (!el) return null;
+          const result = (
+            await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
+          ).rows[0];
+          const notification = (await client.query(queries.GET_FINING_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
+          const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
+          return formattedNotif;
+        })
+        .filter((el) => el)
+    );
+
+    if (payload.estado === 'finalizado') {
+      socket?.emit('SEND_NOTIFICATION', notification[0]);
+      socket?.emit('UPDATE_FINING', payload);
+    }
+
+    socket?.to(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
+    socket?.to(`inst:${payload.nombreCorto}`).emit('UPDATE_FINING', payload);
+
+    client.query('COMMIT');
+  } catch (error) {
+    client.query('ROLLBACK');
+    throw error;
+  }
+};
+
 const formatNotification = (
   sender: string,
   receiver: string | null,
   description: string,
-  payload: Partial<Tramite | Multa>,
+  payload: Partial<Tramite | Multa | Solicitud>,
   notification: any
 ): Notificacion => {
   return {
@@ -443,7 +557,6 @@ const formatNotification = (
   };
 };
 
-//TODO: MUST BE FIXED, create methods for social case and fining
 const notificationTypes = switchcase({
   CREATE_PROCEDURE: broadcastForProcedureInit,
   UPDATE_PROCEDURE: broadcastForProcedureUpdate,
@@ -451,8 +564,8 @@ const notificationTypes = switchcase({
   UPDATE_SOCIAL_AFFAIR: broadcastForAffairUpdate,
   CREATE_FINING: broadcastForFiningInit,
   UPDATE_FINING: broadcastForFiningUpdate,
-  CREATE_APPLICATION: broadcastForAffairInit,
-  UPDATE_APPLICATION: broadcastForFiningInit,
+  CREATE_APPLICATION: broadcastForApplicationInit,
+  UPDATE_APPLICATION: broadcastForApplicationUpdate,
 })(null);
 
 const notificationHandler = async (
