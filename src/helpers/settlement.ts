@@ -827,12 +827,6 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 }, {});
                 console.log('red', reduced);
                 console.log('ke', Object.keys(reduced).join(' '));
-                pdftk.configure({
-                  bin: '/snap/bin/pdftk',
-                  tempDir: '/home/eabs/Documents/repos/sigt-server/node_modules/node-pdftk/node-pdftk-tmp/',
-                  Promise: Promise,
-                  ignoreWarnings: true,
-                });
                 pdftk
                   .input(reduced)
                   .cat(`${Object.keys(reduced).join(' ')}`)
@@ -986,6 +980,104 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
 
 const createReceiptForPPApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
+    const isJuridical = application.tipoContribuyente === 'JURIDICO';
+    const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
+    const payloadContribuyente = isJuridical
+      ? [application.documento, application.rim, application.nacionalidad]
+      : [application.nacionalidad, application.nacionalidad];
+    const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
+    const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+    let motivo = (await gticPool.query(queries.gtic.GET_MOTIVE_BY_TYPE_ID, [idTiposSolicitud.PP])).rows[0];
+    let ramo = (await gticPool.query(queries.gtic.GET_BRANCH_BY_TYPE_ID, [idTiposSolicitud.PP])).rows[0];
+    const subarticulos = (await gticPool.query(queries.gtic.GET_PUBLICITY_SUBARTICLES)).rows;
+    const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID('PP'), [application.id])).rows;
+    const totalIva =
+      +breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0) * 0.16;
+    const totalMonto = +breakdownData
+      .map((row) => row.monto)
+      .reduce((prev, next) => prev + next, 0);
+    return new Promise(async (res, rej) => {
+      const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-PP.pug`), {
+        QR: linkQr,
+          moment: require('moment'),
+          fecha: moment().format('DD-MM-YYYY'),
+
+          datos: {
+            nroSolicitud: 856535, //TODO: Reemplazar con el valor de co_solicitud creado en GTIC
+            nroPlanilla: 10010111, //TODO: Ver donde se guarda esto
+            motivo: motivo.tx_motivo,
+            nroFactura: `${application.anio}-${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
+            tipoTramite: `${ramo.nb_ramo} - ${ramo.tx_ramo}`,
+            fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
+            fechaLiq: moment(application.fechaCreacion).format('DD/MM/YYYY'),
+            fechaVenc: moment(application.fechaCreacion).endOf('month').format('DD/MM/YYYY'),
+            propietario: {
+              rif: `${application.nacionalidad}-${application.documento}`,
+              denomComercial: datosContribuyente.tx_denom_comercial,
+              razonSocial: isJuridical
+                ? datosContribuyente.tx_razon_social
+                : datosContribuyente.nb_contribuyente.trim() + datosContribuyente.ap_contribuyente.trim(),
+            },
+            items: breakdownData
+              .map((row) => {
+                return {
+                  articulo: subarticulos.find((el) => +el.co_medio === row.id_subarticulo),
+                  periodos: `${row.mes} ${row.anio}`.toUpperCase(),
+                  impuesto: formatCurrency(row.monto),
+                };
+              }),
+            totalIva: `${formatCurrency(totalIva)} Bs.S`,
+            totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
+            totalIvaPagar: `${formatCurrency(
+              totalIva //TODO: Retencion
+            )} Bs.S`,
+            montoTotalImpuesto: `${formatCurrency(
+              +breakdownData
+                .map((row) => row.monto)
+                .reduce((prev, next) => prev + next, 0) + totalIva
+            )} Bs.S`,
+            interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
+            estatus: 'PAGADO',
+            observacion: 'Pago por Servicios Municipales',
+            totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+            totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+            totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
+      });
+      const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/PP/${application.idLiquidacion}/recibo.pdf`);
+      const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/PP/${application.idLiquidacion}/recibo.pdf`;
+      if (dev) {
+        pdf
+          .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
+          .toFile(pdfDir, async () => {
+            res(dir);
+          });
+      } else {
+        // try {
+        //   pdf
+        //     .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
+        //     .toBuffer(async (err, buffer) => {
+        //       if (err) {
+        //         rej(err);
+        //       } else {
+        //         const bucketParams = {
+        //           Bucket: 'sut-maracaibo',
+        //           Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}`,
+        //         };
+        //         await S3Client.putObject({
+        //           ...bucketParams,
+        //           Body: buffer,
+        //           ACL: 'public-read',
+        //           ContentType: 'application/pdf',
+        //         }).promise();
+        //         res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+        //       }
+        //     });
+        // } catch (e) {
+        //   throw e;
+        // } finally {
+        // }
+      }
+    });
   } catch (error) {
     throw error;
   }
