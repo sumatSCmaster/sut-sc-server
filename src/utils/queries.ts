@@ -482,6 +482,17 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_RAISED_MONEY_BY_BRANCH: 'SELECT SUM("montoLiquidacion"), "tipoLiquidacion" FROM impuesto.solicitud_view GROUP BY "tipoLiquidacion"',
   GET_SETTLEMENTS_BY_DAY:
     "SELECT COUNT (*), sl.fecha::date AS fecha_creacion FROM impuesto.solicitud sl INNER JOIN impuesto.liquidacion li ON sl.id_solicitud = li.id_solicitud AND sl.fecha::date > CURRENT_DATE - INTERVAL '30 days' GROUP BY sl.fecha::date;",
+  GET_APPLICATION_COUNT_LAST_20_DAYS:
+    "SELECT COUNT (*), sl.fecha::date AS fechacreacion FROM impuesto.solicitud sl INNER JOIN impuesto.liquidacion li ON sl.id_solicitud = li.id_solicitud \
+  WHERE sl.fecha::date > CURRENT_DATE - INTERVAL '20 days' \
+  GROUP BY sl.fecha::date ORDER BY fecha DESC;",
+  GET_APPLICATION_COUNT_LAST_12_MONTHS:
+    "SELECT COUNT (*), EXTRACT(MONTH FROM sl.fecha::date) AS month, EXTRACT(YEAR FROM sl.fecha::date) \
+  AS year FROM impuesto.solicitud sl INNER JOIN impuesto.liquidacion li ON sl.id_solicitud = li.id_solicitud WHERE fecha::date > CURRENT_DATE - INTERVAL '12 months' \
+  GROUP BY month, year;",
+  GET_APPLICATION_COUNT_LAST_5_YEARS:
+    "SELECT COUNT (*), EXTRACT(YEAR FROM sl.fecha::date) AS year FROM impuesto.solicitud sl INNER JOIN impuesto.liquidacion li ON sl.id_solicitud = li.id_solicitud \
+  WHERE sl.fecha::date > CURRENT_DATE - INTERVAL '5 years' GROUP BY year;",
 
   // EXTERNAL USER STATS
   GET_EXTERNAL_TOTAL_COUNT: 'SELECT COUNT(*) FROM tramite WHERE id_usuario = $1;',

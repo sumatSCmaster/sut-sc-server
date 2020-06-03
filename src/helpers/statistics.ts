@@ -537,10 +537,10 @@ const getOfficialApplicationStats = async (institution: number | undefined) => {
     // GRAFICO 4 - LISTO
     const countByStatus = (await client.query(queries.GET_RAISED_MONEY_BY_BRANCH)).rows.map((r) => ({
       x: getNoiceSettlement(r.tipoLiquidacion),
-      y: parseInt(r.sum),
+      y: parseFloat(r.sum.toFixed(2)),
     }));
     // GRAFICO 5
-    const last20Days = (await client.query(queries.GET_FINE_COUNT_LAST_20_DAYS, [institution])).rows.map((r) => ({
+    const last20Days = (await client.query(queries.GET_APPLICATION_COUNT_LAST_20_DAYS)).rows.map((r) => ({
       x: moment(r.fechacreacion).locale('es').format('DD MMM'),
       y: parseInt(r.count),
     }));
@@ -551,7 +551,7 @@ const getOfficialApplicationStats = async (institution: number | undefined) => {
           y: 0,
         }
     );
-    const last12Months = (await client.query(queries.GET_FINE_COUNT_LAST_12_MONTHS, [institution])).rows.map((r) => ({
+    const last12Months = (await client.query(queries.GET_APPLICATION_COUNT_LAST_12_MONTHS)).rows.map((r) => ({
       x: fixMonth(
         moment(new Date(r.year, parseInt(r.month) - 1))
           .locale('es')
@@ -566,7 +566,7 @@ const getOfficialApplicationStats = async (institution: number | undefined) => {
           y: 0,
         }
     );
-    const last5Years = (await client.query(queries.GET_FINE_COUNT_LAST_5_YEARS, [institution])).rows.map((r) => ({
+    const last5Years = (await client.query(queries.GET_APPLICATION_COUNT_LAST_5_YEARS)).rows.map((r) => ({
       x: r.year.toString(),
       y: parseInt(r.count),
     }));
