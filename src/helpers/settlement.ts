@@ -420,6 +420,7 @@ export const insertSettlements = async ({ process, user }) => {
 export const getApplicationsAndSettlements = async ({ user }: { user: Usuario }) => {
   const client = await pool.connect();
   try {
+    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const applications: Solicitud[] = await Promise.all(
       (await client.query(queries.GET_APPLICATION_INSTANCES_BY_USER, [user.id])).rows.map(async (el) => {
         return {
@@ -444,6 +445,13 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
               };
             })
           ),
+          multas: await Promise.all((await client.query(queries.GET_FINES_BY_APPLICATION, [el.id_solicitud])).rows.map(el => {
+            return {
+              id: el.id_multa,
+              fecha: {month: el.mes, year: el.anio},
+              monto: +el.monto * UTMM
+            }
+          })),
         };
       })
     );
