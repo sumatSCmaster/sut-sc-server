@@ -537,7 +537,7 @@ const getOfficialApplicationStats = async () => {
     // GRAFICO 4 - LISTO
     const countByStatus = (await client.query(queries.GET_RAISED_MONEY_BY_BRANCH)).rows.map((r) => ({
       x: getNoiceSettlement(r.tipoLiquidacion),
-      y: parseFloat(r.sum.toFixed(2)),
+      y: +parseFloat(r.sum).toFixed(2),
     }));
     // GRAFICO 5
     const last20Days = (await client.query(queries.GET_APPLICATION_COUNT_LAST_20_DAYS)).rows.map((r) => ({
