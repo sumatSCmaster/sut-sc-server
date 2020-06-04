@@ -7,6 +7,7 @@ import {
   getApplicationsAndSettlements,
   addTaxApplicationPayment,
   createCertificateForApplication,
+  createAccountStatement,
 } from '@helpers/settlement';
 
 const router = Router();
@@ -51,6 +52,17 @@ router.put('/:id/payment', authenticate('jwt'), async (req: any, res) => {
   const [error, data] = await fulfill(addTaxApplicationPayment({ payment: procedimiento.pagos, application: id, user: req.user }));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
+});
+
+router.get('/accountStatement/:contributor', async (req: any, res) => {
+  const { contributor } = req.params;
+  const [error, data] = await fulfill(createAccountStatement(contributor));
+  if (error) res.status(500).json(error);
+  if (data)
+    data.toBuffer(async (err, buffer) => {
+      if (err) res.status(500).json({ status: 500, message: 'Error al procesar el pdf' });
+      res.contentType('application/pdf').send(buffer);
+    });
 });
 
 export default router;

@@ -16,6 +16,8 @@ import * as qr from 'qrcode';
 import * as pdftk from 'node-pdftk';
 import { query } from 'express-validator';
 import { sendNotification } from './notification';
+const written = require('written-number');
+
 const gticPool = GticPool.getInstance();
 const pool = Pool.getInstance();
 
@@ -1177,6 +1179,42 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
     });
   } catch (error) {
     throw error;
+  }
+};
+
+export const createAccountStatement = async (contributor) => {
+  const client = await pool.connect();
+  try {
+    const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION_MOCK, [contributor])).rows[0];
+    const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${tramite.id}`, { errorCorrectionLevel: 'H' });
+    const datosCertificado = {
+      id: tramite.id,
+      fecha: tramite.fechacreacion,
+      codigo: tramite.codigotramite,
+      formato: tramite.formato,
+      tramite: tramite.nombretramitelargo,
+      institucion: tramite.nombrecorto,
+      datos: tramite.datos,
+      estado: 'finalizado',
+      tipoTramite: tramite.tipotramite,
+      certificado: tramite.sufijo === 'ompu' ? (tramite.aprobado ? tramite.formatocertificado : tramite.formatorechazo) : tramite.formatocertificado,
+    };
+    const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
+      ...datosCertificado,
+      cache: false,
+      moment: require('moment'),
+      QR: linkQr,
+      written,
+    });
+    return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
+  } catch (error) {
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al crear el certificado',
+    };
+  } finally {
+    client.release();
   }
 };
 
