@@ -1093,10 +1093,10 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
     let ramo = (await gticPool.query(queries.gtic.GET_BRANCH_BY_TYPE_ID, [idTiposSolicitud.PP])).rows[0];
     const subarticulos = (await gticPool.query(queries.gtic.GET_PUBLICITY_SUBARTICLES)).rows;
     const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID('PP'), [application.id])).rows;
-    const totalIva = +breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0) * 0.16;
+    const totalIva = +breakdownData.map((row) => row.monto).reduce((prev, next) => +prev + +next, 0) * 0.16;
     const totalMonto = +breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0);
     return new Promise(async (res, rej) => {
-      const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-PP.pug`), {
+      const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-PP.pug`), {
         QR: linkQr,
         moment: require('moment'),
         fecha: moment().format('DD-MM-YYYY'),
@@ -1119,7 +1119,7 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
           },
           items: breakdownData.map((row) => {
             return {
-              articulo: subarticulos.find((el) => +el.co_medio === row.id_subarticulo),
+              articulo: subarticulos.find((el) => +el.co_medio === row.id_subarticulo).tx_medio,
               periodos: `${row.mes} ${row.anio}`.toUpperCase(),
               impuesto: formatCurrency(row.monto),
             };
@@ -1129,12 +1129,12 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
           totalIvaPagar: `${formatCurrency(
             totalIva //TODO: Retencion
           )} Bs.S`,
-          montoTotalImpuesto: `${formatCurrency(+breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0) + totalIva)} Bs.S`,
+          montoTotalImpuesto: `${formatCurrency(+breakdownData.map((row) => row.monto).reduce((prev, next) => +prev + +next, 0) + +totalIva)} Bs.S`,
           interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
           estatus: 'PAGADO',
-          observacion: 'Pago por Servicios Municipales',
-          totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
-          totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+          observacion: 'Pago por Publicidad y Propaganda',
+          totalLiq: `${formatCurrency(+totalMonto + +totalIva)} Bs.S`,
+          totalRecaudado: `${formatCurrency(+totalMonto + +totalIva)} Bs.S`,
           totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
         },
       });
