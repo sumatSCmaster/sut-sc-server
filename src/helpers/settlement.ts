@@ -1186,18 +1186,31 @@ export const createAccountStatement = async (contributor) => {
   const client = await pool.connect();
   const gtic = await gticPool.connect();
   try {
-    const tramite = (await gtic.query(queries.gtic.GET_CONTRIBUTOR_BY_ID, [contributor])).rows[0];
+    const contribuyente = (await gtic.query(queries.gtic.GET_CONTRIBUTOR_BY_ID, [contributor])).rows[0];
+    const ae = (await client.query(queries.GET_AE_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map((el) => ({
+      // planilla: new Date().getTime().toString().substr(6),
+      // solicitud: el.id,
+      // porcion: '1/1',
+      // fechaLiquidacion: el.fechaCreacion,
+      // fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
+      // motivo: el.tipoLiquidacion,
+      // estado: ,
+      // montoPorcion: ,
+    }));
+    const sm = (await client.query(queries.GET_SM_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map;
+    const iu = (await client.query(queries.GET_IU_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map;
+    const pp = (await client.query(queries.GET_PP_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map;
     const datosCertificado = {
-      id: tramite.id,
-      fecha: tramite.fechacreacion,
-      codigo: tramite.codigotramite,
-      formato: tramite.formato,
-      tramite: tramite.nombretramitelargo,
-      institucion: tramite.nombrecorto,
-      datos: tramite.datos,
-      estado: 'finalizado',
-      tipoTramite: tramite.tipotramite,
-      certificado: tramite.sufijo === 'ompu' ? (tramite.aprobado ? tramite.formatocertificado : tramite.formatorechazo) : tramite.formatocertificado,
+      //   id: tramite.id,
+      //   fecha: tramite.fechacreacion,
+      //   codigo: tramite.codigotramite,
+      //   formato: tramite.formato,
+      //   tramite: tramite.nombretramitelargo,
+      //   institucion: tramite.nombrecorto,
+      //   datos: tramite.datos,
+      //   estado: 'finalizado',
+      //   tipoTramite: tramite.tipotramite,
+      //   certificado: tramite.sufijo === 'ompu' ? (tramite.aprobado ? tramite.formatocertificado : tramite.formatorechazo) : tramite.formatocertificado,
     };
     const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-EC.pug`), {
       ...datosCertificado,

@@ -583,6 +583,15 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     'SELECT * FROM impuesto.liquidacion WHERE id_procedimiento = $1 AND id_solicitud = $2 ORDER BY id_liquidacion DESC LIMIT 1;',
   GET_TOTAL_PAYMENT_OF_PROCESS_SETTLEMENT:
     'SELECT SUM(monto) AS "totalLiquidaciones" FROM impuesto.liquidacion WHERE id_procedimiento = $1 AND id_solicitud = $2',
+  GET_AE_SETTLEMENTS_FOR_CONTRIBUTOR:
+    'SELECT * FROM impuesto.ae_desglose ae INNER JOIN impuesto.solicitud_view sv ON ae.id_liquidacion = sv."idLiquidacion" WHERE contribuyente = $1',
+  GET_SM_SETTLEMENTS_FOR_CONTRIBUTOR:
+    'SELECT * FROM impuesto.sm_desglose sm INNER JOIN impuesto.solicitud_view sv ON sm.id_liquidacion = sv."idLiquidacion" WHERE contribuyente = $1',
+  GET_IU_SETTLEMENTS_FOR_CONTRIBUTOR:
+    'SELECT * FROM impuesto.iu_desglose iu INNER JOIN impuesto.solicitud_view sv ON iu.id_liquidacion = sv."idLiquidacion" WHERE contribuyente = $1',
+  GET_PP_SETTLEMENTS_FOR_CONTRIBUTOR:
+    'SELECT * FROM impuesto.pp_desglose pp INNER JOIN impuesto.solicitud_view sv ON pp.id_liquidacion = sv."idLiquidacion" WHERE contribuyente = $1',
+
   GET_FINES_BY_APPLICATION: 'SELECT * FROM impuesto.multa WHERE id_solicitud = $1',
   GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID: (typePick) => {
     const type = {
