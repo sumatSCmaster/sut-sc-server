@@ -555,6 +555,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
     );
     await client.query(queries.UPDATE_PAID_STATE_FOR_TAX_PAYMENT_APPLICATION, [application]);
     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
+    console.log(applicationInstance);
     await sendNotification(
       user,
       `Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.nacionalidad}-${applicationInstance.documento}`,
@@ -567,6 +568,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
     return { status: 200, message: 'Pago añadido para la solicitud declarada' };
   } catch (error) {
     client.query('ROLLBACK');
+    console.log(error);
     throw {
       status: 500,
       error,
