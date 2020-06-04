@@ -1252,7 +1252,7 @@ export const createAccountStatement = async (contributor) => {
       .concat(iu)
       .concat(pp)
       .sort((a, b) => (a.fechaLiquidacion === b.fechaLiquidacion ? 0 : a.fechaLiquidacion > b.fechaLiquidacion ? 1 : -1));
-    const saldoFinal = 1;
+    const saldoFinal = statement.map((e) => (e.estado === 'PAGADO' ? e.montoPorcion : -e.montoPorcion)).reduce((e, x) => e + x);
     const datosCertificado: accountStatement = {
       actividadesContribuyente,
       datosContribuyente,
