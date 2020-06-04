@@ -502,7 +502,7 @@ const broadcastForApplicationUpdate = async (
           const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
           const userSocket = users.get(`${el.nacionalidad}-${el.cedula}`);
           userSocket?.emit('SEND_NOTIFICATION', formattedNotif);
-          userSocket?.emit('UPDATE_FINING', payload);
+          userSocket?.emit('UPDATE_APPLICATION', payload);
           return formattedNotif;
         })
       );
@@ -525,11 +525,11 @@ const broadcastForApplicationUpdate = async (
 
     if (payload.estado === 'finalizado') {
       socket?.emit('SEND_NOTIFICATION', notification[0]);
-      socket?.emit('UPDATE_FINING', payload);
+      socket?.emit('UPDATE_APPLICATION', payload);
     }
 
     socket?.to(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
-    socket?.to(`inst:${payload.nombreCorto}`).emit('UPDATE_FINING', payload);
+    socket?.to(`inst:${payload.nombreCorto}`).emit('UPDATE_APPLICATION', payload);
 
     client.query('COMMIT');
   } catch (error) {

@@ -1184,9 +1184,9 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
 
 export const createAccountStatement = async (contributor) => {
   const client = await pool.connect();
+  const gtic = await gticPool.connect();
   try {
-    const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION_MOCK, [contributor])).rows[0];
-    const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${tramite.id}`, { errorCorrectionLevel: 'H' });
+    const tramite = (await gtic.query(queries.gtic.GET_CONTRIBUTOR_BY_ID, [contributor])).rows[0];
     const datosCertificado = {
       id: tramite.id,
       fecha: tramite.fechacreacion,
@@ -1199,11 +1199,10 @@ export const createAccountStatement = async (contributor) => {
       tipoTramite: tramite.tipotramite,
       certificado: tramite.sufijo === 'ompu' ? (tramite.aprobado ? tramite.formatocertificado : tramite.formatorechazo) : tramite.formatocertificado,
     };
-    const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
+    const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-EC.pug`), {
       ...datosCertificado,
       cache: false,
       moment: require('moment'),
-      QR: linkQr,
       written,
     });
     return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
