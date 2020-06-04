@@ -43,7 +43,7 @@ const getNoiceSettlement = (s: string): string => {
     case 'SM':
       return 'Servicios Municipales';
     case 'IU':
-      return 'Inmuebles Urbanes';
+      return 'Inmuebles Urbanos';
     case 'PP':
       return 'Publicidad y Propaganda';
     default:
@@ -60,7 +60,7 @@ export const getStats = (user: Usuario) => {
       ? user.institucion?.id === 6 || user.institucion?.id === 7
         ? getOfficialFiningStats(user.institucion?.id)
         : user.institucion?.id === 9
-        ? getOfficialApplicationStats(user.institucion?.id)
+        ? getOfficialApplicationStats()
         : getOfficialStats(user.institucion?.id)
       : getMayoraltyStats();
 };
@@ -503,7 +503,7 @@ const getOfficialFiningStats = async (institution: number | undefined) => {
   }
 };
 
-const getOfficialApplicationStats = async (institution: number | undefined) => {
+const getOfficialApplicationStats = async () => {
   const client = await pool.connect();
   try {
     // GRAFICO 1 - LISTO
@@ -597,6 +597,7 @@ const getOfficialApplicationStats = async (institution: number | undefined) => {
       }),
     };
   } catch (error) {
+    console.log(error);
     throw {
       status: 500,
       error,
