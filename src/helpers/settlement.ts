@@ -230,11 +230,11 @@ export const getSettlements = async ({ document, reference, type, user }) => {
   }
 };
 
-const getApplicationsAndSettlementsById = async ({ id, user }) => {
+const getApplicationsAndSettlementsById = async ({ id, user }): Promise<Solicitud> => {
   const client = await pool.connect();
   try {
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-    const application: Solicitud = await Promise.all(
+    const application: Solicitud[] = await Promise.all(
       (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows.map(async (el) => {
         return {
           id: el.id_solicitud,
@@ -270,8 +270,8 @@ const getApplicationsAndSettlementsById = async ({ id, user }) => {
           ),
         };
       })
-    )[0];
-    return application;
+    );
+    return application[0];
   } catch (error) {
     throw {
       status: 500,
