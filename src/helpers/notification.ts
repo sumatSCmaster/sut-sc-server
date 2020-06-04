@@ -453,7 +453,7 @@ const broadcastForApplicationInit = async (
           const result = (
             await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
           ).rows[0];
-          const notification = (await client.query(queries.GET_PROCEDURE_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
+          const notification = (await client.query(queries.GET_SETTLEMENT_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
           const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
           return formattedNotif;
         })
@@ -498,7 +498,7 @@ const broadcastForApplicationUpdate = async (
           const result = (
             await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
           ).rows[0];
-          const notification = (await client.query(queries.GET_FINING_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
+          const notification = (await client.query(queries.GET_SETTLEMENT_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
           const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
           const userSocket = users.get(`${el.nacionalidad}-${el.cedula}`);
           userSocket?.emit('SEND_NOTIFICATION', formattedNotif);

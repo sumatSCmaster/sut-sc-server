@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.2
--- Dumped by pg_dump version 12.2
+-- Dumped from database version 12.3 (Ubuntu 12.3-1.pgdg18.04+1)
+-- Dumped by pg_dump version 12.3 (Ubuntu 12.3-1.pgdg18.04+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2993,6 +2993,36 @@ CREATE TABLE public.notificacion (
 
 
 ALTER TABLE public.notificacion OWNER TO postgres;
+
+--
+-- Name: notificacion_impuesto_view; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.notificacion_impuesto_view AS
+ SELECT n.id_notificacion AS id,
+    n.descripcion,
+    n.status,
+    n.fecha AS "fechaCreacion",
+    n.emisor,
+    n.receptor,
+    n.estado AS "estadoNotificacion",
+    n.concepto,
+    s.id_solicitud AS "idSolicitud",
+    s.id_usuario AS usuario,
+    s.documento,
+    s.rim,
+    s.nacionalidad,
+    s.contribuyente,
+    s.pagado,
+    s.aprobado,
+    s.rebotado,
+    s.fecha AS "fechaCreacionSolicitud",
+    s.fecha_aprobado AS "fechaAprobacionSolicitud"
+   FROM (public.notificacion n
+     JOIN impuesto.solicitud s ON ((n.id_procedimiento = s.id_solicitud)));
+
+
+ALTER TABLE public.notificacion_impuesto_view OWNER TO postgres;
 
 --
 -- Name: notificacion_multa_view; Type: VIEW; Schema: public; Owner: postgres
