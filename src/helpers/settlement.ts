@@ -250,7 +250,7 @@ const getApplicationsAndSettlementsById = async ({ id, user }): Promise<Solicitu
           liquidaciones: await Promise.all(
             (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows.map((el) => {
               return {
-                id: el.id,
+                id: el.id_liquidacion,
                 tipoProcedimiento: el.tipoProcedimiento,
                 fecha: { month: el.mes, year: el.anio },
                 monto: el.monto,
