@@ -588,6 +588,7 @@ export const validateApplication = async (body, user) => {
     client.query('BEGIN');
     const solicitud = (await client.query(queries.GET_APPLICATION_BY_ID, [body.idTramite])).rows[0];
     const applicationInstance = await getApplicationsAndSettlementsById({ id: body.idTramite, user: solicitud.id_usuario });
+    applicationInstance.aprobado = true;
     await sendNotification(
       user,
       `Se ha finalizado una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.nacionalidad}-${applicationInstance.documento}`,
@@ -1189,9 +1190,9 @@ export const createAccountStatement = async (contributor) => {
   try {
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const contribuyente = (await gtic.query(queries.gtic.GET_CONTRIBUTOR_BY_ID, [contributor])).rows[0];
-    const economicActivities = (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, contributor)).rows;
+    const economicActivities = (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [contributor])).rows;
     const ae = (await client.query(queries.GET_AE_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map((el) => {
-      const activity = economicActivities.find((x) => JSON.stringify(x.nu_ref_actividad).endsWith(parseInt(el.id_aforo).toString(8)));
+      const activity = economicActivities.find((x) => x.nu_ref_actividad.endsWith(el.id_aforo));
       return {
         planilla: new Date().getTime().toString().substr(6),
         solicitud: el.id,
@@ -1200,7 +1201,8 @@ export const createAccountStatement = async (contributor) => {
         fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
         motivo: el.tipoLiquidacion,
         estado: el.aprobado ? 'PAGADO' : 'VIGENTE',
-        montoPorcion: activity && parseInt(activity.nu_ut) * UTMM > el.monto_declarado ? parseInt(activity.nu_ut) * UTMM : el.monto_declarado,
+        montoPorcion:
+          activity && parseInt(activity.nu_ut) * UTMM > parseFloat(el.monto_declarado) ? parseInt(activity.nu_ut) * UTMM : parseFloat(el.monto_declarado),
       };
     });
     const sm = (await client.query(queries.GET_SM_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map((el) => {
@@ -1212,7 +1214,7 @@ export const createAccountStatement = async (contributor) => {
         fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
         motivo: el.tipoLiquidacion,
         estado: el.aprobado ? 'PAGADO' : 'VIGENTE',
-        montoPorcion: +el.montoGas + +el.montoAseo,
+        montoPorcion: +el.monto_gas + +el.monto_aseo,
       };
     });
     const iu = (await client.query(queries.GET_IU_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map((el) => {
@@ -1224,7 +1226,7 @@ export const createAccountStatement = async (contributor) => {
         fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
         motivo: el.tipoLiquidacion,
         estado: el.aprobado ? 'PAGADO' : 'VIGENTE',
-        montoPorcion: el.monto,
+        montoPorcion: parseFloat(el.monto),
       };
     });
     const pp = (await client.query(queries.GET_PP_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map((el) => {
@@ -1236,17 +1238,17 @@ export const createAccountStatement = async (contributor) => {
         fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
         motivo: el.tipoLiquidacion,
         estado: el.aprobado ? 'PAGADO' : 'VIGENTE',
-        montoPorcion: el.monto,
+        montoPorcion: parseFloat(el.monto),
       };
     });
     const datosContribuyente = {
       nombreORazon: contribuyente.tx_razon_social || `${contribuyente.nb_contribuyente} ${contribuyente.ap_contribuyente}`,
-      cedulaORif: contribuyente.tx_rif ? `${contribuyente.tx_tp_doc}-${contribuyente.nu_cedula}` : `${contribuyente.tx_tp_doc}-${contribuyente.tx_rif}`,
+      cedulaORif: contribuyente.tx_rif ? `${contribuyente.tx_tp_doc}-${contribuyente.tx_rif}` : `${contribuyente.tx_tp_doc}-${contribuyente.nu_cedula}`,
       rim: contribuyente.nu_referencia,
       direccion: contribuyente.tx_direccion,
       telefono: contribuyente.nu_telf_movil || contribuyente.nu_telf_hab,
     };
-    const actividadesContribuyente = economicActivities.map((el) => ({ id: el.nu_ref_actividad, nombreActividad: el.tx_actividad }));
+    const actividadesContribuyente = economicActivities.map((el) => ({ id: el.co_actividad, nombreActividad: el.tx_actividad }));
     const statement = ae
       .concat(sm)
       .concat(iu)
@@ -1273,6 +1275,7 @@ export const createAccountStatement = async (contributor) => {
       message: errorMessageGenerator(error) || 'Error al crear el certificado',
     };
   } finally {
+    gtic.release();
     client.release();
   }
 };
