@@ -6,6 +6,7 @@ import { Notificacion, Tramite, Multa, Usuario, Solicitud } from '@root/interfac
 import { errorMessageGenerator } from './errors';
 import { PoolClient } from 'pg';
 import switchcase from '@utils/switch';
+import { getApplicationsAndSettlementsById } from './settlement';
 
 const pool = Pool.getInstance();
 const users = getUsers();
@@ -16,6 +17,7 @@ export const getNotifications = async (user: Usuario): Promise<Notificacion[] | 
     const id = `${user.nacionalidad}-${user.cedula}`;
     const respTramites = (await client.query(queries.GET_PROCEDURE_NOTIFICATIONS_FOR_USER, [id])).rows;
     const respMultas = (await client.query(queries.GET_FINING_NOTIFICATIONS_FOR_USER, [id])).rows;
+    const respImpuesto = (await client.query(queries.GET_SETTLEMENT_NOTIFICATIONS_FOR_USER, [id])).rows;
     const tramites = await Promise.all(
       respTramites.map(async (el) => {
         const tramite: Partial<Tramite> = {
@@ -73,8 +75,21 @@ export const getNotifications = async (user: Usuario): Promise<Notificacion[] | 
         return formatNotification(el.emisor, el.receptor, el.descripcion, multa, notificacion);
       })
     );
-
-    const notificaciones = [...tramites, ...multas].sort((a, b) => (a.fechaCreacion === b.fechaCreacion ? 0 : a.fechaCreacion > b.fechaCreacion ? -1 : 1));
+    const impuestos = await Promise.all(
+      respImpuesto.map(async (el) => {
+        const impuesto = await getApplicationsAndSettlementsById({ id: el.idSolicitud, user });
+        const notificacion = {
+          id: el.id,
+          status: el.status,
+          fechaCreacion: el.fechaCreacion,
+          concepto: el.concepto,
+        };
+        return formatNotification(el.emisor, el.receptor, el.descripcion, impuesto, notificacion);
+      })
+    );
+    const notificaciones = [...tramites, ...multas, ...impuestos].sort((a, b) =>
+      a.fechaCreacion === b.fechaCreacion ? 0 : a.fechaCreacion > b.fechaCreacion ? -1 : 1
+    );
     return { status: 200, message: 'Notificaciones retornadas de manera satisfactoria', notificaciones };
   } catch (error) {
     throw {

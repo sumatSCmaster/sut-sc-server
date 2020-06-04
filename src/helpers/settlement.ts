@@ -232,7 +232,7 @@ export const getSettlements = async ({ document, reference, type, user }) => {
   }
 };
 
-const getApplicationsAndSettlementsById = async ({ id, user }): Promise<Solicitud> => {
+export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<Solicitud> => {
   const client = await pool.connect();
   try {
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
@@ -305,7 +305,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
           liquidaciones: await Promise.all(
             (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows.map((el) => {
               return {
-                id: el.id,
+                id: el.id_liquidacion,
                 tipoProcedimiento: el.tipoProcedimiento,
                 fecha: { month: el.mes, year: el.anio },
                 monto: el.monto,
@@ -557,6 +557,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
     );
     await client.query(queries.UPDATE_PAID_STATE_FOR_TAX_PAYMENT_APPLICATION, [application]);
     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
+    applicationInstance.pagado = true;
     console.log(applicationInstance);
     await sendNotification(
       user,
@@ -1186,31 +1187,77 @@ export const createAccountStatement = async (contributor) => {
   const client = await pool.connect();
   const gtic = await gticPool.connect();
   try {
+    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const contribuyente = (await gtic.query(queries.gtic.GET_CONTRIBUTOR_BY_ID, [contributor])).rows[0];
-    const ae = (await client.query(queries.GET_AE_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map((el) => ({
-      // planilla: new Date().getTime().toString().substr(6),
-      // solicitud: el.id,
-      // porcion: '1/1',
-      // fechaLiquidacion: el.fechaCreacion,
-      // fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
-      // motivo: el.tipoLiquidacion,
-      // estado: ,
-      // montoPorcion: ,
-    }));
-    const sm = (await client.query(queries.GET_SM_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map;
-    const iu = (await client.query(queries.GET_IU_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map;
-    const pp = (await client.query(queries.GET_PP_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map;
-    const datosCertificado = {
-      //   id: tramite.id,
-      //   fecha: tramite.fechacreacion,
-      //   codigo: tramite.codigotramite,
-      //   formato: tramite.formato,
-      //   tramite: tramite.nombretramitelargo,
-      //   institucion: tramite.nombrecorto,
-      //   datos: tramite.datos,
-      //   estado: 'finalizado',
-      //   tipoTramite: tramite.tipotramite,
-      //   certificado: tramite.sufijo === 'ompu' ? (tramite.aprobado ? tramite.formatocertificado : tramite.formatorechazo) : tramite.formatocertificado,
+    const economicActivities = (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, contributor)).rows;
+    const ae = (await client.query(queries.GET_AE_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map((el) => {
+      const activity = economicActivities.find((x) => JSON.stringify(x.nu_ref_actividad).endsWith(parseInt(el.id_aforo).toString(8)));
+      return {
+        planilla: new Date().getTime().toString().substr(6),
+        solicitud: el.id,
+        porcion: '1/1',
+        fechaLiquidacion: moment(el.fechaCreacion).month(el.mes).year(el.anio).format('DD/MM/YYYY'),
+        fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
+        motivo: el.tipoLiquidacion,
+        estado: el.aprobado ? 'PAGADO' : 'VIGENTE',
+        montoPorcion: activity && parseInt(activity.nu_ut) * UTMM > el.monto_declarado ? parseInt(activity.nu_ut) * UTMM : el.monto_declarado,
+      };
+    });
+    const sm = (await client.query(queries.GET_SM_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map((el) => {
+      return {
+        planilla: new Date().getTime().toString().substr(6),
+        solicitud: el.id,
+        porcion: '1/1',
+        fechaLiquidacion: moment(el.fechaCreacion).month(el.mes).year(el.anio).format('DD/MM/YYYY'),
+        fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
+        motivo: el.tipoLiquidacion,
+        estado: el.aprobado ? 'PAGADO' : 'VIGENTE',
+        montoPorcion: +el.montoGas + +el.montoAseo,
+      };
+    });
+    const iu = (await client.query(queries.GET_IU_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map((el) => {
+      return {
+        planilla: new Date().getTime().toString().substr(6),
+        solicitud: el.id,
+        porcion: '1/1',
+        fechaLiquidacion: moment(el.fechaCreacion).month(el.mes).year(el.anio).format('DD/MM/YYYY'),
+        fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
+        motivo: el.tipoLiquidacion,
+        estado: el.aprobado ? 'PAGADO' : 'VIGENTE',
+        montoPorcion: el.monto,
+      };
+    });
+    const pp = (await client.query(queries.GET_PP_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map((el) => {
+      return {
+        planilla: new Date().getTime().toString().substr(6),
+        solicitud: el.id,
+        porcion: '1/1',
+        fechaLiquidacion: moment(el.fechaCreacion).month(el.mes).year(el.anio).format('DD/MM/YYYY'),
+        fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
+        motivo: el.tipoLiquidacion,
+        estado: el.aprobado ? 'PAGADO' : 'VIGENTE',
+        montoPorcion: el.monto,
+      };
+    });
+    const datosContribuyente = {
+      nombreORazon: contribuyente.tx_razon_social || `${contribuyente.nb_contribuyente} ${contribuyente.ap_contribuyente}`,
+      cedulaORif: contribuyente.tx_rif ? `${contribuyente.tx_tp_doc}-${contribuyente.nu_cedula}` : `${contribuyente.tx_tp_doc}-${contribuyente.tx_rif}`,
+      rim: contribuyente.nu_referencia,
+      direccion: contribuyente.tx_direccion,
+      telefono: contribuyente.nu_telf_movil || contribuyente.nu_telf_hab,
+    };
+    const actividadesContribuyente = economicActivities.map((el) => ({ id: el.nu_ref_actividad, nombreActividad: el.tx_actividad }));
+    const statement = ae
+      .concat(sm)
+      .concat(iu)
+      .concat(pp)
+      .sort((a, b) => (a.fechaLiquidacion === b.fechaLiquidacion ? 0 : a.fechaLiquidacion > b.fechaLiquidacion ? 1 : -1));
+    const saldoFinal = 1;
+    const datosCertificado: accountStatement = {
+      actividadesContribuyente,
+      datosContribuyente,
+      datosLiquidacion: statement,
+      saldoFinal,
     };
     const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-EC.pug`), {
       ...datosCertificado,
@@ -1348,4 +1395,35 @@ interface CertificatePayload {
   pool: PoolClient;
   user: Usuario;
   application: any;
+}
+
+interface accountStatement {
+  datosContribuyente: Contribuyente;
+  actividadesContribuyente: AE[];
+  datosLiquidacion: datoLiquidacion[];
+  saldoFinal: number;
+}
+
+interface Contribuyente {
+  nombreORazon: string;
+  cedulaORif: string;
+  rim: string;
+  direccion: string;
+  telefono: string;
+}
+
+interface AE {
+  id: string;
+  nombreActividad: string;
+}
+
+interface datoLiquidacion {
+  planilla: string;
+  solicitud: number;
+  porcion: string;
+  fechaLiquidacion: string;
+  fechaVencimiento: string;
+  motivo: string;
+  estado: string;
+  montoPorcion: number;
 }
