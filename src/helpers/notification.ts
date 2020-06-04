@@ -77,14 +77,19 @@ export const getNotifications = async (user: Usuario): Promise<Notificacion[] | 
     );
     const impuestos = await Promise.all(
       respImpuesto.map(async (el) => {
-        const impuesto = await getApplicationsAndSettlementsById({ id: el.idSolicitud, user });
+        const impuesto: Solicitud = await getApplicationsAndSettlementsById({ id: el.idSolicitud, user });
+        const solicitud: Solicitud & { estado: string; nombreCorto: string } = {
+          ...impuesto,
+          estado: el.estadoNotificacion,
+          nombreCorto: 'SEDEMAT',
+        };
         const notificacion = {
           id: el.id,
           status: el.status,
           fechaCreacion: el.fechaCreacion,
           concepto: el.concepto,
         };
-        return formatNotification(el.emisor, el.receptor, el.descripcion, impuesto, notificacion);
+        return formatNotification(el.emisor, el.receptor, el.descripcion, solicitud, notificacion);
       })
     );
     const notificaciones = [...tramites, ...multas, ...impuestos].sort((a, b) =>
@@ -557,7 +562,7 @@ const formatNotification = (
   sender: string,
   receiver: string | null,
   description: string,
-  payload: Partial<Tramite | Multa | Solicitud>,
+  payload: Partial<Tramite | Multa | (Solicitud & { estado: string; nombreCorto: string })>,
   notification: any
 ): Notificacion => {
   return {
