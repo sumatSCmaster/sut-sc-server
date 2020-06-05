@@ -12,8 +12,7 @@ block header
     div.header-child
       img#logo(src='images/sedemat.png')
   img#divider(src='images/Divider.png')
-  div#content
-  div#pageHeader
+  div(style={'padding': '0 10px'})
     .table
       .tr
         .th.center.border-bottom
@@ -40,9 +39,9 @@ block header
         div(style={'-webkit-flex':'7'}).td.border-bottom
           p #{datosContribuyente.direccion}
       .tr
-        div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
+        div(style={'-webkit-flex':'3'}).td.border-right
           p Teléfóno
-        div(style={'-webkit-flex':'7'}).td.border-bottom
+        div(style={'-webkit-flex':'7'}).td
           p #{datosContribuyente.telefono}
     div(style={'margin-top':'20px'}).table
       .tr
@@ -73,32 +72,51 @@ block header
             b Estado
         div(style={'-webkit-flex':'2'}).th.center
           p
-            b MONTO PORCIÓN 
-block title
-block content
+            b MONTO PORCIÓN
+  div(style={'padding': '0 10px'})
+    div(style={'border-top':'none', 'border-bottom':'none','margin-top':'0'}).table.break-page
       each item in datosLiquidacion
-        .tr
-          div(style={'-webkit-flex':'1.5'}).td.center.border-right
-            p
-              b #{item.planilla}
-          div(style={'-webkit-flex':'1.5'}).td.center.border-right
-            p
-              b #{item.solicitud}
-          div(style={'-webkit-flex':'1'}).td.center.border-right
-            p
-              b #{item.porcion}
-          div(style={'-webkit-flex':'1.5'}).td.center.border-right
-            p
-              b #{item.fechaLiquidacion}
-          div(style={'-webkit-flex':'1'}).td.center.border-right
-            p
-              b #{item.fechaVencimiento}
-          div(style={'-webkit-flex':'1.5'}).td.center.border-right
-            p
-              b #{item.motivo}
-          div(style={'-webkit-flex':'1'}).td.center.border-right
-            p
-              b #{item.estado}
-          div(style={'-webkit-flex':'2'}).td.center
-            p
-              b #{item.montoPorcion}         
+        .tr.break-page
+          div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
+            p #{item.planilla}
+          div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
+            p #{item.solicitud}
+          div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+            p #{item.porcion}
+          div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
+            p #{item.fechaLiquidacion}
+          div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+            p #{item.fechaVencimiento}
+          div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
+            p #{item.motivo}
+          div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+            p #{item.estado}
+          div(style={'-webkit-flex':'2'}).td.center.border-bottom
+            p #{item.montoPorcion}
+      .tr
+        div(style={'-webkit-flex':'8'}).th.center.border-right.border-bottom
+          p
+            b MONTO TOTAL
+        div(style={'-webkit-flex':'1.7','padding-left' : '8px'}).td.border-bottom.center
+          p #{saldoFinal}
+    .table
+      .tr
+        .th.center.border-bottom
+          p
+            b ACTIVIDADES DEL CONTRIBUYENTE
+      .tr
+        div(style={'-webkit-flex':'2'}).th.center.border-right
+          p
+            b Numero Actividad
+        div(style={'-webkit-flex':'8'}).th.center
+          p
+            b Descripcion Actividad
+      each  item in actividadesContribuyente
+        div(style={'border-top':'1px solid #000'}).tr
+          div(style={'-webkit-flex':'2'}).td.center.border-right
+            p  #{item.id}   
+          div(style={'-webkit-flex':'8'}).td.center
+            p #{item.nombreActividad}        
+                       
+block title
+block content              
