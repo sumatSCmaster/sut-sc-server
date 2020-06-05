@@ -23,27 +23,27 @@ block header
         div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
           p Nombre o Razón Social
         div(style={'-webkit-flex':'7'}).td.border-bottom
-          p #{datos.nombreORazon}
+          p #{datosContribuyente.nombreORazon}
       .tr
         div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
           p RIF
         div(style={'-webkit-flex':'7'}).td.border-bottom
-          p #{datos.cedulaORif}
+          p #{datosContribuyente.cedulaORif}
       .tr
         div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
           p Referencia
         div(style={'-webkit-flex':'7'}).td.border-bottom
-          p #{datos.ref}
+          p #{datosContribuyente.ref}
       .tr
         div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
           p Dirección
         div(style={'-webkit-flex':'7'}).td.border-bottom
-          p #{datos.direccion}
+          p #{datosContribuyente.direccion}
       .tr
         div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
           p Teléfóno
         div(style={'-webkit-flex':'7'}).td.border-bottom
-          p #{datos.telefono}
+          p #{datosContribuyente.telefono}
     div(style={'margin-top':'20px'}).table
       .tr
         .th.center.border-bottom
@@ -73,6 +73,32 @@ block header
             b Estado
         div(style={'-webkit-flex':'2'}).th.center
           p
-            b MONTO PORCIÓN                                                                                
+            b MONTO PORCIÓN 
 block title
-block content            
+block content
+      each item in datosLiquidacion
+        .tr
+          div(style={'-webkit-flex':'1.5'}).td.center.border-right
+            p
+              b #{item.planilla}
+          div(style={'-webkit-flex':'1.5'}).td.center.border-right
+            p
+              b #{item.solicitud}
+          div(style={'-webkit-flex':'1'}).td.center.border-right
+            p
+              b #{item.porcion}
+          div(style={'-webkit-flex':'1.5'}).td.center.border-right
+            p
+              b #{item.fechaLiquidacion}
+          div(style={'-webkit-flex':'1'}).td.center.border-right
+            p
+              b #{item.fechaVencimiento}
+          div(style={'-webkit-flex':'1.5'}).td.center.border-right
+            p
+              b #{item.motivo}
+          div(style={'-webkit-flex':'1'}).td.center.border-right
+            p
+              b #{item.estado}
+          div(style={'-webkit-flex':'2'}).td.center
+            p
+              b #{item.montoPorcion}         
