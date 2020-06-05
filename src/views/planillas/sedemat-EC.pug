@@ -32,7 +32,7 @@ block header
         div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
           p Referencia
         div(style={'-webkit-flex':'7'}).td.border-bottom
-          p #{datosContribuyente.ref}
+          p #{datosContribuyente.rim}
       .tr
         div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
           p Dirección
@@ -61,13 +61,13 @@ block header
         div(style={'-webkit-flex':'1.5'}).th.center.border-right
           p
             b FECHA LIQ.
-        div(style={'-webkit-flex':'1'}).th.center.border-right
+        div(style={'-webkit-flex':'1.25'}).th.center.border-right
           p
             b FECHA DE VENC.
-        div(style={'-webkit-flex':'1.5'}).th.center.border-right
+        div(style={'-webkit-flex':'1'}).th.center.border-right
           p
             b MOTIVO
-        div(style={'-webkit-flex':'1'}).th.center.border-right
+        div(style={'-webkit-flex':'1.25'}).th.center.border-right
           p
             b Estado
         div(style={'-webkit-flex':'2'}).th.center
@@ -85,14 +85,14 @@ block header
             p #{item.porcion}
           div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
             p #{item.fechaLiquidacion}
-          div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+          div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom
             p #{item.fechaVencimiento}
-          div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
-            p #{item.motivo}
           div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+            p #{item.motivo}
+          div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom
             p #{item.estado}
           div(style={'-webkit-flex':'2'}).td.center.border-bottom
-            p #{item.montoPorcion}
+            p #{new Intl.NumberFormat('de-DE').format(item.montoPorcion)}
       .tr.break-page
         div(style={'-webkit-flex':'8'}).th.center.border-right.border-bottom
           p

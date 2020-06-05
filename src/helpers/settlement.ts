@@ -1200,7 +1200,7 @@ export const createAccountStatement = async (contributor) => {
         fechaLiquidacion: moment(el.fechaCreacion).month(el.mes).year(el.anio).format('DD/MM/YYYY'),
         fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
         motivo: el.tipoLiquidacion,
-        estado: el.aprobado ? 'PAGADO' : 'VIGENTE',
+        estado: el.aprobado && el.pagado ? 'PAGADO' : el.pagado ? 'VALIDANDO' : 'VIGENTE',
         montoPorcion:
           activity && parseInt(activity.nu_ut) * UTMM > parseFloat(el.monto_declarado) ? parseInt(activity.nu_ut) * UTMM : parseFloat(el.monto_declarado),
       };
@@ -1213,7 +1213,7 @@ export const createAccountStatement = async (contributor) => {
         fechaLiquidacion: moment(el.fechaCreacion).month(el.mes).year(el.anio).format('DD/MM/YYYY'),
         fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
         motivo: el.tipoLiquidacion,
-        estado: el.aprobado ? 'PAGADO' : 'VIGENTE',
+        estado: el.aprobado && el.pagado ? 'PAGADO' : el.pagado ? 'VALIDANDO' : 'VIGENTE',
         montoPorcion: +el.monto_gas + +el.monto_aseo,
       };
     });
@@ -1225,7 +1225,7 @@ export const createAccountStatement = async (contributor) => {
         fechaLiquidacion: moment(el.fechaCreacion).month(el.mes).year(el.anio).format('DD/MM/YYYY'),
         fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
         motivo: el.tipoLiquidacion,
-        estado: el.aprobado ? 'PAGADO' : 'VIGENTE',
+        estado: el.aprobado && el.pagado ? 'PAGADO' : el.pagado ? 'VALIDANDO' : 'VIGENTE',
         montoPorcion: parseFloat(el.monto),
       };
     });
@@ -1237,7 +1237,7 @@ export const createAccountStatement = async (contributor) => {
         fechaLiquidacion: moment(el.fechaCreacion).month(el.mes).year(el.anio).format('DD/MM/YYYY'),
         fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
         motivo: el.tipoLiquidacion,
-        estado: el.aprobado ? 'PAGADO' : 'VIGENTE',
+        estado: el.aprobado && el.pagado ? 'PAGADO' : el.pagado ? 'VALIDANDO' : 'VIGENTE',
         montoPorcion: parseFloat(el.monto),
       };
     });
@@ -1255,7 +1255,7 @@ export const createAccountStatement = async (contributor) => {
       .concat(pp)
       .filter((el) => el)
       .sort((a, b) => (a.fechaLiquidacion === b.fechaLiquidacion ? 0 : a.fechaLiquidacion > b.fechaLiquidacion ? 1 : -1));
-    const saldoFinal = statement.map((e) => (e.estado === 'PAGADO' ? e.montoPorcion : -e.montoPorcion)).reduce((e, x) => e + x);
+    const saldoFinal = statement.map((e) => switchcase({PAGADO: e.montoPorcion, VIGENTE: -e.montoPorcion, VALIDANDO: 0})(null)(e.estado)).reduce((e, x) => e + x);
     const datosCertificado: accountStatement = {
       actividadesContribuyente,
       datosContribuyente,
