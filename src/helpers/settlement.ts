@@ -1269,6 +1269,7 @@ export const createAccountStatement = async (contributor) => {
     });
     return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
   } catch (error) {
+    console.log(error)
     throw {
       status: 500,
       error,
