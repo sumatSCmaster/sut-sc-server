@@ -74,7 +74,7 @@ block header
           p
             b MONTO PORCIÓN
   div(style={'padding': '0 10px'})
-    div(style={'border-top':'none', 'border-bottom':'none','margin-top':'0'}).table.break-page
+    div(style={'border-top':'none', 'border-bottom':'none', 'margin-top':0}).table
       each item in datosLiquidacion
         .tr.break-page
           div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
@@ -93,18 +93,18 @@ block header
             p #{item.estado}
           div(style={'-webkit-flex':'2'}).td.center.border-bottom
             p #{item.montoPorcion}
-      .tr
+      .tr.break-page
         div(style={'-webkit-flex':'8'}).th.center.border-right.border-bottom
           p
             b MONTO TOTAL
         div(style={'-webkit-flex':'1.7','padding-left' : '8px'}).td.border-bottom.center
-          p #{saldoFinal}
+          p #{new Intl.NumberFormat('de-DE').format(saldoFinal)}
     .table
-      .tr
+      .tr.break-page
         .th.center.border-bottom
           p
             b ACTIVIDADES DEL CONTRIBUYENTE
-      .tr
+      .tr.break-page
         div(style={'-webkit-flex':'2'}).th.center.border-right
           p
             b Numero Actividad
@@ -112,11 +112,12 @@ block header
           p
             b Descripcion Actividad
       each  item in actividadesContribuyente
-        div(style={'border-top':'1px solid #000'}).tr
+        div(style={'border-top':'1px solid #000'}).tr.break-page
           div(style={'-webkit-flex':'2'}).td.center.border-right
             p  #{item.id}   
           div(style={'-webkit-flex':'8'}).td.center
             p #{item.nombreActividad}        
                        
 block title
-block content              
+block content
+block footer         

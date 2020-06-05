@@ -568,7 +568,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
       client
     );
     client.query('COMMIT');
-    return { status: 200, message: 'Pago añadido para la solicitud declarada' };
+    return { status: 200, message: 'Pago añadido para la solicitud declarada', solicitud: applicationInstance };
   } catch (error) {
     client.query('ROLLBACK');
     console.log(error);

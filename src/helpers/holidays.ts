@@ -13,6 +13,7 @@ export const getHolidays = async (): Promise<DiaFeriado[]> => {
         return result;
     } catch(e) {
         throw {
+            error: e,
             status: 500,
             message: errorMessageGenerator(e) || 'Error al obtener dias feriados'
         }

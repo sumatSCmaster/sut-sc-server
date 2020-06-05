@@ -7,7 +7,9 @@ import { authenticate } from 'passport';
 const router = Router();
 
 router.get('/', authenticate('jwt'), isOfficialAdmin ,async (req,res) => {
+    console.log('hola')
     const [error, data] = await fulfill(getHolidays());
+    console.log(error, data)
     if (error) res.status(500).json({ error, status: 500 });
     if (data) res.status(200).json({ holidays: data, status: 200, message: 'Dias feriados obtenidos' });
 });
