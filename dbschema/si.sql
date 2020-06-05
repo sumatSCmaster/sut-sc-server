@@ -2360,6 +2360,7 @@ CREATE VIEW impuesto.solicitud_view AS
     s.id_usuario AS usuario,
     s.documento,
     s.rim,
+    s.contribuyente,
     s.nacionalidad,
         CASE
             WHEN (s.rim IS NULL) THEN 'NATURAL'::text
