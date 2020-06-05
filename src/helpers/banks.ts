@@ -4,6 +4,8 @@ import { errorMessageGenerator } from './errors';
 import { validateProcedure } from './procedures';
 import { validateFining } from './fines';
 import { PoolClient } from 'pg';
+import switchcase from '@utils/switch';
+import { validateApplication } from './settlement';
 const pool = Pool.getInstance();
 
 export const getAllBanks = async () => {
@@ -42,11 +44,14 @@ export const validatePayments = async (body, user) => {
           pagoPrevio: el.pagoprevio,
           referencia: el.referencia,
           fechaDePago: el.fechadepago,
-          codigoTramite: el.codigotramite || el.codigomulta,
+          codigoTramite: el.codigotramite,
+          codigoMulta: el.codigomulta,
           fechaDeAprobacion: el.fechadeaprobacion,
           tipoTramite: el.tipotramite,
+          documento: el.documento,
+          nacionalidad: el.nacionalidad,
         };
-        el.sufijo !== 'ml' ? await validateProcedure(pagoValidado, user) : await validateFining(pagoValidado, user);
+        await validationHandler({ concept: el.concepto, body: pagoValidado, user });
         return pagoValidado;
       })
     );
@@ -66,7 +71,16 @@ export const validatePayments = async (body, user) => {
 
 export const insertPaymentReference = async (payment: any, procedure: number, client: PoolClient) => {
   const { referencia, banco, costo, fecha, concepto } = payment;
-  return await client.query(queries.INSERT_PAYMENT, [procedure, referencia, costo, banco, fecha, concepto]).catch((error) => {
-    throw error;
-  });
+  try {
+    return await client.query(queries.INSERT_PAYMENT, [procedure, referencia, costo, banco, fecha, concepto]);
+  } catch (e) {
+    throw e;
+  }
+};
+
+const validateCases = switchcase({ IMPUESTO: validateApplication, TRAMITE: validateProcedure, MULTA: validateFining })(null);
+
+const validationHandler = async ({ concept, body, user }) => {
+  const executedMethod = await validateCases(concept);
+  return executedMethod ? await executedMethod(body, user) : { status: 400, message: 'No existe un caso de validacion definido con este concepto' };
 };

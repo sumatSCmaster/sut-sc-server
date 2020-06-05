@@ -1,6 +1,7 @@
 extends default
 block css
   link(rel="stylesheet", href="css/sedemat.css")
+block title
 block content
   div#fecha
     p 
@@ -15,178 +16,182 @@ block content
     .QR
       img#QR(src=QR, alt='QR')
   div#planilla
-    div(style={'margin-bottom':'25px'})
+    div(style={'margin-bottom':'20px'})
       div.table(style={'width':'90%', 'font-size':'16px', 'font-weight': 'bold'})
         div.tr
-          div(style={'width':'15%'}).td.border-right.border-bottom.center
+          div(style={'-webkit-flex': 1.5}).td.border-right.border-bottom.center
             p 
               b Nro. Solicitud
-          div(style={'width':'20%'}).td.border-right.border-bottom.center
+          div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
             p
               b Nro. Planilla
-          div(style={'width':'15%'}).td.border-right.border-bottom.center
+          div(style={'-webkit-flex': 1.5}).td.border-right.border-bottom.center
             p
               b MOTIVO
-          div(style={'width':'20%'}).td.border-right.border-bottom.center
+          div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
             p
               b Liquidador
-          div(style={'width':'15%'}).td.border-bottom.center.border-right
+          div(style={'-webkit-flex': 1.5}).td.border-bottom.center.border-right
             p
               b Cajero
-          div(style={'width':'15%'}).td.border-bottom.center
+          div(style={'-webkit-flex': 1.5}).td.border-bottom.center
             p
               b Nº Factura
         div.tr
-          div(style={'width':'15%'}).td.border-right.center
-            p  asda
-          div(style={'width':'20%'}).td.border-right.center
-            p  asda
-          div(style={'width':'15%'}).td.border-right.center
-            p  asd
-          div(style={'width':'20%'}).td.border-right.center
-            p  asd
-          div(style={'width':'15%'}).td.border-right.center
-            p  ads
-          div(style={'width':'15%'}).td.center
-            p  ads
+          div(style={'-webkit-flex': 1.5}).td.border-right.center
+            p #{datos.nroSolicitud}
+          div(style={'-webkit-flex': 2}).td.border-right.center
+            p #{datos.nroPlanilla}
+          div(style={'-webkit-flex': 1.5}).td.border-right.center
+            p #{datos.motivo}
+          div(style={'-webkit-flex': 2}).td.border-right.center
+            p  USUARIO WEB
+          div(style={'-webkit-flex': 1.5}).td.border-right.center
+            p
+          div(style={'-webkit-flex': 1.5}).td.center
+            p  #{datos.nroFactura}
     div.table(style={'font-size':'16px'})
       div.tr
-        div.td(style={'width':'80%'}).border-right.border-bottom
+        div.td(style={'-webkit-flex': 8}).border-right.border-bottom
           p
             b Tipo De Trámite:
-            span &nbsp; #{datos.nombreORazon}
-        div.td(style={'width':'20%'}).border-bottom
+            span &nbsp; #{datos.tipoTramite}
+        div.td(style={'-webkit-flex': 2}).border-bottom
           p
             b Cuenta/Contrato.:
-            span &nbsp; #{datos.nombreORazon}
+            span &nbsp; #{datos.cuentaOContrato}
       div.tr
-        div(style={'width':'30%'}).td.border-right
+        div(style={'-webkit-flex': 3}).td.border-right
           p
             b Tipo Inmueble:
-            span &nbsp; #{datos.nombreORazon}
-        div(style={'width':'10%'}).td.border-right.center
+            span &nbsp; #{datos.tipoInmueble}
+        div(style={'-webkit-flex': 1}).td.border-right.center
           p
             b FECHA CREACIÓN:
-        div(style={'width':'10%'}).td.border-right
-          p
-        div(style={'width':'15%'}).td.border-right.center
+        div(style={'-webkit-flex': 1}).td.border-right
+          p #{datos.fechaCre}
+        div(style={'-webkit-flex': 1.5}).td.border-right.center
           p
             b FECHA LIQUIDACIÓN:          
-        div(style={'width':'10%'}).td.border-right
+        div(style={'-webkit-flex': 1}).td.border-right
+          p #{datos.fechaLiq}
+        div(style={'-webkit-flex': 1.5}).td.border-right.center
           p
-        div(style={'width':'15%'}).td.border-right.center
-          p
-            b FECHA LIQUIDACIÓN:         
-        div(style={'width':'10%'}).td
-          p
+            b FECHA VENCIMIENTO:         
+        div(style={'-webkit-flex': 1}).td
+          p #{datos.fechaVenc}
     div.table
       div.tr
-        div(style={'width':'100%'}).th.border-bottom.center
+        div(style={'-webkit-flex': 1}).th.border-bottom.center
           p
             b PROPIETARIO DEL INMUEBLE Y SOLICITANTE   
       div.tr
-        div(style={'width':'20%'}).td.border-right.border-bottom.center
+        div(style={'-webkit-flex': 2, padding:'0 1px'}).td.border-right.border-bottom.center
           p Razón Social:
-        div(style={'width':'55%'}).td.border-right.border-bottom
-          p a
-        div(style={'width':'25%'}).td.border-bottom
+        div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
+          p #{datos.propietario.razonSocial}
+        div(style={'-webkit-flex': 2.5}).td.border-bottom
           p 
             b RIF.:
-            span &nbsp; #{datos.nombreORazon}
+            span &nbsp; #{datos.propietario.rif}
       div.tr
-        div(style={'width':'20%'}).td.border-right.border-bottom.center
-          p Razón Social:
-        div(style={'width':'80%'}).td.border-bottom
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p Denom. Comercial:
+        div(style={'-webkit-flex': 8}).td.border-bottom
           p 
-            span &nbsp; #{datos.nombreORazon}
+            span &nbsp; #{datos.propietario.denomComercial}
       div.tr
-        div(style={'width':'20%'}).td.border-right.center
-          p Razón Social:
-        div(style={'width':'80%'}).td
+        div(style={'-webkit-flex': 2}).td.border-right.center
+          p Dirección:
+        div(style={'-webkit-flex': 8}).td
           p 
-            span &nbsp; #{datos.nombreORazon}
-    div(style={'text-align': '-webkit-right'})  
-      div.table
+            span &nbsp; #{datos.propietario.direccion}
+    div
+      div(style={'display':'-webkit-flex'})
+        div.table(style={'-webkit-flex': 5.5})
+          div.tr
+            div(style={'-webkit-flex': 5.5}).th.center.border-right
+              p
+                b DIRECCIÓN
+            div(style={'-webkit-flex': 2.5}).th.center.border-right
+              p
+                b PERIODOS
+            div(style={'-webkit-flex': 2}).th.center
+              p
+                b IMPUESTO                 
+          div(style={'display':'-webkit-flex'})
+            div(style={'-webkit-flex': 5.5}).tr
+              div(style={'align-self':'center', 'text-align':'justify', 'border-top':'1px solid #000'}).td.border-right
+                p 
+                  span &nbsp; #{datos.items[0].direccion}
+            div(style={'-webkit-flex': 2.5}).border-right
+              each item in datos.items
+                  div(style={'border-top':'1px solid #000'}).td.center.break-page
+                    p 
+                      span &nbsp; #{item.periodos}
+            div(style={'-webkit-flex': 2})
+              each item in datos.items                      
+                  div(style={'border-top':'1px solid #000'}).td.center.break-page
+                    p 
+                      span &nbsp; #{item.impuesto}
+      div(style={'margin-top':'20px'}).table.break-page
         div.tr
-          div(style={'width':'55%'}).th.border-bottom.center.border-right
-            p
-              b DIRECCIÓN
-          div(style={'width':'25%'}).th.border-bottom.center.border-right
-            p
-              b PERIODOS
-          div(style={'width':'20%'}).th.border-bottom.center
-            p
-              b IMPUESTO 
-        div.tr
-          div(style={'width':'55%'}).td.border-right
-            p 
-              span &nbsp; #{datos.nombreORazon}
-          div(style={'width':'25%'}).td.border-right
-            p 
-              span &nbsp; #{datos.nombreORazon}
-          div(style={'width':'20%'}).td
-            p 
-              span &nbsp; #{datos.nombreORazon}
-            
-      div(style={'width':'45%','margin-top':0, 'border':'none'}).table
-        div.tr
-          div(style={'width':'55.4%'}).td.border-right.end
+          div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
             p
               b TOTAL IVA (16%)
-          div(style={'width':'44.6%'}).td.border-bottom.border-right
+          div(style={'-webkit-flex': 4.5}).td.border-bottom.end
+            p #{datos.totalIva}
+        div.tr              
+          div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
             p
+              b TOTAL RETENCION IVA (75%)
+          div(style={'-webkit-flex': 4.5}).td.border-bottom.end
+            p #{datos.totalRetencionIva}
+        div.tr            
+          div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
+            p
+              b TOTAL IVA A PAGAR
+          div(style={'-webkit-flex': 4.5}).td.border-bottom.end
+            p #{datos.totalIvaPagar}
         div.tr
-          div(style={'width':'55.4%'}).td.border-right.end
+          div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
             p
-              b TOTAL RETENCION IVA (75%):
-          div(style={'width':'44.6%'}).td.border-bottom.border-right
+              b TOTAL IMPUESTO A PAGAR
+          div(style={'-webkit-flex': 4.5}).td.border-bottom.end
+            p #{datos.montoTotalImpuesto}
+        div.tr            
+          div(style={'-webkit-flex': 5.5}).td.border-right
             p
-        div.tr
-          div(style={'width':'55.4%'}).td.border-right.end
-            p
-              b TOTAL IVA A PAGAR:
-          div(style={'width':'44.6%'}).td.border-bottom.border-right
-            p
-        div.tr
-          div(style={'width':'55.4%'}).td.border-right.end
-            p
-              b TOTAL IMPUESTO A PAGAR:
-          div(style={'width':'44.6%'}).td.border-right
-            p
-        div.tr
-          div(style={'width':'40%'}).td.end
-            p
-              b Intereses Moratorios:
-          div(style={'width':'60%'}).td.all-border 
-            p
-    div.table
+              b Intereses Moratorios
+          div(style={'-webkit-flex': 4.5}).td.end
+            p #{datos.interesMoratorio}
+    div.table.break-page
       div.tr
-        div(style={'width':'20%'}).th.border-bottom.border-right
+        div(style={'-webkit-flex': 2}).th.border-bottom.border-right
           p
             b Estatus:
-        div(style={'width':'80%'}).th.border-bottom
-          p
+        div(style={'-webkit-flex': 8}).th.border-bottom
+          p #{datos.estatus}
       div.tr
-        div(style={'width':'100%'}).th.border-bottom
+        div(style={'-webkit-flex': 1}).th.border-bottom
           p
             b OBSERVACIONES
       div.tr
-        div(style={'width':'100%'}).td
+        div(style={'-webkit-flex': 1}).td
           p
-            span &nbsp; #{datos.nombreORazon}
-    div.table
+            span &nbsp; #{datos.observacion}
+    div.table.break-page
       div(style={'background-color':'rgba(0,0,0,0.2)'}).tr
-        div(style={'width':'33%'}).td.border-right.center
+        div(style={'-webkit-flex': 1}).td.border-right.center
           p
             b Total Liquidado:
-            span &nbsp; #{datos.nombreORazon}
-        div(style={'width':'33%'}).td.border-right.center
+            span &nbsp; #{datos.totalLiq}
+        div(style={'-webkit-flex': 1}).td.border-right.center
           p
             b Total Recaudado:
-            span &nbsp; #{datos.nombreORazon}
-        div(style={'width':'33%'}).td.center
+            span &nbsp; #{datos.totalRecaudado}
+        div(style={'-webkit-flex': 1}).td.center
           p
             b Total Credito Fiscal:
-            span &nbsp; #{datos.nombreORazon}
-
-      
+            span &nbsp; #{datos.totalCred}
+block footer

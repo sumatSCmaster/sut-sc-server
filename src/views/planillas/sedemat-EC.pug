@@ -1,0 +1,123 @@
+extends default
+block css
+  link(rel="stylesheet", href="css/sedemat.css")
+block header
+  header#header
+    div.header-child
+      img#alcaldia(src='images/LogoAlcaldia.png')
+    div.header-child
+        p Alcaldida Bolivariana de Maracaibo
+        p Servicio Desconcentrado Municipal de Administración Tributaria
+        p R.I.F.: G-20002908-0
+    div.header-child
+      img#logo(src='images/sedemat.png')
+  img#divider(src='images/Divider.png')
+  div(style={'padding': '0 10px'})
+    .table
+      .tr
+        .th.center.border-bottom
+          p
+            b DATOS DEL CONTRIBUYENTE
+      .tr
+        div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
+          p Nombre o Razón Social
+        div(style={'-webkit-flex':'7'}).td.border-bottom
+          p #{datosContribuyente.nombreORazon}
+      .tr
+        div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
+          p RIF
+        div(style={'-webkit-flex':'7'}).td.border-bottom
+          p #{datosContribuyente.cedulaORif}
+      .tr
+        div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
+          p Referencia
+        div(style={'-webkit-flex':'7'}).td.border-bottom
+          p #{datosContribuyente.rim}
+      .tr
+        div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
+          p Dirección
+        div(style={'-webkit-flex':'7'}).td.border-bottom
+          p #{datosContribuyente.direccion}
+      .tr
+        div(style={'-webkit-flex':'3'}).td.border-right
+          p Teléfóno
+        div(style={'-webkit-flex':'7'}).td
+          p #{datosContribuyente.telefono}
+    div(style={'margin-top':'20px'}).table
+      .tr
+        .th.center.border-bottom
+          p
+            b ESTADO DE CUENTA DEL CONTRIBUYENTE
+      .tr
+        div(style={'-webkit-flex':'1.5'}).th.center.border-right
+          p
+            b PLANILLA
+        div(style={'-webkit-flex':'1.5'}).th.center.border-right
+          p
+            b SOLICITUD
+        div(style={'-webkit-flex':'1'}).th.center.border-right
+          p
+            b PORCIÓN
+        div(style={'-webkit-flex':'1.5'}).th.center.border-right
+          p
+            b FECHA LIQ.
+        div(style={'-webkit-flex':'1.25'}).th.center.border-right
+          p
+            b FECHA DE VENC.
+        div(style={'-webkit-flex':'1'}).th.center.border-right
+          p
+            b MOTIVO
+        div(style={'-webkit-flex':'1.25'}).th.center.border-right
+          p
+            b Estado
+        div(style={'-webkit-flex':'2'}).th.center
+          p
+            b MONTO PORCIÓN
+  div(style={'padding': '0 10px'})
+    div(style={'border-top':'none', 'border-bottom':'none', 'margin-top':0}).table
+      each item in datosLiquidacion
+        .tr.break-page
+          div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
+            p #{item.planilla}
+          div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
+            p #{item.solicitud}
+          div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+            p #{item.porcion}
+          div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
+            p #{item.fechaLiquidacion}
+          div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom
+            p #{item.fechaVencimiento}
+          div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+            p #{item.motivo}
+          div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom
+            p #{item.estado}
+          div(style={'-webkit-flex':'2'}).td.center.border-bottom
+            p #{new Intl.NumberFormat('de-DE').format(item.montoPorcion)}
+      .tr.break-page
+        div(style={'-webkit-flex':'8'}).th.center.border-right.border-bottom
+          p
+            b MONTO TOTAL
+        div(style={'-webkit-flex':'1.7','padding-left' : '8px'}).td.border-bottom.center
+          p #{new Intl.NumberFormat('de-DE').format(saldoFinal)}
+    .table
+      .tr.break-page
+        .th.center.border-bottom
+          p
+            b ACTIVIDADES DEL CONTRIBUYENTE
+      .tr.break-page
+        div(style={'-webkit-flex':'2'}).th.center.border-right
+          p
+            b Numero Actividad
+        div(style={'-webkit-flex':'8'}).th.center
+          p
+            b Descripcion Actividad
+      each  item in actividadesContribuyente
+        div(style={'border-top':'1px solid #000'}).tr.break-page
+          div(style={'-webkit-flex':'2'}).td.center.border-right
+            p  #{item.id}   
+          div(style={'-webkit-flex':'8'}).td.center
+            p #{item.nombreActividad}        
+                       
+block title
+block content
+block footer         

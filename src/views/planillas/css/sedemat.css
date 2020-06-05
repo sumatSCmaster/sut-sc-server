@@ -29,7 +29,7 @@
   display: flex;
   display: -webkit-flex;
 }
-.center > p{
+.center > p, .center{
   text-align: center !important;
 }
 .end > p{
@@ -49,4 +49,23 @@
   display: -webkit-flex;
   flex-direction: column;
   -webkit-flex-direction: column;
+}
+
+.solvencia{
+  text-align: justify;
+  font-size: 20px;
+}
+
+.solvencia b {
+  color: #292526;
+}
+
+.flex {
+  width: 100%;
+  display: flex;
+  display: -webkit-flex;
+}
+.flex > p, .flex > div {
+  flex: 1;
+  -webkit-flex: 1;
 }

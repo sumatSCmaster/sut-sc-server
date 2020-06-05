@@ -150,6 +150,89 @@ export interface Recaudo {
   nombreCorto: string;
 }
 
+export interface ActividadEconomica {
+  id: string;
+  minimoTributable: number;
+  nombreActividad: string;
+  idContribuyente: number;
+  alicuota: number;
+  costoSolvencia: number;
+  deuda: Fecha[];
+}
+
+export interface Solicitud {
+  id: number;
+  usuario: Usuario;
+  documento: string;
+  contribuyente: string;
+  rim?: string;
+  nacionalidad: string;
+  aprobado: boolean;
+  fecha: Date;
+  monto: number;
+  pagado: boolean;
+  liquidaciones: Liquidacion[];
+  multas?: MultaImpuesto[];
+}
+
+export interface MultaImpuesto {
+  id: number;
+  fecha: Fecha;
+  monto: number;
+}
+
+export interface Liquidacion {
+  id: number;
+  tipoProcedimiento: string;
+  fecha: Fecha;
+  monto: number;
+  certificado?: string;
+  recibo?: string;
+}
+
+export interface Publicidad {
+  articulos: {
+    id: number;
+    nombreArticulo: string;
+    subarticulos: {
+      id: number;
+      nombreSubarticulo: string;
+      parametro: string;
+      costo: number;
+      costoAlto?: number;
+    };
+  };
+  deuda: Fecha[];
+}
+
+export interface ServicioMunicipal {
+  id: string;
+  direccionInmueble: string;
+  tipoInmueble: string;
+  tarifaAseo: string;
+  tarifaGas: string;
+  deuda: Fecha[];
+}
+
+export interface InmuebleUrbano {
+  id: string;
+  direccionInmueble: string;
+  ultimoAvaluo: string;
+  impuestoInmueble: number;
+  deuda: Fecha[];
+}
+
+export interface Fecha {
+  month: string;
+  year: number;
+}
+
+export interface Impuesto {
+  tipoImpuesto: string;
+  fechaCancelada: Date;
+  monto: number;
+}
+
 export interface Campo {
   id: number;
   orden: number;
@@ -167,6 +250,12 @@ export interface Notificacion {
   status: boolean;
   fechaCreacion: Date;
   concepto: string;
+}
+
+export interface DiaFeriado {
+  id?: number;
+  dia: Date;
+  descripcion: string;
 }
 
 export interface ErrorEstandar {
