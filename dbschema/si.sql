@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.3 (Ubuntu 12.3-1.pgdg18.04+1)
--- Dumped by pg_dump version 12.3 (Ubuntu 12.3-1.pgdg18.04+1)
+-- Dumped from database version 12.2
+-- Dumped by pg_dump version 12.2
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -1989,7 +1989,8 @@ ALTER SEQUENCE impuesto.ae_desglose_id_ae_desglose_seq OWNED BY impuesto.ae_desg
 
 CREATE TABLE impuesto.dias_feriados (
     id_dia_feriado integer NOT NULL,
-    dia date
+    dia date,
+    descripcion character varying
 );
 
 
@@ -5081,7 +5082,7 @@ COPY impuesto.ae_desglose (id_ae_desglose, id_aforo, id_liquidacion, monto_decla
 -- Data for Name: dias_feriados; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.dias_feriados (id_dia_feriado, dia) FROM stdin;
+COPY impuesto.dias_feriados (id_dia_feriado, dia, descripcion) FROM stdin;
 \.
 
 
