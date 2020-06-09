@@ -57,7 +57,7 @@
     "qrcode": "^1.4.4",
     "socket.io": "^2.3.0",
     "ts-nested-set": "^1.0.7",
-    "twilio": "^3.39.3",
+    "twilio": "^3.45.0",
     "typescript": "^3.7.4",
     "uuid": "^7.0.1",
     "written-number": "^0.9.1"
