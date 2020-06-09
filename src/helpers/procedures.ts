@@ -164,7 +164,7 @@ const getFineInstances = async (user, client: PoolClient) => {
 const getSettlementInstances = async (user, client: PoolClient) => {
   try {
     let query = belongsToAnInstitution(user) ? queries.GET_SETTLEMENT_INSTANCES : queries.GET_SETTLEMENT_INSTANCES_BY_ID;
-    let payload = belongsToAnInstitution(user) ? undefined : [user.id]
+    let payload = belongsToAnInstitution(user) ? undefined : [user.id];
     let response = (await client.query(query, payload)).rows;
     return response.map((el) => {
       const liquidacion: Liquidacion & { pagado: string; aprobado: string } = {
@@ -244,6 +244,11 @@ const getProcedureInstancesByInstitution = async (institution, tipoUsuario, clie
 const getProcedureByInstitution = async (institution, client: PoolClient): Promise<Institucion[] | any> => {
   return Promise.all(
     institution.map(async (institucion) => {
+      institucion.tiposUsuarios = (await client.query(queries.GET_USER_TYPES)).rows.map(async (el) => ({
+        id: el.id_tipo_usuario,
+        descripcion: el.descripcion,
+        cargos: await (await client.query(queries.GET_JOBS_BY_TYPES_AND_INSTITUTION, [el.id_tipo_usuario, institucion.id])).rows,
+      }));
       const procedures = (await client.query(queries.GET_PROCEDURE_BY_INSTITUTION, [institucion.id])).rows;
       institucion.cuentasBancarias = (await client.query(queries.GET_BANK_ACCOUNTS_FOR_INSTITUTION, [institucion.id])).rows.map((cuenta) => {
         const documento = cuenta.documento.split(':');
