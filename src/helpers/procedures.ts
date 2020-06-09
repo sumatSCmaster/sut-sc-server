@@ -244,11 +244,13 @@ const getProcedureInstancesByInstitution = async (institution, tipoUsuario, clie
 const getProcedureByInstitution = async (institution, client: PoolClient): Promise<Institucion[] | any> => {
   return Promise.all(
     institution.map(async (institucion) => {
-      institucion.tiposUsuarios = (await client.query(queries.GET_USER_TYPES)).rows.map(async (el) => ({
-        id: el.id_tipo_usuario,
-        descripcion: el.descripcion,
-        cargos: await Promise.all((await client.query(queries.GET_JOBS_BY_TYPES_AND_INSTITUTION, [el.id_tipo_usuario, institucion.id])).rows),
-      }));
+      institucion.tiposUsuarios = Promise.all(
+        (await client.query(queries.GET_USER_TYPES)).rows.map(async (el) => ({
+          id: el.id_tipo_usuario,
+          descripcion: el.descripcion,
+          cargos: await Promise.all((await client.query(queries.GET_JOBS_BY_TYPES_AND_INSTITUTION, [el.id_tipo_usuario, institucion.id])).rows),
+        }))
+      );
       const procedures = (await client.query(queries.GET_PROCEDURE_BY_INSTITUTION, [institucion.id])).rows;
       institucion.cuentasBancarias = (await client.query(queries.GET_BANK_ACCOUNTS_FOR_INSTITUTION, [institucion.id])).rows.map((cuenta) => {
         const documento = cuenta.documento.split(':');
