@@ -13,7 +13,7 @@ const queries = {
   CREATE_USER: `INSERT INTO usuario (nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, id_tipo_usuario, password, telefono) \
   VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
   ADD_PASSWORD: 'INSERT INTO cuenta_funcionario (id_usuario, password) VALUES ($1, $2);',
-  ADD_OFFICIAL_DATA: 'INSERT INTO cuenta_funcionario (id_usuario, id_institucion) VALUES ($1, $2) RETURNING *;',
+  ADD_OFFICIAL_DATA: 'INSERT INTO cuenta_funcionario (id_usuario, id_cargo) VALUES ($1, $2) RETURNING *;',
   ADD_OFFICIAL_PERMISSIONS: 'INSERT INTO permiso_de_acceso (id_usuario, id_tipo_tramite) VALUES ($1, $2)',
   INSERT_GOOGLE_USER: 'INSERT INTO datos_google VALUES ($1, $2)',
   INSERT_FACEBOOK_USER: 'INSERT INTO datos_facebook VALUES ($1, $2)',
@@ -57,7 +57,8 @@ const queries = {
   LEFT JOIN datos_google dg ON usr.id_usuario = dg.id_usuario\
   WHERE dg.id_google = $1 OR df.id_facebook=$1',
   GET_EXTERNAL_USER: 'SELECT * FROM usuario WHERE id_usuario = $1',
-  GET_ADMIN_INSTITUTE: 'SELECT i.* FROM institucion i INNER JOIN cuenta_funcionario cf ON i.id_institucion = cf.id_institucion \
+  GET_ADMIN_INSTITUTE:
+    'SELECT i.* FROM institucion i INNER JOIN cargo c ON i.id_institucion = c.id_institucion INNER JOIN cuenta_funcionario cf ON c.id_cargo = cf.id_cargo \
     WHERE cf.id_usuario = $1;',
   CHECK_IF_OFFICIAL:
     "SELECT 1 FROM usuario u \
@@ -75,9 +76,8 @@ const queries = {
     "SELECT 1 FROM usuario u \
   INNER JOIN tipo_usuario tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
   WHERE tu.descripcion = 'Superuser' AND u.cedula = $1",
-  ADMIN_EXISTS:
-    'SELECT * FROM usuario usr inner join cuenta_funcionario cf ON usr.id_usuario \
-  = cf.id_usuario WHERE id_tipo_usuario = 2 AND id_institucion = $1',
+  ADMIN_EXISTS: 'SELECT * FROM usuario usr inner join cuenta_funcionario cf ON usr.id_usuario \
+  = cf.id_usuario WHERE id_tipo_usuario = 2 AND id_cargo = $1',
   VALIDATE_TOKEN: "SELECT 1 FROM recuperacion WHERE token_recuperacion = $1 AND usado = false AND CURRENT_TIMESTAMP - fecha_recuperacion < '20 minutes';",
   EMAIL_EXISTS: 'SELECT 1 FROM usuario u WHERE nombre_de_usuario = $1;',
   EXTERNAL_USER_COMPLETE:
@@ -107,12 +107,12 @@ const queries = {
     INSERT INTO cuenta_funcionario VALUES((SELECT id_usuario from funcionario), $8) RETURNING *',
   GET_OFFICIAL:
     'SELECT usr.* from usuario usr INNER JOIN cuenta_funcionario cf ON\
-     usr.id_usuario=cf.id_usuario WHERE usr.id_usuario=$1 AND cf.id_institucion = $2',
+     usr.id_usuario=cf.id_usuario WHERE usr.id_usuario=$1 AND cf.id_cargo = $2',
   GET_OFFICIALS_BY_INSTITUTION:
     'SELECT usr.id_usuario AS id, usr.nombre_completo AS nombreCompleto, usr.nombre_de_usuario AS nombreUsuario,\
     usr.direccion, usr.cedula, usr.nacionalidad, usr.id_tipo_usuario AS tipoUsuario, usr.telefono\
     from usuario usr INNER JOIN cuenta_funcionario cf ON\
-    usr.id_usuario=cf.id_usuario WHERE cf.id_institucion = $1 AND usr.id_usuario != $2 AND usr.id_tipo_usuario!=1',
+    usr.id_usuario=cf.id_usuario INNER JOIN cargo c ON cf.id_cargo = c.id_cargo WHERE c.id_institucion = $1 AND usr.id_usuario != $2 AND usr.id_tipo_usuario!=1',
   GET_ALL_OFFICIALS:
     'SELECT usr.id_usuario AS id, usr.nombre_completo AS nombreCompleto, usr.nombre_de_usuario AS nombreUsuario,\
     usr.direccion, usr.cedula, usr.nacionalidad, usr.id_tipo_usuario AS tipoUsuario, usr.telefono\
@@ -126,9 +126,9 @@ const queries = {
     'UPDATE usuario SET nombre_completo = $1, nombre_de_usuario = $2, direccion = $3,\
     cedula = $4, nacionalidad = $5, telefono =$6, id_tipo_usuario = $8 WHERE id_usuario = $7 RETURNING *',
   DELETE_OFFICIAL:
-    'DELETE FROM usuario usr USING cuenta_funcionario cf WHERE\
-    usr.id_usuario = cf.id_usuario AND usr.id_usuario = $1\
-    AND cf.id_institucion = $2 RETURNING *;',
+    'DELETE FROM usuario usr USING cuenta_funcionario cf, cargo c WHERE\
+    usr.id_usuario = cf.id_usuario AND cf.id_cargo = c.id_cargo AND usr.id_usuario = $1\
+    AND c.id_institucion = $2 RETURNING *;',
   DELETE_OFFICIAL_AS_SUPERUSER: 'DELETE FROM usuario WHERE usuario.id_usuario = $1 RETURNING *;',
 
   //tramite
@@ -504,11 +504,11 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
 
   GET_NON_NORMAL_OFFICIALS:
     'SELECT * FROM USUARIO  usr INNER JOIN CUENTA_FUNCIONARIO cf ON usr.id_usuario = cf.id_usuario \
-    INNER JOIN institucion ins ON cf.id_institucion = ins.id_institucion WHERE \
+    INNER JOIN cargo c ON cf.id_cargo = c.id_cargo INNER JOIN institucion ins ON cf.id_institucion = ins.id_institucion WHERE \
     ins.nombre_corto = $1 AND usr.id_tipo_usuario != 3',
   GET_OFFICIALS_FOR_PROCEDURE:
     'SELECT * FROM permiso_de_acceso pda INNER JOIN usuario usr ON pda.id_usuario=usr.id_usuario \
-    INNER JOIN CUENTA_FUNCIONARIO cf ON usr.id_usuario = cf.id_usuario INNER JOIN institucion ins \
+    INNER JOIN CUENTA_FUNCIONARIO cf ON usr.id_usuario = cf.id_usuario INNER JOIN cargo c ON cf.id_cargo = c.id_cargo INNER JOIN institucion ins \
     ON cf.id_institucion = ins.id_institucion WHERE ins.nombre_corto =$1 AND id_tipo_tramite = $2',
   GET_SUPER_USER: 'SELECT * FROM USUARIO WHERE id_tipo_usuario = 1',
   GET_PROCEDURE_CREATOR: 'SELECT * FROM USUARIO WHERE id_usuario = $1',

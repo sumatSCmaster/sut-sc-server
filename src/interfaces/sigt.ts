@@ -268,7 +268,9 @@ export namespace Payloads {
   export type CrearSuperuser = Partial<Usuario> & {
     institucion: number;
   };
-  export type CrearAdmin = CrearSuperuser;
+  export type CrearAdmin = Partial<Usuario> & {
+    cargo: number;
+  };
 
   export type ProcedureItems = {
     nombre: string;

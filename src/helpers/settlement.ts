@@ -540,7 +540,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
   try {
     client.query('BEGIN');
     const solicitud = (await client.query(queries.GET_APPLICATION_BY_ID, [application])).rows[0];
-    const pagoSum = payment.map((e) => e.costo).reduce(((e, i) => e + i),0);
+    const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
     if (pagoSum < solicitud.monto_total) return { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
     await Promise.all(
       payment.map(async (el) => {
@@ -951,30 +951,30 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             }
           });
         } else {
-          // try {
-          //   pdf
-          //     .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
-          //     .toBuffer(async (err, buffer) => {
-          //       if (err) {
-          //         rej(err);
-          //       } else {
-          //         const bucketParams = {
-          //           Bucket: 'sut-maracaibo',
-          //           Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}`,
-          //         };
-          //         await S3Client.putObject({
-          //           ...bucketParams,
-          //           Body: buffer,
-          //           ACL: 'public-read',
-          //           ContentType: 'application/pdf',
-          //         }).promise();
-          //         res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
-          //       }
-          //     });
-          // } catch (e) {
-          //   throw e;
-          // } finally {
-          // }
+          try {
+            // pdf
+            //   .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
+            //   .toBuffer(async (err, buffer) => {
+            //     if (err) {
+            //       rej(err);
+            //     } else {
+            //       const bucketParams = {
+            //         Bucket: 'sut-maracaibo',
+            //         Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}`,
+            //       };
+            //       await S3Client.putObject({
+            //         ...bucketParams,
+            //         Body: buffer,
+            //         ACL: 'public-read',
+            //         ContentType: 'application/pdf',
+            //       }).promise();
+            //       res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+            //     }
+            //   });
+          } catch (e) {
+            throw e;
+          } finally {
+          }
         }
       } catch (e) {
         console.log('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
@@ -990,6 +990,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
   }
 };
 
+//TODO: terminar esto
 const createReceiptForAEApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
     const isJuridical = application.tipoContribuyente === 'JURIDICO';
@@ -1255,7 +1256,9 @@ export const createAccountStatement = async (contributor) => {
       .concat(pp)
       .filter((el) => el)
       .sort((a, b) => (a.fechaLiquidacion === b.fechaLiquidacion ? 0 : a.fechaLiquidacion > b.fechaLiquidacion ? 1 : -1));
-    const saldoFinal = statement.map((e) => switchcase({PAGADO: e.montoPorcion, VIGENTE: -e.montoPorcion, VALIDANDO: 0})(null)(e.estado)).reduce(((e, x) => e + x),0);
+    const saldoFinal = statement
+      .map((e) => switchcase({ PAGADO: e.montoPorcion, VIGENTE: -e.montoPorcion, VALIDANDO: 0 })(null)(e.estado))
+      .reduce((e, x) => e + x, 0);
     const datosCertificado: accountStatement = {
       actividadesContribuyente,
       datosContribuyente,
@@ -1270,7 +1273,7 @@ export const createAccountStatement = async (contributor) => {
     });
     return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     throw {
       status: 500,
       error,

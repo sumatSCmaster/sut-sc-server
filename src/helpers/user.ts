@@ -81,7 +81,7 @@ export const createAdmin = async (user: Payloads.CrearAdmin): Promise<Partial<Us
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    const adminExists = user.institucion === 0 ? false : (await client.query(queries.ADMIN_EXISTS, [user.institucion])).rowCount > 0;
+    const adminExists = user.cargo === 0 ? false : (await client.query(queries.ADMIN_EXISTS, [user.cargo])).rowCount > 0;
     if (adminExists) throw new Error('Ya existe un administrador para esta institucion');
     const res = (
       await client.query(queries.CREATE_USER, [
@@ -95,7 +95,7 @@ export const createAdmin = async (user: Payloads.CrearAdmin): Promise<Partial<Us
         user.telefono,
       ])
     ).rows[0];
-    const res2 = await client.query(queries.ADD_OFFICIAL_DATA, [res.id_usuario, user.institucion]);
+    const res2 = await client.query(queries.ADD_OFFICIAL_DATA, [res.id_usuario, user.cargo]);
 
     client.query('COMMIT');
     const usuario: Partial<Usuario> = {

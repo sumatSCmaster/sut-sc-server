@@ -82,7 +82,7 @@ async function addPermissions(id, permisos, client: PoolClient) {
 }
 
 export const createOfficial = async (official: any) => {
-  const { nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, telefono, password, permisos, tipoUsuario, institucion } = official;
+  const { nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, telefono, password, permisos, tipoUsuario, cargo } = official;
   const client = await pool.connect();
   const salt = genSaltSync(10);
   try {
@@ -95,10 +95,10 @@ export const createOfficial = async (official: any) => {
       nacionalidad,
       hashSync(password, salt),
       telefono,
-      institucion,
+      cargo,
       tipoUsuario,
     ]);
-    const off = await client.query(queries.GET_OFFICIAL, [insert.rows[0].id_usuario, insert.rows[0].id_institucion]);
+    const off = await client.query(queries.GET_OFFICIAL, [insert.rows[0].id_usuario, insert.rows[0].id_cargo]);
     const id = off.rows[0].id_usuario;
     await addPermissions(id, permisos || [], client);
     client.query('COMMIT');
