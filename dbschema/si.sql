@@ -5277,6 +5277,27 @@ COPY public.campo_tramite (id_campo, id_tipo_tramite, orden, estado, id_seccion)
 --
 
 COPY public.cargo (id_cargo, id_tipo_usuario, id_institucion, descripcion) FROM stdin;
+1	2	1	Administrador
+2	3	1	Funcionario
+3	2	2	Administrador
+4	3	2	Funcionario
+5	2	3	Administrador
+6	3	3	Funcionario
+7	2	4	Administrador
+8	3	4	Funcionario
+9	2	5	Administrador
+10	3	5	Funcionario
+11	2	6	Administrador
+12	3	6	Funcionario
+13	2	7	Administrador
+14	3	7	Funcionario
+15	2	8	Administrador
+16	3	8	Funcionario
+17	5	3	Director OMPU
+18	5	3	Director OMCAT
+19	5	3	Director OMTU
+20	2	0	Administrador
+21	3	0	Funcionario
 \.
 
 
@@ -5302,27 +5323,26 @@ COPY public.certificado (id_certificado, id_tramite, url_certificado) FROM stdin
 --
 
 COPY public.cuenta_funcionario (id_usuario, id_cargo) FROM stdin;
-55	\N
-56	\N
 57	\N
-59	\N
 65	\N
-66	\N
-67	\N
-68	\N
-70	\N
-71	\N
-72	\N
-73	\N
-75	\N
-76	\N
-77	\N
-78	\N
-79	\N
-80	\N
-81	\N
-82	\N
 83	\N
+56	1
+59	3
+66	20
+67	5
+68	6
+70	17
+71	21
+72	7
+73	8
+75	10
+76	9
+77	13
+78	14
+79	11
+80	12
+81	15
+82	16
 \.
 
 
@@ -8285,7 +8305,7 @@ SELECT pg_catalog.setval('public.campos_id_campo_seq', 13, true);
 -- Name: cargo_id_cargo_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.cargo_id_cargo_seq', 1, false);
+SELECT pg_catalog.setval('public.cargo_id_cargo_seq', 21, true);
 
 
 --
