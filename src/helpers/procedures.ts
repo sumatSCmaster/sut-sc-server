@@ -244,7 +244,7 @@ const getProcedureInstancesByInstitution = async (institution, tipoUsuario, clie
 const getProcedureByInstitution = async (institution, client: PoolClient): Promise<Institucion[] | any> => {
   return Promise.all(
     institution.map(async (institucion) => {
-      institucion.tiposUsuarios = Promise.all(
+      institucion.tiposUsuarios = await Promise.all(
         (await client.query(queries.GET_USER_TYPES)).rows.map(async (el) => ({
           id: el.id_tipo_usuario,
           descripcion: el.descripcion,

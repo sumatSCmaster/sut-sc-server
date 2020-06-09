@@ -117,7 +117,7 @@ export const createAdmin = async (user: Payloads.CrearAdmin): Promise<Partial<Us
   }
 };
 
-export const addInstitute = async (user: Partial<Usuario>): Promise<Partial<Usuario> & { institucion: Institucion }> => {
+export const addInstitute = async (user: Partial<Usuario>): Promise<Partial<Usuario> & { institucion: Institucion & { cargo: string } }> => {
   const client = await pool.connect();
   try {
     const res = (await client.query(queries.GET_ADMIN_INSTITUTE, [user.id])).rows;
@@ -127,6 +127,7 @@ export const addInstitute = async (user: Partial<Usuario>): Promise<Partial<Usua
         id: res[0].id_institucion,
         nombreCompleto: res[0].nombre_completo,
         nombreCorto: res[0].nombre_corto,
+        cargo: res[0].cargo,
       },
     };
   } catch (e) {

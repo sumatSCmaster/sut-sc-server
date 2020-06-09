@@ -58,7 +58,7 @@ const queries = {
   WHERE dg.id_google = $1 OR df.id_facebook=$1',
   GET_EXTERNAL_USER: 'SELECT * FROM usuario WHERE id_usuario = $1',
   GET_ADMIN_INSTITUTE:
-    'SELECT i.* FROM institucion i INNER JOIN cargo c ON i.id_institucion = c.id_institucion INNER JOIN cuenta_funcionario cf ON c.id_cargo = cf.id_cargo \
+    'SELECT i.*, c.descripcion AS cargo FROM institucion i INNER JOIN cargo c ON i.id_institucion = c.id_institucion INNER JOIN cuenta_funcionario cf ON c.id_cargo = cf.id_cargo \
     WHERE cf.id_usuario = $1;',
   CHECK_IF_OFFICIAL:
     "SELECT 1 FROM usuario u \
