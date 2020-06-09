@@ -247,7 +247,7 @@ const getProcedureByInstitution = async (institution, client: PoolClient): Promi
       institucion.tiposUsuarios = (await client.query(queries.GET_USER_TYPES)).rows.map(async (el) => ({
         id: el.id_tipo_usuario,
         descripcion: el.descripcion,
-        cargos: await (await client.query(queries.GET_JOBS_BY_TYPES_AND_INSTITUTION, [el.id_tipo_usuario, institucion.id])).rows,
+        cargos: (await client.query(queries.GET_JOBS_BY_TYPES_AND_INSTITUTION, [el.id_tipo_usuario, institucion.id])).rows,
       }));
       const procedures = (await client.query(queries.GET_PROCEDURE_BY_INSTITUTION, [institucion.id])).rows;
       institucion.cuentasBancarias = (await client.query(queries.GET_BANK_ACCOUNTS_FOR_INSTITUTION, [institucion.id])).rows.map((cuenta) => {
