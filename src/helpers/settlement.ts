@@ -266,11 +266,14 @@ export const getTaxPayerInfo = async ({ docType, document, type }) => {
         telefonoMovil: juridicalContributor.nu_telf_movil,
         telefonoHabitacion: juridicalContributor.nu_telf_hab,
         email: juridicalContributor.tx_email,
-        parroquia:
-          (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [juridicalContributor.tx_direccion.split('Parroquia')[1].split('Sector')[0].trim()])).rows[0]
-            .id || undefined,
+        parroquia: juridicalContributor.tx_direccion
+          ? (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [juridicalContributor.tx_direccion.split('Parroquia')[1].split('Sector')[0].trim()])).rows[0]
+              .id || undefined
+          : undefined,
         sector: juridicalContributor.sector,
-        direccion: 'Avenida ' + juridicalContributor.tx_direccion.split('Parroquia')[1].split('Avenida')[1].split('Pto')[0].trim().replace(/.$/, ''),
+        direccion: juridicalContributor.tx_direccion
+          ? 'Avenida ' + juridicalContributor.tx_direccion.split('Parroquia')[1].split('Avenida')[1].split('Pto')[0].trim().replace(/.$/, '')
+          : undefined,
         puntoReferencia: juridicalContributor.tx_punto_referencia,
       };
     }
@@ -280,7 +283,6 @@ export const getTaxPayerInfo = async ({ docType, document, type }) => {
       contribuyente: taxPayer,
     };
   } catch (error) {
-    client.query('ROLLBACK');
     console.log(error);
     throw {
       status: 500,
