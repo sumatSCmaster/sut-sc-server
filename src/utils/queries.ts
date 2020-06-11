@@ -623,13 +623,13 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   CREATE_TAX_PAYMENT_APPLICATION: 'SELECT * FROM insert_solicitud($1, $2, $3, $4, $5, $6)',
   CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION: 'SELECT * FROM insert_liquidacion($1,$2,$3,$4,$5)',
   CURRENT_AE_APPLICATION_EXISTS:
-    'SELECT * FROM impuesto.solicitud_view WHERE documento = $1 AND rim = $2 AND nacionalidad = $3 AND aprobado = false AND "tipoLiquidacion" = \'AE\' AND (EXTRACT(month FROM "fechaCreacion"::date) = EXTRACT(month FROM now()::date));',
+    'SELECT * FROM impuesto.solicitud_view sv INNER JOIN impuesto.contribuyente c ON sv.contribuyente = c.id_contribuyente INNER JOIN impuesto.registro_municipal rm ON c.id_contribuyente = rm.id_contribuyente WHERE c.documento = $1 AND rm.referencia_municipal = $2 AND c.tipo_documento = $3 AND sv.aprobado = false AND "descripcionRamo" = \'AE\' AND (EXTRACT(month FROM sv."fechaCreacion"::date) = EXTRACT(month FROM now()::date));',
   CURRENT_SM_APPLICATION_EXISTS:
-    'SELECT * FROM impuesto.solicitud_view WHERE documento = $1 AND rim = $2 AND nacionalidad = $3 AND aprobado = false AND "tipoLiquidacion" = \'SM\' AND (EXTRACT(month FROM "fechaCreacion"::date) = EXTRACT(month FROM now()::date));',
+    'SELECT * FROM impuesto.solicitud_view sv INNER JOIN impuesto.contribuyente c ON sv.contribuyente = c.id_contribuyente INNER JOIN impuesto.registro_municipal rm ON c.id_contribuyente = rm.id_contribuyente WHERE c.documento = $1 AND rm.referencia_municipal = $2 AND c.tipo_documento = $3 AND sv.aprobado = false AND "descripcionRamo" = \'SM\' AND (EXTRACT(month FROM sv."fechaCreacion"::date) = EXTRACT(month FROM now()::date));',
   CURRENT_IU_APPLICATION_EXISTS:
-    'SELECT * FROM impuesto.solicitud_view WHERE documento = $1 AND rim = $2 AND nacionalidad = $3 AND aprobado = false AND "tipoLiquidacion" = \'IU\' AND (EXTRACT(month FROM "fechaCreacion"::date) = EXTRACT(month FROM now()::date));',
+    'SELECT * FROM impuesto.solicitud_view sv INNER JOIN impuesto.contribuyente c ON sv.contribuyente = c.id_contribuyente INNER JOIN impuesto.registro_municipal rm ON c.id_contribuyente = rm.id_contribuyente WHERE c.documento = $1 AND rm.referencia_municipal = $2 AND c.tipo_documento = $3 AND sv.aprobado = false AND "descripcionRamo" = \'IU\' AND (EXTRACT(month FROM sv."fechaCreacion"::date) = EXTRACT(month FROM now()::date));',
   CURRENT_PP_APPLICATION_EXISTS:
-    'SELECT * FROM impuesto.solicitud_view WHERE documento = $1 AND rim = $2 AND nacionalidad = $3 AND aprobado = false AND "tipoLiquidacion" = \'PP\' AND (EXTRACT(month FROM "fechaCreacion"::date) = EXTRACT(month FROM now()::date));',
+    'SELECT * FROM impuesto.solicitud_view sv INNER JOIN impuesto.contribuyente c ON sv.contribuyente = c.id_contribuyente INNER JOIN impuesto.registro_municipal rm ON c.id_contribuyente = rm.id_contribuyente WHERE c.documento = $1 AND rm.referencia_municipal = $2 AND c.tipo_documento = $3 AND sv.aprobado = false AND "descripcionRamo" = \'PP\' AND (EXTRACT(month FROM sv."fechaCreacion"::date) = EXTRACT(month FROM now()::date));',
   CREATE_AE_BREAKDOWN_FOR_SETTLEMENT: 'INSERT INTO impuesto.ae_desglose (id_liquidacion, id_aforo, monto_declarado) VALUES ($1, $2, $3) RETURNING *',
   CREATE_SM_BREAKDOWN_FOR_SETTLEMENT:
     'INSERT INTO impuesto.sm_desglose (id_liquidacion, id_inmueble, monto_aseo, monto_gas) VALUES ($1, $2, $3, $4) RETURNING *',

@@ -241,7 +241,7 @@ export const getTaxPayerInfo = async ({ docType, document, type }) => {
     if (taxPayerExists > 0) return { status: 409, message: 'Ya existe un contribuyente registrado con estos datos' };
     if (type === 'NATURAL') {
       const naturalContributor = (await gtic.query(queries.gtic.GET_NATURAL_CONTRIBUTOR, [document, docType])).rows[0];
-      if (!naturalContributor) return { status: 204 };
+      if (!naturalContributor) return { status: 200, contribuyente: { tipoContribuyente: type }, message: 'No existe un usuario registrado en SEDEMAT' };
       taxPayer = {
         tipoContribuyente: type,
         nombreCompleto: `${naturalContributor.nb_contribuyente} ${naturalContributor.ap_contribuyente}`,
@@ -257,7 +257,7 @@ export const getTaxPayerInfo = async ({ docType, document, type }) => {
       };
     } else {
       const juridicalContributor = (await gtic.query(queries.gtic.GET_JURIDICAL_CONTRIBUTOR, [document, docType])).rows[0];
-      if (!juridicalContributor) return { status: 204 };
+      if (!juridicalContributor) return { status: 200, contribuyente: { tipoContribuyente: type }, message: 'No existe un usuario registrado en SEDEMAT' };
       taxPayer = {
         tipoContribuyente: type,
         razonSocial: juridicalContributor.tx_razon_social,
@@ -285,7 +285,7 @@ export const getTaxPayerInfo = async ({ docType, document, type }) => {
     throw {
       status: 500,
       error,
-      message: errorMessageGenerator(error) || 'Error al obtener los impuestos',
+      message: errorMessageGenerator(error) || 'Error al obtener datos del contribuyente',
     };
   } finally {
     client.release();
