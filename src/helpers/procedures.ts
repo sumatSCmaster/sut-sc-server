@@ -169,7 +169,7 @@ const getSettlementInstances = async (user, client: PoolClient) => {
     return response.map((el) => {
       const liquidacion: Liquidacion & { pagado: string; aprobado: string } = {
         id: el.id_liquidacion,
-        tipoProcedimiento: el.descripcion,
+        ramo: el.descripcion,
         fecha: { month: el.mes, year: el.anio },
         monto: el.monto,
         certificado: el.certificado,

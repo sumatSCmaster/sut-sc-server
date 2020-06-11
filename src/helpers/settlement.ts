@@ -245,39 +245,39 @@ export const getTaxPayerInfo = async ({ docType, document, type }) => {
       taxPayer = {
         tipoContribuyente: type,
         nombreCompleto: `${naturalContributor.nb_contribuyente} ${naturalContributor.ap_contribuyente}`.replace('null', '').trim(),
-        telefonoMovil: naturalContributor.nu_telf_movil.trim(),
-        telefonoHabitacion: naturalContributor.nu_telf_hab.trim(),
-        email: naturalContributor.tx_email.trim(),
+        telefonoMovil: (naturalContributor.nu_telf_movil || '').trim(),
+        telefonoHabitacion: (naturalContributor.nu_telf_hab || '').trim(),
+        email: (naturalContributor.tx_email || '').trim(),
         parroquia: naturalContributor.tx_direccion
           ? (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [naturalContributor.tx_direccion.split('Parroquia')[1].split('Sector')[0].trim()])).rows[0]
               .id || undefined
           : undefined,
-        sector: naturalContributor.sector.trim(),
+        sector: (naturalContributor.sector || '').trim(),
         direccion: naturalContributor.tx_direccion
           ? 'Avenida ' + naturalContributor.tx_direccion.split('Parroquia')[1].split('Avenida')[1].split('Pto')[0].trim().replace(/.$/, '')
           : undefined,
-        puntoReferencia: naturalContributor.tx_punto_referencia.trim(),
+        puntoReferencia: (naturalContributor.tx_punto_referencia || '').trim(),
       };
     } else {
       const juridicalContributor = (await gtic.query(queries.gtic.GET_JURIDICAL_CONTRIBUTOR, [document, docType])).rows[0];
       if (!juridicalContributor) return { status: 200, contribuyente: { tipoContribuyente: type }, message: 'No existe un usuario registrado en SEDEMAT' };
       taxPayer = {
         tipoContribuyente: type,
-        razonSocial: juridicalContributor.tx_razon_social.trim(),
-        siglas: juridicalContributor.tx_siglas.trim(),
-        denomComercial: juridicalContributor.tx_denom_comercial.trim(),
-        telefonoMovil: juridicalContributor.nu_telf_movil.trim(),
-        telefonoHabitacion: juridicalContributor.nu_telf_hab.trim(),
-        email: juridicalContributor.tx_email.trim(),
+        razonSocial: (juridicalContributor.tx_razon_social || '').trim(),
+        siglas: (juridicalContributor.tx_siglas || '').trim(),
+        denomComercial: (juridicalContributor.tx_denom_comercial || '').trim(),
+        telefonoMovil: (juridicalContributor.nu_telf_movil || '').trim(),
+        telefonoHabitacion: (juridicalContributor.nu_telf_hab || '').trim(),
+        email: (juridicalContributor.tx_email || '').trim(),
         parroquia: juridicalContributor.tx_direccion
           ? (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [juridicalContributor.tx_direccion.split('Parroquia')[1].split('Sector')[0].trim()])).rows[0]
               .id || undefined
           : undefined,
-        sector: juridicalContributor.sector.trim(),
+        sector: (juridicalContributor.sector || '').trim(),
         direccion: juridicalContributor.tx_direccion
           ? 'Avenida ' + juridicalContributor.tx_direccion.split('Parroquia')[1].split('Avenida')[1].split('Pto')[0].trim().replace(/.$/, '')
           : undefined,
-        puntoReferencia: juridicalContributor.tx_punto_referencia.trim(),
+        puntoReferencia: (juridicalContributor.tx_punto_referencia || '').trim(),
       };
     }
     return {
