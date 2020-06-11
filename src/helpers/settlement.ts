@@ -243,6 +243,7 @@ export const getTaxPayerInfo = async ({ docType, document, type }) => {
       const naturalContributor = (await gtic.query(queries.gtic.GET_NATURAL_CONTRIBUTOR, [document, docType])).rows[0];
       if (!naturalContributor) return { status: 204 };
       taxPayer = {
+        tipoContribuyente: type,
         nombreCompleto: `${naturalContributor.nb_contribuyente} ${naturalContributor.ap_contribuyente}`,
         telefonoMovil: naturalContributor.nu_telf_movil,
         telefonoHabitacion: naturalContributor.nu_telf_hab,
@@ -258,6 +259,7 @@ export const getTaxPayerInfo = async ({ docType, document, type }) => {
       const juridicalContributor = (await gtic.query(queries.gtic.GET_JURIDICAL_CONTRIBUTOR, [document, docType])).rows[0];
       if (!juridicalContributor) return { status: 204 };
       taxPayer = {
+        tipoContribuyente: type,
         razonSocial: juridicalContributor.tx_razon_social,
         siglas: juridicalContributor.tx_siglas,
         denomComercial: juridicalContributor.tx_denom_comercial,
