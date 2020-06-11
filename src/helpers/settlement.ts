@@ -248,11 +248,14 @@ export const getTaxPayerInfo = async ({ docType, document, type }) => {
         telefonoMovil: naturalContributor.nu_telf_movil,
         telefonoHabitacion: naturalContributor.nu_telf_hab,
         email: naturalContributor.tx_email,
-        parroquia:
-          (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [naturalContributor.tx_direccion.split('Parroquia')[1].split('Sector')[0].trim()])).rows[0]
-            .id || undefined,
+        parroquia: naturalContributor.tx_direccion
+          ? (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [naturalContributor.tx_direccion.split('Parroquia')[1].split('Sector')[0].trim()])).rows[0]
+              .id || undefined
+          : undefined,
         sector: naturalContributor.sector,
-        direccion: 'Avenida ' + naturalContributor.tx_direccion.split('Parroquia')[1].split('Avenida')[1].split('Pto')[0].trim().replace(/.$/, ''),
+        direccion: naturalContributor.tx_direccion
+          ? 'Avenida ' + naturalContributor.tx_direccion.split('Parroquia')[1].split('Avenida')[1].split('Pto')[0].trim().replace(/.$/, '')
+          : undefined,
         puntoReferencia: naturalContributor.tx_punto_referencia,
       };
     } else {
