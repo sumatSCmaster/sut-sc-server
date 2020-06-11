@@ -579,9 +579,9 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_SETTLEMENTS_BY_APPLICATION_INSTANCE:
     'SELECT l.*, p.descripcion AS "tipoProcedimiento" FROM impuesto.liquidacion l INNER JOIN impuesto.procedimiento p ON l.id_procedimiento=p.id_procedimiento WHERE id_solicitud = $1',
   GET_SETTLEMENT_INSTANCES:
-    'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.procedimiento ON procedimiento.id_procedimiento = l.id_procedimiento',
+    'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo',
   GET_SETTLEMENT_INSTANCES_BY_ID:
-    'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.procedimiento ON procedimiento.id_procedimiento = l.id_procedimiento WHERE s.id_usuario = $1;',
+    'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo WHERE s.id_usuario = $1;',
   GET_APPLICATION_VIEW_BY_SETTLEMENT: 'SELECT * FROM impuesto.solicitud_view WHERE "idLiquidacion" = $1',
   GET_LAST_FINE_FOR_LATE_APPLICATION:
     'SELECT * FROM impuesto.multa ml INNER JOIN impuesto.solicitud sl ON ml.id_solicitud = sl.id_solicitud WHERE contribuyente = $1 ORDER BY sl.fecha DESC LIMIT 1',
