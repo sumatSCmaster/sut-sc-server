@@ -397,6 +397,59 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
   }
 };
 
+export const getApplicationsAndSettlementsForContributor = async ({ docType, document }: { docType: string; document: string }) => {
+  const client = await pool.connect();
+  try {
+    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const applications: Solicitud[] = await Promise.all(
+      (await client.query(queries.GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR, [docType, document])).rows.map(async (el) => {
+        return {
+          id: el.id_solicitud,
+          usuario: el.usuario,
+          documento: el.documento,
+          contribuyente: el.contribuyente,
+          rim: el.rim,
+          nacionalidad: el.nacionalidad,
+          aprobado: el.aprobado,
+          pagado: el.pagado,
+          fecha: el.fecha,
+          monto: el.monto_total,
+          liquidaciones: await Promise.all(
+            (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows.map((el) => {
+              return {
+                id: el.id_liquidacion,
+                tipoProcedimiento: el.tipoProcedimiento,
+                fecha: { month: el.mes, year: el.anio },
+                monto: el.monto,
+                certificado: el.certificado,
+                recibo: el.recibo,
+              };
+            })
+          ),
+          multas: await Promise.all(
+            (await client.query(queries.GET_FINES_BY_APPLICATION, [el.id_solicitud])).rows.map((el) => {
+              return {
+                id: el.id_multa,
+                fecha: { month: el.mes, year: el.anio },
+                monto: +el.monto * UTMM,
+              };
+            })
+          ),
+        };
+      })
+    );
+    return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', solicitudes: applications };
+  } catch (error) {
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 export const insertSettlements = async ({ process, user }) => {
   const client = await pool.connect();
   const { impuestos } = process;

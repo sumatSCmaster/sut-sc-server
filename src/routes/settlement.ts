@@ -9,6 +9,7 @@ import {
   createCertificateForApplication,
   createAccountStatement,
   getTaxPayerInfo,
+  getApplicationsAndSettlementsForContributor,
 } from '@helpers/settlement';
 
 const router = Router();
@@ -21,8 +22,6 @@ router.get('/', authenticate('jwt'), async (req, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-router.get('/', authenticate('jwt'), async (req, res) => {});
-
 router.get('/taxPayer', authenticate('jwt'), async (req, res) => {
   const { tipoDocumento, documento, tipoContribuyente } = req.query;
   const [err, data] = await fulfill(getTaxPayerInfo({ docType: tipoDocumento, document: documento, type: tipoContribuyente }));
@@ -32,6 +31,14 @@ router.get('/taxPayer', authenticate('jwt'), async (req, res) => {
 
 router.get('/instances', authenticate('jwt'), async (req: any, res) => {
   const [err, data] = await fulfill(getApplicationsAndSettlements({ user: req.user }));
+  if (err) res.status(err.status).json(err);
+  if (data) res.status(data.status).json(data);
+});
+
+//TODO: incluir validacion de que sea funcionario
+router.get('/instances/official', authenticate('jwt'), async (req, res) => {
+  const { tipoDocumento, documento } = req.query;
+  const [err, data] = await fulfill(getApplicationsAndSettlementsForContributor({ docType: tipoDocumento, document: documento }));
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
 });

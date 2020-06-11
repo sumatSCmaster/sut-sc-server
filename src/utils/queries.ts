@@ -575,6 +575,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   TAX_PAYER_EXISTS: 'SELECT * FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2',
   GET_APPLICATION_BY_ID: 'SELECT * FROM impuesto.solicitud WHERE id_solicitud = $1',
   GET_APPLICATION_INSTANCES_BY_USER: 'SELECT * FROM impuesto.solicitud WHERE id_usuario = $1',
+  GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR: 'SELECT * FROM impuesto.solicitud WHERE nacionalidad = $1 AND documento = $2',
   GET_SETTLEMENTS_BY_APPLICATION_INSTANCE:
     'SELECT l.*, p.descripcion AS "tipoProcedimiento" FROM impuesto.liquidacion l INNER JOIN impuesto.procedimiento p ON l.id_procedimiento=p.id_procedimiento WHERE id_solicitud = $1',
   GET_SETTLEMENT_INSTANCES:
