@@ -232,6 +232,65 @@ export const getSettlements = async ({ document, reference, type, user }) => {
   }
 };
 
+export const getTaxPayerInfo = async ({ docType, document, type }) => {
+  const client = await pool.connect();
+  const gtic = await gticPool.connect();
+  let taxPayer;
+  try {
+    const taxPayerExists = (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rowCount;
+    if (taxPayerExists > 0) return { status: 409, message: 'Ya existe un contribuyente registrado con estos datos' };
+    if (type === 'NATURAL') {
+      const naturalContributor = (await gtic.query(queries.gtic.GET_NATURAL_CONTRIBUTOR, [document, docType])).rows[0];
+      if (!naturalContributor) return { status: 204 };
+      taxPayer = {
+        nombreCompleto: `${naturalContributor.nb_contribuyente} ${naturalContributor.ap_contribuyente}`,
+        telefonoMovil: naturalContributor.nu_telf_movil,
+        telefonoHabitacion: naturalContributor.nu_telf_hab,
+        email: naturalContributor.tx_email,
+        parroquia:
+          (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [naturalContributor.tx_direccion.split('Parroquia')[1].split('Sector')[0].trim()])).rows[0]
+            .id || undefined,
+        sector: naturalContributor.sector,
+        direccion: 'Avenida ' + naturalContributor.tx_direccion.split('Parroquia')[1].split('Avenida')[1].split('Pto')[0].trim().replace(/.$/, ''),
+        puntoReferencia: naturalContributor.tx_punto_referencia,
+      };
+    } else {
+      const juridicalContributor = (await gtic.query(queries.gtic.GET_JURIDICAL_CONTRIBUTOR, [document, docType])).rows[0];
+      if (!juridicalContributor) return { status: 204 };
+      taxPayer = {
+        razonSocial: juridicalContributor.tx_razon_social,
+        siglas: juridicalContributor.tx_siglas,
+        denomComercial: juridicalContributor.tx_denom_comercial,
+        telefonoMovil: juridicalContributor.nu_telf_movil,
+        telefonoHabitacion: juridicalContributor.nu_telf_hab,
+        email: juridicalContributor.tx_email,
+        parroquia:
+          (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [juridicalContributor.tx_direccion.split('Parroquia')[1].split('Sector')[0].trim()])).rows[0]
+            .id || undefined,
+        sector: juridicalContributor.sector,
+        direccion: 'Avenida ' + juridicalContributor.tx_direccion.split('Parroquia')[1].split('Avenida')[1].split('Pto')[0].trim().replace(/.$/, ''),
+        puntoReferencia: juridicalContributor.tx_punto_referencia,
+      };
+    }
+    return {
+      status: 200,
+      message: 'Datos del registro obtenidos',
+      contribuyente: taxPayer,
+    };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al obtener los impuestos',
+    };
+  } finally {
+    client.release();
+    gtic.release();
+  }
+};
+
 export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<Solicitud> => {
   const client = await pool.connect();
   try {
