@@ -163,14 +163,10 @@ export interface ActividadEconomica {
 export interface Solicitud {
   id: number;
   usuario: Usuario;
-  documento: string;
   contribuyente: string;
-  rim?: string;
-  nacionalidad: string;
   aprobado: boolean;
   fecha: Date;
   monto: number;
-  pagado: boolean;
   liquidaciones: Liquidacion[];
   multas?: MultaImpuesto[];
 }
@@ -183,7 +179,7 @@ export interface MultaImpuesto {
 
 export interface Liquidacion {
   id: number;
-  tipoProcedimiento: string;
+  ramo: string;
   fecha: Fecha;
   monto: number;
   certificado?: string;

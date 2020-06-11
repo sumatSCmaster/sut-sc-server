@@ -577,7 +577,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_APPLICATION_INSTANCES_BY_USER: 'SELECT * FROM impuesto.solicitud WHERE id_usuario = $1',
   GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR: 'SELECT * FROM impuesto.solicitud WHERE nacionalidad = $1 AND documento = $2',
   GET_SETTLEMENTS_BY_APPLICATION_INSTANCE:
-    'SELECT l.*, p.descripcion AS "tipoProcedimiento" FROM impuesto.liquidacion l INNER JOIN impuesto.procedimiento p ON l.id_procedimiento=p.id_procedimiento WHERE id_solicitud = $1',
+    'SELECT l.*, r.descripcion AS "tipoProcedimiento" FROM impuesto.liquidacion l INNER JOIN impuesto.subramo sr ON l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo r ON sr.id_ramo = r.id_ramo WHERE id_solicitud = $1',
   GET_SETTLEMENT_INSTANCES:
     'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo',
   GET_SETTLEMENT_INSTANCES_BY_ID:
