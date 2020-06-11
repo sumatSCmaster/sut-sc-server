@@ -244,7 +244,7 @@ export const getTaxPayerInfo = async ({ docType, document, type }) => {
       if (!naturalContributor) return { status: 200, contribuyente: { tipoContribuyente: type }, message: 'No existe un usuario registrado en SEDEMAT' };
       taxPayer = {
         tipoContribuyente: type,
-        nombreCompleto: `${naturalContributor.nb_contribuyente} ${naturalContributor.ap_contribuyente}`,
+        nombreCompleto: `${naturalContributor.nb_contribuyente} ${naturalContributor.ap_contribuyente}`.replace('null', '').trim(),
         telefonoMovil: naturalContributor.nu_telf_movil,
         telefonoHabitacion: naturalContributor.nu_telf_hab,
         email: naturalContributor.tx_email,

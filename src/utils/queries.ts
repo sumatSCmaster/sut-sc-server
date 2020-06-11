@@ -483,7 +483,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_COMPLETED_APPLICATION_TOTAL: 'SELECT COUNT (*) FROM impuesto.solicitud WHERE aprobado = true',
   GET_MONTHLY_COMPLETED_APPLICATION_TOTAL: 'SELECT COUNT (*) FROM impuesto.solicitud WHERE EXTRACT(MONTH FROM fecha) = $1 AND aprobado = true',
   GET_RAISED_MONEY_BY_BRANCH:
-    'SELECT SUM("montoLiquidacion"), "tipoLiquidacion" FROM impuesto.solicitud_view WHERE "fechaCreacion"::date = CURRENT_DATE::date GROUP BY "tipoLiquidacion" ORDER BY sum DESC',
+    'SELECT SUM("montoLiquidacion"), "descripcionRamo" FROM impuesto.solicitud_view WHERE "fechaCreacion"::date = CURRENT_DATE::date GROUP BY "descripcionRamo" ORDER BY sum DESC',
   GET_SETTLEMENTS_BY_DAY:
     "SELECT COUNT (*), sl.fecha::date AS fecha_creacion FROM impuesto.solicitud sl INNER JOIN impuesto.liquidacion li ON sl.id_solicitud = li.id_solicitud AND sl.fecha::date > CURRENT_DATE - INTERVAL '30 days' GROUP BY sl.fecha::date;",
   GET_APPLICATION_COUNT_LAST_20_DAYS:
@@ -591,14 +591,10 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     'SELECT * FROM impuesto.liquidacion WHERE id_procedimiento = $1 AND id_solicitud = $2 ORDER BY id_liquidacion DESC LIMIT 1;',
   GET_TOTAL_PAYMENT_OF_PROCESS_SETTLEMENT:
     'SELECT SUM(monto) AS "totalLiquidaciones" FROM impuesto.liquidacion WHERE id_procedimiento = $1 AND id_solicitud = $2',
-  GET_AE_SETTLEMENTS_FOR_CONTRIBUTOR:
-    'SELECT * FROM impuesto.ae_desglose ae INNER JOIN impuesto.solicitud_view sv ON ae.id_liquidacion = sv."idLiquidacion" WHERE contribuyente = $1',
-  GET_SM_SETTLEMENTS_FOR_CONTRIBUTOR:
-    'SELECT * FROM impuesto.sm_desglose sm INNER JOIN impuesto.solicitud_view sv ON sm.id_liquidacion = sv."idLiquidacion" WHERE contribuyente = $1',
-  GET_IU_SETTLEMENTS_FOR_CONTRIBUTOR:
-    'SELECT * FROM impuesto.iu_desglose iu INNER JOIN impuesto.solicitud_view sv ON iu.id_liquidacion = sv."idLiquidacion" WHERE contribuyente = $1',
-  GET_PP_SETTLEMENTS_FOR_CONTRIBUTOR:
-    'SELECT * FROM impuesto.pp_desglose pp INNER JOIN impuesto.solicitud_view sv ON pp.id_liquidacion = sv."idLiquidacion" WHERE contribuyente = $1',
+  GET_AE_SETTLEMENTS_FOR_CONTRIBUTOR: 'SELECT * FROM impuesto.solicitud_view sv WHERE contribuyente = $1 AND "descripcionRamo" = \'AE\'',
+  GET_SM_SETTLEMENTS_FOR_CONTRIBUTOR: 'SELECT * FROM impuesto.solicitud_view sv WHERE contribuyente = $1 AND "descripcionRamo" = \'SM\'',
+  GET_IU_SETTLEMENTS_FOR_CONTRIBUTOR: 'SELECT * FROM impuesto.solicitud_view sv WHERE contribuyente = $1 AND "descripcionRamo" = \'IU\'',
+  GET_PP_SETTLEMENTS_FOR_CONTRIBUTOR: 'SELECT * FROM impuesto.solicitud_view sv WHERE contribuyente = $1 AND "descripcionRamo" = \'PP\'',
 
   GET_FINES_BY_APPLICATION: 'SELECT * FROM impuesto.multa WHERE id_solicitud = $1',
   GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID: (typePick) => {
