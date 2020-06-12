@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.1 (Ubuntu 12.1-1.pgdg19.04+1)
--- Dumped by pg_dump version 12.1 (Ubuntu 12.1-1.pgdg19.04+1)
+-- Dumped from database version 12.3
+-- Dumped by pg_dump version 12.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -17,36 +17,44 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: impuesto; Type: SCHEMA; Schema: -; Owner: -
+-- Name: impuesto; Type: SCHEMA; Schema: -; Owner: postgres
 --
 
 CREATE SCHEMA impuesto;
 
 
+ALTER SCHEMA impuesto OWNER TO postgres;
+
 --
--- Name: timetable; Type: SCHEMA; Schema: -; Owner: -
+-- Name: timetable; Type: SCHEMA; Schema: -; Owner: postgres
 --
 
 CREATE SCHEMA timetable;
 
 
+ALTER SCHEMA timetable OWNER TO postgres;
+
 --
--- Name: valores_fiscales; Type: SCHEMA; Schema: -; Owner: -
+-- Name: valores_fiscales; Type: SCHEMA; Schema: -; Owner: postgres
 --
 
 CREATE SCHEMA valores_fiscales;
 
 
+ALTER SCHEMA valores_fiscales OWNER TO postgres;
+
 --
--- Name: cron; Type: DOMAIN; Schema: timetable; Owner: -
+-- Name: cron; Type: DOMAIN; Schema: timetable; Owner: postgres
 --
 
 CREATE DOMAIN timetable.cron AS text
 	CONSTRAINT cron_check CHECK ((((substr(VALUE, 1, 6) = ANY (ARRAY['@every'::text, '@after'::text])) AND ((substr(VALUE, 7))::interval IS NOT NULL)) OR (VALUE = '@reboot'::text) OR (VALUE ~ '^(((\d+,)+\d+|(\d+(\/|-)\d+)|(\*(\/|-)\d+)|\d+|\*) +){4}(((\d+,)+\d+|(\d+(\/|-)\d+)|(\*(\/|-)\d+)|\d+|\*) ?)$'::text)));
 
 
+ALTER DOMAIN timetable.cron OWNER TO postgres;
+
 --
--- Name: execution_status; Type: TYPE; Schema: timetable; Owner: -
+-- Name: execution_status; Type: TYPE; Schema: timetable; Owner: postgres
 --
 
 CREATE TYPE timetable.execution_status AS ENUM (
@@ -57,8 +65,10 @@ CREATE TYPE timetable.execution_status AS ENUM (
 );
 
 
+ALTER TYPE timetable.execution_status OWNER TO postgres;
+
 --
--- Name: log_type; Type: TYPE; Schema: timetable; Owner: -
+-- Name: log_type; Type: TYPE; Schema: timetable; Owner: postgres
 --
 
 CREATE TYPE timetable.log_type AS ENUM (
@@ -71,8 +81,10 @@ CREATE TYPE timetable.log_type AS ENUM (
 );
 
 
+ALTER TYPE timetable.log_type OWNER TO postgres;
+
 --
--- Name: task_kind; Type: TYPE; Schema: timetable; Owner: -
+-- Name: task_kind; Type: TYPE; Schema: timetable; Owner: postgres
 --
 
 CREATE TYPE timetable.task_kind AS ENUM (
@@ -82,8 +94,161 @@ CREATE TYPE timetable.task_kind AS ENUM (
 );
 
 
+ALTER TYPE timetable.task_kind OWNER TO postgres;
+
 --
--- Name: casos_sociales_transicion(text, text); Type: FUNCTION; Schema: public; Owner: -
+-- Name: complete_solicitud_state(integer, text, json, boolean); Type: FUNCTION; Schema: impuesto; Owner: postgres
+--
+
+CREATE FUNCTION impuesto.complete_solicitud_state(_id_solicitud integer, event text, _datos json DEFAULT NULL::json, _aprobado boolean DEFAULT NULL::boolean) RETURNS TABLE(state text)
+    LANGUAGE plpgsql
+    AS $$
+  BEGIN
+    INSERT INTO impuesto.evento_solicitud values (default, _id_solicitud, event, now());
+    
+    RETURN QUERY SELECT ss.state FROM impuesto.solicitud_state ss WHERE id = _id_solicitud;
+
+    IF _aprobado IS NOT NULL THEN
+                UPDATE impuesto.solicitud SET aprobado = _aprobado WHERE id_solicitud = _id_solicitud;
+                UPDATE impuesto.solicitud SET fecha_aprobado = now() WHERE id_solicitud = _id_solicitud;
+    END IF;
+  END;
+$$;
+
+
+ALTER FUNCTION impuesto.complete_solicitud_state(_id_solicitud integer, event text, _datos json, _aprobado boolean) OWNER TO postgres;
+
+--
+-- Name: eventos_solicitud_trigger_func(); Type: FUNCTION; Schema: impuesto; Owner: postgres
+--
+
+CREATE FUNCTION impuesto.eventos_solicitud_trigger_func() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  new_state text;
+BEGIN
+  SELECT public.solicitud_fsm(event ORDER BY id_evento_solicitud)
+  FROM (
+    SELECT id_evento_solicitud, event FROM evento_solicitud WHERE id_solicitud = new.id_solicitud
+    UNION
+    SELECT new.id_evento_solicitud, new.event
+  ) s
+  INTO new_state;
+
+  IF new_state = 'error' THEN
+    RAISE EXCEPTION 'evento invalido';
+  END IF;
+
+  RETURN new;
+END
+$$;
+
+
+ALTER FUNCTION impuesto.eventos_solicitud_trigger_func() OWNER TO postgres;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: solicitud; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.solicitud (
+    id_solicitud integer NOT NULL,
+    id_usuario integer,
+    aprobado boolean DEFAULT false,
+    fecha date,
+    fecha_aprobado date,
+    id_tipo_tramite integer,
+    id_contribuyente integer
+);
+
+
+ALTER TABLE impuesto.solicitud OWNER TO postgres;
+
+--
+-- Name: insert_solicitud(integer, integer); Type: FUNCTION; Schema: impuesto; Owner: postgres
+--
+
+CREATE FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer) RETURNS SETOF impuesto.solicitud
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    solicitudRow impuesto.solicitud%ROWTYPE;
+    BEGIN
+        INSERT INTO impuesto.solicitud (id_usuario, aprobado, fecha, id_tipo_tramite) VALUES (_id_usuario, false, now(), _id_tipo_tramite) RETURNING * INTO solicitudRow;
+
+        INSERT INTO impuesto.evento_tramite values (default, solicitudRow.id_solicitud, 'iniciar', now());   
+
+        RETURN QUERY SELECT * FROM impuesto.solicitud WHERE id_solicitud=solicitudRow.id_solicitud;
+
+        RETURN;
+    END;
+$$;
+
+
+ALTER FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer) OWNER TO postgres;
+
+--
+-- Name: solicitud_transicion(text, text); Type: FUNCTION; Schema: impuesto; Owner: postgres
+--
+
+CREATE FUNCTION impuesto.solicitud_transicion(state text, event text) RETURNS text
+    LANGUAGE sql
+    AS $$
+    SELECT CASE state
+        WHEN 'creado' THEN
+            CASE event
+                WHEN 'iniciar' THEN 'iniciado' 
+                ELSE 'error' -- siuuuu
+            END 
+        WHEN 'iniciado' THEN
+            CASE event
+                WHEN 'ingresardatos_pi' THEN 'ingresardatos'
+                WHEN 'aprobacioncajero_pi' THEN 'finalizado'
+                ELSE 'error'
+            END
+        WHEN 'ingresardatos' THEN
+            CASE event
+                WHEN 'validar_pi' THEN 'validando'
+                ELSE 'error'
+            END
+        WHEN 'validando' THEN
+            CASE event
+                WHEN 'finalizar_pi' THEN 'finalizado'
+                WHEN 'rebotado_pi' THEN 'ingresardatos'
+                ELSE 'error'
+            END
+        ELSE 'error' -- ausilio
+    END -- yaaaaaaaaaaaaaaaaaaa
+$$;
+
+
+ALTER FUNCTION impuesto.solicitud_transicion(state text, event text) OWNER TO postgres;
+
+--
+-- Name: update_solicitud_state(integer, text); Type: FUNCTION; Schema: impuesto; Owner: postgres
+--
+
+CREATE FUNCTION impuesto.update_solicitud_state(_id_solicitud integer, event text) RETURNS TABLE(state text)
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+        INSERT INTO impuesto.evento_solicitud values (default, _id_solicitud, event, now());
+          
+        RETURN QUERY SELECT ss.state FROM impuesto.solicitud_state ss WHERE id = _id_solicitud;
+                  
+			
+    END;
+$$;
+
+
+ALTER FUNCTION impuesto.update_solicitud_state(_id_solicitud integer, event text) OWNER TO postgres;
+
+--
+-- Name: casos_sociales_transicion(text, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.casos_sociales_transicion(state text, event text) RETURNS text
@@ -126,8 +291,10 @@ CREATE FUNCTION public.casos_sociales_transicion(state text, event text) RETURNS
 $$;
 
 
+ALTER FUNCTION public.casos_sociales_transicion(state text, event text) OWNER TO postgres;
+
 --
--- Name: codigo_caso(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: codigo_caso(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.codigo_caso() RETURNS trigger
@@ -160,8 +327,10 @@ BEGIN
  $$;
 
 
+ALTER FUNCTION public.codigo_caso() OWNER TO postgres;
+
 --
--- Name: codigo_multa(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: codigo_multa(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.codigo_multa() RETURNS trigger
@@ -194,8 +363,10 @@ BEGIN
 $$;
 
 
+ALTER FUNCTION public.codigo_multa() OWNER TO postgres;
+
 --
--- Name: codigo_tramite(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: codigo_tramite(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.codigo_tramite() RETURNS trigger
@@ -229,8 +400,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.codigo_tramite() OWNER TO postgres;
+
 --
--- Name: complete_multa_state(integer, text, json, character varying, boolean); Type: FUNCTION; Schema: public; Owner: -
+-- Name: complete_multa_state(integer, text, json, character varying, boolean); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.complete_multa_state(_id_multa integer, event text, _datos json DEFAULT NULL::json, _url_certificado character varying DEFAULT NULL::character varying, _aprobado boolean DEFAULT NULL::boolean) RETURNS TABLE(state text)
@@ -252,8 +425,10 @@ CREATE FUNCTION public.complete_multa_state(_id_multa integer, event text, _dato
 $$;
 
 
+ALTER FUNCTION public.complete_multa_state(_id_multa integer, event text, _datos json, _url_certificado character varying, _aprobado boolean) OWNER TO postgres;
+
 --
--- Name: complete_tramite_state(integer, text, json, character varying, boolean); Type: FUNCTION; Schema: public; Owner: -
+-- Name: complete_tramite_state(integer, text, json, character varying, boolean); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.complete_tramite_state(_id_tramite integer, event text, _datos json DEFAULT NULL::json, _url_certificado character varying DEFAULT NULL::character varying, _aprobado boolean DEFAULT NULL::boolean) RETURNS TABLE(state text)
@@ -276,8 +451,10 @@ CREATE FUNCTION public.complete_tramite_state(_id_tramite integer, event text, _
                                                               $$;
 
 
+ALTER FUNCTION public.complete_tramite_state(_id_tramite integer, event text, _datos json, _url_certificado character varying, _aprobado boolean) OWNER TO postgres;
+
 --
--- Name: evento_tramite_trigger_func(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: evento_tramite_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.evento_tramite_trigger_func() RETURNS trigger
@@ -303,8 +480,10 @@ DECLARE
                                 $$;
 
 
+ALTER FUNCTION public.evento_tramite_trigger_func() OWNER TO postgres;
+
 --
--- Name: eventos_casos_sociales_trigger_func(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: eventos_casos_sociales_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.eventos_casos_sociales_trigger_func() RETURNS trigger
@@ -330,8 +509,10 @@ END
 $$;
 
 
+ALTER FUNCTION public.eventos_casos_sociales_trigger_func() OWNER TO postgres;
+
 --
--- Name: eventos_multa_trigger_func(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: eventos_multa_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.eventos_multa_trigger_func() RETURNS trigger
@@ -357,8 +538,10 @@ END
 $$;
 
 
+ALTER FUNCTION public.eventos_multa_trigger_func() OWNER TO postgres;
+
 --
--- Name: eventos_tramite_trigger_func(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: eventos_tramite_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.eventos_tramite_trigger_func() RETURNS trigger
@@ -384,8 +567,10 @@ DECLARE
                                 $$;
 
 
+ALTER FUNCTION public.eventos_tramite_trigger_func() OWNER TO postgres;
+
 --
--- Name: caso_social_fsm(text); Type: AGGREGATE; Schema: public; Owner: -
+-- Name: caso_social_fsm(text); Type: AGGREGATE; Schema: public; Owner: postgres
 --
 
 CREATE AGGREGATE public.caso_social_fsm(text) (
@@ -395,12 +580,10 @@ CREATE AGGREGATE public.caso_social_fsm(text) (
 );
 
 
-SET default_tablespace = '';
-
-SET default_table_access_method = heap;
+ALTER AGGREGATE public.caso_social_fsm(text) OWNER TO postgres;
 
 --
--- Name: caso_social; Type: TABLE; Schema: public; Owner: -
+-- Name: caso_social; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.caso_social (
@@ -416,8 +599,10 @@ CREATE TABLE public.caso_social (
 );
 
 
+ALTER TABLE public.caso_social OWNER TO postgres;
+
 --
--- Name: evento_caso_social; Type: TABLE; Schema: public; Owner: -
+-- Name: evento_caso_social; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.evento_caso_social (
@@ -428,8 +613,10 @@ CREATE TABLE public.evento_caso_social (
 );
 
 
+ALTER TABLE public.evento_caso_social OWNER TO postgres;
+
 --
--- Name: institucion; Type: TABLE; Schema: public; Owner: -
+-- Name: institucion; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.institucion (
@@ -439,8 +626,10 @@ CREATE TABLE public.institucion (
 );
 
 
+ALTER TABLE public.institucion OWNER TO postgres;
+
 --
--- Name: tipo_tramite; Type: TABLE; Schema: public; Owner: -
+-- Name: tipo_tramite; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.tipo_tramite (
@@ -460,8 +649,10 @@ CREATE TABLE public.tipo_tramite (
 );
 
 
+ALTER TABLE public.tipo_tramite OWNER TO postgres;
+
 --
--- Name: casos_sociales_state; Type: VIEW; Schema: public; Owner: -
+-- Name: casos_sociales_state; Type: VIEW; Schema: public; Owner: postgres
 --
 
 CREATE VIEW public.casos_sociales_state AS
@@ -487,8 +678,10 @@ CREATE VIEW public.casos_sociales_state AS
           GROUP BY evento_caso_social.id_caso) ev ON ((cs.id_caso = ev.id_caso)));
 
 
+ALTER TABLE public.casos_sociales_state OWNER TO postgres;
+
 --
--- Name: insert_caso(integer, json, integer); Type: FUNCTION; Schema: public; Owner: -
+-- Name: insert_caso(integer, json, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.insert_caso(_id_tipo_tramite integer, datos json, _id_usuario integer) RETURNS SETOF public.casos_sociales_state
@@ -509,25 +702,29 @@ DECLARE
                     $$;
 
 
+ALTER FUNCTION public.insert_caso(_id_tipo_tramite integer, datos json, _id_usuario integer) OWNER TO postgres;
+
 --
--- Name: liquidacion; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: liquidacion; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
 CREATE TABLE impuesto.liquidacion (
     id_liquidacion integer NOT NULL,
     id_solicitud integer,
-    id_procedimiento integer,
     monto numeric,
     certificado character varying,
     recibo character varying,
-    mes character varying,
-    anio integer,
-    fecha_liquidacion date DEFAULT now()
+    fecha_liquidacion date DEFAULT now(),
+    id_subramo integer,
+    datos json,
+    fecha date
 );
 
 
+ALTER TABLE impuesto.liquidacion OWNER TO postgres;
+
 --
--- Name: insert_liquidacion(integer, character varying, character varying, integer, numeric); Type: FUNCTION; Schema: public; Owner: -
+-- Name: insert_liquidacion(integer, character varying, character varying, integer, numeric); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.insert_liquidacion(_id_solicitud integer, _descripcion character varying, _mes character varying, _anio integer, _monto numeric) RETURNS SETOF impuesto.liquidacion
@@ -545,8 +742,10 @@ DECLARE
 $$;
 
 
+ALTER FUNCTION public.insert_liquidacion(_id_solicitud integer, _descripcion character varying, _mes character varying, _anio integer, _monto numeric) OWNER TO postgres;
+
 --
--- Name: multa_transicion(text, text); Type: FUNCTION; Schema: public; Owner: -
+-- Name: multa_transicion(text, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.multa_transicion(state text, event text) RETURNS text
@@ -578,8 +777,10 @@ CREATE FUNCTION public.multa_transicion(state text, event text) RETURNS text
 $$;
 
 
+ALTER FUNCTION public.multa_transicion(state text, event text) OWNER TO postgres;
+
 --
--- Name: multa_fsm(text); Type: AGGREGATE; Schema: public; Owner: -
+-- Name: multa_fsm(text); Type: AGGREGATE; Schema: public; Owner: postgres
 --
 
 CREATE AGGREGATE public.multa_fsm(text) (
@@ -589,8 +790,10 @@ CREATE AGGREGATE public.multa_fsm(text) (
 );
 
 
+ALTER AGGREGATE public.multa_fsm(text) OWNER TO postgres;
+
 --
--- Name: evento_multa; Type: TABLE; Schema: public; Owner: -
+-- Name: evento_multa; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.evento_multa (
@@ -601,8 +804,10 @@ CREATE TABLE public.evento_multa (
 );
 
 
+ALTER TABLE public.evento_multa OWNER TO postgres;
+
 --
--- Name: multa; Type: TABLE; Schema: public; Owner: -
+-- Name: multa; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.multa (
@@ -623,8 +828,10 @@ CREATE TABLE public.multa (
 );
 
 
+ALTER TABLE public.multa OWNER TO postgres;
+
 --
--- Name: multa_state; Type: VIEW; Schema: public; Owner: -
+-- Name: multa_state; Type: VIEW; Schema: public; Owner: postgres
 --
 
 CREATE VIEW public.multa_state AS
@@ -654,8 +861,10 @@ CREATE VIEW public.multa_state AS
           GROUP BY evento_multa.id_multa) ev ON ((m.id_multa = ev.id_multa)));
 
 
+ALTER TABLE public.multa_state OWNER TO postgres;
+
 --
--- Name: insert_multa(integer, json, character varying, bigint, integer); Type: FUNCTION; Schema: public; Owner: -
+-- Name: insert_multa(integer, json, character varying, bigint, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.insert_multa(_id_tipo_tramite integer, datos json, _nacionalidad character varying, _cedula bigint, _id_usuario integer) RETURNS SETOF public.multa_state
@@ -676,8 +885,10 @@ DECLARE
 $$;
 
 
+ALTER FUNCTION public.insert_multa(_id_tipo_tramite integer, datos json, _nacionalidad character varying, _cedula bigint, _id_usuario integer) OWNER TO postgres;
+
 --
--- Name: insert_notificacion_trigger_func(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: insert_notificacion_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.insert_notificacion_trigger_func() RETURNS trigger
@@ -694,47 +905,10 @@ END
 $$;
 
 
---
--- Name: solicitud; Type: TABLE; Schema: impuesto; Owner: -
---
-
-CREATE TABLE impuesto.solicitud (
-    id_solicitud integer NOT NULL,
-    id_usuario integer,
-    documento character varying,
-    rim character varying,
-    aprobado boolean DEFAULT false,
-    fecha date,
-    monto_total numeric,
-    nacionalidad character varying,
-    pagado boolean DEFAULT false,
-    rebotado boolean DEFAULT false,
-    fecha_aprobado date,
-    contribuyente integer
-);
-
+ALTER FUNCTION public.insert_notificacion_trigger_func() OWNER TO postgres;
 
 --
--- Name: insert_solicitud(integer, character varying, character varying, character varying, numeric, integer); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.insert_solicitud(_id_usuario integer, _documento character varying, _rim character varying, _nacionalidad character varying, _monto_total numeric, _contribuyente integer) RETURNS SETOF impuesto.solicitud
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-    solicitudRow impuesto.solicitud%ROWTYPE;
-    BEGIN
-        INSERT INTO impuesto.solicitud (id_usuario, documento, rim, nacionalidad, aprobado, fecha, monto_total, contribuyente) VALUES (_id_usuario, _documento, _rim, _nacionalidad, false, now(), _monto_total, _contribuyente) RETURNING * INTO solicitudRow;
-            
-        RETURN QUERY SELECT * FROM impuesto.solicitud WHERE id_solicitud=solicitudRow.id_solicitud;
-
-        RETURN;
-    END;
-$$;
-
-
---
--- Name: tramites_eventos_transicion(text, text); Type: FUNCTION; Schema: public; Owner: -
+-- Name: tramites_eventos_transicion(text, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.tramites_eventos_transicion(state text, event text) RETURNS text
@@ -793,8 +967,10 @@ END
 $$;
 
 
+ALTER FUNCTION public.tramites_eventos_transicion(state text, event text) OWNER TO postgres;
+
 --
--- Name: tramite_evento_fsm(text); Type: AGGREGATE; Schema: public; Owner: -
+-- Name: tramite_evento_fsm(text); Type: AGGREGATE; Schema: public; Owner: postgres
 --
 
 CREATE AGGREGATE public.tramite_evento_fsm(text) (
@@ -804,8 +980,10 @@ CREATE AGGREGATE public.tramite_evento_fsm(text) (
 );
 
 
+ALTER AGGREGATE public.tramite_evento_fsm(text) OWNER TO postgres;
+
 --
--- Name: evento_tramite; Type: TABLE; Schema: public; Owner: -
+-- Name: evento_tramite; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.evento_tramite (
@@ -816,8 +994,10 @@ CREATE TABLE public.evento_tramite (
 );
 
 
+ALTER TABLE public.evento_tramite OWNER TO postgres;
+
 --
--- Name: tramite; Type: TABLE; Schema: public; Owner: -
+-- Name: tramite; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.tramite (
@@ -836,8 +1016,10 @@ CREATE TABLE public.tramite (
 );
 
 
+ALTER TABLE public.tramite OWNER TO postgres;
+
 --
--- Name: tramites_state_with_resources; Type: VIEW; Schema: public; Owner: -
+-- Name: tramites_state_with_resources; Type: VIEW; Schema: public; Owner: postgres
 --
 
 CREATE VIEW public.tramites_state_with_resources AS
@@ -867,8 +1049,10 @@ CREATE VIEW public.tramites_state_with_resources AS
           GROUP BY evento_tramite.id_tramite) ev ON ((t.id_tramite = ev.id_tramite)));
 
 
+ALTER TABLE public.tramites_state_with_resources OWNER TO postgres;
+
 --
--- Name: insert_tramite(integer, json, integer); Type: FUNCTION; Schema: public; Owner: -
+-- Name: insert_tramite(integer, json, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.insert_tramite(_id_tipo_tramite integer, datos json, _id_usuario integer) RETURNS SETOF public.tramites_state_with_resources
@@ -889,8 +1073,10 @@ DECLARE
                     $$;
 
 
+ALTER FUNCTION public.insert_tramite(_id_tipo_tramite integer, datos json, _id_usuario integer) OWNER TO postgres;
+
 --
--- Name: revisar_pagos_fin_de_dia(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: revisar_pagos_fin_de_dia(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.revisar_pagos_fin_de_dia() RETURNS void
@@ -916,8 +1102,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.revisar_pagos_fin_de_dia() OWNER TO postgres;
+
 --
--- Name: tipos_tramites_costo_utmm_trigger_func(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: tipos_tramites_costo_utmm_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.tipos_tramites_costo_utmm_trigger_func() RETURNS trigger
@@ -933,8 +1121,10 @@ DECLARE
 $$;
 
 
+ALTER FUNCTION public.tipos_tramites_costo_utmm_trigger_func() OWNER TO postgres;
+
 --
--- Name: tramite_eventos_trigger_func(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: tramite_eventos_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.tramite_eventos_trigger_func() RETURNS trigger
@@ -960,8 +1150,10 @@ DECLARE
                                 $$;
 
 
+ALTER FUNCTION public.tramite_eventos_trigger_func() OWNER TO postgres;
+
 --
--- Name: update_caso_state(integer, text, json); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_caso_state(integer, text, json); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.update_caso_state(_id_caso integer, event text, _datos json DEFAULT NULL::json) RETURNS TABLE(state text)
@@ -979,8 +1171,10 @@ CREATE FUNCTION public.update_caso_state(_id_caso integer, event text, _datos js
                                                               $$;
 
 
+ALTER FUNCTION public.update_caso_state(_id_caso integer, event text, _datos json) OWNER TO postgres;
+
 --
--- Name: update_multa_state(integer, text, json); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_multa_state(integer, text, json); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.update_multa_state(_id_multa integer, event text, _datos json DEFAULT NULL::json) RETURNS TABLE(state text)
@@ -998,8 +1192,10 @@ CREATE FUNCTION public.update_multa_state(_id_multa integer, event text, _datos 
 $$;
 
 
+ALTER FUNCTION public.update_multa_state(_id_multa integer, event text, _datos json) OWNER TO postgres;
+
 --
--- Name: update_multa_state(integer, text, json, numeric, character varying); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_multa_state(integer, text, json, numeric, character varying); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.update_multa_state(_id_multa integer, event text, _datos json DEFAULT NULL::json, _costo numeric DEFAULT NULL::numeric, _url_boleta character varying DEFAULT NULL::character varying) RETURNS TABLE(state text)
@@ -1023,8 +1219,10 @@ CREATE FUNCTION public.update_multa_state(_id_multa integer, event text, _datos 
 $$;
 
 
+ALTER FUNCTION public.update_multa_state(_id_multa integer, event text, _datos json, _costo numeric, _url_boleta character varying) OWNER TO postgres;
+
 --
--- Name: update_tramite_state(integer, text, json, numeric, character varying); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_tramite_state(integer, text, json, numeric, character varying); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.update_tramite_state(_id_tramite integer, event text, _datos json DEFAULT NULL::json, _costo numeric DEFAULT NULL::numeric, _url_planilla character varying DEFAULT NULL::character varying) RETURNS TABLE(state text)
@@ -1048,8 +1246,10 @@ CREATE FUNCTION public.update_tramite_state(_id_tramite integer, event text, _da
                                                               $$;
 
 
+ALTER FUNCTION public.update_tramite_state(_id_tramite integer, event text, _datos json, _costo numeric, _url_planilla character varying) OWNER TO postgres;
+
 --
--- Name: validate_payments(jsonb); Type: FUNCTION; Schema: public; Owner: -
+-- Name: validate_payments(jsonb); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.validate_payments(inputcsvjson jsonb, OUT outputjson jsonb) RETURNS jsonb
@@ -1122,8 +1322,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.validate_payments(inputcsvjson jsonb, OUT outputjson jsonb) OWNER TO postgres;
+
 --
--- Name: _validate_json_schema_type(text, jsonb); Type: FUNCTION; Schema: timetable; Owner: -
+-- Name: _validate_json_schema_type(text, jsonb); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
 CREATE FUNCTION timetable._validate_json_schema_type(type text, data jsonb) RETURNS boolean
@@ -1147,8 +1349,10 @@ END;
 $$;
 
 
+ALTER FUNCTION timetable._validate_json_schema_type(type text, data jsonb) OWNER TO postgres;
+
 --
--- Name: cron_element_to_array(text, text); Type: FUNCTION; Schema: timetable; Owner: -
+-- Name: cron_element_to_array(text, text); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
 CREATE FUNCTION timetable.cron_element_to_array(element text, element_type text) RETURNS integer[]
@@ -1257,8 +1461,10 @@ END;
 $_$;
 
 
+ALTER FUNCTION timetable.cron_element_to_array(element text, element_type text) OWNER TO postgres;
+
 --
--- Name: get_running_jobs(bigint); Type: FUNCTION; Schema: timetable; Owner: -
+-- Name: get_running_jobs(bigint); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
 CREATE FUNCTION timetable.get_running_jobs(bigint) RETURNS SETOF record
@@ -1280,8 +1486,10 @@ CREATE FUNCTION timetable.get_running_jobs(bigint) RETURNS SETOF record
 $_$;
 
 
+ALTER FUNCTION timetable.get_running_jobs(bigint) OWNER TO postgres;
+
 --
--- Name: get_task_id(text); Type: FUNCTION; Schema: timetable; Owner: -
+-- Name: get_task_id(text); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
 CREATE FUNCTION timetable.get_task_id(task_name text) RETURNS bigint
@@ -1291,8 +1499,10 @@ CREATE FUNCTION timetable.get_task_id(task_name text) RETURNS bigint
 $_$;
 
 
+ALTER FUNCTION timetable.get_task_id(task_name text) OWNER TO postgres;
+
 --
--- Name: insert_base_task(text, bigint); Type: FUNCTION; Schema: timetable; Owner: -
+-- Name: insert_base_task(text, bigint); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
 CREATE FUNCTION timetable.insert_base_task(task_name text, parent_task_id bigint) RETURNS bigint
@@ -1319,8 +1529,10 @@ END
 $$;
 
 
+ALTER FUNCTION timetable.insert_base_task(task_name text, parent_task_id bigint) OWNER TO postgres;
+
 --
--- Name: is_cron_in_time(timetable.cron, timestamp with time zone); Type: FUNCTION; Schema: timetable; Owner: -
+-- Name: is_cron_in_time(timetable.cron, timestamp with time zone); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
 CREATE FUNCTION timetable.is_cron_in_time(run_at timetable.cron, ts timestamp with time zone) RETURNS boolean
@@ -1351,8 +1563,10 @@ END;
 $$;
 
 
+ALTER FUNCTION timetable.is_cron_in_time(run_at timetable.cron, ts timestamp with time zone) OWNER TO postgres;
+
 --
--- Name: job_add(text, text, text, timetable.task_kind, timetable.cron, integer, boolean, boolean); Type: FUNCTION; Schema: timetable; Owner: -
+-- Name: job_add(text, text, text, timetable.task_kind, timetable.cron, integer, boolean, boolean); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
 CREATE FUNCTION timetable.job_add(task_name text, task_function text, client_name text, task_type timetable.task_kind DEFAULT 'SQL'::timetable.task_kind, run_at timetable.cron DEFAULT NULL::text, max_instances integer DEFAULT NULL::integer, live boolean DEFAULT false, self_destruct boolean DEFAULT false) RETURNS bigint
@@ -1387,8 +1601,10 @@ RETURNING chain_execution_config
 $$;
 
 
+ALTER FUNCTION timetable.job_add(task_name text, task_function text, client_name text, task_type timetable.task_kind, run_at timetable.cron, max_instances integer, live boolean, self_destruct boolean) OWNER TO postgres;
+
 --
--- Name: task_chain_delete(bigint, bigint); Type: FUNCTION; Schema: timetable; Owner: -
+-- Name: task_chain_delete(bigint, bigint); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
 CREATE FUNCTION timetable.task_chain_delete(config_ bigint, chain_id_ bigint) RETURNS boolean
@@ -1459,8 +1675,10 @@ END
 $$;
 
 
+ALTER FUNCTION timetable.task_chain_delete(config_ bigint, chain_id_ bigint) OWNER TO postgres;
+
 --
--- Name: trig_chain_fixer(); Type: FUNCTION; Schema: timetable; Owner: -
+-- Name: trig_chain_fixer(); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
 CREATE FUNCTION timetable.trig_chain_fixer() RETURNS trigger
@@ -1507,8 +1725,10 @@ CREATE FUNCTION timetable.trig_chain_fixer() RETURNS trigger
 $$;
 
 
+ALTER FUNCTION timetable.trig_chain_fixer() OWNER TO postgres;
+
 --
--- Name: validate_json_schema(jsonb, jsonb, jsonb); Type: FUNCTION; Schema: timetable; Owner: -
+-- Name: validate_json_schema(jsonb, jsonb, jsonb); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
 CREATE FUNCTION timetable.validate_json_schema(schema jsonb, data jsonb, root_schema jsonb DEFAULT NULL::jsonb) RETURNS boolean
@@ -1756,8 +1976,23 @@ END;
 $_$;
 
 
+ALTER FUNCTION timetable.validate_json_schema(schema jsonb, data jsonb, root_schema jsonb) OWNER TO postgres;
+
 --
--- Name: actividad_economica; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: solicitud_fsm(text); Type: AGGREGATE; Schema: impuesto; Owner: postgres
+--
+
+CREATE AGGREGATE impuesto.solicitud_fsm(text) (
+    SFUNC = impuesto.solicitud_transicion,
+    STYPE = text,
+    INITCOND = 'creado'
+);
+
+
+ALTER AGGREGATE impuesto.solicitud_fsm(text) OWNER TO postgres;
+
+--
+-- Name: actividad_economica; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
 CREATE TABLE impuesto.actividad_economica (
@@ -1765,13 +2000,49 @@ CREATE TABLE impuesto.actividad_economica (
     numero_referencia integer,
     descripcion character varying,
     alicuota numeric,
-    id_tipo_actividad integer,
     ut numeric
 );
 
 
+ALTER TABLE impuesto.actividad_economica OWNER TO postgres;
+
 --
--- Name: actividad_economica_exoneracion; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: actividad_economica_contribuyente; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.actividad_economica_contribuyente (
+    id_actividad_economica_contribuyente integer NOT NULL,
+    id_contribuyente integer NOT NULL,
+    numero_referencia integer NOT NULL
+);
+
+
+ALTER TABLE impuesto.actividad_economica_contribuyente OWNER TO postgres;
+
+--
+-- Name: actividad_economica_contribuy_id_actividad_economica_contri_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq OWNER TO postgres;
+
+--
+-- Name: actividad_economica_contribuy_id_actividad_economica_contri_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq OWNED BY impuesto.actividad_economica_contribuyente.id_actividad_economica_contribuyente;
+
+
+--
+-- Name: actividad_economica_exoneracion; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
 CREATE TABLE impuesto.actividad_economica_exoneracion (
@@ -1781,8 +2052,10 @@ CREATE TABLE impuesto.actividad_economica_exoneracion (
 );
 
 
+ALTER TABLE impuesto.actividad_economica_exoneracion OWNER TO postgres;
+
 --
--- Name: actividad_economica_exoneraci_id_actividad_economica_exoner_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: actividad_economica_exoneraci_id_actividad_economica_exoner_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
 CREATE SEQUENCE impuesto.actividad_economica_exoneraci_id_actividad_economica_exoner_seq
@@ -1794,15 +2067,17 @@ CREATE SEQUENCE impuesto.actividad_economica_exoneraci_id_actividad_economica_ex
     CACHE 1;
 
 
+ALTER TABLE impuesto.actividad_economica_exoneraci_id_actividad_economica_exoner_seq OWNER TO postgres;
+
 --
--- Name: actividad_economica_exoneraci_id_actividad_economica_exoner_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: actividad_economica_exoneraci_id_actividad_economica_exoner_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
 ALTER SEQUENCE impuesto.actividad_economica_exoneraci_id_actividad_economica_exoner_seq OWNED BY impuesto.actividad_economica_exoneracion.id_actividad_economica_exoneracion;
 
 
 --
--- Name: actividad_economica_id_actividad_economica_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: actividad_economica_id_actividad_economica_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
 CREATE SEQUENCE impuesto.actividad_economica_id_actividad_economica_seq
@@ -1814,30 +2089,32 @@ CREATE SEQUENCE impuesto.actividad_economica_id_actividad_economica_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.actividad_economica_id_actividad_economica_seq OWNER TO postgres;
+
 --
--- Name: actividad_economica_id_actividad_economica_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: actividad_economica_id_actividad_economica_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
 ALTER SEQUENCE impuesto.actividad_economica_id_actividad_economica_seq OWNED BY impuesto.actividad_economica.id_actividad_economica;
 
 
 --
--- Name: ae_desglose; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: categoria_propaganda; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
-CREATE TABLE impuesto.ae_desglose (
-    id_ae_desglose integer NOT NULL,
-    id_aforo integer NOT NULL,
-    id_liquidacion integer NOT NULL,
-    monto_declarado numeric
+CREATE TABLE impuesto.categoria_propaganda (
+    id_categoria_propaganda integer NOT NULL,
+    descripcion character varying NOT NULL
 );
 
 
+ALTER TABLE impuesto.categoria_propaganda OWNER TO postgres;
+
 --
--- Name: ae_desglose_id_ae_desglose_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: categoria_propaganda_id_categoria_propaganda_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
-CREATE SEQUENCE impuesto.ae_desglose_id_ae_desglose_seq
+CREATE SEQUENCE impuesto.categoria_propaganda_id_categoria_propaganda_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -1846,15 +2123,98 @@ CREATE SEQUENCE impuesto.ae_desglose_id_ae_desglose_seq
     CACHE 1;
 
 
---
--- Name: ae_desglose_id_ae_desglose_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
---
-
-ALTER SEQUENCE impuesto.ae_desglose_id_ae_desglose_seq OWNED BY impuesto.ae_desglose.id_ae_desglose;
-
+ALTER TABLE impuesto.categoria_propaganda_id_categoria_propaganda_seq OWNER TO postgres;
 
 --
--- Name: dias_feriados; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: categoria_propaganda_id_categoria_propaganda_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.categoria_propaganda_id_categoria_propaganda_seq OWNED BY impuesto.categoria_propaganda.id_categoria_propaganda;
+
+
+--
+-- Name: contribuyente; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.contribuyente (
+    id_contribuyente integer NOT NULL,
+    tipo_documento character(1) NOT NULL,
+    documento character varying NOT NULL,
+    razon_social character varying NOT NULL,
+    denominacion_comercial character varying NOT NULL,
+    siglas character varying NOT NULL,
+    telefono_celular character varying NOT NULL,
+    telefono_habitacion character varying NOT NULL,
+    email character varying NOT NULL,
+    id_parroquia integer NOT NULL,
+    sector character varying NOT NULL,
+    direccion character varying NOT NULL,
+    punto_referencia character varying NOT NULL,
+    verificado boolean
+);
+
+
+ALTER TABLE impuesto.contribuyente OWNER TO postgres;
+
+--
+-- Name: contribuyente_exoneracion; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.contribuyente_exoneracion (
+    id_contribuyente_exoneracion integer NOT NULL,
+    id_plazo_exoneracion integer NOT NULL,
+    id_contribuyente integer NOT NULL
+);
+
+
+ALTER TABLE impuesto.contribuyente_exoneracion OWNER TO postgres;
+
+--
+-- Name: contribuyente_exoneracion_id_contribuyente_exoneracion_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.contribuyente_exoneracion_id_contribuyente_exoneracion_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.contribuyente_exoneracion_id_contribuyente_exoneracion_seq OWNER TO postgres;
+
+--
+-- Name: contribuyente_exoneracion_id_contribuyente_exoneracion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.contribuyente_exoneracion_id_contribuyente_exoneracion_seq OWNED BY impuesto.contribuyente_exoneracion.id_contribuyente_exoneracion;
+
+
+--
+-- Name: contribuyente_id_contribuyente_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.contribuyente_id_contribuyente_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.contribuyente_id_contribuyente_seq OWNER TO postgres;
+
+--
+-- Name: contribuyente_id_contribuyente_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.contribuyente_id_contribuyente_seq OWNED BY impuesto.contribuyente.id_contribuyente;
+
+
+--
+-- Name: dias_feriados; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
 CREATE TABLE impuesto.dias_feriados (
@@ -1864,8 +2224,10 @@ CREATE TABLE impuesto.dias_feriados (
 );
 
 
+ALTER TABLE impuesto.dias_feriados OWNER TO postgres;
+
 --
--- Name: dias_feriados_id_dia_feriado_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: dias_feriados_id_dia_feriado_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
 CREATE SEQUENCE impuesto.dias_feriados_id_dia_feriado_seq
@@ -1877,15 +2239,53 @@ CREATE SEQUENCE impuesto.dias_feriados_id_dia_feriado_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.dias_feriados_id_dia_feriado_seq OWNER TO postgres;
+
 --
--- Name: dias_feriados_id_dia_feriado_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: dias_feriados_id_dia_feriado_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
 ALTER SEQUENCE impuesto.dias_feriados_id_dia_feriado_seq OWNED BY impuesto.dias_feriados.id_dia_feriado;
 
 
 --
--- Name: factor; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: evento_solicitud; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.evento_solicitud (
+    id_evento_solicitud integer NOT NULL,
+    id_solicitud integer NOT NULL,
+    event character varying,
+    "time" timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE impuesto.evento_solicitud OWNER TO postgres;
+
+--
+-- Name: evento_solicitud_id_evento_solicitud_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.evento_solicitud_id_evento_solicitud_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.evento_solicitud_id_evento_solicitud_seq OWNER TO postgres;
+
+--
+-- Name: evento_solicitud_id_evento_solicitud_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.evento_solicitud_id_evento_solicitud_seq OWNED BY impuesto.evento_solicitud.id_evento_solicitud;
+
+
+--
+-- Name: factor; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
 CREATE TABLE impuesto.factor (
@@ -1895,8 +2295,10 @@ CREATE TABLE impuesto.factor (
 );
 
 
+ALTER TABLE impuesto.factor OWNER TO postgres;
+
 --
--- Name: factor_id_factor_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: factor_id_factor_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
 CREATE SEQUENCE impuesto.factor_id_factor_seq
@@ -1908,30 +2310,33 @@ CREATE SEQUENCE impuesto.factor_id_factor_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.factor_id_factor_seq OWNER TO postgres;
+
 --
--- Name: factor_id_factor_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: factor_id_factor_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
 ALTER SEQUENCE impuesto.factor_id_factor_seq OWNED BY impuesto.factor.id_factor;
 
 
 --
--- Name: iu_desglose; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: inmueble_contribuyente; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
-CREATE TABLE impuesto.iu_desglose (
-    id_iu_desglose integer NOT NULL,
+CREATE TABLE impuesto.inmueble_contribuyente (
+    id_inmueble_contribuyente integer NOT NULL,
     id_inmueble integer NOT NULL,
-    id_liquidacion integer NOT NULL,
-    monto numeric
+    id_contribuyente integer NOT NULL
 );
 
 
+ALTER TABLE impuesto.inmueble_contribuyente OWNER TO postgres;
+
 --
--- Name: iu_desglose_id_iu_desglose_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: inmueble_contribuyente_id_inmueble_contribuyente_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
-CREATE SEQUENCE impuesto.iu_desglose_id_iu_desglose_seq
+CREATE SEQUENCE impuesto.inmueble_contribuyente_id_inmueble_contribuyente_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -1940,15 +2345,17 @@ CREATE SEQUENCE impuesto.iu_desglose_id_iu_desglose_seq
     CACHE 1;
 
 
---
--- Name: iu_desglose_id_iu_desglose_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
---
-
-ALTER SEQUENCE impuesto.iu_desglose_id_iu_desglose_seq OWNED BY impuesto.iu_desglose.id_iu_desglose;
-
+ALTER TABLE impuesto.inmueble_contribuyente_id_inmueble_contribuyente_seq OWNER TO postgres;
 
 --
--- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: inmueble_contribuyente_id_inmueble_contribuyente_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.inmueble_contribuyente_id_inmueble_contribuyente_seq OWNED BY impuesto.inmueble_contribuyente.id_inmueble_contribuyente;
+
+
+--
+-- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
 CREATE SEQUENCE impuesto.liquidacion_id_liquidacion_seq
@@ -1960,15 +2367,17 @@ CREATE SEQUENCE impuesto.liquidacion_id_liquidacion_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.liquidacion_id_liquidacion_seq OWNER TO postgres;
+
 --
--- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
 ALTER SEQUENCE impuesto.liquidacion_id_liquidacion_seq OWNED BY impuesto.liquidacion.id_liquidacion;
 
 
 --
--- Name: multa; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: multa; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
 CREATE TABLE impuesto.multa (
@@ -1981,8 +2390,10 @@ CREATE TABLE impuesto.multa (
 );
 
 
+ALTER TABLE impuesto.multa OWNER TO postgres;
+
 --
--- Name: multa_id_multa_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: multa_id_multa_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
 CREATE SEQUENCE impuesto.multa_id_multa_seq
@@ -1994,15 +2405,63 @@ CREATE SEQUENCE impuesto.multa_id_multa_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.multa_id_multa_seq OWNER TO postgres;
+
 --
--- Name: multa_id_multa_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: multa_id_multa_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
 ALTER SEQUENCE impuesto.multa_id_multa_seq OWNED BY impuesto.multa.id_multa;
 
 
 --
--- Name: plazo_exoneracion; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: notificacion; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.notificacion (
+    id_notificacion integer NOT NULL,
+    id_procedimiento integer,
+    emisor character varying,
+    receptor character varying,
+    descripcion character varying,
+    status boolean,
+    fecha timestamp with time zone,
+    estado character varying,
+    concepto character varying DEFAULT 'TRAMITE'::character varying,
+    CONSTRAINT notificacion_concepto_check CHECK (((concepto)::text = ANY (ARRAY['TRAMITE'::text, 'MULTA'::text, 'IMPUESTO'::text])))
+);
+
+
+ALTER TABLE public.notificacion OWNER TO postgres;
+
+--
+-- Name: notificacion_impuesto_view; Type: VIEW; Schema: impuesto; Owner: postgres
+--
+
+CREATE VIEW impuesto.notificacion_impuesto_view AS
+ SELECT n.id_notificacion AS id,
+    n.descripcion,
+    n.status,
+    n.fecha AS "fechaCreacion",
+    n.emisor,
+    n.receptor,
+    n.estado AS "estadoNotificacion",
+    n.concepto,
+    s.id_solicitud AS "idSolicitud",
+    s.id_usuario AS usuario,
+    s.aprobado,
+    s.fecha AS "fechaCreacionSolicitud",
+    s.fecha_aprobado AS "fechaAprobacionSolicitud",
+    s.id_tipo_tramite AS "idTipoTramite"
+   FROM ((public.notificacion n
+     JOIN impuesto.solicitud s ON ((n.id_procedimiento = s.id_solicitud)))
+     JOIN public.tipo_tramite tt ON ((tt.id_tipo_tramite = s.id_tipo_tramite)));
+
+
+ALTER TABLE impuesto.notificacion_impuesto_view OWNER TO postgres;
+
+--
+-- Name: plazo_exoneracion; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
 CREATE TABLE impuesto.plazo_exoneracion (
@@ -2012,8 +2471,10 @@ CREATE TABLE impuesto.plazo_exoneracion (
 );
 
 
+ALTER TABLE impuesto.plazo_exoneracion OWNER TO postgres;
+
 --
--- Name: plazo_exoneracion_id_plazo_exoneracion_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: plazo_exoneracion_id_plazo_exoneracion_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
 CREATE SEQUENCE impuesto.plazo_exoneracion_id_plazo_exoneracion_seq
@@ -2025,72 +2486,30 @@ CREATE SEQUENCE impuesto.plazo_exoneracion_id_plazo_exoneracion_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.plazo_exoneracion_id_plazo_exoneracion_seq OWNER TO postgres;
+
 --
--- Name: plazo_exoneracion_id_plazo_exoneracion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: plazo_exoneracion_id_plazo_exoneracion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
 ALTER SEQUENCE impuesto.plazo_exoneracion_id_plazo_exoneracion_seq OWNED BY impuesto.plazo_exoneracion.id_plazo_exoneracion;
 
 
 --
--- Name: pp_desglose; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: ramo_exoneracion; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
-CREATE TABLE impuesto.pp_desglose (
-    id_pp_desglose integer NOT NULL,
-    id_subarticulo integer NOT NULL,
-    id_liquidacion integer NOT NULL,
-    monto numeric,
-    cantidad integer
-);
-
-
---
--- Name: pp_desglose_id_pp_desglose_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
---
-
-CREATE SEQUENCE impuesto.pp_desglose_id_pp_desglose_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: pp_desglose_id_pp_desglose_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
---
-
-ALTER SEQUENCE impuesto.pp_desglose_id_pp_desglose_seq OWNED BY impuesto.pp_desglose.id_pp_desglose;
-
-
---
--- Name: procedimiento; Type: TABLE; Schema: impuesto; Owner: -
---
-
-CREATE TABLE impuesto.procedimiento (
-    id_procedimiento integer NOT NULL,
-    descripcion character varying,
-    planilla_certificado character varying,
-    planilla_recibo character varying
-);
-
-
---
--- Name: procedimiento_exoneracion; Type: TABLE; Schema: impuesto; Owner: -
---
-
-CREATE TABLE impuesto.procedimiento_exoneracion (
-    id_procedimiento_exoneracion integer NOT NULL,
+CREATE TABLE impuesto.ramo_exoneracion (
+    id_ramo_exoneracion integer NOT NULL,
     id_plazo_exoneracion integer,
-    id_procedimiento integer,
-    id_tipo_contribuyente integer
+    id_ramo integer
 );
 
 
+ALTER TABLE impuesto.ramo_exoneracion OWNER TO postgres;
+
 --
--- Name: procedimiento_exoneracion_id_procedimiento_exoneracion_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: procedimiento_exoneracion_id_procedimiento_exoneracion_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
 CREATE SEQUENCE impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq
@@ -2102,51 +2521,33 @@ CREATE SEQUENCE impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_
     CACHE 1;
 
 
---
--- Name: procedimiento_exoneracion_id_procedimiento_exoneracion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
---
-
-ALTER SEQUENCE impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq OWNED BY impuesto.procedimiento_exoneracion.id_procedimiento_exoneracion;
-
+ALTER TABLE impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq OWNER TO postgres;
 
 --
--- Name: procedimiento_id_procedimiento_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: procedimiento_exoneracion_id_procedimiento_exoneracion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
-CREATE SEQUENCE impuesto.procedimiento_id_procedimiento_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
+ALTER SEQUENCE impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq OWNED BY impuesto.ramo_exoneracion.id_ramo_exoneracion;
 
 
 --
--- Name: procedimiento_id_procedimiento_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: ramo; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
-ALTER SEQUENCE impuesto.procedimiento_id_procedimiento_seq OWNED BY impuesto.procedimiento.id_procedimiento;
-
-
---
--- Name: sm_desglose; Type: TABLE; Schema: impuesto; Owner: -
---
-
-CREATE TABLE impuesto.sm_desglose (
-    id_sm_desglose integer NOT NULL,
-    id_inmueble integer NOT NULL,
-    id_liquidacion integer NOT NULL,
-    monto_gas numeric,
-    monto_aseo numeric
+CREATE TABLE impuesto.ramo (
+    id_ramo integer NOT NULL,
+    codigo character varying NOT NULL,
+    descripcion character varying NOT NULL
 );
 
 
+ALTER TABLE impuesto.ramo OWNER TO postgres;
+
 --
--- Name: sm_desglose_id_sm_desglose_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: ramo_id_ramo_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
-CREATE SEQUENCE impuesto.sm_desglose_id_sm_desglose_seq
+CREATE SEQUENCE impuesto.ramo_id_ramo_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -2155,15 +2556,53 @@ CREATE SEQUENCE impuesto.sm_desglose_id_sm_desglose_seq
     CACHE 1;
 
 
---
--- Name: sm_desglose_id_sm_desglose_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
---
-
-ALTER SEQUENCE impuesto.sm_desglose_id_sm_desglose_seq OWNED BY impuesto.sm_desglose.id_sm_desglose;
-
+ALTER TABLE impuesto.ramo_id_ramo_seq OWNER TO postgres;
 
 --
--- Name: solicitud_id_solicitud_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: ramo_id_ramo_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.ramo_id_ramo_seq OWNED BY impuesto.ramo.id_ramo;
+
+
+--
+-- Name: registro_municipal; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.registro_municipal (
+    id_registro_municipal integer NOT NULL,
+    id_contribuyente integer NOT NULL,
+    referencia_municipal character varying,
+    fecha_aprobacion date
+);
+
+
+ALTER TABLE impuesto.registro_municipal OWNER TO postgres;
+
+--
+-- Name: registro_municipal_id_registro_municipal_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.registro_municipal_id_registro_municipal_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.registro_municipal_id_registro_municipal_seq OWNER TO postgres;
+
+--
+-- Name: registro_municipal_id_registro_municipal_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.registro_municipal_id_registro_municipal_seq OWNED BY impuesto.registro_municipal.id_registro_municipal;
+
+
+--
+-- Name: solicitud_id_solicitud_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
 CREATE SEQUENCE impuesto.solicitud_id_solicitud_seq
@@ -2175,49 +2614,191 @@ CREATE SEQUENCE impuesto.solicitud_id_solicitud_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.solicitud_id_solicitud_seq OWNER TO postgres;
+
 --
--- Name: solicitud_id_solicitud_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: solicitud_id_solicitud_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
 ALTER SEQUENCE impuesto.solicitud_id_solicitud_seq OWNED BY impuesto.solicitud.id_solicitud;
 
 
 --
--- Name: solicitud_view; Type: VIEW; Schema: impuesto; Owner: -
+-- Name: solicitud_state; Type: VIEW; Schema: impuesto; Owner: postgres
+--
+
+CREATE VIEW impuesto.solicitud_state AS
+ SELECT s.id_solicitud AS id,
+    s.id_tipo_tramite AS tipotramite,
+    s.aprobado,
+    s.fecha,
+    s.fecha_aprobado AS "fechaAprobacion",
+    ev.state
+   FROM (impuesto.solicitud s
+     JOIN ( SELECT es.id_solicitud,
+            impuesto.solicitud_fsm((es.event)::text ORDER BY es.id_evento_solicitud) AS state
+           FROM impuesto.evento_solicitud es
+          GROUP BY es.id_solicitud) ev ON ((s.id_solicitud = ev.id_solicitud)));
+
+
+ALTER TABLE impuesto.solicitud_state OWNER TO postgres;
+
+--
+-- Name: subramo; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.subramo (
+    id_subramo integer NOT NULL,
+    id_ramo integer NOT NULL,
+    subindice character varying,
+    descripcion character varying
+);
+
+
+ALTER TABLE impuesto.subramo OWNER TO postgres;
+
+--
+-- Name: solicitud_view; Type: VIEW; Schema: impuesto; Owner: postgres
 --
 
 CREATE VIEW impuesto.solicitud_view AS
  SELECT s.id_solicitud AS id,
     s.id_usuario AS usuario,
-    s.documento,
-    s.rim,
-    s.contribuyente,
-    s.nacionalidad,
-        CASE
-            WHEN (s.rim IS NULL) THEN 'NATURAL'::text
-            ELSE 'JURIDICO'::text
-        END AS "tipoContribuyente",
     s.aprobado,
-    s.pagado,
     s.fecha AS "fechaCreacion",
-    s.monto_total AS "totalSolicitud",
     l.id_liquidacion AS "idLiquidacion",
     l.monto AS "montoLiquidacion",
     l.recibo,
     l.certificado,
-    l.mes,
-    l.anio,
-    pr.id_procedimiento AS "idProcedimiento",
-    pr.descripcion AS "tipoLiquidacion",
-    pr.planilla_certificado AS "planillaSolvencia",
-    pr.planilla_recibo AS "planillaRecibo"
-   FROM ((impuesto.solicitud s
+    l.id_subramo AS "idSubramo",
+    l.datos,
+    sr.subindice,
+    sr.descripcion AS "descripcionSubramo",
+    r.codigo AS "codigoRamo",
+    r.descripcion AS "descripcionRamo",
+    c.id_contribuyente AS contribuyente,
+    c.tipo_documento AS "tipoDocumento",
+    c.documento,
+    c.razon_social AS "razonSocial",
+    c.denominacion_comercial AS "denominacionComercial",
+    c.siglas,
+    c.telefono_celular AS "telefonoCelular",
+    c.telefono_habitacion AS "telefonoHabitacion",
+    c.email,
+    c.sector,
+    c.direccion,
+    c.punto_referencia AS "puntoReferencia",
+    c.verificado
+   FROM ((((impuesto.solicitud s
+     JOIN impuesto.contribuyente c ON ((s.id_contribuyente = c.id_contribuyente)))
      JOIN impuesto.liquidacion l ON ((s.id_solicitud = l.id_solicitud)))
-     JOIN impuesto.procedimiento pr ON ((l.id_procedimiento = pr.id_procedimiento)));
+     JOIN impuesto.subramo sr ON ((sr.id_subramo = l.id_subramo)))
+     JOIN impuesto.ramo r ON ((r.id_ramo = sr.id_subramo)));
+
+
+ALTER TABLE impuesto.solicitud_view OWNER TO postgres;
+
+--
+-- Name: subramo_id_subramo_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.subramo_id_subramo_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.subramo_id_subramo_seq OWNER TO postgres;
+
+--
+-- Name: subramo_id_subramo_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.subramo_id_subramo_seq OWNED BY impuesto.subramo.id_subramo;
 
 
 --
--- Name: tabulador_gas; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: tabulador_aseo_actividad_economica; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.tabulador_aseo_actividad_economica (
+    id_tabulador_aseo_actividad_economica integer NOT NULL,
+    id_usuario integer NOT NULL,
+    numero_referencia integer NOT NULL,
+    monto numeric,
+    fecha_creacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    fecha_desde date,
+    fecha_hasta date
+);
+
+
+ALTER TABLE impuesto.tabulador_aseo_actividad_economica OWNER TO postgres;
+
+--
+-- Name: tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq OWNER TO postgres;
+
+--
+-- Name: tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq OWNED BY impuesto.tabulador_aseo_actividad_economica.id_tabulador_aseo_actividad_economica;
+
+
+--
+-- Name: tabulador_aseo_residencial; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.tabulador_aseo_residencial (
+    id_tabulador_aseo_residencial integer NOT NULL,
+    id_usuario integer NOT NULL,
+    monto numeric,
+    fecha_creacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    fecha_desde date,
+    fecha_hasta date
+);
+
+
+ALTER TABLE impuesto.tabulador_aseo_residencial OWNER TO postgres;
+
+--
+-- Name: tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq OWNER TO postgres;
+
+--
+-- Name: tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq OWNED BY impuesto.tabulador_aseo_residencial.id_tabulador_aseo_residencial;
+
+
+--
+-- Name: tabulador_gas; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
 CREATE TABLE impuesto.tabulador_gas (
@@ -2227,8 +2808,49 @@ CREATE TABLE impuesto.tabulador_gas (
 );
 
 
+ALTER TABLE impuesto.tabulador_gas OWNER TO postgres;
+
 --
--- Name: tabulador_gas_id_tabulador_gas_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_actividad_economica; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.tabulador_gas_actividad_economica (
+    id_tabulador_gas_actividad_economica integer NOT NULL,
+    id_usuario integer NOT NULL,
+    numero_referencia integer NOT NULL,
+    monto numeric,
+    fecha_creacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    fecha_desde date,
+    fecha_hasta date
+);
+
+
+ALTER TABLE impuesto.tabulador_gas_actividad_economica OWNER TO postgres;
+
+--
+-- Name: tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq OWNER TO postgres;
+
+--
+-- Name: tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq OWNED BY impuesto.tabulador_gas_actividad_economica.id_tabulador_gas_actividad_economica;
+
+
+--
+-- Name: tabulador_gas_id_tabulador_gas_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
 CREATE SEQUENCE impuesto.tabulador_gas_id_tabulador_gas_seq
@@ -2240,28 +2862,36 @@ CREATE SEQUENCE impuesto.tabulador_gas_id_tabulador_gas_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.tabulador_gas_id_tabulador_gas_seq OWNER TO postgres;
+
 --
--- Name: tabulador_gas_id_tabulador_gas_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_id_tabulador_gas_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
 ALTER SEQUENCE impuesto.tabulador_gas_id_tabulador_gas_seq OWNED BY impuesto.tabulador_gas.id_tabulador_gas;
 
 
 --
--- Name: tipo_actividad_economica; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_residencial; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
-CREATE TABLE impuesto.tipo_actividad_economica (
-    id_tipo_actividad integer NOT NULL,
-    descripcion character varying
+CREATE TABLE impuesto.tabulador_gas_residencial (
+    id_tabulador_gas_residencial integer NOT NULL,
+    id_usuario integer NOT NULL,
+    monto numeric,
+    fecha_creacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    fecha_desde date,
+    fecha_hasta date
 );
 
 
+ALTER TABLE impuesto.tabulador_gas_residencial OWNER TO postgres;
+
 --
--- Name: tipo_actividad_economica_id_tipo_actividad_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_residencial_id_tabulador_gas_residencial_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
-CREATE SEQUENCE impuesto.tipo_actividad_economica_id_tipo_actividad_seq
+CREATE SEQUENCE impuesto.tabulador_gas_residencial_id_tabulador_gas_residencial_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -2270,28 +2900,36 @@ CREATE SEQUENCE impuesto.tipo_actividad_economica_id_tipo_actividad_seq
     CACHE 1;
 
 
---
--- Name: tipo_actividad_economica_id_tipo_actividad_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
---
-
-ALTER SEQUENCE impuesto.tipo_actividad_economica_id_tipo_actividad_seq OWNED BY impuesto.tipo_actividad_economica.id_tipo_actividad;
-
+ALTER TABLE impuesto.tabulador_gas_residencial_id_tabulador_gas_residencial_seq OWNER TO postgres;
 
 --
--- Name: tipo_contribuyente; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_residencial_id_tabulador_gas_residencial_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
-CREATE TABLE impuesto.tipo_contribuyente (
-    id_tipo_contribuyente integer NOT NULL,
-    descripcion integer
+ALTER SEQUENCE impuesto.tabulador_gas_residencial_id_tabulador_gas_residencial_seq OWNED BY impuesto.tabulador_gas_residencial.id_tabulador_gas_residencial;
+
+
+--
+-- Name: tipo_aviso_propaganda; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.tipo_aviso_propaganda (
+    id_tipo_aviso_propaganda integer NOT NULL,
+    id_categoria_propaganda integer NOT NULL,
+    descripcion character varying NOT NULL,
+    parametro character varying NOT NULL,
+    monto numeric NOT NULL,
+    id_valor integer DEFAULT 2
 );
 
 
+ALTER TABLE impuesto.tipo_aviso_propaganda OWNER TO postgres;
+
 --
--- Name: tipo_contribuyente_id_tipo_contribuyente_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
-CREATE SEQUENCE impuesto.tipo_contribuyente_id_tipo_contribuyente_seq
+CREATE SEQUENCE impuesto.tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -2300,15 +2938,17 @@ CREATE SEQUENCE impuesto.tipo_contribuyente_id_tipo_contribuyente_seq
     CACHE 1;
 
 
---
--- Name: tipo_contribuyente_id_tipo_contribuyente_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
---
-
-ALTER SEQUENCE impuesto.tipo_contribuyente_id_tipo_contribuyente_seq OWNED BY impuesto.tipo_contribuyente.id_tipo_contribuyente;
-
+ALTER TABLE impuesto.tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq OWNER TO postgres;
 
 --
--- Name: tipo_multa; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq OWNED BY impuesto.tipo_aviso_propaganda.id_tipo_aviso_propaganda;
+
+
+--
+-- Name: tipo_multa; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
 CREATE TABLE impuesto.tipo_multa (
@@ -2317,8 +2957,10 @@ CREATE TABLE impuesto.tipo_multa (
 );
 
 
+ALTER TABLE impuesto.tipo_multa OWNER TO postgres;
+
 --
--- Name: tipo_multa_id_tipo_multa_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: tipo_multa_id_tipo_multa_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
 CREATE SEQUENCE impuesto.tipo_multa_id_tipo_multa_seq
@@ -2330,15 +2972,17 @@ CREATE SEQUENCE impuesto.tipo_multa_id_tipo_multa_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.tipo_multa_id_tipo_multa_seq OWNER TO postgres;
+
 --
--- Name: tipo_multa_id_tipo_multa_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: tipo_multa_id_tipo_multa_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
 ALTER SEQUENCE impuesto.tipo_multa_id_tipo_multa_seq OWNED BY impuesto.tipo_multa.id_tipo_multa;
 
 
 --
--- Name: banco; Type: TABLE; Schema: public; Owner: -
+-- Name: banco; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.banco (
@@ -2347,8 +2991,10 @@ CREATE TABLE public.banco (
 );
 
 
+ALTER TABLE public.banco OWNER TO postgres;
+
 --
--- Name: bancos_id_banco_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: bancos_id_banco_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.bancos_id_banco_seq
@@ -2360,15 +3006,17 @@ CREATE SEQUENCE public.bancos_id_banco_seq
     CACHE 1;
 
 
+ALTER TABLE public.bancos_id_banco_seq OWNER TO postgres;
+
 --
--- Name: bancos_id_banco_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: bancos_id_banco_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.bancos_id_banco_seq OWNED BY public.banco.id_banco;
 
 
 --
--- Name: campo; Type: TABLE; Schema: public; Owner: -
+-- Name: campo; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.campo (
@@ -2380,8 +3028,10 @@ CREATE TABLE public.campo (
 );
 
 
+ALTER TABLE public.campo OWNER TO postgres;
+
 --
--- Name: campo_tramite; Type: TABLE; Schema: public; Owner: -
+-- Name: campo_tramite; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.campo_tramite (
@@ -2394,8 +3044,10 @@ CREATE TABLE public.campo_tramite (
 );
 
 
+ALTER TABLE public.campo_tramite OWNER TO postgres;
+
 --
--- Name: campos_id_campo_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: campos_id_campo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.campos_id_campo_seq
@@ -2407,15 +3059,17 @@ CREATE SEQUENCE public.campos_id_campo_seq
     CACHE 1;
 
 
+ALTER TABLE public.campos_id_campo_seq OWNER TO postgres;
+
 --
--- Name: campos_id_campo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: campos_id_campo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.campos_id_campo_seq OWNED BY public.campo.id_campo;
 
 
 --
--- Name: cargo; Type: TABLE; Schema: public; Owner: -
+-- Name: cargo; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.cargo (
@@ -2426,8 +3080,10 @@ CREATE TABLE public.cargo (
 );
 
 
+ALTER TABLE public.cargo OWNER TO postgres;
+
 --
--- Name: cargo_id_cargo_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: cargo_id_cargo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.cargo_id_cargo_seq
@@ -2439,15 +3095,17 @@ CREATE SEQUENCE public.cargo_id_cargo_seq
     CACHE 1;
 
 
+ALTER TABLE public.cargo_id_cargo_seq OWNER TO postgres;
+
 --
--- Name: cargo_id_cargo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: cargo_id_cargo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.cargo_id_cargo_seq OWNED BY public.cargo.id_cargo;
 
 
 --
--- Name: casos_sociales_id_caso_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: casos_sociales_id_caso_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.casos_sociales_id_caso_seq
@@ -2459,15 +3117,17 @@ CREATE SEQUENCE public.casos_sociales_id_caso_seq
     CACHE 1;
 
 
+ALTER TABLE public.casos_sociales_id_caso_seq OWNER TO postgres;
+
 --
--- Name: casos_sociales_id_caso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: casos_sociales_id_caso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.casos_sociales_id_caso_seq OWNED BY public.caso_social.id_caso;
 
 
 --
--- Name: certificado; Type: TABLE; Schema: public; Owner: -
+-- Name: certificado; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.certificado (
@@ -2477,8 +3137,10 @@ CREATE TABLE public.certificado (
 );
 
 
+ALTER TABLE public.certificado OWNER TO postgres;
+
 --
--- Name: certificados_id_certificado_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: certificados_id_certificado_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.certificados_id_certificado_seq
@@ -2490,15 +3152,17 @@ CREATE SEQUENCE public.certificados_id_certificado_seq
     CACHE 1;
 
 
+ALTER TABLE public.certificados_id_certificado_seq OWNER TO postgres;
+
 --
--- Name: certificados_id_certificado_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: certificados_id_certificado_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.certificados_id_certificado_seq OWNED BY public.certificado.id_certificado;
 
 
 --
--- Name: cuenta_funcionario; Type: TABLE; Schema: public; Owner: -
+-- Name: cuenta_funcionario; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.cuenta_funcionario (
@@ -2507,8 +3171,10 @@ CREATE TABLE public.cuenta_funcionario (
 );
 
 
+ALTER TABLE public.cuenta_funcionario OWNER TO postgres;
+
 --
--- Name: datos_facebook; Type: TABLE; Schema: public; Owner: -
+-- Name: datos_facebook; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.datos_facebook (
@@ -2517,8 +3183,10 @@ CREATE TABLE public.datos_facebook (
 );
 
 
+ALTER TABLE public.datos_facebook OWNER TO postgres;
+
 --
--- Name: datos_google; Type: TABLE; Schema: public; Owner: -
+-- Name: datos_google; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.datos_google (
@@ -2527,8 +3195,10 @@ CREATE TABLE public.datos_google (
 );
 
 
+ALTER TABLE public.datos_google OWNER TO postgres;
+
 --
--- Name: detalle_factura; Type: TABLE; Schema: public; Owner: -
+-- Name: detalle_factura; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.detalle_factura (
@@ -2539,8 +3209,10 @@ CREATE TABLE public.detalle_factura (
 );
 
 
+ALTER TABLE public.detalle_factura OWNER TO postgres;
+
 --
--- Name: detalles_facturas_id_detalle_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: detalles_facturas_id_detalle_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.detalles_facturas_id_detalle_seq
@@ -2552,15 +3224,17 @@ CREATE SEQUENCE public.detalles_facturas_id_detalle_seq
     CACHE 1;
 
 
+ALTER TABLE public.detalles_facturas_id_detalle_seq OWNER TO postgres;
+
 --
--- Name: detalles_facturas_id_detalle_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: detalles_facturas_id_detalle_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.detalles_facturas_id_detalle_seq OWNED BY public.detalle_factura.id_detalle;
 
 
 --
--- Name: evento_multa_id_evento_multa_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: evento_multa_id_evento_multa_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.evento_multa_id_evento_multa_seq
@@ -2572,15 +3246,17 @@ CREATE SEQUENCE public.evento_multa_id_evento_multa_seq
     CACHE 1;
 
 
+ALTER TABLE public.evento_multa_id_evento_multa_seq OWNER TO postgres;
+
 --
--- Name: evento_multa_id_evento_multa_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: evento_multa_id_evento_multa_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.evento_multa_id_evento_multa_seq OWNED BY public.evento_multa.id_evento_multa;
 
 
 --
--- Name: eventos_casos_sociales_id_evento_caso_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: eventos_casos_sociales_id_evento_caso_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.eventos_casos_sociales_id_evento_caso_seq
@@ -2592,15 +3268,17 @@ CREATE SEQUENCE public.eventos_casos_sociales_id_evento_caso_seq
     CACHE 1;
 
 
+ALTER TABLE public.eventos_casos_sociales_id_evento_caso_seq OWNER TO postgres;
+
 --
--- Name: eventos_casos_sociales_id_evento_caso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: eventos_casos_sociales_id_evento_caso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.eventos_casos_sociales_id_evento_caso_seq OWNED BY public.evento_caso_social.id_evento_caso;
 
 
 --
--- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.eventos_tramite_id_evento_tramite_seq
@@ -2612,15 +3290,17 @@ CREATE SEQUENCE public.eventos_tramite_id_evento_tramite_seq
     CACHE 1;
 
 
+ALTER TABLE public.eventos_tramite_id_evento_tramite_seq OWNER TO postgres;
+
 --
--- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.eventos_tramite_id_evento_tramite_seq OWNED BY public.evento_tramite.id_evento_tramite;
 
 
 --
--- Name: factura_tramite; Type: TABLE; Schema: public; Owner: -
+-- Name: factura_tramite; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.factura_tramite (
@@ -2629,8 +3309,10 @@ CREATE TABLE public.factura_tramite (
 );
 
 
+ALTER TABLE public.factura_tramite OWNER TO postgres;
+
 --
--- Name: facturas_tramites_id_factura_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: facturas_tramites_id_factura_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.facturas_tramites_id_factura_seq
@@ -2642,15 +3324,17 @@ CREATE SEQUENCE public.facturas_tramites_id_factura_seq
     CACHE 1;
 
 
+ALTER TABLE public.facturas_tramites_id_factura_seq OWNER TO postgres;
+
 --
--- Name: facturas_tramites_id_factura_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: facturas_tramites_id_factura_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.facturas_tramites_id_factura_seq OWNED BY public.factura_tramite.id_factura;
 
 
 --
--- Name: inmueble_urbano; Type: TABLE; Schema: public; Owner: -
+-- Name: inmueble_urbano; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.inmueble_urbano (
@@ -2667,8 +3351,10 @@ CREATE TABLE public.inmueble_urbano (
 );
 
 
+ALTER TABLE public.inmueble_urbano OWNER TO postgres;
+
 --
--- Name: inmueble_urbano_id_inmueble_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: inmueble_urbano_id_inmueble_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.inmueble_urbano_id_inmueble_seq
@@ -2680,15 +3366,17 @@ CREATE SEQUENCE public.inmueble_urbano_id_inmueble_seq
     CACHE 1;
 
 
+ALTER TABLE public.inmueble_urbano_id_inmueble_seq OWNER TO postgres;
+
 --
--- Name: inmueble_urbano_id_inmueble_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: inmueble_urbano_id_inmueble_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.inmueble_urbano_id_inmueble_seq OWNED BY public.inmueble_urbano.id_inmueble;
 
 
 --
--- Name: parroquia; Type: TABLE; Schema: public; Owner: -
+-- Name: parroquia; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.parroquia (
@@ -2697,8 +3385,10 @@ CREATE TABLE public.parroquia (
 );
 
 
+ALTER TABLE public.parroquia OWNER TO postgres;
+
 --
--- Name: inmueble_urbano_view; Type: VIEW; Schema: public; Owner: -
+-- Name: inmueble_urbano_view; Type: VIEW; Schema: public; Owner: postgres
 --
 
 CREATE VIEW public.inmueble_urbano_view AS
@@ -2716,8 +3406,10 @@ CREATE VIEW public.inmueble_urbano_view AS
      JOIN public.parroquia p ON ((inmueble_urbano.id_parroquia = p.id)));
 
 
+ALTER TABLE public.inmueble_urbano_view OWNER TO postgres;
+
 --
--- Name: institucion_banco; Type: TABLE; Schema: public; Owner: -
+-- Name: institucion_banco; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.institucion_banco (
@@ -2730,8 +3422,10 @@ CREATE TABLE public.institucion_banco (
 );
 
 
+ALTER TABLE public.institucion_banco OWNER TO postgres;
+
 --
--- Name: instituciones_id_institucion_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: instituciones_id_institucion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.instituciones_id_institucion_seq
@@ -2743,15 +3437,17 @@ CREATE SEQUENCE public.instituciones_id_institucion_seq
     CACHE 1;
 
 
+ALTER TABLE public.instituciones_id_institucion_seq OWNER TO postgres;
+
 --
--- Name: instituciones_id_institucion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: instituciones_id_institucion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.instituciones_id_institucion_seq OWNED BY public.institucion.id_institucion;
 
 
 --
--- Name: multa_id_multa_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: multa_id_multa_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.multa_id_multa_seq
@@ -2763,33 +3459,17 @@ CREATE SEQUENCE public.multa_id_multa_seq
     CACHE 1;
 
 
+ALTER TABLE public.multa_id_multa_seq OWNER TO postgres;
+
 --
--- Name: multa_id_multa_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: multa_id_multa_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.multa_id_multa_seq OWNED BY public.multa.id_multa;
 
 
 --
--- Name: notificacion; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.notificacion (
-    id_notificacion integer NOT NULL,
-    id_procedimiento integer,
-    emisor character varying,
-    receptor character varying,
-    descripcion character varying,
-    status boolean,
-    fecha timestamp with time zone,
-    estado character varying,
-    concepto character varying DEFAULT 'TRAMITE'::character varying,
-    CONSTRAINT notificacion_concepto_check CHECK (((concepto)::text = ANY (ARRAY['TRAMITE'::text, 'MULTA'::text, 'IMPUESTO'::text])))
-);
-
-
---
--- Name: notificacion_impuesto_view; Type: VIEW; Schema: public; Owner: -
+-- Name: notificacion_impuesto_view; Type: VIEW; Schema: public; Owner: postgres
 --
 
 CREATE VIEW public.notificacion_impuesto_view AS
@@ -2803,21 +3483,19 @@ CREATE VIEW public.notificacion_impuesto_view AS
     n.concepto,
     s.id_solicitud AS "idSolicitud",
     s.id_usuario AS usuario,
-    s.documento,
-    s.rim,
-    s.nacionalidad,
-    s.contribuyente,
-    s.pagado,
     s.aprobado,
-    s.rebotado,
     s.fecha AS "fechaCreacionSolicitud",
-    s.fecha_aprobado AS "fechaAprobacionSolicitud"
-   FROM (public.notificacion n
-     JOIN impuesto.solicitud s ON ((n.id_procedimiento = s.id_solicitud)));
+    s.fecha_aprobado AS "fechaAprobacionSolicitud",
+    s.id_tipo_tramite AS "idTipoTramite"
+   FROM ((public.notificacion n
+     JOIN impuesto.solicitud s ON ((n.id_procedimiento = s.id_solicitud)))
+     JOIN public.tipo_tramite tt ON ((tt.id_tipo_tramite = s.id_tipo_tramite)));
 
+
+ALTER TABLE public.notificacion_impuesto_view OWNER TO postgres;
 
 --
--- Name: notificacion_multa_view; Type: VIEW; Schema: public; Owner: -
+-- Name: notificacion_multa_view; Type: VIEW; Schema: public; Owner: postgres
 --
 
 CREATE VIEW public.notificacion_multa_view AS
@@ -2850,8 +3528,10 @@ CREATE VIEW public.notificacion_multa_view AS
      JOIN public.multa_state m ON ((n.id_procedimiento = m.id)));
 
 
+ALTER TABLE public.notificacion_multa_view OWNER TO postgres;
+
 --
--- Name: notificacion_tramite_view; Type: VIEW; Schema: public; Owner: -
+-- Name: notificacion_tramite_view; Type: VIEW; Schema: public; Owner: postgres
 --
 
 CREATE VIEW public.notificacion_tramite_view AS
@@ -2883,8 +3563,10 @@ CREATE VIEW public.notificacion_tramite_view AS
      JOIN public.tramites_state_with_resources t ON ((n.id_procedimiento = t.id)));
 
 
+ALTER TABLE public.notificacion_tramite_view OWNER TO postgres;
+
 --
--- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.notificaciones_id_notificacion_seq
@@ -2896,15 +3578,17 @@ CREATE SEQUENCE public.notificaciones_id_notificacion_seq
     CACHE 1;
 
 
+ALTER TABLE public.notificaciones_id_notificacion_seq OWNER TO postgres;
+
 --
--- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.notificaciones_id_notificacion_seq OWNED BY public.notificacion.id_notificacion;
 
 
 --
--- Name: operaciones_id_operacion_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: operaciones_id_operacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.operaciones_id_operacion_seq
@@ -2915,8 +3599,10 @@ CREATE SEQUENCE public.operaciones_id_operacion_seq
     CACHE 1;
 
 
+ALTER TABLE public.operaciones_id_operacion_seq OWNER TO postgres;
+
 --
--- Name: operacion; Type: TABLE; Schema: public; Owner: -
+-- Name: operacion; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.operacion (
@@ -2925,8 +3611,10 @@ CREATE TABLE public.operacion (
 );
 
 
+ALTER TABLE public.operacion OWNER TO postgres;
+
 --
--- Name: operatividad_terminal; Type: TABLE; Schema: public; Owner: -
+-- Name: operatividad_terminal; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.operatividad_terminal (
@@ -2941,8 +3629,10 @@ CREATE TABLE public.operatividad_terminal (
 );
 
 
+ALTER TABLE public.operatividad_terminal OWNER TO postgres;
+
 --
--- Name: operatividad_terminal_id_operatividad_terminal_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: operatividad_terminal_id_operatividad_terminal_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.operatividad_terminal_id_operatividad_terminal_seq
@@ -2954,15 +3644,17 @@ CREATE SEQUENCE public.operatividad_terminal_id_operatividad_terminal_seq
     CACHE 1;
 
 
+ALTER TABLE public.operatividad_terminal_id_operatividad_terminal_seq OWNER TO postgres;
+
 --
--- Name: operatividad_terminal_id_operatividad_terminal_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: operatividad_terminal_id_operatividad_terminal_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.operatividad_terminal_id_operatividad_terminal_seq OWNED BY public.operatividad_terminal.id_operatividad_terminal;
 
 
 --
--- Name: ordenanza; Type: TABLE; Schema: public; Owner: -
+-- Name: ordenanza; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.ordenanza (
@@ -2974,8 +3666,10 @@ CREATE TABLE public.ordenanza (
 );
 
 
+ALTER TABLE public.ordenanza OWNER TO postgres;
+
 --
--- Name: ordenanza_tramite; Type: TABLE; Schema: public; Owner: -
+-- Name: ordenanza_tramite; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.ordenanza_tramite (
@@ -2990,8 +3684,10 @@ CREATE TABLE public.ordenanza_tramite (
 );
 
 
+ALTER TABLE public.ordenanza_tramite OWNER TO postgres;
+
 --
--- Name: ordenanzas_id_ordenanza_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: ordenanzas_id_ordenanza_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.ordenanzas_id_ordenanza_seq
@@ -3003,15 +3699,17 @@ CREATE SEQUENCE public.ordenanzas_id_ordenanza_seq
     CACHE 1;
 
 
+ALTER TABLE public.ordenanzas_id_ordenanza_seq OWNER TO postgres;
+
 --
--- Name: ordenanzas_id_ordenanza_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: ordenanzas_id_ordenanza_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.ordenanzas_id_ordenanza_seq OWNED BY public.ordenanza.id_ordenanza;
 
 
 --
--- Name: tarifa_inspeccion; Type: TABLE; Schema: public; Owner: -
+-- Name: tarifa_inspeccion; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.tarifa_inspeccion (
@@ -3024,8 +3722,10 @@ CREATE TABLE public.tarifa_inspeccion (
 );
 
 
+ALTER TABLE public.tarifa_inspeccion OWNER TO postgres;
+
 --
--- Name: ordenanzas_instancias_tramites; Type: VIEW; Schema: public; Owner: -
+-- Name: ordenanzas_instancias_tramites; Type: VIEW; Schema: public; Owner: postgres
 --
 
 CREATE VIEW public.ordenanzas_instancias_tramites AS
@@ -3042,8 +3742,10 @@ CREATE VIEW public.ordenanzas_instancias_tramites AS
      JOIN public.ordenanza o ON ((o.id_ordenanza = ti.id_ordenanza)));
 
 
+ALTER TABLE public.ordenanzas_instancias_tramites OWNER TO postgres;
+
 --
--- Name: ordenanzas_tramites_id_ordenanza_tramite_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: ordenanzas_tramites_id_ordenanza_tramite_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.ordenanzas_tramites_id_ordenanza_tramite_seq
@@ -3055,15 +3757,17 @@ CREATE SEQUENCE public.ordenanzas_tramites_id_ordenanza_tramite_seq
     CACHE 1;
 
 
+ALTER TABLE public.ordenanzas_tramites_id_ordenanza_tramite_seq OWNER TO postgres;
+
 --
--- Name: ordenanzas_tramites_id_ordenanza_tramite_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: ordenanzas_tramites_id_ordenanza_tramite_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.ordenanzas_tramites_id_ordenanza_tramite_seq OWNED BY public.ordenanza_tramite.id_ordenanza_tramite;
 
 
 --
--- Name: pago; Type: TABLE; Schema: public; Owner: -
+-- Name: pago; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.pago (
@@ -3080,8 +3784,10 @@ CREATE TABLE public.pago (
 );
 
 
+ALTER TABLE public.pago OWNER TO postgres;
+
 --
--- Name: pago_manual; Type: TABLE; Schema: public; Owner: -
+-- Name: pago_manual; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.pago_manual (
@@ -3090,8 +3796,10 @@ CREATE TABLE public.pago_manual (
 );
 
 
+ALTER TABLE public.pago_manual OWNER TO postgres;
+
 --
--- Name: pagos_id_pago_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: pagos_id_pago_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.pagos_id_pago_seq
@@ -3103,15 +3811,17 @@ CREATE SEQUENCE public.pagos_id_pago_seq
     CACHE 1;
 
 
+ALTER TABLE public.pagos_id_pago_seq OWNER TO postgres;
+
 --
--- Name: pagos_id_pago_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: pagos_id_pago_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.pagos_id_pago_seq OWNED BY public.pago.id_pago;
 
 
 --
--- Name: parroquias_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: parroquias_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.parroquias_id_seq
@@ -3123,15 +3833,17 @@ CREATE SEQUENCE public.parroquias_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.parroquias_id_seq OWNER TO postgres;
+
 --
--- Name: parroquias_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: parroquias_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.parroquias_id_seq OWNED BY public.parroquia.id;
 
 
 --
--- Name: permiso_de_acceso; Type: TABLE; Schema: public; Owner: -
+-- Name: permiso_de_acceso; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.permiso_de_acceso (
@@ -3141,8 +3853,10 @@ CREATE TABLE public.permiso_de_acceso (
 );
 
 
+ALTER TABLE public.permiso_de_acceso OWNER TO postgres;
+
 --
--- Name: permiso_de_acceso_id_permiso_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: permiso_de_acceso_id_permiso_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.permiso_de_acceso_id_permiso_seq
@@ -3154,15 +3868,17 @@ CREATE SEQUENCE public.permiso_de_acceso_id_permiso_seq
     CACHE 1;
 
 
+ALTER TABLE public.permiso_de_acceso_id_permiso_seq OWNER TO postgres;
+
 --
--- Name: permiso_de_acceso_id_permiso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: permiso_de_acceso_id_permiso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.permiso_de_acceso_id_permiso_seq OWNED BY public.permiso_de_acceso.id_permiso;
 
 
 --
--- Name: propietario; Type: TABLE; Schema: public; Owner: -
+-- Name: propietario; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.propietario (
@@ -3174,8 +3890,10 @@ CREATE TABLE public.propietario (
 );
 
 
+ALTER TABLE public.propietario OWNER TO postgres;
+
 --
--- Name: propietario_id_propietario_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: propietario_id_propietario_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.propietario_id_propietario_seq
@@ -3187,15 +3905,17 @@ CREATE SEQUENCE public.propietario_id_propietario_seq
     CACHE 1;
 
 
+ALTER TABLE public.propietario_id_propietario_seq OWNER TO postgres;
+
 --
--- Name: propietario_id_propietario_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: propietario_id_propietario_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.propietario_id_propietario_seq OWNED BY public.propietario.id_propietario;
 
 
 --
--- Name: propietario_inmueble; Type: TABLE; Schema: public; Owner: -
+-- Name: propietario_inmueble; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.propietario_inmueble (
@@ -3205,8 +3925,10 @@ CREATE TABLE public.propietario_inmueble (
 );
 
 
+ALTER TABLE public.propietario_inmueble OWNER TO postgres;
+
 --
--- Name: propietarios_inmuebles_id_propietario_inmueble_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: propietarios_inmuebles_id_propietario_inmueble_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.propietarios_inmuebles_id_propietario_inmueble_seq
@@ -3218,15 +3940,17 @@ CREATE SEQUENCE public.propietarios_inmuebles_id_propietario_inmueble_seq
     CACHE 1;
 
 
+ALTER TABLE public.propietarios_inmuebles_id_propietario_inmueble_seq OWNER TO postgres;
+
 --
--- Name: propietarios_inmuebles_id_propietario_inmueble_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: propietarios_inmuebles_id_propietario_inmueble_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.propietarios_inmuebles_id_propietario_inmueble_seq OWNED BY public.propietario_inmueble.id_propietario_inmueble;
 
 
 --
--- Name: recaudo; Type: TABLE; Schema: public; Owner: -
+-- Name: recaudo; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.recaudo (
@@ -3239,8 +3963,10 @@ CREATE TABLE public.recaudo (
 );
 
 
+ALTER TABLE public.recaudo OWNER TO postgres;
+
 --
--- Name: recaudos_id_recaudo_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: recaudos_id_recaudo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.recaudos_id_recaudo_seq
@@ -3252,15 +3978,17 @@ CREATE SEQUENCE public.recaudos_id_recaudo_seq
     CACHE 1;
 
 
+ALTER TABLE public.recaudos_id_recaudo_seq OWNER TO postgres;
+
 --
--- Name: recaudos_id_recaudo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: recaudos_id_recaudo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.recaudos_id_recaudo_seq OWNED BY public.recaudo.id_recaudo;
 
 
 --
--- Name: recuperacion; Type: TABLE; Schema: public; Owner: -
+-- Name: recuperacion; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.recuperacion (
@@ -3272,8 +4000,10 @@ CREATE TABLE public.recuperacion (
 );
 
 
+ALTER TABLE public.recuperacion OWNER TO postgres;
+
 --
--- Name: recuperacion_id_recuperacion_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: recuperacion_id_recuperacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.recuperacion_id_recuperacion_seq
@@ -3285,15 +4015,17 @@ CREATE SEQUENCE public.recuperacion_id_recuperacion_seq
     CACHE 1;
 
 
+ALTER TABLE public.recuperacion_id_recuperacion_seq OWNER TO postgres;
+
 --
--- Name: recuperacion_id_recuperacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: recuperacion_id_recuperacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.recuperacion_id_recuperacion_seq OWNED BY public.recuperacion.id_recuperacion;
 
 
 --
--- Name: seccion; Type: TABLE; Schema: public; Owner: -
+-- Name: seccion; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.seccion (
@@ -3302,8 +4034,10 @@ CREATE TABLE public.seccion (
 );
 
 
+ALTER TABLE public.seccion OWNER TO postgres;
+
 --
--- Name: tarifas_inspeccion_id_tarifa_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: tarifas_inspeccion_id_tarifa_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.tarifas_inspeccion_id_tarifa_seq
@@ -3315,15 +4049,17 @@ CREATE SEQUENCE public.tarifas_inspeccion_id_tarifa_seq
     CACHE 1;
 
 
+ALTER TABLE public.tarifas_inspeccion_id_tarifa_seq OWNER TO postgres;
+
 --
--- Name: tarifas_inspeccion_id_tarifa_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: tarifas_inspeccion_id_tarifa_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.tarifas_inspeccion_id_tarifa_seq OWNED BY public.tarifa_inspeccion.id_tarifa;
 
 
 --
--- Name: template_certificado; Type: TABLE; Schema: public; Owner: -
+-- Name: template_certificado; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.template_certificado (
@@ -3333,8 +4069,10 @@ CREATE TABLE public.template_certificado (
 );
 
 
+ALTER TABLE public.template_certificado OWNER TO postgres;
+
 --
--- Name: templates_certificados_id_template_certificado_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: templates_certificados_id_template_certificado_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.templates_certificados_id_template_certificado_seq
@@ -3346,15 +4084,17 @@ CREATE SEQUENCE public.templates_certificados_id_template_certificado_seq
     CACHE 1;
 
 
+ALTER TABLE public.templates_certificados_id_template_certificado_seq OWNER TO postgres;
+
 --
--- Name: templates_certificados_id_template_certificado_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: templates_certificados_id_template_certificado_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.templates_certificados_id_template_certificado_seq OWNED BY public.template_certificado.id_template_certificado;
 
 
 --
--- Name: tipo_tramite_recaudo; Type: TABLE; Schema: public; Owner: -
+-- Name: tipo_tramite_recaudo; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.tipo_tramite_recaudo (
@@ -3364,8 +4104,10 @@ CREATE TABLE public.tipo_tramite_recaudo (
 );
 
 
+ALTER TABLE public.tipo_tramite_recaudo OWNER TO postgres;
+
 --
--- Name: tipo_usuario; Type: TABLE; Schema: public; Owner: -
+-- Name: tipo_usuario; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.tipo_usuario (
@@ -3374,8 +4116,10 @@ CREATE TABLE public.tipo_usuario (
 );
 
 
+ALTER TABLE public.tipo_usuario OWNER TO postgres;
+
 --
--- Name: tipos_tramites_id_tipo_tramite_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: tipos_tramites_id_tipo_tramite_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.tipos_tramites_id_tipo_tramite_seq
@@ -3387,15 +4131,17 @@ CREATE SEQUENCE public.tipos_tramites_id_tipo_tramite_seq
     CACHE 1;
 
 
+ALTER TABLE public.tipos_tramites_id_tipo_tramite_seq OWNER TO postgres;
+
 --
--- Name: tipos_tramites_id_tipo_tramite_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: tipos_tramites_id_tipo_tramite_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.tipos_tramites_id_tipo_tramite_seq OWNED BY public.tipo_tramite.id_tipo_tramite;
 
 
 --
--- Name: tipos_usuarios_id_tipo_usuario_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: tipos_usuarios_id_tipo_usuario_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.tipos_usuarios_id_tipo_usuario_seq
@@ -3407,15 +4153,17 @@ CREATE SEQUENCE public.tipos_usuarios_id_tipo_usuario_seq
     CACHE 1;
 
 
+ALTER TABLE public.tipos_usuarios_id_tipo_usuario_seq OWNER TO postgres;
+
 --
--- Name: tipos_usuarios_id_tipo_usuario_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: tipos_usuarios_id_tipo_usuario_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.tipos_usuarios_id_tipo_usuario_seq OWNED BY public.tipo_usuario.id_tipo_usuario;
 
 
 --
--- Name: tramite_archivo_recaudo; Type: TABLE; Schema: public; Owner: -
+-- Name: tramite_archivo_recaudo; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.tramite_archivo_recaudo (
@@ -3424,8 +4172,10 @@ CREATE TABLE public.tramite_archivo_recaudo (
 );
 
 
+ALTER TABLE public.tramite_archivo_recaudo OWNER TO postgres;
+
 --
--- Name: tramites_id_tramite_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: tramites_id_tramite_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.tramites_id_tramite_seq
@@ -3437,15 +4187,17 @@ CREATE SEQUENCE public.tramites_id_tramite_seq
     CACHE 1;
 
 
+ALTER TABLE public.tramites_id_tramite_seq OWNER TO postgres;
+
 --
--- Name: tramites_id_tramite_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: tramites_id_tramite_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.tramites_id_tramite_seq OWNED BY public.tramite.id_tramite;
 
 
 --
--- Name: tramites_state; Type: VIEW; Schema: public; Owner: -
+-- Name: tramites_state; Type: VIEW; Schema: public; Owner: postgres
 --
 
 CREATE VIEW public.tramites_state AS
@@ -3468,8 +4220,10 @@ CREATE VIEW public.tramites_state AS
           GROUP BY evento_tramite.id_tramite) ev ON ((t.id_tramite = ev.id_tramite)));
 
 
+ALTER TABLE public.tramites_state OWNER TO postgres;
+
 --
--- Name: usuario; Type: TABLE; Schema: public; Owner: -
+-- Name: usuario; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.usuario (
@@ -3486,8 +4240,10 @@ CREATE TABLE public.usuario (
 );
 
 
+ALTER TABLE public.usuario OWNER TO postgres;
+
 --
--- Name: usuarios_id_usuario_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: usuarios_id_usuario_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.usuarios_id_usuario_seq
@@ -3499,15 +4255,17 @@ CREATE SEQUENCE public.usuarios_id_usuario_seq
     CACHE 1;
 
 
+ALTER TABLE public.usuarios_id_usuario_seq OWNER TO postgres;
+
 --
--- Name: usuarios_id_usuario_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: usuarios_id_usuario_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.usuarios_id_usuario_seq OWNED BY public.usuario.id_usuario;
 
 
 --
--- Name: valor; Type: TABLE; Schema: public; Owner: -
+-- Name: valor; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.valor (
@@ -3517,8 +4275,10 @@ CREATE TABLE public.valor (
 );
 
 
+ALTER TABLE public.valor OWNER TO postgres;
+
 --
--- Name: valores_id_valor_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: valores_id_valor_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.valores_id_valor_seq
@@ -3530,15 +4290,17 @@ CREATE SEQUENCE public.valores_id_valor_seq
     CACHE 1;
 
 
+ALTER TABLE public.valores_id_valor_seq OWNER TO postgres;
+
 --
--- Name: valores_id_valor_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: valores_id_valor_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.valores_id_valor_seq OWNED BY public.valor.id_valor;
 
 
 --
--- Name: variables_id_var_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: variables_id_var_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.variables_id_var_seq
@@ -3549,8 +4311,10 @@ CREATE SEQUENCE public.variables_id_var_seq
     CACHE 1;
 
 
+ALTER TABLE public.variables_id_var_seq OWNER TO postgres;
+
 --
--- Name: variable; Type: TABLE; Schema: public; Owner: -
+-- Name: variable; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.variable (
@@ -3559,8 +4323,10 @@ CREATE TABLE public.variable (
 );
 
 
+ALTER TABLE public.variable OWNER TO postgres;
+
 --
--- Name: variables_de_costo_id_variable_de_costo_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: variables_de_costo_id_variable_de_costo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.variables_de_costo_id_variable_de_costo_seq
@@ -3571,8 +4337,10 @@ CREATE SEQUENCE public.variables_de_costo_id_variable_de_costo_seq
     CACHE 1;
 
 
+ALTER TABLE public.variables_de_costo_id_variable_de_costo_seq OWNER TO postgres;
+
 --
--- Name: variable_de_costo; Type: TABLE; Schema: public; Owner: -
+-- Name: variable_de_costo; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.variable_de_costo (
@@ -3584,8 +4352,10 @@ CREATE TABLE public.variable_de_costo (
 );
 
 
+ALTER TABLE public.variable_de_costo OWNER TO postgres;
+
 --
--- Name: variable_ordenanza; Type: TABLE; Schema: public; Owner: -
+-- Name: variable_ordenanza; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.variable_ordenanza (
@@ -3595,8 +4365,10 @@ CREATE TABLE public.variable_ordenanza (
 );
 
 
+ALTER TABLE public.variable_ordenanza OWNER TO postgres;
+
 --
--- Name: variables_ordenanzas_id_variable_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: variables_ordenanzas_id_variable_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.variables_ordenanzas_id_variable_seq
@@ -3608,15 +4380,17 @@ CREATE SEQUENCE public.variables_ordenanzas_id_variable_seq
     CACHE 1;
 
 
+ALTER TABLE public.variables_ordenanzas_id_variable_seq OWNER TO postgres;
+
 --
--- Name: variables_ordenanzas_id_variable_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: variables_ordenanzas_id_variable_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.variables_ordenanzas_id_variable_seq OWNED BY public.variable_ordenanza.id_variable;
 
 
 --
--- Name: base_task; Type: TABLE; Schema: timetable; Owner: -
+-- Name: base_task; Type: TABLE; Schema: timetable; Owner: postgres
 --
 
 CREATE TABLE timetable.base_task (
@@ -3632,8 +4406,10 @@ END)
 );
 
 
+ALTER TABLE timetable.base_task OWNER TO postgres;
+
 --
--- Name: base_task_task_id_seq; Type: SEQUENCE; Schema: timetable; Owner: -
+-- Name: base_task_task_id_seq; Type: SEQUENCE; Schema: timetable; Owner: postgres
 --
 
 CREATE SEQUENCE timetable.base_task_task_id_seq
@@ -3644,15 +4420,17 @@ CREATE SEQUENCE timetable.base_task_task_id_seq
     CACHE 1;
 
 
+ALTER TABLE timetable.base_task_task_id_seq OWNER TO postgres;
+
 --
--- Name: base_task_task_id_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: -
+-- Name: base_task_task_id_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: postgres
 --
 
 ALTER SEQUENCE timetable.base_task_task_id_seq OWNED BY timetable.base_task.task_id;
 
 
 --
--- Name: chain_execution_config; Type: TABLE; Schema: timetable; Owner: -
+-- Name: chain_execution_config; Type: TABLE; Schema: timetable; Owner: postgres
 --
 
 CREATE TABLE timetable.chain_execution_config (
@@ -3669,8 +4447,10 @@ CREATE TABLE timetable.chain_execution_config (
 );
 
 
+ALTER TABLE timetable.chain_execution_config OWNER TO postgres;
+
 --
--- Name: chain_execution_config_chain_execution_config_seq; Type: SEQUENCE; Schema: timetable; Owner: -
+-- Name: chain_execution_config_chain_execution_config_seq; Type: SEQUENCE; Schema: timetable; Owner: postgres
 --
 
 CREATE SEQUENCE timetable.chain_execution_config_chain_execution_config_seq
@@ -3681,15 +4461,17 @@ CREATE SEQUENCE timetable.chain_execution_config_chain_execution_config_seq
     CACHE 1;
 
 
+ALTER TABLE timetable.chain_execution_config_chain_execution_config_seq OWNER TO postgres;
+
 --
--- Name: chain_execution_config_chain_execution_config_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: -
+-- Name: chain_execution_config_chain_execution_config_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: postgres
 --
 
 ALTER SEQUENCE timetable.chain_execution_config_chain_execution_config_seq OWNED BY timetable.chain_execution_config.chain_execution_config;
 
 
 --
--- Name: chain_execution_parameters; Type: TABLE; Schema: timetable; Owner: -
+-- Name: chain_execution_parameters; Type: TABLE; Schema: timetable; Owner: postgres
 --
 
 CREATE TABLE timetable.chain_execution_parameters (
@@ -3701,8 +4483,10 @@ CREATE TABLE timetable.chain_execution_parameters (
 );
 
 
+ALTER TABLE timetable.chain_execution_parameters OWNER TO postgres;
+
 --
--- Name: database_connection; Type: TABLE; Schema: timetable; Owner: -
+-- Name: database_connection; Type: TABLE; Schema: timetable; Owner: postgres
 --
 
 CREATE TABLE timetable.database_connection (
@@ -3712,8 +4496,10 @@ CREATE TABLE timetable.database_connection (
 );
 
 
+ALTER TABLE timetable.database_connection OWNER TO postgres;
+
 --
--- Name: database_connection_database_connection_seq; Type: SEQUENCE; Schema: timetable; Owner: -
+-- Name: database_connection_database_connection_seq; Type: SEQUENCE; Schema: timetable; Owner: postgres
 --
 
 CREATE SEQUENCE timetable.database_connection_database_connection_seq
@@ -3724,15 +4510,17 @@ CREATE SEQUENCE timetable.database_connection_database_connection_seq
     CACHE 1;
 
 
+ALTER TABLE timetable.database_connection_database_connection_seq OWNER TO postgres;
+
 --
--- Name: database_connection_database_connection_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: -
+-- Name: database_connection_database_connection_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: postgres
 --
 
 ALTER SEQUENCE timetable.database_connection_database_connection_seq OWNED BY timetable.database_connection.database_connection;
 
 
 --
--- Name: execution_log; Type: TABLE; Schema: timetable; Owner: -
+-- Name: execution_log; Type: TABLE; Schema: timetable; Owner: postgres
 --
 
 CREATE TABLE timetable.execution_log (
@@ -3749,8 +4537,10 @@ CREATE TABLE timetable.execution_log (
 );
 
 
+ALTER TABLE timetable.execution_log OWNER TO postgres;
+
 --
--- Name: log; Type: TABLE; Schema: timetable; Owner: -
+-- Name: log; Type: TABLE; Schema: timetable; Owner: postgres
 --
 
 CREATE TABLE timetable.log (
@@ -3763,8 +4553,10 @@ CREATE TABLE timetable.log (
 );
 
 
+ALTER TABLE timetable.log OWNER TO postgres;
+
 --
--- Name: log_id_seq; Type: SEQUENCE; Schema: timetable; Owner: -
+-- Name: log_id_seq; Type: SEQUENCE; Schema: timetable; Owner: postgres
 --
 
 CREATE SEQUENCE timetable.log_id_seq
@@ -3775,15 +4567,17 @@ CREATE SEQUENCE timetable.log_id_seq
     CACHE 1;
 
 
+ALTER TABLE timetable.log_id_seq OWNER TO postgres;
+
 --
--- Name: log_id_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: -
+-- Name: log_id_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: postgres
 --
 
 ALTER SEQUENCE timetable.log_id_seq OWNED BY timetable.log.id;
 
 
 --
--- Name: migrations; Type: TABLE; Schema: timetable; Owner: -
+-- Name: migrations; Type: TABLE; Schema: timetable; Owner: postgres
 --
 
 CREATE TABLE timetable.migrations (
@@ -3792,8 +4586,10 @@ CREATE TABLE timetable.migrations (
 );
 
 
+ALTER TABLE timetable.migrations OWNER TO postgres;
+
 --
--- Name: run_status; Type: TABLE; Schema: timetable; Owner: -
+-- Name: run_status; Type: TABLE; Schema: timetable; Owner: postgres
 --
 
 CREATE TABLE timetable.run_status (
@@ -3808,8 +4604,10 @@ CREATE TABLE timetable.run_status (
 );
 
 
+ALTER TABLE timetable.run_status OWNER TO postgres;
+
 --
--- Name: run_status_run_status_seq; Type: SEQUENCE; Schema: timetable; Owner: -
+-- Name: run_status_run_status_seq; Type: SEQUENCE; Schema: timetable; Owner: postgres
 --
 
 CREATE SEQUENCE timetable.run_status_run_status_seq
@@ -3820,15 +4618,17 @@ CREATE SEQUENCE timetable.run_status_run_status_seq
     CACHE 1;
 
 
+ALTER TABLE timetable.run_status_run_status_seq OWNER TO postgres;
+
 --
--- Name: run_status_run_status_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: -
+-- Name: run_status_run_status_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: postgres
 --
 
 ALTER SEQUENCE timetable.run_status_run_status_seq OWNED BY timetable.run_status.run_status;
 
 
 --
--- Name: task_chain; Type: TABLE; Schema: timetable; Owner: -
+-- Name: task_chain; Type: TABLE; Schema: timetable; Owner: postgres
 --
 
 CREATE TABLE timetable.task_chain (
@@ -3841,8 +4641,10 @@ CREATE TABLE timetable.task_chain (
 );
 
 
+ALTER TABLE timetable.task_chain OWNER TO postgres;
+
 --
--- Name: task_chain_chain_id_seq; Type: SEQUENCE; Schema: timetable; Owner: -
+-- Name: task_chain_chain_id_seq; Type: SEQUENCE; Schema: timetable; Owner: postgres
 --
 
 CREATE SEQUENCE timetable.task_chain_chain_id_seq
@@ -3853,15 +4655,17 @@ CREATE SEQUENCE timetable.task_chain_chain_id_seq
     CACHE 1;
 
 
+ALTER TABLE timetable.task_chain_chain_id_seq OWNER TO postgres;
+
 --
--- Name: task_chain_chain_id_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: -
+-- Name: task_chain_chain_id_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: postgres
 --
 
 ALTER SEQUENCE timetable.task_chain_chain_id_seq OWNED BY timetable.task_chain.chain_id;
 
 
 --
--- Name: ano; Type: TABLE; Schema: valores_fiscales; Owner: -
+-- Name: ano; Type: TABLE; Schema: valores_fiscales; Owner: postgres
 --
 
 CREATE TABLE valores_fiscales.ano (
@@ -3870,8 +4674,10 @@ CREATE TABLE valores_fiscales.ano (
 );
 
 
+ALTER TABLE valores_fiscales.ano OWNER TO postgres;
+
 --
--- Name: ano_fiscal_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: -
+-- Name: ano_fiscal_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: postgres
 --
 
 CREATE SEQUENCE valores_fiscales.ano_fiscal_id_seq
@@ -3883,15 +4689,17 @@ CREATE SEQUENCE valores_fiscales.ano_fiscal_id_seq
     CACHE 1;
 
 
+ALTER TABLE valores_fiscales.ano_fiscal_id_seq OWNER TO postgres;
+
 --
--- Name: ano_fiscal_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: -
+-- Name: ano_fiscal_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: postgres
 --
 
 ALTER SEQUENCE valores_fiscales.ano_fiscal_id_seq OWNED BY valores_fiscales.ano.id;
 
 
 --
--- Name: construccion; Type: TABLE; Schema: valores_fiscales; Owner: -
+-- Name: construccion; Type: TABLE; Schema: valores_fiscales; Owner: postgres
 --
 
 CREATE TABLE valores_fiscales.construccion (
@@ -3902,8 +4710,10 @@ CREATE TABLE valores_fiscales.construccion (
 );
 
 
+ALTER TABLE valores_fiscales.construccion OWNER TO postgres;
+
 --
--- Name: construccion_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: -
+-- Name: construccion_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: postgres
 --
 
 CREATE SEQUENCE valores_fiscales.construccion_id_seq
@@ -3914,15 +4724,17 @@ CREATE SEQUENCE valores_fiscales.construccion_id_seq
     CACHE 1;
 
 
+ALTER TABLE valores_fiscales.construccion_id_seq OWNER TO postgres;
+
 --
--- Name: construccion_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: -
+-- Name: construccion_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: postgres
 --
 
 ALTER SEQUENCE valores_fiscales.construccion_id_seq OWNED BY valores_fiscales.construccion.id;
 
 
 --
--- Name: tipo_construccion; Type: TABLE; Schema: valores_fiscales; Owner: -
+-- Name: tipo_construccion; Type: TABLE; Schema: valores_fiscales; Owner: postgres
 --
 
 CREATE TABLE valores_fiscales.tipo_construccion (
@@ -3931,8 +4743,10 @@ CREATE TABLE valores_fiscales.tipo_construccion (
 );
 
 
+ALTER TABLE valores_fiscales.tipo_construccion OWNER TO postgres;
+
 --
--- Name: get_all_construcciones; Type: VIEW; Schema: valores_fiscales; Owner: -
+-- Name: get_all_construcciones; Type: VIEW; Schema: valores_fiscales; Owner: postgres
 --
 
 CREATE VIEW valores_fiscales.get_all_construcciones AS
@@ -3947,8 +4761,10 @@ CREATE VIEW valores_fiscales.get_all_construcciones AS
      JOIN valores_fiscales.ano ON ((construccion.ano_id = ano.id)));
 
 
+ALTER TABLE valores_fiscales.get_all_construcciones OWNER TO postgres;
+
 --
--- Name: sector; Type: TABLE; Schema: valores_fiscales; Owner: -
+-- Name: sector; Type: TABLE; Schema: valores_fiscales; Owner: postgres
 --
 
 CREATE TABLE valores_fiscales.sector (
@@ -3958,8 +4774,10 @@ CREATE TABLE valores_fiscales.sector (
 );
 
 
+ALTER TABLE valores_fiscales.sector OWNER TO postgres;
+
 --
--- Name: terreno; Type: TABLE; Schema: valores_fiscales; Owner: -
+-- Name: terreno; Type: TABLE; Schema: valores_fiscales; Owner: postgres
 --
 
 CREATE TABLE valores_fiscales.terreno (
@@ -3970,8 +4788,10 @@ CREATE TABLE valores_fiscales.terreno (
 );
 
 
+ALTER TABLE valores_fiscales.terreno OWNER TO postgres;
+
 --
--- Name: get_all_terrenos; Type: VIEW; Schema: valores_fiscales; Owner: -
+-- Name: get_all_terrenos; Type: VIEW; Schema: valores_fiscales; Owner: postgres
 --
 
 CREATE VIEW valores_fiscales.get_all_terrenos AS
@@ -3989,8 +4809,10 @@ CREATE VIEW valores_fiscales.get_all_terrenos AS
      JOIN valores_fiscales.ano ON ((terreno.ano_id = ano.id)));
 
 
+ALTER TABLE valores_fiscales.get_all_terrenos OWNER TO postgres;
+
 --
--- Name: sector_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: -
+-- Name: sector_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: postgres
 --
 
 CREATE SEQUENCE valores_fiscales.sector_id_seq
@@ -4002,15 +4824,17 @@ CREATE SEQUENCE valores_fiscales.sector_id_seq
     CACHE 1;
 
 
+ALTER TABLE valores_fiscales.sector_id_seq OWNER TO postgres;
+
 --
--- Name: sector_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: -
+-- Name: sector_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: postgres
 --
 
 ALTER SEQUENCE valores_fiscales.sector_id_seq OWNED BY valores_fiscales.sector.id;
 
 
 --
--- Name: terreno_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: -
+-- Name: terreno_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: postgres
 --
 
 CREATE SEQUENCE valores_fiscales.terreno_id_seq
@@ -4021,15 +4845,17 @@ CREATE SEQUENCE valores_fiscales.terreno_id_seq
     CACHE 1;
 
 
+ALTER TABLE valores_fiscales.terreno_id_seq OWNER TO postgres;
+
 --
--- Name: terreno_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: -
+-- Name: terreno_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: postgres
 --
 
 ALTER SEQUENCE valores_fiscales.terreno_id_seq OWNED BY valores_fiscales.terreno.id;
 
 
 --
--- Name: tipo_construccion_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: -
+-- Name: tipo_construccion_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: postgres
 --
 
 CREATE SEQUENCE valores_fiscales.tipo_construccion_id_seq
@@ -4041,670 +4867,729 @@ CREATE SEQUENCE valores_fiscales.tipo_construccion_id_seq
     CACHE 1;
 
 
+ALTER TABLE valores_fiscales.tipo_construccion_id_seq OWNER TO postgres;
+
 --
--- Name: tipo_construccion_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: -
+-- Name: tipo_construccion_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: postgres
 --
 
 ALTER SEQUENCE valores_fiscales.tipo_construccion_id_seq OWNED BY valores_fiscales.tipo_construccion.id;
 
 
 --
--- Name: actividad_economica id_actividad_economica; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: actividad_economica id_actividad_economica; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.actividad_economica ALTER COLUMN id_actividad_economica SET DEFAULT nextval('impuesto.actividad_economica_id_actividad_economica_seq'::regclass);
 
 
 --
--- Name: actividad_economica_exoneracion id_actividad_economica_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: actividad_economica_contribuyente id_actividad_economica_contribuyente; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.actividad_economica_contribuyente ALTER COLUMN id_actividad_economica_contribuyente SET DEFAULT nextval('impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq'::regclass);
+
+
+--
+-- Name: actividad_economica_exoneracion id_actividad_economica_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.actividad_economica_exoneracion ALTER COLUMN id_actividad_economica_exoneracion SET DEFAULT nextval('impuesto.actividad_economica_exoneraci_id_actividad_economica_exoner_seq'::regclass);
 
 
 --
--- Name: ae_desglose id_ae_desglose; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: categoria_propaganda id_categoria_propaganda; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.ae_desglose ALTER COLUMN id_ae_desglose SET DEFAULT nextval('impuesto.ae_desglose_id_ae_desglose_seq'::regclass);
+ALTER TABLE ONLY impuesto.categoria_propaganda ALTER COLUMN id_categoria_propaganda SET DEFAULT nextval('impuesto.categoria_propaganda_id_categoria_propaganda_seq'::regclass);
 
 
 --
--- Name: dias_feriados id_dia_feriado; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: contribuyente id_contribuyente; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.contribuyente ALTER COLUMN id_contribuyente SET DEFAULT nextval('impuesto.contribuyente_id_contribuyente_seq'::regclass);
+
+
+--
+-- Name: contribuyente_exoneracion id_contribuyente_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.contribuyente_exoneracion ALTER COLUMN id_contribuyente_exoneracion SET DEFAULT nextval('impuesto.contribuyente_exoneracion_id_contribuyente_exoneracion_seq'::regclass);
+
+
+--
+-- Name: dias_feriados id_dia_feriado; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.dias_feriados ALTER COLUMN id_dia_feriado SET DEFAULT nextval('impuesto.dias_feriados_id_dia_feriado_seq'::regclass);
 
 
 --
--- Name: factor id_factor; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: evento_solicitud id_evento_solicitud; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.evento_solicitud ALTER COLUMN id_evento_solicitud SET DEFAULT nextval('impuesto.evento_solicitud_id_evento_solicitud_seq'::regclass);
+
+
+--
+-- Name: factor id_factor; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.factor ALTER COLUMN id_factor SET DEFAULT nextval('impuesto.factor_id_factor_seq'::regclass);
 
 
 --
--- Name: iu_desglose id_iu_desglose; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: inmueble_contribuyente id_inmueble_contribuyente; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.iu_desglose ALTER COLUMN id_iu_desglose SET DEFAULT nextval('impuesto.iu_desglose_id_iu_desglose_seq'::regclass);
+ALTER TABLE ONLY impuesto.inmueble_contribuyente ALTER COLUMN id_inmueble_contribuyente SET DEFAULT nextval('impuesto.inmueble_contribuyente_id_inmueble_contribuyente_seq'::regclass);
 
 
 --
--- Name: liquidacion id_liquidacion; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: liquidacion id_liquidacion; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.liquidacion ALTER COLUMN id_liquidacion SET DEFAULT nextval('impuesto.liquidacion_id_liquidacion_seq'::regclass);
 
 
 --
--- Name: multa id_multa; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: multa id_multa; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.multa ALTER COLUMN id_multa SET DEFAULT nextval('impuesto.multa_id_multa_seq'::regclass);
 
 
 --
--- Name: plazo_exoneracion id_plazo_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: plazo_exoneracion id_plazo_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.plazo_exoneracion ALTER COLUMN id_plazo_exoneracion SET DEFAULT nextval('impuesto.plazo_exoneracion_id_plazo_exoneracion_seq'::regclass);
 
 
 --
--- Name: pp_desglose id_pp_desglose; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: ramo id_ramo; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.pp_desglose ALTER COLUMN id_pp_desglose SET DEFAULT nextval('impuesto.pp_desglose_id_pp_desglose_seq'::regclass);
-
-
---
--- Name: procedimiento id_procedimiento; Type: DEFAULT; Schema: impuesto; Owner: -
---
-
-ALTER TABLE ONLY impuesto.procedimiento ALTER COLUMN id_procedimiento SET DEFAULT nextval('impuesto.procedimiento_id_procedimiento_seq'::regclass);
+ALTER TABLE ONLY impuesto.ramo ALTER COLUMN id_ramo SET DEFAULT nextval('impuesto.ramo_id_ramo_seq'::regclass);
 
 
 --
--- Name: procedimiento_exoneracion id_procedimiento_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: ramo_exoneracion id_ramo_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.procedimiento_exoneracion ALTER COLUMN id_procedimiento_exoneracion SET DEFAULT nextval('impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq'::regclass);
-
-
---
--- Name: sm_desglose id_sm_desglose; Type: DEFAULT; Schema: impuesto; Owner: -
---
-
-ALTER TABLE ONLY impuesto.sm_desglose ALTER COLUMN id_sm_desglose SET DEFAULT nextval('impuesto.sm_desglose_id_sm_desglose_seq'::regclass);
+ALTER TABLE ONLY impuesto.ramo_exoneracion ALTER COLUMN id_ramo_exoneracion SET DEFAULT nextval('impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq'::regclass);
 
 
 --
--- Name: solicitud id_solicitud; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: registro_municipal id_registro_municipal; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.registro_municipal ALTER COLUMN id_registro_municipal SET DEFAULT nextval('impuesto.registro_municipal_id_registro_municipal_seq'::regclass);
+
+
+--
+-- Name: solicitud id_solicitud; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.solicitud ALTER COLUMN id_solicitud SET DEFAULT nextval('impuesto.solicitud_id_solicitud_seq'::regclass);
 
 
 --
--- Name: tabulador_gas id_tabulador_gas; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: subramo id_subramo; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.subramo ALTER COLUMN id_subramo SET DEFAULT nextval('impuesto.subramo_id_subramo_seq'::regclass);
+
+
+--
+-- Name: tabulador_aseo_actividad_economica id_tabulador_aseo_actividad_economica; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_aseo_actividad_economica ALTER COLUMN id_tabulador_aseo_actividad_economica SET DEFAULT nextval('impuesto.tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq'::regclass);
+
+
+--
+-- Name: tabulador_aseo_residencial id_tabulador_aseo_residencial; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_aseo_residencial ALTER COLUMN id_tabulador_aseo_residencial SET DEFAULT nextval('impuesto.tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq'::regclass);
+
+
+--
+-- Name: tabulador_gas id_tabulador_gas; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.tabulador_gas ALTER COLUMN id_tabulador_gas SET DEFAULT nextval('impuesto.tabulador_gas_id_tabulador_gas_seq'::regclass);
 
 
 --
--- Name: tipo_actividad_economica id_tipo_actividad; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_actividad_economica id_tabulador_gas_actividad_economica; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.tipo_actividad_economica ALTER COLUMN id_tipo_actividad SET DEFAULT nextval('impuesto.tipo_actividad_economica_id_tipo_actividad_seq'::regclass);
-
-
---
--- Name: tipo_contribuyente id_tipo_contribuyente; Type: DEFAULT; Schema: impuesto; Owner: -
---
-
-ALTER TABLE ONLY impuesto.tipo_contribuyente ALTER COLUMN id_tipo_contribuyente SET DEFAULT nextval('impuesto.tipo_contribuyente_id_tipo_contribuyente_seq'::regclass);
+ALTER TABLE ONLY impuesto.tabulador_gas_actividad_economica ALTER COLUMN id_tabulador_gas_actividad_economica SET DEFAULT nextval('impuesto.tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq'::regclass);
 
 
 --
--- Name: tipo_multa id_tipo_multa; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_residencial id_tabulador_gas_residencial; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_gas_residencial ALTER COLUMN id_tabulador_gas_residencial SET DEFAULT nextval('impuesto.tabulador_gas_residencial_id_tabulador_gas_residencial_seq'::regclass);
+
+
+--
+-- Name: tipo_aviso_propaganda id_tipo_aviso_propaganda; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tipo_aviso_propaganda ALTER COLUMN id_tipo_aviso_propaganda SET DEFAULT nextval('impuesto.tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq'::regclass);
+
+
+--
+-- Name: tipo_multa id_tipo_multa; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.tipo_multa ALTER COLUMN id_tipo_multa SET DEFAULT nextval('impuesto.tipo_multa_id_tipo_multa_seq'::regclass);
 
 
 --
--- Name: banco id_banco; Type: DEFAULT; Schema: public; Owner: -
+-- Name: banco id_banco; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.banco ALTER COLUMN id_banco SET DEFAULT nextval('public.bancos_id_banco_seq'::regclass);
 
 
 --
--- Name: campo id_campo; Type: DEFAULT; Schema: public; Owner: -
+-- Name: campo id_campo; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.campo ALTER COLUMN id_campo SET DEFAULT nextval('public.campos_id_campo_seq'::regclass);
 
 
 --
--- Name: cargo id_cargo; Type: DEFAULT; Schema: public; Owner: -
+-- Name: cargo id_cargo; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.cargo ALTER COLUMN id_cargo SET DEFAULT nextval('public.cargo_id_cargo_seq'::regclass);
 
 
 --
--- Name: caso_social id_caso; Type: DEFAULT; Schema: public; Owner: -
+-- Name: caso_social id_caso; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.caso_social ALTER COLUMN id_caso SET DEFAULT nextval('public.casos_sociales_id_caso_seq'::regclass);
 
 
 --
--- Name: certificado id_certificado; Type: DEFAULT; Schema: public; Owner: -
+-- Name: certificado id_certificado; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.certificado ALTER COLUMN id_certificado SET DEFAULT nextval('public.certificados_id_certificado_seq'::regclass);
 
 
 --
--- Name: detalle_factura id_detalle; Type: DEFAULT; Schema: public; Owner: -
+-- Name: detalle_factura id_detalle; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.detalle_factura ALTER COLUMN id_detalle SET DEFAULT nextval('public.detalles_facturas_id_detalle_seq'::regclass);
 
 
 --
--- Name: evento_caso_social id_evento_caso; Type: DEFAULT; Schema: public; Owner: -
+-- Name: evento_caso_social id_evento_caso; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.evento_caso_social ALTER COLUMN id_evento_caso SET DEFAULT nextval('public.eventos_casos_sociales_id_evento_caso_seq'::regclass);
 
 
 --
--- Name: evento_multa id_evento_multa; Type: DEFAULT; Schema: public; Owner: -
+-- Name: evento_multa id_evento_multa; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.evento_multa ALTER COLUMN id_evento_multa SET DEFAULT nextval('public.evento_multa_id_evento_multa_seq'::regclass);
 
 
 --
--- Name: evento_tramite id_evento_tramite; Type: DEFAULT; Schema: public; Owner: -
+-- Name: evento_tramite id_evento_tramite; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.evento_tramite ALTER COLUMN id_evento_tramite SET DEFAULT nextval('public.eventos_tramite_id_evento_tramite_seq'::regclass);
 
 
 --
--- Name: factura_tramite id_factura; Type: DEFAULT; Schema: public; Owner: -
+-- Name: factura_tramite id_factura; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.factura_tramite ALTER COLUMN id_factura SET DEFAULT nextval('public.facturas_tramites_id_factura_seq'::regclass);
 
 
 --
--- Name: inmueble_urbano id_inmueble; Type: DEFAULT; Schema: public; Owner: -
+-- Name: inmueble_urbano id_inmueble; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.inmueble_urbano ALTER COLUMN id_inmueble SET DEFAULT nextval('public.inmueble_urbano_id_inmueble_seq'::regclass);
 
 
 --
--- Name: institucion id_institucion; Type: DEFAULT; Schema: public; Owner: -
+-- Name: institucion id_institucion; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.institucion ALTER COLUMN id_institucion SET DEFAULT nextval('public.instituciones_id_institucion_seq'::regclass);
 
 
 --
--- Name: multa id_multa; Type: DEFAULT; Schema: public; Owner: -
+-- Name: multa id_multa; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.multa ALTER COLUMN id_multa SET DEFAULT nextval('public.multa_id_multa_seq'::regclass);
 
 
 --
--- Name: notificacion id_notificacion; Type: DEFAULT; Schema: public; Owner: -
+-- Name: notificacion id_notificacion; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.notificacion ALTER COLUMN id_notificacion SET DEFAULT nextval('public.notificaciones_id_notificacion_seq'::regclass);
 
 
 --
--- Name: operatividad_terminal id_operatividad_terminal; Type: DEFAULT; Schema: public; Owner: -
+-- Name: operatividad_terminal id_operatividad_terminal; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.operatividad_terminal ALTER COLUMN id_operatividad_terminal SET DEFAULT nextval('public.operatividad_terminal_id_operatividad_terminal_seq'::regclass);
 
 
 --
--- Name: ordenanza id_ordenanza; Type: DEFAULT; Schema: public; Owner: -
+-- Name: ordenanza id_ordenanza; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.ordenanza ALTER COLUMN id_ordenanza SET DEFAULT nextval('public.ordenanzas_id_ordenanza_seq'::regclass);
 
 
 --
--- Name: ordenanza_tramite id_ordenanza_tramite; Type: DEFAULT; Schema: public; Owner: -
+-- Name: ordenanza_tramite id_ordenanza_tramite; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.ordenanza_tramite ALTER COLUMN id_ordenanza_tramite SET DEFAULT nextval('public.ordenanzas_tramites_id_ordenanza_tramite_seq'::regclass);
 
 
 --
--- Name: pago id_pago; Type: DEFAULT; Schema: public; Owner: -
+-- Name: pago id_pago; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.pago ALTER COLUMN id_pago SET DEFAULT nextval('public.pagos_id_pago_seq'::regclass);
 
 
 --
--- Name: parroquia id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: parroquia id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.parroquia ALTER COLUMN id SET DEFAULT nextval('public.parroquias_id_seq'::regclass);
 
 
 --
--- Name: permiso_de_acceso id_permiso; Type: DEFAULT; Schema: public; Owner: -
+-- Name: permiso_de_acceso id_permiso; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.permiso_de_acceso ALTER COLUMN id_permiso SET DEFAULT nextval('public.permiso_de_acceso_id_permiso_seq'::regclass);
 
 
 --
--- Name: propietario id_propietario; Type: DEFAULT; Schema: public; Owner: -
+-- Name: propietario id_propietario; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.propietario ALTER COLUMN id_propietario SET DEFAULT nextval('public.propietario_id_propietario_seq'::regclass);
 
 
 --
--- Name: propietario_inmueble id_propietario_inmueble; Type: DEFAULT; Schema: public; Owner: -
+-- Name: propietario_inmueble id_propietario_inmueble; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.propietario_inmueble ALTER COLUMN id_propietario_inmueble SET DEFAULT nextval('public.propietarios_inmuebles_id_propietario_inmueble_seq'::regclass);
 
 
 --
--- Name: recaudo id_recaudo; Type: DEFAULT; Schema: public; Owner: -
+-- Name: recaudo id_recaudo; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.recaudo ALTER COLUMN id_recaudo SET DEFAULT nextval('public.recaudos_id_recaudo_seq'::regclass);
 
 
 --
--- Name: recuperacion id_recuperacion; Type: DEFAULT; Schema: public; Owner: -
+-- Name: recuperacion id_recuperacion; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.recuperacion ALTER COLUMN id_recuperacion SET DEFAULT nextval('public.recuperacion_id_recuperacion_seq'::regclass);
 
 
 --
--- Name: tarifa_inspeccion id_tarifa; Type: DEFAULT; Schema: public; Owner: -
+-- Name: tarifa_inspeccion id_tarifa; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.tarifa_inspeccion ALTER COLUMN id_tarifa SET DEFAULT nextval('public.tarifas_inspeccion_id_tarifa_seq'::regclass);
 
 
 --
--- Name: template_certificado id_template_certificado; Type: DEFAULT; Schema: public; Owner: -
+-- Name: template_certificado id_template_certificado; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.template_certificado ALTER COLUMN id_template_certificado SET DEFAULT nextval('public.templates_certificados_id_template_certificado_seq'::regclass);
 
 
 --
--- Name: tipo_tramite id_tipo_tramite; Type: DEFAULT; Schema: public; Owner: -
+-- Name: tipo_tramite id_tipo_tramite; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.tipo_tramite ALTER COLUMN id_tipo_tramite SET DEFAULT nextval('public.tipos_tramites_id_tipo_tramite_seq'::regclass);
 
 
 --
--- Name: tipo_usuario id_tipo_usuario; Type: DEFAULT; Schema: public; Owner: -
+-- Name: tipo_usuario id_tipo_usuario; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.tipo_usuario ALTER COLUMN id_tipo_usuario SET DEFAULT nextval('public.tipos_usuarios_id_tipo_usuario_seq'::regclass);
 
 
 --
--- Name: tramite id_tramite; Type: DEFAULT; Schema: public; Owner: -
+-- Name: tramite id_tramite; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.tramite ALTER COLUMN id_tramite SET DEFAULT nextval('public.tramites_id_tramite_seq'::regclass);
 
 
 --
--- Name: usuario id_usuario; Type: DEFAULT; Schema: public; Owner: -
+-- Name: usuario id_usuario; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.usuario ALTER COLUMN id_usuario SET DEFAULT nextval('public.usuarios_id_usuario_seq'::regclass);
 
 
 --
--- Name: valor id_valor; Type: DEFAULT; Schema: public; Owner: -
+-- Name: valor id_valor; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.valor ALTER COLUMN id_valor SET DEFAULT nextval('public.valores_id_valor_seq'::regclass);
 
 
 --
--- Name: variable_ordenanza id_variable; Type: DEFAULT; Schema: public; Owner: -
+-- Name: variable_ordenanza id_variable; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.variable_ordenanza ALTER COLUMN id_variable SET DEFAULT nextval('public.variables_ordenanzas_id_variable_seq'::regclass);
 
 
 --
--- Name: base_task task_id; Type: DEFAULT; Schema: timetable; Owner: -
+-- Name: base_task task_id; Type: DEFAULT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.base_task ALTER COLUMN task_id SET DEFAULT nextval('timetable.base_task_task_id_seq'::regclass);
 
 
 --
--- Name: chain_execution_config chain_execution_config; Type: DEFAULT; Schema: timetable; Owner: -
+-- Name: chain_execution_config chain_execution_config; Type: DEFAULT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.chain_execution_config ALTER COLUMN chain_execution_config SET DEFAULT nextval('timetable.chain_execution_config_chain_execution_config_seq'::regclass);
 
 
 --
--- Name: database_connection database_connection; Type: DEFAULT; Schema: timetable; Owner: -
+-- Name: database_connection database_connection; Type: DEFAULT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.database_connection ALTER COLUMN database_connection SET DEFAULT nextval('timetable.database_connection_database_connection_seq'::regclass);
 
 
 --
--- Name: log id; Type: DEFAULT; Schema: timetable; Owner: -
+-- Name: log id; Type: DEFAULT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.log ALTER COLUMN id SET DEFAULT nextval('timetable.log_id_seq'::regclass);
 
 
 --
--- Name: run_status run_status; Type: DEFAULT; Schema: timetable; Owner: -
+-- Name: run_status run_status; Type: DEFAULT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.run_status ALTER COLUMN run_status SET DEFAULT nextval('timetable.run_status_run_status_seq'::regclass);
 
 
 --
--- Name: task_chain chain_id; Type: DEFAULT; Schema: timetable; Owner: -
+-- Name: task_chain chain_id; Type: DEFAULT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.task_chain ALTER COLUMN chain_id SET DEFAULT nextval('timetable.task_chain_chain_id_seq'::regclass);
 
 
 --
--- Name: ano id; Type: DEFAULT; Schema: valores_fiscales; Owner: -
+-- Name: ano id; Type: DEFAULT; Schema: valores_fiscales; Owner: postgres
 --
 
 ALTER TABLE ONLY valores_fiscales.ano ALTER COLUMN id SET DEFAULT nextval('valores_fiscales.ano_fiscal_id_seq'::regclass);
 
 
 --
--- Name: construccion id; Type: DEFAULT; Schema: valores_fiscales; Owner: -
+-- Name: construccion id; Type: DEFAULT; Schema: valores_fiscales; Owner: postgres
 --
 
 ALTER TABLE ONLY valores_fiscales.construccion ALTER COLUMN id SET DEFAULT nextval('valores_fiscales.construccion_id_seq'::regclass);
 
 
 --
--- Name: sector id; Type: DEFAULT; Schema: valores_fiscales; Owner: -
+-- Name: sector id; Type: DEFAULT; Schema: valores_fiscales; Owner: postgres
 --
 
 ALTER TABLE ONLY valores_fiscales.sector ALTER COLUMN id SET DEFAULT nextval('valores_fiscales.sector_id_seq'::regclass);
 
 
 --
--- Name: terreno id; Type: DEFAULT; Schema: valores_fiscales; Owner: -
+-- Name: terreno id; Type: DEFAULT; Schema: valores_fiscales; Owner: postgres
 --
 
 ALTER TABLE ONLY valores_fiscales.terreno ALTER COLUMN id SET DEFAULT nextval('valores_fiscales.terreno_id_seq'::regclass);
 
 
 --
--- Name: tipo_construccion id; Type: DEFAULT; Schema: valores_fiscales; Owner: -
+-- Name: tipo_construccion id; Type: DEFAULT; Schema: valores_fiscales; Owner: postgres
 --
 
 ALTER TABLE ONLY valores_fiscales.tipo_construccion ALTER COLUMN id SET DEFAULT nextval('valores_fiscales.tipo_construccion_id_seq'::regclass);
 
 
 --
--- Data for Name: actividad_economica; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: actividad_economica; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.actividad_economica (id_actividad_economica, numero_referencia, descripcion, alicuota, id_tipo_actividad, ut) FROM stdin;
-1	2029001	Transporte Terrestre de Carga refrigerada.	2.00	\N	5.0000
-2	2030001	Almacenamiento de productos, materiales, insumos, equipos, maquinarias.	2.00	\N	4.0000
-3	2031001	Almacenamiento Refrigerado.	3.50	\N	4.0000
-4	2032001	Transporte Aéreo y Marítimo de Carga.	3.50	\N	6.0000
-5	2033001	Servicio de encomiendas.	3.00	\N	6.0000
-6	2034001	Transporte terrestre de pasajeros.	1.00	\N	4.0000
-7	2035001	Transporte Lacustre o Marítimo de pasajeros.	3.00	\N	4.0000
-8	2036001	Transporte aéreo de pasajeros.	3.00	\N	4.0000
-9	2037001	Transporte de personal.	1.00	\N	4.0000
-10	2038001	Empresas de transporte de valores y vigilancia.	2.50	\N	4.0000
-11	2039001	Agencias Funerarias y Capillas Velatorias.	1.00	\N	4.0000
-12	2040001	Reproducciones fotostáticas, heliografías y afines.	1.00	\N	2.0000
-13	2041001	Intermediación en contratos de arrendamiento y compra- venta de inmuebles. 	5.00	\N	6.0000
-14	2042001	Arrendamiento de inmuebles.	5.00	\N	5.0000
-15	2043002	Arrendamiento de Fondos de Comercio.	5.00	\N	5.0000
-16	2044001	Alquiler de Lanchas, Gabarras y Similares.	3.00	\N	6.0000
-17	2045001	Alquiler de Vehículos.	3.00	\N	5.0000
-18	2046001	Servicio de Estacionamiento Vehicular en Centros Comerciales y Judicial.	1.50	\N	5.0000
-19	2047001	Venta e Implementación de Software.	2.00	\N	4.0000
-20	30640012	Distribución y venta de vehículos y motos (usados).	4.00	\N	4.0000
-21	1001001	Preparación y envasado de carnes, excepto embutidos y productos marinos.	2.00	\N	5.0000
-22	1002001	Procesamiento y envasado de productos marinos.	3.00	\N	5.0000
-23	1003001	Fabricación y procesamiento de productos lácteos y sus derivados.	2.00	\N	3.0000
-24	1004001	Industria de bebidas alcohólicas (cerveza, ron, whisky, vino) y no alcohólicas refrescos, maltas y otras bebidas no alcohólicas, distribuidos en envases retornables o biodegradables, excepto jugos de frutas y vegetales	4.00	\N	8.0000
-25	1005001	Industria de bebidas alcohólicas (cerveza, ron, whisky, vino) y no alcohólicas refrescos, maltas y otras bebidas no alcohólicas, distribuidos en envases no retornables o no biodegradables.	6.00	\N	8.0000
-26	1006001	Elaboración de alimentos para consumo animal.	2.50	\N	3.0000
-27	1007001	Elaboración y envasado de embutidos de cualquier tipo, excepto productos marinos.	3.00	\N	5.0000
-28	1009001	Fabricación de aceites y grasas para consumo humano.	1.50	\N	5.0000
-29	1010001	Molienda, elaboración, preparación y limpieza de productos para obtener harina y cereales.	2.50	\N	5.0000
-30	1011001	Fabricación de pan y pastelería en todas sus formas.	2.00	\N	4.0000
-31	1012001	Industria de pastas alimenticias en todas sus formas.	2.00	\N	4.0000
-32	1013001	Fabricación de galletas y confitería.	2.00	\N	5.0000
-33	1014001	Industria de sal.	1.00	\N	5.0000
-34	1015001	Industria de azúcar, papelón, condimentos y vinagre.	1.00	\N	3.0000
-35	1016001	Industria de productos de café, cacao, chocolate, té y similares.	2.50	\N	5.0000
-36	1017001	Tratamiento y envasado retornable de aguas y fabricación de hielo.	2.00	\N	5.0000
-37	1018001	Industrias de tabaco y sus derivados.	6.00	\N	7.0000
-38	1019001	Industrias textiles.	2.00	\N	4.0000
-39	1020001	Fabricación de colchones.	3.00	\N	5.0000
-40	1021001	Industrias gráficas litográficas, tipográficas, de imprentas y sellos de caucho.	2.00	\N	5.0000
-41	1022001	Fabricación y recuperación de pulpa y otras fibras para hacer papel o cartón, envases y similares de papel y cartón, mantelería, servilletas, papel sanitario y otros de pulpa, papel y cartón.	2.50	\N	5.0000
-42	1023001	Industrias de producción de madera, Aserraderos y productos de madera.	2.50	\N	5.0000
-43	1024001	Industrias de productos químicos.	2.00	\N	5.0000
-44	1025001	Fabricación de productos farmacéuticos,\tlaboratorio farmacológico, medicamentos y cosméticos.	2.00	\N	5.0000
-45	1026001	Industrias para la preparación de asfalto de cualquier tipo.	3.00	\N	5.0000
-46	1027001	Fabricación de productos de plásticos, cauchos y goma.	3.00	\N	4.0000
-47	1028001	Fabricación de láminas de mármol, granito, silestone y similares en cualquiera de sus formatos.	3.50	\N	5.0000
-48	20270012	Puestos de Comida Callejera (Empanadas, Tequeños, Pastelitos, Mandocas y Similares, excluye Franquicias)	2.00	\N	4.0000
-49	2028001	Transporte Terrestre de Carga no refrigerada.	2.00	\N	4.0000
-50	2048001	Talleres de reparación y mantenimiento general de vehículos de cualquier tipo.	2.00	\N	3.0000
-51	1029001	Fabricación   de   cemento,   concreto   premezclado,  placas prefabricadas y bloques de cemento. Fábrica de objetos de barro, loza y porcelana, cerámica, productos de arcilla para la construcción y alfarería, cal y yeso. Bloques de arcilla.  Productos de hormigón, granzones, granzoncillo y similares. Explotación de arcilla, arena y minerales.	2.50	\N	4.0000
-52	1030001	Fábrica de vidrio y fibra de vidrio y manufacturas de vidrios para carros y otros vidrios en general. Fábrica de espejos. Fabricación de refractarios y similares.	2.50	\N	5.0000
-53	1031001	Industrias de productos metalúrgicos y fundiciones en general.	2.00	\N	5.0000
-54	1032001	Fabricación de maquinarias para la industria.	1.50	\N	5.0000
-55	1033001	Diques y astilleros para la construcción, reparación y mantenimiento de embarcaciones.	3.50	\N	5.0000
-56	1034001	Fabricación de producto oftalmológicos, cristales oftálmicos, lentes intraoculares.	2.00	\N	4.0000
-57	1035001	Fabricación de placas, rótulos, letreros y anuncios, copas, trofeos, vallas, avisos y anuncios públicos.	2.00	\N	5.0000
-58	1036001	Fabricación de productos de seguridad industrial.	2.00	\N	5.0000
-59	1037001	Industria de la Construcción.	1.00	\N	4.0000
-60	1038001	Plantas de procesamiento y envasado de gas de cualquier tipo.	2.00	\N	4.0000
-61	1039001	Empresas Desarrolladoras de Software.	2.00	\N	5.0000
-62	1040001	Industria del calzado.	2.00	\N	3.0000
-63	1041001	Fabricación de pinturas de cualquier tipo.	2.50	\N	5.0000
-64	1042001	Fábricas de muebles de cualquier tipo.	2.00	\N	3.0000
-65	1043001	Fabricación de ventanas, puertas y rejas de cualquier tipo y uso.	3.00	\N	4.0000
-66	1044001	Fabricación de helados.	2.00	\N	4.0000
-67	1045001	Otros productos metálicos, cavas, recipientes, urnas y similares.	2.00	\N	5.0000
-68	1046001	Fabricación de toldos, persianas, mamparas, carpas, lámparas y similares.	3.00	\N	5.0000
-69	1047001	Fabricación de blindados para vehículos y vehículos blindados modificados.	4.00	\N	6.0000
-70	1048001	Otras industrias no especificadas.	6.00	\N	8.0000
-71	2001001	Bingos, casinos y demás casas o establecimientos de juegos de azar.	10.00	\N	8.0000
-72	2002001	Empresas de espectáculos, recreación y esparcimiento.	3.00	\N	4.0000
-73	2003001	Empresas de publicidad.	3.50	\N	5.0000
-74	2004001	Salas de Cine.	3.00	\N	3.0000
-75	2005001	Servicio de telecomunicaciones.	1.00	\N	3.0000
-76	2006001	Distribución de electricidad.	1.00	\N	3.0000
-77	2007001	Servicios para la construcción o ejecución de obras.	3.50	\N	5.0000
-78	2008001	Arrendamiento y Servicios de mantenimiento, conservación y limpieza de naves, aeronaves y similares.	3.50	\N	5.0000
-79	2009001	Arrendamiento de equipos y maquinarias con o sin operador.	3.50	\N	5.0000
-80	2010001	Servicio y mantenimiento de jardines, ornatos y similares.	2.00	\N	3.0000
-81	2011001	Servicios aduaneros y agencias de aduanales.	3.50	\N	4.0000
-82	2012001	Servicio para el Suministro de Personal, vigilancia, mantenimiento y similares.	3.00	\N	4.0000
-83	2013001	Servicios de clínica, incluye: hotelería, farmacia, laboratorio, imágenes, estudios, alquileres de equipos, acompañante, comidas, y similares.	1.50	\N	4.0000
-84	2014001	Servicio de emergencia pre-pagada.	2.00	\N	5.0000
-85	2015001	Servicios de radiografías, radioscopias, ecógramas, resonancias magnéticas, centro de diagnósticos e imágenes, laboratorios, electrocardiogramas y otros asociados a la salud.	1.50	\N	4.0000
-86	2016001	Servicio de Alquiler de Ambulancia y alquiler de equipos médicos.	1.50	\N	3.0000
-87	2017001	Clínicas veterinarias y spa para mascotas.	2.00	\N	3.0000
-88	2018001	Bancos, empresas de seguros y reaseguros, casas de cambio y otras instituciones financieras.	6.00	\N	4.0000
-89	2019001	Corretaje de Seguros	3.00	\N	4.0000
-90	2020001	Bar, Discotecas, cervecerías, tascas, cafés.	3.00	\N	5.0000
-91	2021001	Restaurantes, fuentes de soda, pizzerías, heladerías y similares.	2.00	\N	4.0000
-92	2022001	Salas para fiestas y juegos infantiles, reuniones, recepciones.	2.00	\N	4.0000
-93	2023001	Hoteles.	2.00	\N	6.0000
-94	20230011	Hoteles 1 y 2 estrellas	2.00	\N	3.0000
-95	20230012	Hoteles 3 y 4 estrellas	2.00	\N	4.0000
-96	20230013	Hoteles 5 estrellas o mas 	2.00	\N	6.0000
-97	2024002	Posadas, pensiones.	1.00	\N	3.0000
-98	2025003	Moteles.	4.50	\N	6.0000
-99	2026001	Restaurantes Tipo franquicia, Franquicias de Comida y Cadena de Restaurantes.	2.50	\N	5.0000
-100	2027001	Puestos de Comida Callejera (Ventas de Parrillas, Perro calientes, Hamburguesas, Arepas, Empanadas, Tequeños, Pastelitos, Mandocas y Similares, excluye Franquicias).	3.00	\N	5.0000
-101	20270011	Puestos de Comida Callejera (Ventas de Parrillas, Perro calientes, Hamburguesas, Arepas excluye Franquicias)	3.00	\N	5.0000
-102	2049002	Talleres de adecuación, reparación y fabricación de productos metalúrgicos.	2.00	\N	4.0000
-103	2050001	Servicios de mantenimiento, reconstrucción e instalación de transformadores eléctricos, tendidos eléctricos, instalación de postes, interruptores y demás implementos y equipos para el servicio eléctrico.	1.50	\N	3.0000
-104	2051001	Servicios de reparación y mantenimiento de equipos, celulares, artefactos eléctricos y electrodomésticos.	2.00	\N	3.0000
-105	2052001	Reparación y Mantenimiento de Equipos Tecnológicos, Calibración y o Mantenimiento de Fuentes Radioactivas y similares.	3.00	\N	4.0000
-106	2053001	Lavado y engrase de vehículos, cambio de aceite, aútolavado y similares.	3.00	\N	4.0000
-107	2054001	Servicio de grúas.	2.00	\N	4.0000
-108	2055001	Tintorerías y lavanderías.	2.50	\N	4.0000
-109	2056001	Barberías, Salones de belleza, spa, estéticas y peluquerías (sin licor)	2.00	\N	3.0000
-110	2057001	Barberías, Salones de belleza, spa, estéticas y peluquerías (con licor)	3.00	\N	4.0000
-111	2058001	Gimnasios.	3.00	\N	4.0000
-112	2059001	Casa de Empeño.	6.00	\N	4.0000
-113	2060001	Servicio de deshuese, despresado, troceado y corte de Animales.	3.00	\N	4.0000
-114	2061001	Servicio de Mantenimiento, Limpieza y Aseo al Comercio e Industria.	3.50	\N	5.0000
-115	2062001	Servicio de Fumigación y desinfección.	2.50	\N	5.0000
-116	2063001	Servicio de Tapicería.	2.00	\N	4.0000
-117	2064001	Servicio de Reparación y Mantenimiento de Equipos de Refrigeración en general.	3.00	\N	3.0000
-118	2065001	Servicio de Rectificación de Motores.	2.50	\N	5.0000
-119	2066001	Servicio de Montaje, Alineación, Balanceo y reparación de cauchos.	2.00	\N	4.0000
-120	2067001	Oficinas cobranzas, administración de condominios y  similares	3.00	\N	4.0000
-121	2068001	Servicios Petroleros, entendidos por tales, aquellos contratados para la Exploración, Explotación, Extracción, Mantenimiento, Transporte y Refinación de Hidrocarburos. Suministro de Equipos y Herramientas, excluye Servicios prestados en el Lago de Maracaibo.	4.50	\N	5.0000
-122	2069002	Servicios a la Industria Petrolera no conexos a la Exploración, Explotación, Extracción, Mantenimiento, Transporte y Refinación de Hidrocarburos.	4.50	\N	5.0000
-123	2070003	Servicios y construcciones ejecutados en el Lago de Maracaibo (sobre o bajo sus aguas, o en el lecho del lago).	3.00	\N	6.0000
-124	2071001	Comisionistas y Consignatarios (Intermediario, Agentes, Representantes, Concesionarios) y similares.	8.00	\N	5.0000
-125	2072001	Comisión por Venta de Boleto Aéreo, Terrestre y Marítimo.	3.00	\N	5.0000
-126	2073001	Servicio de Laboratorio Medico	2.00	\N	3.0000
-127	2074001	Servicio de Consultorio Medico Odontologico	2.00	\N	4.0000
-128	2075001	Transporte Urbano inscrito en el Instituto Municipal de Transporte	1.00	\N	2.0000
-129	2076001	Servicio por honorarios Profesionales	2.00	\N	4.0000
-130	2077001	Otros servicios no especificados.	4.00	\N	8.0000
-131	3001001	Cadenas de supermercados, hipermercados, megatiendas, multitiendas y minimarket.	1.50	\N	6.0000
-132	3002001	Venta de materiales, equipos, herramientas e insumos para la exploración, explotación, extracción, mantenimiento, transporte y refinación de hidrocarburos.	4.00	\N	5.0000
-133	3003002	Venta de materiales, equipos, herramientas e insumos a la industria Petrolera no conexos a la exploración, explotación, extracción, mantenimiento, transporte y refinación de Hidrocarburos.	4.00	\N	5.0000
-134	3004001	Distribución  y Venta de gas de cualquier tipo.	2.00	\N	3.0000
-135	3005001	Estaciones de servicio para el expendio de combustible.	1.00	\N	1.0000
-203	3070001	Venta y reparación de Bicicletas, repuestos y accesorios.	3.00	\N	2.0000
-204	3071001	Distribución y venta de aceite de todo tipo para vehículos y maquinarias, vendidos en pipas y similares.	3.00	\N	3.0000
-136	3006001	Cadena de Tiendas de Ventas al Mayor o detal de Insumos Comerciales, Mega tiendas y Multitiendas. Incluye todos aquellos establecimientos o tiendas donde concurran los siguientes requisitos: a) Que ejerzan simultáneamente tres (3) o más aforos; y b) Que realicen ventas al mayor y detal.	3.50	\N	5.0000
-137	3007001	Abastos, bodegas y pequeños detales de víveres.	2.00	\N	2.0000
-138	3008001	Distribución y venta de productos químicos.	3.00	\N	3.0000
-139	3009001	Distribución de productos farmacéuticos.	2.50	\N	4.0000
-140	3010001	Farmacias.	2.00	\N	3.0000
-141	3011001	Distribución de pinturas, lacas, barnices y materiales aislantes.	3.50	\N	4.0000
-142	3012001	Detal de pinturas, lacas, barnices y materiales aislantes.	3.00	\N	3.0000
-143	3013001	Distribución y venta de alimentos para animales.	2.00	\N	3.0000
-144	3014001	Venta de desecho de cebada, cereal y afrecho.	4.00	\N	4.0000
-145	3015001	Venta y Distribución de productos para el agro, avícola, pesquero y similares.	2.00	\N	3.0000
-146	3016001	Distribución de víveres, aceites y grasas comestibles, presentados en envases retornables.	2.50	\N	3.0000
-147	3017002	Distribución de víveres, aceites y grasas comestibles, presentados en envases no retornables.	3.00	\N	3.0000
-148	3018001	Distribución de helados y productos similares, presentados en envases retornables o biodegradables.	3.50	\N	2.0000
-149	3019002	Distribución de helados y productos similares, presentados en envases no retornables ni biodegradables.	5.00	\N	3.0000
-150	3020001	Venta de helados, pastelería, cyber y refresquería al detal.	2.00	\N	3.0000
-151	3021001	Distribución de carnes de cualquier tipo, excepto embutidos.	2.00	\N	2.0000
-152	3022001	Venta de carnes, Charcutería y pescadería.	2.00	\N	3.0000
-153	3023001	Distribución de embutidos de cualquier tipo empacados en plásticos.	3.00	\N	3.0000
-154	3024001	Boutique y sastrería.	4.00	\N	4.0000
-155	30240011	Boutique	3.00	\N	3.0000
-156	30240012	Sastrería	2.00	\N	2.0000
-157	3025001	Comercialización al detal de pan.	2.00	\N	2.0000
-158	3026001	Mayorista de confiterías.	3.00	\N	3.0000
-159	3027001	Distribuidor de productos lácteos, jugos de frutas y Vegetales, presentados en envases biodegradables.	2.00	\N	3.0000
-160	3028001	Distribuidor de productos lácteos y jugos de frutas y Vegetales, presentados en envases, plásticos, vidrio, metal y tetra pack.	4.00	\N	3.0000
-161	3029001	Distribución de bebidas alcohólicas y no alcohólicas, presentadas en envases o empaques retornables o biodegradables, excepto jugos de frutas y vegetales.	3.00	\N	5.0000
-162	3030002	Distribución de bebidas alcohólicas y no alcohólicas, presentados en envases plásticos, vidrio, metal y tetra pack.	5.00	\N	5.0000
-163	3031001	Venta de productos alimenticios, bebidas alcohólicas, no alcohólicas y gaseosas en vehículos automotores (sólo ruteros).	1.50	\N	3.0000
-164	3032001	Distribución al mayor y detal de agua presentados en envases o empaques retornables o biodegradables.	2.20	\N	3.0000
-165	3033002	Distribución al mayor y detal de agua presentada en envases o empaques plásticos o no biodegradables.	3.50	\N	4.0000
-166	3034001	Licorerías (Depósito de licores).	4.00	\N	5.0000
-167	3035001	Venta de frutas, verduras y hortalizas.	2.00	\N	2.0000
-168	3036001	Venta de equipos médicos y quirúrgicos.	2.00	\N	3.0000
-169	3037001	Artículos ortopédicos.	1.00	\N	2.0000
-170	3038001	Laboratorio Dental, implantes y prótesis dentales, bracket, retenedores.	2.50	\N	3.0000
-171	3039001	Artículos de lujo, pieles, joyas, reparación de prendas y relojes.	5.00	\N	5.0000
-172	3040001	Venta de artículos de peluquerías (cepillos, tintes, secadores y otros productos relacionados).	2.00	\N	3.0000
-173	3041001	Artículos religiosos.	1.00	\N	1.0000
-174	3042001	Floristerías y viveros.	3.00	\N	2.0000
-175	3043001	Jugueterías, quincallas, bazares y similares, artículos deportivos  y fotográficos.	3.00	\N	3.0000
-176	3044001	Papelerías, revistas y artículos de oficina.	3.00	\N	3.0000
-177	3045002	Venta de libros.	1.00	\N	1.0000
-178	3046001	Venta de utensilios y enseres para la limpieza (Lampazos, escobas, rastrillos y similares).	3.00	\N	3.0000
-179	3047001	Venta de Persianas, Alfombras, Cortinas, telas, cueros, semi-cueros y demás artículos para Tapicerías.	3.00	\N	3.0000
-180	3048001	Venta de Lencerías.	3.00	\N	3.0000
-181	3049001	Venta al Mayor y Detal de Artículos de Seguridad  Industrial (botas, guantes, cascos, mascarillas, lentes de seguridad y todo lo relacionado con la seguridad industrial).	3.00	\N	4.0000
-182	3050001	Ventas de muebles.	3.00	\N	3.0000
-183	3051001	Ventas de electrodomésticos.	2.00	\N	4.0000
-184	3052001	Venta de repuestos y materiales electrónicos y eléctricos.	2.50	\N	4.0000
-185	3053002	Venta de celulares, equipos de telecomunicaciones, accesorios y repuestos.	3.00	\N	4.0000
-186	3054001	Ferreterías, tornillerías y cerrajerías.	3.00	\N	3.0000
-187	3055001	Distribución y ventas  de cemento de cualquier tipo, bloques, arenas, granzón y demás materiales similares.	2.00	\N	3.0000
-188	3056001	Distribución y venta productos de arcilla para la construcción y alfarería, cal y yeso. Bloques de arcilla. Productos de hormigón, granzones, granzoncillo y similares.	3.00	\N	3.0000
-189	3057001	Distribución y Venta de Madera de cualquier tipo y demás materiales para carpintería.	2.00	\N	3.0000
-190	3058001	Distribución y venta de productos de hierro.	2.00	\N	4.0000
-191	3059001	Distribución y Venta de mármol, granitos y silestone en cualquiera de sus formatos.	5.00	\N	6.0000
-192	3060001	Distribución y Venta de cerámicas en cualquiera de sus formatos.	3.00	\N	4.0000
-193	3061001	Distribución y venta de calzados, carteras y otros artículos de cuero.	3.00	\N	3.0000
-194	3062001	Cosméticos, perfumes y artículos de tocador.	3.00	\N	3.0000
-195	3063001	Ópticas y Tiendas de artículos de oftalmología.	2.00	\N	3.0000
-196	3064001	Distribución y venta de vehículos, motos, nuevos y usados.	5.00	\N	6.0000
-197	30640011	Distribución y venta de vehículos y motos (nuevos).	5.00	\N	4.0000
-198	3065001	Venta de maquinarias industriales, agrícolas, similares y repuestos para las mismas.	2.50	\N	3.0000
-199	3066001	Venta al detal de motores nuevos, accesorios, repuestos para vehículos de cualquier tipo.	4.00	\N	4.0000
-200	3067001	Ventas de cauchos y acumuladores de energía.	3.00	\N	4.0000
-201	3068001	Importadoras de motores, repuestos usados y chiveras.	5.00	\N	4.0000
-202	3069001	Importadoras de electrodomésticos usados y repuestos usados para electrodomésticos.	4.00	\N	3.0000
-205	3072002	Distribución y ventas de lubricantes de todo tipo: aditivos, grasas y productos similares para vehículos y maquinaria  en envases sellado de plásticos, vidrio, metal o tetra pack.	2.00	\N	3.0000
-206	3073001	Ventas de fuentes radioactivas y similares.	3.50	\N	5.0000
-207	3074001	Distribución y venta de cartuchos para impresoras, fotocopiadoras y similares.	3.00	\N	3.0000
-208	3075001	Distribución y venta de Vidrio para vehículos.	3.00	\N	3.0000
-209	3076001	Distribución y venta de vidrio templado.	4.00	\N	3.0000
-210	3077001	Venta de vidrio, excepto para vehículos y vidrio templado.	2.00	\N	3.0000
-211	3078001	Distribución de Productos de Tabaco.	6.00	\N	5.0000
-212	3079001	Tienda de Instrumentos musicales.	3.00	\N	3.0000
-213	3080001	Venta de transformadores, plantas eléctricas, tendidos eléctricos, postes, interruptores y demás implementos y equipos eléctricos y mecánicos.	3.00	\N	3.0000
-214	3081001	Acopio o recolección de envases plásticos, cartones, vidrio, materiales metálicos con fines de reciclaje	6.00	\N	4.0000
-215	3082001	Distribución y venta de billetes de loterías.	5.00	\N	5.0000
-216	3083001	Parley	5.00	\N	6.0000
-217	3084001	Peñas Hipicas	4.00	\N	4.0000
-218	3085001	Otras actividades comerciales no especificadas.	6.00	\N	5.0000
-219	4001001	Pequeños Empresarios	0.50	\N	1.0000
-220	1008001	Industrias de jugos, sopas, salsas, mermeladas, postres y otros de frutas y vegetales.	2.00	\N	5.0000
+COPY impuesto.actividad_economica (id_actividad_economica, numero_referencia, descripcion, alicuota, ut) FROM stdin;
+1	2029001	Transporte Terrestre de Carga refrigerada.	2.00	5.0000
+2	2030001	Almacenamiento de productos, materiales, insumos, equipos, maquinarias.	2.00	4.0000
+3	2031001	Almacenamiento Refrigerado.	3.50	4.0000
+4	2032001	Transporte Aéreo y Marítimo de Carga.	3.50	6.0000
+5	2033001	Servicio de encomiendas.	3.00	6.0000
+6	2034001	Transporte terrestre de pasajeros.	1.00	4.0000
+7	2035001	Transporte Lacustre o Marítimo de pasajeros.	3.00	4.0000
+8	2036001	Transporte aéreo de pasajeros.	3.00	4.0000
+9	2037001	Transporte de personal.	1.00	4.0000
+10	2038001	Empresas de transporte de valores y vigilancia.	2.50	4.0000
+11	2039001	Agencias Funerarias y Capillas Velatorias.	1.00	4.0000
+12	2040001	Reproducciones fotostáticas, heliografías y afines.	1.00	2.0000
+13	2041001	Intermediación en contratos de arrendamiento y compra- venta de inmuebles. 	5.00	6.0000
+14	2042001	Arrendamiento de inmuebles.	5.00	5.0000
+15	2043002	Arrendamiento de Fondos de Comercio.	5.00	5.0000
+16	2044001	Alquiler de Lanchas, Gabarras y Similares.	3.00	6.0000
+17	2045001	Alquiler de Vehículos.	3.00	5.0000
+18	2046001	Servicio de Estacionamiento Vehicular en Centros Comerciales y Judicial.	1.50	5.0000
+19	2047001	Venta e Implementación de Software.	2.00	4.0000
+20	30640012	Distribución y venta de vehículos y motos (usados).	4.00	4.0000
+21	1001001	Preparación y envasado de carnes, excepto embutidos y productos marinos.	2.00	5.0000
+22	1002001	Procesamiento y envasado de productos marinos.	3.00	5.0000
+23	1003001	Fabricación y procesamiento de productos lácteos y sus derivados.	2.00	3.0000
+24	1004001	Industria de bebidas alcohólicas (cerveza, ron, whisky, vino) y no alcohólicas refrescos, maltas y otras bebidas no alcohólicas, distribuidos en envases retornables o biodegradables, excepto jugos de frutas y vegetales	4.00	8.0000
+25	1005001	Industria de bebidas alcohólicas (cerveza, ron, whisky, vino) y no alcohólicas refrescos, maltas y otras bebidas no alcohólicas, distribuidos en envases no retornables o no biodegradables.	6.00	8.0000
+26	1006001	Elaboración de alimentos para consumo animal.	2.50	3.0000
+27	1007001	Elaboración y envasado de embutidos de cualquier tipo, excepto productos marinos.	3.00	5.0000
+28	1009001	Fabricación de aceites y grasas para consumo humano.	1.50	5.0000
+29	1010001	Molienda, elaboración, preparación y limpieza de productos para obtener harina y cereales.	2.50	5.0000
+30	1011001	Fabricación de pan y pastelería en todas sus formas.	2.00	4.0000
+31	1012001	Industria de pastas alimenticias en todas sus formas.	2.00	4.0000
+32	1013001	Fabricación de galletas y confitería.	2.00	5.0000
+33	1014001	Industria de sal.	1.00	5.0000
+34	1015001	Industria de azúcar, papelón, condimentos y vinagre.	1.00	3.0000
+35	1016001	Industria de productos de café, cacao, chocolate, té y similares.	2.50	5.0000
+36	1017001	Tratamiento y envasado retornable de aguas y fabricación de hielo.	2.00	5.0000
+37	1018001	Industrias de tabaco y sus derivados.	6.00	7.0000
+38	1019001	Industrias textiles.	2.00	4.0000
+39	1020001	Fabricación de colchones.	3.00	5.0000
+40	1021001	Industrias gráficas litográficas, tipográficas, de imprentas y sellos de caucho.	2.00	5.0000
+41	1022001	Fabricación y recuperación de pulpa y otras fibras para hacer papel o cartón, envases y similares de papel y cartón, mantelería, servilletas, papel sanitario y otros de pulpa, papel y cartón.	2.50	5.0000
+42	1023001	Industrias de producción de madera, Aserraderos y productos de madera.	2.50	5.0000
+43	1024001	Industrias de productos químicos.	2.00	5.0000
+44	1025001	Fabricación de productos farmacéuticos,\tlaboratorio farmacológico, medicamentos y cosméticos.	2.00	5.0000
+45	1026001	Industrias para la preparación de asfalto de cualquier tipo.	3.00	5.0000
+46	1027001	Fabricación de productos de plásticos, cauchos y goma.	3.00	4.0000
+47	1028001	Fabricación de láminas de mármol, granito, silestone y similares en cualquiera de sus formatos.	3.50	5.0000
+48	20270012	Puestos de Comida Callejera (Empanadas, Tequeños, Pastelitos, Mandocas y Similares, excluye Franquicias)	2.00	4.0000
+49	2028001	Transporte Terrestre de Carga no refrigerada.	2.00	4.0000
+50	2048001	Talleres de reparación y mantenimiento general de vehículos de cualquier tipo.	2.00	3.0000
+51	1029001	Fabricación   de   cemento,   concreto   premezclado,  placas prefabricadas y bloques de cemento. Fábrica de objetos de barro, loza y porcelana, cerámica, productos de arcilla para la construcción y alfarería, cal y yeso. Bloques de arcilla.  Productos de hormigón, granzones, granzoncillo y similares. Explotación de arcilla, arena y minerales.	2.50	4.0000
+52	1030001	Fábrica de vidrio y fibra de vidrio y manufacturas de vidrios para carros y otros vidrios en general. Fábrica de espejos. Fabricación de refractarios y similares.	2.50	5.0000
+53	1031001	Industrias de productos metalúrgicos y fundiciones en general.	2.00	5.0000
+54	1032001	Fabricación de maquinarias para la industria.	1.50	5.0000
+55	1033001	Diques y astilleros para la construcción, reparación y mantenimiento de embarcaciones.	3.50	5.0000
+56	1034001	Fabricación de producto oftalmológicos, cristales oftálmicos, lentes intraoculares.	2.00	4.0000
+57	1035001	Fabricación de placas, rótulos, letreros y anuncios, copas, trofeos, vallas, avisos y anuncios públicos.	2.00	5.0000
+58	1036001	Fabricación de productos de seguridad industrial.	2.00	5.0000
+59	1037001	Industria de la Construcción.	1.00	4.0000
+60	1038001	Plantas de procesamiento y envasado de gas de cualquier tipo.	2.00	4.0000
+61	1039001	Empresas Desarrolladoras de Software.	2.00	5.0000
+62	1040001	Industria del calzado.	2.00	3.0000
+63	1041001	Fabricación de pinturas de cualquier tipo.	2.50	5.0000
+64	1042001	Fábricas de muebles de cualquier tipo.	2.00	3.0000
+65	1043001	Fabricación de ventanas, puertas y rejas de cualquier tipo y uso.	3.00	4.0000
+66	1044001	Fabricación de helados.	2.00	4.0000
+67	1045001	Otros productos metálicos, cavas, recipientes, urnas y similares.	2.00	5.0000
+68	1046001	Fabricación de toldos, persianas, mamparas, carpas, lámparas y similares.	3.00	5.0000
+69	1047001	Fabricación de blindados para vehículos y vehículos blindados modificados.	4.00	6.0000
+70	1048001	Otras industrias no especificadas.	6.00	8.0000
+71	2001001	Bingos, casinos y demás casas o establecimientos de juegos de azar.	10.00	8.0000
+72	2002001	Empresas de espectáculos, recreación y esparcimiento.	3.00	4.0000
+73	2003001	Empresas de publicidad.	3.50	5.0000
+74	2004001	Salas de Cine.	3.00	3.0000
+75	2005001	Servicio de telecomunicaciones.	1.00	3.0000
+76	2006001	Distribución de electricidad.	1.00	3.0000
+77	2007001	Servicios para la construcción o ejecución de obras.	3.50	5.0000
+78	2008001	Arrendamiento y Servicios de mantenimiento, conservación y limpieza de naves, aeronaves y similares.	3.50	5.0000
+79	2009001	Arrendamiento de equipos y maquinarias con o sin operador.	3.50	5.0000
+80	2010001	Servicio y mantenimiento de jardines, ornatos y similares.	2.00	3.0000
+81	2011001	Servicios aduaneros y agencias de aduanales.	3.50	4.0000
+82	2012001	Servicio para el Suministro de Personal, vigilancia, mantenimiento y similares.	3.00	4.0000
+83	2013001	Servicios de clínica, incluye: hotelería, farmacia, laboratorio, imágenes, estudios, alquileres de equipos, acompañante, comidas, y similares.	1.50	4.0000
+84	2014001	Servicio de emergencia pre-pagada.	2.00	5.0000
+85	2015001	Servicios de radiografías, radioscopias, ecógramas, resonancias magnéticas, centro de diagnósticos e imágenes, laboratorios, electrocardiogramas y otros asociados a la salud.	1.50	4.0000
+86	2016001	Servicio de Alquiler de Ambulancia y alquiler de equipos médicos.	1.50	3.0000
+87	2017001	Clínicas veterinarias y spa para mascotas.	2.00	3.0000
+88	2018001	Bancos, empresas de seguros y reaseguros, casas de cambio y otras instituciones financieras.	6.00	4.0000
+89	2019001	Corretaje de Seguros	3.00	4.0000
+90	2020001	Bar, Discotecas, cervecerías, tascas, cafés.	3.00	5.0000
+91	2021001	Restaurantes, fuentes de soda, pizzerías, heladerías y similares.	2.00	4.0000
+92	2022001	Salas para fiestas y juegos infantiles, reuniones, recepciones.	2.00	4.0000
+93	2023001	Hoteles.	2.00	6.0000
+94	20230011	Hoteles 1 y 2 estrellas	2.00	3.0000
+95	20230012	Hoteles 3 y 4 estrellas	2.00	4.0000
+96	20230013	Hoteles 5 estrellas o mas 	2.00	6.0000
+97	2024002	Posadas, pensiones.	1.00	3.0000
+98	2025003	Moteles.	4.50	6.0000
+99	2026001	Restaurantes Tipo franquicia, Franquicias de Comida y Cadena de Restaurantes.	2.50	5.0000
+100	2027001	Puestos de Comida Callejera (Ventas de Parrillas, Perro calientes, Hamburguesas, Arepas, Empanadas, Tequeños, Pastelitos, Mandocas y Similares, excluye Franquicias).	3.00	5.0000
+101	20270011	Puestos de Comida Callejera (Ventas de Parrillas, Perro calientes, Hamburguesas, Arepas excluye Franquicias)	3.00	5.0000
+102	2049002	Talleres de adecuación, reparación y fabricación de productos metalúrgicos.	2.00	4.0000
+103	2050001	Servicios de mantenimiento, reconstrucción e instalación de transformadores eléctricos, tendidos eléctricos, instalación de postes, interruptores y demás implementos y equipos para el servicio eléctrico.	1.50	3.0000
+104	2051001	Servicios de reparación y mantenimiento de equipos, celulares, artefactos eléctricos y electrodomésticos.	2.00	3.0000
+105	2052001	Reparación y Mantenimiento de Equipos Tecnológicos, Calibración y o Mantenimiento de Fuentes Radioactivas y similares.	3.00	4.0000
+106	2053001	Lavado y engrase de vehículos, cambio de aceite, aútolavado y similares.	3.00	4.0000
+107	2054001	Servicio de grúas.	2.00	4.0000
+108	2055001	Tintorerías y lavanderías.	2.50	4.0000
+109	2056001	Barberías, Salones de belleza, spa, estéticas y peluquerías (sin licor)	2.00	3.0000
+110	2057001	Barberías, Salones de belleza, spa, estéticas y peluquerías (con licor)	3.00	4.0000
+111	2058001	Gimnasios.	3.00	4.0000
+112	2059001	Casa de Empeño.	6.00	4.0000
+113	2060001	Servicio de deshuese, despresado, troceado y corte de Animales.	3.00	4.0000
+114	2061001	Servicio de Mantenimiento, Limpieza y Aseo al Comercio e Industria.	3.50	5.0000
+115	2062001	Servicio de Fumigación y desinfección.	2.50	5.0000
+116	2063001	Servicio de Tapicería.	2.00	4.0000
+117	2064001	Servicio de Reparación y Mantenimiento de Equipos de Refrigeración en general.	3.00	3.0000
+118	2065001	Servicio de Rectificación de Motores.	2.50	5.0000
+119	2066001	Servicio de Montaje, Alineación, Balanceo y reparación de cauchos.	2.00	4.0000
+120	2067001	Oficinas cobranzas, administración de condominios y  similares	3.00	4.0000
+121	2068001	Servicios Petroleros, entendidos por tales, aquellos contratados para la Exploración, Explotación, Extracción, Mantenimiento, Transporte y Refinación de Hidrocarburos. Suministro de Equipos y Herramientas, excluye Servicios prestados en el Lago de Maracaibo.	4.50	5.0000
+122	2069002	Servicios a la Industria Petrolera no conexos a la Exploración, Explotación, Extracción, Mantenimiento, Transporte y Refinación de Hidrocarburos.	4.50	5.0000
+123	2070003	Servicios y construcciones ejecutados en el Lago de Maracaibo (sobre o bajo sus aguas, o en el lecho del lago).	3.00	6.0000
+124	2071001	Comisionistas y Consignatarios (Intermediario, Agentes, Representantes, Concesionarios) y similares.	8.00	5.0000
+125	2072001	Comisión por Venta de Boleto Aéreo, Terrestre y Marítimo.	3.00	5.0000
+126	2073001	Servicio de Laboratorio Medico	2.00	3.0000
+127	2074001	Servicio de Consultorio Medico Odontologico	2.00	4.0000
+128	2075001	Transporte Urbano inscrito en el Instituto Municipal de Transporte	1.00	2.0000
+129	2076001	Servicio por honorarios Profesionales	2.00	4.0000
+130	2077001	Otros servicios no especificados.	4.00	8.0000
+131	3001001	Cadenas de supermercados, hipermercados, megatiendas, multitiendas y minimarket.	1.50	6.0000
+132	3002001	Venta de materiales, equipos, herramientas e insumos para la exploración, explotación, extracción, mantenimiento, transporte y refinación de hidrocarburos.	4.00	5.0000
+133	3003002	Venta de materiales, equipos, herramientas e insumos a la industria Petrolera no conexos a la exploración, explotación, extracción, mantenimiento, transporte y refinación de Hidrocarburos.	4.00	5.0000
+134	3004001	Distribución  y Venta de gas de cualquier tipo.	2.00	3.0000
+135	3005001	Estaciones de servicio para el expendio de combustible.	1.00	1.0000
+203	3070001	Venta y reparación de Bicicletas, repuestos y accesorios.	3.00	2.0000
+204	3071001	Distribución y venta de aceite de todo tipo para vehículos y maquinarias, vendidos en pipas y similares.	3.00	3.0000
+136	3006001	Cadena de Tiendas de Ventas al Mayor o detal de Insumos Comerciales, Mega tiendas y Multitiendas. Incluye todos aquellos establecimientos o tiendas donde concurran los siguientes requisitos: a) Que ejerzan simultáneamente tres (3) o más aforos; y b) Que realicen ventas al mayor y detal.	3.50	5.0000
+137	3007001	Abastos, bodegas y pequeños detales de víveres.	2.00	2.0000
+138	3008001	Distribución y venta de productos químicos.	3.00	3.0000
+139	3009001	Distribución de productos farmacéuticos.	2.50	4.0000
+140	3010001	Farmacias.	2.00	3.0000
+141	3011001	Distribución de pinturas, lacas, barnices y materiales aislantes.	3.50	4.0000
+142	3012001	Detal de pinturas, lacas, barnices y materiales aislantes.	3.00	3.0000
+143	3013001	Distribución y venta de alimentos para animales.	2.00	3.0000
+144	3014001	Venta de desecho de cebada, cereal y afrecho.	4.00	4.0000
+145	3015001	Venta y Distribución de productos para el agro, avícola, pesquero y similares.	2.00	3.0000
+146	3016001	Distribución de víveres, aceites y grasas comestibles, presentados en envases retornables.	2.50	3.0000
+147	3017002	Distribución de víveres, aceites y grasas comestibles, presentados en envases no retornables.	3.00	3.0000
+148	3018001	Distribución de helados y productos similares, presentados en envases retornables o biodegradables.	3.50	2.0000
+149	3019002	Distribución de helados y productos similares, presentados en envases no retornables ni biodegradables.	5.00	3.0000
+150	3020001	Venta de helados, pastelería, cyber y refresquería al detal.	2.00	3.0000
+151	3021001	Distribución de carnes de cualquier tipo, excepto embutidos.	2.00	2.0000
+152	3022001	Venta de carnes, Charcutería y pescadería.	2.00	3.0000
+153	3023001	Distribución de embutidos de cualquier tipo empacados en plásticos.	3.00	3.0000
+154	3024001	Boutique y sastrería.	4.00	4.0000
+155	30240011	Boutique	3.00	3.0000
+156	30240012	Sastrería	2.00	2.0000
+157	3025001	Comercialización al detal de pan.	2.00	2.0000
+158	3026001	Mayorista de confiterías.	3.00	3.0000
+159	3027001	Distribuidor de productos lácteos, jugos de frutas y Vegetales, presentados en envases biodegradables.	2.00	3.0000
+160	3028001	Distribuidor de productos lácteos y jugos de frutas y Vegetales, presentados en envases, plásticos, vidrio, metal y tetra pack.	4.00	3.0000
+161	3029001	Distribución de bebidas alcohólicas y no alcohólicas, presentadas en envases o empaques retornables o biodegradables, excepto jugos de frutas y vegetales.	3.00	5.0000
+162	3030002	Distribución de bebidas alcohólicas y no alcohólicas, presentados en envases plásticos, vidrio, metal y tetra pack.	5.00	5.0000
+163	3031001	Venta de productos alimenticios, bebidas alcohólicas, no alcohólicas y gaseosas en vehículos automotores (sólo ruteros).	1.50	3.0000
+164	3032001	Distribución al mayor y detal de agua presentados en envases o empaques retornables o biodegradables.	2.20	3.0000
+165	3033002	Distribución al mayor y detal de agua presentada en envases o empaques plásticos o no biodegradables.	3.50	4.0000
+166	3034001	Licorerías (Depósito de licores).	4.00	5.0000
+167	3035001	Venta de frutas, verduras y hortalizas.	2.00	2.0000
+168	3036001	Venta de equipos médicos y quirúrgicos.	2.00	3.0000
+169	3037001	Artículos ortopédicos.	1.00	2.0000
+170	3038001	Laboratorio Dental, implantes y prótesis dentales, bracket, retenedores.	2.50	3.0000
+171	3039001	Artículos de lujo, pieles, joyas, reparación de prendas y relojes.	5.00	5.0000
+172	3040001	Venta de artículos de peluquerías (cepillos, tintes, secadores y otros productos relacionados).	2.00	3.0000
+173	3041001	Artículos religiosos.	1.00	1.0000
+174	3042001	Floristerías y viveros.	3.00	2.0000
+175	3043001	Jugueterías, quincallas, bazares y similares, artículos deportivos  y fotográficos.	3.00	3.0000
+176	3044001	Papelerías, revistas y artículos de oficina.	3.00	3.0000
+177	3045002	Venta de libros.	1.00	1.0000
+178	3046001	Venta de utensilios y enseres para la limpieza (Lampazos, escobas, rastrillos y similares).	3.00	3.0000
+179	3047001	Venta de Persianas, Alfombras, Cortinas, telas, cueros, semi-cueros y demás artículos para Tapicerías.	3.00	3.0000
+180	3048001	Venta de Lencerías.	3.00	3.0000
+181	3049001	Venta al Mayor y Detal de Artículos de Seguridad  Industrial (botas, guantes, cascos, mascarillas, lentes de seguridad y todo lo relacionado con la seguridad industrial).	3.00	4.0000
+182	3050001	Ventas de muebles.	3.00	3.0000
+183	3051001	Ventas de electrodomésticos.	2.00	4.0000
+184	3052001	Venta de repuestos y materiales electrónicos y eléctricos.	2.50	4.0000
+185	3053002	Venta de celulares, equipos de telecomunicaciones, accesorios y repuestos.	3.00	4.0000
+186	3054001	Ferreterías, tornillerías y cerrajerías.	3.00	3.0000
+187	3055001	Distribución y ventas  de cemento de cualquier tipo, bloques, arenas, granzón y demás materiales similares.	2.00	3.0000
+188	3056001	Distribución y venta productos de arcilla para la construcción y alfarería, cal y yeso. Bloques de arcilla. Productos de hormigón, granzones, granzoncillo y similares.	3.00	3.0000
+189	3057001	Distribución y Venta de Madera de cualquier tipo y demás materiales para carpintería.	2.00	3.0000
+190	3058001	Distribución y venta de productos de hierro.	2.00	4.0000
+191	3059001	Distribución y Venta de mármol, granitos y silestone en cualquiera de sus formatos.	5.00	6.0000
+192	3060001	Distribución y Venta de cerámicas en cualquiera de sus formatos.	3.00	4.0000
+193	3061001	Distribución y venta de calzados, carteras y otros artículos de cuero.	3.00	3.0000
+194	3062001	Cosméticos, perfumes y artículos de tocador.	3.00	3.0000
+195	3063001	Ópticas y Tiendas de artículos de oftalmología.	2.00	3.0000
+196	3064001	Distribución y venta de vehículos, motos, nuevos y usados.	5.00	6.0000
+197	30640011	Distribución y venta de vehículos y motos (nuevos).	5.00	4.0000
+198	3065001	Venta de maquinarias industriales, agrícolas, similares y repuestos para las mismas.	2.50	3.0000
+199	3066001	Venta al detal de motores nuevos, accesorios, repuestos para vehículos de cualquier tipo.	4.00	4.0000
+200	3067001	Ventas de cauchos y acumuladores de energía.	3.00	4.0000
+201	3068001	Importadoras de motores, repuestos usados y chiveras.	5.00	4.0000
+202	3069001	Importadoras de electrodomésticos usados y repuestos usados para electrodomésticos.	4.00	3.0000
+205	3072002	Distribución y ventas de lubricantes de todo tipo: aditivos, grasas y productos similares para vehículos y maquinaria  en envases sellado de plásticos, vidrio, metal o tetra pack.	2.00	3.0000
+206	3073001	Ventas de fuentes radioactivas y similares.	3.50	5.0000
+207	3074001	Distribución y venta de cartuchos para impresoras, fotocopiadoras y similares.	3.00	3.0000
+208	3075001	Distribución y venta de Vidrio para vehículos.	3.00	3.0000
+209	3076001	Distribución y venta de vidrio templado.	4.00	3.0000
+210	3077001	Venta de vidrio, excepto para vehículos y vidrio templado.	2.00	3.0000
+211	3078001	Distribución de Productos de Tabaco.	6.00	5.0000
+212	3079001	Tienda de Instrumentos musicales.	3.00	3.0000
+213	3080001	Venta de transformadores, plantas eléctricas, tendidos eléctricos, postes, interruptores y demás implementos y equipos eléctricos y mecánicos.	3.00	3.0000
+214	3081001	Acopio o recolección de envases plásticos, cartones, vidrio, materiales metálicos con fines de reciclaje	6.00	4.0000
+215	3082001	Distribución y venta de billetes de loterías.	5.00	5.0000
+216	3083001	Parley	5.00	6.0000
+217	3084001	Peñas Hipicas	4.00	4.0000
+218	3085001	Otras actividades comerciales no especificadas.	6.00	5.0000
+219	4001001	Pequeños Empresarios	0.50	1.0000
+220	1008001	Industrias de jugos, sopas, salsas, mermeladas, postres y otros de frutas y vegetales.	2.00	5.0000
 \.
 
 
 --
--- Data for Name: actividad_economica_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: actividad_economica_contribuyente; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.actividad_economica_contribuyente (id_actividad_economica_contribuyente, id_contribuyente, numero_referencia) FROM stdin;
+\.
+
+
+--
+-- Data for Name: actividad_economica_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
 COPY impuesto.actividad_economica_exoneracion (id_actividad_economica_exoneracion, id_plazo_exoneracion, id_actividad_economica) FROM stdin;
@@ -4712,15 +5597,45 @@ COPY impuesto.actividad_economica_exoneracion (id_actividad_economica_exoneracio
 
 
 --
--- Data for Name: ae_desglose; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: categoria_propaganda; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.ae_desglose (id_ae_desglose, id_aforo, id_liquidacion, monto_declarado) FROM stdin;
+COPY impuesto.categoria_propaganda (id_categoria_propaganda, descripcion) FROM stdin;
+1	A-001, PUBLICIDAD COMERCIAL DE PRODUCTOS DE BEBIDAS ALCOHÓLICAS REFRESCOS, MALTAS, Y BEBIDAS ENERGIZANTES.
+3	A-003, PROPAGANDA SOBRE PRODUCTOS  MANUFACTURAS DE TABACO.
+4	A-004, PUBLICIDAD COMERCIAL DE PRODUCTOS ALIMENTICIOS.
+5	A-005, PROPAGANDA COMERCIAL PRODUCTOS DE HELADOS.
+7	A-007, PROPAGANDA Y PUBLICIDAD COMERCIAL DE FRANQUICIAS.
+6	A-006, PUBLICIDAD COMERCIAL DE PRODUCTOS DE PASAPALOS O SNACKS.
+8	A-008, PUBLICIDAD COMERCIAL DE PRODUCTOS DE ASEO DE HIGIENE PERSONAL.
+9	A-009, PROPAGANDA COMERCIAL DE PRODUCTOS DE LUBRICANTES, ADITIVOS Y DEMÁS PRODUCTOS PARA VEHICULOS.
+10	A-010, PROPAGANDA COMERCIAL DE PRODUCTOS DE TELECOMUNICACIONES (TV POR CABLE  Y SATELITAL, TELEFONÍA MOVIL Y FIJA DE INTERNET).
+11	A-011, PROPAGANDA COMERCIAL DE AUTOMERCADOS, SUPERMERCADOS E HIPERMERCADOS.
+12	A-012, PUBLICIDAD Y PROPAGANDA EN INDUSTRIA, COMERCIO Y SERVICIOS NO PATROCINADOS POR MARCAS REGISTRADAS, PRODUCTOS O FRANQUICIAS.
+13	A-013, PUBLICIDAD Y PROPAGANDA  EN MARCAS DE VEHICULOS, NEUMATICOS  Y ACUMULADOR DE ENERGÍA PARA VEHÍCULOS.
+14	A-014, OTROS PRODUCTOS  DE PUBLICIDAD Y PROPAGANDA COMERCIAL.
+2	PROPAGANDA COMERCIAL DE BANCS, SEGUROS Y DEMAS ENTIDADES FINANCIERAS.
 \.
 
 
 --
--- Data for Name: dias_feriados; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: contribuyente; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.contribuyente (id_contribuyente, tipo_documento, documento, razon_social, denominacion_comercial, siglas, telefono_celular, telefono_habitacion, email, id_parroquia, sector, direccion, punto_referencia, verificado) FROM stdin;
+\.
+
+
+--
+-- Data for Name: contribuyente_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.contribuyente_exoneracion (id_contribuyente_exoneracion, id_plazo_exoneracion, id_contribuyente) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dias_feriados; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
 COPY impuesto.dias_feriados (id_dia_feriado, dia, descripcion) FROM stdin;
@@ -4742,7 +5657,15 @@ COPY impuesto.dias_feriados (id_dia_feriado, dia, descripcion) FROM stdin;
 
 
 --
--- Data for Name: factor; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: evento_solicitud; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.evento_solicitud (id_evento_solicitud, id_solicitud, event, "time") FROM stdin;
+\.
+
+
+--
+-- Data for Name: factor; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
 COPY impuesto.factor (id_factor, descripcion, valor) FROM stdin;
@@ -4750,23 +5673,23 @@ COPY impuesto.factor (id_factor, descripcion, valor) FROM stdin;
 
 
 --
--- Data for Name: iu_desglose; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: inmueble_contribuyente; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.iu_desglose (id_iu_desglose, id_inmueble, id_liquidacion, monto) FROM stdin;
+COPY impuesto.inmueble_contribuyente (id_inmueble_contribuyente, id_inmueble, id_contribuyente) FROM stdin;
 \.
 
 
 --
--- Data for Name: liquidacion; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: liquidacion; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.liquidacion (id_liquidacion, id_solicitud, id_procedimiento, monto, certificado, recibo, mes, anio, fecha_liquidacion) FROM stdin;
+COPY impuesto.liquidacion (id_liquidacion, id_solicitud, monto, certificado, recibo, fecha_liquidacion, id_subramo, datos, fecha) FROM stdin;
 \.
 
 
 --
--- Data for Name: multa; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: multa; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
 COPY impuesto.multa (id_multa, id_solicitud, id_tipo_multa, monto, mes, anio) FROM stdin;
@@ -4774,7 +5697,7 @@ COPY impuesto.multa (id_multa, id_solicitud, id_tipo_multa, monto, mes, anio) FR
 
 
 --
--- Data for Name: plazo_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: plazo_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
 COPY impuesto.plazo_exoneracion (id_plazo_exoneracion, fecha_inicio, fecha_fin) FROM stdin;
@@ -4782,51 +5705,276 @@ COPY impuesto.plazo_exoneracion (id_plazo_exoneracion, fecha_inicio, fecha_fin) 
 
 
 --
--- Data for Name: pp_desglose; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: ramo; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.pp_desglose (id_pp_desglose, id_subarticulo, id_liquidacion, monto, cantidad) FROM stdin;
+COPY impuesto.ramo (id_ramo, codigo, descripcion) FROM stdin;
 \.
 
 
 --
--- Data for Name: procedimiento; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: ramo_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.procedimiento (id_procedimiento, descripcion, planilla_certificado, planilla_recibo) FROM stdin;
-1	AE	\N	\N
-2	SM	\N	\N
-3	IU	\N	\N
-4	PP	\N	\N
+COPY impuesto.ramo_exoneracion (id_ramo_exoneracion, id_plazo_exoneracion, id_ramo) FROM stdin;
 \.
 
 
 --
--- Data for Name: procedimiento_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: registro_municipal; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.procedimiento_exoneracion (id_procedimiento_exoneracion, id_plazo_exoneracion, id_procedimiento, id_tipo_contribuyente) FROM stdin;
+COPY impuesto.registro_municipal (id_registro_municipal, id_contribuyente, referencia_municipal, fecha_aprobacion) FROM stdin;
 \.
 
 
 --
--- Data for Name: sm_desglose; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: solicitud; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.sm_desglose (id_sm_desglose, id_inmueble, id_liquidacion, monto_gas, monto_aseo) FROM stdin;
+COPY impuesto.solicitud (id_solicitud, id_usuario, aprobado, fecha, fecha_aprobado, id_tipo_tramite, id_contribuyente) FROM stdin;
 \.
 
 
 --
--- Data for Name: solicitud; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: subramo; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.solicitud (id_solicitud, id_usuario, documento, rim, aprobado, fecha, monto_total, nacionalidad, pagado, rebotado, fecha_aprobado, contribuyente) FROM stdin;
+COPY impuesto.subramo (id_subramo, id_ramo, subindice, descripcion) FROM stdin;
 \.
 
 
 --
--- Data for Name: tabulador_gas; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: tabulador_aseo_actividad_economica; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.tabulador_aseo_actividad_economica (id_tabulador_aseo_actividad_economica, id_usuario, numero_referencia, monto, fecha_creacion, fecha_desde, fecha_hasta) FROM stdin;
+1	83	1001001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+2	83	1002001	4950000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+3	83	1003001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+4	83	1004001	9900000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+5	83	1005001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+6	83	1006001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+7	83	1007001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+8	83	1008001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+9	83	1009001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+10	83	1010001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+11	83	1011001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+12	83	1012001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+13	83	1013001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+14	83	1014001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+15	83	1015001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+16	83	1016001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+17	83	1017001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+18	83	1018001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+19	83	1019001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+20	83	1020001	4950000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+21	83	1021001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+22	83	1022001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+23	83	1023001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+24	83	1024001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+25	83	1025001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+26	83	1026001	6600000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+27	83	1027001	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+28	83	1028001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+29	83	1029001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+30	83	1030001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+31	83	1033001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+32	83	1034001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+33	83	1036001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+34	83	1037001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+35	83	1038001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+36	83	1039001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+37	83	1040001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+38	83	1041001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+39	83	1042001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+40	83	1043001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+41	83	1044001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+42	83	1045001	6600000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+43	83	1046001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+44	83	1047001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+45	83	1048001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+46	83	2001001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+47	83	2002001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+48	83	2003001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+49	83	2004001	6600000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+50	83	2005001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+51	83	2006001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+52	83	2007001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+53	83	2008001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+54	83	2009001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+55	83	2010001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+56	83	2011001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+57	83	2012001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+58	83	2013001	33000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+59	83	2014001	16500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+60	83	2016001	8250000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+61	83	2015001	9900000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+62	83	2017001	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+63	83	2018001	22000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+64	83	2019001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+65	83	2020001	19800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+66	83	2021001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+67	83	2022001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+68	83	2023001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+69	83	2024002	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+70	83	2025003	16500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+71	83	2026001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+72	83	2028001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+73	83	2029001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+74	83	2030001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+75	83	2031001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+76	83	2032001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+77	83	2033001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+78	83	2034001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+79	83	2035001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+80	83	2036001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+81	83	2037001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+82	83	2038001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+83	83	2039001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+84	83	2040001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+85	83	2042001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+86	83	2043002	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+87	83	2044001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+88	83	2045001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+89	83	2046001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+90	83	2047001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+91	83	2048001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+92	83	2049002	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+93	83	2051001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+94	83	2052001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+95	83	2053001	4950000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+96	83	2054001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+97	83	2055001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+98	83	2056001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+99	83	2057001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+100	83	2058001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+101	83	2059001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+102	83	2060001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+103	83	2061001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+104	83	2062001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+105	83	2063001	4950000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+106	83	2064001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+107	83	2065001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+108	83	2066001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+109	83	2067001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+110	83	2068001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+111	83	2069002	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+112	83	2070003	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+113	83	2071001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+114	83	2072001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+115	83	2073001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+116	83	3001001	16500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+117	83	3002001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+118	83	3003002	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+119	83	3004001	4950000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+120	83	3005001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+121	83	3006001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+122	83	3007001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+123	83	3008001	6050000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+124	83	3009001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+125	83	3010001	12100000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+126	83	3011001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+127	83	3012001	6050000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+128	83	3013001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+129	83	3014001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+130	83	3015001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+131	83	3016001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+132	83	3017002	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+133	83	3019002	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+134	83	3020001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+135	83	3021001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+136	83	3022001	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+137	83	3023001	4950000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+138	83	3024001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+139	83	3025001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+140	83	3026001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+141	83	3027001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+142	83	3028001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+143	83	3030002	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+144	83	3031001	7150000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+145	83	3032001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+146	83	3033002	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+147	83	3034001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+148	83	3035001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+149	83	3036001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+150	83	3037001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+151	83	3038001	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+152	83	3039001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+153	83	3040001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+154	83	3041001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+155	83	3042001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+156	83	3043001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+157	83	3044001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+158	83	3045002	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+159	83	3046001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+160	83	3047001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+161	83	3048001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+162	83	3049001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+163	83	3050001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+164	83	3051001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+165	83	3052001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+166	83	3053002	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+167	83	3054001	6050000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+168	83	3055001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+169	83	3056001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+170	83	3057001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+171	83	3058001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+172	83	3059001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+173	83	3060001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+174	83	3061001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+175	83	3062001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+176	83	3063001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+177	83	3064001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+178	83	3065001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+179	83	3066001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+180	83	3067001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+181	83	3068001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+182	83	3070001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+183	83	3072002	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+184	83	3073001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+185	83	3074001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+186	83	3075001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+187	83	3076001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+188	83	3077001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+189	83	3078001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+190	83	3079001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+191	83	3080001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+192	83	3081001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+193	83	3082001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+194	83	3083001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+195	83	20230011	16500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+196	83	20230012	22000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+197	83	20230013	33000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+198	83	20270011	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+199	83	20270012	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+200	83	30240011	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+201	83	30240012	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+202	83	30640011	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+203	83	30640012	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+204	83	1032001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+205	83	1035001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+206	83	2027001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+207	83	2041001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+208	83	2050001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+209	83	3018001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+210	83	3029001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+211	83	3069001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+212	83	3071001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+\.
+
+
+--
+-- Data for Name: tabulador_aseo_residencial; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.tabulador_aseo_residencial (id_tabulador_aseo_residencial, id_usuario, monto, fecha_creacion, fecha_desde, fecha_hasta) FROM stdin;
+1	83	18000	2020-06-11 13:49:10.551481-04	2020-06-11	\N
+\.
+
+
+--
+-- Data for Name: tabulador_gas; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
 COPY impuesto.tabulador_gas (id_tabulador_gas, id_actividad_economica, monto) FROM stdin;
@@ -4834,23 +5982,306 @@ COPY impuesto.tabulador_gas (id_tabulador_gas, id_actividad_economica, monto) FR
 
 
 --
--- Data for Name: tipo_actividad_economica; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: tabulador_gas_actividad_economica; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.tipo_actividad_economica (id_tipo_actividad, descripcion) FROM stdin;
+COPY impuesto.tabulador_gas_actividad_economica (id_tabulador_gas_actividad_economica, id_usuario, numero_referencia, monto, fecha_creacion, fecha_desde, fecha_hasta) FROM stdin;
+1	83	1002001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+2	83	1003001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+3	83	1004001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+4	83	2007001	4950000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+5	83	1005001	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+6	83	1006001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+7	83	1007001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+8	83	1008001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+9	83	1009001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+10	83	1010001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+11	83	1011001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+12	83	1012001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+13	83	1013001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+14	83	1014001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+15	83	1015001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+16	83	1016001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+17	83	1017001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+18	83	1018001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+19	83	1019001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+20	83	1020001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+21	83	1021001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+22	83	1022001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+23	83	1023001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+24	83	1024001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+25	83	1025001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+26	83	1026001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+27	83	1027001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+28	83	1028001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+29	83	1029001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+30	83	1030001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+31	83	1031001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+32	83	1032001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+33	83	1033001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+34	83	1034001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+35	83	1035001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+36	83	1036001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+37	83	1037001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+38	83	1039001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+39	83	1040001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+40	83	1041001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+41	83	1042001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+42	83	1043001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+43	83	1044001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+44	83	1045001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+45	83	1046001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+46	83	1047001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+47	83	1048001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+48	83	2001001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+49	83	2002001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+50	83	2003001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+51	83	2004001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+52	83	2005001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+53	83	2006001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+54	83	2008001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+55	83	2009001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+56	83	2010001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+57	83	2011001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+58	83	2012001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+59	83	2014001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+60	83	2015001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+61	83	2016001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+62	83	2017001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+63	83	2018001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+64	83	2019001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+65	83	2020001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+66	83	2021001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+67	83	2022001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+68	83	2023001	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+69	83	2024002	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+70	83	2025003	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+71	83	2026001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+72	83	2029001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+73	83	2028001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+74	83	2027001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+75	83	2030001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+76	83	2031001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+77	83	2032001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+78	83	2033001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+79	83	2034001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+80	83	2035001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+81	83	2036001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+82	83	2037001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+83	83	2038001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+84	83	2039001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+85	83	2040001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+86	83	2041001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+87	83	2042001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+88	83	2043002	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+89	83	2045001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+90	83	2046001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+91	83	2047001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+92	83	2048001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+93	83	2049002	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+94	83	2051001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+95	83	2052001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+96	83	2053001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+97	83	2054001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+98	83	2055001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+99	83	2056001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+100	83	2057001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+101	83	2058001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+102	83	2059001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+103	83	2060001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+104	83	2061001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+105	83	2062001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+106	83	2063001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+107	83	2064001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+108	83	2065001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+109	83	2066001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+110	83	2067001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+111	83	2068001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+112	83	2069002	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+113	83	2070003	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+114	83	2071001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+115	83	2072001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+116	83	3001001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+117	83	3002001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+118	83	3003002	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+119	83	2073001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+120	83	3004001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+121	83	3005001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+122	83	3006001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+123	83	3007001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+124	83	3009001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+125	83	3008001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+126	83	3010001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+127	83	3011001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+128	83	3012001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+129	83	3013001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+130	83	3014001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+131	83	3015001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+132	83	3016001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+133	83	3017002	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+134	83	3019002	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+135	83	3020001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+136	83	3021001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+137	83	3022001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+138	83	3023001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+139	83	3024001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+140	83	3025001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+141	83	3026001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+142	83	3027001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+143	83	3028001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+144	83	3029001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+145	83	3030002	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+146	83	3031001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+147	83	3032001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+148	83	3033002	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+149	83	3034001	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+150	83	3035001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+151	83	3036001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+152	83	3037001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+153	83	3038001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+154	83	3039001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+155	83	3040001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+156	83	3041001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+157	83	3042001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+158	83	3043001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+159	83	3044001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+160	83	3045002	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+161	83	3046001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+162	83	3047001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+163	83	3048001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+164	83	3050001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+165	83	3051001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+166	83	3052001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+167	83	3053002	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+168	83	3054001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+169	83	3055001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+170	83	3056001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+171	83	3057001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+172	83	3058001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+173	83	3059001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+174	83	3060001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+175	83	3061001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+176	83	3062001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+177	83	3063001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+178	83	3064001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+179	83	3065001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+180	83	3067001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+181	83	3068001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+182	83	3069001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+183	83	3070001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+184	83	3071001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+185	83	3072002	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+186	83	3073001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+187	83	3074001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+188	83	3075001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+189	83	3076001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+190	83	3077001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+191	83	3078001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+192	83	3079001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+193	83	3080001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+194	83	3081001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+195	83	3082001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+196	83	3083001	2640000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+197	83	20230011	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+198	83	20230012	6600000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+199	83	20230013	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+200	83	20270011	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+201	83	20270012	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+202	83	30240011	1100000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+203	83	30240012	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+204	83	30640011	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+205	83	30640012	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+206	83	1038001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+207	83	2013001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+208	83	2044001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+209	83	2050001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+210	83	3018001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+211	83	3049001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+212	83	3066001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
 \.
 
 
 --
--- Data for Name: tipo_contribuyente; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: tabulador_gas_residencial; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.tipo_contribuyente (id_tipo_contribuyente, descripcion) FROM stdin;
+COPY impuesto.tabulador_gas_residencial (id_tabulador_gas_residencial, id_usuario, monto, fecha_creacion, fecha_desde, fecha_hasta) FROM stdin;
+1	83	7000	2020-06-11 13:48:49.040513-04	2020-06-11	\N
 \.
 
 
 --
--- Data for Name: tipo_multa; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: tipo_aviso_propaganda; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.tipo_aviso_propaganda (id_tipo_aviso_propaganda, id_categoria_propaganda, descripcion, parametro, monto, id_valor) FROM stdin;
+198	2	A-002.2, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+199	2	A-002.3, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+200	3	A-003.1, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN AVISOS DE: PARED, FACHADA, DE SUELO, DE CHUPETA, COLGANTES DE VIENTOS, VALLAS,\nINCLUYE  AVISOS EN LICORERIAS, ESTABLECIMIENTOS NOCTURNOS, PANADERÍAS, MINI MERCADOS, FARMACIOS, SUPERMERCADOS Y SIMILARES.\n	UNIDADES	4	2
+201	3	A-003.2, PROPAGANDA E IMAGEN DEL PRODUCTO O MARCA INCOPORADAS EN ANUNCIOS PORTAILES, EXHBIDORES, CABECERO MULTIMARCA, PIXEL.	UNIDADES	3	2
+202	3	A-003.3, ANUNCIOS E IMÁGENES INCOPORADAS A VEHICULO AUTOMOTOR.	UNIDADES	4	2
+204	3	A-003.5, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+203	3	A-003.4, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+205	4	A-004.1, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN AVISOS DE: PARED, FACHADA, DE SUELO, DE CHUPETA, COLGANTES DE VIENTOS, VALLAS,\nINCLUYE  AVISOS EN LICORERIAS, ESTABLECIMIENTOS NOCTURNOS, PANADERÍAS, MINI MERCADOS, FARMACIAS, SUPERMERCADOS Y SIMILARES.\n	UNIDADES	4	2
+206	4	A-004.2, PROPAGANDA E IMAGEN DEL PRODUCTO O MARCA INCOPORADAS EN ANUNCIOS PORTÁTILES, EXHBIDORES, CABECERO MULTIMARCA, PIXEL.	UNIDADES	3	2
+207	4	A-004.3, ANUNCIOS E IMÁGENES INCOPORADAS A VEHICULO AUTOMOTOR.	UNIDADES	4	2
+208	4	A-004.4, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+209	4	A-004.5, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+194	1	A-001.2, PROPAGANADA E IMAGEN DEL PRODUCTO O MARCA INCORPORADAS  EN ANUNCIOS PORTÁTILES, EXHIBIDORES, CABECERO MULTIMARCA.	UNIDADES	3	2
+195	1	A-001.3, ANUNCIOS E IMÁGENES DEL PRODUCTO INCORPORADOS A VEHÍCULOS AUTOMOTORES.	UNIDADES	2	2
+196	1	A-001.4, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+210	5	A-005.1, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN AVISOS DE: PARED, FACHADA, DE SUELO, DE CHUPETA, COLGANTES DE VIENTOS, VALLAS,\nINCLUYE  AVISOS EN LICORERIAS, ESTABLECIMIENTOS NOCTURNOS, PANADERÍAS, MINI MERCADOS, FARMACIAS, SUPERMERCADOS Y SIMILARES.\n	UNIDADES	4	2
+211	5	A-005.2, ANUNCIOS E IMÁGENES INCOPORADAS A VHEICULO AUTOMOTOR.	UNIDADES	4	2
+193	1	A-001.1, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN AVISOS DE: PARED, FACHADA, DE SUELO, DE CHUPETA, COLGANTES DE VIENTOS, VALLAS, TOLDOS Y MARQUESINA. \nINCLUYE AVISOS EN CENTROS COMERCIALES, LICORERÍAS, ESTABLECIMIENTOS NOCTURNOS, PANADERÍAS, MINI MERCADOS, FARMACIAS, SUPERMERCADOS, RESTAURANTE Y SIMILARES. PROPAGANDA E IMAGEN DEL PRODUCTO O MARCA INCORPORADAS EN ANUNCIOS PORTÁTILES, EXHIBIDORES, CABECERO MULTIMARCA.\n	UNIDADES	4	2
+214	5	A-005.5, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+212	5	A-005.3, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA. DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+213	5	A-005.4, PROPAGANDA DE PRODUCTOS, IMAGEN O MARCAS INCORPORADA  A EQUIPOS TALES COMO: NEVERAS, FREEZER, CAVAS, ENFRIADORAS DE BOTELLAS, HELADOS Y YOGURT.	UNIDADES	4	2
+215	6	A-006.1, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN AVISOS DE: PARED, FACHADA, DE SUELO, DE CHUPETA, COLGANTES DE VIENTOS, VALLAS,\nINCLUYE  AVISOS EN LICORERIAS, ESTABLECIMIENTOS NOCTURNOS, PANADERÍAS, MINI MERCADOS, FARMACIAS, SUPERMERCADOS Y SIMILARES.\n	UNIDADES	4	2
+216	6	A-006.2, PROPAGANDA E IMAGEN DEL PRODUCTO O MARCA INCORPORADAS EN ANUNCIOS PORTÁTILES, EXHIBIDORES, CABECERO MULTIMARCA.	UNIDADES	3	2
+217	6	A-006.3, ANUNCIOS E IMÁGENES INCOPORADAS A VHEICULO AUTOMOTOR.	UNIDADES	4	2
+219	6	A-006.5, PROMOCIONES EVENTUALES.	UNIDADES	5	2
+220	6	A-006.6, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+221	7	A-007.1, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN AVISOS DE FACHADA, SALIENTES, PARED, SUELO, CHUPETA, COLGANTES DE VIENTOS, VALLAS, TOLDOS Y MARQUESINA.( Que estén  fijados en el piso, pared o fachada del establecimiento).	UNIDADES	4	2
+222	7	A-007.2, PROPAGANDA E IMAGEN DEL PRODUCTO O MARCA INCORPORADOS EN ANUNCIOS PORTÁTILES, EXHIBIDORES, CABECERO MULTIMARCA.	UNIDADES	3	2
+223	7	A-007.3, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA. DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+224	7	A-007.4, MAQUINAS DISPENSADORAS DE CAFÉ, SOLO O COMBINADO, CON INCORPORACIÓN DE PROPAGANDA DE PRODUCTOS O MARCAS. PROPAGANDA DE PRODUCTOS O MARCAS INCOPORADA A EQUIPOS TALES COMO, NEVERAS, FREEZER, CAVAS, ENFRIADORAS DE BOTELLAS Y YOGURT.	UNIDADES	3	2
+225	7	A-007.5, PROMOCIONES EVENTUALES.	UNIDADES	5	2
+226	7	A-007.6, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+227	8	A-008.1, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN AVISOS DE: PARED, FACHADA, DE SUELO, DE CHUPETA, COLGANTES DE VIENTOS, VALLAS,\nINCLUYE  AVISOS EN LICORERIAS, ESTABLECIMIENTOS NOCTURNOS, PANADERÍAS, MINI MERCADOS, FARMACIAS, SUPERMERCADOS Y SIMILARES.\n	UNIDADES	4	2
+228	8	A-008.2, PROPAGANDA E IMAGEN DEL PRODUCTO O MARCA INCORPORADAS EN ANUNCIOS PORTATILES, EXHIBIDORES, CABECERO MULTIMARCA.	UNIDADES	3	2
+230	8	A-008.4, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+231	9	A-009.1, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN AVISOS DE: PARED, FACHADA, DE SUELO, DE CHUPETA, COLGANTES DE VIENTOS, VALLAS,\nINCLUYE  AVISOS EN LICORERIAS, ESTABLECIMIENTOS NOCTURNOS, PANADERÍAS, MINI MERCADOS, FARMACIAS, SUPERMERCADOS Y SIMILARES.\n	UNIDADES	4	2
+232	9	A-009.2, PROPAGANDA E IMAGEN DEL PRODUCTO O MARCA INCORPORADAS EN ANUNCIOS PORTATILES, EXHIBIDORES, CABECERO MULTIMARCA.	UNIDADES	3	2
+233	9	A-009.3, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA. DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+234	9	A-009.4, OTROS MEDIOS NO ESPECÍFICADOS.	UNIDADES	7	2
+235	10	A-010.1, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN AVISOS DE: PARED, FACHADA, DE SUELO, DE CHUPETA, COLGANTES DE VIENTOS, VALLAS,\nINCLUYE  AVISOS EN LICORERIAS, ESTABLECIMIENTOS NOCTURNOS, PANADERÍAS, MINI MERCADOS, FARMACIAS, SUPERMERCADOS Y SIMILARES.\n	UNIDADES	4	2
+236	10	A-010.2, PROPAGANDA E IMAGEN DEL PRODUCTO O MARCA INCORPORADAS EN ANUNCIOS PORTATILES, EXHIBIDORES, CABECERO MULTIMARCA.	UNIDADES	3	2
+237	10	A-010.3, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA. DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+238	10	A-010.4, ANUNCIOS E IMÁGENES DEL PRODUCTO ENCORPORADOS A VEHÍCULO AUTOMOTOR.	UNIDADES	3	2
+239	10	A-010.5, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+240	11	A-011.1, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN AVISOS DE: PARED, FACHADA, DE SUELO, DE CHUPETA, COLGANTES DE VIENTOS, VALLAS,\nINCLUYE  AVISOS EN LICORERIAS, ESTABLECIMIENTOS NOCTURNOS, PANADERÍAS, MINI MERCADOS, FARMACIAS, SUPERMERCADOS Y SIMILARES.\n	UNIDADES	4	2
+241	11	A-011.2, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA. DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+242	11	A-011.3, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+243	12	A-012.1, PROPAGANDA DE FACHADA, SALIENTES, PARED, SUELO, CHUPETA, ANUNCIOS COLGANTE Y DE VIENTOS, TOLDOS Y MARQUESINAS.	UNIDADES	4	2
+244	12	A-012.2, ANUNCIOS E IMÁGENES DEL PRODUCTO INCORPORADOS A VEHÍCULO AUTOMOTOR.	UNIDADES	3	2
+245	12	A-012.3, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA. DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+246	12	A-012.4, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+247	13	A-013.1, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN AVISOS DE: PARED, FACHADA, DE SUELO, DE CHUPETA, COLGANTES DE VIENTOS, VALLAS,\nINCLUYE  AVISOS EN LICORERIAS, ESTABLECIMIENTOS NOCTURNOS, PANADERÍAS, MINI MERCADOS, FARMACIAS, SUPERMERCADOS Y SIMILARES.\n	UNIDADES	4	2
+248	13	A-013.2, PROPAGANDA E IMAGEN DEL PRODUCTO O MARCA INCORPORADAS EN ANUNCIOS PORTATILES, EXHIBIDORES, CABECERO MULTIMARCA.	UNIDADES	3	2
+218	6	A-006.4, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA. DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+229	8	A-008.3, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA. DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+249	13	A-013.3, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA. DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+250	13	A-013.4, ANUNCIOS E IMÁGENES DEL PRODUCTO INCORPORADOS A VEHÍCULO AUTOMOTOR.	UNIDADES	3	2
+251	13	A-013.5, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+252	14	A-014.1, OTRAS CLASES DE PUBLICIDAD Y PROPAGANDA COMERCIAL.	UNIDADES	7	2
+253	1	A-001.5, PROPAGANDA DE PRODUCTOS, IMAGEN O MARCAS, INCORPORADA A EQUIPOS TALES COMO: NEVERAS, FREEZER, CAVAS, ENFRIADORAS DE BOTELLAS, SIFONES, DISPENSADORES DE BEBIDAS.	UNIDADES	3	2
+254	1	A-001.6, ESPECTACULOS DE PUBLICIDAD Y PROPAGANDA PROMOCIONES.	UNIDADES	6	2
+255	1	A-001.7, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+\.
+
+
+--
+-- Data for Name: tipo_multa; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
 COPY impuesto.tipo_multa (id_tipo_multa, descripcion) FROM stdin;
@@ -4859,7 +6290,7 @@ COPY impuesto.tipo_multa (id_tipo_multa, descripcion) FROM stdin;
 
 
 --
--- Data for Name: banco; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: banco; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.banco (id_banco, nombre) FROM stdin;
@@ -4869,7 +6300,7 @@ COPY public.banco (id_banco, nombre) FROM stdin;
 
 
 --
--- Data for Name: campo; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: campo; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.campo (id_campo, nombre, tipo, validacion, col) FROM stdin;
@@ -4963,7 +6394,7 @@ COPY public.campo (id_campo, nombre, tipo, validacion, col) FROM stdin;
 
 
 --
--- Data for Name: campo_tramite; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: campo_tramite; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.campo_tramite (id_campo, id_tipo_tramite, orden, estado, id_seccion) FROM stdin;
@@ -5273,7 +6704,7 @@ COPY public.campo_tramite (id_campo, id_tipo_tramite, orden, estado, id_seccion)
 
 
 --
--- Data for Name: cargo; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: cargo; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.cargo (id_cargo, id_tipo_usuario, id_institucion, descripcion) FROM stdin;
@@ -5302,7 +6733,7 @@ COPY public.cargo (id_cargo, id_tipo_usuario, id_institucion, descripcion) FROM 
 
 
 --
--- Data for Name: caso_social; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: caso_social; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.caso_social (id_caso, id_tipo_tramite, costo, datos, fecha_creacion, codigo_tramite, consecutivo, id_usuario, url_planilla) FROM stdin;
@@ -5311,7 +6742,7 @@ COPY public.caso_social (id_caso, id_tipo_tramite, costo, datos, fecha_creacion,
 
 
 --
--- Data for Name: certificado; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: certificado; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.certificado (id_certificado, id_tramite, url_certificado) FROM stdin;
@@ -5319,7 +6750,7 @@ COPY public.certificado (id_certificado, id_tramite, url_certificado) FROM stdin
 
 
 --
--- Data for Name: cuenta_funcionario; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: cuenta_funcionario; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.cuenta_funcionario (id_usuario, id_cargo) FROM stdin;
@@ -5347,7 +6778,7 @@ COPY public.cuenta_funcionario (id_usuario, id_cargo) FROM stdin;
 
 
 --
--- Data for Name: datos_facebook; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: datos_facebook; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.datos_facebook (id_usuario, id_facebook) FROM stdin;
@@ -5355,7 +6786,7 @@ COPY public.datos_facebook (id_usuario, id_facebook) FROM stdin;
 
 
 --
--- Data for Name: datos_google; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: datos_google; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.datos_google (id_usuario, id_google) FROM stdin;
@@ -5363,7 +6794,7 @@ COPY public.datos_google (id_usuario, id_google) FROM stdin;
 
 
 --
--- Data for Name: detalle_factura; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: detalle_factura; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.detalle_factura (id_detalle, id_factura, nombre, costo) FROM stdin;
@@ -5371,7 +6802,7 @@ COPY public.detalle_factura (id_detalle, id_factura, nombre, costo) FROM stdin;
 
 
 --
--- Data for Name: evento_caso_social; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: evento_caso_social; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.evento_caso_social (id_evento_caso, id_caso, event, "time") FROM stdin;
@@ -5380,7 +6811,7 @@ COPY public.evento_caso_social (id_evento_caso, id_caso, event, "time") FROM std
 
 
 --
--- Data for Name: evento_multa; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: evento_multa; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.evento_multa (id_evento_multa, id_multa, event, "time") FROM stdin;
@@ -5388,7 +6819,7 @@ COPY public.evento_multa (id_evento_multa, id_multa, event, "time") FROM stdin;
 
 
 --
--- Data for Name: evento_tramite; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: evento_tramite; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.evento_tramite (id_evento_tramite, id_tramite, event, "time") FROM stdin;
@@ -5396,7 +6827,7 @@ COPY public.evento_tramite (id_evento_tramite, id_tramite, event, "time") FROM s
 
 
 --
--- Data for Name: factura_tramite; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: factura_tramite; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.factura_tramite (id_factura, id_tramite) FROM stdin;
@@ -5404,7 +6835,7 @@ COPY public.factura_tramite (id_factura, id_tramite) FROM stdin;
 
 
 --
--- Data for Name: inmueble_urbano; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: inmueble_urbano; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, fecha_creacion, fecha_actualizacion, fecha_ultimo_avaluo, tipo_inmueble) FROM stdin;
@@ -5413,7 +6844,7 @@ COPY public.inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia
 
 
 --
--- Data for Name: institucion; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: institucion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.institucion (id_institucion, nombre_completo, nombre_corto) FROM stdin;
@@ -5431,7 +6862,7 @@ COPY public.institucion (id_institucion, nombre_completo, nombre_corto) FROM std
 
 
 --
--- Data for Name: institucion_banco; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: institucion_banco; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.institucion_banco (id_institucion, id_banco, numero_cuenta, nombre_titular, documento_de_identificacion, id_institucion_banco) FROM stdin;
@@ -5452,7 +6883,7 @@ COPY public.institucion_banco (id_institucion, id_banco, numero_cuenta, nombre_t
 
 
 --
--- Data for Name: multa; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: multa; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.multa (id_multa, id_tipo_tramite, datos, costo, fecha_creacion, codigo_multa, consecutivo, id_usuario, cedula, nacionalidad, url_certificado, aprobado, url_boleta) FROM stdin;
@@ -5460,7 +6891,7 @@ COPY public.multa (id_multa, id_tipo_tramite, datos, costo, fecha_creacion, codi
 
 
 --
--- Data for Name: notificacion; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: notificacion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.notificacion (id_notificacion, id_procedimiento, emisor, receptor, descripcion, status, fecha, estado, concepto) FROM stdin;
@@ -5468,7 +6899,7 @@ COPY public.notificacion (id_notificacion, id_procedimiento, emisor, receptor, d
 
 
 --
--- Data for Name: operacion; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: operacion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.operacion (id_operacion, nombre_op) FROM stdin;
@@ -5476,7 +6907,7 @@ COPY public.operacion (id_operacion, nombre_op) FROM stdin;
 
 
 --
--- Data for Name: operatividad_terminal; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: operatividad_terminal; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.operatividad_terminal (id_operatividad_terminal, destino, tipo, monto, tasa, habilitado) FROM stdin;
@@ -5553,7 +6984,7 @@ COPY public.operatividad_terminal (id_operatividad_terminal, destino, tipo, mont
 
 
 --
--- Data for Name: ordenanza; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: ordenanza; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.ordenanza (id_ordenanza, descripcion, tarifa, id_valor, habilitado) FROM stdin;
@@ -5618,7 +7049,7 @@ COPY public.ordenanza (id_ordenanza, descripcion, tarifa, id_valor, habilitado) 
 
 
 --
--- Data for Name: ordenanza_tramite; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: ordenanza_tramite; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.ordenanza_tramite (id_ordenanza_tramite, id_tramite, id_tarifa, utmm, valor_calc, factor, factor_value, costo_ordenanza) FROM stdin;
@@ -5626,7 +7057,7 @@ COPY public.ordenanza_tramite (id_ordenanza_tramite, id_tramite, id_tarifa, utmm
 
 
 --
--- Data for Name: pago; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: pago; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.pago (id_pago, id_procedimiento, referencia, monto, fecha_de_pago, aprobado, id_banco, fecha_de_aprobacion, concepto) FROM stdin;
@@ -5634,7 +7065,7 @@ COPY public.pago (id_pago, id_procedimiento, referencia, monto, fecha_de_pago, a
 
 
 --
--- Data for Name: pago_manual; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: pago_manual; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.pago_manual (id_pago, id_usuario_funcionario) FROM stdin;
@@ -5642,7 +7073,7 @@ COPY public.pago_manual (id_pago, id_usuario_funcionario) FROM stdin;
 
 
 --
--- Data for Name: parroquia; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: parroquia; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.parroquia (id, nombre) FROM stdin;
@@ -5668,7 +7099,7 @@ COPY public.parroquia (id, nombre) FROM stdin;
 
 
 --
--- Data for Name: permiso_de_acceso; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: permiso_de_acceso; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.permiso_de_acceso (id_permiso, id_usuario, id_tipo_tramite) FROM stdin;
@@ -5697,7 +7128,7 @@ COPY public.permiso_de_acceso (id_permiso, id_usuario, id_tipo_tramite) FROM std
 
 
 --
--- Data for Name: propietario; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: propietario; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.propietario (id_propietario, razon_social, cedula, rif, email) FROM stdin;
@@ -5723,7 +7154,7 @@ COPY public.propietario (id_propietario, razon_social, cedula, rif, email) FROM 
 
 
 --
--- Data for Name: propietario_inmueble; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: propietario_inmueble; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.propietario_inmueble (id_propietario_inmueble, id_propietario, id_inmueble) FROM stdin;
@@ -5732,7 +7163,7 @@ COPY public.propietario_inmueble (id_propietario_inmueble, id_propietario, id_in
 
 
 --
--- Data for Name: recaudo; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: recaudo; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.recaudo (id_recaudo, nombre_largo, nombre_corto, obligatorio, planilla, extension) FROM stdin;
@@ -5803,7 +7234,7 @@ COPY public.recaudo (id_recaudo, nombre_largo, nombre_corto, obligatorio, planil
 
 
 --
--- Data for Name: recuperacion; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: recuperacion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.recuperacion (id_recuperacion, id_usuario, token_recuperacion, usado, fecha_recuperacion) FROM stdin;
@@ -5811,7 +7242,7 @@ COPY public.recuperacion (id_recuperacion, id_usuario, token_recuperacion, usado
 
 
 --
--- Data for Name: seccion; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: seccion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.seccion (id_seccion, nombre) FROM stdin;
@@ -5844,7 +7275,7 @@ COPY public.seccion (id_seccion, nombre) FROM stdin;
 
 
 --
--- Data for Name: tarifa_inspeccion; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: tarifa_inspeccion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.tarifa_inspeccion (id_tarifa, id_ordenanza, id_tipo_tramite, formula, utiliza_codcat, id_variable) FROM stdin;
@@ -5909,7 +7340,7 @@ COPY public.tarifa_inspeccion (id_tarifa, id_ordenanza, id_tipo_tramite, formula
 
 
 --
--- Data for Name: template_certificado; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: template_certificado; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.template_certificado (id_template_certificado, id_tipo_tramite, link) FROM stdin;
@@ -5917,7 +7348,7 @@ COPY public.template_certificado (id_template_certificado, id_tipo_tramite, link
 
 
 --
--- Data for Name: tipo_tramite; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: tipo_tramite; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.tipo_tramite (id_tipo_tramite, id_institucion, nombre_tramite, costo_base, sufijo, nombre_corto, formato, planilla, certificado, utiliza_informacion_catastral, pago_previo, costo_utmm, planilla_rechazo) FROM stdin;
@@ -5948,7 +7379,7 @@ COPY public.tipo_tramite (id_tipo_tramite, id_institucion, nombre_tramite, costo
 
 
 --
--- Data for Name: tipo_tramite_recaudo; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: tipo_tramite_recaudo; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.tipo_tramite_recaudo (id_tipo_tramite, id_recaudo, fisico) FROM stdin;
@@ -6059,7 +7490,7 @@ COPY public.tipo_tramite_recaudo (id_tipo_tramite, id_recaudo, fisico) FROM stdi
 
 
 --
--- Data for Name: tipo_usuario; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: tipo_usuario; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.tipo_usuario (id_tipo_usuario, descripcion) FROM stdin;
@@ -6072,7 +7503,7 @@ COPY public.tipo_usuario (id_tipo_usuario, descripcion) FROM stdin;
 
 
 --
--- Data for Name: tramite; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: tramite; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.tramite (id_tramite, id_tipo_tramite, datos, costo, fecha_creacion, codigo_tramite, consecutivo, id_usuario, url_planilla, url_certificado, aprobado, fecha_culminacion) FROM stdin;
@@ -6080,7 +7511,7 @@ COPY public.tramite (id_tramite, id_tipo_tramite, datos, costo, fecha_creacion, 
 
 
 --
--- Data for Name: tramite_archivo_recaudo; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: tramite_archivo_recaudo; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.tramite_archivo_recaudo (id_tramite, url_archivo_recaudo) FROM stdin;
@@ -6088,7 +7519,7 @@ COPY public.tramite_archivo_recaudo (id_tramite, url_archivo_recaudo) FROM stdin
 
 
 --
--- Data for Name: usuario; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: usuario; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.usuario (id_usuario, nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, id_tipo_usuario, password, telefono) FROM stdin;
@@ -6118,7 +7549,7 @@ COPY public.usuario (id_usuario, nombre_completo, nombre_de_usuario, direccion, 
 
 
 --
--- Data for Name: valor; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: valor; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.valor (id_valor, descripcion, valor_en_bs) FROM stdin;
@@ -6128,7 +7559,7 @@ COPY public.valor (id_valor, descripcion, valor_en_bs) FROM stdin;
 
 
 --
--- Data for Name: variable; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: variable; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.variable (id_var, nombre_variable) FROM stdin;
@@ -6136,7 +7567,7 @@ COPY public.variable (id_var, nombre_variable) FROM stdin;
 
 
 --
--- Data for Name: variable_de_costo; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: variable_de_costo; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.variable_de_costo (id_variable_de_costo, id_tipo_tramite, id_operacion, precedencia, aumento) FROM stdin;
@@ -6144,7 +7575,7 @@ COPY public.variable_de_costo (id_variable_de_costo, id_tipo_tramite, id_operaci
 
 
 --
--- Data for Name: variable_ordenanza; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: variable_ordenanza; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.variable_ordenanza (id_variable, nombre, nombre_plural) FROM stdin;
@@ -6157,7 +7588,7 @@ COPY public.variable_ordenanza (id_variable, nombre, nombre_plural) FROM stdin;
 
 
 --
--- Data for Name: base_task; Type: TABLE DATA; Schema: timetable; Owner: -
+-- Data for Name: base_task; Type: TABLE DATA; Schema: timetable; Owner: postgres
 --
 
 COPY timetable.base_task (task_id, name, kind, script) FROM stdin;
@@ -6166,7 +7597,7 @@ COPY timetable.base_task (task_id, name, kind, script) FROM stdin;
 
 
 --
--- Data for Name: chain_execution_config; Type: TABLE DATA; Schema: timetable; Owner: -
+-- Data for Name: chain_execution_config; Type: TABLE DATA; Schema: timetable; Owner: postgres
 --
 
 COPY timetable.chain_execution_config (chain_execution_config, chain_id, chain_name, run_at, max_instances, live, self_destruct, exclusive_execution, excluded_execution_configs, client_name) FROM stdin;
@@ -6175,7 +7606,7 @@ COPY timetable.chain_execution_config (chain_execution_config, chain_id, chain_n
 
 
 --
--- Data for Name: chain_execution_parameters; Type: TABLE DATA; Schema: timetable; Owner: -
+-- Data for Name: chain_execution_parameters; Type: TABLE DATA; Schema: timetable; Owner: postgres
 --
 
 COPY timetable.chain_execution_parameters (chain_execution_config, chain_id, order_id, value) FROM stdin;
@@ -6183,7 +7614,7 @@ COPY timetable.chain_execution_parameters (chain_execution_config, chain_id, ord
 
 
 --
--- Data for Name: database_connection; Type: TABLE DATA; Schema: timetable; Owner: -
+-- Data for Name: database_connection; Type: TABLE DATA; Schema: timetable; Owner: postgres
 --
 
 COPY timetable.database_connection (database_connection, connect_string, comment) FROM stdin;
@@ -6191,7 +7622,7 @@ COPY timetable.database_connection (database_connection, connect_string, comment
 
 
 --
--- Data for Name: execution_log; Type: TABLE DATA; Schema: timetable; Owner: -
+-- Data for Name: execution_log; Type: TABLE DATA; Schema: timetable; Owner: postgres
 --
 
 COPY timetable.execution_log (chain_execution_config, chain_id, task_id, name, script, kind, last_run, finished, returncode, pid) FROM stdin;
@@ -6199,7 +7630,7 @@ COPY timetable.execution_log (chain_execution_config, chain_id, task_id, name, s
 
 
 --
--- Data for Name: log; Type: TABLE DATA; Schema: timetable; Owner: -
+-- Data for Name: log; Type: TABLE DATA; Schema: timetable; Owner: postgres
 --
 
 COPY timetable.log (id, ts, client_name, pid, log_level, message) FROM stdin;
@@ -6207,7 +7638,7 @@ COPY timetable.log (id, ts, client_name, pid, log_level, message) FROM stdin;
 
 
 --
--- Data for Name: migrations; Type: TABLE DATA; Schema: timetable; Owner: -
+-- Data for Name: migrations; Type: TABLE DATA; Schema: timetable; Owner: postgres
 --
 
 COPY timetable.migrations (id, version) FROM stdin;
@@ -6215,7 +7646,7 @@ COPY timetable.migrations (id, version) FROM stdin;
 
 
 --
--- Data for Name: run_status; Type: TABLE DATA; Schema: timetable; Owner: -
+-- Data for Name: run_status; Type: TABLE DATA; Schema: timetable; Owner: postgres
 --
 
 COPY timetable.run_status (run_status, start_status, execution_status, chain_id, current_execution_element, started, last_status_update, chain_execution_config) FROM stdin;
@@ -6223,7 +7654,7 @@ COPY timetable.run_status (run_status, start_status, execution_status, chain_id,
 
 
 --
--- Data for Name: task_chain; Type: TABLE DATA; Schema: timetable; Owner: -
+-- Data for Name: task_chain; Type: TABLE DATA; Schema: timetable; Owner: postgres
 --
 
 COPY timetable.task_chain (chain_id, parent_id, task_id, run_uid, database_connection, ignore_error) FROM stdin;
@@ -6232,7 +7663,7 @@ COPY timetable.task_chain (chain_id, parent_id, task_id, run_uid, database_conne
 
 
 --
--- Data for Name: ano; Type: TABLE DATA; Schema: valores_fiscales; Owner: -
+-- Data for Name: ano; Type: TABLE DATA; Schema: valores_fiscales; Owner: postgres
 --
 
 COPY valores_fiscales.ano (id, descripcion) FROM stdin;
@@ -6246,7 +7677,7 @@ COPY valores_fiscales.ano (id, descripcion) FROM stdin;
 
 
 --
--- Data for Name: construccion; Type: TABLE DATA; Schema: valores_fiscales; Owner: -
+-- Data for Name: construccion; Type: TABLE DATA; Schema: valores_fiscales; Owner: postgres
 --
 
 COPY valores_fiscales.construccion (valor_fiscal, id, tipo_construccion_id, ano_id) FROM stdin;
@@ -6554,7 +7985,7 @@ COPY valores_fiscales.construccion (valor_fiscal, id, tipo_construccion_id, ano_
 
 
 --
--- Data for Name: sector; Type: TABLE DATA; Schema: valores_fiscales; Owner: -
+-- Data for Name: sector; Type: TABLE DATA; Schema: valores_fiscales; Owner: postgres
 --
 
 COPY valores_fiscales.sector (descripcion, parroquia_id, id) FROM stdin;
@@ -6782,7 +8213,7 @@ COPY valores_fiscales.sector (descripcion, parroquia_id, id) FROM stdin;
 
 
 --
--- Data for Name: terreno; Type: TABLE DATA; Schema: valores_fiscales; Owner: -
+-- Data for Name: terreno; Type: TABLE DATA; Schema: valores_fiscales; Owner: postgres
 --
 
 COPY valores_fiscales.terreno (valor_fiscal, sector_id, id, ano_id) FROM stdin;
@@ -8104,7 +9535,7 @@ COPY valores_fiscales.terreno (valor_fiscal, sector_id, id, ano_id) FROM stdin;
 
 
 --
--- Data for Name: tipo_construccion; Type: TABLE DATA; Schema: valores_fiscales; Owner: -
+-- Data for Name: tipo_construccion; Type: TABLE DATA; Schema: valores_fiscales; Owner: postgres
 --
 
 COPY valores_fiscales.tipo_construccion (descripcion, id) FROM stdin;
@@ -8162,455 +9593,512 @@ M50	50
 
 
 --
--- Name: actividad_economica_exoneraci_id_actividad_economica_exoner_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: actividad_economica_contribuy_id_actividad_economica_contri_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq', 1, false);
+
+
+--
+-- Name: actividad_economica_exoneraci_id_actividad_economica_exoner_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
 SELECT pg_catalog.setval('impuesto.actividad_economica_exoneraci_id_actividad_economica_exoner_seq', 1, false);
 
 
 --
--- Name: actividad_economica_id_actividad_economica_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: actividad_economica_id_actividad_economica_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
 SELECT pg_catalog.setval('impuesto.actividad_economica_id_actividad_economica_seq', 220, true);
 
 
 --
--- Name: ae_desglose_id_ae_desglose_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: categoria_propaganda_id_categoria_propaganda_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.ae_desglose_id_ae_desglose_seq', 41, true);
+SELECT pg_catalog.setval('impuesto.categoria_propaganda_id_categoria_propaganda_seq', 1, false);
 
 
 --
--- Name: dias_feriados_id_dia_feriado_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: contribuyente_exoneracion_id_contribuyente_exoneracion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.contribuyente_exoneracion_id_contribuyente_exoneracion_seq', 1, false);
+
+
+--
+-- Name: contribuyente_id_contribuyente_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.contribuyente_id_contribuyente_seq', 1, false);
+
+
+--
+-- Name: dias_feriados_id_dia_feriado_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
 SELECT pg_catalog.setval('impuesto.dias_feriados_id_dia_feriado_seq', 47, true);
 
 
 --
--- Name: factor_id_factor_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: evento_solicitud_id_evento_solicitud_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.evento_solicitud_id_evento_solicitud_seq', 1, false);
+
+
+--
+-- Name: factor_id_factor_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
 SELECT pg_catalog.setval('impuesto.factor_id_factor_seq', 1, false);
 
 
 --
--- Name: iu_desglose_id_iu_desglose_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: inmueble_contribuyente_id_inmueble_contribuyente_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.iu_desglose_id_iu_desglose_seq', 38, true);
+SELECT pg_catalog.setval('impuesto.inmueble_contribuyente_id_inmueble_contribuyente_seq', 1, false);
 
 
 --
--- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
 SELECT pg_catalog.setval('impuesto.liquidacion_id_liquidacion_seq', 186, true);
 
 
 --
--- Name: multa_id_multa_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: multa_id_multa_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
 SELECT pg_catalog.setval('impuesto.multa_id_multa_seq', 33, true);
 
 
 --
--- Name: plazo_exoneracion_id_plazo_exoneracion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: plazo_exoneracion_id_plazo_exoneracion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
 SELECT pg_catalog.setval('impuesto.plazo_exoneracion_id_plazo_exoneracion_seq', 1, false);
 
 
 --
--- Name: pp_desglose_id_pp_desglose_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
---
-
-SELECT pg_catalog.setval('impuesto.pp_desglose_id_pp_desglose_seq', 1, true);
-
-
---
--- Name: procedimiento_exoneracion_id_procedimiento_exoneracion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: procedimiento_exoneracion_id_procedimiento_exoneracion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
 SELECT pg_catalog.setval('impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq', 1, false);
 
 
 --
--- Name: procedimiento_id_procedimiento_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: ramo_id_ramo_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.procedimiento_id_procedimiento_seq', 4, true);
-
-
---
--- Name: sm_desglose_id_sm_desglose_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
---
-
-SELECT pg_catalog.setval('impuesto.sm_desglose_id_sm_desglose_seq', 43, true);
+SELECT pg_catalog.setval('impuesto.ramo_id_ramo_seq', 1, false);
 
 
 --
--- Name: solicitud_id_solicitud_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: registro_municipal_id_registro_municipal_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.registro_municipal_id_registro_municipal_seq', 1, false);
+
+
+--
+-- Name: solicitud_id_solicitud_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
 SELECT pg_catalog.setval('impuesto.solicitud_id_solicitud_seq', 61, true);
 
 
 --
--- Name: tabulador_gas_id_tabulador_gas_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: subramo_id_subramo_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.subramo_id_subramo_seq', 1, false);
+
+
+--
+-- Name: tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq', 212, true);
+
+
+--
+-- Name: tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq', 1, true);
+
+
+--
+-- Name: tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq', 212, true);
+
+
+--
+-- Name: tabulador_gas_id_tabulador_gas_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
 SELECT pg_catalog.setval('impuesto.tabulador_gas_id_tabulador_gas_seq', 1, false);
 
 
 --
--- Name: tipo_actividad_economica_id_tipo_actividad_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_residencial_id_tabulador_gas_residencial_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.tipo_actividad_economica_id_tipo_actividad_seq', 1, false);
-
-
---
--- Name: tipo_contribuyente_id_tipo_contribuyente_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
---
-
-SELECT pg_catalog.setval('impuesto.tipo_contribuyente_id_tipo_contribuyente_seq', 1, false);
+SELECT pg_catalog.setval('impuesto.tabulador_gas_residencial_id_tabulador_gas_residencial_seq', 1, true);
 
 
 --
--- Name: tipo_multa_id_tipo_multa_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq', 1, false);
+
+
+--
+-- Name: tipo_multa_id_tipo_multa_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
 SELECT pg_catalog.setval('impuesto.tipo_multa_id_tipo_multa_seq', 1, true);
 
 
 --
--- Name: bancos_id_banco_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: bancos_id_banco_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.bancos_id_banco_seq', 2, true);
 
 
 --
--- Name: campos_id_campo_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: campos_id_campo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.campos_id_campo_seq', 13, true);
 
 
 --
--- Name: cargo_id_cargo_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: cargo_id_cargo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.cargo_id_cargo_seq', 21, true);
 
 
 --
--- Name: casos_sociales_id_caso_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: casos_sociales_id_caso_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.casos_sociales_id_caso_seq', 2, true);
 
 
 --
--- Name: certificados_id_certificado_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: certificados_id_certificado_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.certificados_id_certificado_seq', 1, false);
 
 
 --
--- Name: detalles_facturas_id_detalle_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: detalles_facturas_id_detalle_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.detalles_facturas_id_detalle_seq', 1, false);
 
 
 --
--- Name: evento_multa_id_evento_multa_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: evento_multa_id_evento_multa_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.evento_multa_id_evento_multa_seq', 41, true);
 
 
 --
--- Name: eventos_casos_sociales_id_evento_caso_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: eventos_casos_sociales_id_evento_caso_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.eventos_casos_sociales_id_evento_caso_seq', 2, true);
 
 
 --
--- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.eventos_tramite_id_evento_tramite_seq', 618, true);
 
 
 --
--- Name: facturas_tramites_id_factura_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: facturas_tramites_id_factura_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.facturas_tramites_id_factura_seq', 1, false);
 
 
 --
--- Name: inmueble_urbano_id_inmueble_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: inmueble_urbano_id_inmueble_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.inmueble_urbano_id_inmueble_seq', 33, true);
 
 
 --
--- Name: instituciones_id_institucion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: instituciones_id_institucion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.instituciones_id_institucion_seq', 1, false);
 
 
 --
--- Name: multa_id_multa_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: multa_id_multa_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.multa_id_multa_seq', 14, true);
 
 
 --
--- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.notificaciones_id_notificacion_seq', 495, true);
 
 
 --
--- Name: operaciones_id_operacion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: operaciones_id_operacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.operaciones_id_operacion_seq', 1, true);
 
 
 --
--- Name: operatividad_terminal_id_operatividad_terminal_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: operatividad_terminal_id_operatividad_terminal_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.operatividad_terminal_id_operatividad_terminal_seq', 77, true);
 
 
 --
--- Name: ordenanzas_id_ordenanza_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: ordenanzas_id_ordenanza_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.ordenanzas_id_ordenanza_seq', 57, true);
 
 
 --
--- Name: ordenanzas_tramites_id_ordenanza_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: ordenanzas_tramites_id_ordenanza_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.ordenanzas_tramites_id_ordenanza_tramite_seq', 15, true);
 
 
 --
--- Name: pagos_id_pago_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: pagos_id_pago_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.pagos_id_pago_seq', 225, true);
 
 
 --
--- Name: parroquias_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: parroquias_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.parroquias_id_seq', 1, false);
 
 
 --
--- Name: permiso_de_acceso_id_permiso_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: permiso_de_acceso_id_permiso_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.permiso_de_acceso_id_permiso_seq', 30, true);
 
 
 --
--- Name: propietario_id_propietario_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: propietario_id_propietario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.propietario_id_propietario_seq', 18, true);
 
 
 --
--- Name: propietarios_inmuebles_id_propietario_inmueble_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: propietarios_inmuebles_id_propietario_inmueble_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.propietarios_inmuebles_id_propietario_inmueble_seq', 10, true);
 
 
 --
--- Name: recaudos_id_recaudo_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: recaudos_id_recaudo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.recaudos_id_recaudo_seq', 1, true);
 
 
 --
--- Name: recuperacion_id_recuperacion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: recuperacion_id_recuperacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.recuperacion_id_recuperacion_seq', 1, false);
 
 
 --
--- Name: tarifas_inspeccion_id_tarifa_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: tarifas_inspeccion_id_tarifa_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.tarifas_inspeccion_id_tarifa_seq', 57, true);
 
 
 --
--- Name: templates_certificados_id_template_certificado_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: templates_certificados_id_template_certificado_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.templates_certificados_id_template_certificado_seq', 1, false);
 
 
 --
--- Name: tipos_tramites_id_tipo_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: tipos_tramites_id_tipo_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.tipos_tramites_id_tipo_tramite_seq', 4, true);
 
 
 --
--- Name: tipos_usuarios_id_tipo_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: tipos_usuarios_id_tipo_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.tipos_usuarios_id_tipo_usuario_seq', 1, false);
 
 
 --
--- Name: tramites_id_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: tramites_id_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 273, true);
 
 
 --
--- Name: usuarios_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: usuarios_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 115, true);
 
 
 --
--- Name: valores_id_valor_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: valores_id_valor_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.valores_id_valor_seq', 2, true);
 
 
 --
--- Name: variables_de_costo_id_variable_de_costo_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: variables_de_costo_id_variable_de_costo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.variables_de_costo_id_variable_de_costo_seq', 1, false);
 
 
 --
--- Name: variables_id_var_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: variables_id_var_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.variables_id_var_seq', 1, false);
 
 
 --
--- Name: variables_ordenanzas_id_variable_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: variables_ordenanzas_id_variable_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.variables_ordenanzas_id_variable_seq', 5, true);
 
 
 --
--- Name: base_task_task_id_seq; Type: SEQUENCE SET; Schema: timetable; Owner: -
+-- Name: base_task_task_id_seq; Type: SEQUENCE SET; Schema: timetable; Owner: postgres
 --
 
 SELECT pg_catalog.setval('timetable.base_task_task_id_seq', 1, true);
 
 
 --
--- Name: chain_execution_config_chain_execution_config_seq; Type: SEQUENCE SET; Schema: timetable; Owner: -
+-- Name: chain_execution_config_chain_execution_config_seq; Type: SEQUENCE SET; Schema: timetable; Owner: postgres
 --
 
 SELECT pg_catalog.setval('timetable.chain_execution_config_chain_execution_config_seq', 1, true);
 
 
 --
--- Name: database_connection_database_connection_seq; Type: SEQUENCE SET; Schema: timetable; Owner: -
+-- Name: database_connection_database_connection_seq; Type: SEQUENCE SET; Schema: timetable; Owner: postgres
 --
 
 SELECT pg_catalog.setval('timetable.database_connection_database_connection_seq', 1, false);
 
 
 --
--- Name: log_id_seq; Type: SEQUENCE SET; Schema: timetable; Owner: -
+-- Name: log_id_seq; Type: SEQUENCE SET; Schema: timetable; Owner: postgres
 --
 
 SELECT pg_catalog.setval('timetable.log_id_seq', 1, false);
 
 
 --
--- Name: run_status_run_status_seq; Type: SEQUENCE SET; Schema: timetable; Owner: -
+-- Name: run_status_run_status_seq; Type: SEQUENCE SET; Schema: timetable; Owner: postgres
 --
 
 SELECT pg_catalog.setval('timetable.run_status_run_status_seq', 1, false);
 
 
 --
--- Name: task_chain_chain_id_seq; Type: SEQUENCE SET; Schema: timetable; Owner: -
+-- Name: task_chain_chain_id_seq; Type: SEQUENCE SET; Schema: timetable; Owner: postgres
 --
 
 SELECT pg_catalog.setval('timetable.task_chain_chain_id_seq', 1, true);
 
 
 --
--- Name: ano_fiscal_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: -
+-- Name: ano_fiscal_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: postgres
 --
 
 SELECT pg_catalog.setval('valores_fiscales.ano_fiscal_id_seq', 6, true);
 
 
 --
--- Name: construccion_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: -
+-- Name: construccion_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: postgres
 --
 
 SELECT pg_catalog.setval('valores_fiscales.construccion_id_seq', 305, true);
 
 
 --
--- Name: sector_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: -
+-- Name: sector_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: postgres
 --
 
 SELECT pg_catalog.setval('valores_fiscales.sector_id_seq', 220, true);
 
 
 --
--- Name: terreno_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: -
+-- Name: terreno_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: postgres
 --
 
 SELECT pg_catalog.setval('valores_fiscales.terreno_id_seq', 1315, true);
 
 
 --
--- Name: tipo_construccion_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: -
+-- Name: tipo_construccion_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: postgres
 --
 
 SELECT pg_catalog.setval('valores_fiscales.tipo_construccion_id_seq', 50, true);
 
 
 --
--- Name: actividad_economica_exoneracion actividad_economica_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: actividad_economica_contribuyente actividad_economica_contribuyente_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.actividad_economica_contribuyente
+    ADD CONSTRAINT actividad_economica_contribuyente_pkey PRIMARY KEY (id_actividad_economica_contribuyente);
+
+
+--
+-- Name: actividad_economica_exoneracion actividad_economica_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.actividad_economica_exoneracion
@@ -8618,7 +10106,15 @@ ALTER TABLE ONLY impuesto.actividad_economica_exoneracion
 
 
 --
--- Name: actividad_economica actividad_economica_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: actividad_economica actividad_economica_numero_referencia_key; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.actividad_economica
+    ADD CONSTRAINT actividad_economica_numero_referencia_key UNIQUE (numero_referencia);
+
+
+--
+-- Name: actividad_economica actividad_economica_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.actividad_economica
@@ -8626,15 +10122,31 @@ ALTER TABLE ONLY impuesto.actividad_economica
 
 
 --
--- Name: ae_desglose ae_desglose_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: categoria_propaganda categoria_propaganda_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.ae_desglose
-    ADD CONSTRAINT ae_desglose_pkey PRIMARY KEY (id_ae_desglose);
+ALTER TABLE ONLY impuesto.categoria_propaganda
+    ADD CONSTRAINT categoria_propaganda_pkey PRIMARY KEY (id_categoria_propaganda);
 
 
 --
--- Name: dias_feriados dias_feriados_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: contribuyente_exoneracion contribuyente_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.contribuyente_exoneracion
+    ADD CONSTRAINT contribuyente_exoneracion_pkey PRIMARY KEY (id_contribuyente_exoneracion);
+
+
+--
+-- Name: contribuyente contribuyente_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.contribuyente
+    ADD CONSTRAINT contribuyente_pkey PRIMARY KEY (id_contribuyente);
+
+
+--
+-- Name: dias_feriados dias_feriados_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.dias_feriados
@@ -8642,7 +10154,15 @@ ALTER TABLE ONLY impuesto.dias_feriados
 
 
 --
--- Name: factor factor_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: evento_solicitud evento_solicitud_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.evento_solicitud
+    ADD CONSTRAINT evento_solicitud_pkey PRIMARY KEY (id_evento_solicitud);
+
+
+--
+-- Name: factor factor_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.factor
@@ -8650,15 +10170,7 @@ ALTER TABLE ONLY impuesto.factor
 
 
 --
--- Name: iu_desglose iu_desglose_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
---
-
-ALTER TABLE ONLY impuesto.iu_desglose
-    ADD CONSTRAINT iu_desglose_pkey PRIMARY KEY (id_iu_desglose);
-
-
---
--- Name: liquidacion liquidacion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: liquidacion liquidacion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.liquidacion
@@ -8666,7 +10178,7 @@ ALTER TABLE ONLY impuesto.liquidacion
 
 
 --
--- Name: multa multa_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: multa multa_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.multa
@@ -8674,7 +10186,7 @@ ALTER TABLE ONLY impuesto.multa
 
 
 --
--- Name: plazo_exoneracion plazo_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: plazo_exoneracion plazo_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.plazo_exoneracion
@@ -8682,39 +10194,31 @@ ALTER TABLE ONLY impuesto.plazo_exoneracion
 
 
 --
--- Name: pp_desglose pp_desglose_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: ramo_exoneracion procedimiento_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.pp_desglose
-    ADD CONSTRAINT pp_desglose_pkey PRIMARY KEY (id_pp_desglose);
-
-
---
--- Name: procedimiento_exoneracion procedimiento_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
---
-
-ALTER TABLE ONLY impuesto.procedimiento_exoneracion
-    ADD CONSTRAINT procedimiento_exoneracion_pkey PRIMARY KEY (id_procedimiento_exoneracion);
+ALTER TABLE ONLY impuesto.ramo_exoneracion
+    ADD CONSTRAINT procedimiento_exoneracion_pkey PRIMARY KEY (id_ramo_exoneracion);
 
 
 --
--- Name: procedimiento procedimiento_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: ramo ramo_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.procedimiento
-    ADD CONSTRAINT procedimiento_pkey PRIMARY KEY (id_procedimiento);
-
-
---
--- Name: sm_desglose sm_desglose_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
---
-
-ALTER TABLE ONLY impuesto.sm_desglose
-    ADD CONSTRAINT sm_desglose_pkey PRIMARY KEY (id_sm_desglose);
+ALTER TABLE ONLY impuesto.ramo
+    ADD CONSTRAINT ramo_pkey PRIMARY KEY (id_ramo);
 
 
 --
--- Name: solicitud solicitud_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: registro_municipal registro_municipal_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.registro_municipal
+    ADD CONSTRAINT registro_municipal_pkey PRIMARY KEY (id_registro_municipal);
+
+
+--
+-- Name: solicitud solicitud_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.solicitud
@@ -8722,7 +10226,39 @@ ALTER TABLE ONLY impuesto.solicitud
 
 
 --
--- Name: tabulador_gas tabulador_gas_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: subramo subramo_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.subramo
+    ADD CONSTRAINT subramo_pkey PRIMARY KEY (id_subramo);
+
+
+--
+-- Name: tabulador_aseo_actividad_economica tabulador_aseo_actividad_economica_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_aseo_actividad_economica
+    ADD CONSTRAINT tabulador_aseo_actividad_economica_pkey PRIMARY KEY (id_tabulador_aseo_actividad_economica);
+
+
+--
+-- Name: tabulador_aseo_residencial tabulador_aseo_residencial_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_aseo_residencial
+    ADD CONSTRAINT tabulador_aseo_residencial_pkey PRIMARY KEY (id_tabulador_aseo_residencial);
+
+
+--
+-- Name: tabulador_gas_actividad_economica tabulador_gas_actividad_economica_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_gas_actividad_economica
+    ADD CONSTRAINT tabulador_gas_actividad_economica_pkey PRIMARY KEY (id_tabulador_gas_actividad_economica);
+
+
+--
+-- Name: tabulador_gas tabulador_gas_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.tabulador_gas
@@ -8730,23 +10266,23 @@ ALTER TABLE ONLY impuesto.tabulador_gas
 
 
 --
--- Name: tipo_actividad_economica tipo_actividad_economica_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_residencial tabulador_gas_residencial_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.tipo_actividad_economica
-    ADD CONSTRAINT tipo_actividad_economica_pkey PRIMARY KEY (id_tipo_actividad);
-
-
---
--- Name: tipo_contribuyente tipo_contribuyente_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
---
-
-ALTER TABLE ONLY impuesto.tipo_contribuyente
-    ADD CONSTRAINT tipo_contribuyente_pkey PRIMARY KEY (id_tipo_contribuyente);
+ALTER TABLE ONLY impuesto.tabulador_gas_residencial
+    ADD CONSTRAINT tabulador_gas_residencial_pkey PRIMARY KEY (id_tabulador_gas_residencial);
 
 
 --
--- Name: tipo_multa tipo_multa_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: tipo_aviso_propaganda tipo_aviso_propaganda_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tipo_aviso_propaganda
+    ADD CONSTRAINT tipo_aviso_propaganda_pkey PRIMARY KEY (id_tipo_aviso_propaganda);
+
+
+--
+-- Name: tipo_multa tipo_multa_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.tipo_multa
@@ -8754,7 +10290,7 @@ ALTER TABLE ONLY impuesto.tipo_multa
 
 
 --
--- Name: banco bancos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: banco bancos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.banco
@@ -8762,7 +10298,7 @@ ALTER TABLE ONLY public.banco
 
 
 --
--- Name: campo campos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: campo campos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.campo
@@ -8770,7 +10306,7 @@ ALTER TABLE ONLY public.campo
 
 
 --
--- Name: cargo cargo_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: cargo cargo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.cargo
@@ -8778,7 +10314,7 @@ ALTER TABLE ONLY public.cargo
 
 
 --
--- Name: caso_social casos_sociales_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: caso_social casos_sociales_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.caso_social
@@ -8786,7 +10322,7 @@ ALTER TABLE ONLY public.caso_social
 
 
 --
--- Name: certificado certificados_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: certificado certificados_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.certificado
@@ -8794,7 +10330,7 @@ ALTER TABLE ONLY public.certificado
 
 
 --
--- Name: cuenta_funcionario cuentas_funcionarios_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: cuenta_funcionario cuentas_funcionarios_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.cuenta_funcionario
@@ -8802,7 +10338,7 @@ ALTER TABLE ONLY public.cuenta_funcionario
 
 
 --
--- Name: datos_google datos_google_id_google_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: datos_google datos_google_id_google_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.datos_google
@@ -8810,7 +10346,7 @@ ALTER TABLE ONLY public.datos_google
 
 
 --
--- Name: datos_google datos_google_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: datos_google datos_google_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.datos_google
@@ -8818,7 +10354,7 @@ ALTER TABLE ONLY public.datos_google
 
 
 --
--- Name: evento_multa evento_multa_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: evento_multa evento_multa_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.evento_multa
@@ -8826,7 +10362,7 @@ ALTER TABLE ONLY public.evento_multa
 
 
 --
--- Name: evento_tramite eventos_tramite_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: evento_tramite eventos_tramite_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.evento_tramite
@@ -8834,7 +10370,7 @@ ALTER TABLE ONLY public.evento_tramite
 
 
 --
--- Name: factura_tramite facturas_tramites_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: factura_tramite facturas_tramites_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.factura_tramite
@@ -8842,7 +10378,7 @@ ALTER TABLE ONLY public.factura_tramite
 
 
 --
--- Name: inmueble_urbano inmueble_urbano_cod_catastral_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: inmueble_urbano inmueble_urbano_cod_catastral_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.inmueble_urbano
@@ -8850,7 +10386,7 @@ ALTER TABLE ONLY public.inmueble_urbano
 
 
 --
--- Name: inmueble_urbano inmueble_urbano_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: inmueble_urbano inmueble_urbano_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.inmueble_urbano
@@ -8858,7 +10394,7 @@ ALTER TABLE ONLY public.inmueble_urbano
 
 
 --
--- Name: institucion instituciones_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: institucion instituciones_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.institucion
@@ -8866,7 +10402,7 @@ ALTER TABLE ONLY public.institucion
 
 
 --
--- Name: multa multa_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: multa multa_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.multa
@@ -8874,7 +10410,7 @@ ALTER TABLE ONLY public.multa
 
 
 --
--- Name: notificacion notificaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: notificacion notificaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.notificacion
@@ -8882,7 +10418,7 @@ ALTER TABLE ONLY public.notificacion
 
 
 --
--- Name: operacion operacion_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: operacion operacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.operacion
@@ -8890,7 +10426,7 @@ ALTER TABLE ONLY public.operacion
 
 
 --
--- Name: ordenanza ordenanzas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: ordenanza ordenanzas_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.ordenanza
@@ -8898,7 +10434,7 @@ ALTER TABLE ONLY public.ordenanza
 
 
 --
--- Name: ordenanza_tramite ordenanzas_tramites_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: ordenanza_tramite ordenanzas_tramites_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.ordenanza_tramite
@@ -8906,7 +10442,7 @@ ALTER TABLE ONLY public.ordenanza_tramite
 
 
 --
--- Name: pago pagos_id_banco_referencia_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: pago pagos_id_banco_referencia_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.pago
@@ -8914,7 +10450,7 @@ ALTER TABLE ONLY public.pago
 
 
 --
--- Name: pago_manual pagos_manuales_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: pago_manual pagos_manuales_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.pago_manual
@@ -8922,7 +10458,7 @@ ALTER TABLE ONLY public.pago_manual
 
 
 --
--- Name: pago pagos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: pago pagos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.pago
@@ -8930,7 +10466,7 @@ ALTER TABLE ONLY public.pago
 
 
 --
--- Name: parroquia parroquia_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: parroquia parroquia_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.parroquia
@@ -8938,7 +10474,7 @@ ALTER TABLE ONLY public.parroquia
 
 
 --
--- Name: permiso_de_acceso permiso_de_acceso_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: permiso_de_acceso permiso_de_acceso_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.permiso_de_acceso
@@ -8946,7 +10482,7 @@ ALTER TABLE ONLY public.permiso_de_acceso
 
 
 --
--- Name: propietario propietario_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: propietario propietario_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.propietario
@@ -8954,7 +10490,7 @@ ALTER TABLE ONLY public.propietario
 
 
 --
--- Name: propietario_inmueble propietarios_inmuebles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: propietario_inmueble propietarios_inmuebles_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.propietario_inmueble
@@ -8962,7 +10498,7 @@ ALTER TABLE ONLY public.propietario_inmueble
 
 
 --
--- Name: recaudo recaudos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: recaudo recaudos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.recaudo
@@ -8970,7 +10506,7 @@ ALTER TABLE ONLY public.recaudo
 
 
 --
--- Name: recuperacion recuperacion_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: recuperacion recuperacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.recuperacion
@@ -8978,7 +10514,7 @@ ALTER TABLE ONLY public.recuperacion
 
 
 --
--- Name: seccion secciones_pk; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: seccion secciones_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.seccion
@@ -8986,7 +10522,7 @@ ALTER TABLE ONLY public.seccion
 
 
 --
--- Name: tarifa_inspeccion tarifas_inspeccion_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tarifa_inspeccion tarifas_inspeccion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.tarifa_inspeccion
@@ -8994,7 +10530,7 @@ ALTER TABLE ONLY public.tarifa_inspeccion
 
 
 --
--- Name: template_certificado templates_certificados_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: template_certificado templates_certificados_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.template_certificado
@@ -9002,7 +10538,7 @@ ALTER TABLE ONLY public.template_certificado
 
 
 --
--- Name: tipo_tramite tipos_tramites_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tipo_tramite tipos_tramites_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.tipo_tramite
@@ -9010,7 +10546,7 @@ ALTER TABLE ONLY public.tipo_tramite
 
 
 --
--- Name: tipo_usuario tipos_usuarios_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tipo_usuario tipos_usuarios_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.tipo_usuario
@@ -9018,7 +10554,7 @@ ALTER TABLE ONLY public.tipo_usuario
 
 
 --
--- Name: tramite tramites_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tramite tramites_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.tramite
@@ -9026,7 +10562,7 @@ ALTER TABLE ONLY public.tramite
 
 
 --
--- Name: usuario usuarios_cedula_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: usuario usuarios_cedula_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.usuario
@@ -9034,7 +10570,7 @@ ALTER TABLE ONLY public.usuario
 
 
 --
--- Name: usuario usuarios_nombre_de_usuario_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: usuario usuarios_nombre_de_usuario_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.usuario
@@ -9042,7 +10578,7 @@ ALTER TABLE ONLY public.usuario
 
 
 --
--- Name: usuario usuarios_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: usuario usuarios_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.usuario
@@ -9050,7 +10586,7 @@ ALTER TABLE ONLY public.usuario
 
 
 --
--- Name: valor valores_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: valor valores_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.valor
@@ -9058,7 +10594,7 @@ ALTER TABLE ONLY public.valor
 
 
 --
--- Name: variable_de_costo variable_de_costo_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: variable_de_costo variable_de_costo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.variable_de_costo
@@ -9066,7 +10602,7 @@ ALTER TABLE ONLY public.variable_de_costo
 
 
 --
--- Name: variable_ordenanza variables_ordenanzas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: variable_ordenanza variables_ordenanzas_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.variable_ordenanza
@@ -9074,7 +10610,7 @@ ALTER TABLE ONLY public.variable_ordenanza
 
 
 --
--- Name: variable variables_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: variable variables_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.variable
@@ -9082,7 +10618,7 @@ ALTER TABLE ONLY public.variable
 
 
 --
--- Name: base_task base_task_name_key; Type: CONSTRAINT; Schema: timetable; Owner: -
+-- Name: base_task base_task_name_key; Type: CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.base_task
@@ -9090,7 +10626,7 @@ ALTER TABLE ONLY timetable.base_task
 
 
 --
--- Name: base_task base_task_pkey; Type: CONSTRAINT; Schema: timetable; Owner: -
+-- Name: base_task base_task_pkey; Type: CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.base_task
@@ -9098,7 +10634,7 @@ ALTER TABLE ONLY timetable.base_task
 
 
 --
--- Name: chain_execution_config chain_execution_config_chain_name_key; Type: CONSTRAINT; Schema: timetable; Owner: -
+-- Name: chain_execution_config chain_execution_config_chain_name_key; Type: CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.chain_execution_config
@@ -9106,7 +10642,7 @@ ALTER TABLE ONLY timetable.chain_execution_config
 
 
 --
--- Name: chain_execution_config chain_execution_config_pkey; Type: CONSTRAINT; Schema: timetable; Owner: -
+-- Name: chain_execution_config chain_execution_config_pkey; Type: CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.chain_execution_config
@@ -9114,7 +10650,7 @@ ALTER TABLE ONLY timetable.chain_execution_config
 
 
 --
--- Name: chain_execution_parameters chain_execution_parameters_pkey; Type: CONSTRAINT; Schema: timetable; Owner: -
+-- Name: chain_execution_parameters chain_execution_parameters_pkey; Type: CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.chain_execution_parameters
@@ -9122,7 +10658,7 @@ ALTER TABLE ONLY timetable.chain_execution_parameters
 
 
 --
--- Name: database_connection database_connection_pkey; Type: CONSTRAINT; Schema: timetable; Owner: -
+-- Name: database_connection database_connection_pkey; Type: CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.database_connection
@@ -9130,7 +10666,7 @@ ALTER TABLE ONLY timetable.database_connection
 
 
 --
--- Name: log log_pkey; Type: CONSTRAINT; Schema: timetable; Owner: -
+-- Name: log log_pkey; Type: CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.log
@@ -9138,7 +10674,7 @@ ALTER TABLE ONLY timetable.log
 
 
 --
--- Name: migrations migrations_pkey; Type: CONSTRAINT; Schema: timetable; Owner: -
+-- Name: migrations migrations_pkey; Type: CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.migrations
@@ -9146,7 +10682,7 @@ ALTER TABLE ONLY timetable.migrations
 
 
 --
--- Name: run_status run_status_pkey; Type: CONSTRAINT; Schema: timetable; Owner: -
+-- Name: run_status run_status_pkey; Type: CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.run_status
@@ -9154,7 +10690,7 @@ ALTER TABLE ONLY timetable.run_status
 
 
 --
--- Name: task_chain task_chain_parent_id_key; Type: CONSTRAINT; Schema: timetable; Owner: -
+-- Name: task_chain task_chain_parent_id_key; Type: CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.task_chain
@@ -9162,7 +10698,7 @@ ALTER TABLE ONLY timetable.task_chain
 
 
 --
--- Name: task_chain task_chain_pkey; Type: CONSTRAINT; Schema: timetable; Owner: -
+-- Name: task_chain task_chain_pkey; Type: CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.task_chain
@@ -9170,7 +10706,7 @@ ALTER TABLE ONLY timetable.task_chain
 
 
 --
--- Name: ano ano_fiscal_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: -
+-- Name: ano ano_fiscal_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: postgres
 --
 
 ALTER TABLE ONLY valores_fiscales.ano
@@ -9178,7 +10714,7 @@ ALTER TABLE ONLY valores_fiscales.ano
 
 
 --
--- Name: construccion construccion_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: -
+-- Name: construccion construccion_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: postgres
 --
 
 ALTER TABLE ONLY valores_fiscales.construccion
@@ -9186,7 +10722,7 @@ ALTER TABLE ONLY valores_fiscales.construccion
 
 
 --
--- Name: sector sector_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: -
+-- Name: sector sector_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: postgres
 --
 
 ALTER TABLE ONLY valores_fiscales.sector
@@ -9194,7 +10730,7 @@ ALTER TABLE ONLY valores_fiscales.sector
 
 
 --
--- Name: terreno terreno_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: -
+-- Name: terreno terreno_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: postgres
 --
 
 ALTER TABLE ONLY valores_fiscales.terreno
@@ -9202,7 +10738,7 @@ ALTER TABLE ONLY valores_fiscales.terreno
 
 
 --
--- Name: tipo_construccion tipo_construccion_descripcion_key; Type: CONSTRAINT; Schema: valores_fiscales; Owner: -
+-- Name: tipo_construccion tipo_construccion_descripcion_key; Type: CONSTRAINT; Schema: valores_fiscales; Owner: postgres
 --
 
 ALTER TABLE ONLY valores_fiscales.tipo_construccion
@@ -9210,7 +10746,7 @@ ALTER TABLE ONLY valores_fiscales.tipo_construccion
 
 
 --
--- Name: tipo_construccion tipo_construccion_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: -
+-- Name: tipo_construccion tipo_construccion_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: postgres
 --
 
 ALTER TABLE ONLY valores_fiscales.tipo_construccion
@@ -9218,70 +10754,93 @@ ALTER TABLE ONLY valores_fiscales.tipo_construccion
 
 
 --
--- Name: tramite codigo_tramite_trg; Type: TRIGGER; Schema: public; Owner: -
+-- Name: evento_solicitud eventos_solicitud_trigger; Type: TRIGGER; Schema: impuesto; Owner: postgres
+--
+
+CREATE TRIGGER eventos_solicitud_trigger BEFORE INSERT ON impuesto.evento_solicitud FOR EACH ROW EXECUTE FUNCTION impuesto.eventos_solicitud_trigger_func();
+
+
+--
+-- Name: tramite codigo_tramite_trg; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
 CREATE TRIGGER codigo_tramite_trg BEFORE INSERT ON public.tramite FOR EACH ROW EXECUTE FUNCTION public.codigo_tramite();
 
 
 --
--- Name: caso_social codigos_casos_sociales_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: caso_social codigos_casos_sociales_trigger; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
 CREATE TRIGGER codigos_casos_sociales_trigger BEFORE INSERT ON public.caso_social FOR EACH ROW EXECUTE FUNCTION public.codigo_caso();
 
 
 --
--- Name: multa codigos_multas_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: multa codigos_multas_trigger; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
 CREATE TRIGGER codigos_multas_trigger BEFORE INSERT ON public.multa FOR EACH ROW EXECUTE FUNCTION public.codigo_multa();
 
 
 --
--- Name: evento_caso_social eventos_casos_sociales_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: evento_caso_social eventos_casos_sociales_trigger; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
 CREATE TRIGGER eventos_casos_sociales_trigger BEFORE INSERT ON public.evento_caso_social FOR EACH ROW EXECUTE FUNCTION public.eventos_casos_sociales_trigger_func();
 
 
 --
--- Name: evento_multa eventos_multa_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: evento_multa eventos_multa_trigger; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
 CREATE TRIGGER eventos_multa_trigger BEFORE INSERT ON public.evento_multa FOR EACH ROW EXECUTE FUNCTION public.eventos_multa_trigger_func();
 
 
 --
--- Name: evento_tramite eventos_tramite_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: evento_tramite eventos_tramite_trigger; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
 CREATE TRIGGER eventos_tramite_trigger BEFORE INSERT ON public.evento_tramite FOR EACH ROW EXECUTE FUNCTION public.eventos_tramite_trigger_func();
 
 
 --
--- Name: notificacion insert_notificaciones_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: notificacion insert_notificaciones_trigger; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
 CREATE TRIGGER insert_notificaciones_trigger BEFORE INSERT ON public.notificacion FOR EACH ROW EXECUTE FUNCTION public.insert_notificacion_trigger_func();
 
 
 --
--- Name: valor tipos_tramites_costo_utmm_trig; Type: TRIGGER; Schema: public; Owner: -
+-- Name: valor tipos_tramites_costo_utmm_trig; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
 CREATE TRIGGER tipos_tramites_costo_utmm_trig AFTER UPDATE ON public.valor FOR EACH ROW WHEN (((new.descripcion)::text = 'UTMM'::text)) EXECUTE FUNCTION public.tipos_tramites_costo_utmm_trigger_func();
 
 
 --
--- Name: base_task trig_task_chain_fixer; Type: TRIGGER; Schema: timetable; Owner: -
+-- Name: base_task trig_task_chain_fixer; Type: TRIGGER; Schema: timetable; Owner: postgres
 --
 
 CREATE TRIGGER trig_task_chain_fixer BEFORE DELETE ON timetable.base_task FOR EACH ROW EXECUTE FUNCTION timetable.trig_chain_fixer();
 
 
 --
--- Name: actividad_economica_exoneracion actividad_economica_exoneracion_id_actividad_economica_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: actividad_economica_contribuyente actividad_economica_contribuyente_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.actividad_economica_contribuyente
+    ADD CONSTRAINT actividad_economica_contribuyente_id_contribuyente_fkey FOREIGN KEY (id_contribuyente) REFERENCES impuesto.contribuyente(id_contribuyente);
+
+
+--
+-- Name: actividad_economica_contribuyente actividad_economica_contribuyente_numero_referencia_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.actividad_economica_contribuyente
+    ADD CONSTRAINT actividad_economica_contribuyente_numero_referencia_fkey FOREIGN KEY (numero_referencia) REFERENCES impuesto.actividad_economica(numero_referencia);
+
+
+--
+-- Name: actividad_economica_exoneracion actividad_economica_exoneracion_id_actividad_economica_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.actividad_economica_exoneracion
@@ -9289,7 +10848,7 @@ ALTER TABLE ONLY impuesto.actividad_economica_exoneracion
 
 
 --
--- Name: actividad_economica_exoneracion actividad_economica_exoneracion_id_plazo_exoneracion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: actividad_economica_exoneracion actividad_economica_exoneracion_id_plazo_exoneracion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.actividad_economica_exoneracion
@@ -9297,39 +10856,55 @@ ALTER TABLE ONLY impuesto.actividad_economica_exoneracion
 
 
 --
--- Name: actividad_economica actividad_economica_id_tipo_actividad_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: contribuyente_exoneracion contribuyente_exoneracion_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.actividad_economica
-    ADD CONSTRAINT actividad_economica_id_tipo_actividad_fkey FOREIGN KEY (id_tipo_actividad) REFERENCES impuesto.tipo_actividad_economica(id_tipo_actividad);
-
-
---
--- Name: ae_desglose ae_desglose_id_liquidacion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
---
-
-ALTER TABLE ONLY impuesto.ae_desglose
-    ADD CONSTRAINT ae_desglose_id_liquidacion_fkey FOREIGN KEY (id_liquidacion) REFERENCES impuesto.liquidacion(id_liquidacion);
+ALTER TABLE ONLY impuesto.contribuyente_exoneracion
+    ADD CONSTRAINT contribuyente_exoneracion_id_contribuyente_fkey FOREIGN KEY (id_contribuyente) REFERENCES impuesto.contribuyente(id_contribuyente);
 
 
 --
--- Name: iu_desglose iu_desglose_id_liquidacion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: contribuyente_exoneracion contribuyente_exoneracion_id_plazo_exoneracion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.iu_desglose
-    ADD CONSTRAINT iu_desglose_id_liquidacion_fkey FOREIGN KEY (id_liquidacion) REFERENCES impuesto.liquidacion(id_liquidacion);
-
-
---
--- Name: liquidacion liquidacion_id_procedimiento_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
---
-
-ALTER TABLE ONLY impuesto.liquidacion
-    ADD CONSTRAINT liquidacion_id_procedimiento_fkey FOREIGN KEY (id_procedimiento) REFERENCES impuesto.procedimiento(id_procedimiento);
+ALTER TABLE ONLY impuesto.contribuyente_exoneracion
+    ADD CONSTRAINT contribuyente_exoneracion_id_plazo_exoneracion_fkey FOREIGN KEY (id_plazo_exoneracion) REFERENCES impuesto.plazo_exoneracion(id_plazo_exoneracion);
 
 
 --
--- Name: liquidacion liquidacion_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: contribuyente contribuyente_id_parroquia_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.contribuyente
+    ADD CONSTRAINT contribuyente_id_parroquia_fkey FOREIGN KEY (id_parroquia) REFERENCES public.parroquia(id);
+
+
+--
+-- Name: evento_solicitud evento_solicitud_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.evento_solicitud
+    ADD CONSTRAINT evento_solicitud_id_solicitud_fkey FOREIGN KEY (id_solicitud) REFERENCES impuesto.solicitud(id_solicitud) ON DELETE CASCADE;
+
+
+--
+-- Name: inmueble_contribuyente inmueble_contribuyente_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.inmueble_contribuyente
+    ADD CONSTRAINT inmueble_contribuyente_id_contribuyente_fkey FOREIGN KEY (id_contribuyente) REFERENCES impuesto.contribuyente(id_contribuyente);
+
+
+--
+-- Name: inmueble_contribuyente inmueble_contribuyente_id_inmueble_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.inmueble_contribuyente
+    ADD CONSTRAINT inmueble_contribuyente_id_inmueble_fkey FOREIGN KEY (id_inmueble) REFERENCES public.inmueble_urbano(id_inmueble);
+
+
+--
+-- Name: liquidacion liquidacion_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.liquidacion
@@ -9337,7 +10912,15 @@ ALTER TABLE ONLY impuesto.liquidacion
 
 
 --
--- Name: multa multa_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: liquidacion liquidacion_id_subramo_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.liquidacion
+    ADD CONSTRAINT liquidacion_id_subramo_fkey FOREIGN KEY (id_subramo) REFERENCES impuesto.subramo(id_subramo);
+
+
+--
+-- Name: multa multa_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.multa
@@ -9345,7 +10928,7 @@ ALTER TABLE ONLY impuesto.multa
 
 
 --
--- Name: multa multa_id_tipo_multa_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: multa multa_id_tipo_multa_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.multa
@@ -9353,47 +10936,47 @@ ALTER TABLE ONLY impuesto.multa
 
 
 --
--- Name: pp_desglose pp_desglose_id_liquidacion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: ramo_exoneracion procedimiento_exoneracion_id_plazo_exoneracion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.pp_desglose
-    ADD CONSTRAINT pp_desglose_id_liquidacion_fkey FOREIGN KEY (id_liquidacion) REFERENCES impuesto.liquidacion(id_liquidacion);
-
-
---
--- Name: procedimiento_exoneracion procedimiento_exoneracion_id_plazo_exoneracion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
---
-
-ALTER TABLE ONLY impuesto.procedimiento_exoneracion
+ALTER TABLE ONLY impuesto.ramo_exoneracion
     ADD CONSTRAINT procedimiento_exoneracion_id_plazo_exoneracion_fkey FOREIGN KEY (id_plazo_exoneracion) REFERENCES impuesto.plazo_exoneracion(id_plazo_exoneracion);
 
 
 --
--- Name: procedimiento_exoneracion procedimiento_exoneracion_id_procedimiento_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: ramo_exoneracion ramo_exoneracion_id_ramo_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.procedimiento_exoneracion
-    ADD CONSTRAINT procedimiento_exoneracion_id_procedimiento_fkey FOREIGN KEY (id_procedimiento) REFERENCES impuesto.procedimiento(id_procedimiento);
-
-
---
--- Name: procedimiento_exoneracion procedimiento_exoneracion_id_tipo_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
---
-
-ALTER TABLE ONLY impuesto.procedimiento_exoneracion
-    ADD CONSTRAINT procedimiento_exoneracion_id_tipo_contribuyente_fkey FOREIGN KEY (id_tipo_contribuyente) REFERENCES impuesto.tipo_contribuyente(id_tipo_contribuyente);
+ALTER TABLE ONLY impuesto.ramo_exoneracion
+    ADD CONSTRAINT ramo_exoneracion_id_ramo_fkey FOREIGN KEY (id_ramo) REFERENCES impuesto.ramo(id_ramo);
 
 
 --
--- Name: sm_desglose sm_desglose_id_liquidacion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: registro_municipal registro_municipal_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.sm_desglose
-    ADD CONSTRAINT sm_desglose_id_liquidacion_fkey FOREIGN KEY (id_liquidacion) REFERENCES impuesto.liquidacion(id_liquidacion);
+ALTER TABLE ONLY impuesto.registro_municipal
+    ADD CONSTRAINT registro_municipal_id_contribuyente_fkey FOREIGN KEY (id_contribuyente) REFERENCES impuesto.contribuyente(id_contribuyente);
 
 
 --
--- Name: solicitud solicitud_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: solicitud solicitud_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.solicitud
+    ADD CONSTRAINT solicitud_id_contribuyente_fkey FOREIGN KEY (id_contribuyente) REFERENCES impuesto.contribuyente(id_contribuyente);
+
+
+--
+-- Name: solicitud solicitud_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.solicitud
+    ADD CONSTRAINT solicitud_id_tipo_tramite_fkey FOREIGN KEY (id_tipo_tramite) REFERENCES public.tipo_tramite(id_tipo_tramite);
+
+
+--
+-- Name: solicitud solicitud_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.solicitud
@@ -9401,7 +10984,55 @@ ALTER TABLE ONLY impuesto.solicitud
 
 
 --
--- Name: tabulador_gas tabulador_gas_id_actividad_economica_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: subramo subramo_id_ramo_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.subramo
+    ADD CONSTRAINT subramo_id_ramo_fkey FOREIGN KEY (id_ramo) REFERENCES impuesto.ramo(id_ramo);
+
+
+--
+-- Name: tabulador_aseo_actividad_economica tabulador_aseo_actividad_economica_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_aseo_actividad_economica
+    ADD CONSTRAINT tabulador_aseo_actividad_economica_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuario(id_usuario);
+
+
+--
+-- Name: tabulador_aseo_actividad_economica tabulador_aseo_actividad_economica_numero_referencia_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_aseo_actividad_economica
+    ADD CONSTRAINT tabulador_aseo_actividad_economica_numero_referencia_fkey FOREIGN KEY (numero_referencia) REFERENCES impuesto.actividad_economica(numero_referencia);
+
+
+--
+-- Name: tabulador_aseo_residencial tabulador_aseo_residencial_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_aseo_residencial
+    ADD CONSTRAINT tabulador_aseo_residencial_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuario(id_usuario);
+
+
+--
+-- Name: tabulador_gas_actividad_economica tabulador_gas_actividad_economica_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_gas_actividad_economica
+    ADD CONSTRAINT tabulador_gas_actividad_economica_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuario(id_usuario);
+
+
+--
+-- Name: tabulador_gas_actividad_economica tabulador_gas_actividad_economica_numero_referencia_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_gas_actividad_economica
+    ADD CONSTRAINT tabulador_gas_actividad_economica_numero_referencia_fkey FOREIGN KEY (numero_referencia) REFERENCES impuesto.actividad_economica(numero_referencia);
+
+
+--
+-- Name: tabulador_gas tabulador_gas_id_actividad_economica_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.tabulador_gas
@@ -9409,7 +11040,31 @@ ALTER TABLE ONLY impuesto.tabulador_gas
 
 
 --
--- Name: campo_tramite campos_tramites_id_campo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tabulador_gas_residencial tabulador_gas_residencial_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_gas_residencial
+    ADD CONSTRAINT tabulador_gas_residencial_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuario(id_usuario);
+
+
+--
+-- Name: tipo_aviso_propaganda tipo_aviso_propaganda_id_categoria_propaganda_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tipo_aviso_propaganda
+    ADD CONSTRAINT tipo_aviso_propaganda_id_categoria_propaganda_fkey FOREIGN KEY (id_categoria_propaganda) REFERENCES impuesto.categoria_propaganda(id_categoria_propaganda);
+
+
+--
+-- Name: tipo_aviso_propaganda tipo_aviso_propaganda_id_valor_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tipo_aviso_propaganda
+    ADD CONSTRAINT tipo_aviso_propaganda_id_valor_fkey FOREIGN KEY (id_valor) REFERENCES public.valor(id_valor);
+
+
+--
+-- Name: campo_tramite campos_tramites_id_campo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.campo_tramite
@@ -9417,7 +11072,7 @@ ALTER TABLE ONLY public.campo_tramite
 
 
 --
--- Name: campo_tramite campos_tramites_id_seccion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: campo_tramite campos_tramites_id_seccion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.campo_tramite
@@ -9425,7 +11080,7 @@ ALTER TABLE ONLY public.campo_tramite
 
 
 --
--- Name: campo_tramite campos_tramites_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: campo_tramite campos_tramites_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.campo_tramite
@@ -9433,7 +11088,7 @@ ALTER TABLE ONLY public.campo_tramite
 
 
 --
--- Name: cargo cargo_id_institucion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: cargo cargo_id_institucion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.cargo
@@ -9441,7 +11096,7 @@ ALTER TABLE ONLY public.cargo
 
 
 --
--- Name: cargo cargo_id_tipo_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: cargo cargo_id_tipo_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.cargo
@@ -9449,7 +11104,7 @@ ALTER TABLE ONLY public.cargo
 
 
 --
--- Name: caso_social casos_sociales_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: caso_social casos_sociales_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.caso_social
@@ -9457,7 +11112,7 @@ ALTER TABLE ONLY public.caso_social
 
 
 --
--- Name: caso_social casos_sociales_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: caso_social casos_sociales_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.caso_social
@@ -9465,7 +11120,7 @@ ALTER TABLE ONLY public.caso_social
 
 
 --
--- Name: certificado certificados_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: certificado certificados_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.certificado
@@ -9473,7 +11128,7 @@ ALTER TABLE ONLY public.certificado
 
 
 --
--- Name: cuenta_funcionario cuentas_funcionarios_id_cargo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: cuenta_funcionario cuentas_funcionarios_id_cargo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.cuenta_funcionario
@@ -9481,7 +11136,7 @@ ALTER TABLE ONLY public.cuenta_funcionario
 
 
 --
--- Name: cuenta_funcionario cuentas_funcionarios_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: cuenta_funcionario cuentas_funcionarios_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.cuenta_funcionario
@@ -9489,7 +11144,7 @@ ALTER TABLE ONLY public.cuenta_funcionario
 
 
 --
--- Name: datos_facebook datos_facebook_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: datos_facebook datos_facebook_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.datos_facebook
@@ -9497,7 +11152,7 @@ ALTER TABLE ONLY public.datos_facebook
 
 
 --
--- Name: datos_google datos_google_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: datos_google datos_google_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.datos_google
@@ -9505,7 +11160,7 @@ ALTER TABLE ONLY public.datos_google
 
 
 --
--- Name: detalle_factura detalles_facturas_id_factura_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: detalle_factura detalles_facturas_id_factura_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.detalle_factura
@@ -9513,7 +11168,7 @@ ALTER TABLE ONLY public.detalle_factura
 
 
 --
--- Name: evento_multa evento_multa_id_multa_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: evento_multa evento_multa_id_multa_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.evento_multa
@@ -9521,7 +11176,7 @@ ALTER TABLE ONLY public.evento_multa
 
 
 --
--- Name: evento_tramite eventos_tramite_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: evento_tramite eventos_tramite_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.evento_tramite
@@ -9529,7 +11184,7 @@ ALTER TABLE ONLY public.evento_tramite
 
 
 --
--- Name: factura_tramite facturas_tramites_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: factura_tramite facturas_tramites_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.factura_tramite
@@ -9537,7 +11192,7 @@ ALTER TABLE ONLY public.factura_tramite
 
 
 --
--- Name: inmueble_urbano inmueble_urbano_id_parroquia_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: inmueble_urbano inmueble_urbano_id_parroquia_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.inmueble_urbano
@@ -9545,7 +11200,7 @@ ALTER TABLE ONLY public.inmueble_urbano
 
 
 --
--- Name: institucion_banco instituciones_bancos_id_banco_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: institucion_banco instituciones_bancos_id_banco_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.institucion_banco
@@ -9553,7 +11208,7 @@ ALTER TABLE ONLY public.institucion_banco
 
 
 --
--- Name: institucion_banco instituciones_bancos_id_institucion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: institucion_banco instituciones_bancos_id_institucion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.institucion_banco
@@ -9561,7 +11216,7 @@ ALTER TABLE ONLY public.institucion_banco
 
 
 --
--- Name: multa multa_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: multa multa_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.multa
@@ -9569,7 +11224,7 @@ ALTER TABLE ONLY public.multa
 
 
 --
--- Name: multa multa_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: multa multa_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.multa
@@ -9577,7 +11232,7 @@ ALTER TABLE ONLY public.multa
 
 
 --
--- Name: ordenanza ordenanzas_id_valor_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: ordenanza ordenanzas_id_valor_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.ordenanza
@@ -9585,7 +11240,7 @@ ALTER TABLE ONLY public.ordenanza
 
 
 --
--- Name: ordenanza_tramite ordenanzas_tramites_id_tarifa_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: ordenanza_tramite ordenanzas_tramites_id_tarifa_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.ordenanza_tramite
@@ -9593,7 +11248,7 @@ ALTER TABLE ONLY public.ordenanza_tramite
 
 
 --
--- Name: ordenanza_tramite ordenanzas_tramites_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: ordenanza_tramite ordenanzas_tramites_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.ordenanza_tramite
@@ -9601,7 +11256,7 @@ ALTER TABLE ONLY public.ordenanza_tramite
 
 
 --
--- Name: pago pagos_id_banco_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: pago pagos_id_banco_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.pago
@@ -9609,7 +11264,7 @@ ALTER TABLE ONLY public.pago
 
 
 --
--- Name: pago_manual pagos_manuales_id_pago_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: pago_manual pagos_manuales_id_pago_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.pago_manual
@@ -9617,7 +11272,7 @@ ALTER TABLE ONLY public.pago_manual
 
 
 --
--- Name: pago_manual pagos_manuales_id_usuario_funcionario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: pago_manual pagos_manuales_id_usuario_funcionario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.pago_manual
@@ -9625,7 +11280,7 @@ ALTER TABLE ONLY public.pago_manual
 
 
 --
--- Name: permiso_de_acceso permiso_de_acceso_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: permiso_de_acceso permiso_de_acceso_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.permiso_de_acceso
@@ -9633,7 +11288,7 @@ ALTER TABLE ONLY public.permiso_de_acceso
 
 
 --
--- Name: permiso_de_acceso permiso_de_acceso_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: permiso_de_acceso permiso_de_acceso_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.permiso_de_acceso
@@ -9641,7 +11296,7 @@ ALTER TABLE ONLY public.permiso_de_acceso
 
 
 --
--- Name: propietario_inmueble propietarios_inmuebles_id_inmueble_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: propietario_inmueble propietarios_inmuebles_id_inmueble_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.propietario_inmueble
@@ -9649,7 +11304,7 @@ ALTER TABLE ONLY public.propietario_inmueble
 
 
 --
--- Name: propietario_inmueble propietarios_inmuebles_id_propietario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: propietario_inmueble propietarios_inmuebles_id_propietario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.propietario_inmueble
@@ -9657,7 +11312,7 @@ ALTER TABLE ONLY public.propietario_inmueble
 
 
 --
--- Name: recuperacion recuperacion_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: recuperacion recuperacion_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.recuperacion
@@ -9665,7 +11320,7 @@ ALTER TABLE ONLY public.recuperacion
 
 
 --
--- Name: tarifa_inspeccion tarifas_inspeccion_id_ordenanza_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tarifa_inspeccion tarifas_inspeccion_id_ordenanza_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.tarifa_inspeccion
@@ -9673,7 +11328,7 @@ ALTER TABLE ONLY public.tarifa_inspeccion
 
 
 --
--- Name: tarifa_inspeccion tarifas_inspeccion_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tarifa_inspeccion tarifas_inspeccion_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.tarifa_inspeccion
@@ -9681,7 +11336,7 @@ ALTER TABLE ONLY public.tarifa_inspeccion
 
 
 --
--- Name: tarifa_inspeccion tarifas_inspeccion_id_variable_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tarifa_inspeccion tarifas_inspeccion_id_variable_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.tarifa_inspeccion
@@ -9689,7 +11344,7 @@ ALTER TABLE ONLY public.tarifa_inspeccion
 
 
 --
--- Name: template_certificado templates_certificados_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: template_certificado templates_certificados_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.template_certificado
@@ -9697,7 +11352,7 @@ ALTER TABLE ONLY public.template_certificado
 
 
 --
--- Name: tipo_tramite tipos_tramites_id_institucion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tipo_tramite tipos_tramites_id_institucion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.tipo_tramite
@@ -9705,7 +11360,7 @@ ALTER TABLE ONLY public.tipo_tramite
 
 
 --
--- Name: tipo_tramite_recaudo tipos_tramites_recaudos_id_recaudo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tipo_tramite_recaudo tipos_tramites_recaudos_id_recaudo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.tipo_tramite_recaudo
@@ -9713,7 +11368,7 @@ ALTER TABLE ONLY public.tipo_tramite_recaudo
 
 
 --
--- Name: tipo_tramite_recaudo tipos_tramites_recaudos_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tipo_tramite_recaudo tipos_tramites_recaudos_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.tipo_tramite_recaudo
@@ -9721,7 +11376,7 @@ ALTER TABLE ONLY public.tipo_tramite_recaudo
 
 
 --
--- Name: tramite_archivo_recaudo tramites_archivos_recaudos_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tramite_archivo_recaudo tramites_archivos_recaudos_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.tramite_archivo_recaudo
@@ -9729,7 +11384,7 @@ ALTER TABLE ONLY public.tramite_archivo_recaudo
 
 
 --
--- Name: tramite tramites_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tramite tramites_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.tramite
@@ -9737,7 +11392,7 @@ ALTER TABLE ONLY public.tramite
 
 
 --
--- Name: tramite tramites_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tramite tramites_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.tramite
@@ -9745,7 +11400,7 @@ ALTER TABLE ONLY public.tramite
 
 
 --
--- Name: usuario usuarios_id_tipo_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: usuario usuarios_id_tipo_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.usuario
@@ -9753,7 +11408,7 @@ ALTER TABLE ONLY public.usuario
 
 
 --
--- Name: variable_de_costo variable_de_costo_id_operacion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: variable_de_costo variable_de_costo_id_operacion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.variable_de_costo
@@ -9761,7 +11416,7 @@ ALTER TABLE ONLY public.variable_de_costo
 
 
 --
--- Name: variable_de_costo variable_de_costo_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: variable_de_costo variable_de_costo_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.variable_de_costo
@@ -9769,7 +11424,7 @@ ALTER TABLE ONLY public.variable_de_costo
 
 
 --
--- Name: chain_execution_config chain_execution_config_chain_id_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: -
+-- Name: chain_execution_config chain_execution_config_chain_id_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.chain_execution_config
@@ -9777,7 +11432,7 @@ ALTER TABLE ONLY timetable.chain_execution_config
 
 
 --
--- Name: chain_execution_parameters chain_execution_parameters_chain_execution_config_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: -
+-- Name: chain_execution_parameters chain_execution_parameters_chain_execution_config_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.chain_execution_parameters
@@ -9785,7 +11440,7 @@ ALTER TABLE ONLY timetable.chain_execution_parameters
 
 
 --
--- Name: chain_execution_parameters chain_execution_parameters_chain_id_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: -
+-- Name: chain_execution_parameters chain_execution_parameters_chain_id_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.chain_execution_parameters
@@ -9793,7 +11448,7 @@ ALTER TABLE ONLY timetable.chain_execution_parameters
 
 
 --
--- Name: task_chain task_chain_database_connection_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: -
+-- Name: task_chain task_chain_database_connection_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.task_chain
@@ -9801,7 +11456,7 @@ ALTER TABLE ONLY timetable.task_chain
 
 
 --
--- Name: task_chain task_chain_parent_id_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: -
+-- Name: task_chain task_chain_parent_id_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.task_chain
@@ -9809,7 +11464,7 @@ ALTER TABLE ONLY timetable.task_chain
 
 
 --
--- Name: task_chain task_chain_task_id_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: -
+-- Name: task_chain task_chain_task_id_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
 ALTER TABLE ONLY timetable.task_chain
@@ -9817,7 +11472,7 @@ ALTER TABLE ONLY timetable.task_chain
 
 
 --
--- Name: construccion construccion_ano_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: -
+-- Name: construccion construccion_ano_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: postgres
 --
 
 ALTER TABLE ONLY valores_fiscales.construccion
@@ -9825,7 +11480,7 @@ ALTER TABLE ONLY valores_fiscales.construccion
 
 
 --
--- Name: construccion construccion_tipo_construccion_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: -
+-- Name: construccion construccion_tipo_construccion_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: postgres
 --
 
 ALTER TABLE ONLY valores_fiscales.construccion
@@ -9833,7 +11488,7 @@ ALTER TABLE ONLY valores_fiscales.construccion
 
 
 --
--- Name: sector sector_parroquia_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: -
+-- Name: sector sector_parroquia_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: postgres
 --
 
 ALTER TABLE ONLY valores_fiscales.sector
@@ -9841,7 +11496,7 @@ ALTER TABLE ONLY valores_fiscales.sector
 
 
 --
--- Name: terreno terreno_ano_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: -
+-- Name: terreno terreno_ano_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: postgres
 --
 
 ALTER TABLE ONLY valores_fiscales.terreno
@@ -9849,7 +11504,7 @@ ALTER TABLE ONLY valores_fiscales.terreno
 
 
 --
--- Name: terreno terreno_sector_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: -
+-- Name: terreno terreno_sector_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: postgres
 --
 
 ALTER TABLE ONLY valores_fiscales.terreno
