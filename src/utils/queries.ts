@@ -616,7 +616,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     };
     return `SELECT * FROM impuesto.${type[typePick].table} d INNER JOIN impuesto.liquidacion l ON d.id_liquidacion = l.id_liquidacion INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud WHERE l.id_solicitud = $1;`;
   },
-  CREATE_TAX_PAYMENT_APPLICATION: 'SELECT * FROM insert_solicitud($1, $2, $3, $4, $5, $6)',
+  CREATE_TAX_PAYMENT_APPLICATION: 'SELECT * FROM impuesto.insert_solicitud($1, "eltramite", $2)',
   CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION: 'SELECT * FROM insert_liquidacion($1,$2,$3,$4,$5)',
   CURRENT_AE_APPLICATION_EXISTS:
     'SELECT * FROM impuesto.solicitud_view sv INNER JOIN impuesto.registro_municipal rm ON sv.contribuyente = rm.id_contribuyente WHERE sv.documento = $1 AND rm.referencia_municipal = $2 AND sv."tipoDocumento" = $3 AND sv.aprobado = false AND "descripcionRamo" = \'AE\' AND (EXTRACT(month FROM sv."fechaCreacion"::date) = EXTRACT(month FROM now()::date));',

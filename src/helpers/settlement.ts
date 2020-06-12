@@ -463,23 +463,14 @@ export const insertSettlements = async ({ process, user }) => {
   try {
     client.query('BEGIN');
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-    const application = (
-      await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [
-        user.id,
-        process.documento,
-        process.rim,
-        process.nacionalidad,
-        process.totalPagoImpuestos,
-        process.contribuyente,
-      ])
-    ).rows[0];
+    const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, process.rim])).rows[0];
 
-    const hasAE = impuestos.find((el) => el.tipoImpuesto === 'AE');
+    const hasAE = impuestos.find((el) => el.ramo === 'AE');
     if (hasAE) {
       const now = moment().locale('ES');
       const pivot = moment().locale('ES');
       const onlyAE = impuestos
-        .filter((el) => el.tipoImpuesto === 'AE')
+        .filter((el) => el.ramo === 'AE')
         .sort((a, b) =>
           pivot.month(a.fechaCancelada.month).toDate() === pivot.month(b.fechaCancelada.month).toDate()
             ? 0
@@ -487,7 +478,7 @@ export const insertSettlements = async ({ process, user }) => {
             ? 1
             : -1
         );
-      const lastSavedFine = (await client.query(queries.GET_LAST_FINE_FOR_LATE_APPLICATION, [process.contribuyente])).rows[0];
+      const lastSavedFine = (await client.query(queries.GET_LAST_FINE_FOR_LATE_APPLICATION, [application.id_contribuyente])).rows[0];
       if (lastSavedFine && lastSavedFine.anio === now.year()) {
         finingAmount = lastSavedFine.monto;
         const proposedFiningDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month();
@@ -580,13 +571,18 @@ export const insertSettlements = async ({ process, user }) => {
 
     const settlement: Liquidacion[] = await Promise.all(
       impuestos.map(async (el) => {
+        const datos = {
+          desglose: el.desglose ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
+          fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },
+        };
         const liquidacion = (
           await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
             application.id_solicitud,
-            el.tipoImpuesto,
+            el.monto,
+            el.ramo,
+            datos,
             el.fechaCancelada.month,
             el.fechaCancelada.year,
-            el.monto,
           ])
         ).rows[0];
 
@@ -594,7 +590,7 @@ export const insertSettlements = async ({ process, user }) => {
           await Promise.all(
             el.desglose.map(async (al) => {
               console.log(el.tipoImpuesto, el.fechaCancelada.month);
-              const insert = breakdownCaseHandler(el.tipoImpuesto, al, liquidacion.id_liquidacion);
+              const insert = breakdownCaseHandler(el.tipoImpuesto, al);
               const result = (await client.query(insert.query, insert.payload)).rows[0];
               return result;
             })
@@ -1481,15 +1477,15 @@ const breakdownCases = switchcase({
   PP: queries.CREATE_PP_BREAKDOWN_FOR_SETTLEMENT,
 })(null);
 
-const breakdownCaseHandler = (settlementType, breakdown, settlement) => {
-  const query = breakdownCases(settlementType);
+const breakdownCaseHandler = (settlementType, breakdown) => {
+  // const query = breakdownCases(settlementType);
   const payload = switchcase({
-    AE: [settlement, breakdown.aforo, breakdown.montoDeclarado],
-    SM: [settlement, breakdown.inmueble, breakdown.montoAseo, breakdown.montoGas],
-    IU: [settlement, breakdown.inmueble, breakdown.monto],
-    PP: [settlement, breakdown.subarticulo, breakdown.monto, breakdown.cantidad],
+    AE: { aforo: breakdown.aforo, montoDeclarado: breakdown.montoDeclarado },
+    SM: { inmueble: breakdown.inmueble, montoAseo: +breakdown.montoAseo, montoGas: breakdown.montoGas },
+    IU: { inmueble: breakdown.inmueble, monto: breakdown.monto },
+    PP: { subarticulo: breakdown.subarticulo, monto: breakdown.monto, cantidad: breakdown.cantidad },
   })(null)(settlementType);
-  return { query, payload };
+  return payload;
 };
 
 const certificateCreationHandler = async (process, media, payload: CertificatePayload) => {
