@@ -183,6 +183,7 @@ export interface Liquidacion {
   fecha: Fecha;
   monto: number;
   certificado?: string;
+  desglose?: object;
   recibo?: string;
 }
 

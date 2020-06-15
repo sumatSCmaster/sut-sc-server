@@ -491,14 +491,20 @@ export const insertSettlements = async ({ process, user }) => {
               const multa = Promise.resolve(
                 client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
                   application.id_solicitud,
-                  moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
-                  now.year(),
                   finingAmount,
+                  {
+                    fecha: {
+                      month: moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
+                      year: now.year(),
+                    },
+                    descripcion: 'Multa por Declaracion Fuera de Plazo',
+                  },
+                  moment().month(counter).date(1).format('DD-MM-YYYY'),
                 ])
               )
                 .then((el) => el.rows[0])
                 .then((data) => {
-                  return { id: data.id_multa, fecha: { month: data.mes, year: data.anio }, monto: +data.monto * UTMM };
+                  return { id: data.id_liquidacion, fecha: data.datos.fecha, monto: +data.monto * UTMM, descripcion: data.datos.descripcion };
                 });
               counter++;
               finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
@@ -510,16 +516,18 @@ export const insertSettlements = async ({ process, user }) => {
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
               application.id_solicitud,
-              moment().toDate().toLocaleDateString('ES', { month: 'long' }),
-              now.year(),
               finingAmount,
+              {
+                fecha: {
+                  month: moment().toDate().toLocaleDateString('ES', { month: 'long' }),
+                  year: now.year(),
+                },
+                descripcion: 'Multa por Declaracion Fuera de Plazo',
+              },
+              moment().date(1).format('DD-MM-YYYY'),
             ])
           ).rows[0];
-          const fine = {
-            id: multa.id_multa,
-            fecha: { month: multa.mes, year: multa.anio },
-            monto: +multa.monto * UTMM,
-          };
+          const fine = { id: multa.id_liquidacion, fecha: multa.datos.fecha, monto: multa.monto * UTMM, descripcion: multa.datos.descripcion };
           finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
           finingMonths.push(fine);
         }
@@ -534,14 +542,20 @@ export const insertSettlements = async ({ process, user }) => {
               const multa = Promise.resolve(
                 client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
                   application.id_solicitud,
-                  moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
-                  now.year(),
                   finingAmount,
+                  {
+                    fecha: {
+                      month: moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
+                      year: now.year(),
+                    },
+                    descripcion: 'Multa por Declaracion Fuera de Plazo',
+                  },
+                  moment().month(counter).date(1).format('DD-MM-YYYY'),
                 ])
               )
                 .then((el) => el.rows[0])
                 .then((data) => {
-                  return { id: data.id_multa, fecha: { month: data.mes, year: data.anio }, monto: +data.monto * UTMM };
+                  return { id: data.id_liquidacion, fecha: data.datos.fecha, monto: +data.monto * UTMM, descripcion: data.datos.descripcion };
                 });
               counter++;
               finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
@@ -553,16 +567,19 @@ export const insertSettlements = async ({ process, user }) => {
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
               application.id_solicitud,
-              moment().toDate().toLocaleDateString('ES', { month: 'long' }),
-              now.year(),
               finingAmount,
+              {
+                fecha: {
+                  month: moment().toDate().toLocaleDateString('ES', { month: 'long' }),
+                  year: now.year(),
+                },
+                descripcion: 'Multa por Declaracion Fuera de Plazo',
+              },
+              moment().date(1).format('DD-MM-YYYY'),
             ])
           ).rows[0];
-          const fine = {
-            id: multa.id_multa,
-            fecha: { month: multa.mes, year: multa.anio },
-            monto: +multa.monto * UTMM,
-          };
+          const fine = { id: multa.id_liquidacion, fecha: multa.datos.fecha, monto: multa.monto * UTMM, descripcion: multa.datos.descripcion };
+
           finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
           finingMonths.push(fine);
         }
@@ -581,21 +598,9 @@ export const insertSettlements = async ({ process, user }) => {
             el.monto,
             el.ramo,
             datos,
-            el.fechaCancelada.month,
-            el.fechaCancelada.year,
+            moment().month(el.fechaCancelada.month).date(1).format('DD-MM-YYYY'),
           ])
         ).rows[0];
-
-        if (el.desglose) {
-          await Promise.all(
-            el.desglose.map(async (al) => {
-              console.log(el.tipoImpuesto, el.fechaCancelada.month);
-              const insert = breakdownCaseHandler(el.tipoImpuesto, al);
-              const result = (await client.query(insert.query, insert.payload)).rows[0];
-              return result;
-            })
-          );
-        }
 
         return {
           id: liquidacion.id_liquidacion,
@@ -604,6 +609,7 @@ export const insertSettlements = async ({ process, user }) => {
           monto: liquidacion.monto,
           certificado: liquidacion.certificado,
           recibo: liquidacion.recibo,
+          desglose: liquidacion.datos,
         };
       })
     );
