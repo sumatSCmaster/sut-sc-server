@@ -309,6 +309,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const application: Solicitud[] = await Promise.all(
       (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows.map(async (el) => {
+        const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
         return {
           id: el.id_solicitud,
           usuario: typeof user === 'object' ? user : { id: user },
@@ -317,27 +318,31 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
           fecha: el.fecha,
           monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0]
             .monto_total,
-          liquidaciones: await Promise.all(
-            (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows.map((el) => {
+          liquidaciones: liquidaciones
+            .filter((el) => el.tipoProcedimiento !== 'MUL')
+            .map((el) => {
               return {
                 id: el.id_liquidacion,
                 ramo: el.tipoProcedimiento,
-                fecha: { month: el.mes, year: el.anio },
+                fecha: el.datos.fecha,
                 monto: el.monto,
                 certificado: el.certificado,
                 recibo: el.recibo,
               };
-            })
-          ),
-          multas: await Promise.all(
-            (await client.query(queries.GET_FINES_BY_APPLICATION, [el.id_solicitud])).rows.map((el) => {
+            }),
+          multas: liquidaciones
+            .filter((el) => el.tipoProcedimiento === 'MUL')
+            .map((el) => {
               return {
-                id: el.id_multa,
-                fecha: { month: el.mes, year: el.anio },
-                monto: +el.monto * UTMM,
+                id: el.id_liquidacion,
+                ramo: el.tipoProcedimiento,
+                fecha: el.datos.fecha,
+                monto: el.monto * UTMM,
+                descripcion: el.datos.descripcion,
+                certificado: el.certificado,
+                recibo: el.recibo,
               };
-            })
-          ),
+            }),
         };
       })
     );
@@ -359,6 +364,8 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const applications: Solicitud[] = await Promise.all(
       (await client.query(queries.GET_APPLICATION_INSTANCES_BY_USER, [user.id])).rows.map(async (el) => {
+        const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
+
         return {
           id: el.id_solicitud,
           usuario: user,
@@ -367,27 +374,31 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
           fecha: el.fecha,
           monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0]
             .monto_total,
-          liquidaciones: await Promise.all(
-            (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows.map((el) => {
+          liquidaciones: liquidaciones
+            .filter((el) => el.tipoProcedimiento !== 'MUL')
+            .map((el) => {
               return {
                 id: el.id_liquidacion,
                 ramo: el.tipoProcedimiento,
-                fecha: { month: el.mes, year: el.anio },
+                fecha: el.datos.fecha,
                 monto: el.monto,
                 certificado: el.certificado,
                 recibo: el.recibo,
               };
-            })
-          ),
-          multas: await Promise.all(
-            (await client.query(queries.GET_FINES_BY_APPLICATION, [el.id_solicitud])).rows.map((el) => {
+            }),
+          multas: liquidaciones
+            .filter((el) => el.tipoProcedimiento === 'MUL')
+            .map((el) => {
               return {
-                id: el.id_multa,
-                fecha: { month: el.mes, year: el.anio },
-                monto: +el.monto * UTMM,
+                id: el.id_liquidacion,
+                ramo: el.tipoProcedimiento,
+                fecha: el.datos.fecha,
+                monto: el.monto * UTMM,
+                descripcion: el.datos.descripcion,
+                certificado: el.certificado,
+                recibo: el.recibo,
               };
-            })
-          ),
+            }),
         };
       })
     );
@@ -409,6 +420,8 @@ export const getApplicationsAndSettlementsForContributor = async ({ docType, doc
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const applications: Solicitud[] = await Promise.all(
       (await client.query(queries.GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR, [docType, document])).rows.map(async (el) => {
+        const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
+
         return {
           id: el.id_solicitud,
           usuario: el.usuario,
@@ -417,27 +430,31 @@ export const getApplicationsAndSettlementsForContributor = async ({ docType, doc
           fecha: el.fecha,
           monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0]
             .monto_total,
-          liquidaciones: await Promise.all(
-            (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows.map((el) => {
+          liquidaciones: liquidaciones
+            .filter((el) => el.tipoProcedimiento !== 'MUL')
+            .map((el) => {
               return {
                 id: el.id_liquidacion,
                 ramo: el.tipoProcedimiento,
-                fecha: { month: el.mes, year: el.anio },
+                fecha: el.datos.fecha,
                 monto: el.monto,
                 certificado: el.certificado,
                 recibo: el.recibo,
               };
-            })
-          ),
-          multas: await Promise.all(
-            (await client.query(queries.GET_FINES_BY_APPLICATION, [el.id_solicitud])).rows.map((el) => {
+            }),
+          multas: liquidaciones
+            .filter((el) => el.tipoProcedimiento === 'MUL')
+            .map((el) => {
               return {
-                id: el.id_multa,
-                fecha: { month: el.mes, year: el.anio },
-                monto: +el.monto * UTMM,
+                id: el.id_liquidacion,
+                ramo: el.tipoProcedimiento,
+                fecha: el.datos.fecha,
+                monto: el.monto * UTMM,
+                descripcion: el.datos.descripcion,
+                certificado: el.certificado,
+                recibo: el.recibo,
               };
-            })
-          ),
+            }),
         };
       })
     );
