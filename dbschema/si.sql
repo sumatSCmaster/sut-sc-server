@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.3
--- Dumped by pg_dump version 12.3
+-- Dumped from database version 12.3 (Ubuntu 12.3-1.pgdg18.04+1)
+-- Dumped by pg_dump version 12.3 (Ubuntu 12.3-1.pgdg18.04+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -169,16 +169,16 @@ CREATE TABLE impuesto.solicitud (
 ALTER TABLE impuesto.solicitud OWNER TO postgres;
 
 --
--- Name: insert_solicitud(integer, integer); Type: FUNCTION; Schema: impuesto; Owner: postgres
+-- Name: insert_solicitud(integer, integer, integer); Type: FUNCTION; Schema: impuesto; Owner: postgres
 --
 
-CREATE FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer) RETURNS SETOF impuesto.solicitud
+CREATE FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer, _referencia_municipal integer) RETURNS SETOF impuesto.solicitud
     LANGUAGE plpgsql
     AS $$
 DECLARE
     solicitudRow impuesto.solicitud%ROWTYPE;
     BEGIN
-        INSERT INTO impuesto.solicitud (id_usuario, aprobado, fecha, id_tipo_tramite) VALUES (_id_usuario, false, now(), _id_tipo_tramite) RETURNING * INTO solicitudRow;
+        INSERT INTO impuesto.solicitud (id_usuario, aprobado, fecha, id_tipo_tramite, id_contribuyente) VALUES (_id_usuario, false, now(), _id_tipo_tramite, (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE referencia_municipal = _referencia_municipal)) RETURNING * INTO solicitudRow;
 
         INSERT INTO impuesto.evento_tramite values (default, solicitudRow.id_solicitud, 'iniciar', now());   
 
@@ -189,7 +189,7 @@ DECLARE
 $$;
 
 
-ALTER FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer) OWNER TO postgres;
+ALTER FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer, _referencia_municipal integer) OWNER TO postgres;
 
 --
 -- Name: solicitud_transicion(text, text); Type: FUNCTION; Schema: impuesto; Owner: postgres
@@ -722,6 +722,48 @@ CREATE TABLE impuesto.liquidacion (
 
 
 ALTER TABLE impuesto.liquidacion OWNER TO postgres;
+
+--
+-- Name: insert_liquidacion(integer, numeric, integer, json, date); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.insert_liquidacion(_id_solicitud integer, _monto numeric DEFAULT NULL::numeric, _id_subramo integer DEFAULT NULL::integer, _datos json DEFAULT NULL::json, _fecha date DEFAULT NULL::date) RETURNS SETOF impuesto.liquidacion
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    liquidacionRow impuesto.liquidacion%ROWTYPE;
+    BEGIN
+        INSERT INTO impuesto.liquidacion (id_solicitud, monto, id_subramo, datos, fecha) VALUES (_id_solicitud, _monto, (SELECT sr.id_subramo FROM impuesto.subramo sr INNER JOIN impuesto.ramo r ON sr.id_ramo = r.id_ramo WHERE r.descripcion = _id_subramo AND sr.descripcion = 'Pago Ordinario'), _datos, _fecha) RETURNING * INTO liquidacionRow;
+            
+        RETURN QUERY SELECT * FROM impuesto.liquidacion WHERE id_liquidacion=liquidacionRow.id_liquidacion;
+
+        RETURN;
+    END;
+$$;
+
+
+ALTER FUNCTION public.insert_liquidacion(_id_solicitud integer, _monto numeric, _id_subramo integer, _datos json, _fecha date) OWNER TO postgres;
+
+--
+-- Name: insert_liquidacion(integer, numeric, character varying, json, date); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.insert_liquidacion(_id_solicitud integer, _monto numeric DEFAULT NULL::numeric, _ramo character varying DEFAULT NULL::character varying, _datos json DEFAULT NULL::json, _fecha date DEFAULT NULL::date) RETURNS SETOF impuesto.liquidacion
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    liquidacionRow impuesto.liquidacion%ROWTYPE;
+    BEGIN
+        INSERT INTO impuesto.liquidacion (id_solicitud, monto, id_subramo, datos, fecha) VALUES (_id_solicitud, _monto, (SELECT sr.id_subramo FROM impuesto.subramo sr INNER JOIN impuesto.ramo r ON sr.id_ramo = r.id_ramo WHERE r.descripcion = _ramo AND sr.descripcion = 'Pago Ordinario'), _datos, _fecha) RETURNING * INTO liquidacionRow;
+            
+        RETURN QUERY SELECT * FROM impuesto.liquidacion WHERE id_liquidacion=liquidacionRow.id_liquidacion;
+
+        RETURN;
+    END;
+$$;
+
+
+ALTER FUNCTION public.insert_liquidacion(_id_solicitud integer, _monto numeric, _ramo character varying, _datos json, _fecha date) OWNER TO postgres;
 
 --
 -- Name: insert_liquidacion(integer, character varying, character varying, integer, numeric); Type: FUNCTION; Schema: public; Owner: postgres
