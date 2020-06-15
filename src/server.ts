@@ -2,6 +2,8 @@ import app from './index';
 import { Socket, Server } from 'socket.io';
 import { init } from './config/socket';
 //import Pool from '@utils/GticPool';
+import { sendRimVerification, verifyCode } from '@helpers/verification';
+import { VerificationValue } from './interfaces/sigt';
 
 const server = app.listen(process.env.PORT || 5000, () => console.log(`Listening on port ${process.env.PORT || 5000}`));
 
@@ -16,20 +18,13 @@ const server = app.listen(process.env.PORT || 5000, () => console.log(`Listening
 const socket: Server = require('socket.io')(server);
 init(socket);
 
-/*
-async function xd(){
-    const xd = Pool.getInstance();
 
-    const client = await xd.connect();
-
-    const res = await client.query('SELECT * FROM tb032_tarifa_gas_residencial;');
-
-    console.log(res.rows);
-
-    client.release();
-
+/* async function xd(){
+    console.log('XD')
+    //console.log(await sendRimVerification('1', VerificationValue.Email, 'andresmarmolm@gmail.com'));
+    console.log(await verifyCode('1', VerificationValue.Email,  '229367'))
 }
 
 xd()
 
-*/
+ */

@@ -280,3 +280,9 @@ export namespace Payloads {
     items: ProcedureItems[];
   };
 }
+
+export enum VerificationValue  {
+  CellPhone,
+  Email,
+  
+}

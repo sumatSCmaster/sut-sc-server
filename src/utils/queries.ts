@@ -649,6 +649,18 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   CREATE_HOLIDAY: 'INSERT INTO impuesto.dias_feriados (dia, descripcion) VALUES ($1, $2) RETURNING id_dia_feriado AS id, dia, descripcion;',
   DELETE_HOLIDAY: 'DELETE FROM impuesto.dias_feriados WHERE id_dia_feriado = $1 RETURNING id_dia_feriado as id, dia, descripcion;',
 
+  //VERIFICACION DE DATOS DE RIM
+  VERIFY_EXISTING_EMAIL_VERIFICATION: "SELECT 1 FROM impuesto.verificacion_email WHERE id_registro_municipal = $1 AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
+  VERIFY_EXISTING_PHONE_VERIFICATION: "SELECT 1 FROM impuesto.verificacion_telefono WHERE id_registro_municipal = $1 AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
+  INSERT_EMAIL_VERIFICATION: 'INSERT INTO impuesto.verificacion_email (id_registro_municipal, codigo_recuperacion) VALUES ($1, $2);',
+  INSERT_PHONE_VERIFICATION: 'INSERT INTO impuesto.verificacion_telefono (id_registro_municipal, codigo_recuperacion) VALUES ($1, $2);',
+  VALIDATE_EMAIL_VERIFICATION: "SELECT * FROM impuesto.verificacion_email WHERE id_registro_municipal = $1 AND codigo_recuperacion = $2 AND verificado = false AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
+  VALIDATE_PHONE_VERIFICATION: "SELECT * FROM impuesto.verificacion_telefono WHERE id_registro_municipal = $1 AND codigo_recuperacion = $2 AND verificado = false AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
+  DISABLE_EMAIL_VERIFICATION: 'UPDATE impuesto.verificacion_email SET verificado = true WHERE id_verificacion_email = $1',
+  DISABLE_PHONE_VERIFICATION: 'UPDATE impuesto.verificacion_telefono SET verificado = true WHERE id_verificacion_phone = $1',
+  FIND_EMAIL_CODE: "SELECT * FROM impuesto.verificacion_email ve INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = ve.id_registro_municipal WHERE id_registro_municipal = $1 AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
+  FIND_PHONE_CODE: "SELECT * FROM impuesto.verificacion_telefono vt INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = vt.id_registro_municipal WHERE id_registro_municipal = $1 AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
+
   gtic: {
     GET_NATURAL_CONTRIBUTOR:
       'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 ORDER BY co_contribuyente DESC LIMIT 1;',
