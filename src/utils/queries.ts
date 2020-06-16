@@ -730,6 +730,25 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     GET_PUBLICITY_SUBARTICLES: 'SELECT * FROM tb102_medio_propaganda where CO_ARTICULO is not null;',
     GET_MOTIVE_BY_TYPE_ID: 'SELECT * FROM t09_tipo_solicitud ts INNER JOIN tb034_motivo m ON ts.co_motivo = m.co_motivo WHERE co_tipo_solicitud = $1;',
     GET_BRANCH_BY_TYPE_ID: 'SELECT * FROM t09_tipo_solicitud ts INNER JOIN tb046_ae_ramo r ON r.co_ramo = ts.co_ramo  WHERE co_tipo_solicitud = $1;',
+    GET_REPRESENTATIVE_BY_EMAIL: 'SELECT * FROM t01_usuario WHERE da_email = $1;',
+    GET_CONTRIBUTOR_BY_REPRESENTATIVE_USER:
+      'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE co_usuario_registro = $1 ',
+    GET_CONTRIBUTOR_BY_REPRESENTATIVE_USER_EXTENDED:
+      'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE co_contribuyente = $1 ORDER BY c.co_contribuyente DESC',
+    GET_ESTATES_BY_MUNICIPAL_REGISTRY:
+      'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo INNER JOIN\
+       (SELECT * FROM tb071_contrib_inmueble WHERE in_activo = 1) ci ON ci.co_contribuyente = c.co_contribuyente INNER JOIN\
+        tb070_inmueble i ON ci.co_inmueble = i.co_inmueble WHERE nu_referencia = $1;',
+    GET_SETTLEMENTS_BY_MUNICIPAL_REGISTRY:
+      'SELECT * FROM tb004_contribuyente c  INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo INNER JOIN\
+       tb079_liquidacion l ON l.co_contribuyente = c.co_contribuyente WHERE nu_referencia = $1 AND nu_monto_bolivar_fuerte IS NULL AND \
+       l.anio_liquidacion = EXTRACT(year FROM CURRENT_DATE) ORDER BY fe_liquidacion DESC;',
+    GET_FISCAL_CREDIT_BY_MUNICIPAL_REGISTRY:
+      'SELECT * FROM tb004_contribuyente c  INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo INNER JOIN\
+       t67_credito_fiscal cf ON cf.co_contribuyente = c.co_contribuyente WHERE nu_referencia = $1;',
+    GET_FININGS_BY_MUNICIPAL_REGISTRY:
+      'SELECT * FROM tb004_contribuyente c  INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo INNER JOIN\
+       tb051_ae_decl_multa dm ON dm.co_contribuyente = c.co_contribuyente WHERE nu_referencia = $1;',
   },
 };
 

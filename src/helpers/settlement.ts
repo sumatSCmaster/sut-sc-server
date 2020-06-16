@@ -14,6 +14,8 @@ import { dirname } from 'path';
 import * as pdf from 'html-pdf';
 import * as qr from 'qrcode';
 import * as pdftk from 'node-pdftk';
+import bcrypt from 'bcryptjs';
+import md5 from 'md5';
 import { query } from 'express-validator';
 import { sendNotification } from './notification';
 const written = require('written-number');
@@ -300,6 +302,51 @@ export const getTaxPayerInfo = async ({ docType, document, type }) => {
   } finally {
     client.release();
     gtic.release();
+  }
+};
+
+const logInExternalLinking = async ({ credentials }) => {
+  const client = await pool.connect();
+  const gtic = await gticPool.connect();
+  try {
+    const { attemptedUser, canBeLinked } = await externalUserForLinkingExists({ user: credentials.nombreUsuario, password: credentials.password, gtic });
+    if (!canBeLinked) return { status: 403, message: 'Credenciales incorrectas' };
+    const contributors = await Promise.all(
+      (await gtic.query(queries.gtic.GET_CONTRIBUTOR_BY_REPRESENTATIVE_USER_EXTENDED, [attemptedUser.id_tb004_contribuyente])).rows
+        .map(async (el) => {
+          const sucursales = null;
+          const inmuebles = {
+            liquidaciones: null,
+            multas: null,
+            creditoFiscal: null,
+          };
+        })
+        .filter((el) => el)
+    );
+    return { status: 200, message: 'Informacion de enlace de cuenta obtenida', usuario: null };
+  } catch (error) {
+    console.log(error);
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al obtener datos del contribuyente',
+    };
+  } finally {
+    client.release();
+    gtic.release();
+  }
+};
+
+const externalUserForLinkingExists = async ({ user, password, gtic }: { user: string; password: string; gtic: PoolClient }) => {
+  try {
+    const gticUser = (await gtic.query(queries.gtic.GET_REPRESENTATIVE_BY_EMAIL, [user])).rows[0];
+    if (!gticUser) return { canBeLinked: false };
+    const isAttemptedUser = gticUser.tx_password.startsWith('$')
+      ? await bcrypt.compare(password, gticUser.tx_password)
+      : md5(password) === gticUser.tx_password;
+    return { attemptedUser: gticUser, canBeLinked: isAttemptedUser };
+  } catch (e) {
+    throw e;
   }
 };
 

@@ -75,6 +75,13 @@ router.post('/:id/:certificate', authenticate('jwt'), async (req: any, res) => {
   if (data) res.status(data.status).json(data);
 });
 
+router.post('/login', authenticate('jwt'), async (req, res) => {
+  const { contribuyente } = req.body;
+  const [error, data] = await fulfill(insertSettlements({ process: contribuyente, user: req.user }));
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+});
+
 router.post('/taxPayer', authenticate('jwt'), async (req, res) => {
   const { contribuyente } = req.body;
   const [error, data] = await fulfill(insertSettlements({ process: contribuyente, user: req.user }));
