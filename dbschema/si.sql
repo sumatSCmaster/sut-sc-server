@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.3 (Ubuntu 12.3-1.pgdg18.04+1)
--- Dumped by pg_dump version 12.3 (Ubuntu 12.3-1.pgdg18.04+1)
+-- Dumped from database version 12.3
+-- Dumped by pg_dump version 12.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -128,9 +128,9 @@ CREATE FUNCTION impuesto.eventos_solicitud_trigger_func() RETURNS trigger
 DECLARE
   new_state text;
 BEGIN
-  SELECT public.solicitud_fsm(event ORDER BY id_evento_solicitud)
+  SELECT impuesto.solicitud_fsm(event ORDER BY id_evento_solicitud)
   FROM (
-    SELECT id_evento_solicitud, event FROM evento_solicitud WHERE id_solicitud = new.id_solicitud
+    SELECT id_evento_solicitud, event FROM impuesto.evento_solicitud WHERE id_solicitud = new.id_solicitud
     UNION
     SELECT new.id_evento_solicitud, new.event
   ) s
@@ -190,6 +190,29 @@ $$;
 
 
 ALTER FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer, _referencia_municipal integer) OWNER TO postgres;
+
+--
+-- Name: insert_solicitud(integer, integer, character varying); Type: FUNCTION; Schema: impuesto; Owner: postgres
+--
+
+CREATE FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer, _referencia_municipal character varying) RETURNS SETOF impuesto.solicitud
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    solicitudRow impuesto.solicitud%ROWTYPE;
+    BEGIN
+        INSERT INTO impuesto.solicitud (id_usuario, aprobado, fecha, id_tipo_tramite, id_contribuyente) VALUES (_id_usuario, false, now(), _id_tipo_tramite, (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE referencia_municipal = _referencia_municipal)) RETURNING * INTO solicitudRow;
+
+        INSERT INTO impuesto.evento_solicitud values (default, solicitudRow.id_solicitud, 'iniciar', now());   
+
+        RETURN QUERY SELECT * FROM impuesto.solicitud WHERE id_solicitud=solicitudRow.id_solicitud;
+
+        RETURN;
+    END;
+$$;
+
+
+ALTER FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer, _referencia_municipal character varying) OWNER TO postgres;
 
 --
 -- Name: solicitud_transicion(text, text); Type: FUNCTION; Schema: impuesto; Owner: postgres
@@ -724,27 +747,6 @@ CREATE TABLE impuesto.liquidacion (
 ALTER TABLE impuesto.liquidacion OWNER TO postgres;
 
 --
--- Name: insert_liquidacion(integer, numeric, integer, json, date); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.insert_liquidacion(_id_solicitud integer, _monto numeric DEFAULT NULL::numeric, _id_subramo integer DEFAULT NULL::integer, _datos json DEFAULT NULL::json, _fecha date DEFAULT NULL::date) RETURNS SETOF impuesto.liquidacion
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-    liquidacionRow impuesto.liquidacion%ROWTYPE;
-    BEGIN
-        INSERT INTO impuesto.liquidacion (id_solicitud, monto, id_subramo, datos, fecha) VALUES (_id_solicitud, _monto, (SELECT sr.id_subramo FROM impuesto.subramo sr INNER JOIN impuesto.ramo r ON sr.id_ramo = r.id_ramo WHERE r.descripcion = _id_subramo AND sr.descripcion = 'Pago Ordinario'), _datos, _fecha) RETURNING * INTO liquidacionRow;
-            
-        RETURN QUERY SELECT * FROM impuesto.liquidacion WHERE id_liquidacion=liquidacionRow.id_liquidacion;
-
-        RETURN;
-    END;
-$$;
-
-
-ALTER FUNCTION public.insert_liquidacion(_id_solicitud integer, _monto numeric, _id_subramo integer, _datos json, _fecha date) OWNER TO postgres;
-
---
 -- Name: insert_liquidacion(integer, numeric, character varying, json, date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -764,27 +766,6 @@ $$;
 
 
 ALTER FUNCTION public.insert_liquidacion(_id_solicitud integer, _monto numeric, _ramo character varying, _datos json, _fecha date) OWNER TO postgres;
-
---
--- Name: insert_liquidacion(integer, character varying, character varying, integer, numeric); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.insert_liquidacion(_id_solicitud integer, _descripcion character varying, _mes character varying, _anio integer, _monto numeric) RETURNS SETOF impuesto.liquidacion
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-    liquidacionRow impuesto.liquidacion%ROWTYPE;
-    BEGIN
-        INSERT INTO impuesto.liquidacion (id_solicitud, id_procedimiento, mes, anio, monto) VALUES (_id_solicitud, (SELECT id_procedimiento FROM impuesto.procedimiento WHERE descripcion = _descripcion), _mes, _anio, _monto) RETURNING * INTO liquidacionRow;
-            
-        RETURN QUERY SELECT * FROM impuesto.liquidacion WHERE id_liquidacion=liquidacionRow.id_liquidacion;
-
-        RETURN;
-    END;
-$$;
-
-
-ALTER FUNCTION public.insert_liquidacion(_id_solicitud integer, _descripcion character varying, _mes character varying, _anio integer, _monto numeric) OWNER TO postgres;
 
 --
 -- Name: multa_transicion(text, text); Type: FUNCTION; Schema: public; Owner: postgres
@@ -2141,6 +2122,42 @@ ALTER SEQUENCE impuesto.actividad_economica_id_actividad_economica_seq OWNED BY 
 
 
 --
+-- Name: avaluo_inmueble; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.avaluo_inmueble (
+    id_avaluo_inmueble integer NOT NULL,
+    id_inmueble integer NOT NULL,
+    avaluo numeric NOT NULL,
+    anio integer
+);
+
+
+ALTER TABLE impuesto.avaluo_inmueble OWNER TO postgres;
+
+--
+-- Name: avaluo_inmueble_id_avaluo_inmueble_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.avaluo_inmueble_id_avaluo_inmueble_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.avaluo_inmueble_id_avaluo_inmueble_seq OWNER TO postgres;
+
+--
+-- Name: avaluo_inmueble_id_avaluo_inmueble_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.avaluo_inmueble_id_avaluo_inmueble_seq OWNED BY impuesto.avaluo_inmueble.id_avaluo_inmueble;
+
+
+--
 -- Name: categoria_propaganda; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2185,9 +2202,6 @@ CREATE TABLE impuesto.contribuyente (
     razon_social character varying NOT NULL,
     denominacion_comercial character varying NOT NULL,
     siglas character varying NOT NULL,
-    telefono_celular character varying NOT NULL,
-    telefono_habitacion character varying NOT NULL,
-    email character varying NOT NULL,
     id_parroquia integer NOT NULL,
     sector character varying NOT NULL,
     direccion character varying NOT NULL,
@@ -2615,7 +2629,10 @@ CREATE TABLE impuesto.registro_municipal (
     id_registro_municipal integer NOT NULL,
     id_contribuyente integer NOT NULL,
     referencia_municipal character varying,
-    fecha_aprobacion date
+    fecha_aprobacion date,
+    telefono_celular character varying,
+    telefono_habitacion character varying,
+    email character varying
 );
 
 
@@ -2724,9 +2741,6 @@ CREATE VIEW impuesto.solicitud_view AS
     c.razon_social AS "razonSocial",
     c.denominacion_comercial AS "denominacionComercial",
     c.siglas,
-    c.telefono_celular AS "telefonoCelular",
-    c.telefono_habitacion AS "telefonoHabitacion",
-    c.email,
     c.sector,
     c.direccion,
     c.punto_referencia AS "puntoReferencia",
@@ -3021,6 +3035,115 @@ ALTER TABLE impuesto.tipo_multa_id_tipo_multa_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE impuesto.tipo_multa_id_tipo_multa_seq OWNED BY impuesto.tipo_multa.id_tipo_multa;
+
+
+--
+-- Name: usuario_enlazado; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.usuario_enlazado (
+    id_usuario_enlazado integer NOT NULL,
+    id_contribuyente integer NOT NULL,
+    email character varying NOT NULL
+);
+
+
+ALTER TABLE impuesto.usuario_enlazado OWNER TO postgres;
+
+--
+-- Name: usuario_enlazado_id_usuario_enlazado_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.usuario_enlazado_id_usuario_enlazado_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.usuario_enlazado_id_usuario_enlazado_seq OWNER TO postgres;
+
+--
+-- Name: usuario_enlazado_id_usuario_enlazado_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.usuario_enlazado_id_usuario_enlazado_seq OWNED BY impuesto.usuario_enlazado.id_usuario_enlazado;
+
+
+--
+-- Name: verificacion_email; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.verificacion_email (
+    id_verificacion_email integer NOT NULL,
+    id_registro_municipal integer NOT NULL,
+    codigo_recuperacion character varying,
+    fecha_recuperacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    verificado boolean DEFAULT false
+);
+
+
+ALTER TABLE impuesto.verificacion_email OWNER TO postgres;
+
+--
+-- Name: verificacion_email_id_verificacion_email_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.verificacion_email_id_verificacion_email_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.verificacion_email_id_verificacion_email_seq OWNER TO postgres;
+
+--
+-- Name: verificacion_email_id_verificacion_email_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.verificacion_email_id_verificacion_email_seq OWNED BY impuesto.verificacion_email.id_verificacion_email;
+
+
+--
+-- Name: verificacion_telefono; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.verificacion_telefono (
+    id_verificacion_telefono integer NOT NULL,
+    id_registro_municipal integer NOT NULL,
+    codigo_recuperacion character varying,
+    fecha_recuperacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    verificado boolean DEFAULT false
+);
+
+
+ALTER TABLE impuesto.verificacion_telefono OWNER TO postgres;
+
+--
+-- Name: verificacion_telefono_id_verificacion_telefono_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.verificacion_telefono_id_verificacion_telefono_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.verificacion_telefono_id_verificacion_telefono_seq OWNER TO postgres;
+
+--
+-- Name: verificacion_telefono_id_verificacion_telefono_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.verificacion_telefono_id_verificacion_telefono_seq OWNED BY impuesto.verificacion_telefono.id_verificacion_telefono;
 
 
 --
@@ -4278,6 +4401,7 @@ CREATE TABLE public.usuario (
     id_tipo_usuario integer,
     password character varying,
     telefono character varying,
+    id_contribuyente integer,
     CONSTRAINT usuarios_nacionalidad_check CHECK ((nacionalidad = ANY (ARRAY['V'::bpchar, 'E'::bpchar])))
 );
 
@@ -4940,6 +5064,13 @@ ALTER TABLE ONLY impuesto.actividad_economica_exoneracion ALTER COLUMN id_activi
 
 
 --
+-- Name: avaluo_inmueble id_avaluo_inmueble; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.avaluo_inmueble ALTER COLUMN id_avaluo_inmueble SET DEFAULT nextval('impuesto.avaluo_inmueble_id_avaluo_inmueble_seq'::regclass);
+
+
+--
 -- Name: categoria_propaganda id_categoria_propaganda; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5091,6 +5222,27 @@ ALTER TABLE ONLY impuesto.tipo_aviso_propaganda ALTER COLUMN id_tipo_aviso_propa
 --
 
 ALTER TABLE ONLY impuesto.tipo_multa ALTER COLUMN id_tipo_multa SET DEFAULT nextval('impuesto.tipo_multa_id_tipo_multa_seq'::regclass);
+
+
+--
+-- Name: usuario_enlazado id_usuario_enlazado; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.usuario_enlazado ALTER COLUMN id_usuario_enlazado SET DEFAULT nextval('impuesto.usuario_enlazado_id_usuario_enlazado_seq'::regclass);
+
+
+--
+-- Name: verificacion_email id_verificacion_email; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.verificacion_email ALTER COLUMN id_verificacion_email SET DEFAULT nextval('impuesto.verificacion_email_id_verificacion_email_seq'::regclass);
+
+
+--
+-- Name: verificacion_telefono id_verificacion_telefono; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.verificacion_telefono ALTER COLUMN id_verificacion_telefono SET DEFAULT nextval('impuesto.verificacion_telefono_id_verificacion_telefono_seq'::regclass);
 
 
 --
@@ -5639,6 +5791,14 @@ COPY impuesto.actividad_economica_exoneracion (id_actividad_economica_exoneracio
 
 
 --
+-- Data for Name: avaluo_inmueble; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.avaluo_inmueble (id_avaluo_inmueble, id_inmueble, avaluo, anio) FROM stdin;
+\.
+
+
+--
 -- Data for Name: categoria_propaganda; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -5664,7 +5824,8 @@ COPY impuesto.categoria_propaganda (id_categoria_propaganda, descripcion) FROM s
 -- Data for Name: contribuyente; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.contribuyente (id_contribuyente, tipo_documento, documento, razon_social, denominacion_comercial, siglas, telefono_celular, telefono_habitacion, email, id_parroquia, sector, direccion, punto_referencia, verificado) FROM stdin;
+COPY impuesto.contribuyente (id_contribuyente, tipo_documento, documento, razon_social, denominacion_comercial, siglas, id_parroquia, sector, direccion, punto_referencia, verificado) FROM stdin;
+1	V	222	AA	AAAA,	CCCC	108	ASDADS	ASDASDAS	ASDASD	f
 \.
 
 
@@ -5766,7 +5927,8 @@ COPY impuesto.ramo_exoneracion (id_ramo_exoneracion, id_plazo_exoneracion, id_ra
 -- Data for Name: registro_municipal; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.registro_municipal (id_registro_municipal, id_contribuyente, referencia_municipal, fecha_aprobacion) FROM stdin;
+COPY impuesto.registro_municipal (id_registro_municipal, id_contribuyente, referencia_municipal, fecha_aprobacion, telefono_celular, telefono_habitacion, email) FROM stdin;
+1	1	2020200202	\N	+584126750593	+5802617534001	andresmarmolm@gmail.com
 \.
 
 
@@ -6328,6 +6490,31 @@ COPY impuesto.tipo_aviso_propaganda (id_tipo_aviso_propaganda, id_categoria_prop
 
 COPY impuesto.tipo_multa (id_tipo_multa, descripcion) FROM stdin;
 1	Multa por Declaracion Tardia
+\.
+
+
+--
+-- Data for Name: usuario_enlazado; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.usuario_enlazado (id_usuario_enlazado, id_contribuyente, email) FROM stdin;
+\.
+
+
+--
+-- Data for Name: verificacion_email; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.verificacion_email (id_verificacion_email, id_registro_municipal, codigo_recuperacion, fecha_recuperacion, verificado) FROM stdin;
+5	1	229367	2020-06-15 14:07:55.240867-04	t
+\.
+
+
+--
+-- Data for Name: verificacion_telefono; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.verificacion_telefono (id_verificacion_telefono, id_registro_municipal, codigo_recuperacion, fecha_recuperacion, verificado) FROM stdin;
 \.
 
 
@@ -7564,29 +7751,29 @@ COPY public.tramite_archivo_recaudo (id_tramite, url_archivo_recaudo) FROM stdin
 -- Data for Name: usuario; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.usuario (id_usuario, nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, id_tipo_usuario, password, telefono) FROM stdin;
-55	Super Usuario	super@user.com	Super Usuario	1	V	1	$2a$10$VVT8CHvO3jEEoj/djKK4Z.CGPO9JAHw1NMUIK6QwM3BEwElf68kUW	\N
-56	Administrador Bomberos	admin@bomberos.com	Bomberos	1231231231	V	2	$2a$10$nqEy4iyMTQJLAN.BOQ2GuuWioAwRcnXY7ClFbJtmp4svHLg9os/8m	1231231231
-58	External User	external@user.com	Aqui	27139153	V	4	$2a$10$1az9AKXYIZ48FrTXXnb24.QT89PZuCTh2n0zabqVW7G8YyKinYNXe	4127645681
-59	Administrador SAGAS	admin@sagas.com	SAGAS	123123	V	2	$2a$10$.avdkJGtcLhgw/UydHdZf.QEeiSoAjUxRM/xLiTA1gQLUDkDy4lfm	1231231231
-66	Administrador Alcaldia	admin@alcaldia.com	Alcaldia	99999999	V	2	$2a$10$OtCHXU7MOIa6a5K2dt.soOa4AvzrKvp5qY1RtYTaCQqpV2.KTsOyu	8123814877
-67	Administrador CPU	admin@cpu.com	CPU	1231234444	V	2	$2a$10$qEObA7PrDPq2vv/MsfcyFutEKZQuPdVxQnv.5cafIrxfaBnN/P0ba	1231239811
-70	Director CPU	director@cpu.com	CPU	27139154	V	5	$2a$10$yBVC5M9rGWV5i.i2Nyl1fOGg1FKV2HQ0keq3jPcOvrGXtrjEra.z.	1231231231
-65	Funcionario SAGAS	funcionario@sagas.com	SAGAS	123133333	V	3	$2a$10$Na8DEr4PxMVxAQXgeAGkR.DjVx7YX/8/FJIhPeePIrPzKItJvTscy	1231231231
-57	Funcionario Bomberos	funcionario@bomberos.com	Bomberos	123123123	V	3	$2a$10$fFZ3EHbzdimZ9tDvrGod9ureMPkROVtzScEd0pO/piaQh6RLmedMG	1231231233
-71	Funcionario Alcaldia	funcionario@alcaldia.com	Alcaldia	7878787855	V	3	$2a$10$4vosHs6BExfapyssBS5XUekAR9AUa2Be.mhjLuqqmr7i1aZCWUehu	7777777777
-72	Administrador Terminal	terminal@admin.com	Terminal	128488188	V	2	$2a$10$hIeSExSylu8RY2bVPk6dPeLzKIR7Wo0yNjvRyqxR/QwZqTYEEf4wq	1723817728
-73	Funcionario Terminal	funcionario@terminal.com	Terminal	1028124812	V	3	$2a$10$4oNhbsHJuAaFE.xY8bS1HOPakehWJmx6IkGbuaU57nBqro7iLsgg.	1092471093
-75	Funcionario SEDEPAR	funcionario@sedepar.com	SEDEPAR	1289417241	V	3	$2a$10$8.dFFea0jSaDPFYmH4GM9urNDgGy6SawTnqALfevVvQdzodEkR7fS	1974102937
-76	Administrador SEDEPAR	admin@sedepar.com	SEDEPAR	1294712034	V	2	$2a$10$mIBjS3jXMabi8XXohLECoeyKOUr.rZc8jlQXvdZcaSaZT88YLYLaG	8374198241
-77	Administrador Policia	admin@policia.com	Policia	1249712091	V	2	$2a$10$P.v8kW77Xzm1ecmVsuBVuu.5avlhiv8izDmK51hW2/Jj6q/j/beNi	1029471204
-78	Funcionario Policia	funcionario@policia.com	Policia	1293712049	V	3	$2a$10$e.DuvVSdwlr23z1I8B/STeX5V.8V3rhoeXgRWokiP.dEmf3A/eoPK	1927312029
-79	Administrador IMA	admin@ima.com	IMA	1028310919	V	2	$2a$10$I2NhOoazRC2gF0pIdzNXrumPh0soj/9/KDA5dx1RqDNrow1fNzsbG	1923109472
-80	Funcionario IMA	funcionario@ima.com	IMA	1231740197	V	3	$2a$10$eAu/NEg9vEd5nKXbjSyemODqqLt2J1nO4joWhwbDpZopJAj7N0ZSW	1902741092
-81	Administrador INTCUMA	admin@intcuma.com	INTCUMA	1239812938	V	2	$2a$10$mHlp3WfgE.99gg2i2wSI2OrL29UABov9Lo4iylvngFZTwAi2gmBOa	9132801238
-82	Funcionario INTCUMA	funcionario@intcuma.com	INTCUMA	1023102938	V	3	$2a$10$qVi/NuT7X1ELSfz5mpM8e.OrMKAuSqJLPQ4H45/SB/WiwUw2TkA2i	1829038123
-68	Funcionario CPU	funcionario@cpu.com	CPU	1283190247	V	3	$2a$10$qLVJeDD5mKiXlhrNQEJDtOX9baIZcjY3zwMmepViWXp.VENHwaOda	9271092741
-83	Admin SEDEMAT	admin@sedemat.com	SEDEMAT	1923812093	V	2	$2a$10$24HQ9feMqbPag1esm.IhIOkaAYcQlTKeKlTZlU8xg78bLqeQuCCMC	1902831092
+COPY public.usuario (id_usuario, nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, id_tipo_usuario, password, telefono, id_contribuyente) FROM stdin;
+55	Super Usuario	super@user.com	Super Usuario	1	V	1	$2a$10$VVT8CHvO3jEEoj/djKK4Z.CGPO9JAHw1NMUIK6QwM3BEwElf68kUW	\N	\N
+56	Administrador Bomberos	admin@bomberos.com	Bomberos	1231231231	V	2	$2a$10$nqEy4iyMTQJLAN.BOQ2GuuWioAwRcnXY7ClFbJtmp4svHLg9os/8m	1231231231	\N
+58	External User	external@user.com	Aqui	27139153	V	4	$2a$10$1az9AKXYIZ48FrTXXnb24.QT89PZuCTh2n0zabqVW7G8YyKinYNXe	4127645681	\N
+59	Administrador SAGAS	admin@sagas.com	SAGAS	123123	V	2	$2a$10$.avdkJGtcLhgw/UydHdZf.QEeiSoAjUxRM/xLiTA1gQLUDkDy4lfm	1231231231	\N
+66	Administrador Alcaldia	admin@alcaldia.com	Alcaldia	99999999	V	2	$2a$10$OtCHXU7MOIa6a5K2dt.soOa4AvzrKvp5qY1RtYTaCQqpV2.KTsOyu	8123814877	\N
+67	Administrador CPU	admin@cpu.com	CPU	1231234444	V	2	$2a$10$qEObA7PrDPq2vv/MsfcyFutEKZQuPdVxQnv.5cafIrxfaBnN/P0ba	1231239811	\N
+70	Director CPU	director@cpu.com	CPU	27139154	V	5	$2a$10$yBVC5M9rGWV5i.i2Nyl1fOGg1FKV2HQ0keq3jPcOvrGXtrjEra.z.	1231231231	\N
+65	Funcionario SAGAS	funcionario@sagas.com	SAGAS	123133333	V	3	$2a$10$Na8DEr4PxMVxAQXgeAGkR.DjVx7YX/8/FJIhPeePIrPzKItJvTscy	1231231231	\N
+57	Funcionario Bomberos	funcionario@bomberos.com	Bomberos	123123123	V	3	$2a$10$fFZ3EHbzdimZ9tDvrGod9ureMPkROVtzScEd0pO/piaQh6RLmedMG	1231231233	\N
+71	Funcionario Alcaldia	funcionario@alcaldia.com	Alcaldia	7878787855	V	3	$2a$10$4vosHs6BExfapyssBS5XUekAR9AUa2Be.mhjLuqqmr7i1aZCWUehu	7777777777	\N
+72	Administrador Terminal	terminal@admin.com	Terminal	128488188	V	2	$2a$10$hIeSExSylu8RY2bVPk6dPeLzKIR7Wo0yNjvRyqxR/QwZqTYEEf4wq	1723817728	\N
+73	Funcionario Terminal	funcionario@terminal.com	Terminal	1028124812	V	3	$2a$10$4oNhbsHJuAaFE.xY8bS1HOPakehWJmx6IkGbuaU57nBqro7iLsgg.	1092471093	\N
+75	Funcionario SEDEPAR	funcionario@sedepar.com	SEDEPAR	1289417241	V	3	$2a$10$8.dFFea0jSaDPFYmH4GM9urNDgGy6SawTnqALfevVvQdzodEkR7fS	1974102937	\N
+76	Administrador SEDEPAR	admin@sedepar.com	SEDEPAR	1294712034	V	2	$2a$10$mIBjS3jXMabi8XXohLECoeyKOUr.rZc8jlQXvdZcaSaZT88YLYLaG	8374198241	\N
+77	Administrador Policia	admin@policia.com	Policia	1249712091	V	2	$2a$10$P.v8kW77Xzm1ecmVsuBVuu.5avlhiv8izDmK51hW2/Jj6q/j/beNi	1029471204	\N
+78	Funcionario Policia	funcionario@policia.com	Policia	1293712049	V	3	$2a$10$e.DuvVSdwlr23z1I8B/STeX5V.8V3rhoeXgRWokiP.dEmf3A/eoPK	1927312029	\N
+79	Administrador IMA	admin@ima.com	IMA	1028310919	V	2	$2a$10$I2NhOoazRC2gF0pIdzNXrumPh0soj/9/KDA5dx1RqDNrow1fNzsbG	1923109472	\N
+80	Funcionario IMA	funcionario@ima.com	IMA	1231740197	V	3	$2a$10$eAu/NEg9vEd5nKXbjSyemODqqLt2J1nO4joWhwbDpZopJAj7N0ZSW	1902741092	\N
+81	Administrador INTCUMA	admin@intcuma.com	INTCUMA	1239812938	V	2	$2a$10$mHlp3WfgE.99gg2i2wSI2OrL29UABov9Lo4iylvngFZTwAi2gmBOa	9132801238	\N
+82	Funcionario INTCUMA	funcionario@intcuma.com	INTCUMA	1023102938	V	3	$2a$10$qVi/NuT7X1ELSfz5mpM8e.OrMKAuSqJLPQ4H45/SB/WiwUw2TkA2i	1829038123	\N
+68	Funcionario CPU	funcionario@cpu.com	CPU	1283190247	V	3	$2a$10$qLVJeDD5mKiXlhrNQEJDtOX9baIZcjY3zwMmepViWXp.VENHwaOda	9271092741	\N
+83	Admin SEDEMAT	admin@sedemat.com	SEDEMAT	1923812093	V	2	$2a$10$24HQ9feMqbPag1esm.IhIOkaAYcQlTKeKlTZlU8xg78bLqeQuCCMC	1902831092	\N
 \.
 
 
@@ -9656,6 +9843,13 @@ SELECT pg_catalog.setval('impuesto.actividad_economica_id_actividad_economica_se
 
 
 --
+-- Name: avaluo_inmueble_id_avaluo_inmueble_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.avaluo_inmueble_id_avaluo_inmueble_seq', 1, false);
+
+
+--
 -- Name: categoria_propaganda_id_categoria_propaganda_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -9673,7 +9867,7 @@ SELECT pg_catalog.setval('impuesto.contribuyente_exoneracion_id_contribuyente_ex
 -- Name: contribuyente_id_contribuyente_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.contribuyente_id_contribuyente_seq', 1, false);
+SELECT pg_catalog.setval('impuesto.contribuyente_id_contribuyente_seq', 1, true);
 
 
 --
@@ -9743,7 +9937,7 @@ SELECT pg_catalog.setval('impuesto.ramo_id_ramo_seq', 1, false);
 -- Name: registro_municipal_id_registro_municipal_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.registro_municipal_id_registro_municipal_seq', 1, false);
+SELECT pg_catalog.setval('impuesto.registro_municipal_id_registro_municipal_seq', 1, true);
 
 
 --
@@ -9807,6 +10001,27 @@ SELECT pg_catalog.setval('impuesto.tipo_aviso_propaganda_id_tipo_aviso_propagand
 --
 
 SELECT pg_catalog.setval('impuesto.tipo_multa_id_tipo_multa_seq', 1, true);
+
+
+--
+-- Name: usuario_enlazado_id_usuario_enlazado_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.usuario_enlazado_id_usuario_enlazado_seq', 1, false);
+
+
+--
+-- Name: verificacion_email_id_verificacion_email_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.verificacion_email_id_verificacion_email_seq', 5, true);
+
+
+--
+-- Name: verificacion_telefono_id_verificacion_telefono_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.verificacion_telefono_id_verificacion_telefono_seq', 1, false);
 
 
 --
@@ -10164,6 +10379,14 @@ ALTER TABLE ONLY impuesto.actividad_economica
 
 
 --
+-- Name: avaluo_inmueble avaluo_inmueble_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.avaluo_inmueble
+    ADD CONSTRAINT avaluo_inmueble_pkey PRIMARY KEY (id_avaluo_inmueble);
+
+
+--
 -- Name: categoria_propaganda categoria_propaganda_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -10329,6 +10552,30 @@ ALTER TABLE ONLY impuesto.tipo_aviso_propaganda
 
 ALTER TABLE ONLY impuesto.tipo_multa
     ADD CONSTRAINT tipo_multa_pkey PRIMARY KEY (id_tipo_multa);
+
+
+--
+-- Name: usuario_enlazado usuario_enlazado_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.usuario_enlazado
+    ADD CONSTRAINT usuario_enlazado_pkey PRIMARY KEY (id_usuario_enlazado);
+
+
+--
+-- Name: verificacion_email verificacion_email_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.verificacion_email
+    ADD CONSTRAINT verificacion_email_pkey PRIMARY KEY (id_verificacion_email);
+
+
+--
+-- Name: verificacion_telefono verificacion_telefono_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.verificacion_telefono
+    ADD CONSTRAINT verificacion_telefono_pkey PRIMARY KEY (id_verificacion_telefono);
 
 
 --
@@ -10898,6 +11145,14 @@ ALTER TABLE ONLY impuesto.actividad_economica_exoneracion
 
 
 --
+-- Name: avaluo_inmueble avaluo_inmueble_id_inmueble_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.avaluo_inmueble
+    ADD CONSTRAINT avaluo_inmueble_id_inmueble_fkey FOREIGN KEY (id_inmueble) REFERENCES public.inmueble_urbano(id_inmueble);
+
+
+--
 -- Name: contribuyente_exoneracion contribuyente_exoneracion_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11103,6 +11358,30 @@ ALTER TABLE ONLY impuesto.tipo_aviso_propaganda
 
 ALTER TABLE ONLY impuesto.tipo_aviso_propaganda
     ADD CONSTRAINT tipo_aviso_propaganda_id_valor_fkey FOREIGN KEY (id_valor) REFERENCES public.valor(id_valor);
+
+
+--
+-- Name: usuario_enlazado usuario_enlazado_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.usuario_enlazado
+    ADD CONSTRAINT usuario_enlazado_id_contribuyente_fkey FOREIGN KEY (id_contribuyente) REFERENCES impuesto.contribuyente(id_contribuyente);
+
+
+--
+-- Name: verificacion_email verificacion_email_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.verificacion_email
+    ADD CONSTRAINT verificacion_email_id_registro_municipal_fkey FOREIGN KEY (id_registro_municipal) REFERENCES impuesto.registro_municipal(id_registro_municipal);
+
+
+--
+-- Name: verificacion_telefono verificacion_telefono_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.verificacion_telefono
+    ADD CONSTRAINT verificacion_telefono_id_registro_municipal_fkey FOREIGN KEY (id_registro_municipal) REFERENCES impuesto.registro_municipal(id_registro_municipal);
 
 
 --
@@ -11439,6 +11718,14 @@ ALTER TABLE ONLY public.tramite
 
 ALTER TABLE ONLY public.tramite
     ADD CONSTRAINT tramites_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuario(id_usuario) ON DELETE CASCADE;
+
+
+--
+-- Name: usuario usuario_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.usuario
+    ADD CONSTRAINT usuario_id_contribuyente_fkey FOREIGN KEY (id_contribuyente) REFERENCES impuesto.contribuyente(id_contribuyente);
 
 
 --
