@@ -19,13 +19,11 @@ export const sendRimVerification = async (idRim: string, value: VerificationValu
         client.query('BEGIN');
         switch(value){
             case VerificationValue.Email:
-                console.log('AUXILIO')
                 alreadyExists = (await client.query(queries.VERIFY_EXISTING_EMAIL_VERIFICATION, [idRim])).rowCount > 0;
                 if(alreadyExists){
                     throw new Error('Ya hay una verificacion en curso');
                 }
                 await client.query(queries.INSERT_EMAIL_VERIFICATION, [idRim, code]);
-                console.log('AAAAAAA')
                 await transporter.sendMail({
                     from: 'waku@wakusoftware.com',
                     to: payload,
@@ -128,7 +126,6 @@ export const verifyCode = async (idRim: string, value: VerificationValue, code: 
                 
         }
         valid = res.rowCount > 0;
-        console.log(res.rows)
         
         if(valid){
             verificationId = value === VerificationValue.Email ? res.rows[0].id_verificacion_email : res.rows[0].id_verificacion_telefono;
