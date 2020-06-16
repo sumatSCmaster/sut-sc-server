@@ -479,6 +479,13 @@ export const insertSettlements = async ({ process, user }) => {
   let finingMonths: MultaImpuesto[] | undefined, finingAmount;
   try {
     client.query('BEGIN');
+    const contributorExists = (
+      await client.query(
+        'SELECT * FROM impuesto.contribuyente c INNER JOIN impuesto.registro_municipal rm ON c.id_contribuyente = rm.id_contribuyente WHERE rm.referencia_municipal = $1',
+        [process.rim]
+      )
+    ).rows[0];
+    if (!contributorExists) return { status: 404, message: 'No existe un contribuyente registrado en el sistema' };
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, process.rim])).rows[0];
 
@@ -621,12 +628,12 @@ export const insertSettlements = async ({ process, user }) => {
 
         return {
           id: liquidacion.id_liquidacion,
-          tipoProcedimiento: el.tipoImpuesto,
-          fecha: { month: liquidacion.mes, year: liquidacion.anio },
+          tipoProcedimiento: el.ramo,
+          fecha: datos.fecha,
           monto: liquidacion.monto,
           certificado: liquidacion.certificado,
           recibo: liquidacion.recibo,
-          desglose: liquidacion.datos,
+          desglose: datos.desglose,
         };
       })
     );

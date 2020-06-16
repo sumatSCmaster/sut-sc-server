@@ -619,8 +619,9 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     };
     return `SELECT * FROM impuesto.${type[typePick].table} d INNER JOIN impuesto.liquidacion l ON d.id_liquidacion = l.id_liquidacion INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud WHERE l.id_solicitud = $1;`;
   },
-  CREATE_TAX_PAYMENT_APPLICATION: 'SELECT * FROM impuesto.insert_solicitud($1, "eltramite", $2)',
-  CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION: 'SELECT * FROM insert_liquidacion($1,$2,$3,$4,$5',
+  CREATE_TAX_PAYMENT_APPLICATION:
+    "SELECT * FROM impuesto.insert_solicitud($1, (SELECT id_tipo_tramite FROM tipo_tramite WHERE nombre_tramite = 'Pago de Impuestos'), $2)",
+  CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION: 'SELECT * FROM insert_liquidacion($1,$2,$3,$4,$5)',
   CURRENT_AE_APPLICATION_EXISTS:
     'SELECT * FROM impuesto.solicitud_view sv INNER JOIN impuesto.registro_municipal rm ON sv.contribuyente = rm.id_contribuyente WHERE sv.documento = $1 AND rm.referencia_municipal = $2 AND sv."tipoDocumento" = $3 AND sv.aprobado = false AND "descripcionRamo" = \'AE\' AND (EXTRACT(month FROM sv."fechaCreacion"::date) = EXTRACT(month FROM now()::date));',
   CURRENT_SM_APPLICATION_EXISTS:
@@ -635,7 +636,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   CREATE_IU_BREAKDOWN_FOR_SETTLEMENT: 'INSERT INTO impuesto.iu_desglose (id_liquidacion, id_inmueble, monto) VALUES ($1, $2, $3) RETURNING *',
   CREATE_PP_BREAKDOWN_FOR_SETTLEMENT: 'INSERT INTO impuesto.pp_desglose (id_liquidacion, id_subarticulo, monto, cantidad) VALUES ($1, $2, $3, $4) RETURNING *',
   CREATE_FINING_FOR_LATE_APPLICATION:
-    "INSERT INTO impuesto.liquidacion (id_solicitud, monto, id_subramo, datos, fecha) VALUES ($1, $2, (SELECT sr.id_subramo FROM impuesto.subramo sr INNER JOIN impuesto.ramo r ON sr.id_ramo = r.id_ramo WHERE r.descripcion = 'MUL' AND sr.descripcion = 'Multa Actividad Economica'), $3, $4) RETURNING *",
+    "INSERT INTO impuesto.liquidacion (id_solicitud, monto, id_subramo, datos, fecha) VALUES ($1, $2, (SELECT sr.id_subramo FROM impuesto.subramo sr INNER JOIN impuesto.ramo r ON sr.id_ramo = r.id_ramo WHERE r.descripcion = 'MUL' AND sr.descripcion = 'Multa por Actividad Economica'), $3, $4) RETURNING *",
   UPDATE_PAID_STATE_FOR_TAX_PAYMENT_APPLICATION: 'UPDATE impuesto.solicitud SET pagado = true WHERE id_solicitud = $1',
   UPDATE_RECEIPT_FOR_SETTLEMENTS: 'UPDATE impuesto.liquidacion SET recibo = $1 WHERE id_procedimiento = $2 AND id_solicitud = $3',
   UPDATE_CERTIFICATE_SETTLEMENT: 'UPDATE impuesto.liquidacion SET certificado = $1 WHERE id_liquidacion = $2;',
@@ -650,16 +651,22 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   DELETE_HOLIDAY: 'DELETE FROM impuesto.dias_feriados WHERE id_dia_feriado = $1 RETURNING id_dia_feriado as id, dia, descripcion;',
 
   //VERIFICACION DE DATOS DE RIM
-  VERIFY_EXISTING_EMAIL_VERIFICATION: "SELECT 1 FROM impuesto.verificacion_email WHERE id_registro_municipal = $1 AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
-  VERIFY_EXISTING_PHONE_VERIFICATION: "SELECT 1 FROM impuesto.verificacion_telefono WHERE id_registro_municipal = $1 AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
+  VERIFY_EXISTING_EMAIL_VERIFICATION:
+    "SELECT 1 FROM impuesto.verificacion_email WHERE id_registro_municipal = $1 AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
+  VERIFY_EXISTING_PHONE_VERIFICATION:
+    "SELECT 1 FROM impuesto.verificacion_telefono WHERE id_registro_municipal = $1 AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
   INSERT_EMAIL_VERIFICATION: 'INSERT INTO impuesto.verificacion_email (id_registro_municipal, codigo_recuperacion) VALUES ($1, $2);',
   INSERT_PHONE_VERIFICATION: 'INSERT INTO impuesto.verificacion_telefono (id_registro_municipal, codigo_recuperacion) VALUES ($1, $2);',
-  VALIDATE_EMAIL_VERIFICATION: "SELECT * FROM impuesto.verificacion_email WHERE id_registro_municipal = $1 AND codigo_recuperacion = $2 AND verificado = false AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
-  VALIDATE_PHONE_VERIFICATION: "SELECT * FROM impuesto.verificacion_telefono WHERE id_registro_municipal = $1 AND codigo_recuperacion = $2 AND verificado = false AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
+  VALIDATE_EMAIL_VERIFICATION:
+    "SELECT * FROM impuesto.verificacion_email WHERE id_registro_municipal = $1 AND codigo_recuperacion = $2 AND verificado = false AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
+  VALIDATE_PHONE_VERIFICATION:
+    "SELECT * FROM impuesto.verificacion_telefono WHERE id_registro_municipal = $1 AND codigo_recuperacion = $2 AND verificado = false AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
   DISABLE_EMAIL_VERIFICATION: 'UPDATE impuesto.verificacion_email SET verificado = true WHERE id_verificacion_email = $1',
   DISABLE_PHONE_VERIFICATION: 'UPDATE impuesto.verificacion_telefono SET verificado = true WHERE id_verificacion_phone = $1',
-  FIND_EMAIL_CODE: "SELECT * FROM impuesto.verificacion_email ve INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = ve.id_registro_municipal WHERE id_registro_municipal = $1 AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
-  FIND_PHONE_CODE: "SELECT * FROM impuesto.verificacion_telefono vt INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = vt.id_registro_municipal WHERE id_registro_municipal = $1 AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
+  FIND_EMAIL_CODE:
+    "SELECT * FROM impuesto.verificacion_email ve INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = ve.id_registro_municipal WHERE id_registro_municipal = $1 AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
+  FIND_PHONE_CODE:
+    "SELECT * FROM impuesto.verificacion_telefono vt INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = vt.id_registro_municipal WHERE id_registro_municipal = $1 AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
 
   gtic: {
     GET_NATURAL_CONTRIBUTOR:
