@@ -239,9 +239,7 @@ const nullStringCheck = (str: string | null): string => {
   return str;
 };
 
-export const getTaxPayerInfo = async ({ docType, document, type }) => {
-  const client = await pool.connect();
-  const gtic = await gticPool.connect();
+export const getTaxPayerInfo = async ({ docType, document, type, gtic, client }) => {
   let taxPayer;
   try {
     const taxPayerExists = (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rowCount;
@@ -251,6 +249,8 @@ export const getTaxPayerInfo = async ({ docType, document, type }) => {
       if (!naturalContributor) return { status: 200, contribuyente: { tipoContribuyente: type }, message: 'No existe un usuario registrado en SEDEMAT' };
       taxPayer = {
         tipoContribuyente: type,
+        documento: document,
+        tipoDocumento: docType,
         nombreCompleto: `${naturalContributor.nb_contribuyente} ${naturalContributor.ap_contribuyente}`.replace('null', '').trim(),
         telefonoMovil: nullStringCheck(naturalContributor.nu_telf_movil).trim(),
         telefonoHabitacion: nullStringCheck(naturalContributor.nu_telf_hab).trim(),
@@ -270,6 +270,8 @@ export const getTaxPayerInfo = async ({ docType, document, type }) => {
       if (!juridicalContributor) return { status: 200, contribuyente: { tipoContribuyente: type }, message: 'No existe un usuario registrado en SEDEMAT' };
       taxPayer = {
         tipoContribuyente: type,
+        documento: document,
+        tipoDocumento: docType,
         razonSocial: nullStringCheck(juridicalContributor.tx_razon_social).trim(),
         siglas: nullStringCheck(juridicalContributor.tx_siglas).trim(),
         denomComercial: nullStringCheck(juridicalContributor.tx_denom_comercial).trim(),
@@ -287,25 +289,13 @@ export const getTaxPayerInfo = async ({ docType, document, type }) => {
         puntoReferencia: nullStringCheck(juridicalContributor.tx_punto_referencia).trim(),
       };
     }
-    return {
-      status: 200,
-      message: 'Datos del registro obtenidos',
-      contribuyente: taxPayer,
-    };
+    return taxPayer;
   } catch (error) {
-    console.log(error);
-    throw {
-      status: 500,
-      error,
-      message: errorMessageGenerator(error) || 'Error al obtener datos del contribuyente',
-    };
-  } finally {
-    client.release();
-    gtic.release();
+    throw error;
   }
 };
 
-const logInExternalLinking = async ({ credentials }) => {
+export const logInExternalLinking = async ({ credentials }) => {
   const client = await pool.connect();
   const gtic = await gticPool.connect();
   try {
@@ -314,16 +304,26 @@ const logInExternalLinking = async ({ credentials }) => {
     const contributors = await Promise.all(
       (await gtic.query(queries.gtic.GET_CONTRIBUTOR_BY_REPRESENTATIVE_USER_EXTENDED, [attemptedUser.id_tb004_contribuyente])).rows
         .map(async (el) => {
-          const sucursales = null;
           const inmuebles = {
             liquidaciones: null,
             multas: null,
             creditoFiscal: null,
           };
+          return {
+            contribuyente: await getTaxPayerInfo({
+              docType: el.tx_tp_doc,
+              document: el.tx_dist_contribuyente === 'J' ? el.tx_rif : el.nu_cedula,
+              type: el.tx_dist_contribuyente === 'J' ? 'JURIDICO' : 'NATURAL',
+              gtic,
+              client,
+            }),
+            sucursales: null,
+            inmuebles: null,
+          };
         })
         .filter((el) => el)
     );
-    return { status: 200, message: 'Informacion de enlace de cuenta obtenida', usuario: null };
+    return { status: 200, message: 'Informacion de enlace de cuenta obtenida', usuario: contributors };
   } catch (error) {
     console.log(error);
     throw {

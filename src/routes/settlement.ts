@@ -10,6 +10,7 @@ import {
   createAccountStatement,
   getTaxPayerInfo,
   getApplicationsAndSettlementsForContributor,
+  logInExternalLinking,
 } from '@helpers/settlement';
 
 const router = Router();
@@ -22,12 +23,12 @@ router.get('/', authenticate('jwt'), async (req, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-router.get('/taxPayer', authenticate('jwt'), async (req, res) => {
-  const { tipoDocumento, documento, tipoContribuyente } = req.query;
-  const [err, data] = await fulfill(getTaxPayerInfo({ docType: tipoDocumento, document: documento, type: tipoContribuyente }));
-  if (err) res.status(err.status).json(err);
-  if (data) res.status(data.status).json(data);
-});
+// router.get('/taxPayer', authenticate('jwt'), async (req, res) => {
+//   const { tipoDocumento, documento, tipoContribuyente } = req.query;
+//   const [err, data] = await fulfill(getTaxPayerInfo({ docType: tipoDocumento, document: documento, type: tipoContribuyente }));
+//   if (err) res.status(err.status).json(err);
+//   if (data) res.status(data.status).json(data);
+// });
 
 router.get('/accountStatement/:contributor', async (req: any, res) => {
   const { contributor } = req.params;
@@ -75,12 +76,15 @@ router.post('/:id/:certificate', authenticate('jwt'), async (req: any, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-router.post('/login', authenticate('jwt'), async (req, res) => {
-  const { contribuyente } = req.body;
-  const [error, data] = await fulfill(insertSettlements({ process: contribuyente, user: req.user }));
-  if (error) res.status(500).json(error);
-  if (data) res.status(data.status).json(data);
-});
+router.post(
+  '/login',
+  /*authenticate('jwt'), */ async (req, res) => {
+    const { usuario } = req.body;
+    const [error, data] = await fulfill(logInExternalLinking({ credentials: usuario }));
+    if (error) res.status(500).json(error);
+    if (data) res.status(data.status).json(data);
+  }
+);
 
 router.post('/taxPayer', authenticate('jwt'), async (req, res) => {
   const { contribuyente } = req.body;

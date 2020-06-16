@@ -743,6 +743,10 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
       'SELECT * FROM tb004_contribuyente c  INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo INNER JOIN\
        tb079_liquidacion l ON l.co_contribuyente = c.co_contribuyente WHERE nu_referencia = $1 AND nu_monto_bolivar_fuerte IS NULL AND \
        l.anio_liquidacion = EXTRACT(year FROM CURRENT_DATE) ORDER BY fe_liquidacion DESC;',
+    GET_SETTLEMENTS_BY_CONTRIBUTOR:
+      'SELECT * FROM tb004_contribuyente c  INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo INNER JOIN\
+    tb079_liquidacion l ON l.co_contribuyente = c.co_contribuyente WHERE co_contribuyente = $1 AND nu_monto_bolivar_fuerte IS NULL AND \
+    l.anio_liquidacion = EXTRACT(year FROM CURRENT_DATE) ORDER BY fe_liquidacion DESC;',
     GET_FISCAL_CREDIT_BY_MUNICIPAL_REGISTRY:
       'SELECT * FROM tb004_contribuyente c  INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo INNER JOIN\
        t67_credito_fiscal cf ON cf.co_contribuyente = c.co_contribuyente WHERE nu_referencia = $1;',
