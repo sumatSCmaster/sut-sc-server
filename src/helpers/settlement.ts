@@ -236,7 +236,7 @@ export const getSettlements = async ({ document, reference, type, user }) => {
 
 const nullStringCheck = (str: string | null): string => {
   if (!str) return '';
-  return str;
+  return str.trim();
 };
 
 export const getTaxPayerInfo = async ({ docType, document, type, gtic, client }) => {
@@ -295,6 +295,39 @@ export const getTaxPayerInfo = async ({ docType, document, type, gtic, client })
   }
 };
 
+const structureEstates = (x: any) => {
+  return {
+    id: nullStringCheck(x.co_inmueble),
+    direccion: nullStringCheck(x.tx_direccion),
+    email: nullStringCheck(x.tx_email),
+    razonSocial: nullStringCheck(x.tx_razon_social),
+    denomComercial: nullStringCheck(x.tx_denom_comercial),
+    metrosCuadrados: +x.nu_metro_cuadrado,
+    cuentaContrato: x.cuenta_contrato,
+    nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined),
+  };
+};
+
+const structureSettlements = (x: any) => {
+  return {
+    id: nullStringCheck(x.co_liquidacion),
+    estado: nullStringCheck(x.co_estatus === 1 ? 'VIGENTE' : 'PAGADO'),
+    ramo: nullStringCheck(x.tx_ramo),
+    codigoRamo: nullStringCheck(x.nb_ramo),
+    monto: nullStringCheck(x.nu_monto),
+    fecha: { month: moment(x.fe_liquidacion).toDate().toLocaleDateString('ES', { month: 'long' }), year: moment(x.fe_liquidacion).year() },
+  };
+};
+
+const structureFinings = (x: any) => {
+  return {
+    id: nullStringCheck(x.co_decl_multa),
+    estado: nullStringCheck(x.in_activo ? 'VIGENTE' : 'PAGADO'),
+    monto: nullStringCheck(x.nu_monto),
+    fecha: { month: moment(x.created_at).toDate().toLocaleDateString('ES', { month: 'long' }), year: moment(x.created_at).year() },
+  };
+};
+
 export const logInExternalLinking = async ({ credentials }) => {
   const client = await pool.connect();
   const gtic = await gticPool.connect();
@@ -304,21 +337,138 @@ export const logInExternalLinking = async ({ credentials }) => {
     const contributors = await Promise.all(
       (await gtic.query(queries.gtic.GET_CONTRIBUTOR_BY_REPRESENTATIVE_USER_EXTENDED, [attemptedUser.id_tb004_contribuyente])).rows
         .map(async (el) => {
-          const inmuebles = {
-            liquidaciones: null,
-            multas: null,
-            creditoFiscal: null,
-          };
           return {
-            contribuyente: await getTaxPayerInfo({
+            datosContribuyente: await getTaxPayerInfo({
               docType: el.tx_tp_doc,
               document: el.tx_dist_contribuyente === 'J' ? el.tx_rif : el.nu_cedula,
               type: el.tx_dist_contribuyente === 'J' ? 'JURIDICO' : 'NATURAL',
               gtic,
               client,
             }),
-            sucursales: null,
-            inmuebles: null,
+            sucursales: await Promise.all(
+              el.tx_dist_contribuyente === 'J'
+                ? (await gtic.query(queries.gtic.GET_JURIDICAL_CONTRIBUTOR, [el.tx_rif, el.tx_tp_doc])).rows.map(async (x) => {
+                    const inmuebles = await Promise.all(
+                      (await gtic.query(queries.gtic.GET_ESTATES_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureEstates(j))
+                    );
+                    const liquidaciones = await Promise.all(
+                      (await gtic.query(queries.gtic.GET_SETTLEMENTS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureSettlements(j))
+                    );
+                    const creditoFiscal = (await gtic.query(queries.gtic.GET_FISCAL_CREDIT_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows[0];
+                    const multas = await Promise.all(
+                      (await gtic.query(queries.gtic.GET_FININGS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureFinings(j))
+                    );
+                    inmuebles.push({
+                      id: x.co_contribuyente,
+                      direccion: nullStringCheck(x.tx_direccion),
+                      email: nullStringCheck(x.tx_email),
+                      razonSocial: nullStringCheck(x.tx_razon_social),
+                      denomComercial: nullStringCheck(x.tx_denom_comercial),
+                      metrosCuadrados: 0.0,
+                      cuentaContrato: 0.0,
+                      nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined).trim(),
+                    });
+                    const datosSucursal = {
+                      id: nullStringCheck(x.co_contribuyente),
+                      direccion: nullStringCheck(x.tx_direccion),
+                      email: nullStringCheck(x.tx_email),
+                      razonSocial: nullStringCheck(x.tx_razon_social),
+                      denomComercial: nullStringCheck(x.tx_denom_comercial),
+                      metrosCuadrados: 0.0,
+                      cuentaContrato: 0.0,
+                      nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined),
+                      telefonoMovil: nullStringCheck(x.nu_telf_representante || x.nu_telf_movil),
+                      registroMunicipal: nullStringCheck(x.nu_referencia),
+                      creditoFiscal: creditoFiscal ? creditoFiscal.mo_haber : 0,
+                    };
+                    return { datosSucursal, inmuebles, liquidaciones, multas };
+                  })
+                : (await gtic.query(queries.gtic.GET_NATURAL_CONTRIBUTOR, [el.nu_cedula, el.tx_tp_doc])).rows.map(async (x) => {
+                    let datos;
+                    if (x.nu_referencia) {
+                      const inmuebles = await Promise.all(
+                        (await gtic.query(queries.gtic.GET_ESTATES_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureEstates(j))
+                      );
+                      const liquidaciones = await Promise.all(
+                        (await gtic.query(queries.gtic.GET_SETTLEMENTS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureSettlements(j))
+                      );
+                      const creditoFiscal = (await gtic.query(queries.gtic.GET_FISCAL_CREDIT_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows[0];
+                      const multas = await Promise.all(
+                        (await gtic.query(queries.gtic.GET_FININGS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureFinings(j))
+                      );
+
+                      inmuebles.push({
+                        id: x.co_contribuyente,
+                        direccion: nullStringCheck(x.tx_direccion),
+                        email: nullStringCheck(x.tx_email),
+                        razonSocial: nullStringCheck(x.tx_razon_social),
+                        denomComercial: nullStringCheck(x.tx_denom_comercial),
+                        metrosCuadrados: 0.0,
+                        cuentaContrato: 0.0,
+                        nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined).trim(),
+                      });
+                      const datosSucursal = {
+                        id: nullStringCheck(x.co_contribuyente),
+                        direccion: nullStringCheck(x.tx_direccion),
+                        email: nullStringCheck(x.tx_email),
+                        razonSocial: nullStringCheck(x.tx_razon_social),
+                        denomComercial: nullStringCheck(x.tx_denom_comercial),
+                        metrosCuadrados: 0.0,
+                        cuentaContrato: 0.0,
+                        nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined),
+                        telefonoMovil: nullStringCheck(x.nu_telf_representante || x.nu_telf_movil),
+                        registroMunicipal: nullStringCheck(x.nu_referencia),
+                        creditoFiscal: creditoFiscal ? creditoFiscal.mo_haber : 0,
+                      };
+                      datos = {
+                        datosSucursal,
+                        inmuebles,
+                        liquidaciones,
+                        multas,
+                      };
+                    } else {
+                      const inmuebles = await Promise.all(
+                        (await gtic.query(queries.gtic.GET_ESTATES_BY_CONTRIBUTOR, [x.co_contribuyente])).rows.map((j) => structureEstates(j))
+                      );
+                      const liquidaciones = await Promise.all(
+                        (await gtic.query(queries.gtic.GET_SETTLEMENTS_BY_CONTRIBUTOR, [x.co_contribuyente])).rows.map((j) => structureSettlements(j))
+                      );
+                      const creditoFiscal = (await gtic.query(queries.gtic.GET_FISCAL_CREDIT_BY_CONTRIBUTOR, [x.co_contribuyente])).rows[0];
+                      const multas = await Promise.all(
+                        (await gtic.query(queries.gtic.GET_FININGS_BY_CONTRIBUTOR, [x.co_contribuyente])).rows.map((j) => structureFinings(j))
+                      );
+                      inmuebles.push({
+                        id: x.co_contribuyente,
+                        direccion: nullStringCheck(x.tx_direccion),
+                        email: nullStringCheck(x.tx_email),
+                        razonSocial: nullStringCheck(x.tx_razon_social),
+                        denomComercial: nullStringCheck(x.tx_denom_comercial),
+                        metrosCuadrados: 0.0,
+                        cuentaContrato: 0.0,
+                        nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined).trim(),
+                      });
+                      const datosSucursal = {
+                        id: nullStringCheck(x.co_contribuyente),
+                        direccion: nullStringCheck(x.tx_direccion),
+                        email: nullStringCheck(x.tx_email),
+                        razonSocial: nullStringCheck(x.tx_razon_social),
+                        denomComercial: nullStringCheck(x.tx_denom_comercial),
+                        metrosCuadrados: 0.0,
+                        cuentaContrato: 0.0,
+                        nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined),
+                        telefonoMovil: nullStringCheck(x.nu_telf_representante || x.nu_telf_movil),
+                        creditoFiscal: creditoFiscal ? creditoFiscal.mo_haber : 0,
+                      };
+                      datos = {
+                        datosSucursal,
+                        inmuebles,
+                        liquidaciones,
+                        multas,
+                      };
+                    }
+                    return datos;
+                  })
+            ),
           };
         })
         .filter((el) => el)
@@ -339,12 +489,16 @@ export const logInExternalLinking = async ({ credentials }) => {
 
 const externalUserForLinkingExists = async ({ user, password, gtic }: { user: string; password: string; gtic: PoolClient }) => {
   try {
-    const gticUser = (await gtic.query(queries.gtic.GET_REPRESENTATIVE_BY_EMAIL, [user])).rows[0];
-    if (!gticUser) return { canBeLinked: false };
-    const isAttemptedUser = gticUser.tx_password.startsWith('$')
-      ? await bcrypt.compare(password, gticUser.tx_password)
-      : md5(password) === gticUser.tx_password;
-    return { attemptedUser: gticUser, canBeLinked: isAttemptedUser };
+    const gticUser = (await gtic.query(queries.gtic.GET_REPRESENTATIVE_BY_EMAIL, [user])).rows;
+    if (!gticUser[0]) return { canBeLinked: false };
+    const isAttemptedUser = gticUser
+      .map((el) => ({
+        loggedIn: el.tx_password.startsWith('$') ? bcrypt.compareSync(password, el.tx_password) : md5(password) === el.tx_password,
+        contribuyente: el,
+      }))
+      .find((x) => x.loggedIn);
+    console.log(isAttemptedUser);
+    return { attemptedUser: isAttemptedUser?.contribuyente, canBeLinked: isAttemptedUser?.loggedIn };
   } catch (e) {
     throw e;
   }
