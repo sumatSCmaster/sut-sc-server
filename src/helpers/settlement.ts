@@ -473,7 +473,7 @@ export const logInExternalLinking = async ({ credentials }) => {
         })
         .filter((el) => el)
     );
-    return { status: 200, message: 'Informacion de enlace de cuenta obtenida', usuario: contributors };
+    return { status: 200, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: contributors };
   } catch (error) {
     console.log(error);
     throw {
