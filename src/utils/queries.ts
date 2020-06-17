@@ -754,9 +754,13 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
       'SELECT cf.* FROM t67_credito_fiscal cf WHERE cf.co_contribuyente = $1 AND in_activo = true ORDER BY co_credito_fiscal DESC LIMIT 1;',
     GET_FININGS_BY_MUNICIPAL_REGISTRY:
       'SELECT dm.* FROM tb004_contribuyente c  INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo INNER JOIN\
-       tb051_ae_decl_multa dm ON dm.co_contribuyente = c.co_contribuyente WHERE nu_referencia = $1 AND EXTRACT(YEAR FROM dm.created_at) = EXTRACT(YEAR FROM CURRENT_DATE);',
+       tb051_ae_decl_multa dm ON dm.co_contribuyente = c.co_contribuyente INNER JOIN tb079_liquidacion l ON l.co_liquidacion = dm.co_liquidacion_propio \
+       INNER JOIN tb046_ae_ramo r ON r.co_ramo = l.co_ramo INNER JOIN tb034_motivo m ON m.co_motivo = l.co_motivo \
+       WHERE nu_referencia = $1 AND EXTRACT(YEAR FROM dm.created_at) = EXTRACT(YEAR FROM CURRENT_DATE);',
     GET_FININGS_BY_CONTRIBUTOR:
-      'SELECT dm.* FROM tb051_ae_decl_multa dm WHERE co_contribuyente = $1 AND EXTRACT(YEAR FROM dm.created_at) = EXTRACT(YEAR FROM CURRENT_DATE);',
+      'SELECT dm.*,l.*, r.*, m.* FROM tb051_ae_decl_multa dm INNER JOIN tb079_liquidacion l ON l.co_liquidacion = dm.co_liquidacion_propio \
+      INNER JOIN tb046_ae_ramo r ON r.co_ramo = l.co_ramo INNER JOIN tb034_motivo m ON m.co_motivo = l.co_motivo \
+      WHERE dm.co_contribuyente = 233425 AND EXTRACT(YEAR FROM dm.created_at) = EXTRACT(YEAR FROM CURRENT_DATE);',
   },
 };
 
