@@ -616,12 +616,15 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
   }
 };
 
-export const getApplicationsAndSettlementsForContributor = async ({ referencia, docType, document }) => {
+export const getApplicationsAndSettlementsForContributor = async ({ referencia, docType, document, typeUser }) => {
   const client = await pool.connect();
   try {
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const applications: Solicitud[] = await Promise.all(
-      (await client.query(queries.GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR, [referencia, document, docType])).rows.map(async (el) => {
+      (typeUser === 'JURIDICO'
+        ? await client.query(queries.GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR, [referencia, document, docType])
+        : await client.query(queries.GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR, [document, docType])
+      ).rows.map(async (el) => {
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
 
         return {
@@ -661,6 +664,20 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
       })
     );
     return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', solicitudes: applications };
+  } catch (error) {
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const completeUserLinking = async () => {
+  const client = await pool.connect();
+  try {
   } catch (error) {
     throw {
       status: 500,

@@ -49,9 +49,11 @@ router.get('/instances', authenticate('jwt'), async (req: any, res) => {
 
 //TODO: incluir validacion de que sea funcionario
 router.get('/instances/:referencia', authenticate('jwt'), async (req, res) => {
-  const { tipoDocumento, documento } = req.query;
+  const { tipoDocumento, documento, tipoContribuyente } = req.query;
   const { referencia } = req.params;
-  const [err, data] = await fulfill(getApplicationsAndSettlementsForContributor({ referencia, docType: tipoDocumento, document: documento }));
+  const [err, data] = await fulfill(
+    getApplicationsAndSettlementsForContributor({ referencia, docType: tipoDocumento, document: documento, typeUser: tipoContribuyente })
+  );
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
 });
