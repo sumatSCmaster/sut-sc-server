@@ -1,6 +1,6 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
-import { errorMessageGenerator } from './errors';
+import { errorMessageGenerator, errorMessageExtractor } from './errors';
 
 const pool = Pool.getInstance();
 
@@ -35,7 +35,7 @@ export const validateDocById = async (id: string) => {
   } catch (e) {
     throw {
       status: 500,
-      error: e,
+      error: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error al obtener informacion de validacion',
     };
   } finally {
@@ -62,7 +62,7 @@ export const validateSedematById = async (id: string) => {
   } catch (e) {
     throw {
       status: 500,
-      error: e,
+      error: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error al obtener informacion de validacion',
     };
   } finally {

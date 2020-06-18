@@ -1,6 +1,6 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
-import { errorMessageGenerator } from './errors';
+import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { validateProcedure } from './procedures';
 import { validateFining } from './fines';
 import { PoolClient } from 'pg';
@@ -20,7 +20,7 @@ export const getAllBanks = async () => {
   } catch (e) {
     throw {
       status: 500,
-      error: e,
+      error: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error al obtener los tramites',
     };
   } finally {
@@ -63,7 +63,7 @@ export const validatePayments = async (body, user) => {
     };
   } catch (e) {
     console.log(e);
-    throw e;
+    throw errorMessageExtractor(e);
   } finally {
     client.release();
   }
@@ -74,7 +74,7 @@ export const insertPaymentReference = async (payment: any, procedure: number, cl
   try {
     return await client.query(queries.INSERT_PAYMENT, [procedure, referencia, costo, banco, fecha, concepto]);
   } catch (e) {
-    throw e;
+    throw errorMessageExtractor(e);
   }
 };
 

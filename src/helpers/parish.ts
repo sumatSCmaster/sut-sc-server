@@ -1,7 +1,7 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { Parroquia } from '@interfaces/sigt';
-import { errorMessageGenerator } from './errors';
+import { errorMessageGenerator, errorMessageExtractor } from './errors';
 const pool = Pool.getInstance();
 
 export const getAllParishes = async (): Promise<{
@@ -17,7 +17,7 @@ export const getAllParishes = async (): Promise<{
   } catch (error) {
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener las parroquias',
     };
   } finally {
@@ -33,7 +33,7 @@ export const getSectorByParish = async (parish) => {
   } catch (error) {
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al crear el codigo catastral',
     };
   } finally {

@@ -1,7 +1,7 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { Institucion, TipoTramite, Tramite, Usuario } from '@interfaces/sigt';
-import { errorMessageGenerator } from './errors';
+import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import switchcase from '@utils/switch';
 import { sendNotification } from './notification';
 const pool = Pool.getInstance();
@@ -43,7 +43,7 @@ export const affairInit = async (affair, user) => {
     client.query('ROLLBACK');
     throw {
       status: 500,
-      ...error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || error.message || 'Error al iniciar el caso social',
     };
   } finally {
@@ -87,7 +87,7 @@ export const updateAffair = async (affair, user) => {
     client.query('ROLLBACK');
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al actualizar el caso social',
     };
   } finally {

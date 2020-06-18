@@ -5,6 +5,7 @@ import transporter from '@utils/mail';
 import { VerificationValue } from '@interfaces/sigt';
 import queries from '@utils/queries';
 import { QueryResult } from 'pg';
+import { errorMessageExtractor } from '@helpers/errors'
 
 const pool = Pool.getInstance();
 

@@ -1,6 +1,6 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
-import { errorMessageGenerator } from './errors';
+import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { createTransport, createTestAccount } from 'nodemailer';
 import { v4 as uuidv4 } from 'uuid';
 import { genSalt, hash } from 'bcryptjs';
@@ -29,7 +29,7 @@ export const forgotPassword = async email => {
   } catch (e) {
     throw {
       status: 500,
-      error: e,
+      error: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error al iniciar proceso de recuperación',
     };
   } finally {
@@ -56,7 +56,7 @@ export const recoverPassword = async (recoverToken, password) => {
     client.query('ROLLBACK');
     throw {
       status: 500,
-      error: e,
+      error: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error al iniciar proceso de recuperación',
     };
   } finally {

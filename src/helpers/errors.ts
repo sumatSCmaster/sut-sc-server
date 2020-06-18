@@ -10,3 +10,12 @@ export const errorMessageGenerator = pgError => {
   }
   return msg;
 };
+
+
+export const errorMessageExtractor = error => {
+  if ('internalQuery' in error){
+    return error
+  }else{
+    return error.message;
+  }
+}

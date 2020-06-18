@@ -1,7 +1,7 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { Parroquia } from '@interfaces/sigt';
-import { errorMessageGenerator } from './errors';
+import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { PoolClient } from 'pg';
 const pool = Pool.getInstance();
 
@@ -26,7 +26,7 @@ export const getDataForTaxValues = async () => {
   } catch (error) {
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al crear el codigo catastral',
     };
   } finally {
@@ -55,7 +55,7 @@ export const getTaxValuesToDate = async () => {
   } catch (error) {
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener los valores fiscales actualizados',
     };
   } finally {
@@ -125,7 +125,7 @@ export const updateGroundValuesByFactor = async (ground) => {
     client.query('ROLLBACK');
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al actualizar el valor fiscal de los terrenos',
     };
   } finally {
@@ -152,7 +152,7 @@ export const updateConstructionValuesByFactor = async (construction) => {
     client.query('ROLLBACK');
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al actualizar el valor fiscal de las construcciones',
     };
   } finally {
@@ -193,7 +193,7 @@ export const updateGroundValuesBySector = async (ground, sector) => {
     client.query('ROLLBACK');
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al actualizar el valor fiscal del terreno',
     };
   } finally {

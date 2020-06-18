@@ -1,6 +1,6 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
-import { errorMessageGenerator } from './errors';
+import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { PoolClient } from 'pg';
 import GticPool from '@utils/GticPool';
 import { insertPaymentReference } from './banks';
@@ -225,7 +225,7 @@ export const getSettlements = async ({ document, reference, type, user }) => {
     console.log(error);
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener los impuestos',
     };
   } finally {
@@ -291,7 +291,7 @@ export const getTaxPayerInfo = async ({ docType, document, type, gtic, client })
     }
     return taxPayer;
   } catch (error) {
-    throw error;
+    throw errorMessageExtractor(error);
   }
 };
 
@@ -479,7 +479,7 @@ export const logInExternalLinking = async ({ credentials }) => {
     console.log(error);
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener datos del contribuyente',
     };
   } finally {
@@ -501,7 +501,7 @@ const externalUserForLinkingExists = async ({ user, password, gtic }: { user: st
     console.log(isAttemptedUser);
     return { attemptedUser: isAttemptedUser?.contribuyente, canBeLinked: isAttemptedUser?.loggedIn };
   } catch (e) {
-    throw e;
+    throw errorMessageExtractor(e);
   }
 };
 
@@ -552,7 +552,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
   } catch (error) {
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
     };
   } finally {
@@ -608,7 +608,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
   } catch (error) {
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
     };
   } finally {
@@ -667,7 +667,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
   } catch (error) {
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
     };
   } finally {
@@ -883,7 +883,7 @@ export const insertSettlements = async ({ process, user }) => {
     client.query('ROLLBACK');
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al crear liquidaciones',
     };
   } finally {
@@ -931,7 +931,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
     console.log(error);
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al insertar referencias de pago',
     };
   } finally {
@@ -960,7 +960,7 @@ export const validateApplication = async (body, user) => {
     client.query('ROLLBACK');
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al validar el pago',
     };
   } finally {
@@ -988,7 +988,7 @@ export const createCertificateForApplication = async ({ settlement, media, user 
     console.log(error);
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener los impuestos',
     };
   } finally {
@@ -1074,7 +1074,7 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
       }
     });
   } catch (error) {
-    throw error;
+    throw errorMessageExtractor(error);
   }
 };
 
@@ -1339,12 +1339,12 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
         console.log(e);
         throw {
           message: 'Error en generacion de certificado de SM',
-          e,
+          e: errorMessageExtractor(e),
         };
       }
     });
   } catch (error) {
-    throw error;
+    throw errorMessageExtractor(error);
   }
 };
 
@@ -1441,7 +1441,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
       }
     });
   } catch (error) {
-    throw error;
+    throw errorMessageExtractor(error);
   }
 };
 
@@ -1539,7 +1539,7 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
       }
     });
   } catch (error) {
-    throw error;
+    throw errorMessageExtractor(error);
   }
 };
 
@@ -1634,7 +1634,7 @@ export const createAccountStatement = async (contributor) => {
     console.log(error);
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al crear el certificado',
     };
   } finally {
@@ -1743,7 +1743,7 @@ const certificateCreationHandler = async (process, media, payload: CertificatePa
     if (result) return await result(payload);
     throw new Error('No se encontró el tipo de certificado seleccionado');
   } catch (e) {
-    throw e;
+    throw errorMessageExtractor(e);
   }
 };
 

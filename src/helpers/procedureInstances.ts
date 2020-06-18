@@ -17,7 +17,7 @@ export const updateProcedureInstanceCost = async (body: Payloads.UpdateProcedure
     await client.query('ROLLBACK');
     throw {
       status: 500,
-      e,
+      e: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error al actualizar el costo del tramite',
     };
   } finally {

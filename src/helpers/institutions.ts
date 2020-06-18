@@ -1,7 +1,7 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { Institucion } from '@interfaces/sigt';
-import { errorMessageGenerator } from './errors';
+import { errorMessageGenerator, errorMessageExtractor } from './errors';
 const pool = Pool.getInstance();
 
 export const getAllInstitutions = async (): Promise<{
@@ -23,7 +23,7 @@ export const getAllInstitutions = async (): Promise<{
   } catch (error) {
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener las instituciones',
     };
   } finally {

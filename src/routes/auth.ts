@@ -9,7 +9,7 @@ import { checkResult } from '@validations/index';
 import { createSuperuser, createAdmin, completeExtUserSignUp, addInstitute, signUpUser, addPermissions } from '@helpers/user';
 import { isSuperuser, isAdmin } from '@middlewares/auth';
 import { fulfill } from '@utils/resolver';
-import { errorMessageGenerator } from '@helpers/errors';
+import { errorMessageGenerator, errorMessageExtractor } from '@helpers/errors';
 import { forgotPassword, recoverPassword, getUserData } from '@helpers/auth';
 
 const router = Router();
@@ -70,6 +70,7 @@ router.post('/createAdmin', authenticate('jwt'), isSuperuser, authValidations.cr
     const user = await createAdmin({ ...req.body.usuario }).catch((e) => {
       res.status(500).json({
         status: 500,
+        error: errorMessageExtractor(e),
         message: errorMessageGenerator(e) || e.message,
       });
     });
@@ -83,6 +84,7 @@ router.post('/createAdmin', authenticate('jwt'), isSuperuser, authValidations.cr
   } catch (e) {
     res.status(500).json({
       status: 500,
+      error: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error en la creación de un administrador',
     });
   }
@@ -96,6 +98,7 @@ router.post('/createSuperuser', authValidations.createSuperuser, checkResult, as
       const user = await createSuperuser({ ...req.body.usuario }).catch((e) => {
         res.status(500).json({
           status: 500,
+          error: errorMessageExtractor(e),
           message: errorMessageGenerator(e) || 'La creación del superusuario falló',
         });
       });
@@ -109,6 +112,7 @@ router.post('/createSuperuser', authValidations.createSuperuser, checkResult, as
     } catch (e) {
       res.status(500).json({
         status: 500,
+        error: errorMessageExtractor(e),
         message: errorMessageGenerator(e) || 'La creación del superusuario falló',
       });
     }
