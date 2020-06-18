@@ -575,7 +575,9 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   TAX_PAYER_EXISTS: 'SELECT * FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2',
   GET_APPLICATION_BY_ID: 'SELECT * FROM impuesto.solicitud WHERE id_solicitud = $1',
   GET_APPLICATION_INSTANCES_BY_USER: 'SELECT * FROM impuesto.solicitud WHERE id_usuario = $1',
-  GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR: 'SELECT * FROM impuesto.solicitud WHERE nacionalidad = $1 AND documento = $2',
+  GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR:
+    'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.contribuyente c ON s.id_contribuyente = c.id_contribuyente INNER JOIN\
+     impuesto.registro_municipal r ON c.id_contribuyente = r.id_contribuyente WHERE r.referencia_municipal = $1 AND c.documento = $2 AND c.tipo_documento = $3;',
   GET_SETTLEMENTS_BY_APPLICATION_INSTANCE:
     'SELECT l.*, r.descripcion AS "tipoProcedimiento" FROM impuesto.liquidacion l INNER JOIN impuesto.subramo sr ON l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo r ON sr.id_ramo = r.id_ramo WHERE id_solicitud = $1',
   GET_SETTLEMENT_INSTANCES:
@@ -760,7 +762,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     GET_FININGS_BY_CONTRIBUTOR:
       'SELECT dm.*,l.*, r.*, m.* FROM tb051_ae_decl_multa dm INNER JOIN tb079_liquidacion l ON l.co_liquidacion = dm.co_liquidacion_propio \
       INNER JOIN tb046_ae_ramo r ON r.co_ramo = l.co_ramo INNER JOIN tb034_motivo m ON m.co_motivo = l.co_motivo \
-      WHERE dm.co_contribuyente = 233425 AND EXTRACT(YEAR FROM dm.created_at) = EXTRACT(YEAR FROM CURRENT_DATE);',
+      WHERE dm.co_contribuyente = $1 AND EXTRACT(YEAR FROM dm.created_at) = EXTRACT(YEAR FROM CURRENT_DATE);',
   },
 };
 

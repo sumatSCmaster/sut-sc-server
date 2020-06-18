@@ -437,6 +437,7 @@ export const logInExternalLinking = async ({ credentials }) => {
                       const multas = await Promise.all(
                         (await gtic.query(queries.gtic.GET_FININGS_BY_CONTRIBUTOR, [x.co_contribuyente])).rows.map((j) => structureFinings(j))
                       );
+
                       inmuebles.push({
                         id: x.co_contribuyente,
                         direccion: nullStringCheck(x.tx_direccion),
@@ -615,12 +616,12 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
   }
 };
 
-export const getApplicationsAndSettlementsForContributor = async ({ docType, document }: { docType: string; document: string }) => {
+export const getApplicationsAndSettlementsForContributor = async ({ referencia, docType, document }) => {
   const client = await pool.connect();
   try {
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const applications: Solicitud[] = await Promise.all(
-      (await client.query(queries.GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR, [docType, document])).rows.map(async (el) => {
+      (await client.query(queries.GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR, [referencia, document, docType])).rows.map(async (el) => {
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
 
         return {
