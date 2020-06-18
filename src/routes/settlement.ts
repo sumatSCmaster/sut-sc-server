@@ -11,6 +11,8 @@ import {
   getTaxPayerInfo,
   getApplicationsAndSettlementsForContributor,
   logInExternalLinking,
+  verifyUserLinking,
+  initialUserLinking,
 } from '@helpers/settlement';
 
 const router = Router();
@@ -89,8 +91,15 @@ router.post(
 );
 
 router.post('/taxPayer', authenticate('jwt'), async (req, res) => {
-  const { contribuyente } = req.body;
-  const [error, data] = await fulfill(insertSettlements({ process: contribuyente, user: req.user }));
+  const { datosEnlace } = req.body;
+  const [error, data] = await fulfill(initialUserLinking(datosEnlace));
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+});
+
+router.put('/taxPayer/verify', authenticate('jwt'), async (req, res) => {
+  const { codigo } = req.body;
+  const [error, data] = await fulfill(verifyUserLinking({ code: codigo, user: req.user }));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });

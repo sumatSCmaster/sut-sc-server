@@ -427,27 +427,16 @@ export const logInExternalLinking = async ({ credentials }) => {
                         multas,
                       };
                     } else {
-                      const inmuebles = await Promise.all(
-                        (await gtic.query(queries.gtic.GET_ESTATES_BY_CONTRIBUTOR, [x.co_contribuyente])).rows.map((j) => structureEstates(j))
-                      );
                       const liquidaciones = await Promise.all(
                         (await gtic.query(queries.gtic.GET_SETTLEMENTS_BY_CONTRIBUTOR, [x.co_contribuyente])).rows.map((j) => structureSettlements(j))
                       );
                       const creditoFiscal = (await gtic.query(queries.gtic.GET_FISCAL_CREDIT_BY_CONTRIBUTOR, [x.co_contribuyente])).rows[0];
+                      const inmuebles = await Promise.all(
+                        (await gtic.query(queries.gtic.GET_ESTATES_BY_CONTRIBUTOR, [x.co_contribuyente])).rows.map((j) => structureEstates(j))
+                      );
                       const multas = await Promise.all(
                         (await gtic.query(queries.gtic.GET_FININGS_BY_CONTRIBUTOR, [x.co_contribuyente])).rows.map((j) => structureFinings(j))
                       );
-
-                      inmuebles.push({
-                        id: x.co_contribuyente,
-                        direccion: nullStringCheck(x.tx_direccion),
-                        email: nullStringCheck(x.tx_email),
-                        razonSocial: nullStringCheck(x.tx_razon_social),
-                        denomComercial: nullStringCheck(x.tx_denom_comercial),
-                        metrosCuadrados: 0.0,
-                        cuentaContrato: 0.0,
-                        nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined).trim(),
-                      });
                       const datosSucursal = {
                         id: nullStringCheck(x.co_contribuyente),
                         direccion: nullStringCheck(x.tx_direccion),
@@ -675,7 +664,22 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
   }
 };
 
-export const completeUserLinking = async () => {
+export const initialUserLinking = async (linkingData) => {
+  const client = await pool.connect();
+  const { datosContribuyente, sucursales } = linkingData;
+  try {
+  } catch (error) {
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const verifyUserLinking = async ({ code, user }) => {
   const client = await pool.connect();
   try {
   } catch (error) {
