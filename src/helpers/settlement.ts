@@ -623,7 +623,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
     const applications: Solicitud[] = await Promise.all(
       (typeUser === 'JURIDICO'
         ? await client.query(queries.GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR, [referencia, document, docType])
-        : await client.query(queries.GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR, [document, docType])
+        : await client.query(queries.GET_APPLICATION_INSTANCES_FOR_NATURAL_CONTRIBUTOR, [document, docType])
       ).rows.map(async (el) => {
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
 
