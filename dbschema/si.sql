@@ -2593,7 +2593,8 @@ ALTER SEQUENCE impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_s
 CREATE TABLE impuesto.ramo (
     id_ramo integer NOT NULL,
     codigo character varying NOT NULL,
-    descripcion character varying NOT NULL
+    descripcion character varying NOT NULL,
+    descripcion_corta character varying
 );
 
 
@@ -2632,7 +2633,8 @@ CREATE TABLE impuesto.registro_municipal (
     fecha_aprobacion date,
     telefono_celular character varying,
     telefono_habitacion character varying,
-    email character varying
+    email character varying,
+    credito_fiscal numeric
 );
 
 
@@ -5911,7 +5913,102 @@ COPY impuesto.plazo_exoneracion (id_plazo_exoneracion, fecha_inicio, fecha_fin) 
 -- Data for Name: ramo; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.ramo (id_ramo, codigo, descripcion) FROM stdin;
+COPY impuesto.ramo (id_ramo, codigo, descripcion, descripcion_corta) FROM stdin;
+29	501	MULTAS                                                                                    	MUL
+9	112	ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES                 	AE
+8	111	PROPIEDAD INMOBILIARIA                                                                    	IU
+11	114	PROPAGANDAS Y AVISOS COMERCIALES                                                          	PM
+2	101	SITUADO CONSTITUCIONAL                                                                    	\N
+3	102	SITUADO PUENTE SOBRE EL LAGO                                                              	\N
+4	103	LEY DE ASIGNACIONES ESPECIALES                                                            	\N
+5	104	FONDO INTERGUB.PARA LA DESCENT.(FIDES)                                                    	\N
+6	105	CONSEJO NACIONAL DE VIVIENDA (CONAVI)                                                     	\N
+7	120	REGALIAS PETROLERAS                                                                       	\N
+10	113	PATENTE DE VEHICULOS                                                                      	\N
+12	115	ESPECTACULOS PUBLICOS                                                                     	\N
+13	116	INSTITUTO NACIONAL DE HIPODROMO 5 Y 6                                                     	\N
+14	117	JUEGOS Y APUESTAS LICITAS                                                                 	\N
+15	118	REMISION TRIBUTARIA                                                                       	\N
+16	119	CONVENIO DE PAGO GENERAL                                                                  	\N
+17	200	TASA DE ESPECTACULOS PUBLICOS                                                             	\N
+18	201	EXPEDICION DE VARIABLES URBANAS                                                           	\N
+19	202	CATASTRO Y NOMENCLATURA                                                                   	\N
+20	203	TASAS ADMINISTRATIVAS POR EXPEDICION DE LICENCIAS DE LICORES                              	\N
+21	204	REGULACION DE ALQUILERES                                                                  	\N
+22	205	VENTA DE AGUA                                                                             	\N
+23	206	VENTA DE GAS                                                                              	\N
+24	301	CEMENTERIO JARDIN LA CHINITA                                                              	\N
+25	303	MERCADOS MUNICIPALES                                                                      	\N
+26	304	PARTICIPACION PEAJE PUENTE SOBRE EL LAGO                                                  	\N
+27	306	PARTICIPACION VENTA DE GAS                                                                	\N
+28	402	INTERESES Y DIVIDENDOS (SEDEMAT)                                                          	\N
+30	502	MULTA ESPECTACULOS PUBLICOS                                                               	\N
+31	503	MULTA RECARGO E INT MORA DE CONSTRUCCION                                                  	\N
+32	504	OTRAS MULTAS                                                                              	\N
+33	552	INTERESES                                                                                 	\N
+34	602	COBRANZA DE DEUDA MOROSA                                                                  	\N
+35	604	COBRANZA DE DEUDA MOROSA                                                                  	\N
+36	702	REINTEGROS                                                                                	\N
+37	703	INGRESOS VARIOS                                                                           	\N
+38	704	O T R O S                                                                                 	\N
+39	705	RESERVAS DEL TESORO NO COMPROMETIDAS                                                      	\N
+40	706	INGRESOS A#O ANTERIOR                                                                     	\N
+41	804	CEMENTERIOS MUNICIPALES                                                                   	\N
+42	805	VENTAS DE TERRENOS                                                                        	\N
+43	806	VENTA DE TERRENO PATRIMONIO MUNICIPAL                                                     	\N
+44	901	APORTES GUBERNAMENTALES Y OTROS                                                           	\N
+45	902	APORTE DEL I.N.H.                                                                         	\N
+46	903	TRANSFERENCIAS                                                                            	\N
+47	910	REPAROS FISCALES                                                                          	\N
+48	911	REPAROS FISCALES (IND. Y COM.)                                                            	\N
+49	912	REPARO POR RETENCIONES NO ENTERADAS                                                       	\N
+50	915	RETENCIONES DECRETO 048                                                                   	\N
+51	918	COMPENS.RETENCIONES DEC.048                                                               	\N
+52	920	DEDUCCIONES,ADELANTOS,Y OTROS GASTOS                                                      	\N
+53	925	COMPENSACIONES                                                                            	\N
+54	929	CESION DE CREDITO FISCAL                                                                  	\N
+55	930	CORRECCIONES ADMINISTRATIVAS                                                              	\N
+56	940	REBAJAS FISCALES                                                                          	\N
+57	950	INGRESOS POR SERVICIOS INTERNOS                                                           	\N
+58	951	DEPOSITOS RECHAZADOS                                                                      	\N
+59	990	LIQUIDACIONES POR CHEQUE DEVUELTO                                                         	\N
+60	106	FONDO D/INV.D/ESTAB.MACRO ECONOMICA                                                       	\N
+61	107	RECURSOS DE MINFRA                                                                        	\N
+62	108	MINISTERIO DE PLANIFICACION Y DESARROLLO                                                  	\N
+63	109	MINISTERIO DEL INTERIOR Y JUSTICIA                                                        	\N
+65	207	CONSTANCIA DE VARIABLES URBANAS FUNDAMENTALES                                             	\N
+66	208	CONSTANCIAS DE CALIDAD TERMICAS                                                           	\N
+67	505	MULTA POLIMARACAIBO                                                                       	\N
+68	123	DIRECCION DE CATASTRO                                                                     	\N
+69	124	DIRECCION DE OMPU                                                                         	\N
+70	403	INTERESES Y DIVIDENDOS (ALCALDIA MCBO CUENTAS SEDEMAT)                                    	\N
+71	404	INTERESES Y DIVIDENDOS (POLIMARACAIBO)                                                    	\N
+72	405	INTERESES Y DIVIDENDOS (CPU)                                                              	\N
+73	406	INTERESES Y DIVIDENDOS (BOMBEROS MCBO)                                                    	\N
+74	407	INTERESES Y DIVIDENDOS (IMAU)                                                             	\N
+75	408	INTERESES Y DIVIDENDOS (SAGAS)                                                            	\N
+76	506	MULTA CONSEJO DE PROTECCION NNA                                                           	\N
+77	409	INTERESES Y DIVIDENDOS (ALCALDIA MCBO)                                                    	\N
+78	110	ACUERDO NRO. 003-2012                                                                     	\N
+79	410	PROCESO DE LICITACION                                                                     	\N
+80	209	SISTEMA VIAL URBANO                                                                       	\N
+81	401	INTERESES Y DIVIDENDOS (CONSEJO DE DERECHO)                                               	\N
+82	127	VENTAJAS ESPECIALES PETROLERAS                                                            	\N
+83	904	TRANSFERENCIAS CORRIENTES INTERNAS DE LA REPUBLICA                                        	\N
+84	707	INGRESOS EN TRANSITO                                                                      	\N
+85	210	DIRECCION DE PROTECCION CIVIL                                                             	\N
+86	211	TASAS ALCADIA DE MARACAIBO                                                                	\N
+87	212	TASAS SAGAS                                                                               	\N
+88	411	INTERESES Y DIVIDENDOS (PROTECCION CIVIL)                                                 	\N
+89	412	INTERESES Y DIVIDENDOS (SALUD MARACAIBO)                                                  	\N
+90	213	TASAS IMTCUMA                                                                             	\N
+91	508	COPIAS CERTIFICADAS POLIMARACAIBO                                                         	\N
+92	125	BOMBEROS DE MARACAIBO                                                                     	\N
+93	126	ANTICIPOS DE OBRAS (SIMA)                                                                 	\N
+94	507	MULTAS SALUD MARACAIBO                                                                    	\N
+97	130	DIRECCION DE AGUA	\N
+98	140	DIRECCION DE INGENIERIA MUNICIPAL	\N
+64	122	SERVICIOS MUNICIPALES                                                                     	SM
 \.
 
 
@@ -5927,8 +6024,8 @@ COPY impuesto.ramo_exoneracion (id_ramo_exoneracion, id_plazo_exoneracion, id_ra
 -- Data for Name: registro_municipal; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.registro_municipal (id_registro_municipal, id_contribuyente, referencia_municipal, fecha_aprobacion, telefono_celular, telefono_habitacion, email) FROM stdin;
-1	1	2020200202	\N	+584126750593	+5802617534001	andresmarmolm@gmail.com
+COPY impuesto.registro_municipal (id_registro_municipal, id_contribuyente, referencia_municipal, fecha_aprobacion, telefono_celular, telefono_habitacion, email, credito_fiscal) FROM stdin;
+1	1	2020200202	\N	+584126750593	+5802617534001	andresmarmolm@gmail.com	\N
 \.
 
 
@@ -5945,6 +6042,101 @@ COPY impuesto.solicitud (id_solicitud, id_usuario, aprobado, fecha, fecha_aproba
 --
 
 COPY impuesto.subramo (id_subramo, id_ramo, subindice, descripcion) FROM stdin;
+3	2	1	Pago ordinario
+4	3	1	Pago ordinario
+5	4	1	Pago ordinario
+6	5	1	Pago ordinario
+7	6	1	Pago ordinario
+8	7	1	Pago ordinario
+9	8	1	Pago ordinario
+10	9	1	Pago ordinario
+11	10	1	Pago ordinario
+12	11	1	Pago ordinario
+13	12	1	Pago ordinario
+14	13	1	Pago ordinario
+15	14	1	Pago ordinario
+16	15	1	Pago ordinario
+17	16	1	Pago ordinario
+18	17	1	Pago ordinario
+19	18	1	Pago ordinario
+20	19	1	Pago ordinario
+21	20	1	Pago ordinario
+22	21	1	Pago ordinario
+23	22	1	Pago ordinario
+24	23	1	Pago ordinario
+25	24	1	Pago ordinario
+26	25	1	Pago ordinario
+27	26	1	Pago ordinario
+28	27	1	Pago ordinario
+29	28	1	Pago ordinario
+30	29	1	Multa
+32	30	1	Pago ordinario
+33	31	1	Pago ordinario
+34	32	1	Pago ordinario
+35	33	1	Pago ordinario
+36	34	1	Pago ordinario
+37	35	1	Pago ordinario
+38	36	1	Pago ordinario
+39	37	1	Pago ordinario
+40	38	1	Pago ordinario
+41	39	1	Pago ordinario
+42	40	1	Pago ordinario
+43	41	1	Pago ordinario
+44	42	1	Pago ordinario
+45	43	1	Pago ordinario
+46	44	1	Pago ordinario
+47	45	1	Pago ordinario
+48	46	1	Pago ordinario
+49	47	1	Pago ordinario
+50	48	1	Pago ordinario
+51	49	1	Pago ordinario
+52	50	1	Pago ordinario
+53	51	1	Pago ordinario
+54	52	1	Pago ordinario
+55	53	1	Pago ordinario
+56	54	1	Pago ordinario
+57	55	1	Pago ordinario
+58	56	1	Pago ordinario
+59	57	1	Pago ordinario
+60	58	1	Pago ordinario
+61	59	1	Pago ordinario
+62	60	1	Pago ordinario
+63	61	1	Pago ordinario
+64	62	1	Pago ordinario
+65	63	1	Pago ordinario
+66	64	1	Pago ordinario
+67	65	1	Pago ordinario
+68	66	1	Pago ordinario
+69	67	1	Pago ordinario
+70	68	1	Pago ordinario
+71	69	1	Pago ordinario
+72	70	1	Pago ordinario
+73	71	1	Pago ordinario
+74	72	1	Pago ordinario
+75	73	1	Pago ordinario
+76	74	1	Pago ordinario
+77	75	1	Pago ordinario
+78	76	1	Pago ordinario
+79	77	1	Pago ordinario
+80	78	1	Pago ordinario
+81	79	1	Pago ordinario
+82	80	1	Pago ordinario
+83	81	1	Pago ordinario
+84	82	1	Pago ordinario
+85	83	1	Pago ordinario
+86	84	1	Pago ordinario
+87	85	1	Pago ordinario
+88	86	1	Pago ordinario
+89	87	1	Pago ordinario
+90	88	1	Pago ordinario
+91	89	1	Pago ordinario
+92	90	1	Pago ordinario
+93	91	1	Pago ordinario
+94	92	1	Pago ordinario
+95	93	1	Pago ordinario
+96	94	1	Pago ordinario
+97	97	1	Pago ordinario
+98	98	1	Pago ordinario
 \.
 
 
@@ -9951,7 +10143,7 @@ SELECT pg_catalog.setval('impuesto.solicitud_id_solicitud_seq', 61, true);
 -- Name: subramo_id_subramo_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.subramo_id_subramo_seq', 1, false);
+SELECT pg_catalog.setval('impuesto.subramo_id_subramo_seq', 98, true);
 
 
 --
