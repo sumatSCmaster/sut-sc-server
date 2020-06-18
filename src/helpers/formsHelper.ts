@@ -72,7 +72,7 @@ export const createForm = async (
             }
           });
       } catch (e) {
-        throw e;
+        throw errorMessageExtractor(e);
       } finally {
       }
     }

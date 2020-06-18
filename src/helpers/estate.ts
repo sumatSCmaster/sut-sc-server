@@ -1,6 +1,6 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
-import { errorMessageGenerator } from './errors';
+import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { PoolClient } from 'pg';
 import { Tramite, Inmueble } from '@root/interfaces/sigt';
 
@@ -14,7 +14,7 @@ export const getEstatesInfo = async () => {
   } catch (e) {
     throw {
       status: 500,
-      error: errorMessageGenerator(e) || 'Error al obtener los inmuebles',
+      error: errorMessageGenerator(e) || errorMessageExtractor(e) || 'Error al obtener los inmuebles',
     };
   } finally {
     client.release();
@@ -30,7 +30,7 @@ export const getEstateInfoByCod = async (cod: string) => {
   } catch (e) {
     throw {
       status: 500,
-      error: errorMessageGenerator(e) || 'Error al obtener los inmuebles',
+      error: errorMessageGenerator(e) || errorMessageExtractor(e) || 'Error al obtener los inmuebles',
     };
   } finally {
     client.release();
@@ -58,7 +58,7 @@ export const addOwners = async (properties, client: PoolClient) => {
   } catch (e) {
     throw {
       status: 500,
-      error: errorMessageGenerator(e) || 'Error al obtener propietarios',
+      error: errorMessageGenerator(e) || errorMessageExtractor(e) || 'Error al obtener propietarios',
     };
   }
 };
@@ -84,7 +84,7 @@ export const createPersonalEstate = async (procedure) => {
     throw {
       status: 500,
       error,
-      message: errorMessageGenerator(error) || 'Error al crear el codigo catastral',
+      message: errorMessageGenerator(error) || errorMessageExtractor(error) || 'Error al crear el codigo catastral',
     };
   } finally {
     client.release();

@@ -2,7 +2,7 @@ import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { Usuario } from '@interfaces/sigt';
 import { Client, PoolClient } from 'pg';
-import { errorMessageGenerator } from './errors';
+import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { genSaltSync, hashSync } from 'bcryptjs';
 const pool = Pool.getInstance();
 
@@ -32,7 +32,7 @@ export const getOfficialsByInstitution = async (institution: string, id: number)
     };
   } catch (e) {
     throw {
-      error: e,
+      error: errorMessageExtractor(e),
       status: 500,
       message: errorMessageGenerator(e) || 'Error al obtener los funcionarios',
     };
@@ -64,7 +64,7 @@ export const getAllOfficials = async () => {
     };
   } catch (e) {
     throw {
-      error: e,
+      error: errorMessageExtractor(e),
       status: 500,
       message: errorMessageGenerator(e) || 'Error al obtener los funcionarios',
     };

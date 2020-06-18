@@ -1,7 +1,7 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import moment from 'moment';
-import { errorMessageGenerator } from './errors';
+import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { Usuario, IDsTipoUsuario } from '@root/interfaces/sigt';
 const pool = Pool.getInstance();
 
@@ -160,7 +160,7 @@ const getSuperUserStats = async () => {
   } catch (error) {
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener las estadisticas',
     };
   } finally {
@@ -186,7 +186,7 @@ const getExternalStats = async (id: number) => {
   } catch (error) {
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener las estadisticas',
     };
   } finally {
@@ -289,7 +289,7 @@ const getMayoraltyStats = async () => {
   } catch (error) {
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener las estadisticas',
     };
   } finally {
@@ -392,7 +392,7 @@ const getOfficialStats = async (institution: number | undefined) => {
   } catch (error) {
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener las estadisticas',
     };
   } finally {
@@ -495,7 +495,7 @@ const getOfficialFiningStats = async (institution: number | undefined) => {
   } catch (error) {
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener las estadisticas',
     };
   } finally {
@@ -600,7 +600,7 @@ const getOfficialApplicationStats = async () => {
     console.log(error);
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener las estadisticas',
     };
   } finally {

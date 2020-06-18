@@ -1,6 +1,6 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
-import { errorMessageGenerator } from './errors';
+import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { DiaFeriado } from '@root/interfaces/sigt';
 
 const pool = Pool.getInstance();
@@ -13,7 +13,7 @@ export const getHolidays = async (): Promise<DiaFeriado[]> => {
         return result;
     } catch(e) {
         throw {
-            error: e,
+            error: errorMessageExtractor(e),
             status: 500,
             message: errorMessageGenerator(e) || 'Error al obtener dias feriados'
         }
@@ -32,7 +32,8 @@ export const createHolidays = async(data: DiaFeriado[]): Promise<DiaFeriado[]> =
     } catch(e) {
         throw {
             status: 500,
-            message: errorMessageGenerator(e) || 'Error al crearr dias feriados'
+            error: errorMessageExtractor(e),
+            message: errorMessageGenerator(e) || 'Error al crear dias feriados'
         }
     } finally {
         client.release();
@@ -48,6 +49,7 @@ export const deleteHoliday = async (id): Promise<DiaFeriado> => {
     } catch(e) {
         throw {
             status: 500,
+            error: errorMessageExtractor(e),
             message: errorMessageGenerator(e) || 'Error al eliminar dias feriados'
         }
     } finally {

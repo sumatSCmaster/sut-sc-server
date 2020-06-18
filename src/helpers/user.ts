@@ -4,7 +4,7 @@ import { compare } from 'bcryptjs';
 import { Usuario, Payloads, Nacionalidad, IDsTipoUsuario, Institucion } from '@interfaces/sigt';
 import { fulfill } from '@utils/resolver';
 import { stringify } from 'flatted/cjs';
-import { errorMessageGenerator } from './errors';
+import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { generateToken } from '@utils/Strategies';
 
 const pool = Pool.getInstance();
@@ -71,7 +71,7 @@ export const createSuperuser = async (user: Payloads.CrearSuperuser): Promise<Pa
     return usuario;
   } catch (e) {
     client.query('ROLLBACK');
-    throw e;
+    throw errorMessageExtractor(e);
   } finally {
     client.release();
   }
@@ -111,7 +111,7 @@ export const createAdmin = async (user: Payloads.CrearAdmin): Promise<Partial<Us
     return usuario;
   } catch (e) {
     client.query('ROLLBACK');
-    throw e;
+    throw errorMessageExtractor(e);
   } finally {
     client.release();
   }
@@ -134,7 +134,7 @@ export const addInstitute = async (user: Partial<Usuario>): Promise<Partial<Usua
       },
     };
   } catch (e) {
-    throw e;
+    throw errorMessageExtractor(e);
   } finally {
     client.release();
   }
@@ -149,7 +149,7 @@ export const addPermissions = async (user: Partial<Usuario>): Promise<Partial<Us
       permisos: res.map((row) => +row.id_tipo_tramite),
     };
   } catch (e) {
-    throw e;
+    throw errorMessageExtractor(e);
   } finally {
     client.release();
   }
@@ -210,7 +210,7 @@ export const initialExtUserSignUp = async (user) => {
     };
   } catch (e) {
     client.query('ROLLBACK');
-    return e;
+    return errorMessageExtractor(e);
   } finally {
     client.release();
   }
@@ -248,7 +248,7 @@ export const completeExtUserSignUp = async (user, id) => {
     client.query('ROLLBACK');
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error en la creación del usuario',
     };
   } finally {
@@ -291,7 +291,7 @@ export const signUpUser = async (user) => {
   } catch (error) {
     client.query('ROLLBACK');
     throw {
-      error,
+      error: errorMessageExtractor(error),
       status: 500,
       message: errorMessageGenerator(error) || 'Error en la creación del usuario',
     };
@@ -320,6 +320,7 @@ export const updateUser = async (user) => {
   } catch (e) {
     throw {
       status: 500,
+      error: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error en la actualizacion del usuario',
     };
   } finally {
@@ -334,7 +335,7 @@ export const hasNotifications = async (cedula) => {
   } catch (e) {
     throw {
       status: 500,
-      e,
+      e: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error al obtener estado de notificaciones del usuario',
     };
   } finally {

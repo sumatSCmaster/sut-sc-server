@@ -6,7 +6,7 @@ import { renderFile } from 'pug';
 import { resolve } from 'path';
 import * as pdf from 'html-pdf';
 import * as qr from 'qrcode';
-import { errorMessageGenerator } from '@helpers/errors';
+import { errorMessageGenerator, errorMessageExtractor } from '@helpers/errors';
 const  written = require('written-number');
 
 const pool = Pool.getInstance();
@@ -117,7 +117,7 @@ export const createMockCertificate = async (procedure) => {
   } catch (error) {
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al crear el certificado',
     };
   } finally {

@@ -3,7 +3,7 @@ import queries from '../utils/queries';
 import { getUsers, getIo } from '@config/socket';
 import twilio from 'twilio';
 import { Notificacion, Tramite, Multa, Usuario, Solicitud } from '@root/interfaces/sigt';
-import { errorMessageGenerator } from './errors';
+import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { PoolClient } from 'pg';
 import switchcase from '@utils/switch';
 import { getApplicationsAndSettlementsById } from './settlement';
@@ -99,7 +99,7 @@ export const getNotifications = async (user: Usuario): Promise<Notificacion[] | 
   } catch (error) {
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener las notificaciones del usuario',
     };
   } finally {
@@ -115,7 +115,7 @@ export const markAllAsRead = async (user: Usuario): Promise<object> => {
   } catch (error) {
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al marcar como leidas las notificaciones del usuario',
     };
   } finally {
@@ -134,7 +134,7 @@ export const sendNotification = async (
   try {
     notificationHandler(sender, description, type, payload, concept, client);
   } catch (e) {
-    throw e;
+    throw errorMessageExtractor(e);
   }
 };
 
@@ -176,7 +176,7 @@ const broadcastForProcedureInit = async (sender: Usuario, description: string, p
     client.query('COMMIT');
   } catch (error) {
     client.query('ROLLBACK');
-    throw error;
+    throw errorMessageExtractor(error);
   }
 };
 
@@ -239,7 +239,7 @@ const broadcastForProcedureUpdate = async (sender: Usuario, description: string,
     client.query('COMMIT');
   } catch (error) {
     client.query('ROLLBACK');
-    throw error;
+    throw errorMessageExtractor(error);
   }
 };
 
@@ -278,7 +278,7 @@ const broadcastForAffairInit = async (sender: Usuario, description: string, payl
     client.query('COMMIT');
   } catch (error) {
     client.query('ROLLBACK');
-    throw error;
+    throw errorMessageExtractor(error);
   }
 };
 
@@ -318,7 +318,7 @@ const broadcastForAffairUpdate = async (sender: Usuario, description: string, pa
     client.query('COMMIT');
   } catch (error) {
     client.query('ROLLBACK');
-    throw error;
+    throw errorMessageExtractor(error);
   }
 };
 
@@ -375,7 +375,7 @@ const broadcastForFiningInit = async (sender: Usuario, description: string, payl
     client.query('COMMIT');
   } catch (error) {
     client.query('ROLLBACK');
-    throw error;
+    throw errorMessageExtractor(error);
   }
 };
 
@@ -440,7 +440,7 @@ const broadcastForFiningUpdate = async (sender: Usuario, description: string, pa
     client.query('COMMIT');
   } catch (error) {
     client.query('ROLLBACK');
-    throw error;
+    throw errorMessageExtractor(error);
   }
 };
 
@@ -486,7 +486,7 @@ const broadcastForApplicationInit = async (
     client.query('COMMIT');
   } catch (error) {
     client.query('ROLLBACK');
-    throw error;
+    throw errorMessageExtractor(error);
   }
 };
 
@@ -554,7 +554,7 @@ const broadcastForApplicationUpdate = async (
     client.query('COMMIT');
   } catch (error) {
     client.query('ROLLBACK');
-    throw error;
+    throw errorMessageExtractor(error);
   }
 };
 
@@ -600,7 +600,7 @@ const notificationHandler = async (
   try {
     if (notificationSender) return await notificationSender(sender, description, payload, concept, client);
   } catch (error) {
-    throw error;
+    throw errorMessageExtractor(error);
   }
 };
 
