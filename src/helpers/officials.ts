@@ -118,7 +118,7 @@ export const createOfficial = async (official: any) => {
     client.query('ROLLBACK');
     throw {
       status: 500,
-      error: e,
+      error: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error al crear un funcionario',
     };
   } finally {
@@ -156,7 +156,7 @@ export const updateOfficial = async (official: any, id: string) => {
     client.query('ROLLBACK');
     throw {
       status: 500,
-      error: e,
+      error: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error al actualizar datos del funcionario',
     };
   } finally {
@@ -174,7 +174,7 @@ export const deleteOfficial = async (officialID: string, institution: number) =>
   } catch (e) {
     client.query('ROLLBACK');
     throw {
-      error: e,
+      error: errorMessageExtractor(e),
       status: 500,
       message: errorMessageGenerator(e) || 'Error al eliminar funcionario',
     };
@@ -193,7 +193,7 @@ export const deleteOfficialSuperuser = async (officialID: string) => {
   } catch (e) {
     client.query('ROLLBACK');
     throw {
-      error: e,
+      error: errorMessageExtractor(e),
       status: 500,
       message: errorMessageGenerator(e) || 'Error al eliminar funcionario',
     };

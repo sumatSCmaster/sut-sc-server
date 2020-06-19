@@ -195,13 +195,13 @@ ALTER FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite i
 -- Name: insert_solicitud(integer, integer, character varying); Type: FUNCTION; Schema: impuesto; Owner: postgres
 --
 
-CREATE FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer, _referencia_municipal character varying) RETURNS SETOF impuesto.solicitud
+CREATE FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer, _id_contribuyente character varying) RETURNS SETOF impuesto.solicitud
     LANGUAGE plpgsql
     AS $$
 DECLARE
     solicitudRow impuesto.solicitud%ROWTYPE;
     BEGIN
-        INSERT INTO impuesto.solicitud (id_usuario, aprobado, fecha, id_tipo_tramite, id_contribuyente) VALUES (_id_usuario, false, now(), _id_tipo_tramite, (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE referencia_municipal = _referencia_municipal)) RETURNING * INTO solicitudRow;
+        INSERT INTO impuesto.solicitud (id_usuario, aprobado, fecha, id_tipo_tramite, id_contribuyente) VALUES (_id_usuario, false, now(), _id_tipo_tramite, _id_contribuyente) RETURNING * INTO solicitudRow;
 
         INSERT INTO impuesto.evento_solicitud values (default, solicitudRow.id_solicitud, 'iniciar', now());   
 
@@ -212,7 +212,7 @@ DECLARE
 $$;
 
 
-ALTER FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer, _referencia_municipal character varying) OWNER TO postgres;
+ALTER FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer, _id_contribuyente character varying) OWNER TO postgres;
 
 --
 -- Name: solicitud_transicion(text, text); Type: FUNCTION; Schema: impuesto; Owner: postgres
@@ -740,7 +740,8 @@ CREATE TABLE impuesto.liquidacion (
     fecha_liquidacion date DEFAULT now(),
     id_subramo integer,
     datos json,
-    fecha date
+    fecha date,
+    id_registro_municipal integer
 );
 
 
@@ -766,6 +767,32 @@ $$;
 
 
 ALTER FUNCTION public.insert_liquidacion(_id_solicitud integer, _monto numeric, _ramo character varying, _datos json, _fecha date) OWNER TO postgres;
+
+--
+-- Name: insert_liquidacion(integer, numeric, character varying, json, date, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.insert_liquidacion(_id_solicitud integer, _monto numeric DEFAULT NULL::numeric, _ramo character varying DEFAULT NULL::character varying, _datos json DEFAULT NULL::json, _fecha date DEFAULT NULL::date, _id_registro_municipal integer DEFAULT NULL::integer) RETURNS SETOF impuesto.liquidacion
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    liquidacionRow impuesto.liquidacion%ROWTYPE;
+    BEGIN
+        INSERT INTO impuesto.liquidacion (id_solicitud, monto, id_subramo, datos, fecha) VALUES (_id_solicitud, _monto, (SELECT sr.id_subramo FROM impuesto.subramo sr INNER JOIN impuesto.ramo r ON sr.id_ramo = r.id_ramo WHERE r.descripcion = _ramo AND sr.descripcion = 'Pago Ordinario'), _datos, _fecha) RETURNING * INTO liquidacionRow;
+
+        IF _id_registro_municipal IS NOT NULL THEN
+            UPDATE impuesto.liquidacion SET id_registro_municipal = _id_registro_municipal WHERE id_liquidacion = liquidacionRow.id_liquidacion;
+        END IF;
+   
+
+        RETURN QUERY SELECT * FROM impuesto.liquidacion WHERE id_liquidacion=liquidacionRow.id_liquidacion;
+
+        RETURN;
+    END;
+$$;
+
+
+ALTER FUNCTION public.insert_liquidacion(_id_solicitud integer, _monto numeric, _ramo character varying, _datos json, _fecha date, _id_registro_municipal integer) OWNER TO postgres;
 
 --
 -- Name: multa_transicion(text, text); Type: FUNCTION; Schema: public; Owner: postgres
@@ -2270,6 +2297,42 @@ ALTER SEQUENCE impuesto.contribuyente_id_contribuyente_seq OWNED BY impuesto.con
 
 
 --
+-- Name: credito_fiscal; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.credito_fiscal (
+    id_credito_fiscal integer NOT NULL,
+    id_persona integer NOT NULL,
+    concepto character varying NOT NULL,
+    credito numeric NOT NULL
+);
+
+
+ALTER TABLE impuesto.credito_fiscal OWNER TO postgres;
+
+--
+-- Name: credito_fiscal_id_credito_fiscal_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.credito_fiscal_id_credito_fiscal_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.credito_fiscal_id_credito_fiscal_seq OWNER TO postgres;
+
+--
+-- Name: credito_fiscal_id_credito_fiscal_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.credito_fiscal_id_credito_fiscal_seq OWNED BY impuesto.credito_fiscal.id_credito_fiscal;
+
+
+--
 -- Name: dias_feriados; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2634,7 +2697,7 @@ CREATE TABLE impuesto.registro_municipal (
     telefono_celular character varying,
     telefono_habitacion character varying,
     email character varying,
-    credito_fiscal numeric
+    denominacion_comercial character varying
 );
 
 
@@ -5094,6 +5157,13 @@ ALTER TABLE ONLY impuesto.contribuyente_exoneracion ALTER COLUMN id_contribuyent
 
 
 --
+-- Name: credito_fiscal id_credito_fiscal; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.credito_fiscal ALTER COLUMN id_credito_fiscal SET DEFAULT nextval('impuesto.credito_fiscal_id_credito_fiscal_seq'::regclass);
+
+
+--
 -- Name: dias_feriados id_dia_feriado; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5840,6 +5910,14 @@ COPY impuesto.contribuyente_exoneracion (id_contribuyente_exoneracion, id_plazo_
 
 
 --
+-- Data for Name: credito_fiscal; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.credito_fiscal (id_credito_fiscal, id_persona, concepto, credito) FROM stdin;
+\.
+
+
+--
 -- Data for Name: dias_feriados; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -5889,7 +5967,7 @@ COPY impuesto.inmueble_contribuyente (id_inmueble_contribuyente, id_inmueble, id
 -- Data for Name: liquidacion; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.liquidacion (id_liquidacion, id_solicitud, monto, certificado, recibo, fecha_liquidacion, id_subramo, datos, fecha) FROM stdin;
+COPY impuesto.liquidacion (id_liquidacion, id_solicitud, monto, certificado, recibo, fecha_liquidacion, id_subramo, datos, fecha, id_registro_municipal) FROM stdin;
 \.
 
 
@@ -6024,7 +6102,7 @@ COPY impuesto.ramo_exoneracion (id_ramo_exoneracion, id_plazo_exoneracion, id_ra
 -- Data for Name: registro_municipal; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.registro_municipal (id_registro_municipal, id_contribuyente, referencia_municipal, fecha_aprobacion, telefono_celular, telefono_habitacion, email, credito_fiscal) FROM stdin;
+COPY impuesto.registro_municipal (id_registro_municipal, id_contribuyente, referencia_municipal, fecha_aprobacion, telefono_celular, telefono_habitacion, email, denominacion_comercial) FROM stdin;
 1	1	2020200202	\N	+584126750593	+5802617534001	andresmarmolm@gmail.com	\N
 \.
 
@@ -10063,6 +10141,13 @@ SELECT pg_catalog.setval('impuesto.contribuyente_id_contribuyente_seq', 1, true)
 
 
 --
+-- Name: credito_fiscal_id_credito_fiscal_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.credito_fiscal_id_credito_fiscal_seq', 1, false);
+
+
+--
 -- Name: dias_feriados_id_dia_feriado_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -10600,6 +10685,14 @@ ALTER TABLE ONLY impuesto.contribuyente_exoneracion
 
 ALTER TABLE ONLY impuesto.contribuyente
     ADD CONSTRAINT contribuyente_pkey PRIMARY KEY (id_contribuyente);
+
+
+--
+-- Name: credito_fiscal credito_fiscal_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.credito_fiscal
+    ADD CONSTRAINT credito_fiscal_pkey PRIMARY KEY (id_credito_fiscal);
 
 
 --
@@ -11390,6 +11483,14 @@ ALTER TABLE ONLY impuesto.inmueble_contribuyente
 
 ALTER TABLE ONLY impuesto.inmueble_contribuyente
     ADD CONSTRAINT inmueble_contribuyente_id_inmueble_fkey FOREIGN KEY (id_inmueble) REFERENCES public.inmueble_urbano(id_inmueble);
+
+
+--
+-- Name: liquidacion liquidacion_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.liquidacion
+    ADD CONSTRAINT liquidacion_id_registro_municipal_fkey FOREIGN KEY (id_registro_municipal) REFERENCES impuesto.registro_municipal(id_registro_municipal);
 
 
 --
