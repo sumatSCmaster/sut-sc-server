@@ -4,20 +4,18 @@ import Pool from '@utils/Pool';
 import transporter from '@utils/mail';
 import { VerificationValue } from '@interfaces/sigt';
 import queries from '@utils/queries';
-import { QueryResult, Client } from 'pg';
+import { QueryResult, Client, PoolClient } from 'pg';
 import { errorMessageExtractor } from '@helpers/errors';
 
 const pool = Pool.getInstance();
 
 const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
-export const sendRimVerification = async (idRim: number[], value: VerificationValue, payload: string) => {
-  const client = await pool.connect();
+export const sendRimVerification = async (idRim: number[], value: VerificationValue, payload: string, client: PoolClient) => {
   let alreadyExists;
   const code = Math.random().toString().substring(2, 8);
   console.log('code', code);
   try {
-    client.query('BEGIN');
     switch (value) {
       case VerificationValue.Email:
         await Promise.all(
@@ -55,16 +53,12 @@ export const sendRimVerification = async (idRim: number[], value: VerificationVa
         // });
         break;
     }
-    client.query('COMMIT');
   } catch (e) {
-    client.query('ROLLBACK');
     console.log('fallo', e);
     throw {
       e,
       message: 'Hubo un error en el envio del codigo de verificacion',
     };
-  } finally {
-    client.release();
   }
 
   return {

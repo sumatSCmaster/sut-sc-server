@@ -748,7 +748,7 @@ export const initialUserLinking = async (linkingData, user) => {
     await client.query('UPDATE USUARIO SET id_contribuyente = $1 WHERE id_usuario = $2', [contributor.id_contribuyente, user.id]);
     if (datosContribuyente.tipoContribuyente === 'JURIDICO') {
       const rims: number[] = await Promise.all(
-        sucursales
+        await sucursales
           .map(async (x) => {
             const { inmuebles, liquidaciones, multas, datosSucursal } = x;
             const liquidacionesPagas = liquidaciones.filter((el) => el.estado === 'PAGADO');
@@ -772,7 +772,7 @@ export const initialUserLinking = async (linkingData, user) => {
               inmuebles.length > 0
                 ? await Promise.all(
                     inmuebles.map(
-                      async (el) => (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.referencia_municipal, el.direccion])).rows[0]
+                      async (el) => (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_referencia_municipal, el.direccion])).rows[0]
                     )
                   )
                 : undefined;
@@ -787,7 +787,8 @@ export const initialUserLinking = async (linkingData, user) => {
                       el.monto,
                       el.ramo,
                       { fecha: el.fecha },
-                      moment().month(el.fecha.month).format('DD-MM-YYYY'),
+                      moment().month(el.fecha.month).format('MM-DD-YYYY'),
+                      registry.id_registro_municipal
                     ])
                 )
               );
@@ -803,17 +804,18 @@ export const initialUserLinking = async (linkingData, user) => {
                       el.monto,
                       el.ramo,
                       { fecha: el.fecha },
-                      moment().month(el.fecha.month).format('DD-MM-YYYY'),
+                      moment().month(el.fecha.month).format('MM-DD-YYYY'),
+                      registry.id_registro_municipal
                     ])
                 )
               );
             }
             return representado ? registry.id_registro_municipal : undefined;
           })
-          .filter((el) => el)
-      );
-      await sendRimVerification(rims, VerificationValue.CellPhone, datosContacto.telefono);
-      payload.rims = rims;
+
+      )
+      await sendRimVerification(rims.filter((el) => el), VerificationValue.CellPhone, datosContacto.telefono, client);
+      payload = {rims :rims.filter((el) => el)};
     } else {
       sucursales.map((x) => {
         const { inmuebles, liquidaciones, multas, datosSucursal } = x;
