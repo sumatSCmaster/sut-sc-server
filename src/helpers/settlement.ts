@@ -6,7 +6,7 @@ import GticPool from '@utils/GticPool';
 import { insertPaymentReference } from './banks';
 import moment, { Moment } from 'moment';
 import switchcase from '@utils/switch';
-import { Liquidacion, Solicitud, Usuario, MultaImpuesto } from '@root/interfaces/sigt';
+import { Liquidacion, Solicitud, Usuario, MultaImpuesto, VerificationValue } from '@root/interfaces/sigt';
 import { resolve } from 'path';
 import { renderFile } from 'pug';
 import { writeFile, mkdir } from 'fs';
@@ -18,6 +18,7 @@ import bcrypt from 'bcryptjs';
 import md5 from 'md5';
 import { query } from 'express-validator';
 import { sendNotification } from './notification';
+import { sendRimVerification } from './verification';
 const written = require('written-number');
 
 const gticPool = GticPool.getInstance();
@@ -664,10 +665,103 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
   }
 };
 
-export const initialUserLinking = async (linkingData) => {
+export const initialUserLinking = async (linkingData, user) => {
   const client = await pool.connect();
   const { datosContribuyente, sucursales } = linkingData;
+  const { tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia } = datosContribuyente;
   try {
+    const contributor = (
+      await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [
+        tipoDocumento,
+        documento,
+        razonSocial,
+        denomComercial,
+        siglas,
+        parroquia,
+        sector,
+        direccion,
+        puntoReferencia,
+        true,
+      ])
+    ).rows[0];
+
+    if (datosContribuyente.tipoContribuyente === 'JURIDICO') {
+      const sucursalesContribuyente: { registroMunicipal: number; telefonoMovil: string }[] = await Promise.all(
+        sucursales
+          .map(async (x) => {
+            const { inmuebles, liquidaciones, multas, datosSucursal } = x;
+            const liquidacionesPagas = liquidaciones.filter((el) => el.estado === 'PAGADO');
+            const liquidacionesVigentes = liquidaciones.filter((el) => el.estado !== 'PAGADO');
+            const multasPagas = multas.filter((el) => el.estado === 'PAGADO');
+            const multasVigentes = multas.filter((el) => el.estado !== 'PAGADO');
+            const pagados = liquidacionesPagas.concat(multasPagas);
+            const vigentes = liquidacionesVigentes.concat(multasVigentes);
+            const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial } = datosSucursal;
+            const registry = (
+              await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [
+                contributor.id_contribuyente,
+                registroMunicipal,
+                nombreRepresentante,
+                telefonoMovil,
+                email,
+                denomComercial,
+              ])
+            ).rows[0];
+            const estates =
+              inmuebles.length > 0
+                ? await Promise.all(
+                    inmuebles.map(
+                      async (el) => (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.referencia_municipal, el.direccion])).rows[0]
+                    )
+                  )
+                : undefined;
+            if (pagados.length > 0) {
+              const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+              await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, 'aprobacioncajero_pi']);
+              await Promise.all(
+                pagados.map(
+                  async (el) =>
+                    await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+                      application.id_solicitud,
+                      el.monto,
+                      el.ramo,
+                      { fecha: el.fecha },
+                      moment().month(el.fecha.month).format('DD-MM-YYYY'),
+                    ])
+                )
+              );
+            }
+
+            if (vigentes.length > 0) {
+              const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+              await Promise.all(
+                vigentes.map(
+                  async (el) =>
+                    await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+                      application.id_solicitud,
+                      el.monto,
+                      el.ramo,
+                      { fecha: el.fecha },
+                      moment().month(el.fecha.month).format('DD-MM-YYYY'),
+                    ])
+                )
+              );
+            }
+            return datosSucursal.representado ? { registroMunicipal: registry.id_registro_municipal, telefonoMovil } : undefined;
+          })
+          .filter((el) => el)
+      );
+      const rims = sucursalesContribuyente.map((el) => el.registroMunicipal);
+      await sendRimVerification(rims, VerificationValue.CellPhone, sucursalesContribuyente[0].telefonoMovil);
+    } else {
+      sucursales.map((x) => {
+        const { inmuebles, liquidaciones, multas, datosSucursal } = x;
+        if (datosSucursal.hasOwnProperty('registroMunicipal')) {
+        } else {
+        }
+      });
+    }
+    return { status: 201, message: 'En espera de verificación de teléfono' };
   } catch (error) {
     throw {
       status: 500,

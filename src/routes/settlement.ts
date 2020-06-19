@@ -92,7 +92,7 @@ router.post(
 
 router.post('/taxPayer', authenticate('jwt'), async (req, res) => {
   const { datosEnlace } = req.body;
-  const [error, data] = await fulfill(initialUserLinking(datosEnlace));
+  const [error, data] = await fulfill(initialUserLinking(datosEnlace, req.user));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
