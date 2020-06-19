@@ -626,7 +626,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
           monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0]
             .monto_total,
           liquidaciones: liquidaciones
-            .filter((el) => el.tipoProcedimiento !== 'MUL')
+            .filter((el) => el.tipoProcedimiento !== 'Multas')
             .map((el) => {
               return {
                 id: el.id_liquidacion,
@@ -638,7 +638,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
               };
             }),
           multas: liquidaciones
-            .filter((el) => el.tipoProcedimiento === 'MUL')
+            .filter((el) => el.tipoProcedimiento === 'Multas')
             .map((el) => {
               return {
                 id: el.id_liquidacion,
@@ -773,6 +773,7 @@ export const initialUserLinking = async (linkingData, user) => {
     client.release();
   }
 };
+
 export const verifyUserLinking = async ({ code, rims, user }) => {
   const client = await pool.connect();
   try {

@@ -104,7 +104,7 @@ router.put('/taxPayer/verify', authenticate('jwt'), async (req, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-//TERMINAR
+//TODO: TERMINAR y crear el helper
 router.put('/taxPayer/resend', authenticate('jwt'), async (req, res) => {
   const { codigo, rims } = req.body;
   const [error, data] = await fulfill(verifyUserLinking({ rims, code: codigo, user: req.user }));
