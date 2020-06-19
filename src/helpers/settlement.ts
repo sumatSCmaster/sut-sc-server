@@ -18,7 +18,7 @@ import bcrypt from 'bcryptjs';
 import md5 from 'md5';
 import { query } from 'express-validator';
 import { sendNotification } from './notification';
-import { sendRimVerification, verifyCode } from './verification';
+import { sendRimVerification, verifyCode, resendCode } from './verification';
 const written = require('written-number');
 
 const gticPool = GticPool.getInstance();
@@ -847,6 +847,23 @@ export const verifyUserLinking = async ({ code, rims, user }) => {
       status: 500,
       error,
       message: errorMessageGenerator(error) || 'Error al verificar el codigo del usuario',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const resendUserCode = async ({  rims, user }) => {
+  const client = await pool.connect();
+  try {
+    await resendCode(rims, VerificationValue.CellPhone);
+    return { status: 200, message: 'Usuario enlazado y verificado' };
+  } catch (error) {
+    let status = error.tiempo ? 429 : 500
+    throw {
+      status: status,
+      message: errorMessageGenerator(error) || 'Error al verificar el codigo del usuario',
+      ...error
     };
   } finally {
     client.release();
