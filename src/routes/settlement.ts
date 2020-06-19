@@ -98,8 +98,16 @@ router.post('/taxPayer', authenticate('jwt'), async (req, res) => {
 });
 
 router.put('/taxPayer/verify', authenticate('jwt'), async (req, res) => {
-  const { codigo } = req.body;
-  const [error, data] = await fulfill(verifyUserLinking({ code: codigo, user: req.user }));
+  const { codigo, rims } = req.body;
+  const [error, data] = await fulfill(verifyUserLinking({ rims, code: codigo, user: req.user }));
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+});
+
+//TERMINAR
+router.put('/taxPayer/resend', authenticate('jwt'), async (req, res) => {
+  const { codigo, rims } = req.body;
+  const [error, data] = await fulfill(verifyUserLinking({ rims, code: codigo, user: req.user }));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });

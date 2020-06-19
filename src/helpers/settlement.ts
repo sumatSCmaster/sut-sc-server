@@ -18,7 +18,7 @@ import bcrypt from 'bcryptjs';
 import md5 from 'md5';
 import { query } from 'express-validator';
 import { sendNotification } from './notification';
-import { sendRimVerification } from './verification';
+import { sendRimVerification, verifyCode } from './verification';
 const written = require('written-number');
 
 const gticPool = GticPool.getInstance();
@@ -669,6 +669,7 @@ export const initialUserLinking = async (linkingData, user) => {
   const client = await pool.connect();
   const { datosContribuyente, sucursales, datosContacto } = linkingData;
   const { tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia } = datosContribuyente;
+  let payload;
   try {
     const contributor = (
       await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [
@@ -684,7 +685,7 @@ export const initialUserLinking = async (linkingData, user) => {
         true,
       ])
     ).rows[0];
-
+    await client.query('UPDATE USUARIO SET id_contribuyente = $1 WHERE id_usuario = $2', [contributor.id_contribuyente, user.id]);
     if (datosContribuyente.tipoContribuyente === 'JURIDICO') {
       const rims: number[] = await Promise.all(
         sucursales
@@ -752,6 +753,7 @@ export const initialUserLinking = async (linkingData, user) => {
           .filter((el) => el)
       );
       await sendRimVerification(rims, VerificationValue.CellPhone, datosContacto.telefono);
+      payload.rims = rims;
     } else {
       sucursales.map((x) => {
         const { inmuebles, liquidaciones, multas, datosSucursal } = x;
@@ -760,26 +762,27 @@ export const initialUserLinking = async (linkingData, user) => {
         }
       });
     }
-    return { status: 201, message: 'En espera de verificación de teléfono' };
+    return { status: 201, message: 'Enlace inicial completado', rims: payload.rims };
   } catch (error) {
     throw {
       status: 500,
       error,
-      message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
+      message: errorMessageGenerator(error) || 'Error al iniciar el enlace de usuario de Tributo',
     };
   } finally {
     client.release();
   }
 };
-
-export const verifyUserLinking = async ({ code, user }) => {
+export const verifyUserLinking = async ({ code, rims, user }) => {
   const client = await pool.connect();
   try {
+    await verifyCode(rims, VerificationValue.CellPhone, code);
+    return { status: 200, message: 'Usuario enlazado y verificado' };
   } catch (error) {
     throw {
       status: 500,
       error,
-      message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
+      message: errorMessageGenerator(error) || 'Error al verificar el codigo del usuario',
     };
   } finally {
     client.release();
