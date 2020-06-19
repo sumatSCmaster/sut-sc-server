@@ -667,7 +667,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
 
 export const initialUserLinking = async (linkingData, user) => {
   const client = await pool.connect();
-  const { datosContribuyente, sucursales } = linkingData;
+  const { datosContribuyente, sucursales, datosContacto } = linkingData;
   const { tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia } = datosContribuyente;
   try {
     const contributor = (
@@ -686,7 +686,7 @@ export const initialUserLinking = async (linkingData, user) => {
     ).rows[0];
 
     if (datosContribuyente.tipoContribuyente === 'JURIDICO') {
-      const sucursalesContribuyente: { registroMunicipal: number; telefonoMovil: string }[] = await Promise.all(
+      const rims: number[] = await Promise.all(
         sucursales
           .map(async (x) => {
             const { inmuebles, liquidaciones, multas, datosSucursal } = x;
@@ -696,14 +696,14 @@ export const initialUserLinking = async (linkingData, user) => {
             const multasVigentes = multas.filter((el) => el.estado !== 'PAGADO');
             const pagados = liquidacionesPagas.concat(multasPagas);
             const vigentes = liquidacionesVigentes.concat(multasVigentes);
-            const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial } = datosSucursal;
+            const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
             const registry = (
               await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [
                 contributor.id_contribuyente,
                 registroMunicipal,
                 nombreRepresentante,
-                telefonoMovil,
-                email,
+                representado ? datosContacto.telefono : telefonoMovil,
+                representado ? datosContacto.correo : email,
                 denomComercial,
               ])
             ).rows[0];
@@ -747,12 +747,11 @@ export const initialUserLinking = async (linkingData, user) => {
                 )
               );
             }
-            return datosSucursal.representado ? { registroMunicipal: registry.id_registro_municipal, telefonoMovil } : undefined;
+            return representado ? registry.id_registro_municipal : undefined;
           })
           .filter((el) => el)
       );
-      const rims = sucursalesContribuyente.map((el) => el.registroMunicipal);
-      await sendRimVerification(rims, VerificationValue.CellPhone, sucursalesContribuyente[0].telefonoMovil);
+      await sendRimVerification(rims, VerificationValue.CellPhone, datosContacto.telefono);
     } else {
       sucursales.map((x) => {
         const { inmuebles, liquidaciones, multas, datosSucursal } = x;
