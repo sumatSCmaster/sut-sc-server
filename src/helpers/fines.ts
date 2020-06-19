@@ -147,7 +147,7 @@ const addPaymentFining = async (procedure, user: Usuario) => {
     throw {
       status: 500,
       error,
-      message: errorMessageGenerator(error) || errorMessageExtractor(e) || 'Error al insertar datos de pago',
+      message: errorMessageGenerator(error) || errorMessageExtractor(error) || 'Error al insertar datos de pago',
     };
   } finally {
     client.release();
@@ -223,7 +223,7 @@ export const validateFining = async (procedure, user: Usuario) => {
     throw {
       status: 500,
       error,
-      message: errorMessageGenerator(error) || errorMessageExtractor(e) || 'Error al validar pago de multa',
+      message: errorMessageGenerator(error) || errorMessageExtractor(error) || 'Error al validar pago de multa',
     };
   } finally {
     client.release();

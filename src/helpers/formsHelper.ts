@@ -4,6 +4,7 @@ import * as pdf from 'html-pdf';
 import * as qr from 'qrcode';
 import S3Client from '@utils/s3';
 import queries from '@utils/queries';
+import { errorMessageExtractor } from './errors';
 const written = require('written-number');
 
 const dev = process.env.NODE_ENV !== 'production';

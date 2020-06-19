@@ -103,7 +103,7 @@ router.get('/:type/:name', (req, res) => {
   try {
     res.setHeader('Content-Type', 'image/png');
     res.sendFile(path.join(process.env.STORAGE_DIR || '/', type, name));
-  } catch {
+  } catch (e) {
     res.setHeader('ContentType', 'application/json');
     res.status(404).json({
       status: 404,
