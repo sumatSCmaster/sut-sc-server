@@ -195,13 +195,13 @@ ALTER FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite i
 -- Name: insert_solicitud(integer, integer, character varying); Type: FUNCTION; Schema: impuesto; Owner: postgres
 --
 
-CREATE FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer, _referencia_municipal character varying) RETURNS SETOF impuesto.solicitud
+CREATE FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer, _id_contribuyente character varying) RETURNS SETOF impuesto.solicitud
     LANGUAGE plpgsql
     AS $$
 DECLARE
     solicitudRow impuesto.solicitud%ROWTYPE;
     BEGIN
-        INSERT INTO impuesto.solicitud (id_usuario, aprobado, fecha, id_tipo_tramite, id_contribuyente) VALUES (_id_usuario, false, now(), _id_tipo_tramite, (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE referencia_municipal = _referencia_municipal)) RETURNING * INTO solicitudRow;
+        INSERT INTO impuesto.solicitud (id_usuario, aprobado, fecha, id_tipo_tramite, id_contribuyente) VALUES (_id_usuario, false, now(), _id_tipo_tramite, _id_contribuyente) RETURNING * INTO solicitudRow;
 
         INSERT INTO impuesto.evento_solicitud values (default, solicitudRow.id_solicitud, 'iniciar', now());   
 
@@ -212,7 +212,7 @@ DECLARE
 $$;
 
 
-ALTER FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer, _referencia_municipal character varying) OWNER TO postgres;
+ALTER FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer, _id_contribuyente character varying) OWNER TO postgres;
 
 --
 -- Name: solicitud_transicion(text, text); Type: FUNCTION; Schema: impuesto; Owner: postgres
