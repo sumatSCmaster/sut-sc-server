@@ -83,6 +83,14 @@ export const resendCode = async (idRim: string[], value: VerificationValue) => {
     switch (value) {
       case VerificationValue.Email:
         res = (await client.query(queries.FIND_EMAIL_CODE, [idRim[0]])).rows[0];
+        if(res.tiempo.minutes < 10){
+          let seconds = +res.tiempo.seconds || 0;
+          let minutes = +res.tiempo.minutes || 0;
+          throw {
+            error: new Error('Debe esperar para reenviar un codigo'),
+            tiempo: (10 * 60) - ((minutes * 60) + seconds) 
+          }
+        }
         code = res.codigo_verificacion;
         email = res.email;
         await transporter.sendMail({
@@ -98,7 +106,14 @@ export const resendCode = async (idRim: string[], value: VerificationValue) => {
         res = (await client.query(queries.FIND_PHONE_CODE, [idRim[0]])).rows[0];
         code = res.codigo_verificacion;
         phone = res.telefono_celular;
-
+        if(res.tiempo.minutes < 10){
+          let seconds = +res.tiempo.seconds || 0;
+          let minutes = +res.tiempo.minutes || 0;
+          throw {
+            error: new Error('Debe esperar para reenviar un codigo'),
+            tiempo: (10 * 60) - ((minutes * 60) + seconds) 
+          }
+        }
         await twilioClient.messages.create({
           body: `Su codigo de verificación es: ${code}`,
           from: process.env.TWILIO_NUMBER,

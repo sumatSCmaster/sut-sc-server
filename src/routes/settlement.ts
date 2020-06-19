@@ -13,6 +13,7 @@ import {
   logInExternalLinking,
   verifyUserLinking,
   initialUserLinking,
+  resendUserCode,
 } from '@helpers/settlement';
 
 const router = Router();
@@ -106,8 +107,8 @@ router.put('/taxPayer/verify', authenticate('jwt'), async (req, res) => {
 
 //TODO: TERMINAR y crear el helper
 router.put('/taxPayer/resend', authenticate('jwt'), async (req, res) => {
-  const { codigo, rims } = req.body;
-  const [error, data] = await fulfill(verifyUserLinking({ rims, code: codigo, user: req.user }));
+  const { rims } = req.body;
+  const [error, data] = await fulfill(resendUserCode({ rims, user: req.user }));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });

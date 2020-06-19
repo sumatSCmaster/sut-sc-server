@@ -225,7 +225,7 @@ export const updateConstructionValuesByModel = async (construction, model) => {
     client.query('ROLLBACK');
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al actualizar el valor fiscal de la construccion',
     };
   } finally {
