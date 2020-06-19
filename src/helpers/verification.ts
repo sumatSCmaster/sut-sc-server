@@ -66,7 +66,7 @@ export const sendRimVerification = async (idRim: number[], value: VerificationVa
   };
 };
 
-export const resendCode = async (idRim: string[], value: VerificationValue) => {
+export const resendCode = async (idRim: number[], value: VerificationValue) => {
   const client = await pool.connect();
   let res;
   let code;
@@ -77,13 +77,14 @@ export const resendCode = async (idRim: string[], value: VerificationValue) => {
     switch (value) {
       case VerificationValue.Email:
         res = (await client.query(queries.FIND_EMAIL_CODE, [idRim[0]])).rows[0];
-        if(res.tiempo.minutes < 10){
+        if (!res) throw new Error('No existe una verificacion para la sucursal seleccionada');
+        if (res.tiempo.minutes < 10) {
           let seconds = +res.tiempo.seconds || 0;
           let minutes = +res.tiempo.minutes || 0;
           throw {
             error: new Error('Debe esperar para reenviar un codigo'),
-            tiempo: (10 * 60) - ((minutes * 60) + seconds) 
-          }
+            tiempo: 10 * 60 - (minutes * 60 + seconds),
+          };
         }
         code = res.codigo_verificacion;
         email = res.email;
@@ -98,21 +99,22 @@ export const resendCode = async (idRim: string[], value: VerificationValue) => {
 
       case VerificationValue.CellPhone:
         res = (await client.query(queries.FIND_PHONE_CODE, [idRim[0]])).rows[0];
+        if (!res) throw new Error('No existe una verificacion para la sucursal seleccionada');
         code = res.codigo_verificacion;
         phone = res.telefono_celular;
-        if(res.tiempo.minutes < 10){
+        if (res.tiempo.minutes < 10) {
           let seconds = +res.tiempo.seconds || 0;
           let minutes = +res.tiempo.minutes || 0;
           throw {
             error: new Error('Debe esperar para reenviar un codigo'),
-            tiempo: (10 * 60) - ((minutes * 60) + seconds) 
-          }
+            tiempo: 10 * 60 - (minutes * 60 + seconds),
+          };
         }
-        await twilioClient.messages.create({
-          body: `Su codigo de verificación es: ${code}`,
-          from: process.env.TWILIO_NUMBER,
-          to: phone,
-        });
+        // await twilioClient.messages.create({
+        //   body: `Su codigo de verificación es: ${code}`,
+        //   from: process.env.TWILIO_NUMBER,
+        //   to: phone,
+        // });
         break;
     }
     client.query('COMMIT');

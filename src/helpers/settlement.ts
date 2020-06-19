@@ -731,6 +731,47 @@ export const initialUserLinking = async (linkingData, user) => {
   let payload;
   try {
     client.query('BEGIN');
+    const contributorExists = (
+      await client.query('SELECT * FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2', [tipoDocumento, documento])
+    ).rows;
+    if (contributorExists.length > 0) {
+      const rims: number[] = await Promise.all(
+        await sucursales.map(async (el) => {
+          const { datosSucursal } = el;
+          const { nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
+          const updatedRegistry = (
+            await client.query(
+              'UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombreRepresentante = $2, telefono_celular = $3, email = $4 WHERE id_contribuyente = $5 RETURNING *',
+              [
+                denomComercial,
+                nombreRepresentante,
+                representado ? datosContacto.telefono : telefonoMovil,
+                representado ? datosContacto.correo : email,
+                contributorExists[0].id_contribuyente,
+              ]
+            )
+          ).rows[0];
+          return representado ? updatedRegistry.id_registro_municipal : undefined;
+        })
+      );
+      try {
+        await resendCode(
+          rims.filter((el) => el),
+          VerificationValue.CellPhone
+        );
+      } catch (e) {
+        if (e.message === 'No existe una verificacion para la sucursal seleccionada')
+          await sendRimVerification(
+            rims.filter((el) => el),
+            VerificationValue.CellPhone,
+            datosContacto.telefono,
+            client
+          );
+        else throw e;
+      }
+      payload = { rims: rims.filter((el) => el) };
+      return { status: 200, message: 'Datos actualizados para las sucursales del contribuyente', hasNewCode: true, payload };
+    }
     const contributor = (
       await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [
         tipoDocumento,
@@ -748,74 +789,77 @@ export const initialUserLinking = async (linkingData, user) => {
     await client.query('UPDATE USUARIO SET id_contribuyente = $1 WHERE id_usuario = $2', [contributor.id_contribuyente, user.id]);
     if (datosContribuyente.tipoContribuyente === 'JURIDICO') {
       const rims: number[] = await Promise.all(
-        await sucursales
-          .map(async (x) => {
-            const { inmuebles, liquidaciones, multas, datosSucursal } = x;
-            const liquidacionesPagas = liquidaciones.filter((el) => el.estado === 'PAGADO');
-            const liquidacionesVigentes = liquidaciones.filter((el) => el.estado !== 'PAGADO');
-            const multasPagas = multas.filter((el) => el.estado === 'PAGADO');
-            const multasVigentes = multas.filter((el) => el.estado !== 'PAGADO');
-            const pagados = liquidacionesPagas.concat(multasPagas);
-            const vigentes = liquidacionesVigentes.concat(multasVigentes);
-            const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
-            const registry = (
-              await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [
-                contributor.id_contribuyente,
-                registroMunicipal,
-                nombreRepresentante,
-                representado ? datosContacto.telefono : telefonoMovil,
-                representado ? datosContacto.correo : email,
-                denomComercial,
-              ])
-            ).rows[0];
-            const estates =
-              inmuebles.length > 0
-                ? await Promise.all(
-                    inmuebles.map(
-                      async (el) => (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_referencia_municipal, el.direccion])).rows[0]
-                    )
+        await sucursales.map(async (x) => {
+          const { inmuebles, liquidaciones, multas, datosSucursal } = x;
+          const liquidacionesPagas = liquidaciones.filter((el) => el.estado === 'PAGADO');
+          const liquidacionesVigentes = liquidaciones.filter((el) => el.estado !== 'PAGADO');
+          const multasPagas = multas.filter((el) => el.estado === 'PAGADO');
+          const multasVigentes = multas.filter((el) => el.estado !== 'PAGADO');
+          const pagados = liquidacionesPagas.concat(multasPagas);
+          const vigentes = liquidacionesVigentes.concat(multasVigentes);
+          const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
+          const registry = (
+            await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [
+              contributor.id_contribuyente,
+              registroMunicipal,
+              nombreRepresentante,
+              representado ? datosContacto.telefono : telefonoMovil,
+              representado ? datosContacto.correo : email,
+              denomComercial,
+            ])
+          ).rows[0];
+          const estates =
+            inmuebles.length > 0
+              ? await Promise.all(
+                  inmuebles.map(
+                    async (el) => (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_referencia_municipal, el.direccion])).rows[0]
                   )
-                : undefined;
-            if (pagados.length > 0) {
-              const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
-              await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, 'aprobacioncajero_pi']);
-              await Promise.all(
-                pagados.map(
-                  async (el) =>
-                    await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
-                      application.id_solicitud,
-                      el.monto,
-                      el.ramo,
-                      { fecha: el.fecha },
-                      moment().month(el.fecha.month).format('MM-DD-YYYY'),
-                      registry.id_registro_municipal
-                    ])
                 )
-              );
-            }
+              : undefined;
+          if (pagados.length > 0) {
+            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, 'aprobacioncajero_pi']);
+            await Promise.all(
+              pagados.map(
+                async (el) =>
+                  await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+                    application.id_solicitud,
+                    el.monto,
+                    el.ramo,
+                    { fecha: el.fecha },
+                    moment().month(el.fecha.month).format('MM-DD-YYYY'),
+                    registry.id_registro_municipal,
+                  ])
+              )
+            );
+          }
 
-            if (vigentes.length > 0) {
-              const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
-              await Promise.all(
-                vigentes.map(
-                  async (el) =>
-                    await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
-                      application.id_solicitud,
-                      el.monto,
-                      el.ramo,
-                      { fecha: el.fecha },
-                      moment().month(el.fecha.month).format('MM-DD-YYYY'),
-                      registry.id_registro_municipal
-                    ])
-                )
-              );
-            }
-            return representado ? registry.id_registro_municipal : undefined;
-          })
-
-      )
-      await sendRimVerification(rims.filter((el) => el), VerificationValue.CellPhone, datosContacto.telefono, client);
-      payload = {rims :rims.filter((el) => el)};
+          if (vigentes.length > 0) {
+            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            await Promise.all(
+              vigentes.map(
+                async (el) =>
+                  await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+                    application.id_solicitud,
+                    el.monto,
+                    el.ramo,
+                    { fecha: el.fecha },
+                    moment().month(el.fecha.month).format('MM-DD-YYYY'),
+                    registry.id_registro_municipal,
+                  ])
+              )
+            );
+          }
+          return representado ? registry.id_registro_municipal : undefined;
+        })
+      );
+      await sendRimVerification(
+        rims.filter((el) => el),
+        VerificationValue.CellPhone,
+        datosContacto.telefono,
+        client
+      );
+      payload = { rims: rims.filter((el) => el) };
     } else {
       sucursales.map((x) => {
         const { inmuebles, liquidaciones, multas, datosSucursal } = x;
@@ -855,17 +899,17 @@ export const verifyUserLinking = async ({ code, rims, user }) => {
   }
 };
 
-export const resendUserCode = async ({  rims, user }) => {
+export const resendUserCode = async ({ rims, user }) => {
   const client = await pool.connect();
   try {
     await resendCode(rims, VerificationValue.CellPhone);
     return { status: 200, message: 'Usuario enlazado y verificado' };
   } catch (error) {
-    let status = error.tiempo ? 429 : 500
+    let status = error.tiempo ? 429 : 500;
     throw {
       status: status,
       message: errorMessageGenerator(error) || 'Error al verificar el codigo del usuario',
-      ...error
+      ...error,
     };
   } finally {
     client.release();

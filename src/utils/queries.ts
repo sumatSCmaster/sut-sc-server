@@ -577,11 +577,13 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_APPLICATION_INSTANCES_BY_USER: 'SELECT * FROM impuesto.solicitud WHERE id_usuario = $1',
   GET_APPLICATION_DEBTS_BY_MUNICIPAL_REGISTRY:
     'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.registro_municipal r\
-     ON l.id_registro_municipal = r.id_registro_municipal INNER JOIN impuesto.contribuyente c ON r.id_contribuyente = c.id_contribuyente WHERE\
+     ON l.id_registro_municipal = r.id_registro_municipal INNER JOIN impuesto.contribuyente c ON r.id_contribuyente = c.id_contribuyente INNER JOIN impuesto.subramo sr ON l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE\
       s.aprobado = false AND r.registro_municipal = $1 AND c.tipo_documento = $2 AND c.documento = $3',
   GET_APPLICATION_DEBTS_FOR_NATURAL_CONTRIBUTOR:
-    'SELECT * FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud s ON l.id_solicitud = s.id_solicitud INNER JOIN impuesto.contribuyente c\
-     ON s.id_contribuyente = c.id_contribuyente INNER JOIN impuesto.subramo sr ON l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE s.aprobado = false AND c.tipo_documento = $1 AND c.documento = $2;',
+    'SELECT rm.id_ramo, rm.descripcion, SUM(l.monto) as monto FROM impuesto.ramo rm INNER JOIN impuesto.subramo sr ON rm.id_ramo = sr.id_ramo INNER JOIN\
+     impuesto.liquidacion l ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.solicitud s ON l.id_solicitud = s.id_solicitud INNER JOIN impuesto.contribuyente c\
+    ON s.id_contribuyente = c.id_contribuyente WHERE s.aprobado = false AND c.tipo_documento = $1 AND c.documento = $2 GROUP BY rm.descripcion,\
+     rm.id_ramo HAVING SUM(l.monto) > 0',
   GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR:
     'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.contribuyente c ON s.id_contribuyente = c.id_contribuyente INNER JOIN\
      impuesto.registro_municipal r ON c.id_contribuyente = r.id_contribuyente WHERE r.referencia_municipal = $1 AND c.documento = $2 AND c.tipo_documento = $3;',
@@ -634,7 +636,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     "SELECT * FROM impuesto.insert_solicitud($1, (SELECT id_tipo_tramite FROM tipo_tramite WHERE nombre_tramite = 'Pago de Impuestos'), $2)",
   UPDATE_TAX_APPLICATION_PAYMENT: 'SELECT * FROM impuesto.update_solicitud_state ($1, $2)',
   COMPLETE_TAX_APPLICATION_PAYMENT: 'SELECT * FROM impuesto.complete_solicitud_state($1, $2, null, true)',
-  CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION: 'SELECT * FROM insert_liquidacion($1,$2,$3,$4,$5, $6)',
+  CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION: 'SELECT * FROM insert_liquidacion($1,$2,$3,$4,$5)',
   CURRENT_AE_APPLICATION_EXISTS:
     'SELECT * FROM impuesto.solicitud_view sv INNER JOIN impuesto.registro_municipal rm ON sv.contribuyente = rm.id_contribuyente WHERE sv.documento = $1 AND rm.referencia_municipal = $2 AND sv."tipoDocumento" = $3 AND sv.aprobado = false AND "descripcionRamo" = \'AE\' AND (EXTRACT(month FROM sv."fechaCreacion"::date) = EXTRACT(month FROM now()::date));',
   CURRENT_SM_APPLICATION_EXISTS:
@@ -684,9 +686,9 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   DISABLE_EMAIL_VERIFICATION: 'UPDATE impuesto.verificacion_email SET verificado = true WHERE id_verificacion_email = $1',
   DISABLE_PHONE_VERIFICATION: 'UPDATE impuesto.verificacion_telefono SET verificado = true WHERE id_verificacion_phone = $1',
   FIND_EMAIL_CODE:
-    "SELECT ve.*, rm.*, (CURRENT_TIMESTAMP - fecha_recuperacion) AS tiempo FROM impuesto.verificacion_email ve INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = ve.id_registro_municipal WHERE id_registro_municipal = $1 ",
+    "SELECT * FROM impuesto.verificacion_email ve INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = ve.id_registro_municipal WHERE id_registro_municipal = $1 AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
   FIND_PHONE_CODE:
-    "SELECT vt, rm.*, (CURRENT_TIMESTAMP - fecha_recuperacion) AS tiempo FROM impuesto.verificacion_telefono vt INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = vt.id_registro_municipal WHERE id_registro_municipal = $1 ",
+    "SELECT * FROM impuesto.verificacion_telefono vt INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = vt.id_registro_municipal WHERE id_registro_municipal = $1 AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
 
   gtic: {
     GET_NATURAL_CONTRIBUTOR:
