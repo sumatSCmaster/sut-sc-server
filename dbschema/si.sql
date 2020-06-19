@@ -741,7 +741,7 @@ CREATE TABLE impuesto.liquidacion (
     id_subramo integer,
     datos json,
     fecha date,
-    id_registro_municipal integer NOT NULL
+    id_registro_municipal integer
 );
 
 
@@ -767,6 +767,32 @@ $$;
 
 
 ALTER FUNCTION public.insert_liquidacion(_id_solicitud integer, _monto numeric, _ramo character varying, _datos json, _fecha date) OWNER TO postgres;
+
+--
+-- Name: insert_liquidacion(integer, numeric, character varying, json, date, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.insert_liquidacion(_id_solicitud integer, _monto numeric DEFAULT NULL::numeric, _ramo character varying DEFAULT NULL::character varying, _datos json DEFAULT NULL::json, _fecha date DEFAULT NULL::date, _id_registro_municipal integer DEFAULT NULL::integer) RETURNS SETOF impuesto.liquidacion
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    liquidacionRow impuesto.liquidacion%ROWTYPE;
+    BEGIN
+        INSERT INTO impuesto.liquidacion (id_solicitud, monto, id_subramo, datos, fecha) VALUES (_id_solicitud, _monto, (SELECT sr.id_subramo FROM impuesto.subramo sr INNER JOIN impuesto.ramo r ON sr.id_ramo = r.id_ramo WHERE r.descripcion = _ramo AND sr.descripcion = 'Pago Ordinario'), _datos, _fecha) RETURNING * INTO liquidacionRow;
+
+        IF _id_registro_municipal IS NOT NULL THEN
+            UPDATE impuesto.liquidacion SET id_registro_municipal = _id_registro_municipal WHERE id_liquidacion = liquidacionRow.id_liquidacion;
+        END IF;
+   
+
+        RETURN QUERY SELECT * FROM impuesto.liquidacion WHERE id_liquidacion=liquidacionRow.id_liquidacion;
+
+        RETURN;
+    END;
+$$;
+
+
+ALTER FUNCTION public.insert_liquidacion(_id_solicitud integer, _monto numeric, _ramo character varying, _datos json, _fecha date, _id_registro_municipal integer) OWNER TO postgres;
 
 --
 -- Name: multa_transicion(text, text); Type: FUNCTION; Schema: public; Owner: postgres
