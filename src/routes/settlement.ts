@@ -13,6 +13,7 @@ import {
   logInExternalLinking,
   verifyUserLinking,
   initialUserLinking,
+  getEntireDebtsForContributor,
 } from '@helpers/settlement';
 
 const router = Router();
@@ -49,13 +50,21 @@ router.get('/instances', authenticate('jwt'), async (req: any, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-//TODO: incluir validacion de que sea funcionario
+//TODO: incluir validacion de que sea funcionario, informacion del contribuyente
 router.get('/instances/:referencia', authenticate('jwt'), async (req, res) => {
   const { tipoDocumento, documento, tipoContribuyente } = req.query;
   const { referencia } = req.params;
   const [err, data] = await fulfill(
     getApplicationsAndSettlementsForContributor({ referencia, docType: tipoDocumento, document: documento, typeUser: tipoContribuyente })
   );
+  if (err) res.status(err.status).json(err);
+  if (data) res.status(data.status).json(data);
+});
+
+router.get('/debts/:referencia', authenticate('jwt'), async (req, res) => {
+  const { tipoDocumento, documento, tipoContribuyente } = req.query;
+  const { referencia } = req.params;
+  const [err, data] = await fulfill(getEntireDebtsForContributor({ referencia, docType: tipoDocumento, document: documento, typeUser: tipoContribuyente }));
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
 });
