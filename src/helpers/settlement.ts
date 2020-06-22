@@ -900,6 +900,7 @@ export const resendUserCode = async ({ rims, user }) => {
   }
 };
 
+//FIXME: acoplar a los estandares actuales de SUT
 export const insertSettlements = async ({ process, user }) => {
   const client = await pool.connect();
   const { impuestos } = process;
@@ -917,7 +918,7 @@ export const insertSettlements = async ({ process, user }) => {
     ).rows[0];
     if (!contributorExists) return { status: 404, message: 'No existe un contribuyente registrado en el sistema' };
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-    const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, process.rim])).rows[0];
+    const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributorExists.id_contribuyente])).rows[0];
 
     const hasAE = impuestos.find((el) => el.ramo === 'AE');
     if (hasAE) {

@@ -725,27 +725,6 @@ CREATE TABLE impuesto.liquidacion (
 ALTER TABLE impuesto.liquidacion OWNER TO postgres;
 
 --
--- Name: insert_liquidacion(integer, numeric, character varying, json, date); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.insert_liquidacion(_id_solicitud integer, _monto numeric DEFAULT NULL::numeric, _ramo character varying DEFAULT NULL::character varying, _datos json DEFAULT NULL::json, _fecha date DEFAULT NULL::date) RETURNS SETOF impuesto.liquidacion
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-    liquidacionRow impuesto.liquidacion%ROWTYPE;
-    BEGIN
-        INSERT INTO impuesto.liquidacion (id_solicitud, monto, id_subramo, datos, fecha) VALUES (_id_solicitud, _monto, (SELECT sr.id_subramo FROM impuesto.subramo sr INNER JOIN impuesto.ramo r ON sr.id_ramo = r.id_ramo WHERE r.descripcion = _ramo AND sr.descripcion = 'Pago Ordinario'), _datos, _fecha) RETURNING * INTO liquidacionRow;
-            
-        RETURN QUERY SELECT * FROM impuesto.liquidacion WHERE id_liquidacion=liquidacionRow.id_liquidacion;
-
-        RETURN;
-    END;
-$$;
-
-
-ALTER FUNCTION public.insert_liquidacion(_id_solicitud integer, _monto numeric, _ramo character varying, _datos json, _fecha date) OWNER TO postgres;
-
---
 -- Name: insert_liquidacion(integer, numeric, character varying, json, date, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2674,7 +2653,8 @@ CREATE TABLE impuesto.registro_municipal (
     telefono_celular character varying,
     telefono_habitacion character varying,
     email character varying,
-    denominacion_comercial character varying
+    denominacion_comercial character varying,
+    nombre_representante character varying
 );
 
 
@@ -3546,15 +3526,16 @@ ALTER SEQUENCE public.facturas_tramites_id_factura_seq OWNED BY public.factura_t
 
 CREATE TABLE public.inmueble_urbano (
     id_inmueble integer NOT NULL,
-    cod_catastral character varying NOT NULL,
+    cod_catastral character varying,
     direccion character varying NOT NULL,
-    id_parroquia integer NOT NULL,
-    metros_construccion numeric NOT NULL,
-    metros_terreno numeric NOT NULL,
+    id_parroquia integer,
+    metros_construccion numeric,
+    metros_terreno numeric,
     fecha_creacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     fecha_ultimo_avaluo timestamp with time zone,
-    tipo_inmueble character varying
+    tipo_inmueble character varying,
+    id_registro_municipal integer
 );
 
 
@@ -5874,7 +5855,6 @@ COPY impuesto.categoria_propaganda (id_categoria_propaganda, descripcion) FROM s
 --
 
 COPY impuesto.contribuyente (id_contribuyente, tipo_documento, documento, razon_social, denominacion_comercial, siglas, id_parroquia, sector, direccion, punto_referencia, verificado) FROM stdin;
-1	V	222	AA	AAAA,	CCCC	108	ASDADS	ASDASDAS	ASDASD	f
 \.
 
 
@@ -5921,8 +5901,6 @@ COPY impuesto.dias_feriados (id_dia_feriado, dia, descripcion) FROM stdin;
 --
 
 COPY impuesto.evento_solicitud (id_evento_solicitud, id_solicitud, event, "time") FROM stdin;
-2	62	iniciar	2020-06-22 10:56:35.788995
-3	62	ingresardatos_pi	2020-06-22 10:57:04.774345
 \.
 
 
@@ -5947,25 +5925,6 @@ COPY impuesto.inmueble_contribuyente (id_inmueble_contribuyente, id_inmueble, id
 --
 
 COPY impuesto.liquidacion (id_liquidacion, id_solicitud, monto, certificado, recibo, fecha_liquidacion, id_subramo, datos, fecha, id_registro_municipal) FROM stdin;
-187	62	1399120.00	\N	\N	2020-06-22	9	{"id":1}	2020-06-22	1
-188	62	1399120.00	\N	\N	2020-06-22	9	{"id":1}	2020-06-22	1
-189	62	1399120.00	\N	\N	2020-06-22	9	{"id":1}	2020-06-22	1
-190	62	1399120.00	\N	\N	2020-06-22	9	{"id":1}	2020-06-22	1
-191	62	1399120.00	\N	\N	2020-06-22	9	{"id":1}	2020-06-22	1
-192	62	1399120.00	\N	\N	2020-06-22	9	{"id":1}	2020-06-22	1
-193	62	1399120.00	\N	\N	2020-06-22	\N	{"id":1}	2020-06-22	1
-194	62	1399120.00	\N	\N	2020-06-22	10	{"id":1}	2020-06-22	1
-195	62	1399120.00	\N	\N	2020-06-22	10	{"id":1}	2020-06-22	1
-196	62	1399120.00	\N	\N	2020-06-22	10	{"id":1}	2020-06-22	1
-197	62	1399120.00	\N	\N	2020-06-22	10	{"id":1}	2020-06-22	1
-198	62	1399120.00	\N	\N	2020-06-22	10	{"id":1}	2020-06-22	1
-199	62	1399120.00	\N	\N	2020-06-22	10	{"id":1}	2020-06-22	1
-200	62	1399120.00	\N	\N	2020-06-22	10	{"id":1}	2020-06-22	1
-201	62	1399120.00	\N	\N	2020-06-22	10	{"id":1}	2020-06-22	1
-202	62	1399120.00	\N	\N	2020-06-22	10	{"id":1}	2020-06-22	1
-203	62	1399120.00	\N	\N	2020-06-22	10	{"id":1}	2020-06-22	1
-204	62	1399120.00	\N	\N	2020-06-22	10	{"id":1}	2020-06-22	1
-205	62	1399120.00	\N	\N	2020-06-22	10	{"id":1}	2020-06-22	1
 \.
 
 
@@ -5991,9 +5950,10 @@ COPY impuesto.plazo_exoneracion (id_plazo_exoneracion, fecha_inicio, fecha_fin) 
 
 COPY impuesto.ramo (id_ramo, codigo, descripcion, descripcion_corta) FROM stdin;
 29	501	MULTAS	MUL
+2	101	SITUADO CONSTITUCIONAL	\N
 9	112	ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES	AE
 8	111	PROPIEDAD INMOBILIARIA	IU
-2	101	SITUADO CONSTITUCIONAL	\N
+11	114	PROPAGANDAS Y AVISOS COMERCIALES	PM
 3	102	SITUADO PUENTE SOBRE EL LAGO	\N
 4	103	LEY DE ASIGNACIONES ESPECIALES	\N
 5	104	FONDO INTERGUB.PARA LA DESCENT.(FIDES)	\N
@@ -6047,14 +6007,13 @@ COPY impuesto.ramo (id_ramo, codigo, descripcion, descripcion_corta) FROM stdin;
 57	950	INGRESOS POR SERVICIOS INTERNOS	\N
 58	951	DEPOSITOS RECHAZADOS	\N
 59	990	LIQUIDACIONES POR CHEQUE DEVUELTO	\N
+67	505	MULTA POLIMARACAIBO	\N
 60	106	FONDO D/INV.D/ESTAB.MACRO ECONOMICA	\N
-87	212	TASAS SAGAS	\N
 61	107	RECURSOS DE MINFRA	\N
 62	108	MINISTERIO DE PLANIFICACION Y DESARROLLO	\N
 63	109	MINISTERIO DEL INTERIOR Y JUSTICIA	\N
 65	207	CONSTANCIA DE VARIABLES URBANAS FUNDAMENTALES	\N
 66	208	CONSTANCIAS DE CALIDAD TERMICAS	\N
-67	505	MULTA POLIMARACAIBO	\N
 68	123	DIRECCION DE CATASTRO	\N
 69	124	DIRECCION DE OMPU	\N
 70	403	INTERESES Y DIVIDENDOS (ALCALDIA MCBO CUENTAS SEDEMAT)	\N
@@ -6074,6 +6033,7 @@ COPY impuesto.ramo (id_ramo, codigo, descripcion, descripcion_corta) FROM stdin;
 84	707	INGRESOS EN TRANSITO	\N
 85	210	DIRECCION DE PROTECCION CIVIL	\N
 86	211	TASAS ALCADIA DE MARACAIBO	\N
+87	212	TASAS SAGAS	\N
 88	411	INTERESES Y DIVIDENDOS (PROTECCION CIVIL)	\N
 89	412	INTERESES Y DIVIDENDOS (SALUD MARACAIBO)	\N
 90	213	TASAS IMTCUMA	\N
@@ -6084,7 +6044,6 @@ COPY impuesto.ramo (id_ramo, codigo, descripcion, descripcion_corta) FROM stdin;
 97	130	DIRECCION DE AGUA	\N
 98	140	DIRECCION DE INGENIERIA MUNICIPAL	\N
 64	122	SERVICIOS MUNICIPALES	SM
-11	114	PROPAGANDAS Y AVISOS COMERCIALES	PP
 \.
 
 
@@ -6100,8 +6059,7 @@ COPY impuesto.ramo_exoneracion (id_ramo_exoneracion, id_plazo_exoneracion, id_ra
 -- Data for Name: registro_municipal; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.registro_municipal (id_registro_municipal, id_contribuyente, referencia_municipal, fecha_aprobacion, telefono_celular, telefono_habitacion, email, denominacion_comercial) FROM stdin;
-1	1	2020200202	\N	+584126750593	+5802617534001	andresmarmolm@gmail.com	\N
+COPY impuesto.registro_municipal (id_registro_municipal, id_contribuyente, referencia_municipal, fecha_aprobacion, telefono_celular, telefono_habitacion, email, denominacion_comercial, nombre_representante) FROM stdin;
 \.
 
 
@@ -6110,7 +6068,6 @@ COPY impuesto.registro_municipal (id_registro_municipal, id_contribuyente, refer
 --
 
 COPY impuesto.solicitud (id_solicitud, id_usuario, aprobado, fecha, fecha_aprobado, id_tipo_tramite, id_contribuyente) FROM stdin;
-62	58	f	2020-06-22	\N	5	1
 \.
 
 
@@ -6775,7 +6732,6 @@ COPY impuesto.usuario_enlazado (id_usuario_enlazado, id_contribuyente, email) FR
 --
 
 COPY impuesto.verificacion_email (id_verificacion_email, id_registro_municipal, codigo_recuperacion, fecha_recuperacion, verificado) FROM stdin;
-5	1	229367	2020-06-15 14:07:55.240867-04	t
 \.
 
 
@@ -7336,8 +7292,15 @@ COPY public.factura_tramite (id_factura, id_tramite) FROM stdin;
 -- Data for Name: inmueble_urbano; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, fecha_creacion, fecha_actualizacion, fecha_ultimo_avaluo, tipo_inmueble) FROM stdin;
-21	231315U01004083001001P0500	Calle 73 entre Av. 3E y 3F	108	200	300	2020-03-20 16:46:01.230084-04	2020-03-20 16:46:01.230084-04	\N	\N
+COPY public.inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, fecha_creacion, fecha_actualizacion, fecha_ultimo_avaluo, tipo_inmueble, id_registro_municipal) FROM stdin;
+21	231315U01004083001001P0500	Calle 73 entre Av. 3E y 3F	108	200	300	2020-03-20 16:46:01.230084-04	2020-03-20 16:46:01.230084-04	\N	\N	\N
+128	\N	Parroquia CHIQUINQUIRA Sector  INDIO MARA Avenida  65 Calle  22A, Local Nro.  MZN, Pto de Ref.   EDIF. IPSFA	\N	\N	\N	2020-06-19 14:59:15.540418-04	2020-06-19 14:59:15.540418-04	\N	\N	\N
+129	\N	Parroquia OLEGARIO VILLALOBOS Sector SCT   BELLA VISTA(OLEGARIO V) AVENIDA 4 BELLA VISTA 1684520 LOCAL 67-13 LOCAL EDF. BLITZ 67-13   FTE. CHURRASCO BAR-GRILL MBO Maracaibo ZUL Avenida 4 Calle 0, Apartamento Nro. 67-13, Pto de Ref. 0	\N	\N	\N	2020-06-19 14:59:15.540418-04	2020-06-19 14:59:15.540418-04	\N	\N	\N
+130	\N	Parroquia CHIQUINQUIRA Sector INDIO MARA Avenida 22A Calle 65, Local Nro. MZN., Pto de Ref. EDIF. IPSFA	\N	\N	\N	2020-06-19 14:59:15.540418-04	2020-06-19 14:59:15.540418-04	\N	\N	\N
+131	\N	Parroquia CHIQUINQUIRA Sector - Avenida - Calle -, Local Nro. -, Pto de Ref. -	\N	\N	\N	2020-06-19 14:59:15.540418-04	2020-06-19 14:59:15.540418-04	\N	\N	\N
+132	\N		\N	\N	\N	2020-06-19 14:59:15.540418-04	2020-06-19 14:59:15.540418-04	\N	\N	\N
+133	\N	Parroquia CHIQUINQUIRA Sector SCT   PARAISO AVENIDA 22 1674040   PB PB LDO. CUARTEL LIBERTADOR MBO Maracaibo ZUL Avenida 22A Calle 65, Local Nro. P A, Pto de Ref. IPFA	\N	\N	\N	2020-06-19 14:59:15.540418-04	2020-06-19 14:59:15.540418-04	\N	\N	\N
+134	\N	Parroquia OLEGARIO VILLALOBOS Sector INDIO MARA Avenida 22A Calle 65, Local Nro. 3, Pto de Ref. IPFA	\N	\N	\N	2020-06-19 14:59:15.540418-04	2020-06-19 14:59:15.540418-04	\N	\N	\N
 \.
 
 
@@ -7874,6 +7837,7 @@ COPY public.tipo_tramite (id_tipo_tramite, id_institucion, nombre_tramite, costo
 18	5	Apartado de Bohío	2500000	pa	Apartado de Bohío	SEDEPAR-001	sedepar-solt-AB	sedepar-cert-AB	f	t	5	\N
 22	3	Constancia de Nomenclatura	200000.0	cr	NM	CPU-OMCAT-003	cpu-solt-NM	cpu-cert-NM	f	t	0.4	\N
 5	9	Pago de Impuestos	\N	pi	Pago de Impuestos	\N	\N	\N	f	f	\N	\N
+9	9	Pago de Impuestos	\N	pi	Pago de Impuestos	\N	\N	\N	f	f	\N	\N
 \.
 
 
@@ -8024,7 +7988,6 @@ COPY public.tramite_archivo_recaudo (id_tramite, url_archivo_recaudo) FROM stdin
 COPY public.usuario (id_usuario, nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, id_tipo_usuario, password, telefono, id_contribuyente) FROM stdin;
 55	Super Usuario	super@user.com	Super Usuario	1	V	1	$2a$10$VVT8CHvO3jEEoj/djKK4Z.CGPO9JAHw1NMUIK6QwM3BEwElf68kUW	\N	\N
 56	Administrador Bomberos	admin@bomberos.com	Bomberos	1231231231	V	2	$2a$10$nqEy4iyMTQJLAN.BOQ2GuuWioAwRcnXY7ClFbJtmp4svHLg9os/8m	1231231231	\N
-58	External User	external@user.com	Aqui	27139153	V	4	$2a$10$1az9AKXYIZ48FrTXXnb24.QT89PZuCTh2n0zabqVW7G8YyKinYNXe	4127645681	\N
 59	Administrador SAGAS	admin@sagas.com	SAGAS	123123	V	2	$2a$10$.avdkJGtcLhgw/UydHdZf.QEeiSoAjUxRM/xLiTA1gQLUDkDy4lfm	1231231231	\N
 66	Administrador Alcaldia	admin@alcaldia.com	Alcaldia	99999999	V	2	$2a$10$OtCHXU7MOIa6a5K2dt.soOa4AvzrKvp5qY1RtYTaCQqpV2.KTsOyu	8123814877	\N
 67	Administrador CPU	admin@cpu.com	CPU	1231234444	V	2	$2a$10$qEObA7PrDPq2vv/MsfcyFutEKZQuPdVxQnv.5cafIrxfaBnN/P0ba	1231239811	\N
@@ -8044,6 +8007,7 @@ COPY public.usuario (id_usuario, nombre_completo, nombre_de_usuario, direccion, 
 82	Funcionario INTCUMA	funcionario@intcuma.com	INTCUMA	1023102938	V	3	$2a$10$qVi/NuT7X1ELSfz5mpM8e.OrMKAuSqJLPQ4H45/SB/WiwUw2TkA2i	1829038123	\N
 68	Funcionario CPU	funcionario@cpu.com	CPU	1283190247	V	3	$2a$10$qLVJeDD5mKiXlhrNQEJDtOX9baIZcjY3zwMmepViWXp.VENHwaOda	9271092741	\N
 83	Admin SEDEMAT	admin@sedemat.com	SEDEMAT	1923812093	V	2	$2a$10$24HQ9feMqbPag1esm.IhIOkaAYcQlTKeKlTZlU8xg78bLqeQuCCMC	1902831092	\N
+58	External User	external@user.com	Aqui	27139153	V	4	$2a$10$1az9AKXYIZ48FrTXXnb24.QT89PZuCTh2n0zabqVW7G8YyKinYNXe	4127645681	\N
 \.
 
 
@@ -10137,7 +10101,7 @@ SELECT pg_catalog.setval('impuesto.contribuyente_exoneracion_id_contribuyente_ex
 -- Name: contribuyente_id_contribuyente_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.contribuyente_id_contribuyente_seq', 1, true);
+SELECT pg_catalog.setval('impuesto.contribuyente_id_contribuyente_seq', 31, true);
 
 
 --
@@ -10158,7 +10122,7 @@ SELECT pg_catalog.setval('impuesto.dias_feriados_id_dia_feriado_seq', 47, true);
 -- Name: evento_solicitud_id_evento_solicitud_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.evento_solicitud_id_evento_solicitud_seq', 3, true);
+SELECT pg_catalog.setval('impuesto.evento_solicitud_id_evento_solicitud_seq', 104, true);
 
 
 --
@@ -10179,7 +10143,7 @@ SELECT pg_catalog.setval('impuesto.inmueble_contribuyente_id_inmueble_contribuye
 -- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.liquidacion_id_liquidacion_seq', 205, true);
+SELECT pg_catalog.setval('impuesto.liquidacion_id_liquidacion_seq', 321, true);
 
 
 --
@@ -10214,14 +10178,14 @@ SELECT pg_catalog.setval('impuesto.ramo_id_ramo_seq', 1, false);
 -- Name: registro_municipal_id_registro_municipal_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.registro_municipal_id_registro_municipal_seq', 1, true);
+SELECT pg_catalog.setval('impuesto.registro_municipal_id_registro_municipal_seq', 116, true);
 
 
 --
 -- Name: solicitud_id_solicitud_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.solicitud_id_solicitud_seq', 62, true);
+SELECT pg_catalog.setval('impuesto.solicitud_id_solicitud_seq', 113, true);
 
 
 --
@@ -10298,7 +10262,7 @@ SELECT pg_catalog.setval('impuesto.verificacion_email_id_verificacion_email_seq'
 -- Name: verificacion_telefono_id_verificacion_telefono_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.verificacion_telefono_id_verificacion_telefono_seq', 1, false);
+SELECT pg_catalog.setval('impuesto.verificacion_telefono_id_verificacion_telefono_seq', 49, true);
 
 
 --
@@ -10375,7 +10339,7 @@ SELECT pg_catalog.setval('public.facturas_tramites_id_factura_seq', 1, false);
 -- Name: inmueble_urbano_id_inmueble_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.inmueble_urbano_id_inmueble_seq', 33, true);
+SELECT pg_catalog.setval('public.inmueble_urbano_id_inmueble_seq', 148, true);
 
 
 --
@@ -10494,7 +10458,7 @@ SELECT pg_catalog.setval('public.templates_certificados_id_template_certificado_
 -- Name: tipos_tramites_id_tipo_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.tipos_tramites_id_tipo_tramite_seq', 5, true);
+SELECT pg_catalog.setval('public.tipos_tramites_id_tipo_tramite_seq', 9, true);
 
 
 --
@@ -10685,6 +10649,14 @@ ALTER TABLE ONLY impuesto.contribuyente_exoneracion
 
 ALTER TABLE ONLY impuesto.contribuyente
     ADD CONSTRAINT contribuyente_pkey PRIMARY KEY (id_contribuyente);
+
+
+--
+-- Name: contribuyente contribuyente_tipo_documento_documento_key; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.contribuyente
+    ADD CONSTRAINT contribuyente_tipo_documento_documento_key UNIQUE (tipo_documento, documento);
 
 
 --
@@ -11811,6 +11783,14 @@ ALTER TABLE ONLY public.factura_tramite
 
 ALTER TABLE ONLY public.inmueble_urbano
     ADD CONSTRAINT inmueble_urbano_id_parroquia_fkey FOREIGN KEY (id_parroquia) REFERENCES public.parroquia(id);
+
+
+--
+-- Name: inmueble_urbano inmueble_urbano_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inmueble_urbano
+    ADD CONSTRAINT inmueble_urbano_id_registro_municipal_fkey FOREIGN KEY (id_registro_municipal) REFERENCES impuesto.registro_municipal(id_registro_municipal);
 
 
 --
