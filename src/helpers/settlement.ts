@@ -665,55 +665,39 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
   }
 };
 
-export const getEntireDebtsForContributor = async ({ referencia, docType, document, typeUser }) => {
+export const getEntireDebtsForContributor = async ({ reference, docType, document, typeUser }) => {
   const client = await pool.connect();
   try {
+    console.log(document, typeUser, docType, reference);
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-    const applications: Solicitud[] = await Promise.all(
-      (typeUser === 'JURIDICO'
-        ? await client.query(queries.GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR, [referencia, document, docType])
-        : await client.query(queries.GET_APPLICATION_INSTANCES_FOR_NATURAL_CONTRIBUTOR, [document, docType])
-      ).rows.map(async (el) => {
-        const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
-
-        return {
-          id: el.id_solicitud,
-          usuario: el.usuario,
-          contribuyente: el.id_contribuyente,
-          aprobado: el.aprobado,
-          fecha: el.fecha,
-          monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0]
-            .monto_total,
-          liquidaciones: liquidaciones
-            .filter((el) => el.tipoProcedimiento !== 'Multas')
-            .map((el) => {
-              return {
-                id: el.id_liquidacion,
-                ramo: el.tipoProcedimiento,
-                fecha: el.datos.fecha,
-                monto: el.monto,
-                certificado: el.certificado,
-                recibo: el.recibo,
-              };
-            }),
-          multas: liquidaciones
-            .filter((el) => el.tipoProcedimiento === 'Multas')
-            .map((el) => {
-              return {
-                id: el.id_liquidacion,
-                ramo: el.tipoProcedimiento,
-                fecha: el.datos.fecha,
-                monto: el.monto * UTMM,
-                descripcion: el.datos.descripcion,
-                certificado: el.certificado,
-                recibo: el.recibo,
-              };
-            }),
-        };
-      })
-    );
-    return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', solicitudes: applications };
+    const contribuyente = (await client.query(queries.GET_CONTRIBUTOR_BY_DOCUMENT_AND_DOC_TYPE, [document, docType])).rows[0];
+    if (!contribuyente) return { status: 404, message: 'El contribuyente no está registrado en SEDEMAT' };
+    const liquidaciones = (typeUser === 'NATURAL'
+      ? await client.query(queries.GET_APPLICATION_DEBTS_FOR_NATURAL_CONTRIBUTOR, [contribuyente.id_contribuyente])
+      : await client.query(queries.GET_APPLICATION_DEBTS_BY_MUNICIPAL_REGISTRY, [reference, contribuyente.id_contribuyente])
+    ).rows;
+    const hasSettlements = liquidaciones.length > 0;
+    if (!hasSettlements) return { status: 404, message: 'El contribuyente no posee deudas' };
+    const payload = {
+      contribuyente: {
+        id: contribuyente.id_contribuyente,
+        tipoDocumento: contribuyente.tipo_documento,
+        documento: contribuyente.documento,
+        razonSocial: contribuyente.razon_social,
+        denomComercial: contribuyente.denominacion_comercial || undefined,
+        siglas: contribuyente.siglas || undefined,
+        parroquia: contribuyente.parroquia,
+        sector: contribuyente.sector,
+        direccion: contribuyente.direccion,
+        puntoReferencia: contribuyente.punto_referencia,
+        verificado: contribuyente.verificado,
+        liquidaciones: liquidaciones.map((x) => ({ id: x.id_ramo, ramo: x.descripcion, monto: x.monto })),
+        totalDeuda: liquidaciones.map((x) => x.monto).reduce((i, j) => i + j),
+      },
+    };
+    return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', ...payload };
   } catch (error) {
+    console.log(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -760,7 +744,7 @@ export const initialUserLinking = async (linkingData, user) => {
           VerificationValue.CellPhone
         );
       } catch (e) {
-        console.log(e.message)
+        console.log(e.message);
         if (e.message === 'No existe una verificacion para la sucursal seleccionada')
           await sendRimVerification(
             rims.filter((el) => el),

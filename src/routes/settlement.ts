@@ -62,10 +62,12 @@ router.get('/instances/:referencia', authenticate('jwt'), async (req, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-router.get('/debts/:referencia', authenticate('jwt'), async (req, res) => {
-  const { tipoDocumento, documento, tipoContribuyente } = req.query;
-  const { referencia } = req.params;
-  const [err, data] = await fulfill(getEntireDebtsForContributor({ referencia, docType: tipoDocumento, document: documento, typeUser: tipoContribuyente }));
+router.get('/debts/:tipoContribuyente', authenticate('jwt'), async (req, res) => {
+  const { tipoDocumento, documento, referencia } = req.query;
+  const { tipoContribuyente } = req.params;
+  const [err, data] = await fulfill(
+    getEntireDebtsForContributor({ reference: referencia, docType: tipoDocumento, document: documento, typeUser: tipoContribuyente })
+  );
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
 });
