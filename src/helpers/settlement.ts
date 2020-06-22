@@ -243,8 +243,6 @@ const nullStringCheck = (str: string | null): string => {
 export const getTaxPayerInfo = async ({ docType, document, type, gtic, client }) => {
   let taxPayer;
   try {
-    const taxPayerExists = (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rowCount;
-    if (taxPayerExists > 0) return { status: 409, message: 'Ya existe un contribuyente registrado con estos datos' };
     if (type === 'NATURAL') {
       const naturalContributor = (await gtic.query(queries.gtic.GET_NATURAL_CONTRIBUTOR, [document, docType])).rows[0];
       if (!naturalContributor) return { status: 200, contribuyente: { tipoContribuyente: type }, message: 'No existe un usuario registrado en SEDEMAT' };
@@ -715,9 +713,7 @@ export const initialUserLinking = async (linkingData, user) => {
   let payload;
   try {
     client.query('BEGIN');
-    const contributorExists = (
-      await client.query('SELECT * FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2', [tipoDocumento, documento])
-    ).rows;
+    const contributorExists = (await client.query(queries.TAX_PAYER_EXISTS, [tipoDocumento, documento])).rows;
     if (contributorExists.length > 0) {
       let hasNewCode;
       const rims: number[] = await Promise.all(
