@@ -674,9 +674,9 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
 
   //VERIFICACION DE DATOS DE RIM
   VERIFY_EXISTING_EMAIL_VERIFICATION:
-    "SELECT 1 FROM impuesto.verificacion_email WHERE id_registro_municipal = $1 AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
+    "SELECT 1 FROM impuesto.verificacion_email WHERE id_registro_municipal = $1 AND (CURRENT_TIMESTAMP - fecha_recuperacion) < '10 minutes';",
   VERIFY_EXISTING_PHONE_VERIFICATION:
-    "SELECT 1 FROM impuesto.verificacion_telefono WHERE id_registro_municipal = $1 AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
+    "SELECT 1 FROM impuesto.verificacion_telefono WHERE id_registro_municipal = $1 AND (CURRENT_TIMESTAMP - fecha_recuperacion) < '10 minutes';",
   INSERT_EMAIL_VERIFICATION: 'INSERT INTO impuesto.verificacion_email (id_registro_municipal, codigo_recuperacion) VALUES ($1, $2);',
   INSERT_PHONE_VERIFICATION: 'INSERT INTO impuesto.verificacion_telefono (id_registro_municipal, codigo_recuperacion) VALUES ($1, $2);',
   VALIDATE_EMAIL_VERIFICATION:

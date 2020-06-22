@@ -17,36 +17,42 @@ export const sendRimVerification = async (idRim: number[], value: VerificationVa
   console.log('code', code);
   try {
     switch (value) {
-      case VerificationValue.Email:
-        await Promise.all(
-          idRim.map(async (id) => {
-            alreadyExists = (await client.query(queries.VERIFY_EXISTING_EMAIL_VERIFICATION, [id])).rowCount > 0;
-            if (alreadyExists) {
-              throw new Error('Ya hay una verificacion en curso');
-            }
-            return await client.query(queries.INSERT_EMAIL_VERIFICATION, [id, code]);
-          })
-        );
-        await transporter.sendMail({
-          from: 'waku@wakusoftware.com',
-          to: payload,
-          subject: 'Validación de información',
-          text: `Su codigo de verificación es: ${code}`,
-          html: `Su codigo de verificación es: <strong>${code}</strong>`,
-        });
-        break;
-
+      // case VerificationValue.Email:
+      //   await Promise.all(
+      //     idRim.map(async (id) => {
+      //       alreadyExists = (await client.query(queries.VERIFY_EXISTING_EMAIL_VERIFICATION, [id])).rowCount > 0;
+      //       if (alreadyExists) {
+      //         throw new Error('Ya hay una verificacion en curso');
+      //       }
+      //       return client.query(queries.INSERT_EMAIL_VERIFICATION, [id, code]);
+      //     })
+      //   );
+      //   await transporter.sendMail({
+      //     from: 'waku@wakusoftware.com',
+      //     to: payload,
+      //     subject: 'Validación de información',
+      //     text: `Su codigo de verificación es: ${code}`,
+      //     html: `Su codigo de verificación es: <strong>${code}</strong>`,
+      //   });
+      //   break;
       case VerificationValue.CellPhone:
+        console.log('AAAAAAAAAAA')
         await Promise.all(
           idRim.map(async (id) => {
-            alreadyExists = (await client.query(queries.VERIFY_EXISTING_PHONE_VERIFICATION, [id])).rowCount > 0;
-            if (alreadyExists) {
-              throw new Error('Ya hay una verificacion en curso');
+            try{
+              alreadyExists = (await client.query(queries.VERIFY_EXISTING_PHONE_VERIFICATION, [id])).rowCount > 0;
+              console.log(alreadyExists)
+              if (alreadyExists) {
+                throw new Error('Ya hay una verificacion en curso');
+              }
+              return client.query(queries.INSERT_PHONE_VERIFICATION, [id, code]);
+            } catch (e) {
+              console.log('error in')
+              throw e
             }
-            return await client.query(queries.INSERT_PHONE_VERIFICATION, [id, code]);
+            
           })
         );
-        console.log('e')
         // await twilioClient.messages.create({
         //   body: `Su codigo de verificación es: ${code}`,
         //   from: process.env.TWILIO_NUMBER,
@@ -131,7 +137,7 @@ export const resendCode = async (idRim: number[], value: VerificationValue) => {
   };
 };
 
-export const verifyCode = async (idRim: string[], value: VerificationValue, code: string) => {
+export const verifyCode = async (idRim: number[], value: VerificationValue, code: string) => {
   const client = await pool.connect();
   let res: QueryResult[];
   let verificationId;

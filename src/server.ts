@@ -1,7 +1,7 @@
 import app from './index';
 import { Socket, Server } from 'socket.io';
 import { init } from './config/socket';
-//import Pool from '@utils/GticPool';
+//mport Pool from '@utils/Pool';
 import { sendRimVerification, verifyCode } from '@helpers/verification';
 import { VerificationValue } from './interfaces/sigt';
 
@@ -19,12 +19,13 @@ const socket: Server = require('socket.io')(server);
 init(socket);
 
 
-/* async function xd(){
-    console.log('XD')
-    //console.log(await sendRimVerification('1', VerificationValue.Email, 'andresmarmolm@gmail.com'));
-    console.log(await verifyCode('1', VerificationValue.Email,  '229367'))
-}
+// async function xd(){
+//     const pool = Pool.getInstance();
+//     const client = await pool.connect()
+//     console.log('XD')
+//     console.log(await sendRimVerification([1], VerificationValue.CellPhone, 'andresmarmolm@gmail.com', client));
+//     //console.log(await verifyCode(['1'], VerificationValue.Email,  '229367'))
+// }
 
-xd()
+// xd()
 
- */
