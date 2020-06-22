@@ -678,23 +678,13 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   DELETE_HOLIDAY: 'DELETE FROM impuesto.dias_feriados WHERE id_dia_feriado = $1 RETURNING id_dia_feriado as id, dia, descripcion;',
 
   //VERIFICACION DE DATOS DE RIM
-  VERIFY_EXISTING_EMAIL_VERIFICATION:
-    "SELECT 1 FROM impuesto.verificacion_email WHERE id_registro_municipal = $1 AND (CURRENT_TIMESTAMP - fecha_recuperacion) < '10 minutes';",
-  VERIFY_EXISTING_PHONE_VERIFICATION:
-    "SELECT 1 FROM impuesto.verificacion_telefono WHERE id_registro_municipal = $1 AND (CURRENT_TIMESTAMP - fecha_recuperacion) < '10 minutes';",
-  INSERT_EMAIL_VERIFICATION: 'INSERT INTO impuesto.verificacion_email (id_registro_municipal, codigo_recuperacion) VALUES ($1, $2);',
-  INSERT_PHONE_VERIFICATION: 'INSERT INTO impuesto.verificacion_telefono (id_registro_municipal, codigo_recuperacion) VALUES ($1, $2);',
-  VALIDATE_EMAIL_VERIFICATION:
-    "SELECT * FROM impuesto.verificacion_email WHERE id_registro_municipal = $1 AND codigo_recuperacion = $2 AND verificado = false AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
-  VALIDATE_PHONE_VERIFICATION:
-    "SELECT * FROM impuesto.verificacion_telefono WHERE id_registro_municipal = $1 AND codigo_recuperacion = $2 AND verificado = false AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
-  DISABLE_EMAIL_VERIFICATION: 'UPDATE impuesto.verificacion_email SET verificado = true WHERE id_verificacion_email = $1',
-  DISABLE_PHONE_VERIFICATION: 'UPDATE impuesto.verificacion_telefono SET verificado = true WHERE id_verificacion_phone = $1',
-  FIND_EMAIL_CODE:
-    "SELECT * FROM impuesto.verificacion_email ve INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = ve.id_registro_municipal WHERE vt.id_registro_municipal = $1 AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
-  FIND_PHONE_CODE:
-    "SELECT *, (CURRENT_TIMESTAMP - fecha_recuperacion) AS tiempo  FROM impuesto.verificacion_telefono vt INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = vt.id_registro_municipal WHERE vt.id_registro_municipal = $1 AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
-
+  CHECK_VERIFICATION_EXISTS: 'SELECT * FROM impuesto.verificacion_telefono WHERE id_usuario = $1 AND verificado = false',
+  DROP_EXISTING_VERIFICATION: 'DELETE FROM impuesto.verificacion_telefono WHERE id_usuario = $1',
+  CREATE_VERIFICATION: 'INSERT INTO impuesto.verificacion_telefono (codigo_verificacion, id_usuario) VALUES ($1, $2) RETURNING *;',
+  ADD_PHONE_TO_VERIFICATION: 'INSERT INTO impuesto.registro_municipal_verificacion (id_registro_municipal, id_verificacion_telefono) VALUES ($1, $2);',
+  GET_VERIFICATION: "SELECT *, (CURRENT_TIMESTAMP - fecha_verificacion) AS elapsed, (CURRENT_TIMESTAMP - fecha_verificacion) > interval '10 minutes' AS late FROM impuesto.verificacion_telefono WHERE id_usuario = $1",
+  VALIDATE_CODE: 'UPDATE impuesto.verificacion_telefono SET verificado = true WHERE id_usuario = $1',
+  UPDATE_CODE: 'UPDATE impuesto.verificacion_telefono SET codigo_verificacion = $1, fecha_verificacion = CURRENT_TIMESTAMP WHERE id_usuario = $2',
   gtic: {
     GET_NATURAL_CONTRIBUTOR:
       'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 ORDER BY co_contribuyente DESC',

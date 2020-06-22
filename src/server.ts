@@ -1,8 +1,8 @@
 import app from './index';
 import { Socket, Server } from 'socket.io';
 import { init } from './config/socket';
-//mport Pool from '@utils/Pool';
-import { sendRimVerification, verifyCode } from '@helpers/verification';
+import Pool from '@utils/Pool';
+import { sendRimVerification, verifyCode, resendCode } from '@helpers/verification';
 import { VerificationValue } from './interfaces/sigt';
 
 const server = app.listen(process.env.PORT || 5000, () => console.log(`Listening on port ${process.env.PORT || 5000}`));
@@ -19,13 +19,14 @@ const socket: Server = require('socket.io')(server);
 init(socket);
 
 
-// async function xd(){
-//     const pool = Pool.getInstance();
-//     const client = await pool.connect()
-//     console.log('XD')
-//     console.log(await sendRimVerification([1], VerificationValue.CellPhone, 'andresmarmolm@gmail.com', client));
-//     //console.log(await verifyCode(['1'], VerificationValue.Email,  '229367'))
-// }
+async function xd(){
+    const pool = Pool.getInstance();
+    const client = await pool.connect()
+    console.log('XD')
+    //console.log(await sendRimVerification( VerificationValue.CellPhone, {idRim: [1], content: '+584126750593', user: 58}));
+    console.log(await verifyCode(VerificationValue.CellPhone,  { code: '493681', user: 58 }))
+    //console.log(await resendCode( VerificationValue.CellPhone, { user: 58}))
+}
 
-// xd()
+//xd()
 

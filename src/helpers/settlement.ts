@@ -689,18 +689,16 @@ export const initialUserLinking = async (linkingData, user) => {
         );
         try {
           await resendCode(
-            rims.filter((el) => el),
-            VerificationValue.CellPhone
+            VerificationValue.CellPhone,
+            {user: user.id}
           );
           hasNewCode = true;
         } catch (e) {
           console.log(e.message);
           if (e.message === 'No existe una verificacion para la sucursal seleccionada')
             await sendRimVerification(
-              rims.filter((el) => el),
               VerificationValue.CellPhone,
-              datosContacto.telefono,
-              client
+              {idRim: rims.filter((el) => el), content: datosContacto.telefono, user: user.id}
             );
           else throw e;
           hasNewCode = true;
@@ -739,10 +737,8 @@ export const initialUserLinking = async (linkingData, user) => {
         })
       );
       await sendRimVerification(
-        rims.filter((el) => el),
         VerificationValue.CellPhone,
-        datosContacto.telefono,
-        client
+        {content: datosContacto.telefono, user: 58, idRim: rims.filter((el) => el)}
       );
       payload = { rims: rims.filter((el) => el) };
     } else {
@@ -771,7 +767,7 @@ export const initialUserLinking = async (linkingData, user) => {
 export const verifyUserLinking = async ({ code, rims, user }) => {
   const client = await pool.connect();
   try {
-    await verifyCode(rims, VerificationValue.CellPhone, code);
+    await verifyCode(VerificationValue.CellPhone, {code, user: user.id});
     return { status: 200, message: 'Usuario enlazado y verificado' };
   } catch (error) {
     throw {
@@ -787,7 +783,7 @@ export const verifyUserLinking = async ({ code, rims, user }) => {
 export const resendUserCode = async ({ rims, user }) => {
   const client = await pool.connect();
   try {
-    await resendCode(rims, VerificationValue.CellPhone);
+    await resendCode(VerificationValue.CellPhone, {user: user.id});
     return { status: 200, message: 'Usuario enlazado y verificado' };
   } catch (error) {
     let status = error.tiempo ? 429 : 500;
