@@ -954,6 +954,7 @@ export const insertSettlements = async ({ process, user }) => {
                     descripcion: 'Multa por Declaracion Fuera de Plazo',
                   },
                   moment().month(counter).date(1).format('DD-MM-YYYY'),
+                  contributorExists.id_registro_municipal,
                 ])
               )
                 .then((el) => el.rows[0])
@@ -979,6 +980,7 @@ export const insertSettlements = async ({ process, user }) => {
                 descripcion: 'Multa por Declaracion Fuera de Plazo',
               },
               moment().date(1).format('DD-MM-YYYY'),
+              contributorExists.id_registro_municipal,
             ])
           ).rows[0];
           const fine = { id: multa.id_liquidacion, fecha: multa.datos.fecha, monto: multa.monto * UTMM, descripcion: multa.datos.descripcion };
@@ -1005,6 +1007,7 @@ export const insertSettlements = async ({ process, user }) => {
                     descripcion: 'Multa por Declaracion Fuera de Plazo',
                   },
                   moment().month(counter).date(1).format('DD-MM-YYYY'),
+                  contributorExists.id_registro_municipal,
                 ])
               )
                 .then((el) => el.rows[0])
@@ -1030,6 +1033,7 @@ export const insertSettlements = async ({ process, user }) => {
                 descripcion: 'Multa por Declaracion Fuera de Plazo',
               },
               moment().date(1).format('DD-MM-YYYY'),
+              contributorExists.id_registro_municipal,
             ])
           ).rows[0];
           const fine = { id: multa.id_liquidacion, fecha: multa.datos.fecha, monto: multa.monto * UTMM, descripcion: multa.datos.descripcion };
@@ -1053,6 +1057,7 @@ export const insertSettlements = async ({ process, user }) => {
             el.ramo,
             datos,
             moment().month(el.fechaCancelada.month).date(1).format('DD-MM-YYYY'),
+            contributorExists.id_registro_municipal,
           ])
         ).rows[0];
 
