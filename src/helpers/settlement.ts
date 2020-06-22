@@ -692,7 +692,7 @@ export const getEntireDebtsForContributor = async ({ reference, docType, documen
         puntoReferencia: contribuyente.punto_referencia,
         verificado: contribuyente.verificado,
         liquidaciones: liquidaciones.map((x) => ({ id: x.id_ramo, ramo: x.descripcion, monto: x.monto })),
-        totalDeuda: liquidaciones.map((x) => x.monto).reduce((i, j) => i + j),
+        totalDeuda: liquidaciones.map((x) => x.monto).reduce((i, j) => +i + +j),
       },
     };
     return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', ...payload };
