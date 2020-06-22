@@ -719,6 +719,7 @@ export const initialUserLinking = async (linkingData, user) => {
       await client.query('SELECT * FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2', [tipoDocumento, documento])
     ).rows;
     if (contributorExists.length > 0) {
+      let hasNewCode;
       const rims: number[] = await Promise.all(
         await sucursales.map(async (el) => {
           const { datosSucursal } = el;
@@ -743,6 +744,7 @@ export const initialUserLinking = async (linkingData, user) => {
           rims.filter((el) => el),
           VerificationValue.CellPhone
         );
+        hasNewCode = true;
       } catch (e) {
         console.log(e.message);
         if (e.message === 'No existe una verificacion para la sucursal seleccionada')
@@ -753,9 +755,10 @@ export const initialUserLinking = async (linkingData, user) => {
             client
           );
         else throw e;
+        hasNewCode = true;
       }
       payload = { rims: rims.filter((el) => el) };
-      return { status: 200, message: 'Datos actualizados para las sucursales del contribuyente', hasNewCode: true, payload };
+      return { status: 200, message: 'Datos actualizados para las sucursales del contribuyente', hasNewCode, payload };
     }
     const contributor = (
       await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [
