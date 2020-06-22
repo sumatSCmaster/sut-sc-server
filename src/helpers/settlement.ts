@@ -965,13 +965,14 @@ export const insertSettlements = async ({ process, user }) => {
       liquidaciones: settlement,
       multas: finingMonths,
     };
+    const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.INGRESARDATOS])).rows[0].state;
     await sendNotification(
       user,
       // `Se ha iniciado una solicitud para el contribuyente con el documento de identidad: ${solicitud.nacionalidad}-${solicitud.documento}`,
       'si',
       'CREATE_APPLICATION',
       'IMPUESTO',
-      { ...solicitud, estado: 'ingresardatos', nombreCorto: 'SEDEMAT' },
+      { ...solicitud, estado: state, nombreCorto: 'SEDEMAT' },
       client
     );
     client.query('COMMIT');
@@ -1010,7 +1011,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
         await insertPaymentReference(el, application, client);
       })
     );
-    await client.query(queries.UPDATE_PAID_STATE_FOR_TAX_PAYMENT_APPLICATION, [application]);
+    const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0];
     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
     console.log(applicationInstance);
     await sendNotification(
@@ -1019,7 +1020,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
       'si',
       'UPDATE_APPLICATION',
       'IMPUESTO',
-      { ...applicationInstance, estado: 'validando', nombreCorto: 'SEDEMAT' },
+      { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
       client
     );
     client.query('COMMIT');
@@ -1041,6 +1042,7 @@ export const validateApplication = async (body, user) => {
   const client = await pool.connect();
   try {
     client.query('BEGIN');
+    const state = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
     const solicitud = (await client.query(queries.GET_APPLICATION_BY_ID, [body.idTramite])).rows[0];
     const applicationInstance = await getApplicationsAndSettlementsById({ id: body.idTramite, user: solicitud.id_usuario });
     applicationInstance.aprobado = true;
@@ -1050,7 +1052,7 @@ export const validateApplication = async (body, user) => {
       'si',
       'UPDATE_APPLICATION',
       'IMPUESTO',
-      { ...applicationInstance, estado: 'finalizado', nombreCorto: 'SEDEMAT' },
+      { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
       client
     );
     client.query('COMMIT');
@@ -1797,6 +1799,14 @@ const breakdownCases = switchcase({
   IU: queries.CREATE_IU_BREAKDOWN_FOR_SETTLEMENT,
   PP: queries.CREATE_PP_BREAKDOWN_FOR_SETTLEMENT,
 })(null);
+
+const applicationStateEvents = {
+  INGRESARDATOS: 'ingresardatos_pi',
+  APROBARCAJERO: 'aprobacioncajero_pi',
+  VALIDAR: 'validar_pi',
+  FINALIZAR: 'finalizar_pi',
+  REBOTAR: 'rebotado_pi',
+};
 
 const breakdownCaseHandler = (settlementType, breakdown) => {
   // const query = breakdownCases(settlementType);
