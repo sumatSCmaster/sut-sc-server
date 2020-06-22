@@ -741,7 +741,7 @@ export const initialUserLinking = async (linkingData, user) => {
           const { nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
           const updatedRegistry = (
             await client.query(
-              'UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombreRepresentante = $2, telefono_celular = $3, email = $4 WHERE id_contribuyente = $5 RETURNING *',
+              'UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombre_representante = $2, telefono_celular = $3, email = $4 WHERE id_contribuyente = $5 RETURNING *',
               [
                 denomComercial,
                 nombreRepresentante,
@@ -760,6 +760,7 @@ export const initialUserLinking = async (linkingData, user) => {
           VerificationValue.CellPhone
         );
       } catch (e) {
+        console.log(e.message)
         if (e.message === 'No existe una verificacion para la sucursal seleccionada')
           await sendRimVerification(
             rims.filter((el) => el),

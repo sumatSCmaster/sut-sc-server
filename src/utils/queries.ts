@@ -686,9 +686,9 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   DISABLE_EMAIL_VERIFICATION: 'UPDATE impuesto.verificacion_email SET verificado = true WHERE id_verificacion_email = $1',
   DISABLE_PHONE_VERIFICATION: 'UPDATE impuesto.verificacion_telefono SET verificado = true WHERE id_verificacion_phone = $1',
   FIND_EMAIL_CODE:
-    "SELECT * FROM impuesto.verificacion_email ve INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = ve.id_registro_municipal WHERE id_registro_municipal = $1 AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
+    "SELECT * FROM impuesto.verificacion_email ve INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = ve.id_registro_municipal WHERE vt.id_registro_municipal = $1 AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
   FIND_PHONE_CODE:
-    "SELECT * FROM impuesto.verificacion_telefono vt INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = vt.id_registro_municipal WHERE id_registro_municipal = $1 AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
+    "SELECT * FROM impuesto.verificacion_telefono vt INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = vt.id_registro_municipal WHERE vt.id_registro_municipal = $1 AND CURRENT_TIMESTAMP - fecha_recuperacion < '10 minutes';",
 
   gtic: {
     GET_NATURAL_CONTRIBUTOR:

@@ -46,6 +46,7 @@ export const sendRimVerification = async (idRim: number[], value: VerificationVa
             return await client.query(queries.INSERT_PHONE_VERIFICATION, [id, code]);
           })
         );
+        console.log('e')
         // await twilioClient.messages.create({
         //   body: `Su codigo de verificación es: ${code}`,
         //   from: process.env.TWILIO_NUMBER,
@@ -120,10 +121,7 @@ export const resendCode = async (idRim: number[], value: VerificationValue) => {
     client.query('COMMIT');
   } catch (e) {
     client.query('ROLLBACK');
-    throw {
-      e,
-      message: 'Error en el reenvio del código',
-    };
+    throw e
   } finally {
     client.release();
   }
