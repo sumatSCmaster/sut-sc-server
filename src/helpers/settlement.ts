@@ -680,7 +680,7 @@ export const initialUserLinking = async (linkingData, user) => {
     const contributorExists = (await client.query(queries.TAX_PAYER_EXISTS, [tipoDocumento, documento])).rows;
     if (contributorExists.length > 0) {
       if (datosContribuyente.tipoContribuyente === 'JURIDICO') {
-        let hasNewCode;
+        let hasNewCode = false;
         const rims: number[] = await Promise.all(
           await sucursales.map(async (el) => {
             const { datosSucursal } = el;
@@ -698,14 +698,9 @@ export const initialUserLinking = async (linkingData, user) => {
           })
         );
         client.query('COMMIT');
-        try {
-          await sendRimVerification(VerificationValue.CellPhone, { idRim: rims.filter((el) => el), content: datosContacto.telefono, user: user.id });
-          hasNewCode = true;
-        } catch (e) {
-          console.log(e.message);
-          hasNewCode = false;
-          throw e;
-        }
+        await sendRimVerification(VerificationValue.CellPhone, { idRim: rims.filter((el) => el), content: datosContacto.telefono, user: user.id });
+        hasNewCode = true;
+
         payload = { rims: rims.filter((el) => el) };
         return { status: 200, message: 'Datos actualizados para las sucursales del contribuyente', hasNewCode, payload };
       } else {
@@ -774,6 +769,7 @@ export const initialUserLinking = async (linkingData, user) => {
   } catch (error) {
     client.query('ROLLBACK');
     console.log(error);
+
     throw {
       status: error.tiempo ? 429 : 500,
       ...error,
