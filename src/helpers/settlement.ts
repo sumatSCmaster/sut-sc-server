@@ -526,10 +526,15 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
           usuario: user,
           contribuyente: el.id_contribuyente,
           aprobado: el.aprobado,
+          estado: (await client.query('SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state FROM impuesto.evento_solicitud es WHERE es.id_solicitud = $1 GROUP BY es.id_solicitud', [el.id_solicitud]))
+            .rows[0].state,
+          referenciaMunicipal: liquidaciones[0].id_registro_municipal
+            ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0].id_registro_municipal])).rows[0].referencia_municipal
+            : undefined,
           fecha: el.fecha,
           monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0].monto_total,
           liquidaciones: liquidaciones
-            .filter((el) => el.tipoProcedimiento !== 'MUL')
+            .filter((el) => el.tipoProcedimiento !== 'Multas')
             .map((el) => {
               return {
                 id: el.id_liquidacion,
@@ -541,7 +546,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
               };
             }),
           multas: liquidaciones
-            .filter((el) => el.tipoProcedimiento === 'MUL')
+            .filter((el) => el.tipoProcedimiento === 'Multas')
             .map((el) => {
               return {
                 id: el.id_liquidacion,
@@ -857,7 +862,7 @@ export const insertSettlements = async ({ process, user }) => {
     const userContributor = (await client.query('SELECT c.* FROM USUARIO u INNER JOIN impuesto.contribuyente c ON u.id_contribuyente = c.id_contribuyente WHERE u.id_usuario = $1', [user.id])).rows;
     const userHasContributor = userContributor.length > 0;
     if (!userHasContributor) throw { status: 404, message: 'El usuario no esta asociado con ningun contribuyente' };
-    const contributorReference = (await client.query('SELECT * FROM impuesto.registro_municipal rm WHERE rm.referencia_municipal = $1 AND rm.id_contribuyente = $2', [process.rim, userContributor[0].id_contribuyente])).rows[0];
+    const contributorReference = (await client.query('SELECT * FROM impuesto.registro_municipal rm WHERE rm.referencia_municipal = $1 AND rm.id_contribuyente = $2', [process.rim || '', userContributor[0].id_contribuyente])).rows[0];
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, userContributor[0].id_contribuyente])).rows[0];
 
@@ -999,7 +1004,7 @@ export const insertSettlements = async ({ process, user }) => {
 
         return {
           id: liquidacion.id_liquidacion,
-          tipoProcedimiento: el.ramo,
+          ramo: el.ramo,
           fecha: datos.fecha,
           monto: liquidacion.monto,
           certificado: liquidacion.certificado,
@@ -1009,15 +1014,19 @@ export const insertSettlements = async ({ process, user }) => {
       })
     );
 
-    const solicitud: Solicitud = {
+    const solicitud: Solicitud & { registroMunicipal: string } = {
       id: application.id_solicitud,
       usuario: user,
       contribuyente: application.contribuyente,
       aprobado: application.aprobado,
       fecha: application.fecha,
-      monto: application.monto_total,
+      monto: finingMonths
+        ?.concat(settlement)
+        .map((el) => +el.monto)
+        .reduce((x, j) => x + j, 0) as number,
       liquidaciones: settlement,
       multas: finingMonths,
+      registroMunicipal: process.rim,
     };
     const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
     await sendNotification(
