@@ -699,13 +699,12 @@ export const initialUserLinking = async (linkingData, user) => {
         );
         client.query('COMMIT');
         try {
-          await resendCode(VerificationValue.CellPhone, { user: user.id });
+          await sendRimVerification(VerificationValue.CellPhone, { idRim: rims.filter((el) => el), content: datosContacto.telefono, user: user.id });
           hasNewCode = true;
         } catch (e) {
           console.log(e.message);
-          if (e.message === 'No se ha hallado un proceso de verificación en proceso') await sendRimVerification(VerificationValue.CellPhone, { idRim: rims.filter((el) => el), content: datosContacto.telefono, user: user.id });
-          else throw e;
-          hasNewCode = true;
+          hasNewCode = false;
+          throw e;
         }
         payload = { rims: rims.filter((el) => el) };
         return { status: 200, message: 'Datos actualizados para las sucursales del contribuyente', hasNewCode, payload };
@@ -812,6 +811,21 @@ export const resendUserCode = async ({ rims, user }) => {
       status: status,
       message: errorMessageGenerator(error) || 'Error al verificar el codigo del usuario',
       ...error,
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const createUserBenefits = async () => {
+  const client = await pool.connect();
+  try {
+  } catch (error) {
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
     };
   } finally {
     client.release();
