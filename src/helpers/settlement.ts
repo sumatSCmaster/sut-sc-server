@@ -829,6 +829,21 @@ export const createUserBenefits = async (contributor) => {
   }
 };
 
+export const userBenefitsAgreement = async (contributor) => {
+  const client = await pool.connect();
+  try {
+  } catch (error) {
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al crear solicitud de beneficios de usuario',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 //FIXME: acoplar a los estandares actuales de SUT
 export const insertSettlements = async ({ process, user }) => {
   const client = await pool.connect();
@@ -1004,7 +1019,7 @@ export const insertSettlements = async ({ process, user }) => {
       liquidaciones: settlement,
       multas: finingMonths,
     };
-    const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.INGRESARDATOS])).rows[0].state;
+    const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
     await sendNotification(
       user,
       // `Se ha iniciado una solicitud para el contribuyente con el documento de identidad: ${solicitud.nacionalidad}-${solicitud.documento}`,
