@@ -46,18 +46,7 @@ export const createSuperuser = async (user: Payloads.CrearSuperuser): Promise<Pa
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    const res = (
-      await client.query(queries.CREATE_USER, [
-        user.nombreCompleto,
-        user.nombreUsuario,
-        user.direccion,
-        user.cedula,
-        user.nacionalidad,
-        IDsTipoUsuario.Superuser,
-        user.password,
-        user.telefono,
-      ])
-    ).rows[0];
+    const res = (await client.query(queries.CREATE_USER, [user.nombreCompleto, user.nombreUsuario, user.direccion, user.cedula, user.nacionalidad, IDsTipoUsuario.Superuser, user.password, user.telefono])).rows[0];
     const res2 = await client.query(queries.ADD_OFFICIAL_DATA, [res.id_usuario, user.institucion]);
     client.query('COMMIT');
     const usuario: Partial<Usuario> = {
@@ -83,18 +72,7 @@ export const createAdmin = async (user: Payloads.CrearAdmin): Promise<Partial<Us
     client.query('BEGIN');
     const adminExists = user.cargo === 0 ? false : (await client.query(queries.ADMIN_EXISTS, [user.cargo])).rowCount > 0;
     if (adminExists) throw new Error('Ya existe un administrador para esta institucion');
-    const res = (
-      await client.query(queries.CREATE_USER, [
-        user.nombreCompleto,
-        user.nombreUsuario,
-        user.direccion,
-        user.cedula,
-        user.nacionalidad,
-        IDsTipoUsuario.Administrador,
-        user.password,
-        user.telefono,
-      ])
-    ).rows[0];
+    const res = (await client.query(queries.CREATE_USER, [user.nombreCompleto, user.nombreUsuario, user.direccion, user.cedula, user.nacionalidad, IDsTipoUsuario.Administrador, user.password, user.telefono])).rows[0];
     const res2 = await client.query(queries.ADD_OFFICIAL_DATA, [res.id_usuario, user.cargo]);
 
     client.query('COMMIT');
@@ -221,16 +199,7 @@ export const completeExtUserSignUp = async (user, id) => {
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    const response = await client.query(queries.EXTERNAL_USER_COMPLETE, [
-      direccion,
-      cedula,
-      nacionalidad,
-      nombreUsuario,
-      password,
-      nombreCompleto,
-      telefono,
-      id,
-    ]);
+    const response = await client.query(queries.EXTERNAL_USER_COMPLETE, [direccion, cedula, nacionalidad, nombreUsuario, password, nombreCompleto, telefono, id]);
     client.query('COMMIT');
     const data = response.rows[0];
     const usuario: Usuario = {
@@ -261,15 +230,7 @@ export const signUpUser = async (user) => {
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    const response = await client.query(queries.SIGN_UP_WITH_LOCAL_STRATEGY, [
-      nombreCompleto,
-      nombreUsuario,
-      direccion,
-      cedula,
-      nacionalidad,
-      password,
-      telefono,
-    ]);
+    const response = await client.query(queries.SIGN_UP_WITH_LOCAL_STRATEGY, [nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, password, telefono]);
     client.query('COMMIT');
     const data = response.rows[0];
     const usuario: Usuario = {
@@ -332,6 +293,23 @@ export const hasNotifications = async (cedula) => {
   const client = await pool.connect();
   try {
     return (await client.query(queries.GET_USER_HAS_NOTIFICATIONS, [cedula])).rows[0].hasNotifications;
+  } catch (e) {
+    throw {
+      status: 500,
+      e: errorMessageExtractor(e),
+      message: errorMessageGenerator(e) || 'Error al obtener estado de notificaciones del usuario',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const hasLinkedContributor = async (user) => {
+  const client = await pool.connect();
+  try {
+    const contribuyente = (await client.query('SELECT * FROM impuesto.CONTRIBUYENTE c INNER JOIN USUARIO u ON c.id_contribuyente = u.id_contribuyente WHERE u.id_usuario = $1', [user])).rows[0];
+    const verificacionTelefono = (await client.query('SELECT * FROM impuesto.verificacion_telefono v INNER JOIN usuario u ON v.id_usuario = u.id_usuario WHERE id_usuario = $1', [user])).rows[0].verificado;
+    return contribuyente ? { ...contribuyente, verificacionTelefono } : null;
   } catch (e) {
     throw {
       status: 500,
