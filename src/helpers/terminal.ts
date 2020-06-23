@@ -1,6 +1,6 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
-import { errorMessageGenerator } from './errors';
+import { errorMessageGenerator, errorMessageExtractor } from './errors';
 
 const pool = Pool.getInstance();
 
@@ -15,6 +15,7 @@ export const getDestinations = async () => {
     } catch(e) {
         throw {
             status: 500,
+            error: errorMessageExtractor(e),
             message: errorMessageGenerator(e) || 'Error al obtener destinos'
         }
     } finally {
@@ -34,6 +35,7 @@ export const createDestination = async (dest) => {
     } catch(e) {
         throw {
             status: 500,
+            error: errorMessageExtractor(e),
             message: errorMessageGenerator(e) || 'Error al crear destino'
         }
     } finally {
@@ -53,6 +55,7 @@ export const updateDestination = async (dest) => {
     } catch(e) {
         throw {
             status: 500,
+            error: errorMessageExtractor(e),
             message: errorMessageGenerator(e) || 'Error al actualizar destino'
         }
     } finally {
@@ -71,6 +74,7 @@ export const disableDestination = async (id) => {
     } catch(e) {
         throw {
             status: 500,
+            error: errorMessageExtractor(e),
             message: errorMessageGenerator(e) || 'Error al deshabilitar destino'
         }
     } finally {
@@ -90,6 +94,7 @@ export const increaseCostAll = async (rate) => {
     } catch(e) {
         throw {
             status: 500,
+            error: errorMessageExtractor(e),
             message: errorMessageGenerator(e) || 'Error al incrementar costos de destinos'
         }
     } finally {

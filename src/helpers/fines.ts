@@ -1,7 +1,7 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { Institucion, TipoTramite, Usuario, Multa } from '@interfaces/sigt';
-import { errorMessageGenerator } from './errors';
+import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import switchcase from '@utils/switch';
 import { sendNotification } from './notification';
 import { sendEmail } from './events/procedureUpdateState';
@@ -147,7 +147,7 @@ const addPaymentFining = async (procedure, user: Usuario) => {
     throw {
       status: 500,
       error,
-      message: errorMessageGenerator(error) || 'Error al insertar datos de pago',
+      message: errorMessageGenerator(error) || errorMessageExtractor(error) || 'Error al insertar datos de pago',
     };
   } finally {
     client.release();
@@ -223,7 +223,7 @@ export const validateFining = async (procedure, user: Usuario) => {
     throw {
       status: 500,
       error,
-      message: errorMessageGenerator(error) || 'Error al validar pago de multa',
+      message: errorMessageGenerator(error) || errorMessageExtractor(error) || 'Error al validar pago de multa',
     };
   } finally {
     client.release();

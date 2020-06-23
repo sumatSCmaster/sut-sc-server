@@ -4,7 +4,7 @@ import { compare } from 'bcryptjs';
 import { Usuario, Payloads, Nacionalidad, IDsTipoUsuario, Institucion } from '@interfaces/sigt';
 import { fulfill } from '@utils/resolver';
 import { stringify } from 'flatted/cjs';
-import { errorMessageGenerator } from './errors';
+import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { generateToken } from '@utils/Strategies';
 
 const pool = Pool.getInstance();
@@ -46,18 +46,7 @@ export const createSuperuser = async (user: Payloads.CrearSuperuser): Promise<Pa
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    const res = (
-      await client.query(queries.CREATE_USER, [
-        user.nombreCompleto,
-        user.nombreUsuario,
-        user.direccion,
-        user.cedula,
-        user.nacionalidad,
-        IDsTipoUsuario.Superuser,
-        user.password,
-        user.telefono,
-      ])
-    ).rows[0];
+    const res = (await client.query(queries.CREATE_USER, [user.nombreCompleto, user.nombreUsuario, user.direccion, user.cedula, user.nacionalidad, IDsTipoUsuario.Superuser, user.password, user.telefono])).rows[0];
     const res2 = await client.query(queries.ADD_OFFICIAL_DATA, [res.id_usuario, user.institucion]);
     client.query('COMMIT');
     const usuario: Partial<Usuario> = {
@@ -71,7 +60,7 @@ export const createSuperuser = async (user: Payloads.CrearSuperuser): Promise<Pa
     return usuario;
   } catch (e) {
     client.query('ROLLBACK');
-    throw e;
+    throw errorMessageExtractor(e);
   } finally {
     client.release();
   }
@@ -81,21 +70,10 @@ export const createAdmin = async (user: Payloads.CrearAdmin): Promise<Partial<Us
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    const adminExists = user.institucion === 0 ? false : (await client.query(queries.ADMIN_EXISTS, [user.institucion])).rowCount > 0;
+    const adminExists = user.cargo === 0 ? false : (await client.query(queries.ADMIN_EXISTS, [user.cargo])).rowCount > 0;
     if (adminExists) throw new Error('Ya existe un administrador para esta institucion');
-    const res = (
-      await client.query(queries.CREATE_USER, [
-        user.nombreCompleto,
-        user.nombreUsuario,
-        user.direccion,
-        user.cedula,
-        user.nacionalidad,
-        IDsTipoUsuario.Administrador,
-        user.password,
-        user.telefono,
-      ])
-    ).rows[0];
-    const res2 = await client.query(queries.ADD_OFFICIAL_DATA, [res.id_usuario, user.institucion]);
+    const res = (await client.query(queries.CREATE_USER, [user.nombreCompleto, user.nombreUsuario, user.direccion, user.cedula, user.nacionalidad, IDsTipoUsuario.Administrador, user.password, user.telefono])).rows[0];
+    const res2 = await client.query(queries.ADD_OFFICIAL_DATA, [res.id_usuario, user.cargo]);
 
     client.query('COMMIT');
     const usuario: Partial<Usuario> = {
@@ -111,13 +89,13 @@ export const createAdmin = async (user: Payloads.CrearAdmin): Promise<Partial<Us
     return usuario;
   } catch (e) {
     client.query('ROLLBACK');
-    throw e;
+    throw errorMessageExtractor(e);
   } finally {
     client.release();
   }
 };
 
-export const addInstitute = async (user: Partial<Usuario>): Promise<Partial<Usuario> & { institucion: Institucion }> => {
+export const addInstitute = async (user: Partial<Usuario>): Promise<Partial<Usuario> & { institucion: Institucion & { cargo: object } }> => {
   const client = await pool.connect();
   try {
     const res = (await client.query(queries.GET_ADMIN_INSTITUTE, [user.id])).rows;
@@ -127,10 +105,14 @@ export const addInstitute = async (user: Partial<Usuario>): Promise<Partial<Usua
         id: res[0].id_institucion,
         nombreCompleto: res[0].nombre_completo,
         nombreCorto: res[0].nombre_corto,
+        cargo: {
+          id: res[0].idCargo,
+          descripcion: res[0].cargo,
+        },
       },
     };
   } catch (e) {
-    throw e;
+    throw errorMessageExtractor(e);
   } finally {
     client.release();
   }
@@ -145,7 +127,7 @@ export const addPermissions = async (user: Partial<Usuario>): Promise<Partial<Us
       permisos: res.map((row) => +row.id_tipo_tramite),
     };
   } catch (e) {
-    throw e;
+    throw errorMessageExtractor(e);
   } finally {
     client.release();
   }
@@ -206,7 +188,7 @@ export const initialExtUserSignUp = async (user) => {
     };
   } catch (e) {
     client.query('ROLLBACK');
-    return e;
+    return errorMessageExtractor(e);
   } finally {
     client.release();
   }
@@ -217,16 +199,7 @@ export const completeExtUserSignUp = async (user, id) => {
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    const response = await client.query(queries.EXTERNAL_USER_COMPLETE, [
-      direccion,
-      cedula,
-      nacionalidad,
-      nombreUsuario,
-      password,
-      nombreCompleto,
-      telefono,
-      id,
-    ]);
+    const response = await client.query(queries.EXTERNAL_USER_COMPLETE, [direccion, cedula, nacionalidad, nombreUsuario, password, nombreCompleto, telefono, id]);
     client.query('COMMIT');
     const data = response.rows[0];
     const usuario: Usuario = {
@@ -244,7 +217,7 @@ export const completeExtUserSignUp = async (user, id) => {
     client.query('ROLLBACK');
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error en la creación del usuario',
     };
   } finally {
@@ -257,15 +230,7 @@ export const signUpUser = async (user) => {
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    const response = await client.query(queries.SIGN_UP_WITH_LOCAL_STRATEGY, [
-      nombreCompleto,
-      nombreUsuario,
-      direccion,
-      cedula,
-      nacionalidad,
-      password,
-      telefono,
-    ]);
+    const response = await client.query(queries.SIGN_UP_WITH_LOCAL_STRATEGY, [nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, password, telefono]);
     client.query('COMMIT');
     const data = response.rows[0];
     const usuario: Usuario = {
@@ -287,7 +252,7 @@ export const signUpUser = async (user) => {
   } catch (error) {
     client.query('ROLLBACK');
     throw {
-      error,
+      error: errorMessageExtractor(error),
       status: 500,
       message: errorMessageGenerator(error) || 'Error en la creación del usuario',
     };
@@ -316,6 +281,7 @@ export const updateUser = async (user) => {
   } catch (e) {
     throw {
       status: 500,
+      error: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error en la actualizacion del usuario',
     };
   } finally {
@@ -330,7 +296,40 @@ export const hasNotifications = async (cedula) => {
   } catch (e) {
     throw {
       status: 500,
-      e,
+      e: errorMessageExtractor(e),
+      message: errorMessageGenerator(e) || 'Error al obtener estado de notificaciones del usuario',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const hasLinkedContributor = async (user) => {
+  const client = await pool.connect();
+  try {
+    const contributor = (await client.query('SELECT * FROM impuesto.CONTRIBUYENTE c INNER JOIN USUARIO u ON c.id_contribuyente = u.id_contribuyente WHERE u.id_usuario = $1', [user])).rows[0];
+    if (!contributor) return null;
+    const verificacionTelefono = (await client.query('SELECT * FROM impuesto.verificacion_telefono v INNER JOIN usuario u ON v.id_usuario = u.id_usuario WHERE u.id_usuario = $1', [user])).rows[0];
+    const contribuyente = {
+      id: contributor.id_contribuyente,
+      tipoDocumento: contributor.tipo_documento,
+      documento: contributor.documento,
+      razonSocial: contributor.razon_social,
+      denomComercial: contributor.denominacion_comercial || undefined,
+      siglas: contributor.siglas || undefined,
+      parroquia: contributor.parroquia,
+      sector: contributor.sector,
+      direccion: contributor.direccion,
+      puntoReferencia: contributor.punto_referencia,
+      verificado: contributor.verificado,
+      verificacionTelefono: verificacionTelefono.verificado,
+    };
+    return contribuyente;
+  } catch (e) {
+    console.log(e);
+    throw {
+      status: 500,
+      e: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error al obtener estado de notificaciones del usuario',
     };
   } finally {

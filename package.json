@@ -40,6 +40,7 @@
     "html-pdf": "^2.2.0",
     "jwt-simple": "^0.5.6",
     "lodash": "^4.17.15",
+    "md5": "^2.2.1",
     "module-alias": "^2.2.2",
     "moment": "^2.24.0",
     "multer": "^1.4.2",
@@ -57,7 +58,7 @@
     "qrcode": "^1.4.4",
     "socket.io": "^2.3.0",
     "ts-nested-set": "^1.0.7",
-    "twilio": "^3.39.3",
+    "twilio": "^3.45.0",
     "typescript": "^3.7.4",
     "uuid": "^7.0.1",
     "written-number": "^0.9.1"

@@ -1,6 +1,6 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
-import { errorMessageGenerator } from './errors';
+import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { PoolClient } from 'pg';
 
 const pool = Pool.getInstance();
@@ -16,6 +16,7 @@ export const getOrdinancesByInstitution = async (idInstitucion) => {
   } catch (e) {
     throw {
       status: 500,
+      error: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error al obtener ordenanzs',
     };
   } finally {
@@ -51,7 +52,7 @@ export const getOrdinancesByProcedure = async (id) => {
     };
   } catch (e) {
     throw {
-      error: e,
+      error: errorMessageExtractor(e),
       status: 500,
       message: errorMessageGenerator(e) || 'Error al obtener ordenanzas',
     };
@@ -101,6 +102,7 @@ export const getOrdinancesByProcedureWithCodCat = async (id, cod) => {
   } catch (e) {
     throw {
       status: 500,
+      error: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error al obtener ordenanzas',
     };
   } finally {
@@ -125,6 +127,7 @@ export const disableOrdinance = async (idOrdenanza) => {
   } catch (e) {
     throw {
       status: 500,
+      error: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error al eliminar ordenanza',
     };
   } finally {
@@ -168,6 +171,7 @@ export const getVariables = async () => {
   } catch (e) {
     throw {
       status: 500,
+      error: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error al obtener variables',
     };
   } finally {
@@ -193,6 +197,7 @@ export const createOrdinance = async (ordinance) => {
   } catch (e) {
     throw {
       status: 500,
+      error: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error al eliminar ordenanza',
     };
   } finally {

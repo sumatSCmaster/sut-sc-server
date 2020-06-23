@@ -1,0 +1,77 @@
+extends default
+//- REQUISITOS PARA LA RENOVACION DE LA LICENCIA DE LICORES PARA LOS EXPENDIO DE LICORES Y EXPENDIO DE CONSUMO
+block content
+  div#fecha
+    p 
+      b FECHA:
+      //- span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+    p 
+      b Codigo de Tramite:
+      span &nbsp; #{codigo}
+  div#planilla      
+    div.table                                  
+      div.th
+        p DATOS DEL REPRESENTANTE LEGAL
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Nombre:
+            span &nbsp; #{datos.usuario.nombre}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Cédula:
+            span &nbsp; #{datos.usuario.cedula}
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Telefono:
+            span &nbsp; #{datos.usuario.telefono}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Correo:
+            span &nbsp; #{datos.usuario.correo}
+      div.tr
+        div.td(style={ width: '100%' }).border-right
+          p
+            b Dirección:
+            span &nbsp; #{datos.usuario.direccion}
+    div.table                                  
+      div.th
+        p DATOS DE LA EMPRESA
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Razon Social:
+            span &nbsp; #{datos.usuario.nombre}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b R.I.F:
+            span &nbsp; #{datos.usuario.cedula}
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b R.I.M:
+            span &nbsp; #{datos.usuario.telefono}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Telefono:
+            span &nbsp; #{datos.usuario.correo}
+      div.tr
+        div.td(style={ width: '100%' }).border-right
+          p
+            b Dirección:
+            span &nbsp; #{datos.usuario.direccion}            
+    div(style={'margin-top':'150px'})#recaudos
+      h3 REQUISITOS OBLIGATORIOS
+      hr.divider
+      ul
+        li Carta poder que autorice a un representante para la realización de los tramites, en caso de efectuarlos un tercero anexar copiar de la cedula de identidad de ambos.
+        li Copia de la última Acto de Asamblea que haya aprobado cualquier modificacion del acta constitutiva estatutaria, si la hubiere.
+        li Constancia vigente del cumplimiento de Normas Técnicas expedida por el Instituto Autónomo Cuerpo de Bomberos del Municipio Maracaibo.
+        li Permiso sanitario del establecimiento emitido por la autoridad competente, con indicación expresa del ramo a explotar. 
+          b El presente requisito es aplicable solo al Expendio de Consumo.
+      hr.divider
+    div(style={'margin-bottom':'50px', 'font-size':'14px'})
+      h3 OBSERVACIONES GENERALES
+      ul
+        li La solicitud de Renovación deberá realizarse por lo mneos con treinta (30) días de anticipacion a su vencimineto de conformidad con lo previsto en el articulo 28 de la Ordenanza sobre Expendio, Distribucion y Consumo de Bebidas Alcohólicas del Municipio Maracaibo.

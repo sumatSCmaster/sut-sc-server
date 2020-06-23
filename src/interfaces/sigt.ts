@@ -163,14 +163,10 @@ export interface ActividadEconomica {
 export interface Solicitud {
   id: number;
   usuario: Usuario;
-  documento: string;
   contribuyente: string;
-  rim?: string;
-  nacionalidad: string;
   aprobado: boolean;
   fecha: Date;
   monto: number;
-  pagado: boolean;
   liquidaciones: Liquidacion[];
   multas?: MultaImpuesto[];
 }
@@ -183,11 +179,71 @@ export interface MultaImpuesto {
 
 export interface Liquidacion {
   id: number;
-  tipoProcedimiento: string;
+  ramo: string;
   fecha: Fecha;
   monto: number;
   certificado?: string;
+  desglose?: object;
   recibo?: string;
+}
+
+export interface DatosEnlace {
+  datosContribuyente: {
+    tipoContribuyente: string;
+    documento: string;
+    tipoDocumento: string;
+    razonSocial: string;
+    siglas: string;
+    denomComercial: string;
+    telefonoMovil: string;
+    telefonoHabitacion: string;
+    email: string;
+    parroquia: number;
+    sector: string;
+    direccion: string;
+    puntoReferencia: string;
+  };
+  sucursales: Sucursal[];
+}
+export interface Sucursal {
+  datosSucursal: DatosSucursal;
+  inmuebles: InmueblesSucursal[];
+  liquidaciones: LiquidacionesSucursal[];
+  multas: Partial<LiquidacionesSucursal[]>;
+}
+
+export interface InmueblesSucursal {
+  id: number;
+  direccion: string;
+  email: string;
+  razonSocial: string;
+  denomComercial: string;
+  metrosCuadrados: number;
+  cuentaContrato: string;
+  nombreRepresentante: string;
+}
+
+export interface LiquidacionesSucursal {
+  id: number;
+  estado: string;
+  ramo: string;
+  codigoRamo: string;
+  monto: string;
+  fecha: Fecha;
+}
+
+export interface DatosSucursal {
+  id: string;
+  direccion: string;
+  email: string;
+  razonSocial: string;
+  denomComercial: string;
+  metrosCuadrados: number;
+  cuentaContrato: string;
+  nombreRepresentante: string;
+  telefonoMovil: string;
+  registroMunicipal: string;
+  creditoFiscal: number;
 }
 
 export interface Publicidad {
@@ -268,7 +324,9 @@ export namespace Payloads {
   export type CrearSuperuser = Partial<Usuario> & {
     institucion: number;
   };
-  export type CrearAdmin = CrearSuperuser;
+  export type CrearAdmin = Partial<Usuario> & {
+    cargo: number;
+  };
 
   export type ProcedureItems = {
     nombre: string;
@@ -280,4 +338,9 @@ export namespace Payloads {
     costo: number;
     items: ProcedureItems[];
   };
+}
+
+export enum VerificationValue {
+  CellPhone,
+  Email,
 }

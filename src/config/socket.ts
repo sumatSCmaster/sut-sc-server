@@ -2,6 +2,7 @@ import { Socket, Server } from 'socket.io';
 import { decode } from 'jwt-simple';
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
+import { errorMessageExtractor } from '@helpers/errors';
 
 const pool = Pool.getInstance();
 
@@ -33,7 +34,7 @@ const connection = (socket: Socket) => {
       socket.leaveAll();
     });
   } catch (e) {
-    throw e;
+    throw errorMessageExtractor(e);
   }
 };
 

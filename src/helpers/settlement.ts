@@ -1,12 +1,12 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
-import { errorMessageGenerator } from './errors';
+import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { PoolClient } from 'pg';
 import GticPool from '@utils/GticPool';
 import { insertPaymentReference } from './banks';
 import moment, { Moment } from 'moment';
 import switchcase from '@utils/switch';
-import { Liquidacion, Solicitud, Usuario, MultaImpuesto } from '@root/interfaces/sigt';
+import { Liquidacion, Solicitud, Usuario, MultaImpuesto, VerificationValue } from '@root/interfaces/sigt';
 import { resolve } from 'path';
 import { renderFile } from 'pug';
 import { writeFile, mkdir } from 'fs';
@@ -14,8 +14,12 @@ import { dirname } from 'path';
 import * as pdf from 'html-pdf';
 import * as qr from 'qrcode';
 import * as pdftk from 'node-pdftk';
+import bcrypt from 'bcryptjs';
+import md5 from 'md5';
 import { query } from 'express-validator';
 import { sendNotification } from './notification';
+import { sendRimVerification, verifyCode, resendCode } from './verification';
+import { hasLinkedContributor } from './user';
 const written = require('written-number');
 
 const gticPool = GticPool.getInstance();
@@ -42,12 +46,8 @@ export const getSettlements = async ({ document, reference, type, user }) => {
     const IUApplicationExists = (await client.query(queries.CURRENT_IU_APPLICATION_EXISTS, [document, reference, type])).rows[0];
     const PPApplicationExists = (await client.query(queries.CURRENT_PP_APPLICATION_EXISTS, [document, reference, type])).rows[0];
 
-    if (AEApplicationExists && SMApplicationExists && IUApplicationExists && PPApplicationExists)
-      return { status: 409, message: 'Ya existe una declaracion de impuestos para este mes' };
-    const contributor = (reference
-      ? await gtic.query(queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS, [document, reference, type])
-      : await gtic.query(queries.gtic.NATURAL_CONTRIBUTOR_EXISTS, [document, type])
-    ).rows[0];
+    if (AEApplicationExists && SMApplicationExists && IUApplicationExists && PPApplicationExists) return { status: 409, message: 'Ya existe una declaracion de impuestos para este mes' };
+    const contributor = (reference ? await gtic.query(queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS, [document, reference, type]) : await gtic.query(queries.gtic.NATURAL_CONTRIBUTOR_EXISTS, [document, type])).rows[0];
     if (!contributor) return { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
     const now = moment(new Date());
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
@@ -112,9 +112,7 @@ export const getSettlements = async ({ document, reference, type, user }) => {
                 : (await gtic.query(queries.gtic.GET_RESIDENTIAL_CLEANING_TARIFF)).rows[0].nu_tarifa;
             const tarifaAseo = calculoAseo / UTMM > 300 ? UTMM * 300 : calculoAseo;
             const calculoGas =
-              el.tx_tp_inmueble === 'COMERCIAL'
-                ? (await gtic.query(queries.gtic.GET_MAX_GAS_TARIFF_BY_CONTRIBUTOR, [contributor.co_contribuyente])).rows[0].nu_tarifa
-                : (await gtic.query(queries.gtic.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].nu_tarifa;
+              el.tx_tp_inmueble === 'COMERCIAL' ? (await gtic.query(queries.gtic.GET_MAX_GAS_TARIFF_BY_CONTRIBUTOR, [contributor.co_contribuyente])).rows[0].nu_tarifa : (await gtic.query(queries.gtic.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].nu_tarifa;
             const tarifaGas = calculoGas / UTMM > 300 ? UTMM * 300 : calculoGas;
             return { id: el.co_inmueble, tipoInmueble: el.tx_tp_inmueble, direccionInmueble: el.tx_direccion, tarifaAseo, tarifaGas, deuda: debtSM };
           })
@@ -223,12 +221,296 @@ export const getSettlements = async ({ document, reference, type, user }) => {
     console.log(error);
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener los impuestos',
     };
   } finally {
     client.release();
     gtic.release();
+  }
+};
+
+const nullStringCheck = (str: string | null): string => {
+  if (!str) return '';
+  return str.trim();
+};
+
+export const getTaxPayerInfo = async ({ docType, document, type, gtic, client }) => {
+  let taxPayer;
+  try {
+    if (type === 'NATURAL') {
+      const naturalContributor = (await gtic.query(queries.gtic.GET_NATURAL_CONTRIBUTOR, [document, docType])).rows[0];
+      if (!naturalContributor) return { status: 200, contribuyente: { tipoContribuyente: type }, message: 'No existe un usuario registrado en SEDEMAT' };
+      taxPayer = {
+        tipoContribuyente: type,
+        documento: document,
+        tipoDocumento: docType,
+        nombreCompleto: `${naturalContributor.nb_contribuyente} ${naturalContributor.ap_contribuyente}`.replace('null', '').trim(),
+        telefonoMovil: nullStringCheck(naturalContributor.nu_telf_movil).trim(),
+        telefonoHabitacion: nullStringCheck(naturalContributor.nu_telf_hab).trim(),
+        email: nullStringCheck(naturalContributor.tx_email).trim(),
+        parroquia: naturalContributor.tx_direccion ? (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [naturalContributor.tx_direccion.split('Parroquia')[1].split('Sector')[0].trim()])).rows[0].id || undefined : undefined,
+        sector: nullStringCheck(naturalContributor.sector).trim(),
+        direccion: naturalContributor.tx_direccion ? 'Avenida ' + naturalContributor.tx_direccion.split('Parroquia')[1].split('Avenida')[1].split('Pto')[0].trim().replace(/.$/, '') : undefined,
+        puntoReferencia: nullStringCheck(naturalContributor.tx_punto_referencia).trim(),
+      };
+    } else {
+      const juridicalContributor = (await gtic.query(queries.gtic.GET_JURIDICAL_CONTRIBUTOR, [document, docType])).rows[0];
+      if (!juridicalContributor) return { status: 200, contribuyente: { tipoContribuyente: type }, message: 'No existe un usuario registrado en SEDEMAT' };
+      taxPayer = {
+        tipoContribuyente: type,
+        documento: document,
+        tipoDocumento: docType,
+        razonSocial: nullStringCheck(juridicalContributor.tx_razon_social).trim(),
+        siglas: nullStringCheck(juridicalContributor.tx_siglas).trim(),
+        denomComercial: nullStringCheck(juridicalContributor.tx_denom_comercial).trim(),
+        telefonoMovil: nullStringCheck(juridicalContributor.nu_telf_movil).trim(),
+        telefonoHabitacion: nullStringCheck(juridicalContributor.nu_telf_hab).trim(),
+        email: nullStringCheck(juridicalContributor.tx_email).trim(),
+        parroquia: juridicalContributor.tx_direccion ? (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [juridicalContributor.tx_direccion.split('Parroquia')[1].split('Sector')[0].trim()])).rows[0].id || undefined : undefined,
+        sector: nullStringCheck(juridicalContributor.sector).trim(),
+        direccion: juridicalContributor.tx_direccion ? 'Avenida ' + juridicalContributor.tx_direccion.split('Parroquia')[1].split('Avenida')[1].split('Pto')[0].trim().replace(/.$/, '') : undefined,
+        puntoReferencia: nullStringCheck(juridicalContributor.tx_punto_referencia).trim(),
+      };
+    }
+    return taxPayer;
+  } catch (error) {
+    throw errorMessageExtractor(error);
+  }
+};
+
+const structureEstates = (x: any) => {
+  return {
+    id: nullStringCheck(x.co_inmueble),
+    direccion: nullStringCheck(x.tx_direccion),
+    email: nullStringCheck(x.tx_email),
+    razonSocial: nullStringCheck(x.tx_razon_social),
+    denomComercial: nullStringCheck(x.tx_denom_comercial),
+    metrosCuadrados: +x.nu_metro_cuadrado,
+    cuentaContrato: x.cuenta_contrato,
+    nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined),
+  };
+};
+
+const structureSettlements = (x: any) => {
+  return {
+    id: nullStringCheck(x.co_liquidacion),
+    estado: nullStringCheck(x.co_estatus === 1 ? 'VIGENTE' : 'PAGADO'),
+    ramo: nullStringCheck(x.tx_ramo),
+    codigoRamo: nullStringCheck(x.nb_ramo),
+    monto: nullStringCheck(x.nu_monto),
+    fecha: { month: moment(x.fe_liquidacion).toDate().toLocaleDateString('ES', { month: 'long' }), year: moment(x.fe_liquidacion).year() },
+  };
+};
+
+const structureFinings = (x: any) => {
+  return {
+    id: nullStringCheck(x.co_decl_multa),
+    estado: nullStringCheck(x.in_activo ? 'VIGENTE' : 'PAGADO'),
+    monto: nullStringCheck(x.nu_monto),
+    fecha: { month: moment(x.created_at).toDate().toLocaleDateString('ES', { month: 'long' }), year: moment(x.created_at).year() },
+  };
+};
+
+export const logInExternalLinking = async ({ credentials }) => {
+  const client = await pool.connect();
+  const gtic = await gticPool.connect();
+  try {
+    const { attemptedUser, canBeLinked } = await externalUserForLinkingExists({ user: credentials.nombreUsuario, password: credentials.password, gtic });
+    if (!canBeLinked) return { status: 403, message: 'Credenciales incorrectas' };
+    const contributors = await Promise.all(
+      (await gtic.query(queries.gtic.GET_CONTRIBUTOR_BY_REPRESENTATIVE_USER_EXTENDED, [attemptedUser.id_tb004_contribuyente])).rows
+        .map(async (el) => {
+          const contributorExists = (await client.query(queries.TAX_PAYER_EXISTS, [el.tx_tp_doc, el.tx_dist_contribuyente === 'J' ? el.tx_rif : el.nu_cedula])).rows;
+          if (contributorExists.length > 0) return getLinkedContributorData(contributorExists[0]);
+          return {
+            datosContribuyente: await getTaxPayerInfo({
+              docType: el.tx_tp_doc,
+              document: el.tx_dist_contribuyente === 'J' ? el.tx_rif : el.nu_cedula,
+              type: el.tx_dist_contribuyente === 'J' ? 'JURIDICO' : 'NATURAL',
+              gtic,
+              client,
+            }),
+            sucursales: await Promise.all(
+              el.tx_dist_contribuyente === 'J'
+                ? (await gtic.query(queries.gtic.GET_JURIDICAL_CONTRIBUTOR, [el.tx_rif, el.tx_tp_doc])).rows.map(async (x) => {
+                    const inmuebles = await Promise.all((await gtic.query(queries.gtic.GET_ESTATES_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureEstates(j)));
+                    const liquidaciones = await Promise.all((await gtic.query(queries.gtic.GET_SETTLEMENTS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureSettlements(j)));
+                    const creditoFiscal = (await gtic.query(queries.gtic.GET_FISCAL_CREDIT_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows[0];
+                    const multas = await Promise.all((await gtic.query(queries.gtic.GET_FININGS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureFinings(j)));
+                    inmuebles.push({
+                      id: x.co_contribuyente,
+                      direccion: nullStringCheck(x.tx_direccion),
+                      email: nullStringCheck(x.tx_email),
+                      razonSocial: nullStringCheck(x.tx_razon_social),
+                      denomComercial: nullStringCheck(x.tx_denom_comercial),
+                      metrosCuadrados: 0.0,
+                      cuentaContrato: 0.0,
+                      nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined).trim(),
+                    });
+                    const datosSucursal = {
+                      id: nullStringCheck(x.co_contribuyente),
+                      direccion: nullStringCheck(x.tx_direccion),
+                      email: nullStringCheck(x.tx_email),
+                      razonSocial: nullStringCheck(x.tx_razon_social),
+                      denomComercial: nullStringCheck(x.tx_denom_comercial),
+                      metrosCuadrados: 0.0,
+                      cuentaContrato: 0.0,
+                      nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined),
+                      telefonoMovil: nullStringCheck(x.nu_telf_representante || x.nu_telf_movil),
+                      registroMunicipal: nullStringCheck(x.nu_referencia),
+                      creditoFiscal: creditoFiscal ? creditoFiscal.mo_haber : 0,
+                    };
+                    return { datosSucursal, inmuebles, liquidaciones, multas };
+                  })
+                : (await gtic.query(queries.gtic.GET_NATURAL_CONTRIBUTOR, [el.nu_cedula, el.tx_tp_doc])).rows.map(async (x) => {
+                    let datos;
+                    if (x.nu_referencia) {
+                      const inmuebles = await Promise.all((await gtic.query(queries.gtic.GET_ESTATES_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureEstates(j)));
+                      const liquidaciones = await Promise.all((await gtic.query(queries.gtic.GET_SETTLEMENTS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureSettlements(j)));
+                      const creditoFiscal = (await gtic.query(queries.gtic.GET_FISCAL_CREDIT_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows[0];
+                      const multas = await Promise.all((await gtic.query(queries.gtic.GET_FININGS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureFinings(j)));
+
+                      inmuebles.push({
+                        id: x.co_contribuyente,
+                        direccion: nullStringCheck(x.tx_direccion),
+                        email: nullStringCheck(x.tx_email),
+                        razonSocial: nullStringCheck(x.tx_razon_social),
+                        denomComercial: nullStringCheck(x.tx_denom_comercial),
+                        metrosCuadrados: 0.0,
+                        cuentaContrato: 0.0,
+                        nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined).trim(),
+                      });
+                      const datosSucursal = {
+                        id: nullStringCheck(x.co_contribuyente),
+                        direccion: nullStringCheck(x.tx_direccion),
+                        email: nullStringCheck(x.tx_email),
+                        razonSocial: nullStringCheck(x.tx_razon_social),
+                        denomComercial: nullStringCheck(x.tx_denom_comercial),
+                        metrosCuadrados: 0.0,
+                        cuentaContrato: 0.0,
+                        nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined),
+                        telefonoMovil: nullStringCheck(x.nu_telf_representante || x.nu_telf_movil),
+                        registroMunicipal: nullStringCheck(x.nu_referencia),
+                        creditoFiscal: creditoFiscal ? creditoFiscal.mo_haber : 0,
+                      };
+                      datos = {
+                        datosSucursal,
+                        inmuebles,
+                        liquidaciones,
+                        multas,
+                      };
+                    } else {
+                      const liquidaciones = await Promise.all((await gtic.query(queries.gtic.GET_SETTLEMENTS_BY_CONTRIBUTOR, [x.co_contribuyente])).rows.map((j) => structureSettlements(j)));
+                      const creditoFiscal = (await gtic.query(queries.gtic.GET_FISCAL_CREDIT_BY_CONTRIBUTOR, [x.co_contribuyente])).rows[0];
+                      const inmuebles = await Promise.all((await gtic.query(queries.gtic.GET_ESTATES_BY_CONTRIBUTOR, [x.co_contribuyente])).rows.map((j) => structureEstates(j)));
+                      const multas = await Promise.all((await gtic.query(queries.gtic.GET_FININGS_BY_CONTRIBUTOR, [x.co_contribuyente])).rows.map((j) => structureFinings(j)));
+                      const datosSucursal = {
+                        id: nullStringCheck(x.co_contribuyente),
+                        direccion: nullStringCheck(x.tx_direccion),
+                        email: nullStringCheck(x.tx_email),
+                        razonSocial: nullStringCheck(x.tx_razon_social),
+                        denomComercial: nullStringCheck(x.tx_denom_comercial),
+                        metrosCuadrados: 0.0,
+                        cuentaContrato: 0.0,
+                        nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined),
+                        telefonoMovil: nullStringCheck(x.nu_telf_representante || x.nu_telf_movil),
+                        creditoFiscal: creditoFiscal ? creditoFiscal.mo_haber : 0,
+                      };
+                      datos = {
+                        datosSucursal,
+                        inmuebles,
+                        liquidaciones,
+                        multas,
+                      };
+                    }
+                    return datos;
+                  })
+            ),
+          };
+        })
+        .filter((el) => el)
+    );
+    return { status: 200, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: contributors };
+  } catch (error) {
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al obtener datos del contribuyente',
+    };
+  } finally {
+    client.release();
+    gtic.release();
+  }
+};
+
+const getLinkedContributorData = async (contributor: any) => {
+  const client = await pool.connect();
+  try {
+    const datosContribuyente = {
+      tipoContribuyente: contributor.tipo_contribuyente,
+      documento: contributor.documento,
+      tipoDocumento: contributor.tipo_documento,
+      razonSocial: contributor.razon_social,
+      siglas: contributor.siglas,
+      denomComercial: contributor.denominacion_comercial,
+      telefonoMovil: '',
+      telefonoHabitacion: '',
+      email: '',
+      parroquia: contributor.parroquia,
+      sector: contributor.sector,
+      direccion: contributor.direccion,
+      puntoReferencia: contributor.punto_referencia,
+    };
+    const sucursales = await Promise.all(
+      (await client.query('SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = $1', [contributor.id_contribuyente])).rows
+        .filter((el) => !el.actualizado)
+        .map(async (el) => {
+          const inmueble = (await client.query('SELECT * FROM inmueble_urbano WHERE id_registro_municipal = $1 ORDER BY id_inmueble DESC LIMIT 1', [el.id_registro_municipal])).rows[0];
+
+          const payload = {
+            datosSucursal: {
+              id: el.id_registro_municipal,
+              direccion: inmueble ? inmueble.direccion : null,
+              email: el.email,
+              razonSocial: datosContribuyente.razonSocial,
+              denomComercial: el.denominacion_comercial,
+              metrosCuadrados: 0.0,
+              cuentaContrato: 0.0,
+              nombreRepresentante: el.nombre_representante,
+              telefonoMovil: el.telefono_celular,
+              registroMunicipal: el.referencia_municipal,
+            },
+            inmuebles: [{ id: inmueble && inmueble.id_inmueble, direccion: inmueble && inmueble.direccion }],
+            liquidaciones: [],
+            multas: [],
+          };
+          return { ...payload };
+        })
+    );
+    return { datosContribuyente, sucursales };
+  } catch (error) {
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+const externalUserForLinkingExists = async ({ user, password, gtic }: { user: string; password: string; gtic: PoolClient }) => {
+  try {
+    const gticUser = (await gtic.query(queries.gtic.GET_REPRESENTATIVE_BY_EMAIL, [user])).rows;
+    if (!gticUser[0]) return { canBeLinked: false };
+    const isAttemptedUser = gticUser
+      .map((el) => ({
+        loggedIn: el.tx_password.startsWith('$') ? bcrypt.compareSync(password, el.tx_password) : md5(password) === el.tx_password,
+        contribuyente: el,
+      }))
+      .find((x) => x.loggedIn);
+    console.log(isAttemptedUser);
+    return { attemptedUser: isAttemptedUser?.contribuyente, canBeLinked: isAttemptedUser?.loggedIn };
+  } catch (e) {
+    throw errorMessageExtractor(e);
   }
 };
 
@@ -238,38 +520,39 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const application: Solicitud[] = await Promise.all(
       (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows.map(async (el) => {
+        const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
         return {
           id: el.id_solicitud,
           usuario: typeof user === 'object' ? user : { id: user },
-          documento: el.documento,
-          contribuyente: el.contribuyente,
-          rim: el.rim,
-          nacionalidad: el.nacionalidad,
+          contribuyente: el.id_contribuyente,
           aprobado: el.aprobado,
-          pagado: el.pagado,
           fecha: el.fecha,
-          monto: el.monto_total,
-          liquidaciones: await Promise.all(
-            (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows.map((el) => {
+          monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0].monto_total,
+          liquidaciones: liquidaciones
+            .filter((el) => el.tipoProcedimiento !== 'Multas')
+            .map((el) => {
               return {
                 id: el.id_liquidacion,
-                tipoProcedimiento: el.tipoProcedimiento,
-                fecha: { month: el.mes, year: el.anio },
+                ramo: el.tipoProcedimiento,
+                fecha: el.datos.fecha,
                 monto: el.monto,
                 certificado: el.certificado,
                 recibo: el.recibo,
               };
-            })
-          ),
-          multas: await Promise.all(
-            (await client.query(queries.GET_FINES_BY_APPLICATION, [el.id_solicitud])).rows.map((el) => {
+            }),
+          multas: liquidaciones
+            .filter((el) => el.tipoProcedimiento === 'Multas')
+            .map((el) => {
               return {
-                id: el.id_multa,
-                fecha: { month: el.mes, year: el.anio },
-                monto: +el.monto * UTMM,
+                id: el.id_liquidacion,
+                ramo: el.tipoProcedimiento,
+                fecha: el.datos.fecha,
+                monto: el.monto * UTMM,
+                descripcion: el.datos.descripcion,
+                certificado: el.certificado,
+                recibo: el.recibo,
               };
-            })
-          ),
+            }),
         };
       })
     );
@@ -277,7 +560,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
   } catch (error) {
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
     };
   } finally {
@@ -291,38 +574,44 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const applications: Solicitud[] = await Promise.all(
       (await client.query(queries.GET_APPLICATION_INSTANCES_BY_USER, [user.id])).rows.map(async (el) => {
+        const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
+
         return {
           id: el.id_solicitud,
           usuario: user,
-          documento: el.documento,
-          contribuyente: el.contribuyente,
-          rim: el.rim,
-          nacionalidad: el.nacionalidad,
+          contribuyente: el.id_contribuyente,
           aprobado: el.aprobado,
-          pagado: el.pagado,
+          estado: (await client.query('SELECT state FROM impuesto.solicitud_state WHERE id = $1', [el.id_solicitud])).rows[0].state,
+          referenciaMunicipal: liquidaciones[0].id_registro_municipal
+            ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0].id_registro_municipal])).rows[0].referencia_municipal
+            : undefined,
           fecha: el.fecha,
-          monto: el.monto_total,
-          liquidaciones: await Promise.all(
-            (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows.map((el) => {
+          monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0].monto_total,
+          liquidaciones: liquidaciones
+            .filter((el) => el.tipoProcedimiento !== 'Multas')
+            .map((el) => {
               return {
                 id: el.id_liquidacion,
-                tipoProcedimiento: el.tipoProcedimiento,
-                fecha: { month: el.mes, year: el.anio },
+                ramo: el.tipoProcedimiento,
+                fecha: el.datos.fecha,
                 monto: el.monto,
                 certificado: el.certificado,
                 recibo: el.recibo,
               };
-            })
-          ),
-          multas: await Promise.all(
-            (await client.query(queries.GET_FINES_BY_APPLICATION, [el.id_solicitud])).rows.map((el) => {
+            }),
+          multas: liquidaciones
+            .filter((el) => el.tipoProcedimiento === 'Multas')
+            .map((el) => {
               return {
-                id: el.id_multa,
-                fecha: { month: el.mes, year: el.anio },
-                monto: +el.monto * UTMM,
+                id: el.id_liquidacion,
+                ramo: el.tipoProcedimiento,
+                fecha: el.datos.fecha,
+                monto: el.monto * UTMM,
+                descripcion: el.datos.descripcion,
+                certificado: el.certificado,
+                recibo: el.recibo,
               };
-            })
-          ),
+            }),
         };
       })
     );
@@ -330,7 +619,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
   } catch (error) {
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
     };
   } finally {
@@ -338,6 +627,287 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
   }
 };
 
+export const getApplicationsAndSettlementsForContributor = async ({ referencia, docType, document, typeUser }) => {
+  const client = await pool.connect();
+  try {
+    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const applications: Solicitud[] = await Promise.all(
+      (typeUser === 'JURIDICO' ? await client.query(queries.GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR, [referencia, document, docType]) : await client.query(queries.GET_APPLICATION_INSTANCES_FOR_NATURAL_CONTRIBUTOR, [document, docType])).rows.map(
+        async (el) => {
+          const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
+
+          return {
+            id: el.id_solicitud,
+            usuario: el.usuario,
+            contribuyente: el.id_contribuyente,
+            aprobado: el.aprobado,
+            fecha: el.fecha,
+            monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0].monto_total,
+            liquidaciones: liquidaciones
+              .filter((el) => el.tipoProcedimiento !== 'Multas')
+              .map((el) => {
+                return {
+                  id: el.id_liquidacion,
+                  ramo: el.tipoProcedimiento,
+                  fecha: el.datos.fecha,
+                  monto: el.monto,
+                  certificado: el.certificado,
+                  recibo: el.recibo,
+                };
+              }),
+            multas: liquidaciones
+              .filter((el) => el.tipoProcedimiento === 'Multas')
+              .map((el) => {
+                return {
+                  id: el.id_liquidacion,
+                  ramo: el.tipoProcedimiento,
+                  fecha: el.datos.fecha,
+                  monto: el.monto * UTMM,
+                  descripcion: el.datos.descripcion,
+                  certificado: el.certificado,
+                  recibo: el.recibo,
+                };
+              }),
+          };
+        }
+      )
+    );
+    return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', solicitudes: applications };
+  } catch (error) {
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const getEntireDebtsForContributor = async ({ reference, docType, document, typeUser }) => {
+  const client = await pool.connect();
+  try {
+    console.log(document, typeUser, docType, reference);
+    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const contribuyente = (await client.query(queries.GET_CONTRIBUTOR_BY_DOCUMENT_AND_DOC_TYPE, [document, docType])).rows[0];
+    if (!contribuyente) return { status: 404, message: 'El contribuyente no está registrado en SEDEMAT' };
+    const liquidaciones = (typeUser === 'NATURAL'
+      ? await client.query(queries.GET_APPLICATION_DEBTS_FOR_NATURAL_CONTRIBUTOR, [contribuyente.id_contribuyente])
+      : await client.query(queries.GET_APPLICATION_DEBTS_BY_MUNICIPAL_REGISTRY, [reference, contribuyente.id_contribuyente])
+    ).rows;
+    const hasSettlements = liquidaciones.length > 0;
+    if (!hasSettlements) return { status: 404, message: 'El contribuyente no posee deudas' };
+    const payload = {
+      contribuyente: {
+        id: contribuyente.id_contribuyente,
+        tipoDocumento: contribuyente.tipo_documento,
+        documento: contribuyente.documento,
+        registroMunicipal: reference,
+        razonSocial: contribuyente.razon_social,
+        denomComercial: contribuyente.denominacion_comercial || undefined,
+        siglas: contribuyente.siglas || undefined,
+        parroquia: contribuyente.parroquia,
+        sector: contribuyente.sector,
+        direccion: contribuyente.direccion,
+        puntoReferencia: contribuyente.punto_referencia,
+        verificado: contribuyente.verificado,
+        liquidaciones: liquidaciones.map((x) => ({ id: x.id_ramo, ramo: x.descripcion, monto: x.monto })),
+        totalDeuda: liquidaciones.map((x) => x.monto).reduce((i, j) => +i + +j),
+      },
+    };
+    return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', ...payload };
+  } catch (error) {
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+//TODO: terminar la parte de la persona natural
+export const initialUserLinking = async (linkingData, user) => {
+  const client = await pool.connect();
+  const { datosContribuyente, sucursales, datosContacto } = linkingData;
+  const { tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, tipoContribuyente } = datosContribuyente;
+  let payload;
+  try {
+    client.query('BEGIN');
+    const contributorExists = (await client.query(queries.TAX_PAYER_EXISTS, [tipoDocumento, documento])).rows;
+    if (contributorExists.length > 0) {
+      if (datosContribuyente.tipoContribuyente === 'JURIDICO') {
+        let hasNewCode = false;
+        const rims: number[] = await Promise.all(
+          await sucursales.map(async (el) => {
+            const { datosSucursal } = el;
+            const { nombreRepresentante, telefonoMovil, email, denomComercial, representado, registroMunicipal } = datosSucursal;
+            const updatedRegistry = (
+              await client.query('UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombre_representante = $2, telefono_celular = $3, email = $4, actualizado = $5 WHERE referencia_municipal = $6 RETURNING *', [
+                denomComercial,
+                nombreRepresentante,
+                representado ? datosContacto.telefono : telefonoMovil,
+                representado ? datosContacto.correo : email,
+                representado,
+                registroMunicipal,
+              ])
+            ).rows[0];
+            return representado ? updatedRegistry.id_registro_municipal : undefined;
+          })
+        );
+        await client.query('UPDATE USUARIO SET id_contribuyente = $1 WHERE id_usuario = $2', [contributorExists[0].id_contribuyente, user.id]);
+        await client.query('COMMIT');
+        await sendRimVerification(VerificationValue.CellPhone, { idRim: rims.filter((el) => el), content: datosContacto.telefono, user: user.id });
+        hasNewCode = true;
+
+        payload = { rims: rims.filter((el) => el) };
+        return { status: 200, message: 'Datos actualizados para las sucursales del contribuyente', hasNewCode, payload };
+      } else {
+      }
+    }
+    const contributor = (await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, true, tipoContribuyente])).rows[0];
+    await client.query('UPDATE USUARIO SET id_contribuyente = $1 WHERE id_usuario = $2', [contributor.id_contribuyente, user.id]);
+    if (datosContribuyente.tipoContribuyente === 'JURIDICO') {
+      const rims: number[] = await Promise.all(
+        await sucursales.map(async (x) => {
+          const { inmuebles, liquidaciones, multas, datosSucursal } = x;
+          const liquidacionesPagas = liquidaciones.filter((el) => el.estado === 'PAGADO');
+          const liquidacionesVigentes = liquidaciones.filter((el) => el.estado !== 'PAGADO');
+          const multasPagas = multas.filter((el) => el.estado === 'PAGADO');
+          const multasVigentes = multas.filter((el) => el.estado !== 'PAGADO');
+          const pagados = liquidacionesPagas.concat(multasPagas);
+          const vigentes = liquidacionesVigentes.concat(multasVigentes);
+          const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
+          const registry = (
+            await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [
+              contributor.id_contribuyente,
+              registroMunicipal,
+              nombreRepresentante,
+              representado ? datosContacto.telefono : telefonoMovil,
+              representado ? datosContacto.correo : email,
+              denomComercial,
+              representado || false,
+            ])
+          ).rows[0];
+          const estates = inmuebles.length > 0 ? await Promise.all(inmuebles.map(async (el) => (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_referencia_municipal, el.direccion])).rows[0])) : undefined;
+          if (pagados.length > 0) {
+            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
+            await Promise.all(
+              pagados.map(
+                async (el) =>
+                  await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [application.id_solicitud, el.monto, el.ramo, { fecha: el.fecha }, moment().month(el.fecha.month).format('MM-DD-YYYY'), registry.id_registro_municipal])
+              )
+            );
+          }
+
+          if (vigentes.length > 0) {
+            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            await Promise.all(
+              vigentes.map(
+                async (el) =>
+                  await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [application.id_solicitud, el.monto, el.ramo, { fecha: el.fecha }, moment().month(el.fecha.month).format('MM-DD-YYYY'), registry.id_registro_municipal])
+              )
+            );
+          }
+          return representado ? registry.id_registro_municipal : undefined;
+        })
+      );
+      await client.query('COMMIT');
+      await sendRimVerification(VerificationValue.CellPhone, { content: datosContacto.telefono, user: user.id, idRim: rims.filter((el) => el) });
+      payload = { rims: rims.filter((el) => el) };
+    } else {
+      sucursales.map((x) => {
+        const { inmuebles, liquidaciones, multas, datosSucursal } = x;
+        if (datosSucursal.hasOwnProperty('registroMunicipal')) {
+        } else {
+        }
+      });
+    }
+    client.query('COMMIT');
+    return { status: 201, message: 'Enlace inicial completado', rims: payload.rims };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+
+    throw {
+      status: error.tiempo ? 429 : 500,
+      ...error,
+      message: errorMessageGenerator(error) || error.error.message || 'Error al iniciar el enlace de usuario de SEDEMAT',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const verifyUserLinking = async ({ code, user }) => {
+  const client = await pool.connect();
+  try {
+    await verifyCode(VerificationValue.CellPhone, { code, user: user.id });
+    const contribuyente = await hasLinkedContributor(user.id);
+    return { status: 200, message: 'Usuario enlazado y verificado', contribuyente };
+  } catch (error) {
+    throw {
+      status: 500,
+      error,
+      message: errorMessageGenerator(error) || 'Error al verificar el codigo del usuario',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const resendUserCode = async ({ user }) => {
+  const client = await pool.connect();
+  try {
+    await resendCode(VerificationValue.CellPhone, { user: user.id });
+    return { status: 200, message: 'Codigo reenviado' };
+  } catch (error) {
+    console.log(error);
+    let status = error.tiempo ? 429 : 500;
+    throw {
+      status: status,
+      message: errorMessageGenerator(error) || 'Error al verificar el codigo del usuario',
+      ...error,
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const createUserBenefits = async (contributor) => {
+  const client = await pool.connect();
+  try {
+  } catch (error) {
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al crear solicitud de beneficios de usuario',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const userBenefitsAgreement = async (contributor) => {
+  const client = await pool.connect();
+  try {
+  } catch (error) {
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al crear solicitud de beneficios de usuario',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+//FIXME: acoplar a los estandares actuales de SUT
 export const insertSettlements = async ({ process, user }) => {
   const client = await pool.connect();
   const { impuestos } = process;
@@ -347,32 +917,21 @@ export const insertSettlements = async ({ process, user }) => {
   let finingMonths: MultaImpuesto[] | undefined, finingAmount;
   try {
     client.query('BEGIN');
+    const userContributor = (await client.query('SELECT c.* FROM USUARIO u INNER JOIN impuesto.contribuyente c ON u.id_contribuyente = c.id_contribuyente WHERE u.id_usuario = $1', [user.id])).rows;
+    const userHasContributor = userContributor.length > 0;
+    if (!userHasContributor) throw { status: 404, message: 'El usuario no esta asociado con ningun contribuyente' };
+    const contributorReference = (await client.query('SELECT * FROM impuesto.registro_municipal rm WHERE rm.referencia_municipal = $1 AND rm.id_contribuyente = $2', [process.rim || '', userContributor[0].id_contribuyente])).rows[0];
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-    const application = (
-      await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [
-        user.id,
-        process.documento,
-        process.rim,
-        process.nacionalidad,
-        process.totalPagoImpuestos,
-        process.contribuyente,
-      ])
-    ).rows[0];
+    const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, userContributor[0].id_contribuyente])).rows[0];
 
-    const hasAE = impuestos.find((el) => el.tipoImpuesto === 'AE');
+    const hasAE = impuestos.find((el) => el.ramo === 'AE');
     if (hasAE) {
       const now = moment().locale('ES');
       const pivot = moment().locale('ES');
       const onlyAE = impuestos
-        .filter((el) => el.tipoImpuesto === 'AE')
-        .sort((a, b) =>
-          pivot.month(a.fechaCancelada.month).toDate() === pivot.month(b.fechaCancelada.month).toDate()
-            ? 0
-            : pivot.month(a.fechaCancelada.month).toDate() > pivot.month(b.fechaCancelada.month).toDate()
-            ? 1
-            : -1
-        );
-      const lastSavedFine = (await client.query(queries.GET_LAST_FINE_FOR_LATE_APPLICATION, [process.contribuyente])).rows[0];
+        .filter((el) => el.ramo === 'AE')
+        .sort((a, b) => (pivot.month(a.fechaCancelada.month).toDate() === pivot.month(b.fechaCancelada.month).toDate() ? 0 : pivot.month(a.fechaCancelada.month).toDate() > pivot.month(b.fechaCancelada.month).toDate() ? 1 : -1));
+      const lastSavedFine = (await client.query(queries.GET_LAST_FINE_FOR_LATE_APPLICATION, [application.id_contribuyente])).rows[0];
       if (lastSavedFine && lastSavedFine.anio === now.year()) {
         finingAmount = lastSavedFine.monto;
         const proposedFiningDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month();
@@ -385,14 +944,21 @@ export const insertSettlements = async ({ process, user }) => {
               const multa = Promise.resolve(
                 client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
                   application.id_solicitud,
-                  moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
-                  now.year(),
                   finingAmount,
+                  {
+                    fecha: {
+                      month: moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
+                      year: now.year(),
+                    },
+                    descripcion: 'Multa por Declaracion Fuera de Plazo',
+                  },
+                  moment().month(counter).date(1).format('DD-MM-YYYY'),
+                  contributorReference.id_registro_municipal || null,
                 ])
               )
                 .then((el) => el.rows[0])
                 .then((data) => {
-                  return { id: data.id_multa, fecha: { month: data.mes, year: data.anio }, monto: +data.monto * UTMM };
+                  return { id: data.id_liquidacion, fecha: data.datos.fecha, monto: +data.monto * UTMM, descripcion: data.datos.descripcion };
                 });
               counter++;
               finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
@@ -404,16 +970,19 @@ export const insertSettlements = async ({ process, user }) => {
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
               application.id_solicitud,
-              moment().toDate().toLocaleDateString('ES', { month: 'long' }),
-              now.year(),
               finingAmount,
+              {
+                fecha: {
+                  month: moment().toDate().toLocaleDateString('ES', { month: 'long' }),
+                  year: now.year(),
+                },
+                descripcion: 'Multa por Declaracion Fuera de Plazo',
+              },
+              moment().date(1).format('DD-MM-YYYY'),
+              contributorReference.id_registro_municipal || null,
             ])
           ).rows[0];
-          const fine = {
-            id: multa.id_multa,
-            fecha: { month: multa.mes, year: multa.anio },
-            monto: +multa.monto * UTMM,
-          };
+          const fine = { id: multa.id_liquidacion, fecha: multa.datos.fecha, monto: multa.monto * UTMM, descripcion: multa.datos.descripcion };
           finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
           finingMonths.push(fine);
         }
@@ -428,14 +997,21 @@ export const insertSettlements = async ({ process, user }) => {
               const multa = Promise.resolve(
                 client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
                   application.id_solicitud,
-                  moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
-                  now.year(),
                   finingAmount,
+                  {
+                    fecha: {
+                      month: moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
+                      year: now.year(),
+                    },
+                    descripcion: 'Multa por Declaracion Fuera de Plazo',
+                  },
+                  moment().month(counter).date(1).format('DD-MM-YYYY'),
+                  contributorReference.id_registro_municipal || null,
                 ])
               )
                 .then((el) => el.rows[0])
                 .then((data) => {
-                  return { id: data.id_multa, fecha: { month: data.mes, year: data.anio }, monto: +data.monto * UTMM };
+                  return { id: data.id_liquidacion, fecha: data.datos.fecha, monto: +data.monto * UTMM, descripcion: data.datos.descripcion };
                 });
               counter++;
               finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
@@ -447,16 +1023,20 @@ export const insertSettlements = async ({ process, user }) => {
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
               application.id_solicitud,
-              moment().toDate().toLocaleDateString('ES', { month: 'long' }),
-              now.year(),
               finingAmount,
+              {
+                fecha: {
+                  month: moment().toDate().toLocaleDateString('ES', { month: 'long' }),
+                  year: now.year(),
+                },
+                descripcion: 'Multa por Declaracion Fuera de Plazo',
+              },
+              moment().date(1).format('DD-MM-YYYY'),
+              contributorReference.id_registro_municipal || null,
             ])
           ).rows[0];
-          const fine = {
-            id: multa.id_multa,
-            fecha: { month: multa.mes, year: multa.anio },
-            monto: +multa.monto * UTMM,
-          };
+          const fine = { id: multa.id_liquidacion, fecha: multa.datos.fecha, monto: multa.monto * UTMM, descripcion: multa.datos.descripcion };
+
           finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
           finingMonths.push(fine);
         }
@@ -465,58 +1045,55 @@ export const insertSettlements = async ({ process, user }) => {
 
     const settlement: Liquidacion[] = await Promise.all(
       impuestos.map(async (el) => {
+        const datos = {
+          desglose: el.desglose ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
+          fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },
+        };
         const liquidacion = (
           await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
             application.id_solicitud,
-            el.tipoImpuesto,
-            el.fechaCancelada.month,
-            el.fechaCancelada.year,
             el.monto,
+            el.ramo,
+            datos,
+            moment().month(el.fechaCancelada.month).date(1).format('DD-MM-YYYY'),
+            contributorReference.id_registro_municipal || null,
           ])
         ).rows[0];
 
-        if (el.desglose) {
-          await Promise.all(
-            el.desglose.map(async (al) => {
-              console.log(el.tipoImpuesto, el.fechaCancelada.month);
-              const insert = breakdownCaseHandler(el.tipoImpuesto, al, liquidacion.id_liquidacion);
-              const result = (await client.query(insert.query, insert.payload)).rows[0];
-              return result;
-            })
-          );
-        }
-
         return {
           id: liquidacion.id_liquidacion,
-          tipoProcedimiento: el.tipoImpuesto,
-          fecha: { month: liquidacion.mes, year: liquidacion.anio },
+          ramo: el.ramo,
+          fecha: datos.fecha,
           monto: liquidacion.monto,
           certificado: liquidacion.certificado,
           recibo: liquidacion.recibo,
+          desglose: datos.desglose,
         };
       })
     );
 
-    const solicitud: Solicitud = {
+    const solicitud: Solicitud & { registroMunicipal: string } = {
       id: application.id_solicitud,
       usuario: user,
-      documento: application.documento,
       contribuyente: application.contribuyente,
-      rim: application.rim,
-      nacionalidad: application.nacionalidad,
       aprobado: application.aprobado,
-      pagado: application.pagado,
       fecha: application.fecha,
-      monto: application.monto_total,
+      monto: finingMonths
+        ?.concat(settlement)
+        .map((el) => +el.monto)
+        .reduce((x, j) => x + j, 0) as number,
       liquidaciones: settlement,
       multas: finingMonths,
+      registroMunicipal: process.rim,
     };
+    const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
     await sendNotification(
       user,
-      `Se ha iniciado una solicitud para el contribuyente con el documento de identidad: ${solicitud.nacionalidad}-${solicitud.documento}`,
+      // `Se ha iniciado una solicitud para el contribuyente con el documento de identidad: ${solicitud.nacionalidad}-${solicitud.documento}`,
+      'si',
       'CREATE_APPLICATION',
       'IMPUESTO',
-      { ...solicitud, estado: 'ingresardatos', nombreCorto: 'SEDEMAT' },
+      { ...solicitud, estado: state, nombreCorto: 'SEDEMAT' },
       client
     );
     client.query('COMMIT');
@@ -526,7 +1103,7 @@ export const insertSettlements = async ({ process, user }) => {
     client.query('ROLLBACK');
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al crear liquidaciones',
     };
   } finally {
@@ -540,7 +1117,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
   try {
     client.query('BEGIN');
     const solicitud = (await client.query(queries.GET_APPLICATION_BY_ID, [application])).rows[0];
-    const pagoSum = payment.map((e) => e.costo).reduce(((e, i) => e + i),0);
+    const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
     if (pagoSum < solicitud.monto_total) return { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
     await Promise.all(
       payment.map(async (el) => {
@@ -555,16 +1132,16 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
         await insertPaymentReference(el, application, client);
       })
     );
-    await client.query(queries.UPDATE_PAID_STATE_FOR_TAX_PAYMENT_APPLICATION, [application]);
+    const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0];
     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
-    applicationInstance.pagado = true;
     console.log(applicationInstance);
     await sendNotification(
       user,
-      `Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.nacionalidad}-${applicationInstance.documento}`,
+      // `Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.nacionalidad}-${applicationInstance.documento}`,
+      'si',
       'UPDATE_APPLICATION',
       'IMPUESTO',
-      { ...applicationInstance, estado: 'validando', nombreCorto: 'SEDEMAT' },
+      { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
       client
     );
     client.query('COMMIT');
@@ -574,7 +1151,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
     console.log(error);
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al insertar referencias de pago',
     };
   } finally {
@@ -586,15 +1163,17 @@ export const validateApplication = async (body, user) => {
   const client = await pool.connect();
   try {
     client.query('BEGIN');
+    const state = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
     const solicitud = (await client.query(queries.GET_APPLICATION_BY_ID, [body.idTramite])).rows[0];
     const applicationInstance = await getApplicationsAndSettlementsById({ id: body.idTramite, user: solicitud.id_usuario });
     applicationInstance.aprobado = true;
     await sendNotification(
       user,
-      `Se ha finalizado una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.nacionalidad}-${applicationInstance.documento}`,
+      // `Se ha finalizado una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.nacionalidad}-${applicationInstance.documento}`,
+      'si',
       'UPDATE_APPLICATION',
       'IMPUESTO',
-      { ...applicationInstance, estado: 'finalizado', nombreCorto: 'SEDEMAT' },
+      { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
       client
     );
     client.query('COMMIT');
@@ -602,7 +1181,7 @@ export const validateApplication = async (body, user) => {
     client.query('ROLLBACK');
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al validar el pago',
     };
   } finally {
@@ -630,7 +1209,7 @@ export const createCertificateForApplication = async ({ settlement, media, user 
     console.log(error);
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener los impuestos',
     };
   } finally {
@@ -656,9 +1235,7 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
   try {
     const isJuridical = application.tipoContribuyente === 'JURIDICO';
     const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
-    const payloadContribuyente = isJuridical
-      ? [application.documento, application.rim, application.nacionalidad]
-      : [application.nacionalidad, application.nacionalidad];
+    const payloadContribuyente = isJuridical ? [application.documento, application.rim, application.nacionalidad] : [application.nacionalidad, application.nacionalidad];
     const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     return new Promise(async (res, rej) => {
@@ -682,12 +1259,10 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`);
       const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`;
       if (dev) {
-        pdf
-          .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
-          .toFile(pdfDir, async () => {
-            await pool.query(queries.UPDATE_CERTIFICATE_SETTLEMENT, [dir, application.idLiquidacion]);
-            res(dir);
-          });
+        pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
+          await pool.query(queries.UPDATE_CERTIFICATE_SETTLEMENT, [dir, application.idLiquidacion]);
+          res(dir);
+        });
       } else {
         // try {
         //   pdf
@@ -716,7 +1291,7 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
       }
     });
   } catch (error) {
-    throw error;
+    throw errorMessageExtractor(error);
   }
 };
 
@@ -725,9 +1300,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     console.log('culo');
     const isJuridical = application.tipoContribuyente === 'JURIDICO';
     const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
-    const payloadContribuyente = isJuridical
-      ? [application.documento, application.rim, application.nacionalidad]
-      : [application.nacionalidad, application.nacionalidad];
+    const payloadContribuyente = isJuridical ? [application.documento, application.rim, application.nacionalidad] : [application.nacionalidad, application.nacionalidad];
     const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
     const inmueblesContribuyente = (await gticPool.query(queries.gtic.GET_ESTATES_BY_CONTRIBUTOR, [datosContribuyente.co_contribuyente])).rows;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
@@ -740,11 +1313,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       motivo = (await gticPool.query(queries.gtic.GET_MOTIVE_BY_TYPE_ID, [idTiposSolicitud.SM])).rows[0];
       ramo = (await gticPool.query(queries.gtic.GET_BRANCH_BY_TYPE_ID, [idTiposSolicitud.SM])).rows[0];
       const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID('SM'), [application.id])).rows;
-      const totalIva =
-        +breakdownData.map((row) => (row.monto_gas ? +row.monto_aseo + +row.monto_gas : +row.monto_aseo)).reduce((prev, next) => prev + next, 0) * 0.16;
-      const totalMonto = +breakdownData
-        .map((row) => (row.monto_gas ? +row.monto_aseo + +row.monto_gas : +row.monto_aseo))
-        .reduce((prev, next) => prev + next, 0);
+      const totalIva = +breakdownData.map((row) => (row.monto_gas ? +row.monto_aseo + +row.monto_gas : +row.monto_aseo)).reduce((prev, next) => prev + next, 0) * 0.16;
+      const totalMonto = +breakdownData.map((row) => (row.monto_gas ? +row.monto_aseo + +row.monto_gas : +row.monto_aseo)).reduce((prev, next) => prev + next, 0);
       console.log('culo2');
       console.log(breakdownData);
       console.log(totalIva, totalMonto);
@@ -770,9 +1340,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               rif: `${application.nacionalidad}-${application.documento}`,
               denomComercial: datosContribuyente.tx_denom_comercial,
               direccion: datosContribuyente.tx_direccion,
-              razonSocial: isJuridical
-                ? datosContribuyente.tx_razon_social
-                : datosContribuyente.nb_contribuyente.trim() + datosContribuyente.ap_contribuyente.trim(),
+              razonSocial: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente.trim() + datosContribuyente.ap_contribuyente.trim(),
             },
             items: breakdownData
               .filter((row) => row.id_inmueble === +el.co_inmueble)
@@ -835,9 +1403,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               rif: `${application.nacionalidad}-${application.documento}`,
               denomComercial: datosContribuyente.tx_denom_comercial,
               direccion: datosContribuyente.tx_direccion,
-              razonSocial: isJuridical
-                ? datosContribuyente.tx_razon_social
-                : datosContribuyente.nb_contribuyente.trim() + datosContribuyente.ap_contribuyente.trim(),
+              razonSocial: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente.trim() + datosContribuyente.ap_contribuyente.trim(),
             },
             items: breakdownData
               .filter((row) => row.id_inmueble === +el.co_inmueble)
@@ -951,52 +1517,51 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             }
           });
         } else {
-          // try {
-          //   pdf
-          //     .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
-          //     .toBuffer(async (err, buffer) => {
-          //       if (err) {
-          //         rej(err);
-          //       } else {
-          //         const bucketParams = {
-          //           Bucket: 'sut-maracaibo',
-          //           Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}`,
-          //         };
-          //         await S3Client.putObject({
-          //           ...bucketParams,
-          //           Body: buffer,
-          //           ACL: 'public-read',
-          //           ContentType: 'application/pdf',
-          //         }).promise();
-          //         res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
-          //       }
-          //     });
-          // } catch (e) {
-          //   throw e;
-          // } finally {
-          // }
+          try {
+            // pdf
+            //   .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
+            //   .toBuffer(async (err, buffer) => {
+            //     if (err) {
+            //       rej(err);
+            //     } else {
+            //       const bucketParams = {
+            //         Bucket: 'sut-maracaibo',
+            //         Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}`,
+            //       };
+            //       await S3Client.putObject({
+            //         ...bucketParams,
+            //         Body: buffer,
+            //         ACL: 'public-read',
+            //         ContentType: 'application/pdf',
+            //       }).promise();
+            //       res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+            //     }
+            //   });
+          } catch (e) {
+            throw e;
+          } finally {
+          }
         }
       } catch (e) {
         console.log('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
         console.log(e);
         throw {
           message: 'Error en generacion de certificado de SM',
-          e,
+          e: errorMessageExtractor(e),
         };
       }
     });
   } catch (error) {
-    throw error;
+    throw errorMessageExtractor(error);
   }
 };
 
+//TODO: terminar esto
 const createReceiptForAEApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
     const isJuridical = application.tipoContribuyente === 'JURIDICO';
     const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
-    const payloadContribuyente = isJuridical
-      ? [application.documento, application.rim, application.nacionalidad]
-      : [application.nacionalidad, application.nacionalidad];
+    const payloadContribuyente = isJuridical ? [application.documento, application.rim, application.nacionalidad] : [application.nacionalidad, application.nacionalidad];
     const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
     const economicActivities = (await gticPool.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [datosContribuyente.co_contribuyente])).rows[0];
     const applicationInfo = (await gticPool.query(queries.gtic.GET_INFO_FOR_AE_CERTIFICATE)).rows[0];
@@ -1048,12 +1613,10 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
       const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
       const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
       if (dev) {
-        pdf
-          .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
-          .toFile(pdfDir, async () => {
-            await pool.query(queries.UPDATE_RECEIPT_FOR_SETTLEMENTS, [dir, application.idProcedimiento, application.id]);
-            res(dir);
-          });
+        pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
+          await pool.query(queries.UPDATE_RECEIPT_FOR_SETTLEMENTS, [dir, application.idProcedimiento, application.id]);
+          res(dir);
+        });
       } else {
         // try {
         //   pdf
@@ -1082,7 +1645,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
       }
     });
   } catch (error) {
-    throw error;
+    throw errorMessageExtractor(error);
   }
 };
 
@@ -1090,9 +1653,7 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
   try {
     const isJuridical = application.tipoContribuyente === 'JURIDICO';
     const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
-    const payloadContribuyente = isJuridical
-      ? [application.documento, application.rim, application.nacionalidad]
-      : [application.nacionalidad, application.nacionalidad];
+    const payloadContribuyente = isJuridical ? [application.documento, application.rim, application.nacionalidad] : [application.nacionalidad, application.nacionalidad];
     const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     let motivo = (await gticPool.query(queries.gtic.GET_MOTIVE_BY_TYPE_ID, [idTiposSolicitud.PP])).rows[0];
@@ -1119,9 +1680,7 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
           propietario: {
             rif: `${application.nacionalidad}-${application.documento}`,
             denomComercial: datosContribuyente.tx_denom_comercial,
-            razonSocial: isJuridical
-              ? datosContribuyente.tx_razon_social
-              : datosContribuyente.nb_contribuyente.trim() + datosContribuyente.ap_contribuyente.trim(),
+            razonSocial: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente.trim() + datosContribuyente.ap_contribuyente.trim(),
           },
           items: breakdownData.map((row) => {
             return {
@@ -1147,11 +1706,9 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/PP/${application.idLiquidacion}/recibo.pdf`);
       const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/PP/${application.idLiquidacion}/recibo.pdf`;
       if (dev) {
-        pdf
-          .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
-          .toFile(pdfDir, async () => {
-            res(dir);
-          });
+        pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
+          res(dir);
+        });
       } else {
         // try {
         //   pdf
@@ -1180,7 +1737,7 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
       }
     });
   } catch (error) {
-    throw error;
+    throw errorMessageExtractor(error);
   }
 };
 
@@ -1201,8 +1758,7 @@ export const createAccountStatement = async (contributor) => {
         fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
         motivo: el.tipoLiquidacion,
         estado: el.aprobado && el.pagado ? 'PAGADO' : el.pagado ? 'VALIDANDO' : 'VIGENTE',
-        montoPorcion:
-          activity && parseInt(activity.nu_ut) * UTMM > parseFloat(el.monto_declarado) ? parseInt(activity.nu_ut) * UTMM : parseFloat(el.monto_declarado),
+        montoPorcion: activity && parseInt(activity.nu_ut) * UTMM > parseFloat(el.monto_declarado) ? parseInt(activity.nu_ut) * UTMM : parseFloat(el.monto_declarado),
       };
     });
     const sm = (await client.query(queries.GET_SM_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map((el) => {
@@ -1255,7 +1811,7 @@ export const createAccountStatement = async (contributor) => {
       .concat(pp)
       .filter((el) => el)
       .sort((a, b) => (a.fechaLiquidacion === b.fechaLiquidacion ? 0 : a.fechaLiquidacion > b.fechaLiquidacion ? 1 : -1));
-    const saldoFinal = statement.map((e) => switchcase({PAGADO: e.montoPorcion, VIGENTE: -e.montoPorcion, VALIDANDO: 0})(null)(e.estado)).reduce(((e, x) => e + x),0);
+    const saldoFinal = statement.map((e) => switchcase({ PAGADO: e.montoPorcion, VIGENTE: -e.montoPorcion, VALIDANDO: 0 })(null)(e.estado)).reduce((e, x) => e + x, 0);
     const datosCertificado: accountStatement = {
       actividadesContribuyente,
       datosContribuyente,
@@ -1270,10 +1826,10 @@ export const createAccountStatement = async (contributor) => {
     });
     return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al crear el certificado',
     };
   } finally {
@@ -1365,15 +1921,23 @@ const breakdownCases = switchcase({
   PP: queries.CREATE_PP_BREAKDOWN_FOR_SETTLEMENT,
 })(null);
 
-const breakdownCaseHandler = (settlementType, breakdown, settlement) => {
-  const query = breakdownCases(settlementType);
+const applicationStateEvents = {
+  INGRESARDATOS: 'ingresardatos_pi',
+  APROBARCAJERO: 'aprobacioncajero_pi',
+  VALIDAR: 'validar_pi',
+  FINALIZAR: 'finalizar_pi',
+  REBOTAR: 'rebotado_pi',
+};
+
+const breakdownCaseHandler = (settlementType, breakdown) => {
+  // const query = breakdownCases(settlementType);
   const payload = switchcase({
-    AE: [settlement, breakdown.aforo, breakdown.montoDeclarado],
-    SM: [settlement, breakdown.inmueble, breakdown.montoAseo, breakdown.montoGas],
-    IU: [settlement, breakdown.inmueble, breakdown.monto],
-    PP: [settlement, breakdown.subarticulo, breakdown.monto, breakdown.cantidad],
+    AE: { aforo: breakdown.aforo, montoDeclarado: breakdown.montoDeclarado },
+    SM: { inmueble: breakdown.inmueble, montoAseo: +breakdown.montoAseo, montoGas: breakdown.montoGas },
+    IU: { inmueble: breakdown.inmueble, monto: breakdown.monto },
+    PP: { subarticulo: breakdown.subarticulo, monto: breakdown.monto, cantidad: breakdown.cantidad },
   })(null)(settlementType);
-  return { query, payload };
+  return payload;
 };
 
 const certificateCreationHandler = async (process, media, payload: CertificatePayload) => {
@@ -1382,7 +1946,7 @@ const certificateCreationHandler = async (process, media, payload: CertificatePa
     if (result) return await result(payload);
     throw new Error('No se encontró el tipo de certificado seleccionado');
   } catch (e) {
-    throw e;
+    throw errorMessageExtractor(e);
   }
 };
 

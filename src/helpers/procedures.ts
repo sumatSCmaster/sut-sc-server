@@ -1,7 +1,7 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { Institucion, TipoTramite, Campo, Tramite, Usuario, Liquidacion } from '@interfaces/sigt';
-import { errorMessageGenerator } from './errors';
+import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { insertPaymentReference } from './banks';
 import { PoolClient } from 'pg';
 import switchcase from '@utils/switch';
@@ -36,7 +36,7 @@ export const getAvailableProcedures = async (
   } catch (error) {
     throw {
       status: 500,
-      error: error || { ...error },
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || error.message || 'Error al obtener los tramites',
     };
   } finally {
@@ -64,7 +64,7 @@ export const getAvailableProceduresOfInstitution = async (req: {
   } catch (error) {
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener los tramites',
     };
   } finally {
@@ -125,6 +125,7 @@ const getProcedureInstances = async (user, client: PoolClient) => {
       })
     );
   } catch (error) {
+    console.log(errorMessageExtractor(error))
     throw new Error('Error al obtener instancias de tramite');
   }
 };
@@ -156,7 +157,7 @@ const getFineInstances = async (user, client: PoolClient) => {
       return multa;
     });
   } catch (error) {
-    console.log(error);
+    console.log(errorMessageExtractor(error));
     throw new Error('Error al obtener instancias de multa');
   }
 };
@@ -164,12 +165,12 @@ const getFineInstances = async (user, client: PoolClient) => {
 const getSettlementInstances = async (user, client: PoolClient) => {
   try {
     let query = belongsToAnInstitution(user) ? queries.GET_SETTLEMENT_INSTANCES : queries.GET_SETTLEMENT_INSTANCES_BY_ID;
-    let payload = belongsToAnInstitution(user) ? undefined : [user.id]
+    let payload = belongsToAnInstitution(user) ? undefined : [user.id];
     let response = (await client.query(query, payload)).rows;
     return response.map((el) => {
       const liquidacion: Liquidacion & { pagado: string; aprobado: string } = {
         id: el.id_liquidacion,
-        tipoProcedimiento: el.descripcion,
+        ramo: el.descripcion,
         fecha: { month: el.mes, year: el.anio },
         monto: el.monto,
         certificado: el.certificado,
@@ -181,7 +182,7 @@ const getSettlementInstances = async (user, client: PoolClient) => {
       return liquidacion;
     });
   } catch (error) {
-    console.log(error);
+    console.log(errorMessageExtractor(error));
     throw new Error('Error al obtener instancias de liquidacion');
   }
 };
@@ -235,7 +236,7 @@ const getProcedureInstancesByInstitution = async (institution, tipoUsuario, clie
   } catch (error) {
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener instancias de tramite',
     };
   }
@@ -244,6 +245,13 @@ const getProcedureInstancesByInstitution = async (institution, tipoUsuario, clie
 const getProcedureByInstitution = async (institution, client: PoolClient): Promise<Institucion[] | any> => {
   return Promise.all(
     institution.map(async (institucion) => {
+      institucion.tiposUsuarios = await Promise.all(
+        (await client.query(queries.GET_USER_TYPES)).rows.map(async (el) => ({
+          id: el.id_tipo_usuario,
+          descripcion: el.descripcion,
+          cargos: await Promise.all((await client.query(queries.GET_JOBS_BY_TYPES_AND_INSTITUTION, [el.id_tipo_usuario, institucion.id])).rows),
+        }))
+      );
       const procedures = (await client.query(queries.GET_PROCEDURE_BY_INSTITUTION, [institucion.id])).rows;
       institucion.cuentasBancarias = (await client.query(queries.GET_BANK_ACCOUNTS_FOR_INSTITUTION, [institucion.id])).rows.map((cuenta) => {
         const documento = cuenta.documento.split(':');
@@ -339,7 +347,7 @@ export const updateProcedureCost = async (id: string, newCost: string): Promise<
     client.query('ROLLBACK');
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener los tramites',
     };
   } finally {
@@ -366,7 +374,7 @@ export const getFieldsForValidations = async ({ id, type }) => {
     console.log(error);
     throw {
       status: 400,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error en los campos',
     };
   } finally {
@@ -459,7 +467,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
     console.log(error);
     throw {
       status: 500,
-      ...error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || error.message || 'Error al iniciar el tramite',
     };
   } finally {
@@ -519,7 +527,7 @@ export const validateProcedure = async (procedure, user: Usuario) => {
     client.query('ROLLBACK');
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al validar el pago del trámite',
     };
   } finally {
@@ -610,7 +618,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
     console.log(error);
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al procesar el trámite',
     };
   } finally {
@@ -676,7 +684,7 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
     client.query('ROLLBACK');
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al añadir datos de pago del trámite',
     };
   } finally {
@@ -758,7 +766,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
     client.query('ROLLBACK');
     throw {
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al revisar el tramite',
     };
   } finally {

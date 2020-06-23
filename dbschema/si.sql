@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.2
--- Dumped by pg_dump version 12.2
+-- Dumped from database version 12.3 (Ubuntu 12.3-1.pgdg18.04+1)
+-- Dumped by pg_dump version 12.3 (Ubuntu 12.3-1.pgdg18.04+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -95,6 +95,157 @@ CREATE TYPE timetable.task_kind AS ENUM (
 
 
 ALTER TYPE timetable.task_kind OWNER TO postgres;
+
+--
+-- Name: complete_solicitud_state(integer, text, json, boolean); Type: FUNCTION; Schema: impuesto; Owner: postgres
+--
+
+CREATE FUNCTION impuesto.complete_solicitud_state(_id_solicitud integer, event text, _datos json DEFAULT NULL::json, _aprobado boolean DEFAULT NULL::boolean) RETURNS TABLE(state text)
+    LANGUAGE plpgsql
+    AS $$
+  BEGIN
+    INSERT INTO impuesto.evento_solicitud values (default, _id_solicitud, event, now());
+    
+    RETURN QUERY SELECT ss.state FROM impuesto.solicitud_state ss WHERE id = _id_solicitud;
+
+    IF _aprobado IS NOT NULL THEN
+                UPDATE impuesto.solicitud SET aprobado = _aprobado WHERE id_solicitud = _id_solicitud;
+                UPDATE impuesto.solicitud SET fecha_aprobado = now() WHERE id_solicitud = _id_solicitud;
+    END IF;
+  END;
+$$;
+
+
+ALTER FUNCTION impuesto.complete_solicitud_state(_id_solicitud integer, event text, _datos json, _aprobado boolean) OWNER TO postgres;
+
+--
+-- Name: eventos_solicitud_trigger_func(); Type: FUNCTION; Schema: impuesto; Owner: postgres
+--
+
+CREATE FUNCTION impuesto.eventos_solicitud_trigger_func() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  new_state text;
+BEGIN
+  SELECT impuesto.solicitud_fsm(event ORDER BY id_evento_solicitud)
+  FROM (
+    SELECT id_evento_solicitud, event FROM impuesto.evento_solicitud WHERE id_solicitud = new.id_solicitud
+    UNION
+    SELECT new.id_evento_solicitud, new.event
+  ) s
+  INTO new_state;
+
+  IF new_state = 'error' THEN
+    RAISE EXCEPTION 'evento invalido';
+  END IF;
+
+  RETURN new;
+END
+$$;
+
+
+ALTER FUNCTION impuesto.eventos_solicitud_trigger_func() OWNER TO postgres;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: solicitud; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.solicitud (
+    id_solicitud integer NOT NULL,
+    id_usuario integer,
+    aprobado boolean DEFAULT false,
+    fecha date,
+    fecha_aprobado date,
+    id_tipo_tramite integer,
+    id_contribuyente integer
+);
+
+
+ALTER TABLE impuesto.solicitud OWNER TO postgres;
+
+--
+-- Name: insert_solicitud(integer, integer, integer); Type: FUNCTION; Schema: impuesto; Owner: postgres
+--
+
+CREATE FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer, _id_contribuyente integer) RETURNS SETOF impuesto.solicitud
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    solicitudRow impuesto.solicitud%ROWTYPE;
+    BEGIN
+        INSERT INTO impuesto.solicitud (id_usuario, aprobado, fecha, id_tipo_tramite, id_contribuyente) VALUES (_id_usuario, false, now(), _id_tipo_tramite, _id_contribuyente) RETURNING * INTO solicitudRow;
+
+        INSERT INTO impuesto.evento_solicitud values (default, solicitudRow.id_solicitud, 'iniciar', now());   
+
+        RETURN QUERY SELECT * FROM impuesto.solicitud WHERE id_solicitud=solicitudRow.id_solicitud;
+
+        RETURN;
+    END;
+$$;
+
+
+ALTER FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer, _id_contribuyente integer) OWNER TO postgres;
+
+--
+-- Name: solicitud_transicion(text, text); Type: FUNCTION; Schema: impuesto; Owner: postgres
+--
+
+CREATE FUNCTION impuesto.solicitud_transicion(state text, event text) RETURNS text
+    LANGUAGE sql
+    AS $$
+    SELECT CASE state
+        WHEN 'creado' THEN
+            CASE event
+                WHEN 'iniciar' THEN 'iniciado' 
+                ELSE 'error' -- siuuuu
+            END 
+        WHEN 'iniciado' THEN
+            CASE event
+                WHEN 'ingresardatos_pi' THEN 'ingresardatos'
+                WHEN 'aprobacioncajero_pi' THEN 'finalizado'
+                ELSE 'error'
+            END
+        WHEN 'ingresardatos' THEN
+            CASE event
+                WHEN 'validar_pi' THEN 'validando'
+                ELSE 'error'
+            END
+        WHEN 'validando' THEN
+            CASE event
+                WHEN 'finalizar_pi' THEN 'finalizado'
+                WHEN 'rebotado_pi' THEN 'ingresardatos'
+                ELSE 'error'
+            END
+        ELSE 'error' -- ausilio
+    END -- yaaaaaaaaaaaaaaaaaaa
+$$;
+
+
+ALTER FUNCTION impuesto.solicitud_transicion(state text, event text) OWNER TO postgres;
+
+--
+-- Name: update_solicitud_state(integer, text); Type: FUNCTION; Schema: impuesto; Owner: postgres
+--
+
+CREATE FUNCTION impuesto.update_solicitud_state(_id_solicitud integer, event text) RETURNS TABLE(state text)
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+        INSERT INTO impuesto.evento_solicitud values (default, _id_solicitud, event, now());
+          
+        RETURN QUERY SELECT ss.state FROM impuesto.solicitud_state ss WHERE id = _id_solicitud;
+                  
+			
+    END;
+$$;
+
+
+ALTER FUNCTION impuesto.update_solicitud_state(_id_solicitud integer, event text) OWNER TO postgres;
 
 --
 -- Name: casos_sociales_transicion(text, text); Type: FUNCTION; Schema: public; Owner: postgres
@@ -431,10 +582,6 @@ CREATE AGGREGATE public.caso_social_fsm(text) (
 
 ALTER AGGREGATE public.caso_social_fsm(text) OWNER TO postgres;
 
-SET default_tablespace = '';
-
-SET default_table_access_method = heap;
-
 --
 -- Name: caso_social; Type: TABLE; Schema: public; Owner: postgres
 --
@@ -564,30 +711,36 @@ ALTER FUNCTION public.insert_caso(_id_tipo_tramite integer, datos json, _id_usua
 CREATE TABLE impuesto.liquidacion (
     id_liquidacion integer NOT NULL,
     id_solicitud integer,
-    id_procedimiento integer,
     monto numeric,
     certificado character varying,
     recibo character varying,
-    mes character varying,
-    anio integer,
-    fecha_liquidacion date DEFAULT now()
+    fecha_liquidacion date DEFAULT now(),
+    id_subramo integer,
+    datos json,
+    fecha date,
+    id_registro_municipal integer
 );
 
 
 ALTER TABLE impuesto.liquidacion OWNER TO postgres;
 
 --
--- Name: insert_liquidacion(integer, character varying, character varying, integer, numeric); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: insert_liquidacion(integer, numeric, character varying, json, date, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.insert_liquidacion(_id_solicitud integer, _descripcion character varying, _mes character varying, _anio integer, _monto numeric) RETURNS SETOF impuesto.liquidacion
+CREATE FUNCTION public.insert_liquidacion(_id_solicitud integer, _monto numeric DEFAULT NULL::numeric, _ramo character varying DEFAULT NULL::character varying, _datos json DEFAULT NULL::json, _fecha date DEFAULT NULL::date, _id_registro_municipal integer DEFAULT NULL::integer) RETURNS SETOF impuesto.liquidacion
     LANGUAGE plpgsql
     AS $$
 DECLARE
     liquidacionRow impuesto.liquidacion%ROWTYPE;
     BEGIN
-        INSERT INTO impuesto.liquidacion (id_solicitud, id_procedimiento, mes, anio, monto) VALUES (_id_solicitud, (SELECT id_procedimiento FROM impuesto.procedimiento WHERE descripcion = _descripcion), _mes, _anio, _monto) RETURNING * INTO liquidacionRow;
-            
+        INSERT INTO impuesto.liquidacion (id_solicitud, monto, id_subramo, datos, fecha) VALUES (_id_solicitud, _monto, (SELECT sr.id_subramo FROM impuesto.subramo sr INNER JOIN impuesto.ramo r ON sr.id_ramo = r.id_ramo WHERE (r.descripcion = _ramo OR r.descripcion_corta = _ramo) AND sr.descripcion = 'Pago ordinario'), _datos, _fecha) RETURNING * INTO liquidacionRow;
+
+        IF _id_registro_municipal IS NOT NULL THEN
+            UPDATE impuesto.liquidacion SET id_registro_municipal = _id_registro_municipal WHERE id_liquidacion = liquidacionRow.id_liquidacion;
+        END IF;
+   
+
         RETURN QUERY SELECT * FROM impuesto.liquidacion WHERE id_liquidacion=liquidacionRow.id_liquidacion;
 
         RETURN;
@@ -595,7 +748,7 @@ DECLARE
 $$;
 
 
-ALTER FUNCTION public.insert_liquidacion(_id_solicitud integer, _descripcion character varying, _mes character varying, _anio integer, _monto numeric) OWNER TO postgres;
+ALTER FUNCTION public.insert_liquidacion(_id_solicitud integer, _monto numeric, _ramo character varying, _datos json, _fecha date, _id_registro_municipal integer) OWNER TO postgres;
 
 --
 -- Name: multa_transicion(text, text); Type: FUNCTION; Schema: public; Owner: postgres
@@ -759,49 +912,6 @@ $$;
 
 
 ALTER FUNCTION public.insert_notificacion_trigger_func() OWNER TO postgres;
-
---
--- Name: solicitud; Type: TABLE; Schema: impuesto; Owner: postgres
---
-
-CREATE TABLE impuesto.solicitud (
-    id_solicitud integer NOT NULL,
-    id_usuario integer,
-    documento character varying,
-    rim character varying,
-    aprobado boolean DEFAULT false,
-    fecha date,
-    monto_total numeric,
-    nacionalidad character varying,
-    pagado boolean DEFAULT false,
-    rebotado boolean DEFAULT false,
-    fecha_aprobado date,
-    contribuyente integer
-);
-
-
-ALTER TABLE impuesto.solicitud OWNER TO postgres;
-
---
--- Name: insert_solicitud(integer, character varying, character varying, character varying, numeric, integer); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.insert_solicitud(_id_usuario integer, _documento character varying, _rim character varying, _nacionalidad character varying, _monto_total numeric, _contribuyente integer) RETURNS SETOF impuesto.solicitud
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-    solicitudRow impuesto.solicitud%ROWTYPE;
-    BEGIN
-        INSERT INTO impuesto.solicitud (id_usuario, documento, rim, nacionalidad, aprobado, fecha, monto_total, contribuyente) VALUES (_id_usuario, _documento, _rim, _nacionalidad, false, now(), _monto_total, _contribuyente) RETURNING * INTO solicitudRow;
-            
-        RETURN QUERY SELECT * FROM impuesto.solicitud WHERE id_solicitud=solicitudRow.id_solicitud;
-
-        RETURN;
-    END;
-$$;
-
-
-ALTER FUNCTION public.insert_solicitud(_id_usuario integer, _documento character varying, _rim character varying, _nacionalidad character varying, _monto_total numeric, _contribuyente integer) OWNER TO postgres;
 
 --
 -- Name: tramites_eventos_transicion(text, text); Type: FUNCTION; Schema: public; Owner: postgres
@@ -1875,6 +1985,19 @@ $_$;
 ALTER FUNCTION timetable.validate_json_schema(schema jsonb, data jsonb, root_schema jsonb) OWNER TO postgres;
 
 --
+-- Name: solicitud_fsm(text); Type: AGGREGATE; Schema: impuesto; Owner: postgres
+--
+
+CREATE AGGREGATE impuesto.solicitud_fsm(text) (
+    SFUNC = impuesto.solicitud_transicion,
+    STYPE = text,
+    INITCOND = 'creado'
+);
+
+
+ALTER AGGREGATE impuesto.solicitud_fsm(text) OWNER TO postgres;
+
+--
 -- Name: actividad_economica; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -1883,12 +2006,46 @@ CREATE TABLE impuesto.actividad_economica (
     numero_referencia integer,
     descripcion character varying,
     alicuota numeric,
-    id_tipo_actividad integer,
     ut numeric
 );
 
 
 ALTER TABLE impuesto.actividad_economica OWNER TO postgres;
+
+--
+-- Name: actividad_economica_contribuyente; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.actividad_economica_contribuyente (
+    id_actividad_economica_contribuyente integer NOT NULL,
+    id_contribuyente integer NOT NULL,
+    numero_referencia integer NOT NULL
+);
+
+
+ALTER TABLE impuesto.actividad_economica_contribuyente OWNER TO postgres;
+
+--
+-- Name: actividad_economica_contribuy_id_actividad_economica_contri_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq OWNER TO postgres;
+
+--
+-- Name: actividad_economica_contribuy_id_actividad_economica_contri_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq OWNED BY impuesto.actividad_economica_contribuyente.id_actividad_economica_contribuyente;
+
 
 --
 -- Name: actividad_economica_exoneracion; Type: TABLE; Schema: impuesto; Owner: postgres
@@ -1948,24 +2105,24 @@ ALTER SEQUENCE impuesto.actividad_economica_id_actividad_economica_seq OWNED BY 
 
 
 --
--- Name: ae_desglose; Type: TABLE; Schema: impuesto; Owner: postgres
+-- Name: avaluo_inmueble; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
-CREATE TABLE impuesto.ae_desglose (
-    id_ae_desglose integer NOT NULL,
-    id_aforo integer NOT NULL,
-    id_liquidacion integer NOT NULL,
-    monto_declarado numeric
+CREATE TABLE impuesto.avaluo_inmueble (
+    id_avaluo_inmueble integer NOT NULL,
+    id_inmueble integer NOT NULL,
+    avaluo numeric NOT NULL,
+    anio integer
 );
 
 
-ALTER TABLE impuesto.ae_desglose OWNER TO postgres;
+ALTER TABLE impuesto.avaluo_inmueble OWNER TO postgres;
 
 --
--- Name: ae_desglose_id_ae_desglose_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+-- Name: avaluo_inmueble_id_avaluo_inmueble_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
-CREATE SEQUENCE impuesto.ae_desglose_id_ae_desglose_seq
+CREATE SEQUENCE impuesto.avaluo_inmueble_id_avaluo_inmueble_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -1974,13 +2131,161 @@ CREATE SEQUENCE impuesto.ae_desglose_id_ae_desglose_seq
     CACHE 1;
 
 
-ALTER TABLE impuesto.ae_desglose_id_ae_desglose_seq OWNER TO postgres;
+ALTER TABLE impuesto.avaluo_inmueble_id_avaluo_inmueble_seq OWNER TO postgres;
 
 --
--- Name: ae_desglose_id_ae_desglose_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+-- Name: avaluo_inmueble_id_avaluo_inmueble_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
-ALTER SEQUENCE impuesto.ae_desglose_id_ae_desglose_seq OWNED BY impuesto.ae_desglose.id_ae_desglose;
+ALTER SEQUENCE impuesto.avaluo_inmueble_id_avaluo_inmueble_seq OWNED BY impuesto.avaluo_inmueble.id_avaluo_inmueble;
+
+
+--
+-- Name: categoria_propaganda; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.categoria_propaganda (
+    id_categoria_propaganda integer NOT NULL,
+    descripcion character varying NOT NULL
+);
+
+
+ALTER TABLE impuesto.categoria_propaganda OWNER TO postgres;
+
+--
+-- Name: categoria_propaganda_id_categoria_propaganda_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.categoria_propaganda_id_categoria_propaganda_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.categoria_propaganda_id_categoria_propaganda_seq OWNER TO postgres;
+
+--
+-- Name: categoria_propaganda_id_categoria_propaganda_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.categoria_propaganda_id_categoria_propaganda_seq OWNED BY impuesto.categoria_propaganda.id_categoria_propaganda;
+
+
+--
+-- Name: contribuyente; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.contribuyente (
+    id_contribuyente integer NOT NULL,
+    tipo_documento character(1) NOT NULL,
+    documento character varying NOT NULL,
+    razon_social character varying NOT NULL,
+    denominacion_comercial character varying NOT NULL,
+    siglas character varying NOT NULL,
+    id_parroquia integer NOT NULL,
+    sector character varying NOT NULL,
+    direccion character varying NOT NULL,
+    punto_referencia character varying NOT NULL,
+    verificado boolean
+);
+
+
+ALTER TABLE impuesto.contribuyente OWNER TO postgres;
+
+--
+-- Name: contribuyente_exoneracion; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.contribuyente_exoneracion (
+    id_contribuyente_exoneracion integer NOT NULL,
+    id_plazo_exoneracion integer NOT NULL,
+    id_contribuyente integer NOT NULL
+);
+
+
+ALTER TABLE impuesto.contribuyente_exoneracion OWNER TO postgres;
+
+--
+-- Name: contribuyente_exoneracion_id_contribuyente_exoneracion_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.contribuyente_exoneracion_id_contribuyente_exoneracion_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.contribuyente_exoneracion_id_contribuyente_exoneracion_seq OWNER TO postgres;
+
+--
+-- Name: contribuyente_exoneracion_id_contribuyente_exoneracion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.contribuyente_exoneracion_id_contribuyente_exoneracion_seq OWNED BY impuesto.contribuyente_exoneracion.id_contribuyente_exoneracion;
+
+
+--
+-- Name: contribuyente_id_contribuyente_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.contribuyente_id_contribuyente_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.contribuyente_id_contribuyente_seq OWNER TO postgres;
+
+--
+-- Name: contribuyente_id_contribuyente_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.contribuyente_id_contribuyente_seq OWNED BY impuesto.contribuyente.id_contribuyente;
+
+
+--
+-- Name: credito_fiscal; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.credito_fiscal (
+    id_credito_fiscal integer NOT NULL,
+    id_persona integer NOT NULL,
+    concepto character varying NOT NULL,
+    credito numeric NOT NULL
+);
+
+
+ALTER TABLE impuesto.credito_fiscal OWNER TO postgres;
+
+--
+-- Name: credito_fiscal_id_credito_fiscal_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.credito_fiscal_id_credito_fiscal_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.credito_fiscal_id_credito_fiscal_seq OWNER TO postgres;
+
+--
+-- Name: credito_fiscal_id_credito_fiscal_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.credito_fiscal_id_credito_fiscal_seq OWNED BY impuesto.credito_fiscal.id_credito_fiscal;
 
 
 --
@@ -2019,6 +2324,42 @@ ALTER SEQUENCE impuesto.dias_feriados_id_dia_feriado_seq OWNED BY impuesto.dias_
 
 
 --
+-- Name: evento_solicitud; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.evento_solicitud (
+    id_evento_solicitud integer NOT NULL,
+    id_solicitud integer NOT NULL,
+    event character varying,
+    "time" timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE impuesto.evento_solicitud OWNER TO postgres;
+
+--
+-- Name: evento_solicitud_id_evento_solicitud_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.evento_solicitud_id_evento_solicitud_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.evento_solicitud_id_evento_solicitud_seq OWNER TO postgres;
+
+--
+-- Name: evento_solicitud_id_evento_solicitud_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.evento_solicitud_id_evento_solicitud_seq OWNED BY impuesto.evento_solicitud.id_evento_solicitud;
+
+
+--
 -- Name: factor; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2054,24 +2395,23 @@ ALTER SEQUENCE impuesto.factor_id_factor_seq OWNED BY impuesto.factor.id_factor;
 
 
 --
--- Name: iu_desglose; Type: TABLE; Schema: impuesto; Owner: postgres
+-- Name: inmueble_contribuyente; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
-CREATE TABLE impuesto.iu_desglose (
-    id_iu_desglose integer NOT NULL,
+CREATE TABLE impuesto.inmueble_contribuyente (
+    id_inmueble_contribuyente integer NOT NULL,
     id_inmueble integer NOT NULL,
-    id_liquidacion integer NOT NULL,
-    monto numeric
+    id_contribuyente integer NOT NULL
 );
 
 
-ALTER TABLE impuesto.iu_desglose OWNER TO postgres;
+ALTER TABLE impuesto.inmueble_contribuyente OWNER TO postgres;
 
 --
--- Name: iu_desglose_id_iu_desglose_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+-- Name: inmueble_contribuyente_id_inmueble_contribuyente_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
-CREATE SEQUENCE impuesto.iu_desglose_id_iu_desglose_seq
+CREATE SEQUENCE impuesto.inmueble_contribuyente_id_inmueble_contribuyente_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -2080,13 +2420,13 @@ CREATE SEQUENCE impuesto.iu_desglose_id_iu_desglose_seq
     CACHE 1;
 
 
-ALTER TABLE impuesto.iu_desglose_id_iu_desglose_seq OWNER TO postgres;
+ALTER TABLE impuesto.inmueble_contribuyente_id_inmueble_contribuyente_seq OWNER TO postgres;
 
 --
--- Name: iu_desglose_id_iu_desglose_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+-- Name: inmueble_contribuyente_id_inmueble_contribuyente_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
-ALTER SEQUENCE impuesto.iu_desglose_id_iu_desglose_seq OWNED BY impuesto.iu_desglose.id_iu_desglose;
+ALTER SEQUENCE impuesto.inmueble_contribuyente_id_inmueble_contribuyente_seq OWNED BY impuesto.inmueble_contribuyente.id_inmueble_contribuyente;
 
 
 --
@@ -2150,6 +2490,52 @@ ALTER SEQUENCE impuesto.multa_id_multa_seq OWNED BY impuesto.multa.id_multa;
 
 
 --
+-- Name: notificacion; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.notificacion (
+    id_notificacion integer NOT NULL,
+    id_procedimiento integer,
+    emisor character varying,
+    receptor character varying,
+    descripcion character varying,
+    status boolean,
+    fecha timestamp with time zone,
+    estado character varying,
+    concepto character varying DEFAULT 'TRAMITE'::character varying,
+    CONSTRAINT notificacion_concepto_check CHECK (((concepto)::text = ANY (ARRAY['TRAMITE'::text, 'MULTA'::text, 'IMPUESTO'::text])))
+);
+
+
+ALTER TABLE public.notificacion OWNER TO postgres;
+
+--
+-- Name: notificacion_impuesto_view; Type: VIEW; Schema: impuesto; Owner: postgres
+--
+
+CREATE VIEW impuesto.notificacion_impuesto_view AS
+ SELECT n.id_notificacion AS id,
+    n.descripcion,
+    n.status,
+    n.fecha AS "fechaCreacion",
+    n.emisor,
+    n.receptor,
+    n.estado AS "estadoNotificacion",
+    n.concepto,
+    s.id_solicitud AS "idSolicitud",
+    s.id_usuario AS usuario,
+    s.aprobado,
+    s.fecha AS "fechaCreacionSolicitud",
+    s.fecha_aprobado AS "fechaAprobacionSolicitud",
+    s.id_tipo_tramite AS "idTipoTramite"
+   FROM ((public.notificacion n
+     JOIN impuesto.solicitud s ON ((n.id_procedimiento = s.id_solicitud)))
+     JOIN public.tipo_tramite tt ON ((tt.id_tipo_tramite = s.id_tipo_tramite)));
+
+
+ALTER TABLE impuesto.notificacion_impuesto_view OWNER TO postgres;
+
+--
 -- Name: plazo_exoneracion; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2185,69 +2571,17 @@ ALTER SEQUENCE impuesto.plazo_exoneracion_id_plazo_exoneracion_seq OWNED BY impu
 
 
 --
--- Name: pp_desglose; Type: TABLE; Schema: impuesto; Owner: postgres
+-- Name: ramo_exoneracion; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
-CREATE TABLE impuesto.pp_desglose (
-    id_pp_desglose integer NOT NULL,
-    id_subarticulo integer NOT NULL,
-    id_liquidacion integer NOT NULL,
-    monto numeric,
-    cantidad integer
-);
-
-
-ALTER TABLE impuesto.pp_desglose OWNER TO postgres;
-
---
--- Name: pp_desglose_id_pp_desglose_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
---
-
-CREATE SEQUENCE impuesto.pp_desglose_id_pp_desglose_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE impuesto.pp_desglose_id_pp_desglose_seq OWNER TO postgres;
-
---
--- Name: pp_desglose_id_pp_desglose_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
---
-
-ALTER SEQUENCE impuesto.pp_desglose_id_pp_desglose_seq OWNED BY impuesto.pp_desglose.id_pp_desglose;
-
-
---
--- Name: procedimiento; Type: TABLE; Schema: impuesto; Owner: postgres
---
-
-CREATE TABLE impuesto.procedimiento (
-    id_procedimiento integer NOT NULL,
-    descripcion character varying,
-    planilla_certificado character varying,
-    planilla_recibo character varying
-);
-
-
-ALTER TABLE impuesto.procedimiento OWNER TO postgres;
-
---
--- Name: procedimiento_exoneracion; Type: TABLE; Schema: impuesto; Owner: postgres
---
-
-CREATE TABLE impuesto.procedimiento_exoneracion (
-    id_procedimiento_exoneracion integer NOT NULL,
+CREATE TABLE impuesto.ramo_exoneracion (
+    id_ramo_exoneracion integer NOT NULL,
     id_plazo_exoneracion integer,
-    id_procedimiento integer,
-    id_tipo_contribuyente integer
+    id_ramo integer
 );
 
 
-ALTER TABLE impuesto.procedimiento_exoneracion OWNER TO postgres;
+ALTER TABLE impuesto.ramo_exoneracion OWNER TO postgres;
 
 --
 -- Name: procedimiento_exoneracion_id_procedimiento_exoneracion_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
@@ -2268,51 +2602,28 @@ ALTER TABLE impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq 
 -- Name: procedimiento_exoneracion_id_procedimiento_exoneracion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
-ALTER SEQUENCE impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq OWNED BY impuesto.procedimiento_exoneracion.id_procedimiento_exoneracion;
+ALTER SEQUENCE impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq OWNED BY impuesto.ramo_exoneracion.id_ramo_exoneracion;
 
 
 --
--- Name: procedimiento_id_procedimiento_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+-- Name: ramo; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
-CREATE SEQUENCE impuesto.procedimiento_id_procedimiento_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE impuesto.procedimiento_id_procedimiento_seq OWNER TO postgres;
-
---
--- Name: procedimiento_id_procedimiento_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
---
-
-ALTER SEQUENCE impuesto.procedimiento_id_procedimiento_seq OWNED BY impuesto.procedimiento.id_procedimiento;
-
-
---
--- Name: sm_desglose; Type: TABLE; Schema: impuesto; Owner: postgres
---
-
-CREATE TABLE impuesto.sm_desglose (
-    id_sm_desglose integer NOT NULL,
-    id_inmueble integer NOT NULL,
-    id_liquidacion integer NOT NULL,
-    monto_gas numeric,
-    monto_aseo numeric
+CREATE TABLE impuesto.ramo (
+    id_ramo integer NOT NULL,
+    codigo character varying NOT NULL,
+    descripcion character varying NOT NULL,
+    descripcion_corta character varying
 );
 
 
-ALTER TABLE impuesto.sm_desglose OWNER TO postgres;
+ALTER TABLE impuesto.ramo OWNER TO postgres;
 
 --
--- Name: sm_desglose_id_sm_desglose_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+-- Name: ramo_id_ramo_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
-CREATE SEQUENCE impuesto.sm_desglose_id_sm_desglose_seq
+CREATE SEQUENCE impuesto.ramo_id_ramo_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -2321,13 +2632,54 @@ CREATE SEQUENCE impuesto.sm_desglose_id_sm_desglose_seq
     CACHE 1;
 
 
-ALTER TABLE impuesto.sm_desglose_id_sm_desglose_seq OWNER TO postgres;
+ALTER TABLE impuesto.ramo_id_ramo_seq OWNER TO postgres;
 
 --
--- Name: sm_desglose_id_sm_desglose_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+-- Name: ramo_id_ramo_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
-ALTER SEQUENCE impuesto.sm_desglose_id_sm_desglose_seq OWNED BY impuesto.sm_desglose.id_sm_desglose;
+ALTER SEQUENCE impuesto.ramo_id_ramo_seq OWNED BY impuesto.ramo.id_ramo;
+
+
+--
+-- Name: registro_municipal; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.registro_municipal (
+    id_registro_municipal integer NOT NULL,
+    id_contribuyente integer NOT NULL,
+    referencia_municipal character varying,
+    fecha_aprobacion date,
+    telefono_celular character varying,
+    telefono_habitacion character varying,
+    email character varying,
+    denominacion_comercial character varying,
+    nombre_representante character varying
+);
+
+
+ALTER TABLE impuesto.registro_municipal OWNER TO postgres;
+
+--
+-- Name: registro_municipal_id_registro_municipal_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.registro_municipal_id_registro_municipal_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.registro_municipal_id_registro_municipal_seq OWNER TO postgres;
+
+--
+-- Name: registro_municipal_id_registro_municipal_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.registro_municipal_id_registro_municipal_seq OWNED BY impuesto.registro_municipal.id_registro_municipal;
 
 
 --
@@ -2353,40 +2705,175 @@ ALTER SEQUENCE impuesto.solicitud_id_solicitud_seq OWNED BY impuesto.solicitud.i
 
 
 --
+-- Name: solicitud_state; Type: VIEW; Schema: impuesto; Owner: postgres
+--
+
+CREATE VIEW impuesto.solicitud_state AS
+ SELECT s.id_solicitud AS id,
+    s.id_tipo_tramite AS tipotramite,
+    s.aprobado,
+    s.fecha,
+    s.fecha_aprobado AS "fechaAprobacion",
+    ev.state
+   FROM (impuesto.solicitud s
+     JOIN ( SELECT es.id_solicitud,
+            impuesto.solicitud_fsm((es.event)::text ORDER BY es.id_evento_solicitud) AS state
+           FROM impuesto.evento_solicitud es
+          GROUP BY es.id_solicitud) ev ON ((s.id_solicitud = ev.id_solicitud)));
+
+
+ALTER TABLE impuesto.solicitud_state OWNER TO postgres;
+
+--
+-- Name: subramo; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.subramo (
+    id_subramo integer NOT NULL,
+    id_ramo integer NOT NULL,
+    subindice character varying,
+    descripcion character varying
+);
+
+
+ALTER TABLE impuesto.subramo OWNER TO postgres;
+
+--
 -- Name: solicitud_view; Type: VIEW; Schema: impuesto; Owner: postgres
 --
 
 CREATE VIEW impuesto.solicitud_view AS
  SELECT s.id_solicitud AS id,
     s.id_usuario AS usuario,
-    s.documento,
-    s.rim,
-    s.contribuyente,
-    s.nacionalidad,
-        CASE
-            WHEN (s.rim IS NULL) THEN 'NATURAL'::text
-            ELSE 'JURIDICO'::text
-        END AS "tipoContribuyente",
     s.aprobado,
-    s.pagado,
     s.fecha AS "fechaCreacion",
-    s.monto_total AS "totalSolicitud",
     l.id_liquidacion AS "idLiquidacion",
     l.monto AS "montoLiquidacion",
     l.recibo,
     l.certificado,
-    l.mes,
-    l.anio,
-    pr.id_procedimiento AS "idProcedimiento",
-    pr.descripcion AS "tipoLiquidacion",
-    pr.planilla_certificado AS "planillaSolvencia",
-    pr.planilla_recibo AS "planillaRecibo"
-   FROM ((impuesto.solicitud s
+    l.id_subramo AS "idSubramo",
+    l.datos,
+    sr.subindice,
+    sr.descripcion AS "descripcionSubramo",
+    r.codigo AS "codigoRamo",
+    r.descripcion AS "descripcionRamo",
+    c.id_contribuyente AS contribuyente,
+    c.tipo_documento AS "tipoDocumento",
+    c.documento,
+    c.razon_social AS "razonSocial",
+    c.denominacion_comercial AS "denominacionComercial",
+    c.siglas,
+    c.sector,
+    c.direccion,
+    c.punto_referencia AS "puntoReferencia",
+    c.verificado
+   FROM ((((impuesto.solicitud s
+     JOIN impuesto.contribuyente c ON ((s.id_contribuyente = c.id_contribuyente)))
      JOIN impuesto.liquidacion l ON ((s.id_solicitud = l.id_solicitud)))
-     JOIN impuesto.procedimiento pr ON ((l.id_procedimiento = pr.id_procedimiento)));
+     JOIN impuesto.subramo sr ON ((sr.id_subramo = l.id_subramo)))
+     JOIN impuesto.ramo r ON ((r.id_ramo = sr.id_subramo)));
 
 
 ALTER TABLE impuesto.solicitud_view OWNER TO postgres;
+
+--
+-- Name: subramo_id_subramo_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.subramo_id_subramo_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.subramo_id_subramo_seq OWNER TO postgres;
+
+--
+-- Name: subramo_id_subramo_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.subramo_id_subramo_seq OWNED BY impuesto.subramo.id_subramo;
+
+
+--
+-- Name: tabulador_aseo_actividad_economica; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.tabulador_aseo_actividad_economica (
+    id_tabulador_aseo_actividad_economica integer NOT NULL,
+    id_usuario integer NOT NULL,
+    numero_referencia integer NOT NULL,
+    monto numeric,
+    fecha_creacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    fecha_desde date,
+    fecha_hasta date
+);
+
+
+ALTER TABLE impuesto.tabulador_aseo_actividad_economica OWNER TO postgres;
+
+--
+-- Name: tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq OWNER TO postgres;
+
+--
+-- Name: tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq OWNED BY impuesto.tabulador_aseo_actividad_economica.id_tabulador_aseo_actividad_economica;
+
+
+--
+-- Name: tabulador_aseo_residencial; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.tabulador_aseo_residencial (
+    id_tabulador_aseo_residencial integer NOT NULL,
+    id_usuario integer NOT NULL,
+    monto numeric,
+    fecha_creacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    fecha_desde date,
+    fecha_hasta date
+);
+
+
+ALTER TABLE impuesto.tabulador_aseo_residencial OWNER TO postgres;
+
+--
+-- Name: tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq OWNER TO postgres;
+
+--
+-- Name: tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq OWNED BY impuesto.tabulador_aseo_residencial.id_tabulador_aseo_residencial;
+
 
 --
 -- Name: tabulador_gas; Type: TABLE; Schema: impuesto; Owner: postgres
@@ -2400,6 +2887,45 @@ CREATE TABLE impuesto.tabulador_gas (
 
 
 ALTER TABLE impuesto.tabulador_gas OWNER TO postgres;
+
+--
+-- Name: tabulador_gas_actividad_economica; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.tabulador_gas_actividad_economica (
+    id_tabulador_gas_actividad_economica integer NOT NULL,
+    id_usuario integer NOT NULL,
+    numero_referencia integer NOT NULL,
+    monto numeric,
+    fecha_creacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    fecha_desde date,
+    fecha_hasta date
+);
+
+
+ALTER TABLE impuesto.tabulador_gas_actividad_economica OWNER TO postgres;
+
+--
+-- Name: tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq OWNER TO postgres;
+
+--
+-- Name: tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq OWNED BY impuesto.tabulador_gas_actividad_economica.id_tabulador_gas_actividad_economica;
+
 
 --
 -- Name: tabulador_gas_id_tabulador_gas_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
@@ -2424,22 +2950,26 @@ ALTER SEQUENCE impuesto.tabulador_gas_id_tabulador_gas_seq OWNED BY impuesto.tab
 
 
 --
--- Name: tipo_actividad_economica; Type: TABLE; Schema: impuesto; Owner: postgres
+-- Name: tabulador_gas_residencial; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
-CREATE TABLE impuesto.tipo_actividad_economica (
-    id_tipo_actividad integer NOT NULL,
-    descripcion character varying
+CREATE TABLE impuesto.tabulador_gas_residencial (
+    id_tabulador_gas_residencial integer NOT NULL,
+    id_usuario integer NOT NULL,
+    monto numeric,
+    fecha_creacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    fecha_desde date,
+    fecha_hasta date
 );
 
 
-ALTER TABLE impuesto.tipo_actividad_economica OWNER TO postgres;
+ALTER TABLE impuesto.tabulador_gas_residencial OWNER TO postgres;
 
 --
--- Name: tipo_actividad_economica_id_tipo_actividad_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+-- Name: tabulador_gas_residencial_id_tabulador_gas_residencial_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
-CREATE SEQUENCE impuesto.tipo_actividad_economica_id_tipo_actividad_seq
+CREATE SEQUENCE impuesto.tabulador_gas_residencial_id_tabulador_gas_residencial_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -2448,32 +2978,36 @@ CREATE SEQUENCE impuesto.tipo_actividad_economica_id_tipo_actividad_seq
     CACHE 1;
 
 
-ALTER TABLE impuesto.tipo_actividad_economica_id_tipo_actividad_seq OWNER TO postgres;
+ALTER TABLE impuesto.tabulador_gas_residencial_id_tabulador_gas_residencial_seq OWNER TO postgres;
 
 --
--- Name: tipo_actividad_economica_id_tipo_actividad_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+-- Name: tabulador_gas_residencial_id_tabulador_gas_residencial_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
-ALTER SEQUENCE impuesto.tipo_actividad_economica_id_tipo_actividad_seq OWNED BY impuesto.tipo_actividad_economica.id_tipo_actividad;
+ALTER SEQUENCE impuesto.tabulador_gas_residencial_id_tabulador_gas_residencial_seq OWNED BY impuesto.tabulador_gas_residencial.id_tabulador_gas_residencial;
 
 
 --
--- Name: tipo_contribuyente; Type: TABLE; Schema: impuesto; Owner: postgres
+-- Name: tipo_aviso_propaganda; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
-CREATE TABLE impuesto.tipo_contribuyente (
-    id_tipo_contribuyente integer NOT NULL,
-    descripcion integer
+CREATE TABLE impuesto.tipo_aviso_propaganda (
+    id_tipo_aviso_propaganda integer NOT NULL,
+    id_categoria_propaganda integer NOT NULL,
+    descripcion character varying NOT NULL,
+    parametro character varying NOT NULL,
+    monto numeric NOT NULL,
+    id_valor integer DEFAULT 2
 );
 
 
-ALTER TABLE impuesto.tipo_contribuyente OWNER TO postgres;
+ALTER TABLE impuesto.tipo_aviso_propaganda OWNER TO postgres;
 
 --
--- Name: tipo_contribuyente_id_tipo_contribuyente_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+-- Name: tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
-CREATE SEQUENCE impuesto.tipo_contribuyente_id_tipo_contribuyente_seq
+CREATE SEQUENCE impuesto.tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -2482,13 +3016,13 @@ CREATE SEQUENCE impuesto.tipo_contribuyente_id_tipo_contribuyente_seq
     CACHE 1;
 
 
-ALTER TABLE impuesto.tipo_contribuyente_id_tipo_contribuyente_seq OWNER TO postgres;
+ALTER TABLE impuesto.tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq OWNER TO postgres;
 
 --
--- Name: tipo_contribuyente_id_tipo_contribuyente_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+-- Name: tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
-ALTER SEQUENCE impuesto.tipo_contribuyente_id_tipo_contribuyente_seq OWNED BY impuesto.tipo_contribuyente.id_tipo_contribuyente;
+ALTER SEQUENCE impuesto.tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq OWNED BY impuesto.tipo_aviso_propaganda.id_tipo_aviso_propaganda;
 
 
 --
@@ -2523,6 +3057,115 @@ ALTER TABLE impuesto.tipo_multa_id_tipo_multa_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE impuesto.tipo_multa_id_tipo_multa_seq OWNED BY impuesto.tipo_multa.id_tipo_multa;
+
+
+--
+-- Name: usuario_enlazado; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.usuario_enlazado (
+    id_usuario_enlazado integer NOT NULL,
+    id_contribuyente integer NOT NULL,
+    email character varying NOT NULL
+);
+
+
+ALTER TABLE impuesto.usuario_enlazado OWNER TO postgres;
+
+--
+-- Name: usuario_enlazado_id_usuario_enlazado_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.usuario_enlazado_id_usuario_enlazado_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.usuario_enlazado_id_usuario_enlazado_seq OWNER TO postgres;
+
+--
+-- Name: usuario_enlazado_id_usuario_enlazado_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.usuario_enlazado_id_usuario_enlazado_seq OWNED BY impuesto.usuario_enlazado.id_usuario_enlazado;
+
+
+--
+-- Name: verificacion_email; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.verificacion_email (
+    id_verificacion_email integer NOT NULL,
+    id_registro_municipal integer NOT NULL,
+    codigo_recuperacion character varying,
+    fecha_recuperacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    verificado boolean DEFAULT false
+);
+
+
+ALTER TABLE impuesto.verificacion_email OWNER TO postgres;
+
+--
+-- Name: verificacion_email_id_verificacion_email_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.verificacion_email_id_verificacion_email_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.verificacion_email_id_verificacion_email_seq OWNER TO postgres;
+
+--
+-- Name: verificacion_email_id_verificacion_email_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.verificacion_email_id_verificacion_email_seq OWNED BY impuesto.verificacion_email.id_verificacion_email;
+
+
+--
+-- Name: verificacion_telefono; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.verificacion_telefono (
+    id_verificacion_telefono integer NOT NULL,
+    id_registro_municipal integer NOT NULL,
+    codigo_recuperacion character varying,
+    fecha_recuperacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    verificado boolean DEFAULT false
+);
+
+
+ALTER TABLE impuesto.verificacion_telefono OWNER TO postgres;
+
+--
+-- Name: verificacion_telefono_id_verificacion_telefono_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
+--
+
+CREATE SEQUENCE impuesto.verificacion_telefono_id_verificacion_telefono_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.verificacion_telefono_id_verificacion_telefono_seq OWNER TO postgres;
+
+--
+-- Name: verificacion_telefono_id_verificacion_telefono_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
+--
+
+ALTER SEQUENCE impuesto.verificacion_telefono_id_verificacion_telefono_seq OWNED BY impuesto.verificacion_telefono.id_verificacion_telefono;
 
 
 --
@@ -2613,6 +3256,42 @@ ALTER SEQUENCE public.campos_id_campo_seq OWNED BY public.campo.id_campo;
 
 
 --
+-- Name: cargo; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.cargo (
+    id_cargo integer NOT NULL,
+    id_tipo_usuario integer,
+    id_institucion integer,
+    descripcion character varying
+);
+
+
+ALTER TABLE public.cargo OWNER TO postgres;
+
+--
+-- Name: cargo_id_cargo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.cargo_id_cargo_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.cargo_id_cargo_seq OWNER TO postgres;
+
+--
+-- Name: cargo_id_cargo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.cargo_id_cargo_seq OWNED BY public.cargo.id_cargo;
+
+
+--
 -- Name: casos_sociales_id_caso_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -2675,7 +3354,7 @@ ALTER SEQUENCE public.certificados_id_certificado_seq OWNED BY public.certificad
 
 CREATE TABLE public.cuenta_funcionario (
     id_usuario integer NOT NULL,
-    id_institucion integer
+    id_cargo integer
 );
 
 
@@ -2847,15 +3526,16 @@ ALTER SEQUENCE public.facturas_tramites_id_factura_seq OWNED BY public.factura_t
 
 CREATE TABLE public.inmueble_urbano (
     id_inmueble integer NOT NULL,
-    cod_catastral character varying NOT NULL,
+    cod_catastral character varying,
     direccion character varying NOT NULL,
-    id_parroquia integer NOT NULL,
-    metros_construccion numeric NOT NULL,
-    metros_terreno numeric NOT NULL,
+    id_parroquia integer,
+    metros_construccion numeric,
+    metros_terreno numeric,
     fecha_creacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     fecha_ultimo_avaluo timestamp with time zone,
-    tipo_inmueble character varying
+    tipo_inmueble character varying,
+    id_registro_municipal integer
 );
 
 
@@ -2977,26 +3657,6 @@ ALTER SEQUENCE public.multa_id_multa_seq OWNED BY public.multa.id_multa;
 
 
 --
--- Name: notificacion; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.notificacion (
-    id_notificacion integer NOT NULL,
-    id_procedimiento integer,
-    emisor character varying,
-    receptor character varying,
-    descripcion character varying,
-    status boolean,
-    fecha timestamp with time zone,
-    estado character varying,
-    concepto character varying DEFAULT 'TRAMITE'::character varying,
-    CONSTRAINT notificacion_concepto_check CHECK (((concepto)::text = ANY (ARRAY['TRAMITE'::text, 'MULTA'::text, 'IMPUESTO'::text])))
-);
-
-
-ALTER TABLE public.notificacion OWNER TO postgres;
-
---
 -- Name: notificacion_impuesto_view; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -3011,17 +3671,13 @@ CREATE VIEW public.notificacion_impuesto_view AS
     n.concepto,
     s.id_solicitud AS "idSolicitud",
     s.id_usuario AS usuario,
-    s.documento,
-    s.rim,
-    s.nacionalidad,
-    s.contribuyente,
-    s.pagado,
     s.aprobado,
-    s.rebotado,
     s.fecha AS "fechaCreacionSolicitud",
-    s.fecha_aprobado AS "fechaAprobacionSolicitud"
-   FROM (public.notificacion n
-     JOIN impuesto.solicitud s ON ((n.id_procedimiento = s.id_solicitud)));
+    s.fecha_aprobado AS "fechaAprobacionSolicitud",
+    s.id_tipo_tramite AS "idTipoTramite"
+   FROM ((public.notificacion n
+     JOIN impuesto.solicitud s ON ((n.id_procedimiento = s.id_solicitud)))
+     JOIN public.tipo_tramite tt ON ((tt.id_tipo_tramite = s.id_tipo_tramite)));
 
 
 ALTER TABLE public.notificacion_impuesto_view OWNER TO postgres;
@@ -3768,6 +4424,7 @@ CREATE TABLE public.usuario (
     id_tipo_usuario integer,
     password character varying,
     telefono character varying,
+    id_contribuyente integer,
     CONSTRAINT usuarios_nacionalidad_check CHECK ((nacionalidad = ANY (ARRAY['V'::bpchar, 'E'::bpchar])))
 );
 
@@ -4416,6 +5073,13 @@ ALTER TABLE ONLY impuesto.actividad_economica ALTER COLUMN id_actividad_economic
 
 
 --
+-- Name: actividad_economica_contribuyente id_actividad_economica_contribuyente; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.actividad_economica_contribuyente ALTER COLUMN id_actividad_economica_contribuyente SET DEFAULT nextval('impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq'::regclass);
+
+
+--
 -- Name: actividad_economica_exoneracion id_actividad_economica_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -4423,10 +5087,38 @@ ALTER TABLE ONLY impuesto.actividad_economica_exoneracion ALTER COLUMN id_activi
 
 
 --
--- Name: ae_desglose id_ae_desglose; Type: DEFAULT; Schema: impuesto; Owner: postgres
+-- Name: avaluo_inmueble id_avaluo_inmueble; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.ae_desglose ALTER COLUMN id_ae_desglose SET DEFAULT nextval('impuesto.ae_desglose_id_ae_desglose_seq'::regclass);
+ALTER TABLE ONLY impuesto.avaluo_inmueble ALTER COLUMN id_avaluo_inmueble SET DEFAULT nextval('impuesto.avaluo_inmueble_id_avaluo_inmueble_seq'::regclass);
+
+
+--
+-- Name: categoria_propaganda id_categoria_propaganda; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.categoria_propaganda ALTER COLUMN id_categoria_propaganda SET DEFAULT nextval('impuesto.categoria_propaganda_id_categoria_propaganda_seq'::regclass);
+
+
+--
+-- Name: contribuyente id_contribuyente; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.contribuyente ALTER COLUMN id_contribuyente SET DEFAULT nextval('impuesto.contribuyente_id_contribuyente_seq'::regclass);
+
+
+--
+-- Name: contribuyente_exoneracion id_contribuyente_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.contribuyente_exoneracion ALTER COLUMN id_contribuyente_exoneracion SET DEFAULT nextval('impuesto.contribuyente_exoneracion_id_contribuyente_exoneracion_seq'::regclass);
+
+
+--
+-- Name: credito_fiscal id_credito_fiscal; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.credito_fiscal ALTER COLUMN id_credito_fiscal SET DEFAULT nextval('impuesto.credito_fiscal_id_credito_fiscal_seq'::regclass);
 
 
 --
@@ -4437,6 +5129,13 @@ ALTER TABLE ONLY impuesto.dias_feriados ALTER COLUMN id_dia_feriado SET DEFAULT 
 
 
 --
+-- Name: evento_solicitud id_evento_solicitud; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.evento_solicitud ALTER COLUMN id_evento_solicitud SET DEFAULT nextval('impuesto.evento_solicitud_id_evento_solicitud_seq'::regclass);
+
+
+--
 -- Name: factor id_factor; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -4444,10 +5143,10 @@ ALTER TABLE ONLY impuesto.factor ALTER COLUMN id_factor SET DEFAULT nextval('imp
 
 
 --
--- Name: iu_desglose id_iu_desglose; Type: DEFAULT; Schema: impuesto; Owner: postgres
+-- Name: inmueble_contribuyente id_inmueble_contribuyente; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.iu_desglose ALTER COLUMN id_iu_desglose SET DEFAULT nextval('impuesto.iu_desglose_id_iu_desglose_seq'::regclass);
+ALTER TABLE ONLY impuesto.inmueble_contribuyente ALTER COLUMN id_inmueble_contribuyente SET DEFAULT nextval('impuesto.inmueble_contribuyente_id_inmueble_contribuyente_seq'::regclass);
 
 
 --
@@ -4472,31 +5171,24 @@ ALTER TABLE ONLY impuesto.plazo_exoneracion ALTER COLUMN id_plazo_exoneracion SE
 
 
 --
--- Name: pp_desglose id_pp_desglose; Type: DEFAULT; Schema: impuesto; Owner: postgres
+-- Name: ramo id_ramo; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.pp_desglose ALTER COLUMN id_pp_desglose SET DEFAULT nextval('impuesto.pp_desglose_id_pp_desglose_seq'::regclass);
-
-
---
--- Name: procedimiento id_procedimiento; Type: DEFAULT; Schema: impuesto; Owner: postgres
---
-
-ALTER TABLE ONLY impuesto.procedimiento ALTER COLUMN id_procedimiento SET DEFAULT nextval('impuesto.procedimiento_id_procedimiento_seq'::regclass);
+ALTER TABLE ONLY impuesto.ramo ALTER COLUMN id_ramo SET DEFAULT nextval('impuesto.ramo_id_ramo_seq'::regclass);
 
 
 --
--- Name: procedimiento_exoneracion id_procedimiento_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: postgres
+-- Name: ramo_exoneracion id_ramo_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.procedimiento_exoneracion ALTER COLUMN id_procedimiento_exoneracion SET DEFAULT nextval('impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq'::regclass);
+ALTER TABLE ONLY impuesto.ramo_exoneracion ALTER COLUMN id_ramo_exoneracion SET DEFAULT nextval('impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq'::regclass);
 
 
 --
--- Name: sm_desglose id_sm_desglose; Type: DEFAULT; Schema: impuesto; Owner: postgres
+-- Name: registro_municipal id_registro_municipal; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.sm_desglose ALTER COLUMN id_sm_desglose SET DEFAULT nextval('impuesto.sm_desglose_id_sm_desglose_seq'::regclass);
+ALTER TABLE ONLY impuesto.registro_municipal ALTER COLUMN id_registro_municipal SET DEFAULT nextval('impuesto.registro_municipal_id_registro_municipal_seq'::regclass);
 
 
 --
@@ -4507,6 +5199,27 @@ ALTER TABLE ONLY impuesto.solicitud ALTER COLUMN id_solicitud SET DEFAULT nextva
 
 
 --
+-- Name: subramo id_subramo; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.subramo ALTER COLUMN id_subramo SET DEFAULT nextval('impuesto.subramo_id_subramo_seq'::regclass);
+
+
+--
+-- Name: tabulador_aseo_actividad_economica id_tabulador_aseo_actividad_economica; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_aseo_actividad_economica ALTER COLUMN id_tabulador_aseo_actividad_economica SET DEFAULT nextval('impuesto.tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq'::regclass);
+
+
+--
+-- Name: tabulador_aseo_residencial id_tabulador_aseo_residencial; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_aseo_residencial ALTER COLUMN id_tabulador_aseo_residencial SET DEFAULT nextval('impuesto.tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq'::regclass);
+
+
+--
 -- Name: tabulador_gas id_tabulador_gas; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -4514,17 +5227,24 @@ ALTER TABLE ONLY impuesto.tabulador_gas ALTER COLUMN id_tabulador_gas SET DEFAUL
 
 
 --
--- Name: tipo_actividad_economica id_tipo_actividad; Type: DEFAULT; Schema: impuesto; Owner: postgres
+-- Name: tabulador_gas_actividad_economica id_tabulador_gas_actividad_economica; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.tipo_actividad_economica ALTER COLUMN id_tipo_actividad SET DEFAULT nextval('impuesto.tipo_actividad_economica_id_tipo_actividad_seq'::regclass);
+ALTER TABLE ONLY impuesto.tabulador_gas_actividad_economica ALTER COLUMN id_tabulador_gas_actividad_economica SET DEFAULT nextval('impuesto.tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq'::regclass);
 
 
 --
--- Name: tipo_contribuyente id_tipo_contribuyente; Type: DEFAULT; Schema: impuesto; Owner: postgres
+-- Name: tabulador_gas_residencial id_tabulador_gas_residencial; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.tipo_contribuyente ALTER COLUMN id_tipo_contribuyente SET DEFAULT nextval('impuesto.tipo_contribuyente_id_tipo_contribuyente_seq'::regclass);
+ALTER TABLE ONLY impuesto.tabulador_gas_residencial ALTER COLUMN id_tabulador_gas_residencial SET DEFAULT nextval('impuesto.tabulador_gas_residencial_id_tabulador_gas_residencial_seq'::regclass);
+
+
+--
+-- Name: tipo_aviso_propaganda id_tipo_aviso_propaganda; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tipo_aviso_propaganda ALTER COLUMN id_tipo_aviso_propaganda SET DEFAULT nextval('impuesto.tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq'::regclass);
 
 
 --
@@ -4532,6 +5252,27 @@ ALTER TABLE ONLY impuesto.tipo_contribuyente ALTER COLUMN id_tipo_contribuyente 
 --
 
 ALTER TABLE ONLY impuesto.tipo_multa ALTER COLUMN id_tipo_multa SET DEFAULT nextval('impuesto.tipo_multa_id_tipo_multa_seq'::regclass);
+
+
+--
+-- Name: usuario_enlazado id_usuario_enlazado; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.usuario_enlazado ALTER COLUMN id_usuario_enlazado SET DEFAULT nextval('impuesto.usuario_enlazado_id_usuario_enlazado_seq'::regclass);
+
+
+--
+-- Name: verificacion_email id_verificacion_email; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.verificacion_email ALTER COLUMN id_verificacion_email SET DEFAULT nextval('impuesto.verificacion_email_id_verificacion_email_seq'::regclass);
+
+
+--
+-- Name: verificacion_telefono id_verificacion_telefono; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.verificacion_telefono ALTER COLUMN id_verificacion_telefono SET DEFAULT nextval('impuesto.verificacion_telefono_id_verificacion_telefono_seq'::regclass);
 
 
 --
@@ -4546,6 +5287,13 @@ ALTER TABLE ONLY public.banco ALTER COLUMN id_banco SET DEFAULT nextval('public.
 --
 
 ALTER TABLE ONLY public.campo ALTER COLUMN id_campo SET DEFAULT nextval('public.campos_id_campo_seq'::regclass);
+
+
+--
+-- Name: cargo id_cargo; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cargo ALTER COLUMN id_cargo SET DEFAULT nextval('public.cargo_id_cargo_seq'::regclass);
 
 
 --
@@ -4832,227 +5580,235 @@ ALTER TABLE ONLY valores_fiscales.tipo_construccion ALTER COLUMN id SET DEFAULT 
 -- Data for Name: actividad_economica; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.actividad_economica (id_actividad_economica, numero_referencia, descripcion, alicuota, id_tipo_actividad, ut) FROM stdin;
-1	2029001	Transporte Terrestre de Carga refrigerada.	2.00	\N	5.0000
-2	2030001	Almacenamiento de productos, materiales, insumos, equipos, maquinarias.	2.00	\N	4.0000
-3	2031001	Almacenamiento Refrigerado.	3.50	\N	4.0000
-4	2032001	Transporte Aéreo y Marítimo de Carga.	3.50	\N	6.0000
-5	2033001	Servicio de encomiendas.	3.00	\N	6.0000
-6	2034001	Transporte terrestre de pasajeros.	1.00	\N	4.0000
-7	2035001	Transporte Lacustre o Marítimo de pasajeros.	3.00	\N	4.0000
-8	2036001	Transporte aéreo de pasajeros.	3.00	\N	4.0000
-9	2037001	Transporte de personal.	1.00	\N	4.0000
-10	2038001	Empresas de transporte de valores y vigilancia.	2.50	\N	4.0000
-11	2039001	Agencias Funerarias y Capillas Velatorias.	1.00	\N	4.0000
-12	2040001	Reproducciones fotostáticas, heliografías y afines.	1.00	\N	2.0000
-13	2041001	Intermediación en contratos de arrendamiento y compra- venta de inmuebles. 	5.00	\N	6.0000
-14	2042001	Arrendamiento de inmuebles.	5.00	\N	5.0000
-15	2043002	Arrendamiento de Fondos de Comercio.	5.00	\N	5.0000
-16	2044001	Alquiler de Lanchas, Gabarras y Similares.	3.00	\N	6.0000
-17	2045001	Alquiler de Vehículos.	3.00	\N	5.0000
-18	2046001	Servicio de Estacionamiento Vehicular en Centros Comerciales y Judicial.	1.50	\N	5.0000
-19	2047001	Venta e Implementación de Software.	2.00	\N	4.0000
-20	30640012	Distribución y venta de vehículos y motos (usados).	4.00	\N	4.0000
-21	1001001	Preparación y envasado de carnes, excepto embutidos y productos marinos.	2.00	\N	5.0000
-22	1002001	Procesamiento y envasado de productos marinos.	3.00	\N	5.0000
-23	1003001	Fabricación y procesamiento de productos lácteos y sus derivados.	2.00	\N	3.0000
-24	1004001	Industria de bebidas alcohólicas (cerveza, ron, whisky, vino) y no alcohólicas refrescos, maltas y otras bebidas no alcohólicas, distribuidos en envases retornables o biodegradables, excepto jugos de frutas y vegetales	4.00	\N	8.0000
-25	1005001	Industria de bebidas alcohólicas (cerveza, ron, whisky, vino) y no alcohólicas refrescos, maltas y otras bebidas no alcohólicas, distribuidos en envases no retornables o no biodegradables.	6.00	\N	8.0000
-26	1006001	Elaboración de alimentos para consumo animal.	2.50	\N	3.0000
-27	1007001	Elaboración y envasado de embutidos de cualquier tipo, excepto productos marinos.	3.00	\N	5.0000
-28	1009001	Fabricación de aceites y grasas para consumo humano.	1.50	\N	5.0000
-29	1010001	Molienda, elaboración, preparación y limpieza de productos para obtener harina y cereales.	2.50	\N	5.0000
-30	1011001	Fabricación de pan y pastelería en todas sus formas.	2.00	\N	4.0000
-31	1012001	Industria de pastas alimenticias en todas sus formas.	2.00	\N	4.0000
-32	1013001	Fabricación de galletas y confitería.	2.00	\N	5.0000
-33	1014001	Industria de sal.	1.00	\N	5.0000
-34	1015001	Industria de azúcar, papelón, condimentos y vinagre.	1.00	\N	3.0000
-35	1016001	Industria de productos de café, cacao, chocolate, té y similares.	2.50	\N	5.0000
-36	1017001	Tratamiento y envasado retornable de aguas y fabricación de hielo.	2.00	\N	5.0000
-37	1018001	Industrias de tabaco y sus derivados.	6.00	\N	7.0000
-38	1019001	Industrias textiles.	2.00	\N	4.0000
-39	1020001	Fabricación de colchones.	3.00	\N	5.0000
-40	1021001	Industrias gráficas litográficas, tipográficas, de imprentas y sellos de caucho.	2.00	\N	5.0000
-41	1022001	Fabricación y recuperación de pulpa y otras fibras para hacer papel o cartón, envases y similares de papel y cartón, mantelería, servilletas, papel sanitario y otros de pulpa, papel y cartón.	2.50	\N	5.0000
-42	1023001	Industrias de producción de madera, Aserraderos y productos de madera.	2.50	\N	5.0000
-43	1024001	Industrias de productos químicos.	2.00	\N	5.0000
-44	1025001	Fabricación de productos farmacéuticos,\tlaboratorio farmacológico, medicamentos y cosméticos.	2.00	\N	5.0000
-45	1026001	Industrias para la preparación de asfalto de cualquier tipo.	3.00	\N	5.0000
-46	1027001	Fabricación de productos de plásticos, cauchos y goma.	3.00	\N	4.0000
-47	1028001	Fabricación de láminas de mármol, granito, silestone y similares en cualquiera de sus formatos.	3.50	\N	5.0000
-48	20270012	Puestos de Comida Callejera (Empanadas, Tequeños, Pastelitos, Mandocas y Similares, excluye Franquicias)	2.00	\N	4.0000
-49	2028001	Transporte Terrestre de Carga no refrigerada.	2.00	\N	4.0000
-50	2048001	Talleres de reparación y mantenimiento general de vehículos de cualquier tipo.	2.00	\N	3.0000
-51	1029001	Fabricación   de   cemento,   concreto   premezclado,  placas prefabricadas y bloques de cemento. Fábrica de objetos de barro, loza y porcelana, cerámica, productos de arcilla para la construcción y alfarería, cal y yeso. Bloques de arcilla.  Productos de hormigón, granzones, granzoncillo y similares. Explotación de arcilla, arena y minerales.	2.50	\N	4.0000
-52	1030001	Fábrica de vidrio y fibra de vidrio y manufacturas de vidrios para carros y otros vidrios en general. Fábrica de espejos. Fabricación de refractarios y similares.	2.50	\N	5.0000
-53	1031001	Industrias de productos metalúrgicos y fundiciones en general.	2.00	\N	5.0000
-54	1032001	Fabricación de maquinarias para la industria.	1.50	\N	5.0000
-55	1033001	Diques y astilleros para la construcción, reparación y mantenimiento de embarcaciones.	3.50	\N	5.0000
-56	1034001	Fabricación de producto oftalmológicos, cristales oftálmicos, lentes intraoculares.	2.00	\N	4.0000
-57	1035001	Fabricación de placas, rótulos, letreros y anuncios, copas, trofeos, vallas, avisos y anuncios públicos.	2.00	\N	5.0000
-58	1036001	Fabricación de productos de seguridad industrial.	2.00	\N	5.0000
-59	1037001	Industria de la Construcción.	1.00	\N	4.0000
-60	1038001	Plantas de procesamiento y envasado de gas de cualquier tipo.	2.00	\N	4.0000
-61	1039001	Empresas Desarrolladoras de Software.	2.00	\N	5.0000
-62	1040001	Industria del calzado.	2.00	\N	3.0000
-63	1041001	Fabricación de pinturas de cualquier tipo.	2.50	\N	5.0000
-64	1042001	Fábricas de muebles de cualquier tipo.	2.00	\N	3.0000
-65	1043001	Fabricación de ventanas, puertas y rejas de cualquier tipo y uso.	3.00	\N	4.0000
-66	1044001	Fabricación de helados.	2.00	\N	4.0000
-67	1045001	Otros productos metálicos, cavas, recipientes, urnas y similares.	2.00	\N	5.0000
-68	1046001	Fabricación de toldos, persianas, mamparas, carpas, lámparas y similares.	3.00	\N	5.0000
-69	1047001	Fabricación de blindados para vehículos y vehículos blindados modificados.	4.00	\N	6.0000
-70	1048001	Otras industrias no especificadas.	6.00	\N	8.0000
-71	2001001	Bingos, casinos y demás casas o establecimientos de juegos de azar.	10.00	\N	8.0000
-72	2002001	Empresas de espectáculos, recreación y esparcimiento.	3.00	\N	4.0000
-73	2003001	Empresas de publicidad.	3.50	\N	5.0000
-74	2004001	Salas de Cine.	3.00	\N	3.0000
-75	2005001	Servicio de telecomunicaciones.	1.00	\N	3.0000
-76	2006001	Distribución de electricidad.	1.00	\N	3.0000
-77	2007001	Servicios para la construcción o ejecución de obras.	3.50	\N	5.0000
-78	2008001	Arrendamiento y Servicios de mantenimiento, conservación y limpieza de naves, aeronaves y similares.	3.50	\N	5.0000
-79	2009001	Arrendamiento de equipos y maquinarias con o sin operador.	3.50	\N	5.0000
-80	2010001	Servicio y mantenimiento de jardines, ornatos y similares.	2.00	\N	3.0000
-81	2011001	Servicios aduaneros y agencias de aduanales.	3.50	\N	4.0000
-82	2012001	Servicio para el Suministro de Personal, vigilancia, mantenimiento y similares.	3.00	\N	4.0000
-83	2013001	Servicios de clínica, incluye: hotelería, farmacia, laboratorio, imágenes, estudios, alquileres de equipos, acompañante, comidas, y similares.	1.50	\N	4.0000
-84	2014001	Servicio de emergencia pre-pagada.	2.00	\N	5.0000
-85	2015001	Servicios de radiografías, radioscopias, ecógramas, resonancias magnéticas, centro de diagnósticos e imágenes, laboratorios, electrocardiogramas y otros asociados a la salud.	1.50	\N	4.0000
-86	2016001	Servicio de Alquiler de Ambulancia y alquiler de equipos médicos.	1.50	\N	3.0000
-87	2017001	Clínicas veterinarias y spa para mascotas.	2.00	\N	3.0000
-88	2018001	Bancos, empresas de seguros y reaseguros, casas de cambio y otras instituciones financieras.	6.00	\N	4.0000
-89	2019001	Corretaje de Seguros	3.00	\N	4.0000
-90	2020001	Bar, Discotecas, cervecerías, tascas, cafés.	3.00	\N	5.0000
-91	2021001	Restaurantes, fuentes de soda, pizzerías, heladerías y similares.	2.00	\N	4.0000
-92	2022001	Salas para fiestas y juegos infantiles, reuniones, recepciones.	2.00	\N	4.0000
-93	2023001	Hoteles.	2.00	\N	6.0000
-94	20230011	Hoteles 1 y 2 estrellas	2.00	\N	3.0000
-95	20230012	Hoteles 3 y 4 estrellas	2.00	\N	4.0000
-96	20230013	Hoteles 5 estrellas o mas 	2.00	\N	6.0000
-97	2024002	Posadas, pensiones.	1.00	\N	3.0000
-98	2025003	Moteles.	4.50	\N	6.0000
-99	2026001	Restaurantes Tipo franquicia, Franquicias de Comida y Cadena de Restaurantes.	2.50	\N	5.0000
-100	2027001	Puestos de Comida Callejera (Ventas de Parrillas, Perro calientes, Hamburguesas, Arepas, Empanadas, Tequeños, Pastelitos, Mandocas y Similares, excluye Franquicias).	3.00	\N	5.0000
-101	20270011	Puestos de Comida Callejera (Ventas de Parrillas, Perro calientes, Hamburguesas, Arepas excluye Franquicias)	3.00	\N	5.0000
-102	2049002	Talleres de adecuación, reparación y fabricación de productos metalúrgicos.	2.00	\N	4.0000
-103	2050001	Servicios de mantenimiento, reconstrucción e instalación de transformadores eléctricos, tendidos eléctricos, instalación de postes, interruptores y demás implementos y equipos para el servicio eléctrico.	1.50	\N	3.0000
-104	2051001	Servicios de reparación y mantenimiento de equipos, celulares, artefactos eléctricos y electrodomésticos.	2.00	\N	3.0000
-105	2052001	Reparación y Mantenimiento de Equipos Tecnológicos, Calibración y o Mantenimiento de Fuentes Radioactivas y similares.	3.00	\N	4.0000
-106	2053001	Lavado y engrase de vehículos, cambio de aceite, aútolavado y similares.	3.00	\N	4.0000
-107	2054001	Servicio de grúas.	2.00	\N	4.0000
-108	2055001	Tintorerías y lavanderías.	2.50	\N	4.0000
-109	2056001	Barberías, Salones de belleza, spa, estéticas y peluquerías (sin licor)	2.00	\N	3.0000
-110	2057001	Barberías, Salones de belleza, spa, estéticas y peluquerías (con licor)	3.00	\N	4.0000
-111	2058001	Gimnasios.	3.00	\N	4.0000
-112	2059001	Casa de Empeño.	6.00	\N	4.0000
-113	2060001	Servicio de deshuese, despresado, troceado y corte de Animales.	3.00	\N	4.0000
-114	2061001	Servicio de Mantenimiento, Limpieza y Aseo al Comercio e Industria.	3.50	\N	5.0000
-115	2062001	Servicio de Fumigación y desinfección.	2.50	\N	5.0000
-116	2063001	Servicio de Tapicería.	2.00	\N	4.0000
-117	2064001	Servicio de Reparación y Mantenimiento de Equipos de Refrigeración en general.	3.00	\N	3.0000
-118	2065001	Servicio de Rectificación de Motores.	2.50	\N	5.0000
-119	2066001	Servicio de Montaje, Alineación, Balanceo y reparación de cauchos.	2.00	\N	4.0000
-120	2067001	Oficinas cobranzas, administración de condominios y  similares	3.00	\N	4.0000
-121	2068001	Servicios Petroleros, entendidos por tales, aquellos contratados para la Exploración, Explotación, Extracción, Mantenimiento, Transporte y Refinación de Hidrocarburos. Suministro de Equipos y Herramientas, excluye Servicios prestados en el Lago de Maracaibo.	4.50	\N	5.0000
-122	2069002	Servicios a la Industria Petrolera no conexos a la Exploración, Explotación, Extracción, Mantenimiento, Transporte y Refinación de Hidrocarburos.	4.50	\N	5.0000
-123	2070003	Servicios y construcciones ejecutados en el Lago de Maracaibo (sobre o bajo sus aguas, o en el lecho del lago).	3.00	\N	6.0000
-124	2071001	Comisionistas y Consignatarios (Intermediario, Agentes, Representantes, Concesionarios) y similares.	8.00	\N	5.0000
-125	2072001	Comisión por Venta de Boleto Aéreo, Terrestre y Marítimo.	3.00	\N	5.0000
-126	2073001	Servicio de Laboratorio Medico	2.00	\N	3.0000
-127	2074001	Servicio de Consultorio Medico Odontologico	2.00	\N	4.0000
-128	2075001	Transporte Urbano inscrito en el Instituto Municipal de Transporte	1.00	\N	2.0000
-129	2076001	Servicio por honorarios Profesionales	2.00	\N	4.0000
-130	2077001	Otros servicios no especificados.	4.00	\N	8.0000
-131	3001001	Cadenas de supermercados, hipermercados, megatiendas, multitiendas y minimarket.	1.50	\N	6.0000
-132	3002001	Venta de materiales, equipos, herramientas e insumos para la exploración, explotación, extracción, mantenimiento, transporte y refinación de hidrocarburos.	4.00	\N	5.0000
-133	3003002	Venta de materiales, equipos, herramientas e insumos a la industria Petrolera no conexos a la exploración, explotación, extracción, mantenimiento, transporte y refinación de Hidrocarburos.	4.00	\N	5.0000
-134	3004001	Distribución  y Venta de gas de cualquier tipo.	2.00	\N	3.0000
-135	3005001	Estaciones de servicio para el expendio de combustible.	1.00	\N	1.0000
-203	3070001	Venta y reparación de Bicicletas, repuestos y accesorios.	3.00	\N	2.0000
-204	3071001	Distribución y venta de aceite de todo tipo para vehículos y maquinarias, vendidos en pipas y similares.	3.00	\N	3.0000
-136	3006001	Cadena de Tiendas de Ventas al Mayor o detal de Insumos Comerciales, Mega tiendas y Multitiendas. Incluye todos aquellos establecimientos o tiendas donde concurran los siguientes requisitos: a) Que ejerzan simultáneamente tres (3) o más aforos; y b) Que realicen ventas al mayor y detal.	3.50	\N	5.0000
-137	3007001	Abastos, bodegas y pequeños detales de víveres.	2.00	\N	2.0000
-138	3008001	Distribución y venta de productos químicos.	3.00	\N	3.0000
-139	3009001	Distribución de productos farmacéuticos.	2.50	\N	4.0000
-140	3010001	Farmacias.	2.00	\N	3.0000
-141	3011001	Distribución de pinturas, lacas, barnices y materiales aislantes.	3.50	\N	4.0000
-142	3012001	Detal de pinturas, lacas, barnices y materiales aislantes.	3.00	\N	3.0000
-143	3013001	Distribución y venta de alimentos para animales.	2.00	\N	3.0000
-144	3014001	Venta de desecho de cebada, cereal y afrecho.	4.00	\N	4.0000
-145	3015001	Venta y Distribución de productos para el agro, avícola, pesquero y similares.	2.00	\N	3.0000
-146	3016001	Distribución de víveres, aceites y grasas comestibles, presentados en envases retornables.	2.50	\N	3.0000
-147	3017002	Distribución de víveres, aceites y grasas comestibles, presentados en envases no retornables.	3.00	\N	3.0000
-148	3018001	Distribución de helados y productos similares, presentados en envases retornables o biodegradables.	3.50	\N	2.0000
-149	3019002	Distribución de helados y productos similares, presentados en envases no retornables ni biodegradables.	5.00	\N	3.0000
-150	3020001	Venta de helados, pastelería, cyber y refresquería al detal.	2.00	\N	3.0000
-151	3021001	Distribución de carnes de cualquier tipo, excepto embutidos.	2.00	\N	2.0000
-152	3022001	Venta de carnes, Charcutería y pescadería.	2.00	\N	3.0000
-153	3023001	Distribución de embutidos de cualquier tipo empacados en plásticos.	3.00	\N	3.0000
-154	3024001	Boutique y sastrería.	4.00	\N	4.0000
-155	30240011	Boutique	3.00	\N	3.0000
-156	30240012	Sastrería	2.00	\N	2.0000
-157	3025001	Comercialización al detal de pan.	2.00	\N	2.0000
-158	3026001	Mayorista de confiterías.	3.00	\N	3.0000
-159	3027001	Distribuidor de productos lácteos, jugos de frutas y Vegetales, presentados en envases biodegradables.	2.00	\N	3.0000
-160	3028001	Distribuidor de productos lácteos y jugos de frutas y Vegetales, presentados en envases, plásticos, vidrio, metal y tetra pack.	4.00	\N	3.0000
-161	3029001	Distribución de bebidas alcohólicas y no alcohólicas, presentadas en envases o empaques retornables o biodegradables, excepto jugos de frutas y vegetales.	3.00	\N	5.0000
-162	3030002	Distribución de bebidas alcohólicas y no alcohólicas, presentados en envases plásticos, vidrio, metal y tetra pack.	5.00	\N	5.0000
-163	3031001	Venta de productos alimenticios, bebidas alcohólicas, no alcohólicas y gaseosas en vehículos automotores (sólo ruteros).	1.50	\N	3.0000
-164	3032001	Distribución al mayor y detal de agua presentados en envases o empaques retornables o biodegradables.	2.20	\N	3.0000
-165	3033002	Distribución al mayor y detal de agua presentada en envases o empaques plásticos o no biodegradables.	3.50	\N	4.0000
-166	3034001	Licorerías (Depósito de licores).	4.00	\N	5.0000
-167	3035001	Venta de frutas, verduras y hortalizas.	2.00	\N	2.0000
-168	3036001	Venta de equipos médicos y quirúrgicos.	2.00	\N	3.0000
-169	3037001	Artículos ortopédicos.	1.00	\N	2.0000
-170	3038001	Laboratorio Dental, implantes y prótesis dentales, bracket, retenedores.	2.50	\N	3.0000
-171	3039001	Artículos de lujo, pieles, joyas, reparación de prendas y relojes.	5.00	\N	5.0000
-172	3040001	Venta de artículos de peluquerías (cepillos, tintes, secadores y otros productos relacionados).	2.00	\N	3.0000
-173	3041001	Artículos religiosos.	1.00	\N	1.0000
-174	3042001	Floristerías y viveros.	3.00	\N	2.0000
-175	3043001	Jugueterías, quincallas, bazares y similares, artículos deportivos  y fotográficos.	3.00	\N	3.0000
-176	3044001	Papelerías, revistas y artículos de oficina.	3.00	\N	3.0000
-177	3045002	Venta de libros.	1.00	\N	1.0000
-178	3046001	Venta de utensilios y enseres para la limpieza (Lampazos, escobas, rastrillos y similares).	3.00	\N	3.0000
-179	3047001	Venta de Persianas, Alfombras, Cortinas, telas, cueros, semi-cueros y demás artículos para Tapicerías.	3.00	\N	3.0000
-180	3048001	Venta de Lencerías.	3.00	\N	3.0000
-181	3049001	Venta al Mayor y Detal de Artículos de Seguridad  Industrial (botas, guantes, cascos, mascarillas, lentes de seguridad y todo lo relacionado con la seguridad industrial).	3.00	\N	4.0000
-182	3050001	Ventas de muebles.	3.00	\N	3.0000
-183	3051001	Ventas de electrodomésticos.	2.00	\N	4.0000
-184	3052001	Venta de repuestos y materiales electrónicos y eléctricos.	2.50	\N	4.0000
-185	3053002	Venta de celulares, equipos de telecomunicaciones, accesorios y repuestos.	3.00	\N	4.0000
-186	3054001	Ferreterías, tornillerías y cerrajerías.	3.00	\N	3.0000
-187	3055001	Distribución y ventas  de cemento de cualquier tipo, bloques, arenas, granzón y demás materiales similares.	2.00	\N	3.0000
-188	3056001	Distribución y venta productos de arcilla para la construcción y alfarería, cal y yeso. Bloques de arcilla. Productos de hormigón, granzones, granzoncillo y similares.	3.00	\N	3.0000
-189	3057001	Distribución y Venta de Madera de cualquier tipo y demás materiales para carpintería.	2.00	\N	3.0000
-190	3058001	Distribución y venta de productos de hierro.	2.00	\N	4.0000
-191	3059001	Distribución y Venta de mármol, granitos y silestone en cualquiera de sus formatos.	5.00	\N	6.0000
-192	3060001	Distribución y Venta de cerámicas en cualquiera de sus formatos.	3.00	\N	4.0000
-193	3061001	Distribución y venta de calzados, carteras y otros artículos de cuero.	3.00	\N	3.0000
-194	3062001	Cosméticos, perfumes y artículos de tocador.	3.00	\N	3.0000
-195	3063001	Ópticas y Tiendas de artículos de oftalmología.	2.00	\N	3.0000
-196	3064001	Distribución y venta de vehículos, motos, nuevos y usados.	5.00	\N	6.0000
-197	30640011	Distribución y venta de vehículos y motos (nuevos).	5.00	\N	4.0000
-198	3065001	Venta de maquinarias industriales, agrícolas, similares y repuestos para las mismas.	2.50	\N	3.0000
-199	3066001	Venta al detal de motores nuevos, accesorios, repuestos para vehículos de cualquier tipo.	4.00	\N	4.0000
-200	3067001	Ventas de cauchos y acumuladores de energía.	3.00	\N	4.0000
-201	3068001	Importadoras de motores, repuestos usados y chiveras.	5.00	\N	4.0000
-202	3069001	Importadoras de electrodomésticos usados y repuestos usados para electrodomésticos.	4.00	\N	3.0000
-205	3072002	Distribución y ventas de lubricantes de todo tipo: aditivos, grasas y productos similares para vehículos y maquinaria  en envases sellado de plásticos, vidrio, metal o tetra pack.	2.00	\N	3.0000
-206	3073001	Ventas de fuentes radioactivas y similares.	3.50	\N	5.0000
-207	3074001	Distribución y venta de cartuchos para impresoras, fotocopiadoras y similares.	3.00	\N	3.0000
-208	3075001	Distribución y venta de Vidrio para vehículos.	3.00	\N	3.0000
-209	3076001	Distribución y venta de vidrio templado.	4.00	\N	3.0000
-210	3077001	Venta de vidrio, excepto para vehículos y vidrio templado.	2.00	\N	3.0000
-211	3078001	Distribución de Productos de Tabaco.	6.00	\N	5.0000
-212	3079001	Tienda de Instrumentos musicales.	3.00	\N	3.0000
-213	3080001	Venta de transformadores, plantas eléctricas, tendidos eléctricos, postes, interruptores y demás implementos y equipos eléctricos y mecánicos.	3.00	\N	3.0000
-214	3081001	Acopio o recolección de envases plásticos, cartones, vidrio, materiales metálicos con fines de reciclaje	6.00	\N	4.0000
-215	3082001	Distribución y venta de billetes de loterías.	5.00	\N	5.0000
-216	3083001	Parley	5.00	\N	6.0000
-217	3084001	Peñas Hipicas	4.00	\N	4.0000
-218	3085001	Otras actividades comerciales no especificadas.	6.00	\N	5.0000
-219	4001001	Pequeños Empresarios	0.50	\N	1.0000
-220	1008001	Industrias de jugos, sopas, salsas, mermeladas, postres y otros de frutas y vegetales.	2.00	\N	5.0000
+COPY impuesto.actividad_economica (id_actividad_economica, numero_referencia, descripcion, alicuota, ut) FROM stdin;
+1	2029001	Transporte Terrestre de Carga refrigerada.	2.00	5.0000
+2	2030001	Almacenamiento de productos, materiales, insumos, equipos, maquinarias.	2.00	4.0000
+3	2031001	Almacenamiento Refrigerado.	3.50	4.0000
+4	2032001	Transporte Aéreo y Marítimo de Carga.	3.50	6.0000
+5	2033001	Servicio de encomiendas.	3.00	6.0000
+6	2034001	Transporte terrestre de pasajeros.	1.00	4.0000
+7	2035001	Transporte Lacustre o Marítimo de pasajeros.	3.00	4.0000
+8	2036001	Transporte aéreo de pasajeros.	3.00	4.0000
+9	2037001	Transporte de personal.	1.00	4.0000
+10	2038001	Empresas de transporte de valores y vigilancia.	2.50	4.0000
+11	2039001	Agencias Funerarias y Capillas Velatorias.	1.00	4.0000
+12	2040001	Reproducciones fotostáticas, heliografías y afines.	1.00	2.0000
+13	2041001	Intermediación en contratos de arrendamiento y compra- venta de inmuebles. 	5.00	6.0000
+14	2042001	Arrendamiento de inmuebles.	5.00	5.0000
+15	2043002	Arrendamiento de Fondos de Comercio.	5.00	5.0000
+16	2044001	Alquiler de Lanchas, Gabarras y Similares.	3.00	6.0000
+17	2045001	Alquiler de Vehículos.	3.00	5.0000
+18	2046001	Servicio de Estacionamiento Vehicular en Centros Comerciales y Judicial.	1.50	5.0000
+19	2047001	Venta e Implementación de Software.	2.00	4.0000
+20	30640012	Distribución y venta de vehículos y motos (usados).	4.00	4.0000
+21	1001001	Preparación y envasado de carnes, excepto embutidos y productos marinos.	2.00	5.0000
+22	1002001	Procesamiento y envasado de productos marinos.	3.00	5.0000
+23	1003001	Fabricación y procesamiento de productos lácteos y sus derivados.	2.00	3.0000
+24	1004001	Industria de bebidas alcohólicas (cerveza, ron, whisky, vino) y no alcohólicas refrescos, maltas y otras bebidas no alcohólicas, distribuidos en envases retornables o biodegradables, excepto jugos de frutas y vegetales	4.00	8.0000
+25	1005001	Industria de bebidas alcohólicas (cerveza, ron, whisky, vino) y no alcohólicas refrescos, maltas y otras bebidas no alcohólicas, distribuidos en envases no retornables o no biodegradables.	6.00	8.0000
+26	1006001	Elaboración de alimentos para consumo animal.	2.50	3.0000
+27	1007001	Elaboración y envasado de embutidos de cualquier tipo, excepto productos marinos.	3.00	5.0000
+28	1009001	Fabricación de aceites y grasas para consumo humano.	1.50	5.0000
+29	1010001	Molienda, elaboración, preparación y limpieza de productos para obtener harina y cereales.	2.50	5.0000
+30	1011001	Fabricación de pan y pastelería en todas sus formas.	2.00	4.0000
+31	1012001	Industria de pastas alimenticias en todas sus formas.	2.00	4.0000
+32	1013001	Fabricación de galletas y confitería.	2.00	5.0000
+33	1014001	Industria de sal.	1.00	5.0000
+34	1015001	Industria de azúcar, papelón, condimentos y vinagre.	1.00	3.0000
+35	1016001	Industria de productos de café, cacao, chocolate, té y similares.	2.50	5.0000
+36	1017001	Tratamiento y envasado retornable de aguas y fabricación de hielo.	2.00	5.0000
+37	1018001	Industrias de tabaco y sus derivados.	6.00	7.0000
+38	1019001	Industrias textiles.	2.00	4.0000
+39	1020001	Fabricación de colchones.	3.00	5.0000
+40	1021001	Industrias gráficas litográficas, tipográficas, de imprentas y sellos de caucho.	2.00	5.0000
+41	1022001	Fabricación y recuperación de pulpa y otras fibras para hacer papel o cartón, envases y similares de papel y cartón, mantelería, servilletas, papel sanitario y otros de pulpa, papel y cartón.	2.50	5.0000
+42	1023001	Industrias de producción de madera, Aserraderos y productos de madera.	2.50	5.0000
+43	1024001	Industrias de productos químicos.	2.00	5.0000
+44	1025001	Fabricación de productos farmacéuticos,\tlaboratorio farmacológico, medicamentos y cosméticos.	2.00	5.0000
+45	1026001	Industrias para la preparación de asfalto de cualquier tipo.	3.00	5.0000
+46	1027001	Fabricación de productos de plásticos, cauchos y goma.	3.00	4.0000
+47	1028001	Fabricación de láminas de mármol, granito, silestone y similares en cualquiera de sus formatos.	3.50	5.0000
+48	20270012	Puestos de Comida Callejera (Empanadas, Tequeños, Pastelitos, Mandocas y Similares, excluye Franquicias)	2.00	4.0000
+49	2028001	Transporte Terrestre de Carga no refrigerada.	2.00	4.0000
+50	2048001	Talleres de reparación y mantenimiento general de vehículos de cualquier tipo.	2.00	3.0000
+51	1029001	Fabricación   de   cemento,   concreto   premezclado,  placas prefabricadas y bloques de cemento. Fábrica de objetos de barro, loza y porcelana, cerámica, productos de arcilla para la construcción y alfarería, cal y yeso. Bloques de arcilla.  Productos de hormigón, granzones, granzoncillo y similares. Explotación de arcilla, arena y minerales.	2.50	4.0000
+52	1030001	Fábrica de vidrio y fibra de vidrio y manufacturas de vidrios para carros y otros vidrios en general. Fábrica de espejos. Fabricación de refractarios y similares.	2.50	5.0000
+53	1031001	Industrias de productos metalúrgicos y fundiciones en general.	2.00	5.0000
+54	1032001	Fabricación de maquinarias para la industria.	1.50	5.0000
+55	1033001	Diques y astilleros para la construcción, reparación y mantenimiento de embarcaciones.	3.50	5.0000
+56	1034001	Fabricación de producto oftalmológicos, cristales oftálmicos, lentes intraoculares.	2.00	4.0000
+57	1035001	Fabricación de placas, rótulos, letreros y anuncios, copas, trofeos, vallas, avisos y anuncios públicos.	2.00	5.0000
+58	1036001	Fabricación de productos de seguridad industrial.	2.00	5.0000
+59	1037001	Industria de la Construcción.	1.00	4.0000
+60	1038001	Plantas de procesamiento y envasado de gas de cualquier tipo.	2.00	4.0000
+61	1039001	Empresas Desarrolladoras de Software.	2.00	5.0000
+62	1040001	Industria del calzado.	2.00	3.0000
+63	1041001	Fabricación de pinturas de cualquier tipo.	2.50	5.0000
+64	1042001	Fábricas de muebles de cualquier tipo.	2.00	3.0000
+65	1043001	Fabricación de ventanas, puertas y rejas de cualquier tipo y uso.	3.00	4.0000
+66	1044001	Fabricación de helados.	2.00	4.0000
+67	1045001	Otros productos metálicos, cavas, recipientes, urnas y similares.	2.00	5.0000
+68	1046001	Fabricación de toldos, persianas, mamparas, carpas, lámparas y similares.	3.00	5.0000
+69	1047001	Fabricación de blindados para vehículos y vehículos blindados modificados.	4.00	6.0000
+70	1048001	Otras industrias no especificadas.	6.00	8.0000
+71	2001001	Bingos, casinos y demás casas o establecimientos de juegos de azar.	10.00	8.0000
+72	2002001	Empresas de espectáculos, recreación y esparcimiento.	3.00	4.0000
+73	2003001	Empresas de publicidad.	3.50	5.0000
+74	2004001	Salas de Cine.	3.00	3.0000
+75	2005001	Servicio de telecomunicaciones.	1.00	3.0000
+76	2006001	Distribución de electricidad.	1.00	3.0000
+77	2007001	Servicios para la construcción o ejecución de obras.	3.50	5.0000
+78	2008001	Arrendamiento y Servicios de mantenimiento, conservación y limpieza de naves, aeronaves y similares.	3.50	5.0000
+79	2009001	Arrendamiento de equipos y maquinarias con o sin operador.	3.50	5.0000
+80	2010001	Servicio y mantenimiento de jardines, ornatos y similares.	2.00	3.0000
+81	2011001	Servicios aduaneros y agencias de aduanales.	3.50	4.0000
+82	2012001	Servicio para el Suministro de Personal, vigilancia, mantenimiento y similares.	3.00	4.0000
+83	2013001	Servicios de clínica, incluye: hotelería, farmacia, laboratorio, imágenes, estudios, alquileres de equipos, acompañante, comidas, y similares.	1.50	4.0000
+84	2014001	Servicio de emergencia pre-pagada.	2.00	5.0000
+85	2015001	Servicios de radiografías, radioscopias, ecógramas, resonancias magnéticas, centro de diagnósticos e imágenes, laboratorios, electrocardiogramas y otros asociados a la salud.	1.50	4.0000
+86	2016001	Servicio de Alquiler de Ambulancia y alquiler de equipos médicos.	1.50	3.0000
+87	2017001	Clínicas veterinarias y spa para mascotas.	2.00	3.0000
+88	2018001	Bancos, empresas de seguros y reaseguros, casas de cambio y otras instituciones financieras.	6.00	4.0000
+89	2019001	Corretaje de Seguros	3.00	4.0000
+90	2020001	Bar, Discotecas, cervecerías, tascas, cafés.	3.00	5.0000
+91	2021001	Restaurantes, fuentes de soda, pizzerías, heladerías y similares.	2.00	4.0000
+92	2022001	Salas para fiestas y juegos infantiles, reuniones, recepciones.	2.00	4.0000
+93	2023001	Hoteles.	2.00	6.0000
+94	20230011	Hoteles 1 y 2 estrellas	2.00	3.0000
+95	20230012	Hoteles 3 y 4 estrellas	2.00	4.0000
+96	20230013	Hoteles 5 estrellas o mas 	2.00	6.0000
+97	2024002	Posadas, pensiones.	1.00	3.0000
+98	2025003	Moteles.	4.50	6.0000
+99	2026001	Restaurantes Tipo franquicia, Franquicias de Comida y Cadena de Restaurantes.	2.50	5.0000
+100	2027001	Puestos de Comida Callejera (Ventas de Parrillas, Perro calientes, Hamburguesas, Arepas, Empanadas, Tequeños, Pastelitos, Mandocas y Similares, excluye Franquicias).	3.00	5.0000
+101	20270011	Puestos de Comida Callejera (Ventas de Parrillas, Perro calientes, Hamburguesas, Arepas excluye Franquicias)	3.00	5.0000
+102	2049002	Talleres de adecuación, reparación y fabricación de productos metalúrgicos.	2.00	4.0000
+103	2050001	Servicios de mantenimiento, reconstrucción e instalación de transformadores eléctricos, tendidos eléctricos, instalación de postes, interruptores y demás implementos y equipos para el servicio eléctrico.	1.50	3.0000
+104	2051001	Servicios de reparación y mantenimiento de equipos, celulares, artefactos eléctricos y electrodomésticos.	2.00	3.0000
+105	2052001	Reparación y Mantenimiento de Equipos Tecnológicos, Calibración y o Mantenimiento de Fuentes Radioactivas y similares.	3.00	4.0000
+106	2053001	Lavado y engrase de vehículos, cambio de aceite, aútolavado y similares.	3.00	4.0000
+107	2054001	Servicio de grúas.	2.00	4.0000
+108	2055001	Tintorerías y lavanderías.	2.50	4.0000
+109	2056001	Barberías, Salones de belleza, spa, estéticas y peluquerías (sin licor)	2.00	3.0000
+110	2057001	Barberías, Salones de belleza, spa, estéticas y peluquerías (con licor)	3.00	4.0000
+111	2058001	Gimnasios.	3.00	4.0000
+112	2059001	Casa de Empeño.	6.00	4.0000
+113	2060001	Servicio de deshuese, despresado, troceado y corte de Animales.	3.00	4.0000
+114	2061001	Servicio de Mantenimiento, Limpieza y Aseo al Comercio e Industria.	3.50	5.0000
+115	2062001	Servicio de Fumigación y desinfección.	2.50	5.0000
+116	2063001	Servicio de Tapicería.	2.00	4.0000
+117	2064001	Servicio de Reparación y Mantenimiento de Equipos de Refrigeración en general.	3.00	3.0000
+118	2065001	Servicio de Rectificación de Motores.	2.50	5.0000
+119	2066001	Servicio de Montaje, Alineación, Balanceo y reparación de cauchos.	2.00	4.0000
+120	2067001	Oficinas cobranzas, administración de condominios y  similares	3.00	4.0000
+121	2068001	Servicios Petroleros, entendidos por tales, aquellos contratados para la Exploración, Explotación, Extracción, Mantenimiento, Transporte y Refinación de Hidrocarburos. Suministro de Equipos y Herramientas, excluye Servicios prestados en el Lago de Maracaibo.	4.50	5.0000
+122	2069002	Servicios a la Industria Petrolera no conexos a la Exploración, Explotación, Extracción, Mantenimiento, Transporte y Refinación de Hidrocarburos.	4.50	5.0000
+123	2070003	Servicios y construcciones ejecutados en el Lago de Maracaibo (sobre o bajo sus aguas, o en el lecho del lago).	3.00	6.0000
+124	2071001	Comisionistas y Consignatarios (Intermediario, Agentes, Representantes, Concesionarios) y similares.	8.00	5.0000
+125	2072001	Comisión por Venta de Boleto Aéreo, Terrestre y Marítimo.	3.00	5.0000
+126	2073001	Servicio de Laboratorio Medico	2.00	3.0000
+127	2074001	Servicio de Consultorio Medico Odontologico	2.00	4.0000
+128	2075001	Transporte Urbano inscrito en el Instituto Municipal de Transporte	1.00	2.0000
+129	2076001	Servicio por honorarios Profesionales	2.00	4.0000
+130	2077001	Otros servicios no especificados.	4.00	8.0000
+131	3001001	Cadenas de supermercados, hipermercados, megatiendas, multitiendas y minimarket.	1.50	6.0000
+132	3002001	Venta de materiales, equipos, herramientas e insumos para la exploración, explotación, extracción, mantenimiento, transporte y refinación de hidrocarburos.	4.00	5.0000
+133	3003002	Venta de materiales, equipos, herramientas e insumos a la industria Petrolera no conexos a la exploración, explotación, extracción, mantenimiento, transporte y refinación de Hidrocarburos.	4.00	5.0000
+134	3004001	Distribución  y Venta de gas de cualquier tipo.	2.00	3.0000
+135	3005001	Estaciones de servicio para el expendio de combustible.	1.00	1.0000
+203	3070001	Venta y reparación de Bicicletas, repuestos y accesorios.	3.00	2.0000
+204	3071001	Distribución y venta de aceite de todo tipo para vehículos y maquinarias, vendidos en pipas y similares.	3.00	3.0000
+136	3006001	Cadena de Tiendas de Ventas al Mayor o detal de Insumos Comerciales, Mega tiendas y Multitiendas. Incluye todos aquellos establecimientos o tiendas donde concurran los siguientes requisitos: a) Que ejerzan simultáneamente tres (3) o más aforos; y b) Que realicen ventas al mayor y detal.	3.50	5.0000
+137	3007001	Abastos, bodegas y pequeños detales de víveres.	2.00	2.0000
+138	3008001	Distribución y venta de productos químicos.	3.00	3.0000
+139	3009001	Distribución de productos farmacéuticos.	2.50	4.0000
+140	3010001	Farmacias.	2.00	3.0000
+141	3011001	Distribución de pinturas, lacas, barnices y materiales aislantes.	3.50	4.0000
+142	3012001	Detal de pinturas, lacas, barnices y materiales aislantes.	3.00	3.0000
+143	3013001	Distribución y venta de alimentos para animales.	2.00	3.0000
+144	3014001	Venta de desecho de cebada, cereal y afrecho.	4.00	4.0000
+145	3015001	Venta y Distribución de productos para el agro, avícola, pesquero y similares.	2.00	3.0000
+146	3016001	Distribución de víveres, aceites y grasas comestibles, presentados en envases retornables.	2.50	3.0000
+147	3017002	Distribución de víveres, aceites y grasas comestibles, presentados en envases no retornables.	3.00	3.0000
+148	3018001	Distribución de helados y productos similares, presentados en envases retornables o biodegradables.	3.50	2.0000
+149	3019002	Distribución de helados y productos similares, presentados en envases no retornables ni biodegradables.	5.00	3.0000
+150	3020001	Venta de helados, pastelería, cyber y refresquería al detal.	2.00	3.0000
+151	3021001	Distribución de carnes de cualquier tipo, excepto embutidos.	2.00	2.0000
+152	3022001	Venta de carnes, Charcutería y pescadería.	2.00	3.0000
+153	3023001	Distribución de embutidos de cualquier tipo empacados en plásticos.	3.00	3.0000
+154	3024001	Boutique y sastrería.	4.00	4.0000
+155	30240011	Boutique	3.00	3.0000
+156	30240012	Sastrería	2.00	2.0000
+157	3025001	Comercialización al detal de pan.	2.00	2.0000
+158	3026001	Mayorista de confiterías.	3.00	3.0000
+159	3027001	Distribuidor de productos lácteos, jugos de frutas y Vegetales, presentados en envases biodegradables.	2.00	3.0000
+160	3028001	Distribuidor de productos lácteos y jugos de frutas y Vegetales, presentados en envases, plásticos, vidrio, metal y tetra pack.	4.00	3.0000
+161	3029001	Distribución de bebidas alcohólicas y no alcohólicas, presentadas en envases o empaques retornables o biodegradables, excepto jugos de frutas y vegetales.	3.00	5.0000
+162	3030002	Distribución de bebidas alcohólicas y no alcohólicas, presentados en envases plásticos, vidrio, metal y tetra pack.	5.00	5.0000
+163	3031001	Venta de productos alimenticios, bebidas alcohólicas, no alcohólicas y gaseosas en vehículos automotores (sólo ruteros).	1.50	3.0000
+164	3032001	Distribución al mayor y detal de agua presentados en envases o empaques retornables o biodegradables.	2.20	3.0000
+165	3033002	Distribución al mayor y detal de agua presentada en envases o empaques plásticos o no biodegradables.	3.50	4.0000
+166	3034001	Licorerías (Depósito de licores).	4.00	5.0000
+167	3035001	Venta de frutas, verduras y hortalizas.	2.00	2.0000
+168	3036001	Venta de equipos médicos y quirúrgicos.	2.00	3.0000
+169	3037001	Artículos ortopédicos.	1.00	2.0000
+170	3038001	Laboratorio Dental, implantes y prótesis dentales, bracket, retenedores.	2.50	3.0000
+171	3039001	Artículos de lujo, pieles, joyas, reparación de prendas y relojes.	5.00	5.0000
+172	3040001	Venta de artículos de peluquerías (cepillos, tintes, secadores y otros productos relacionados).	2.00	3.0000
+173	3041001	Artículos religiosos.	1.00	1.0000
+174	3042001	Floristerías y viveros.	3.00	2.0000
+175	3043001	Jugueterías, quincallas, bazares y similares, artículos deportivos  y fotográficos.	3.00	3.0000
+176	3044001	Papelerías, revistas y artículos de oficina.	3.00	3.0000
+177	3045002	Venta de libros.	1.00	1.0000
+178	3046001	Venta de utensilios y enseres para la limpieza (Lampazos, escobas, rastrillos y similares).	3.00	3.0000
+179	3047001	Venta de Persianas, Alfombras, Cortinas, telas, cueros, semi-cueros y demás artículos para Tapicerías.	3.00	3.0000
+180	3048001	Venta de Lencerías.	3.00	3.0000
+181	3049001	Venta al Mayor y Detal de Artículos de Seguridad  Industrial (botas, guantes, cascos, mascarillas, lentes de seguridad y todo lo relacionado con la seguridad industrial).	3.00	4.0000
+182	3050001	Ventas de muebles.	3.00	3.0000
+183	3051001	Ventas de electrodomésticos.	2.00	4.0000
+184	3052001	Venta de repuestos y materiales electrónicos y eléctricos.	2.50	4.0000
+185	3053002	Venta de celulares, equipos de telecomunicaciones, accesorios y repuestos.	3.00	4.0000
+186	3054001	Ferreterías, tornillerías y cerrajerías.	3.00	3.0000
+187	3055001	Distribución y ventas  de cemento de cualquier tipo, bloques, arenas, granzón y demás materiales similares.	2.00	3.0000
+188	3056001	Distribución y venta productos de arcilla para la construcción y alfarería, cal y yeso. Bloques de arcilla. Productos de hormigón, granzones, granzoncillo y similares.	3.00	3.0000
+189	3057001	Distribución y Venta de Madera de cualquier tipo y demás materiales para carpintería.	2.00	3.0000
+190	3058001	Distribución y venta de productos de hierro.	2.00	4.0000
+191	3059001	Distribución y Venta de mármol, granitos y silestone en cualquiera de sus formatos.	5.00	6.0000
+192	3060001	Distribución y Venta de cerámicas en cualquiera de sus formatos.	3.00	4.0000
+193	3061001	Distribución y venta de calzados, carteras y otros artículos de cuero.	3.00	3.0000
+194	3062001	Cosméticos, perfumes y artículos de tocador.	3.00	3.0000
+195	3063001	Ópticas y Tiendas de artículos de oftalmología.	2.00	3.0000
+196	3064001	Distribución y venta de vehículos, motos, nuevos y usados.	5.00	6.0000
+197	30640011	Distribución y venta de vehículos y motos (nuevos).	5.00	4.0000
+198	3065001	Venta de maquinarias industriales, agrícolas, similares y repuestos para las mismas.	2.50	3.0000
+199	3066001	Venta al detal de motores nuevos, accesorios, repuestos para vehículos de cualquier tipo.	4.00	4.0000
+200	3067001	Ventas de cauchos y acumuladores de energía.	3.00	4.0000
+201	3068001	Importadoras de motores, repuestos usados y chiveras.	5.00	4.0000
+202	3069001	Importadoras de electrodomésticos usados y repuestos usados para electrodomésticos.	4.00	3.0000
+205	3072002	Distribución y ventas de lubricantes de todo tipo: aditivos, grasas y productos similares para vehículos y maquinaria  en envases sellado de plásticos, vidrio, metal o tetra pack.	2.00	3.0000
+206	3073001	Ventas de fuentes radioactivas y similares.	3.50	5.0000
+207	3074001	Distribución y venta de cartuchos para impresoras, fotocopiadoras y similares.	3.00	3.0000
+208	3075001	Distribución y venta de Vidrio para vehículos.	3.00	3.0000
+209	3076001	Distribución y venta de vidrio templado.	4.00	3.0000
+210	3077001	Venta de vidrio, excepto para vehículos y vidrio templado.	2.00	3.0000
+211	3078001	Distribución de Productos de Tabaco.	6.00	5.0000
+212	3079001	Tienda de Instrumentos musicales.	3.00	3.0000
+213	3080001	Venta de transformadores, plantas eléctricas, tendidos eléctricos, postes, interruptores y demás implementos y equipos eléctricos y mecánicos.	3.00	3.0000
+214	3081001	Acopio o recolección de envases plásticos, cartones, vidrio, materiales metálicos con fines de reciclaje	6.00	4.0000
+215	3082001	Distribución y venta de billetes de loterías.	5.00	5.0000
+216	3083001	Parley	5.00	6.0000
+217	3084001	Peñas Hipicas	4.00	4.0000
+218	3085001	Otras actividades comerciales no especificadas.	6.00	5.0000
+219	4001001	Pequeños Empresarios	0.50	1.0000
+220	1008001	Industrias de jugos, sopas, salsas, mermeladas, postres y otros de frutas y vegetales.	2.00	5.0000
+\.
+
+
+--
+-- Data for Name: actividad_economica_contribuyente; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.actividad_economica_contribuyente (id_actividad_economica_contribuyente, id_contribuyente, numero_referencia) FROM stdin;
 \.
 
 
@@ -5065,16 +5821,56 @@ COPY impuesto.actividad_economica_exoneracion (id_actividad_economica_exoneracio
 
 
 --
--- Data for Name: ae_desglose; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+-- Data for Name: avaluo_inmueble; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.ae_desglose (id_ae_desglose, id_aforo, id_liquidacion, monto_declarado) FROM stdin;
-3	3001001	116	10.00
-4	3010001	116	10.00
-5	3062001	116	10.00
-6	3001001	117	10.00
-7	3010001	117	10.00
-8	3062001	117	10.00
+COPY impuesto.avaluo_inmueble (id_avaluo_inmueble, id_inmueble, avaluo, anio) FROM stdin;
+\.
+
+
+--
+-- Data for Name: categoria_propaganda; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.categoria_propaganda (id_categoria_propaganda, descripcion) FROM stdin;
+1	A-001, PUBLICIDAD COMERCIAL DE PRODUCTOS DE BEBIDAS ALCOHÓLICAS REFRESCOS, MALTAS, Y BEBIDAS ENERGIZANTES.
+3	A-003, PROPAGANDA SOBRE PRODUCTOS  MANUFACTURAS DE TABACO.
+4	A-004, PUBLICIDAD COMERCIAL DE PRODUCTOS ALIMENTICIOS.
+5	A-005, PROPAGANDA COMERCIAL PRODUCTOS DE HELADOS.
+7	A-007, PROPAGANDA Y PUBLICIDAD COMERCIAL DE FRANQUICIAS.
+6	A-006, PUBLICIDAD COMERCIAL DE PRODUCTOS DE PASAPALOS O SNACKS.
+8	A-008, PUBLICIDAD COMERCIAL DE PRODUCTOS DE ASEO DE HIGIENE PERSONAL.
+9	A-009, PROPAGANDA COMERCIAL DE PRODUCTOS DE LUBRICANTES, ADITIVOS Y DEMÁS PRODUCTOS PARA VEHICULOS.
+10	A-010, PROPAGANDA COMERCIAL DE PRODUCTOS DE TELECOMUNICACIONES (TV POR CABLE  Y SATELITAL, TELEFONÍA MOVIL Y FIJA DE INTERNET).
+11	A-011, PROPAGANDA COMERCIAL DE AUTOMERCADOS, SUPERMERCADOS E HIPERMERCADOS.
+12	A-012, PUBLICIDAD Y PROPAGANDA EN INDUSTRIA, COMERCIO Y SERVICIOS NO PATROCINADOS POR MARCAS REGISTRADAS, PRODUCTOS O FRANQUICIAS.
+13	A-013, PUBLICIDAD Y PROPAGANDA  EN MARCAS DE VEHICULOS, NEUMATICOS  Y ACUMULADOR DE ENERGÍA PARA VEHÍCULOS.
+14	A-014, OTROS PRODUCTOS  DE PUBLICIDAD Y PROPAGANDA COMERCIAL.
+2	PROPAGANDA COMERCIAL DE BANCS, SEGUROS Y DEMAS ENTIDADES FINANCIERAS.
+\.
+
+
+--
+-- Data for Name: contribuyente; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.contribuyente (id_contribuyente, tipo_documento, documento, razon_social, denominacion_comercial, siglas, id_parroquia, sector, direccion, punto_referencia, verificado) FROM stdin;
+\.
+
+
+--
+-- Data for Name: contribuyente_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.contribuyente_exoneracion (id_contribuyente_exoneracion, id_plazo_exoneracion, id_contribuyente) FROM stdin;
+\.
+
+
+--
+-- Data for Name: credito_fiscal; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.credito_fiscal (id_credito_fiscal, id_persona, concepto, credito) FROM stdin;
 \.
 
 
@@ -5083,6 +5879,28 @@ COPY impuesto.ae_desglose (id_ae_desglose, id_aforo, id_liquidacion, monto_decla
 --
 
 COPY impuesto.dias_feriados (id_dia_feriado, dia, descripcion) FROM stdin;
+5	2020-02-25	Carnaval
+6	2020-02-26	Carnaval
+8	2020-06-16	Corpus christi\t
+9	2020-06-25	Batalla de Carabobo
+10	2020-06-30	Dia de San Pedro y San Pablo
+11	2020-07-06	Dia de la independencia
+12	2020-07-25	Natalicio del Libertador
+13	2020-09-15	Dia de la Virgen del Coromoto
+15	2020-10-13	Dia de la resistencia indegena
+16	2020-11-24	Dia de la Virgen del Rosario de Chiquinquira
+17	2020-12-15	Dia de la Inmacula Concepcion
+18	2020-12-25	Feriado Nacional
+19	2020-12-26	Navidad de Nuestro Señor
+20	2021-01-01	Feriado Nacional
+\.
+
+
+--
+-- Data for Name: evento_solicitud; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.evento_solicitud (id_evento_solicitud, id_solicitud, event, "time") FROM stdin;
 \.
 
 
@@ -5095,11 +5913,10 @@ COPY impuesto.factor (id_factor, descripcion, valor) FROM stdin;
 
 
 --
--- Data for Name: iu_desglose; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+-- Data for Name: inmueble_contribuyente; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.iu_desglose (id_iu_desglose, id_inmueble, id_liquidacion, monto) FROM stdin;
-5	240776	144	13497763.37
+COPY impuesto.inmueble_contribuyente (id_inmueble_contribuyente, id_inmueble, id_contribuyente) FROM stdin;
 \.
 
 
@@ -5107,15 +5924,7 @@ COPY impuesto.iu_desglose (id_iu_desglose, id_inmueble, id_liquidacion, monto) F
 -- Data for Name: liquidacion; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.liquidacion (id_liquidacion, id_solicitud, id_procedimiento, monto, certificado, recibo, mes, anio, fecha_liquidacion) FROM stdin;
-144	27	3	13497763.3725	\N	\N	abril	2020	2020-05-29
-145	27	3	54141217.24	\N	\N	marzo	2020	2020-05-29
-146	27	4	2000000	\N	\N	abril	2020	2020-05-29
-147	27	4	22400000	\N	\N	marzo	2020	2020-05-29
-116	22	1	7000000	\N	\N	marzo	2020	2020-05-29
-117	22	1	7000000	\N	\N	abril	2020	2020-05-29
-142	27	2	6380220.14306	\N	\N	marzo	2020	2020-05-29
-143	27	2	6380220.14306	\N	\N	abril	2020	2020-05-29
+COPY impuesto.liquidacion (id_liquidacion, id_solicitud, monto, certificado, recibo, fecha_liquidacion, id_subramo, datos, fecha, id_registro_municipal) FROM stdin;
 \.
 
 
@@ -5136,41 +5945,121 @@ COPY impuesto.plazo_exoneracion (id_plazo_exoneracion, fecha_inicio, fecha_fin) 
 
 
 --
--- Data for Name: pp_desglose; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+-- Data for Name: ramo; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.pp_desglose (id_pp_desglose, id_subarticulo, id_liquidacion, monto, cantidad) FROM stdin;
-1	197	146	2000000.00	1
+COPY impuesto.ramo (id_ramo, codigo, descripcion, descripcion_corta) FROM stdin;
+29	501	MULTAS	MUL
+2	101	SITUADO CONSTITUCIONAL	\N
+9	112	ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES	AE
+8	111	PROPIEDAD INMOBILIARIA	IU
+11	114	PROPAGANDAS Y AVISOS COMERCIALES	PM
+3	102	SITUADO PUENTE SOBRE EL LAGO	\N
+4	103	LEY DE ASIGNACIONES ESPECIALES	\N
+5	104	FONDO INTERGUB.PARA LA DESCENT.(FIDES)	\N
+6	105	CONSEJO NACIONAL DE VIVIENDA (CONAVI)	\N
+7	120	REGALIAS PETROLERAS	\N
+10	113	PATENTE DE VEHICULOS	\N
+12	115	ESPECTACULOS PUBLICOS	\N
+13	116	INSTITUTO NACIONAL DE HIPODROMO 5 Y 6	\N
+14	117	JUEGOS Y APUESTAS LICITAS	\N
+15	118	REMISION TRIBUTARIA	\N
+16	119	CONVENIO DE PAGO GENERAL	\N
+17	200	TASA DE ESPECTACULOS PUBLICOS	\N
+18	201	EXPEDICION DE VARIABLES URBANAS	\N
+19	202	CATASTRO Y NOMENCLATURA	\N
+20	203	TASAS ADMINISTRATIVAS POR EXPEDICION DE LICENCIAS DE LICORES	\N
+21	204	REGULACION DE ALQUILERES	\N
+22	205	VENTA DE AGUA	\N
+23	206	VENTA DE GAS	\N
+24	301	CEMENTERIO JARDIN LA CHINITA	\N
+25	303	MERCADOS MUNICIPALES	\N
+26	304	PARTICIPACION PEAJE PUENTE SOBRE EL LAGO	\N
+27	306	PARTICIPACION VENTA DE GAS	\N
+28	402	INTERESES Y DIVIDENDOS (SEDEMAT)	\N
+30	502	MULTA ESPECTACULOS PUBLICOS	\N
+31	503	MULTA RECARGO E INT MORA DE CONSTRUCCION	\N
+32	504	OTRAS MULTAS	\N
+33	552	INTERESES	\N
+34	602	COBRANZA DE DEUDA MOROSA	\N
+35	604	COBRANZA DE DEUDA MOROSA	\N
+36	702	REINTEGROS	\N
+37	703	INGRESOS VARIOS	\N
+38	704	O T R O S	\N
+39	705	RESERVAS DEL TESORO NO COMPROMETIDAS	\N
+40	706	INGRESOS A#O ANTERIOR	\N
+41	804	CEMENTERIOS MUNICIPALES	\N
+42	805	VENTAS DE TERRENOS	\N
+43	806	VENTA DE TERRENO PATRIMONIO MUNICIPAL	\N
+44	901	APORTES GUBERNAMENTALES Y OTROS	\N
+45	902	APORTE DEL I.N.H.	\N
+46	903	TRANSFERENCIAS	\N
+47	910	REPAROS FISCALES	\N
+48	911	REPAROS FISCALES (IND. Y COM.)	\N
+49	912	REPARO POR RETENCIONES NO ENTERADAS	\N
+50	915	RETENCIONES DECRETO 048	\N
+51	918	COMPENS.RETENCIONES DEC.048	\N
+52	920	DEDUCCIONES,ADELANTOS,Y OTROS GASTOS	\N
+53	925	COMPENSACIONES	\N
+54	929	CESION DE CREDITO FISCAL	\N
+55	930	CORRECCIONES ADMINISTRATIVAS	\N
+56	940	REBAJAS FISCALES	\N
+57	950	INGRESOS POR SERVICIOS INTERNOS	\N
+58	951	DEPOSITOS RECHAZADOS	\N
+59	990	LIQUIDACIONES POR CHEQUE DEVUELTO	\N
+67	505	MULTA POLIMARACAIBO	\N
+60	106	FONDO D/INV.D/ESTAB.MACRO ECONOMICA	\N
+61	107	RECURSOS DE MINFRA	\N
+62	108	MINISTERIO DE PLANIFICACION Y DESARROLLO	\N
+63	109	MINISTERIO DEL INTERIOR Y JUSTICIA	\N
+65	207	CONSTANCIA DE VARIABLES URBANAS FUNDAMENTALES	\N
+66	208	CONSTANCIAS DE CALIDAD TERMICAS	\N
+68	123	DIRECCION DE CATASTRO	\N
+69	124	DIRECCION DE OMPU	\N
+70	403	INTERESES Y DIVIDENDOS (ALCALDIA MCBO CUENTAS SEDEMAT)	\N
+71	404	INTERESES Y DIVIDENDOS (POLIMARACAIBO)	\N
+72	405	INTERESES Y DIVIDENDOS (CPU)	\N
+73	406	INTERESES Y DIVIDENDOS (BOMBEROS MCBO)	\N
+74	407	INTERESES Y DIVIDENDOS (IMAU)	\N
+75	408	INTERESES Y DIVIDENDOS (SAGAS)	\N
+76	506	MULTA CONSEJO DE PROTECCION NNA	\N
+77	409	INTERESES Y DIVIDENDOS (ALCALDIA MCBO)	\N
+78	110	ACUERDO NRO. 003-2012	\N
+79	410	PROCESO DE LICITACION	\N
+80	209	SISTEMA VIAL URBANO	\N
+81	401	INTERESES Y DIVIDENDOS (CONSEJO DE DERECHO)	\N
+82	127	VENTAJAS ESPECIALES PETROLERAS	\N
+83	904	TRANSFERENCIAS CORRIENTES INTERNAS DE LA REPUBLICA	\N
+84	707	INGRESOS EN TRANSITO	\N
+85	210	DIRECCION DE PROTECCION CIVIL	\N
+86	211	TASAS ALCADIA DE MARACAIBO	\N
+87	212	TASAS SAGAS	\N
+88	411	INTERESES Y DIVIDENDOS (PROTECCION CIVIL)	\N
+89	412	INTERESES Y DIVIDENDOS (SALUD MARACAIBO)	\N
+90	213	TASAS IMTCUMA	\N
+91	508	COPIAS CERTIFICADAS POLIMARACAIBO	\N
+92	125	BOMBEROS DE MARACAIBO	\N
+93	126	ANTICIPOS DE OBRAS (SIMA)	\N
+94	507	MULTAS SALUD MARACAIBO	\N
+97	130	DIRECCION DE AGUA	\N
+98	140	DIRECCION DE INGENIERIA MUNICIPAL	\N
+64	122	SERVICIOS MUNICIPALES	SM
 \.
 
 
 --
--- Data for Name: procedimiento; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+-- Data for Name: ramo_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.procedimiento (id_procedimiento, descripcion, planilla_certificado, planilla_recibo) FROM stdin;
-1	AE	\N	\N
-2	SM	\N	\N
-3	IU	\N	\N
-4	PP	\N	\N
+COPY impuesto.ramo_exoneracion (id_ramo_exoneracion, id_plazo_exoneracion, id_ramo) FROM stdin;
 \.
 
 
 --
--- Data for Name: procedimiento_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+-- Data for Name: registro_municipal; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.procedimiento_exoneracion (id_procedimiento_exoneracion, id_plazo_exoneracion, id_procedimiento, id_tipo_contribuyente) FROM stdin;
-\.
-
-
---
--- Data for Name: sm_desglose; Type: TABLE DATA; Schema: impuesto; Owner: postgres
---
-
-COPY impuesto.sm_desglose (id_sm_desglose, id_inmueble, id_liquidacion, monto_gas, monto_aseo) FROM stdin;
-9	240776	142	5500000.00	189.78
-10	240776	143	5500000.00	189.78
+COPY impuesto.registro_municipal (id_registro_municipal, id_contribuyente, referencia_municipal, fecha_aprobacion, telefono_celular, telefono_habitacion, email, denominacion_comercial, nombre_representante) FROM stdin;
 \.
 
 
@@ -5178,9 +6067,339 @@ COPY impuesto.sm_desglose (id_sm_desglose, id_inmueble, id_liquidacion, monto_ga
 -- Data for Name: solicitud; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.solicitud (id_solicitud, id_usuario, documento, rim, aprobado, fecha, monto_total, nacionalidad, pagado, rebotado, fecha_aprobado, contribuyente) FROM stdin;
-22	58	308620483	207R002131	f	2020-05-29	14000000	J	f	f	\N	238775
-27	58	308620483	207R002131	f	2020-05-29	104799421	J	f	f	\N	238775
+COPY impuesto.solicitud (id_solicitud, id_usuario, aprobado, fecha, fecha_aprobado, id_tipo_tramite, id_contribuyente) FROM stdin;
+\.
+
+
+--
+-- Data for Name: subramo; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.subramo (id_subramo, id_ramo, subindice, descripcion) FROM stdin;
+3	2	1	Pago ordinario
+4	3	1	Pago ordinario
+5	4	1	Pago ordinario
+6	5	1	Pago ordinario
+7	6	1	Pago ordinario
+8	7	1	Pago ordinario
+9	8	1	Pago ordinario
+10	9	1	Pago ordinario
+11	10	1	Pago ordinario
+12	11	1	Pago ordinario
+13	12	1	Pago ordinario
+14	13	1	Pago ordinario
+15	14	1	Pago ordinario
+16	15	1	Pago ordinario
+17	16	1	Pago ordinario
+18	17	1	Pago ordinario
+19	18	1	Pago ordinario
+20	19	1	Pago ordinario
+21	20	1	Pago ordinario
+22	21	1	Pago ordinario
+23	22	1	Pago ordinario
+24	23	1	Pago ordinario
+25	24	1	Pago ordinario
+26	25	1	Pago ordinario
+27	26	1	Pago ordinario
+28	27	1	Pago ordinario
+29	28	1	Pago ordinario
+30	29	1	Multa
+32	30	1	Pago ordinario
+33	31	1	Pago ordinario
+34	32	1	Pago ordinario
+35	33	1	Pago ordinario
+36	34	1	Pago ordinario
+37	35	1	Pago ordinario
+38	36	1	Pago ordinario
+39	37	1	Pago ordinario
+40	38	1	Pago ordinario
+41	39	1	Pago ordinario
+42	40	1	Pago ordinario
+43	41	1	Pago ordinario
+44	42	1	Pago ordinario
+45	43	1	Pago ordinario
+46	44	1	Pago ordinario
+47	45	1	Pago ordinario
+48	46	1	Pago ordinario
+49	47	1	Pago ordinario
+50	48	1	Pago ordinario
+51	49	1	Pago ordinario
+52	50	1	Pago ordinario
+53	51	1	Pago ordinario
+54	52	1	Pago ordinario
+55	53	1	Pago ordinario
+56	54	1	Pago ordinario
+57	55	1	Pago ordinario
+58	56	1	Pago ordinario
+59	57	1	Pago ordinario
+60	58	1	Pago ordinario
+61	59	1	Pago ordinario
+62	60	1	Pago ordinario
+63	61	1	Pago ordinario
+64	62	1	Pago ordinario
+65	63	1	Pago ordinario
+66	64	1	Pago ordinario
+67	65	1	Pago ordinario
+68	66	1	Pago ordinario
+69	67	1	Pago ordinario
+70	68	1	Pago ordinario
+71	69	1	Pago ordinario
+72	70	1	Pago ordinario
+73	71	1	Pago ordinario
+74	72	1	Pago ordinario
+75	73	1	Pago ordinario
+76	74	1	Pago ordinario
+77	75	1	Pago ordinario
+78	76	1	Pago ordinario
+79	77	1	Pago ordinario
+80	78	1	Pago ordinario
+81	79	1	Pago ordinario
+82	80	1	Pago ordinario
+83	81	1	Pago ordinario
+84	82	1	Pago ordinario
+85	83	1	Pago ordinario
+86	84	1	Pago ordinario
+87	85	1	Pago ordinario
+88	86	1	Pago ordinario
+89	87	1	Pago ordinario
+90	88	1	Pago ordinario
+91	89	1	Pago ordinario
+92	90	1	Pago ordinario
+93	91	1	Pago ordinario
+94	92	1	Pago ordinario
+95	93	1	Pago ordinario
+96	94	1	Pago ordinario
+97	97	1	Pago ordinario
+98	98	1	Pago ordinario
+\.
+
+
+--
+-- Data for Name: tabulador_aseo_actividad_economica; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.tabulador_aseo_actividad_economica (id_tabulador_aseo_actividad_economica, id_usuario, numero_referencia, monto, fecha_creacion, fecha_desde, fecha_hasta) FROM stdin;
+1	83	1001001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+2	83	1002001	4950000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+3	83	1003001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+4	83	1004001	9900000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+5	83	1005001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+6	83	1006001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+7	83	1007001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+8	83	1008001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+9	83	1009001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+10	83	1010001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+11	83	1011001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+12	83	1012001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+13	83	1013001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+14	83	1014001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+15	83	1015001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+16	83	1016001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+17	83	1017001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+18	83	1018001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+19	83	1019001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+20	83	1020001	4950000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+21	83	1021001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+22	83	1022001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+23	83	1023001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+24	83	1024001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+25	83	1025001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+26	83	1026001	6600000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+27	83	1027001	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+28	83	1028001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+29	83	1029001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+30	83	1030001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+31	83	1033001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+32	83	1034001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+33	83	1036001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+34	83	1037001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+35	83	1038001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+36	83	1039001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+37	83	1040001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+38	83	1041001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+39	83	1042001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+40	83	1043001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+41	83	1044001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+42	83	1045001	6600000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+43	83	1046001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+44	83	1047001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+45	83	1048001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+46	83	2001001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+47	83	2002001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+48	83	2003001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+49	83	2004001	6600000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+50	83	2005001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+51	83	2006001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+52	83	2007001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+53	83	2008001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+54	83	2009001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+55	83	2010001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+56	83	2011001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+57	83	2012001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+58	83	2013001	33000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+59	83	2014001	16500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+60	83	2016001	8250000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+61	83	2015001	9900000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+62	83	2017001	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+63	83	2018001	22000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+64	83	2019001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+65	83	2020001	19800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+66	83	2021001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+67	83	2022001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+68	83	2023001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+69	83	2024002	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+70	83	2025003	16500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+71	83	2026001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+72	83	2028001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+73	83	2029001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+74	83	2030001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+75	83	2031001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+76	83	2032001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+77	83	2033001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+78	83	2034001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+79	83	2035001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+80	83	2036001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+81	83	2037001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+82	83	2038001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+83	83	2039001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+84	83	2040001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+85	83	2042001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+86	83	2043002	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+87	83	2044001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+88	83	2045001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+89	83	2046001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+90	83	2047001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+91	83	2048001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+92	83	2049002	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+93	83	2051001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+94	83	2052001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+95	83	2053001	4950000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+96	83	2054001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+97	83	2055001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+98	83	2056001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+99	83	2057001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+100	83	2058001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+101	83	2059001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+102	83	2060001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+103	83	2061001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+104	83	2062001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+105	83	2063001	4950000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+106	83	2064001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+107	83	2065001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+108	83	2066001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+109	83	2067001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+110	83	2068001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+111	83	2069002	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+112	83	2070003	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+113	83	2071001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+114	83	2072001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+115	83	2073001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+116	83	3001001	16500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+117	83	3002001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+118	83	3003002	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+119	83	3004001	4950000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+120	83	3005001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+121	83	3006001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+122	83	3007001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+123	83	3008001	6050000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+124	83	3009001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+125	83	3010001	12100000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+126	83	3011001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+127	83	3012001	6050000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+128	83	3013001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+129	83	3014001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+130	83	3015001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+131	83	3016001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+132	83	3017002	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+133	83	3019002	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+134	83	3020001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+135	83	3021001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+136	83	3022001	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+137	83	3023001	4950000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+138	83	3024001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+139	83	3025001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+140	83	3026001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+141	83	3027001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+142	83	3028001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+143	83	3030002	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+144	83	3031001	7150000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+145	83	3032001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+146	83	3033002	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+147	83	3034001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+148	83	3035001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+149	83	3036001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+150	83	3037001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+151	83	3038001	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+152	83	3039001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+153	83	3040001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+154	83	3041001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+155	83	3042001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+156	83	3043001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+157	83	3044001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+158	83	3045002	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+159	83	3046001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+160	83	3047001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+161	83	3048001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+162	83	3049001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+163	83	3050001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+164	83	3051001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+165	83	3052001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+166	83	3053002	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+167	83	3054001	6050000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+168	83	3055001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+169	83	3056001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+170	83	3057001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+171	83	3058001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+172	83	3059001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+173	83	3060001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+174	83	3061001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+175	83	3062001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+176	83	3063001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+177	83	3064001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+178	83	3065001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+179	83	3066001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+180	83	3067001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+181	83	3068001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+182	83	3070001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+183	83	3072002	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+184	83	3073001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+185	83	3074001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+186	83	3075001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+187	83	3076001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+188	83	3077001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+189	83	3078001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+190	83	3079001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+191	83	3080001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+192	83	3081001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+193	83	3082001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+194	83	3083001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+195	83	20230011	16500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+196	83	20230012	22000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+197	83	20230013	33000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+198	83	20270011	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+199	83	20270012	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+200	83	30240011	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+201	83	30240012	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+202	83	30640011	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+203	83	30640012	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+204	83	1032001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+205	83	1035001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+206	83	2027001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+207	83	2041001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+208	83	2050001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+209	83	3018001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+210	83	3029001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+211	83	3069001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+212	83	3071001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+\.
+
+
+--
+-- Data for Name: tabulador_aseo_residencial; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.tabulador_aseo_residencial (id_tabulador_aseo_residencial, id_usuario, monto, fecha_creacion, fecha_desde, fecha_hasta) FROM stdin;
+1	83	18000	2020-06-11 13:49:10.551481-04	2020-06-11	\N
 \.
 
 
@@ -5193,18 +6412,301 @@ COPY impuesto.tabulador_gas (id_tabulador_gas, id_actividad_economica, monto) FR
 
 
 --
--- Data for Name: tipo_actividad_economica; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+-- Data for Name: tabulador_gas_actividad_economica; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.tipo_actividad_economica (id_tipo_actividad, descripcion) FROM stdin;
+COPY impuesto.tabulador_gas_actividad_economica (id_tabulador_gas_actividad_economica, id_usuario, numero_referencia, monto, fecha_creacion, fecha_desde, fecha_hasta) FROM stdin;
+1	83	1002001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+2	83	1003001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+3	83	1004001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+4	83	2007001	4950000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+5	83	1005001	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+6	83	1006001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+7	83	1007001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+8	83	1008001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+9	83	1009001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+10	83	1010001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+11	83	1011001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+12	83	1012001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+13	83	1013001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+14	83	1014001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+15	83	1015001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+16	83	1016001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+17	83	1017001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+18	83	1018001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+19	83	1019001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+20	83	1020001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+21	83	1021001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+22	83	1022001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+23	83	1023001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+24	83	1024001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+25	83	1025001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+26	83	1026001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+27	83	1027001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+28	83	1028001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+29	83	1029001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+30	83	1030001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+31	83	1031001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+32	83	1032001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+33	83	1033001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+34	83	1034001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+35	83	1035001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+36	83	1036001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+37	83	1037001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+38	83	1039001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+39	83	1040001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+40	83	1041001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+41	83	1042001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+42	83	1043001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+43	83	1044001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+44	83	1045001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+45	83	1046001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+46	83	1047001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+47	83	1048001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+48	83	2001001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+49	83	2002001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+50	83	2003001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+51	83	2004001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+52	83	2005001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+53	83	2006001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+54	83	2008001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+55	83	2009001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+56	83	2010001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+57	83	2011001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+58	83	2012001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+59	83	2014001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+60	83	2015001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+61	83	2016001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+62	83	2017001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+63	83	2018001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+64	83	2019001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+65	83	2020001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+66	83	2021001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+67	83	2022001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+68	83	2023001	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+69	83	2024002	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+70	83	2025003	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+71	83	2026001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+72	83	2029001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+73	83	2028001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+74	83	2027001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+75	83	2030001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+76	83	2031001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+77	83	2032001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+78	83	2033001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+79	83	2034001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+80	83	2035001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+81	83	2036001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+82	83	2037001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+83	83	2038001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+84	83	2039001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+85	83	2040001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+86	83	2041001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+87	83	2042001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+88	83	2043002	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+89	83	2045001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+90	83	2046001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+91	83	2047001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+92	83	2048001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+93	83	2049002	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+94	83	2051001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+95	83	2052001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+96	83	2053001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+97	83	2054001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+98	83	2055001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+99	83	2056001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+100	83	2057001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+101	83	2058001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+102	83	2059001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+103	83	2060001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+104	83	2061001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+105	83	2062001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+106	83	2063001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+107	83	2064001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+108	83	2065001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+109	83	2066001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+110	83	2067001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+111	83	2068001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+112	83	2069002	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+113	83	2070003	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+114	83	2071001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+115	83	2072001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+116	83	3001001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+117	83	3002001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+118	83	3003002	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+119	83	2073001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+120	83	3004001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+121	83	3005001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+122	83	3006001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+123	83	3007001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+124	83	3009001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+125	83	3008001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+126	83	3010001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+127	83	3011001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+128	83	3012001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+129	83	3013001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+130	83	3014001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+131	83	3015001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+132	83	3016001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+133	83	3017002	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+134	83	3019002	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+135	83	3020001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+136	83	3021001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+137	83	3022001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+138	83	3023001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+139	83	3024001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+140	83	3025001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+141	83	3026001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+142	83	3027001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+143	83	3028001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+144	83	3029001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+145	83	3030002	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+146	83	3031001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+147	83	3032001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+148	83	3033002	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+149	83	3034001	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+150	83	3035001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+151	83	3036001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+152	83	3037001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+153	83	3038001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+154	83	3039001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+155	83	3040001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+156	83	3041001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+157	83	3042001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+158	83	3043001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+159	83	3044001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+160	83	3045002	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+161	83	3046001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+162	83	3047001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+163	83	3048001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+164	83	3050001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+165	83	3051001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+166	83	3052001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+167	83	3053002	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+168	83	3054001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+169	83	3055001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+170	83	3056001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+171	83	3057001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+172	83	3058001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+173	83	3059001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+174	83	3060001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+175	83	3061001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+176	83	3062001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+177	83	3063001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+178	83	3064001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+179	83	3065001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+180	83	3067001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+181	83	3068001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+182	83	3069001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+183	83	3070001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+184	83	3071001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+185	83	3072002	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+186	83	3073001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+187	83	3074001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+188	83	3075001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+189	83	3076001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+190	83	3077001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+191	83	3078001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+192	83	3079001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+193	83	3080001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+194	83	3081001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+195	83	3082001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+196	83	3083001	2640000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+197	83	20230011	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+198	83	20230012	6600000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+199	83	20230013	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+200	83	20270011	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+201	83	20270012	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+202	83	30240011	1100000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+203	83	30240012	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+204	83	30640011	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+205	83	30640012	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+206	83	1038001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+207	83	2013001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+208	83	2044001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+209	83	2050001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+210	83	3018001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+211	83	3049001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+212	83	3066001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
 \.
 
 
 --
--- Data for Name: tipo_contribuyente; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+-- Data for Name: tabulador_gas_residencial; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
-COPY impuesto.tipo_contribuyente (id_tipo_contribuyente, descripcion) FROM stdin;
+COPY impuesto.tabulador_gas_residencial (id_tabulador_gas_residencial, id_usuario, monto, fecha_creacion, fecha_desde, fecha_hasta) FROM stdin;
+1	83	7000	2020-06-11 13:48:49.040513-04	2020-06-11	\N
+\.
+
+
+--
+-- Data for Name: tipo_aviso_propaganda; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.tipo_aviso_propaganda (id_tipo_aviso_propaganda, id_categoria_propaganda, descripcion, parametro, monto, id_valor) FROM stdin;
+198	2	A-002.2, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+199	2	A-002.3, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+200	3	A-003.1, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN AVISOS DE: PARED, FACHADA, DE SUELO, DE CHUPETA, COLGANTES DE VIENTOS, VALLAS,\nINCLUYE  AVISOS EN LICORERIAS, ESTABLECIMIENTOS NOCTURNOS, PANADERÍAS, MINI MERCADOS, FARMACIOS, SUPERMERCADOS Y SIMILARES.\n	UNIDADES	4	2
+201	3	A-003.2, PROPAGANDA E IMAGEN DEL PRODUCTO O MARCA INCOPORADAS EN ANUNCIOS PORTAILES, EXHBIDORES, CABECERO MULTIMARCA, PIXEL.	UNIDADES	3	2
+202	3	A-003.3, ANUNCIOS E IMÁGENES INCOPORADAS A VEHICULO AUTOMOTOR.	UNIDADES	4	2
+204	3	A-003.5, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+203	3	A-003.4, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+205	4	A-004.1, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN AVISOS DE: PARED, FACHADA, DE SUELO, DE CHUPETA, COLGANTES DE VIENTOS, VALLAS,\nINCLUYE  AVISOS EN LICORERIAS, ESTABLECIMIENTOS NOCTURNOS, PANADERÍAS, MINI MERCADOS, FARMACIAS, SUPERMERCADOS Y SIMILARES.\n	UNIDADES	4	2
+206	4	A-004.2, PROPAGANDA E IMAGEN DEL PRODUCTO O MARCA INCOPORADAS EN ANUNCIOS PORTÁTILES, EXHBIDORES, CABECERO MULTIMARCA, PIXEL.	UNIDADES	3	2
+207	4	A-004.3, ANUNCIOS E IMÁGENES INCOPORADAS A VEHICULO AUTOMOTOR.	UNIDADES	4	2
+208	4	A-004.4, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+209	4	A-004.5, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+194	1	A-001.2, PROPAGANADA E IMAGEN DEL PRODUCTO O MARCA INCORPORADAS  EN ANUNCIOS PORTÁTILES, EXHIBIDORES, CABECERO MULTIMARCA.	UNIDADES	3	2
+195	1	A-001.3, ANUNCIOS E IMÁGENES DEL PRODUCTO INCORPORADOS A VEHÍCULOS AUTOMOTORES.	UNIDADES	2	2
+196	1	A-001.4, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+210	5	A-005.1, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN AVISOS DE: PARED, FACHADA, DE SUELO, DE CHUPETA, COLGANTES DE VIENTOS, VALLAS,\nINCLUYE  AVISOS EN LICORERIAS, ESTABLECIMIENTOS NOCTURNOS, PANADERÍAS, MINI MERCADOS, FARMACIAS, SUPERMERCADOS Y SIMILARES.\n	UNIDADES	4	2
+211	5	A-005.2, ANUNCIOS E IMÁGENES INCOPORADAS A VHEICULO AUTOMOTOR.	UNIDADES	4	2
+193	1	A-001.1, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN AVISOS DE: PARED, FACHADA, DE SUELO, DE CHUPETA, COLGANTES DE VIENTOS, VALLAS, TOLDOS Y MARQUESINA. \nINCLUYE AVISOS EN CENTROS COMERCIALES, LICORERÍAS, ESTABLECIMIENTOS NOCTURNOS, PANADERÍAS, MINI MERCADOS, FARMACIAS, SUPERMERCADOS, RESTAURANTE Y SIMILARES. PROPAGANDA E IMAGEN DEL PRODUCTO O MARCA INCORPORADAS EN ANUNCIOS PORTÁTILES, EXHIBIDORES, CABECERO MULTIMARCA.\n	UNIDADES	4	2
+214	5	A-005.5, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+212	5	A-005.3, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA. DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+213	5	A-005.4, PROPAGANDA DE PRODUCTOS, IMAGEN O MARCAS INCORPORADA  A EQUIPOS TALES COMO: NEVERAS, FREEZER, CAVAS, ENFRIADORAS DE BOTELLAS, HELADOS Y YOGURT.	UNIDADES	4	2
+215	6	A-006.1, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN AVISOS DE: PARED, FACHADA, DE SUELO, DE CHUPETA, COLGANTES DE VIENTOS, VALLAS,\nINCLUYE  AVISOS EN LICORERIAS, ESTABLECIMIENTOS NOCTURNOS, PANADERÍAS, MINI MERCADOS, FARMACIAS, SUPERMERCADOS Y SIMILARES.\n	UNIDADES	4	2
+216	6	A-006.2, PROPAGANDA E IMAGEN DEL PRODUCTO O MARCA INCORPORADAS EN ANUNCIOS PORTÁTILES, EXHIBIDORES, CABECERO MULTIMARCA.	UNIDADES	3	2
+217	6	A-006.3, ANUNCIOS E IMÁGENES INCOPORADAS A VHEICULO AUTOMOTOR.	UNIDADES	4	2
+219	6	A-006.5, PROMOCIONES EVENTUALES.	UNIDADES	5	2
+220	6	A-006.6, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+221	7	A-007.1, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN AVISOS DE FACHADA, SALIENTES, PARED, SUELO, CHUPETA, COLGANTES DE VIENTOS, VALLAS, TOLDOS Y MARQUESINA.( Que estén  fijados en el piso, pared o fachada del establecimiento).	UNIDADES	4	2
+222	7	A-007.2, PROPAGANDA E IMAGEN DEL PRODUCTO O MARCA INCORPORADOS EN ANUNCIOS PORTÁTILES, EXHIBIDORES, CABECERO MULTIMARCA.	UNIDADES	3	2
+223	7	A-007.3, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA. DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+224	7	A-007.4, MAQUINAS DISPENSADORAS DE CAFÉ, SOLO O COMBINADO, CON INCORPORACIÓN DE PROPAGANDA DE PRODUCTOS O MARCAS. PROPAGANDA DE PRODUCTOS O MARCAS INCOPORADA A EQUIPOS TALES COMO, NEVERAS, FREEZER, CAVAS, ENFRIADORAS DE BOTELLAS Y YOGURT.	UNIDADES	3	2
+225	7	A-007.5, PROMOCIONES EVENTUALES.	UNIDADES	5	2
+226	7	A-007.6, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+227	8	A-008.1, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN AVISOS DE: PARED, FACHADA, DE SUELO, DE CHUPETA, COLGANTES DE VIENTOS, VALLAS,\nINCLUYE  AVISOS EN LICORERIAS, ESTABLECIMIENTOS NOCTURNOS, PANADERÍAS, MINI MERCADOS, FARMACIAS, SUPERMERCADOS Y SIMILARES.\n	UNIDADES	4	2
+228	8	A-008.2, PROPAGANDA E IMAGEN DEL PRODUCTO O MARCA INCORPORADAS EN ANUNCIOS PORTATILES, EXHIBIDORES, CABECERO MULTIMARCA.	UNIDADES	3	2
+230	8	A-008.4, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+231	9	A-009.1, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN AVISOS DE: PARED, FACHADA, DE SUELO, DE CHUPETA, COLGANTES DE VIENTOS, VALLAS,\nINCLUYE  AVISOS EN LICORERIAS, ESTABLECIMIENTOS NOCTURNOS, PANADERÍAS, MINI MERCADOS, FARMACIAS, SUPERMERCADOS Y SIMILARES.\n	UNIDADES	4	2
+232	9	A-009.2, PROPAGANDA E IMAGEN DEL PRODUCTO O MARCA INCORPORADAS EN ANUNCIOS PORTATILES, EXHIBIDORES, CABECERO MULTIMARCA.	UNIDADES	3	2
+233	9	A-009.3, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA. DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+234	9	A-009.4, OTROS MEDIOS NO ESPECÍFICADOS.	UNIDADES	7	2
+235	10	A-010.1, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN AVISOS DE: PARED, FACHADA, DE SUELO, DE CHUPETA, COLGANTES DE VIENTOS, VALLAS,\nINCLUYE  AVISOS EN LICORERIAS, ESTABLECIMIENTOS NOCTURNOS, PANADERÍAS, MINI MERCADOS, FARMACIAS, SUPERMERCADOS Y SIMILARES.\n	UNIDADES	4	2
+236	10	A-010.2, PROPAGANDA E IMAGEN DEL PRODUCTO O MARCA INCORPORADAS EN ANUNCIOS PORTATILES, EXHIBIDORES, CABECERO MULTIMARCA.	UNIDADES	3	2
+237	10	A-010.3, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA. DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+238	10	A-010.4, ANUNCIOS E IMÁGENES DEL PRODUCTO ENCORPORADOS A VEHÍCULO AUTOMOTOR.	UNIDADES	3	2
+239	10	A-010.5, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+240	11	A-011.1, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN AVISOS DE: PARED, FACHADA, DE SUELO, DE CHUPETA, COLGANTES DE VIENTOS, VALLAS,\nINCLUYE  AVISOS EN LICORERIAS, ESTABLECIMIENTOS NOCTURNOS, PANADERÍAS, MINI MERCADOS, FARMACIAS, SUPERMERCADOS Y SIMILARES.\n	UNIDADES	4	2
+241	11	A-011.2, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA. DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+242	11	A-011.3, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+243	12	A-012.1, PROPAGANDA DE FACHADA, SALIENTES, PARED, SUELO, CHUPETA, ANUNCIOS COLGANTE Y DE VIENTOS, TOLDOS Y MARQUESINAS.	UNIDADES	4	2
+244	12	A-012.2, ANUNCIOS E IMÁGENES DEL PRODUCTO INCORPORADOS A VEHÍCULO AUTOMOTOR.	UNIDADES	3	2
+245	12	A-012.3, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA. DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+246	12	A-012.4, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+247	13	A-013.1, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN AVISOS DE: PARED, FACHADA, DE SUELO, DE CHUPETA, COLGANTES DE VIENTOS, VALLAS,\nINCLUYE  AVISOS EN LICORERIAS, ESTABLECIMIENTOS NOCTURNOS, PANADERÍAS, MINI MERCADOS, FARMACIAS, SUPERMERCADOS Y SIMILARES.\n	UNIDADES	4	2
+248	13	A-013.2, PROPAGANDA E IMAGEN DEL PRODUCTO O MARCA INCORPORADAS EN ANUNCIOS PORTATILES, EXHIBIDORES, CABECERO MULTIMARCA.	UNIDADES	3	2
+218	6	A-006.4, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA. DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+229	8	A-008.3, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA. DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+249	13	A-013.3, IMAGEN DEL PRODUCTO O MARCA, INCORPORADAS EN: ANUNCIOS DE BILLETES, CARA A CARA, HABLADORES, BANDERINES, PANCARTAS, SUVENIR, ANUNCIOS O ENCARTES EN PERIODICOS, REVISTAS SERVILLETEROS. PITILLERAS, DESTAPADORES, LLAVEROS, AFICHES, POWER BANK, PENDONES, ROTULADORS MICROPERFORADOS, PUNTA DE GÓNDOLA, ROMPETRAFICO, BANDEA, VAOS, CAJAS O ENVASES, MESAS, SILLAS, DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA. DE CUALQUIER OTRO MATERIAL QUE INCORPOREN SU IMAGEN DE PRODUCTO O MARCA.	BANDA	5	2
+250	13	A-013.4, ANUNCIOS E IMÁGENES DEL PRODUCTO INCORPORADOS A VEHÍCULO AUTOMOTOR.	UNIDADES	3	2
+251	13	A-013.5, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
+252	14	A-014.1, OTRAS CLASES DE PUBLICIDAD Y PROPAGANDA COMERCIAL.	UNIDADES	7	2
+253	1	A-001.5, PROPAGANDA DE PRODUCTOS, IMAGEN O MARCAS, INCORPORADA A EQUIPOS TALES COMO: NEVERAS, FREEZER, CAVAS, ENFRIADORAS DE BOTELLAS, SIFONES, DISPENSADORES DE BEBIDAS.	UNIDADES	3	2
+254	1	A-001.6, ESPECTACULOS DE PUBLICIDAD Y PROPAGANDA PROMOCIONES.	UNIDADES	6	2
+255	1	A-001.7, OTROS MEDIOS NO ESPECIFICADOS.	UNIDADES	7	2
 \.
 
 
@@ -5214,6 +6716,30 @@ COPY impuesto.tipo_contribuyente (id_tipo_contribuyente, descripcion) FROM stdin
 
 COPY impuesto.tipo_multa (id_tipo_multa, descripcion) FROM stdin;
 1	Multa por Declaracion Tardia
+\.
+
+
+--
+-- Data for Name: usuario_enlazado; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.usuario_enlazado (id_usuario_enlazado, id_contribuyente, email) FROM stdin;
+\.
+
+
+--
+-- Data for Name: verificacion_email; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.verificacion_email (id_verificacion_email, id_registro_municipal, codigo_recuperacion, fecha_recuperacion, verificado) FROM stdin;
+\.
+
+
+--
+-- Data for Name: verificacion_telefono; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.verificacion_telefono (id_verificacion_telefono, id_registro_municipal, codigo_recuperacion, fecha_recuperacion, verificado) FROM stdin;
 \.
 
 
@@ -5632,6 +7158,35 @@ COPY public.campo_tramite (id_campo, id_tipo_tramite, orden, estado, id_seccion)
 
 
 --
+-- Data for Name: cargo; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.cargo (id_cargo, id_tipo_usuario, id_institucion, descripcion) FROM stdin;
+1	2	1	Administrador
+2	3	1	Funcionario
+3	2	2	Administrador
+4	3	2	Funcionario
+5	2	3	Administrador
+6	3	3	Funcionario
+7	2	4	Administrador
+8	3	4	Funcionario
+9	2	5	Administrador
+10	3	5	Funcionario
+11	2	6	Administrador
+12	3	6	Funcionario
+13	2	7	Administrador
+14	3	7	Funcionario
+15	2	8	Administrador
+16	3	8	Funcionario
+17	5	3	Director OMPU
+18	5	3	Director OMCAT
+19	5	3	Director OMTU
+20	2	0	Administrador
+21	3	0	Funcionario
+\.
+
+
+--
 -- Data for Name: caso_social; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -5652,27 +7207,27 @@ COPY public.certificado (id_certificado, id_tramite, url_certificado) FROM stdin
 -- Data for Name: cuenta_funcionario; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.cuenta_funcionario (id_usuario, id_institucion) FROM stdin;
-55	1
+COPY public.cuenta_funcionario (id_usuario, id_cargo) FROM stdin;
+57	\N
+65	\N
+83	\N
 56	1
-57	1
-59	2
-65	2
-66	0
-67	3
-68	3
-70	3
-71	0
-72	4
-73	4
-75	5
-76	5
-77	7
-78	7
-79	6
-80	6
-81	8
-82	8
+59	3
+66	20
+67	5
+68	6
+70	17
+71	21
+72	7
+73	8
+75	10
+76	9
+77	13
+78	14
+79	11
+80	12
+81	15
+82	16
 \.
 
 
@@ -5722,40 +7277,6 @@ COPY public.evento_multa (id_evento_multa, id_multa, event, "time") FROM stdin;
 --
 
 COPY public.evento_tramite (id_evento_tramite, id_tramite, event, "time") FROM stdin;
-583	255	iniciar	2020-05-07 10:57:09.720038-04
-584	255	validar_pa	2020-05-07 10:57:09.720038-04
-586	257	iniciar	2020-05-07 10:57:38.168622-04
-587	257	validar_pa	2020-05-07 10:57:38.168622-04
-588	258	iniciar	2020-05-07 10:57:53.919855-04
-589	258	enproceso_pd	2020-05-07 10:57:53.919855-04
-590	259	iniciar	2020-05-07 10:58:28.363512-04
-591	259	validar_pa	2020-05-07 10:58:28.363512-04
-592	260	iniciar	2020-05-07 10:58:51.901449-04
-593	260	validar_pa	2020-05-07 10:58:51.901449-04
-594	261	iniciar	2020-05-07 10:58:59.049063-04
-595	261	enproceso_pd	2020-05-07 10:58:59.049063-04
-596	262	iniciar	2020-05-07 11:00:56.334025-04
-597	262	enproceso_pd	2020-05-07 11:00:56.334025-04
-598	263	iniciar	2020-05-07 11:01:07.212907-04
-599	263	enproceso_pd	2020-05-07 11:01:07.212907-04
-600	264	iniciar	2020-05-07 11:01:52.832256-04
-601	264	enproceso_pd	2020-05-07 11:01:52.832256-04
-602	265	iniciar	2020-05-07 11:02:07.106868-04
-603	265	enproceso_pd	2020-05-07 11:02:07.106868-04
-604	266	iniciar	2020-05-07 11:03:00.239298-04
-605	266	enproceso_pd	2020-05-07 11:03:00.239298-04
-606	267	iniciar	2020-05-07 11:03:37.842654-04
-607	267	validar_cr	2020-05-07 11:03:37.842654-04
-608	268	iniciar	2020-05-07 11:46:05.315309-04
-609	268	validar_cr	2020-05-07 11:46:05.315309-04
-610	269	iniciar	2020-05-07 11:46:32.804564-04
-611	269	validar_cr	2020-05-07 11:46:32.804564-04
-612	270	iniciar	2020-05-07 11:47:09.713907-04
-613	270	validar_cr	2020-05-07 11:47:09.713907-04
-614	271	iniciar	2020-05-07 11:48:02.25006-04
-615	271	validar_tl	2020-05-07 11:48:02.25006-04
-617	273	iniciar	2020-05-07 11:48:23.471532-04
-618	273	validar_pa	2020-05-07 11:48:23.471532-04
 \.
 
 
@@ -5771,8 +7292,15 @@ COPY public.factura_tramite (id_factura, id_tramite) FROM stdin;
 -- Data for Name: inmueble_urbano; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, fecha_creacion, fecha_actualizacion, fecha_ultimo_avaluo, tipo_inmueble) FROM stdin;
-21	231315U01004083001001P0500	Calle 73 entre Av. 3E y 3F	108	200	300	2020-03-20 16:46:01.230084-04	2020-03-20 16:46:01.230084-04	\N	\N
+COPY public.inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, fecha_creacion, fecha_actualizacion, fecha_ultimo_avaluo, tipo_inmueble, id_registro_municipal) FROM stdin;
+21	231315U01004083001001P0500	Calle 73 entre Av. 3E y 3F	108	200	300	2020-03-20 16:46:01.230084-04	2020-03-20 16:46:01.230084-04	\N	\N	\N
+128	\N	Parroquia CHIQUINQUIRA Sector  INDIO MARA Avenida  65 Calle  22A, Local Nro.  MZN, Pto de Ref.   EDIF. IPSFA	\N	\N	\N	2020-06-19 14:59:15.540418-04	2020-06-19 14:59:15.540418-04	\N	\N	\N
+129	\N	Parroquia OLEGARIO VILLALOBOS Sector SCT   BELLA VISTA(OLEGARIO V) AVENIDA 4 BELLA VISTA 1684520 LOCAL 67-13 LOCAL EDF. BLITZ 67-13   FTE. CHURRASCO BAR-GRILL MBO Maracaibo ZUL Avenida 4 Calle 0, Apartamento Nro. 67-13, Pto de Ref. 0	\N	\N	\N	2020-06-19 14:59:15.540418-04	2020-06-19 14:59:15.540418-04	\N	\N	\N
+130	\N	Parroquia CHIQUINQUIRA Sector INDIO MARA Avenida 22A Calle 65, Local Nro. MZN., Pto de Ref. EDIF. IPSFA	\N	\N	\N	2020-06-19 14:59:15.540418-04	2020-06-19 14:59:15.540418-04	\N	\N	\N
+131	\N	Parroquia CHIQUINQUIRA Sector - Avenida - Calle -, Local Nro. -, Pto de Ref. -	\N	\N	\N	2020-06-19 14:59:15.540418-04	2020-06-19 14:59:15.540418-04	\N	\N	\N
+132	\N		\N	\N	\N	2020-06-19 14:59:15.540418-04	2020-06-19 14:59:15.540418-04	\N	\N	\N
+133	\N	Parroquia CHIQUINQUIRA Sector SCT   PARAISO AVENIDA 22 1674040   PB PB LDO. CUARTEL LIBERTADOR MBO Maracaibo ZUL Avenida 22A Calle 65, Local Nro. P A, Pto de Ref. IPFA	\N	\N	\N	2020-06-19 14:59:15.540418-04	2020-06-19 14:59:15.540418-04	\N	\N	\N
+134	\N	Parroquia OLEGARIO VILLALOBOS Sector INDIO MARA Avenida 22A Calle 65, Local Nro. 3, Pto de Ref. IPFA	\N	\N	\N	2020-06-19 14:59:15.540418-04	2020-06-19 14:59:15.540418-04	\N	\N	\N
 \.
 
 
@@ -5828,21 +7356,6 @@ COPY public.multa (id_multa, id_tipo_tramite, datos, costo, fecha_creacion, codi
 --
 
 COPY public.notificacion (id_notificacion, id_procedimiento, emisor, receptor, descripcion, status, fecha, estado, concepto) FROM stdin;
-412	255	V-27139153	V-1	Un trámite de tipo Cumplimiento de Normas Tecnicas ha sido creado	f	2020-05-07 10:57:13.617386-04	validando	TRAMITE
-413	255	V-27139153	V-1	Un trámite de tipo Cumplimiento de Normas Tecnicas ha sido creado	f	2020-05-07 10:57:13.617386-04	validando	TRAMITE
-414	255	V-27139153	V-1231231231	Un trámite de tipo Cumplimiento de Normas Tecnicas ha sido creado	f	2020-05-07 10:57:13.617386-04	validando	TRAMITE
-432	263	V-27139153	V-1	Un trámite de tipo Permiso de Habitabilidad sin Instalaciones de Servicio de Gas ha sido creado	f	2020-05-07 11:01:07.728089-04	enproceso	TRAMITE
-433	263	V-27139153	V-123123	Un trámite de tipo Permiso de Habitabilidad sin Instalaciones de Servicio de Gas ha sido creado	f	2020-05-07 11:01:07.728089-04	enproceso	TRAMITE
-434	263	V-27139153	V-123133333	Un trámite de tipo Permiso de Habitabilidad sin Instalaciones de Servicio de Gas ha sido creado	f	2020-05-07 11:01:07.728089-04	enproceso	TRAMITE
-435	264	V-27139153	V-1	Un trámite de tipo Permiso de Condiciones Habitables con Instalaciones de Servicio de Gas ha sido creado	f	2020-05-07 11:01:53.330397-04	enproceso	TRAMITE
-436	264	V-27139153	V-123123	Un trámite de tipo Permiso de Condiciones Habitables con Instalaciones de Servicio de Gas ha sido creado	f	2020-05-07 11:01:53.330397-04	enproceso	TRAMITE
-437	264	V-27139153	V-123133333	Un trámite de tipo Permiso de Condiciones Habitables con Instalaciones de Servicio de Gas ha sido creado	f	2020-05-07 11:01:53.330397-04	enproceso	TRAMITE
-438	266	V-27139153	V-1	Un trámite de tipo Permiso de Condiciones Habitables sin Instalaciones de Servicio de Gas ha sido creado	f	2020-05-07 11:03:00.859148-04	enproceso	TRAMITE
-439	266	V-27139153	V-123123	Un trámite de tipo Permiso de Condiciones Habitables sin Instalaciones de Servicio de Gas ha sido creado	f	2020-05-07 11:03:00.859148-04	enproceso	TRAMITE
-440	266	V-27139153	V-123133333	Un trámite de tipo Permiso de Condiciones Habitables sin Instalaciones de Servicio de Gas ha sido creado	f	2020-05-07 11:03:00.859148-04	enproceso	TRAMITE
-444	268	V-27139153	V-1	Un trámite de tipo Constancia de Nomenclatura ha sido creado	f	2020-05-07 11:46:05.980597-04	validando	TRAMITE
-445	268	V-27139153	V-1231234444	Un trámite de tipo Constancia de Nomenclatura ha sido creado	f	2020-05-07 11:46:05.980597-04	validando	TRAMITE
-446	268	V-27139153	V-27139154	Un trámite de tipo Constancia de Nomenclatura ha sido creado	f	2020-05-07 11:46:05.980597-04	validando	TRAMITE
 \.
 
 
@@ -6323,6 +7836,8 @@ COPY public.tipo_tramite (id_tipo_tramite, id_institucion, nombre_tramite, costo
 16	3	Solvencia de Inmuebles Urbanos	3000000	cr	SIU	CPU-OMCAT-002	cpu-solt-SIU	cpu-cert-SIU	f	t	6	\N
 18	5	Apartado de Bohío	2500000	pa	Apartado de Bohío	SEDEPAR-001	sedepar-solt-AB	sedepar-cert-AB	f	t	5	\N
 22	3	Constancia de Nomenclatura	200000.0	cr	NM	CPU-OMCAT-003	cpu-solt-NM	cpu-cert-NM	f	t	0.4	\N
+5	9	Pago de Impuestos	\N	pi	Pago de Impuestos	\N	\N	\N	f	f	\N	\N
+9	9	Pago de Impuestos	\N	pi	Pago de Impuestos	\N	\N	\N	f	f	\N	\N
 \.
 
 
@@ -6455,23 +7970,6 @@ COPY public.tipo_usuario (id_tipo_usuario, descripcion) FROM stdin;
 --
 
 COPY public.tramite (id_tramite, id_tipo_tramite, datos, costo, fecha_creacion, codigo_tramite, consecutivo, id_usuario, url_planilla, url_certificado, aprobado, fecha_culminacion) FROM stdin;
-270	15	{"usuario":{"nombre":"External User","cedula":"27139153","telefono":"4127645681","correo":"external@user.com","parroquia":"CECILIO ACOSTA","direccion":"Aqui","propietarios":[{"razonSocial":"asdasd","cedulaORif":"1241241241","nacionalidad":"V","telefono":"1241241241","direccion":"asdasdasd","correo":"asd@asd.asd","parroquia":"BOLIVAR"}],"nombreConjunto":"asd","cantidadEdificios":"1","nombreEdificio":"asd","cantidadPisos":"123123","pisoApto":"123123","cantidadAptosPiso":"1231","numeroApto":"123123","nomenclaturaEdificio":"asdasd","ubicacionEdificio":"asd","parroquiaEdificio":"IDELFONSO VASQUEZ","nacionalidad":"V","codCat":null}}	1200000	2020-05-07 11:47:09.713907-04	CPU-07052020-15-0001	1	58	http://localhost:5000/tramites/CPU-07052020-15-0001/planilla.pdf	\N	f	\N
-266	13	{"usuario":{"nombre":"External User","ubicadoEn":"asdasdasd","telefono":"4127645681","tipoOcupacion":"123123","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]}}}	\N	2020-05-07 11:03:00.239298-04	SAGAS-07052020-13-0002	2	58	http://localhost:5000/tramites/SAGAS-07052020-13-0002/planilla.pdf	\N	f	\N
-268	22	{"usuario":{"nombre":"External User","cedula":"27139153","telefono":"4127645681","correo":"external@user.com","parroquia":"CACIQUE MARA","direccion":"Aqui","propietarios":[{"razonSocial":"asdasd","nacionalidad":"V","cedulaORif":"1241241241","telefono":"1241241241","direccion":"asdasdasd","correo":"asd@asd.asd","parroquia":"BOLIVAR"}],"ubicadoEn":"asdasdasd","puntoReferencia":"asd","finalidad":"Mismo Número","frente":"","linderoFrente":"a","linderoFondo":"b","linderoDerecha":"c","linderoIzquierda":"d","nacionalidad":"V","codCat":null}}	80000	2020-05-07 11:46:05.315309-04	CPU-07052020-22-0001	1	58	http://localhost:5000/tramites/CPU-07052020-22-0001/planilla.pdf	\N	f	\N
-267	16	{"usuario":{"nombre":"External User","cedula":"27139153","telefono":"4127645681","correo":"external@user.com","parroquia":"CACIQUE MARA","direccion":"Aqui","propietarios":[{"razonSocial":"asdasd","cedulaORif":"1241241241","nacionalidad":"V","telefono":"1241241241","direccion":"asdasdasd","correo":"asd@asd.asd","parroquia":"BOLIVAR"}],"ubicadoEn":"asdasdasd","parroquiaEdificio":"BOLIVAR","tipoInmuebleSolvencia":"terreno","nacionalidad":"V","codCat":null}}	1200000	2020-05-07 11:03:37.842654-04	CPU-07052020-16-0001	1	58	http://localhost:5000/tramites/CPU-07052020-16-0001/planilla.pdf	\N	f	\N
-269	14	{"usuario":{"nombre":"External User","cedula":"27139153","telefono":"4127645681","correo":"external@user.com","parroquia":"CACIQUE MARA","direccion":"Aqui","propietarios":[{"razonSocial":"asdasd","cedulaORif":"1241241241","nacionalidad":"V","telefono":"1241241241","direccion":"asdasdasd","correo":"asd@asd.asd","parroquia":"BOLIVAR"}],"ubicadoEn":"asdasdasd","parroquiaEdificio":"CACIQUE MARA","tipoInmueble":"asdasd","nacionalidad":"V","codCat":null}}	1200000	2020-05-07 11:46:32.804564-04	CPU-07052020-14-0001	1	58	http://localhost:5000/tramites/CPU-07052020-14-0001/planilla.pdf	\N	f	\N
-273	18	{"usuario":{"nombre":"External User","cedula":"27139153","telefono":"4127645681","correo":"external@user.com","fechaApartado":"2020-05-15T15:48:06.719Z","numeroBohio":"1","nacionalidad":"V","codCat":null}}	1000000	2020-05-07 11:48:23.471532-04	SEDEPAR-07052020-18-0001	1	58	http://localhost:5000/tramites/SEDEPAR-07052020-18-0001/planilla.pdf	\N	f	\N
-262	10	{"usuario":{"nombre":"External User","ubicadoEn":"asdasdasd","telefono":"4127645681","tipoOcupacion":"123123","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]}}}	\N	2020-05-07 11:00:56.334025-04	SAGAS-07052020-10-0001	1	58	http://localhost:5000/tramites/SAGAS-07052020-10-0001/planilla.pdf	\N	f	\N
-255	1	{"usuario":{"cedulaORif":"27139153","nombreORazon":"Gabriel Trompiz","direccion":"Aqui","puntoReferencia":"ASD","sector":"123","parroquia":"BOLIVAR","nombre":"External User","cedula":"27139153","telefono":"4127645681","correo":"external@user.com","contacto":"si","horario":"no","prefix":"V","nacionalidad":"V","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]}}}	8000000	2020-05-07 10:57:09.720038-04	CBM-07052020-1-0001	1	58	http://localhost:5000/tramites/CBM-07052020-1-0001/planilla.pdf	\N	f	\N
-259	6	{"usuario":{"nombre":"External User","ubicadoEn":"asdasdasd","telefono":"4127645681","tipoOcupacion":"123123","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]}}}	240000000	2020-05-07 10:58:28.363512-04	SAGAS-07052020-6-0001	1	58	http://localhost:5000/tramites/SAGAS-07052020-6-0001/planilla.pdf	\N	f	\N
-257	2	{"usuario":{"cedulaORif":"27139153","nombreORazon":"Gabriel Trompiz","direccion":"Aqui","puntoReferencia":"asd","sector":"123","parroquia":"BOLIVAR","nombre":"External User","cedula":"27139153","telefono":"4127645681","correo":"external@user.com","contacto":"asd","horario":"asd","prefix":"V","nacionalidad":"V","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]}}}	8000000	2020-05-07 10:57:38.168622-04	CBM-07052020-2-0001	1	58	http://localhost:5000/tramites/CBM-07052020-2-0001/planilla.pdf	\N	f	\N
-258	3	{"usuario":{"cedulaORif":"27139153","nombreORazon":"Gabriel Trompiz","direccion":"Aqui","puntoReferencia":"asd","sector":"asd","parroquia":"BOLIVAR","nombre":"External User","cedula":"27139153","telefono":"4127645681","correo":"external@user.com","contacto":"123","horario":"asd","prefix":"V","nacionalidad":"V","codCat":null}}	\N	2020-05-07 10:57:53.919855-04	CBM-07052020-3-0001	1	58	http://localhost:5000/tramites/CBM-07052020-3-0001/planilla.pdf	\N	f	\N
-260	7	{"usuario":{"nombre":"External User","ubicadoEn":"asdasdasd","telefono":"4127645681","tipoOcupacion":"123123","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]}}}	960000000	2020-05-07 10:58:51.901449-04	SAGAS-07052020-7-0001	1	58	http://localhost:5000/tramites/SAGAS-07052020-7-0001/planilla.pdf	\N	f	\N
-261	8	{"usuario":{"nombre":"External User","ubicadoEn":"asdasdasd","telefono":"4127645681","tipoOcupacion":"123123","areaConstruccion":"123123","codCat":null}}	\N	2020-05-07 10:58:59.049063-04	SAGAS-07052020-8-0001	1	58	http://localhost:5000/tramites/SAGAS-07052020-8-0001/planilla.pdf	\N	f	\N
-263	11	{"usuario":{"nombre":"External User","ubicadoEn":"asdasdasd","telefono":"4127645681","tipoOcupacion":"123123","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]}}}	\N	2020-05-07 11:01:07.212907-04	SAGAS-07052020-11-0001	1	58	http://localhost:5000/tramites/SAGAS-07052020-11-0001/planilla.pdf	\N	f	\N
-264	12	{"usuario":{"nombre":"External User","ubicadoEn":"asdasdasd","telefono":"4127645681","tipoOcupacion":"123123","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]}}}	\N	2020-05-07 11:01:52.832256-04	SAGAS-07052020-12-0001	1	58	http://localhost:5000/tramites/SAGAS-07052020-12-0001/planilla.pdf	\N	f	\N
-265	13	{"usuario":{"nombre":"External User","ubicadoEn":"asdasdasd","telefono":"4127645681","tipoOcupacion":"123123","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]}}}	\N	2020-05-07 11:02:07.106868-04	SAGAS-07052020-13-0001	1	58	http://localhost:5000/tramites/SAGAS-07052020-13-0001/planilla.pdf	\N	f	\N
-271	17	{"usuario":{"cedula":"1231231231","nombreCompleto":"Gabriel Trompiz","destino":"Baruta","metodo":"Transferencia","monto":"1.000","fechaTramite":"2020-05-07T15:48:02.205Z"}}	1000.0	2020-05-07 11:48:02.25006-04	SEDETEMA-07052020-17-0001	1	58	http://localhost:5000/tramites/SEDETEMA-07052020-17-0001/planilla.pdf	\N	f	\N
 \.
 
 
@@ -6480,21 +7978,6 @@ COPY public.tramite (id_tramite, id_tipo_tramite, datos, costo, fecha_creacion, 
 --
 
 COPY public.tramite_archivo_recaudo (id_tramite, url_archivo_recaudo) FROM stdin;
-259	http://localhost:5000/tramites/SAGAS-07052020-6-0001/RIFPropietario.png
-259	http://localhost:5000/tramites/SAGAS-07052020-6-0001/CedulaPropietario.png
-260	http://localhost:5000/tramites/SAGAS-07052020-7-0001/RIFPropietario.png
-260	http://localhost:5000/tramites/SAGAS-07052020-7-0001/CedulaPropietario.png
-262	http://localhost:5000/tramites/SAGAS-07052020-10-0001/ConstanciaSAGAS.png
-263	http://localhost:5000/tramites/SAGAS-07052020-11-0001/ConstanciaSAGAS.png
-264	http://localhost:5000/tramites/SAGAS-07052020-12-0001/ConstanciaSAGAS.png
-266	http://localhost:5000/tramites/SAGAS-07052020-13-0002/ConstanciaSAGAS.png
-267	http://localhost:5000/tramites/CPU-07052020-16-0001/CedulaPropietario.png
-267	http://localhost:5000/tramites/CPU-07052020-16-0001/DocumentoPropiedad.png
-267	http://localhost:5000/tramites/CPU-07052020-16-0001/Nomenclatura.png
-268	http://localhost:5000/tramites/CPU-07052020-22-0001/CedulaPropietario.png
-269	http://localhost:5000/tramites/CPU-07052020-14-0001/CedulaPropietario.png
-270	http://localhost:5000/tramites/CPU-07052020-15-0001/CedulaPropietario.png
-273	http://localhost:5000/tramites/SEDEPAR-07052020-18-0001/CedulaSolicitante.png
 \.
 
 
@@ -6502,28 +7985,29 @@ COPY public.tramite_archivo_recaudo (id_tramite, url_archivo_recaudo) FROM stdin
 -- Data for Name: usuario; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.usuario (id_usuario, nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, id_tipo_usuario, password, telefono) FROM stdin;
-55	Super Usuario	super@user.com	Super Usuario	1	V	1	$2a$10$VVT8CHvO3jEEoj/djKK4Z.CGPO9JAHw1NMUIK6QwM3BEwElf68kUW	\N
-56	Administrador Bomberos	admin@bomberos.com	Bomberos	1231231231	V	2	$2a$10$nqEy4iyMTQJLAN.BOQ2GuuWioAwRcnXY7ClFbJtmp4svHLg9os/8m	1231231231
-58	External User	external@user.com	Aqui	27139153	V	4	$2a$10$1az9AKXYIZ48FrTXXnb24.QT89PZuCTh2n0zabqVW7G8YyKinYNXe	4127645681
-59	Administrador SAGAS	admin@sagas.com	SAGAS	123123	V	2	$2a$10$.avdkJGtcLhgw/UydHdZf.QEeiSoAjUxRM/xLiTA1gQLUDkDy4lfm	1231231231
-66	Administrador Alcaldia	admin@alcaldia.com	Alcaldia	99999999	V	2	$2a$10$OtCHXU7MOIa6a5K2dt.soOa4AvzrKvp5qY1RtYTaCQqpV2.KTsOyu	8123814877
-67	Administrador CPU	admin@cpu.com	CPU	1231234444	V	2	$2a$10$qEObA7PrDPq2vv/MsfcyFutEKZQuPdVxQnv.5cafIrxfaBnN/P0ba	1231239811
-70	Director CPU	director@cpu.com	CPU	27139154	V	5	$2a$10$yBVC5M9rGWV5i.i2Nyl1fOGg1FKV2HQ0keq3jPcOvrGXtrjEra.z.	1231231231
-65	Funcionario SAGAS	funcionario@sagas.com	SAGAS	123133333	V	3	$2a$10$Na8DEr4PxMVxAQXgeAGkR.DjVx7YX/8/FJIhPeePIrPzKItJvTscy	1231231231
-57	Funcionario Bomberos	funcionario@bomberos.com	Bomberos	123123123	V	3	$2a$10$fFZ3EHbzdimZ9tDvrGod9ureMPkROVtzScEd0pO/piaQh6RLmedMG	1231231233
-71	Funcionario Alcaldia	funcionario@alcaldia.com	Alcaldia	7878787855	V	3	$2a$10$4vosHs6BExfapyssBS5XUekAR9AUa2Be.mhjLuqqmr7i1aZCWUehu	7777777777
-72	Administrador Terminal	terminal@admin.com	Terminal	128488188	V	2	$2a$10$hIeSExSylu8RY2bVPk6dPeLzKIR7Wo0yNjvRyqxR/QwZqTYEEf4wq	1723817728
-73	Funcionario Terminal	funcionario@terminal.com	Terminal	1028124812	V	3	$2a$10$4oNhbsHJuAaFE.xY8bS1HOPakehWJmx6IkGbuaU57nBqro7iLsgg.	1092471093
-75	Funcionario SEDEPAR	funcionario@sedepar.com	SEDEPAR	1289417241	V	3	$2a$10$8.dFFea0jSaDPFYmH4GM9urNDgGy6SawTnqALfevVvQdzodEkR7fS	1974102937
-76	Administrador SEDEPAR	admin@sedepar.com	SEDEPAR	1294712034	V	2	$2a$10$mIBjS3jXMabi8XXohLECoeyKOUr.rZc8jlQXvdZcaSaZT88YLYLaG	8374198241
-77	Administrador Policia	admin@policia.com	Policia	1249712091	V	2	$2a$10$P.v8kW77Xzm1ecmVsuBVuu.5avlhiv8izDmK51hW2/Jj6q/j/beNi	1029471204
-78	Funcionario Policia	funcionario@policia.com	Policia	1293712049	V	3	$2a$10$e.DuvVSdwlr23z1I8B/STeX5V.8V3rhoeXgRWokiP.dEmf3A/eoPK	1927312029
-79	Administrador IMA	admin@ima.com	IMA	1028310919	V	2	$2a$10$I2NhOoazRC2gF0pIdzNXrumPh0soj/9/KDA5dx1RqDNrow1fNzsbG	1923109472
-80	Funcionario IMA	funcionario@ima.com	IMA	1231740197	V	3	$2a$10$eAu/NEg9vEd5nKXbjSyemODqqLt2J1nO4joWhwbDpZopJAj7N0ZSW	1902741092
-81	Administrador INTCUMA	admin@intcuma.com	INTCUMA	1239812938	V	2	$2a$10$mHlp3WfgE.99gg2i2wSI2OrL29UABov9Lo4iylvngFZTwAi2gmBOa	9132801238
-82	Funcionario INTCUMA	funcionario@intcuma.com	INTCUMA	1023102938	V	3	$2a$10$qVi/NuT7X1ELSfz5mpM8e.OrMKAuSqJLPQ4H45/SB/WiwUw2TkA2i	1829038123
-68	Funcionario CPU	funcionario@cpu.com	CPU	1283190247	V	3	$2a$10$qLVJeDD5mKiXlhrNQEJDtOX9baIZcjY3zwMmepViWXp.VENHwaOda	9271092741
+COPY public.usuario (id_usuario, nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, id_tipo_usuario, password, telefono, id_contribuyente) FROM stdin;
+55	Super Usuario	super@user.com	Super Usuario	1	V	1	$2a$10$VVT8CHvO3jEEoj/djKK4Z.CGPO9JAHw1NMUIK6QwM3BEwElf68kUW	\N	\N
+56	Administrador Bomberos	admin@bomberos.com	Bomberos	1231231231	V	2	$2a$10$nqEy4iyMTQJLAN.BOQ2GuuWioAwRcnXY7ClFbJtmp4svHLg9os/8m	1231231231	\N
+59	Administrador SAGAS	admin@sagas.com	SAGAS	123123	V	2	$2a$10$.avdkJGtcLhgw/UydHdZf.QEeiSoAjUxRM/xLiTA1gQLUDkDy4lfm	1231231231	\N
+66	Administrador Alcaldia	admin@alcaldia.com	Alcaldia	99999999	V	2	$2a$10$OtCHXU7MOIa6a5K2dt.soOa4AvzrKvp5qY1RtYTaCQqpV2.KTsOyu	8123814877	\N
+67	Administrador CPU	admin@cpu.com	CPU	1231234444	V	2	$2a$10$qEObA7PrDPq2vv/MsfcyFutEKZQuPdVxQnv.5cafIrxfaBnN/P0ba	1231239811	\N
+70	Director CPU	director@cpu.com	CPU	27139154	V	5	$2a$10$yBVC5M9rGWV5i.i2Nyl1fOGg1FKV2HQ0keq3jPcOvrGXtrjEra.z.	1231231231	\N
+65	Funcionario SAGAS	funcionario@sagas.com	SAGAS	123133333	V	3	$2a$10$Na8DEr4PxMVxAQXgeAGkR.DjVx7YX/8/FJIhPeePIrPzKItJvTscy	1231231231	\N
+57	Funcionario Bomberos	funcionario@bomberos.com	Bomberos	123123123	V	3	$2a$10$fFZ3EHbzdimZ9tDvrGod9ureMPkROVtzScEd0pO/piaQh6RLmedMG	1231231233	\N
+71	Funcionario Alcaldia	funcionario@alcaldia.com	Alcaldia	7878787855	V	3	$2a$10$4vosHs6BExfapyssBS5XUekAR9AUa2Be.mhjLuqqmr7i1aZCWUehu	7777777777	\N
+72	Administrador Terminal	terminal@admin.com	Terminal	128488188	V	2	$2a$10$hIeSExSylu8RY2bVPk6dPeLzKIR7Wo0yNjvRyqxR/QwZqTYEEf4wq	1723817728	\N
+73	Funcionario Terminal	funcionario@terminal.com	Terminal	1028124812	V	3	$2a$10$4oNhbsHJuAaFE.xY8bS1HOPakehWJmx6IkGbuaU57nBqro7iLsgg.	1092471093	\N
+75	Funcionario SEDEPAR	funcionario@sedepar.com	SEDEPAR	1289417241	V	3	$2a$10$8.dFFea0jSaDPFYmH4GM9urNDgGy6SawTnqALfevVvQdzodEkR7fS	1974102937	\N
+76	Administrador SEDEPAR	admin@sedepar.com	SEDEPAR	1294712034	V	2	$2a$10$mIBjS3jXMabi8XXohLECoeyKOUr.rZc8jlQXvdZcaSaZT88YLYLaG	8374198241	\N
+77	Administrador Policia	admin@policia.com	Policia	1249712091	V	2	$2a$10$P.v8kW77Xzm1ecmVsuBVuu.5avlhiv8izDmK51hW2/Jj6q/j/beNi	1029471204	\N
+78	Funcionario Policia	funcionario@policia.com	Policia	1293712049	V	3	$2a$10$e.DuvVSdwlr23z1I8B/STeX5V.8V3rhoeXgRWokiP.dEmf3A/eoPK	1927312029	\N
+79	Administrador IMA	admin@ima.com	IMA	1028310919	V	2	$2a$10$I2NhOoazRC2gF0pIdzNXrumPh0soj/9/KDA5dx1RqDNrow1fNzsbG	1923109472	\N
+80	Funcionario IMA	funcionario@ima.com	IMA	1231740197	V	3	$2a$10$eAu/NEg9vEd5nKXbjSyemODqqLt2J1nO4joWhwbDpZopJAj7N0ZSW	1902741092	\N
+81	Administrador INTCUMA	admin@intcuma.com	INTCUMA	1239812938	V	2	$2a$10$mHlp3WfgE.99gg2i2wSI2OrL29UABov9Lo4iylvngFZTwAi2gmBOa	9132801238	\N
+82	Funcionario INTCUMA	funcionario@intcuma.com	INTCUMA	1023102938	V	3	$2a$10$qVi/NuT7X1ELSfz5mpM8e.OrMKAuSqJLPQ4H45/SB/WiwUw2TkA2i	1829038123	\N
+68	Funcionario CPU	funcionario@cpu.com	CPU	1283190247	V	3	$2a$10$qLVJeDD5mKiXlhrNQEJDtOX9baIZcjY3zwMmepViWXp.VENHwaOda	9271092741	\N
+83	Admin SEDEMAT	admin@sedemat.com	SEDEMAT	1923812093	V	2	$2a$10$24HQ9feMqbPag1esm.IhIOkaAYcQlTKeKlTZlU8xg78bLqeQuCCMC	1902831092	\N
+58	External User	external@user.com	Aqui	27139153	V	4	$2a$10$1az9AKXYIZ48FrTXXnb24.QT89PZuCTh2n0zabqVW7G8YyKinYNXe	4127645681	\N
 \.
 
 
@@ -8572,6 +10056,13 @@ M50	50
 
 
 --
+-- Name: actividad_economica_contribuy_id_actividad_economica_contri_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq', 1, false);
+
+
+--
 -- Name: actividad_economica_exoneraci_id_actividad_economica_exoner_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -8586,17 +10077,52 @@ SELECT pg_catalog.setval('impuesto.actividad_economica_id_actividad_economica_se
 
 
 --
--- Name: ae_desglose_id_ae_desglose_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+-- Name: avaluo_inmueble_id_avaluo_inmueble_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.ae_desglose_id_ae_desglose_seq', 8, true);
+SELECT pg_catalog.setval('impuesto.avaluo_inmueble_id_avaluo_inmueble_seq', 1, false);
+
+
+--
+-- Name: categoria_propaganda_id_categoria_propaganda_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.categoria_propaganda_id_categoria_propaganda_seq', 1, false);
+
+
+--
+-- Name: contribuyente_exoneracion_id_contribuyente_exoneracion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.contribuyente_exoneracion_id_contribuyente_exoneracion_seq', 1, false);
+
+
+--
+-- Name: contribuyente_id_contribuyente_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.contribuyente_id_contribuyente_seq', 31, true);
+
+
+--
+-- Name: credito_fiscal_id_credito_fiscal_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.credito_fiscal_id_credito_fiscal_seq', 1, false);
 
 
 --
 -- Name: dias_feriados_id_dia_feriado_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.dias_feriados_id_dia_feriado_seq', 1, false);
+SELECT pg_catalog.setval('impuesto.dias_feriados_id_dia_feriado_seq', 47, true);
+
+
+--
+-- Name: evento_solicitud_id_evento_solicitud_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.evento_solicitud_id_evento_solicitud_seq', 104, true);
 
 
 --
@@ -8607,24 +10133,24 @@ SELECT pg_catalog.setval('impuesto.factor_id_factor_seq', 1, false);
 
 
 --
--- Name: iu_desglose_id_iu_desglose_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+-- Name: inmueble_contribuyente_id_inmueble_contribuyente_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.iu_desglose_id_iu_desglose_seq', 5, true);
+SELECT pg_catalog.setval('impuesto.inmueble_contribuyente_id_inmueble_contribuyente_seq', 1, false);
 
 
 --
 -- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.liquidacion_id_liquidacion_seq', 147, true);
+SELECT pg_catalog.setval('impuesto.liquidacion_id_liquidacion_seq', 321, true);
 
 
 --
 -- Name: multa_id_multa_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.multa_id_multa_seq', 1, false);
+SELECT pg_catalog.setval('impuesto.multa_id_multa_seq', 33, true);
 
 
 --
@@ -8635,13 +10161,6 @@ SELECT pg_catalog.setval('impuesto.plazo_exoneracion_id_plazo_exoneracion_seq', 
 
 
 --
--- Name: pp_desglose_id_pp_desglose_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
---
-
-SELECT pg_catalog.setval('impuesto.pp_desglose_id_pp_desglose_seq', 1, true);
-
-
---
 -- Name: procedimiento_exoneracion_id_procedimiento_exoneracion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -8649,24 +10168,52 @@ SELECT pg_catalog.setval('impuesto.procedimiento_exoneracion_id_procedimiento_ex
 
 
 --
--- Name: procedimiento_id_procedimiento_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+-- Name: ramo_id_ramo_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.procedimiento_id_procedimiento_seq', 4, true);
+SELECT pg_catalog.setval('impuesto.ramo_id_ramo_seq', 1, false);
 
 
 --
--- Name: sm_desglose_id_sm_desglose_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+-- Name: registro_municipal_id_registro_municipal_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.sm_desglose_id_sm_desglose_seq', 10, true);
+SELECT pg_catalog.setval('impuesto.registro_municipal_id_registro_municipal_seq', 116, true);
 
 
 --
 -- Name: solicitud_id_solicitud_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.solicitud_id_solicitud_seq', 27, true);
+SELECT pg_catalog.setval('impuesto.solicitud_id_solicitud_seq', 113, true);
+
+
+--
+-- Name: subramo_id_subramo_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.subramo_id_subramo_seq', 98, true);
+
+
+--
+-- Name: tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq', 212, true);
+
+
+--
+-- Name: tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq', 1, true);
+
+
+--
+-- Name: tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq', 212, true);
 
 
 --
@@ -8677,17 +10224,17 @@ SELECT pg_catalog.setval('impuesto.tabulador_gas_id_tabulador_gas_seq', 1, false
 
 
 --
--- Name: tipo_actividad_economica_id_tipo_actividad_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+-- Name: tabulador_gas_residencial_id_tabulador_gas_residencial_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.tipo_actividad_economica_id_tipo_actividad_seq', 1, false);
+SELECT pg_catalog.setval('impuesto.tabulador_gas_residencial_id_tabulador_gas_residencial_seq', 1, true);
 
 
 --
--- Name: tipo_contribuyente_id_tipo_contribuyente_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+-- Name: tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.tipo_contribuyente_id_tipo_contribuyente_seq', 1, false);
+SELECT pg_catalog.setval('impuesto.tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq', 1, false);
 
 
 --
@@ -8695,6 +10242,27 @@ SELECT pg_catalog.setval('impuesto.tipo_contribuyente_id_tipo_contribuyente_seq'
 --
 
 SELECT pg_catalog.setval('impuesto.tipo_multa_id_tipo_multa_seq', 1, true);
+
+
+--
+-- Name: usuario_enlazado_id_usuario_enlazado_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.usuario_enlazado_id_usuario_enlazado_seq', 1, false);
+
+
+--
+-- Name: verificacion_email_id_verificacion_email_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.verificacion_email_id_verificacion_email_seq', 5, true);
+
+
+--
+-- Name: verificacion_telefono_id_verificacion_telefono_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
+--
+
+SELECT pg_catalog.setval('impuesto.verificacion_telefono_id_verificacion_telefono_seq', 49, true);
 
 
 --
@@ -8709,6 +10277,13 @@ SELECT pg_catalog.setval('public.bancos_id_banco_seq', 2, true);
 --
 
 SELECT pg_catalog.setval('public.campos_id_campo_seq', 13, true);
+
+
+--
+-- Name: cargo_id_cargo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.cargo_id_cargo_seq', 21, true);
 
 
 --
@@ -8764,7 +10339,7 @@ SELECT pg_catalog.setval('public.facturas_tramites_id_factura_seq', 1, false);
 -- Name: inmueble_urbano_id_inmueble_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.inmueble_urbano_id_inmueble_seq', 33, true);
+SELECT pg_catalog.setval('public.inmueble_urbano_id_inmueble_seq', 148, true);
 
 
 --
@@ -8785,7 +10360,7 @@ SELECT pg_catalog.setval('public.multa_id_multa_seq', 14, true);
 -- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.notificaciones_id_notificacion_seq', 456, true);
+SELECT pg_catalog.setval('public.notificaciones_id_notificacion_seq', 495, true);
 
 
 --
@@ -8820,7 +10395,7 @@ SELECT pg_catalog.setval('public.ordenanzas_tramites_id_ordenanza_tramite_seq', 
 -- Name: pagos_id_pago_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.pagos_id_pago_seq', 191, true);
+SELECT pg_catalog.setval('public.pagos_id_pago_seq', 225, true);
 
 
 --
@@ -8883,7 +10458,7 @@ SELECT pg_catalog.setval('public.templates_certificados_id_template_certificado_
 -- Name: tipos_tramites_id_tipo_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.tipos_tramites_id_tipo_tramite_seq', 4, true);
+SELECT pg_catalog.setval('public.tipos_tramites_id_tipo_tramite_seq', 9, true);
 
 
 --
@@ -8904,7 +10479,7 @@ SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 273, true);
 -- Name: usuarios_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 82, true);
+SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 115, true);
 
 
 --
@@ -9013,11 +10588,27 @@ SELECT pg_catalog.setval('valores_fiscales.tipo_construccion_id_seq', 50, true);
 
 
 --
+-- Name: actividad_economica_contribuyente actividad_economica_contribuyente_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.actividad_economica_contribuyente
+    ADD CONSTRAINT actividad_economica_contribuyente_pkey PRIMARY KEY (id_actividad_economica_contribuyente);
+
+
+--
 -- Name: actividad_economica_exoneracion actividad_economica_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.actividad_economica_exoneracion
     ADD CONSTRAINT actividad_economica_exoneracion_pkey PRIMARY KEY (id_actividad_economica_exoneracion);
+
+
+--
+-- Name: actividad_economica actividad_economica_numero_referencia_key; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.actividad_economica
+    ADD CONSTRAINT actividad_economica_numero_referencia_key UNIQUE (numero_referencia);
 
 
 --
@@ -9029,11 +10620,51 @@ ALTER TABLE ONLY impuesto.actividad_economica
 
 
 --
--- Name: ae_desglose ae_desglose_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+-- Name: avaluo_inmueble avaluo_inmueble_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.ae_desglose
-    ADD CONSTRAINT ae_desglose_pkey PRIMARY KEY (id_ae_desglose);
+ALTER TABLE ONLY impuesto.avaluo_inmueble
+    ADD CONSTRAINT avaluo_inmueble_pkey PRIMARY KEY (id_avaluo_inmueble);
+
+
+--
+-- Name: categoria_propaganda categoria_propaganda_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.categoria_propaganda
+    ADD CONSTRAINT categoria_propaganda_pkey PRIMARY KEY (id_categoria_propaganda);
+
+
+--
+-- Name: contribuyente_exoneracion contribuyente_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.contribuyente_exoneracion
+    ADD CONSTRAINT contribuyente_exoneracion_pkey PRIMARY KEY (id_contribuyente_exoneracion);
+
+
+--
+-- Name: contribuyente contribuyente_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.contribuyente
+    ADD CONSTRAINT contribuyente_pkey PRIMARY KEY (id_contribuyente);
+
+
+--
+-- Name: contribuyente contribuyente_tipo_documento_documento_key; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.contribuyente
+    ADD CONSTRAINT contribuyente_tipo_documento_documento_key UNIQUE (tipo_documento, documento);
+
+
+--
+-- Name: credito_fiscal credito_fiscal_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.credito_fiscal
+    ADD CONSTRAINT credito_fiscal_pkey PRIMARY KEY (id_credito_fiscal);
 
 
 --
@@ -9045,19 +10676,19 @@ ALTER TABLE ONLY impuesto.dias_feriados
 
 
 --
+-- Name: evento_solicitud evento_solicitud_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.evento_solicitud
+    ADD CONSTRAINT evento_solicitud_pkey PRIMARY KEY (id_evento_solicitud);
+
+
+--
 -- Name: factor factor_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.factor
     ADD CONSTRAINT factor_pkey PRIMARY KEY (id_factor);
-
-
---
--- Name: iu_desglose iu_desglose_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
---
-
-ALTER TABLE ONLY impuesto.iu_desglose
-    ADD CONSTRAINT iu_desglose_pkey PRIMARY KEY (id_iu_desglose);
 
 
 --
@@ -9085,35 +10716,27 @@ ALTER TABLE ONLY impuesto.plazo_exoneracion
 
 
 --
--- Name: pp_desglose pp_desglose_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+-- Name: ramo_exoneracion procedimiento_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.pp_desglose
-    ADD CONSTRAINT pp_desglose_pkey PRIMARY KEY (id_pp_desglose);
-
-
---
--- Name: procedimiento_exoneracion procedimiento_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
---
-
-ALTER TABLE ONLY impuesto.procedimiento_exoneracion
-    ADD CONSTRAINT procedimiento_exoneracion_pkey PRIMARY KEY (id_procedimiento_exoneracion);
+ALTER TABLE ONLY impuesto.ramo_exoneracion
+    ADD CONSTRAINT procedimiento_exoneracion_pkey PRIMARY KEY (id_ramo_exoneracion);
 
 
 --
--- Name: procedimiento procedimiento_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+-- Name: ramo ramo_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.procedimiento
-    ADD CONSTRAINT procedimiento_pkey PRIMARY KEY (id_procedimiento);
+ALTER TABLE ONLY impuesto.ramo
+    ADD CONSTRAINT ramo_pkey PRIMARY KEY (id_ramo);
 
 
 --
--- Name: sm_desglose sm_desglose_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+-- Name: registro_municipal registro_municipal_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.sm_desglose
-    ADD CONSTRAINT sm_desglose_pkey PRIMARY KEY (id_sm_desglose);
+ALTER TABLE ONLY impuesto.registro_municipal
+    ADD CONSTRAINT registro_municipal_pkey PRIMARY KEY (id_registro_municipal);
 
 
 --
@@ -9125,6 +10748,38 @@ ALTER TABLE ONLY impuesto.solicitud
 
 
 --
+-- Name: subramo subramo_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.subramo
+    ADD CONSTRAINT subramo_pkey PRIMARY KEY (id_subramo);
+
+
+--
+-- Name: tabulador_aseo_actividad_economica tabulador_aseo_actividad_economica_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_aseo_actividad_economica
+    ADD CONSTRAINT tabulador_aseo_actividad_economica_pkey PRIMARY KEY (id_tabulador_aseo_actividad_economica);
+
+
+--
+-- Name: tabulador_aseo_residencial tabulador_aseo_residencial_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_aseo_residencial
+    ADD CONSTRAINT tabulador_aseo_residencial_pkey PRIMARY KEY (id_tabulador_aseo_residencial);
+
+
+--
+-- Name: tabulador_gas_actividad_economica tabulador_gas_actividad_economica_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_gas_actividad_economica
+    ADD CONSTRAINT tabulador_gas_actividad_economica_pkey PRIMARY KEY (id_tabulador_gas_actividad_economica);
+
+
+--
 -- Name: tabulador_gas tabulador_gas_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -9133,19 +10788,19 @@ ALTER TABLE ONLY impuesto.tabulador_gas
 
 
 --
--- Name: tipo_actividad_economica tipo_actividad_economica_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+-- Name: tabulador_gas_residencial tabulador_gas_residencial_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.tipo_actividad_economica
-    ADD CONSTRAINT tipo_actividad_economica_pkey PRIMARY KEY (id_tipo_actividad);
+ALTER TABLE ONLY impuesto.tabulador_gas_residencial
+    ADD CONSTRAINT tabulador_gas_residencial_pkey PRIMARY KEY (id_tabulador_gas_residencial);
 
 
 --
--- Name: tipo_contribuyente tipo_contribuyente_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+-- Name: tipo_aviso_propaganda tipo_aviso_propaganda_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.tipo_contribuyente
-    ADD CONSTRAINT tipo_contribuyente_pkey PRIMARY KEY (id_tipo_contribuyente);
+ALTER TABLE ONLY impuesto.tipo_aviso_propaganda
+    ADD CONSTRAINT tipo_aviso_propaganda_pkey PRIMARY KEY (id_tipo_aviso_propaganda);
 
 
 --
@@ -9154,6 +10809,30 @@ ALTER TABLE ONLY impuesto.tipo_contribuyente
 
 ALTER TABLE ONLY impuesto.tipo_multa
     ADD CONSTRAINT tipo_multa_pkey PRIMARY KEY (id_tipo_multa);
+
+
+--
+-- Name: usuario_enlazado usuario_enlazado_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.usuario_enlazado
+    ADD CONSTRAINT usuario_enlazado_pkey PRIMARY KEY (id_usuario_enlazado);
+
+
+--
+-- Name: verificacion_email verificacion_email_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.verificacion_email
+    ADD CONSTRAINT verificacion_email_pkey PRIMARY KEY (id_verificacion_email);
+
+
+--
+-- Name: verificacion_telefono verificacion_telefono_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.verificacion_telefono
+    ADD CONSTRAINT verificacion_telefono_pkey PRIMARY KEY (id_verificacion_telefono);
 
 
 --
@@ -9170,6 +10849,14 @@ ALTER TABLE ONLY public.banco
 
 ALTER TABLE ONLY public.campo
     ADD CONSTRAINT campos_pkey PRIMARY KEY (id_campo);
+
+
+--
+-- Name: cargo cargo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cargo
+    ADD CONSTRAINT cargo_pkey PRIMARY KEY (id_cargo);
 
 
 --
@@ -9613,6 +11300,13 @@ ALTER TABLE ONLY valores_fiscales.tipo_construccion
 
 
 --
+-- Name: evento_solicitud eventos_solicitud_trigger; Type: TRIGGER; Schema: impuesto; Owner: postgres
+--
+
+CREATE TRIGGER eventos_solicitud_trigger BEFORE INSERT ON impuesto.evento_solicitud FOR EACH ROW EXECUTE FUNCTION impuesto.eventos_solicitud_trigger_func();
+
+
+--
 -- Name: tramite codigo_tramite_trg; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -9676,6 +11370,22 @@ CREATE TRIGGER trig_task_chain_fixer BEFORE DELETE ON timetable.base_task FOR EA
 
 
 --
+-- Name: actividad_economica_contribuyente actividad_economica_contribuyente_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.actividad_economica_contribuyente
+    ADD CONSTRAINT actividad_economica_contribuyente_id_contribuyente_fkey FOREIGN KEY (id_contribuyente) REFERENCES impuesto.contribuyente(id_contribuyente);
+
+
+--
+-- Name: actividad_economica_contribuyente actividad_economica_contribuyente_numero_referencia_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.actividad_economica_contribuyente
+    ADD CONSTRAINT actividad_economica_contribuyente_numero_referencia_fkey FOREIGN KEY (numero_referencia) REFERENCES impuesto.actividad_economica(numero_referencia);
+
+
+--
 -- Name: actividad_economica_exoneracion actividad_economica_exoneracion_id_actividad_economica_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -9692,35 +11402,67 @@ ALTER TABLE ONLY impuesto.actividad_economica_exoneracion
 
 
 --
--- Name: actividad_economica actividad_economica_id_tipo_actividad_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+-- Name: avaluo_inmueble avaluo_inmueble_id_inmueble_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.actividad_economica
-    ADD CONSTRAINT actividad_economica_id_tipo_actividad_fkey FOREIGN KEY (id_tipo_actividad) REFERENCES impuesto.tipo_actividad_economica(id_tipo_actividad);
-
-
---
--- Name: ae_desglose ae_desglose_id_liquidacion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
---
-
-ALTER TABLE ONLY impuesto.ae_desglose
-    ADD CONSTRAINT ae_desglose_id_liquidacion_fkey FOREIGN KEY (id_liquidacion) REFERENCES impuesto.liquidacion(id_liquidacion);
+ALTER TABLE ONLY impuesto.avaluo_inmueble
+    ADD CONSTRAINT avaluo_inmueble_id_inmueble_fkey FOREIGN KEY (id_inmueble) REFERENCES public.inmueble_urbano(id_inmueble);
 
 
 --
--- Name: iu_desglose iu_desglose_id_liquidacion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+-- Name: contribuyente_exoneracion contribuyente_exoneracion_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.iu_desglose
-    ADD CONSTRAINT iu_desglose_id_liquidacion_fkey FOREIGN KEY (id_liquidacion) REFERENCES impuesto.liquidacion(id_liquidacion);
+ALTER TABLE ONLY impuesto.contribuyente_exoneracion
+    ADD CONSTRAINT contribuyente_exoneracion_id_contribuyente_fkey FOREIGN KEY (id_contribuyente) REFERENCES impuesto.contribuyente(id_contribuyente);
 
 
 --
--- Name: liquidacion liquidacion_id_procedimiento_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+-- Name: contribuyente_exoneracion contribuyente_exoneracion_id_plazo_exoneracion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.contribuyente_exoneracion
+    ADD CONSTRAINT contribuyente_exoneracion_id_plazo_exoneracion_fkey FOREIGN KEY (id_plazo_exoneracion) REFERENCES impuesto.plazo_exoneracion(id_plazo_exoneracion);
+
+
+--
+-- Name: contribuyente contribuyente_id_parroquia_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.contribuyente
+    ADD CONSTRAINT contribuyente_id_parroquia_fkey FOREIGN KEY (id_parroquia) REFERENCES public.parroquia(id);
+
+
+--
+-- Name: evento_solicitud evento_solicitud_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.evento_solicitud
+    ADD CONSTRAINT evento_solicitud_id_solicitud_fkey FOREIGN KEY (id_solicitud) REFERENCES impuesto.solicitud(id_solicitud) ON DELETE CASCADE;
+
+
+--
+-- Name: inmueble_contribuyente inmueble_contribuyente_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.inmueble_contribuyente
+    ADD CONSTRAINT inmueble_contribuyente_id_contribuyente_fkey FOREIGN KEY (id_contribuyente) REFERENCES impuesto.contribuyente(id_contribuyente);
+
+
+--
+-- Name: inmueble_contribuyente inmueble_contribuyente_id_inmueble_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.inmueble_contribuyente
+    ADD CONSTRAINT inmueble_contribuyente_id_inmueble_fkey FOREIGN KEY (id_inmueble) REFERENCES public.inmueble_urbano(id_inmueble);
+
+
+--
+-- Name: liquidacion liquidacion_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.liquidacion
-    ADD CONSTRAINT liquidacion_id_procedimiento_fkey FOREIGN KEY (id_procedimiento) REFERENCES impuesto.procedimiento(id_procedimiento);
+    ADD CONSTRAINT liquidacion_id_registro_municipal_fkey FOREIGN KEY (id_registro_municipal) REFERENCES impuesto.registro_municipal(id_registro_municipal);
 
 
 --
@@ -9729,6 +11471,14 @@ ALTER TABLE ONLY impuesto.liquidacion
 
 ALTER TABLE ONLY impuesto.liquidacion
     ADD CONSTRAINT liquidacion_id_solicitud_fkey FOREIGN KEY (id_solicitud) REFERENCES impuesto.solicitud(id_solicitud);
+
+
+--
+-- Name: liquidacion liquidacion_id_subramo_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.liquidacion
+    ADD CONSTRAINT liquidacion_id_subramo_fkey FOREIGN KEY (id_subramo) REFERENCES impuesto.subramo(id_subramo);
 
 
 --
@@ -9748,43 +11498,43 @@ ALTER TABLE ONLY impuesto.multa
 
 
 --
--- Name: pp_desglose pp_desglose_id_liquidacion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+-- Name: ramo_exoneracion procedimiento_exoneracion_id_plazo_exoneracion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.pp_desglose
-    ADD CONSTRAINT pp_desglose_id_liquidacion_fkey FOREIGN KEY (id_liquidacion) REFERENCES impuesto.liquidacion(id_liquidacion);
-
-
---
--- Name: procedimiento_exoneracion procedimiento_exoneracion_id_plazo_exoneracion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
---
-
-ALTER TABLE ONLY impuesto.procedimiento_exoneracion
+ALTER TABLE ONLY impuesto.ramo_exoneracion
     ADD CONSTRAINT procedimiento_exoneracion_id_plazo_exoneracion_fkey FOREIGN KEY (id_plazo_exoneracion) REFERENCES impuesto.plazo_exoneracion(id_plazo_exoneracion);
 
 
 --
--- Name: procedimiento_exoneracion procedimiento_exoneracion_id_procedimiento_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+-- Name: ramo_exoneracion ramo_exoneracion_id_ramo_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.procedimiento_exoneracion
-    ADD CONSTRAINT procedimiento_exoneracion_id_procedimiento_fkey FOREIGN KEY (id_procedimiento) REFERENCES impuesto.procedimiento(id_procedimiento);
-
-
---
--- Name: procedimiento_exoneracion procedimiento_exoneracion_id_tipo_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
---
-
-ALTER TABLE ONLY impuesto.procedimiento_exoneracion
-    ADD CONSTRAINT procedimiento_exoneracion_id_tipo_contribuyente_fkey FOREIGN KEY (id_tipo_contribuyente) REFERENCES impuesto.tipo_contribuyente(id_tipo_contribuyente);
+ALTER TABLE ONLY impuesto.ramo_exoneracion
+    ADD CONSTRAINT ramo_exoneracion_id_ramo_fkey FOREIGN KEY (id_ramo) REFERENCES impuesto.ramo(id_ramo);
 
 
 --
--- Name: sm_desglose sm_desglose_id_liquidacion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+-- Name: registro_municipal registro_municipal_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.sm_desglose
-    ADD CONSTRAINT sm_desglose_id_liquidacion_fkey FOREIGN KEY (id_liquidacion) REFERENCES impuesto.liquidacion(id_liquidacion);
+ALTER TABLE ONLY impuesto.registro_municipal
+    ADD CONSTRAINT registro_municipal_id_contribuyente_fkey FOREIGN KEY (id_contribuyente) REFERENCES impuesto.contribuyente(id_contribuyente);
+
+
+--
+-- Name: solicitud solicitud_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.solicitud
+    ADD CONSTRAINT solicitud_id_contribuyente_fkey FOREIGN KEY (id_contribuyente) REFERENCES impuesto.contribuyente(id_contribuyente);
+
+
+--
+-- Name: solicitud solicitud_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.solicitud
+    ADD CONSTRAINT solicitud_id_tipo_tramite_fkey FOREIGN KEY (id_tipo_tramite) REFERENCES public.tipo_tramite(id_tipo_tramite);
 
 
 --
@@ -9796,11 +11546,107 @@ ALTER TABLE ONLY impuesto.solicitud
 
 
 --
+-- Name: subramo subramo_id_ramo_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.subramo
+    ADD CONSTRAINT subramo_id_ramo_fkey FOREIGN KEY (id_ramo) REFERENCES impuesto.ramo(id_ramo);
+
+
+--
+-- Name: tabulador_aseo_actividad_economica tabulador_aseo_actividad_economica_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_aseo_actividad_economica
+    ADD CONSTRAINT tabulador_aseo_actividad_economica_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuario(id_usuario);
+
+
+--
+-- Name: tabulador_aseo_actividad_economica tabulador_aseo_actividad_economica_numero_referencia_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_aseo_actividad_economica
+    ADD CONSTRAINT tabulador_aseo_actividad_economica_numero_referencia_fkey FOREIGN KEY (numero_referencia) REFERENCES impuesto.actividad_economica(numero_referencia);
+
+
+--
+-- Name: tabulador_aseo_residencial tabulador_aseo_residencial_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_aseo_residencial
+    ADD CONSTRAINT tabulador_aseo_residencial_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuario(id_usuario);
+
+
+--
+-- Name: tabulador_gas_actividad_economica tabulador_gas_actividad_economica_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_gas_actividad_economica
+    ADD CONSTRAINT tabulador_gas_actividad_economica_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuario(id_usuario);
+
+
+--
+-- Name: tabulador_gas_actividad_economica tabulador_gas_actividad_economica_numero_referencia_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_gas_actividad_economica
+    ADD CONSTRAINT tabulador_gas_actividad_economica_numero_referencia_fkey FOREIGN KEY (numero_referencia) REFERENCES impuesto.actividad_economica(numero_referencia);
+
+
+--
 -- Name: tabulador_gas tabulador_gas_id_actividad_economica_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.tabulador_gas
     ADD CONSTRAINT tabulador_gas_id_actividad_economica_fkey FOREIGN KEY (id_actividad_economica) REFERENCES impuesto.actividad_economica(id_actividad_economica);
+
+
+--
+-- Name: tabulador_gas_residencial tabulador_gas_residencial_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tabulador_gas_residencial
+    ADD CONSTRAINT tabulador_gas_residencial_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuario(id_usuario);
+
+
+--
+-- Name: tipo_aviso_propaganda tipo_aviso_propaganda_id_categoria_propaganda_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tipo_aviso_propaganda
+    ADD CONSTRAINT tipo_aviso_propaganda_id_categoria_propaganda_fkey FOREIGN KEY (id_categoria_propaganda) REFERENCES impuesto.categoria_propaganda(id_categoria_propaganda);
+
+
+--
+-- Name: tipo_aviso_propaganda tipo_aviso_propaganda_id_valor_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.tipo_aviso_propaganda
+    ADD CONSTRAINT tipo_aviso_propaganda_id_valor_fkey FOREIGN KEY (id_valor) REFERENCES public.valor(id_valor);
+
+
+--
+-- Name: usuario_enlazado usuario_enlazado_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.usuario_enlazado
+    ADD CONSTRAINT usuario_enlazado_id_contribuyente_fkey FOREIGN KEY (id_contribuyente) REFERENCES impuesto.contribuyente(id_contribuyente);
+
+
+--
+-- Name: verificacion_email verificacion_email_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.verificacion_email
+    ADD CONSTRAINT verificacion_email_id_registro_municipal_fkey FOREIGN KEY (id_registro_municipal) REFERENCES impuesto.registro_municipal(id_registro_municipal);
+
+
+--
+-- Name: verificacion_telefono verificacion_telefono_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.verificacion_telefono
+    ADD CONSTRAINT verificacion_telefono_id_registro_municipal_fkey FOREIGN KEY (id_registro_municipal) REFERENCES impuesto.registro_municipal(id_registro_municipal);
 
 
 --
@@ -9828,6 +11674,22 @@ ALTER TABLE ONLY public.campo_tramite
 
 
 --
+-- Name: cargo cargo_id_institucion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cargo
+    ADD CONSTRAINT cargo_id_institucion_fkey FOREIGN KEY (id_institucion) REFERENCES public.institucion(id_institucion);
+
+
+--
+-- Name: cargo cargo_id_tipo_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cargo
+    ADD CONSTRAINT cargo_id_tipo_usuario_fkey FOREIGN KEY (id_tipo_usuario) REFERENCES public.tipo_usuario(id_tipo_usuario);
+
+
+--
 -- Name: caso_social casos_sociales_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -9852,11 +11714,11 @@ ALTER TABLE ONLY public.certificado
 
 
 --
--- Name: cuenta_funcionario cuentas_funcionarios_id_institucion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: cuenta_funcionario cuentas_funcionarios_id_cargo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.cuenta_funcionario
-    ADD CONSTRAINT cuentas_funcionarios_id_institucion_fkey FOREIGN KEY (id_institucion) REFERENCES public.institucion(id_institucion);
+    ADD CONSTRAINT cuentas_funcionarios_id_cargo_fkey FOREIGN KEY (id_cargo) REFERENCES public.cargo(id_cargo);
 
 
 --
@@ -9921,6 +11783,14 @@ ALTER TABLE ONLY public.factura_tramite
 
 ALTER TABLE ONLY public.inmueble_urbano
     ADD CONSTRAINT inmueble_urbano_id_parroquia_fkey FOREIGN KEY (id_parroquia) REFERENCES public.parroquia(id);
+
+
+--
+-- Name: inmueble_urbano inmueble_urbano_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inmueble_urbano
+    ADD CONSTRAINT inmueble_urbano_id_registro_municipal_fkey FOREIGN KEY (id_registro_municipal) REFERENCES impuesto.registro_municipal(id_registro_municipal);
 
 
 --
@@ -10121,6 +11991,14 @@ ALTER TABLE ONLY public.tramite
 
 ALTER TABLE ONLY public.tramite
     ADD CONSTRAINT tramites_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuario(id_usuario) ON DELETE CASCADE;
+
+
+--
+-- Name: usuario usuario_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.usuario
+    ADD CONSTRAINT usuario_id_contribuyente_fkey FOREIGN KEY (id_contribuyente) REFERENCES impuesto.contribuyente(id_contribuyente);
 
 
 --

@@ -1,7 +1,7 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { Payloads } from '@interfaces/sigt';
-import { errorMessageGenerator } from './errors';
+import { errorMessageGenerator, errorMessageExtractor } from './errors';
 const pool = Pool.getInstance();
 
 export const updateProcedureInstanceCost = async (body: Payloads.UpdateProcedureInstanceCost) => {
@@ -17,7 +17,7 @@ export const updateProcedureInstanceCost = async (body: Payloads.UpdateProcedure
     await client.query('ROLLBACK');
     throw {
       status: 500,
-      e,
+      e: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error al actualizar el costo del tramite',
     };
   } finally {

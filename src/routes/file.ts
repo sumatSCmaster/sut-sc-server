@@ -6,7 +6,7 @@ import path from 'path';
 import switchcase from '@utils/switch';
 import fs from 'fs';
 import Pool from '@utils/Pool';
-import { errorMessageGenerator } from '@helpers/errors';
+import { errorMessageGenerator, errorMessageExtractor } from '@helpers/errors';
 import queries from '@utils/queries';
 
 const pool = Pool.getInstance();
@@ -90,7 +90,7 @@ router.post('/:type/:id?', uploadFile, async (req: any, res) => {
   } catch (error) {
     res.status(500).json({
       status: 500,
-      error,
+      error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || error.message || 'No se logró insertar los recaudos',
     });
   } finally {
@@ -103,10 +103,11 @@ router.get('/:type/:name', (req, res) => {
   try {
     res.setHeader('Content-Type', 'image/png');
     res.sendFile(path.join(process.env.STORAGE_DIR || '/', type, name));
-  } catch {
+  } catch (e) {
     res.setHeader('ContentType', 'application/json');
     res.status(404).json({
       status: 404,
+      error: errorMessageExtractor(e),
       message: 'Archivo no encontrado',
     });
   }
@@ -128,7 +129,7 @@ router.put('/:id', authenticate('jwt'), async (req, res) => {
     res.status(200).json({ status: 200, message: 'Eliminado satisfactoriamente' });
   } catch (e) {
     client.query('ROLLBACK');
-    res.status(500).json({ status: 500, message: 'Error al eliminar el archivo', error: e });
+    res.status(500).json({ status: 500, message: 'Error al eliminar el archivo', error: errorMessageExtractor(e) });
   } finally {
     client.release();
   }

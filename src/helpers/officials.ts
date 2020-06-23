@@ -2,7 +2,7 @@ import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { Usuario } from '@interfaces/sigt';
 import { Client, PoolClient } from 'pg';
-import { errorMessageGenerator } from './errors';
+import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { genSaltSync, hashSync } from 'bcryptjs';
 const pool = Pool.getInstance();
 
@@ -32,7 +32,7 @@ export const getOfficialsByInstitution = async (institution: string, id: number)
     };
   } catch (e) {
     throw {
-      error: e,
+      error: errorMessageExtractor(e),
       status: 500,
       message: errorMessageGenerator(e) || 'Error al obtener los funcionarios',
     };
@@ -64,7 +64,7 @@ export const getAllOfficials = async () => {
     };
   } catch (e) {
     throw {
-      error: e,
+      error: errorMessageExtractor(e),
       status: 500,
       message: errorMessageGenerator(e) || 'Error al obtener los funcionarios',
     };
@@ -82,7 +82,7 @@ async function addPermissions(id, permisos, client: PoolClient) {
 }
 
 export const createOfficial = async (official: any) => {
-  const { nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, telefono, password, permisos, tipoUsuario, institucion } = official;
+  const { nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, telefono, password, permisos, tipoUsuario, cargo } = official;
   const client = await pool.connect();
   const salt = genSaltSync(10);
   try {
@@ -95,10 +95,10 @@ export const createOfficial = async (official: any) => {
       nacionalidad,
       hashSync(password, salt),
       telefono,
-      institucion,
+      cargo,
       tipoUsuario,
     ]);
-    const off = await client.query(queries.GET_OFFICIAL, [insert.rows[0].id_usuario, insert.rows[0].id_institucion]);
+    const off = await client.query(queries.GET_OFFICIAL, [insert.rows[0].id_usuario, insert.rows[0].id_cargo]);
     const id = off.rows[0].id_usuario;
     await addPermissions(id, permisos || [], client);
     client.query('COMMIT');
@@ -118,7 +118,7 @@ export const createOfficial = async (official: any) => {
     client.query('ROLLBACK');
     throw {
       status: 500,
-      error: e,
+      error: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error al crear un funcionario',
     };
   } finally {
@@ -156,7 +156,7 @@ export const updateOfficial = async (official: any, id: string) => {
     client.query('ROLLBACK');
     throw {
       status: 500,
-      error: e,
+      error: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error al actualizar datos del funcionario',
     };
   } finally {
@@ -174,7 +174,7 @@ export const deleteOfficial = async (officialID: string, institution: number) =>
   } catch (e) {
     client.query('ROLLBACK');
     throw {
-      error: e,
+      error: errorMessageExtractor(e),
       status: 500,
       message: errorMessageGenerator(e) || 'Error al eliminar funcionario',
     };
@@ -193,7 +193,7 @@ export const deleteOfficialSuperuser = async (officialID: string) => {
   } catch (e) {
     client.query('ROLLBACK');
     throw {
-      error: e,
+      error: errorMessageExtractor(e),
       status: 500,
       message: errorMessageGenerator(e) || 'Error al eliminar funcionario',
     };
