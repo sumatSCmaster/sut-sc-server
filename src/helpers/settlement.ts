@@ -703,11 +703,7 @@ export const initialUserLinking = async (linkingData, user) => {
           hasNewCode = true;
         } catch (e) {
           console.log(e.message);
-          if (e.message === 'No se ha hallado un proceso de verificación en proceso')
-            await sendRimVerification(
-              VerificationValue.CellPhone,
-              {idRim: rims.filter((el) => el), content: datosContacto.telefono, user: user.id}
-            );
+          if (e.message === 'No se ha hallado un proceso de verificación en proceso') await sendRimVerification(VerificationValue.CellPhone, { idRim: rims.filter((el) => el), content: datosContacto.telefono, user: user.id });
           else throw e;
           hasNewCode = true;
         }
@@ -742,7 +738,7 @@ export const initialUserLinking = async (linkingData, user) => {
           const estates = inmuebles.length > 0 ? await Promise.all(inmuebles.map(async (el) => (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_referencia_municipal, el.direccion])).rows[0])) : undefined;
           if (pagados.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
-            await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, 'aprobacioncajero_pi']);
+            await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
             await Promise.all(
               pagados.map(
                 async (el) =>
