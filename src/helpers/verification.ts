@@ -20,7 +20,7 @@ export const sendRimVerification = async (value: VerificationValue, payload: { i
   let code = generateCode();
   console.log('code', code);
   try {
-    client.query('BEGIN');
+    await client.query('BEGIN');
     switch (value) {
       case VerificationValue.CellPhone:
         const exists = await client.query(queries.CHECK_VERIFICATION_EXISTS, [payload.user]);
@@ -33,10 +33,9 @@ export const sendRimVerification = async (value: VerificationValue, payload: { i
               error: new Error('Debe esperar para enviar un código'),
               tiempo: 10 * 60 - (minutes * 60 + seconds)
             }
-          }else{
-            await client.query(queries.DROP_EXISTING_VERIFICATION, [payload.user])
           }
         }
+        await client.query(queries.DROP_EXISTING_VERIFICATION, [payload.user])
         const verification = (await client.query(queries.CREATE_VERIFICATION, [code, payload.user])).rows[0];
         await Promise.all(
           payload.idRim.map(async (id) => {
@@ -50,10 +49,10 @@ export const sendRimVerification = async (value: VerificationValue, payload: { i
         // });
         break;
     }
-    client.query('COMMIT');
+    await client.query('COMMIT');
   } catch (e) {
     console.log('fallo', e);
-    client.query('ROLLBACK');
+    await client.query('ROLLBACK');
     throw {
       e,
       message: 'Hubo un error en el envio del codigo de verificacion',
