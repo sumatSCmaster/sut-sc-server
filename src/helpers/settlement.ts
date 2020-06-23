@@ -802,6 +802,7 @@ export const resendUserCode = async ({ rims, user }) => {
     await resendCode(VerificationValue.CellPhone, { user: user.id });
     return { status: 200, message: 'Codigo reenviado' };
   } catch (error) {
+    console.log(error);
     let status = error.tiempo ? 429 : 500;
     throw {
       status: status,
