@@ -780,7 +780,7 @@ export const initialUserLinking = async (linkingData, user) => {
   }
 };
 
-export const verifyUserLinking = async ({ code, rims, user }) => {
+export const verifyUserLinking = async ({ code, user }) => {
   const client = await pool.connect();
   try {
     await verifyCode(VerificationValue.CellPhone, { code, user: user.id });
@@ -796,7 +796,7 @@ export const verifyUserLinking = async ({ code, rims, user }) => {
   }
 };
 
-export const resendUserCode = async ({ rims, user }) => {
+export const resendUserCode = async ({ user }) => {
   const client = await pool.connect();
   try {
     await resendCode(VerificationValue.CellPhone, { user: user.id });
@@ -814,7 +814,7 @@ export const resendUserCode = async ({ rims, user }) => {
   }
 };
 
-export const createUserBenefits = async () => {
+export const createUserBenefits = async (contributor) => {
   const client = await pool.connect();
   try {
   } catch (error) {
@@ -822,7 +822,7 @@ export const createUserBenefits = async () => {
     throw {
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
+      message: errorMessageGenerator(error) || 'Error al crear solicitud de beneficios de usuario',
     };
   } finally {
     client.release();

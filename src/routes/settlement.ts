@@ -15,6 +15,7 @@ import {
   initialUserLinking,
   getEntireDebtsForContributor,
   resendUserCode,
+  createUserBenefits,
 } from '@helpers/settlement';
 
 const router = Router();
@@ -98,6 +99,13 @@ router.post(
   }
 );
 
+router.post('/benefits', authenticate('jwt'), async (req, res) => {
+  const { contribuyente } = req.body;
+  const [error, data] = await fulfill(createUserBenefits(contribuyente));
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+});
+
 router.post('/taxPayer', authenticate('jwt'), async (req, res) => {
   const { datosEnlace } = req.body;
   const [error, data] = await fulfill(initialUserLinking(datosEnlace, req.user));
@@ -106,16 +114,14 @@ router.post('/taxPayer', authenticate('jwt'), async (req, res) => {
 });
 
 router.put('/taxPayer/verify', authenticate('jwt'), async (req, res) => {
-  const { codigo, rims } = req.body;
-  const [error, data] = await fulfill(verifyUserLinking({ rims, code: codigo, user: req.user }));
+  const { codigo } = req.body;
+  const [error, data] = await fulfill(verifyUserLinking({ code: codigo, user: req.user }));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
 
-//TODO: TERMINAR y crear el helper
 router.put('/taxPayer/resend', authenticate('jwt'), async (req, res) => {
-  const { rims } = req.body;
-  const [error, data] = await fulfill(resendUserCode({ rims, user: req.user }));
+  const [error, data] = await fulfill(resendUserCode({ user: req.user }));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
