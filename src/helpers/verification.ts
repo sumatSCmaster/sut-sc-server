@@ -51,7 +51,6 @@ export const sendRimVerification = async (value: VerificationValue, payload: { i
     }
     await client.query('COMMIT');
   } catch (e) {
-    console.log('fallo', e);
     await client.query('ROLLBACK');
     throw e;
   } finally {
