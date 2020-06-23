@@ -307,9 +307,23 @@ export const hasNotifications = async (cedula) => {
 export const hasLinkedContributor = async (user) => {
   const client = await pool.connect();
   try {
-    const contribuyente = (await client.query('SELECT * FROM impuesto.CONTRIBUYENTE c INNER JOIN USUARIO u ON c.id_contribuyente = u.id_contribuyente WHERE u.id_usuario = $1', [user])).rows[0];
-    const verificacionTelefono = (await client.query('SELECT * FROM impuesto.verificacion_telefono v INNER JOIN usuario u ON v.id_usuario = u.id_usuario WHERE u.id_usuario = $1', [user])).rows[0].verificado;
-    return contribuyente ? { ...contribuyente, verificacionTelefono } : null;
+    const contributor = (await client.query('SELECT * FROM impuesto.CONTRIBUYENTE c INNER JOIN USUARIO u ON c.id_contribuyente = u.id_contribuyente WHERE u.id_usuario = $1', [user])).rows[0];
+    const verificacionTelefono = (await client.query('SELECT * FROM impuesto.verificacion_telefono v INNER JOIN usuario u ON v.id_usuario = u.id_usuario WHERE u.id_usuario = $1', [user])).rows[0];
+    const contribuyente = {
+      id: contributor.id_contribuyente,
+      tipoDocumento: contributor.tipo_documento,
+      documento: contributor.documento,
+      razonSocial: contributor.razon_social,
+      denomComercial: contributor.denominacion_comercial || undefined,
+      siglas: contributor.siglas || undefined,
+      parroquia: contributor.parroquia,
+      sector: contributor.sector,
+      direccion: contributor.direccion,
+      puntoReferencia: contributor.punto_referencia,
+      verificado: contributor.verificado,
+      verificacionTelefono: verificacionTelefono.verificado,
+    };
+    return contributor ? contribuyente : null;
   } catch (e) {
     console.log(e);
     throw {
