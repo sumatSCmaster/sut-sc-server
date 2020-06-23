@@ -18,15 +18,13 @@ const server = app.listen(process.env.PORT || 5000, () => console.log(`Listening
 const socket: Server = require('socket.io')(server);
 init(socket);
 
+// async function xd() {
+//   const pool = Pool.getInstance();
+//   const client = await pool.connect();
+//   console.log('XD');
+//   //console.log(await sendRimVerification( VerificationValue.CellPhone, {idRim: [1], content: '+584126750593', user: 58}));
+//   // console.log(await verifyCode(VerificationValue.CellPhone,  { code: '493681', user: 58 }))
+//   console.log(await resendCode(VerificationValue.CellPhone, { user: 58 }));
+// }
 
-async function xd(){
-    const pool = Pool.getInstance();
-    const client = await pool.connect()
-    console.log('XD')
-    //console.log(await sendRimVerification( VerificationValue.CellPhone, {idRim: [1], content: '+584126750593', user: 58}));
-    console.log(await verifyCode(VerificationValue.CellPhone,  { code: '493681', user: 58 }))
-    //console.log(await resendCode( VerificationValue.CellPhone, { user: 58}))
-}
-
-//xd()
-
+// xd();

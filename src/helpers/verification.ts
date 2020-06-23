@@ -83,12 +83,15 @@ export const resendCode = async (value: VerificationValue, payload: { user: numb
           } else {
             let code = generateCode();
             console.log(code);
+            console.log(payload.user);
             await client.query(queries.UPDATE_CODE, [code, payload.user]);
-            // await twilioClient.messages.create({
+            // await twilioClient.messages.crea te({
             //   body: `Su codigo de verificación es: ${code}`,
             //   from: process.env.TWILIO_NUMBER,
             //   to: phone,
             // });
+            client.query('COMMIT');
+
             return {
               message: 'Código reenviado',
             };
