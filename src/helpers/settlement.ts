@@ -19,6 +19,7 @@ import md5 from 'md5';
 import { query } from 'express-validator';
 import { sendNotification } from './notification';
 import { sendRimVerification, verifyCode, resendCode } from './verification';
+import { hasLinkedContributor } from './user';
 const written = require('written-number');
 
 const gticPool = GticPool.getInstance();
@@ -474,7 +475,7 @@ const getLinkedContributorData = async (contributor: any) => {
               direccion: inmueble ? inmueble.direccion : null,
               email: el.email,
               razonSocial: datosContribuyente.razonSocial,
-              denomComercial: el.denomComercial,
+              denomComercial: el.denominacion_comercial,
               metrosCuadrados: 0.0,
               cuentaContrato: 0.0,
               nombreRepresentante: el.nombre_representante,
@@ -845,7 +846,8 @@ export const verifyUserLinking = async ({ code, user }) => {
   const client = await pool.connect();
   try {
     await verifyCode(VerificationValue.CellPhone, { code, user: user.id });
-    return { status: 200, message: 'Usuario enlazado y verificado' };
+    const contribuyente = await hasLinkedContributor(user.id);
+    return { status: 200, message: 'Usuario enlazado y verificado', contribuyente };
   } catch (error) {
     throw {
       status: 500,
