@@ -308,9 +308,10 @@ export const hasLinkedContributor = async (user) => {
   const client = await pool.connect();
   try {
     const contribuyente = (await client.query('SELECT * FROM impuesto.CONTRIBUYENTE c INNER JOIN USUARIO u ON c.id_contribuyente = u.id_contribuyente WHERE u.id_usuario = $1', [user])).rows[0];
-    const verificacionTelefono = (await client.query('SELECT * FROM impuesto.verificacion_telefono v INNER JOIN usuario u ON v.id_usuario = u.id_usuario WHERE id_usuario = $1', [user])).rows[0].verificado;
+    const verificacionTelefono = (await client.query('SELECT * FROM impuesto.verificacion_telefono v INNER JOIN usuario u ON v.id_usuario = u.id_usuario WHERE u.id_usuario = $1', [user])).rows[0].verificado;
     return contribuyente ? { ...contribuyente, verificacionTelefono } : null;
   } catch (e) {
+    console.log(e);
     throw {
       status: 500,
       e: errorMessageExtractor(e),

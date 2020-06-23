@@ -526,8 +526,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
           usuario: user,
           contribuyente: el.id_contribuyente,
           aprobado: el.aprobado,
-          estado: (await client.query('SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state FROM impuesto.evento_solicitud es WHERE es.id_solicitud = $1 GROUP BY es.id_solicitud', [el.id_solicitud]))
-            .rows[0].state,
+          estado: (await client.query('SELECT state FROM impuesto.solicitud_state WHERE id = $1', [el.id_solicitud])).rows[0].state,
           referenciaMunicipal: liquidaciones[0].id_registro_municipal
             ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0].id_registro_municipal])).rows[0].referencia_municipal
             : undefined,
