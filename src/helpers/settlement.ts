@@ -703,7 +703,11 @@ export const initialUserLinking = async (linkingData, user) => {
           hasNewCode = true;
         } catch (e) {
           console.log(e.message);
-          if (e.message === 'No existe una verificacion para la sucursal seleccionada') await sendRimVerification(VerificationValue.CellPhone, { idRim: rims.filter((el) => el), content: datosContacto.telefono, user: user.id });
+          if (e.message === 'No se ha hallado un proceso de verificación en proceso')
+            await sendRimVerification(
+              VerificationValue.CellPhone,
+              {idRim: rims.filter((el) => el), content: datosContacto.telefono, user: user.id}
+            );
           else throw e;
           hasNewCode = true;
         }

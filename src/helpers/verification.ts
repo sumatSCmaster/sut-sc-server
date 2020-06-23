@@ -24,8 +24,18 @@ export const sendRimVerification = async (value: VerificationValue, payload: { i
     switch (value) {
       case VerificationValue.CellPhone:
         const exists = await client.query(queries.CHECK_VERIFICATION_EXISTS, [payload.user]);
-        if (exists.rowCount > 0) {
-          await client.query(queries.DROP_EXISTING_VERIFICATION, [payload.user]);
+        if(exists.rowCount > 0){
+          const verificationRow = exists.rows[0];
+          if(!verificationRow.late) {
+            const minutes = +verificationRow.elapsed.minutes || 0;
+            const seconds = +verificationRow.elapsed.seconds || 0;
+            throw {
+              error: new Error('Debe esperar para enviar un código'),
+              tiempo: 10 * 60 - (minutes * 60 + seconds)
+            }
+          }else{
+            await client.query(queries.DROP_EXISTING_VERIFICATION, [payload.user])
+          }
         }
         const verification = (await client.query(queries.CREATE_VERIFICATION, [code, payload.user])).rows[0];
         await Promise.all(
