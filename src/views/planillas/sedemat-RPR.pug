@@ -1,0 +1,106 @@
+extends default
+block css
+  link(rel="stylesheet", href="css/sedemat.css")
+block title
+block content
+  div#fecha
+    p 
+      b FECHA:
+      span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+    p 
+      b Codigo de Reporte:
+      span &nbsp; #{codigo}
+  div.table
+    .tr
+      .th.border-bottom.center
+        p
+          b ACUMULADO DE INGRESOS
+    .tr
+      .td
+        p #{datos.acumuladoIngresos}
+  div(style={'margin-top':'20px'}).table
+    .tr
+      div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
+        p
+          b RAMO
+      div(style={'-webkit-flex':'3'}).th.center.border-right.border-bottom
+        p
+          b DESCRIPCIÓN
+      div(style={'-webkit-flex':'2'}).th.center.border-right.border-bottom
+        p
+          b LIQUIDADO
+      div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
+        p
+          b CANT. 
+      div(style={'-webkit-flex':'2'}).th.center.border-right.border-bottom
+        p
+          b INGRESADO
+      div(style={'-webkit-flex':'1'}).th.center.border-bottom
+        p
+          b CANT.
+    each item in datos.ingresos
+      .tr.break-page
+        div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+          p #{item.ramo}
+        div(style={'-webkit-flex':'3'}).td.center.border-right.border-bottom
+          p #{item.descripcion}
+        div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
+          p #{new Intl.NumberFormat('de-DE').format(item.liquidado)}
+        div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+          p #{item.cantidadLiq}
+        div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
+          p #{new Intl.NumberFormat('de-DE').format(item.ingresado)}
+        div(style={'-webkit-flex':'1'}).td.center.border-bottom
+          p #{item.cantidadIng}
+    .tr.break-page
+      div(style={'-webkit-flex':'4'}).th.center.border-right
+        p
+          b TOTALES
+      div(style={'-webkit-flex':'2'}).td.center.border-right
+        p Bs #{new Intl.NumberFormat('de-DE').format(datos.liquidadoTotal)}
+      div(style={'-webkit-flex':'1'}).td.center.border-right
+        p #{datos.cantidadLiqTotal}          
+      div(style={'-webkit-flex':'2'}).td.center.border-right
+        p Bs #{new Intl.NumberFormat('de-DE').format(datos.ingresadoTotal)}
+      div(style={'-webkit-flex':'1'}).td.center
+        p #{datos.cantidadIngTotal}   
+  div(style={'margin-top':'20px'}).table.break-page
+    .tr.break-page
+      .th.center.border-bottom
+        p
+          b METODOS DE PAGO
+    .tr.break-page
+      div(style={'-webkit-flex':'3'}).th.center.border-bottom.border-right
+        p
+          b REF
+      div(style={'-webkit-flex':'2.5'}).th.center.border-bottom.border-right
+        p
+          b BANCO
+      div(style={'-webkit-flex':'2'}).th.center.border-bottom.border-right
+        p
+          b FECHA
+      div(style={'-webkit-flex':'2.5'}).th.center.border-bottom
+        p
+          b MONTO          
+    each item in datos.metodoPago.transferencias
+      .tr.break-page
+        div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
+          p
+            b #{item.ref}
+        div(style={'-webkit-flex':'2.5'}).td.center.border-bottom.border-right
+          p
+            b #{item.banco}
+        div(style={'-webkit-flex':'2'}).td.center.border-bottom.border-right
+          p
+            b #{moment(item.fecha).format('DD/MM/YYYY')}
+        div(style={'-webkit-flex':'2.5'}).td.center.border-bottom
+          p
+            b #{new Intl.NumberFormat('de-DE').format(item.monto)}
+    .tr
+      div(style={'-webkit-flex':'7.5'}).th.center.border-right
+        p
+          b TOTALES
+      div(style={'-webkit-flex':'2.5'}).td.center
+        p
+          b Bs #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.total)}
+block footer         
