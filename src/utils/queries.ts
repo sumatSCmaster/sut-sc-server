@@ -598,7 +598,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
        punto_referencia, verificado, tipo_contribuyente) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *;',
   CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR:
     'INSERT INTO impuesto.registro_municipal (id_contribuyente, referencia_municipal, nombre_representante, telefono_celular,\
-     email, denominacion_comercial, fecha_aprobacion) VALUES ($1, $2, $3, $4, $5, $6, now()) RETURNING *;',
+     email, denominacion_comercial, fecha_aprobacion, actualizado) VALUES ($1, $2, $3, $4, $5, $6, now(), $7) RETURNING *;',
   CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR: 'INSERT INTO inmueble_urbano (id_registro_municipal, direccion) VALUES ($1, $2);',
   GET_CONTRIBUTOR_BY_DOCUMENT_AND_DOC_TYPE: 'SELECT * FROM impuesto.contribuyente c WHERE c.documento = $1 AND c.tipo_documento = $2',
 

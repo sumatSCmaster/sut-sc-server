@@ -690,17 +690,19 @@ export const initialUserLinking = async (linkingData, user) => {
             const { datosSucursal } = el;
             const { nombreRepresentante, telefonoMovil, email, denomComercial, representado, registroMunicipal } = datosSucursal;
             const updatedRegistry = (
-              await client.query('UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombre_representante = $2, telefono_celular = $3, email = $4 WHERE referencia_municipal = $5 RETURNING *', [
+              await client.query('UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombre_representante = $2, telefono_celular = $3, email = $4, actualizado = $5 WHERE referencia_municipal = $6 RETURNING *', [
                 denomComercial,
                 nombreRepresentante,
                 representado ? datosContacto.telefono : telefonoMovil,
                 representado ? datosContacto.correo : email,
+                representado,
                 registroMunicipal,
               ])
             ).rows[0];
             return representado ? updatedRegistry.id_registro_municipal : undefined;
           })
         );
+        await client.query('UPDATE USUARIO SET id_contribuyente = $1 WHERE id_usuario = $2', [contributorExists[0].id_contribuyente, user.id]);
         client.query('COMMIT');
         await sendRimVerification(VerificationValue.CellPhone, { idRim: rims.filter((el) => el), content: datosContacto.telefono, user: user.id });
         hasNewCode = true;
@@ -731,6 +733,7 @@ export const initialUserLinking = async (linkingData, user) => {
               representado ? datosContacto.telefono : telefonoMovil,
               representado ? datosContacto.correo : email,
               denomComercial,
+              representado || false,
             ])
           ).rows[0];
           const estates = inmuebles.length > 0 ? await Promise.all(inmuebles.map(async (el) => (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_referencia_municipal, el.direccion])).rows[0])) : undefined;
@@ -740,7 +743,7 @@ export const initialUserLinking = async (linkingData, user) => {
             await Promise.all(
               pagados.map(
                 async (el) =>
-                  await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [application.id_solicitud, el.monto, el.ramo, { fecha: el.fecha }, moment().month(el.fecha.month).format('DD-MM-YYYY'), registry.id_registro_municipal])
+                  await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [application.id_solicitud, el.monto, el.ramo, { fecha: el.fecha }, moment().month(el.fecha.month).format('MM-DD-YYYY'), registry.id_registro_municipal])
               )
             );
           }
@@ -750,7 +753,7 @@ export const initialUserLinking = async (linkingData, user) => {
             await Promise.all(
               vigentes.map(
                 async (el) =>
-                  await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [application.id_solicitud, el.monto, el.ramo, { fecha: el.fecha }, moment().month(el.fecha.month).format('DD-MM-YYYY'), registry.id_registro_municipal])
+                  await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [application.id_solicitud, el.monto, el.ramo, { fecha: el.fecha }, moment().month(el.fecha.month).format('MM-DD-YYYY'), registry.id_registro_municipal])
               )
             );
           }
