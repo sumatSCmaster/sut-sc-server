@@ -529,7 +529,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
           fecha: el.fecha,
           monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0].monto_total,
           liquidaciones: liquidaciones
-            .filter((el) => el.tipoProcedimiento !== 'MUL')
+            .filter((el) => el.tipoProcedimiento !== 'Multas')
             .map((el) => {
               return {
                 id: el.id_liquidacion,
@@ -541,7 +541,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
               };
             }),
           multas: liquidaciones
-            .filter((el) => el.tipoProcedimiento === 'MUL')
+            .filter((el) => el.tipoProcedimiento === 'Multas')
             .map((el) => {
               return {
                 id: el.id_liquidacion,
@@ -758,7 +758,7 @@ export const initialUserLinking = async (linkingData, user) => {
           })
         );
         await client.query('UPDATE USUARIO SET id_contribuyente = $1 WHERE id_usuario = $2', [contributorExists[0].id_contribuyente, user.id]);
-        client.query('COMMIT');
+        await client.query('COMMIT');
         await sendRimVerification(VerificationValue.CellPhone, { idRim: rims.filter((el) => el), content: datosContacto.telefono, user: user.id });
         hasNewCode = true;
 
@@ -815,7 +815,7 @@ export const initialUserLinking = async (linkingData, user) => {
           return representado ? registry.id_registro_municipal : undefined;
         })
       );
-      client.query('COMMIT');
+      await client.query('COMMIT');
       await sendRimVerification(VerificationValue.CellPhone, { content: datosContacto.telefono, user: user.id, idRim: rims.filter((el) => el) });
       payload = { rims: rims.filter((el) => el) };
     } else {
