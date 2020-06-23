@@ -320,6 +320,8 @@ export const logInExternalLinking = async ({ credentials }) => {
     const contributors = await Promise.all(
       (await gtic.query(queries.gtic.GET_CONTRIBUTOR_BY_REPRESENTATIVE_USER_EXTENDED, [attemptedUser.id_tb004_contribuyente])).rows
         .map(async (el) => {
+          const contributorExists = (await client.query(queries.TAX_PAYER_EXISTS, [el.tx_tp_doc, el.tx_dist_contribuyente === 'J' ? el.tx_rif : el.nu_cedula])).rows;
+          if (contributorExists.length > 0) return getLinkedContributorData(contributorExists[0]);
           return {
             datosContribuyente: await getTaxPayerInfo({
               docType: el.tx_tp_doc,
@@ -439,6 +441,58 @@ export const logInExternalLinking = async ({ credentials }) => {
   } finally {
     client.release();
     gtic.release();
+  }
+};
+
+const getLinkedContributorData = async (contributor: any) => {
+  const client = await pool.connect();
+  try {
+    const datosContribuyente = {
+      tipoContribuyente: contributor.tipo_contribuyente,
+      documento: contributor.documento,
+      tipoDocumento: contributor.tipo_documento,
+      razonSocial: contributor.razon_social,
+      siglas: contributor.siglas,
+      denomComercial: contributor.denominacion_comercial,
+      telefonoMovil: '',
+      telefonoHabitacion: '',
+      email: '',
+      parroquia: contributor.parroquia,
+      sector: contributor.sector,
+      direccion: contributor.direccion,
+      puntoReferencia: contributor.punto_referencia,
+    };
+    const sucursales = await Promise.all(
+      (await client.query('SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = $1', [contributor.id_contribuyente])).rows
+        .filter((el) => !el.actualizado)
+        .map(async (el) => {
+          const inmueble = (await client.query('SELECT * FROM inmueble_urbano WHERE id_registro_municipal = $1 ORDER BY id_inmueble DESC LIMIT 1', [el.id_registro_municipal])).rows[0];
+
+          const payload = {
+            datosSucursal: {
+              id: el.id_registro_municipal,
+              direccion: inmueble ? inmueble.direccion : null,
+              email: el.email,
+              razonSocial: datosContribuyente.razonSocial,
+              denomComercial: el.denomComercial,
+              metrosCuadrados: 0.0,
+              cuentaContrato: 0.0,
+              nombreRepresentante: el.nombre_representante,
+              telefonoMovil: el.telefono_celular,
+              registroMunicipal: el.referencia_municipal,
+            },
+            inmuebles: [{ id: inmueble && inmueble.id_inmueble, direccion: inmueble && inmueble.direccion }],
+            liquidaciones: [],
+            multas: [],
+          };
+          return { ...payload };
+        })
+    );
+    return { datosContribuyente, sucursales };
+  } catch (error) {
+    throw error;
+  } finally {
+    client.release();
   }
 };
 
