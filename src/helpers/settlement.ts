@@ -800,7 +800,7 @@ export const resendUserCode = async ({ rims, user }) => {
   const client = await pool.connect();
   try {
     await resendCode(VerificationValue.CellPhone, { user: user.id });
-    return { status: 200, message: 'Usuario enlazado y verificado' };
+    return { status: 200, message: 'Codigo reenviado' };
   } catch (error) {
     let status = error.tiempo ? 429 : 500;
     throw {
