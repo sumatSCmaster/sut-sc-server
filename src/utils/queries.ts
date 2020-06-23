@@ -613,11 +613,31 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   //VERIFICACION DE DATOS DE RIM
   CHECK_VERIFICATION_EXISTS: "SELECT *, (CURRENT_TIMESTAMP - fecha_verificacion) AS elapsed, (CURRENT_TIMESTAMP - fecha_verificacion) > interval '10 minutes' AS late  FROM impuesto.verificacion_telefono WHERE id_usuario = $1;",
   DROP_EXISTING_VERIFICATION: 'DELETE FROM impuesto.verificacion_telefono WHERE id_usuario = $1',
-  CREATE_VERIFICATION: 'INSERT INTO impuesto.verificacion_telefono (codigo_verificacion, id_usuario) VALUES ($1, $2) RETURNING *;',
+  CREATE_VERIFICATION: 'INSERT INTO impuesto.verificacion_telefono (codigo_verificacion, id_usuario, telefono) VALUES ($1, $2, $3) RETURNING *;',
   ADD_PHONE_TO_VERIFICATION: 'INSERT INTO impuesto.registro_municipal_verificacion (id_registro_municipal, id_verificacion_telefono) VALUES ($1, $2);',
   GET_VERIFICATION: "SELECT *, (CURRENT_TIMESTAMP - fecha_verificacion) AS elapsed, (CURRENT_TIMESTAMP - fecha_verificacion) > interval '10 minutes' AS late FROM impuesto.verificacion_telefono WHERE id_usuario = $1",
   VALIDATE_CODE: 'UPDATE impuesto.verificacion_telefono SET verificado = true WHERE id_usuario = $1',
   UPDATE_CODE: 'UPDATE impuesto.verificacion_telefono SET codigo_verificacion = $1, fecha_verificacion = CURRENT_TIMESTAMP WHERE id_usuario = $2',
+
+  //REPORTES
+  GET_INGRESS: `SELECT r.codigo AS ramo, r.descripcion, COUNT(*) as ingresado, SUM(monto) as cantidading \
+        FROM impuesto.liquidacion l \
+        INNER JOIN impuesto.solicitud s ON l.id_solicitud = s.id_solicitud \
+        INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) \
+            AS state FROM impuesto.evento_solicitud es GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud \
+        INNER JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo \
+        INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_subramo \
+        WHERE state = 'finalizado' AND fecha_liquidacion BETWEEN $1 AND $2 \
+        GROUP BY r.codigo, r.descripcion;`,
+  GET_LIQUIDATED: `SELECT r.codigo AS ramo, r.descripcion, COUNT(*) as liquidado, SUM(monto) as cantidadliq \
+        FROM impuesto.liquidacion l  \
+        INNER JOIN impuesto.solicitud s ON l.id_solicitud = s.id_solicitud \
+        INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) \
+            AS state FROM impuesto.evento_solicitud es GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud \
+        INNER JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo \
+        INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_subramo \
+        WHERE state != 'finalizado' AND fecha_liquidacion BETWEEN $1 AND $2 \
+        GROUP BY r.codigo, r.descripcion;`,
   gtic: {
     GET_NATURAL_CONTRIBUTOR: 'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 ORDER BY co_contribuyente DESC',
     GET_JURIDICAL_CONTRIBUTOR: 'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE tx_rif = $1 AND tx_tp_doc = $2 AND nu_referencia IS NOT NULL ORDER BY co_contribuyente DESC',
