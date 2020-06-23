@@ -1,6 +1,5 @@
 import { Pool as PgPool, PoolConfig } from 'pg';
 require('dotenv').config();
-const testing = process.env.NODE_ENV === 'test';
 
 export default class Pool {
   private static instance: PgPool;
@@ -11,7 +10,7 @@ export default class Pool {
     if (!Pool.instance) {
       const opt: PoolConfig = {
         connectionString: process.env.DATABASE_URL,
-        ssl: false,
+        ssl: true,
       };
       Pool.instance = new PgPool(opt);
     }
