@@ -313,6 +313,7 @@ export const hasLinkedContributor = async (user) => {
     const contribuyente = {
       id: contributor.id_contribuyente,
       tipoDocumento: contributor.tipo_documento,
+      tipoContribuyente: contributor.tipo_contribuyente,
       documento: contributor.documento,
       razonSocial: contributor.razon_social,
       denomComercial: contributor.denominacion_comercial || undefined,
