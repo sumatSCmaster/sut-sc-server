@@ -1423,7 +1423,7 @@ export const insertSettlements = async ({ process, user }) => {
                     },
                     descripcion: 'Multa por Declaracion Fuera de Plazo',
                   },
-                  moment().month(counter).endOf('month').format('DD-MM-YYYY'),
+                  moment().month(counter).endOf('month').format('MM-DD-YYYY'),
                   (contributorReference && contributorReference.id_registro_municipal) || null,
                 ])
               )
@@ -1449,7 +1449,7 @@ export const insertSettlements = async ({ process, user }) => {
                 },
                 descripcion: 'Multa por Declaracion Fuera de Plazo',
               },
-              moment().endOf('month').format('DD-MM-YYYY'),
+              moment().endOf('month').format('MM-DD-YYYY'),
               (contributorReference && contributorReference.id_registro_municipal) || null,
             ])
           ).rows[0];
@@ -1476,7 +1476,7 @@ export const insertSettlements = async ({ process, user }) => {
                     },
                     descripcion: 'Multa por Declaracion Fuera de Plazo',
                   },
-                  moment().month(counter).endOf('month').format('DD-MM-YYYY'),
+                  moment().month(counter).endOf('month').format('MM-DD-YYYY'),
                   (contributorReference && contributorReference.id_registro_municipal) || null,
                 ])
               )
@@ -1502,7 +1502,7 @@ export const insertSettlements = async ({ process, user }) => {
                 },
                 descripcion: 'Multa por Declaracion Fuera de Plazo',
               },
-              moment().endOf('month').format('DD-MM-YYYY'),
+              moment().endOf('month').format('MM-DD-YYYY'),
               (contributorReference && contributorReference.id_registro_municipal) || null,
             ])
           ).rows[0];
@@ -1535,7 +1535,7 @@ export const insertSettlements = async ({ process, user }) => {
             el.monto,
             el.ramo,
             datos,
-            moment().month(el.fechaCancelada.month).endOf('month').format('DD-MM-YYYY'),
+            moment().month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
             contributorReference.id_registro_municipal || null,
           ])
         ).rows[0];
@@ -1732,7 +1732,7 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
           representanteLegal: datosContribuyente.nb_representante_legal,
           periodo: mesesCardinal[application.mes],
           anio: application.anio,
-          fecha: moment().format('DD-MM-YYYY'),
+          fecha: moment().format('MM-DD-YYYY'),
           fechaLetra: `${moment().date()} de ${application.mes} de ${application.anio}`,
         },
       });
@@ -1803,7 +1803,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
         certInfo = {
           QR: linkQr,
           moment: require('moment'),
-          fecha: moment().format('DD-MM-YYYY'),
+          fecha: moment().format('MM-DD-YYYY'),
 
           datos: {
             nroSolicitud: 856535, //TODO: Reemplazar con el valor de co_solicitud creado en GTIC
@@ -1866,7 +1866,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
         certInfo = {
           QR: linkQr,
           moment: require('moment'),
-          fecha: moment().format('DD-MM-YYYY'),
+          fecha: moment().format('MM-DD-YYYY'),
 
           datos: {
             nroSolicitud: 856535, //TODO: Reemplazar con el valor de co_solicitud creado en GTIC
@@ -2146,7 +2146,7 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
       const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-PP.pug`), {
         QR: linkQr,
         moment: require('moment'),
-        fecha: moment().format('DD-MM-YYYY'),
+        fecha: moment().format('MM-DD-YYYY'),
 
         datos: {
           nroSolicitud: 856535, //TODO: Reemplazar con el valor de co_solicitud creado en GTIC
