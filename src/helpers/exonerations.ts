@@ -1,6 +1,7 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { errorMessageExtractor } from './errors';
+import { ActividadEconomica, Ramo } from '@root/interfaces/sigt';
 
 const pool = Pool.getInstance();
 
@@ -84,19 +85,19 @@ export const getBranchExonerations = async () => {
     }
 }
 
-export const createContributorExoneration = async ({idContributor, from, activities}: { idContributor: number, from: Date, activities: any[]  }) => {
+export const createContributorExoneration = async ({idContributor, from, activities}: { idContributor: number, from: Date, activities: ActividadEconomica[]  }) => {
     const client = await pool.connect()
     try{
         await client.query('BEGIN');
         const exoneration = (await client.query(queries.CREATE_EXONERATION, [from])).rows[0];
         if(activities){
             await Promise.all(activities.map(async (row) => {
-                if((await client.query(queries.GET_EXONERATED_ACTIVITY_BY_CONTRIBUTOR, [idContributor, row.idActividadEconomica])).rowCount > 0){
-                    throw new Error(`La actividad ${row.descripcion} ya esta exonerada para este contribuyente`)
-                }else if(!((await client.query(queries.GET_CONTRIBUTOR_HAS_ACTIVITY, [idContributor, row.idActividadEconomica])).rowCount > 0)) {
+                if((await client.query(queries.GET_EXONERATED_ACTIVITY_BY_CONTRIBUTOR, [idContributor, row.id])).rowCount > 0){
+                    throw new Error(`La actividad ${row.nombreActividad} ya esta exonerada para este contribuyente`)
+                }else if(!((await client.query(queries.GET_CONTRIBUTOR_HAS_ACTIVITY, [idContributor, row.id])).rowCount > 0)) {
                     throw new Error(`El contribuyente no tiene esa actividad economica.`)
                 } else {
-                    return client.query(queries.INSERT_CONTRIBUTOR_EXONERATED_ACTIVITY, [exoneration.id_plazo_exoneracion, idContributor, row.idActividadEconomica]);
+                    return client.query(queries.INSERT_CONTRIBUTOR_EXONERATED_ACTIVITY, [exoneration.id_plazo_exoneracion, idContributor, row.id]);
                 }
             }))
         }else {
@@ -121,10 +122,79 @@ export const createContributorExoneration = async ({idContributor, from, activit
     }
 }
 
-export const createActivityExoneration = async () => {
+export const createActivityExoneration = async ({ from, activities }: { from: Date, activities: ActividadEconomica[] }) => {
+    const client = await pool.connect()
+    try{
+        await client.query('BEGIN');
+        const exoneration = (await client.query(queries.CREATE_EXONERATION, [from])).rows[0];
+        
+        await Promise.all(activities.map(async (row) => {
+            if((await client.query(queries.GET_ACTIVITY_IS_EXONERATED, [row.id])).rowCount > 0){
+                throw new Error(`La actividad economica ${row.nombreActividad} ya está exonerada`)
+            }else {
+                return client.query(queries.INSERT_EXONERATION_ACTIVITY, [exoneration.id_plazo_exoneracion, row.id])
+            }
+        }));
 
+        await client.query('COMMIT');
+        return {
+            message: 'Exoneraciones creadas'   
+        }
+
+    } catch (e) {
+        await client.query('ROLLBACK');
+        console.error(e)
+        throw e;
+    } finally {
+        client.release()
+    }
 }
 
-export const createBranchExoneration = async () => {
+export const createBranchExoneration = async ({ from, activities }: { from: Date, activities: Ramo[] }) => {
+    const client = await pool.connect()
+    try{
+        await client.query('BEGIN');
+        const exoneration = (await client.query(queries.CREATE_EXONERATION, [from])).rows[0];
+        
+        await Promise.all(activities.map(async (row) => {
+            if((await client.query(queries.GET_BRANCH_IS_EXONERATED, [row.id])).rowCount > 0){
+                throw new Error(`La actividad economica ${row.descripcion} ya está exonerada`)
+            }else {
+                return client.query(queries.INSERT_EXONERATION_BRANCH, [exoneration.id_plazo_exoneracion, row.id])
+            }
+        }));
 
+        await client.query('COMMIT');
+        return {
+            message: 'Exoneraciones creadas'   
+        }
+
+    } catch (e) {
+        await client.query('ROLLBACK');
+        console.error(e)
+        throw e;
+    } finally {
+        client.release()
+    }
+};
+
+export const updateEndTimeExoneration = async (id, to) => {
+    const client = await pool.connect()
+    try{
+        await client.query('BEGIN');
+        
+        await client.query(queries.UPDATE_EXONERATION_END_TIME, [to, id]);
+
+        await client.query('COMMIT');
+        return {
+            message: 'Exoneracion actualizada'   
+        }
+
+    } catch (e) {
+        await client.query('ROLLBACK');
+        console.error(e)
+        throw e;
+    } finally {
+        client.release()
+    }
 }

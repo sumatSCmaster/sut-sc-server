@@ -644,6 +644,9 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   INSERT_CONTRIBUTOR_EXONERATED_ACTIVITY: `INSERT INTO impuesto.contribuyente_exoneracion (id_contribuyente_exoneracion, id_plazo_exoneracion, id_contribuyente, id_actividad_economica)
                 VALUES (default, $1, $2, $3);`,
   INSERT_EXONERATION_CONTRIBUTOR: 'INSERT INTO impuesto.contribuyente_exoneracion (id_contribuyente_exoneracion, id_plazo_exoneracion, id_contribuyente) VALUES (default, $1, $2);',
+  INSERT_EXONERATION_ACTIVITY: 'INSERT INTO impuesto.actividad_economica_exoneracion (id_actividad_economica_exoneracion, id_plazo_exoneracion, id_actividad_economica) VALUES (default, $1, $2);',
+  INSERT_EXONERATION_BRANCH: 'INSERT INTO impuesto.ramo_exoneracion (id_actividad_economica_exoneracion, id_plazo_exoneracion, id_ramo) VALUES (default, $1, $2);',
+  
   GET_EXONERATED_ACTIVITY_BY_CONTRIBUTOR: 'SELECT * FROM impuesto.plazo_exoneracion pe INNER JOIN impuesto.contribuyente_exoneracion ce ON ce.id_plazo_exoneracion = pe.id_plazo_exoneracion WHERE id_contribuyente = $1 AND id_actividad_economica = $2 AND fecha_inicio <= NOW() AND fecha_fin IS NULL',
   GET_EXONERATED_CONTRIBUTOR_STATUS: 'SELECT * FROM impuesto.plazo_exoneracion WHERE id_contribuyente = $1 AND id_actividad_economica IS NULL AND fecha_hasta IS NULL',
   GET_CONTRIBUTOR_HAS_ACTIVITY: 'SELECT * FROM impuesto.actividad_economica ae INNER JOIN impuesto.actividad_economica_contribuyente aec ON aec.numero_referencia = ae.numero_referencia WHERE id_contribuyente = $1 AND id_actividad_economica = $2',
@@ -658,11 +661,23 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
         INNER JOIN impuesto.actividad_economica_exoneracion aee ON aee.id_plazo_exoneracion = pe.id_plazo_exoneracion
         INNER JOIN impuesto.actividad_economica ae ON aee.id_actividad_economica = ae.id_actividad_economica
         ORDER BY pe.id_plazo_exoneracion DESC;`,
+  GET_ACTIVITY_IS_EXONERATED: `SELECT pe.*, ae.*, (pe.fecha_inicio <= NOW() AND pe.fecha_fin IS NULL ) AS active 
+        FROM impuesto.plazo_exoneracion pe
+        INNER JOIN impuesto.actividad_economica_exoneracion aee ON aee.id_plazo_exoneracion = pe.id_plazo_exoneracion
+        INNER JOIN impuesto.actividad_economica ae ON aee.id_actividad_economica = ae.id_actividad_economica
+        WHERE id_actividad_economica = $1 AND (pe.fecha_inicio <= NOW() AND pe.fecha_fin IS NULL)
+        ORDER BY pe.id_plazo_exoneracion DESC;`,
   GET_BRANCH_EXONERATIONS: `SELECT pe.*, r.*, (pe.fecha_inicio <= NOW() AND pe.fecha_fin IS NULL) AS active 
         FROM impuesto.plazo_exoneracion pe
         INNER JOIN impuesto.ramo_exoneracion re ON re.id_plazo_exoneracion = pe.id_plazo_exoneracion
         INNER JOIN impuesto.ramo r ON r.id_ramo = re.id_ramo
         ORDER BY pe.id_plazo_exoneracion DESC;`,
+  GET_BRANCH_IS_EXONERATED: `SELECT pe.*, ae.*, (pe.fecha_inicio <= NOW() AND pe.fecha_fin IS NULL ) AS active 
+        FROM impuesto.plazo_exoneracion pe
+        INNER JOIN impuesto.ramo_exoneracion re ON re.id_plazo_exoneracion = pe.id_plazo_exoneracion
+        WHERE id_ramo = $1 AND (pe.fecha_inicio <= NOW() AND pe.fecha_fin IS NULL)
+        ORDER BY pe.id_plazo_exoneracion DESC;`,
+  UPDATE_EXONERATION_END_TIME: `UPDATE impuesto.plazo_exoneracion SET fecha_fin = $1 WHERE id_plazo_exoneracion = $1`,
   gtic: {
     GET_NATURAL_CONTRIBUTOR: 'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 ORDER BY co_contribuyente DESC',
     GET_JURIDICAL_CONTRIBUTOR: 'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE tx_rif = $1 AND tx_tp_doc = $2 AND nu_referencia IS NOT NULL ORDER BY co_contribuyente DESC',

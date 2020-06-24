@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
-import { getContributorExonerations, getActivityExonerations, getBranchExonerations, createContributorExoneration } from '@helpers/exonerations';
+import { getContributorExonerations, getActivityExonerations, getBranchExonerations, createContributorExoneration, createActivityExoneration, createBranchExoneration } from '@helpers/exonerations';
 import { authenticate } from 'passport';
 
 const router = Router();
@@ -29,4 +29,15 @@ router.post('/contributor', authenticate('jwt'), async (req, res) => {
     if (data) res.status(200).json({ status: 200, data });
 })
 
+router.post('/activity', authenticate('jwt'), async (req, res) => {
+    const [error, data] = await fulfill(createActivityExoneration(req.body))
+    if (error) res.status(500).json({ error, status: 500 });
+    if (data) res.status(200).json({ status: 200, data });
+})
+
+router.post('/branch', authenticate('jwt'), async (req, res) => {
+    const [error, data] = await fulfill(createBranchExoneration(req.body))
+    if (error) res.status(500).json({ error, status: 500 });
+    if (data) res.status(200).json({ status: 200, data });
+})
 export default router;
