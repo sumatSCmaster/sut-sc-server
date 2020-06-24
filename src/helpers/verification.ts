@@ -42,11 +42,16 @@ export const sendRimVerification = async (value: VerificationValue, payload: { i
             await client.query(queries.ADD_PHONE_TO_VERIFICATION, [id, verification.id_verificacion_telefono]);
           })
         );
-        // await twilioClient.messages.create({
-        //   body: `Su codigo de verificación es: ${code}`,
-        //   from: process.env.TWILIO_NUMBER,
-        //   to: `+58${payload.content}`,
-        // });
+        try{
+          // await twilioClient.messages.create({
+          //   body: `Su codigo de verificación es: ${code}`,
+          //   from: process.env.TWILIO_NUMBER,
+          //   to: `+58${payload.content}`,
+          // });
+        } catch(e){
+          console.log(e)
+        }
+        
         break;
     }
     await client.query('COMMIT');
