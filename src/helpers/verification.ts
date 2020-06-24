@@ -36,17 +36,17 @@ export const sendRimVerification = async (value: VerificationValue, payload: { i
           }
         }
         await client.query(queries.DROP_EXISTING_VERIFICATION, [payload.user]);
-        const verification = (await client.query(queries.CREATE_VERIFICATION, [code, payload.user])).rows[0];
+        const verification = (await client.query(queries.CREATE_VERIFICATION, [code, payload.user, payload.content])).rows[0];
         await Promise.all(
           payload.idRim.map(async (id) => {
             await client.query(queries.ADD_PHONE_TO_VERIFICATION, [id, verification.id_verificacion_telefono]);
           })
         );
-        // await twilioClient.messages.create({
-        //   body: `Su codigo de verificación es: ${code}`,
-        //   from: process.env.TWILIO_NUMBER,
-        //   to: payload.content,
-        // });
+        await twilioClient.messages.create({
+          body: `Su codigo de verificación es: ${code}`,
+          from: process.env.TWILIO_NUMBER,
+          to: `+58${payload.content}`,
+        });
         break;
     }
     await client.query('COMMIT');
@@ -85,11 +85,11 @@ export const resendCode = async (value: VerificationValue, payload: { user: numb
             console.log(code);
             console.log(payload.user);
             await client.query(queries.UPDATE_CODE, [code, payload.user]);
-            // await twilioClient.messages.crea te({
-            //   body: `Su codigo de verificación es: ${code}`,
-            //   from: process.env.TWILIO_NUMBER,
-            //   to: phone,
-            // });
+            await twilioClient.messages.create({
+              body: `Su codigo de verificación es: ${code}`,
+              from: process.env.TWILIO_NUMBER,
+              to: `+58${verificationRow.telefono}`,
+            });
             client.query('COMMIT');
 
             return {
