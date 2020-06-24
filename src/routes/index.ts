@@ -19,6 +19,7 @@ import user from './user';
 import destination from './terminal';
 import holiday from './holidays';
 import branches from './branches';
+import exonerations from './exonerations';
 
 const router = Router();
 
@@ -41,6 +42,7 @@ router.use('/notification', notification);
 router.use('/settlements', settlement);
 router.use('/holiday', holiday);
 router.use('/branches', branches);
+router.use('/exonerations', exonerations);
 router.use(resources);
 
 router.get('/', (req, res) => {

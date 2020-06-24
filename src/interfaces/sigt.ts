@@ -344,3 +344,9 @@ export enum VerificationValue {
   CellPhone,
   Email,
 }
+
+export type Ramo = {
+  id:number
+  codigo: string
+  descripcion: string
+}
