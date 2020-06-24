@@ -33,6 +33,13 @@ const idTiposSolicitud = {
   IU: 445,
   PP: 97,
 };
+
+const codigosRamo = {
+  AE: 112,
+  SM: 122,
+  PP: 114,
+  IU: 111,
+};
 const formatCurrency = (number: number) => new Intl.NumberFormat('de-DE').format(number);
 
 export const checkContributorExists = () => async (req: any, res, next) => {
@@ -60,226 +67,44 @@ export const checkContributorExists = () => async (req: any, res, next) => {
   }
 };
 
-export const getSettlements2 = async ({ document, reference, type, user }) => {
-  const client = await pool.connect();
-  const gtic = await gticPool.connect();
-  const montoAcarreado: any = {};
-  let AE, SM, IU, PP;
-  try {
-    const AEApplicationExists = (await client.query(queries.CURRENT_AE_APPLICATION_EXISTS, [document, reference, type])).rows[0];
-    const SMApplicationExists = (await client.query(queries.CURRENT_SM_APPLICATION_EXISTS, [document, reference, type])).rows[0];
-    const IUApplicationExists = (await client.query(queries.CURRENT_IU_APPLICATION_EXISTS, [document, reference, type])).rows[0];
-    const PPApplicationExists = (await client.query(queries.CURRENT_PP_APPLICATION_EXISTS, [document, reference, type])).rows[0];
-
-    if (AEApplicationExists && SMApplicationExists && IUApplicationExists && PPApplicationExists) return { status: 409, message: 'Ya existe una declaracion de impuestos para este mes' };
-    const contributor = (reference ? await gtic.query(queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS, [document, reference, type]) : await gtic.query(queries.gtic.NATURAL_CONTRIBUTOR_EXISTS, [document, type])).rows[0];
-    if (!contributor) return { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
-    const now = moment(new Date());
-    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-    //AE
-    if (contributor.nu_referencia && !AEApplicationExists) {
-      const economicActivities = (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [contributor.co_contribuyente])).rows;
-      if (economicActivities.length === 0) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
-      let lastEA = (await gtic.query(queries.gtic.GET_ACTIVE_ECONOMIC_ACTIVITIES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-      if (!lastEA) lastEA = (await gtic.query(queries.gtic.GET_PAID_ECONOMIC_ACTIVITIES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-      if (!lastEA) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
-      const lastEAPayment = moment(lastEA.fe_liquidacion);
-      const pastMonthEA = moment(lastEA.fe_liquidacion).subtract(1, 'M');
-      const EADate = moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
-      const dateInterpolation = Math.floor(now.diff(EADate, 'M'));
-      montoAcarreado.AE = {
-        monto: lastEA.mo_pendiente ? parseFloat(lastEA.mo_pendiente) : 0,
-        fecha: { month: pastMonthEA.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthEA.year() },
-      };
-      if (dateInterpolation !== 0) {
-        AE = economicActivities.map((el) => {
-          return {
-            id: el.nu_ref_actividad,
-            minimoTributable: Math.round(el.nu_ut) * UTMM,
-            nombreActividad: el.tx_actividad,
-            idContribuyente: el.co_contribuyente,
-            alicuota: el.nu_porc_alicuota / 100,
-            costoSolvencia: UTMM * 2,
-            deuda: new Array(dateInterpolation).fill({ month: null, year: null }).map((value, index) => {
-              const date = addMonths(new Date(lastEAPayment.toDate()), index);
-              return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
-            }),
-          };
-        });
-      }
-    }
-    //SM
-    const estates = (await gtic.query(queries.gtic.GET_ESTATES_BY_CONTRIBUTOR, [contributor.co_contribuyente])).rows;
-    if (estates.length > 0) {
-      if (!SMApplicationExists) {
-        let lastSM = (await gtic.query(queries.gtic.GET_ACTIVE_MUNICIPAL_SERVICES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-        if (!lastSM) lastSM = (await gtic.query(queries.gtic.GET_PAID_MUNICIPAL_SERVICES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-        if (!lastSM) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
-        const lastSMPayment = moment(lastSM.fe_liquidacion);
-        const pastMonthSM = moment(lastSM.fe_liquidacion).subtract(1, 'M');
-        const SMDate = moment([lastSMPayment.year(), lastSMPayment.month(), 1]);
-        const dateInterpolationSM = Math.floor(now.diff(SMDate, 'M'));
-        montoAcarreado.SM = {
-          monto: lastSM.mo_pendiente ? parseFloat(lastSM.mo_pendiente) : 0,
-          fecha: { month: pastMonthSM.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthSM.year() },
-        };
-        const debtSM = new Array(dateInterpolationSM).fill({ month: null, year: null }).map((value, index) => {
-          const date = addMonths(new Date(lastSMPayment.toDate()), index);
-          return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
-        });
-        SM = await Promise.all(
-          estates.map(async (el) => {
-            const calculoAseo =
-              el.tx_tp_inmueble === 'COMERCIAL'
-                ? el.nu_metro_cuadrado && el.nu_metro_cuadrado !== 0
-                  ? 0.15 * el.nu_metro_cuadrado
-                  : (await gtic.query(queries.gtic.GET_MAX_CLEANING_TARIFF_BY_CONTRIBUTOR, [contributor.co_contribuyente])).rows[0].nu_tarifa
-                : (await gtic.query(queries.gtic.GET_RESIDENTIAL_CLEANING_TARIFF)).rows[0].nu_tarifa;
-            const tarifaAseo = calculoAseo / UTMM > 300 ? UTMM * 300 : calculoAseo;
-            const calculoGas =
-              el.tx_tp_inmueble === 'COMERCIAL' ? (await gtic.query(queries.gtic.GET_MAX_GAS_TARIFF_BY_CONTRIBUTOR, [contributor.co_contribuyente])).rows[0].nu_tarifa : (await gtic.query(queries.gtic.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].nu_tarifa;
-            const tarifaGas = calculoGas / UTMM > 300 ? UTMM * 300 : calculoGas;
-            return { id: el.co_inmueble, tipoInmueble: el.tx_tp_inmueble, direccionInmueble: el.tx_direccion, tarifaAseo, tarifaGas, deuda: debtSM };
-          })
-        );
-      }
-
-      //IU
-      if (!IUApplicationExists) {
-        let lastIU = (await gtic.query(queries.gtic.GET_ACTIVE_URBAN_ESTATE_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-        if (!lastIU) lastIU = (await gtic.query(queries.gtic.GET_PAID_URBAN_ESTATE_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-        if (!lastIU) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
-        const lastIUPayment = moment(lastIU.fe_liquidacion);
-        const pastMonthIU = moment(lastIU.fe_liquidacion).subtract(1, 'M');
-        const IUDate = moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
-        const dateInterpolationIU = Math.floor(now.diff(IUDate, 'M'));
-        montoAcarreado.IU = {
-          monto: lastIU.mo_pendiente ? parseFloat(lastIU.mo_pendiente) : 0,
-          fecha: { month: pastMonthIU.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthIU.year() },
-        };
-        if (dateInterpolationIU > 0) {
-          const debtIU = new Array(dateInterpolationIU).fill({ month: null, year: null }).map((value, index) => {
-            const date = addMonths(new Date(lastIUPayment.toDate()), index);
-            return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
-          });
-          IU = estates.map((el) => {
-            return {
-              id: el.co_inmueble,
-              direccionInmueble: el.tx_direccion,
-              ultimoAvaluo: el.nu_monto,
-              impuestoInmueble: (el.nu_monto * 0.01) / 12,
-              deuda: debtIU,
-            };
-          });
-        }
-      }
-    }
-
-    //PP
-    if (!PPApplicationExists) {
-      let debtPP;
-      let lastPP = (await gtic.query(queries.gtic.GET_ACTIVE_PUBLICITY_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-      if (!lastPP) lastPP = (await gtic.query(queries.gtic.GET_PAID_PUBLICITY_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-      if (lastPP) {
-        const lastPPPayment = moment(lastPP.fe_liquidacion);
-        const pastMonthPP = moment(lastPP.fe_liquidacion).subtract(1, 'M');
-        const PPDate = moment([lastPPPayment.year(), lastPPPayment.month(), 1]);
-        const dateInterpolationPP = Math.floor(now.diff(PPDate, 'M'));
-        montoAcarreado.PP = {
-          monto: lastPP.mo_pendiente ? parseFloat(lastPP.mo_pendiente) : 0,
-          fecha: { month: pastMonthPP.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthPP.year() },
-        };
-        if (dateInterpolationPP > 0) {
-          debtPP = new Array(dateInterpolationPP).fill({ month: null, year: null }).map((value, index) => {
-            const date = addMonths(new Date(lastPPPayment.toDate()), index);
-            return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
-          });
-        }
-      } else {
-        debtPP = new Array(now.month() + 1).fill({ month: null, year: null }).map((value, index) => {
-          const date = addMonths(moment(`${now.year()}-01-01`).toDate(), index);
-          return { month: date.toLocaleString('ES', { month: 'long' }), year: date.getFullYear() };
-        });
-      }
-      if (debtPP) {
-        const publicityArticles = (await gtic.query(queries.gtic.GET_PUBLICITY_ARTICLES)).rows;
-        const publicitySubarticles = (await gtic.query(queries.gtic.GET_PUBLICITY_SUBARTICLES)).rows;
-        PP = {
-          deuda: debtPP,
-          articulos: publicityArticles.map((el) => {
-            return {
-              id: +el.co_articulo,
-              nombreArticulo: el.tx_articulo,
-              subarticulos: publicitySubarticles
-                .filter((al) => +el.co_articulo === al.co_articulo)
-                .map((el) => {
-                  return {
-                    id: +el.co_medio,
-                    nombreSubarticulo: el.tx_medio,
-                    parametro: el.parametro,
-                    costo: +el.ut_medio * UTMM,
-                    costoAlto: el.parametro === 'BANDA' ? (+el.ut_medio + 2) * UTMM : undefined,
-                  };
-                }),
-            };
-          }),
-        };
-      }
-    }
-    return {
-      status: 200,
-      message: 'Impuestos obtenidos satisfactoriamente',
-      impuesto: {
-        contribuyente: contributor.co_contribuyente,
-        razonSocial: contributor.tx_razon_social || `${contributor.nb_contribuyente} ${contributor.ap_contribuyente}`,
-        siglas: contributor.tx_siglas,
-        rim: contributor.nu_referencia,
-        documento: contributor.tx_rif || contributor.nu_cedula,
-        AE,
-        SM,
-        IU,
-        PP,
-        montoAcarreado: addMissingCarriedAmounts(montoAcarreado),
-      },
-    };
-  } catch (error) {
-    console.log(error);
-    throw {
-      status: 500,
-      error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al obtener los impuestos',
-    };
-  } finally {
-    client.release();
-    gtic.release();
-  }
-};
-
 export const getSettlements = async ({ document, reference, type, user }) => {
   const client = await pool.connect();
   const gtic = await gticPool.connect();
   const montoAcarreado: any = {};
   let AE, SM, IU, PP;
   try {
-    const AEApplicationExists = (await client.query(queries.CURRENT_AE_APPLICATION_EXISTS, [document, reference, type])).rows[0];
-    const SMApplicationExists = (await client.query(queries.CURRENT_SM_APPLICATION_EXISTS, [document, reference, type])).rows[0];
-    const IUApplicationExists = (await client.query(queries.CURRENT_IU_APPLICATION_EXISTS, [document, reference, type])).rows[0];
-    const PPApplicationExists = (await client.query(queries.CURRENT_PP_APPLICATION_EXISTS, [document, reference, type])).rows[0];
+    const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [type, document])).rows[0];
+    if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
+    const branch = reference ? (await client.query('SELECT * FROM impuesto.registro_municipal WHERE referencia_municipal = $1 LIMIT 1', [reference])).rows[0] : undefined;
+    if ((!branch && reference) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEMAT' };
+    const lastSettlementQuery = branch && reference ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
+    const lastSettlementPayload = branch && reference ? branch.id_referencia_municipal : contributor.id_contribuyente;
+    const AEApplicationExists = reference ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.AE, reference])).rows[0] : false;
+    const SMApplicationExists = reference
+      ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.SM, reference])).rows[0]
+      : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.SM, contributor.id_contribuyente])).rows[0];
+    const IUApplicationExists = reference
+      ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.IU, reference])).rows[0]
+      : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.IU, contributor.id_contribuyente])).rows[0];
+    const PPApplicationExists = reference
+      ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.PP, reference])).rows[0]
+      : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.PP, contributor.id_contribuyente])).rows[0];
 
     if (AEApplicationExists && SMApplicationExists && IUApplicationExists && PPApplicationExists) return { status: 409, message: 'Ya existe una declaracion de impuestos para este mes' };
-    const contributor = (reference ? await gtic.query(queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS, [document, reference, type]) : await gtic.query(queries.gtic.NATURAL_CONTRIBUTOR_EXISTS, [document, type])).rows[0];
-    if (!contributor) return { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
     const now = moment(new Date());
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     //AE
-    if (contributor.nu_referencia && !AEApplicationExists) {
-      const economicActivities = (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [contributor.co_contribuyente])).rows;
+    if (branch && branch.referencia_municipal && !AEApplicationExists) {
+      const economicActivities = (
+        await client.query(
+          'SELECT ae.* FROM impuesto.actividad_economica ae INNER JOIN impuesto.actividad_economica_contribuyente aec ON ae.numero_referencia = aec.numero_referencia INNER JOIN impuesto.contribuyente c ON aec.id_contribuyente = c.id_contribuyente WHERE c.id_contribuyente = $1',
+          [contributor.co_contribuyente]
+        )
+      ).rows;
       if (economicActivities.length === 0) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
-      let lastEA = (await gtic.query(queries.gtic.GET_ACTIVE_ECONOMIC_ACTIVITIES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-      if (!lastEA) lastEA = (await gtic.query(queries.gtic.GET_PAID_ECONOMIC_ACTIVITIES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-      if (!lastEA) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
-      const lastEAPayment = moment(lastEA.fe_liquidacion);
-      const pastMonthEA = moment(lastEA.fe_liquidacion).subtract(1, 'M');
+      let lastEA = (await client.query(lastSettlementQuery, [codigosRamo.AE, lastSettlementPayload])).rows[0];
+      const lastEAPayment = (lastEA && moment(lastEA.fecha_liquidacion)) || moment().month(0);
+      const pastMonthEA = (lastEA && moment(lastEA.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
       const EADate = moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
       const dateInterpolation = Math.floor(now.diff(EADate, 'M'));
       montoAcarreado.AE = {
@@ -289,11 +114,11 @@ export const getSettlements = async ({ document, reference, type, user }) => {
       if (dateInterpolation !== 0) {
         AE = economicActivities.map((el) => {
           return {
-            id: el.nu_ref_actividad,
-            minimoTributable: Math.round(el.nu_ut) * UTMM,
-            nombreActividad: el.tx_actividad,
-            idContribuyente: el.co_contribuyente,
-            alicuota: el.nu_porc_alicuota / 100,
+            id: el.id_actividad_economica,
+            minimoTributable: Math.round(el.minimo_tributable) * UTMM,
+            nombreActividad: el.descripcion,
+            idContribuyente: branch.id_registro_municipal,
+            alicuota: el.alicuota / 100,
             costoSolvencia: UTMM * 2,
             deuda: new Array(dateInterpolation).fill({ month: null, year: null }).map((value, index) => {
               const date = addMonths(new Date(lastEAPayment.toDate()), index);
@@ -304,14 +129,19 @@ export const getSettlements = async ({ document, reference, type, user }) => {
       }
     }
     //SM
-    const estates = (await gtic.query(queries.gtic.GET_ESTATES_BY_CONTRIBUTOR, [contributor.co_contribuyente])).rows;
+    const estates = (
+      await client.query(
+        branch && reference
+          ? 'SELECT * FROM impuesto.avaluo_inmueble ai INNER JOIN inmueble_urbano iu ON ai.id_inmueble = iu.id_inmueble WHERE id_registro_municipal = $1 ORDER BY ai.anio DESC'
+          : 'SELECT ai.*,iu.* FROM impuesto.avaluo_inmueble ai INNER JOIN inmueble_urbano iu ON ai.id_inmueble = iu.id_inmueble INNER JOIN impuesto.inmueble_contribuyente_natural icn ON iu.id_inmueble = icn.id_inmueble WHERE icn.id_contribuyente = $1 ORDER BY ai.anio DESC',
+        [lastSettlementPayload]
+      )
+    ).rows;
     if (estates.length > 0) {
       if (!SMApplicationExists) {
-        let lastSM = (await gtic.query(queries.gtic.GET_ACTIVE_MUNICIPAL_SERVICES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-        if (!lastSM) lastSM = (await gtic.query(queries.gtic.GET_PAID_MUNICIPAL_SERVICES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-        if (!lastSM) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
-        const lastSMPayment = moment(lastSM.fe_liquidacion);
-        const pastMonthSM = moment(lastSM.fe_liquidacion).subtract(1, 'M');
+        let lastSM = (await client.query(lastSettlementQuery, [codigosRamo.SM, lastSettlementPayload])).rows[0];
+        const lastSMPayment = (lastSM && moment(lastSM.fecha_liquidacion)) || moment().month(0);
+        const pastMonthSM = (lastSM && moment(lastSM.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
         const SMDate = moment([lastSMPayment.year(), lastSMPayment.month(), 1]);
         const dateInterpolationSM = Math.floor(now.diff(SMDate, 'M'));
         montoAcarreado.SM = {
@@ -325,27 +155,37 @@ export const getSettlements = async ({ document, reference, type, user }) => {
         SM = await Promise.all(
           estates.map(async (el) => {
             const calculoAseo =
-              el.tx_tp_inmueble === 'COMERCIAL'
-                ? el.nu_metro_cuadrado && el.nu_metro_cuadrado !== 0
-                  ? 0.15 * el.nu_metro_cuadrado
-                  : (await gtic.query(queries.gtic.GET_MAX_CLEANING_TARIFF_BY_CONTRIBUTOR, [contributor.co_contribuyente])).rows[0].nu_tarifa
-                : (await gtic.query(queries.gtic.GET_RESIDENTIAL_CLEANING_TARIFF)).rows[0].nu_tarifa;
+              el.tipo_inmueble === 'COMERCIAL'
+                ? el.metros_construccion && el.metros_construccion !== 0
+                  ? 0.15 * el.metros_construccion
+                  : (
+                      await client.query(
+                        'SELECT * FROM impuesto.actividad_economica_contribuyente aec INNER JOIN impuesto.actividad_economica ae ON ae.numero_referencia = aec.numero_referencia INNER JOIN impuesto.tabulador_aseo_actividad_economica ta ON ta.numero_referencia = ae.numero_referencia WHERE id_contribuyente = $1 ORDER BY monto DESC LIMIT 1;',
+                        [contributor.id_contribuyente]
+                      )
+                    ).rows[0].monto
+                : (await client.query('SELECT * FROM impuesto.tabulador_aseo_residencial WHERE fecha_hasta IS NULL;')).rows[0].monto;
             const tarifaAseo = calculoAseo / UTMM > 300 ? UTMM * 300 : calculoAseo;
             const calculoGas =
-              el.tx_tp_inmueble === 'COMERCIAL' ? (await gtic.query(queries.gtic.GET_MAX_GAS_TARIFF_BY_CONTRIBUTOR, [contributor.co_contribuyente])).rows[0].nu_tarifa : (await gtic.query(queries.gtic.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].nu_tarifa;
+              el.tipo_inmueble === 'COMERCIAL'
+                ? (
+                    await gtic.query(
+                      'SELECT * FROM impuesto.actividad_economica_contribuyente aec INNER JOIN impuesto.actividad_economica ae ON ae.numero_referencia = aec.numero_referencia INNER JOIN impuesto.tabulador_gas_actividad_economica tg ON tg.numero_referencia = ae.numero_referencia WHERE id_contribuyente = $1 ORDER BY monto DESC LIMIT 1;',
+                      [contributor.id_contribuyente]
+                    )
+                  ).rows[0].monto
+                : (await client.query('SELECT * FROM impuesto.tabulador_gas_residencial WHERE fecha_hasta IS NULL;')).rows[0].monto;
             const tarifaGas = calculoGas / UTMM > 300 ? UTMM * 300 : calculoGas;
-            return { id: el.co_inmueble, tipoInmueble: el.tx_tp_inmueble, direccionInmueble: el.tx_direccion, tarifaAseo, tarifaGas, deuda: debtSM };
+            return { id: el.id_inmueble, tipoInmueble: el.tipo_inmueble, direccionInmueble: el.direccion, tarifaAseo, tarifaGas, deuda: debtSM };
           })
         );
       }
 
       //IU
       if (!IUApplicationExists) {
-        let lastIU = (await gtic.query(queries.gtic.GET_ACTIVE_URBAN_ESTATE_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-        if (!lastIU) lastIU = (await gtic.query(queries.gtic.GET_PAID_URBAN_ESTATE_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-        if (!lastIU) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
-        const lastIUPayment = moment(lastIU.fe_liquidacion);
-        const pastMonthIU = moment(lastIU.fe_liquidacion).subtract(1, 'M');
+        let lastIU = (await client.query(lastSettlementQuery, [codigosRamo.IU, lastSettlementPayload])).rows[0];
+        const lastIUPayment = (lastIU && moment(lastIU.fecha_liquidacion)) || moment().month(0);
+        const pastMonthIU = (lastIU && moment(lastIU.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
         const IUDate = moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
         const dateInterpolationIU = Math.floor(now.diff(IUDate, 'M'));
         montoAcarreado.IU = {
@@ -359,10 +199,10 @@ export const getSettlements = async ({ document, reference, type, user }) => {
           });
           IU = estates.map((el) => {
             return {
-              id: el.co_inmueble,
-              direccionInmueble: el.tx_direccion,
-              ultimoAvaluo: el.nu_monto,
-              impuestoInmueble: (el.nu_monto * 0.01) / 12,
+              id: el.id_inmueble,
+              direccionInmueble: el.direccion,
+              ultimoAvaluo: el.avaluo,
+              impuestoInmueble: (el.avaluo * 0.01) / 12,
               deuda: debtIU,
             };
           });
@@ -373,11 +213,10 @@ export const getSettlements = async ({ document, reference, type, user }) => {
     //PP
     if (!PPApplicationExists) {
       let debtPP;
-      let lastPP = (await gtic.query(queries.gtic.GET_ACTIVE_PUBLICITY_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-      if (!lastPP) lastPP = (await gtic.query(queries.gtic.GET_PAID_PUBLICITY_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
+      let lastPP = (await client.query(lastSettlementQuery, [codigosRamo.PP, lastSettlementPayload])).rows[0];
       if (lastPP) {
-        const lastPPPayment = moment(lastPP.fe_liquidacion);
-        const pastMonthPP = moment(lastPP.fe_liquidacion).subtract(1, 'M');
+        const lastPPPayment = moment(lastPP.fecha_liquidacion);
+        const pastMonthPP = moment(lastPP.fecha_liquidacion).subtract(1, 'M');
         const PPDate = moment([lastPPPayment.year(), lastPPPayment.month(), 1]);
         const dateInterpolationPP = Math.floor(now.diff(PPDate, 'M'));
         montoAcarreado.PP = {
@@ -397,23 +236,23 @@ export const getSettlements = async ({ document, reference, type, user }) => {
         });
       }
       if (debtPP) {
-        const publicityArticles = (await gtic.query(queries.gtic.GET_PUBLICITY_ARTICLES)).rows;
-        const publicitySubarticles = (await gtic.query(queries.gtic.GET_PUBLICITY_SUBARTICLES)).rows;
+        const publicityArticles = (await client.query('SELECT * impuesto.categoria_propaganda')).rows;
+        const publicitySubarticles = (await client.query('SELECT * impuesto.tipo_aviso_propaganda')).rows;
         PP = {
           deuda: debtPP,
           articulos: publicityArticles.map((el) => {
             return {
-              id: +el.co_articulo,
-              nombreArticulo: el.tx_articulo,
+              id: +el.id_categoria_propaganda,
+              nombreArticulo: el.descripcion,
               subarticulos: publicitySubarticles
-                .filter((al) => +el.co_articulo === al.co_articulo)
+                .filter((al) => +el.id_categoria_propaganda === al.id_categoria_propaganda)
                 .map((el) => {
                   return {
-                    id: +el.co_medio,
-                    nombreSubarticulo: el.tx_medio,
+                    id: +el.tipo_aviso_propaganda,
+                    nombreSubarticulo: el.descripcion,
                     parametro: el.parametro,
-                    costo: +el.ut_medio * UTMM,
-                    costoAlto: el.parametro === 'BANDA' ? (+el.ut_medio + 2) * UTMM : undefined,
+                    costo: +el.monto * UTMM,
+                    costoAlto: el.parametro === 'BANDA' ? (+el.monto + 2) * UTMM : undefined,
                   };
                 }),
             };
@@ -505,10 +344,12 @@ const structureEstates = (x: any) => {
     direccion: nullStringCheck(x.tx_direccion),
     email: nullStringCheck(x.tx_email),
     razonSocial: nullStringCheck(x.tx_razon_social),
+    tipoInmueble: nullStringCheck(x.tx_tp_inmueble) || 'RESIDENCIAL',
     denomComercial: nullStringCheck(x.tx_denom_comercial),
     metrosCuadrados: +x.nu_metro_cuadrado,
     cuentaContrato: x.cuenta_contrato,
     nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined),
+    ultimoAvaluo: { year: x.nu_anio || moment().year(), monto: x.nu_monto || 0 },
   };
 };
 
@@ -537,6 +378,8 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
   const gtic = await gticPool.connect();
   try {
     const contributorQuery = typeUser === 'JURIDICO' ? queries.gtic.GET_JURIDICAL_CONTRIBUTOR + ' LIMIT 1' : queries.gtic.GET_NATURAL_CONTRIBUTOR + ' LIMIT 1';
+    const contributorExists = (await gtic.query(contributorQuery, [docType, document])).rowCount > 0;
+    if (!contributorExists) throw { status: 404, message: 'Contribuyente no encontrado', linked: false };
     const linkingData = await Promise.all(
       (await gtic.query(contributorQuery, [docType, document])).rows
         .map(async (el) => {
@@ -561,9 +404,11 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                       email: nullStringCheck(x.tx_email),
                       razonSocial: nullStringCheck(x.tx_razon_social),
                       denomComercial: nullStringCheck(x.tx_denom_comercial),
+                      tipoInmueble: 'COMERCIAL',
                       metrosCuadrados: 0.0,
                       cuentaContrato: 0.0,
                       nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined).trim(),
+                      ultimoAvaluo: { year: moment().year(), monto: 0 },
                     });
                     const datosSucursal = {
                       id: nullStringCheck(x.co_contribuyente),
@@ -595,9 +440,11 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                         email: nullStringCheck(x.tx_email),
                         razonSocial: nullStringCheck(x.tx_razon_social),
                         denomComercial: nullStringCheck(x.tx_denom_comercial),
+                        tipoInmueble: 'RESIDENCIAL',
                         metrosCuadrados: 0.0,
                         cuentaContrato: 0.0,
                         nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined).trim(),
+                        ultimoAvaluo: { year: moment().year(), monto: 0 },
                       });
                       const datosSucursal = {
                         id: nullStringCheck(x.co_contribuyente),
@@ -678,7 +525,15 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
           const vigentes = liquidacionesVigentes.concat(multasVigentes);
           const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
           const registry = (await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [contributor.id_contribuyente, registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado || false])).rows[0];
-          const estates = inmuebles.length > 0 ? await Promise.all(inmuebles.map(async (el) => (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_referencia_municipal, el.direccion])).rows[0])) : undefined;
+          const estates =
+            inmuebles.length > 0
+              ? await Promise.all(
+                  inmuebles.map(async (el) => {
+                    const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_referencia_municipal, el.direccion, el.tipoInmueble])).rows[0];
+                    await client.query('INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)', [inmueble.id_inmueble, el.avaluo.monto, el.avaluo.year]);
+                  })
+                )
+              : undefined;
           if (pagados.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
             await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
@@ -731,14 +586,23 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
 
           if (registroMunicipal) {
             registry = (await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [contributor.id_contribuyente, registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado || false])).rows[0];
-            const estates = inmuebles.length > 0 ? await Promise.all(inmuebles.map(async (el) => await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_referencia_municipal, el.direccion]))) : undefined;
+            const estates =
+              inmuebles.length > 0
+                ? await Promise.all(
+                    inmuebles.map(async (el) => {
+                      const inmueble = await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_referencia_municipal, el.direccion, el.tipoInmueble]);
+                      await client.query('INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)', [inmueble.rows[0].id_inmueble, el.avaluo.monto, el.avaluo.year]);
+                    })
+                  )
+                : undefined;
           } else {
             const estates =
               inmuebles.length > 0
                 ? await Promise.all(
                     inmuebles.map(async (el) => {
-                      const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [(registry && registry.id_referencia_municipal) || null, el.direccion])).rows[0];
+                      const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [(registry && registry.id_referencia_municipal) || null, el.direccion, el.tipoInmueble])).rows[0];
                       await client.query('INSERT INTO impuesto.inmueble_contribuyente_natural (id_inmueble, id_contribuyente) VALUES ($1, $2) RETURNING *', [inmueble.id_inmueble, contributor.id_contribuyente]);
+                      await client.query('INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)', [inmueble.id_inmueble, el.avaluo.monto, el.avaluo.year]);
                       return 0;
                     })
                   )
@@ -831,9 +695,11 @@ export const logInExternalLinking = async ({ credentials }) => {
                       email: nullStringCheck(x.tx_email),
                       razonSocial: nullStringCheck(x.tx_razon_social),
                       denomComercial: nullStringCheck(x.tx_denom_comercial),
+                      tipoInmueble: 'COMERCIAL',
                       metrosCuadrados: 0.0,
                       cuentaContrato: 0.0,
                       nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined).trim(),
+                      ultimoAvaluo: { year: moment().year(), monto: 0 },
                     });
                     const datosSucursal = {
                       id: nullStringCheck(x.co_contribuyente),
@@ -864,9 +730,11 @@ export const logInExternalLinking = async ({ credentials }) => {
                         email: nullStringCheck(x.tx_email),
                         razonSocial: nullStringCheck(x.tx_razon_social),
                         denomComercial: nullStringCheck(x.tx_denom_comercial),
+                        tipoInmueble: 'RESIDENCIAL',
                         metrosCuadrados: 0.0,
                         cuentaContrato: 0.0,
                         nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined).trim(),
+                        ultimoAvaluo: { year: moment().year(), monto: 0 },
                       });
                       const datosSucursal = {
                         id: nullStringCheck(x.co_contribuyente),
@@ -1220,7 +1088,6 @@ export const getEntireDebtsForContributor = async ({ reference, docType, documen
   }
 };
 
-//TODO: terminar la parte de la persona natural
 export const initialUserLinking = async (linkingData, user) => {
   const client = await pool.connect();
   const { datosContribuyente, sucursales, datosContacto, actividadesEconomicas } = linkingData;
@@ -1290,7 +1157,15 @@ export const initialUserLinking = async (linkingData, user) => {
               representado || false,
             ])
           ).rows[0];
-          const estates = inmuebles.length > 0 ? await Promise.all(inmuebles.map(async (el) => (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_referencia_municipal, el.direccion])).rows[0])) : undefined;
+          const estates =
+            inmuebles.length > 0
+              ? await Promise.all(
+                  inmuebles.map(async (el) => {
+                    const x = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_referencia_municipal, el.direccion, el.tipoInmueble])).rows[0];
+                    await client.query('INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)', [x.id_inmueble, el.avaluo.monto, el.avaluo.year]);
+                  })
+                )
+              : undefined;
           if (pagados.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
             await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
@@ -1356,14 +1231,23 @@ export const initialUserLinking = async (linkingData, user) => {
                 representado || false,
               ])
             ).rows[0];
-            const estates = inmuebles.length > 0 ? await Promise.all(inmuebles.map(async (el) => await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_referencia_municipal, el.direccion]))) : undefined;
+            const estates =
+              inmuebles.length > 0
+                ? await Promise.all(
+                    inmuebles.map(async (el) => {
+                      const inmueble = await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_referencia_municipal, el.direccion, el.tipoInmueble]);
+                      await client.query('INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)', [x.id_inmueble, el.avaluo.monto, el.avaluo.year]);
+                    })
+                  )
+                : undefined;
           } else {
             const estates =
               inmuebles.length > 0
                 ? await Promise.all(
                     inmuebles.map(async (el) => {
-                      const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [(registry && registry.id_referencia_municipal) || null, el.direccion])).rows[0];
+                      const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [(registry && registry.id_referencia_municipal) || null, el.direccion, el.tipoInmueble])).rows[0];
                       await client.query('INSERT INTO impuesto.inmueble_contribuyente_natural (id_inmueble, id_contribuyente) VALUES ($1, $2) RETURNING *', [inmueble.id_inmueble, contributor.id_contribuyente]);
+                      await client.query('INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)', [inmueble.id_inmueble, el.avaluo.monto, el.avaluo.year]);
                       return 0;
                     })
                   )
@@ -2600,3 +2484,198 @@ interface datoLiquidacion {
   estado: string;
   montoPorcion: number;
 }
+
+// export const getSettlements = async ({ document, reference, type, user }) => {
+//   const client = await pool.connect();
+//   const gtic = await gticPool.connect();
+//   const montoAcarreado: any = {};
+//   let AE, SM, IU, PP;
+//   try {
+//     const AEApplicationExists = (await client.query(queries.CURRENT_AE_APPLICATION_EXISTS, [document, reference, type])).rows[0];
+//     const SMApplicationExists = (await client.query(queries.CURRENT_SM_APPLICATION_EXISTS, [document, reference, type])).rows[0];
+//     const IUApplicationExists = (await client.query(queries.CURRENT_IU_APPLICATION_EXISTS, [document, reference, type])).rows[0];
+//     const PPApplicationExists = (await client.query(queries.CURRENT_PP_APPLICATION_EXISTS, [document, reference, type])).rows[0];
+
+//     if (AEApplicationExists && SMApplicationExists && IUApplicationExists && PPApplicationExists) return { status: 409, message: 'Ya existe una declaracion de impuestos para este mes' };
+//     const contributor = (reference ? await gtic.query(queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS, [document, reference, type]) : await gtic.query(queries.gtic.NATURAL_CONTRIBUTOR_EXISTS, [document, type])).rows[0];
+//     if (!contributor) return { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
+//     const now = moment(new Date());
+//     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+//     //AE
+//     if (contributor.nu_referencia && !AEApplicationExists) {
+//       const economicActivities = (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [contributor.co_contribuyente])).rows;
+//       if (economicActivities.length === 0) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
+//       let lastEA = (await gtic.query(queries.gtic.GET_ACTIVE_ECONOMIC_ACTIVITIES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
+//       if (!lastEA) lastEA = (await gtic.query(queries.gtic.GET_PAID_ECONOMIC_ACTIVITIES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
+//       if (!lastEA) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
+//       const lastEAPayment = moment(lastEA.fe_liquidacion);
+//       const pastMonthEA = moment(lastEA.fe_liquidacion).subtract(1, 'M');
+//       const EADate = moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
+//       const dateInterpolation = Math.floor(now.diff(EADate, 'M'));
+//       montoAcarreado.AE = {
+//         monto: lastEA.mo_pendiente ? parseFloat(lastEA.mo_pendiente) : 0,
+//         fecha: { month: pastMonthEA.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthEA.year() },
+//       };
+//       if (dateInterpolation !== 0) {
+//         AE = economicActivities.map((el) => {
+//           return {
+//             id: el.nu_ref_actividad,
+//             minimoTributable: Math.round(el.nu_ut) * UTMM,
+//             nombreActividad: el.tx_actividad,
+//             idContribuyente: el.co_contribuyente,
+//             alicuota: el.nu_porc_alicuota / 100,
+//             costoSolvencia: UTMM * 2,
+//             deuda: new Array(dateInterpolation).fill({ month: null, year: null }).map((value, index) => {
+//               const date = addMonths(new Date(lastEAPayment.toDate()), index);
+//               return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
+//             }),
+//           };
+//         });
+//       }
+//     }
+//     //SM
+//     const estates = (await gtic.query(queries.gtic.GET_ESTATES_BY_CONTRIBUTOR, [contributor.co_contribuyente])).rows;
+//     if (estates.length > 0) {
+//       if (!SMApplicationExists) {
+//         let lastSM = (await gtic.query(queries.gtic.GET_ACTIVE_MUNICIPAL_SERVICES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
+//         if (!lastSM) lastSM = (await gtic.query(queries.gtic.GET_PAID_MUNICIPAL_SERVICES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
+//         if (!lastSM) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
+//         const lastSMPayment = moment(lastSM.fe_liquidacion);
+//         const pastMonthSM = moment(lastSM.fe_liquidacion).subtract(1, 'M');
+//         const SMDate = moment([lastSMPayment.year(), lastSMPayment.month(), 1]);
+//         const dateInterpolationSM = Math.floor(now.diff(SMDate, 'M'));
+//         montoAcarreado.SM = {
+//           monto: lastSM.mo_pendiente ? parseFloat(lastSM.mo_pendiente) : 0,
+//           fecha: { month: pastMonthSM.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthSM.year() },
+//         };
+//         const debtSM = new Array(dateInterpolationSM).fill({ month: null, year: null }).map((value, index) => {
+//           const date = addMonths(new Date(lastSMPayment.toDate()), index);
+//           return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
+//         });
+//         SM = await Promise.all(
+//           estates.map(async (el) => {
+//             const calculoAseo =
+//               el.tx_tp_inmueble === 'COMERCIAL'
+//                 ? el.nu_metro_cuadrado && el.nu_metro_cuadrado !== 0
+//                   ? 0.15 * el.nu_metro_cuadrado
+//                   : (await gtic.query(queries.gtic.GET_MAX_CLEANING_TARIFF_BY_CONTRIBUTOR, [contributor.co_contribuyente])).rows[0].nu_tarifa
+//                 : (await gtic.query(queries.gtic.GET_RESIDENTIAL_CLEANING_TARIFF)).rows[0].nu_tarifa;
+//             const tarifaAseo = calculoAseo / UTMM > 300 ? UTMM * 300 : calculoAseo;
+//             const calculoGas =
+//               el.tx_tp_inmueble === 'COMERCIAL' ? (await gtic.query(queries.gtic.GET_MAX_GAS_TARIFF_BY_CONTRIBUTOR, [contributor.co_contribuyente])).rows[0].nu_tarifa : (await gtic.query(queries.gtic.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].nu_tarifa;
+//             const tarifaGas = calculoGas / UTMM > 300 ? UTMM * 300 : calculoGas;
+//             return { id: el.co_inmueble, tipoInmueble: el.tx_tp_inmueble, direccionInmueble: el.tx_direccion, tarifaAseo, tarifaGas, deuda: debtSM };
+//           })
+//         );
+//       }
+
+//       //IU
+//       if (!IUApplicationExists) {
+//         let lastIU = (await gtic.query(queries.gtic.GET_ACTIVE_URBAN_ESTATE_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
+//         if (!lastIU) lastIU = (await gtic.query(queries.gtic.GET_PAID_URBAN_ESTATE_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
+//         if (!lastIU) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
+//         const lastIUPayment = moment(lastIU.fe_liquidacion);
+//         const pastMonthIU = moment(lastIU.fe_liquidacion).subtract(1, 'M');
+//         const IUDate = moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
+//         const dateInterpolationIU = Math.floor(now.diff(IUDate, 'M'));
+//         montoAcarreado.IU = {
+//           monto: lastIU.mo_pendiente ? parseFloat(lastIU.mo_pendiente) : 0,
+//           fecha: { month: pastMonthIU.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthIU.year() },
+//         };
+//         if (dateInterpolationIU > 0) {
+//           const debtIU = new Array(dateInterpolationIU).fill({ month: null, year: null }).map((value, index) => {
+//             const date = addMonths(new Date(lastIUPayment.toDate()), index);
+//             return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
+//           });
+//           IU = estates.map((el) => {
+//             return {
+//               id: el.co_inmueble,
+//               direccionInmueble: el.tx_direccion,
+//               ultimoAvaluo: el.nu_monto,
+//               impuestoInmueble: (el.nu_monto * 0.01) / 12,
+//               deuda: debtIU,
+//             };
+//           });
+//         }
+//       }
+//     }
+
+//     //PP
+//     if (!PPApplicationExists) {
+//       let debtPP;
+//       let lastPP = (await gtic.query(queries.gtic.GET_ACTIVE_PUBLICITY_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
+//       if (!lastPP) lastPP = (await gtic.query(queries.gtic.GET_PAID_PUBLICITY_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
+//       if (lastPP) {
+//         const lastPPPayment = moment(lastPP.fe_liquidacion);
+//         const pastMonthPP = moment(lastPP.fe_liquidacion).subtract(1, 'M');
+//         const PPDate = moment([lastPPPayment.year(), lastPPPayment.month(), 1]);
+//         const dateInterpolationPP = Math.floor(now.diff(PPDate, 'M'));
+//         montoAcarreado.PP = {
+//           monto: lastPP.mo_pendiente ? parseFloat(lastPP.mo_pendiente) : 0,
+//           fecha: { month: pastMonthPP.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthPP.year() },
+//         };
+//         if (dateInterpolationPP > 0) {
+//           debtPP = new Array(dateInterpolationPP).fill({ month: null, year: null }).map((value, index) => {
+//             const date = addMonths(new Date(lastPPPayment.toDate()), index);
+//             return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
+//           });
+//         }
+//       } else {
+//         debtPP = new Array(now.month() + 1).fill({ month: null, year: null }).map((value, index) => {
+//           const date = addMonths(moment(`${now.year()}-01-01`).toDate(), index);
+//           return { month: date.toLocaleString('ES', { month: 'long' }), year: date.getFullYear() };
+//         });
+//       }
+//       if (debtPP) {
+//         const publicityArticles = (await gtic.query(queries.gtic.GET_PUBLICITY_ARTICLES)).rows;
+//         const publicitySubarticles = (await gtic.query(queries.gtic.GET_PUBLICITY_SUBARTICLES)).rows;
+//         PP = {
+//           deuda: debtPP,
+//           articulos: publicityArticles.map((el) => {
+//             return {
+//               id: +el.co_articulo,
+//               nombreArticulo: el.tx_articulo,
+//               subarticulos: publicitySubarticles
+//                 .filter((al) => +el.co_articulo === al.co_articulo)
+//                 .map((el) => {
+//                   return {
+//                     id: +el.co_medio,
+//                     nombreSubarticulo: el.tx_medio,
+//                     parametro: el.parametro,
+//                     costo: +el.ut_medio * UTMM,
+//                     costoAlto: el.parametro === 'BANDA' ? (+el.ut_medio + 2) * UTMM : undefined,
+//                   };
+//                 }),
+//             };
+//           }),
+//         };
+//       }
+//     }
+//     return {
+//       status: 200,
+//       message: 'Impuestos obtenidos satisfactoriamente',
+//       impuesto: {
+//         contribuyente: contributor.co_contribuyente,
+//         razonSocial: contributor.tx_razon_social || `${contributor.nb_contribuyente} ${contributor.ap_contribuyente}`,
+//         siglas: contributor.tx_siglas,
+//         rim: contributor.nu_referencia,
+//         documento: contributor.tx_rif || contributor.nu_cedula,
+//         AE,
+//         SM,
+//         IU,
+//         PP,
+//         montoAcarreado: addMissingCarriedAmounts(montoAcarreado),
+//       },
+//     };
+//   } catch (error) {
+//     console.log(error);
+//     throw {
+//       status: 500,
+//       error: errorMessageExtractor(error),
+//       message: errorMessageGenerator(error) || 'Error al obtener los impuestos',
+//     };
+//   } finally {
+//     client.release();
+//     gtic.release();
+//   }
+// };
