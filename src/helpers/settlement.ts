@@ -35,14 +35,15 @@ const idTiposSolicitud = {
 };
 const formatCurrency = (number: number) => new Intl.NumberFormat('de-DE').format(number);
 
-export const checkContributorExists = async (req: any, res, next) => {
+export const checkContributorExists = () => async (req: any, res, next) => {
   const client = await pool.connect();
   const { user } = req;
-  const { doc, ref, pref, tipoContribuyente } = req.query;
+  const { doc, ref, pref, contrib } = req.query;
   try {
+    if (user.tipoUsuario !== 3) return next();
     const contributorExists = (await client.query(queries.TAX_PAYER_EXISTS, [pref, doc])).rowCount > 0;
     if (!contributorExists) {
-      const x = await externalLinkingForCashier({ document: doc, docType: pref, reference: ref, user, typeUser: tipoContribuyente });
+      const x = await externalLinkingForCashier({ document: doc, docType: pref, reference: ref, user, typeUser: contrib });
       return x.linked && next();
     } else {
       return next();

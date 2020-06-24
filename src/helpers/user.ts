@@ -323,7 +323,7 @@ export const hasLinkedContributor = async (user) => {
       direccion: contributor.direccion,
       puntoReferencia: contributor.punto_referencia,
       verificado: contributor.verificado,
-      verificacionTelefono: verificacionTelefono.verificado,
+      verificacionTelefono: (verificacionTelefono && verificacionTelefono.verificado) || false,
     };
     return contribuyente;
   } catch (e) {
