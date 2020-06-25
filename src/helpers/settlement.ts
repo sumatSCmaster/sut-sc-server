@@ -520,9 +520,9 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
     const { datosContribuyente, sucursales, actividadesEconomicas } = linkingData[0];
     const { tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, tipoContribuyente } = datosContribuyente;
     const contributor = (await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, true, tipoContribuyente])).rows[0];
-    if (actividadesEconomicas) {
+    if (actividadesEconomicas!.length > 0) {
       await Promise.all(
-        actividadesEconomicas.map(async (x) => {
+        actividadesEconomicas!.map(async (x) => {
           return await client.query('INSERT INTO impuesto.actividad_economica_contribuyente (id_contribuyente, numero_referencia) VALUES ($1, $2)', [contributor.id_contribuyente, x.id]);
         })
       );
@@ -809,18 +809,14 @@ export const logInExternalLinking = async ({ credentials }) => {
                     return datos;
                   })
             ),
-            actividadesEconomicas: el.nu_referencia
-              ? await Promise.all(
-                  (await gtic.query(el.tx_dist_contribuyente === 'J' ? queries.gtic.ECONOMIC_ACTIVITIES_JURIDICAL : queries.gtic.ECONOMIC_ACTIVIES_NATURAL, [el.tx_tp_doc, el.tx_dist_contribuyente === 'J' ? el.tx_rif : el.nu_cedula])).rows.map(
-                    (x) => ({
-                      id: x.nu_ref_actividad,
-                      descripcion: x.tx_actividad,
-                      alicuota: x.nu_porc_alicuota,
-                      minimo_tributable: x.nu_ut,
-                    })
-                  )
-                )
-              : undefined,
+            actividadesEconomicas: await Promise.all(
+              (await gtic.query(el.tx_dist_contribuyente === 'J' ? queries.gtic.ECONOMIC_ACTIVITIES_JURIDICAL : queries.gtic.ECONOMIC_ACTIVIES_NATURAL, [el.tx_tp_doc, el.tx_dist_contribuyente === 'J' ? el.tx_rif : el.nu_cedula])).rows.map((x) => ({
+                id: x.nu_ref_actividad,
+                descripcion: x.tx_actividad,
+                alicuota: x.nu_porc_alicuota,
+                minimo_tributable: x.nu_ut,
+              }))
+            ),
           };
         })
         .filter((el) => el)
@@ -1164,7 +1160,7 @@ export const initialUserLinking = async (linkingData, user) => {
     }
     const contributor = (await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, true, tipoContribuyente])).rows[0];
     await client.query('UPDATE USUARIO SET id_contribuyente = $1 WHERE id_usuario = $2', [contributor.id_contribuyente, user.id]);
-    if (actividadesEconomicas) {
+    if (actividadesEconomicas.length > 0) {
       await Promise.all(
         actividadesEconomicas.map(async (x) => {
           return await client.query('INSERT INTO impuesto.actividad_economica_contribuyente (id_contribuyente, numero_referencia) VALUES ($1, $2)', [contributor.id_contribuyente, x.id]);
