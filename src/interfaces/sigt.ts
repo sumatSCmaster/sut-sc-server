@@ -185,6 +185,7 @@ export interface Liquidacion {
   certificado?: string;
   desglose?: object;
   recibo?: string;
+  estado?: string;
 }
 
 export interface DatosEnlace {
