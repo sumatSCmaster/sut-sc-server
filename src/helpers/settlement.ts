@@ -3,7 +3,7 @@ import queries from '@utils/queries';
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { PoolClient } from 'pg';
 import GticPool from '@utils/GticPool';
-import { insertPaymentReference } from './banks';
+import { insertPaymentReference, insertPaymentCashier } from './banks';
 import moment, { Moment } from 'moment';
 import switchcase from '@utils/switch';
 import { Liquidacion, Solicitud, Usuario, MultaImpuesto, VerificationValue } from '@root/interfaces/sigt';
@@ -377,6 +377,23 @@ const structureFinings = (x: any) => {
     estado: nullStringCheck(x.in_activo ? 'VIGENTE' : 'PAGADO'),
     monto: nullStringCheck(x.nu_monto),
     fecha: { month: moment(x.created_at).toDate().toLocaleDateString('ES', { month: 'long' }), year: moment(x.created_at).year() },
+  };
+};
+
+const structureContributor = (x: any) => {
+  return {
+    id: x.id_contribuyente,
+    tipoDocumento: x.tipo_documento,
+    tipoContribuyente: x.tipo_contribuyente,
+    documento: x.documento,
+    razonSocial: x.razon_social,
+    denomComercial: x.denominacion_comercial || undefined,
+    siglas: x.siglas || undefined,
+    parroquia: x.parroquia,
+    sector: x.sector,
+    direccion: x.direccion,
+    puntoReferencia: x.punto_referencia,
+    verificado: x.verificado,
   };
 };
 
@@ -904,22 +921,27 @@ const externalUserForLinkingExists = async ({ user, password, gtic }: { user: st
   }
 };
 
-export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<Solicitud> => {
+export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<Solicitud & any> => {
   const client = await pool.connect();
   try {
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-    const application: Solicitud[] = await Promise.all(
+    const application = await Promise.all(
       (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows.map(async (el) => {
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
+        const docs = (await client.query('SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1', [el.id_contribuyente])).rows[0];
         return {
           id: el.id_solicitud,
           usuario: typeof user === 'object' ? user : { id: user },
-          contribuyente: el.id_contribuyente,
+          contribuyente: structureContributor(docs),
           aprobado: el.aprobado,
+          documento: docs.documento,
+          tipoDocumento: docs.tipo_documento,
+          estado: (await client.query('SELECT state FROM impuesto.solicitud_state WHERE id = $1', [el.id_solicitud])).rows[0].state,
+          referenciaMunicipal: (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0].id_registro_municipal])).rows[0]?.referencia_municipal,
           fecha: el.fecha,
           monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0].monto_total,
           liquidaciones: liquidaciones
-            .filter((el) => el.tipoProcedimiento !== 'Multas')
+            .filter((el) => el.tipoProcedimiento !== 'MULTAS')
             .map((el) => {
               return {
                 id: el.id_liquidacion,
@@ -931,7 +953,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
               };
             }),
           multas: liquidaciones
-            .filter((el) => el.tipoProcedimiento === 'Multas')
+            .filter((el) => el.tipoProcedimiento === 'MULTAS')
             .map((el) => {
               return {
                 id: el.id_liquidacion,
@@ -969,7 +991,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
         return {
           id: el.id_solicitud,
           usuario: user,
-          contribuyente: el.id_contribuyente,
+          contribuyente: structureContributor(docs),
           aprobado: el.aprobado,
           documento: docs.documento,
           tipoDocumento: docs.tipo_documento,
@@ -980,7 +1002,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
           fecha: el.fecha,
           monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0].monto_total,
           liquidaciones: liquidaciones
-            .filter((el) => el.tipoProcedimiento !== 'Multas')
+            .filter((el) => el.tipoProcedimiento !== 'MULTAS')
             .map((el) => {
               return {
                 id: el.id_liquidacion,
@@ -992,7 +1014,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
               };
             }),
           multas: liquidaciones
-            .filter((el) => el.tipoProcedimiento === 'Multas')
+            .filter((el) => el.tipoProcedimiento === 'MULTAS')
             .map((el) => {
               return {
                 id: el.id_liquidacion,
@@ -1027,16 +1049,17 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
       (typeUser === 'JURIDICO' ? await client.query(queries.GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR, [referencia, document, docType]) : await client.query(queries.GET_APPLICATION_INSTANCES_FOR_NATURAL_CONTRIBUTOR, [document, docType])).rows.map(
         async (el) => {
           const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
+          const docs = (await client.query('SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1', [el.id_contribuyente])).rows[0];
 
           return {
             id: el.id_solicitud,
             usuario: el.usuario,
-            contribuyente: el.id_contribuyente,
+            contribuyente: structureContributor(docs),
             aprobado: el.aprobado,
             fecha: el.fecha,
             monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0].monto_total,
             liquidaciones: liquidaciones
-              .filter((el) => el.tipoProcedimiento !== 'Multas')
+              .filter((el) => el.tipoProcedimiento !== 'MULTAS')
               .map((el) => {
                 return {
                   id: el.id_liquidacion,
@@ -1048,7 +1071,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
                 };
               }),
             multas: liquidaciones
-              .filter((el) => el.tipoProcedimiento === 'Multas')
+              .filter((el) => el.tipoProcedimiento === 'MULTAS')
               .map((el) => {
                 return {
                   id: el.id_liquidacion,
@@ -1596,31 +1619,31 @@ export const insertSettlements = async ({ process, user }) => {
       })
     );
 
-    const solicitud: Solicitud & { registroMunicipal: string } = {
-      id: application.id_solicitud,
-      usuario: user,
-      contribuyente: application.contribuyente,
-      aprobado: application.aprobado,
-      fecha: application.fecha,
-      monto: finingMonths
-        ?.concat(settlement)
-        .map((el) => +el.monto)
-        .reduce((x, j) => x + j, 0) as number,
-      liquidaciones: settlement,
-      multas: finingMonths,
-      registroMunicipal: process.rim,
-    };
+    // const solicitud: Solicitud & { registroMunicipal: string } = {
+    //   id: application.id_solicitud,
+    //   usuario: user,
+    //   contribuyente: application.contribuyente,
+    //   aprobado: application.aprobado,
+    //   fecha: application.fecha,
+    //   monto: finingMonths
+    //     ?.concat(settlement)
+    //     .map((el) => +el.monto)
+    //     .reduce((x, j) => x + j, 0) as number,
+    //   liquidaciones: settlement,
+    //   multas: finingMonths,
+    //   registroMunicipal: process.rim,
+    // };
     const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
+    client.query('COMMIT');
+    const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
     await sendNotification(
       user,
-      // `Se ha iniciado una solicitud para el contribuyente con el documento de identidad: ${solicitud.nacionalidad}-${solicitud.documento}`,
-      'si',
+      `Se ha iniciado una solicitud para el contribuyente con el documento de identidad: ${solicitud.tipoDocumento}-${solicitud.documento}`,
       'CREATE_APPLICATION',
       'IMPUESTO',
       { ...solicitud, estado: state, nombreCorto: 'SEDEMAT' },
       client
     );
-    client.query('COMMIT');
     return { status: 201, message: 'Liquidaciones de impuestos creadas satisfactoriamente', solicitud };
   } catch (error) {
     console.log(error);
@@ -1653,7 +1676,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
         }
         el.fecha = paymentDate;
         el.concepto = 'IMPUESTO';
-        await insertPaymentReference(el, application, client);
+        user.tipoUsuario === 4 ? await insertPaymentReference(el, application, client) : await insertPaymentCashier(el, application, client);
       })
     );
     const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0];
@@ -1661,8 +1684,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
     console.log(applicationInstance);
     await sendNotification(
       user,
-      // `Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.nacionalidad}-${applicationInstance.documento}`,
-      'si',
+      `Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
       'UPDATE_APPLICATION',
       'IMPUESTO',
       { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
@@ -1693,8 +1715,7 @@ export const validateApplication = async (body, user) => {
     applicationInstance.aprobado = true;
     await sendNotification(
       user,
-      // `Se ha finalizado una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.nacionalidad}-${applicationInstance.documento}`,
-      'si',
+      `Se ha finalizado una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
       'UPDATE_APPLICATION',
       'IMPUESTO',
       { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },

@@ -78,6 +78,15 @@ export const insertPaymentReference = async (payment: any, procedure: number, cl
   }
 };
 
+export const insertPaymentCashier = async (payment: any, procedure: number, client: PoolClient) => {
+  const { referencia, banco, costo, fecha, concepto, metodoPago } = payment;
+  try {
+    return await client.query(queries.INSERT_PAYMENT_CASHIER, [procedure, referencia || null, costo, banco || null, fecha, concepto, metodoPago]);
+  } catch (e) {
+    throw errorMessageExtractor(e);
+  }
+};
+
 const validateCases = switchcase({ IMPUESTO: validateApplication, TRAMITE: validateProcedure, MULTA: validateFining })(null);
 
 const validationHandler = async ({ concept, body, user }) => {
