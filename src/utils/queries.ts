@@ -649,6 +649,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
         GROUP BY r.codigo, r.descripcion;`,
 
   //EXONERACIONES
+  GET_CONTRIBUTOR: 'SELECT * FROM impuesto.contribuyente c WHERE c.tipo_documento = $1 AND c.documento = $2;',
   CREATE_EXONERATION: 'INSERT INTO impuesto.plazo_exoneracion (id_plazo_exoneracion, fecha_inicio) VALUES (default, $1) RETURNING *;',
   INSERT_CONTRIBUTOR_EXONERATED_ACTIVITY: `INSERT INTO impuesto.contribuyente_exoneracion (id_contribuyente_exoneracion, id_plazo_exoneracion, id_contribuyente, id_actividad_economica)
                 VALUES (default, $1, $2, $3);`,
@@ -665,7 +666,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
         INNER JOIN impuesto.contribuyente_exoneracion ce ON ce.id_plazo_exoneracion = pe.id_plazo_exoneracion \
         INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = ce.id_contribuyente \
         LEFT JOIN impuesto.actividad_economica ae ON ae.id_actividad_economica = ce.id_actividad_economica \
-        WHERE c.id_contribuyente = $1 ORDER BY pe.id_plazo_exoneracion DESC;`,
+        WHERE c.tipo_documento = $1 AND c.documento = $2 ORDER BY pe.id_plazo_exoneracion DESC;`,
   GET_ACTIVITY_EXONERATIONS: `SELECT pe.*, ae.*, (pe.fecha_inicio <= NOW() AND pe.fecha_fin IS NULL ) AS active 
         FROM impuesto.plazo_exoneracion pe
         INNER JOIN impuesto.actividad_economica_exoneracion aee ON aee.id_plazo_exoneracion = pe.id_plazo_exoneracion
