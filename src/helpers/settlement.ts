@@ -1160,7 +1160,7 @@ export const initialUserLinking = async (linkingData, user) => {
     }
     const contributor = (await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, true, tipoContribuyente])).rows[0];
     await client.query('UPDATE USUARIO SET id_contribuyente = $1 WHERE id_usuario = $2', [contributor.id_contribuyente, user.id]);
-    if (actividadesEconomicas) {
+    if (actividadesEconomicas && actividadesEconomicas.length > 0) {
       await Promise.all(
         actividadesEconomicas.map(async (x) => {
           return await client.query('INSERT INTO impuesto.actividad_economica_contribuyente (id_contribuyente, numero_referencia) VALUES ($1, $2)', [contributor.id_contribuyente, x.id]);
