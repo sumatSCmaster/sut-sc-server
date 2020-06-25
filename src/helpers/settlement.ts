@@ -60,7 +60,7 @@ export const checkContributorExists = () => async (req: any, res, next) => {
     res.send({
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al obtener la informacion del usuario',
+      message: errorMessageGenerator(error) || errorMessageExtractor(error) || 'Error al obtener la informacion del usuario',
     });
   } finally {
     client.release();
@@ -314,9 +314,7 @@ export const getTaxPayerInfo = async ({ docType, document, type, gtic, client })
         telefonoMovil: nullStringCheck(naturalContributor.nu_telf_movil).trim(),
         telefonoHabitacion: nullStringCheck(naturalContributor.nu_telf_hab).trim(),
         email: nullStringCheck(naturalContributor.tx_email).trim(),
-        parroquia: naturalContributor.tx_direccion
-          ? (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [naturalContributor.tx_direccion.split('Parroquia')[1].split('Sector')[0].trim()])).rows.map((el) => (el ? el : { id: null }))[0].id || undefined
-          : undefined,
+        parroquia: naturalContributor.tx_direccion ? (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [naturalContributor.tx_direccion.split('Parroquia')[1].split('Sector')[0].trim()])).rows[0]?.id || undefined : undefined,
         sector: nullStringCheck(naturalContributor.sector).trim(),
         direccion: naturalContributor.tx_direccion ? 'Avenida ' + naturalContributor.tx_direccion.split('Parroquia')[1].split('Avenida')[1].split('Pto')[0].trim().replace(/.$/, '') : undefined,
         puntoReferencia: nullStringCheck(naturalContributor.tx_punto_referencia).trim(),
@@ -334,9 +332,7 @@ export const getTaxPayerInfo = async ({ docType, document, type, gtic, client })
         telefonoMovil: nullStringCheck(juridicalContributor.nu_telf_movil).trim(),
         telefonoHabitacion: nullStringCheck(juridicalContributor.nu_telf_hab).trim(),
         email: nullStringCheck(juridicalContributor.tx_email).trim(),
-        parroquia: juridicalContributor.tx_direccion
-          ? (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [juridicalContributor.tx_direccion.split('Parroquia')[1].split('Sector')[0].trim()])).rows.map((el) => (el ? el : { id: null }))[0].id || undefined
-          : undefined,
+        parroquia: juridicalContributor.tx_direccion ? (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [juridicalContributor.tx_direccion.split('Parroquia')[1].split('Sector')[0].trim()])).rows[0]?.id || undefined : undefined,
         sector: nullStringCheck(juridicalContributor.sector).trim(),
         direccion: juridicalContributor.tx_direccion ? 'Avenida ' + juridicalContributor.tx_direccion.split('Parroquia')[1].split('Avenida')[1].split('Pto')[0].trim().replace(/.$/, '') : undefined,
         puntoReferencia: nullStringCheck(juridicalContributor.tx_punto_referencia).trim(),
@@ -508,7 +504,12 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
             ),
             actividadesEconomicas: el.nu_referencia
               ? await Promise.all(
-                  (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [el.co_contribuyente])).rows.map((x) => ({ id: x.nu_ref_actividad, descripcion: x.tx_actividad, alicuota: x.nu_porc_alicuota, minimo_tributable: x.nu_ut }))
+                  (await gtic.query(typeUser === 'JURIDICO' ? queries.gtic.ECONOMIC_ACTIVITIES_JURIDICAL : queries.gtic.ECONOMIC_ACTIVIES_NATURAL, [docType, document])).rows.map((x) => ({
+                    id: x.nu_ref_actividad,
+                    descripcion: x.tx_actividad,
+                    alicuota: x.nu_porc_alicuota,
+                    minimo_tributable: x.nu_ut,
+                  }))
                 )
               : undefined,
           };
@@ -549,7 +550,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                 )
               : undefined;
           if (pagados.length > 0) {
-            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
             await client.query('UPDATE impuesto.solicitud SET fecha = $1, fecha_aprobado = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
             await Promise.all(
@@ -570,7 +571,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
           }
 
           if (vigentes.length > 0) {
-            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
             await client.query('UPDATE impuesto.solicitud SET fecha = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
@@ -810,7 +811,14 @@ export const logInExternalLinking = async ({ credentials }) => {
             ),
             actividadesEconomicas: el.nu_referencia
               ? await Promise.all(
-                  (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [el.co_contribuyente])).rows.map((x) => ({ id: x.nu_ref_actividad, descripcion: x.tx_actividad, alicuota: x.nu_porc_alicuota, minimo_tributable: x.nu_ut }))
+                  (await gtic.query(el.tx_dist_contribuyente === 'J' ? queries.gtic.ECONOMIC_ACTIVITIES_JURIDICAL : queries.gtic.ECONOMIC_ACTIVIES_NATURAL, [el.tx_tp_doc, el.tx_dist_contribuyente === 'J' ? el.tx_rif : el.nu_cedula])).rows.map(
+                    (x) => ({
+                      id: x.nu_ref_actividad,
+                      descripcion: x.tx_actividad,
+                      alicuota: x.nu_porc_alicuota,
+                      minimo_tributable: x.nu_ut,
+                    })
+                  )
                 )
               : undefined,
           };
@@ -1195,7 +1203,7 @@ export const initialUserLinking = async (linkingData, user) => {
                 )
               : undefined;
           if (pagados.length > 0) {
-            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
             await client.query('UPDATE impuesto.solicitud SET fecha = $1, fecha_aprobado = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
             await Promise.all(
@@ -1216,7 +1224,7 @@ export const initialUserLinking = async (linkingData, user) => {
           }
 
           if (vigentes.length > 0) {
-            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
             await client.query('UPDATE impuesto.solicitud SET fecha = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
