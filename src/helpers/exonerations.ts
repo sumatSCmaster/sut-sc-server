@@ -19,6 +19,8 @@ export const getContributorExonerations = async({ typeDoc, doc }) => {
         return {
             contribuyente: {
                 ...contributor,
+                tipoDocumento: typeDoc,
+                documento: doc,
                 actividades: contributorEconomicActivities.rows
             },
             exoneracionGeneral: generalExoneration ? {
