@@ -8,6 +8,7 @@ import switchcase from '@utils/switch';
 import { sendNotification } from './notification';
 import { sendEmail } from './events/procedureUpdateState';
 import { createRequestForm, createCertificate } from '@utils/forms';
+import { approveContributorBenefits, approveContributorSignUp } from './settlement';
 
 const pool = Pool.getInstance();
 
@@ -385,6 +386,7 @@ const isNotPrepaidProcedure = ({ suffix, user }: { suffix: string; user: Usuario
   if (suffix === 'tl' && user.tipoUsuario !== 4) return !condition;
   if (suffix === 'rc') return !condition;
   if (suffix === 'bc') return !condition;
+  if (suffix === 'tae') return !condition;
   return condition;
 };
 
@@ -566,10 +568,12 @@ export const processProcedure = async (procedure, user: Usuario) => {
       else datos = prevData.datos;
     }
 
-    if (procedure.sufijo === 'ompu') {
+    if (procedure.sufijo === 'ompu' || procedure.sufijo === 'rc') {
       const { aprobado } = procedure;
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
       await client.query(queries.UPDATE_APPROVED_STATE_FOR_PROCEDURE, [aprobado, procedure.idTramite]);
+
+      if (procedure.sufijo === 'rc' && aprobado) await approveContributorSignUp({ procedure: (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0], client });
     } else {
       if (nextEvent.startsWith('finalizar')) {
         procedure.datos = datos;
@@ -712,7 +716,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
       prevData.datos.funcionario = { ...procedure.datos, observaciones };
       datos = prevData.datos;
-      //llamar aqui el metodo para crear la solicitud con los beneficios
+      await approveContributorBenefits({ data: datos, client });
     }
 
     if (procedure.sufijo === 'ompu') {
@@ -813,7 +817,7 @@ const procedureEvents = switchcase({
     ingresardatos: 'validar_ompu',
     validando: 'finalizar_ompu',
   },
-  rc: { iniciado: 'revisar_rc', enrevision: { true: 'aprobar_rc', false: 'rechazar_rc' } },
+  rc: { iniciado: 'procesar_rc', enproceso: { true: 'aprobar_rc', false: 'rechazar_rc' } },
   bc: { iniciado: 'revisar_bc', enrevision: { true: 'aprobar_bc', false: 'rechazar_bc' } },
 })(null);
 

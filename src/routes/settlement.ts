@@ -15,7 +15,6 @@ import {
   initialUserLinking,
   getEntireDebtsForContributor,
   resendUserCode,
-  createUserBenefits,
   checkContributorExists,
 } from '@helpers/settlement';
 import { Usuario } from '@root/interfaces/sigt';
@@ -102,12 +101,12 @@ router.post(
   }
 );
 
-router.post('/benefits', authenticate('jwt'), async (req, res) => {
-  const { contribuyente } = req.body;
-  const [error, data] = await fulfill(createUserBenefits(contribuyente));
-  if (error) res.status(500).json(error);
-  if (data) res.status(data.status).json(data);
-});
+// router.post('/benefits', authenticate('jwt'), async (req, res) => {
+//   const { contribuyente } = req.body;
+//   const [error, data] = await fulfill(createUserBenefits(contribuyente));
+//   if (error) res.status(500).json(error);
+//   if (data) res.status(data.status).json(data);
+// });
 
 router.post('/taxPayer', authenticate('jwt'), async (req, res) => {
   const { datosEnlace } = req.body;

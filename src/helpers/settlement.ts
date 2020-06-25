@@ -20,6 +20,7 @@ import { query } from 'express-validator';
 import { sendNotification } from './notification';
 import { sendRimVerification, verifyCode, resendCode } from './verification';
 import { hasLinkedContributor } from './user';
+import e from 'express';
 const written = require('written-number');
 
 const gticPool = GticPool.getInstance();
@@ -1412,36 +1413,6 @@ export const resendUserCode = async ({ user }) => {
   }
 };
 
-export const createUserBenefits = async (contributor) => {
-  const client = await pool.connect();
-  try {
-  } catch (error) {
-    console.log(error);
-    throw {
-      status: 500,
-      error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al crear solicitud de beneficios de usuario',
-    };
-  } finally {
-    client.release();
-  }
-};
-
-export const userBenefitsAgreement = async (contributor) => {
-  const client = await pool.connect();
-  try {
-  } catch (error) {
-    console.log(error);
-    throw {
-      status: 500,
-      error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al crear solicitud de beneficios de usuario',
-    };
-  } finally {
-    client.release();
-  }
-};
-
 //FIXME: acoplar a los estandares actuales de SUT
 export const insertSettlements = async ({ process, user }) => {
   const client = await pool.connect();
@@ -1731,6 +1702,31 @@ export const validateApplication = async (body, user) => {
     };
   } finally {
     client.release();
+  }
+};
+
+export const approveContributorSignUp = async ({ procedure, client }: { procedure: any; client: PoolClient }) => {
+  try {
+    console.log(procedure);
+  } catch (error) {
+    console.log(error);
+    throw e;
+  }
+};
+
+export const approveContributorAELicense = async ({ data, client }: { data: any; client: PoolClient }) => {
+  try {
+  } catch (error) {
+    console.log(error);
+    throw e;
+  }
+};
+
+export const approveContributorBenefits = async ({ data, client }: { data: any; client: PoolClient }) => {
+  try {
+  } catch (error) {
+    console.log(error);
+    throw e;
   }
 };
 
