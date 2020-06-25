@@ -539,6 +539,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
               ? await Promise.all(
                   inmuebles.map(async (el) => {
                     const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_referencia_municipal, el.direccion, el.tipoInmueble])).rows[0];
+                    console.log(inmueble);
                     await client.query('INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)', [inmueble.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
                   })
                 )
