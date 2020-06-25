@@ -8,8 +8,8 @@
   },
   "scripts": {
     "start": "node build/server.js",
-    "start:debug": "node --inspect=5858 -r ts-node/register -r tsconfig-paths/register src/server.ts",
-    "dev": "nodemon",
+    "start:debug": "node --inspect=9229 -r ts-node/register -r tsconfig-paths/register src/server.ts",
+    "dev": "nodemon --inspect",
     "build": "gulp",
     "test": "cross-env NODE_ENV=test jest --runInBand --detectOpenHandles",
     "test:watch": "cross-env NODE_ENV=test jest --watch --runInBand --detectOpenHandles",
