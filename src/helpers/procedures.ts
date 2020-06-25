@@ -8,7 +8,7 @@ import switchcase from '@utils/switch';
 import { sendNotification } from './notification';
 import { sendEmail } from './events/procedureUpdateState';
 import { createRequestForm, createCertificate } from '@utils/forms';
-import { approveContributorBenefits, approveContributorSignUp } from './settlement';
+import { approveContributorBenefits, approveContributorSignUp, approveContributorAELicense } from './settlement';
 
 const pool = Pool.getInstance();
 
@@ -386,7 +386,6 @@ const isNotPrepaidProcedure = ({ suffix, user }: { suffix: string; user: Usuario
   if (suffix === 'tl' && user.tipoUsuario !== 4) return !condition;
   if (suffix === 'rc') return !condition;
   if (suffix === 'bc') return !condition;
-  if (suffix === 'tae') return !condition;
   return condition;
 };
 
@@ -480,6 +479,7 @@ export const validateProcedure = async (procedure, user: Usuario) => {
   let dir, respState;
   try {
     client.query('BEGIN');
+    console.log('si');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.idTramite])).rows[0];
     if (!procedure.hasOwnProperty('aprobado')) {
       return { status: 403, message: 'No es posible actualizar este estado' };
@@ -568,12 +568,17 @@ export const processProcedure = async (procedure, user: Usuario) => {
       else datos = prevData.datos;
     }
 
-    if (procedure.sufijo === 'ompu' || procedure.sufijo === 'rc') {
+    if (procedure.sufijo === 'ompu' || procedure.sufijo === 'rc' || resources.tipoTramite === 28) {
       const { aprobado } = procedure;
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
       await client.query(queries.UPDATE_APPROVED_STATE_FOR_PROCEDURE, [aprobado, procedure.idTramite]);
 
       if (procedure.sufijo === 'rc' && aprobado) await approveContributorSignUp({ procedure: (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0], client });
+      if (resources.tipoTramite === 28 && aprobado) {
+        procedure.datos = await approveContributorAELicense({ data: datos, client });
+        // dir = await createCertificate(procedure, client);
+        // respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, datos || null, dir || null, true]);
+      }
     } else {
       if (nextEvent.startsWith('finalizar')) {
         procedure.datos = datos;
@@ -819,6 +824,7 @@ const procedureEvents = switchcase({
   },
   rc: { iniciado: 'procesar_rc', enproceso: { true: 'aprobar_rc', false: 'rechazar_rc' } },
   bc: { iniciado: 'revisar_bc', enrevision: { true: 'aprobar_bc', false: 'rechazar_bc' } },
+  lae: { iniciado: 'validar_lae', validando: 'enproceso_lae', enproceso: { true: 'aprobar_lae', false: 'rechazar_lae' } },
 })(null);
 
 const procedureEventHandler = (suffix, state) => {

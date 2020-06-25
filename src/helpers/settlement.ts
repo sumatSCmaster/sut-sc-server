@@ -1716,6 +1716,7 @@ export const approveContributorSignUp = async ({ procedure, client }: { procedur
 
 export const approveContributorAELicense = async ({ data, client }: { data: any; client: PoolClient }) => {
   try {
+    console.log(data);
   } catch (error) {
     console.log(error);
     throw e;

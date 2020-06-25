@@ -51,6 +51,7 @@ export const validatePayments = async (body, user) => {
           documento: el.documento,
           nacionalidad: el.nacionalidad,
         };
+        console.log(el.concepto);
         await validationHandler({ concept: el.concepto, body: pagoValidado, user });
         return pagoValidado;
       })
@@ -90,6 +91,7 @@ export const insertPaymentCashier = async (payment: any, procedure: number, clie
 const validateCases = switchcase({ IMPUESTO: validateApplication, TRAMITE: validateProcedure, MULTA: validateFining })(null);
 
 const validationHandler = async ({ concept, body, user }) => {
-  const executedMethod = await validateCases(concept);
+  const executedMethod = switchcase({ IMPUESTO: validateApplication, TRAMITE: validateProcedure, MULTA: validateFining })(null)(concept);
+  console.log(executedMethod);
   return executedMethod ? await executedMethod(body, user) : { status: 400, message: 'No existe un caso de validacion definido con este concepto' };
 };
