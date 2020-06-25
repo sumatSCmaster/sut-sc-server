@@ -15,11 +15,13 @@ export const getContributorExonerations = async({ typeDoc, doc }) => {
         let activityExonerations = activeExonerations.filter(row => row.id_actividad_economica);
         
         return {
-            exoneracionGeneral: {
+            exoneracionGeneral: generalExoneration ? {
+                id: generalExoneration.id_plazo_exoneracion,
                 fechaInicio: generalExoneration.fecha_inicio,
-            },
+            } : {},
             exoneracionesDeActividadesEconomicas: activityExonerations.map((row) => {
                 return {
+                    id: row.id_plazo_exoneracion,
                     fechaInicio: row.fecha_inicio,
                     numeroReferencia: row.numeroReferencia,
                     descripcion: row.descripcion
@@ -45,6 +47,7 @@ export const getActivityExonerations = async() => {
         return {
             exoneracionesGeneralesDeActividadesEconomicas: activeExonerations.map((row) => {
                 return {
+                    id: row.id_plazo_exoneracion,
                     fechaInicio: row.fecha_inicio,
                     numeroReferencia: row.numeroReferencia,
                     descripcion: row.descripcion
@@ -70,6 +73,7 @@ export const getBranchExonerations = async () => {
         return {
             exoneracionesGeneralesDeRamos: activeExonerations.map((row) => {
                 return {
+                    id: row.id_plazo_exoneracion,
                     fechaInicio: row.fecha_inicio,
                     codigo: row.codigo,
                     descripcion: row.descripcion
