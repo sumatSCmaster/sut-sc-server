@@ -168,7 +168,6 @@ const getSettlementInstances = async (user, client: PoolClient) => {
     let payload = belongsToAnInstitution(user) ? undefined : [user.id];
     let response = (await client.query(query, payload)).rows;
     return response.map((el) => {
-      console.log(el)
       const liquidacion: Liquidacion & { pagado: string; aprobado: string } = {
         id: el.id_liquidacion,
         ramo: el.descripcion,

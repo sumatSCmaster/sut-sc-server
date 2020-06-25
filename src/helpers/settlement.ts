@@ -1434,7 +1434,7 @@ export const insertSettlements = async ({ process, user }) => {
   try {
     client.query('BEGIN');
     const userContributor =
-      user.tipoUsuario !== 4
+      user.tipoUsuario === 4
         ? (await client.query('SELECT c.* FROM USUARIO u INNER JOIN impuesto.contribuyente c ON u.id_contribuyente = c.id_contribuyente WHERE u.id_usuario = $1', [user.id])).rows
         : (await client.query(queries.TAX_PAYER_EXISTS, [process.tipoDocumento, process.documento])).rows;
     const userHasContributor = userContributor.length > 0;

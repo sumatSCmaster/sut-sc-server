@@ -5,10 +5,10 @@ import { ActividadEconomica, Ramo } from '@root/interfaces/sigt';
 
 const pool = Pool.getInstance();
 
-export const getContributorExonerations = async({ contributorId }) => {
+export const getContributorExonerations = async({ typeDoc, doc }) => {
     const client = await pool.connect()
     try{
-        const contributorExonerations = await client.query(queries.GET_CONTRIBUTOR_EXONERATIONS, [contributorId]);
+        const contributorExonerations = await client.query(queries.GET_CONTRIBUTOR_EXONERATIONS, [typeDoc, doc]);
         const activeExonerations = contributorExonerations.rows.filter((row) => row.active);
         
         let generalExoneration = activeExonerations.find(row => !row.id_actividad_economica);
@@ -85,11 +85,13 @@ export const getBranchExonerations = async () => {
     }
 }
 
-export const createContributorExoneration = async ({idContributor, from, activities}: { idContributor: number, from: Date, activities: ActividadEconomica[]  }) => {
+export const createContributorExoneration = async ({typeDoc, doc, from, activities}: { typeDoc: string, doc: string, from: Date, activities: ActividadEconomica[]  }) => {
     const client = await pool.connect()
     try{
         await client.query('BEGIN');
         const exoneration = (await client.query(queries.CREATE_EXONERATION, [from])).rows[0];
+        const contributor = (await client.query(queries.GET_CONTRIBUTOR,[typeDoc, doc]))
+        const idContributor = contributor.rows[0].id_contribuyente;
         if(activities){
             await Promise.all(activities.map(async (row) => {
                 if((await client.query(queries.GET_EXONERATED_ACTIVITY_BY_CONTRIBUTOR, [idContributor, row.id])).rowCount > 0){
