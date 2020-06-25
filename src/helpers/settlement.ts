@@ -538,7 +538,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
             inmuebles.length > 0
               ? await Promise.all(
                   inmuebles.map(async (el) => {
-                    const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_referencia_municipal, el.direccion, el.tipoInmueble])).rows[0];
+                    const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_registro_municipal, el.direccion, el.tipoInmueble])).rows[0];
                     console.log(inmueble);
                     await client.query('INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)', [inmueble.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
                   })
@@ -604,7 +604,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
               inmuebles.length > 0
                 ? await Promise.all(
                     inmuebles.map(async (el) => {
-                      const inmueble = await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_referencia_municipal, el.direccion, el.tipoInmueble]);
+                      const inmueble = await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_registro_municipal, el.direccion, el.tipoInmueble]);
                       await client.query('INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)', [inmueble.rows[0].id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
                     })
                   )
@@ -614,7 +614,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
               inmuebles.length > 0
                 ? await Promise.all(
                     inmuebles.map(async (el) => {
-                      const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [(registry && registry.id_referencia_municipal) || null, el.direccion, el.tipoInmueble])).rows[0];
+                      const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [(registry && registry.id_registro_municipal) || null, el.direccion, el.tipoInmueble])).rows[0];
                       await client.query('INSERT INTO impuesto.inmueble_contribuyente_natural (id_inmueble, id_contribuyente) VALUES ($1, $2) RETURNING *', [inmueble.id_inmueble, contributor.id_contribuyente]);
                       await client.query('INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)', [inmueble.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
                       return 0;
@@ -1181,7 +1181,7 @@ export const initialUserLinking = async (linkingData, user) => {
             inmuebles.length > 0
               ? await Promise.all(
                   inmuebles.map(async (el) => {
-                    const x = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_referencia_municipal, el.direccion, el.tipoInmueble])).rows[0];
+                    const x = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_registro_municipal, el.direccion, el.tipoInmueble])).rows[0];
                     await client.query('INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)', [x.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
                   })
                 )
@@ -1259,7 +1259,7 @@ export const initialUserLinking = async (linkingData, user) => {
               inmuebles.length > 0
                 ? await Promise.all(
                     inmuebles.map(async (el) => {
-                      const inmueble = await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_referencia_municipal, el.direccion, el.tipoInmueble]);
+                      const inmueble = await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_registro_municipal, el.direccion, el.tipoInmueble]);
                       await client.query('INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)', [x.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
                     })
                   )
@@ -1269,7 +1269,7 @@ export const initialUserLinking = async (linkingData, user) => {
               inmuebles.length > 0
                 ? await Promise.all(
                     inmuebles.map(async (el) => {
-                      const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [(registry && registry.id_referencia_municipal) || null, el.direccion, el.tipoInmueble])).rows[0];
+                      const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [(registry && registry.id_registro_municipal) || null, el.direccion, el.tipoInmueble])).rows[0];
                       await client.query('INSERT INTO impuesto.inmueble_contribuyente_natural (id_inmueble, id_contribuyente) VALUES ($1, $2) RETURNING *', [inmueble.id_inmueble, contributor.id_contribuyente]);
                       await client.query('INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)', [inmueble.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
                       return 0;
