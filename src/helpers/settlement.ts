@@ -546,6 +546,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
               : undefined;
           if (pagados.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            await client.query('UPDATE impuesto.solicitud SET fecha = $1, fecha_aprobado = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
             await Promise.all(
               pagados.map(async (el) => {
@@ -566,6 +567,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
 
           if (vigentes.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            await client.query('UPDATE impuesto.solicitud SET fecha = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
                 const settlement = (
@@ -624,6 +626,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
           }
           if (pagados.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            await client.query('UPDATE impuesto.solicitud SET fecha = $1, fecha_aprobado = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
             await Promise.all(
               pagados.map(async (el) => {
@@ -634,7 +637,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                     el.ramo,
                     { fecha: el.fecha },
                     moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
-                    registry.id_registro_municipal,
+                    (registry && registry.id_registro_municipal) || null,
                   ])
                 ).rows[0];
                 await client.query('UPDATE impuesto.liquidacion SET fecha_liquidacion = $1 WHERE id_liquidacion = $2', [el.fechaLiquidacion, settlement.id_liquidacion]);
@@ -644,6 +647,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
 
           if (vigentes.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            await client.query('UPDATE impuesto.solicitud SET fecha = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
                 const settlement = (
@@ -653,7 +657,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                     el.ramo,
                     { fecha: el.fecha },
                     moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
-                    registry.id_registro_municipal,
+                    (registry && registry.id_registro_municipal) || null,
                   ])
                 ).rows[0];
                 await client.query('UPDATE impuesto.liquidacion SET fecha_liquidacion = $1 WHERE id_liquidacion = $2', [el.fechaLiquidacion, settlement.id_liquidacion]);
@@ -1188,6 +1192,7 @@ export const initialUserLinking = async (linkingData, user) => {
               : undefined;
           if (pagados.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            await client.query('UPDATE impuesto.solicitud SET fecha = $1, fecha_aprobado = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
             await Promise.all(
               pagados.map(async (el) => {
@@ -1208,6 +1213,7 @@ export const initialUserLinking = async (linkingData, user) => {
 
           if (vigentes.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            await client.query('UPDATE impuesto.solicitud SET fecha = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
                 const settlement = (
@@ -1279,6 +1285,7 @@ export const initialUserLinking = async (linkingData, user) => {
           }
           if (pagados.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            await client.query('UPDATE impuesto.solicitud SET fecha = $1, fecha_aprobado = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
             await Promise.all(
               pagados.map(async (el) => {
@@ -1289,7 +1296,7 @@ export const initialUserLinking = async (linkingData, user) => {
                     el.ramo,
                     { fecha: el.fecha },
                     moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
-                    registry.id_registro_municipal,
+                    (registry && registry.id_registro_municipal) || null,
                   ])
                 ).rows[0];
                 await client.query('UPDATE impuesto.liquidacion SET fecha_liquidacion = $1 WHERE id_liquidacion = $2', [el.fechaLiquidacion, settlement.id_liquidacion]);
@@ -1299,6 +1306,7 @@ export const initialUserLinking = async (linkingData, user) => {
 
           if (vigentes.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            await client.query('UPDATE impuesto.solicitud SET fecha = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
                 const settlement = (
@@ -1308,7 +1316,7 @@ export const initialUserLinking = async (linkingData, user) => {
                     el.ramo,
                     { fecha: el.fecha },
                     moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
-                    registry.id_registro_municipal,
+                    (registry && registry.id_registro_municipal) || null,
                   ])
                 ).rows[0];
                 await client.query('UPDATE impuesto.liquidacion SET fecha_liquidacion = $1 WHERE id_liquidacion = $2', [el.fechaLiquidacion, settlement.id_liquidacion]);
