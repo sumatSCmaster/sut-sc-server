@@ -8,6 +8,8 @@ const pool = Pool.getInstance();
 export const getContributorExonerations = async({ typeDoc, doc }) => {
     const client = await pool.connect()
     try{
+        const contributor = (await client.query(queries.GET_CONTRIBUTOR, [typeDoc, doc])).rows[0];
+        const contributorEconomicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [contributor.id]))
         const contributorExonerations = await client.query(queries.GET_CONTRIBUTOR_EXONERATIONS, [typeDoc, doc]);
         const activeExonerations = contributorExonerations.rows.filter((row) => row.active);
         
@@ -15,6 +17,10 @@ export const getContributorExonerations = async({ typeDoc, doc }) => {
         let activityExonerations = activeExonerations.filter(row => row.id_actividad_economica);
         
         return {
+            contribuyente: {
+                ...contributor,
+                actividades: contributorEconomicActivities.rows
+            },
             exoneracionGeneral: generalExoneration ? {
                 id: generalExoneration.id_plazo_exoneracion,
                 fechaInicio: generalExoneration.fecha_inicio,
