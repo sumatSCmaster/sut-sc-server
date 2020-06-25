@@ -43,11 +43,11 @@ export const sendRimVerification = async (value: VerificationValue, payload: { i
           })
         );
         try{
-          // await twilioClient.messages.create({
-          //   body: `Su codigo de verificación es: ${code}`,
-          //   from: process.env.TWILIO_NUMBER,
-          //   to: `+58${payload.content}`,
-          // });
+          await twilioClient.messages.create({
+            body: `Su codigo de verificación es: ${code}`,
+            from: process.env.TWILIO_NUMBER,
+            to: `+58${payload.content}`,
+          });
         } catch(e){
           console.log(e)
         }
@@ -91,11 +91,11 @@ export const resendCode = async (value: VerificationValue, payload: { user: numb
             console.log(code);
             console.log(payload.user);
             await client.query(queries.UPDATE_CODE, [code, payload.user]);
-            // await twilioClient.messages.create({
-            //   body: `Su codigo de verificación es: ${code}`,
-            //   from: process.env.TWILIO_NUMBER,
-            //   to: `+58${verificationRow.telefono}`,
-            // });
+            await twilioClient.messages.create({
+              body: `Su codigo de verificación es: ${code}`,
+              from: process.env.TWILIO_NUMBER,
+              to: `+58${verificationRow.telefono}`,
+            });
             client.query('COMMIT');
 
             return {
