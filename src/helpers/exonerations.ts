@@ -152,15 +152,15 @@ export const createActivityExoneration = async ({ from, activities }: { from: Da
     }
 }
 
-export const createBranchExoneration = async ({ from, activities }: { from: Date, activities: Ramo[] }) => {
+export const createBranchExoneration = async ({ from, branches }: { from: Date, branches: Ramo[] }) => {
     const client = await pool.connect()
     try{
         await client.query('BEGIN');
         const exoneration = (await client.query(queries.CREATE_EXONERATION, [from])).rows[0];
         
-        await Promise.all(activities.map(async (row) => {
+        await Promise.all(branches.map(async (row) => {
             if((await client.query(queries.GET_BRANCH_IS_EXONERATED, [row.id])).rowCount > 0){
-                throw new Error(`La actividad economica ${row.descripcion} ya está exonerada`)
+                throw new Error(`El ramo ${row.descripcion} ya está exonerado`)
             }else {
                 return client.query(queries.INSERT_EXONERATION_BRANCH, [exoneration.id_plazo_exoneracion, row.id])
             }
