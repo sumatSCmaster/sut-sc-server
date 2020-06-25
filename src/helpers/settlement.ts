@@ -1634,7 +1634,7 @@ export const insertSettlements = async ({ process, user }) => {
     //   registroMunicipal: process.rim,
     // };
     const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
-    client.query('COMMIT');
+    await client.query('COMMIT');
     const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
     await sendNotification(
       user,
@@ -1680,6 +1680,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
       })
     );
     const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0];
+    client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
     console.log(applicationInstance);
     await sendNotification(
@@ -1690,7 +1691,6 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
       { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
       client
     );
-    client.query('COMMIT');
     return { status: 200, message: 'Pago añadido para la solicitud declarada', solicitud: applicationInstance };
   } catch (error) {
     client.query('ROLLBACK');
@@ -1711,6 +1711,7 @@ export const validateApplication = async (body, user) => {
     client.query('BEGIN');
     const state = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
     const solicitud = (await client.query(queries.GET_APPLICATION_BY_ID, [body.idTramite])).rows[0];
+    await client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: body.idTramite, user: solicitud.id_usuario });
     applicationInstance.aprobado = true;
     await sendNotification(
@@ -1721,7 +1722,6 @@ export const validateApplication = async (body, user) => {
       { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
       client
     );
-    client.query('COMMIT');
   } catch (error) {
     client.query('ROLLBACK');
     throw {
