@@ -81,11 +81,9 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [type, document])).rows[0];
     if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
     const branch = (await client.query('SELECT * FROM impuesto.registro_municipal WHERE referencia_municipal = $1 LIMIT 1', [reference])).rows[0];
-    console.log(branch);
     if ((!branch && truthyCheck(reference)) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEMAT' };
     const lastSettlementQuery = branch ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
     const lastSettlementPayload = branch ? branch.id_registro_municipal : contributor.id_contribuyente;
-    console.log(lastSettlementPayload);
     const AEApplicationExists = truthyCheck(reference) ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.AE, reference])).rows[0] : false;
     const SMApplicationExists = truthyCheck(reference)
       ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.SM, reference])).rows[0]
@@ -144,8 +142,6 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         [lastSettlementPayload]
       )
     ).rows;
-    console.log(branch && reference !== null);
-    console.log(estates.length);
     if (estates.length > 0) {
       if (!SMApplicationExists) {
         let lastSM = (await client.query(lastSettlementQuery, [codigosRamo.SM, lastSettlementPayload])).rows[0];
@@ -257,7 +253,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                 .filter((al) => +el.id_categoria_propaganda === al.id_categoria_propaganda)
                 .map((el) => {
                   return {
-                    id: +el.tipo_aviso_propaganda,
+                    id: +el.id_tipo_aviso_propaganda,
                     nombreSubarticulo: el.descripcion,
                     parametro: el.parametro,
                     costo: +el.monto * UTMM,
@@ -963,7 +959,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
           contribuyente: el.id_contribuyente,
           aprobado: el.aprobado,
           documento: docs.documento,
-          tipoDocumento: docs.tipoDocumento,
+          tipoDocumento: docs.tipo_documento,
           estado: (await client.query('SELECT state FROM impuesto.solicitud_state WHERE id = $1', [el.id_solicitud])).rows[0].state,
           referenciaMunicipal: liquidaciones[0].id_registro_municipal
             ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0].id_registro_municipal])).rows[0].referencia_municipal
