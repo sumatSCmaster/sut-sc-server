@@ -313,6 +313,7 @@ export const hasLinkedContributor = async (user) => {
     const contribuyente = {
       id: contributor.id_contribuyente,
       tipoDocumento: contributor.tipo_documento,
+      tipoContribuyente: contributor.tipo_contribuyente,
       documento: contributor.documento,
       razonSocial: contributor.razon_social,
       denomComercial: contributor.denominacion_comercial || undefined,
@@ -322,7 +323,7 @@ export const hasLinkedContributor = async (user) => {
       direccion: contributor.direccion,
       puntoReferencia: contributor.punto_referencia,
       verificado: contributor.verificado,
-      verificacionTelefono: verificacionTelefono.verificado,
+      verificacionTelefono: (verificacionTelefono && verificacionTelefono.verificado) || false,
     };
     return contribuyente;
   } catch (e) {

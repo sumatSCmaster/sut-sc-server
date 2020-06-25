@@ -535,9 +535,9 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_APPLICATION_INSTANCES_FOR_NATURAL_CONTRIBUTOR: 'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.contribuyente c ON s.id_contribuyente = c.id_contribuyente IWHERE c.documento = $1 AND c.tipo_documento = $2;',
   GET_SETTLEMENTS_BY_APPLICATION_INSTANCE:
     'SELECT l.*, r.descripcion AS "tipoProcedimiento" FROM impuesto.liquidacion l INNER JOIN impuesto.subramo sr ON l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo r ON sr.id_ramo = r.id_ramo WHERE id_solicitud = $1',
-  GET_SETTLEMENT_INSTANCES: 'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo',
+  GET_SETTLEMENT_INSTANCES: 'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo INNER JOIN impuesto.solicitud_state sst ON sst.id = s.id_solicitud',
   GET_SETTLEMENT_INSTANCES_BY_ID:
-    'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo WHERE s.id_usuario = $1;',
+    'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo INNER JOIN impuesto.solicitud_state sst ON sst.id = s.id_solicitud WHERE s.id_usuario = $1;',
   GET_APPLICATION_VIEW_BY_SETTLEMENT: 'SELECT * FROM impuesto.solicitud_view WHERE "idLiquidacion" = $1',
   GET_LAST_FINE_FOR_LATE_APPLICATION:
     "SELECT EXTRACT(month FROM s.fecha::date) AS mes, EXTRACT(year FROM s.fecha::date) AS anio FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud s \
@@ -576,14 +576,23 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   UPDATE_TAX_APPLICATION_PAYMENT: 'SELECT * FROM impuesto.update_solicitud_state ($1, $2)',
   COMPLETE_TAX_APPLICATION_PAYMENT: 'SELECT * FROM impuesto.complete_solicitud_state($1, $2, null, true)',
   CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION: 'SELECT * FROM insert_liquidacion($1,$2,$3,$4,$5, $6)',
-  CURRENT_AE_APPLICATION_EXISTS:
-    'SELECT * FROM impuesto.solicitud_view sv INNER JOIN impuesto.registro_municipal rm ON sv.contribuyente = rm.id_contribuyente WHERE sv.documento = $1 AND rm.referencia_municipal = $2 AND sv."tipoDocumento" = $3 AND sv.aprobado = false AND "descripcionRamo" = \'AE\' AND (EXTRACT(month FROM sv."fechaCreacion"::date) = EXTRACT(month FROM now()::date));',
-  CURRENT_SM_APPLICATION_EXISTS:
-    'SELECT * FROM impuesto.solicitud_view sv INNER JOIN impuesto.registro_municipal rm ON sv.contribuyente = rm.id_contribuyente WHERE sv.documento = $1 AND rm.referencia_municipal = $2 AND sv."tipoDocumento" = $3 AND sv.aprobado = false AND "descripcionRamo" = \'SM\' AND (EXTRACT(month FROM sv."fechaCreacion"::date) = EXTRACT(month FROM now()::date));',
-  CURRENT_IU_APPLICATION_EXISTS:
-    'SELECT * FROM impuesto.solicitud_view sv INNER JOIN impuesto.registro_municipal rm ON sv.contribuyente = rm.id_contribuyente WHERE sv.documento = $1 AND rm.referencia_municipal = $2 AND sv."tipoDocumento" = $3 AND sv.aprobado = false AND "descripcionRamo" = \'IU\' AND (EXTRACT(month FROM sv."fechaCreacion"::date) = EXTRACT(month FROM now()::date));',
-  CURRENT_PP_APPLICATION_EXISTS:
-    'SELECT * FROM impuesto.solicitud_view sv INNER JOIN impuesto.registro_municipal rm ON sv.contribuyente = rm.id_contribuyente WHERE sv.documento = $1 AND rm.referencia_municipal = $2 AND sv."tipoDocumento" = $3 AND sv.aprobado = false AND "descripcionRamo" = \'PP\' AND (EXTRACT(month FROM sv."fechaCreacion"::date) = EXTRACT(month FROM now()::date));',
+  CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM:
+    "SELECT * FROM impuesto.solicitud_state s INNER JOIN impuesto.liquidacion l on s.id = l.id_solicitud INNER JOIN impuesto.subramo sr ON\
+     l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND l.id_registro_municipal =\
+      (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $2 LIMIT 1) AND EXTRACT('month' FROM l.fecha_liquidacion)\
+       = EXTRACT('month' FROM CURRENT_DATE) ORDER BY fecha_liquidacion DESC",
+  CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR:
+    "SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l on s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON\
+  l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND s.id_contribuyente = $2 \
+  AND EXTRACT('month' FROM l.fecha_liquidacion) = EXTRACT('month' FROM CURRENT_DATE) AND l.id_registro_municipal IS NULL ORDER BY fecha_liquidacion DESC",
+  GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM:
+    'SELECT * FROM impuesto.solicitud_state s INNER JOIN impuesto.liquidacion l on s.id = l.id_solicitud INNER JOIN impuesto.subramo sr ON\
+  l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND l.id_registro_municipal =\
+   (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $2 LIMIT 1) ORDER BY fecha_liquidacion DESC LIMIT 1',
+  GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR:
+    'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l on s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON\
+  l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND s.id_contribuyente = $2\
+  AND l.id_registro_municipal IS NULL ORDER BY fecha_liquidacion DESC LIMIT 1',
   CREATE_AE_BREAKDOWN_FOR_SETTLEMENT: 'INSERT INTO impuesto.ae_desglose (id_liquidacion, id_aforo, monto_declarado) VALUES ($1, $2, $3) RETURNING *',
   CREATE_SM_BREAKDOWN_FOR_SETTLEMENT: 'INSERT INTO impuesto.sm_desglose (id_liquidacion, id_inmueble, monto_aseo, monto_gas) VALUES ($1, $2, $3, $4) RETURNING *',
   CREATE_IU_BREAKDOWN_FOR_SETTLEMENT: 'INSERT INTO impuesto.iu_desglose (id_liquidacion, id_inmueble, monto) VALUES ($1, $2, $3) RETURNING *',
@@ -599,7 +608,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR:
     'INSERT INTO impuesto.registro_municipal (id_contribuyente, referencia_municipal, nombre_representante, telefono_celular,\
      email, denominacion_comercial, fecha_aprobacion, actualizado) VALUES ($1, $2, $3, $4, $5, $6, now(), $7) RETURNING *;',
-  CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR: 'INSERT INTO inmueble_urbano (id_registro_municipal, direccion) VALUES ($1, $2);',
+  CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR: 'INSERT INTO inmueble_urbano (id_registro_municipal, direccion, tipo_inmueble) VALUES ($1, $2, $3) RETURNING *;',
   GET_CONTRIBUTOR_BY_DOCUMENT_AND_DOC_TYPE: 'SELECT * FROM impuesto.contribuyente c WHERE c.documento = $1 AND c.tipo_documento = $2',
 
   //Dias feriados
@@ -638,6 +647,47 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
         INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_subramo \
         WHERE state != 'finalizado' AND fecha_liquidacion BETWEEN $1 AND $2 \
         GROUP BY r.codigo, r.descripcion;`,
+
+  //EXONERACIONES
+  CREATE_EXONERATION: 'INSERT INTO impuesto.plazo_exoneracion (id_plazo_exoneracion, fecha_inicio) VALUES (default, $1) RETURNING *;',
+  INSERT_CONTRIBUTOR_EXONERATED_ACTIVITY: `INSERT INTO impuesto.contribuyente_exoneracion (id_contribuyente_exoneracion, id_plazo_exoneracion, id_contribuyente, id_actividad_economica)
+                VALUES (default, $1, $2, $3);`,
+  INSERT_EXONERATION_CONTRIBUTOR: 'INSERT INTO impuesto.contribuyente_exoneracion (id_contribuyente_exoneracion, id_plazo_exoneracion, id_contribuyente) VALUES (default, $1, $2);',
+  INSERT_EXONERATION_ACTIVITY: 'INSERT INTO impuesto.actividad_economica_exoneracion (id_actividad_economica_exoneracion, id_plazo_exoneracion, id_actividad_economica) VALUES (default, $1, $2);',
+  INSERT_EXONERATION_BRANCH: 'INSERT INTO impuesto.ramo_exoneracion (id_actividad_economica_exoneracion, id_plazo_exoneracion, id_ramo) VALUES (default, $1, $2);',
+
+  GET_EXONERATED_ACTIVITY_BY_CONTRIBUTOR:
+    'SELECT * FROM impuesto.plazo_exoneracion pe INNER JOIN impuesto.contribuyente_exoneracion ce ON ce.id_plazo_exoneracion = pe.id_plazo_exoneracion WHERE id_contribuyente = $1 AND id_actividad_economica = $2 AND fecha_inicio <= NOW() AND fecha_fin IS NULL',
+  GET_EXONERATED_CONTRIBUTOR_STATUS: 'SELECT * FROM impuesto.plazo_exoneracion WHERE id_contribuyente = $1 AND id_actividad_economica IS NULL AND fecha_hasta IS NULL',
+  GET_CONTRIBUTOR_HAS_ACTIVITY: 'SELECT * FROM impuesto.actividad_economica ae INNER JOIN impuesto.actividad_economica_contribuyente aec ON aec.numero_referencia = ae.numero_referencia WHERE id_contribuyente = $1 AND id_actividad_economica = $2',
+  GET_CONTRIBUTOR_EXONERATIONS: `SELECT pe.*, ce.*, ae.*, (pe.fecha_inicio <= NOW() AND pe.fecha_fin IS NULL ) AS active \
+        FROM impuesto.plazo_exoneracion pe \
+        INNER JOIN impuesto.contribuyente_exoneracion ce ON ce.id_plazo_exoneracion = pe.id_plazo_exoneracion \
+        INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = ce.id_contribuyente \
+        LEFT JOIN impuesto.actividad_economica ae ON ae.id_actividad_economica = ce.id_actividad_economica \
+        WHERE c.id_contribuyente = $1 ORDER BY pe.id_plazo_exoneracion DESC;`,
+  GET_ACTIVITY_EXONERATIONS: `SELECT pe.*, ae.*, (pe.fecha_inicio <= NOW() AND pe.fecha_fin IS NULL ) AS active 
+        FROM impuesto.plazo_exoneracion pe
+        INNER JOIN impuesto.actividad_economica_exoneracion aee ON aee.id_plazo_exoneracion = pe.id_plazo_exoneracion
+        INNER JOIN impuesto.actividad_economica ae ON aee.id_actividad_economica = ae.id_actividad_economica
+        ORDER BY pe.id_plazo_exoneracion DESC;`,
+  GET_ACTIVITY_IS_EXONERATED: `SELECT pe.*, ae.*, (pe.fecha_inicio <= NOW() AND pe.fecha_fin IS NULL ) AS active 
+        FROM impuesto.plazo_exoneracion pe
+        INNER JOIN impuesto.actividad_economica_exoneracion aee ON aee.id_plazo_exoneracion = pe.id_plazo_exoneracion
+        INNER JOIN impuesto.actividad_economica ae ON aee.id_actividad_economica = ae.id_actividad_economica
+        WHERE id_actividad_economica = $1 AND (pe.fecha_inicio <= NOW() AND pe.fecha_fin IS NULL)
+        ORDER BY pe.id_plazo_exoneracion DESC;`,
+  GET_BRANCH_EXONERATIONS: `SELECT pe.*, r.*, (pe.fecha_inicio <= NOW() AND pe.fecha_fin IS NULL) AS active 
+        FROM impuesto.plazo_exoneracion pe
+        INNER JOIN impuesto.ramo_exoneracion re ON re.id_plazo_exoneracion = pe.id_plazo_exoneracion
+        INNER JOIN impuesto.ramo r ON r.id_ramo = re.id_ramo
+        ORDER BY pe.id_plazo_exoneracion DESC;`,
+  GET_BRANCH_IS_EXONERATED: `SELECT pe.*, ae.*, (pe.fecha_inicio <= NOW() AND pe.fecha_fin IS NULL ) AS active 
+        FROM impuesto.plazo_exoneracion pe
+        INNER JOIN impuesto.ramo_exoneracion re ON re.id_plazo_exoneracion = pe.id_plazo_exoneracion
+        WHERE id_ramo = $1 AND (pe.fecha_inicio <= NOW() AND pe.fecha_fin IS NULL)
+        ORDER BY pe.id_plazo_exoneracion DESC;`,
+  UPDATE_EXONERATION_END_TIME: `UPDATE impuesto.plazo_exoneracion SET fecha_fin = $1 WHERE id_plazo_exoneracion = $1`,
   gtic: {
     GET_NATURAL_CONTRIBUTOR: 'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 ORDER BY co_contribuyente DESC',
     GET_JURIDICAL_CONTRIBUTOR: 'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE tx_rif = $1 AND tx_tp_doc = $2 AND nu_referencia IS NOT NULL ORDER BY co_contribuyente DESC',

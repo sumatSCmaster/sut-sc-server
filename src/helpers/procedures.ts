@@ -171,12 +171,13 @@ const getSettlementInstances = async (user, client: PoolClient) => {
       const liquidacion: Liquidacion & { pagado: string; aprobado: string } = {
         id: el.id_liquidacion,
         ramo: el.descripcion,
-        fecha: { month: el.mes, year: el.anio },
+        fecha: { month: el.datos.fecha.month, year: el.datos.fecha.year },
         monto: el.monto,
         certificado: el.certificado,
         recibo: el.recibo,
         pagado: el.pagado,
         aprobado: el.aprobado,
+        estado: el.state
       };
 
       return liquidacion;

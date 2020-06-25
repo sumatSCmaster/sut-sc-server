@@ -71,23 +71,17 @@ block content
           p
             b TRANSFERENCIA
       .tr.break-page
-        div(style={'-webkit-flex':'3.5'}).th.center.border-bottom.border-right
+        div(style={'-webkit-flex':'6.5'}).th.center.border-bottom.border-right
           p
             b BANCO
-        div(style={'-webkit-flex':'3'}).th.center.border-bottom.border-right
-          p
-            b FECHA
         div(style={'-webkit-flex':'3.5'}).th.center.border-bottom
           p
             b MONTO          
       each item in datos.metodoPago.transferencias.items
         .tr.break-page
-          div(style={'-webkit-flex':'3.5'}).td.center.border-bottom.border-right
+          div(style={'-webkit-flex':'6.5'}).td.center.border-bottom.border-right
             p
               b #{item.banco}
-          div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
-            p
-              b #{moment(item.fecha).format('DD/MM/YYYY')}
           div(style={'-webkit-flex':'3.5'}).td.center.border-bottom
             p
               b #{new Intl.NumberFormat('de-DE').format(item.monto)}
@@ -105,23 +99,17 @@ block content
           p
             b PUNTO DE VENTA
       .tr.break-page
-        div(style={'-webkit-flex':'3.5'}).th.center.border-bottom.border-right
+        div(style={'-webkit-flex':'6.5'}).th.center.border-bottom.border-right
           p
             b BANCO
-        div(style={'-webkit-flex':'3'}).th.center.border-bottom.border-right
-          p
-            b FECHA
         div(style={'-webkit-flex':'3.5'}).th.center.border-bottom
           p
             b MONTO          
       each item in datos.metodoPago.punto.items
         .tr.break-page
-          div(style={'-webkit-flex':'3.5'}).td.center.border-bottom.border-right
+          div(style={'-webkit-flex':'6.5'}).td.center.border-bottom.border-right
             p
               b #{item.banco}
-          div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
-            p
-              b #{moment(item.fecha).format('DD/MM/YYYY')}
           div(style={'-webkit-flex':'3.5'}).td.center.border-bottom
             p
               b #{new Intl.NumberFormat('de-DE').format(item.monto)}
@@ -139,23 +127,17 @@ block content
           p
             b EFECTIVO
       .tr.break-page
-        div(style={'-webkit-flex':'3.5'}).th.center.border-bottom.border-right
+        div(style={'-webkit-flex':'6.5'}).th.center.border-bottom.border-right
           p
             b MONEDA
-        div(style={'-webkit-flex':'3'}).th.center.border-bottom.border-right
-          p
-            b FECHA
         div(style={'-webkit-flex':'3.5'}).th.center.border-bottom
           p
             b MONTO          
       each item in datos.metodoPago.efectivo.items
         .tr.break-page
-          div(style={'-webkit-flex':'3.5'}).td.center.border-bottom.border-right
+          div(style={'-webkit-flex':'6.5'}).td.center.border-bottom.border-right
             p
               b #{item.moneda}
-          div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
-            p
-              b #{moment(item.fecha).format('DD/MM/YYYY')}
           div(style={'-webkit-flex':'3.5'}).td.center.border-bottom
             p
               b #{new Intl.NumberFormat('de-DE').format(item.monto)}
@@ -173,23 +155,17 @@ block content
           p
             b CHEQUES
       .tr.break-page
-        div(style={'-webkit-flex':'3.5'}).th.center.border-bottom.border-right
+        div(style={'-webkit-flex':'6.5'}).th.center.border-bottom.border-right
           p
             b BANCO
-        div(style={'-webkit-flex':'3'}).th.center.border-bottom.border-right
-          p
-            b FECHA
         div(style={'-webkit-flex':'3.5'}).th.center.border-bottom
           p
             b MONTO          
       each item in datos.metodoPago.cheques.items
         .tr.break-page
-          div(style={'-webkit-flex':'3.5'}).td.center.border-bottom.border-right
+          div(style={'-webkit-flex':'6.5'}).td.center.border-bottom.border-right
             p
               b #{item.banco}
-          div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
-            p
-              b #{moment(item.fecha).format('DD/MM/YYYY')}
           div(style={'-webkit-flex':'3.5'}).td.center.border-bottom
             p
               b #{new Intl.NumberFormat('de-DE').format(item.monto)}

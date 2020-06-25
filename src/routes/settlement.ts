@@ -16,14 +16,17 @@ import {
   getEntireDebtsForContributor,
   resendUserCode,
   createUserBenefits,
+  checkContributorExists,
 } from '@helpers/settlement';
+import { Usuario } from '@root/interfaces/sigt';
 
 const router = Router();
 
-router.get('/', authenticate('jwt'), async (req, res) => {
+router.get('/', authenticate('jwt'), checkContributorExists(), async (req, res) => {
   const { doc, ref, pref } = req.query;
   console.log(doc, ref);
-  const [err, data] = await fulfill(getSettlements({ document: doc, reference: ref ? ref : null, type: pref, user: req.user }));
+  const [err, data] = await fulfill(getSettlements({ document: doc, reference: ref ? ref : null, type: pref, user: req.user as Usuario }));
+  console.log(err);
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
 });

@@ -185,6 +185,7 @@ export interface Liquidacion {
   certificado?: string;
   desglose?: object;
   recibo?: string;
+  estado?: string;
 }
 
 export interface DatosEnlace {
@@ -343,4 +344,10 @@ export namespace Payloads {
 export enum VerificationValue {
   CellPhone,
   Email,
+}
+
+export type Ramo = {
+  id:number
+  codigo: string
+  descripcion: string
 }
