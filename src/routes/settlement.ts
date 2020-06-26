@@ -39,7 +39,8 @@ router.get('/', authenticate('jwt'), checkContributorExists(), async (req, res) 
 
 router.get('/accountStatement/:contributor', async (req: any, res) => {
   const { contributor } = req.params;
-  const [error, data] = await fulfill(createAccountStatement(contributor));
+  const { tipoContribuyente, referencia } = req.query;
+  const [error, data] = await fulfill(createAccountStatement({ contributor, reference: referencia || null, typeUser: tipoContribuyente }));
   if (error) res.status(500).json(error);
   if (data)
     data.toBuffer(async (err, buffer) => {

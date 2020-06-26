@@ -596,6 +596,14 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l on s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON\
   l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND s.id_contribuyente = $2\
   AND l.id_registro_municipal IS NULL ORDER BY fecha_liquidacion DESC LIMIT 1',
+  GET_SETTLEMENTS_FOR_CODE_AND_RIM:
+    'SELECT * FROM impuesto.solicitud_state s INNER JOIN impuesto.liquidacion l on s.id = l.id_solicitud INNER JOIN impuesto.subramo sr ON \
+l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND l.id_registro_municipal =\
+ (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $2 LIMIT 1) ORDER BY fecha_liquidacion DESC',
+  GET_SETTLEMENTS_FOR_CODE_AND_CONTRIBUTOR:
+    'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l on s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON \
+  l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND s.id_contribuyente = $2\
+  AND l.id_registro_municipal IS NULL ORDER BY fecha_liquidacion DESC',
   CREATE_AE_BREAKDOWN_FOR_SETTLEMENT: 'INSERT INTO impuesto.ae_desglose (id_liquidacion, id_aforo, monto_declarado) VALUES ($1, $2, $3) RETURNING *',
   CREATE_SM_BREAKDOWN_FOR_SETTLEMENT: 'INSERT INTO impuesto.sm_desglose (id_liquidacion, id_inmueble, monto_aseo, monto_gas) VALUES ($1, $2, $3, $4) RETURNING *',
   CREATE_IU_BREAKDOWN_FOR_SETTLEMENT: 'INSERT INTO impuesto.iu_desglose (id_liquidacion, id_inmueble, monto) VALUES ($1, $2, $3) RETURNING *',
@@ -662,7 +670,8 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
 
   GET_EXONERATED_ACTIVITY_BY_CONTRIBUTOR:
     'SELECT * FROM impuesto.plazo_exoneracion pe INNER JOIN impuesto.contribuyente_exoneracion ce ON ce.id_plazo_exoneracion = pe.id_plazo_exoneracion WHERE id_contribuyente = $1 AND id_actividad_economica = $2 AND fecha_inicio <= NOW() AND fecha_fin IS NULL',
-  GET_EXONERATED_CONTRIBUTOR_STATUS: 'SELECT * FROM impuesto.contribuyente_exoneracion ce INNER JOIN impuesto.plazo_exoneracion pe ON pe.id_plazo_exoneracion = ce.id_plazo_exoneracion WHERE id_contribuyente = $1 AND id_actividad_economica IS NULL AND fecha_fin IS NULL',
+  GET_EXONERATED_CONTRIBUTOR_STATUS:
+    'SELECT * FROM impuesto.contribuyente_exoneracion ce INNER JOIN impuesto.plazo_exoneracion pe ON pe.id_plazo_exoneracion = ce.id_plazo_exoneracion WHERE id_contribuyente = $1 AND id_actividad_economica IS NULL AND fecha_fin IS NULL',
   GET_CONTRIBUTOR_HAS_ACTIVITY: 'SELECT * FROM impuesto.actividad_economica ae INNER JOIN impuesto.actividad_economica_contribuyente aec ON aec.numero_referencia = ae.numero_referencia WHERE id_contribuyente = $1 AND id_actividad_economica = $2',
   GET_CONTRIBUTOR_EXONERATIONS: `SELECT pe.*, ce.*, ae.*, c.*, (pe.fecha_fin IS NULL ) AS active \
         FROM impuesto.plazo_exoneracion pe \
@@ -693,7 +702,8 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
         ORDER BY pe.id_plazo_exoneracion DESC;`,
   UPDATE_EXONERATION_END_TIME: `UPDATE impuesto.plazo_exoneracion SET fecha_fin = $1 WHERE id_plazo_exoneracion = $2`,
   GET_ALL_ACTIVITIES: 'SELECT id_actividad_economica AS id, numero_referencia AS codigo, descripcion FROM impuesto.actividad_economica;',
-  GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR: 'SELECT ae.id_actividad_economica AS id, ae.numero_referencia as "numeroReferencia", ae.descripcion FROM impuesto.actividad_economica_contribuyente aec INNER JOIN impuesto.actividad_economica ae ON ae.numero_referencia = aec.numero_referencia WHERE id_contribuyente = $1;',
+  GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR:
+    'SELECT ae.id_actividad_economica AS id, ae.numero_referencia as "numeroReferencia", ae.descripcion FROM impuesto.actividad_economica_contribuyente aec INNER JOIN impuesto.actividad_economica ae ON ae.numero_referencia = aec.numero_referencia WHERE id_contribuyente = $1;',
   gtic: {
     GET_NATURAL_CONTRIBUTOR: 'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 ORDER BY co_contribuyente DESC',
     GET_JURIDICAL_CONTRIBUTOR: 'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE tx_rif = $1 AND tx_tp_doc = $2 AND nu_referencia IS NOT NULL ORDER BY co_contribuyente DESC',

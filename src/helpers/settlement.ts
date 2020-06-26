@@ -2309,70 +2309,83 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
   }
 };
 
-export const createAccountStatement = async (contributor) => {
+export const createAccountStatement = async ({ contributor, reference, typeUser }) => {
   const client = await pool.connect();
   const gtic = await gticPool.connect();
   try {
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-    const contribuyente = (await gtic.query(queries.gtic.GET_CONTRIBUTOR_BY_ID, [contributor])).rows[0];
-    const economicActivities = (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [contributor])).rows;
-    const ae = (await client.query(queries.GET_AE_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map((el) => {
-      const activity = economicActivities.find((x) => x.nu_ref_actividad.endsWith(el.id_aforo));
+    const paymentState = switchcase({ ingresardatos: 'VIGENTE', validando: 'VALIDANDO', finalizado: 'PAGADO' })(null);
+    const contribuyente = (await client.query('SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1', [contributor])).rows[0];
+    const branch = reference && (await client.query('SELECT r.* FROM impuesto.registro_municipal r WHERE referencia_municipal = $1', [reference])).rows[0];
+    const contributorQuery = typeUser === 'JURIDICO' ? queries.GET_SETTLEMENTS_FOR_CODE_AND_RIM : queries.GET_SETTLEMENTS_FOR_CODE_AND_CONTRIBUTOR;
+    const contributorPayload = typeUser === 'JURIDICO' ? branch.referencia_municipal : contribuyente.id_contribuyente;
+    const economicActivities = (
+      await client.query(
+        'SELECT id_actividad_economica AS id, ae.numero_referencia AS "numeroReferencia", descripcion as "nombreActividad", alicuota, minimo_tributable AS "minimoTributable" FROM impuesto.actividad_economica ae INNER JOIN impuesto.actividad_economica_contribuyente aec ON ae.numero_referencia = aec.numero_referencia WHERE aec.id_contribuyente = $1',
+        [contribuyente.id_contribuyente]
+      )
+    ).rows;
+    const ae =
+      (economicActivities.length > 0 &&
+        (await client.query(contributorQuery, [codigosRamo.AE, contributorPayload])).rows.map((el) => {
+          // const activity = economicActivities.find((x) => x.numeroReferencia.endsWith(el.id_aforo));
+          return {
+            planilla: new Date().getTime().toString().substr(6),
+            solicitud: el.id,
+            porcion: '1/1',
+            fechaLiquidacion: moment(el.fecha_liquidacion).format('DD/MM/YYYY'),
+            fechaVencimiento: moment(el.fecha_vencimiento).format('DD/MM/YYYY'),
+            motivo: el.descripcion_corta,
+            estado: paymentState(el.state),
+            montoPorcion: parseFloat(el.monto),
+            // montoPorcion: activity && parseInt(activity.nu_ut) * UTMM > parseFloat(el.monto_declarado) ? parseInt(activity.nu_ut) * UTMM : parseFloat(el.monto_declarado),
+          };
+        })) ||
+      [];
+    const sm = (await client.query(contributorQuery, [codigosRamo.SM, contributorPayload])).rows.map((el) => {
       return {
         planilla: new Date().getTime().toString().substr(6),
         solicitud: el.id,
         porcion: '1/1',
-        fechaLiquidacion: moment(el.fechaCreacion).month(el.mes).year(el.anio).format('DD/MM/YYYY'),
-        fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
-        motivo: el.tipoLiquidacion,
-        estado: el.aprobado && el.pagado ? 'PAGADO' : el.pagado ? 'VALIDANDO' : 'VIGENTE',
-        montoPorcion: activity && parseInt(activity.nu_ut) * UTMM > parseFloat(el.monto_declarado) ? parseInt(activity.nu_ut) * UTMM : parseFloat(el.monto_declarado),
+        fechaLiquidacion: moment(el.fecha_liquidacion).format('DD/MM/YYYY'),
+        fechaVencimiento: moment(el.fecha_vencimiento).format('DD/MM/YYYY'),
+        motivo: el.descripcion_corta,
+        estado: paymentState(el.state),
+        montoPorcion: parseFloat(el.monto),
+        // montoPorcion: +el.monto_gas + +el.monto_aseo,
       };
     });
-    const sm = (await client.query(queries.GET_SM_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map((el) => {
+    const iu = (await client.query(contributorQuery, [codigosRamo.IU, contributorPayload])).rows.map((el) => {
       return {
         planilla: new Date().getTime().toString().substr(6),
         solicitud: el.id,
         porcion: '1/1',
-        fechaLiquidacion: moment(el.fechaCreacion).month(el.mes).year(el.anio).format('DD/MM/YYYY'),
-        fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
-        motivo: el.tipoLiquidacion,
-        estado: el.aprobado && el.pagado ? 'PAGADO' : el.pagado ? 'VALIDANDO' : 'VIGENTE',
-        montoPorcion: +el.monto_gas + +el.monto_aseo,
-      };
-    });
-    const iu = (await client.query(queries.GET_IU_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map((el) => {
-      return {
-        planilla: new Date().getTime().toString().substr(6),
-        solicitud: el.id,
-        porcion: '1/1',
-        fechaLiquidacion: moment(el.fechaCreacion).month(el.mes).year(el.anio).format('DD/MM/YYYY'),
-        fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
-        motivo: el.tipoLiquidacion,
-        estado: el.aprobado && el.pagado ? 'PAGADO' : el.pagado ? 'VALIDANDO' : 'VIGENTE',
+        fechaLiquidacion: moment(el.fecha_liquidacion).format('DD/MM/YYYY'),
+        fechaVencimiento: moment(el.fecha_vencimiento).format('DD/MM/YYYY'),
+        motivo: el.descripcion_corta,
+        estado: paymentState(el.state),
         montoPorcion: parseFloat(el.monto),
       };
     });
-    const pp = (await client.query(queries.GET_PP_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map((el) => {
+    const pp = (await client.query(contributorQuery, [codigosRamo.PP, contributorPayload])).rows.map((el) => {
       return {
         planilla: new Date().getTime().toString().substr(6),
         solicitud: el.id,
         porcion: '1/1',
-        fechaLiquidacion: moment(el.fechaCreacion).month(el.mes).year(el.anio).format('DD/MM/YYYY'),
-        fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
-        motivo: el.tipoLiquidacion,
-        estado: el.aprobado && el.pagado ? 'PAGADO' : el.pagado ? 'VALIDANDO' : 'VIGENTE',
+        fechaLiquidacion: moment(el.fecha_liquidacion).format('DD/MM/YYYY'),
+        fechaVencimiento: moment(el.fecha_vencimiento).format('DD/MM/YYYY'),
+        motivo: el.descripcion_corta,
+        estado: paymentState(el.state),
         montoPorcion: parseFloat(el.monto),
       };
     });
     const datosContribuyente = {
-      nombreORazon: contribuyente.tx_razon_social || `${contribuyente.nb_contribuyente} ${contribuyente.ap_contribuyente}`,
-      cedulaORif: contribuyente.tx_rif ? `${contribuyente.tx_tp_doc}-${contribuyente.tx_rif}` : `${contribuyente.tx_tp_doc}-${contribuyente.nu_cedula}`,
-      rim: contribuyente.nu_referencia,
-      direccion: contribuyente.tx_direccion,
-      telefono: contribuyente.nu_telf_movil || contribuyente.nu_telf_hab,
+      nombreORazon: contribuyente.razon_social,
+      cedulaORif: `${contribuyente.tipo_documento}-${contribuyente.documento}`,
+      rim: branch.referencia_municipal || null,
+      direccion: contribuyente.direccion,
+      telefono: branch.telefono_celular || '',
     };
-    const actividadesContribuyente = economicActivities.map((el) => ({ id: el.co_actividad, nombreActividad: el.tx_actividad }));
     const statement = ae
       .concat(sm)
       .concat(iu)
@@ -2381,7 +2394,7 @@ export const createAccountStatement = async (contributor) => {
       .sort((a, b) => (a.fechaLiquidacion === b.fechaLiquidacion ? 0 : a.fechaLiquidacion > b.fechaLiquidacion ? 1 : -1));
     const saldoFinal = statement.map((e) => switchcase({ PAGADO: e.montoPorcion, VIGENTE: -e.montoPorcion, VALIDANDO: 0 })(null)(e.estado)).reduce((e, x) => e + x, 0);
     const datosCertificado: accountStatement = {
-      actividadesContribuyente,
+      actividadesContribuyente: economicActivities,
       datosContribuyente,
       datosLiquidacion: statement,
       saldoFinal,
