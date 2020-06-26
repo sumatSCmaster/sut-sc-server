@@ -83,7 +83,7 @@ const queries = {
   INSERT_PAYMENT: 'INSERT INTO pago (id_procedimiento, referencia, monto, id_banco, fecha_de_pago, concepto) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;',
   INSERT_PAYMENT_CASHIER: 'INSERT INTO pago (id_procedimiento, referencia, monto, id_banco, fecha_de_pago, concepto ,aprobado, fecha_de_aprobacion, metodo_pago) VALUES ($1, $2, $3, $4, $5, $6, true, now(), $7) RETURNING *;',
 
-  GET_ALL_BANKS: 'SELECT id_banco as id, nombre  FROM banco',
+  GET_ALL_BANKS: 'SELECT id_banco as id, nombre, validador  FROM banco',
   VALIDATE_PAYMENTS: 'SELECT validate_payments($1);',
   GET_BANK_ACCOUNTS_FOR_INSTITUTION:
     'SELECT id_institucion_banco AS id, id_institucion AS institucion, id_banco AS banco, \
