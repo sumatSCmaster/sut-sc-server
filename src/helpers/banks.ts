@@ -50,6 +50,7 @@ export const validatePayments = async (body, user) => {
           tipoTramite: el.tipotramite,
           documento: el.documento,
           nacionalidad: el.nacionalidad,
+          solicitudAprobada: el.solicitudAprobada || undefined,
         };
         console.log(el.concepto);
         await validationHandler({ concept: el.concepto, body: pagoValidado, user });

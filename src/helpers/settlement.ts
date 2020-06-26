@@ -1679,6 +1679,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
 export const validateApplication = async (body, user) => {
   const client = await pool.connect();
   try {
+    if (!body.solicitudAprobada) return;
     client.query('BEGIN');
     const state = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
     const solicitud = (await client.query(queries.GET_APPLICATION_BY_ID, [body.idTramite])).rows[0];
