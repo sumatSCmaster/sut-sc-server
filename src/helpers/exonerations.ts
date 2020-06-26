@@ -140,7 +140,7 @@ export const createContributorExoneration = async ({typeDoc, doc, from, activiti
         console.error(e)
         throw {
             e,
-            message: e.message
+            message: e.message 
         };
     } finally {
         client.release()

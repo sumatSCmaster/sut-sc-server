@@ -691,7 +691,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
         INNER JOIN impuesto.ramo_exoneracion re ON re.id_plazo_exoneracion = pe.id_plazo_exoneracion
         WHERE id_ramo = $1 AND ( pe.fecha_fin IS NULL)
         ORDER BY pe.id_plazo_exoneracion DESC;`,
-  UPDATE_EXONERATION_END_TIME: `UPDATE impuesto.plazo_exoneracion SET fecha_fin = $1 WHERE id_plazo_exoneracion = $1`,
+  UPDATE_EXONERATION_END_TIME: `UPDATE impuesto.plazo_exoneracion SET fecha_fin = $1 WHERE id_plazo_exoneracion = $2`,
   GET_ALL_ACTIVITIES: 'SELECT id_actividad_economica AS id, numero_referencia AS codigo, descripcion FROM impuesto.actividad_economica;',
   GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR: 'SELECT ae.id_actividad_economica AS id, ae.numero_referencia as "numeroReferencia", ae.descripcion FROM impuesto.actividad_economica_contribuyente aec INNER JOIN impuesto.actividad_economica ae ON ae.numero_referencia = aec.numero_referencia WHERE id_contribuyente = $1;',
   gtic: {
