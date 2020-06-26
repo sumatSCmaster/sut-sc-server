@@ -1838,6 +1838,7 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
         });
       } else {
         try {
+          await pool.query(queries.UPDATE_CERTIFICATE_SETTLEMENT, [dir, application.idLiquidacion]);
           pdf
             .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
             .toBuffer(async (err, buffer) => {
@@ -1941,8 +1942,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
           },
         };
-        console.log('bbbBBBBBBBBBBBBB');
-        console.log(certInfo);
+
         certInfoArray.push({ ...certInfo });
       }
     } else if (application.tipoLiquidacion === 'IU') {
@@ -1951,9 +1951,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID('IU'), [application.id])).rows;
       const totalIva = breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0) * 0.16;
       const totalMonto = +breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0);
-      console.log('culo2');
-      console.log(breakdownData);
-      console.log(totalIva, totalMonto);
+
       for (const el of inmueblesContribuyente) {
         console.log('AAAAAAAAAAAAAAAAAAA');
         certInfo = {
@@ -2006,59 +2004,51 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
           },
         };
-        console.log('bbbBBBBBBBBBBBBB');
-        console.log(certInfo);
+
         certInfoArray.push({ ...certInfo });
       }
     }
 
     return new Promise(async (res, rej) => {
       try {
-        console.log('XD');
-        console.log(inmueblesContribuyente[0]);
+
         let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-SM.pug`), certInfo));
-        console.log('auxilio');
         const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/SM/${application.idLiquidacion}/recibo.pdf`);
         const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/SM/${application.idLiquidacion}/recibo.pdf`;
         const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
 
-        if (dev) {
-          let buffersArray = await Promise.all(
-            htmlArray.map((html) => {
-              return new Promise((res, rej) => {
-                pdf
-                  .create(html, {
-                    format: 'Letter',
-                    border: '5mm',
-                    header: { height: '0px' },
-                    base: 'file://' + resolve(__dirname, '../views/planillas/') + '/',
-                  })
-                  .toBuffer((err, buffer) => {
-                    if (err) {
-                      console.log(err);
-                      rej(err);
-                    } else {
-                      res(buffer);
-                      console.log('buffer');
-                    }
-                  });
-              });
-            })
-          );
-          console.log(buffersArray);
+        let buffersArray: any[] = await Promise.all(
+          htmlArray.map((html) => {
+            return new Promise((res, rej) => {
+              pdf
+                .create(html, {
+                  format: 'Letter',
+                  border: '5mm',
+                  header: { height: '0px' },
+                  base: 'file://' + resolve(__dirname, '../views/planillas/') + '/',
+                })
+                .toBuffer((err, buffer) => {
+                  if (err) {
+                    rej(err);
+                  } else {
+                    res(buffer);
+                  }
+                });
+            });
+          })
+        );
 
+        if (dev) {
+          
           mkdir(dirname(pdfDir), { recursive: true }, (e) => {
             if (e) {
-              console.log(e);
               rej(e);
             } else {
               if (buffersArray.length === 1) {
                 writeFile(pdfDir, buffersArray[0], async (err) => {
                   if (err) {
-                    console.log(err);
                     rej(err);
                   } else {
-                    console.log('suicidio');
                     res(dir);
                   }
                 });
@@ -2072,12 +2062,11 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                   }
                   return prev;
                 }, {});
-                console.log('red', reduced);
-                console.log('ke', Object.keys(reduced).join(' '));
+
                 pdftk
                   .input(reduced)
                   .cat(`${Object.keys(reduced).join(' ')}`)
-                  .output('/home/eabs/Documents/xd.pdf', pdfDir)
+                  .output('../../xd.pdf')
                   .then((buffer) => {
                     console.log('finalbuf', buffer);
                     res(dir);
@@ -2091,33 +2080,60 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
           });
         } else {
           try {
-            // pdf
-            //   .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
-            //   .toBuffer(async (err, buffer) => {
-            //     if (err) {
-            //       rej(err);
-            //     } else {
-            //       const bucketParams = {
-            //         Bucket: 'sut-maracaibo',
-            //         Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}`,
-            //       };
-            //       await S3Client.putObject({
-            //         ...bucketParams,
-            //         Body: buffer,
-            //         ACL: 'public-read',
-            //         ContentType: 'application/pdf',
-            //       }).promise();
-            //       res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
-            //     }
-            //   });
+
+            if (buffersArray.length === 1) {
+              const bucketParams = {
+                Bucket: 'sut-maracaibo',
+                Key: `/sedemat/${application.id}/SM/${application.idLiquidacion}/recibo.pdf`,
+              };
+              await S3Client.putObject({
+                ...bucketParams,
+                Body: buffersArray[0],
+                ACL: 'public-read',
+                ContentType: 'application/pdf',
+              }).promise();
+              res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+
+            } else {
+              let letter = 'A';
+              let reduced: any = buffersArray.reduce((prev: any, next) => {
+                prev[letter] = next;
+                let codePoint = letter.codePointAt(0);
+                if (codePoint !== undefined) {
+                  letter = String.fromCodePoint(++codePoint);
+                }
+                return prev;
+              }, {});
+     
+              pdftk
+                .input(reduced)
+                .cat(`${Object.keys(reduced).join(' ')}`)
+                .output()
+                .then(async (buffer) => {
+                  const bucketParams = {
+                    Bucket: 'sut-maracaibo',
+                    Key: `/sedemat/${application.id}/SM/${application.idLiquidacion}/recibo.pdf`,
+                  };
+                  await S3Client.putObject({
+                    ...bucketParams,
+                    Body: buffer,
+                    ACL: 'public-read',
+                    ContentType: 'application/pdf',
+                  }).promise();
+                  res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+                })
+                .catch((e) => {
+                  console.log(e);
+                  rej(e);
+                });
+            }
+
           } catch (e) {
             throw e;
           } finally {
           }
         }
       } catch (e) {
-        console.log('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
-        console.log(e);
         throw {
           message: 'Error en generacion de certificado de SM',
           e: errorMessageExtractor(e),
