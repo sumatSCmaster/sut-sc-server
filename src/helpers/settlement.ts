@@ -2299,30 +2299,30 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
           res(dir);
         });
       } else {
-        // try {
-        //   pdf
-        //     .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
-        //     .toBuffer(async (err, buffer) => {
-        //       if (err) {
-        //         rej(err);
-        //       } else {
-        //         const bucketParams = {
-        //           Bucket: 'sut-maracaibo',
-        //           Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}`,
-        //         };
-        //         await S3Client.putObject({
-        //           ...bucketParams,
-        //           Body: buffer,
-        //           ACL: 'public-read',
-        //           ContentType: 'application/pdf',
-        //         }).promise();
-        //         res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
-        //       }
-        //     });
-        // } catch (e) {
-        //   throw e;
-        // } finally {
-        // }
+        try {
+          pdf
+            .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
+            .toBuffer(async (err, buffer) => {
+              if (err) {
+                rej(err);
+              } else {
+                const bucketParams = {
+                  Bucket: 'sut-maracaibo',
+                  Key: `/sedemat/${application.id}/PP/${application.idLiquidacion}/recibo.pdf`,
+                };
+                await S3Client.putObject({
+                  ...bucketParams,
+                  Body: buffer,
+                  ACL: 'public-read',
+                  ContentType: 'application/pdf',
+                }).promise();
+                res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+              }
+            });
+        } catch (e) {
+          throw e;
+        } finally {
+        }
       }
     });
   } catch (error) {
