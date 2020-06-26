@@ -546,7 +546,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     "SELECT EXTRACT(month FROM s.fecha::date) AS mes, EXTRACT(year FROM s.fecha::date) AS anio FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud s \
     ON l.id_solicitud = s.id_solicitud INNER JOIN impuesto.contribuyente c ON s.id_contribuyente = c.id_contribuyente WHERE \
     l.id_subramo = (SELECT sr.id_subramo FROM impuesto.subramo sr INNER JOIN impuesto.ramo r ON sr.id_ramo = r.id_ramo WHERE r.codigo = '501' \
-    AND sr.descripcion = 'Multa por Declaracion Tardia (Actividad Economica)') AND c.id_contribuyente = $1 ORDER BY s.fecha DESC",
+    AND sr.descripcion = 'Multa por Declaracion Tardia (Actividad Economica)') AND l.id_registro_municipal = $1 ORDER BY s.fecha DESC",
   GET_FIRST_MONTH_OF_SETTLEMENT_PAYMENT: 'SELECT * FROM impuesto.liquidacion WHERE id_procedimiento = $1 AND id_solicitud = $2 ORDER BY id_liquidacion LIMIT 1;',
   GET_LAST_MONTH_OF_SETTLEMENT_PAYMENT: 'SELECT * FROM impuesto.liquidacion WHERE id_procedimiento = $1 AND id_solicitud = $2 ORDER BY id_liquidacion DESC LIMIT 1;',
   GET_TOTAL_PAYMENT_OF_PROCESS_SETTLEMENT: 'SELECT SUM(monto) AS "totalLiquidaciones" FROM impuesto.liquidacion WHERE id_procedimiento = $1 AND id_solicitud = $2',
@@ -700,7 +700,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         INNER JOIN tramite t ON t.id_tramite = p.id_procedimiento 
         INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite 
         WHERE p.concepto = 'TRAMITE' AND tt.id_institucion = 9 AND p.metodo_pago = 'CHEQUE' AND p.fecha_de_pago BETWEEN $1 AND $2) p) x;`,
-  
+
   //EXONERACIONES
   GET_CONTRIBUTOR: 'SELECT id_contribuyente as id, razon_social AS "razonSocial", denominacion_comercial AS "denominacionComercial" FROM impuesto.contribuyente c WHERE c.tipo_documento = $1 AND c.documento = $2;',
   CREATE_EXONERATION: 'INSERT INTO impuesto.plazo_exoneracion (id_plazo_exoneracion, fecha_inicio) VALUES (default, $1) RETURNING *;',
