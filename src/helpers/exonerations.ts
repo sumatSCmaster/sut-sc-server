@@ -9,6 +9,9 @@ export const getContributorExonerations = async({ typeDoc, doc }) => {
     const client = await pool.connect()
     try{
         const contributor = (await client.query(queries.GET_CONTRIBUTOR, [typeDoc, doc])).rows[0];
+        if(!contributor){
+            throw new Error('No se ha hallado el contribuyente');
+        }
         const contributorEconomicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [contributor.id]))
         const contributorExonerations = await client.query(queries.GET_CONTRIBUTOR_EXONERATIONS, [typeDoc, doc]);
         const activeExonerations = contributorExonerations.rows.filter((row) => row.active);
@@ -102,7 +105,11 @@ export const createContributorExoneration = async ({typeDoc, doc, from, activiti
     try{
         await client.query('BEGIN');
         const exoneration = (await client.query(queries.CREATE_EXONERATION, [from])).rows[0];
+        console.log(exoneration)
         const contributor = (await client.query(queries.GET_CONTRIBUTOR,[typeDoc, doc]))
+        if(!contributor.rows[0]){
+            throw new Error('No se ha hallado el contribuyente');
+        }
         const idContributor = contributor.rows[0].id;
     
         if(activities){
