@@ -960,7 +960,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
                 id: el.id_liquidacion,
                 ramo: el.tipoProcedimiento,
                 fecha: el.datos.fecha,
-                monto: el.monto * UTMM,
+                monto: el.monto,
                 descripcion: el.datos.descripcion,
                 certificado: el.certificado,
                 recibo: el.recibo,
@@ -1021,7 +1021,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
                 id: el.id_liquidacion,
                 ramo: el.tipoProcedimiento,
                 fecha: el.datos.fecha,
-                monto: el.monto * UTMM,
+                monto: el.monto,
                 descripcion: el.datos.descripcion,
                 certificado: el.certificado,
                 recibo: el.recibo,
@@ -1078,7 +1078,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
                   id: el.id_liquidacion,
                   ramo: el.tipoProcedimiento,
                   fecha: el.datos.fecha,
-                  monto: el.monto * UTMM,
+                  monto: el.monto,
                   descripcion: el.datos.descripcion,
                   certificado: el.certificado,
                   recibo: el.recibo,
@@ -1442,7 +1442,7 @@ export const insertSettlements = async ({ process, user }) => {
         .sort((a, b) => (pivot.month(a.fechaCancelada.month).toDate() === pivot.month(b.fechaCancelada.month).toDate() ? 0 : pivot.month(a.fechaCancelada.month).toDate() > pivot.month(b.fechaCancelada.month).toDate() ? 1 : -1));
       const lastSavedFine = (await client.query(queries.GET_LAST_FINE_FOR_LATE_APPLICATION, [application.id_contribuyente])).rows[0];
       if (lastSavedFine && lastSavedFine.anio === now.year()) {
-        finingAmount = lastSavedFine.monto;
+        finingAmount = lastSavedFine.datos.monto;
         const proposedFiningDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month();
         const finingDate = moment().month(lastSavedFine.mes).month() < proposedFiningDate ? moment().month(lastSavedFine.mes).month() : proposedFiningDate;
         finingMonths = new Array(now.month() - finingDate).fill({});
@@ -1453,13 +1453,14 @@ export const insertSettlements = async ({ process, user }) => {
               const multa = Promise.resolve(
                 client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
                   application.id_solicitud,
-                  finingAmount,
+                  finingAmount * UTMM,
                   {
                     fecha: {
                       month: moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
                       year: now.year(),
                     },
                     descripcion: 'Multa por Declaracion Fuera de Plazo',
+                    monto: finingAmount,
                   },
                   moment().month(counter).endOf('month').format('MM-DD-YYYY'),
                   (contributorReference && contributorReference.id_registro_municipal) || null,
@@ -1467,7 +1468,7 @@ export const insertSettlements = async ({ process, user }) => {
               )
                 .then((el) => el.rows[0])
                 .then((data) => {
-                  return { id: data.id_liquidacion, fecha: data.datos.fecha, monto: +data.monto * UTMM, descripcion: data.datos.descripcion };
+                  return { id: data.id_liquidacion, fecha: data.datos.fecha, monto: +data.monto, descripcion: data.datos.descripcion };
                 });
               counter++;
               finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
@@ -1479,19 +1480,20 @@ export const insertSettlements = async ({ process, user }) => {
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
               application.id_solicitud,
-              finingAmount,
+              finingAmount * UTMM,
               {
                 fecha: {
                   month: moment().toDate().toLocaleDateString('ES', { month: 'long' }),
                   year: now.year(),
                 },
                 descripcion: 'Multa por Declaracion Fuera de Plazo',
+                monto: finingAmount,
               },
               moment().endOf('month').format('MM-DD-YYYY'),
               (contributorReference && contributorReference.id_registro_municipal) || null,
             ])
           ).rows[0];
-          const fine = { id: multa.id_liquidacion, fecha: multa.datos.fecha, monto: multa.monto * UTMM, descripcion: multa.datos.descripcion };
+          const fine = { id: multa.id_liquidacion, fecha: multa.datos.fecha, monto: +multa.monto, descripcion: multa.datos.descripcion };
           finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
           finingMonths.push(fine);
         }
@@ -1506,13 +1508,14 @@ export const insertSettlements = async ({ process, user }) => {
               const multa = Promise.resolve(
                 client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
                   application.id_solicitud,
-                  finingAmount,
+                  finingAmount * UTMM,
                   {
                     fecha: {
                       month: moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
                       year: now.year(),
                     },
                     descripcion: 'Multa por Declaracion Fuera de Plazo',
+                    monto: finingAmount,
                   },
                   moment().month(counter).endOf('month').format('MM-DD-YYYY'),
                   (contributorReference && contributorReference.id_registro_municipal) || null,
@@ -1520,7 +1523,7 @@ export const insertSettlements = async ({ process, user }) => {
               )
                 .then((el) => el.rows[0])
                 .then((data) => {
-                  return { id: data.id_liquidacion, fecha: data.datos.fecha, monto: +data.monto * UTMM, descripcion: data.datos.descripcion };
+                  return { id: data.id_liquidacion, fecha: data.datos.fecha, monto: +data.monto, descripcion: data.datos.descripcion };
                 });
               counter++;
               finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
@@ -1532,19 +1535,20 @@ export const insertSettlements = async ({ process, user }) => {
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
               application.id_solicitud,
-              finingAmount,
+              finingAmount * UTMM,
               {
                 fecha: {
                   month: moment().toDate().toLocaleDateString('ES', { month: 'long' }),
                   year: now.year(),
                 },
                 descripcion: 'Multa por Declaracion Fuera de Plazo',
+                monto: finingAmount,
               },
               moment().endOf('month').format('MM-DD-YYYY'),
               (contributorReference && contributorReference.id_registro_municipal) || null,
             ])
           ).rows[0];
-          const fine = { id: multa.id_liquidacion, fecha: multa.datos.fecha, monto: multa.monto * UTMM, descripcion: multa.datos.descripcion };
+          const fine = { id: multa.id_liquidacion, fecha: multa.datos.fecha, monto: +multa.monto, descripcion: multa.datos.descripcion };
 
           finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
           finingMonths.push(fine);
