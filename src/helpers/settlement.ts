@@ -1716,7 +1716,26 @@ export const approveContributorSignUp = async ({ procedure, client }: { procedur
 
 export const approveContributorAELicense = async ({ data, client }: { data: any; client: PoolClient }) => {
   try {
+    const { usuario, funcionario } = data;
+    const { actividadesEconomicas } = funcionario;
+    const { contribuyente } = usuario;
+    const registry = (
+      await client.query('INSERT INTO impuesto.registro_municipal (id_contribuyente, fecha_aprobacion, telefono_celular, email, denominacion_comercial, nombre_representante, actualizado) VALUES ($1, now(), $2, $3, $4, $5, true) RETURNING *', [
+        contribuyente.id,
+        funcionario.telefono,
+        funcionario.correo,
+        funcionario.denominacionComercial,
+        funcionario.nombreRepresentante,
+      ])
+    ).rows[0];
+    data.funcionario.referenciaMunicipal = registry.referencia_municipal;
+    await Promise.all(
+      actividadesEconomicas!.map(async (x) => {
+        return await client.query('INSERT INTO impuesto.actividad_economica_contribuyente (id_contribuyente, numero_referencia) VALUES ($1, $2)', [contribuyente.id, x.codigo]);
+      })
+    );
     console.log(data);
+    return data;
   } catch (error) {
     console.log(error);
     throw e;
