@@ -138,7 +138,10 @@ export const createContributorExoneration = async ({typeDoc, doc, from, activiti
     } catch (e) {
         await client.query('ROLLBACK');
         console.error(e)
-        throw e;
+        throw {
+            e,
+            message: e.message
+        };
     } finally {
         client.release()
     }
