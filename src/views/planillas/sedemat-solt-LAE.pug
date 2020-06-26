@@ -1,0 +1,64 @@
+extends default
+block css
+  link(rel="stylesheet", href="css/sedemat.css")
+block title
+  p SOLICITUD DE LICENCIA DE ACTIVIDAD ECONÓMICA
+block content
+  div#fecha
+    p 
+      b FECHA:
+      span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+    p 
+      b Código de Trámite:
+      span &nbsp; #{codigo}
+  div#planilla      
+    div(style={'margin-top':'40px'}).table                                  
+      div.th.border-bottom
+        p DATOS DEL CONTRIBUYENTE
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Razón Social:
+            span &nbsp; #{datos.usuario.contribuyente.razonSocial}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Documento de Identidad:
+            span &nbsp; #{datos.usuario.contribuyente.tipoDocumento}-#{datos.usuario.contribuyente.documento}
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Sector:
+            span &nbsp; #{datos.usuario.contribuyente.sector}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Punto de Referencia:
+            span &nbsp; #{datos.usuario.contribuyente.puntoReferencia}
+      div.tr
+        div.td(style={ width: '100%' })
+          p
+            b Dirección:
+            span &nbsp; #{datos.usuario.contribuyente.direccion}
+    div(style={'margin-top':'40px'}).table                                  
+      div.th.border-bottom
+        p DATOS DEL SOLICITANTE
+      div.tr
+        div.td(style={ width: '50%' }).border-right
+          p
+            b Teléfono:
+            span &nbsp; #{datos.usuario.telefono}
+        div.td(style={ width: '50%' })
+          p
+            b Correo:
+            span &nbsp; #{datos.usuario.correo}
+    div(style={'margin-top':'40px'}).table                                  
+      div.th.border-bottom
+        p  DATOS DE LA SUCURSAL
+      div.tr
+        div.td(style={ width: '50%' }).border-right
+          p
+            b Denominación Comercial:
+            span &nbsp; #{datos.usuario.denominacionComercial}
+        div.td(style={ width: '50%' })
+          p
+            b Representante Legal:
+            span &nbsp; #{datos.usuario.nombreRepresentante}

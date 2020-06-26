@@ -5,21 +5,34 @@ import { ActividadEconomica, Ramo } from '@root/interfaces/sigt';
 
 const pool = Pool.getInstance();
 
-export const getContributorExonerations = async({ contributorId }) => {
+export const getContributorExonerations = async({ typeDoc, doc }) => {
     const client = await pool.connect()
     try{
-        const contributorExonerations = await client.query(queries.GET_CONTRIBUTOR_EXONERATIONS, [contributorId]);
+        const contributor = (await client.query(queries.GET_CONTRIBUTOR, [typeDoc, doc])).rows[0];
+        if(!contributor){
+            throw new Error('No se ha hallado el contribuyente');
+        }
+        const contributorEconomicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [contributor.id]))
+        const contributorExonerations = await client.query(queries.GET_CONTRIBUTOR_EXONERATIONS, [typeDoc, doc]);
         const activeExonerations = contributorExonerations.rows.filter((row) => row.active);
         
         let generalExoneration = activeExonerations.find(row => !row.id_actividad_economica);
         let activityExonerations = activeExonerations.filter(row => row.id_actividad_economica);
         
         return {
-            exoneracionGeneral: {
-                fechaInicio: generalExoneration.fecha_inicio,
+            contribuyente: {
+                ...contributor,
+                tipoDocumento: typeDoc,
+                documento: doc,
+                actividades: contributorEconomicActivities.rows
             },
+            exoneracionGeneral: generalExoneration ? {
+                id: generalExoneration.id_plazo_exoneracion,
+                fechaInicio: generalExoneration.fecha_inicio,
+            } : {},
             exoneracionesDeActividadesEconomicas: activityExonerations.map((row) => {
                 return {
+                    id: row.id_plazo_exoneracion,
                     fechaInicio: row.fecha_inicio,
                     numeroReferencia: row.numeroReferencia,
                     descripcion: row.descripcion
@@ -45,6 +58,7 @@ export const getActivityExonerations = async() => {
         return {
             exoneracionesGeneralesDeActividadesEconomicas: activeExonerations.map((row) => {
                 return {
+                    id: row.id_plazo_exoneracion,
                     fechaInicio: row.fecha_inicio,
                     numeroReferencia: row.numeroReferencia,
                     descripcion: row.descripcion
@@ -70,6 +84,7 @@ export const getBranchExonerations = async () => {
         return {
             exoneracionesGeneralesDeRamos: activeExonerations.map((row) => {
                 return {
+                    id: row.id_plazo_exoneracion,
                     fechaInicio: row.fecha_inicio,
                     codigo: row.codigo,
                     descripcion: row.descripcion
@@ -85,11 +100,18 @@ export const getBranchExonerations = async () => {
     }
 }
 
-export const createContributorExoneration = async ({idContributor, from, activities}: { idContributor: number, from: Date, activities: ActividadEconomica[]  }) => {
+export const createContributorExoneration = async ({typeDoc, doc, from, activities}: { typeDoc: string, doc: string, from: Date, activities: ActividadEconomica[]  }) => {
     const client = await pool.connect()
     try{
         await client.query('BEGIN');
         const exoneration = (await client.query(queries.CREATE_EXONERATION, [from])).rows[0];
+        console.log(exoneration)
+        const contributor = (await client.query(queries.GET_CONTRIBUTOR,[typeDoc, doc]))
+        if(!contributor.rows[0]){
+            throw new Error('No se ha hallado el contribuyente');
+        }
+        const idContributor = contributor.rows[0].id;
+    
         if(activities){
             await Promise.all(activities.map(async (row) => {
                 if((await client.query(queries.GET_EXONERATED_ACTIVITY_BY_CONTRIBUTOR, [idContributor, row.id])).rowCount > 0){
@@ -116,7 +138,10 @@ export const createContributorExoneration = async ({idContributor, from, activit
     } catch (e) {
         await client.query('ROLLBACK');
         console.error(e)
-        throw e;
+        throw {
+            e,
+            message: e.message 
+        };
     } finally {
         client.release()
     }
@@ -150,15 +175,15 @@ export const createActivityExoneration = async ({ from, activities }: { from: Da
     }
 }
 
-export const createBranchExoneration = async ({ from, activities }: { from: Date, activities: Ramo[] }) => {
+export const createBranchExoneration = async ({ from, branches }: { from: Date, branches: Ramo[] }) => {
     const client = await pool.connect()
     try{
         await client.query('BEGIN');
         const exoneration = (await client.query(queries.CREATE_EXONERATION, [from])).rows[0];
         
-        await Promise.all(activities.map(async (row) => {
+        await Promise.all(branches.map(async (row) => {
             if((await client.query(queries.GET_BRANCH_IS_EXONERATED, [row.id])).rowCount > 0){
-                throw new Error(`La actividad economica ${row.descripcion} ya está exonerada`)
+                throw new Error(`El ramo ${row.descripcion} ya está exonerado`)
             }else {
                 return client.query(queries.INSERT_EXONERATION_BRANCH, [exoneration.id_plazo_exoneracion, row.id])
             }

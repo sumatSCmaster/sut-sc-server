@@ -163,7 +163,7 @@ export interface ActividadEconomica {
 export interface Solicitud {
   id: number;
   usuario: Usuario;
-  contribuyente: string;
+  contribuyente: any;
   aprobado: boolean;
   fecha: Date;
   monto: number;
@@ -347,7 +347,7 @@ export enum VerificationValue {
 }
 
 export type Ramo = {
-  id:number
-  codigo: string
-  descripcion: string
-}
+  id: number;
+  codigo: string;
+  descripcion: string;
+};

@@ -5,8 +5,8 @@ import { authenticate } from 'passport';
 
 const router = Router();
 
-router.get('/contributor/:id', authenticate('jwt'), async (req, res) => {
-  const [error, data] = await fulfill(getContributorExonerations({ contributorId: req.params['id'] }));
+router.get('/contributor/:typedoc/:doc', authenticate('jwt'), async (req, res) => {
+  const [error, data] = await fulfill(getContributorExonerations({ typeDoc: req.params['typedoc'], doc: req.params['doc'] }));
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
 });

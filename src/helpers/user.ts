@@ -307,7 +307,7 @@ export const hasNotifications = async (cedula) => {
 export const hasLinkedContributor = async (user) => {
   const client = await pool.connect();
   try {
-    const contributor = (await client.query('SELECT * FROM impuesto.CONTRIBUYENTE c INNER JOIN USUARIO u ON c.id_contribuyente = u.id_contribuyente WHERE u.id_usuario = $1', [user])).rows[0];
+    const contributor = (await client.query('SELECT c.* FROM impuesto.CONTRIBUYENTE c INNER JOIN USUARIO u ON c.id_contribuyente = u.id_contribuyente WHERE u.id_usuario = $1', [user])).rows[0];
     if (!contributor) return null;
     const verificacionTelefono = (await client.query('SELECT * FROM impuesto.verificacion_telefono v INNER JOIN usuario u ON v.id_usuario = u.id_usuario WHERE u.id_usuario = $1', [user])).rows[0];
     const contribuyente = {

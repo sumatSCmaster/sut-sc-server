@@ -135,9 +135,6 @@ router.put('/:id', authenticate('jwt'), async (req, res) => {
   }
 });
 
-const typeMedia = (type) => (file) =>
-  switchcase({ production: `${process.env.AWS_ACCESS_URL}/${file.key}`, development: `${process.env.SERVER_URL}/${type}/${file.filename}` })(
-    'No es un estado valido'
-  );
+const typeMedia = (type) => (file) => switchcase({ production: `${process.env.AWS_ACCESS_URL}/${file.key}`, development: `${process.env.SERVER_URL}/${type}/${file.filename}` })('No es un estado valido');
 
 export default router;

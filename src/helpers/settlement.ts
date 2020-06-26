@@ -3,7 +3,7 @@ import queries from '@utils/queries';
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { PoolClient } from 'pg';
 import GticPool from '@utils/GticPool';
-import { insertPaymentReference } from './banks';
+import { insertPaymentReference, insertPaymentCashier } from './banks';
 import moment, { Moment } from 'moment';
 import switchcase from '@utils/switch';
 import { Liquidacion, Solicitud, Usuario, MultaImpuesto, VerificationValue } from '@root/interfaces/sigt';
@@ -20,6 +20,7 @@ import { query } from 'express-validator';
 import { sendNotification } from './notification';
 import { sendRimVerification, verifyCode, resendCode } from './verification';
 import { hasLinkedContributor } from './user';
+import e from 'express';
 const written = require('written-number');
 
 const gticPool = GticPool.getInstance();
@@ -60,7 +61,7 @@ export const checkContributorExists = () => async (req: any, res, next) => {
     res.send({
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al obtener la informacion del usuario',
+      message: errorMessageGenerator(error) || errorMessageExtractor(error) || 'Error al obtener la informacion del usuario',
     });
   } finally {
     client.release();
@@ -380,6 +381,23 @@ const structureFinings = (x: any) => {
   };
 };
 
+const structureContributor = (x: any) => {
+  return {
+    id: x.id_contribuyente,
+    tipoDocumento: x.tipo_documento,
+    tipoContribuyente: x.tipo_contribuyente,
+    documento: x.documento,
+    razonSocial: x.razon_social,
+    denomComercial: x.denominacion_comercial || undefined,
+    siglas: x.siglas || undefined,
+    parroquia: x.parroquia,
+    sector: x.sector,
+    direccion: x.direccion,
+    puntoReferencia: x.punto_referencia,
+    verificado: x.verificado,
+  };
+};
+
 export const externalLinkingForCashier = async ({ document, docType, reference, typeUser, user }) => {
   const client = await pool.connect();
   const gtic = await gticPool.connect();
@@ -504,7 +522,12 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
             ),
             actividadesEconomicas: el.nu_referencia
               ? await Promise.all(
-                  (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [el.co_contribuyente])).rows.map((x) => ({ id: x.nu_ref_actividad, descripcion: x.tx_actividad, alicuota: x.nu_porc_alicuota, minimo_tributable: x.nu_ut }))
+                  (await gtic.query(typeUser === 'JURIDICO' ? queries.gtic.ECONOMIC_ACTIVITIES_JURIDICAL : queries.gtic.ECONOMIC_ACTIVIES_NATURAL, [docType, document])).rows.map((x) => ({
+                    id: x.nu_ref_actividad,
+                    descripcion: x.tx_actividad,
+                    alicuota: x.nu_porc_alicuota,
+                    minimo_tributable: x.nu_ut,
+                  }))
                 )
               : undefined,
           };
@@ -515,9 +538,9 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
     const { datosContribuyente, sucursales, actividadesEconomicas } = linkingData[0];
     const { tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, tipoContribuyente } = datosContribuyente;
     const contributor = (await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, true, tipoContribuyente])).rows[0];
-    if (actividadesEconomicas) {
+    if (actividadesEconomicas!.length > 0) {
       await Promise.all(
-        actividadesEconomicas.map(async (x) => {
+        actividadesEconomicas!.map(async (x) => {
           return await client.query('INSERT INTO impuesto.actividad_economica_contribuyente (id_contribuyente, numero_referencia) VALUES ($1, $2)', [contributor.id_contribuyente, x.id]);
         })
       );
@@ -545,7 +568,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                 )
               : undefined;
           if (pagados.length > 0) {
-            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
             await client.query('UPDATE impuesto.solicitud SET fecha = $1, fecha_aprobado = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
             await Promise.all(
@@ -566,7 +589,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
           }
 
           if (vigentes.length > 0) {
-            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
             await client.query('UPDATE impuesto.solicitud SET fecha = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
@@ -804,11 +827,14 @@ export const logInExternalLinking = async ({ credentials }) => {
                     return datos;
                   })
             ),
-            actividadesEconomicas: el.nu_referencia
-              ? await Promise.all(
-                  (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [el.co_contribuyente])).rows.map((x) => ({ id: x.nu_ref_actividad, descripcion: x.tx_actividad, alicuota: x.nu_porc_alicuota, minimo_tributable: x.nu_ut }))
-                )
-              : undefined,
+            actividadesEconomicas: await Promise.all(
+              (await gtic.query(el.tx_dist_contribuyente === 'J' ? queries.gtic.ECONOMIC_ACTIVITIES_JURIDICAL : queries.gtic.ECONOMIC_ACTIVIES_NATURAL, [el.tx_tp_doc, el.tx_dist_contribuyente === 'J' ? el.tx_rif : el.nu_cedula])).rows.map((x) => ({
+                id: x.nu_ref_actividad,
+                descripcion: x.tx_actividad,
+                alicuota: x.nu_porc_alicuota,
+                minimo_tributable: x.nu_ut,
+              }))
+            ),
           };
         })
         .filter((el) => el)
@@ -896,22 +922,27 @@ const externalUserForLinkingExists = async ({ user, password, gtic }: { user: st
   }
 };
 
-export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<Solicitud> => {
+export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<Solicitud & any> => {
   const client = await pool.connect();
   try {
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-    const application: Solicitud[] = await Promise.all(
+    const application = await Promise.all(
       (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows.map(async (el) => {
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
+        const docs = (await client.query('SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1', [el.id_contribuyente])).rows[0];
         return {
           id: el.id_solicitud,
           usuario: typeof user === 'object' ? user : { id: user },
-          contribuyente: el.id_contribuyente,
+          contribuyente: structureContributor(docs),
           aprobado: el.aprobado,
+          documento: docs.documento,
+          tipoDocumento: docs.tipo_documento,
+          estado: (await client.query('SELECT state FROM impuesto.solicitud_state WHERE id = $1', [el.id_solicitud])).rows[0].state,
+          referenciaMunicipal: (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0].id_registro_municipal])).rows[0]?.referencia_municipal,
           fecha: el.fecha,
           monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0].monto_total,
           liquidaciones: liquidaciones
-            .filter((el) => el.tipoProcedimiento !== 'Multas')
+            .filter((el) => el.tipoProcedimiento !== 'MULTAS')
             .map((el) => {
               return {
                 id: el.id_liquidacion,
@@ -923,7 +954,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
               };
             }),
           multas: liquidaciones
-            .filter((el) => el.tipoProcedimiento === 'Multas')
+            .filter((el) => el.tipoProcedimiento === 'MULTAS')
             .map((el) => {
               return {
                 id: el.id_liquidacion,
@@ -961,7 +992,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
         return {
           id: el.id_solicitud,
           usuario: user,
-          contribuyente: el.id_contribuyente,
+          contribuyente: structureContributor(docs),
           aprobado: el.aprobado,
           documento: docs.documento,
           tipoDocumento: docs.tipo_documento,
@@ -972,7 +1003,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
           fecha: el.fecha,
           monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0].monto_total,
           liquidaciones: liquidaciones
-            .filter((el) => el.tipoProcedimiento !== 'Multas')
+            .filter((el) => el.tipoProcedimiento !== 'MULTAS')
             .map((el) => {
               return {
                 id: el.id_liquidacion,
@@ -984,7 +1015,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
               };
             }),
           multas: liquidaciones
-            .filter((el) => el.tipoProcedimiento === 'Multas')
+            .filter((el) => el.tipoProcedimiento === 'MULTAS')
             .map((el) => {
               return {
                 id: el.id_liquidacion,
@@ -1019,16 +1050,17 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
       (typeUser === 'JURIDICO' ? await client.query(queries.GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR, [referencia, document, docType]) : await client.query(queries.GET_APPLICATION_INSTANCES_FOR_NATURAL_CONTRIBUTOR, [document, docType])).rows.map(
         async (el) => {
           const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
+          const docs = (await client.query('SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1', [el.id_contribuyente])).rows[0];
 
           return {
             id: el.id_solicitud,
             usuario: el.usuario,
-            contribuyente: el.id_contribuyente,
+            contribuyente: structureContributor(docs),
             aprobado: el.aprobado,
             fecha: el.fecha,
             monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0].monto_total,
             liquidaciones: liquidaciones
-              .filter((el) => el.tipoProcedimiento !== 'Multas')
+              .filter((el) => el.tipoProcedimiento !== 'MULTAS')
               .map((el) => {
                 return {
                   id: el.id_liquidacion,
@@ -1040,7 +1072,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
                 };
               }),
             multas: liquidaciones
-              .filter((el) => el.tipoProcedimiento === 'Multas')
+              .filter((el) => el.tipoProcedimiento === 'MULTAS')
               .map((el) => {
                 return {
                   id: el.id_liquidacion,
@@ -1152,7 +1184,7 @@ export const initialUserLinking = async (linkingData, user) => {
     }
     const contributor = (await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, true, tipoContribuyente])).rows[0];
     await client.query('UPDATE USUARIO SET id_contribuyente = $1 WHERE id_usuario = $2', [contributor.id_contribuyente, user.id]);
-    if (actividadesEconomicas) {
+    if (actividadesEconomicas && actividadesEconomicas.length > 0) {
       await Promise.all(
         actividadesEconomicas.map(async (x) => {
           return await client.query('INSERT INTO impuesto.actividad_economica_contribuyente (id_contribuyente, numero_referencia) VALUES ($1, $2)', [contributor.id_contribuyente, x.id]);
@@ -1191,7 +1223,7 @@ export const initialUserLinking = async (linkingData, user) => {
                 )
               : undefined;
           if (pagados.length > 0) {
-            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
             await client.query('UPDATE impuesto.solicitud SET fecha = $1, fecha_aprobado = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
             await Promise.all(
@@ -1212,7 +1244,7 @@ export const initialUserLinking = async (linkingData, user) => {
           }
 
           if (vigentes.length > 0) {
-            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
             await client.query('UPDATE impuesto.solicitud SET fecha = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
@@ -1381,36 +1413,6 @@ export const resendUserCode = async ({ user }) => {
   }
 };
 
-export const createUserBenefits = async (contributor) => {
-  const client = await pool.connect();
-  try {
-  } catch (error) {
-    console.log(error);
-    throw {
-      status: 500,
-      error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al crear solicitud de beneficios de usuario',
-    };
-  } finally {
-    client.release();
-  }
-};
-
-export const userBenefitsAgreement = async (contributor) => {
-  const client = await pool.connect();
-  try {
-  } catch (error) {
-    console.log(error);
-    throw {
-      status: 500,
-      error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al crear solicitud de beneficios de usuario',
-    };
-  } finally {
-    client.release();
-  }
-};
-
 //FIXME: acoplar a los estandares actuales de SUT
 export const insertSettlements = async ({ process, user }) => {
   const client = await pool.connect();
@@ -1422,7 +1424,7 @@ export const insertSettlements = async ({ process, user }) => {
   try {
     client.query('BEGIN');
     const userContributor =
-      user.tipoUsuario !== 4
+      user.tipoUsuario === 4
         ? (await client.query('SELECT c.* FROM USUARIO u INNER JOIN impuesto.contribuyente c ON u.id_contribuyente = c.id_contribuyente WHERE u.id_usuario = $1', [user.id])).rows
         : (await client.query(queries.TAX_PAYER_EXISTS, [process.tipoDocumento, process.documento])).rows;
     const userHasContributor = userContributor.length > 0;
@@ -1553,7 +1555,7 @@ export const insertSettlements = async ({ process, user }) => {
     const impuestosExt = impuestos.map((x, i, j) => {
       if (x.ramo === 'AE') {
         const costoSolvencia = 2 * UTMM;
-        x.monto -= costoSolvencia;
+        x.monto = +x.monto - costoSolvencia;
         j.push({ monto: costoSolvencia, ramo: 'SAE', fechaCancelada: x.fechaCancelada });
       }
       return x;
@@ -1588,31 +1590,31 @@ export const insertSettlements = async ({ process, user }) => {
       })
     );
 
-    const solicitud: Solicitud & { registroMunicipal: string } = {
-      id: application.id_solicitud,
-      usuario: user,
-      contribuyente: application.contribuyente,
-      aprobado: application.aprobado,
-      fecha: application.fecha,
-      monto: finingMonths
-        ?.concat(settlement)
-        .map((el) => +el.monto)
-        .reduce((x, j) => x + j, 0) as number,
-      liquidaciones: settlement,
-      multas: finingMonths,
-      registroMunicipal: process.rim,
-    };
+    // const solicitud: Solicitud & { registroMunicipal: string } = {
+    //   id: application.id_solicitud,
+    //   usuario: user,
+    //   contribuyente: application.contribuyente,
+    //   aprobado: application.aprobado,
+    //   fecha: application.fecha,
+    //   monto: finingMonths
+    //     ?.concat(settlement)
+    //     .map((el) => +el.monto)
+    //     .reduce((x, j) => x + j, 0) as number,
+    //   liquidaciones: settlement,
+    //   multas: finingMonths,
+    //   registroMunicipal: process.rim,
+    // };
     const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
+    await client.query('COMMIT');
+    const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
     await sendNotification(
       user,
-      // `Se ha iniciado una solicitud para el contribuyente con el documento de identidad: ${solicitud.nacionalidad}-${solicitud.documento}`,
-      'si',
+      `Se ha iniciado una solicitud para el contribuyente con el documento de identidad: ${solicitud.tipoDocumento}-${solicitud.documento}`,
       'CREATE_APPLICATION',
       'IMPUESTO',
       { ...solicitud, estado: state, nombreCorto: 'SEDEMAT' },
       client
     );
-    client.query('COMMIT');
     return { status: 201, message: 'Liquidaciones de impuestos creadas satisfactoriamente', solicitud };
   } catch (error) {
     console.log(error);
@@ -1645,22 +1647,21 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
         }
         el.fecha = paymentDate;
         el.concepto = 'IMPUESTO';
-        await insertPaymentReference(el, application, client);
+        user.tipoUsuario === 4 ? await insertPaymentReference(el, application, client) : await insertPaymentCashier(el, application, client);
       })
     );
     const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0];
+    client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
     console.log(applicationInstance);
     await sendNotification(
       user,
-      // `Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.nacionalidad}-${applicationInstance.documento}`,
-      'si',
+      `Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
       'UPDATE_APPLICATION',
       'IMPUESTO',
       { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
       client
     );
-    client.query('COMMIT');
     return { status: 200, message: 'Pago añadido para la solicitud declarada', solicitud: applicationInstance };
   } catch (error) {
     client.query('ROLLBACK');
@@ -1678,21 +1679,21 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
 export const validateApplication = async (body, user) => {
   const client = await pool.connect();
   try {
+    if (!body.solicitudAprobada) return;
     client.query('BEGIN');
     const state = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
     const solicitud = (await client.query(queries.GET_APPLICATION_BY_ID, [body.idTramite])).rows[0];
+    await client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: body.idTramite, user: solicitud.id_usuario });
     applicationInstance.aprobado = true;
     await sendNotification(
       user,
-      // `Se ha finalizado una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.nacionalidad}-${applicationInstance.documento}`,
-      'si',
+      `Se ha finalizado una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
       'UPDATE_APPLICATION',
       'IMPUESTO',
       { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
       client
     );
-    client.query('COMMIT');
   } catch (error) {
     client.query('ROLLBACK');
     throw {
@@ -1702,6 +1703,57 @@ export const validateApplication = async (body, user) => {
     };
   } finally {
     client.release();
+  }
+};
+
+export const approveContributorSignUp = async ({ procedure, client }: { procedure: any; client: PoolClient }) => {
+  try {
+    const { datos, usuario } = procedure;
+    const { documentoIdentidad, razonSocial, denominacionComercial, siglas, parroquia, sector, direccion, puntoReferencia, tipoContribuyente, tipoDocumento } = datos.funcionario;
+    const parish = (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [parroquia])).rows[0]?.id;
+    const contributor = (await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [tipoDocumento, documentoIdentidad, razonSocial, denominacionComercial, siglas, parish, sector, direccion, puntoReferencia, true, tipoContribuyente])).rows[0];
+    await client.query('UPDATE USUARIO SET id_contribuyente = $1 WHERE id_usuario = $2', [contributor.id_contribuyente, usuario]);
+    console.log(procedure);
+    return true;
+  } catch (error) {
+    console.log(error);
+    throw e;
+  }
+};
+
+export const approveContributorAELicense = async ({ data, client }: { data: any; client: PoolClient }) => {
+  try {
+    const { usuario, funcionario } = data;
+    const { actividadesEconomicas } = funcionario;
+    const { contribuyente } = usuario;
+    const registry = (
+      await client.query('INSERT INTO impuesto.registro_municipal (id_contribuyente, fecha_aprobacion, telefono_celular, email, denominacion_comercial, nombre_representante, actualizado) VALUES ($1, now(), $2, $3, $4, $5, true) RETURNING *', [
+        contribuyente.id,
+        funcionario.telefono,
+        funcionario.correo,
+        funcionario.denominacionComercial,
+        funcionario.nombreRepresentante,
+      ])
+    ).rows[0];
+    data.funcionario.referenciaMunicipal = registry.referencia_municipal;
+    await Promise.all(
+      actividadesEconomicas!.map(async (x) => {
+        return await client.query('INSERT INTO impuesto.actividad_economica_contribuyente (id_contribuyente, numero_referencia) VALUES ($1, $2)', [contribuyente.id, x.codigo]);
+      })
+    );
+    console.log(data);
+    return data;
+  } catch (error) {
+    console.log(error);
+    throw e;
+  }
+};
+
+export const approveContributorBenefits = async ({ data, client }: { data: any; client: PoolClient }) => {
+  try {
+  } catch (error) {
+    console.log(error);
+    throw e;
   }
 };
 
@@ -2257,70 +2309,83 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
   }
 };
 
-export const createAccountStatement = async (contributor) => {
+export const createAccountStatement = async ({ contributor, reference, typeUser }) => {
   const client = await pool.connect();
   const gtic = await gticPool.connect();
   try {
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-    const contribuyente = (await gtic.query(queries.gtic.GET_CONTRIBUTOR_BY_ID, [contributor])).rows[0];
-    const economicActivities = (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [contributor])).rows;
-    const ae = (await client.query(queries.GET_AE_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map((el) => {
-      const activity = economicActivities.find((x) => x.nu_ref_actividad.endsWith(el.id_aforo));
+    const paymentState = switchcase({ ingresardatos: 'VIGENTE', validando: 'VALIDANDO', finalizado: 'PAGADO' })(null);
+    const contribuyente = (await client.query('SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1', [contributor])).rows[0];
+    const branch = reference && (await client.query('SELECT r.* FROM impuesto.registro_municipal r WHERE referencia_municipal = $1', [reference])).rows[0];
+    const contributorQuery = typeUser === 'JURIDICO' ? queries.GET_SETTLEMENTS_FOR_CODE_AND_RIM : queries.GET_SETTLEMENTS_FOR_CODE_AND_CONTRIBUTOR;
+    const contributorPayload = typeUser === 'JURIDICO' ? branch.referencia_municipal : contribuyente.id_contribuyente;
+    const economicActivities = (
+      await client.query(
+        'SELECT id_actividad_economica AS id, ae.numero_referencia AS "numeroReferencia", descripcion as "nombreActividad", alicuota, minimo_tributable AS "minimoTributable" FROM impuesto.actividad_economica ae INNER JOIN impuesto.actividad_economica_contribuyente aec ON ae.numero_referencia = aec.numero_referencia WHERE aec.id_contribuyente = $1',
+        [contribuyente.id_contribuyente]
+      )
+    ).rows;
+    const ae =
+      (economicActivities.length > 0 &&
+        (await client.query(contributorQuery, [codigosRamo.AE, contributorPayload])).rows.map((el) => {
+          // const activity = economicActivities.find((x) => x.numeroReferencia.endsWith(el.id_aforo));
+          return {
+            planilla: new Date().getTime().toString().substr(6),
+            solicitud: el.id,
+            porcion: '1/1',
+            fechaLiquidacion: moment(el.fecha_liquidacion).format('DD/MM/YYYY'),
+            fechaVencimiento: moment(el.fecha_vencimiento).format('DD/MM/YYYY'),
+            motivo: el.descripcion_corta,
+            estado: paymentState(el.state),
+            montoPorcion: parseFloat(el.monto),
+            // montoPorcion: activity && parseInt(activity.nu_ut) * UTMM > parseFloat(el.monto_declarado) ? parseInt(activity.nu_ut) * UTMM : parseFloat(el.monto_declarado),
+          };
+        })) ||
+      [];
+    const sm = (await client.query(contributorQuery, [codigosRamo.SM, contributorPayload])).rows.map((el) => {
       return {
         planilla: new Date().getTime().toString().substr(6),
         solicitud: el.id,
         porcion: '1/1',
-        fechaLiquidacion: moment(el.fechaCreacion).month(el.mes).year(el.anio).format('DD/MM/YYYY'),
-        fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
-        motivo: el.tipoLiquidacion,
-        estado: el.aprobado && el.pagado ? 'PAGADO' : el.pagado ? 'VALIDANDO' : 'VIGENTE',
-        montoPorcion: activity && parseInt(activity.nu_ut) * UTMM > parseFloat(el.monto_declarado) ? parseInt(activity.nu_ut) * UTMM : parseFloat(el.monto_declarado),
+        fechaLiquidacion: moment(el.fecha_liquidacion).format('DD/MM/YYYY'),
+        fechaVencimiento: moment(el.fecha_vencimiento).format('DD/MM/YYYY'),
+        motivo: el.descripcion_corta,
+        estado: paymentState(el.state),
+        montoPorcion: parseFloat(el.monto),
+        // montoPorcion: +el.monto_gas + +el.monto_aseo,
       };
     });
-    const sm = (await client.query(queries.GET_SM_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map((el) => {
+    const iu = (await client.query(contributorQuery, [codigosRamo.IU, contributorPayload])).rows.map((el) => {
       return {
         planilla: new Date().getTime().toString().substr(6),
         solicitud: el.id,
         porcion: '1/1',
-        fechaLiquidacion: moment(el.fechaCreacion).month(el.mes).year(el.anio).format('DD/MM/YYYY'),
-        fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
-        motivo: el.tipoLiquidacion,
-        estado: el.aprobado && el.pagado ? 'PAGADO' : el.pagado ? 'VALIDANDO' : 'VIGENTE',
-        montoPorcion: +el.monto_gas + +el.monto_aseo,
-      };
-    });
-    const iu = (await client.query(queries.GET_IU_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map((el) => {
-      return {
-        planilla: new Date().getTime().toString().substr(6),
-        solicitud: el.id,
-        porcion: '1/1',
-        fechaLiquidacion: moment(el.fechaCreacion).month(el.mes).year(el.anio).format('DD/MM/YYYY'),
-        fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
-        motivo: el.tipoLiquidacion,
-        estado: el.aprobado && el.pagado ? 'PAGADO' : el.pagado ? 'VALIDANDO' : 'VIGENTE',
+        fechaLiquidacion: moment(el.fecha_liquidacion).format('DD/MM/YYYY'),
+        fechaVencimiento: moment(el.fecha_vencimiento).format('DD/MM/YYYY'),
+        motivo: el.descripcion_corta,
+        estado: paymentState(el.state),
         montoPorcion: parseFloat(el.monto),
       };
     });
-    const pp = (await client.query(queries.GET_PP_SETTLEMENTS_FOR_CONTRIBUTOR, [contributor])).rows.map((el) => {
+    const pp = (await client.query(contributorQuery, [codigosRamo.PP, contributorPayload])).rows.map((el) => {
       return {
         planilla: new Date().getTime().toString().substr(6),
         solicitud: el.id,
         porcion: '1/1',
-        fechaLiquidacion: moment(el.fechaCreacion).month(el.mes).year(el.anio).format('DD/MM/YYYY'),
-        fechaVencimiento: moment(el.fechaLiquidacion).endOf('month').format('DD/MM/YYYY'),
-        motivo: el.tipoLiquidacion,
-        estado: el.aprobado && el.pagado ? 'PAGADO' : el.pagado ? 'VALIDANDO' : 'VIGENTE',
+        fechaLiquidacion: moment(el.fecha_liquidacion).format('DD/MM/YYYY'),
+        fechaVencimiento: moment(el.fecha_vencimiento).format('DD/MM/YYYY'),
+        motivo: el.descripcion_corta,
+        estado: paymentState(el.state),
         montoPorcion: parseFloat(el.monto),
       };
     });
     const datosContribuyente = {
-      nombreORazon: contribuyente.tx_razon_social || `${contribuyente.nb_contribuyente} ${contribuyente.ap_contribuyente}`,
-      cedulaORif: contribuyente.tx_rif ? `${contribuyente.tx_tp_doc}-${contribuyente.tx_rif}` : `${contribuyente.tx_tp_doc}-${contribuyente.nu_cedula}`,
-      rim: contribuyente.nu_referencia,
-      direccion: contribuyente.tx_direccion,
-      telefono: contribuyente.nu_telf_movil || contribuyente.nu_telf_hab,
+      nombreORazon: contribuyente.razon_social,
+      cedulaORif: `${contribuyente.tipo_documento}-${contribuyente.documento}`,
+      rim: branch.referencia_municipal || null,
+      direccion: contribuyente.direccion,
+      telefono: branch.telefono_celular || '',
     };
-    const actividadesContribuyente = economicActivities.map((el) => ({ id: el.co_actividad, nombreActividad: el.tx_actividad }));
     const statement = ae
       .concat(sm)
       .concat(iu)
@@ -2329,7 +2394,7 @@ export const createAccountStatement = async (contributor) => {
       .sort((a, b) => (a.fechaLiquidacion === b.fechaLiquidacion ? 0 : a.fechaLiquidacion > b.fechaLiquidacion ? 1 : -1));
     const saldoFinal = statement.map((e) => switchcase({ PAGADO: e.montoPorcion, VIGENTE: -e.montoPorcion, VALIDANDO: 0 })(null)(e.estado)).reduce((e, x) => e + x, 0);
     const datosCertificado: accountStatement = {
-      actividadesContribuyente,
+      actividadesContribuyente: economicActivities,
       datosContribuyente,
       datosLiquidacion: statement,
       saldoFinal,

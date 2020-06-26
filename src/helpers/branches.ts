@@ -69,6 +69,15 @@ export const generateBranchesReport = async (user, payload: { from: Date, to: Da
 
             console.log('FINAL RES', result)
 
+          const transfersByBank =(await client.query(queries.GET_TRANSFERS_BY_BANK, [payload.from, payload.to])).rows;
+          const totalTranfersByBank = transfersByBank.reduce((prev, next) => prev + next.monto ,0);
+
+          const cash = (await client.query(queries.GET_CASH_REPORT, [payload.from, payload.to])).rows
+          const cashTotal = cash[0].monto || 0
+
+          const pos = (await client.query(queries.GET_POS, [payload.from, payload.to])).rows[0].total || 0;
+          
+          const check = (await client.query(queries.GET_CHECKS, [payload.from, payload.to])).rows[0].total || 0;
 
           const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-RPR.pug`), {
             moment: require('moment'),
@@ -80,38 +89,22 @@ export const generateBranchesReport = async (user, payload: { from: Date, to: Da
                 ingresadoTotal: ingress.rows.reduce((prev, next) => prev + next.cantidading, 0),
                 cantidadIngTotal: ingress.rows.reduce((prev, next) =>  prev + next.ingresado, 0) ,
                 metodoPago: {
-                  total:1231233213.00,
+                  total: totalTranfersByBank + cashTotal + pos + check,
                   transferencias:{
-                    total:123123,
-                    items:[{
-                    banco:'BOD',
-                    fecha:"2020-06-23T13:00:22.167Z",
-                    monto: 12312313.00
-                  }]
+                    total: totalTranfersByBank,
+                    items: transfersByBank
                   },
                   efectivo:{
-                    total: 0,
-                    items:[{
-                      moneda:'BS',
-                      fecha:"2020-06-23T13:00:22.167Z",
-                      monto: 12312313.00
-                    }]
+                    total: cashTotal,
+                    items: cash
                   },
                   punto:{
-                    total:13123123,
-                    items:[{
-                      banco:'BOD',
-                      fecha:"2020-06-23T13:00:22.167Z",
-                      monto: 12312313.00
-                    }]
+                    total: pos
+                    
                   },
                   cheques:{
-                    total:123123,
-                    items:[{
-                      banco:'BOD',
-                      fecha:"2020-06-23T13:00:22.167Z",
-                      monto: 12312313.00
-                    }]
+                    total: check,
+                    
                   }
                 }
               }

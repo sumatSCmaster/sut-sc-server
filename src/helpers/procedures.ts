@@ -8,12 +8,11 @@ import switchcase from '@utils/switch';
 import { sendNotification } from './notification';
 import { sendEmail } from './events/procedureUpdateState';
 import { createRequestForm, createCertificate } from '@utils/forms';
+import { approveContributorBenefits, approveContributorSignUp, approveContributorAELicense } from './settlement';
 
 const pool = Pool.getInstance();
 
-export const getAvailableProcedures = async (
-  user
-): Promise<{ options: Institucion[]; instanciasDeTramite: any; instanciasDeMulta: any; instanciasDeImpuestos: any }> => {
+export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any; instanciasDeMulta: any; instanciasDeImpuestos: any }> => {
   const client: any = await pool.connect();
   client.tipoUsuario = user.tipoUsuario;
   try {
@@ -44,10 +43,7 @@ export const getAvailableProcedures = async (
   }
 };
 
-export const getAvailableProceduresOfInstitution = async (req: {
-  params: { [id: string]: number };
-  user: { tipoUsuario: number };
-}): Promise<{ options: Institucion; instanciasDeTramite }> => {
+export const getAvailableProceduresOfInstitution = async (req: { params: { [id: string]: number }; user: { tipoUsuario: number } }): Promise<{ options: Institucion; instanciasDeTramite }> => {
   const client: PoolClient & { tipoUsuario?: number } = await pool.connect(); //Para cascadear el tipousuario a la busqueda de campos
   client.tipoUsuario = req.user.tipoUsuario;
   const id = req.params['id'];
@@ -125,7 +121,7 @@ const getProcedureInstances = async (user, client: PoolClient) => {
       })
     );
   } catch (error) {
-    console.log(errorMessageExtractor(error))
+    console.log(errorMessageExtractor(error));
     throw new Error('Error al obtener instancias de tramite');
   }
 };
@@ -177,7 +173,7 @@ const getSettlementInstances = async (user, client: PoolClient) => {
         recibo: el.recibo,
         pagado: el.pagado,
         aprobado: el.aprobado,
-        estado: el.state
+        estado: el.state,
       };
 
       return liquidacion;
@@ -388,6 +384,8 @@ const isNotPrepaidProcedure = ({ suffix, user }: { suffix: string; user: Usuario
   if (suffix === 'pd') return !condition;
   if (suffix === 'ompu') return !condition;
   if (suffix === 'tl' && user.tipoUsuario !== 4) return !condition;
+  if (suffix === 'rc') return !condition;
+  if (suffix === 'bc') return !condition;
   return condition;
 };
 
@@ -426,7 +424,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
       }
     } else {
       if (resources.planilla) dir = await createRequestForm(response, client);
-      respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, costo, dir]);
+      respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, response.sufijo === 'bc' ? JSON.stringify({ funcionario: datos }) : null, costo, dir]);
     }
 
     const tramite: Partial<Tramite> = {
@@ -481,6 +479,7 @@ export const validateProcedure = async (procedure, user: Usuario) => {
   let dir, respState;
   try {
     client.query('BEGIN');
+    console.log('si');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.idTramite])).rows[0];
     if (!procedure.hasOwnProperty('aprobado')) {
       return { status: 403, message: 'No es posible actualizar este estado' };
@@ -569,10 +568,17 @@ export const processProcedure = async (procedure, user: Usuario) => {
       else datos = prevData.datos;
     }
 
-    if (procedure.sufijo === 'ompu') {
+    if (procedure.sufijo === 'ompu' || procedure.sufijo === 'rc') {
       const { aprobado } = procedure;
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
       await client.query(queries.UPDATE_APPROVED_STATE_FOR_PROCEDURE, [aprobado, procedure.idTramite]);
+
+      if (procedure.sufijo === 'rc' && aprobado) await approveContributorSignUp({ procedure: (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0], client });
+    } else if (resources.tipoTramite === 28) {
+      const { aprobado } = procedure;
+      procedure.datos = await approveContributorAELicense({ data: datos, client });
+      dir = await createCertificate(procedure, client);
+      respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, true]);
     } else {
       if (nextEvent.startsWith('finalizar')) {
         procedure.datos = datos;
@@ -583,6 +589,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
       }
     }
 
+    await client.query('COMMIT');
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
     const tramite: Partial<Tramite> = {
       id: response.id,
@@ -605,7 +612,6 @@ export const processProcedure = async (procedure, user: Usuario) => {
     };
 
     await sendNotification(user, `Se ha procesado un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
-    client.query('COMMIT');
     sendEmail({
       ...tramite,
       codigo: tramite.codigoTramite,
@@ -664,14 +670,7 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
       nombreTramiteCorto: response.nombretramitecorto,
       aprobado: response.aprobado,
     };
-    await sendNotification(
-      user,
-      `Se añadieron los datos de pago de un trámite de tipo ${tramite.nombreTramiteLargo}`,
-      'UPDATE_PROCEDURE',
-      'TRAMITE',
-      tramite,
-      client
-    );
+    await sendNotification(user, `Se añadieron los datos de pago de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
     client.query('COMMIT');
     sendEmail({
       ...tramite,
@@ -716,6 +715,13 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
       prevData.datos.funcionario = { ...prevData.datos.funcionario, observaciones };
       datos = prevData.datos;
+    }
+
+    if (procedure.sufijo === 'bc' && aprobado) {
+      const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
+      prevData.datos.funcionario = { ...procedure.datos, observaciones };
+      datos = prevData.datos;
+      await approveContributorBenefits({ data: datos, client });
     }
 
     if (procedure.sufijo === 'ompu') {
@@ -783,18 +789,7 @@ const insertOrdinancesByProcedure = async (ordinances, id, type, client: PoolCli
           throw new Error('Error en validación del valor calculado');
         }
       }
-      const response = (
-        await client.query(queries.CREATE_ORDINANCE_FOR_PROCEDURE, [
-          id,
-          type,
-          el.ordenanza,
-          el.utmm,
-          el.valorCalc,
-          el.factor,
-          el.factorValue,
-          el.costoOrdenanza,
-        ])
-      ).rows[0];
+      const response = (await client.query(queries.CREATE_ORDINANCE_FOR_PROCEDURE, [id, type, el.ordenanza, el.utmm, el.valorCalc, el.factor, el.factorValue, el.costoOrdenanza])).rows[0];
       const ordinance = {
         id: key,
         idTramite: response.id_tramite,
@@ -827,6 +822,9 @@ const procedureEvents = switchcase({
     ingresardatos: 'validar_ompu',
     validando: 'finalizar_ompu',
   },
+  rc: { iniciado: 'procesar_rc', enproceso: { true: 'aprobar_rc', false: 'rechazar_rc' } },
+  bc: { iniciado: 'revisar_bc', enrevision: { true: 'aprobar_bc', false: 'rechazar_bc' } },
+  lae: { iniciado: 'validar_lae', validando: 'enproceso_lae', enproceso: { true: 'aprobar_lae', false: 'rechazar_lae' } },
 })(null);
 
 const procedureEventHandler = (suffix, state) => {
