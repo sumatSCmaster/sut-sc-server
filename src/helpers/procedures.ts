@@ -568,17 +568,17 @@ export const processProcedure = async (procedure, user: Usuario) => {
       else datos = prevData.datos;
     }
 
-    if (procedure.sufijo === 'ompu' || procedure.sufijo === 'rc' || resources.tipoTramite === 28) {
+    if (procedure.sufijo === 'ompu' || procedure.sufijo === 'rc') {
       const { aprobado } = procedure;
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
       await client.query(queries.UPDATE_APPROVED_STATE_FOR_PROCEDURE, [aprobado, procedure.idTramite]);
 
       if (procedure.sufijo === 'rc' && aprobado) await approveContributorSignUp({ procedure: (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0], client });
-      if (resources.tipoTramite === 28 && aprobado) {
-        procedure.datos = await approveContributorAELicense({ data: datos, client });
-        // dir = await createCertificate(procedure, client);
-        // respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, datos || null, dir || null, true]);
-      }
+    } else if (resources.tipoTramite === 28) {
+      const { aprobado } = procedure;
+      procedure.datos = await approveContributorAELicense({ data: datos, client });
+      dir = await createCertificate(procedure, client);
+      respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, true]);
     } else {
       if (nextEvent.startsWith('finalizar')) {
         procedure.datos = datos;
@@ -589,6 +589,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
       }
     }
 
+    await client.query('COMMIT');
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
     const tramite: Partial<Tramite> = {
       id: response.id,
@@ -611,7 +612,6 @@ export const processProcedure = async (procedure, user: Usuario) => {
     };
 
     await sendNotification(user, `Se ha procesado un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
-    client.query('COMMIT');
     sendEmail({
       ...tramite,
       codigo: tramite.codigoTramite,
