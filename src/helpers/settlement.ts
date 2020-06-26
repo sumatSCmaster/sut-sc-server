@@ -1707,7 +1707,13 @@ export const validateApplication = async (body, user) => {
 
 export const approveContributorSignUp = async ({ procedure, client }: { procedure: any; client: PoolClient }) => {
   try {
+    const { datos, usuario } = procedure;
+    const { documentoIdentidad, razonSocial, denominacionComercial, siglas, parroquia, sector, direccion, puntoReferencia, tipoContribuyente, tipoDocumento } = datos.funcionario;
+    const parish = (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [parroquia])).rows[0]?.id;
+    const contributor = (await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [tipoDocumento, documentoIdentidad, razonSocial, denominacionComercial, siglas, parish, sector, direccion, puntoReferencia, true, tipoContribuyente])).rows[0];
+    await client.query('UPDATE USUARIO SET id_contribuyente = $1 WHERE id_usuario = $2', [contributor.id_contribuyente, usuario]);
     console.log(procedure);
+    return true;
   } catch (error) {
     console.log(error);
     throw e;
