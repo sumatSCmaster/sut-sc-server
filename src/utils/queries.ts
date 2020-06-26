@@ -650,7 +650,49 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
         INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_subramo \
         WHERE state != 'finalizado' AND fecha_liquidacion BETWEEN $1 AND $2 \
         GROUP BY r.codigo, r.descripcion;`,
-
+  GET_TRANSFERS_BY_BANK: `SELECT b.nombre AS banco, SUM(p.monto) as monto
+        FROM pago p
+        INNER JOIN banco b ON b.id_banco = p.id_banco
+        WHERE p.concepto IN ('IMPUESTO', 'CONVENIO') AND p.metodo_pago = 'TRANSFERENCIA' AND p.fecha_de_pago BETWEEN $1 AND $2
+        GROUP BY b.nombre
+        UNION
+        SELECT b.nombre AS banco, SUM(p.monto) as monto
+        FROM (SELECT * FROM pago p 
+                INNER JOIN tramite t ON t.id_tramite = p.id_procedimiento 
+                INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite 
+                WHERE p.concepto = 'TRAMITE' AND tt.id_institucion = 9 AND p.metodo_pago = 'TRANSFERENCIA' AND p.fecha_de_pago BETWEEN $1 AND $2) p
+        INNER JOIN banco b ON b.id_banco = p.id_banco
+        GROUP BY b.nombre;`,
+  GET_CASH_REPORT: `SELECT 'BS' as moneda, x.monto FROM(
+        SELECT SUM(p.monto) AS monto
+        FROM pago p
+        WHERE p.concepto IN ('IMPUESTO', 'CONVENIO') AND p.metodo_pago = 'EFECTIVO' AND p.fecha_de_pago BETWEEN $1 AND $2
+        UNION
+        SELECT SUM(p.monto) AS monto
+        FROM (SELECT * FROM pago p 
+                INNER JOIN tramite t ON t.id_tramite = p.id_procedimiento 
+                INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite 
+                WHERE p.concepto = 'TRAMITE' AND tt.id_institucion = 9 AND p.metodo_pago = 'EFECTIVO' AND p.fecha_de_pago BETWEEN $1 AND $2) p
+      ) x;`,
+  GET_POS: `SELECT SUM(monto) as total FROM (SELECT SUM(p.monto) as monto
+        FROM pago p
+        WHERE p.concepto IN ('IMPUESTO', 'CONVENIO') AND p.metodo_pago = 'PUNTO DE VENTA' AND p.fecha_de_pago BETWEEN $1 AND $2
+        UNION
+        SELECT SUM(p.monto) as monto
+        FROM (SELECT * FROM pago p 
+                INNER JOIN tramite t ON t.id_tramite = p.id_procedimiento 
+                INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite 
+                WHERE p.concepto = 'TRAMITE' AND tt.id_institucion = 9 AND p.metodo_pago = 'PUNTO DE VENTA' AND p.fecha_de_pago BETWEEN $1 AND $2) p) x;`,
+  GET_CHECKS: `SELECT SUM(monto) AS total FROM (SELECT SUM(p.monto) as monto
+        FROM pago p
+        WHERE p.concepto IN ('IMPUESTO', 'CONVENIO') AND p.metodo_pago = 'CHEQUE' AND p.fecha_de_pago BETWEEN $1 AND $2
+        UNION
+        SELECT SUM(p.monto) as monto
+        FROM (SELECT * FROM pago p 
+        INNER JOIN tramite t ON t.id_tramite = p.id_procedimiento 
+        INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite 
+        WHERE p.concepto = 'TRAMITE' AND tt.id_institucion = 9 AND p.metodo_pago = 'CHEQUE' AND p.fecha_de_pago BETWEEN $1 AND $2) p) x;`,
+  
   //EXONERACIONES
   GET_CONTRIBUTOR: 'SELECT id_contribuyente as id, razon_social AS "razonSocial", denominacion_comercial AS "denominacionComercial" FROM impuesto.contribuyente c WHERE c.tipo_documento = $1 AND c.documento = $2;',
   CREATE_EXONERATION: 'INSERT INTO impuesto.plazo_exoneracion (id_plazo_exoneracion, fecha_inicio) VALUES (default, $1) RETURNING *;',
