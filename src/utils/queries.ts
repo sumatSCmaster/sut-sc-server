@@ -662,34 +662,34 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
 
   GET_EXONERATED_ACTIVITY_BY_CONTRIBUTOR:
     'SELECT * FROM impuesto.plazo_exoneracion pe INNER JOIN impuesto.contribuyente_exoneracion ce ON ce.id_plazo_exoneracion = pe.id_plazo_exoneracion WHERE id_contribuyente = $1 AND id_actividad_economica = $2 AND fecha_inicio <= NOW() AND fecha_fin IS NULL',
-  GET_EXONERATED_CONTRIBUTOR_STATUS: 'SELECT * FROM impuesto.plazo_exoneracion WHERE id_contribuyente = $1 AND id_actividad_economica IS NULL AND fecha_hasta IS NULL',
+  GET_EXONERATED_CONTRIBUTOR_STATUS: 'SELECT * FROM impuesto.contribuyente_exoneracion ce INNER JOIN impuesto.plazo_exoneracion pe ON pe.id_plazo_exoneracion = ce.id_plazo_exoneracion WHERE id_contribuyente = $1 AND id_actividad_economica IS NULL AND fecha_fin IS NULL',
   GET_CONTRIBUTOR_HAS_ACTIVITY: 'SELECT * FROM impuesto.actividad_economica ae INNER JOIN impuesto.actividad_economica_contribuyente aec ON aec.numero_referencia = ae.numero_referencia WHERE id_contribuyente = $1 AND id_actividad_economica = $2',
-  GET_CONTRIBUTOR_EXONERATIONS: `SELECT pe.*, ce.*, ae.*, c.*, (pe.fecha_inicio <= NOW() AND pe.fecha_fin IS NULL ) AS active \
+  GET_CONTRIBUTOR_EXONERATIONS: `SELECT pe.*, ce.*, ae.*, c.*, (pe.fecha_fin IS NULL ) AS active \
         FROM impuesto.plazo_exoneracion pe \
         INNER JOIN impuesto.contribuyente_exoneracion ce ON ce.id_plazo_exoneracion = pe.id_plazo_exoneracion \
         INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = ce.id_contribuyente \
         LEFT JOIN impuesto.actividad_economica ae ON ae.id_actividad_economica = ce.id_actividad_economica \
         WHERE c.tipo_documento = $1 AND c.documento = $2 ORDER BY pe.id_plazo_exoneracion DESC;`,
-  GET_ACTIVITY_EXONERATIONS: `SELECT pe.*, ae.*, (pe.fecha_inicio <= NOW() AND pe.fecha_fin IS NULL ) AS active 
+  GET_ACTIVITY_EXONERATIONS: `SELECT pe.*, ae.*, (pe.fecha_fin IS NULL ) AS active 
         FROM impuesto.plazo_exoneracion pe
         INNER JOIN impuesto.actividad_economica_exoneracion aee ON aee.id_plazo_exoneracion = pe.id_plazo_exoneracion
         INNER JOIN impuesto.actividad_economica ae ON aee.id_actividad_economica = ae.id_actividad_economica
         ORDER BY pe.id_plazo_exoneracion DESC;`,
-  GET_ACTIVITY_IS_EXONERATED: `SELECT pe.*, ae.*, (pe.fecha_inicio <= NOW() AND pe.fecha_fin IS NULL ) AS active 
+  GET_ACTIVITY_IS_EXONERATED: `SELECT pe.*, ae.*, (pe.fecha_fin IS NULL ) AS active 
         FROM impuesto.plazo_exoneracion pe
         INNER JOIN impuesto.actividad_economica_exoneracion aee ON aee.id_plazo_exoneracion = pe.id_plazo_exoneracion
         INNER JOIN impuesto.actividad_economica ae ON aee.id_actividad_economica = ae.id_actividad_economica
-        WHERE id_actividad_economica = $1 AND (pe.fecha_inicio <= NOW() AND pe.fecha_fin IS NULL)
+        WHERE id_actividad_economica = $1 AND (pe.fecha_fin IS NULL)
         ORDER BY pe.id_plazo_exoneracion DESC;`,
-  GET_BRANCH_EXONERATIONS: `SELECT pe.*, r.*, (pe.fecha_inicio <= NOW() AND pe.fecha_fin IS NULL) AS active 
+  GET_BRANCH_EXONERATIONS: `SELECT pe.*, r.*, (pe.fecha_fin IS NULL) AS active 
         FROM impuesto.plazo_exoneracion pe
         INNER JOIN impuesto.ramo_exoneracion re ON re.id_plazo_exoneracion = pe.id_plazo_exoneracion
         INNER JOIN impuesto.ramo r ON r.id_ramo = re.id_ramo
         ORDER BY pe.id_plazo_exoneracion DESC;`,
-  GET_BRANCH_IS_EXONERATED: `SELECT pe.*, ae.*, (pe.fecha_inicio <= NOW() AND pe.fecha_fin IS NULL ) AS active 
+  GET_BRANCH_IS_EXONERATED: `SELECT pe.*, ae.*, (pe.fecha_fin IS NULL ) AS active 
         FROM impuesto.plazo_exoneracion pe
         INNER JOIN impuesto.ramo_exoneracion re ON re.id_plazo_exoneracion = pe.id_plazo_exoneracion
-        WHERE id_ramo = $1 AND (pe.fecha_inicio <= NOW() AND pe.fecha_fin IS NULL)
+        WHERE id_ramo = $1 AND ( pe.fecha_fin IS NULL)
         ORDER BY pe.id_plazo_exoneracion DESC;`,
   UPDATE_EXONERATION_END_TIME: `UPDATE impuesto.plazo_exoneracion SET fecha_fin = $1 WHERE id_plazo_exoneracion = $1`,
   GET_ALL_ACTIVITIES: 'SELECT id_actividad_economica AS id, numero_referencia AS codigo, descripcion FROM impuesto.actividad_economica;',
