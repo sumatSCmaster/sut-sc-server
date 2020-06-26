@@ -103,7 +103,8 @@ export const createContributorExoneration = async ({typeDoc, doc, from, activiti
         await client.query('BEGIN');
         const exoneration = (await client.query(queries.CREATE_EXONERATION, [from])).rows[0];
         const contributor = (await client.query(queries.GET_CONTRIBUTOR,[typeDoc, doc]))
-        const idContributor = contributor.rows[0].id_contribuyente;
+        const idContributor = contributor.rows[0].id;
+    
         if(activities){
             await Promise.all(activities.map(async (row) => {
                 if((await client.query(queries.GET_EXONERATED_ACTIVITY_BY_CONTRIBUTOR, [idContributor, row.id])).rowCount > 0){
