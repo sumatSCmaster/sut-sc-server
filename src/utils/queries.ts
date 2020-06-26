@@ -83,7 +83,7 @@ const queries = {
   INSERT_PAYMENT: 'INSERT INTO pago (id_procedimiento, referencia, monto, id_banco, fecha_de_pago, concepto) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;',
   INSERT_PAYMENT_CASHIER: 'INSERT INTO pago (id_procedimiento, referencia, monto, id_banco, fecha_de_pago, concepto ,aprobado, fecha_de_aprobacion, metodo_pago) VALUES ($1, $2, $3, $4, $5, $6, true, now(), $7) RETURNING *;',
 
-  GET_ALL_BANKS: 'SELECT id_banco as id, nombre  FROM banco',
+  GET_ALL_BANKS: 'SELECT id_banco as id, nombre, validador  FROM banco',
   VALIDATE_PAYMENTS: 'SELECT validate_payments($1);',
   GET_BANK_ACCOUNTS_FOR_INSTITUTION:
     'SELECT id_institucion_banco AS id, id_institucion AS institucion, id_banco AS banco, \
@@ -658,7 +658,49 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_subramo \
         WHERE state != 'finalizado' AND fecha_liquidacion BETWEEN $1 AND $2 \
         GROUP BY r.codigo, r.descripcion;`,
-
+  GET_TRANSFERS_BY_BANK: `SELECT b.nombre AS banco, SUM(p.monto) as monto
+        FROM pago p
+        INNER JOIN banco b ON b.id_banco = p.id_banco
+        WHERE p.concepto IN ('IMPUESTO', 'CONVENIO') AND p.metodo_pago = 'TRANSFERENCIA' AND p.fecha_de_pago BETWEEN $1 AND $2
+        GROUP BY b.nombre
+        UNION
+        SELECT b.nombre AS banco, SUM(p.monto) as monto
+        FROM (SELECT * FROM pago p 
+                INNER JOIN tramite t ON t.id_tramite = p.id_procedimiento 
+                INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite 
+                WHERE p.concepto = 'TRAMITE' AND tt.id_institucion = 9 AND p.metodo_pago = 'TRANSFERENCIA' AND p.fecha_de_pago BETWEEN $1 AND $2) p
+        INNER JOIN banco b ON b.id_banco = p.id_banco
+        GROUP BY b.nombre;`,
+  GET_CASH_REPORT: `SELECT 'BS' as moneda, x.monto FROM(
+        SELECT SUM(p.monto) AS monto
+        FROM pago p
+        WHERE p.concepto IN ('IMPUESTO', 'CONVENIO') AND p.metodo_pago = 'EFECTIVO' AND p.fecha_de_pago BETWEEN $1 AND $2
+        UNION
+        SELECT SUM(p.monto) AS monto
+        FROM (SELECT * FROM pago p 
+                INNER JOIN tramite t ON t.id_tramite = p.id_procedimiento 
+                INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite 
+                WHERE p.concepto = 'TRAMITE' AND tt.id_institucion = 9 AND p.metodo_pago = 'EFECTIVO' AND p.fecha_de_pago BETWEEN $1 AND $2) p
+      ) x;`,
+  GET_POS: `SELECT SUM(monto) as total FROM (SELECT SUM(p.monto) as monto
+        FROM pago p
+        WHERE p.concepto IN ('IMPUESTO', 'CONVENIO') AND p.metodo_pago = 'PUNTO DE VENTA' AND p.fecha_de_pago BETWEEN $1 AND $2
+        UNION
+        SELECT SUM(p.monto) as monto
+        FROM (SELECT * FROM pago p 
+                INNER JOIN tramite t ON t.id_tramite = p.id_procedimiento 
+                INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite 
+                WHERE p.concepto = 'TRAMITE' AND tt.id_institucion = 9 AND p.metodo_pago = 'PUNTO DE VENTA' AND p.fecha_de_pago BETWEEN $1 AND $2) p) x;`,
+  GET_CHECKS: `SELECT SUM(monto) AS total FROM (SELECT SUM(p.monto) as monto
+        FROM pago p
+        WHERE p.concepto IN ('IMPUESTO', 'CONVENIO') AND p.metodo_pago = 'CHEQUE' AND p.fecha_de_pago BETWEEN $1 AND $2
+        UNION
+        SELECT SUM(p.monto) as monto
+        FROM (SELECT * FROM pago p 
+        INNER JOIN tramite t ON t.id_tramite = p.id_procedimiento 
+        INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite 
+        WHERE p.concepto = 'TRAMITE' AND tt.id_institucion = 9 AND p.metodo_pago = 'CHEQUE' AND p.fecha_de_pago BETWEEN $1 AND $2) p) x;`,
+  
   //EXONERACIONES
   GET_CONTRIBUTOR: 'SELECT id_contribuyente as id, razon_social AS "razonSocial", denominacion_comercial AS "denominacionComercial" FROM impuesto.contribuyente c WHERE c.tipo_documento = $1 AND c.documento = $2;',
   CREATE_EXONERATION: 'INSERT INTO impuesto.plazo_exoneracion (id_plazo_exoneracion, fecha_inicio) VALUES (default, $1) RETURNING *;',

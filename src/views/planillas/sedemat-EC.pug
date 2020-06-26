@@ -73,8 +73,6 @@ block header
         div(style={'-webkit-flex':'2'}).th.center
           p
             b MONTO PORCIÓN
-  div(style={'padding': '0 10px'})
-    div(style={'border-top':'none', 'border-bottom':'none', 'margin-top':0}).table
       each item in datosLiquidacion
         .tr.break-page
           div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
@@ -94,10 +92,10 @@ block header
           div(style={'-webkit-flex':'2'}).td.center.border-bottom
             p #{new Intl.NumberFormat('de-DE').format(item.montoPorcion)}
       .tr.break-page
-        div(style={'-webkit-flex':'8'}).th.center.border-right.border-bottom
+        div(style={'-webkit-flex':'8'}).th.center.border-right
           p
             b MONTO TOTAL
-        div(style={'-webkit-flex':'1.7','padding-left' : '8px'}).td.border-bottom.center
+        div(style={'-webkit-flex':'1.7','padding-left' : '8px'}).td.center
           p Bs #{new Intl.NumberFormat('de-DE').format(saldoFinal)}
     .table
       .tr.break-page
