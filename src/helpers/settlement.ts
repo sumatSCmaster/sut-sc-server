@@ -1133,7 +1133,7 @@ export const getEntireDebtsForContributor = async ({ reference, docType, documen
         direccion: contribuyente.direccion,
         puntoReferencia: contribuyente.punto_referencia,
         verificado: contribuyente.verificado,
-        liquidaciones: liquidaciones.map((x) => ({ id: x.id_ramo, ramo: x.descripcion, monto: x.monto })),
+        liquidaciones: liquidaciones.map((x) => ({ id: x.id_ramo, ramo: x.descripcion, monto: x.descripcion === 'MULTAS' ? +x.monto * UTMM : x.monto })),
         totalDeuda: liquidaciones.map((x) => x.monto).reduce((i, j) => +i + +j),
       },
     };
@@ -1695,7 +1695,7 @@ export const validateApplication = async (body, user) => {
     if (!body.solicitudAprobada) return;
     await client.query('BEGIN');
     console.log('si');
-    console.log('primera query:', queries.COMPLETE_TAX_APPLICATION_PAYMENT)
+    console.log('primera query:', queries.COMPLETE_TAX_APPLICATION_PAYMENT);
     console.log('payload primera query:', body.idTramite, applicationStateEvents.FINALIZAR);
     const state = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
     console.log('EL BICHO SIUUUUUUUUUUUUUUUUU');
