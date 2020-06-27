@@ -1727,7 +1727,6 @@ export const validateApplication = async (body, user, client) => {
       message: errorMessageGenerator(error) || 'Error al validar el pago',
     };
   } finally {
-    client.release();
   }
 };
 

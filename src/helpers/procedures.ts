@@ -480,11 +480,9 @@ export const procedureInit = async (procedure, user: Usuario) => {
   }
 };
 
-export const validateProcedure = async (procedure, user: Usuario) => {
-  const client = await pool.connect();
+export const validateProcedure = async (procedure, user: Usuario, client) => {
   let dir, respState;
   try {
-    client.query('BEGIN');
     console.log('si');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.idTramite])).rows[0];
     if (!procedure.hasOwnProperty('aprobado')) {
@@ -520,7 +518,6 @@ export const validateProcedure = async (procedure, user: Usuario) => {
       aprobado: response.aprobado,
     };
     await sendNotification(user, `Se ha validado el pago de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
-    client.query('COMMIT');
     sendEmail({
       ...tramite,
       codigo: tramite.codigoTramite,
@@ -530,14 +527,12 @@ export const validateProcedure = async (procedure, user: Usuario) => {
     });
     return { status: 200, message: 'Pago del tramite validado', tramite };
   } catch (error) {
-    client.query('ROLLBACK');
     throw {
       status: 500,
       error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al validar el pago del trámite',
     };
   } finally {
-    client.release();
   }
 };
 
