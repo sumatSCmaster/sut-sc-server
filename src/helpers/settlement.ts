@@ -1687,12 +1687,16 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
 export const validateApplication = async (body, user) => {
   const client = await pool.connect();
   try {
+    console.log('body dentro del metodo de IMPUESTO');
+    console.log(body)
     if (!body.solicitudAprobada) return;
     client.query('BEGIN');
     const state = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
     const solicitud = (await client.query(queries.GET_APPLICATION_BY_ID, [body.idTramite])).rows[0];
+    console.log('solicitud',solicitud);
     await client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: body.idTramite, user: solicitud.id_usuario });
+    console.log('applicationInstance', applicationInstance)
     applicationInstance.aprobado = true;
     await sendNotification(
       user,
@@ -1702,9 +1706,11 @@ export const validateApplication = async (body, user) => {
       { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
       client
     );
+
+    console.log('fin del metodo')
     return;
   } catch (error) {
-    console.log(error);
+    console.log('error vA',error);
     client.query('ROLLBACK');
     throw {
       status: 500,
