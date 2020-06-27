@@ -25,19 +25,19 @@ export const generateBranchesReport = async (user, payload: { from: Date, to: Da
             let columns;
             if(ingress.rowCount > liquidated.rowCount){
                 pivot = ingress;
-                pivotColumns = ['cantidading', 'ingresado']
+                pivotColumns = ['cantidadIng', 'ingresado']
                 other = liquidated;
                 columns = ['cantidadliq', 'liquidado']
             } else if (liquidated.rowCount > ingress.rowCount){
                 pivot = liquidated;
-                pivotColumns = ['cantidadliq', 'liquidado']
+                pivotColumns = ['cantidadLiq', 'liquidado']
                 other = ingress;
-                columns = ['cantidading', 'ingresado']
+                columns = ['cantidadIng', 'ingresado']
             } else{
                 pivot = ingress;
-                pivotColumns = ['cantidading', 'ingresado']
+                pivotColumns = ['cantidadIng', 'ingresado']
                 other = liquidated;
-                columns = ['cantidadliq', 'liquidado']
+                columns = ['cantidadLiq', 'liquidado']
             }
 
             let result = pivot.rows.reduce((prev, next) => {
@@ -85,8 +85,8 @@ export const generateBranchesReport = async (user, payload: { from: Date, to: Da
                 ingresos: result,
                 acumuladoIngresos: `CONTENIDO: TODOS LOS RAMOS, DESDE EL ${moment(payload.from).format('DD/MM/YYYY')} AL ${moment(payload.to).format('DD/MM/YYYY')}`,
                 cantidadLiqTotal:liquidated.rows.reduce((prev, next) =>  prev + next.liquidado, 0) ,
-                liquidadoTotal: liquidated.rows.reduce((prev, next) => prev + next.cantidadliq, 0),
-                ingresadoTotal: ingress.rows.reduce((prev, next) => prev + next.cantidading, 0),
+                liquidadoTotal: liquidated.rows.reduce((prev, next) => prev + next.cantidadLiq, 0),
+                ingresadoTotal: ingress.rows.reduce((prev, next) => prev + next.cantidadIng, 0),
                 cantidadIngTotal: ingress.rows.reduce((prev, next) =>  prev + next.ingresado, 0) ,
                 metodoPago: {
                   total: totalTranfersByBank + cashTotal + pos + check,
