@@ -1068,8 +1068,8 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
           documento: docs.documento,
           tipoDocumento: docs.tipo_documento,
           estado: (await client.query('SELECT state FROM impuesto.solicitud_state WHERE id = $1', [el.id_solicitud])).rows[0].state,
-          referenciaMunicipal: liquidaciones[0].id_registro_municipal
-            ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0].id_registro_municipal])).rows[0].referencia_municipal
+          referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
+            ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
             : undefined,
           monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0].monto_total,
           liquidaciones: liquidaciones
