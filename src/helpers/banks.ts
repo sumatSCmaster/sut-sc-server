@@ -95,7 +95,7 @@ export const insertPaymentCashier = async (payment: any, procedure: number, clie
 const validateCases = switchcase({ IMPUESTO: validateApplication, TRAMITE: validateProcedure, MULTA: validateFining })(null);
 
 const validationHandler = async ({ concept, body, user, client }) => {
-  const executedMethod = switchcase({ IMPUESTO: validateApplication, TRAMITE: validateProcedure, MULTA: validateFining })(null)(concept);
+  const executedMethod = switchcase({ IMPUESTO: validateApplication, CONVENIO: validateApplication, TRAMITE: validateProcedure, MULTA: validateFining })(null)(concept);
   console.log(executedMethod);
   console.log('funcion a ejecutar',executedMethod.name)
   return executedMethod ? await executedMethod(body, user, client) : { status: 400, message: 'No existe un caso de validacion definido con este concepto' };
