@@ -56,9 +56,9 @@ router.get('/instances', authenticate('jwt'), async (req: any, res) => {
 });
 
 //TODO: incluir validacion de que sea funcionario, informacion del contribuyente
-router.get('/instances/:referencia', authenticate('jwt'), async (req, res) => {
-  const { tipoDocumento, documento, tipoContribuyente } = req.query;
-  const { referencia } = req.params;
+router.get('/instances/:tipoContribuyente', authenticate('jwt'), async (req, res) => {
+  const { tipoDocumento, documento, referencia } = req.query;
+  const { tipoContribuyente } = req.params;
   const [err, data] = await fulfill(getApplicationsAndSettlementsForContributor({ referencia, docType: tipoDocumento, document: documento, typeUser: tipoContribuyente }));
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
