@@ -160,10 +160,9 @@ const getFineInstances = async (user, client: PoolClient) => {
 
 const getSettlementInstances = async (user, client: PoolClient) => {
   try {
-    if(belongsToAnInstitution(user)){
-      return []
-    }else{
-
+    if (belongsToAnInstitution(user)) {
+      return [];
+    } else {
     }
     let query = queries.GET_SETTLEMENT_INSTANCES_BY_ID;
     let payload = [user.id];
@@ -397,10 +396,11 @@ const isNotPrepaidProcedure = ({ suffix, user }: { suffix: string; user: Usuario
 export const procedureInit = async (procedure, user: Usuario) => {
   const client = await pool.connect();
   const { tipoTramite, datos, pago } = procedure;
-  let costo, respState, dir, cert;
+  let costo, respState, dir, cert, datosP;
   try {
     client.query('BEGIN');
-    const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify({ usuario: datos }), user.id])).rows[0];
+    datosP = { usuario: datos };
+    const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify(datosP), user.id])).rows[0];
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.idTramite])).rows[0];
     response.sufijo = resources.sufijo;
@@ -429,14 +429,15 @@ export const procedureInit = async (procedure, user: Usuario) => {
       }
     } else {
       if (resources.planilla) dir = await createRequestForm(response, client);
-      respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, response.sufijo === 'bc' ? JSON.stringify({ funcionario: datos }) : null, costo, dir]);
+      if (response.sufijo === 'bc') datosP = { funcionario: datos };
+      respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, response.sufijo === 'bc' ? JSON.stringify(datosP) : null, costo, dir]);
     }
 
     const tramite: Partial<Tramite> = {
       id: response.id,
       tipoTramite: response.tipotramite,
       estado: respState.rows[0].state,
-      datos: response.datos,
+      datos: datosP,
       planilla: dir,
       certificado: cert,
       costo,
@@ -775,6 +776,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
     });
     return { status: 200, message: 'Trámite revisado', tramite };
   } catch (error) {
+    console.log(error);
     client.query('ROLLBACK');
     throw {
       status: 500,
