@@ -1430,7 +1430,8 @@ export const insertSettlements = async ({ process, user }) => {
         : (await client.query(queries.TAX_PAYER_EXISTS, [process.tipoDocumento, process.documento])).rows;
     const userHasContributor = userContributor.length > 0;
     if (!userHasContributor) throw { status: 404, message: 'El usuario no esta asociado con ningun contribuyente' };
-    const contributorReference = (await client.query('SELECT * FROM impuesto.registro_municipal rm WHERE rm.referencia_municipal = $1 AND rm.id_contribuyente = $2', [process.rim || '', userContributor[0].id_contribuyente])).rows[0];
+    const contributorReference = (await client.query('SELECT * FROM impuesto.registro_municipal rm WHERE rm.referencia_municipal = $1 AND rm.id_contribuyente = $2', [process.rim, userContributor[0].id_contribuyente])).rows[0];
+    console.log(contributorReference);
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, userContributor[0].id_contribuyente])).rows[0];
 
@@ -1757,6 +1758,9 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
 
 export const approveContributorBenefits = async ({ data, client }: { data: any; client: PoolClient }) => {
   try {
+    const { contribuyente, beneficios } = data.datos.funcionario;
+    const contributorWithBranch = (await client.query('SELECT * FROM impuesto.registro_municipal r INNER JOIN impuesto.contribuyente c ON r.id_contribuyente = c.id_contribuyente WHERE r.referencia_municipal = $1', [contribuyente.registroMunicipal]))
+      .rows[0];
   } catch (error) {
     console.log(error);
     throw e;
