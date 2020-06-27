@@ -1687,13 +1687,11 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
   }
 };
 
-export const validateApplication = async (body, user) => {
-  const client = await pool.connect();
+export const validateApplication = async (body, user, client) => {
   try {
     console.log('body dentro del metodo de IMPUESTO');
     console.log(body);
     if (!body.solicitudAprobada) return;
-    await client.query('BEGIN');
     console.log('si');
     console.log('primera query:', queries.COMPLETE_TAX_APPLICATION_PAYMENT);
     console.log('payload primera query:', body.idTramite, applicationStateEvents.FINALIZAR);
@@ -1718,7 +1716,6 @@ export const validateApplication = async (body, user) => {
     return;
   } catch (error) {
     console.log('error vA', error);
-    client.query('ROLLBACK');
     throw {
       status: 500,
       error: errorMessageExtractor(error),
