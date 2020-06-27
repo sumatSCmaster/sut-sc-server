@@ -70,14 +70,20 @@ export const generateBranchesReport = async (user, payload: { from: Date, to: Da
             console.log('FINAL RES', result)
 
           const transfersByBank =(await client.query(queries.GET_TRANSFERS_BY_BANK, [payload.from, payload.to])).rows;
-          const totalTranfersByBank = transfersByBank.reduce((prev, next) => prev + next.monto ,0);
+          const totalTranfersByBank = +transfersByBank.reduce((prev, next) => prev + +(next.monto) ,0);
 
           const cash = (await client.query(queries.GET_CASH_REPORT, [payload.from, payload.to])).rows
-          const cashTotal = cash[0].monto || 0
+          const cashTotal = +cash[0].monto || 0
 
-          const pos = (await client.query(queries.GET_POS, [payload.from, payload.to])).rows[0].total || 0;
+          const pos = +(await client.query(queries.GET_POS, [payload.from, payload.to])).rows[0].total || 0;
           
-          const check = (await client.query(queries.GET_CHECKS, [payload.from, payload.to])).rows[0].total || 0;
+          const check = +(await client.query(queries.GET_CHECKS, [payload.from, payload.to])).rows[0].total || 0;
+          
+          console.log('transfersBybank', transfersByBank)
+          console.log('totaltransfersbybank', totalTranfersByBank)
+          console.log('cash',cash)
+          console.log('pos',pos)
+          console.log('check',check)
 
           const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-RPR.pug`), {
             moment: require('moment'),
@@ -87,7 +93,7 @@ export const generateBranchesReport = async (user, payload: { from: Date, to: Da
                 cantidadLiqTotal:liquidated.rows.reduce((prev, next) =>  prev + (+next.cantidadLiq), 0) ,
                 liquidadoTotal: liquidated.rows.reduce((prev, next) => prev + (+next.liquidado), 0),
                 ingresadoTotal: ingress.rows.reduce((prev, next) => prev + (+next.ingresado), 0),
-                cantidadIngTotal: ingress.rows.reduce((prev, next) =>  prev + (+next.cantidadInq), 0) ,
+                cantidadIngTotal: ingress.rows.reduce((prev, next) =>  prev + (+next.cantidadIng), 0) ,
                 metodoPago: {
                   total: totalTranfersByBank + cashTotal + pos + check,
                   transferencias:{
