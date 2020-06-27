@@ -31,7 +31,7 @@ export const getAllBanks = async () => {
 export const validatePayments = async (body, user) => {
   const client = await pool.connect();
   try {
-    client.query('BEGIN');
+    await client.query('BEGIN');
     const res = await client.query(queries.VALIDATE_PAYMENTS, [body]);
     console.log(res)
     const data = await Promise.all(
@@ -54,12 +54,12 @@ export const validatePayments = async (body, user) => {
           solicitudAprobada: el.solicitudAprobada || undefined,
         };
         console.log(el.concepto);
-        await validationHandler({ concept: el.concepto, body: pagoValidado, user });
+        await validationHandler({ concept: el.concepto, body: pagoValidado, user, client });
         return pagoValidado;
       })
     );
     console.log(data)
-    client.query('COMMIT');
+    await client.query('COMMIT');
     return {
       validatePayments: { data },
       message: 'Pago validado satisfactoriamente',
@@ -94,9 +94,9 @@ export const insertPaymentCashier = async (payment: any, procedure: number, clie
 
 const validateCases = switchcase({ IMPUESTO: validateApplication, TRAMITE: validateProcedure, MULTA: validateFining })(null);
 
-const validationHandler = async ({ concept, body, user }) => {
+const validationHandler = async ({ concept, body, user, client }) => {
   const executedMethod = switchcase({ IMPUESTO: validateApplication, TRAMITE: validateProcedure, MULTA: validateFining })(null)(concept);
   console.log(executedMethod);
   console.log('funcion a ejecutar',executedMethod.name)
-  return executedMethod ? await executedMethod(body, user) : { status: 400, message: 'No existe un caso de validacion definido con este concepto' };
+  return executedMethod ? await executedMethod(body, user, client) : { status: 400, message: 'No existe un caso de validacion definido con este concepto' };
 };
