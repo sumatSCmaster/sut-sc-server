@@ -86,16 +86,19 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     if ((!branch && truthyCheck(reference)) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEMAT' };
     const lastSettlementQuery = contributor.tipo_contribuyente === 'JURIDICO' ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
     const lastSettlementPayload = contributor.tipo_contribuyente === 'JURIDICO' ? branch.referencia_municipal : contributor.id_contribuyente;
-    const AEApplicationExists = truthyCheck(reference) ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.AE, reference])).rows[0] : false;
-    const SMApplicationExists = truthyCheck(reference)
-      ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.SM, reference])).rows[0]
-      : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.SM, contributor.id_contribuyente])).rows[0];
-    const IUApplicationExists = truthyCheck(reference)
-      ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.IU, reference])).rows[0]
-      : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.IU, contributor.id_contribuyente])).rows[0];
-    const PPApplicationExists = truthyCheck(reference)
-      ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.PP, reference])).rows[0]
-      : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.PP, contributor.id_contribuyente])).rows[0];
+    const AEApplicationExists = contributor.tipo_contribuyente === 'JURIDICO' || reference ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.AE, reference])).rows[0] : false;
+    const SMApplicationExists =
+      contributor.tipo_contribuyente === 'JURIDICO'
+        ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.SM, reference])).rows[0]
+        : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.SM, contributor.id_contribuyente])).rows[0];
+    const IUApplicationExists =
+      contributor.tipo_contribuyente === 'JURIDICO'
+        ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.IU, reference])).rows[0]
+        : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.IU, contributor.id_contribuyente])).rows[0];
+    const PPApplicationExists =
+      contributor.tipo_contribuyente === 'JURIDICO'
+        ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.PP, reference])).rows[0]
+        : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.PP, contributor.id_contribuyente])).rows[0];
 
     if (AEApplicationExists && SMApplicationExists && IUApplicationExists && PPApplicationExists) return { status: 409, message: 'Ya existe una declaracion de impuestos para este mes' };
     const now = moment(new Date());
