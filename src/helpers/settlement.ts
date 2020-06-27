@@ -1689,15 +1689,15 @@ export const validateApplication = async (body, user) => {
   const client = await pool.connect();
   try {
     console.log('body dentro del metodo de IMPUESTO');
-    console.log(body)
+    console.log(body);
     if (!body.solicitudAprobada) return;
-    client.query('BEGIN');
+    await client.query('BEGIN');
     const state = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
     const solicitud = (await client.query(queries.GET_APPLICATION_BY_ID, [body.idTramite])).rows[0];
-    console.log('solicitud',solicitud);
+    console.log('solicitud', solicitud);
     await client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: body.idTramite, user: solicitud.id_usuario });
-    console.log('applicationInstance', applicationInstance)
+    console.log('applicationInstance', applicationInstance);
     applicationInstance.aprobado = true;
     await sendNotification(
       user,
@@ -1708,10 +1708,10 @@ export const validateApplication = async (body, user) => {
       client
     );
 
-    console.log('fin del metodo')
+    console.log('fin del metodo');
     return;
   } catch (error) {
-    console.log('error vA',error);
+    console.log('error vA', error);
     client.query('ROLLBACK');
     throw {
       status: 500,
@@ -1772,6 +1772,37 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
     const { contribuyente, beneficios } = data.datos.funcionario;
     const contributorWithBranch = (await client.query('SELECT * FROM impuesto.registro_municipal r INNER JOIN impuesto.contribuyente c ON r.id_contribuyente = c.id_contribuyente WHERE r.referencia_municipal = $1', [contribuyente.registroMunicipal]))
       .rows[0];
+    const benefittedUser = (await client.query('SELECT id_usuario FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud WHERE l.id_registro_municipal = $1', [contributorWithBranch.id_registro_municipal]))
+      .rows[0].id_usuario;
+    await Promise.all(
+      beneficios.map(async (x) => {
+        switch (x.tipoBeneficio) {
+          case 'pagoCompleto':
+            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [benefittedUser, contributorWithBranch.id_contribuyente])).rows[0];
+            const benefit = (
+              await client.query('UPDATE impuesto.liquidacion SET id_solicitud = $1 WHERE id_registro_municipal = $2 AND id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = 1 AND id_ramo = $3) AND ', [
+                application.id_solicitud,
+                contributorWithBranch.id_registro_municipal,
+                x.idRamo,
+              ])
+            ).rows[0];
+            return benefit;
+          case 'descuento':
+            const settlements = (
+              await client.query('UPDATE impuesto.liquidacion SET id_solicitud = $1 WHERE id_registro_municipal = $2 AND id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = 1 AND id_ramo = $3)', [
+                application.id_solicitud,
+                contributorWithBranch.id_registro_municipal,
+                x.idRamo,
+              ])
+            ).rows[0];
+            return;
+          case 'remision':
+            return;
+          case 'convenio':
+            return;
+        }
+      })
+    );
   } catch (error) {
     console.log(error);
     throw e;
