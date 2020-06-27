@@ -64,154 +64,52 @@ block content
         p Bs #{new Intl.NumberFormat('de-DE').format(datos.ingresadoTotal)}
       div(style={'-webkit-flex':'1'}).td.center
         p #{datos.cantidadIngTotal}   
-  if datos.metodoPago.transferencias.items.length > 0
-    div(style={'margin-top':'20px'}).table.break-page
-      .tr.break-page
-        .th.center.border-bottom
-          p
-            b TRANSFERENCIA
-      .tr.break-page
-        div(style={'-webkit-flex':'6.5'}).th.center.border-bottom.border-right
-          p
-            b BANCO
-        div(style={'-webkit-flex':'3.5'}).th.center.border-bottom
-          p
-            b MONTO          
-      each item in datos.metodoPago.transferencias.items
-        .tr.break-page
-          div(style={'-webkit-flex':'6.5'}).td.center.border-bottom.border-right
-            p
-              b #{item.banco}
-          div(style={'-webkit-flex':'3.5'}).td.center.border-bottom
-            p
-              b #{new Intl.NumberFormat('de-DE').format(item.monto)}
-      .tr
-        div(style={'-webkit-flex':'6.5'}).th.center.border-right
-          p
-            b TOTAL DE TRANSFERENCIA
-        div(style={'-webkit-flex':'3.5'}).td.center
-          p
-            b Bs #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.total)}
-  if datos.metodoPago.punto.items.length > 0
-    div(style={'margin-top':'20px'}).table.break-page  
-      .tr.break-page
-        .th.center.border-bottom
-          p
-            b PUNTO DE VENTA
-      .tr.break-page
-        div(style={'-webkit-flex':'6.5'}).th.center.border-bottom.border-right
-          p
-            b BANCO
-        div(style={'-webkit-flex':'3.5'}).th.center.border-bottom
-          p
-            b MONTO          
-      each item in datos.metodoPago.punto.items
-        .tr.break-page
-          div(style={'-webkit-flex':'6.5'}).td.center.border-bottom.border-right
-            p
-              b #{item.banco}
-          div(style={'-webkit-flex':'3.5'}).td.center.border-bottom
-            p
-              b #{new Intl.NumberFormat('de-DE').format(item.monto)}
-      .tr
-        div(style={'-webkit-flex':'6.5'}).th.center.border-right
-          p
-            b TOTAL DE PUNTO DE VENTA
-        div(style={'-webkit-flex':'3.5'}).td.center
-          p
-            b Bs #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.punto.total)}
-  if datos.metodoPago.efectivo.items.length > 0
-    div(style={'margin-top':'20px'}).table.break-page
-      .tr.break-page
-        .th.center.border-bottom
-          p
-            b EFECTIVO
-      .tr.break-page
-        div(style={'-webkit-flex':'6.5'}).th.center.border-bottom.border-right
-          p
-            b MONEDA
-        div(style={'-webkit-flex':'3.5'}).th.center.border-bottom
-          p
-            b MONTO          
-      each item in datos.metodoPago.efectivo.items
-        .tr.break-page
-          div(style={'-webkit-flex':'6.5'}).td.center.border-bottom.border-right
-            p
-              b #{item.moneda}
-          div(style={'-webkit-flex':'3.5'}).td.center.border-bottom
-            p
-              b #{new Intl.NumberFormat('de-DE').format(item.monto)}
-      .tr
-        div(style={'-webkit-flex':'6.5'}).th.center.border-right
-          p
-            b TOTAL DE EFECTIVO
-        div(style={'-webkit-flex':'3.5'}).td.center
-          p
-            b Bs #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.efectivo.total)}
-  if datos.metodoPago.cheques.items.length > 0
-    div(style={'margin-top':'20px'}).table.break-page
-      .tr.break-page
-        .th.center.border-bottom
-          p
-            b CHEQUES
-      .tr.break-page
-        div(style={'-webkit-flex':'6.5'}).th.center.border-bottom.border-right
-          p
-            b BANCO
-        div(style={'-webkit-flex':'3.5'}).th.center.border-bottom
-          p
-            b MONTO          
-      each item in datos.metodoPago.cheques.items
-        .tr.break-page
-          div(style={'-webkit-flex':'6.5'}).td.center.border-bottom.border-right
-            p
-              b #{item.banco}
-          div(style={'-webkit-flex':'3.5'}).td.center.border-bottom
-            p
-              b #{new Intl.NumberFormat('de-DE').format(item.monto)}
-      .tr
-        div(style={'-webkit-flex':'6.5'}).th.center.border-right
-          p
-            b TOTAL DE CHEQUES
-        div(style={'-webkit-flex':'3.5'}).td.center
-          p
-            b Bs #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.cheques.total)}
     div(style={'margin-top':'20px'}).table.break-page
       .tr
         .th.center.border-bottom
           p
             b METODOS DE PAGO
       .tr
-        div(style={'-webkit-flex':'2.5'}).th.center.border-bottom.border-right
+        div(style={'-webkit-flex':'7'}).th.center.border-bottom.border-right
           p
-            b TRANSF
-        div(style={'-webkit-flex':'2.5'}).th.center.border-bottom.border-right
+            b PUNTO DE VENTA
+        div(style={'-webkit-flex':'3'}).td.center.border-bottom
+          p #{datos.metodoPago.punto.total}
+      .tr
+        div(style={'-webkit-flex':'7'}).th.center.border-bottom.border-right
           p
             b EFECTIVO
-        div(style={'-webkit-flex':'2.5'}).th.center.border-bottom.border-right
-          p
-            b PUNTO
-        div(style={'-webkit-flex':'2.5'}).th.center.border-bottom
+        div(style={'-webkit-flex':'3'}).td.center.border-bottom
+          p #{datos.metodoPago.efectivo.total}
+      .tr
+        div(style={'-webkit-flex':'7'}).th.center.border-bottom.border-right
           p
             b CHEQUES
+        div(style={'-webkit-flex':'3'}).td.center.border-bottom
+          p #{datos.metodoPago.cheques.total}
       .tr
-        div(style={'-webkit-flex':'2.5'}).td.center.border-bottom.border-right
+        div(style={'-webkit-flex':'7'}).th.border-bottom.border-right
           p
-            b #{datos.metodoPago.transferencias.total}
-        div(style={'-webkit-flex':'2.5'}).td.center.border-bottom.border-right
-          p
-            b #{datos.metodoPago.efectivo.total}
-        div(style={'-webkit-flex':'2.5'}).td.center.border-bottom.border-right
-          p
-            b #{datos.metodoPago.punto.total}
-        div(style={'-webkit-flex':'2.5'}).td.center.border-bottom
-          p
-            b #{datos.metodoPago.cheques.total}
+            b TRANSFERENCIA BOD
+        div(style={'-webkit-flex':'3'}).td.center.border-bottom
+          p #{datos.metodoPago.transferencia.item.find(el => el.id === 1)}
       .tr
-        div(style={'-webkit-flex':'7.5'}).th.center.border-right
+        div(style={'-webkit-flex':'7'}).th.border-bottom.border-right
+          p
+            b TRANSFERENCIA BANESCO
+        div(style={'-webkit-flex':'3'}).td.center.border-bottom
+          p #{datos.metodoPago.transferencia.item.find(el => el.id === 2)}
+      .tr
+        div(style={'-webkit-flex':'7'}).th.border-bottom.border-right
+          p
+            b TRANSFERENCIA BNC
+        div(style={'-webkit-flex':'3'}).td.center.border-bottom
+          p #{datos.metodoPago.transferencia.item.find(el => el.id === 3)}
+      .tr
+        div(style={'-webkit-flex':'7.'}).th.center.border-right
           p
             b TOTALES
-        div(style={'-webkit-flex':'2.5'}).td.center
+        div(style={'-webkit-flex':'3'}).td.center
           p
             b Bs #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.total)}                       
 block footer         
