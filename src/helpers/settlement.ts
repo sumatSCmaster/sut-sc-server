@@ -84,8 +84,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
     const branch = (await client.query('SELECT * FROM impuesto.registro_municipal WHERE referencia_municipal = $1 LIMIT 1', [reference])).rows[0];
     if ((!branch && truthyCheck(reference)) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEMAT' };
-    const lastSettlementQuery = branch ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
-    const lastSettlementPayload = branch ? branch.id_registro_municipal : contributor.id_contribuyente;
+    const lastSettlementQuery = contributor.tipo_contribuyente === 'JURIDICO' ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
+    const lastSettlementPayload = contributor.tipo_contribuyente === 'JURIDICO' ? branch.id_registro_municipal : contributor.id_contribuyente;
     const AEApplicationExists = truthyCheck(reference) ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.AE, reference])).rows[0] : false;
     const SMApplicationExists = truthyCheck(reference)
       ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.SM, reference])).rows[0]
@@ -155,7 +155,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
           monto: lastSM && lastSM.mo_pendiente ? parseFloat(lastSM.mo_pendiente) : 0,
           fecha: { month: pastMonthSM.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthSM.year() },
         };
-        const debtSM = new Array(dateInterpolationSM).fill({ month: null, year: null }).map((value, index) => {
+        const debtSM = new Array(dateInterpolationSM + 1).fill({ month: null, year: null }).map((value, index) => {
           const date = addMonths(new Date(lastSMPayment.toDate()), index);
           return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
         });
@@ -200,7 +200,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
           fecha: { month: pastMonthIU.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthIU.year() },
         };
         if (dateInterpolationIU > 0) {
-          const debtIU = new Array(dateInterpolationIU).fill({ month: null, year: null }).map((value, index) => {
+          const debtIU = new Array(dateInterpolationIU + 1).fill({ month: null, year: null }).map((value, index) => {
             const date = addMonths(new Date(lastIUPayment.toDate()), index);
             return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
           });
@@ -231,7 +231,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
           fecha: { month: pastMonthPP.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthPP.year() },
         };
         if (dateInterpolationPP > 0) {
-          debtPP = new Array(dateInterpolationPP).fill({ month: null, year: null }).map((value, index) => {
+          debtPP = new Array(dateInterpolationPP + 1).fill({ month: null, year: null }).map((value, index) => {
             const date = addMonths(new Date(lastPPPayment.toDate()), index);
             return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
           });
@@ -1840,25 +1840,23 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
       } else {
         try {
           await pool.query(queries.UPDATE_CERTIFICATE_SETTLEMENT, [dir, application.idLiquidacion]);
-          pdf
-            .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
-            .toBuffer(async (err, buffer) => {
-              if (err) {
-                rej(err);
-              } else {
-                const bucketParams = {
-                  Bucket: 'sut-maracaibo',
-                  Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`,
-                };
-                await S3Client.putObject({
-                  ...bucketParams,
-                  Body: buffer,
-                  ACL: 'public-read',
-                  ContentType: 'application/pdf',
-                }).promise();
-                res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
-              }
-            });
+          pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toBuffer(async (err, buffer) => {
+            if (err) {
+              rej(err);
+            } else {
+              const bucketParams = {
+                Bucket: 'sut-maracaibo',
+                Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`,
+              };
+              await S3Client.putObject({
+                ...bucketParams,
+                Body: buffer,
+                ACL: 'public-read',
+                ContentType: 'application/pdf',
+              }).promise();
+              res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+            }
+          });
         } catch (e) {
           throw e;
         } finally {
@@ -2012,7 +2010,6 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
 
     return new Promise(async (res, rej) => {
       try {
-
         let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-SM.pug`), certInfo));
         const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/SM/${application.idLiquidacion}/recibo.pdf`);
         const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/SM/${application.idLiquidacion}/recibo.pdf`;
@@ -2040,7 +2037,6 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
         );
 
         if (dev) {
-          
           mkdir(dirname(pdfDir), { recursive: true }, (e) => {
             if (e) {
               rej(e);
@@ -2081,7 +2077,6 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
           });
         } else {
           try {
-
             if (buffersArray.length === 1) {
               const bucketParams = {
                 Bucket: 'sut-maracaibo',
@@ -2094,7 +2089,6 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 ContentType: 'application/pdf',
               }).promise();
               res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
-
             } else {
               let letter = 'A';
               let reduced: any = buffersArray.reduce((prev: any, next) => {
@@ -2105,7 +2099,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 }
                 return prev;
               }, {});
-     
+
               pdftk
                 .input(reduced)
                 .cat(`${Object.keys(reduced).join(' ')}`)
@@ -2128,7 +2122,6 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                   rej(e);
                 });
             }
-
           } catch (e) {
             throw e;
           } finally {
@@ -2209,25 +2202,23 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
         });
       } else {
         try {
-          pdf
-            .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
-            .toBuffer(async (err, buffer) => {
-              if (err) {
-                rej(err);
-              } else {
-                const bucketParams = {
-                  Bucket: 'sut-maracaibo',
-                  Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
-                };
-                await S3Client.putObject({
-                  ...bucketParams,
-                  Body: buffer,
-                  ACL: 'public-read',
-                  ContentType: 'application/pdf',
-                }).promise();
-                res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
-              }
-            });
+          pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toBuffer(async (err, buffer) => {
+            if (err) {
+              rej(err);
+            } else {
+              const bucketParams = {
+                Bucket: 'sut-maracaibo',
+                Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
+              };
+              await S3Client.putObject({
+                ...bucketParams,
+                Body: buffer,
+                ACL: 'public-read',
+                ContentType: 'application/pdf',
+              }).promise();
+              res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+            }
+          });
         } catch (e) {
           throw e;
         } finally {
@@ -2301,25 +2292,23 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
         });
       } else {
         try {
-          pdf
-            .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
-            .toBuffer(async (err, buffer) => {
-              if (err) {
-                rej(err);
-              } else {
-                const bucketParams = {
-                  Bucket: 'sut-maracaibo',
-                  Key: `/sedemat/${application.id}/PP/${application.idLiquidacion}/recibo.pdf`,
-                };
-                await S3Client.putObject({
-                  ...bucketParams,
-                  Body: buffer,
-                  ACL: 'public-read',
-                  ContentType: 'application/pdf',
-                }).promise();
-                res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
-              }
-            });
+          pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toBuffer(async (err, buffer) => {
+            if (err) {
+              rej(err);
+            } else {
+              const bucketParams = {
+                Bucket: 'sut-maracaibo',
+                Key: `/sedemat/${application.id}/PP/${application.idLiquidacion}/recibo.pdf`,
+              };
+              await S3Client.putObject({
+                ...bucketParams,
+                Body: buffer,
+                ACL: 'public-read',
+                ContentType: 'application/pdf',
+              }).promise();
+              res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+            }
+          });
         } catch (e) {
           throw e;
         } finally {
