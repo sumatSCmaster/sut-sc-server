@@ -164,8 +164,8 @@ export const createActivityExoneration = async ({ from, activities }: { from: Da
         await client.query('COMMIT');
         return {
             message: 'Exoneraciones creadas',
-            exoneraciones: (await Promise.all(activities.map((row) => {
-                return client.query(queries.GET_ACTIVITY_IS_EXONERATED, [row.id])
+            exoneraciones: (await Promise.all(activities.map(async (row) => {
+                return (await client.query(queries.GET_ACTIVITY_IS_EXONERATED, [row.id])).rows[0]
             })))
         }
 
