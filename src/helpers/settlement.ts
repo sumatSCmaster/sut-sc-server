@@ -1778,7 +1778,7 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
 
 export const approveContributorBenefits = async ({ data, client }: { data: any; client: PoolClient }) => {
   try {
-    const { contribuyente, beneficios } = data.datos.funcionario;
+    const { contribuyente, beneficios } = data.funcionario;
     const contributorWithBranch = (await client.query('SELECT * FROM impuesto.registro_municipal r INNER JOIN impuesto.contribuyente c ON r.id_contribuyente = c.id_contribuyente WHERE r.referencia_municipal = $1', [contribuyente.registroMunicipal]))
       .rows[0];
     const benefittedUser = (await client.query('SELECT id_usuario FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud WHERE l.id_registro_municipal = $1', [contributorWithBranch.id_registro_municipal]))
