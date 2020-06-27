@@ -64,6 +64,7 @@ export const validatePayments = async (body, user) => {
       status: 201,
     };
   } catch (e) {
+    client.query('ROLLBACK');
     console.log(e);
     throw errorMessageExtractor(e);
   } finally {

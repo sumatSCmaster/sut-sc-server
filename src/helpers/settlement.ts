@@ -1700,6 +1700,7 @@ export const validateApplication = async (body, user) => {
       client
     );
   } catch (error) {
+    console.log(error);
     client.query('ROLLBACK');
     throw {
       status: 500,
