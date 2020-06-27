@@ -1694,7 +1694,7 @@ export const validateApplication = async (body, user) => {
     await client.query('BEGIN');
     console.log('si');
     console.log('primera query:', queries.COMPLETE_TAX_APPLICATION_PAYMENT)
-    console.log('payload primera query:' [body.idTramite, applicationStateEvents.FINALIZAR]);
+    console.log('payload primera query:', body.idTramite, applicationStateEvents.FINALIZAR);
     const state = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
     console.log('EL BICHO SIUUUUUUUUUUUUUUUUU')
     const solicitud = (await client.query(queries.GET_APPLICATION_BY_ID, [body.idTramite])).rows[0];
