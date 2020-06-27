@@ -730,7 +730,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         FROM impuesto.plazo_exoneracion pe
         INNER JOIN impuesto.actividad_economica_exoneracion aee ON aee.id_plazo_exoneracion = pe.id_plazo_exoneracion
         INNER JOIN impuesto.actividad_economica ae ON aee.id_actividad_economica = ae.id_actividad_economica
-        WHERE id_actividad_economica = $1 AND (pe.fecha_fin IS NULL)
+        WHERE ae.id_actividad_economica = $1 AND (pe.fecha_fin IS NULL)
         ORDER BY pe.id_plazo_exoneracion DESC;`,
   GET_BRANCH_EXONERATIONS: `SELECT pe.*, r.*, (pe.fecha_fin IS NULL) AS active 
         FROM impuesto.plazo_exoneracion pe
