@@ -640,7 +640,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   UPDATE_CODE: 'UPDATE impuesto.verificacion_telefono SET codigo_verificacion = $1, fecha_verificacion = CURRENT_TIMESTAMP WHERE id_usuario = $2',
 
   //REPORTES
-  GET_INGRESS: `SELECT r.codigo AS ramo, r.descripcion, COUNT(*) as ingresado, SUM(monto) as cantidading \
+  GET_INGRESS: `SELECT r.codigo AS ramo, r.descripcion, COUNT(*) as ingresado, SUM(monto) as "cantidadIng" \
         FROM impuesto.liquidacion l \
         INNER JOIN impuesto.solicitud s ON l.id_solicitud = s.id_solicitud \
         INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) \
@@ -649,7 +649,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_subramo \
         WHERE state = 'finalizado' AND fecha_liquidacion BETWEEN $1 AND $2 \
         GROUP BY r.codigo, r.descripcion;`,
-  GET_LIQUIDATED: `SELECT r.codigo AS ramo, r.descripcion, COUNT(*) as liquidado, SUM(monto) as cantidadliq \
+  GET_LIQUIDATED: `SELECT r.codigo AS ramo, r.descripcion, COUNT(*) as liquidado, SUM(monto) as "cantidadLiq" \
         FROM impuesto.liquidacion l  \
         INNER JOIN impuesto.solicitud s ON l.id_solicitud = s.id_solicitud \
         INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) \
