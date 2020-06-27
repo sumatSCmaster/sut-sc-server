@@ -144,7 +144,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         branch
           ? 'SELECT * FROM impuesto.avaluo_inmueble ai INNER JOIN inmueble_urbano iu ON ai.id_inmueble = iu.id_inmueble WHERE id_registro_municipal = $1 ORDER BY ai.anio DESC'
           : 'SELECT ai.*,iu.* FROM impuesto.avaluo_inmueble ai INNER JOIN inmueble_urbano iu ON ai.id_inmueble = iu.id_inmueble INNER JOIN impuesto.inmueble_contribuyente_natural icn ON iu.id_inmueble = icn.id_inmueble WHERE icn.id_contribuyente = $1 ORDER BY ai.anio DESC',
-        [lastSettlementPayload]
+        [branch ? branch.id_registro_municipal : contributor.id_contribuyente]
       )
     ).rows;
     if (estates.length > 0) {
