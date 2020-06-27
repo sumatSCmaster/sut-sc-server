@@ -1779,28 +1779,44 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
       beneficios.map(async (x) => {
         switch (x.tipoBeneficio) {
           case 'pagoCompleto':
-            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [benefittedUser, contributorWithBranch.id_contribuyente])).rows[0];
-            const benefit = (
-              await client.query('UPDATE impuesto.liquidacion SET id_solicitud = $1 WHERE id_registro_municipal = $2 AND id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = 1 AND id_ramo = $3) AND ', [
-                application.id_solicitud,
-                contributorWithBranch.id_registro_municipal,
-                x.idRamo,
-              ])
+            const applicationFP = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [benefittedUser, contributorWithBranch.id_contribuyente])).rows[0];
+            const benefitFullPayment = (
+              await client.query(
+                "UPDATE impuesto.liquidacion SET id_solicitud = $1 WHERE id_registro_municipal = $2 AND id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = 1 AND id_ramo = $3) AND id_liquidacion IN (SELECT id_liquidacion  FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud_state ss ON ss.id = l.id_solicitud  WHERE ss.state = 'ingresardatos');",
+                [applicationFP.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo]
+              )
             ).rows[0];
-            return benefit;
+            return benefitFullPayment;
           case 'descuento':
             const settlements = (
-              await client.query('UPDATE impuesto.liquidacion SET id_solicitud = $1 WHERE id_registro_municipal = $2 AND id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = 1 AND id_ramo = $3)', [
-                application.id_solicitud,
-                contributorWithBranch.id_registro_municipal,
-                x.idRamo,
-              ])
-            ).rows[0];
-            return;
+              await client.query(
+                "SELECT id_liquidacion FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud_state ss ON ss.id = l.id_solicitud  WHERE ss.state = 'ingresardatos' AND id_registro_municipal = $1 AND id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = 1 AND id_ramo = $2);",
+                [contributorWithBranch.id_registro_municipal, x.idRamo]
+              )
+            ).rows;
+            const benefitDiscount = await Promise.all(settlements.map(async (el) => await client.query('INSERT INTO impuesto.liquidacion_descuento (id_liquidacion, porcentaje_descuento) VALUES ($1, $2)', [el.id_liquidacion, x.porcDescuento])));
+            return benefitDiscount;
           case 'remision':
-            return;
+            const benefitRemission = (
+              await client.query(
+                "UPDATE impuesto.liquidacion SET remitido = true WHERE id_registro_municipal = $1 AND id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = 1 AND id_ramo = $2) AND id_liquidacion IN (SELECT id_liquidacion  FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud_state ss ON ss.id = l.id_solicitud  WHERE ss.state = 'ingresardatos');",
+                [contributorWithBranch.id_registro_municipal, x.idRamo]
+              )
+            ).rows[0];
+            return benefitRemission;
           case 'convenio':
-            return;
+            const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [benefittedUser, contributorWithBranch.id_contribuyente])).rows[0];
+            const agreement = (await client.query('INSERT INTO impuesto.convenio (id_solicitud, cantidad) VALUES ($1, $2) RETURNING *', [applicationAG.id_solicitud, x.porciones.length])).rows[0];
+            const settlementsAG = (
+              await client.query(
+                "UPDATE impuesto.liquidacion SET id_solicitud = $1 WHERE id_registro_municipal = $2 AND id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = 1 AND id_ramo = $3) AND id_liquidacion IN (SELECT id_liquidacion  FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud_state ss ON ss.id = l.id_solicitud  WHERE ss.state = 'ingresardatos');",
+                [applicationAG.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo]
+              )
+            ).rows[0];
+            const benefitAgreement = await Promise.all(
+              x.porciones.map(async (el) => (await client.query('INSERT INTO impuesto.fraccion (id_convenio, monto, porcion, fecha) VALUES ($1, $2, $3, $4)', [agreement.id_convenio, el.monto, el.porcion, el.fechaDePago])).rows[0])
+            );
+            return benefitAgreement;
         }
       })
     );
