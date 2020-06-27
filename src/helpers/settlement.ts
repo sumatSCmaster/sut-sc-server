@@ -1815,6 +1815,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
                 [applicationAG.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo]
               )
             ).rows[0];
+            await client.query("UPDATE impuesto.liquidacion SET id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE id_ramo = $1 AND descripcion = 'Convenio de Pago') WHERE id_solicitud = $1", [applicationAG.id_solicitud]);
             const benefitAgreement = await Promise.all(
               x.porciones.map(async (el) => (await client.query('INSERT INTO impuesto.fraccion (id_convenio, monto, porcion, fecha) VALUES ($1, $2, $3, $4)', [agreement.id_convenio, el.monto, el.porcion, el.fechaDePago])).rows[0])
             );
