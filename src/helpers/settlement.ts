@@ -1133,7 +1133,7 @@ export const getEntireDebtsForContributor = async ({ reference, docType, documen
         direccion: contribuyente.direccion,
         puntoReferencia: contribuyente.punto_referencia,
         verificado: contribuyente.verificado,
-        liquidaciones: liquidaciones.map((x) => ({ id: x.id_ramo, ramo: x.descripcion, monto: x.monto })),
+        liquidaciones: liquidaciones.map((x) => ({ id: x.id_ramo, ramo: x.descripcion, monto: x.descripcion === 'MULTAS' ? +x.monto * UTMM : x.monto })),
         totalDeuda: liquidaciones.map((x) => x.monto).reduce((i, j) => +i + +j),
       },
     };
@@ -1693,7 +1693,7 @@ export const validateApplication = async (body, user, client) => {
     console.log(body);
     if (!body.solicitudAprobada) return;
     console.log('si');
-    console.log('primera query:', queries.COMPLETE_TAX_APPLICATION_PAYMENT)
+    console.log('primera query:', queries.COMPLETE_TAX_APPLICATION_PAYMENT);
     console.log('payload primera query:', body.idTramite, applicationStateEvents.FINALIZAR);
     const state = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
     console.log('EL BICHO SIUUUUUUUUUUUUUUUUU');
@@ -1815,6 +1815,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
                 [applicationAG.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo]
               )
             ).rows[0];
+            await client.query("UPDATE impuesto.liquidacion SET id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE id_ramo = $1 AND descripcion = 'Convenio de Pago') WHERE id_solicitud = $1", [applicationAG.id_solicitud]);
             const benefitAgreement = await Promise.all(
               x.porciones.map(async (el) => (await client.query('INSERT INTO impuesto.fraccion (id_convenio, monto, porcion, fecha) VALUES ($1, $2, $3, $4)', [agreement.id_convenio, el.monto, el.porcion, el.fechaDePago])).rows[0])
             );
