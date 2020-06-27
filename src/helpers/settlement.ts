@@ -1693,6 +1693,52 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
   }
 };
 
+export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fragment, user }) => {
+  const client = await pool.connect();
+  try {
+    client.query('BEGIN');
+    const fraccion = (await client.query('SELECT * FROM impuesto.fraccion WHERE id_convenio = $1 AND id_fraccion = $2', [agreement, fragment])).rows[0];
+    const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
+    if (pagoSum < fraccion.monto) return { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
+    await Promise.all(
+      payment.map(async (el) => {
+        if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
+        const nearbyHolidays = (await client.query(queries.GET_HOLIDAYS_BASED_ON_PAYMENT_DATE, [el.fecha])).rows;
+        const paymentDate = checkIfWeekend(moment(el.fecha));
+        if (nearbyHolidays.length > 0) {
+          while (nearbyHolidays.find((el) => moment(el.dia).format('YYYY-MM-DD') === paymentDate.format('YYYY-MM-DD'))) paymentDate.add({ days: 1 });
+        }
+        el.fecha = paymentDate;
+        el.concepto = 'IMPUESTO';
+        user.tipoUsuario === 4 ? await insertPaymentReference(el, fragment, client) : await insertPaymentCashier(el, fragment, client);
+      })
+    );
+    const state = (await client.query('UPDATE impuesto.fraccion SET aprobado = true WHERE id_fraccion = $1', [fragment])).rows[0];
+    client.query('COMMIT');
+    const applicationInstance = await getApplicationsAndSettlementsById({ id: fragment, user });
+    console.log(applicationInstance);
+    await sendNotification(
+      user,
+      `Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
+      'UPDATE_APPLICATION',
+      'IMPUESTO',
+      { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
+      client
+    );
+    return { status: 200, message: 'Pago añadido para la solicitud declarada', solicitud: applicationInstance };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al insertar referencias de pago',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 export const validateApplication = async (body, user, client) => {
   try {
     console.log('body dentro del metodo de IMPUESTO');
