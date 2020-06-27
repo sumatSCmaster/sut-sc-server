@@ -1705,7 +1705,6 @@ export const validateApplication = async (body, user, client) => {
     console.log('EL BICHO SIUUUUUUUUUUUUUUUUU');
     const solicitud = (await client.query(queries.GET_APPLICATION_BY_ID, [body.idTramite])).rows[0];
     console.log('solicitud', solicitud);
-    await client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: body.idTramite, user: solicitud.id_usuario });
     console.log('applicationInstance', applicationInstance);
     applicationInstance.aprobado = true;
