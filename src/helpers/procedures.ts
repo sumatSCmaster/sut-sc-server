@@ -724,10 +724,8 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
     }
 
     if (procedure.sufijo === 'bc' && aprobado) {
-      const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
-      prevData.datos.funcionario = { ...procedure.datos, observaciones };
-      datos = prevData.datos;
-      await approveContributorBenefits({ data: datos, client });
+      datos = procedure.datos;
+      await approveContributorBenefits({ data: procedure.datos, client });
     }
 
     if (procedure.sufijo === 'ompu') {
