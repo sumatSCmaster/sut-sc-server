@@ -160,8 +160,13 @@ const getFineInstances = async (user, client: PoolClient) => {
 
 const getSettlementInstances = async (user, client: PoolClient) => {
   try {
-    let query = belongsToAnInstitution(user) ? queries.GET_SETTLEMENT_INSTANCES : queries.GET_SETTLEMENT_INSTANCES_BY_ID;
-    let payload = belongsToAnInstitution(user) ? undefined : [user.id];
+    if(belongsToAnInstitution(user)){
+      return []
+    }else{
+
+    }
+    let query = queries.GET_SETTLEMENT_INSTANCES_BY_ID;
+    let payload = [user.id];
     let response = (await client.query(query, payload)).rows;
     return response.map((el) => {
       const liquidacion: Liquidacion & { pagado: string; aprobado: string } = {
@@ -733,7 +738,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       }
     } else {
       if (aprobado) {
-        dir = await createCertificate(procedure, client);
+        if (procedure.sufijo !== 'bc') dir = await createCertificate(procedure, client);
         respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, aprobado]);
       } else {
         respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
