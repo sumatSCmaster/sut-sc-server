@@ -31,7 +31,7 @@ export const getAllBanks = async () => {
 export const validatePayments = async (body, user) => {
   const client = await pool.connect();
   try {
-    client.query('BEGIN');
+    await client.query('BEGIN');
     const res = await client.query(queries.VALIDATE_PAYMENTS, [body]);
     console.log(res)
     const data = await Promise.all(
@@ -59,7 +59,7 @@ export const validatePayments = async (body, user) => {
       })
     );
     console.log(data)
-    client.query('COMMIT');
+    await client.query('COMMIT');
     return {
       validatePayments: { data },
       message: 'Pago validado satisfactoriamente',
