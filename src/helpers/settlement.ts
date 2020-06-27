@@ -1702,6 +1702,7 @@ export const validateApplication = async (body, user) => {
       { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
       client
     );
+    return;
   } catch (error) {
     console.log(error);
     client.query('ROLLBACK');
