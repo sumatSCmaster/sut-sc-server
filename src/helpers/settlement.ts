@@ -1820,6 +1820,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
         }
       })
     );
+    return true;
   } catch (error) {
     console.log(error);
     throw e;
