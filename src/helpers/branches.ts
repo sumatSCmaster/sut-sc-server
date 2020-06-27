@@ -84,10 +84,10 @@ export const generateBranchesReport = async (user, payload: { from: Date, to: Da
             datos: {
                 ingresos: result,
                 acumuladoIngresos: `CONTENIDO: TODOS LOS RAMOS, DESDE EL ${moment(payload.from).format('DD/MM/YYYY')} AL ${moment(payload.to).format('DD/MM/YYYY')}`,
-                cantidadLiqTotal:liquidated.rows.reduce((prev, next) =>  prev + next.liquidado, 0) ,
-                liquidadoTotal: liquidated.rows.reduce((prev, next) => prev + next.cantidadLiq, 0),
-                ingresadoTotal: ingress.rows.reduce((prev, next) => prev + next.cantidadIng, 0),
-                cantidadIngTotal: ingress.rows.reduce((prev, next) =>  prev + next.ingresado, 0) ,
+                cantidadLiqTotal:liquidated.rows.reduce((prev, next) =>  prev + (+next.cantidadLiq), 0) ,
+                liquidadoTotal: liquidated.rows.reduce((prev, next) => prev + (+next.liquidado), 0),
+                ingresadoTotal: ingress.rows.reduce((prev, next) => prev + (+next.ingresado), 0),
+                cantidadIngTotal: ingress.rows.reduce((prev, next) =>  prev + (+next.cantidadInq), 0) ,
                 metodoPago: {
                   total: totalTranfersByBank + cashTotal + pos + check,
                   transferencias:{
