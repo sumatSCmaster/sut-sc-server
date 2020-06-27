@@ -1692,6 +1692,7 @@ export const validateApplication = async (body, user) => {
     console.log(body);
     if (!body.solicitudAprobada) return;
     await client.query('BEGIN');
+    console.log('si');
     const state = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
     const solicitud = (await client.query(queries.GET_APPLICATION_BY_ID, [body.idTramite])).rows[0];
     console.log('solicitud', solicitud);
