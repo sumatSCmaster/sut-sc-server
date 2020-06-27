@@ -709,7 +709,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.idTramite])).rows[0];
 
     if (!procedure.hasOwnProperty('revision')) {
-      return { status: 403, message: 'No es posible actualizar este estado' };
+      throw { status: 403, message: 'No es posible actualizar este estado' };
     }
 
     if (!procedure.hasOwnProperty('sufijo')) {
