@@ -1713,7 +1713,7 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
         user.tipoUsuario === 4 ? await insertPaymentReference(el, fragment, client) : await insertPaymentCashier(el, fragment, client);
       })
     );
-    const state = (await client.query('UPDATE impuesto.fraccion SET pagado = true', [fragment, applicationStateEvents.VALIDAR])).rows[0];
+    const state = (await client.query('UPDATE impuesto.fraccion SET aprobado = true WHERE id_fraccion = $1', [fragment])).rows[0];
     client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: fragment, user });
     console.log(applicationInstance);
