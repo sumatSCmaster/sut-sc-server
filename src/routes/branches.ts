@@ -5,8 +5,7 @@ import { authenticate } from 'passport';
 
 const router = Router();
 
-router.get('/', async (req, res) => {
-  console.log('a')
+router.post('/', authenticate('jwt'), async (req, res) => {
   const { from, to } = req.body;
   const [error, data] = await fulfill(generateBranchesReport(req.user ,{from, to}));
   if (error) res.status(500).json({ error, status: 500 });

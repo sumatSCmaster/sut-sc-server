@@ -658,19 +658,19 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_subramo \
         WHERE state != 'finalizado' AND fecha_liquidacion BETWEEN $1 AND $2 \
         GROUP BY r.codigo, r.descripcion;`,
-  GET_TRANSFERS_BY_BANK: `SELECT b.nombre AS banco, SUM(p.monto) as monto
+  GET_TRANSFERS_BY_BANK: `SELECT b.id_banco, b.nombre AS banco, SUM(p.monto) as monto
         FROM pago p
         INNER JOIN banco b ON b.id_banco = p.id_banco
         WHERE p.concepto IN ('IMPUESTO', 'CONVENIO') AND p.metodo_pago = 'TRANSFERENCIA' AND p.fecha_de_pago BETWEEN $1 AND $2
-        GROUP BY b.nombre
+        GROUP BY b.id_banco, b.nombre
         UNION
-        SELECT b.nombre AS banco, SUM(p.monto) as monto
+        SELECT b.id_banco, b.nombre AS banco, SUM(p.monto) as monto
         FROM (SELECT * FROM pago p 
                 INNER JOIN tramite t ON t.id_tramite = p.id_procedimiento 
                 INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite 
                 WHERE p.concepto = 'TRAMITE' AND tt.id_institucion = 9 AND p.metodo_pago = 'TRANSFERENCIA' AND p.fecha_de_pago BETWEEN $1 AND $2) p
         INNER JOIN banco b ON b.id_banco = p.id_banco
-        GROUP BY b.nombre;`,
+        GROUP BY b.id_banco, b.nombre;`,
   GET_CASH_REPORT: `SELECT 'BS' as moneda, x.monto FROM(
         SELECT SUM(p.monto) AS monto
         FROM pago p
@@ -726,7 +726,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         INNER JOIN impuesto.actividad_economica_exoneracion aee ON aee.id_plazo_exoneracion = pe.id_plazo_exoneracion
         INNER JOIN impuesto.actividad_economica ae ON aee.id_actividad_economica = ae.id_actividad_economica
         ORDER BY pe.id_plazo_exoneracion DESC;`,
-  GET_ACTIVITY_IS_EXONERATED: `SELECT pe.*, ae.*, (pe.fecha_fin IS NULL ) AS active 
+  GET_ACTIVITY_IS_EXONERATED: `SELECT ae.id_actividad_economica AS id, ae.descripcion, (pe.fecha_fin IS NULL ) AS active 
         FROM impuesto.plazo_exoneracion pe
         INNER JOIN impuesto.actividad_economica_exoneracion aee ON aee.id_plazo_exoneracion = pe.id_plazo_exoneracion
         INNER JOIN impuesto.actividad_economica ae ON aee.id_actividad_economica = ae.id_actividad_economica
