@@ -81,6 +81,7 @@ export const generateBranchesReport = async (user, payload: { from: Date, to: Da
 
           const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-RPR.pug`), {
             moment: require('moment'),
+            institucion: 'SEDEMAT',
             datos: {
                 ingresos: result,
                 acumuladoIngresos: `CONTENIDO: TODOS LOS RAMOS, DESDE EL ${moment(payload.from).format('DD/MM/YYYY')} AL ${moment(payload.to).format('DD/MM/YYYY')}`,
