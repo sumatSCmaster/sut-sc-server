@@ -1,9 +1,15 @@
 .border-right {
-  border-right: 1px solid #000;
+  border-right: 1px solid rgba(0, 0, 0, 0.5);
+}
+.th.border-right {
+  border-right: 1px solid rgba(0, 0, 0, 0.3);
+}
+.border-bottom {
+  border-bottom: 1px solid  rgba(0, 0, 0, 0.5);
 }
 
-.border-bottom {
-  border-bottom: 1px solid #000;
+.border-left {
+  border-left: 1px solid rgba(0, 0, 0, 0.5);
 }
 
 .underline {
@@ -23,6 +29,7 @@
   font-weight: bolder;
   margin: 0;
   font-size: 16px;
+  vertical-align: middle;
 }
 
 .tr {
@@ -32,6 +39,11 @@
 }
 .center > p, .center{
   text-align: center !important;
+  display: -webkit-flex;
+  align-items:center;
+  justify-content: center;
+  -webkit-align-items:center;
+  -webkit-justify-content: center;
 }
 .end > p{
   text-align: end !important;
@@ -45,7 +57,8 @@
   width: calc(100% - 4px);
   max-height: 95%;
   margin-top: 20px;
-  border: 2px solid #000;
+  border: 2px solid rgba(0, 0, 0, 0.5);
+  border-radius: 5px;
   display: flex;
   display: -webkit-flex;
   flex-direction: column;

@@ -640,16 +640,16 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   UPDATE_CODE: 'UPDATE impuesto.verificacion_telefono SET codigo_verificacion = $1, fecha_verificacion = CURRENT_TIMESTAMP WHERE id_usuario = $2',
 
   //REPORTES
-  GET_INGRESS: `SELECT r.codigo AS ramo, r.descripcion, COUNT(*) as "cantidadIng", SUM(ROUND(monto)) as ingresado 
-        FROM impuesto.ramo r 
-        INNER JOIN impuesto.subramo sub ON sub.id_ramo = r.id_ramo
-        INNER JOIN impuesto.liquidacion l ON l.id_subramo = sub.id_ramo
-        WHERE l.id_solicitud IN (SELECT s.id_solicitud 
-        FROM impuesto.solicitud s 
-        INNER JOIN pago p ON p.id_procedimiento = s.id_solicitud WHERE p.aprobado = true AND p.fecha_de_pago BETWEEN $1 AND $2)
-        GROUP BY r.codigo, r.descripcion;
-        `,
-  GET_LIQUIDATED: `SELECT r.codigo AS ramo, r.descripcion, COUNT(*) as "cantidadLiq", SUM(ROUND(monto)) as liquidado \
+  GET_INGRESS: `SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, COUNT(*) as "cantidadIng", SUM(monto) as ingresado 
+        FROM impuesto.liquidacion l 
+        INNER JOIN impuesto.solicitud s ON l.id_solicitud = s.id_solicitud 
+        INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) 
+            AS state FROM impuesto.evento_solicitud es GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud 
+        INNER JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo 
+        INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_subramo 
+        WHERE state = 'finalizado' AND fecha_liquidacion BETWEEN $1 AND $2 
+        GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion;`,
+  GET_LIQUIDATED: `SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, COUNT(*) as "cantidadLiq", SUM(monto) as liquidado \
         FROM impuesto.liquidacion l  \
         INNER JOIN impuesto.solicitud s ON l.id_solicitud = s.id_solicitud \
         INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) \
@@ -657,8 +657,8 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         INNER JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo \
         INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_subramo \
         WHERE state != 'finalizado' AND fecha_liquidacion BETWEEN $1 AND $2 \
-        GROUP BY r.codigo, r.descripcion;`,
-  GET_TRANSFERS_BY_BANK: `SELECT b.id_banco as id, b.nombre AS banco, SUM(ROUND(p.monto)) as monto
+        GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion;`,
+  GET_TRANSFERS_BY_BANK: `SELECT b.id_banco, b.nombre AS banco, SUM(p.monto) as monto
         FROM pago p
         INNER JOIN banco b ON b.id_banco = p.id_banco
         WHERE p.concepto IN ('IMPUESTO', 'CONVENIO') AND p.aprobado = true AND p.metodo_pago = 'TRANSFERENCIA' AND p.fecha_de_pago BETWEEN $1 AND $2
