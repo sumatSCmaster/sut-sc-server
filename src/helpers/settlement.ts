@@ -22,6 +22,8 @@ import { sendRimVerification, verifyCode, resendCode } from './verification';
 import { hasLinkedContributor } from './user';
 import e from 'express';
 import S3Client from '@utils/s3';
+import ExcelJs from 'exceljs';
+import * as fs from 'fs';
 const written = require('written-number');
 
 const gticPool = GticPool.getInstance();
@@ -82,7 +84,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
   try {
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [type, document])).rows[0];
     if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
-    const branch = (await client.query('SELECT * FROM impuesto.registro_municipal WHERE referencia_municipal = $1 AND id_contribuyente = $2 LIMIT 1', [reference, contributor.id_contribuyente])).rows[0];
+    const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
     if ((!branch && truthyCheck(reference)) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEMAT' };
     const lastSettlementQuery = contributor.tipo_contribuyente === 'JURIDICO' ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
     const lastSettlementPayload = contributor.tipo_contribuyente === 'JURIDICO' ? branch.referencia_municipal : contributor.id_contribuyente;
@@ -105,12 +107,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     //AE
     if (branch && branch.referencia_municipal && !AEApplicationExists) {
-      const economicActivities = (
-        await client.query(
-          'SELECT ae.* FROM impuesto.actividad_economica ae INNER JOIN impuesto.actividad_economica_contribuyente aec ON ae.numero_referencia = aec.numero_referencia INNER JOIN impuesto.contribuyente c ON aec.id_contribuyente = c.id_contribuyente WHERE c.id_contribuyente = $1',
-          [contributor.id_contribuyente]
-        )
-      ).rows;
+      const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [contributor.id_contribuyente])).rows;
       if (economicActivities.length === 0) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
       let lastEA = (await client.query(lastSettlementQuery, [codigosRamo.AE, lastSettlementPayload])).rows[0];
       const lastEAPayment = (lastEA && moment(lastEA.fecha_liquidacion)) || moment().month(0);
@@ -139,14 +136,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       }
     }
     //SM
-    const estates = (
-      await client.query(
-        branch
-          ? 'SELECT * FROM impuesto.avaluo_inmueble ai INNER JOIN inmueble_urbano iu ON ai.id_inmueble = iu.id_inmueble WHERE id_registro_municipal = $1 ORDER BY ai.anio DESC'
-          : 'SELECT ai.*,iu.* FROM impuesto.avaluo_inmueble ai INNER JOIN inmueble_urbano iu ON ai.id_inmueble = iu.id_inmueble INNER JOIN impuesto.inmueble_contribuyente_natural icn ON iu.id_inmueble = icn.id_inmueble WHERE icn.id_contribuyente = $1 ORDER BY ai.anio DESC',
-        [branch ? branch.id_registro_municipal : contributor.id_contribuyente]
-      )
-    ).rows;
+    const estates = (await client.query(branch ? queries.GET_ESTATES_FOR_JURIDICAL_CONTRIBUTOR : queries.GET_ESTATES_FOR_NATURAL_CONTRIBUTOR, [branch ? branch.id_registro_municipal : contributor.id_contribuyente])).rows;
     if (estates.length > 0) {
       if (!SMApplicationExists) {
         let lastSM = (await client.query(lastSettlementQuery, [codigosRamo.SM, lastSettlementPayload])).rows[0];
@@ -168,23 +158,10 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
               el.tipo_inmueble === 'COMERCIAL'
                 ? el.metros_construccion && el.metros_construccion !== 0
                   ? 0.15 * el.metros_construccion
-                  : (
-                      await client.query(
-                        'SELECT * FROM impuesto.actividad_economica_contribuyente aec INNER JOIN impuesto.actividad_economica ae ON ae.numero_referencia = aec.numero_referencia INNER JOIN impuesto.tabulador_aseo_actividad_economica ta ON ta.numero_referencia = ae.numero_referencia WHERE id_contribuyente = $1 ORDER BY monto DESC LIMIT 1;',
-                        [contributor.id_contribuyente]
-                      )
-                    ).rows[0].monto
-                : (await client.query('SELECT * FROM impuesto.tabulador_aseo_residencial WHERE fecha_hasta IS NULL;')).rows[0].monto;
+                  : (await client.query(queries.GET_AE_CLEANING_TARIFF, [contributor.id_contribuyente])).rows[0].monto
+                : (await client.query(queries.GET_RESIDENTIAL_CLEANING_TARIFF)).rows[0].monto;
             const tarifaAseo = calculoAseo / UTMM > 300 ? UTMM * 300 : calculoAseo;
-            const calculoGas =
-              el.tipo_inmueble === 'COMERCIAL'
-                ? (
-                    await client.query(
-                      'SELECT * FROM impuesto.actividad_economica_contribuyente aec INNER JOIN impuesto.actividad_economica ae ON ae.numero_referencia = aec.numero_referencia INNER JOIN impuesto.tabulador_gas_actividad_economica tg ON tg.numero_referencia = ae.numero_referencia WHERE id_contribuyente = $1 ORDER BY monto DESC LIMIT 1;',
-                      [contributor.id_contribuyente]
-                    )
-                  ).rows[0].monto
-                : (await client.query('SELECT * FROM impuesto.tabulador_gas_residencial WHERE fecha_hasta IS NULL;')).rows[0].monto;
+            const calculoGas = el.tipo_inmueble === 'COMERCIAL' ? (await client.query(queries.GET_AE_GAS_TARIFF, [contributor.id_contribuyente])).rows[0].monto : (await client.query(queries.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].monto;
             const tarifaGas = calculoGas / UTMM > 300 ? UTMM * 300 : calculoGas;
             return { id: el.id_inmueble, tipoInmueble: el.tipo_inmueble, direccionInmueble: el.direccion, tarifaAseo, tarifaGas, deuda: debtSM };
           })
@@ -249,8 +226,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         });
       }
       if (debtPP) {
-        const publicityArticles = (await client.query('SELECT * FROM impuesto.categoria_propaganda')).rows;
-        const publicitySubarticles = (await client.query('SELECT * FROM impuesto.tipo_aviso_propaganda')).rows;
+        const publicityArticles = (await client.query(queries.GET_PUBLICITY_CATEGORIES)).rows;
+        const publicitySubarticles = (await client.query(queries.GET_PUBLICITY_SUBCATEGORIES)).rows;
         PP = {
           deuda: debtPP,
           articulos: publicityArticles.map((el) => {
@@ -548,7 +525,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
     if (actividadesEconomicas!.length > 0) {
       await Promise.all(
         actividadesEconomicas!.map(async (x) => {
-          return await client.query('INSERT INTO impuesto.actividad_economica_contribuyente (id_contribuyente, numero_referencia) VALUES ($1, $2)', [contributor.id_contribuyente, x.id]);
+          return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [contributor.id_contribuyente, x.id]);
         })
       );
     }
@@ -570,13 +547,13 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                   inmuebles.map(async (el) => {
                     const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_registro_municipal, el.direccion, el.tipoInmueble])).rows[0];
                     console.log(inmueble);
-                    await client.query('INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)', [inmueble.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
+                    await client.query(queries.INSERT_ESTATE_VALUE, [inmueble.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
                   })
                 )
               : undefined;
           if (pagados.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
-            await client.query('UPDATE impuesto.solicitud SET fecha = $1, fecha_aprobado = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
+            await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
             await Promise.all(
               pagados.map(async (el) => {
@@ -590,14 +567,14 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                     registry.id_registro_municipal,
                   ])
                 ).rows[0];
-                await client.query('UPDATE impuesto.liquidacion SET fecha_liquidacion = $1 WHERE id_liquidacion = $2', [el.fechaLiquidacion, settlement.id_liquidacion]);
+                await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
               })
             );
           }
 
           if (vigentes.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
-            await client.query('UPDATE impuesto.solicitud SET fecha = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
+            await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
                 const settlement = (
@@ -610,7 +587,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                     registry.id_registro_municipal,
                   ])
                 ).rows[0];
-                await client.query('UPDATE impuesto.liquidacion SET fecha_liquidacion = $1 WHERE id_liquidacion = $2', [el.fechaLiquidacion, settlement.id_liquidacion]);
+                await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
               })
             );
           }
@@ -637,7 +614,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                 ? await Promise.all(
                     inmuebles.map(async (el) => {
                       const inmueble = await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_registro_municipal, el.direccion, el.tipoInmueble]);
-                      await client.query('INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)', [inmueble.rows[0].id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
+                      await client.query(queries.INSERT_ESTATE_VALUE, [inmueble.rows[0].id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
                     })
                   )
                 : undefined;
@@ -647,8 +624,8 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                 ? await Promise.all(
                     inmuebles.map(async (el) => {
                       const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [(registry && registry.id_registro_municipal) || null, el.direccion, el.tipoInmueble])).rows[0];
-                      await client.query('INSERT INTO impuesto.inmueble_contribuyente_natural (id_inmueble, id_contribuyente) VALUES ($1, $2) RETURNING *', [inmueble.id_inmueble, contributor.id_contribuyente]);
-                      await client.query('INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)', [inmueble.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
+                      await client.query(queries.LINK_ESTATE_WITH_NATURAL_CONTRIBUTOR, [inmueble.id_inmueble, contributor.id_contribuyente]);
+                      await client.query(queries.INSERT_ESTATE_VALUE, [inmueble.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
                       return 0;
                     })
                   )
@@ -656,7 +633,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
           }
           if (pagados.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
-            await client.query('UPDATE impuesto.solicitud SET fecha = $1, fecha_aprobado = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
+            await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
             await Promise.all(
               pagados.map(async (el) => {
@@ -670,14 +647,14 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                     (registry && registry.id_registro_municipal) || null,
                   ])
                 ).rows[0];
-                await client.query('UPDATE impuesto.liquidacion SET fecha_liquidacion = $1 WHERE id_liquidacion = $2', [el.fechaLiquidacion, settlement.id_liquidacion]);
+                await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
               })
             );
           }
 
           if (vigentes.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
-            await client.query('UPDATE impuesto.solicitud SET fecha = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
+            await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
                 const settlement = (
@@ -690,7 +667,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                     (registry && registry.id_registro_municipal) || null,
                   ])
                 ).rows[0];
-                await client.query('UPDATE impuesto.liquidacion SET fecha_liquidacion = $1 WHERE id_liquidacion = $2', [el.fechaLiquidacion, settlement.id_liquidacion]);
+                await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
               })
             );
           }
@@ -930,52 +907,19 @@ const externalUserForLinkingExists = async ({ user, password, gtic }: { user: st
 };
 
 //TODO: get de fracciones
-export const getAgreementFractionById = async ({ id, user }): Promise<Solicitud & any> => {
+export const getAgreementFractionById = async ({ id }): Promise<Solicitud & any> => {
   const client = await pool.connect();
   try {
-    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const application = await Promise.all(
-      (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows.map(async (el) => {
-        const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
-        const docs = (await client.query('SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1', [el.id_contribuyente])).rows[0];
-        return {
-          id: el.id_solicitud,
-          usuario: typeof user === 'object' ? user : { id: user },
-          contribuyente: structureContributor(docs),
-          aprobado: el.aprobado,
-          documento: docs.documento,
-          tipoDocumento: docs.tipo_documento,
-          estado: (await client.query('SELECT state FROM impuesto.solicitud_state WHERE id = $1', [el.id_solicitud])).rows[0].state,
-          referenciaMunicipal: (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0].id_registro_municipal])).rows[0]?.referencia_municipal,
-          fecha: el.fecha,
-          monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0].monto_total,
-          liquidaciones: liquidaciones
-            .filter((el) => el.tipoProcedimiento !== 'MULTAS')
-            .map((el) => {
-              return {
-                id: el.id_liquidacion,
-                ramo: el.tipoProcedimiento,
-                fecha: el.datos.fecha,
-                monto: el.monto,
-                certificado: el.certificado,
-                recibo: el.recibo,
-              };
-            }),
-          multas: liquidaciones
-            .filter((el) => el.tipoProcedimiento === 'MULTAS')
-            .map((el) => {
-              return {
-                id: el.id_liquidacion,
-                ramo: el.tipoProcedimiento,
-                fecha: el.datos.fecha,
-                monto: el.monto,
-                descripcion: el.datos.descripcion,
-                certificado: el.certificado,
-                recibo: el.recibo,
-              };
-            }),
-        };
-      })
+      (await client.query(queries.GET_AGREEMENT_FRACTION_BY_ID, [id])).rows.map(async (el) => ({
+        id: el.id_fraccion,
+        idConvenio: el.id_convenio,
+        monto: el.monto,
+        fecha: el.fecha,
+        fechaAprobacion: el.fecha_aprobado,
+        aprobado: el.aprobado,
+        estado: (await client.query(queries.GET_AGREEMENT_FRACTION_STATE, [el.id_fraccion])).rows[0]?.state,
+      }))
     );
     return application[0];
   } catch (error) {
@@ -993,24 +937,27 @@ export const getAgreementFractionById = async ({ id, user }): Promise<Solicitud 
 export const getAgreements = async ({ user }: { user: Usuario }) => {
   const client = await pool.connect();
   try {
-    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const hasApplications = (await client.query(queries.GET_AGREEMENTS_BY_USER, [user.id])).rows.length > 0;
+    if (!hasApplications) throw { status: 404, message: 'El usuario no posee convenios' };
     const applications: Solicitud[] = await Promise.all(
-      (await client.query(queries.GET_APPLICATION_INSTANCES_BY_USER, [user.id])).rows.map(async (el) => {
+      (await client.query(queries.GET_AGREEMENTS_BY_USER, [user.id])).rows.map(async (el) => {
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
-        const docs = (await client.query('SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1', [el.id_contribuyente])).rows[0];
+        const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
         return {
           id: el.id_solicitud,
+          cantPorciones: el.cantidad,
           usuario: user,
+          tipo: 'CONVENIO',
           contribuyente: structureContributor(docs),
           aprobado: el.aprobado,
           documento: docs.documento,
           tipoDocumento: docs.tipo_documento,
-          estado: (await client.query('SELECT state FROM impuesto.solicitud_state WHERE id = $1', [el.id_solicitud])).rows[0].state,
-          referenciaMunicipal: liquidaciones[0].id_registro_municipal
-            ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0].id_registro_municipal])).rows[0].referencia_municipal
+          estado: (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0]?.state,
+          referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
+            ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
             : undefined,
           fecha: el.fecha,
-          monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0].monto_total,
+          monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0]?.monto_total,
           liquidaciones: liquidaciones
             .filter((el) => el.tipoProcedimiento !== 'MULTAS')
             .map((el) => {
@@ -1036,6 +983,7 @@ export const getAgreements = async ({ user }: { user: Usuario }) => {
                 recibo: el.recibo,
               };
             }),
+          porciones: (await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [el.id_convenio])).rows.map((el) => getAgreementFractionById(el.id_fraccion)),
         };
       })
     );
@@ -1058,7 +1006,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
     const application = await Promise.all(
       (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows.map(async (el) => {
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
-        const docs = (await client.query('SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1', [el.id_contribuyente])).rows[0];
+        const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
         return {
           id: el.id_solicitud,
           usuario: typeof user === 'object' ? user : { id: user },
@@ -1066,10 +1014,10 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
           aprobado: el.aprobado,
           documento: docs.documento,
           tipoDocumento: docs.tipo_documento,
-          estado: (await client.query('SELECT state FROM impuesto.solicitud_state WHERE id = $1', [el.id_solicitud])).rows[0].state,
+          estado: (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state,
           referenciaMunicipal: (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0].id_registro_municipal])).rows[0]?.referencia_municipal,
           fecha: el.fecha,
-          monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0].monto_total,
+          monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
           liquidaciones: liquidaciones
             .filter((el) => el.tipoProcedimiento !== 'MULTAS')
             .map((el) => {
@@ -1117,7 +1065,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
     const applications: Solicitud[] = await Promise.all(
       (await client.query(queries.GET_APPLICATION_INSTANCES_BY_USER, [user.id])).rows.map(async (el) => {
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
-        const docs = (await client.query('SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1', [el.id_contribuyente])).rows[0];
+        const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
         return {
           id: el.id_solicitud,
           usuario: user,
@@ -1125,12 +1073,12 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
           aprobado: el.aprobado,
           documento: docs.documento,
           tipoDocumento: docs.tipo_documento,
-          estado: (await client.query('SELECT state FROM impuesto.solicitud_state WHERE id = $1', [el.id_solicitud])).rows[0].state,
+          estado: (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state,
           referenciaMunicipal: liquidaciones[0].id_registro_municipal
             ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0].id_registro_municipal])).rows[0].referencia_municipal
             : undefined,
           fecha: el.fecha,
-          monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0].monto_total,
+          monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
           liquidaciones: liquidaciones
             .filter((el) => el.tipoProcedimiento !== 'MULTAS')
             .map((el) => {
@@ -1182,7 +1130,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
     const applications: Solicitud[] = await Promise.all(
       userApplications.map(async (el) => {
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
-        const docs = (await client.query('SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1', [el.id_contribuyente])).rows[0];
+        const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
 
         return {
           id: el.id_solicitud,
@@ -1192,11 +1140,11 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
           fecha: el.fecha,
           documento: docs.documento,
           tipoDocumento: docs.tipo_documento,
-          estado: (await client.query('SELECT state FROM impuesto.solicitud_state WHERE id = $1', [el.id_solicitud])).rows[0].state,
+          estado: (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state,
           referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
             ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
             : undefined,
-          monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0].monto_total,
+          monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
           liquidaciones: liquidaciones
             .filter((el) => el.tipoProcedimiento !== 'MULTAS')
             .map((el) => {
@@ -1297,19 +1245,12 @@ export const initialUserLinking = async (linkingData, user) => {
             const { datosSucursal } = el;
             const { nombreRepresentante, telefonoMovil, email, denomComercial, representado, registroMunicipal } = datosSucursal;
             const updatedRegistry = (
-              await client.query('UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombre_representante = $2, telefono_celular = $3, email = $4, actualizado = $5 WHERE referencia_municipal = $6 RETURNING *', [
-                denomComercial,
-                nombreRepresentante,
-                representado ? datosContacto.telefono : telefonoMovil,
-                representado ? datosContacto.correo : email,
-                representado,
-                registroMunicipal,
-              ])
+              await client.query(queries.UPDATE_BRANCH_INFO, [denomComercial, nombreRepresentante, representado ? datosContacto.telefono : telefonoMovil, representado ? datosContacto.correo : email, representado, registroMunicipal])
             ).rows[0];
             return representado ? updatedRegistry.id_registro_municipal : undefined;
           })
         );
-        await client.query('UPDATE USUARIO SET id_contribuyente = $1 WHERE id_usuario = $2', [contributorExists[0].id_contribuyente, user.id]);
+        await client.query(queries.ASSIGN_CONTRIBUTOR_TO_USER, [contributorExists[0].id_contribuyente, user.id]);
         await client.query('COMMIT');
         await sendRimVerification(VerificationValue.CellPhone, { idRim: rims.filter((el) => el), content: datosContacto.telefono, user: user.id });
         hasNewCode = true;
@@ -1320,11 +1261,11 @@ export const initialUserLinking = async (linkingData, user) => {
       }
     }
     const contributor = (await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, true, tipoContribuyente])).rows[0];
-    await client.query('UPDATE USUARIO SET id_contribuyente = $1 WHERE id_usuario = $2', [contributor.id_contribuyente, user.id]);
+    await client.query(queries.ASSIGN_CONTRIBUTOR_TO_USER, [contributor.id_contribuyente, user.id]);
     if (actividadesEconomicas && actividadesEconomicas.length > 0) {
       await Promise.all(
         actividadesEconomicas.map(async (x) => {
-          return await client.query('INSERT INTO impuesto.actividad_economica_contribuyente (id_contribuyente, numero_referencia) VALUES ($1, $2)', [contributor.id_contribuyente, x.id]);
+          return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [contributor.id_contribuyente, x.id]);
         })
       );
     }
@@ -1355,13 +1296,13 @@ export const initialUserLinking = async (linkingData, user) => {
               ? await Promise.all(
                   inmuebles.map(async (el) => {
                     const x = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_registro_municipal, el.direccion, el.tipoInmueble])).rows[0];
-                    await client.query('INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)', [x.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
+                    await client.query(queries.INSERT_ESTATE_VALUE, [x.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
                   })
                 )
               : undefined;
           if (pagados.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
-            await client.query('UPDATE impuesto.solicitud SET fecha = $1, fecha_aprobado = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
+            await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
             await Promise.all(
               pagados.map(async (el) => {
@@ -1375,14 +1316,14 @@ export const initialUserLinking = async (linkingData, user) => {
                     registry.id_registro_municipal,
                   ])
                 ).rows[0];
-                await client.query('UPDATE impuesto.liquidacion SET fecha_liquidacion = $1 WHERE id_liquidacion = $2', [el.fechaLiquidacion, settlement.id_liquidacion]);
+                await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
               })
             );
           }
 
           if (vigentes.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
-            await client.query('UPDATE impuesto.solicitud SET fecha = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
+            await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
                 const settlement = (
@@ -1395,7 +1336,7 @@ export const initialUserLinking = async (linkingData, user) => {
                     registry.id_registro_municipal,
                   ])
                 ).rows[0];
-                await client.query('UPDATE impuesto.liquidacion SET fecha_liquidacion = $1 WHERE id_liquidacion = $2', [el.fechaLiquidacion, settlement.id_liquidacion]);
+                await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
               })
             );
           }
@@ -1435,7 +1376,7 @@ export const initialUserLinking = async (linkingData, user) => {
                 ? await Promise.all(
                     inmuebles.map(async (el) => {
                       const inmueble = await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_registro_municipal, el.direccion, el.tipoInmueble]);
-                      await client.query('INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)', [x.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
+                      await client.query(queries.INSERT_ESTATE_VALUE, [x.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
                     })
                   )
                 : undefined;
@@ -1445,8 +1386,8 @@ export const initialUserLinking = async (linkingData, user) => {
                 ? await Promise.all(
                     inmuebles.map(async (el) => {
                       const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [(registry && registry.id_registro_municipal) || null, el.direccion, el.tipoInmueble])).rows[0];
-                      await client.query('INSERT INTO impuesto.inmueble_contribuyente_natural (id_inmueble, id_contribuyente) VALUES ($1, $2) RETURNING *', [inmueble.id_inmueble, contributor.id_contribuyente]);
-                      await client.query('INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)', [inmueble.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
+                      await client.query(queries.LINK_ESTATE_WITH_NATURAL_CONTRIBUTOR, [inmueble.id_inmueble, contributor.id_contribuyente]);
+                      await client.query(queries.INSERT_ESTATE_VALUE, [inmueble.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
                       return 0;
                     })
                   )
@@ -1454,7 +1395,7 @@ export const initialUserLinking = async (linkingData, user) => {
           }
           if (pagados.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
-            await client.query('UPDATE impuesto.solicitud SET fecha = $1, fecha_aprobado = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
+            await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
             await Promise.all(
               pagados.map(async (el) => {
@@ -1468,14 +1409,14 @@ export const initialUserLinking = async (linkingData, user) => {
                     (registry && registry.id_registro_municipal) || null,
                   ])
                 ).rows[0];
-                await client.query('UPDATE impuesto.liquidacion SET fecha_liquidacion = $1 WHERE id_liquidacion = $2', [el.fechaLiquidacion, settlement.id_liquidacion]);
+                await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
               })
             );
           }
 
           if (vigentes.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
-            await client.query('UPDATE impuesto.solicitud SET fecha = $1 WHERE id_solicitud = $2', [pagados[0].fechaLiquidacion, application.id_solicitud]);
+            await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
                 const settlement = (
@@ -1488,7 +1429,7 @@ export const initialUserLinking = async (linkingData, user) => {
                     (registry && registry.id_registro_municipal) || null,
                   ])
                 ).rows[0];
-                await client.query('UPDATE impuesto.liquidacion SET fecha_liquidacion = $1 WHERE id_liquidacion = $2', [el.fechaLiquidacion, settlement.id_liquidacion]);
+                await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
               })
             );
           }
@@ -1560,13 +1501,10 @@ export const insertSettlements = async ({ process, user }) => {
   let finingMonths: MultaImpuesto[] | undefined, finingAmount;
   try {
     client.query('BEGIN');
-    const userContributor =
-      user.tipoUsuario === 4
-        ? (await client.query('SELECT c.* FROM USUARIO u INNER JOIN impuesto.contribuyente c ON u.id_contribuyente = c.id_contribuyente WHERE u.id_usuario = $1', [user.id])).rows
-        : (await client.query(queries.TAX_PAYER_EXISTS, [process.tipoDocumento, process.documento])).rows;
+    const userContributor = user.tipoUsuario === 4 ? (await client.query(queries.GET_CONTRIBUTOR_BY_USER, [user.id])).rows : (await client.query(queries.TAX_PAYER_EXISTS, [process.tipoDocumento, process.documento])).rows;
     const userHasContributor = userContributor.length > 0;
     if (!userHasContributor) throw { status: 404, message: 'El usuario no esta asociado con ningun contribuyente' };
-    const contributorReference = (await client.query('SELECT * FROM impuesto.registro_municipal rm WHERE rm.referencia_municipal = $1 AND rm.id_contribuyente = $2', [process.rim, process.contribuyente])).rows[0];
+    const contributorReference = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [process.rim, process.contribuyente])).rows[0];
     console.log(contributorReference);
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, process.contribuyente])).rows[0];
@@ -1825,7 +1763,7 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    const fraccion = (await client.query('SELECT * FROM impuesto.fraccion WHERE id_convenio = $1 AND id_fraccion = $2', [agreement, fragment])).rows[0];
+    const fraccion = (await client.query(queries.GET_FRACTION_BY_AGREEMENT_AND_FRACTION_ID, [agreement, fragment])).rows[0];
     const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
     if (pagoSum < fraccion.monto_total) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
     await Promise.all(
@@ -1842,11 +1780,9 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
       })
     );
     const state =
-      user.tipoUsuario === 4
-        ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [fragment, applicationStateEvents.VALIDAR])).rows[0]
-        : (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [fragment, applicationStateEvents.APROBARCAJERO])).rows[0];
+      user.tipoUsuario === 4 ? (await client.query(queries.UPDATE_FRACTION_STATE, [fragment, applicationStateEvents.VALIDAR])).rows[0] : (await client.query(queries.COMPLETE_FRACTION_STATE, [fragment, applicationStateEvents.APROBARCAJERO])).rows[0];
     client.query('COMMIT');
-    const applicationInstance = await getAgreementFractionById({ id: fragment, user });
+    const applicationInstance = await getAgreementFractionById({ id: fragment });
     console.log(applicationInstance);
     await sendNotification(
       user,
@@ -1873,6 +1809,10 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
 export const validateApplication = async (body, user, client) => {
   try {
     if (!body.solicitudAprobada) return;
+    if (body.concepto === 'CONVENIO' && body.solicitudAprobada) {
+      //este metodo es para validar los convenios y llevarlos al estado de finalizado
+      const state = (await client.query(queries.COMPLETE_FRACTION_STATE, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
+    }
     const state = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
     const solicitud = (await client.query(queries.GET_APPLICATION_BY_ID, [body.idTramite])).rows[0];
     const applicationInstance = await getApplicationsAndSettlementsById({ id: body.idTramite, user: solicitud.id_usuario });
@@ -1903,8 +1843,8 @@ export const approveContributorSignUp = async ({ procedure, client }: { procedur
     const { documentoIdentidad, razonSocial, denominacionComercial, siglas, parroquia, sector, direccion, puntoReferencia, tipoContribuyente, tipoDocumento } = datos.funcionario;
     const parish = (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [parroquia])).rows[0]?.id;
     const contributor = (await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [tipoDocumento, documentoIdentidad, razonSocial, denominacionComercial, siglas, parish, sector, direccion, puntoReferencia, true, tipoContribuyente])).rows[0];
-    await client.query('UPDATE USUARIO SET id_contribuyente = $1 WHERE id_usuario = $2', [contributor.id_contribuyente, usuario]);
-    await client.query('INSERT INTO impuesto.verificacion_telefono (fecha_verificacion, verificado, id_usuario) VALUES (now(), true, $1)', [usuario]);
+    await client.query(queries.ASSIGN_CONTRIBUTOR_TO_USER, [contributor.id_contribuyente, usuario]);
+    await client.query(queries.ADD_VERIFIED_CONTRIBUTOR, [usuario]);
     console.log(procedure);
     return true;
   } catch (error) {
@@ -1918,19 +1858,11 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
     const { usuario, funcionario } = data;
     const { actividadesEconomicas } = funcionario;
     const { contribuyente } = usuario;
-    const registry = (
-      await client.query('INSERT INTO impuesto.registro_municipal (id_contribuyente, fecha_aprobacion, telefono_celular, email, denominacion_comercial, nombre_representante, actualizado) VALUES ($1, now(), $2, $3, $4, $5, true) RETURNING *', [
-        contribuyente.id,
-        funcionario.telefono,
-        funcionario.correo,
-        funcionario.denominacionComercial,
-        funcionario.nombreRepresentante,
-      ])
-    ).rows[0];
+    const registry = (await client.query(queries.ADD_BRANCH_FOR_CONTRIBUTOR, [contribuyente.id, funcionario.telefono, funcionario.correo, funcionario.denominacionComercial, funcionario.nombreRepresentante])).rows[0];
     data.funcionario.referenciaMunicipal = registry.referencia_municipal;
     await Promise.all(
       actividadesEconomicas!.map(async (x) => {
-        return await client.query('INSERT INTO impuesto.actividad_economica_contribuyente (id_contribuyente, numero_referencia) VALUES ($1, $2)', [contribuyente.id, x.codigo]);
+        return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [contribuyente.id, x.codigo]);
       })
     );
     console.log(data);
@@ -1944,51 +1876,34 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
 export const approveContributorBenefits = async ({ data, client }: { data: any; client: PoolClient }) => {
   try {
     const { contribuyente, beneficios } = data.funcionario;
-    const contributorWithBranch = (await client.query('SELECT * FROM impuesto.registro_municipal r INNER JOIN impuesto.contribuyente c ON r.id_contribuyente = c.id_contribuyente WHERE r.referencia_municipal = $1', [contribuyente.registroMunicipal]))
-      .rows[0];
-    const benefittedUser = (await client.query('SELECT id_usuario FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud WHERE l.id_registro_municipal = $1', [contributorWithBranch.id_registro_municipal]))
-      .rows[0].id_usuario;
+    const contributorWithBranch = (await client.query(queries.GET_CONTRIBUTOR_WITH_BRANCH, [contribuyente.registroMunicipal])).rows[0];
+    const benefittedUser = (await client.query(queries.GET_USER_BY_APPLICATION_AND_RIM, [contributorWithBranch.id_registro_municipal])).rows[0].id_usuario;
     await Promise.all(
       beneficios.map(async (x) => {
         switch (x.tipoBeneficio) {
           case 'pagoCompleto':
             const applicationFP = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [benefittedUser, contributorWithBranch.id_contribuyente])).rows[0];
-            const benefitFullPayment = (
-              await client.query(
-                "UPDATE impuesto.liquidacion SET id_solicitud = $1 WHERE id_registro_municipal = $2 AND id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = '1' AND id_ramo = $3) AND id_liquidacion IN (SELECT id_liquidacion  FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud_state ss ON ss.id = l.id_solicitud  WHERE ss.state = 'ingresardatos');",
-                [applicationFP.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo]
-              )
-            ).rows[0];
+            await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [applicationFP.id_solicitud, applicationStateEvents.INGRESARDATOS]);
+            const benefitFullPayment = (await client.query(queries.CHANGE_SETTLEMENT_TO_NEW_APPLICATION, [applicationFP.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
             return benefitFullPayment;
           case 'descuento':
-            const settlements = (
-              await client.query(
-                "SELECT id_liquidacion FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud_state ss ON ss.id = l.id_solicitud  WHERE ss.state = 'ingresardatos' AND id_registro_municipal = $1 AND id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = '1' AND id_ramo = $2);",
-                [contributorWithBranch.id_registro_municipal, x.idRamo]
-              )
-            ).rows;
-            const benefitDiscount = await Promise.all(settlements.map(async (el) => await client.query('INSERT INTO impuesto.liquidacion_descuento (id_liquidacion, porcentaje_descuento) VALUES ($1, $2)', [el.id_liquidacion, x.porcDescuento])));
+            const settlements = (await client.query(queries.GET_SETTLEMENT_IDS_BY_RIM_AND_BRANCH, [contributorWithBranch.id_registro_municipal, x.idRamo])).rows;
+            const benefitDiscount = await Promise.all(settlements.map(async (el) => await client.query(queries.INSERT_DISCOUNT_FOR_SETTLEMENT, [el.id_liquidacion, x.porcDescuento])));
             return benefitDiscount;
           case 'remision':
-            const benefitRemission = (
-              await client.query(
-                "UPDATE impuesto.liquidacion SET remitido = true WHERE id_registro_municipal = $1 AND id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = '1' AND id_ramo = $2) AND id_liquidacion IN (SELECT id_liquidacion  FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud_state ss ON ss.id = l.id_solicitud  WHERE ss.state = 'ingresardatos');",
-                [contributorWithBranch.id_registro_municipal, x.idRamo]
-              )
-            ).rows[0];
+            const benefitRemission = (await client.query(queries.SET_SETTLEMENTS_AS_FORWARDED_BY_RIM, [contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
             return benefitRemission;
           case 'convenio':
             const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [benefittedUser, contributorWithBranch.id_contribuyente])).rows[0];
-            const agreement = (await client.query('INSERT INTO impuesto.convenio (id_solicitud, cantidad) VALUES ($1, $2) RETURNING *', [applicationAG.id_solicitud, x.porciones.length])).rows[0];
-            const settlementsAG = (
-              await client.query(
-                "UPDATE impuesto.liquidacion SET id_solicitud = $1 WHERE id_registro_municipal = $2 AND id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = '1' AND id_ramo = $3) AND id_liquidacion IN (SELECT id_liquidacion  FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud_state ss ON ss.id = l.id_solicitud  WHERE ss.state = 'ingresardatos');",
-                [applicationAG.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo]
-              )
-            ).rows[0];
-            await client.query("UPDATE impuesto.liquidacion SET id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE id_ramo = $1 AND descripcion = 'Convenio de Pago') WHERE id_solicitud = $2", [x.idRamo, applicationAG.id_solicitud]);
+            await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [applicationAG.id_solicitud, applicationStateEvents.INGRESARDATOS]);
+            const agreement = (await client.query(queries.CREATE_AGREEMENT, [applicationAG.id_solicitud, x.porciones.length])).rows[0];
+            const settlementsAG = (await client.query(queries.CHANGE_SETTLEMENT_TO_NEW_APPLICATION, [applicationAG.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
+            await client.query(queries.CHANGE_SETTLEMENT_BRANCH_TO_AGREEMENT, [x.idRamo, applicationAG.id_solicitud]);
             const benefitAgreement = await Promise.all(
-              x.porciones.map(async (el) => (await client.query('INSERT INTO impuesto.fraccion (id_convenio, monto, porcion, fecha) VALUES ($1, $2, $3, $4)', [agreement.id_convenio, fixatedAmount(+el.monto), el.porcion, el.fechaDePago])).rows[0])
+              x.porciones.map(async (el) => {
+                const fraccion = (await client.query(queries.CREATE_AGREEMENT_FRACTION, [agreement.id_convenio, fixatedAmount(+el.monto), el.porcion, el.fechaDePago])).rows[0];
+                await client.query(queries.UPDATE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.INGRESARDATOS]);
+              })
             );
             return benefitAgreement;
         }
@@ -2564,7 +2479,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
   try {
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const paymentState = switchcase({ ingresardatos: 'VIGENTE', validando: 'VIGENTE', finalizado: 'PAGADO' })(null);
-    const contribuyente = (await client.query('SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1', [contributor])).rows[0];
+    const contribuyente = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [contributor])).rows[0];
     const branch = reference && (await client.query('SELECT r.* FROM impuesto.registro_municipal r WHERE referencia_municipal = $1', [reference])).rows[0];
     const contributorQuery = typeUser === 'JURIDICO' ? queries.GET_SETTLEMENTS_FOR_CODE_AND_RIM : queries.GET_SETTLEMENTS_FOR_CODE_AND_CONTRIBUTOR;
     const contributorPayload = typeUser === 'JURIDICO' ? branch.referencia_municipal : contribuyente.id_contribuyente;
@@ -2670,6 +2585,70 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
 
 const fixatedAmount = (num) => {
   return parseFloat(num.toPrecision(15)).toFixed(2);
+};
+
+export const getSettlementsReport = async (user, payload: { from: Date; to: Date }) => {
+  const client = await pool.connect();
+  try {
+    return new Promise(async (res, rej) => {
+      const workbook = new ExcelJs.Workbook();
+      workbook.creator = 'SUT';
+      workbook.created = new Date();
+      workbook.views = [
+        {
+          x: 0,
+          y: 0,
+          width: 10000,
+          height: 20000,
+          firstSheet: 0,
+          activeTab: 1,
+          visibility: 'visible',
+        },
+      ];
+
+      const sheet = workbook.addWorksheet('Reporte');
+
+      const result = await client.query(queries.GET_SETTLEMENTS_REPORT, [payload.from, payload.to]);
+
+      console.log(result);
+
+      sheet.columns = result.fields.map((row) => {
+        return { header: row.name, key: row.name, width: 32 };
+      });
+      sheet.addRows(result.rows, 'i');
+
+      sheet.eachRow((row, rownumber) => {
+        console.log(rownumber, 'row:', row);
+      });
+      if (dev) {
+        const dir = '../../archivos/test.xlsx';
+        const stream = fs.createWriteStream(require('path').resolve('./archivos/test.xlsx'));
+        await workbook.xlsx.write(stream);
+        res(dir);
+      } else {
+        try {
+          const bucketParams = {
+            Bucket: 'sut-maracaibo',
+            Key: '/sedemat/reportes/liquidaciones.pdf',
+          };
+          await S3Client.putObject({
+            ...bucketParams,
+            Body: await workbook.xlsx.writeBuffer(),
+            ACL: 'public-read',
+            ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          }).promise();
+          res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+        } catch (e) {
+          rej(e);
+        } finally {
+        }
+      }
+    });
+  } catch (error) {
+    throw errorMessageExtractor(error);
+  } finally {
+    client.release();
+  }
 };
 
 const certificateCreationSnippet = () => {
