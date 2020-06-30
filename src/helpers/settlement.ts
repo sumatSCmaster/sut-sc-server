@@ -1843,8 +1843,8 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
     );
     const state =
       user.tipoUsuario === 4
-        ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [fragment, applicationStateEvents.VALIDAR])).rows[0]
-        : (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [fragment, applicationStateEvents.APROBARCAJERO])).rows[0];
+        ? (await client.query('SELECT * FROM impuesto.update_fraccion_state ($1, $2)', [fragment, applicationStateEvents.VALIDAR])).rows[0]
+        : (await client.query('SELECT * FROM impuesto.complete_fraccion_state ($1, $2, true)', [fragment, applicationStateEvents.APROBARCAJERO])).rows[0];
     client.query('COMMIT');
     const applicationInstance = await getAgreementFractionById({ id: fragment, user });
     console.log(applicationInstance);
@@ -1992,7 +1992,10 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             ).rows[0];
             await client.query("UPDATE impuesto.liquidacion SET id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE id_ramo = $1 AND descripcion = 'Convenio de Pago') WHERE id_solicitud = $2", [x.idRamo, applicationAG.id_solicitud]);
             const benefitAgreement = await Promise.all(
-              x.porciones.map(async (el) => (await client.query('INSERT INTO impuesto.fraccion (id_convenio, monto, porcion, fecha) VALUES ($1, $2, $3, $4)', [agreement.id_convenio, fixatedAmount(+el.monto), el.porcion, el.fechaDePago])).rows[0])
+              x.porciones.map(async (el) => {
+                const fraccion = (await client.query('SELECT * FROM impuesto.insert_fraccion($1, $2, $3, $4)', [agreement.id_convenio, fixatedAmount(+el.monto), el.porcion, el.fechaDePago])).rows[0];
+                await client.query('SELECT * FROM update_fraccion_state($1, $2)', [fraccion.id_fraccion, applicationStateEvents.INGRESARDATOS]);
+              })
             );
             return benefitAgreement;
         }
