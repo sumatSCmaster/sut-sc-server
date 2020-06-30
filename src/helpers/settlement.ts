@@ -207,15 +207,18 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
             const date = addMonths(new Date(lastIUPayment.toDate()), index);
             return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
           });
-          IU = estates.map((el) => {
-            return {
-              id: el.id_inmueble,
-              direccionInmueble: el.direccion,
-              ultimoAvaluo: el.avaluo,
-              impuestoInmueble: (el.avaluo * 0.01) / 12,
-              deuda: debtIU,
-            };
-          });
+          IU = estates
+            .filter((el) => el.avaluo)
+            .map((el) => {
+              return {
+                id: el.id_inmueble,
+                direccionInmueble: el.direccion,
+                ultimoAvaluo: el.avaluo,
+                impuestoInmueble: (el.avaluo * 0.01) / 12,
+                deuda: debtIU,
+              };
+            })
+            .filter((el) => el.id);
         }
       }
     }
@@ -530,7 +533,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                     id: x.nu_ref_actividad,
                     descripcion: x.tx_actividad,
                     alicuota: x.nu_porc_alicuota,
-                    minimo_tributable: x.nu_ut,
+                    minimoTributable: x.nu_ut,
                   }))
                 )
               : undefined,
@@ -580,7 +583,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                 const settlement = (
                   await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
                     application.id_solicitud,
-                    el.monto,
+                    fixatedAmount(+el.monto),
                     el.ramo,
                     { fecha: el.fecha },
                     moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
@@ -600,7 +603,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                 const settlement = (
                   await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
                     application.id_solicitud,
-                    el.monto,
+                    fixatedAmount(+el.monto),
                     el.ramo,
                     { fecha: el.fecha },
                     moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
@@ -660,7 +663,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                 const settlement = (
                   await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
                     application.id_solicitud,
-                    el.monto,
+                    fixatedAmount(+el.monto),
                     el.ramo,
                     { fecha: el.fecha },
                     moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
@@ -680,7 +683,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                 const settlement = (
                   await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
                     application.id_solicitud,
-                    el.monto,
+                    fixatedAmount(+el.monto),
                     el.ramo,
                     { fecha: el.fecha },
                     moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
@@ -836,7 +839,7 @@ export const logInExternalLinking = async ({ credentials }) => {
                 id: x.nu_ref_actividad,
                 descripcion: x.tx_actividad,
                 alicuota: x.nu_porc_alicuota,
-                minimo_tributable: x.nu_ut,
+                minimoTributable: x.nu_ut,
               }))
             ),
           };
@@ -1139,7 +1142,7 @@ export const getEntireDebtsForContributor = async ({ reference, docType, documen
         direccion: contribuyente.direccion,
         puntoReferencia: contribuyente.punto_referencia,
         verificado: contribuyente.verificado,
-        liquidaciones: liquidaciones.map((x) => ({ id: x.id_ramo, ramo: x.descripcion, monto: x.descripcion === 'MULTAS' ? +x.monto * UTMM : x.monto })),
+        liquidaciones: liquidaciones.map((x) => ({ id: x.id_ramo, ramo: x.descripcion, monto: x.monto })),
         totalDeuda: liquidaciones.map((x) => x.monto).reduce((i, j) => +i + +j),
       },
     };
@@ -1243,7 +1246,7 @@ export const initialUserLinking = async (linkingData, user) => {
                 const settlement = (
                   await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
                     application.id_solicitud,
-                    el.monto,
+                    fixatedAmount(+el.monto),
                     el.ramo,
                     { fecha: el.fecha },
                     moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
@@ -1263,7 +1266,7 @@ export const initialUserLinking = async (linkingData, user) => {
                 const settlement = (
                   await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
                     application.id_solicitud,
-                    el.monto,
+                    fixatedAmount(+el.monto),
                     el.ramo,
                     { fecha: el.fecha },
                     moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
@@ -1336,7 +1339,7 @@ export const initialUserLinking = async (linkingData, user) => {
                 const settlement = (
                   await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
                     application.id_solicitud,
-                    el.monto,
+                    fixatedAmount(+el.monto),
                     el.ramo,
                     { fecha: el.fecha },
                     moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
@@ -1356,7 +1359,7 @@ export const initialUserLinking = async (linkingData, user) => {
                 const settlement = (
                   await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
                     application.id_solicitud,
-                    el.monto,
+                    fixatedAmount(+el.monto),
                     el.ramo,
                     { fecha: el.fecha },
                     moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
@@ -1466,7 +1469,7 @@ export const insertSettlements = async ({ process, user }) => {
               const multa = Promise.resolve(
                 client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
                   application.id_solicitud,
-                  finingAmount * UTMM,
+                  fixatedAmount(finingAmount * UTMM),
                   {
                     fecha: {
                       month: moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
@@ -1493,7 +1496,7 @@ export const insertSettlements = async ({ process, user }) => {
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
               application.id_solicitud,
-              finingAmount * UTMM,
+              fixatedAmount(finingAmount * UTMM),
               {
                 fecha: {
                   month: moment().toDate().toLocaleDateString('ES', { month: 'long' }),
@@ -1521,7 +1524,7 @@ export const insertSettlements = async ({ process, user }) => {
               const multa = Promise.resolve(
                 client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
                   application.id_solicitud,
-                  finingAmount * UTMM,
+                  fixatedAmount(finingAmount * UTMM),
                   {
                     fecha: {
                       month: moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
@@ -1548,7 +1551,7 @@ export const insertSettlements = async ({ process, user }) => {
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
               application.id_solicitud,
-              finingAmount * UTMM,
+              fixatedAmount(finingAmount * UTMM),
               {
                 fecha: {
                   month: moment().toDate().toLocaleDateString('ES', { month: 'long' }),
@@ -1587,7 +1590,7 @@ export const insertSettlements = async ({ process, user }) => {
         const liquidacion = (
           await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
             application.id_solicitud,
-            el.monto,
+            fixatedAmount(+el.monto),
             el.ramo,
             datos,
             moment().month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
@@ -1667,13 +1670,16 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
         user.tipoUsuario === 4 ? await insertPaymentReference(el, application, client) : await insertPaymentCashier(el, application, client);
       })
     );
-    const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0];
+    const state =
+      user.tipoUsuario === 4
+        ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0]
+        : (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.APROBARCAJERO])).rows[0];
     client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
     console.log(applicationInstance);
     await sendNotification(
       user,
-      `Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
+      `Se ${user.tipoUsuario === 4 ? `han ingresado los datos de pago` : `ha validado el pago`} de una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
       'UPDATE_APPLICATION',
       'IMPUESTO',
       { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
@@ -1741,18 +1747,10 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
 
 export const validateApplication = async (body, user, client) => {
   try {
-    console.log('body dentro del metodo de IMPUESTO');
-    console.log(body);
     if (!body.solicitudAprobada) return;
-    console.log('si');
-    console.log('primera query:', queries.COMPLETE_TAX_APPLICATION_PAYMENT);
-    console.log('payload primera query:', body.idTramite, applicationStateEvents.FINALIZAR);
     const state = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
-    console.log('EL BICHO SIUUUUUUUUUUUUUUUUU');
     const solicitud = (await client.query(queries.GET_APPLICATION_BY_ID, [body.idTramite])).rows[0];
-    console.log('solicitud', solicitud);
     const applicationInstance = await getApplicationsAndSettlementsById({ id: body.idTramite, user: solicitud.id_usuario });
-    console.log('applicationInstance', applicationInstance);
     applicationInstance.aprobado = true;
     await sendNotification(
       user,
@@ -1763,10 +1761,8 @@ export const validateApplication = async (body, user, client) => {
       client
     );
 
-    console.log('fin del metodo');
     return;
   } catch (error) {
-    console.log('error vA', error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -1867,7 +1863,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             ).rows[0];
             await client.query("UPDATE impuesto.liquidacion SET id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE id_ramo = $1 AND descripcion = 'Convenio de Pago') WHERE id_solicitud = $2", [x.idRamo, applicationAG.id_solicitud]);
             const benefitAgreement = await Promise.all(
-              x.porciones.map(async (el) => (await client.query('INSERT INTO impuesto.fraccion (id_convenio, monto, porcion, fecha) VALUES ($1, $2, $3, $4)', [agreement.id_convenio, el.monto, el.porcion, el.fechaDePago])).rows[0])
+              x.porciones.map(async (el) => (await client.query('INSERT INTO impuesto.fraccion (id_convenio, monto, porcion, fecha) VALUES ($1, $2, $3, $4)', [agreement.id_convenio, fixatedAmount(+el.monto), el.porcion, el.fechaDePago])).rows[0])
             );
             return benefitAgreement;
         }
@@ -2545,6 +2541,10 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
     gtic.release();
     client.release();
   }
+};
+
+const fixatedAmount = (num) => {
+  return parseFloat(num.toPrecision(15)).toFixed(2);
 };
 
 const certificateCreationSnippet = () => {
