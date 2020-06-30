@@ -22,6 +22,8 @@ import { sendRimVerification, verifyCode, resendCode } from './verification';
 import { hasLinkedContributor } from './user';
 import e from 'express';
 import S3Client from '@utils/s3';
+import ExcelJs from 'exceljs';
+import * as fs from 'fs';
 const written = require('written-number');
 
 const gticPool = GticPool.getInstance();
@@ -2675,6 +2677,65 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
 const fixatedAmount = (num) => {
   return parseFloat(num.toPrecision(15)).toFixed(2);
 };
+
+
+export const getSettlementsReport = async (user, payload: { from: Date, to: Date }) => {
+  const client = await pool.connect();
+    try {
+        return new Promise(async (res, rej) => {
+          const workbook = new ExcelJs.Workbook()
+          workbook.creator = 'SUT';
+          workbook.created = new Date();
+          workbook.views = [{
+            x: 0, y: 0, width: 10000, height: 20000,
+            firstSheet: 0, activeTab: 1, visibility: 'visible'
+          }];
+
+          const sheet = workbook.addWorksheet('Reporte');
+
+          const result = await client.query(queries.GET_SETTLEMENTS_REPORT, [payload.from, payload.to]);
+          
+          console.log(result)
+
+          sheet.columns = result.fields.map((row) => {
+            return { header: row.name, key: row.name, width: 32 }
+          })
+          sheet.addRows(result.rows, 'i');
+
+          sheet.eachRow((row, rownumber) => {
+            console.log(rownumber, 'row:', row)
+          })
+          if (dev) {
+            const dir = '../../archivos/test.xlsx'
+            const stream = fs.createWriteStream(require('path').resolve( './archivos/test.xlsx'))
+            await workbook.xlsx.write(stream)
+            res(dir)
+          } else {
+            try {
+              const bucketParams = {
+                Bucket: 'sut-maracaibo',
+                Key: '/sedemat/reportes/liquidaciones.pdf',
+              };
+              await S3Client.putObject({
+                ...bucketParams,
+                Body: await workbook.xlsx.writeBuffer(),
+                ACL: 'public-read',
+                ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              }).promise();
+              res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+                  
+            } catch (e) {
+              rej(e)
+            } finally {
+            }
+          }
+        });
+      } catch (error) {
+        throw errorMessageExtractor(error);
+      } finally {
+        client.release()
+      }
+}
 
 const certificateCreationSnippet = () => {
   // const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${id}`, { errorCorrectionLevel: 'H' });

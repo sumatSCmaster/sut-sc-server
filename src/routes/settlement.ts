@@ -17,6 +17,7 @@ import {
   resendUserCode,
   checkContributorExists,
   addTaxApplicationPaymentAgreement,
+  getSettlementsReport,
 } from '@helpers/settlement';
 import { Usuario } from '@root/interfaces/sigt';
 
@@ -72,6 +73,14 @@ router.get('/debts/:tipoContribuyente', authenticate('jwt'), async (req, res) =>
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
 });
+
+router.post('/report', authenticate('jwt'), async(req, res) => {
+  const { from, to } = req.body;
+  const [error, data] = await fulfill(getSettlementsReport(req.user ,{from, to}));
+  console.log(error, data)
+  if (error) res.status(500).json({ error, status: 500 });
+  if (data) res.status(200).json({ status: 200, data });
+})
 
 router.post('/init', authenticate('jwt'), async (req: any, res) => {
   const { procedimiento } = req.body;
