@@ -932,52 +932,19 @@ const externalUserForLinkingExists = async ({ user, password, gtic }: { user: st
 };
 
 //TODO: get de fracciones
-export const getAgreementFractionById = async ({ id, user }): Promise<Solicitud & any> => {
+export const getAgreementFractionById = async ({ id }): Promise<Solicitud & any> => {
   const client = await pool.connect();
   try {
-    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const application = await Promise.all(
-      (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows.map(async (el) => {
-        const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
-        const docs = (await client.query('SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1', [el.id_contribuyente])).rows[0];
-        return {
-          id: el.id_solicitud,
-          usuario: typeof user === 'object' ? user : { id: user },
-          contribuyente: structureContributor(docs),
-          aprobado: el.aprobado,
-          documento: docs.documento,
-          tipoDocumento: docs.tipo_documento,
-          estado: (await client.query('SELECT state FROM impuesto.solicitud_state WHERE id = $1', [el.id_solicitud])).rows[0].state,
-          referenciaMunicipal: (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0].id_registro_municipal])).rows[0]?.referencia_municipal,
-          fecha: el.fecha,
-          monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0].monto_total,
-          liquidaciones: liquidaciones
-            .filter((el) => el.tipoProcedimiento !== 'MULTAS')
-            .map((el) => {
-              return {
-                id: el.id_liquidacion,
-                ramo: el.tipoProcedimiento,
-                fecha: el.datos.fecha,
-                monto: el.monto,
-                certificado: el.certificado,
-                recibo: el.recibo,
-              };
-            }),
-          multas: liquidaciones
-            .filter((el) => el.tipoProcedimiento === 'MULTAS')
-            .map((el) => {
-              return {
-                id: el.id_liquidacion,
-                ramo: el.tipoProcedimiento,
-                fecha: el.datos.fecha,
-                monto: el.monto,
-                descripcion: el.datos.descripcion,
-                certificado: el.certificado,
-                recibo: el.recibo,
-              };
-            }),
-        };
-      })
+      (await client.query('SELECT * FROM impuesto.fraccion WHERE id_fraccion = $1', [id])).rows.map(async (el) => ({
+        id: el.id_fraccion,
+        idConvenio: el.id_convenio,
+        monto: el.monto,
+        fecha: el.fecha,
+        fechaAprobacion: el.fecha_aprobado,
+        aprobado: el.aprobado,
+        estado: (await client.query('SELECT state FROM impuesto.fraccion_state WHERE id = $1', [el.id_fraccion])).rows[0]?.state,
+      }))
     );
     return application[0];
   } catch (error) {
@@ -995,24 +962,27 @@ export const getAgreementFractionById = async ({ id, user }): Promise<Solicitud 
 export const getAgreements = async ({ user }: { user: Usuario }) => {
   const client = await pool.connect();
   try {
-    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const hasApplications = (await client.query('SELECT * FROM impuesto.convenio c INNER JOIN impuesto.solicitud s ON c.id_solicitud = s.id_solicitud WHERE s.id_usuario = $1', [user.id])).rows.length > 0;
+    if (!hasApplications) throw { status: 404, message: 'El usuario no posee convenios' };
     const applications: Solicitud[] = await Promise.all(
-      (await client.query(queries.GET_APPLICATION_INSTANCES_BY_USER, [user.id])).rows.map(async (el) => {
+      (await client.query('SELECT * FROM impuesto.convenio c INNER JOIN impuesto.solicitud s ON c.id_solicitud = s.id_solicitud WHERE s.id_usuario = $1', [user.id])).rows.map(async (el) => {
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
         const docs = (await client.query('SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1', [el.id_contribuyente])).rows[0];
         return {
           id: el.id_solicitud,
+          cantPorciones: el.cantidad,
           usuario: user,
+          tipo: 'CONVENIO',
           contribuyente: structureContributor(docs),
           aprobado: el.aprobado,
           documento: docs.documento,
           tipoDocumento: docs.tipo_documento,
-          estado: (await client.query('SELECT state FROM impuesto.solicitud_state WHERE id = $1', [el.id_solicitud])).rows[0].state,
+          estado: (await client.query('SELECT state FROM impuesto.solicitud_state WHERE id = $1', [el.id_solicitud])).rows[0]?.state,
           referenciaMunicipal: liquidaciones[0].id_registro_municipal
-            ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0].id_registro_municipal])).rows[0].referencia_municipal
+            ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
             : undefined,
           fecha: el.fecha,
-          monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0].monto_total,
+          monto: (await client.query('SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1', [el.id_solicitud])).rows[0]?.monto_total,
           liquidaciones: liquidaciones
             .filter((el) => el.tipoProcedimiento !== 'MULTAS')
             .map((el) => {
@@ -1038,6 +1008,7 @@ export const getAgreements = async ({ user }: { user: Usuario }) => {
                 recibo: el.recibo,
               };
             }),
+          porciones: (await client.query('SELECT * FROM impuesto.fraccion f WHERE f.id_convenio = $1', [el.id_convenio])).rows.map((el) => getAgreementFractionById(el.id_fraccion)),
         };
       })
     );
@@ -1848,7 +1819,7 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
         ? (await client.query('SELECT * FROM impuesto.update_fraccion_state ($1, $2)', [fragment, applicationStateEvents.VALIDAR])).rows[0]
         : (await client.query('SELECT * FROM impuesto.complete_fraccion_state ($1, $2, true)', [fragment, applicationStateEvents.APROBARCAJERO])).rows[0];
     client.query('COMMIT');
-    const applicationInstance = await getAgreementFractionById({ id: fragment, user });
+    const applicationInstance = await getAgreementFractionById({ id: fragment });
     console.log(applicationInstance);
     await sendNotification(
       user,
@@ -1959,6 +1930,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
         switch (x.tipoBeneficio) {
           case 'pagoCompleto':
             const applicationFP = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [benefittedUser, contributorWithBranch.id_contribuyente])).rows[0];
+            await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [applicationFP.id_solicitud, applicationStateEvents.INGRESARDATOS]);
             const benefitFullPayment = (
               await client.query(
                 "UPDATE impuesto.liquidacion SET id_solicitud = $1 WHERE id_registro_municipal = $2 AND id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = '1' AND id_ramo = $3) AND id_liquidacion IN (SELECT id_liquidacion  FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud_state ss ON ss.id = l.id_solicitud  WHERE ss.state = 'ingresardatos');",
@@ -1985,6 +1957,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             return benefitRemission;
           case 'convenio':
             const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [benefittedUser, contributorWithBranch.id_contribuyente])).rows[0];
+            await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [applicationAG.id_solicitud, applicationStateEvents.INGRESARDATOS]);
             const agreement = (await client.query('INSERT INTO impuesto.convenio (id_solicitud, cantidad) VALUES ($1, $2) RETURNING *', [applicationAG.id_solicitud, x.porciones.length])).rows[0];
             const settlementsAG = (
               await client.query(
@@ -2681,64 +2654,69 @@ const fixatedAmount = (num) => {
   return parseFloat(num.toPrecision(15)).toFixed(2);
 };
 
-
-export const getSettlementsReport = async (user, payload: { from: Date, to: Date }) => {
+export const getSettlementsReport = async (user, payload: { from: Date; to: Date }) => {
   const client = await pool.connect();
-    try {
-        return new Promise(async (res, rej) => {
-          const workbook = new ExcelJs.Workbook()
-          workbook.creator = 'SUT';
-          workbook.created = new Date();
-          workbook.views = [{
-            x: 0, y: 0, width: 10000, height: 20000,
-            firstSheet: 0, activeTab: 1, visibility: 'visible'
-          }];
+  try {
+    return new Promise(async (res, rej) => {
+      const workbook = new ExcelJs.Workbook();
+      workbook.creator = 'SUT';
+      workbook.created = new Date();
+      workbook.views = [
+        {
+          x: 0,
+          y: 0,
+          width: 10000,
+          height: 20000,
+          firstSheet: 0,
+          activeTab: 1,
+          visibility: 'visible',
+        },
+      ];
 
-          const sheet = workbook.addWorksheet('Reporte');
+      const sheet = workbook.addWorksheet('Reporte');
 
-          const result = await client.query(queries.GET_SETTLEMENTS_REPORT, [payload.from, payload.to]);
-          
-          console.log(result)
+      const result = await client.query(queries.GET_SETTLEMENTS_REPORT, [payload.from, payload.to]);
 
-          sheet.columns = result.fields.map((row) => {
-            return { header: row.name, key: row.name, width: 32 }
-          })
-          sheet.addRows(result.rows, 'i');
+      console.log(result);
 
-          sheet.eachRow((row, rownumber) => {
-            console.log(rownumber, 'row:', row)
-          })
-          if (dev) {
-            const dir = '../../archivos/test.xlsx'
-            const stream = fs.createWriteStream(require('path').resolve( './archivos/test.xlsx'))
-            await workbook.xlsx.write(stream)
-            res(dir)
-          } else {
-            try {
-              const bucketParams = {
-                Bucket: 'sut-maracaibo',
-                Key: '/sedemat/reportes/liquidaciones.pdf',
-              };
-              await S3Client.putObject({
-                ...bucketParams,
-                Body: await workbook.xlsx.writeBuffer(),
-                ACL: 'public-read',
-                ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-              }).promise();
-              res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
-                  
-            } catch (e) {
-              rej(e)
-            } finally {
-            }
-          }
-        });
-      } catch (error) {
-        throw errorMessageExtractor(error);
-      } finally {
-        client.release()
+      sheet.columns = result.fields.map((row) => {
+        return { header: row.name, key: row.name, width: 32 };
+      });
+      sheet.addRows(result.rows, 'i');
+
+      sheet.eachRow((row, rownumber) => {
+        console.log(rownumber, 'row:', row);
+      });
+      if (dev) {
+        const dir = '../../archivos/test.xlsx';
+        const stream = fs.createWriteStream(require('path').resolve('./archivos/test.xlsx'));
+        await workbook.xlsx.write(stream);
+        res(dir);
+      } else {
+        try {
+          const bucketParams = {
+            Bucket: 'sut-maracaibo',
+            Key: '/sedemat/reportes/liquidaciones.pdf',
+          };
+          await S3Client.putObject({
+            ...bucketParams,
+            Body: await workbook.xlsx.writeBuffer(),
+            ACL: 'public-read',
+            ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          }).promise();
+          res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+        } catch (e) {
+          rej(e);
+        } finally {
+        }
       }
-}
+    });
+  } catch (error) {
+    throw errorMessageExtractor(error);
+  } finally {
+    client.release();
+  }
+};
 
 const certificateCreationSnippet = () => {
   // const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${id}`, { errorCorrectionLevel: 'H' });

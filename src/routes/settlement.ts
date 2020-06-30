@@ -18,6 +18,7 @@ import {
   checkContributorExists,
   addTaxApplicationPaymentAgreement,
   getSettlementsReport,
+  getAgreements,
 } from '@helpers/settlement';
 import { Usuario } from '@root/interfaces/sigt';
 
@@ -57,6 +58,12 @@ router.get('/instances', authenticate('jwt'), async (req: any, res) => {
   if (data) res.status(data.status).json(data);
 });
 
+router.get('/agreements', authenticate('jwt'), async (req: any, res) => {
+  const [err, data] = await fulfill(getAgreements({ user: req.user }));
+  if (err) res.status(err.status).json(err);
+  if (data) res.status(data.status).json(data);
+});
+
 //TODO: incluir validacion de que sea funcionario, informacion del contribuyente
 router.get('/instances/:tipoContribuyente', authenticate('jwt'), async (req, res) => {
   const { tipoDocumento, documento, referencia } = req.query;
@@ -74,13 +81,13 @@ router.get('/debts/:tipoContribuyente', authenticate('jwt'), async (req, res) =>
   if (data) res.status(data.status).json(data);
 });
 
-router.post('/report', authenticate('jwt'), async(req, res) => {
+router.post('/report', authenticate('jwt'), async (req, res) => {
   const { from, to } = req.body;
-  const [error, data] = await fulfill(getSettlementsReport(req.user ,{from, to}));
-  console.log(error, data)
+  const [error, data] = await fulfill(getSettlementsReport(req.user, { from, to }));
+  console.log(error, data);
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
-})
+});
 
 router.post('/init', authenticate('jwt'), async (req: any, res) => {
   const { procedimiento } = req.body;
