@@ -92,19 +92,19 @@ block content
         p(style={'padding-left':'10px'})
           b TRANSFERENCIA BOD
       div(style={'-webkit-flex':'3.5'}).td.center.border-bottom
-        p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.items.find(el => el.id === 1) ? datos.metodoPago.transferencias.items.find(el => el.id === 1) : 0)}
+        p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.items.find(el => el.id === 1) ? datos.metodoPago.transferencias.items.find(el => el.id === 1).monto : 0)}
     .tr
       div(style={'-webkit-flex':'6.5', 'text-align':'start'}).th.border-bottom.border-right
         p(style={'padding-left':'10px'})
           b TRANSFERENCIA BANESCO
-      div(style={'-webkit-flex':'3'}).td.center.border-bottom
-        p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.items.find(el => el.id === 2) ? datos.metodoPago.transferencias.items.find(el => el.id === 2) : 0)}
+      div(style={'-webkit-flex':'3.5'}).td.center.border-bottom
+        p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.items.find(el => el.id === 2) ? datos.metodoPago.transferencias.items.find(el => el.id === 2).monto : 0)}
     .tr
       div(style={'-webkit-flex':'6.5', 'text-align':'start'}).th.border-bottom.border-right
         p(style={'padding-left':'10px'})
           b TRANSFERENCIA BNC
       div(style={'-webkit-flex':'3.5'}).td.center.border-bottom
-        p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.items.find(el => el.id === 3) ? datos.metodoPago.transferencias.items.find(el => el.id === 3) : 0)}
+        p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.items.find(el => el.id === 3) ? datos.metodoPago.transferencias.items.find(el => el.id === 3).monto : 0)}
     .tr
       div(style={'-webkit-flex':'6.5'}).th.border-right
         p
