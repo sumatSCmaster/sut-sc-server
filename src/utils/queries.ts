@@ -661,14 +661,14 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_TRANSFERS_BY_BANK: `SELECT b.id_banco, b.nombre AS banco, SUM(p.monto) as monto
         FROM pago p
         INNER JOIN banco b ON b.id_banco = p.id_banco
-        WHERE p.concepto IN ('IMPUESTO', 'CONVENIO') AND p.metodo_pago = 'TRANSFERENCIA' AND p.fecha_de_pago BETWEEN $1 AND $2
+        WHERE p.concepto IN ('IMPUESTO', 'CONVENIO') AND p.aprobado = true AND p.metodo_pago = 'TRANSFERENCIA' AND p.fecha_de_pago BETWEEN $1 AND $2
         GROUP BY b.id_banco, b.nombre
         UNION
-        SELECT b.id_banco, b.nombre AS banco, SUM(p.monto) as monto
+        SELECT b.id_banco, b.nombre AS banco, SUM(ROUND(p.monto)) as monto
         FROM (SELECT * FROM pago p 
                 INNER JOIN tramite t ON t.id_tramite = p.id_procedimiento 
                 INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite 
-                WHERE p.concepto = 'TRAMITE' AND tt.id_institucion = 9 AND p.metodo_pago = 'TRANSFERENCIA' AND p.fecha_de_pago BETWEEN $1 AND $2) p
+                WHERE p.concepto = 'TRAMITE' AND p.aprobado = true AND tt.id_institucion = 9 AND p.metodo_pago = 'TRANSFERENCIA' AND p.fecha_de_pago BETWEEN $1 AND $2) p
         INNER JOIN banco b ON b.id_banco = p.id_banco
         GROUP BY b.id_banco, b.nombre;`,
   GET_CASH_REPORT: `SELECT 'BS' as moneda, x.monto FROM(

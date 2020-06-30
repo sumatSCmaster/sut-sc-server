@@ -154,11 +154,9 @@ const addPaymentFining = async (procedure, user: Usuario) => {
   }
 };
 
-export const validateFining = async (procedure, user: Usuario) => {
-  const client = await pool.connect();
+export const validateFining = async (procedure, user: Usuario, client ) => {
   let dir, respState;
   try {
-    client.query('BEGIN');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_FINING, [procedure.idTramite])).rows[0];
 
     if (!procedure.hasOwnProperty('aprobado')) {
@@ -205,7 +203,6 @@ export const validateFining = async (procedure, user: Usuario) => {
       multa,
       client
     );
-    client.query('COMMIT');
     const userExists = (await client.query(queries.CHECK_IF_USER_EXISTS, [multa.cedula, multa.nacionalidad])).rows;
     if (userExists.length > 0) {
       sendEmail({
@@ -218,7 +215,6 @@ export const validateFining = async (procedure, user: Usuario) => {
     }
     return { status: 200, message: 'Pago de multa validado', multa };
   } catch (error) {
-    client.query('ROLLBACK');
     console.log(error);
     throw {
       status: 500,
@@ -226,7 +222,6 @@ export const validateFining = async (procedure, user: Usuario) => {
       message: errorMessageGenerator(error) || errorMessageExtractor(error) || 'Error al validar pago de multa',
     };
   } finally {
-    client.release();
   }
 };
 
