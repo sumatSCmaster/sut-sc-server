@@ -1873,6 +1873,10 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
 export const validateApplication = async (body, user, client) => {
   try {
     if (!body.solicitudAprobada) return;
+    if (body.concepto === 'CONVENIO' && body.solicitudAprobada) {
+      //este metodo es para validar los convenios y llevarlos al estado de finalizado
+      const state = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
+    }
     const state = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
     const solicitud = (await client.query(queries.GET_APPLICATION_BY_ID, [body.idTramite])).rows[0];
     const applicationInstance = await getApplicationsAndSettlementsById({ id: body.idTramite, user: solicitud.id_usuario });
