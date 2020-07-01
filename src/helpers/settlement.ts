@@ -574,6 +574,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
 
           if (vigentes.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
+            const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
             await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
@@ -654,6 +655,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
 
           if (vigentes.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
             await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
@@ -1325,6 +1327,7 @@ export const initialUserLinking = async (linkingData, user) => {
 
           if (vigentes.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
+            const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
             await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
@@ -1418,6 +1421,7 @@ export const initialUserLinking = async (linkingData, user) => {
 
           if (vigentes.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
             await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
@@ -1507,9 +1511,9 @@ export const insertSettlements = async ({ process, user }) => {
     const userHasContributor = userContributor.length > 0;
     if (!userHasContributor) throw { status: 404, message: 'El usuario no esta asociado con ningun contribuyente' };
     const contributorReference = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [process.rim, process.contribuyente])).rows[0];
-    console.log(contributorReference);
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, process.contribuyente])).rows[0];
+    const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
 
     const hasAE = impuestos.find((el) => el.ramo === 'AE');
     if (hasAE) {
@@ -1646,7 +1650,7 @@ export const insertSettlements = async ({ process, user }) => {
     const settlement: Liquidacion[] = await Promise.all(
       impuestosExt.map(async (el) => {
         const datos = {
-          desglose: el.desglose ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
+          desglose: el.desglose.length > 0 ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
           fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },
         };
         const liquidacion = (
@@ -1686,7 +1690,6 @@ export const insertSettlements = async ({ process, user }) => {
     //   multas: finingMonths,
     //   registroMunicipal: process.rim,
     // };
-    const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
     await client.query('COMMIT');
     const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
     await sendNotification(
