@@ -20,6 +20,7 @@ import { query } from 'express-validator';
 import { sendNotification } from './notification';
 import { sendRimVerification, verifyCode, resendCode } from './verification';
 import { hasLinkedContributor } from './user';
+import e from 'express';
 import S3Client from '@utils/s3';
 import ExcelJs from 'exceljs';
 import * as fs from 'fs';
@@ -1946,25 +1947,22 @@ export const createCertificateForApplication = async ({ settlement, media, user 
   }
 };
 const mesesCardinal = {
-  Enero: 'Primer',
-  Febrero: 'Segundo',
-  Marzo: 'Tercer',
-  Abril: 'Cuarto',
-  Mayo: 'Quinto',
-  Junio: 'Sexto',
-  Julio: 'Séptimo',
-  Agosto: 'Octavo',
-  Septiembre: 'Noveno',
-  Octubre: 'Décimo',
-  Noviembre: 'Undécimo',
-  Diciembre: 'Duodécimo',
+  enero: 'Primer',
+  febrero: 'Segundo',
+  marzo: 'Tercer',
+  abril: 'Cuarto',
+  mayo: 'Quinto',
+  junio: 'Sexto',
+  julio: 'Séptimo',
+  agosto: 'Octavo',
+  septiembre: 'Noveno',
+  octubre: 'Décimo',
+  noviembre: 'Undécimo',
+  diciembre: 'Duodécimo',
 };
 const createSolvencyForApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
-    const isJuridical = application.tipoContribuyente === 'JURIDICO';
-    const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
-    const payloadContribuyente = isJuridical ? [application.documento, application.rim, application.nacionalidad] : [application.nacionalidad, application.nacionalidad];
-    const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
+    const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0]
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-AE.pug`), {
@@ -1973,15 +1971,15 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
         institucion: 'SEDEMAT',
         QR: linkQr,
         datos: {
-          contribuyente: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente + datosContribuyente.ap_contribuyente,
-          rim: application.rim,
-          cedulaORif: application.nacionalidad + '-' + application.documento,
-          direccion: datosContribuyente.tx_direccion,
-          representanteLegal: datosContribuyente.nb_representante_legal,
-          periodo: mesesCardinal[application.mes],
-          anio: application.anio,
+          contribuyente: application.razonSocial,
+          rim: referencia?.referencia_municipal,
+          cedulaORif: application.tipoDocumento + '-' + application.documento,
+          direccion: application.direccion,
+          representanteLegal: referencia?.nombre_representante,
+          periodo: mesesCardinal[application.datos.fecha.mes],
+          anio: application.datos.fecha.anio,
           fecha: moment().format('MM-DD-YYYY'),
-          fechaLetra: `${moment().date()} de ${application.mes} de ${application.anio}`,
+          fechaLetra: `${moment().date()} de ${application.datos.fecha.mes} de ${application.datos.fecha.anio}`,
         },
       });
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`);
@@ -2026,8 +2024,9 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
   try {
     console.log('culo');
     const isJuridical = application.tipoContribuyente === 'JURIDICO';
+    const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0]
     const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
-    const payloadContribuyente = isJuridical ? [application.documento, application.rim, application.nacionalidad] : [application.nacionalidad, application.nacionalidad];
+    const payloadContribuyente = isJuridical ? [application.documento, referencia?.referencia_municipal, application.tipoDocumento] : [application.tipoDocumento, application.nacionalidad];
     const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
     const inmueblesContribuyente = (await gticPool.query(queries.gtic.GET_ESTATES_BY_CONTRIBUTOR, [datosContribuyente.co_contribuyente])).rows;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
@@ -2037,14 +2036,12 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     let certInfoArray: any[] = [];
     console.log('appli', application);
     if (application.tipoLiquidacion === 'SM') {
-      motivo = (await gticPool.query(queries.gtic.GET_MOTIVE_BY_TYPE_ID, [idTiposSolicitud.SM])).rows[0];
-      ramo = (await gticPool.query(queries.gtic.GET_BRANCH_BY_TYPE_ID, [idTiposSolicitud.SM])).rows[0];
-      const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID('SM'), [application.id])).rows;
-      const totalIva = +breakdownData.map((row) => (row.monto_gas ? +row.monto_aseo + +row.monto_gas : +row.monto_aseo)).reduce((prev, next) => prev + next, 0) * 0.16;
-      const totalMonto = +breakdownData.map((row) => (row.monto_gas ? +row.monto_aseo + +row.monto_gas : +row.monto_aseo)).reduce((prev, next) => prev + next, 0);
-      console.log('culo2');
-      console.log(breakdownData);
-      console.log(totalIva, totalMonto);
+      motivo = application.descripcionSubramo
+      ramo = application.descripcionRamo
+      const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id])).rows;
+      const totalIva = +breakdownData.map((row) => (row.datos.desglose.montoGas ? +row.datos.desglose.montoAseo + +row.datos.desglose.montoGas : +row.datos.desglose.montoAseo)).reduce((prev, next) => prev + next, 0) * 0.16;
+      const totalMonto = +breakdownData.map((row) => (row.datos.desglose.montoGas ? +row.datos.desglose.montoAseo + +row.datos.desglose.montoGas : +row.datos.desglose.montoAseo)).reduce((prev, next) => prev + next, 0);
+
       for (const el of inmueblesContribuyente) {
         console.log('AAAAAAAAAAAAAAAAAAA');
         certInfo = {
@@ -2053,11 +2050,11 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
           fecha: moment().format('MM-DD-YYYY'),
 
           datos: {
-            nroSolicitud: 856535, //TODO: Reemplazar con el valor de co_solicitud creado en GTIC
-            nroPlanilla: 10010111, //TODO: Ver donde se guarda esto
-            motivo: motivo.tx_motivo,
+            nroSolicitud: application.id, 
+            nroPlanilla: 10010111, 
+            motivo: motivo,
             nroFactura: `${application.anio}-${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
-            tipoTramite: `${ramo.nb_ramo} - ${ramo.tx_ramo}`,
+            tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
             cuentaOContrato: el.cuenta_contrato,
             tipoInmueble: el.tx_tp_inmueble,
             fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
@@ -2065,17 +2062,22 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             fechaVenc: moment(application.fechaCreacion).endOf('month').format('DD/MM/YYYY'),
             propietario: {
               rif: `${application.nacionalidad}-${application.documento}`,
-              denomComercial: datosContribuyente.tx_denom_comercial,
-              direccion: datosContribuyente.tx_direccion,
-              razonSocial: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente.trim() + datosContribuyente.ap_contribuyente.trim(),
+              denomComercial: application.denominacionComercial,
+              direccion: application.direccion,
+              razonSocial: application.razonSocial,
             },
             items: breakdownData
-              .filter((row) => row.id_inmueble === +el.co_inmueble)
+              .map((row) => {
+                return {
+                  desglose: row.datos.desglose.find((desglose) => desglose.inmueble === +el.co_inmueble),
+                  fecha: row.datos.fecha
+                }
+              })
               .map((row) => {
                 return {
                   direccion: el.direccion_inmueble,
-                  periodos: `${row.mes} ${row.anio}`.toUpperCase(),
-                  impuesto: row.monto_gas ? formatCurrency(+row.monto_gas + +row.monto_aseo) : formatCurrency(row.monto_aseo),
+                  periodos: `${row.fecha.mes} ${row.fecha.anio}`.toUpperCase(),
+                  impuesto: row.desglose.montoGas ? formatCurrency(+row.desglose.montoGas + + row.desglose.montoAseo) : formatCurrency(row.desglose.montoAseo),
                 };
               }),
             totalIva: `${formatCurrency(totalIva)} Bs.S`,
@@ -2083,8 +2085,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
             montoTotalImpuesto: `${formatCurrency(
               +breakdownData
-                .filter((row) => row.id_inmueble === +el.co_inmueble)
-                .map((row) => (row.monto_gas ? +row.monto_aseo + +row.monto_gas : +row.monto_aseo))
+              .map((row) => {
+                return {
+                  desglose: row.datos.desglose.find((desglose) => desglose.inmueble === +el.co_inmueble),
+                  fecha: row.datos.fecha
+                }
+              })
+                .map((row) => (row.desglose.montoGas ? +row.desglose.montoAseo + +row.desglose.montoGas : +row.desglose.montoAseo))
                 .reduce((prev, next) => prev + next, 0) + totalIva
             )} Bs.S`,
             interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
@@ -2101,23 +2108,22 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     } else if (application.tipoLiquidacion === 'IU') {
       motivo = (await gticPool.query(queries.gtic.GET_MOTIVE_BY_TYPE_ID, [idTiposSolicitud.IU])).rows[0];
       ramo = (await gticPool.query(queries.gtic.GET_BRANCH_BY_TYPE_ID, [idTiposSolicitud.IU])).rows[0];
-      const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID('IU'), [application.id])).rows;
+      const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id])).rows;
       const totalIva = breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0) * 0.16;
       const totalMonto = +breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0);
 
       for (const el of inmueblesContribuyente) {
-        console.log('AAAAAAAAAAAAAAAAAAA');
         certInfo = {
           QR: linkQr,
           moment: require('moment'),
           fecha: moment().format('MM-DD-YYYY'),
 
           datos: {
-            nroSolicitud: 856535, //TODO: Reemplazar con el valor de co_solicitud creado en GTIC
-            nroPlanilla: 10010111, //TODO: Ver donde se guarda esto
-            motivo: motivo.tx_motivo,
+            nroSolicitud: application.id, 
+            nroPlanilla: 10010111, 
+            motivo: motivo,
             nroFactura: `${application.anio}-${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
-            tipoTramite: `${ramo.nb_ramo} - ${ramo.tx_ramo}`,
+            tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
             cuentaOContrato: el.cuenta_contrato,
             tipoInmueble: el.tx_tp_inmueble,
             fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
@@ -2125,9 +2131,9 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             fechaVenc: moment(application.fechaCreacion).endOf('month').format('DD/MM/YYYY'),
             propietario: {
               rif: `${application.nacionalidad}-${application.documento}`,
-              denomComercial: datosContribuyente.tx_denom_comercial,
-              direccion: datosContribuyente.tx_direccion,
-              razonSocial: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente.trim() + datosContribuyente.ap_contribuyente.trim(),
+              denomComercial: application.denominacionComercial,
+              direccion: application.direccion,
+              razonSocial: application.razonSocial,
             },
             items: breakdownData
               .filter((row) => row.id_inmueble === +el.co_inmueble)
@@ -2305,6 +2311,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
     const UTMM = (await pool.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const impuesto = UTMM * 2;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+    const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0]
     moment.locale('es');
 
     const certAE = {
@@ -2318,10 +2325,10 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
         motivo: `D${application.mes.substr(0, 3).toUpperCase()}${application.anio}`,
         porcion: '1/1',
         categoria: applicationInfo.tx_ramo,
-        rif: `${application.nacionalidad}-${application.documento}`,
-        ref: application.rim,
-        razonSocial: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente + datosContribuyente.ap_contribuyente,
-        direccion: datosContribuyente.tx_direccion,
+        rif: `${application.tipoDocumento}-${application.documento}`,
+        ref: referencia.referencia_municipal,
+        razonSocial: application.razonSocial,
+        direccion: application.direccion,
         fechaCre: moment(application.fechaCreacion).format('YYYY-MM-DD'),
         fechaLiq: moment().format('YYYY-MM-DD'),
         fechaVenc: moment().date(31).format('YYYY-MM-DD'),
@@ -2394,7 +2401,7 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
     let motivo = (await gticPool.query(queries.gtic.GET_MOTIVE_BY_TYPE_ID, [idTiposSolicitud.PP])).rows[0];
     let ramo = (await gticPool.query(queries.gtic.GET_BRANCH_BY_TYPE_ID, [idTiposSolicitud.PP])).rows[0];
     const subarticulos = (await gticPool.query(queries.gtic.GET_PUBLICITY_SUBARTICLES)).rows;
-    const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID('PP'), [application.id])).rows;
+    const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id])).rows;
     const totalIva = +breakdownData.map((row) => row.monto).reduce((prev, next) => +prev + +next, 0) * 0.16;
     const totalMonto = +breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0);
     return new Promise(async (res, rej) => {
@@ -2588,7 +2595,7 @@ const fixatedAmount = (num) => {
   return parseFloat(num.toPrecision(15)).toFixed(2);
 };
 
-export const getSettlementsReport = async (user, payload: { from: Date; to: Date }) => {
+export const getSettlementsReport = async (user, payload: { from: Date; to: Date, ramo: number }) => {
   const client = await pool.connect();
   try {
     return new Promise(async (res, rej) => {
@@ -2609,7 +2616,7 @@ export const getSettlementsReport = async (user, payload: { from: Date; to: Date
 
       const sheet = workbook.addWorksheet('Reporte');
 
-      const result = await client.query(queries.GET_SETTLEMENTS_REPORT, [payload.from, payload.to]);
+      const result = await client.query( payload.ramo ? queries.GET_SETTLEMENT_REPORT_BY_BRANCH : queries.GET_SETTLEMENTS_REPORT, payload.ramo ? [payload.from, payload.to, payload.ramo] : [payload.from, payload.to]);
 
       console.log(result);
 

@@ -13,6 +13,18 @@ const dev = process.env.NODE_ENV !== 'production';
 
 const pool = Pool.getInstance();
 
+export const getBranches = async () => {
+  const client = await pool.connect();
+  try{
+    const branches = await client.query(queries.GET_BRANCHES);
+    return branches.rows;
+  } catch (e){
+    throw e
+  } finally{
+    client.release()
+  }
+}
+
 export const generateBranchesReport = async (user, payload: { from: Date, to: Date }) => {
     const client = await pool.connect();
     try {
