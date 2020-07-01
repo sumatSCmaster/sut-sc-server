@@ -61,51 +61,54 @@ block content
         p #{new Intl.NumberFormat('de-DE').format(datos.ingresadoTotal ? datos.ingresadoTotal : 0)}
       div(style={'-webkit-flex':'1'}).td.center
         p #{datos.cantidadIngTotal}   
-  div(style={'margin-top':'20px'}).table.break-page
+  div(style={'margin-top':'20px', 'width':'75%'}).table.break-page
     .tr
-      .th.center.border-bottom
+      div(style={'-webkit-flex':'7'}).th.center.border-bottom.border-right
         p
           b METODOS DE PAGO
+      div(style={'-webkit-flex':'3'}).th.center.border-bottom
+        p
+          b MONTO BS.   
     .tr
-      div(style={'-webkit-flex':'6.5', 'text-align':'start'}).th.border-bottom.border-right
+      div(style={'-webkit-flex':'7', 'text-align':'start'}).th.border-bottom.border-right
         p(style={'padding-left':'10px'})
           b PUNTO DE VENTA
-      div(style={'-webkit-flex':'3.5'}).td.center.border-bottom
+      div(style={'-webkit-flex':'3'}).td.center.border-bottom
         p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.punto.total)}
     .tr
-      div(style={'-webkit-flex':'6.5', 'text-align':'start'}).th.border-bottom.border-right
+      div(style={'-webkit-flex':'7', 'text-align':'start'}).th.border-bottom.border-right
         p(style={'padding-left':'10px'})
           b EFECTIVO
-      div(style={'-webkit-flex':'3.5'}).td.center.border-bottom
+      div(style={'-webkit-flex':'3'}).td.center.border-bottom
         p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.efectivo.total)}
     .tr
-      div(style={'-webkit-flex':'6.5', 'text-align':'start'}).th.border-bottom.border-right
+      div(style={'-webkit-flex':'7', 'text-align':'start'}).th.border-bottom.border-right
         p(style={'padding-left':'10px'})
           b CHEQUES
-      div(style={'-webkit-flex':'3.5'}).td.center.border-bottom
+      div(style={'-webkit-flex':'3'}).td.center.border-bottom
         p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.cheques.total)}
     .tr
-      div(style={'-webkit-flex':'6.5', 'text-align':'start'}).th.border-bottom.border-right
+      div(style={'-webkit-flex':'7', 'text-align':'start'}).th.border-bottom.border-right
         p(style={'padding-left':'10px'})
           b TRANSFERENCIA BOD
-      div(style={'-webkit-flex':'3.5'}).td.center.border-bottom
+      div(style={'-webkit-flex':'3'}).td.center.border-bottom
         p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.items.find(el => el.id === 1) ? datos.metodoPago.transferencias.items.find(el => el.id === 1).monto : 0)}
     .tr
-      div(style={'-webkit-flex':'6.5', 'text-align':'start'}).th.border-bottom.border-right
+      div(style={'-webkit-flex':'7', 'text-align':'start'}).th.border-bottom.border-right
         p(style={'padding-left':'10px'})
           b TRANSFERENCIA BANESCO
-      div(style={'-webkit-flex':'3.5'}).td.center.border-bottom
+      div(style={'-webkit-flex':'3'}).td.center.border-bottom
         p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.items.find(el => el.id === 2) ? datos.metodoPago.transferencias.items.find(el => el.id === 2).monto : 0)}
     .tr
-      div(style={'-webkit-flex':'6.5', 'text-align':'start'}).th.border-bottom.border-right
+      div(style={'-webkit-flex':'7', 'text-align':'start'}).th.border-bottom.border-right
         p(style={'padding-left':'10px'})
           b TRANSFERENCIA BNC
-      div(style={'-webkit-flex':'3.5'}).td.center.border-bottom
+      div(style={'-webkit-flex':'3'}).td.center.border-bottom
         p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.items.find(el => el.id === 3) ? datos.metodoPago.transferencias.items.find(el => el.id === 3).monto : 0)}
     .tr
-      div(style={'-webkit-flex':'6.5'}).th.border-right
+      div(style={'-webkit-flex':'7'}).th.border-right
         p
           b TOTALES Bs.
-      div(style={'-webkit-flex':'3.5'}).td.center
+      div(style={'-webkit-flex':'3'}).td.center
         p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.total)}                       
 block footer         

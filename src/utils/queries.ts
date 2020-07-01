@@ -625,7 +625,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR: 'SELECT * FROM impuesto.registro_municipal WHERE referencia_municipal = $1 AND id_contribuyente = $2 LIMIT 1',
   GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR:
     'SELECT ae.* FROM impuesto.actividad_economica ae INNER JOIN impuesto.actividad_economica_contribuyente aec ON ae.numero_referencia = aec.numero_referencia INNER JOIN impuesto.contribuyente c ON aec.id_contribuyente = c.id_contribuyente WHERE c.id_contribuyente = $1',
-
+  REGISTRY_BY_SETTLEMENT_ID: 'SELECT * FROM impuesto.registro_municipal rm INNER JOIN impuesto.liquidacion l ON l.id_registro_municipal = rm.id_registro_municipal WHERE l.id_liquidacion = $1;',
   //Dias feriados
   GET_HOLIDAYS_BASED_ON_PAYMENT_DATE: "SELECT * FROM impuesto.dias_feriados WHERE dia BETWEEN $1::date AND ($1::date + interval '7 days');",
   GET_HOLIDAYS: 'SELECT id_dia_feriado as id, dia, descripcion \
