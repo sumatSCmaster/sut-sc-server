@@ -1963,9 +1963,7 @@ const mesesCardinal = {
 const createSolvencyForApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
     const isJuridical = application.tipoContribuyente === 'JURIDICO';
-    const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
-    const payloadContribuyente = isJuridical ? [application.documento, application.rim, application.nacionalidad] : [application.nacionalidad, application.nacionalidad];
-    const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
+    const referencia = await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-AE.pug`), {
@@ -1974,15 +1972,15 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
         institucion: 'SEDEMAT',
         QR: linkQr,
         datos: {
-          contribuyente: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente + datosContribuyente.ap_contribuyente,
-          rim: application.rim,
-          cedulaORif: application.nacionalidad + '-' + application.documento,
-          direccion: datosContribuyente.tx_direccion,
-          representanteLegal: datosContribuyente.nb_representante_legal,
-          periodo: mesesCardinal[application.mes],
-          anio: application.anio,
+          contribuyente: application.razonSocial,
+          rim: application.,
+          cedulaORif: application.tipoDocumento + '-' + application.documento,
+          direccion: application.direccion,
+          representanteLegal: referencia.rows[0]?.nombre_representante,
+          periodo: mesesCardinal[application.datos.fecha.mes],
+          anio: application.datos.fecha.anio,
           fecha: moment().format('MM-DD-YYYY'),
-          fechaLetra: `${moment().date()} de ${application.mes} de ${application.anio}`,
+          fechaLetra: `${moment().date()} de ${application.datos.fecha.mes} de ${application.datos.fecha.anio}`,
         },
       });
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`);
