@@ -939,7 +939,7 @@ export const getAgreements = async ({ user }: { user: Usuario }) => {
   try {
     const hasApplications = (await client.query(queries.GET_AGREEMENTS_BY_USER, [user.id])).rows.length > 0;
     if (!hasApplications) throw { status: 404, message: 'El usuario no posee convenios' };
-    const applications: Solicitud[] = await Promise.all(
+    const applications: any[] = await Promise.all(
       (await client.query(queries.GET_AGREEMENTS_BY_USER, [user.id])).rows.map(async (el) => {
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
         const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
@@ -957,37 +957,17 @@ export const getAgreements = async ({ user }: { user: Usuario }) => {
             ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
             : undefined,
           fecha: el.fecha,
+          ramo: (
+            await client.query('SELECT r.descripcion FROM impuesto.ramo r INNER JOIN impuesto.subramo s ON r.id_ramo = s.id_ramo INNER JOIN impuesto.liquidacion l ON s.id_subramo = l.id_subramo WHERE id_liquidacion = $1', [
+              liquidaciones[0]?.id_liquidacion,
+            ])
+          ).rows[0]?.descripcion,
           monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0]?.monto_total,
-          liquidaciones: liquidaciones
-            .filter((el) => el.tipoProcedimiento !== 'MULTAS')
-            .map((el) => {
-              return {
-                id: el.id_liquidacion,
-                ramo: el.tipoProcedimiento,
-                fecha: el.datos.fecha,
-                monto: +el.monto,
-                certificado: el.certificado,
-                recibo: el.recibo,
-              };
-            }),
-          multas: liquidaciones
-            .filter((el) => el.tipoProcedimiento === 'MULTAS')
-            .map((el) => {
-              return {
-                id: el.id_liquidacion,
-                ramo: el.tipoProcedimiento,
-                fecha: el.datos.fecha,
-                monto: +el.monto,
-                descripcion: el.datos.descripcion,
-                certificado: el.certificado,
-                recibo: el.recibo,
-              };
-            }),
-          porciones: await Promise.all((await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [el.id_convenio])).rows.map(async (el) => await getAgreementFractionById(el.id_fraccion))),
+          porciones: await Promise.all((await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [el.id_convenio])).rows.map(async (x) => await getAgreementFractionById(x.id_fraccion))),
         };
       })
     );
-    return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', solicitudes: applications };
+    return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', convenios: applications };
   } catch (error) {
     throw {
       status: 500,
@@ -1962,7 +1942,7 @@ const mesesCardinal = {
 };
 const createSolvencyForApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
-    const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0]
+    const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-AE.pug`), {
@@ -2024,7 +2004,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
   try {
     console.log('culo');
     const isJuridical = application.tipoContribuyente === 'JURIDICO';
-    const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0]
+    const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
     const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
     const payloadContribuyente = isJuridical ? [application.documento, referencia?.referencia_municipal, application.tipoDocumento] : [application.tipoDocumento, application.nacionalidad];
     const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
@@ -2036,8 +2016,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     let certInfoArray: any[] = [];
     console.log('appli', application);
     if (application.tipoLiquidacion === 'SM') {
-      motivo = application.descripcionSubramo
-      ramo = application.descripcionRamo
+      motivo = application.descripcionSubramo;
+      ramo = application.descripcionRamo;
       const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id])).rows;
       const totalIva = +breakdownData.map((row) => (row.datos.desglose.montoGas ? +row.datos.desglose.montoAseo + +row.datos.desglose.montoGas : +row.datos.desglose.montoAseo)).reduce((prev, next) => prev + next, 0) * 0.16;
       const totalMonto = +breakdownData.map((row) => (row.datos.desglose.montoGas ? +row.datos.desglose.montoAseo + +row.datos.desglose.montoGas : +row.datos.desglose.montoAseo)).reduce((prev, next) => prev + next, 0);
@@ -2050,8 +2030,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
           fecha: moment().format('MM-DD-YYYY'),
 
           datos: {
-            nroSolicitud: application.id, 
-            nroPlanilla: 10010111, 
+            nroSolicitud: application.id,
+            nroPlanilla: 10010111,
             motivo: motivo,
             nroFactura: `${application.anio}-${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
             tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
@@ -2070,14 +2050,14 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               .map((row) => {
                 return {
                   desglose: row.datos.desglose.find((desglose) => desglose.inmueble === +el.co_inmueble),
-                  fecha: row.datos.fecha
-                }
+                  fecha: row.datos.fecha,
+                };
               })
               .map((row) => {
                 return {
                   direccion: el.direccion_inmueble,
                   periodos: `${row.fecha.mes} ${row.fecha.anio}`.toUpperCase(),
-                  impuesto: row.desglose.montoGas ? formatCurrency(+row.desglose.montoGas + + row.desglose.montoAseo) : formatCurrency(row.desglose.montoAseo),
+                  impuesto: row.desglose.montoGas ? formatCurrency(+row.desglose.montoGas + +row.desglose.montoAseo) : formatCurrency(row.desglose.montoAseo),
                 };
               }),
             totalIva: `${formatCurrency(totalIva)} Bs.S`,
@@ -2085,12 +2065,12 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
             montoTotalImpuesto: `${formatCurrency(
               +breakdownData
-              .map((row) => {
-                return {
-                  desglose: row.datos.desglose.find((desglose) => desglose.inmueble === +el.co_inmueble),
-                  fecha: row.datos.fecha
-                }
-              })
+                .map((row) => {
+                  return {
+                    desglose: row.datos.desglose.find((desglose) => desglose.inmueble === +el.co_inmueble),
+                    fecha: row.datos.fecha,
+                  };
+                })
                 .map((row) => (row.desglose.montoGas ? +row.desglose.montoAseo + +row.desglose.montoGas : +row.desglose.montoAseo))
                 .reduce((prev, next) => prev + next, 0) + totalIva
             )} Bs.S`,
@@ -2119,8 +2099,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
           fecha: moment().format('MM-DD-YYYY'),
 
           datos: {
-            nroSolicitud: application.id, 
-            nroPlanilla: 10010111, 
+            nroSolicitud: application.id,
+            nroPlanilla: 10010111,
             motivo: motivo,
             nroFactura: `${application.anio}-${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
             tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
@@ -2311,7 +2291,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
     const UTMM = (await pool.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const impuesto = UTMM * 2;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
-    const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0]
+    const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
     moment.locale('es');
 
     const certAE = {
@@ -2595,7 +2575,7 @@ const fixatedAmount = (num) => {
   return parseFloat(num.toPrecision(15)).toFixed(2);
 };
 
-export const getSettlementsReport = async (user, payload: { from: Date; to: Date, ramo: number }) => {
+export const getSettlementsReport = async (user, payload: { from: Date; to: Date; ramo: number }) => {
   const client = await pool.connect();
   try {
     return new Promise(async (res, rej) => {
@@ -2616,7 +2596,7 @@ export const getSettlementsReport = async (user, payload: { from: Date; to: Date
 
       const sheet = workbook.addWorksheet('Reporte');
 
-      const result = await client.query( payload.ramo ? queries.GET_SETTLEMENT_REPORT_BY_BRANCH : queries.GET_SETTLEMENTS_REPORT, payload.ramo ? [payload.from, payload.to, payload.ramo] : [payload.from, payload.to]);
+      const result = await client.query(payload.ramo ? queries.GET_SETTLEMENT_REPORT_BY_BRANCH : queries.GET_SETTLEMENTS_REPORT, payload.ramo ? [payload.from, payload.to, payload.ramo] : [payload.from, payload.to]);
 
       console.log(result);
 
