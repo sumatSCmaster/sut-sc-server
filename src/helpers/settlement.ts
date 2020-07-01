@@ -1908,7 +1908,7 @@ export const createCertificateForApplication = async ({ settlement, media, user 
     client.query('BEGIN');
     const applicationView = (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement])).rows[0];
     if (applicationView[media]) return { status: 200, message: 'Certificado generado satisfactoriamente', media: applicationView[media] };
-    const dir = await certificateCreationHandler(applicationView.tipoLiquidacion, media, {
+    const dir = await certificateCreationHandler(applicationView.descripcionCortaRamo, media, {
       gticPool: gtic,
       pool: client,
       user,
@@ -2018,10 +2018,10 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     let ramo;
     let certInfoArray: any[] = [];
     console.log('appli', application);
-    if (application.tipoLiquidacion === 'SM') {
-      motivo = application.descripcionSubramo;
-      ramo = application.descripcionRamo;
-      const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id])).rows;
+    if (application.descripcionCortaRamo === 'SM') {
+      motivo = application.descripcionSubramo
+      ramo = application.descripcionRamo
+      const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
       const totalIva = +breakdownData.map((row) => (row.datos.desglose.montoGas ? +row.datos.desglose.montoAseo + +row.datos.desglose.montoGas : +row.datos.desglose.montoAseo)).reduce((prev, next) => prev + next, 0) * 0.16;
       const totalMonto = +breakdownData.map((row) => (row.datos.desglose.montoGas ? +row.datos.desglose.montoAseo + +row.datos.desglose.montoGas : +row.datos.desglose.montoAseo)).reduce((prev, next) => prev + next, 0);
 
@@ -2088,7 +2088,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
 
         certInfoArray.push({ ...certInfo });
       }
-    } else if (application.tipoLiquidacion === 'IU') {
+    } else if (application.descripcionCortaRamo === 'IU') {
       motivo = (await gticPool.query(queries.gtic.GET_MOTIVE_BY_TYPE_ID, [idTiposSolicitud.IU])).rows[0];
       ramo = (await gticPool.query(queries.gtic.GET_BRANCH_BY_TYPE_ID, [idTiposSolicitud.IU])).rows[0];
       const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id])).rows;
