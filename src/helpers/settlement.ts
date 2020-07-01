@@ -910,19 +910,22 @@ const externalUserForLinkingExists = async ({ user, password, gtic }: { user: st
 export const getAgreementFractionById = async ({ id }): Promise<Solicitud & any> => {
   const client = await pool.connect();
   try {
-    const application = await Promise.all(
-      (await client.query(queries.GET_AGREEMENT_FRACTION_BY_ID, [id])).rows.map(async (el) => ({
-        id: el.id_fraccion,
-        idConvenio: el.id_convenio,
-        monto: el.monto,
-        fecha: el.fecha,
-        fechaAprobacion: el.fecha_aprobado,
-        aprobado: el.aprobado,
-        estado: (await client.query(queries.GET_AGREEMENT_FRACTION_STATE, [el.id_fraccion])).rows[0]?.state,
-      }))
-    );
-    return application[0];
+    const application = (await client.query(queries.GET_AGREEMENT_FRACTION_BY_ID, [id])).rows[0]
+      
+      const fraction = {
+        id: application.id_fraccion,
+        idConvenio: application.id_convenio,
+        monto: application.monto,
+        fecha: application.fecha,
+        fechaAprobacion: application.fecha_aprobado,
+        aprobado: application.aprobado,
+        estado: (await client.query(queries.GET_AGREEMENT_FRACTION_STATE, [application.id_fraccion])).rows[0]?.state,
+      }
+
+    console.log(fraction)
+    return fraction;
   } catch (error) {
+    console.log(error)
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -963,7 +966,7 @@ export const getAgreements = async ({ user }: { user: Usuario }) => {
             ])
           ).rows[0]?.descripcion,
           monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0]?.monto_total,
-          porciones: await Promise.all((await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [el.id_convenio])).rows.map(async (x) => await getAgreementFractionById(x.id_fraccion))),
+          porciones: await Promise.all((await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [el.id_convenio])).rows.map(async el => await getAgreementFractionById({id:el.id_fraccion}))),
         };
       })
     );
