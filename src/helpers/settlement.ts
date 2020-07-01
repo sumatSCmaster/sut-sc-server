@@ -1170,6 +1170,63 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
   }
 };
 
+const formatContributor = async (contributor, client: PoolClient) => {
+  try {
+    const branches = (await client.query('SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = $1', [contributor.id_contribuyente])).rows;
+    return {
+      id: contributor.id_contribuyente,
+      tipoDocumento: contributor.tipo_documento,
+      tipoContribuyente: contributor.tipo_contribuyente,
+      documento: contributor.documento,
+      razonSocial: contributor.razon_social,
+      denomComercial: contributor.denominacion_comercial || undefined,
+      siglas: contributor.siglas || undefined,
+      parroquia: contributor.parroquia,
+      sector: contributor.sector,
+      direccion: contributor.direccion,
+      puntoReferencia: contributor.punto_referencia,
+      verificado: contributor.verificado,
+      sucursales: branches.length > 0 ? branches.map((el) => formatBranch(el)) : undefined,
+    };
+  } catch (e) {
+    throw e;
+  }
+};
+
+const formatBranch = (branch) => {
+  return {
+    id: branch.id_registro_municipal,
+    referenciaMunicipal: branch.referencia_municipal,
+    fechaAprobacion: branch.fecha_aprobacion,
+    telefono: branch.telefono_celular,
+    email: branch.email,
+    denomComercial: branch.denominacion_comercial,
+    nombreRepresentante: branch.nombre_representante,
+    actualizado: branch.actualizado,
+  };
+};
+
+export const contributorSearch = async ({ document, docType, name }) => {
+  const client = await pool.connect();
+  let contribuyentes: any[] = [];
+  try {
+    if ((!document && !name) || (document.length < 6 && name.length < 3)) throw { status: 406, message: 'Debe aportar mas datos para la busqueda' };
+    contribuyentes = document && document.length > 6 ? (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows : (await client.query(queries.SEARCH_CONTRIBUTOR_BY_NAME, [`%${name}%`])).rows;
+    const contributorExists = contribuyentes.length > 0;
+    if (!contributorExists) return { status: 404, message: 'No existe un contribuyente registrado con ese documento' };
+    contribuyentes = await Promise.all(contribuyentes.map(async (el) => await formatContributor(el, client)));
+    return { status: 200, message: 'Contribuyente obtenido', contribuyentes };
+  } catch (error) {
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al obtener contribuyentes en busqueda',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 export const getEntireDebtsForContributor = async ({ reference, docType, document, typeUser }) => {
   const client = await pool.connect();
   try {
@@ -1881,6 +1938,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
           case 'convenio':
             const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [benefittedUser, contributorWithBranch.id_contribuyente])).rows[0];
             await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [applicationAG.id_solicitud, applicationStateEvents.INGRESARDATOS]);
+            await client.query('UPDATE impuesto.solicitud SET tipo_solicitud = $1 WHERE id_solicitud = $2', ['CONVENIO', applicationAG.id_solicitud]);
             const agreement = (await client.query(queries.CREATE_AGREEMENT, [applicationAG.id_solicitud, x.porciones.length])).rows[0];
             const settlementsAG = (await client.query(queries.CHANGE_SETTLEMENT_TO_NEW_APPLICATION, [applicationAG.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
             await client.query(queries.CHANGE_SETTLEMENT_BRANCH_TO_AGREEMENT, [x.idRamo, applicationAG.id_solicitud]);
@@ -2019,8 +2077,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     let certInfoArray: any[] = [];
     console.log('appli', application);
     if (application.descripcionCortaRamo === 'SM') {
-      motivo = application.descripcionSubramo
-      ramo = application.descripcionRamo
+      motivo = application.descripcionSubramo;
+      ramo = application.descripcionRamo;
       const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
       const totalIva = +breakdownData.map((row) => (row.datos.desglose.montoGas ? +row.datos.desglose.montoAseo + +row.datos.desglose.montoGas : +row.datos.desglose.montoAseo)).reduce((prev, next) => prev + next, 0) * 0.16;
       const totalMonto = +breakdownData.map((row) => (row.datos.desglose.montoGas ? +row.datos.desglose.montoAseo + +row.datos.desglose.montoGas : +row.datos.desglose.montoAseo)).reduce((prev, next) => prev + next, 0);

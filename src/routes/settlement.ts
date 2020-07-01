@@ -19,6 +19,7 @@ import {
   addTaxApplicationPaymentAgreement,
   getSettlementsReport,
   getAgreements,
+  contributorSearch,
 } from '@helpers/settlement';
 import { Usuario } from '@root/interfaces/sigt';
 
@@ -54,6 +55,13 @@ router.get('/accountStatement/:contributor', async (req: any, res) => {
 
 router.get('/instances', authenticate('jwt'), async (req: any, res) => {
   const [err, data] = await fulfill(getApplicationsAndSettlements({ user: req.user }));
+  if (err) res.status(err.status).json(err);
+  if (data) res.status(data.status).json(data);
+});
+
+router.get('/search/taxPayer', authenticate('jwt'), async (req: any, res) => {
+  const { doc, pref, name } = req.query;
+  const [err, data] = await fulfill(contributorSearch({ document: doc || null, docType: pref, name: name || null }));
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
 });
