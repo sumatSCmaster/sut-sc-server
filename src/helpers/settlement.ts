@@ -185,7 +185,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
             return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
           });
           IU = estates
-            .filter((el) => el.avaluo)
+            .filter((el) => +el.avaluo)
             .map((el) => {
               return {
                 id: el.id_inmueble,
@@ -910,22 +910,22 @@ const externalUserForLinkingExists = async ({ user, password, gtic }: { user: st
 export const getAgreementFractionById = async ({ id }): Promise<Solicitud & any> => {
   const client = await pool.connect();
   try {
-    const application = (await client.query(queries.GET_AGREEMENT_FRACTION_BY_ID, [id])).rows[0]
-      
-      const fraction = {
-        id: application.id_fraccion,
-        idConvenio: application.id_convenio,
-        monto: application.monto,
-        fecha: application.fecha,
-        fechaAprobacion: application.fecha_aprobado,
-        aprobado: application.aprobado,
-        estado: (await client.query(queries.GET_AGREEMENT_FRACTION_STATE, [application.id_fraccion])).rows[0]?.state,
-      }
+    const application = (await client.query(queries.GET_AGREEMENT_FRACTION_BY_ID, [id])).rows[0];
 
-    console.log(fraction)
+    const fraction = {
+      id: application.id_fraccion,
+      idConvenio: application.id_convenio,
+      monto: application.monto,
+      fecha: application.fecha,
+      fechaAprobacion: application.fecha_aprobado,
+      aprobado: application.aprobado,
+      estado: (await client.query(queries.GET_AGREEMENT_FRACTION_STATE, [application.id_fraccion])).rows[0]?.state,
+    };
+
+    console.log(fraction);
     return fraction;
   } catch (error) {
-    console.log(error)
+    console.log(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -966,7 +966,7 @@ export const getAgreements = async ({ user }: { user: Usuario }) => {
             ])
           ).rows[0]?.descripcion,
           monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0]?.monto_total,
-          porciones: await Promise.all((await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [el.id_convenio])).rows.map(async el => await getAgreementFractionById({id:el.id_fraccion}))),
+          porciones: await Promise.all((await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [el.id_convenio])).rows.map(async (el) => await getAgreementFractionById({ id: el.id_fraccion }))),
         };
       })
     );
