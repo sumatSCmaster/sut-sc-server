@@ -943,7 +943,7 @@ export const getAgreements = async ({ user }: { user: Usuario }) => {
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
         const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
         return {
-          id: el.id_solicitud,
+          id: el.id_convenio,
           cantPorciones: el.cantidad,
           usuario: user,
           tipo: 'CONVENIO',
@@ -982,7 +982,7 @@ export const getAgreements = async ({ user }: { user: Usuario }) => {
                 recibo: el.recibo,
               };
             }),
-          porciones: (await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [el.id_convenio])).rows.map((el) => getAgreementFractionById(el.id_fraccion)),
+          porciones: await Promise.all((await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [el.id_convenio])).rows.map((el) => getAgreementFractionById(el.id_fraccion))),
         };
       })
     );
