@@ -982,7 +982,7 @@ export const getAgreements = async ({ user }: { user: Usuario }) => {
                 recibo: el.recibo,
               };
             }),
-          porciones: await Promise.all((await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [el.id_convenio])).rows.map((el) => getAgreementFractionById(el.id_fraccion))),
+          porciones: await Promise.all((await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [el.id_convenio])).rows.map(async (el) => await getAgreementFractionById(el.id_fraccion))),
         };
       })
     );
