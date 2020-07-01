@@ -20,7 +20,6 @@ import { query } from 'express-validator';
 import { sendNotification } from './notification';
 import { sendRimVerification, verifyCode, resendCode } from './verification';
 import { hasLinkedContributor } from './user';
-import e from 'express';
 import S3Client from '@utils/s3';
 import ExcelJs from 'exceljs';
 import * as fs from 'fs';
@@ -574,7 +573,6 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
 
           if (vigentes.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
-            const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
             await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
@@ -655,7 +653,6 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
 
           if (vigentes.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
-            const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
             await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
@@ -1327,7 +1324,6 @@ export const initialUserLinking = async (linkingData, user) => {
 
           if (vigentes.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
-            const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
             await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
@@ -1421,7 +1417,6 @@ export const initialUserLinking = async (linkingData, user) => {
 
           if (vigentes.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
-            const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
             await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
@@ -1511,9 +1506,9 @@ export const insertSettlements = async ({ process, user }) => {
     const userHasContributor = userContributor.length > 0;
     if (!userHasContributor) throw { status: 404, message: 'El usuario no esta asociado con ningun contribuyente' };
     const contributorReference = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [process.rim, process.contribuyente])).rows[0];
+    console.log(contributorReference);
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, process.contribuyente])).rows[0];
-    const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
 
     const hasAE = impuestos.find((el) => el.ramo === 'AE');
     if (hasAE) {
@@ -1650,7 +1645,7 @@ export const insertSettlements = async ({ process, user }) => {
     const settlement: Liquidacion[] = await Promise.all(
       impuestosExt.map(async (el) => {
         const datos = {
-          desglose: el.desglose.length > 0 ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
+          desglose: el.desglose ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
           fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },
         };
         const liquidacion = (
@@ -1690,6 +1685,7 @@ export const insertSettlements = async ({ process, user }) => {
     //   multas: finingMonths,
     //   registroMunicipal: process.rim,
     // };
+    const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
     await client.query('COMMIT');
     const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
     await sendNotification(
@@ -1719,9 +1715,9 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0];
+    const solicitud = (await client.query(queries.GET_APPLICATION_BY_ID, [application])).rows[0];
     const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
-    if (pagoSum < solicitud.monto_total) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
+    if (pagoSum < solicitud.monto_total) return { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
     await Promise.all(
       payment.map(async (el) => {
         if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
@@ -1770,7 +1766,7 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
     client.query('BEGIN');
     const fraccion = (await client.query(queries.GET_FRACTION_BY_AGREEMENT_AND_FRACTION_ID, [agreement, fragment])).rows[0];
     const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
-    if (pagoSum < fraccion.monto) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
+    if (pagoSum < fraccion.monto_total) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
     await Promise.all(
       payment.map(async (el) => {
         if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
@@ -1854,7 +1850,7 @@ export const approveContributorSignUp = async ({ procedure, client }: { procedur
     return true;
   } catch (error) {
     console.log(error);
-    throw e;
+    throw error;
   }
 };
 
@@ -1874,7 +1870,7 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
     return data;
   } catch (error) {
     console.log(error);
-    throw e;
+    throw error;
   }
 };
 
@@ -1917,7 +1913,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
     return true;
   } catch (error) {
     console.log(error);
-    throw e;
+    throw error;
   }
 };
 
@@ -1966,7 +1962,9 @@ const mesesCardinal = {
 const createSolvencyForApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
     const isJuridical = application.tipoContribuyente === 'JURIDICO';
-    const referencia = await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])
+    const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
+    const payloadContribuyente = isJuridical ? [application.documento, application.rim, application.nacionalidad] : [application.nacionalidad, application.nacionalidad];
+    const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-AE.pug`), {
@@ -1975,15 +1973,15 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
         institucion: 'SEDEMAT',
         QR: linkQr,
         datos: {
-          contribuyente: application.razonSocial,
-          rim: application.,
-          cedulaORif: application.tipoDocumento + '-' + application.documento,
-          direccion: application.direccion,
-          representanteLegal: referencia.rows[0]?.nombre_representante,
-          periodo: mesesCardinal[application.datos.fecha.mes],
-          anio: application.datos.fecha.anio,
+          contribuyente: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente + datosContribuyente.ap_contribuyente,
+          rim: application.rim,
+          cedulaORif: application.nacionalidad + '-' + application.documento,
+          direccion: datosContribuyente.tx_direccion,
+          representanteLegal: datosContribuyente.nb_representante_legal,
+          periodo: mesesCardinal[application.mes],
+          anio: application.anio,
           fecha: moment().format('MM-DD-YYYY'),
-          fechaLetra: `${moment().date()} de ${application.datos.fecha.mes} de ${application.datos.fecha.anio}`,
+          fechaLetra: `${moment().date()} de ${application.mes} de ${application.anio}`,
         },
       });
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`);
