@@ -1568,9 +1568,9 @@ export const insertSettlements = async ({ process, user }) => {
       const lastSavedFine = (await client.query(queries.GET_LAST_FINE_FOR_LATE_APPLICATION, [contributorReference.id_registro_municipal])).rows[0];
       if (lastSavedFine && moment(lastSavedFine.fecha_liquidacion).year() === now.year() && moment(lastSavedFine.fecha_liquidacion).month() < now.month()) {
         finingAmount = lastSavedFine.datos.monto;
-        const proposedFiningDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month);
-        const finingDate = Math.floor(proposedFiningDate.diff(moment(lastSavedFine.fecha_liquidacion), 'M'));
-        finingMonths = new Array(now.month() - finingDate).fill({});
+        const proposedFiningDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month();
+        const finingDate = moment(lastSavedFine.fecha_liquidacion).month() < proposedFiningDate ? moment(lastSavedFine.fecha_liquidacion).month() : proposedFiningDate;
+        finingMonths = new Array(now.month() - 1 - finingDate).fill({});
         if (finingMonths.length > 0) {
           let counter = finingDate;
           finingMonths = await Promise.all(
@@ -1602,13 +1602,14 @@ export const insertSettlements = async ({ process, user }) => {
           );
         }
         if (now.date() > 10) {
+          const rightfulMonth = now.month() - 1;
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
               application.id_solicitud,
               fixatedAmount(finingAmount * UTMM),
               {
                 fecha: {
-                  month: moment().toDate().toLocaleDateString('ES', { month: 'long' }),
+                  month: moment().month(rightfulMonth).toDate().toLocaleDateString('ES', { month: 'long' }),
                   year: now.year(),
                 },
                 descripcion: 'Multa por Declaracion Fuera de Plazo',
@@ -1624,7 +1625,7 @@ export const insertSettlements = async ({ process, user }) => {
         }
       } else {
         finingAmount = 10;
-        const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month();
+        const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month() + 1;
         finingMonths = new Array(now.month() - finingDate).fill({});
         if (finingMonths.length > 0) {
           let counter = finingDate;
@@ -1657,13 +1658,14 @@ export const insertSettlements = async ({ process, user }) => {
           );
         }
         if (now.date() > 10) {
+          const rightfulMonth = moment().month(now.month()).month() - 1;
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
               application.id_solicitud,
               fixatedAmount(finingAmount * UTMM),
               {
                 fecha: {
-                  month: moment().toDate().toLocaleDateString('ES', { month: 'long' }),
+                  month: moment().month(rightfulMonth).toDate().toLocaleDateString('ES', { month: 'long' }),
                   year: now.year(),
                 },
                 descripcion: 'Multa por Declaracion Fuera de Plazo',
@@ -1762,7 +1764,7 @@ export const insertSettlements = async ({ process, user }) => {
 export const addTaxApplicationPayment = async ({ payment, application, user }) => {
   const client = await pool.connect();
   try {
-    client.query('BEGIN');
+    await client.query('BEGIN');
     const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0];
     const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
     if (pagoSum < solicitud.monto_total) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
@@ -1783,7 +1785,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
       user.tipoUsuario === 4
         ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0]
         : (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.APROBARCAJERO])).rows[0];
-    client.query('COMMIT');
+    await client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
     console.log(applicationInstance);
     await sendNotification(
@@ -1890,11 +1892,10 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
   try {
     //este metodo es para validar los convenios y llevarlos al estado de finalizado
     const state = (await client.query(queries.COMPLETE_FRACTION_STATE, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
-    const agreement = (await client.query(queries.GET_AGREEMENT_FRACTION_BY_ID, [body.idTramite])).rows[0];
+    const agreement = (await client.query('SELECT c.* FROM impuesto.convenio c INNER JOIN impuesto.fraccion f ON c.id_convenio = f.id_convenio WHERE f.id_fraccion = $1', [body.idTramite])).rows[0];
     const fractions = (await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [agreement.id_convenio])).rows;
     if (!fractions.every((fraction) => fraction.aprobado)) return;
     const applicationState = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [agreement.id_solicitud, applicationStateEvents.APROBARCAJERO])).rows[0].state;
-    await client.query('UPDATE impuesto.solicitud SET aprobado = true, fecha_aprobado = now() WHERE id_solicitud = $1', [agreement.id_solicitud]);
     const applicationInstance = await getAgreementFractionById({ id: body.idTramite });
     applicationInstance.aprobado = true;
     // await sendNotification(
@@ -2938,7 +2939,7 @@ export const getSettlementsReport = async (user, payload: { from: Date; to: Date
         try {
           const bucketParams = {
             Bucket: 'sut-maracaibo',
-            Key: '/sedemat/reportes/liquidaciones.pdf',
+            Key: '/sedemat/reportes/liquidaciones.xlsx',
           };
           await S3Client.putObject({
             ...bucketParams,
