@@ -1566,13 +1566,10 @@ export const insertSettlements = async ({ process, user }) => {
         .filter((el) => el.ramo === 'AE')
         .sort((a, b) => (pivot.month(a.fechaCancelada.month).toDate() === pivot.month(b.fechaCancelada.month).toDate() ? 0 : pivot.month(a.fechaCancelada.month).toDate() > pivot.month(b.fechaCancelada.month).toDate() ? 1 : -1));
       const lastSavedFine = (await client.query(queries.GET_LAST_FINE_FOR_LATE_APPLICATION, [contributorReference.id_registro_municipal])).rows[0];
-      console.log('pruebas isisisi');
       if (lastSavedFine && moment(lastSavedFine.fecha_liquidacion).year() === now.year() && moment(lastSavedFine.fecha_liquidacion).month() < now.month()) {
-        console.log('cayendo en 1');
         finingAmount = lastSavedFine.datos.monto;
         const proposedFiningDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month();
         const finingDate = moment(lastSavedFine.fecha_liquidacion).month() < proposedFiningDate ? moment(lastSavedFine.fecha_liquidacion).month() : proposedFiningDate;
-        console.log(finingDate);
         finingMonths = new Array(now.month() - 1 - finingDate).fill({});
         if (finingMonths.length > 0) {
           let counter = finingDate;
@@ -1605,14 +1602,14 @@ export const insertSettlements = async ({ process, user }) => {
           );
         }
         if (now.date() > 10) {
-          console.log('perhaps?');
+          const rightfulMonth = now.month() - 1;
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
               application.id_solicitud,
               fixatedAmount(finingAmount * UTMM),
               {
                 fecha: {
-                  month: moment().toDate().toLocaleDateString('ES', { month: 'long' }),
+                  month: moment().month(rightfulMonth).toDate().toLocaleDateString('ES', { month: 'long' }),
                   year: now.year(),
                 },
                 descripcion: 'Multa por Declaracion Fuera de Plazo',
@@ -1627,11 +1624,9 @@ export const insertSettlements = async ({ process, user }) => {
           finingMonths.push(fine);
         }
       } else {
-        console.log('cayendo en 2');
         finingAmount = 10;
         const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month() + 1;
         finingMonths = new Array(now.month() - finingDate).fill({});
-        console.log('finingMonths', finingMonths);
         if (finingMonths.length > 0) {
           let counter = finingDate;
           finingMonths = await Promise.all(
@@ -1663,14 +1658,14 @@ export const insertSettlements = async ({ process, user }) => {
           );
         }
         if (now.date() > 10) {
-          console.log('quees');
+          const rightfulMonth = moment().month(now.month()).month() - 1;
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
               application.id_solicitud,
               fixatedAmount(finingAmount * UTMM),
               {
                 fecha: {
-                  month: moment().toDate().toLocaleDateString('ES', { month: 'long' }),
+                  month: moment().month(rightfulMonth).toDate().toLocaleDateString('ES', { month: 'long' }),
                   year: now.year(),
                 },
                 descripcion: 'Multa por Declaracion Fuera de Plazo',
@@ -1897,11 +1892,10 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
   try {
     //este metodo es para validar los convenios y llevarlos al estado de finalizado
     const state = (await client.query(queries.COMPLETE_FRACTION_STATE, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
-    const agreement = (await client.query(queries.GET_AGREEMENT_FRACTION_BY_ID, [body.idTramite])).rows[0];
+    const agreement = (await client.query('SELECT c.* FROM impuesto.convenio c INNER JOIN impuesto.fraccion f ON c.id_convenio = f.id_convenio WHERE f.id_fraccion = $1', [body.idTramite])).rows[0];
     const fractions = (await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [agreement.id_convenio])).rows;
     if (!fractions.every((fraction) => fraction.aprobado)) return;
     const applicationState = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [agreement.id_solicitud, applicationStateEvents.APROBARCAJERO])).rows[0].state;
-    await client.query('UPDATE impuesto.solicitud SET aprobado = true, fecha_aprobado = now() WHERE id_solicitud = $1', [agreement.id_solicitud]);
     const applicationInstance = await getAgreementFractionById({ id: body.idTramite });
     applicationInstance.aprobado = true;
     // await sendNotification(
