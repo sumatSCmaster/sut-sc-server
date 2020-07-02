@@ -1566,10 +1566,13 @@ export const insertSettlements = async ({ process, user }) => {
         .filter((el) => el.ramo === 'AE')
         .sort((a, b) => (pivot.month(a.fechaCancelada.month).toDate() === pivot.month(b.fechaCancelada.month).toDate() ? 0 : pivot.month(a.fechaCancelada.month).toDate() > pivot.month(b.fechaCancelada.month).toDate() ? 1 : -1));
       const lastSavedFine = (await client.query(queries.GET_LAST_FINE_FOR_LATE_APPLICATION, [contributorReference.id_registro_municipal])).rows[0];
+      console.log('pruebas isisisi');
       if (lastSavedFine && moment(lastSavedFine.fecha_liquidacion).year() === now.year() && moment(lastSavedFine.fecha_liquidacion).month() < now.month()) {
+        console.log('cayendo en 1');
         finingAmount = lastSavedFine.datos.monto;
         const proposedFiningDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month);
         const finingDate = Math.floor(proposedFiningDate.diff(moment(lastSavedFine.fecha_liquidacion), 'M'));
+        console.log(finingDate);
         finingMonths = new Array(now.month() - finingDate).fill({});
         if (finingMonths.length > 0) {
           let counter = finingDate;
@@ -1602,6 +1605,7 @@ export const insertSettlements = async ({ process, user }) => {
           );
         }
         if (now.date() > 10) {
+          console.log('perhaps?');
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
               application.id_solicitud,
@@ -1623,9 +1627,11 @@ export const insertSettlements = async ({ process, user }) => {
           finingMonths.push(fine);
         }
       } else {
+        console.log('cayendo en 2');
         finingAmount = 10;
         const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month();
         finingMonths = new Array(now.month() - finingDate).fill({});
+        console.log('finingMonths', finingMonths);
         if (finingMonths.length > 0) {
           let counter = finingDate;
           finingMonths = await Promise.all(
@@ -1657,6 +1663,7 @@ export const insertSettlements = async ({ process, user }) => {
           );
         }
         if (now.date() > 10) {
+          console.log('quees');
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
               application.id_solicitud,
@@ -1762,7 +1769,7 @@ export const insertSettlements = async ({ process, user }) => {
 export const addTaxApplicationPayment = async ({ payment, application, user }) => {
   const client = await pool.connect();
   try {
-    client.query('BEGIN');
+    await client.query('BEGIN');
     const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0];
     const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
     if (pagoSum < solicitud.monto_total) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
@@ -1783,7 +1790,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
       user.tipoUsuario === 4
         ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0]
         : (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.APROBARCAJERO])).rows[0];
-    client.query('COMMIT');
+    await client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
     console.log(applicationInstance);
     await sendNotification(
