@@ -85,7 +85,9 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [type, document])).rows[0];
     if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
-    if (branch && !branch.actualizado) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEMAT' };
+    console.log('branch', branch);
+    console.log('contributor', contributor);
+    if ((!branch && reference) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEMAT' };
     const lastSettlementQuery = contributor.tipo_contribuyente === 'JURIDICO' ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
     const lastSettlementPayload = contributor.tipo_contribuyente === 'JURIDICO' ? branch.referencia_municipal : contributor.id_contribuyente;
     const AEApplicationExists = contributor.tipo_contribuyente === 'JURIDICO' || reference ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.AE, reference])).rows[0] : false;
@@ -1181,7 +1183,7 @@ const formatContributor = async (contributor, client: PoolClient) => {
       razonSocial: contributor.razon_social,
       denomComercial: contributor.denominacion_comercial || undefined,
       siglas: contributor.siglas || undefined,
-      parroquia: contributor.parroquia,
+      parroquia: contributor.id_parroquia,
       sector: contributor.sector,
       direccion: contributor.direccion,
       puntoReferencia: contributor.punto_referencia,
