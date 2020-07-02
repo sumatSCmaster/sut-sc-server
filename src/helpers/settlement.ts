@@ -2069,7 +2069,11 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
     const payloadContribuyente = isJuridical ? [application.documento, referencia?.referencia_municipal, application.tipoDocumento] : [application.tipoDocumento, application.nacionalidad];
     const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
-    const inmueblesContribuyente = (await gticPool.query(queries.gtic.GET_ESTATES_BY_CONTRIBUTOR, [datosContribuyente.co_contribuyente])).rows;
+    const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
+    let inmueblesContribuyente: any[] = (await Promise.all(breakdownData[0].datos.desglose.map((row) => {
+      return pool.query(queries.GET_SUT_ESTATE_BY_ID, [row.inmueble]);
+    })));
+    inmueblesContribuyente = inmueblesContribuyente.map(result => result.rows[0]);
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     let certInfo;
     let motivo;
@@ -2079,10 +2083,20 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     if (application.descripcionCortaRamo === 'SM') {
       motivo = application.descripcionSubramo;
       ramo = application.descripcionRamo;
-      const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
-      const totalIva = +breakdownData.map((row) => (row.datos.desglose.montoGas ? +row.datos.desglose.montoAseo + +row.datos.desglose.montoGas : +row.datos.desglose.montoAseo)).reduce((prev, next) => prev + next, 0) * 0.16;
-      const totalMonto = +breakdownData.map((row) => (row.datos.desglose.montoGas ? +row.datos.desglose.montoAseo + +row.datos.desglose.montoGas : +row.datos.desglose.montoAseo)).reduce((prev, next) => prev + next, 0);
+      
+      console.log('breakdownData', breakdownData)
+      console.log('datos sample',breakdownData[0].datos)
+      const totalIva = +breakdownData.map((row) => {
+        return row.datos.desglose.reduce((prev, next) => {
+          return prev + (next.montoGas ? next.montoAseo + +next.montoGas : +next.montoAseo)
+        }, 0)
+      }).reduce((prev, next) => prev + next, 0) * 0.16;
 
+      const totalMonto = +breakdownData.map((row) => {
+        return row.datos.desglose.reduce((prev, next) => {
+          return prev + (next.montoGas ? next.montoAseo + +next.montoGas : +next.montoAseo)
+        }, 0)
+      }).reduce((prev, next) => prev + next, 0);
       for (const el of inmueblesContribuyente) {
         console.log('AAAAAAAAAAAAAAAAAAA');
         certInfo = {
@@ -2094,30 +2108,30 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             nroSolicitud: application.id,
             nroPlanilla: 10010111,
             motivo: motivo,
-            nroFactura: `${application.anio}-${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
+            nroFactura: `${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
             tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
-            cuentaOContrato: el.cuenta_contrato,
-            tipoInmueble: el.tx_tp_inmueble,
+            tipoInmueble: el.tipo_inmueble,
             fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
             fechaLiq: moment(application.fechaCreacion).format('DD/MM/YYYY'),
             fechaVenc: moment(application.fechaCreacion).endOf('month').format('DD/MM/YYYY'),
             propietario: {
-              rif: `${application.nacionalidad}-${application.documento}`,
+              rif: `${application.tipoDocumento}-${application.documento}`,
               denomComercial: application.denominacionComercial,
               direccion: application.direccion,
               razonSocial: application.razonSocial,
             },
             items: breakdownData
               .map((row) => {
+                console.log(el, row)
                 return {
-                  desglose: row.datos.desglose.find((desglose) => desglose.inmueble === +el.co_inmueble),
+                  desglose: row.datos.desglose.find((desglose) => desglose.inmueble === +el.id_inmueble),
                   fecha: row.datos.fecha,
                 };
               })
               .map((row) => {
                 return {
-                  direccion: el.direccion_inmueble,
-                  periodos: `${row.fecha.mes} ${row.fecha.anio}`.toUpperCase(),
+                  direccion: el.direccion,
+                  periodos: `${row.fecha.month} ${row.fecha.year}`.toUpperCase(),
                   impuesto: row.desglose.montoGas ? formatCurrency(+row.desglose.montoGas + +row.desglose.montoAseo) : formatCurrency(row.desglose.montoAseo),
                 };
               }),
@@ -2128,7 +2142,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               +breakdownData
                 .map((row) => {
                   return {
-                    desglose: row.datos.desglose.find((desglose) => desglose.inmueble === +el.co_inmueble),
+                    desglose: row.datos.desglose.find((desglose) => desglose.inmueble === +el.id_inmueble),
                     fecha: row.datos.fecha,
                   };
                 })
@@ -2163,7 +2177,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             nroSolicitud: application.id,
             nroPlanilla: 10010111,
             motivo: motivo,
-            nroFactura: `${application.anio}-${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
+            nroFactura: `${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
             tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
             cuentaOContrato: el.cuenta_contrato,
             tipoInmueble: el.tx_tp_inmueble,
@@ -2816,6 +2830,7 @@ const certificateCreationHandler = async (process, media, payload: CertificatePa
     if (result) return await result(payload);
     throw new Error('No se encontró el tipo de certificado seleccionado');
   } catch (e) {
+    console.log(e)
     throw errorMessageExtractor(e);
   }
 };
