@@ -2944,7 +2944,7 @@ export const getSettlementsReport = async (user, payload: { from: Date; to: Date
         try {
           const bucketParams = {
             Bucket: 'sut-maracaibo',
-            Key: '/sedemat/reportes/liquidaciones.pdf',
+            Key: '/sedemat/reportes/liquidaciones.xlsx',
           };
           await S3Client.putObject({
             ...bucketParams,
