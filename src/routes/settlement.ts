@@ -19,6 +19,7 @@ import {
   addTaxApplicationPaymentAgreement,
   getSettlementsReport,
   getAgreements,
+  contributorSearch,
 } from '@helpers/settlement';
 import { Usuario } from '@root/interfaces/sigt';
 
@@ -58,6 +59,13 @@ router.get('/instances', authenticate('jwt'), async (req: any, res) => {
   if (data) res.status(data.status).json(data);
 });
 
+router.get('/search/taxPayer', authenticate('jwt'), async (req: any, res) => {
+  const { doc, pref, name } = req.query;
+  const [err, data] = await fulfill(contributorSearch({ document: doc || null, docType: pref, name: name || null }));
+  if (err) res.status(err.status).json(err);
+  if (data) res.status(data.status).json(data);
+});
+
 router.get('/agreements', authenticate('jwt'), async (req: any, res) => {
   const [err, data] = await fulfill(getAgreements({ user: req.user }));
   if (err) res.status(err.status).json(err);
@@ -82,8 +90,8 @@ router.get('/debts/:tipoContribuyente', authenticate('jwt'), async (req, res) =>
 });
 
 router.post('/report', authenticate('jwt'), async (req, res) => {
-  const { from, to } = req.body;
-  const [error, data] = await fulfill(getSettlementsReport(req.user, { from, to }));
+  const { from, to, ramo } = req.body;
+  const [error, data] = await fulfill(getSettlementsReport(req.user, { from, to, ramo }));
   console.log(error, data);
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });

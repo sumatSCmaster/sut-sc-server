@@ -5,6 +5,8 @@
 -- Dumped from database version 12.3 (Ubuntu 12.3-1.pgdg18.04+1)
 -- Dumped by pg_dump version 12.3 (Ubuntu 12.3-1.pgdg18.04+1)
 
+-- Started on 2020-07-01 16:23:12 -04
+
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
@@ -17,6 +19,7 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- TOC entry 7 (class 2615 OID 53255)
 -- Name: impuesto; Type: SCHEMA; Schema: -; Owner: postgres
 --
 
@@ -26,6 +29,7 @@ CREATE SCHEMA impuesto;
 ALTER SCHEMA impuesto OWNER TO postgres;
 
 --
+-- TOC entry 5 (class 2615 OID 53256)
 -- Name: timetable; Type: SCHEMA; Schema: -; Owner: postgres
 --
 
@@ -35,6 +39,7 @@ CREATE SCHEMA timetable;
 ALTER SCHEMA timetable OWNER TO postgres;
 
 --
+-- TOC entry 10 (class 2615 OID 53257)
 -- Name: valores_fiscales; Type: SCHEMA; Schema: -; Owner: postgres
 --
 
@@ -44,6 +49,7 @@ CREATE SCHEMA valores_fiscales;
 ALTER SCHEMA valores_fiscales OWNER TO postgres;
 
 --
+-- TOC entry 773 (class 1247 OID 53259)
 -- Name: cron; Type: DOMAIN; Schema: timetable; Owner: postgres
 --
 
@@ -54,6 +60,7 @@ CREATE DOMAIN timetable.cron AS text
 ALTER DOMAIN timetable.cron OWNER TO postgres;
 
 --
+-- TOC entry 777 (class 1247 OID 53262)
 -- Name: execution_status; Type: TYPE; Schema: timetable; Owner: postgres
 --
 
@@ -68,6 +75,7 @@ CREATE TYPE timetable.execution_status AS ENUM (
 ALTER TYPE timetable.execution_status OWNER TO postgres;
 
 --
+-- TOC entry 865 (class 1247 OID 53272)
 -- Name: log_type; Type: TYPE; Schema: timetable; Owner: postgres
 --
 
@@ -84,6 +92,7 @@ CREATE TYPE timetable.log_type AS ENUM (
 ALTER TYPE timetable.log_type OWNER TO postgres;
 
 --
+-- TOC entry 868 (class 1247 OID 53286)
 -- Name: task_kind; Type: TYPE; Schema: timetable; Owner: postgres
 --
 
@@ -97,6 +106,7 @@ CREATE TYPE timetable.task_kind AS ENUM (
 ALTER TYPE timetable.task_kind OWNER TO postgres;
 
 --
+-- TOC entry 448 (class 1255 OID 53293)
 -- Name: complete_fraccion_state(integer, text); Type: FUNCTION; Schema: impuesto; Owner: postgres
 --
 
@@ -119,6 +129,7 @@ $$;
 ALTER FUNCTION impuesto.complete_fraccion_state(_id_fraccion integer, event text) OWNER TO postgres;
 
 --
+-- TOC entry 450 (class 1255 OID 53294)
 -- Name: complete_fraccion_state(integer, text, boolean); Type: FUNCTION; Schema: impuesto; Owner: postgres
 --
 
@@ -141,6 +152,7 @@ $$;
 ALTER FUNCTION impuesto.complete_fraccion_state(_id_fraccion integer, event text, _aprobado boolean) OWNER TO postgres;
 
 --
+-- TOC entry 396 (class 1255 OID 53295)
 -- Name: complete_solicitud_state(integer, text, json, boolean); Type: FUNCTION; Schema: impuesto; Owner: postgres
 --
 
@@ -163,6 +175,7 @@ $$;
 ALTER FUNCTION impuesto.complete_solicitud_state(_id_solicitud integer, event text, _datos json, _aprobado boolean) OWNER TO postgres;
 
 --
+-- TOC entry 451 (class 1255 OID 53296)
 -- Name: eventos_fraccion_trigger_func(); Type: FUNCTION; Schema: impuesto; Owner: postgres
 --
 
@@ -172,9 +185,9 @@ CREATE FUNCTION impuesto.eventos_fraccion_trigger_func() RETURNS trigger
 DECLARE
   new_state text;
 BEGIN
-  SELECT public.fraccion_fsm(event ORDER BY id_evento_fraccion)
+  SELECT impuesto.fraccion_fsm(event ORDER BY id_evento_fraccion)
   FROM (
-    SELECT id_evento_fraccion, event FROM evento_fraccion WHERE id_fraccion = new.id_fraccion
+    SELECT id_evento_fraccion, event FROM impuesto.evento_fraccion WHERE id_fraccion = new.id_fraccion
     UNION
     SELECT new.id_evento_fraccion, new.event
   ) s
@@ -192,6 +205,7 @@ $$;
 ALTER FUNCTION impuesto.eventos_fraccion_trigger_func() OWNER TO postgres;
 
 --
+-- TOC entry 397 (class 1255 OID 53297)
 -- Name: eventos_solicitud_trigger_func(); Type: FUNCTION; Schema: impuesto; Owner: postgres
 --
 
@@ -221,6 +235,7 @@ $$;
 ALTER FUNCTION impuesto.eventos_solicitud_trigger_func() OWNER TO postgres;
 
 --
+-- TOC entry 447 (class 1255 OID 53298)
 -- Name: fraccion_transicion(text, text); Type: FUNCTION; Schema: impuesto; Owner: postgres
 --
 
@@ -262,6 +277,7 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- TOC entry 205 (class 1259 OID 53299)
 -- Name: fraccion; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -279,6 +295,7 @@ CREATE TABLE impuesto.fraccion (
 ALTER TABLE impuesto.fraccion OWNER TO postgres;
 
 --
+-- TOC entry 415 (class 1255 OID 53306)
 -- Name: insert_fraccion(integer, numeric, integer, date); Type: FUNCTION; Schema: impuesto; Owner: postgres
 --
 
@@ -286,13 +303,13 @@ CREATE FUNCTION impuesto.insert_fraccion(_id_convenio integer, _monto numeric, _
     LANGUAGE plpgsql
     AS $$
 DECLARE
-    fraccion impuesto.fraccion%ROWTYPE;
+    fraccionRow impuesto.fraccion%ROWTYPE;
     BEGIN
-        INSERT INTO impuesto.fraccion (id_convenio, monto, porcion, fecha) VALUES (_id_convenio,  _monto, _porcion, _fecha) RETURNING * into fraccion;
+        INSERT INTO impuesto.fraccion (id_convenio, monto, porcion, fecha) VALUES (_id_convenio,  _monto, _porcion, _fecha) RETURNING * into fraccionRow;
         
-        INSERT INTO impuesto.evento_tramite values (default, fraccion.id_fraccion, 'iniciar', now());
+        INSERT INTO impuesto.evento_fraccion values (default, fraccionRow.id_fraccion, 'iniciar', now());
             
-        RETURN QUERY SELECT * FROM impuesto.fraccion WHERE id_fraccion=fraccion.id_fraccion;
+        RETURN QUERY SELECT * FROM impuesto.fraccion WHERE id_fraccion=fraccionRow.id_fraccion;
                 
         RETURN;
     END;
@@ -302,6 +319,7 @@ $$;
 ALTER FUNCTION impuesto.insert_fraccion(_id_convenio integer, _monto numeric, _porcion integer, _fecha date) OWNER TO postgres;
 
 --
+-- TOC entry 206 (class 1259 OID 53307)
 -- Name: solicitud; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -320,6 +338,7 @@ CREATE TABLE impuesto.solicitud (
 ALTER TABLE impuesto.solicitud OWNER TO postgres;
 
 --
+-- TOC entry 410 (class 1255 OID 53314)
 -- Name: insert_solicitud(integer, integer, integer); Type: FUNCTION; Schema: impuesto; Owner: postgres
 --
 
@@ -343,6 +362,7 @@ $$;
 ALTER FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer, _id_contribuyente integer) OWNER TO postgres;
 
 --
+-- TOC entry 411 (class 1255 OID 53315)
 -- Name: solicitud_transicion(text, text); Type: FUNCTION; Schema: impuesto; Owner: postgres
 --
 
@@ -380,6 +400,7 @@ $$;
 ALTER FUNCTION impuesto.solicitud_transicion(state text, event text) OWNER TO postgres;
 
 --
+-- TOC entry 449 (class 1255 OID 53316)
 -- Name: update_fraccion_state(integer, text); Type: FUNCTION; Schema: impuesto; Owner: postgres
 --
 
@@ -399,6 +420,7 @@ $$;
 ALTER FUNCTION impuesto.update_fraccion_state(_id_fraccion integer, event text) OWNER TO postgres;
 
 --
+-- TOC entry 412 (class 1255 OID 53317)
 -- Name: update_solicitud_state(integer, text); Type: FUNCTION; Schema: impuesto; Owner: postgres
 --
 
@@ -418,6 +440,7 @@ $$;
 ALTER FUNCTION impuesto.update_solicitud_state(_id_solicitud integer, event text) OWNER TO postgres;
 
 --
+-- TOC entry 413 (class 1255 OID 53318)
 -- Name: casos_sociales_transicion(text, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -464,6 +487,7 @@ $$;
 ALTER FUNCTION public.casos_sociales_transicion(state text, event text) OWNER TO postgres;
 
 --
+-- TOC entry 414 (class 1255 OID 53319)
 -- Name: codigo_caso(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -500,6 +524,7 @@ BEGIN
 ALTER FUNCTION public.codigo_caso() OWNER TO postgres;
 
 --
+-- TOC entry 416 (class 1255 OID 53320)
 -- Name: codigo_multa(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -536,6 +561,7 @@ $$;
 ALTER FUNCTION public.codigo_multa() OWNER TO postgres;
 
 --
+-- TOC entry 417 (class 1255 OID 53321)
 -- Name: codigo_tramite(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -573,6 +599,7 @@ $$;
 ALTER FUNCTION public.codigo_tramite() OWNER TO postgres;
 
 --
+-- TOC entry 418 (class 1255 OID 53322)
 -- Name: complete_multa_state(integer, text, json, character varying, boolean); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -598,6 +625,7 @@ $$;
 ALTER FUNCTION public.complete_multa_state(_id_multa integer, event text, _datos json, _url_certificado character varying, _aprobado boolean) OWNER TO postgres;
 
 --
+-- TOC entry 419 (class 1255 OID 53323)
 -- Name: complete_tramite_state(integer, text, json, character varying, boolean); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -624,6 +652,7 @@ CREATE FUNCTION public.complete_tramite_state(_id_tramite integer, event text, _
 ALTER FUNCTION public.complete_tramite_state(_id_tramite integer, event text, _datos json, _url_certificado character varying, _aprobado boolean) OWNER TO postgres;
 
 --
+-- TOC entry 420 (class 1255 OID 53324)
 -- Name: evento_tramite_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -653,6 +682,7 @@ DECLARE
 ALTER FUNCTION public.evento_tramite_trigger_func() OWNER TO postgres;
 
 --
+-- TOC entry 421 (class 1255 OID 53325)
 -- Name: eventos_casos_sociales_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -682,6 +712,7 @@ $$;
 ALTER FUNCTION public.eventos_casos_sociales_trigger_func() OWNER TO postgres;
 
 --
+-- TOC entry 422 (class 1255 OID 53326)
 -- Name: eventos_multa_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -711,6 +742,7 @@ $$;
 ALTER FUNCTION public.eventos_multa_trigger_func() OWNER TO postgres;
 
 --
+-- TOC entry 394 (class 1255 OID 53327)
 -- Name: eventos_tramite_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -740,6 +772,7 @@ DECLARE
 ALTER FUNCTION public.eventos_tramite_trigger_func() OWNER TO postgres;
 
 --
+-- TOC entry 1352 (class 1255 OID 53328)
 -- Name: caso_social_fsm(text); Type: AGGREGATE; Schema: public; Owner: postgres
 --
 
@@ -753,6 +786,7 @@ CREATE AGGREGATE public.caso_social_fsm(text) (
 ALTER AGGREGATE public.caso_social_fsm(text) OWNER TO postgres;
 
 --
+-- TOC entry 207 (class 1259 OID 53329)
 -- Name: caso_social; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -772,6 +806,7 @@ CREATE TABLE public.caso_social (
 ALTER TABLE public.caso_social OWNER TO postgres;
 
 --
+-- TOC entry 208 (class 1259 OID 53336)
 -- Name: evento_caso_social; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -786,6 +821,7 @@ CREATE TABLE public.evento_caso_social (
 ALTER TABLE public.evento_caso_social OWNER TO postgres;
 
 --
+-- TOC entry 209 (class 1259 OID 53343)
 -- Name: institucion; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -799,6 +835,7 @@ CREATE TABLE public.institucion (
 ALTER TABLE public.institucion OWNER TO postgres;
 
 --
+-- TOC entry 210 (class 1259 OID 53349)
 -- Name: tipo_tramite; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -822,6 +859,7 @@ CREATE TABLE public.tipo_tramite (
 ALTER TABLE public.tipo_tramite OWNER TO postgres;
 
 --
+-- TOC entry 211 (class 1259 OID 53355)
 -- Name: casos_sociales_state; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -851,6 +889,7 @@ CREATE VIEW public.casos_sociales_state AS
 ALTER TABLE public.casos_sociales_state OWNER TO postgres;
 
 --
+-- TOC entry 395 (class 1255 OID 53360)
 -- Name: insert_caso(integer, json, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -875,6 +914,7 @@ DECLARE
 ALTER FUNCTION public.insert_caso(_id_tipo_tramite integer, datos json, _id_usuario integer) OWNER TO postgres;
 
 --
+-- TOC entry 212 (class 1259 OID 53361)
 -- Name: liquidacion; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -896,6 +936,7 @@ CREATE TABLE impuesto.liquidacion (
 ALTER TABLE impuesto.liquidacion OWNER TO postgres;
 
 --
+-- TOC entry 423 (class 1255 OID 53369)
 -- Name: insert_liquidacion(integer, numeric, character varying, json, date, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -922,6 +963,7 @@ $$;
 ALTER FUNCTION public.insert_liquidacion(_id_solicitud integer, _monto numeric, _ramo character varying, _datos json, _fecha date, _id_registro_municipal integer) OWNER TO postgres;
 
 --
+-- TOC entry 424 (class 1255 OID 53370)
 -- Name: multa_transicion(text, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -957,6 +999,7 @@ $$;
 ALTER FUNCTION public.multa_transicion(state text, event text) OWNER TO postgres;
 
 --
+-- TOC entry 1353 (class 1255 OID 53371)
 -- Name: multa_fsm(text); Type: AGGREGATE; Schema: public; Owner: postgres
 --
 
@@ -970,6 +1013,7 @@ CREATE AGGREGATE public.multa_fsm(text) (
 ALTER AGGREGATE public.multa_fsm(text) OWNER TO postgres;
 
 --
+-- TOC entry 213 (class 1259 OID 53372)
 -- Name: evento_multa; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -984,6 +1028,7 @@ CREATE TABLE public.evento_multa (
 ALTER TABLE public.evento_multa OWNER TO postgres;
 
 --
+-- TOC entry 214 (class 1259 OID 53379)
 -- Name: multa; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -1008,6 +1053,7 @@ CREATE TABLE public.multa (
 ALTER TABLE public.multa OWNER TO postgres;
 
 --
+-- TOC entry 215 (class 1259 OID 53388)
 -- Name: multa_state; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -1041,6 +1087,7 @@ CREATE VIEW public.multa_state AS
 ALTER TABLE public.multa_state OWNER TO postgres;
 
 --
+-- TOC entry 425 (class 1255 OID 53393)
 -- Name: insert_multa(integer, json, character varying, bigint, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1065,6 +1112,7 @@ $$;
 ALTER FUNCTION public.insert_multa(_id_tipo_tramite integer, datos json, _nacionalidad character varying, _cedula bigint, _id_usuario integer) OWNER TO postgres;
 
 --
+-- TOC entry 426 (class 1255 OID 53394)
 -- Name: insert_notificacion_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1085,6 +1133,7 @@ $$;
 ALTER FUNCTION public.insert_notificacion_trigger_func() OWNER TO postgres;
 
 --
+-- TOC entry 427 (class 1255 OID 53395)
 -- Name: tramites_eventos_transicion(text, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1157,6 +1206,7 @@ $$;
 ALTER FUNCTION public.tramites_eventos_transicion(state text, event text) OWNER TO postgres;
 
 --
+-- TOC entry 1354 (class 1255 OID 53396)
 -- Name: tramite_evento_fsm(text); Type: AGGREGATE; Schema: public; Owner: postgres
 --
 
@@ -1170,6 +1220,7 @@ CREATE AGGREGATE public.tramite_evento_fsm(text) (
 ALTER AGGREGATE public.tramite_evento_fsm(text) OWNER TO postgres;
 
 --
+-- TOC entry 216 (class 1259 OID 53397)
 -- Name: evento_tramite; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -1184,6 +1235,7 @@ CREATE TABLE public.evento_tramite (
 ALTER TABLE public.evento_tramite OWNER TO postgres;
 
 --
+-- TOC entry 217 (class 1259 OID 53404)
 -- Name: tramite; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -1206,6 +1258,7 @@ CREATE TABLE public.tramite (
 ALTER TABLE public.tramite OWNER TO postgres;
 
 --
+-- TOC entry 218 (class 1259 OID 53412)
 -- Name: tramites_state_with_resources; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -1239,6 +1292,7 @@ CREATE VIEW public.tramites_state_with_resources AS
 ALTER TABLE public.tramites_state_with_resources OWNER TO postgres;
 
 --
+-- TOC entry 428 (class 1255 OID 53417)
 -- Name: insert_tramite(integer, json, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1263,6 +1317,7 @@ DECLARE
 ALTER FUNCTION public.insert_tramite(_id_tipo_tramite integer, datos json, _id_usuario integer) OWNER TO postgres;
 
 --
+-- TOC entry 429 (class 1255 OID 53418)
 -- Name: revisar_pagos_fin_de_dia(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1292,6 +1347,7 @@ $$;
 ALTER FUNCTION public.revisar_pagos_fin_de_dia() OWNER TO postgres;
 
 --
+-- TOC entry 430 (class 1255 OID 53419)
 -- Name: tipos_tramites_costo_utmm_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1311,6 +1367,7 @@ $$;
 ALTER FUNCTION public.tipos_tramites_costo_utmm_trigger_func() OWNER TO postgres;
 
 --
+-- TOC entry 431 (class 1255 OID 53420)
 -- Name: tramite_eventos_trigger_func(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1340,6 +1397,7 @@ DECLARE
 ALTER FUNCTION public.tramite_eventos_trigger_func() OWNER TO postgres;
 
 --
+-- TOC entry 432 (class 1255 OID 53421)
 -- Name: update_caso_state(integer, text, json); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1361,6 +1419,7 @@ CREATE FUNCTION public.update_caso_state(_id_caso integer, event text, _datos js
 ALTER FUNCTION public.update_caso_state(_id_caso integer, event text, _datos json) OWNER TO postgres;
 
 --
+-- TOC entry 433 (class 1255 OID 53422)
 -- Name: update_multa_state(integer, text, json); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1382,6 +1441,7 @@ $$;
 ALTER FUNCTION public.update_multa_state(_id_multa integer, event text, _datos json) OWNER TO postgres;
 
 --
+-- TOC entry 434 (class 1255 OID 53423)
 -- Name: update_multa_state(integer, text, json, numeric, character varying); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1409,6 +1469,7 @@ $$;
 ALTER FUNCTION public.update_multa_state(_id_multa integer, event text, _datos json, _costo numeric, _url_boleta character varying) OWNER TO postgres;
 
 --
+-- TOC entry 435 (class 1255 OID 53424)
 -- Name: update_tramite_state(integer, text, json, numeric, character varying); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1436,6 +1497,7 @@ CREATE FUNCTION public.update_tramite_state(_id_tramite integer, event text, _da
 ALTER FUNCTION public.update_tramite_state(_id_tramite integer, event text, _datos json, _costo numeric, _url_planilla character varying) OWNER TO postgres;
 
 --
+-- TOC entry 436 (class 1255 OID 53425)
 -- Name: validate_payments(jsonb); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1525,6 +1587,7 @@ $$;
 ALTER FUNCTION public.validate_payments(inputcsvjson jsonb, OUT outputjson jsonb) OWNER TO postgres;
 
 --
+-- TOC entry 437 (class 1255 OID 53426)
 -- Name: _validate_json_schema_type(text, jsonb); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
@@ -1552,6 +1615,7 @@ $$;
 ALTER FUNCTION timetable._validate_json_schema_type(type text, data jsonb) OWNER TO postgres;
 
 --
+-- TOC entry 438 (class 1255 OID 53427)
 -- Name: cron_element_to_array(text, text); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
@@ -1664,6 +1728,7 @@ $_$;
 ALTER FUNCTION timetable.cron_element_to_array(element text, element_type text) OWNER TO postgres;
 
 --
+-- TOC entry 439 (class 1255 OID 53428)
 -- Name: get_running_jobs(bigint); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
@@ -1689,6 +1754,7 @@ $_$;
 ALTER FUNCTION timetable.get_running_jobs(bigint) OWNER TO postgres;
 
 --
+-- TOC entry 440 (class 1255 OID 53429)
 -- Name: get_task_id(text); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
@@ -1702,6 +1768,7 @@ $_$;
 ALTER FUNCTION timetable.get_task_id(task_name text) OWNER TO postgres;
 
 --
+-- TOC entry 441 (class 1255 OID 53430)
 -- Name: insert_base_task(text, bigint); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
@@ -1732,6 +1799,7 @@ $$;
 ALTER FUNCTION timetable.insert_base_task(task_name text, parent_task_id bigint) OWNER TO postgres;
 
 --
+-- TOC entry 442 (class 1255 OID 53431)
 -- Name: is_cron_in_time(timetable.cron, timestamp with time zone); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
@@ -1766,6 +1834,7 @@ $$;
 ALTER FUNCTION timetable.is_cron_in_time(run_at timetable.cron, ts timestamp with time zone) OWNER TO postgres;
 
 --
+-- TOC entry 443 (class 1255 OID 53432)
 -- Name: job_add(text, text, text, timetable.task_kind, timetable.cron, integer, boolean, boolean); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
@@ -1804,6 +1873,7 @@ $$;
 ALTER FUNCTION timetable.job_add(task_name text, task_function text, client_name text, task_type timetable.task_kind, run_at timetable.cron, max_instances integer, live boolean, self_destruct boolean) OWNER TO postgres;
 
 --
+-- TOC entry 444 (class 1255 OID 53433)
 -- Name: task_chain_delete(bigint, bigint); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
@@ -1878,6 +1948,7 @@ $$;
 ALTER FUNCTION timetable.task_chain_delete(config_ bigint, chain_id_ bigint) OWNER TO postgres;
 
 --
+-- TOC entry 445 (class 1255 OID 53434)
 -- Name: trig_chain_fixer(); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
@@ -1928,6 +1999,7 @@ $$;
 ALTER FUNCTION timetable.trig_chain_fixer() OWNER TO postgres;
 
 --
+-- TOC entry 446 (class 1255 OID 53435)
 -- Name: validate_json_schema(jsonb, jsonb, jsonb); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
@@ -2179,6 +2251,7 @@ $_$;
 ALTER FUNCTION timetable.validate_json_schema(schema jsonb, data jsonb, root_schema jsonb) OWNER TO postgres;
 
 --
+-- TOC entry 1355 (class 1255 OID 53437)
 -- Name: fraccion_fsm(text); Type: AGGREGATE; Schema: impuesto; Owner: postgres
 --
 
@@ -2192,6 +2265,7 @@ CREATE AGGREGATE impuesto.fraccion_fsm(text) (
 ALTER AGGREGATE impuesto.fraccion_fsm(text) OWNER TO postgres;
 
 --
+-- TOC entry 1356 (class 1255 OID 53438)
 -- Name: solicitud_fsm(text); Type: AGGREGATE; Schema: impuesto; Owner: postgres
 --
 
@@ -2205,6 +2279,7 @@ CREATE AGGREGATE impuesto.solicitud_fsm(text) (
 ALTER AGGREGATE impuesto.solicitud_fsm(text) OWNER TO postgres;
 
 --
+-- TOC entry 219 (class 1259 OID 53439)
 -- Name: actividad_economica; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2220,6 +2295,7 @@ CREATE TABLE impuesto.actividad_economica (
 ALTER TABLE impuesto.actividad_economica OWNER TO postgres;
 
 --
+-- TOC entry 220 (class 1259 OID 53445)
 -- Name: actividad_economica_contribuyente; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2233,6 +2309,7 @@ CREATE TABLE impuesto.actividad_economica_contribuyente (
 ALTER TABLE impuesto.actividad_economica_contribuyente OWNER TO postgres;
 
 --
+-- TOC entry 221 (class 1259 OID 53448)
 -- Name: actividad_economica_contribuy_id_actividad_economica_contri_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -2248,6 +2325,8 @@ CREATE SEQUENCE impuesto.actividad_economica_contribuy_id_actividad_economica_co
 ALTER TABLE impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq OWNER TO postgres;
 
 --
+-- TOC entry 4410 (class 0 OID 0)
+-- Dependencies: 221
 -- Name: actividad_economica_contribuy_id_actividad_economica_contri_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -2255,6 +2334,7 @@ ALTER SEQUENCE impuesto.actividad_economica_contribuy_id_actividad_economica_con
 
 
 --
+-- TOC entry 222 (class 1259 OID 53450)
 -- Name: actividad_economica_exoneracion; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2268,6 +2348,7 @@ CREATE TABLE impuesto.actividad_economica_exoneracion (
 ALTER TABLE impuesto.actividad_economica_exoneracion OWNER TO postgres;
 
 --
+-- TOC entry 223 (class 1259 OID 53453)
 -- Name: actividad_economica_exoneraci_id_actividad_economica_exoner_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -2283,6 +2364,8 @@ CREATE SEQUENCE impuesto.actividad_economica_exoneraci_id_actividad_economica_ex
 ALTER TABLE impuesto.actividad_economica_exoneraci_id_actividad_economica_exoner_seq OWNER TO postgres;
 
 --
+-- TOC entry 4411 (class 0 OID 0)
+-- Dependencies: 223
 -- Name: actividad_economica_exoneraci_id_actividad_economica_exoner_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -2290,6 +2373,7 @@ ALTER SEQUENCE impuesto.actividad_economica_exoneraci_id_actividad_economica_exo
 
 
 --
+-- TOC entry 224 (class 1259 OID 53455)
 -- Name: actividad_economica_id_actividad_economica_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -2305,6 +2389,8 @@ CREATE SEQUENCE impuesto.actividad_economica_id_actividad_economica_seq
 ALTER TABLE impuesto.actividad_economica_id_actividad_economica_seq OWNER TO postgres;
 
 --
+-- TOC entry 4412 (class 0 OID 0)
+-- Dependencies: 224
 -- Name: actividad_economica_id_actividad_economica_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -2312,6 +2398,7 @@ ALTER SEQUENCE impuesto.actividad_economica_id_actividad_economica_seq OWNED BY 
 
 
 --
+-- TOC entry 225 (class 1259 OID 53457)
 -- Name: avaluo_inmueble; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2326,6 +2413,7 @@ CREATE TABLE impuesto.avaluo_inmueble (
 ALTER TABLE impuesto.avaluo_inmueble OWNER TO postgres;
 
 --
+-- TOC entry 226 (class 1259 OID 53463)
 -- Name: avaluo_inmueble_id_avaluo_inmueble_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -2341,6 +2429,8 @@ CREATE SEQUENCE impuesto.avaluo_inmueble_id_avaluo_inmueble_seq
 ALTER TABLE impuesto.avaluo_inmueble_id_avaluo_inmueble_seq OWNER TO postgres;
 
 --
+-- TOC entry 4413 (class 0 OID 0)
+-- Dependencies: 226
 -- Name: avaluo_inmueble_id_avaluo_inmueble_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -2348,6 +2438,7 @@ ALTER SEQUENCE impuesto.avaluo_inmueble_id_avaluo_inmueble_seq OWNED BY impuesto
 
 
 --
+-- TOC entry 227 (class 1259 OID 53465)
 -- Name: categoria_propaganda; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2360,6 +2451,7 @@ CREATE TABLE impuesto.categoria_propaganda (
 ALTER TABLE impuesto.categoria_propaganda OWNER TO postgres;
 
 --
+-- TOC entry 228 (class 1259 OID 53471)
 -- Name: categoria_propaganda_id_categoria_propaganda_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -2375,6 +2467,8 @@ CREATE SEQUENCE impuesto.categoria_propaganda_id_categoria_propaganda_seq
 ALTER TABLE impuesto.categoria_propaganda_id_categoria_propaganda_seq OWNER TO postgres;
 
 --
+-- TOC entry 4414 (class 0 OID 0)
+-- Dependencies: 228
 -- Name: categoria_propaganda_id_categoria_propaganda_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -2382,6 +2476,7 @@ ALTER SEQUENCE impuesto.categoria_propaganda_id_categoria_propaganda_seq OWNED B
 
 
 --
+-- TOC entry 229 (class 1259 OID 53473)
 -- Name: contribuyente; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2404,6 +2499,7 @@ CREATE TABLE impuesto.contribuyente (
 ALTER TABLE impuesto.contribuyente OWNER TO postgres;
 
 --
+-- TOC entry 230 (class 1259 OID 53479)
 -- Name: contribuyente_exoneracion; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2418,6 +2514,7 @@ CREATE TABLE impuesto.contribuyente_exoneracion (
 ALTER TABLE impuesto.contribuyente_exoneracion OWNER TO postgres;
 
 --
+-- TOC entry 231 (class 1259 OID 53482)
 -- Name: contribuyente_exoneracion_id_contribuyente_exoneracion_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -2433,6 +2530,8 @@ CREATE SEQUENCE impuesto.contribuyente_exoneracion_id_contribuyente_exoneracion_
 ALTER TABLE impuesto.contribuyente_exoneracion_id_contribuyente_exoneracion_seq OWNER TO postgres;
 
 --
+-- TOC entry 4415 (class 0 OID 0)
+-- Dependencies: 231
 -- Name: contribuyente_exoneracion_id_contribuyente_exoneracion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -2440,6 +2539,7 @@ ALTER SEQUENCE impuesto.contribuyente_exoneracion_id_contribuyente_exoneracion_s
 
 
 --
+-- TOC entry 232 (class 1259 OID 53484)
 -- Name: contribuyente_id_contribuyente_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -2455,6 +2555,8 @@ CREATE SEQUENCE impuesto.contribuyente_id_contribuyente_seq
 ALTER TABLE impuesto.contribuyente_id_contribuyente_seq OWNER TO postgres;
 
 --
+-- TOC entry 4416 (class 0 OID 0)
+-- Dependencies: 232
 -- Name: contribuyente_id_contribuyente_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -2462,6 +2564,7 @@ ALTER SEQUENCE impuesto.contribuyente_id_contribuyente_seq OWNED BY impuesto.con
 
 
 --
+-- TOC entry 233 (class 1259 OID 53486)
 -- Name: convenio; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2475,6 +2578,7 @@ CREATE TABLE impuesto.convenio (
 ALTER TABLE impuesto.convenio OWNER TO postgres;
 
 --
+-- TOC entry 234 (class 1259 OID 53489)
 -- Name: convenio_id_convenio_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -2490,6 +2594,8 @@ CREATE SEQUENCE impuesto.convenio_id_convenio_seq
 ALTER TABLE impuesto.convenio_id_convenio_seq OWNER TO postgres;
 
 --
+-- TOC entry 4417 (class 0 OID 0)
+-- Dependencies: 234
 -- Name: convenio_id_convenio_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -2497,6 +2603,7 @@ ALTER SEQUENCE impuesto.convenio_id_convenio_seq OWNED BY impuesto.convenio.id_c
 
 
 --
+-- TOC entry 235 (class 1259 OID 53491)
 -- Name: credito_fiscal; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2511,6 +2618,7 @@ CREATE TABLE impuesto.credito_fiscal (
 ALTER TABLE impuesto.credito_fiscal OWNER TO postgres;
 
 --
+-- TOC entry 236 (class 1259 OID 53497)
 -- Name: credito_fiscal_id_credito_fiscal_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -2526,6 +2634,8 @@ CREATE SEQUENCE impuesto.credito_fiscal_id_credito_fiscal_seq
 ALTER TABLE impuesto.credito_fiscal_id_credito_fiscal_seq OWNER TO postgres;
 
 --
+-- TOC entry 4418 (class 0 OID 0)
+-- Dependencies: 236
 -- Name: credito_fiscal_id_credito_fiscal_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -2533,6 +2643,7 @@ ALTER SEQUENCE impuesto.credito_fiscal_id_credito_fiscal_seq OWNED BY impuesto.c
 
 
 --
+-- TOC entry 237 (class 1259 OID 53499)
 -- Name: dias_feriados; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2546,6 +2657,7 @@ CREATE TABLE impuesto.dias_feriados (
 ALTER TABLE impuesto.dias_feriados OWNER TO postgres;
 
 --
+-- TOC entry 238 (class 1259 OID 53505)
 -- Name: dias_feriados_id_dia_feriado_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -2561,6 +2673,8 @@ CREATE SEQUENCE impuesto.dias_feriados_id_dia_feriado_seq
 ALTER TABLE impuesto.dias_feriados_id_dia_feriado_seq OWNER TO postgres;
 
 --
+-- TOC entry 4419 (class 0 OID 0)
+-- Dependencies: 238
 -- Name: dias_feriados_id_dia_feriado_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -2568,6 +2682,7 @@ ALTER SEQUENCE impuesto.dias_feriados_id_dia_feriado_seq OWNED BY impuesto.dias_
 
 
 --
+-- TOC entry 239 (class 1259 OID 53507)
 -- Name: evento_fraccion; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2582,6 +2697,7 @@ CREATE TABLE impuesto.evento_fraccion (
 ALTER TABLE impuesto.evento_fraccion OWNER TO postgres;
 
 --
+-- TOC entry 240 (class 1259 OID 53514)
 -- Name: evento_fraccion_id_evento_fraccion_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -2597,6 +2713,8 @@ CREATE SEQUENCE impuesto.evento_fraccion_id_evento_fraccion_seq
 ALTER TABLE impuesto.evento_fraccion_id_evento_fraccion_seq OWNER TO postgres;
 
 --
+-- TOC entry 4420 (class 0 OID 0)
+-- Dependencies: 240
 -- Name: evento_fraccion_id_evento_fraccion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -2604,6 +2722,7 @@ ALTER SEQUENCE impuesto.evento_fraccion_id_evento_fraccion_seq OWNED BY impuesto
 
 
 --
+-- TOC entry 241 (class 1259 OID 53516)
 -- Name: evento_solicitud; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2618,6 +2737,7 @@ CREATE TABLE impuesto.evento_solicitud (
 ALTER TABLE impuesto.evento_solicitud OWNER TO postgres;
 
 --
+-- TOC entry 242 (class 1259 OID 53523)
 -- Name: evento_solicitud_id_evento_solicitud_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -2633,6 +2753,8 @@ CREATE SEQUENCE impuesto.evento_solicitud_id_evento_solicitud_seq
 ALTER TABLE impuesto.evento_solicitud_id_evento_solicitud_seq OWNER TO postgres;
 
 --
+-- TOC entry 4421 (class 0 OID 0)
+-- Dependencies: 242
 -- Name: evento_solicitud_id_evento_solicitud_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -2640,6 +2762,7 @@ ALTER SEQUENCE impuesto.evento_solicitud_id_evento_solicitud_seq OWNED BY impues
 
 
 --
+-- TOC entry 243 (class 1259 OID 53525)
 -- Name: factor; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2653,6 +2776,7 @@ CREATE TABLE impuesto.factor (
 ALTER TABLE impuesto.factor OWNER TO postgres;
 
 --
+-- TOC entry 244 (class 1259 OID 53531)
 -- Name: factor_id_factor_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -2668,6 +2792,8 @@ CREATE SEQUENCE impuesto.factor_id_factor_seq
 ALTER TABLE impuesto.factor_id_factor_seq OWNER TO postgres;
 
 --
+-- TOC entry 4422 (class 0 OID 0)
+-- Dependencies: 244
 -- Name: factor_id_factor_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -2675,6 +2801,7 @@ ALTER SEQUENCE impuesto.factor_id_factor_seq OWNED BY impuesto.factor.id_factor;
 
 
 --
+-- TOC entry 245 (class 1259 OID 53533)
 -- Name: fraccion_id_fraccion_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -2690,6 +2817,8 @@ CREATE SEQUENCE impuesto.fraccion_id_fraccion_seq
 ALTER TABLE impuesto.fraccion_id_fraccion_seq OWNER TO postgres;
 
 --
+-- TOC entry 4423 (class 0 OID 0)
+-- Dependencies: 245
 -- Name: fraccion_id_fraccion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -2697,6 +2826,7 @@ ALTER SEQUENCE impuesto.fraccion_id_fraccion_seq OWNED BY impuesto.fraccion.id_f
 
 
 --
+-- TOC entry 246 (class 1259 OID 53535)
 -- Name: fraccion_state; Type: VIEW; Schema: impuesto; Owner: postgres
 --
 
@@ -2716,6 +2846,7 @@ CREATE VIEW impuesto.fraccion_state AS
 ALTER TABLE impuesto.fraccion_state OWNER TO postgres;
 
 --
+-- TOC entry 247 (class 1259 OID 53539)
 -- Name: inmueble_contribuyente_natural; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2729,6 +2860,7 @@ CREATE TABLE impuesto.inmueble_contribuyente_natural (
 ALTER TABLE impuesto.inmueble_contribuyente_natural OWNER TO postgres;
 
 --
+-- TOC entry 248 (class 1259 OID 53542)
 -- Name: inmueble_contribuyente_id_inmueble_contribuyente_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -2744,6 +2876,8 @@ CREATE SEQUENCE impuesto.inmueble_contribuyente_id_inmueble_contribuyente_seq
 ALTER TABLE impuesto.inmueble_contribuyente_id_inmueble_contribuyente_seq OWNER TO postgres;
 
 --
+-- TOC entry 4424 (class 0 OID 0)
+-- Dependencies: 248
 -- Name: inmueble_contribuyente_id_inmueble_contribuyente_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -2751,6 +2885,7 @@ ALTER SEQUENCE impuesto.inmueble_contribuyente_id_inmueble_contribuyente_seq OWN
 
 
 --
+-- TOC entry 249 (class 1259 OID 53544)
 -- Name: liquidacion_descuento; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2764,6 +2899,7 @@ CREATE TABLE impuesto.liquidacion_descuento (
 ALTER TABLE impuesto.liquidacion_descuento OWNER TO postgres;
 
 --
+-- TOC entry 250 (class 1259 OID 53550)
 -- Name: liquidacion_descuento_id_liquidacion_descuento_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -2779,6 +2915,8 @@ CREATE SEQUENCE impuesto.liquidacion_descuento_id_liquidacion_descuento_seq
 ALTER TABLE impuesto.liquidacion_descuento_id_liquidacion_descuento_seq OWNER TO postgres;
 
 --
+-- TOC entry 4425 (class 0 OID 0)
+-- Dependencies: 250
 -- Name: liquidacion_descuento_id_liquidacion_descuento_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -2786,6 +2924,7 @@ ALTER SEQUENCE impuesto.liquidacion_descuento_id_liquidacion_descuento_seq OWNED
 
 
 --
+-- TOC entry 251 (class 1259 OID 53552)
 -- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -2801,6 +2940,8 @@ CREATE SEQUENCE impuesto.liquidacion_id_liquidacion_seq
 ALTER TABLE impuesto.liquidacion_id_liquidacion_seq OWNER TO postgres;
 
 --
+-- TOC entry 4426 (class 0 OID 0)
+-- Dependencies: 251
 -- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -2808,6 +2949,7 @@ ALTER SEQUENCE impuesto.liquidacion_id_liquidacion_seq OWNED BY impuesto.liquida
 
 
 --
+-- TOC entry 252 (class 1259 OID 53554)
 -- Name: multa; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2824,6 +2966,7 @@ CREATE TABLE impuesto.multa (
 ALTER TABLE impuesto.multa OWNER TO postgres;
 
 --
+-- TOC entry 253 (class 1259 OID 53560)
 -- Name: multa_id_multa_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -2839,6 +2982,8 @@ CREATE SEQUENCE impuesto.multa_id_multa_seq
 ALTER TABLE impuesto.multa_id_multa_seq OWNER TO postgres;
 
 --
+-- TOC entry 4427 (class 0 OID 0)
+-- Dependencies: 253
 -- Name: multa_id_multa_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -2846,6 +2991,7 @@ ALTER SEQUENCE impuesto.multa_id_multa_seq OWNED BY impuesto.multa.id_multa;
 
 
 --
+-- TOC entry 254 (class 1259 OID 53562)
 -- Name: notificacion; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -2866,6 +3012,7 @@ CREATE TABLE public.notificacion (
 ALTER TABLE public.notificacion OWNER TO postgres;
 
 --
+-- TOC entry 255 (class 1259 OID 53570)
 -- Name: notificacion_impuesto_view; Type: VIEW; Schema: impuesto; Owner: postgres
 --
 
@@ -2892,6 +3039,7 @@ CREATE VIEW impuesto.notificacion_impuesto_view AS
 ALTER TABLE impuesto.notificacion_impuesto_view OWNER TO postgres;
 
 --
+-- TOC entry 256 (class 1259 OID 53575)
 -- Name: plazo_exoneracion; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2905,6 +3053,7 @@ CREATE TABLE impuesto.plazo_exoneracion (
 ALTER TABLE impuesto.plazo_exoneracion OWNER TO postgres;
 
 --
+-- TOC entry 257 (class 1259 OID 53578)
 -- Name: plazo_exoneracion_id_plazo_exoneracion_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -2920,6 +3069,8 @@ CREATE SEQUENCE impuesto.plazo_exoneracion_id_plazo_exoneracion_seq
 ALTER TABLE impuesto.plazo_exoneracion_id_plazo_exoneracion_seq OWNER TO postgres;
 
 --
+-- TOC entry 4428 (class 0 OID 0)
+-- Dependencies: 257
 -- Name: plazo_exoneracion_id_plazo_exoneracion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -2927,6 +3078,7 @@ ALTER SEQUENCE impuesto.plazo_exoneracion_id_plazo_exoneracion_seq OWNED BY impu
 
 
 --
+-- TOC entry 258 (class 1259 OID 53580)
 -- Name: ramo_exoneracion; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2940,6 +3092,7 @@ CREATE TABLE impuesto.ramo_exoneracion (
 ALTER TABLE impuesto.ramo_exoneracion OWNER TO postgres;
 
 --
+-- TOC entry 259 (class 1259 OID 53583)
 -- Name: procedimiento_exoneracion_id_procedimiento_exoneracion_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -2955,6 +3108,8 @@ CREATE SEQUENCE impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_
 ALTER TABLE impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq OWNER TO postgres;
 
 --
+-- TOC entry 4429 (class 0 OID 0)
+-- Dependencies: 259
 -- Name: procedimiento_exoneracion_id_procedimiento_exoneracion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -2962,6 +3117,7 @@ ALTER SEQUENCE impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_s
 
 
 --
+-- TOC entry 260 (class 1259 OID 53585)
 -- Name: ramo; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -2976,6 +3132,7 @@ CREATE TABLE impuesto.ramo (
 ALTER TABLE impuesto.ramo OWNER TO postgres;
 
 --
+-- TOC entry 261 (class 1259 OID 53591)
 -- Name: ramo_id_ramo_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -2991,6 +3148,8 @@ CREATE SEQUENCE impuesto.ramo_id_ramo_seq
 ALTER TABLE impuesto.ramo_id_ramo_seq OWNER TO postgres;
 
 --
+-- TOC entry 4430 (class 0 OID 0)
+-- Dependencies: 261
 -- Name: ramo_id_ramo_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -2998,6 +3157,7 @@ ALTER SEQUENCE impuesto.ramo_id_ramo_seq OWNED BY impuesto.ramo.id_ramo;
 
 
 --
+-- TOC entry 262 (class 1259 OID 53593)
 -- Name: registro_municipal_referencia_municipal_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -3012,6 +3172,7 @@ CREATE SEQUENCE impuesto.registro_municipal_referencia_municipal_seq
 ALTER TABLE impuesto.registro_municipal_referencia_municipal_seq OWNER TO postgres;
 
 --
+-- TOC entry 263 (class 1259 OID 53595)
 -- Name: registro_municipal; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -3032,6 +3193,7 @@ CREATE TABLE impuesto.registro_municipal (
 ALTER TABLE impuesto.registro_municipal OWNER TO postgres;
 
 --
+-- TOC entry 264 (class 1259 OID 53603)
 -- Name: registro_municipal_id_registro_municipal_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -3046,6 +3208,8 @@ CREATE SEQUENCE impuesto.registro_municipal_id_registro_municipal_seq
 ALTER TABLE impuesto.registro_municipal_id_registro_municipal_seq OWNER TO postgres;
 
 --
+-- TOC entry 4431 (class 0 OID 0)
+-- Dependencies: 264
 -- Name: registro_municipal_id_registro_municipal_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -3053,6 +3217,7 @@ ALTER SEQUENCE impuesto.registro_municipal_id_registro_municipal_seq OWNED BY im
 
 
 --
+-- TOC entry 265 (class 1259 OID 53605)
 -- Name: registro_municipal_verificacion; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -3065,6 +3230,7 @@ CREATE TABLE impuesto.registro_municipal_verificacion (
 ALTER TABLE impuesto.registro_municipal_verificacion OWNER TO postgres;
 
 --
+-- TOC entry 266 (class 1259 OID 53608)
 -- Name: solicitud_id_solicitud_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -3080,6 +3246,8 @@ CREATE SEQUENCE impuesto.solicitud_id_solicitud_seq
 ALTER TABLE impuesto.solicitud_id_solicitud_seq OWNER TO postgres;
 
 --
+-- TOC entry 4432 (class 0 OID 0)
+-- Dependencies: 266
 -- Name: solicitud_id_solicitud_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -3087,6 +3255,7 @@ ALTER SEQUENCE impuesto.solicitud_id_solicitud_seq OWNED BY impuesto.solicitud.i
 
 
 --
+-- TOC entry 267 (class 1259 OID 53610)
 -- Name: solicitud_state; Type: VIEW; Schema: impuesto; Owner: postgres
 --
 
@@ -3107,6 +3276,7 @@ CREATE VIEW impuesto.solicitud_state AS
 ALTER TABLE impuesto.solicitud_state OWNER TO postgres;
 
 --
+-- TOC entry 268 (class 1259 OID 53615)
 -- Name: subramo; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -3121,6 +3291,7 @@ CREATE TABLE impuesto.subramo (
 ALTER TABLE impuesto.subramo OWNER TO postgres;
 
 --
+-- TOC entry 269 (class 1259 OID 53621)
 -- Name: solicitud_view; Type: VIEW; Schema: impuesto; Owner: postgres
 --
 
@@ -3159,6 +3330,7 @@ CREATE VIEW impuesto.solicitud_view AS
 ALTER TABLE impuesto.solicitud_view OWNER TO postgres;
 
 --
+-- TOC entry 270 (class 1259 OID 53626)
 -- Name: subramo_id_subramo_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -3174,6 +3346,8 @@ CREATE SEQUENCE impuesto.subramo_id_subramo_seq
 ALTER TABLE impuesto.subramo_id_subramo_seq OWNER TO postgres;
 
 --
+-- TOC entry 4433 (class 0 OID 0)
+-- Dependencies: 270
 -- Name: subramo_id_subramo_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -3181,6 +3355,7 @@ ALTER SEQUENCE impuesto.subramo_id_subramo_seq OWNED BY impuesto.subramo.id_subr
 
 
 --
+-- TOC entry 271 (class 1259 OID 53628)
 -- Name: tabulador_aseo_actividad_economica; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -3198,6 +3373,7 @@ CREATE TABLE impuesto.tabulador_aseo_actividad_economica (
 ALTER TABLE impuesto.tabulador_aseo_actividad_economica OWNER TO postgres;
 
 --
+-- TOC entry 272 (class 1259 OID 53635)
 -- Name: tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -3213,6 +3389,8 @@ CREATE SEQUENCE impuesto.tabulador_aseo_actividad_econ_id_tabulador_aseo_activid
 ALTER TABLE impuesto.tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq OWNER TO postgres;
 
 --
+-- TOC entry 4434 (class 0 OID 0)
+-- Dependencies: 272
 -- Name: tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -3220,6 +3398,7 @@ ALTER SEQUENCE impuesto.tabulador_aseo_actividad_econ_id_tabulador_aseo_activida
 
 
 --
+-- TOC entry 273 (class 1259 OID 53637)
 -- Name: tabulador_aseo_residencial; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -3236,6 +3415,7 @@ CREATE TABLE impuesto.tabulador_aseo_residencial (
 ALTER TABLE impuesto.tabulador_aseo_residencial OWNER TO postgres;
 
 --
+-- TOC entry 274 (class 1259 OID 53644)
 -- Name: tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -3251,6 +3431,8 @@ CREATE SEQUENCE impuesto.tabulador_aseo_residencial_id_tabulador_aseo_residencia
 ALTER TABLE impuesto.tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq OWNER TO postgres;
 
 --
+-- TOC entry 4435 (class 0 OID 0)
+-- Dependencies: 274
 -- Name: tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -3258,6 +3440,7 @@ ALTER SEQUENCE impuesto.tabulador_aseo_residencial_id_tabulador_aseo_residencial
 
 
 --
+-- TOC entry 275 (class 1259 OID 53646)
 -- Name: tabulador_gas; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -3271,6 +3454,7 @@ CREATE TABLE impuesto.tabulador_gas (
 ALTER TABLE impuesto.tabulador_gas OWNER TO postgres;
 
 --
+-- TOC entry 276 (class 1259 OID 53652)
 -- Name: tabulador_gas_actividad_economica; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -3288,6 +3472,7 @@ CREATE TABLE impuesto.tabulador_gas_actividad_economica (
 ALTER TABLE impuesto.tabulador_gas_actividad_economica OWNER TO postgres;
 
 --
+-- TOC entry 277 (class 1259 OID 53659)
 -- Name: tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -3303,6 +3488,8 @@ CREATE SEQUENCE impuesto.tabulador_gas_actividad_econo_id_tabulador_gas_activida
 ALTER TABLE impuesto.tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq OWNER TO postgres;
 
 --
+-- TOC entry 4436 (class 0 OID 0)
+-- Dependencies: 277
 -- Name: tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -3310,6 +3497,7 @@ ALTER SEQUENCE impuesto.tabulador_gas_actividad_econo_id_tabulador_gas_actividad
 
 
 --
+-- TOC entry 278 (class 1259 OID 53661)
 -- Name: tabulador_gas_id_tabulador_gas_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -3325,6 +3513,8 @@ CREATE SEQUENCE impuesto.tabulador_gas_id_tabulador_gas_seq
 ALTER TABLE impuesto.tabulador_gas_id_tabulador_gas_seq OWNER TO postgres;
 
 --
+-- TOC entry 4437 (class 0 OID 0)
+-- Dependencies: 278
 -- Name: tabulador_gas_id_tabulador_gas_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -3332,6 +3522,7 @@ ALTER SEQUENCE impuesto.tabulador_gas_id_tabulador_gas_seq OWNED BY impuesto.tab
 
 
 --
+-- TOC entry 279 (class 1259 OID 53663)
 -- Name: tabulador_gas_residencial; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -3348,6 +3539,7 @@ CREATE TABLE impuesto.tabulador_gas_residencial (
 ALTER TABLE impuesto.tabulador_gas_residencial OWNER TO postgres;
 
 --
+-- TOC entry 280 (class 1259 OID 53670)
 -- Name: tabulador_gas_residencial_id_tabulador_gas_residencial_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -3363,6 +3555,8 @@ CREATE SEQUENCE impuesto.tabulador_gas_residencial_id_tabulador_gas_residencial_
 ALTER TABLE impuesto.tabulador_gas_residencial_id_tabulador_gas_residencial_seq OWNER TO postgres;
 
 --
+-- TOC entry 4438 (class 0 OID 0)
+-- Dependencies: 280
 -- Name: tabulador_gas_residencial_id_tabulador_gas_residencial_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -3370,6 +3564,7 @@ ALTER SEQUENCE impuesto.tabulador_gas_residencial_id_tabulador_gas_residencial_s
 
 
 --
+-- TOC entry 281 (class 1259 OID 53672)
 -- Name: tipo_aviso_propaganda; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -3386,6 +3581,7 @@ CREATE TABLE impuesto.tipo_aviso_propaganda (
 ALTER TABLE impuesto.tipo_aviso_propaganda OWNER TO postgres;
 
 --
+-- TOC entry 282 (class 1259 OID 53679)
 -- Name: tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -3401,6 +3597,8 @@ CREATE SEQUENCE impuesto.tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq
 ALTER TABLE impuesto.tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq OWNER TO postgres;
 
 --
+-- TOC entry 4439 (class 0 OID 0)
+-- Dependencies: 282
 -- Name: tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -3408,6 +3606,7 @@ ALTER SEQUENCE impuesto.tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq OWNED
 
 
 --
+-- TOC entry 283 (class 1259 OID 53681)
 -- Name: tipo_multa; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -3420,6 +3619,7 @@ CREATE TABLE impuesto.tipo_multa (
 ALTER TABLE impuesto.tipo_multa OWNER TO postgres;
 
 --
+-- TOC entry 284 (class 1259 OID 53687)
 -- Name: tipo_multa_id_tipo_multa_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -3435,6 +3635,8 @@ CREATE SEQUENCE impuesto.tipo_multa_id_tipo_multa_seq
 ALTER TABLE impuesto.tipo_multa_id_tipo_multa_seq OWNER TO postgres;
 
 --
+-- TOC entry 4440 (class 0 OID 0)
+-- Dependencies: 284
 -- Name: tipo_multa_id_tipo_multa_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -3442,6 +3644,7 @@ ALTER SEQUENCE impuesto.tipo_multa_id_tipo_multa_seq OWNED BY impuesto.tipo_mult
 
 
 --
+-- TOC entry 285 (class 1259 OID 53689)
 -- Name: usuario_enlazado; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -3455,6 +3658,7 @@ CREATE TABLE impuesto.usuario_enlazado (
 ALTER TABLE impuesto.usuario_enlazado OWNER TO postgres;
 
 --
+-- TOC entry 286 (class 1259 OID 53695)
 -- Name: usuario_enlazado_id_usuario_enlazado_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -3470,6 +3674,8 @@ CREATE SEQUENCE impuesto.usuario_enlazado_id_usuario_enlazado_seq
 ALTER TABLE impuesto.usuario_enlazado_id_usuario_enlazado_seq OWNER TO postgres;
 
 --
+-- TOC entry 4441 (class 0 OID 0)
+-- Dependencies: 286
 -- Name: usuario_enlazado_id_usuario_enlazado_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -3477,6 +3683,7 @@ ALTER SEQUENCE impuesto.usuario_enlazado_id_usuario_enlazado_seq OWNED BY impues
 
 
 --
+-- TOC entry 287 (class 1259 OID 53697)
 -- Name: verificacion_email; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -3492,6 +3699,7 @@ CREATE TABLE impuesto.verificacion_email (
 ALTER TABLE impuesto.verificacion_email OWNER TO postgres;
 
 --
+-- TOC entry 288 (class 1259 OID 53705)
 -- Name: verificacion_email_id_verificacion_email_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -3507,6 +3715,8 @@ CREATE SEQUENCE impuesto.verificacion_email_id_verificacion_email_seq
 ALTER TABLE impuesto.verificacion_email_id_verificacion_email_seq OWNER TO postgres;
 
 --
+-- TOC entry 4442 (class 0 OID 0)
+-- Dependencies: 288
 -- Name: verificacion_email_id_verificacion_email_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -3514,6 +3724,7 @@ ALTER SEQUENCE impuesto.verificacion_email_id_verificacion_email_seq OWNED BY im
 
 
 --
+-- TOC entry 289 (class 1259 OID 53707)
 -- Name: verificacion_telefono; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -3530,6 +3741,7 @@ CREATE TABLE impuesto.verificacion_telefono (
 ALTER TABLE impuesto.verificacion_telefono OWNER TO postgres;
 
 --
+-- TOC entry 290 (class 1259 OID 53715)
 -- Name: verificacion_telefono_id_verificacion_telefono_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
@@ -3545,6 +3757,8 @@ CREATE SEQUENCE impuesto.verificacion_telefono_id_verificacion_telefono_seq
 ALTER TABLE impuesto.verificacion_telefono_id_verificacion_telefono_seq OWNER TO postgres;
 
 --
+-- TOC entry 4443 (class 0 OID 0)
+-- Dependencies: 290
 -- Name: verificacion_telefono_id_verificacion_telefono_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
@@ -3552,6 +3766,7 @@ ALTER SEQUENCE impuesto.verificacion_telefono_id_verificacion_telefono_seq OWNED
 
 
 --
+-- TOC entry 291 (class 1259 OID 53717)
 -- Name: banco; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -3565,6 +3780,7 @@ CREATE TABLE public.banco (
 ALTER TABLE public.banco OWNER TO postgres;
 
 --
+-- TOC entry 292 (class 1259 OID 53724)
 -- Name: bancos_id_banco_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -3580,6 +3796,8 @@ CREATE SEQUENCE public.bancos_id_banco_seq
 ALTER TABLE public.bancos_id_banco_seq OWNER TO postgres;
 
 --
+-- TOC entry 4444 (class 0 OID 0)
+-- Dependencies: 292
 -- Name: bancos_id_banco_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -3587,6 +3805,7 @@ ALTER SEQUENCE public.bancos_id_banco_seq OWNED BY public.banco.id_banco;
 
 
 --
+-- TOC entry 293 (class 1259 OID 53726)
 -- Name: campo; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -3602,6 +3821,7 @@ CREATE TABLE public.campo (
 ALTER TABLE public.campo OWNER TO postgres;
 
 --
+-- TOC entry 294 (class 1259 OID 53732)
 -- Name: campo_tramite; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -3618,6 +3838,7 @@ CREATE TABLE public.campo_tramite (
 ALTER TABLE public.campo_tramite OWNER TO postgres;
 
 --
+-- TOC entry 295 (class 1259 OID 53739)
 -- Name: campos_id_campo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -3633,6 +3854,8 @@ CREATE SEQUENCE public.campos_id_campo_seq
 ALTER TABLE public.campos_id_campo_seq OWNER TO postgres;
 
 --
+-- TOC entry 4445 (class 0 OID 0)
+-- Dependencies: 295
 -- Name: campos_id_campo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -3640,6 +3863,7 @@ ALTER SEQUENCE public.campos_id_campo_seq OWNED BY public.campo.id_campo;
 
 
 --
+-- TOC entry 296 (class 1259 OID 53741)
 -- Name: cargo; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -3654,6 +3878,7 @@ CREATE TABLE public.cargo (
 ALTER TABLE public.cargo OWNER TO postgres;
 
 --
+-- TOC entry 297 (class 1259 OID 53747)
 -- Name: cargo_id_cargo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -3669,6 +3894,8 @@ CREATE SEQUENCE public.cargo_id_cargo_seq
 ALTER TABLE public.cargo_id_cargo_seq OWNER TO postgres;
 
 --
+-- TOC entry 4446 (class 0 OID 0)
+-- Dependencies: 297
 -- Name: cargo_id_cargo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -3676,6 +3903,7 @@ ALTER SEQUENCE public.cargo_id_cargo_seq OWNED BY public.cargo.id_cargo;
 
 
 --
+-- TOC entry 298 (class 1259 OID 53749)
 -- Name: casos_sociales_id_caso_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -3691,6 +3919,8 @@ CREATE SEQUENCE public.casos_sociales_id_caso_seq
 ALTER TABLE public.casos_sociales_id_caso_seq OWNER TO postgres;
 
 --
+-- TOC entry 4447 (class 0 OID 0)
+-- Dependencies: 298
 -- Name: casos_sociales_id_caso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -3698,6 +3928,7 @@ ALTER SEQUENCE public.casos_sociales_id_caso_seq OWNED BY public.caso_social.id_
 
 
 --
+-- TOC entry 299 (class 1259 OID 53751)
 -- Name: certificado; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -3711,6 +3942,7 @@ CREATE TABLE public.certificado (
 ALTER TABLE public.certificado OWNER TO postgres;
 
 --
+-- TOC entry 300 (class 1259 OID 53757)
 -- Name: certificados_id_certificado_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -3726,6 +3958,8 @@ CREATE SEQUENCE public.certificados_id_certificado_seq
 ALTER TABLE public.certificados_id_certificado_seq OWNER TO postgres;
 
 --
+-- TOC entry 4448 (class 0 OID 0)
+-- Dependencies: 300
 -- Name: certificados_id_certificado_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -3733,6 +3967,7 @@ ALTER SEQUENCE public.certificados_id_certificado_seq OWNED BY public.certificad
 
 
 --
+-- TOC entry 301 (class 1259 OID 53759)
 -- Name: cuenta_funcionario; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -3745,6 +3980,7 @@ CREATE TABLE public.cuenta_funcionario (
 ALTER TABLE public.cuenta_funcionario OWNER TO postgres;
 
 --
+-- TOC entry 302 (class 1259 OID 53762)
 -- Name: datos_facebook; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -3757,6 +3993,7 @@ CREATE TABLE public.datos_facebook (
 ALTER TABLE public.datos_facebook OWNER TO postgres;
 
 --
+-- TOC entry 303 (class 1259 OID 53768)
 -- Name: datos_google; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -3769,6 +4006,7 @@ CREATE TABLE public.datos_google (
 ALTER TABLE public.datos_google OWNER TO postgres;
 
 --
+-- TOC entry 304 (class 1259 OID 53774)
 -- Name: detalle_factura; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -3783,6 +4021,7 @@ CREATE TABLE public.detalle_factura (
 ALTER TABLE public.detalle_factura OWNER TO postgres;
 
 --
+-- TOC entry 305 (class 1259 OID 53780)
 -- Name: detalles_facturas_id_detalle_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -3798,6 +4037,8 @@ CREATE SEQUENCE public.detalles_facturas_id_detalle_seq
 ALTER TABLE public.detalles_facturas_id_detalle_seq OWNER TO postgres;
 
 --
+-- TOC entry 4449 (class 0 OID 0)
+-- Dependencies: 305
 -- Name: detalles_facturas_id_detalle_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -3805,6 +4046,7 @@ ALTER SEQUENCE public.detalles_facturas_id_detalle_seq OWNED BY public.detalle_f
 
 
 --
+-- TOC entry 306 (class 1259 OID 53782)
 -- Name: evento_multa_id_evento_multa_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -3820,6 +4062,8 @@ CREATE SEQUENCE public.evento_multa_id_evento_multa_seq
 ALTER TABLE public.evento_multa_id_evento_multa_seq OWNER TO postgres;
 
 --
+-- TOC entry 4450 (class 0 OID 0)
+-- Dependencies: 306
 -- Name: evento_multa_id_evento_multa_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -3827,6 +4071,7 @@ ALTER SEQUENCE public.evento_multa_id_evento_multa_seq OWNED BY public.evento_mu
 
 
 --
+-- TOC entry 307 (class 1259 OID 53784)
 -- Name: eventos_casos_sociales_id_evento_caso_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -3842,6 +4087,8 @@ CREATE SEQUENCE public.eventos_casos_sociales_id_evento_caso_seq
 ALTER TABLE public.eventos_casos_sociales_id_evento_caso_seq OWNER TO postgres;
 
 --
+-- TOC entry 4451 (class 0 OID 0)
+-- Dependencies: 307
 -- Name: eventos_casos_sociales_id_evento_caso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -3849,6 +4096,7 @@ ALTER SEQUENCE public.eventos_casos_sociales_id_evento_caso_seq OWNED BY public.
 
 
 --
+-- TOC entry 308 (class 1259 OID 53786)
 -- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -3864,6 +4112,8 @@ CREATE SEQUENCE public.eventos_tramite_id_evento_tramite_seq
 ALTER TABLE public.eventos_tramite_id_evento_tramite_seq OWNER TO postgres;
 
 --
+-- TOC entry 4452 (class 0 OID 0)
+-- Dependencies: 308
 -- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -3871,6 +4121,7 @@ ALTER SEQUENCE public.eventos_tramite_id_evento_tramite_seq OWNED BY public.even
 
 
 --
+-- TOC entry 309 (class 1259 OID 53788)
 -- Name: factura_tramite; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -3883,6 +4134,7 @@ CREATE TABLE public.factura_tramite (
 ALTER TABLE public.factura_tramite OWNER TO postgres;
 
 --
+-- TOC entry 310 (class 1259 OID 53791)
 -- Name: facturas_tramites_id_factura_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -3898,6 +4150,8 @@ CREATE SEQUENCE public.facturas_tramites_id_factura_seq
 ALTER TABLE public.facturas_tramites_id_factura_seq OWNER TO postgres;
 
 --
+-- TOC entry 4453 (class 0 OID 0)
+-- Dependencies: 310
 -- Name: facturas_tramites_id_factura_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -3905,6 +4159,7 @@ ALTER SEQUENCE public.facturas_tramites_id_factura_seq OWNED BY public.factura_t
 
 
 --
+-- TOC entry 311 (class 1259 OID 53793)
 -- Name: inmueble_urbano; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -3926,6 +4181,7 @@ CREATE TABLE public.inmueble_urbano (
 ALTER TABLE public.inmueble_urbano OWNER TO postgres;
 
 --
+-- TOC entry 312 (class 1259 OID 53801)
 -- Name: inmueble_urbano_id_inmueble_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -3941,6 +4197,8 @@ CREATE SEQUENCE public.inmueble_urbano_id_inmueble_seq
 ALTER TABLE public.inmueble_urbano_id_inmueble_seq OWNER TO postgres;
 
 --
+-- TOC entry 4454 (class 0 OID 0)
+-- Dependencies: 312
 -- Name: inmueble_urbano_id_inmueble_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -3948,6 +4206,7 @@ ALTER SEQUENCE public.inmueble_urbano_id_inmueble_seq OWNED BY public.inmueble_u
 
 
 --
+-- TOC entry 313 (class 1259 OID 53803)
 -- Name: parroquia; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -3960,6 +4219,7 @@ CREATE TABLE public.parroquia (
 ALTER TABLE public.parroquia OWNER TO postgres;
 
 --
+-- TOC entry 314 (class 1259 OID 53809)
 -- Name: inmueble_urbano_view; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -3981,6 +4241,7 @@ CREATE VIEW public.inmueble_urbano_view AS
 ALTER TABLE public.inmueble_urbano_view OWNER TO postgres;
 
 --
+-- TOC entry 315 (class 1259 OID 53813)
 -- Name: institucion_banco; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -3997,6 +4258,7 @@ CREATE TABLE public.institucion_banco (
 ALTER TABLE public.institucion_banco OWNER TO postgres;
 
 --
+-- TOC entry 316 (class 1259 OID 53820)
 -- Name: instituciones_id_institucion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4012,6 +4274,8 @@ CREATE SEQUENCE public.instituciones_id_institucion_seq
 ALTER TABLE public.instituciones_id_institucion_seq OWNER TO postgres;
 
 --
+-- TOC entry 4455 (class 0 OID 0)
+-- Dependencies: 316
 -- Name: instituciones_id_institucion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -4019,6 +4283,7 @@ ALTER SEQUENCE public.instituciones_id_institucion_seq OWNED BY public.instituci
 
 
 --
+-- TOC entry 317 (class 1259 OID 53822)
 -- Name: multa_id_multa_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4034,6 +4299,8 @@ CREATE SEQUENCE public.multa_id_multa_seq
 ALTER TABLE public.multa_id_multa_seq OWNER TO postgres;
 
 --
+-- TOC entry 4456 (class 0 OID 0)
+-- Dependencies: 317
 -- Name: multa_id_multa_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -4041,6 +4308,7 @@ ALTER SEQUENCE public.multa_id_multa_seq OWNED BY public.multa.id_multa;
 
 
 --
+-- TOC entry 318 (class 1259 OID 53824)
 -- Name: notificacion_impuesto_view; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -4067,6 +4335,7 @@ CREATE VIEW public.notificacion_impuesto_view AS
 ALTER TABLE public.notificacion_impuesto_view OWNER TO postgres;
 
 --
+-- TOC entry 319 (class 1259 OID 53829)
 -- Name: notificacion_multa_view; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -4103,6 +4372,7 @@ CREATE VIEW public.notificacion_multa_view AS
 ALTER TABLE public.notificacion_multa_view OWNER TO postgres;
 
 --
+-- TOC entry 320 (class 1259 OID 53834)
 -- Name: notificacion_tramite_view; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -4138,6 +4408,7 @@ CREATE VIEW public.notificacion_tramite_view AS
 ALTER TABLE public.notificacion_tramite_view OWNER TO postgres;
 
 --
+-- TOC entry 321 (class 1259 OID 53839)
 -- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4153,6 +4424,8 @@ CREATE SEQUENCE public.notificaciones_id_notificacion_seq
 ALTER TABLE public.notificaciones_id_notificacion_seq OWNER TO postgres;
 
 --
+-- TOC entry 4457 (class 0 OID 0)
+-- Dependencies: 321
 -- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -4160,6 +4433,7 @@ ALTER SEQUENCE public.notificaciones_id_notificacion_seq OWNED BY public.notific
 
 
 --
+-- TOC entry 322 (class 1259 OID 53841)
 -- Name: operaciones_id_operacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4174,6 +4448,7 @@ CREATE SEQUENCE public.operaciones_id_operacion_seq
 ALTER TABLE public.operaciones_id_operacion_seq OWNER TO postgres;
 
 --
+-- TOC entry 323 (class 1259 OID 53843)
 -- Name: operacion; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4186,6 +4461,7 @@ CREATE TABLE public.operacion (
 ALTER TABLE public.operacion OWNER TO postgres;
 
 --
+-- TOC entry 324 (class 1259 OID 53850)
 -- Name: operatividad_terminal; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4204,6 +4480,7 @@ CREATE TABLE public.operatividad_terminal (
 ALTER TABLE public.operatividad_terminal OWNER TO postgres;
 
 --
+-- TOC entry 325 (class 1259 OID 53859)
 -- Name: operatividad_terminal_id_operatividad_terminal_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4219,6 +4496,8 @@ CREATE SEQUENCE public.operatividad_terminal_id_operatividad_terminal_seq
 ALTER TABLE public.operatividad_terminal_id_operatividad_terminal_seq OWNER TO postgres;
 
 --
+-- TOC entry 4458 (class 0 OID 0)
+-- Dependencies: 325
 -- Name: operatividad_terminal_id_operatividad_terminal_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -4226,6 +4505,7 @@ ALTER SEQUENCE public.operatividad_terminal_id_operatividad_terminal_seq OWNED B
 
 
 --
+-- TOC entry 326 (class 1259 OID 53861)
 -- Name: ordenanza; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4241,6 +4521,7 @@ CREATE TABLE public.ordenanza (
 ALTER TABLE public.ordenanza OWNER TO postgres;
 
 --
+-- TOC entry 327 (class 1259 OID 53868)
 -- Name: ordenanza_tramite; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4259,6 +4540,7 @@ CREATE TABLE public.ordenanza_tramite (
 ALTER TABLE public.ordenanza_tramite OWNER TO postgres;
 
 --
+-- TOC entry 328 (class 1259 OID 53874)
 -- Name: ordenanzas_id_ordenanza_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4274,6 +4556,8 @@ CREATE SEQUENCE public.ordenanzas_id_ordenanza_seq
 ALTER TABLE public.ordenanzas_id_ordenanza_seq OWNER TO postgres;
 
 --
+-- TOC entry 4459 (class 0 OID 0)
+-- Dependencies: 328
 -- Name: ordenanzas_id_ordenanza_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -4281,6 +4565,7 @@ ALTER SEQUENCE public.ordenanzas_id_ordenanza_seq OWNED BY public.ordenanza.id_o
 
 
 --
+-- TOC entry 329 (class 1259 OID 53876)
 -- Name: tarifa_inspeccion; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4297,6 +4582,7 @@ CREATE TABLE public.tarifa_inspeccion (
 ALTER TABLE public.tarifa_inspeccion OWNER TO postgres;
 
 --
+-- TOC entry 330 (class 1259 OID 53882)
 -- Name: ordenanzas_instancias_tramites; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -4317,6 +4603,7 @@ CREATE VIEW public.ordenanzas_instancias_tramites AS
 ALTER TABLE public.ordenanzas_instancias_tramites OWNER TO postgres;
 
 --
+-- TOC entry 331 (class 1259 OID 53887)
 -- Name: ordenanzas_tramites_id_ordenanza_tramite_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4332,6 +4619,8 @@ CREATE SEQUENCE public.ordenanzas_tramites_id_ordenanza_tramite_seq
 ALTER TABLE public.ordenanzas_tramites_id_ordenanza_tramite_seq OWNER TO postgres;
 
 --
+-- TOC entry 4460 (class 0 OID 0)
+-- Dependencies: 331
 -- Name: ordenanzas_tramites_id_ordenanza_tramite_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -4339,6 +4628,7 @@ ALTER SEQUENCE public.ordenanzas_tramites_id_ordenanza_tramite_seq OWNED BY publ
 
 
 --
+-- TOC entry 332 (class 1259 OID 53889)
 -- Name: pago; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4361,6 +4651,7 @@ CREATE TABLE public.pago (
 ALTER TABLE public.pago OWNER TO postgres;
 
 --
+-- TOC entry 333 (class 1259 OID 53900)
 -- Name: pago_manual; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4373,6 +4664,7 @@ CREATE TABLE public.pago_manual (
 ALTER TABLE public.pago_manual OWNER TO postgres;
 
 --
+-- TOC entry 334 (class 1259 OID 53903)
 -- Name: pagos_id_pago_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4388,6 +4680,8 @@ CREATE SEQUENCE public.pagos_id_pago_seq
 ALTER TABLE public.pagos_id_pago_seq OWNER TO postgres;
 
 --
+-- TOC entry 4461 (class 0 OID 0)
+-- Dependencies: 334
 -- Name: pagos_id_pago_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -4395,6 +4689,7 @@ ALTER SEQUENCE public.pagos_id_pago_seq OWNED BY public.pago.id_pago;
 
 
 --
+-- TOC entry 335 (class 1259 OID 53905)
 -- Name: parroquias_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4410,6 +4705,8 @@ CREATE SEQUENCE public.parroquias_id_seq
 ALTER TABLE public.parroquias_id_seq OWNER TO postgres;
 
 --
+-- TOC entry 4462 (class 0 OID 0)
+-- Dependencies: 335
 -- Name: parroquias_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -4417,6 +4714,7 @@ ALTER SEQUENCE public.parroquias_id_seq OWNED BY public.parroquia.id;
 
 
 --
+-- TOC entry 336 (class 1259 OID 53907)
 -- Name: permiso_de_acceso; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4430,6 +4728,7 @@ CREATE TABLE public.permiso_de_acceso (
 ALTER TABLE public.permiso_de_acceso OWNER TO postgres;
 
 --
+-- TOC entry 337 (class 1259 OID 53910)
 -- Name: permiso_de_acceso_id_permiso_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4445,6 +4744,8 @@ CREATE SEQUENCE public.permiso_de_acceso_id_permiso_seq
 ALTER TABLE public.permiso_de_acceso_id_permiso_seq OWNER TO postgres;
 
 --
+-- TOC entry 4463 (class 0 OID 0)
+-- Dependencies: 337
 -- Name: permiso_de_acceso_id_permiso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -4452,6 +4753,7 @@ ALTER SEQUENCE public.permiso_de_acceso_id_permiso_seq OWNED BY public.permiso_d
 
 
 --
+-- TOC entry 338 (class 1259 OID 53912)
 -- Name: propietario; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4467,6 +4769,7 @@ CREATE TABLE public.propietario (
 ALTER TABLE public.propietario OWNER TO postgres;
 
 --
+-- TOC entry 339 (class 1259 OID 53918)
 -- Name: propietario_id_propietario_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4482,6 +4785,8 @@ CREATE SEQUENCE public.propietario_id_propietario_seq
 ALTER TABLE public.propietario_id_propietario_seq OWNER TO postgres;
 
 --
+-- TOC entry 4464 (class 0 OID 0)
+-- Dependencies: 339
 -- Name: propietario_id_propietario_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -4489,6 +4794,7 @@ ALTER SEQUENCE public.propietario_id_propietario_seq OWNED BY public.propietario
 
 
 --
+-- TOC entry 340 (class 1259 OID 53920)
 -- Name: propietario_inmueble; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4502,6 +4808,7 @@ CREATE TABLE public.propietario_inmueble (
 ALTER TABLE public.propietario_inmueble OWNER TO postgres;
 
 --
+-- TOC entry 341 (class 1259 OID 53923)
 -- Name: propietarios_inmuebles_id_propietario_inmueble_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4517,6 +4824,8 @@ CREATE SEQUENCE public.propietarios_inmuebles_id_propietario_inmueble_seq
 ALTER TABLE public.propietarios_inmuebles_id_propietario_inmueble_seq OWNER TO postgres;
 
 --
+-- TOC entry 4465 (class 0 OID 0)
+-- Dependencies: 341
 -- Name: propietarios_inmuebles_id_propietario_inmueble_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -4524,6 +4833,7 @@ ALTER SEQUENCE public.propietarios_inmuebles_id_propietario_inmueble_seq OWNED B
 
 
 --
+-- TOC entry 342 (class 1259 OID 53925)
 -- Name: recaudo; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4540,6 +4850,7 @@ CREATE TABLE public.recaudo (
 ALTER TABLE public.recaudo OWNER TO postgres;
 
 --
+-- TOC entry 343 (class 1259 OID 53933)
 -- Name: recaudos_id_recaudo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4555,6 +4866,8 @@ CREATE SEQUENCE public.recaudos_id_recaudo_seq
 ALTER TABLE public.recaudos_id_recaudo_seq OWNER TO postgres;
 
 --
+-- TOC entry 4466 (class 0 OID 0)
+-- Dependencies: 343
 -- Name: recaudos_id_recaudo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -4562,6 +4875,7 @@ ALTER SEQUENCE public.recaudos_id_recaudo_seq OWNED BY public.recaudo.id_recaudo
 
 
 --
+-- TOC entry 344 (class 1259 OID 53935)
 -- Name: recuperacion; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4577,6 +4891,7 @@ CREATE TABLE public.recuperacion (
 ALTER TABLE public.recuperacion OWNER TO postgres;
 
 --
+-- TOC entry 345 (class 1259 OID 53942)
 -- Name: recuperacion_id_recuperacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4592,6 +4907,8 @@ CREATE SEQUENCE public.recuperacion_id_recuperacion_seq
 ALTER TABLE public.recuperacion_id_recuperacion_seq OWNER TO postgres;
 
 --
+-- TOC entry 4467 (class 0 OID 0)
+-- Dependencies: 345
 -- Name: recuperacion_id_recuperacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -4599,6 +4916,7 @@ ALTER SEQUENCE public.recuperacion_id_recuperacion_seq OWNED BY public.recuperac
 
 
 --
+-- TOC entry 346 (class 1259 OID 53944)
 -- Name: seccion; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4611,6 +4929,7 @@ CREATE TABLE public.seccion (
 ALTER TABLE public.seccion OWNER TO postgres;
 
 --
+-- TOC entry 347 (class 1259 OID 53950)
 -- Name: tarifas_inspeccion_id_tarifa_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4626,6 +4945,8 @@ CREATE SEQUENCE public.tarifas_inspeccion_id_tarifa_seq
 ALTER TABLE public.tarifas_inspeccion_id_tarifa_seq OWNER TO postgres;
 
 --
+-- TOC entry 4468 (class 0 OID 0)
+-- Dependencies: 347
 -- Name: tarifas_inspeccion_id_tarifa_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -4633,6 +4954,7 @@ ALTER SEQUENCE public.tarifas_inspeccion_id_tarifa_seq OWNED BY public.tarifa_in
 
 
 --
+-- TOC entry 348 (class 1259 OID 53952)
 -- Name: template_certificado; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4646,6 +4968,7 @@ CREATE TABLE public.template_certificado (
 ALTER TABLE public.template_certificado OWNER TO postgres;
 
 --
+-- TOC entry 349 (class 1259 OID 53958)
 -- Name: templates_certificados_id_template_certificado_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4661,6 +4984,8 @@ CREATE SEQUENCE public.templates_certificados_id_template_certificado_seq
 ALTER TABLE public.templates_certificados_id_template_certificado_seq OWNER TO postgres;
 
 --
+-- TOC entry 4469 (class 0 OID 0)
+-- Dependencies: 349
 -- Name: templates_certificados_id_template_certificado_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -4668,6 +4993,7 @@ ALTER SEQUENCE public.templates_certificados_id_template_certificado_seq OWNED B
 
 
 --
+-- TOC entry 350 (class 1259 OID 53960)
 -- Name: tipo_tramite_recaudo; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4681,6 +5007,7 @@ CREATE TABLE public.tipo_tramite_recaudo (
 ALTER TABLE public.tipo_tramite_recaudo OWNER TO postgres;
 
 --
+-- TOC entry 351 (class 1259 OID 53963)
 -- Name: tipo_usuario; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4693,6 +5020,7 @@ CREATE TABLE public.tipo_usuario (
 ALTER TABLE public.tipo_usuario OWNER TO postgres;
 
 --
+-- TOC entry 352 (class 1259 OID 53969)
 -- Name: tipos_tramites_id_tipo_tramite_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4708,6 +5036,8 @@ CREATE SEQUENCE public.tipos_tramites_id_tipo_tramite_seq
 ALTER TABLE public.tipos_tramites_id_tipo_tramite_seq OWNER TO postgres;
 
 --
+-- TOC entry 4470 (class 0 OID 0)
+-- Dependencies: 352
 -- Name: tipos_tramites_id_tipo_tramite_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -4715,6 +5045,7 @@ ALTER SEQUENCE public.tipos_tramites_id_tipo_tramite_seq OWNED BY public.tipo_tr
 
 
 --
+-- TOC entry 353 (class 1259 OID 53971)
 -- Name: tipos_usuarios_id_tipo_usuario_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4730,6 +5061,8 @@ CREATE SEQUENCE public.tipos_usuarios_id_tipo_usuario_seq
 ALTER TABLE public.tipos_usuarios_id_tipo_usuario_seq OWNER TO postgres;
 
 --
+-- TOC entry 4471 (class 0 OID 0)
+-- Dependencies: 353
 -- Name: tipos_usuarios_id_tipo_usuario_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -4737,6 +5070,7 @@ ALTER SEQUENCE public.tipos_usuarios_id_tipo_usuario_seq OWNED BY public.tipo_us
 
 
 --
+-- TOC entry 354 (class 1259 OID 53973)
 -- Name: tramite_archivo_recaudo; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4749,6 +5083,7 @@ CREATE TABLE public.tramite_archivo_recaudo (
 ALTER TABLE public.tramite_archivo_recaudo OWNER TO postgres;
 
 --
+-- TOC entry 355 (class 1259 OID 53979)
 -- Name: tramites_id_tramite_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4764,6 +5099,8 @@ CREATE SEQUENCE public.tramites_id_tramite_seq
 ALTER TABLE public.tramites_id_tramite_seq OWNER TO postgres;
 
 --
+-- TOC entry 4472 (class 0 OID 0)
+-- Dependencies: 355
 -- Name: tramites_id_tramite_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -4771,6 +5108,7 @@ ALTER SEQUENCE public.tramites_id_tramite_seq OWNED BY public.tramite.id_tramite
 
 
 --
+-- TOC entry 356 (class 1259 OID 53981)
 -- Name: tramites_state; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -4797,6 +5135,7 @@ CREATE VIEW public.tramites_state AS
 ALTER TABLE public.tramites_state OWNER TO postgres;
 
 --
+-- TOC entry 357 (class 1259 OID 53986)
 -- Name: usuario; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4818,6 +5157,7 @@ CREATE TABLE public.usuario (
 ALTER TABLE public.usuario OWNER TO postgres;
 
 --
+-- TOC entry 358 (class 1259 OID 53993)
 -- Name: usuarios_id_usuario_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4833,6 +5173,8 @@ CREATE SEQUENCE public.usuarios_id_usuario_seq
 ALTER TABLE public.usuarios_id_usuario_seq OWNER TO postgres;
 
 --
+-- TOC entry 4473 (class 0 OID 0)
+-- Dependencies: 358
 -- Name: usuarios_id_usuario_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -4840,6 +5182,7 @@ ALTER SEQUENCE public.usuarios_id_usuario_seq OWNED BY public.usuario.id_usuario
 
 
 --
+-- TOC entry 359 (class 1259 OID 53995)
 -- Name: valor; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4853,6 +5196,7 @@ CREATE TABLE public.valor (
 ALTER TABLE public.valor OWNER TO postgres;
 
 --
+-- TOC entry 360 (class 1259 OID 54001)
 -- Name: valores_id_valor_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4868,6 +5212,8 @@ CREATE SEQUENCE public.valores_id_valor_seq
 ALTER TABLE public.valores_id_valor_seq OWNER TO postgres;
 
 --
+-- TOC entry 4474 (class 0 OID 0)
+-- Dependencies: 360
 -- Name: valores_id_valor_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -4875,6 +5221,7 @@ ALTER SEQUENCE public.valores_id_valor_seq OWNED BY public.valor.id_valor;
 
 
 --
+-- TOC entry 361 (class 1259 OID 54003)
 -- Name: variables_id_var_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4889,6 +5236,7 @@ CREATE SEQUENCE public.variables_id_var_seq
 ALTER TABLE public.variables_id_var_seq OWNER TO postgres;
 
 --
+-- TOC entry 362 (class 1259 OID 54005)
 -- Name: variable; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4901,6 +5249,7 @@ CREATE TABLE public.variable (
 ALTER TABLE public.variable OWNER TO postgres;
 
 --
+-- TOC entry 363 (class 1259 OID 54012)
 -- Name: variables_de_costo_id_variable_de_costo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4915,6 +5264,7 @@ CREATE SEQUENCE public.variables_de_costo_id_variable_de_costo_seq
 ALTER TABLE public.variables_de_costo_id_variable_de_costo_seq OWNER TO postgres;
 
 --
+-- TOC entry 364 (class 1259 OID 54014)
 -- Name: variable_de_costo; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4930,6 +5280,7 @@ CREATE TABLE public.variable_de_costo (
 ALTER TABLE public.variable_de_costo OWNER TO postgres;
 
 --
+-- TOC entry 365 (class 1259 OID 54021)
 -- Name: variable_ordenanza; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4943,6 +5294,7 @@ CREATE TABLE public.variable_ordenanza (
 ALTER TABLE public.variable_ordenanza OWNER TO postgres;
 
 --
+-- TOC entry 366 (class 1259 OID 54027)
 -- Name: variables_ordenanzas_id_variable_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -4958,6 +5310,8 @@ CREATE SEQUENCE public.variables_ordenanzas_id_variable_seq
 ALTER TABLE public.variables_ordenanzas_id_variable_seq OWNER TO postgres;
 
 --
+-- TOC entry 4475 (class 0 OID 0)
+-- Dependencies: 366
 -- Name: variables_ordenanzas_id_variable_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -4965,6 +5319,7 @@ ALTER SEQUENCE public.variables_ordenanzas_id_variable_seq OWNED BY public.varia
 
 
 --
+-- TOC entry 367 (class 1259 OID 54029)
 -- Name: base_task; Type: TABLE; Schema: timetable; Owner: postgres
 --
 
@@ -4984,6 +5339,7 @@ END)
 ALTER TABLE timetable.base_task OWNER TO postgres;
 
 --
+-- TOC entry 368 (class 1259 OID 54037)
 -- Name: base_task_task_id_seq; Type: SEQUENCE; Schema: timetable; Owner: postgres
 --
 
@@ -4998,6 +5354,8 @@ CREATE SEQUENCE timetable.base_task_task_id_seq
 ALTER TABLE timetable.base_task_task_id_seq OWNER TO postgres;
 
 --
+-- TOC entry 4476 (class 0 OID 0)
+-- Dependencies: 368
 -- Name: base_task_task_id_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: postgres
 --
 
@@ -5005,6 +5363,7 @@ ALTER SEQUENCE timetable.base_task_task_id_seq OWNED BY timetable.base_task.task
 
 
 --
+-- TOC entry 369 (class 1259 OID 54039)
 -- Name: chain_execution_config; Type: TABLE; Schema: timetable; Owner: postgres
 --
 
@@ -5025,6 +5384,7 @@ CREATE TABLE timetable.chain_execution_config (
 ALTER TABLE timetable.chain_execution_config OWNER TO postgres;
 
 --
+-- TOC entry 370 (class 1259 OID 54048)
 -- Name: chain_execution_config_chain_execution_config_seq; Type: SEQUENCE; Schema: timetable; Owner: postgres
 --
 
@@ -5039,6 +5399,8 @@ CREATE SEQUENCE timetable.chain_execution_config_chain_execution_config_seq
 ALTER TABLE timetable.chain_execution_config_chain_execution_config_seq OWNER TO postgres;
 
 --
+-- TOC entry 4477 (class 0 OID 0)
+-- Dependencies: 370
 -- Name: chain_execution_config_chain_execution_config_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: postgres
 --
 
@@ -5046,6 +5408,7 @@ ALTER SEQUENCE timetable.chain_execution_config_chain_execution_config_seq OWNED
 
 
 --
+-- TOC entry 371 (class 1259 OID 54050)
 -- Name: chain_execution_parameters; Type: TABLE; Schema: timetable; Owner: postgres
 --
 
@@ -5061,6 +5424,7 @@ CREATE TABLE timetable.chain_execution_parameters (
 ALTER TABLE timetable.chain_execution_parameters OWNER TO postgres;
 
 --
+-- TOC entry 372 (class 1259 OID 54057)
 -- Name: database_connection; Type: TABLE; Schema: timetable; Owner: postgres
 --
 
@@ -5074,6 +5438,7 @@ CREATE TABLE timetable.database_connection (
 ALTER TABLE timetable.database_connection OWNER TO postgres;
 
 --
+-- TOC entry 373 (class 1259 OID 54063)
 -- Name: database_connection_database_connection_seq; Type: SEQUENCE; Schema: timetable; Owner: postgres
 --
 
@@ -5088,6 +5453,8 @@ CREATE SEQUENCE timetable.database_connection_database_connection_seq
 ALTER TABLE timetable.database_connection_database_connection_seq OWNER TO postgres;
 
 --
+-- TOC entry 4478 (class 0 OID 0)
+-- Dependencies: 373
 -- Name: database_connection_database_connection_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: postgres
 --
 
@@ -5095,6 +5462,7 @@ ALTER SEQUENCE timetable.database_connection_database_connection_seq OWNED BY ti
 
 
 --
+-- TOC entry 374 (class 1259 OID 54065)
 -- Name: execution_log; Type: TABLE; Schema: timetable; Owner: postgres
 --
 
@@ -5115,6 +5483,7 @@ CREATE TABLE timetable.execution_log (
 ALTER TABLE timetable.execution_log OWNER TO postgres;
 
 --
+-- TOC entry 375 (class 1259 OID 54072)
 -- Name: log; Type: TABLE; Schema: timetable; Owner: postgres
 --
 
@@ -5131,6 +5500,7 @@ CREATE TABLE timetable.log (
 ALTER TABLE timetable.log OWNER TO postgres;
 
 --
+-- TOC entry 376 (class 1259 OID 54079)
 -- Name: log_id_seq; Type: SEQUENCE; Schema: timetable; Owner: postgres
 --
 
@@ -5145,6 +5515,8 @@ CREATE SEQUENCE timetable.log_id_seq
 ALTER TABLE timetable.log_id_seq OWNER TO postgres;
 
 --
+-- TOC entry 4479 (class 0 OID 0)
+-- Dependencies: 376
 -- Name: log_id_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: postgres
 --
 
@@ -5152,6 +5524,7 @@ ALTER SEQUENCE timetable.log_id_seq OWNED BY timetable.log.id;
 
 
 --
+-- TOC entry 377 (class 1259 OID 54081)
 -- Name: migrations; Type: TABLE; Schema: timetable; Owner: postgres
 --
 
@@ -5164,6 +5537,7 @@ CREATE TABLE timetable.migrations (
 ALTER TABLE timetable.migrations OWNER TO postgres;
 
 --
+-- TOC entry 378 (class 1259 OID 54087)
 -- Name: run_status; Type: TABLE; Schema: timetable; Owner: postgres
 --
 
@@ -5182,6 +5556,7 @@ CREATE TABLE timetable.run_status (
 ALTER TABLE timetable.run_status OWNER TO postgres;
 
 --
+-- TOC entry 379 (class 1259 OID 54091)
 -- Name: run_status_run_status_seq; Type: SEQUENCE; Schema: timetable; Owner: postgres
 --
 
@@ -5196,6 +5571,8 @@ CREATE SEQUENCE timetable.run_status_run_status_seq
 ALTER TABLE timetable.run_status_run_status_seq OWNER TO postgres;
 
 --
+-- TOC entry 4480 (class 0 OID 0)
+-- Dependencies: 379
 -- Name: run_status_run_status_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: postgres
 --
 
@@ -5203,6 +5580,7 @@ ALTER SEQUENCE timetable.run_status_run_status_seq OWNED BY timetable.run_status
 
 
 --
+-- TOC entry 380 (class 1259 OID 54093)
 -- Name: task_chain; Type: TABLE; Schema: timetable; Owner: postgres
 --
 
@@ -5219,6 +5597,7 @@ CREATE TABLE timetable.task_chain (
 ALTER TABLE timetable.task_chain OWNER TO postgres;
 
 --
+-- TOC entry 381 (class 1259 OID 54100)
 -- Name: task_chain_chain_id_seq; Type: SEQUENCE; Schema: timetable; Owner: postgres
 --
 
@@ -5233,6 +5612,8 @@ CREATE SEQUENCE timetable.task_chain_chain_id_seq
 ALTER TABLE timetable.task_chain_chain_id_seq OWNER TO postgres;
 
 --
+-- TOC entry 4481 (class 0 OID 0)
+-- Dependencies: 381
 -- Name: task_chain_chain_id_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: postgres
 --
 
@@ -5240,6 +5621,7 @@ ALTER SEQUENCE timetable.task_chain_chain_id_seq OWNED BY timetable.task_chain.c
 
 
 --
+-- TOC entry 382 (class 1259 OID 54102)
 -- Name: ano; Type: TABLE; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -5252,6 +5634,7 @@ CREATE TABLE valores_fiscales.ano (
 ALTER TABLE valores_fiscales.ano OWNER TO postgres;
 
 --
+-- TOC entry 383 (class 1259 OID 54105)
 -- Name: ano_fiscal_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -5267,6 +5650,8 @@ CREATE SEQUENCE valores_fiscales.ano_fiscal_id_seq
 ALTER TABLE valores_fiscales.ano_fiscal_id_seq OWNER TO postgres;
 
 --
+-- TOC entry 4482 (class 0 OID 0)
+-- Dependencies: 383
 -- Name: ano_fiscal_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -5274,6 +5659,7 @@ ALTER SEQUENCE valores_fiscales.ano_fiscal_id_seq OWNED BY valores_fiscales.ano.
 
 
 --
+-- TOC entry 384 (class 1259 OID 54107)
 -- Name: construccion; Type: TABLE; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -5288,6 +5674,7 @@ CREATE TABLE valores_fiscales.construccion (
 ALTER TABLE valores_fiscales.construccion OWNER TO postgres;
 
 --
+-- TOC entry 385 (class 1259 OID 54110)
 -- Name: construccion_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -5302,6 +5689,8 @@ CREATE SEQUENCE valores_fiscales.construccion_id_seq
 ALTER TABLE valores_fiscales.construccion_id_seq OWNER TO postgres;
 
 --
+-- TOC entry 4483 (class 0 OID 0)
+-- Dependencies: 385
 -- Name: construccion_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -5309,6 +5698,7 @@ ALTER SEQUENCE valores_fiscales.construccion_id_seq OWNED BY valores_fiscales.co
 
 
 --
+-- TOC entry 386 (class 1259 OID 54112)
 -- Name: tipo_construccion; Type: TABLE; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -5321,6 +5711,7 @@ CREATE TABLE valores_fiscales.tipo_construccion (
 ALTER TABLE valores_fiscales.tipo_construccion OWNER TO postgres;
 
 --
+-- TOC entry 387 (class 1259 OID 54118)
 -- Name: get_all_construcciones; Type: VIEW; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -5339,6 +5730,7 @@ CREATE VIEW valores_fiscales.get_all_construcciones AS
 ALTER TABLE valores_fiscales.get_all_construcciones OWNER TO postgres;
 
 --
+-- TOC entry 388 (class 1259 OID 54122)
 -- Name: sector; Type: TABLE; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -5352,6 +5744,7 @@ CREATE TABLE valores_fiscales.sector (
 ALTER TABLE valores_fiscales.sector OWNER TO postgres;
 
 --
+-- TOC entry 389 (class 1259 OID 54128)
 -- Name: terreno; Type: TABLE; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -5366,6 +5759,7 @@ CREATE TABLE valores_fiscales.terreno (
 ALTER TABLE valores_fiscales.terreno OWNER TO postgres;
 
 --
+-- TOC entry 390 (class 1259 OID 54131)
 -- Name: get_all_terrenos; Type: VIEW; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -5387,6 +5781,7 @@ CREATE VIEW valores_fiscales.get_all_terrenos AS
 ALTER TABLE valores_fiscales.get_all_terrenos OWNER TO postgres;
 
 --
+-- TOC entry 391 (class 1259 OID 54135)
 -- Name: sector_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -5402,6 +5797,8 @@ CREATE SEQUENCE valores_fiscales.sector_id_seq
 ALTER TABLE valores_fiscales.sector_id_seq OWNER TO postgres;
 
 --
+-- TOC entry 4484 (class 0 OID 0)
+-- Dependencies: 391
 -- Name: sector_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -5409,6 +5806,7 @@ ALTER SEQUENCE valores_fiscales.sector_id_seq OWNED BY valores_fiscales.sector.i
 
 
 --
+-- TOC entry 392 (class 1259 OID 54137)
 -- Name: terreno_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -5423,6 +5821,8 @@ CREATE SEQUENCE valores_fiscales.terreno_id_seq
 ALTER TABLE valores_fiscales.terreno_id_seq OWNER TO postgres;
 
 --
+-- TOC entry 4485 (class 0 OID 0)
+-- Dependencies: 392
 -- Name: terreno_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -5430,6 +5830,7 @@ ALTER SEQUENCE valores_fiscales.terreno_id_seq OWNED BY valores_fiscales.terreno
 
 
 --
+-- TOC entry 393 (class 1259 OID 54139)
 -- Name: tipo_construccion_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -5445,6 +5846,8 @@ CREATE SEQUENCE valores_fiscales.tipo_construccion_id_seq
 ALTER TABLE valores_fiscales.tipo_construccion_id_seq OWNER TO postgres;
 
 --
+-- TOC entry 4486 (class 0 OID 0)
+-- Dependencies: 393
 -- Name: tipo_construccion_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -5452,6 +5855,7 @@ ALTER SEQUENCE valores_fiscales.tipo_construccion_id_seq OWNED BY valores_fiscal
 
 
 --
+-- TOC entry 3681 (class 2604 OID 54141)
 -- Name: actividad_economica id_actividad_economica; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5459,6 +5863,7 @@ ALTER TABLE ONLY impuesto.actividad_economica ALTER COLUMN id_actividad_economic
 
 
 --
+-- TOC entry 3682 (class 2604 OID 54142)
 -- Name: actividad_economica_contribuyente id_actividad_economica_contribuyente; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5466,6 +5871,7 @@ ALTER TABLE ONLY impuesto.actividad_economica_contribuyente ALTER COLUMN id_acti
 
 
 --
+-- TOC entry 3683 (class 2604 OID 54143)
 -- Name: actividad_economica_exoneracion id_actividad_economica_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5473,6 +5879,7 @@ ALTER TABLE ONLY impuesto.actividad_economica_exoneracion ALTER COLUMN id_activi
 
 
 --
+-- TOC entry 3684 (class 2604 OID 54144)
 -- Name: avaluo_inmueble id_avaluo_inmueble; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5480,6 +5887,7 @@ ALTER TABLE ONLY impuesto.avaluo_inmueble ALTER COLUMN id_avaluo_inmueble SET DE
 
 
 --
+-- TOC entry 3685 (class 2604 OID 54145)
 -- Name: categoria_propaganda id_categoria_propaganda; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5487,6 +5895,7 @@ ALTER TABLE ONLY impuesto.categoria_propaganda ALTER COLUMN id_categoria_propaga
 
 
 --
+-- TOC entry 3686 (class 2604 OID 54146)
 -- Name: contribuyente id_contribuyente; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5494,6 +5903,7 @@ ALTER TABLE ONLY impuesto.contribuyente ALTER COLUMN id_contribuyente SET DEFAUL
 
 
 --
+-- TOC entry 3687 (class 2604 OID 54147)
 -- Name: contribuyente_exoneracion id_contribuyente_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5501,6 +5911,7 @@ ALTER TABLE ONLY impuesto.contribuyente_exoneracion ALTER COLUMN id_contribuyent
 
 
 --
+-- TOC entry 3688 (class 2604 OID 54148)
 -- Name: convenio id_convenio; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5508,6 +5919,7 @@ ALTER TABLE ONLY impuesto.convenio ALTER COLUMN id_convenio SET DEFAULT nextval(
 
 
 --
+-- TOC entry 3689 (class 2604 OID 54149)
 -- Name: credito_fiscal id_credito_fiscal; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5515,6 +5927,7 @@ ALTER TABLE ONLY impuesto.credito_fiscal ALTER COLUMN id_credito_fiscal SET DEFA
 
 
 --
+-- TOC entry 3690 (class 2604 OID 54150)
 -- Name: dias_feriados id_dia_feriado; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5522,6 +5935,7 @@ ALTER TABLE ONLY impuesto.dias_feriados ALTER COLUMN id_dia_feriado SET DEFAULT 
 
 
 --
+-- TOC entry 3692 (class 2604 OID 54151)
 -- Name: evento_fraccion id_evento_fraccion; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5529,6 +5943,7 @@ ALTER TABLE ONLY impuesto.evento_fraccion ALTER COLUMN id_evento_fraccion SET DE
 
 
 --
+-- TOC entry 3694 (class 2604 OID 54152)
 -- Name: evento_solicitud id_evento_solicitud; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5536,6 +5951,7 @@ ALTER TABLE ONLY impuesto.evento_solicitud ALTER COLUMN id_evento_solicitud SET 
 
 
 --
+-- TOC entry 3695 (class 2604 OID 54153)
 -- Name: factor id_factor; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5543,6 +5959,7 @@ ALTER TABLE ONLY impuesto.factor ALTER COLUMN id_factor SET DEFAULT nextval('imp
 
 
 --
+-- TOC entry 3658 (class 2604 OID 54154)
 -- Name: fraccion id_fraccion; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5550,6 +5967,7 @@ ALTER TABLE ONLY impuesto.fraccion ALTER COLUMN id_fraccion SET DEFAULT nextval(
 
 
 --
+-- TOC entry 3696 (class 2604 OID 54155)
 -- Name: inmueble_contribuyente_natural id_inmueble_contribuyente; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5557,6 +5975,7 @@ ALTER TABLE ONLY impuesto.inmueble_contribuyente_natural ALTER COLUMN id_inmuebl
 
 
 --
+-- TOC entry 3669 (class 2604 OID 54156)
 -- Name: liquidacion id_liquidacion; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5564,6 +5983,7 @@ ALTER TABLE ONLY impuesto.liquidacion ALTER COLUMN id_liquidacion SET DEFAULT ne
 
 
 --
+-- TOC entry 3697 (class 2604 OID 54157)
 -- Name: liquidacion_descuento id_liquidacion_descuento; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5571,6 +5991,7 @@ ALTER TABLE ONLY impuesto.liquidacion_descuento ALTER COLUMN id_liquidacion_desc
 
 
 --
+-- TOC entry 3698 (class 2604 OID 54158)
 -- Name: multa id_multa; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5578,6 +5999,7 @@ ALTER TABLE ONLY impuesto.multa ALTER COLUMN id_multa SET DEFAULT nextval('impue
 
 
 --
+-- TOC entry 3702 (class 2604 OID 54159)
 -- Name: plazo_exoneracion id_plazo_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5585,6 +6007,7 @@ ALTER TABLE ONLY impuesto.plazo_exoneracion ALTER COLUMN id_plazo_exoneracion SE
 
 
 --
+-- TOC entry 3704 (class 2604 OID 54160)
 -- Name: ramo id_ramo; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5592,6 +6015,7 @@ ALTER TABLE ONLY impuesto.ramo ALTER COLUMN id_ramo SET DEFAULT nextval('impuest
 
 
 --
+-- TOC entry 3703 (class 2604 OID 54161)
 -- Name: ramo_exoneracion id_ramo_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5599,6 +6023,7 @@ ALTER TABLE ONLY impuesto.ramo_exoneracion ALTER COLUMN id_ramo_exoneracion SET 
 
 
 --
+-- TOC entry 3707 (class 2604 OID 54162)
 -- Name: registro_municipal id_registro_municipal; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5606,6 +6031,7 @@ ALTER TABLE ONLY impuesto.registro_municipal ALTER COLUMN id_registro_municipal 
 
 
 --
+-- TOC entry 3660 (class 2604 OID 54163)
 -- Name: solicitud id_solicitud; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5613,6 +6039,7 @@ ALTER TABLE ONLY impuesto.solicitud ALTER COLUMN id_solicitud SET DEFAULT nextva
 
 
 --
+-- TOC entry 3708 (class 2604 OID 54164)
 -- Name: subramo id_subramo; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5620,6 +6047,7 @@ ALTER TABLE ONLY impuesto.subramo ALTER COLUMN id_subramo SET DEFAULT nextval('i
 
 
 --
+-- TOC entry 3710 (class 2604 OID 54165)
 -- Name: tabulador_aseo_actividad_economica id_tabulador_aseo_actividad_economica; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5627,6 +6055,7 @@ ALTER TABLE ONLY impuesto.tabulador_aseo_actividad_economica ALTER COLUMN id_tab
 
 
 --
+-- TOC entry 3712 (class 2604 OID 54166)
 -- Name: tabulador_aseo_residencial id_tabulador_aseo_residencial; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5634,6 +6063,7 @@ ALTER TABLE ONLY impuesto.tabulador_aseo_residencial ALTER COLUMN id_tabulador_a
 
 
 --
+-- TOC entry 3713 (class 2604 OID 54167)
 -- Name: tabulador_gas id_tabulador_gas; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5641,6 +6071,7 @@ ALTER TABLE ONLY impuesto.tabulador_gas ALTER COLUMN id_tabulador_gas SET DEFAUL
 
 
 --
+-- TOC entry 3715 (class 2604 OID 54168)
 -- Name: tabulador_gas_actividad_economica id_tabulador_gas_actividad_economica; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5648,6 +6079,7 @@ ALTER TABLE ONLY impuesto.tabulador_gas_actividad_economica ALTER COLUMN id_tabu
 
 
 --
+-- TOC entry 3717 (class 2604 OID 54169)
 -- Name: tabulador_gas_residencial id_tabulador_gas_residencial; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5655,6 +6087,7 @@ ALTER TABLE ONLY impuesto.tabulador_gas_residencial ALTER COLUMN id_tabulador_ga
 
 
 --
+-- TOC entry 3719 (class 2604 OID 54170)
 -- Name: tipo_aviso_propaganda id_tipo_aviso_propaganda; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5662,6 +6095,7 @@ ALTER TABLE ONLY impuesto.tipo_aviso_propaganda ALTER COLUMN id_tipo_aviso_propa
 
 
 --
+-- TOC entry 3720 (class 2604 OID 54171)
 -- Name: tipo_multa id_tipo_multa; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5669,6 +6103,7 @@ ALTER TABLE ONLY impuesto.tipo_multa ALTER COLUMN id_tipo_multa SET DEFAULT next
 
 
 --
+-- TOC entry 3721 (class 2604 OID 54172)
 -- Name: usuario_enlazado id_usuario_enlazado; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5676,6 +6111,7 @@ ALTER TABLE ONLY impuesto.usuario_enlazado ALTER COLUMN id_usuario_enlazado SET 
 
 
 --
+-- TOC entry 3724 (class 2604 OID 54173)
 -- Name: verificacion_email id_verificacion_email; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5683,6 +6119,7 @@ ALTER TABLE ONLY impuesto.verificacion_email ALTER COLUMN id_verificacion_email 
 
 
 --
+-- TOC entry 3727 (class 2604 OID 54174)
 -- Name: verificacion_telefono id_verificacion_telefono; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
@@ -5690,6 +6127,7 @@ ALTER TABLE ONLY impuesto.verificacion_telefono ALTER COLUMN id_verificacion_tel
 
 
 --
+-- TOC entry 3729 (class 2604 OID 54175)
 -- Name: banco id_banco; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5697,6 +6135,7 @@ ALTER TABLE ONLY public.banco ALTER COLUMN id_banco SET DEFAULT nextval('public.
 
 
 --
+-- TOC entry 3730 (class 2604 OID 54176)
 -- Name: campo id_campo; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5704,6 +6143,7 @@ ALTER TABLE ONLY public.campo ALTER COLUMN id_campo SET DEFAULT nextval('public.
 
 
 --
+-- TOC entry 3732 (class 2604 OID 54177)
 -- Name: cargo id_cargo; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5711,6 +6151,7 @@ ALTER TABLE ONLY public.cargo ALTER COLUMN id_cargo SET DEFAULT nextval('public.
 
 
 --
+-- TOC entry 3662 (class 2604 OID 54178)
 -- Name: caso_social id_caso; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5718,6 +6159,7 @@ ALTER TABLE ONLY public.caso_social ALTER COLUMN id_caso SET DEFAULT nextval('pu
 
 
 --
+-- TOC entry 3733 (class 2604 OID 54179)
 -- Name: certificado id_certificado; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5725,6 +6167,7 @@ ALTER TABLE ONLY public.certificado ALTER COLUMN id_certificado SET DEFAULT next
 
 
 --
+-- TOC entry 3734 (class 2604 OID 54180)
 -- Name: detalle_factura id_detalle; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5732,6 +6175,7 @@ ALTER TABLE ONLY public.detalle_factura ALTER COLUMN id_detalle SET DEFAULT next
 
 
 --
+-- TOC entry 3664 (class 2604 OID 54181)
 -- Name: evento_caso_social id_evento_caso; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5739,6 +6183,7 @@ ALTER TABLE ONLY public.evento_caso_social ALTER COLUMN id_evento_caso SET DEFAU
 
 
 --
+-- TOC entry 3671 (class 2604 OID 54182)
 -- Name: evento_multa id_evento_multa; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5746,6 +6191,7 @@ ALTER TABLE ONLY public.evento_multa ALTER COLUMN id_evento_multa SET DEFAULT ne
 
 
 --
+-- TOC entry 3677 (class 2604 OID 54183)
 -- Name: evento_tramite id_evento_tramite; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5753,6 +6199,7 @@ ALTER TABLE ONLY public.evento_tramite ALTER COLUMN id_evento_tramite SET DEFAUL
 
 
 --
+-- TOC entry 3735 (class 2604 OID 54184)
 -- Name: factura_tramite id_factura; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5760,6 +6207,7 @@ ALTER TABLE ONLY public.factura_tramite ALTER COLUMN id_factura SET DEFAULT next
 
 
 --
+-- TOC entry 3738 (class 2604 OID 54185)
 -- Name: inmueble_urbano id_inmueble; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5767,6 +6215,7 @@ ALTER TABLE ONLY public.inmueble_urbano ALTER COLUMN id_inmueble SET DEFAULT nex
 
 
 --
+-- TOC entry 3665 (class 2604 OID 54186)
 -- Name: institucion id_institucion; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5774,6 +6223,7 @@ ALTER TABLE ONLY public.institucion ALTER COLUMN id_institucion SET DEFAULT next
 
 
 --
+-- TOC entry 3674 (class 2604 OID 54187)
 -- Name: multa id_multa; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5781,6 +6231,7 @@ ALTER TABLE ONLY public.multa ALTER COLUMN id_multa SET DEFAULT nextval('public.
 
 
 --
+-- TOC entry 3700 (class 2604 OID 54188)
 -- Name: notificacion id_notificacion; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5788,6 +6239,7 @@ ALTER TABLE ONLY public.notificacion ALTER COLUMN id_notificacion SET DEFAULT ne
 
 
 --
+-- TOC entry 3744 (class 2604 OID 54189)
 -- Name: operatividad_terminal id_operatividad_terminal; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5795,6 +6247,7 @@ ALTER TABLE ONLY public.operatividad_terminal ALTER COLUMN id_operatividad_termi
 
 
 --
+-- TOC entry 3747 (class 2604 OID 54190)
 -- Name: ordenanza id_ordenanza; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5802,6 +6255,7 @@ ALTER TABLE ONLY public.ordenanza ALTER COLUMN id_ordenanza SET DEFAULT nextval(
 
 
 --
+-- TOC entry 3748 (class 2604 OID 54191)
 -- Name: ordenanza_tramite id_ordenanza_tramite; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5809,6 +6263,7 @@ ALTER TABLE ONLY public.ordenanza_tramite ALTER COLUMN id_ordenanza_tramite SET 
 
 
 --
+-- TOC entry 3753 (class 2604 OID 54192)
 -- Name: pago id_pago; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5816,6 +6271,7 @@ ALTER TABLE ONLY public.pago ALTER COLUMN id_pago SET DEFAULT nextval('public.pa
 
 
 --
+-- TOC entry 3739 (class 2604 OID 54193)
 -- Name: parroquia id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5823,6 +6279,7 @@ ALTER TABLE ONLY public.parroquia ALTER COLUMN id SET DEFAULT nextval('public.pa
 
 
 --
+-- TOC entry 3756 (class 2604 OID 54194)
 -- Name: permiso_de_acceso id_permiso; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5830,6 +6287,7 @@ ALTER TABLE ONLY public.permiso_de_acceso ALTER COLUMN id_permiso SET DEFAULT ne
 
 
 --
+-- TOC entry 3757 (class 2604 OID 54195)
 -- Name: propietario id_propietario; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5837,6 +6295,7 @@ ALTER TABLE ONLY public.propietario ALTER COLUMN id_propietario SET DEFAULT next
 
 
 --
+-- TOC entry 3758 (class 2604 OID 54196)
 -- Name: propietario_inmueble id_propietario_inmueble; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5844,6 +6303,7 @@ ALTER TABLE ONLY public.propietario_inmueble ALTER COLUMN id_propietario_inmuebl
 
 
 --
+-- TOC entry 3761 (class 2604 OID 54197)
 -- Name: recaudo id_recaudo; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5851,6 +6311,7 @@ ALTER TABLE ONLY public.recaudo ALTER COLUMN id_recaudo SET DEFAULT nextval('pub
 
 
 --
+-- TOC entry 3763 (class 2604 OID 54198)
 -- Name: recuperacion id_recuperacion; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5858,6 +6319,7 @@ ALTER TABLE ONLY public.recuperacion ALTER COLUMN id_recuperacion SET DEFAULT ne
 
 
 --
+-- TOC entry 3749 (class 2604 OID 54199)
 -- Name: tarifa_inspeccion id_tarifa; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5865,6 +6327,7 @@ ALTER TABLE ONLY public.tarifa_inspeccion ALTER COLUMN id_tarifa SET DEFAULT nex
 
 
 --
+-- TOC entry 3764 (class 2604 OID 54200)
 -- Name: template_certificado id_template_certificado; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5872,6 +6335,7 @@ ALTER TABLE ONLY public.template_certificado ALTER COLUMN id_template_certificad
 
 
 --
+-- TOC entry 3666 (class 2604 OID 54201)
 -- Name: tipo_tramite id_tipo_tramite; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5879,6 +6343,7 @@ ALTER TABLE ONLY public.tipo_tramite ALTER COLUMN id_tipo_tramite SET DEFAULT ne
 
 
 --
+-- TOC entry 3765 (class 2604 OID 54202)
 -- Name: tipo_usuario id_tipo_usuario; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5886,6 +6351,7 @@ ALTER TABLE ONLY public.tipo_usuario ALTER COLUMN id_tipo_usuario SET DEFAULT ne
 
 
 --
+-- TOC entry 3680 (class 2604 OID 54203)
 -- Name: tramite id_tramite; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5893,6 +6359,7 @@ ALTER TABLE ONLY public.tramite ALTER COLUMN id_tramite SET DEFAULT nextval('pub
 
 
 --
+-- TOC entry 3766 (class 2604 OID 54204)
 -- Name: usuario id_usuario; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5900,6 +6367,7 @@ ALTER TABLE ONLY public.usuario ALTER COLUMN id_usuario SET DEFAULT nextval('pub
 
 
 --
+-- TOC entry 3768 (class 2604 OID 54205)
 -- Name: valor id_valor; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5907,6 +6375,7 @@ ALTER TABLE ONLY public.valor ALTER COLUMN id_valor SET DEFAULT nextval('public.
 
 
 --
+-- TOC entry 3771 (class 2604 OID 54206)
 -- Name: variable_ordenanza id_variable; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -5914,6 +6383,7 @@ ALTER TABLE ONLY public.variable_ordenanza ALTER COLUMN id_variable SET DEFAULT 
 
 
 --
+-- TOC entry 3773 (class 2604 OID 54207)
 -- Name: base_task task_id; Type: DEFAULT; Schema: timetable; Owner: postgres
 --
 
@@ -5921,6 +6391,7 @@ ALTER TABLE ONLY timetable.base_task ALTER COLUMN task_id SET DEFAULT nextval('t
 
 
 --
+-- TOC entry 3778 (class 2604 OID 54208)
 -- Name: chain_execution_config chain_execution_config; Type: DEFAULT; Schema: timetable; Owner: postgres
 --
 
@@ -5928,6 +6399,7 @@ ALTER TABLE ONLY timetable.chain_execution_config ALTER COLUMN chain_execution_c
 
 
 --
+-- TOC entry 3780 (class 2604 OID 54209)
 -- Name: database_connection database_connection; Type: DEFAULT; Schema: timetable; Owner: postgres
 --
 
@@ -5935,6 +6407,7 @@ ALTER TABLE ONLY timetable.database_connection ALTER COLUMN database_connection 
 
 
 --
+-- TOC entry 3783 (class 2604 OID 54210)
 -- Name: log id; Type: DEFAULT; Schema: timetable; Owner: postgres
 --
 
@@ -5942,6 +6415,7 @@ ALTER TABLE ONLY timetable.log ALTER COLUMN id SET DEFAULT nextval('timetable.lo
 
 
 --
+-- TOC entry 3785 (class 2604 OID 54211)
 -- Name: run_status run_status; Type: DEFAULT; Schema: timetable; Owner: postgres
 --
 
@@ -5949,6 +6423,7 @@ ALTER TABLE ONLY timetable.run_status ALTER COLUMN run_status SET DEFAULT nextva
 
 
 --
+-- TOC entry 3787 (class 2604 OID 54212)
 -- Name: task_chain chain_id; Type: DEFAULT; Schema: timetable; Owner: postgres
 --
 
@@ -5956,6 +6431,7 @@ ALTER TABLE ONLY timetable.task_chain ALTER COLUMN chain_id SET DEFAULT nextval(
 
 
 --
+-- TOC entry 3788 (class 2604 OID 54213)
 -- Name: ano id; Type: DEFAULT; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -5963,6 +6439,7 @@ ALTER TABLE ONLY valores_fiscales.ano ALTER COLUMN id SET DEFAULT nextval('valor
 
 
 --
+-- TOC entry 3789 (class 2604 OID 54214)
 -- Name: construccion id; Type: DEFAULT; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -5970,6 +6447,7 @@ ALTER TABLE ONLY valores_fiscales.construccion ALTER COLUMN id SET DEFAULT nextv
 
 
 --
+-- TOC entry 3791 (class 2604 OID 54215)
 -- Name: sector id; Type: DEFAULT; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -5977,6 +6455,7 @@ ALTER TABLE ONLY valores_fiscales.sector ALTER COLUMN id SET DEFAULT nextval('va
 
 
 --
+-- TOC entry 3792 (class 2604 OID 54216)
 -- Name: terreno id; Type: DEFAULT; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -5984,6 +6463,7 @@ ALTER TABLE ONLY valores_fiscales.terreno ALTER COLUMN id SET DEFAULT nextval('v
 
 
 --
+-- TOC entry 3790 (class 2604 OID 54217)
 -- Name: tipo_construccion id; Type: DEFAULT; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -5991,6 +6471,8 @@ ALTER TABLE ONLY valores_fiscales.tipo_construccion ALTER COLUMN id SET DEFAULT 
 
 
 --
+-- TOC entry 4242 (class 0 OID 53439)
+-- Dependencies: 219
 -- Data for Name: actividad_economica; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -6219,6 +6701,8 @@ COPY impuesto.actividad_economica (id_actividad_economica, numero_referencia, de
 
 
 --
+-- TOC entry 4243 (class 0 OID 53445)
+-- Dependencies: 220
 -- Data for Name: actividad_economica_contribuyente; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -6236,6 +6720,8 @@ COPY impuesto.actividad_economica_contribuyente (id_actividad_economica_contribu
 
 
 --
+-- TOC entry 4245 (class 0 OID 53450)
+-- Dependencies: 222
 -- Data for Name: actividad_economica_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -6244,6 +6730,8 @@ COPY impuesto.actividad_economica_exoneracion (id_actividad_economica_exoneracio
 
 
 --
+-- TOC entry 4248 (class 0 OID 53457)
+-- Dependencies: 225
 -- Data for Name: avaluo_inmueble; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -6283,6 +6771,8 @@ COPY impuesto.avaluo_inmueble (id_avaluo_inmueble, id_inmueble, avaluo, anio) FR
 
 
 --
+-- TOC entry 4250 (class 0 OID 53465)
+-- Dependencies: 227
 -- Data for Name: categoria_propaganda; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -6305,6 +6795,8 @@ COPY impuesto.categoria_propaganda (id_categoria_propaganda, descripcion) FROM s
 
 
 --
+-- TOC entry 4252 (class 0 OID 53473)
+-- Dependencies: 229
 -- Data for Name: contribuyente; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -6319,6 +6811,8 @@ COPY impuesto.contribuyente (id_contribuyente, tipo_documento, documento, razon_
 
 
 --
+-- TOC entry 4253 (class 0 OID 53479)
+-- Dependencies: 230
 -- Data for Name: contribuyente_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -6327,14 +6821,20 @@ COPY impuesto.contribuyente_exoneracion (id_contribuyente_exoneracion, id_plazo_
 
 
 --
+-- TOC entry 4256 (class 0 OID 53486)
+-- Dependencies: 233
 -- Data for Name: convenio; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
 COPY impuesto.convenio (id_convenio, id_solicitud, cantidad) FROM stdin;
+31	278	2
+32	281	2
 \.
 
 
 --
+-- TOC entry 4258 (class 0 OID 53491)
+-- Dependencies: 235
 -- Data for Name: credito_fiscal; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -6343,6 +6843,8 @@ COPY impuesto.credito_fiscal (id_credito_fiscal, id_persona, concepto, credito) 
 
 
 --
+-- TOC entry 4260 (class 0 OID 53499)
+-- Dependencies: 237
 -- Data for Name: dias_feriados; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -6365,14 +6867,26 @@ COPY impuesto.dias_feriados (id_dia_feriado, dia, descripcion) FROM stdin;
 
 
 --
+-- TOC entry 4262 (class 0 OID 53507)
+-- Dependencies: 239
 -- Data for Name: evento_fraccion; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
 COPY impuesto.evento_fraccion (id_evento_fraccion, id_fraccion, event, "time") FROM stdin;
+5	6	iniciar	2020-07-01 16:20:14.353543
+6	7	iniciar	2020-07-01 16:20:14.353543
+7	8	iniciar	2020-07-01 16:20:14.353543
+8	9	iniciar	2020-07-01 16:20:14.353543
+9	6	ingresardatos_pi	2020-07-01 16:20:14.353543
+10	7	ingresardatos_pi	2020-07-01 16:20:14.353543
+11	8	ingresardatos_pi	2020-07-01 16:20:14.353543
+12	9	ingresardatos_pi	2020-07-01 16:20:14.353543
 \.
 
 
 --
+-- TOC entry 4264 (class 0 OID 53516)
+-- Dependencies: 241
 -- Data for Name: evento_solicitud; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -6430,10 +6944,24 @@ COPY impuesto.evento_solicitud (id_evento_solicitud, id_solicitud, event, "time"
 286	200	iniciar	2020-06-27 17:01:41.369458
 287	200	ingresardatos_pi	2020-06-27 17:01:41.369458
 288	200	validar_pi	2020-06-30 12:58:42.828701
+442	278	iniciar	2020-07-01 16:20:14.353543
+290	202	iniciar	2020-07-01 15:55:15.769117
+291	202	ingresardatos_pi	2020-07-01 15:55:15.769117
+443	279	iniciar	2020-07-01 16:20:14.353543
+444	280	iniciar	2020-07-01 16:20:14.353543
+445	281	iniciar	2020-07-01 16:20:14.353543
+446	282	iniciar	2020-07-01 16:20:14.353543
+447	278	ingresardatos_pi	2020-07-01 16:20:14.353543
+448	279	ingresardatos_pi	2020-07-01 16:20:14.353543
+449	280	ingresardatos_pi	2020-07-01 16:20:14.353543
+450	281	ingresardatos_pi	2020-07-01 16:20:14.353543
+451	282	ingresardatos_pi	2020-07-01 16:20:14.353543
 \.
 
 
 --
+-- TOC entry 4266 (class 0 OID 53525)
+-- Dependencies: 243
 -- Data for Name: factor; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -6442,14 +6970,22 @@ COPY impuesto.factor (id_factor, descripcion, valor) FROM stdin;
 
 
 --
+-- TOC entry 4231 (class 0 OID 53299)
+-- Dependencies: 205
 -- Data for Name: fraccion; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
 COPY impuesto.fraccion (id_fraccion, id_convenio, monto, porcion, fecha, aprobado, fecha_aprobado) FROM stdin;
+6	31	163158578.15	1	2020-01-07	f	\N
+7	31	10000000.00	2	2020-01-07	f	\N
+8	32	10000000.00	1	2020-02-07	f	\N
+9	32	5000000.00	2	2020-03-07	f	\N
 \.
 
 
 --
+-- TOC entry 4269 (class 0 OID 53539)
+-- Dependencies: 247
 -- Data for Name: inmueble_contribuyente_natural; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -6458,6 +6994,8 @@ COPY impuesto.inmueble_contribuyente_natural (id_inmueble_contribuyente, id_inmu
 
 
 --
+-- TOC entry 4237 (class 0 OID 53361)
+-- Dependencies: 212
 -- Data for Name: liquidacion; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -6638,10 +7176,22 @@ COPY impuesto.liquidacion (id_liquidacion, id_solicitud, monto, certificado, rec
 856	199	5950000	\N	\N	2020-06-27	10	{"desglose":[{"aforo":131,"montoDeclarado":"5000000.00"},{"aforo":140,"montoDeclarado":"50000000.00"},{"aforo":194,"montoDeclarado":"65000000.00"}],"fecha":{"month":"abril","year":2020}}	2020-06-30	24	f
 857	199	12930000	\N	\N	2020-06-27	10	{"desglose":[{"aforo":131,"montoDeclarado":"650000000.00"},{"aforo":140,"montoDeclarado":"65000000.00"},{"aforo":194,"montoDeclarado":"56000000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	24	f
 858	199	28999.999999999996	\N	\N	2020-06-27	66	{"desglose":[{"inmueble":343,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":344,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"marzo","year":2020}}	2020-03-31	24	f
+868	281	5000000.00	\N	\N	2020-07-01	101	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":10}	2020-05-31	22	f
+869	281	10000000.00	\N	\N	2020-07-01	101	{"fecha":{"month":"junio","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":20}	2020-06-30	22	f
+870	279	36938523723.69	\N	\N	2020-07-01	10	{"desglose":[{"aforo":75,"montoDeclarado":"123412312.00"},{"aforo":185,"montoDeclarado":"1231234124123.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	22	f
+871	279	371737023.69	\N	\N	2020-07-01	10	{"desglose":[{"aforo":75,"montoDeclarado":"123412341.00"},{"aforo":185,"montoDeclarado":"12341234123.00"}],"fecha":{"month":"junio","year":2020}}	2020-06-30	22	f
+875	282	29000.00	\N	\N	2020-07-01	66	{"desglose":[{"inmueble":340,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":341,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	22	f
+876	282	29000.00	\N	\N	2020-07-01	66	{"desglose":[{"inmueble":340,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":341,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"junio","year":2020}}	2020-06-30	22	f
+872	282	29000.00	\N	\N	2020-07-01	66	{"desglose":[{"inmueble":340,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":341,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"febrero","year":2020}}	2020-02-29	22	f
+873	282	29000.00	\N	\N	2020-07-01	66	{"desglose":[{"inmueble":340,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":341,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"marzo","year":2020}}	2020-03-31	22	f
+874	282	29000.00	\N	\N	2020-07-01	66	{"desglose":[{"inmueble":340,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":341,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"abril","year":2020}}	2020-07-31	22	f
+877	282	29000.00	\N	\N	2020-07-01	66	{"desglose":[{"inmueble":340,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":341,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"julio","year":2020}}	2020-07-31	22	f
 \.
 
 
 --
+-- TOC entry 4271 (class 0 OID 53544)
+-- Dependencies: 249
 -- Data for Name: liquidacion_descuento; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -6650,6 +7200,8 @@ COPY impuesto.liquidacion_descuento (id_liquidacion_descuento, id_liquidacion, p
 
 
 --
+-- TOC entry 4274 (class 0 OID 53554)
+-- Dependencies: 252
 -- Data for Name: multa; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -6658,6 +7210,8 @@ COPY impuesto.multa (id_multa, id_solicitud, id_tipo_multa, monto, mes, anio) FR
 
 
 --
+-- TOC entry 4277 (class 0 OID 53575)
+-- Dependencies: 256
 -- Data for Name: plazo_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -6669,6 +7223,8 @@ COPY impuesto.plazo_exoneracion (id_plazo_exoneracion, fecha_inicio, fecha_fin) 
 
 
 --
+-- TOC entry 4281 (class 0 OID 53585)
+-- Dependencies: 260
 -- Data for Name: ramo; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -6773,6 +7329,8 @@ COPY impuesto.ramo (id_ramo, codigo, descripcion, descripcion_corta) FROM stdin;
 
 
 --
+-- TOC entry 4279 (class 0 OID 53580)
+-- Dependencies: 258
 -- Data for Name: ramo_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -6781,15 +7339,15 @@ COPY impuesto.ramo_exoneracion (id_ramo_exoneracion, id_plazo_exoneracion, id_ra
 
 
 --
+-- TOC entry 4284 (class 0 OID 53595)
+-- Dependencies: 263
 -- Data for Name: registro_municipal; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
 COPY impuesto.registro_municipal (id_registro_municipal, id_contribuyente, referencia_municipal, fecha_aprobacion, telefono_celular, telefono_habitacion, email, denominacion_comercial, nombre_representante, actualizado) FROM stdin;
 19	57	2900014139	2020-06-26	4129661659	\N	orderleep@gmail.com	CORPORACION DIGITEL, C.A.	ROBERTO JOSE ORTA	t
 20	57	2900013536	2020-06-26	4129661659	\N	romayjj@gmail.com	CORPORACION DIGITEL, C.A.  PALACIO DE EVENTOS	FRANCISCO  HUNG	t
-18	57	2900011266	2020-06-26	1896841	\N		CORPORACION GSM	OSWALDO CISNEROS	\N
 21	57	2900026280	2020-06-26	4129661659	\N	ffrazo@gmail.com	CORPORACION DIGITEL, C.A.	DEMERIS RUIZ	t
-22	57	2900011265	2020-06-26	2617501622	\N	impuestos_digitel@digitel.com.ve	CORPORACION DIGITEL, C.A.	ALFRED TULIO HUNG RIVERO	\N
 27	58	2900013829	2020-06-26	4129661659	\N	orderleep@gmail.com	FARMACIA COVIDES, C.A. ( LOCATEL BELLA VISTA )	LILIANA SANCHEZ	t
 28	61	7000002467	2020-06-27	4146224064	\N	wakapluswakuplus@gmail.com	SERVICIOS INFORMATICOS WAKUPLUS CA	MANUEL MARULANDA	t
 29	61	7000002467	2020-06-27	4146224064	\N	wakapluswakuplus@gmail.com	SERVICIOS INFORMATICOS WAKUPLUS CA	MANUEL MARULANDA	t
@@ -6802,10 +7360,14 @@ COPY impuesto.registro_municipal (id_registro_municipal, id_contribuyente, refer
 25	58	207R002132	2020-06-26	2122643821	\N		RARMACIA COVIDES, C.A. ( LOCATEL I.P.S.F.A. )	JOSE ABEID	\N
 26	58	207P000358	2020-06-26	02617590502	\N		FARMACIA COVIDES C.A.-	LILIANA SANCHEZ.-	\N
 23	58	AR20200024	2020-06-26	1	\N		FARMACIA COVIDES C.A.	IVECO	t
+18	57	2900011266	2020-06-26	4078376304	\N	snider8520@gmail.com	CORPORACION GSM	OSWALDO CISNEROS	t
+22	57	2900011265	2020-06-26	4078376304	\N	snider8520@gmail.com	CORPORACION DIGITEL, C.A.	ALFRED TULIO HUNG RIVERO	t
 \.
 
 
 --
+-- TOC entry 4286 (class 0 OID 53605)
+-- Dependencies: 265
 -- Data for Name: registro_municipal_verificacion; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -6815,10 +7377,14 @@ COPY impuesto.registro_municipal_verificacion (id_registro_municipal, id_verific
 21	83
 27	84
 24	85
+18	86
+22	86
 \.
 
 
 --
+-- TOC entry 4232 (class 0 OID 53307)
+-- Dependencies: 206
 -- Data for Name: solicitud; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -6848,10 +7414,18 @@ COPY impuesto.solicitud (id_solicitud, id_usuario, aprobado, fecha, fecha_aproba
 190	117	f	2020-05-13	\N	5	62	\N
 191	\N	f	2020-05-06	\N	5	62	\N
 192	\N	f	2020-05-13	\N	5	62	\N
+202	125	f	2020-07-01	\N	5	57	\N
+279	\N	f	2020-07-01	\N	5	57	\N
+280	\N	f	2020-07-01	\N	5	57	\N
+282	\N	f	2020-07-01	\N	5	57	\N
+278	\N	f	2020-07-01	\N	5	57	CONVENIO
+281	\N	f	2020-07-01	\N	5	57	CONVENIO
 \.
 
 
 --
+-- TOC entry 4288 (class 0 OID 53615)
+-- Dependencies: 268
 -- Data for Name: subramo; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -6959,6 +7533,8 @@ COPY impuesto.subramo (id_subramo, id_ramo, subindice, descripcion) FROM stdin;
 
 
 --
+-- TOC entry 4290 (class 0 OID 53628)
+-- Dependencies: 271
 -- Data for Name: tabulador_aseo_actividad_economica; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -7179,6 +7755,8 @@ COPY impuesto.tabulador_aseo_actividad_economica (id_tabulador_aseo_actividad_ec
 
 
 --
+-- TOC entry 4292 (class 0 OID 53637)
+-- Dependencies: 273
 -- Data for Name: tabulador_aseo_residencial; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -7188,6 +7766,8 @@ COPY impuesto.tabulador_aseo_residencial (id_tabulador_aseo_residencial, id_usua
 
 
 --
+-- TOC entry 4294 (class 0 OID 53646)
+-- Dependencies: 275
 -- Data for Name: tabulador_gas; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -7196,6 +7776,8 @@ COPY impuesto.tabulador_gas (id_tabulador_gas, id_actividad_economica, monto) FR
 
 
 --
+-- TOC entry 4295 (class 0 OID 53652)
+-- Dependencies: 276
 -- Data for Name: tabulador_gas_actividad_economica; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -7416,6 +7998,8 @@ COPY impuesto.tabulador_gas_actividad_economica (id_tabulador_gas_actividad_econ
 
 
 --
+-- TOC entry 4298 (class 0 OID 53663)
+-- Dependencies: 279
 -- Data for Name: tabulador_gas_residencial; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -7425,6 +8009,8 @@ COPY impuesto.tabulador_gas_residencial (id_tabulador_gas_residencial, id_usuari
 
 
 --
+-- TOC entry 4300 (class 0 OID 53672)
+-- Dependencies: 281
 -- Data for Name: tipo_aviso_propaganda; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -7495,6 +8081,8 @@ COPY impuesto.tipo_aviso_propaganda (id_tipo_aviso_propaganda, id_categoria_prop
 
 
 --
+-- TOC entry 4302 (class 0 OID 53681)
+-- Dependencies: 283
 -- Data for Name: tipo_multa; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -7504,6 +8092,8 @@ COPY impuesto.tipo_multa (id_tipo_multa, descripcion) FROM stdin;
 
 
 --
+-- TOC entry 4304 (class 0 OID 53689)
+-- Dependencies: 285
 -- Data for Name: usuario_enlazado; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -7512,6 +8102,8 @@ COPY impuesto.usuario_enlazado (id_usuario_enlazado, id_contribuyente, email) FR
 
 
 --
+-- TOC entry 4306 (class 0 OID 53697)
+-- Dependencies: 287
 -- Data for Name: verificacion_email; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -7520,6 +8112,8 @@ COPY impuesto.verificacion_email (id_verificacion_email, id_registro_municipal, 
 
 
 --
+-- TOC entry 4308 (class 0 OID 53707)
+-- Dependencies: 289
 -- Data for Name: verificacion_telefono; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
@@ -7530,10 +8124,13 @@ COPY impuesto.verificacion_telefono (id_verificacion_telefono, codigo_verificaci
 83	062801	2020-06-26 19:04:24.049606-04	t	121	4129661659
 84	310569	2020-06-26 19:14:02.661491-04	t	122	4129661659
 85	505131	2020-06-27 12:30:31.169715-04	t	124	4129661659
+86	664885	2020-07-01 15:52:21.927678-04	t	125	4078376304
 \.
 
 
 --
+-- TOC entry 4310 (class 0 OID 53717)
+-- Dependencies: 291
 -- Data for Name: banco; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -7577,6 +8174,8 @@ COPY public.banco (id_banco, nombre, validador) FROM stdin;
 
 
 --
+-- TOC entry 4312 (class 0 OID 53726)
+-- Dependencies: 293
 -- Data for Name: campo; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -7676,6 +8275,8 @@ COPY public.campo (id_campo, nombre, tipo, validacion, col) FROM stdin;
 
 
 --
+-- TOC entry 4313 (class 0 OID 53732)
+-- Dependencies: 294
 -- Data for Name: campo_tramite; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8012,6 +8613,8 @@ COPY public.campo_tramite (id_campo, id_tipo_tramite, orden, estado, id_seccion)
 
 
 --
+-- TOC entry 4315 (class 0 OID 53741)
+-- Dependencies: 296
 -- Data for Name: cargo; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8044,6 +8647,8 @@ COPY public.cargo (id_cargo, id_tipo_usuario, id_institucion, descripcion) FROM 
 
 
 --
+-- TOC entry 4233 (class 0 OID 53329)
+-- Dependencies: 207
 -- Data for Name: caso_social; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8053,6 +8658,8 @@ COPY public.caso_social (id_caso, id_tipo_tramite, costo, datos, fecha_creacion,
 
 
 --
+-- TOC entry 4318 (class 0 OID 53751)
+-- Dependencies: 299
 -- Data for Name: certificado; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8061,6 +8668,8 @@ COPY public.certificado (id_certificado, id_tramite, url_certificado) FROM stdin
 
 
 --
+-- TOC entry 4320 (class 0 OID 53759)
+-- Dependencies: 301
 -- Data for Name: cuenta_funcionario; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8091,6 +8700,8 @@ COPY public.cuenta_funcionario (id_usuario, id_cargo) FROM stdin;
 
 
 --
+-- TOC entry 4321 (class 0 OID 53762)
+-- Dependencies: 302
 -- Data for Name: datos_facebook; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8099,6 +8710,8 @@ COPY public.datos_facebook (id_usuario, id_facebook) FROM stdin;
 
 
 --
+-- TOC entry 4322 (class 0 OID 53768)
+-- Dependencies: 303
 -- Data for Name: datos_google; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8112,6 +8725,8 @@ COPY public.datos_google (id_usuario, id_google) FROM stdin;
 
 
 --
+-- TOC entry 4323 (class 0 OID 53774)
+-- Dependencies: 304
 -- Data for Name: detalle_factura; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8120,6 +8735,8 @@ COPY public.detalle_factura (id_detalle, id_factura, nombre, costo) FROM stdin;
 
 
 --
+-- TOC entry 4234 (class 0 OID 53336)
+-- Dependencies: 208
 -- Data for Name: evento_caso_social; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8129,6 +8746,8 @@ COPY public.evento_caso_social (id_evento_caso, id_caso, event, "time") FROM std
 
 
 --
+-- TOC entry 4238 (class 0 OID 53372)
+-- Dependencies: 213
 -- Data for Name: evento_multa; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8137,6 +8756,8 @@ COPY public.evento_multa (id_evento_multa, id_multa, event, "time") FROM stdin;
 
 
 --
+-- TOC entry 4240 (class 0 OID 53397)
+-- Dependencies: 216
 -- Data for Name: evento_tramite; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8144,10 +8765,15 @@ COPY public.evento_tramite (id_evento_tramite, id_tramite, event, "time") FROM s
 668	298	iniciar	2020-06-26 18:49:43.696424-04
 669	298	procesar_rc	2020-06-26 18:49:43.696424-04
 670	298	aprobar_rc	2020-06-26 19:51:45.215522-04
+671	299	iniciar	2020-07-01 15:57:12.02261-04
+672	299	revisar_bc	2020-07-01 15:57:12.02261-04
+673	299	aprobar_bc	2020-07-01 16:20:14.353543-04
 \.
 
 
 --
+-- TOC entry 4328 (class 0 OID 53788)
+-- Dependencies: 309
 -- Data for Name: factura_tramite; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8156,6 +8782,8 @@ COPY public.factura_tramite (id_factura, id_tramite) FROM stdin;
 
 
 --
+-- TOC entry 4330 (class 0 OID 53793)
+-- Dependencies: 311
 -- Data for Name: inmueble_urbano; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8196,6 +8824,8 @@ COPY public.inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia
 
 
 --
+-- TOC entry 4235 (class 0 OID 53343)
+-- Dependencies: 209
 -- Data for Name: institucion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8214,6 +8844,8 @@ COPY public.institucion (id_institucion, nombre_completo, nombre_corto) FROM std
 
 
 --
+-- TOC entry 4333 (class 0 OID 53813)
+-- Dependencies: 315
 -- Data for Name: institucion_banco; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8239,6 +8871,8 @@ COPY public.institucion_banco (id_institucion, id_banco, numero_cuenta, nombre_t
 
 
 --
+-- TOC entry 4239 (class 0 OID 53379)
+-- Dependencies: 214
 -- Data for Name: multa; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8247,6 +8881,8 @@ COPY public.multa (id_multa, id_tipo_tramite, datos, costo, fecha_creacion, codi
 
 
 --
+-- TOC entry 4276 (class 0 OID 53562)
+-- Dependencies: 254
 -- Data for Name: notificacion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8414,10 +9050,16 @@ COPY public.notificacion (id_notificacion, id_procedimiento, emisor, receptor, d
 656	200	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-06-27 13:01:41.466493-04	ingresardatos	IMPUESTO
 657	200	V-1023910231	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-30 08:58:42.910166-04	{"state":"validando"}	IMPUESTO
 658	200	V-1023910231	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-30 08:58:42.910166-04	{"state":"validando"}	IMPUESTO
+659	202	V-2190823091	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-07-01 15:55:15.815913-04	ingresardatos	IMPUESTO
+660	202	V-2190823091	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-07-01 15:55:15.815913-04	ingresardatos	IMPUESTO
+661	299	V-1923812093	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-07-01 15:57:12.152887-04	enrevision	TRAMITE
+662	299	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Beneficio de Contribuyente	f	2020-07-01 16:20:14.470068-04	finalizado	TRAMITE
 \.
 
 
 --
+-- TOC entry 4338 (class 0 OID 53843)
+-- Dependencies: 323
 -- Data for Name: operacion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8426,6 +9068,8 @@ COPY public.operacion (id_operacion, nombre_op) FROM stdin;
 
 
 --
+-- TOC entry 4339 (class 0 OID 53850)
+-- Dependencies: 324
 -- Data for Name: operatividad_terminal; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8503,6 +9147,8 @@ COPY public.operatividad_terminal (id_operatividad_terminal, destino, tipo, mont
 
 
 --
+-- TOC entry 4341 (class 0 OID 53861)
+-- Dependencies: 326
 -- Data for Name: ordenanza; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8568,6 +9214,8 @@ COPY public.ordenanza (id_ordenanza, descripcion, tarifa, id_valor, habilitado) 
 
 
 --
+-- TOC entry 4342 (class 0 OID 53868)
+-- Dependencies: 327
 -- Data for Name: ordenanza_tramite; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8576,6 +9224,8 @@ COPY public.ordenanza_tramite (id_ordenanza_tramite, id_tramite, id_tarifa, utmm
 
 
 --
+-- TOC entry 4346 (class 0 OID 53889)
+-- Dependencies: 332
 -- Data for Name: pago; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8596,6 +9246,8 @@ COPY public.pago (id_pago, id_procedimiento, referencia, monto, fecha_de_pago, a
 
 
 --
+-- TOC entry 4347 (class 0 OID 53900)
+-- Dependencies: 333
 -- Data for Name: pago_manual; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8604,6 +9256,8 @@ COPY public.pago_manual (id_pago, id_usuario_funcionario) FROM stdin;
 
 
 --
+-- TOC entry 4332 (class 0 OID 53803)
+-- Dependencies: 313
 -- Data for Name: parroquia; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8630,6 +9284,8 @@ COPY public.parroquia (id, nombre) FROM stdin;
 
 
 --
+-- TOC entry 4350 (class 0 OID 53907)
+-- Dependencies: 336
 -- Data for Name: permiso_de_acceso; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8665,6 +9321,8 @@ COPY public.permiso_de_acceso (id_permiso, id_usuario, id_tipo_tramite) FROM std
 
 
 --
+-- TOC entry 4352 (class 0 OID 53912)
+-- Dependencies: 338
 -- Data for Name: propietario; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8691,6 +9349,8 @@ COPY public.propietario (id_propietario, razon_social, cedula, rif, email) FROM 
 
 
 --
+-- TOC entry 4354 (class 0 OID 53920)
+-- Dependencies: 340
 -- Data for Name: propietario_inmueble; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8700,6 +9360,8 @@ COPY public.propietario_inmueble (id_propietario_inmueble, id_propietario, id_in
 
 
 --
+-- TOC entry 4356 (class 0 OID 53925)
+-- Dependencies: 342
 -- Data for Name: recaudo; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8777,6 +9439,8 @@ COPY public.recaudo (id_recaudo, nombre_largo, nombre_corto, obligatorio, planil
 
 
 --
+-- TOC entry 4358 (class 0 OID 53935)
+-- Dependencies: 344
 -- Data for Name: recuperacion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8785,6 +9449,8 @@ COPY public.recuperacion (id_recuperacion, id_usuario, token_recuperacion, usado
 
 
 --
+-- TOC entry 4360 (class 0 OID 53944)
+-- Dependencies: 346
 -- Data for Name: seccion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8821,6 +9487,8 @@ COPY public.seccion (id_seccion, nombre) FROM stdin;
 
 
 --
+-- TOC entry 4344 (class 0 OID 53876)
+-- Dependencies: 329
 -- Data for Name: tarifa_inspeccion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8886,6 +9554,8 @@ COPY public.tarifa_inspeccion (id_tarifa, id_ordenanza, id_tipo_tramite, formula
 
 
 --
+-- TOC entry 4362 (class 0 OID 53952)
+-- Dependencies: 348
 -- Data for Name: template_certificado; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8894,6 +9564,8 @@ COPY public.template_certificado (id_template_certificado, id_tipo_tramite, link
 
 
 --
+-- TOC entry 4236 (class 0 OID 53349)
+-- Dependencies: 210
 -- Data for Name: tipo_tramite; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -8929,6 +9601,8 @@ COPY public.tipo_tramite (id_tipo_tramite, id_institucion, nombre_tramite, costo
 
 
 --
+-- TOC entry 4364 (class 0 OID 53960)
+-- Dependencies: 350
 -- Data for Name: tipo_tramite_recaudo; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -9046,6 +9720,8 @@ COPY public.tipo_tramite_recaudo (id_tipo_tramite, id_recaudo, fisico) FROM stdi
 
 
 --
+-- TOC entry 4365 (class 0 OID 53963)
+-- Dependencies: 351
 -- Data for Name: tipo_usuario; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -9059,15 +9735,20 @@ COPY public.tipo_usuario (id_tipo_usuario, descripcion) FROM stdin;
 
 
 --
+-- TOC entry 4241 (class 0 OID 53404)
+-- Dependencies: 217
 -- Data for Name: tramite; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.tramite (id_tramite, id_tipo_tramite, datos, costo, fecha_creacion, codigo_tramite, consecutivo, id_usuario, url_planilla, url_certificado, aprobado, fecha_culminacion) FROM stdin;
 298	27	{"usuario":{"documentoIdentidad":"400197520","razonSocial":"Wak Casa de Software CA","denominacionComercial":"Wak Casa de Software CA","siglas":"WAK","parroquia":"OLEGARIO VILLALOBOS","sector":"Tierra Negra","direccion":"Av 21 Calle 86","puntoReferencia":"Diagonal CDO","tipoContribuyente":"JURIDICO","tipoDocumento":"J","codCat":null},"funcionario":{"documentoIdentidad":"400197520","razonSocial":"Wak Casa de Software CA","denominacionComercial":"Wak Casa de Software CA","siglas":"WAK","parroquia":"OLEGARIO VILLALOBOS","sector":"Tierra Negra","direccion":"Av 21 Calle 86","puntoReferencia":"Diagonal CDO","tipoContribuyente":"JURIDICO","tipoDocumento":"V"}}	\N	2020-06-26 18:49:43.696424-04	SEDEMAT-26062020-27-0001	1	119	\N	\N	t	2020-06-26 19:51:45.215522-04
+299	26	{"funcionario":{"beneficios":[{"idRamo":"8","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":163158578.15,"fechaDePago":"01-07-2020"},{"porcion":"2","monto":10000000,"fechaDePago":"01-07-2020"}]},{"idRamo":"9","tipoBeneficio":"pagoCompleto"},{"idRamo":"11","tipoBeneficio":"pagoCompleto"},{"idRamo":"29","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":10000000,"fechaDePago":"02-07-2020"},{"porcion":"2","monto":5000000,"fechaDePago":"03-07-2020"}]},{"idRamo":"64","tipoBeneficio":"pagoCompleto"}],"contribuyente":{"id":57,"tipoDocumento":"J","documento":"304689713","registroMunicipal":"2900011265","razonSocial":"CORPORACION DIGITEL, C.A.","denomComercial":"CORPORACION GSM","sector":"","direccion":null,"puntoReferencia":"","verificado":true,"liquidaciones":[{"id":8,"ramo":"PROPIEDAD INMOBILIARIA","monto":"263158578.15"},{"id":9,"ramo":"ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES","monto":"38308422681.44"},{"id":11,"ramo":"PROPAGANDAS Y AVISOS COMERCIALES","monto":"22400000.00"},{"id":29,"ramo":"MULTAS","monto":"15000000.00"},{"id":64,"ramo":"SERVICIOS MUNICIPALES","monto":"20402432.70"}],"totalDeuda":38629383692.29}}}	\N	2020-07-01 15:57:12.02261-04	SEDEMAT-01072020-26-0001	1	83	\N	\N	t	2020-07-01 16:20:14.353543-04
 \.
 
 
 --
+-- TOC entry 4368 (class 0 OID 53973)
+-- Dependencies: 354
 -- Data for Name: tramite_archivo_recaudo; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -9077,6 +9758,8 @@ COPY public.tramite_archivo_recaudo (id_tramite, url_archivo_recaudo) FROM stdin
 
 
 --
+-- TOC entry 4370 (class 0 OID 53986)
+-- Dependencies: 357
 -- Data for Name: usuario; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -9111,10 +9794,13 @@ COPY public.usuario (id_usuario, nombre_completo, nombre_de_usuario, direccion, 
 122	Jhon Jose Romay	jhonjromy@gmail.com	av 21	16079142	V	4	$2a$10$RcZ6dQf5Tdi0wgcq2lH8a.VG4ab4z8nx68V1ZdRwE58MHBVU3y4t.	4129661659	58
 119	Jhonnatan Romay	romayjj@gmail.com	Av 21 calle 86	18496685	V	4	$2a$10$Mfw/1FYYPxQOiXzfEM19wen5RTTychOjBke778b/kYKJYv2iXhCX.	4146053291	59
 124	Raul Fuentes	jj5star@hotmail.com	av 21 calle 86	10555777	V	4	$2a$10$qCFDSaIdAEZi3dH4RLXT/uQk2qQ0IQOkmES2ycbXXKH2bkJNNBUSW	4146053291	58
+125	digitel	impuestos_digitel@digitel.com.ve	lkasjdkasjkdja	2190823091	V	4	$2a$10$xhMAl1K0jjqQTy7QN6zFfej9..S/yEtLcgCQPMW6Jsi3en4azy0YO	1231412341	57
 \.
 
 
 --
+-- TOC entry 4372 (class 0 OID 53995)
+-- Dependencies: 359
 -- Data for Name: valor; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -9125,6 +9811,8 @@ COPY public.valor (id_valor, descripcion, valor_en_bs) FROM stdin;
 
 
 --
+-- TOC entry 4375 (class 0 OID 54005)
+-- Dependencies: 362
 -- Data for Name: variable; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -9133,6 +9821,8 @@ COPY public.variable (id_var, nombre_variable) FROM stdin;
 
 
 --
+-- TOC entry 4377 (class 0 OID 54014)
+-- Dependencies: 364
 -- Data for Name: variable_de_costo; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -9141,6 +9831,8 @@ COPY public.variable_de_costo (id_variable_de_costo, id_tipo_tramite, id_operaci
 
 
 --
+-- TOC entry 4378 (class 0 OID 54021)
+-- Dependencies: 365
 -- Data for Name: variable_ordenanza; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -9154,6 +9846,8 @@ COPY public.variable_ordenanza (id_variable, nombre, nombre_plural) FROM stdin;
 
 
 --
+-- TOC entry 4380 (class 0 OID 54029)
+-- Dependencies: 367
 -- Data for Name: base_task; Type: TABLE DATA; Schema: timetable; Owner: postgres
 --
 
@@ -9163,6 +9857,8 @@ COPY timetable.base_task (task_id, name, kind, script) FROM stdin;
 
 
 --
+-- TOC entry 4382 (class 0 OID 54039)
+-- Dependencies: 369
 -- Data for Name: chain_execution_config; Type: TABLE DATA; Schema: timetable; Owner: postgres
 --
 
@@ -9172,6 +9868,8 @@ COPY timetable.chain_execution_config (chain_execution_config, chain_id, chain_n
 
 
 --
+-- TOC entry 4384 (class 0 OID 54050)
+-- Dependencies: 371
 -- Data for Name: chain_execution_parameters; Type: TABLE DATA; Schema: timetable; Owner: postgres
 --
 
@@ -9180,6 +9878,8 @@ COPY timetable.chain_execution_parameters (chain_execution_config, chain_id, ord
 
 
 --
+-- TOC entry 4385 (class 0 OID 54057)
+-- Dependencies: 372
 -- Data for Name: database_connection; Type: TABLE DATA; Schema: timetable; Owner: postgres
 --
 
@@ -9188,6 +9888,8 @@ COPY timetable.database_connection (database_connection, connect_string, comment
 
 
 --
+-- TOC entry 4387 (class 0 OID 54065)
+-- Dependencies: 374
 -- Data for Name: execution_log; Type: TABLE DATA; Schema: timetable; Owner: postgres
 --
 
@@ -9196,6 +9898,8 @@ COPY timetable.execution_log (chain_execution_config, chain_id, task_id, name, s
 
 
 --
+-- TOC entry 4388 (class 0 OID 54072)
+-- Dependencies: 375
 -- Data for Name: log; Type: TABLE DATA; Schema: timetable; Owner: postgres
 --
 
@@ -9204,6 +9908,8 @@ COPY timetable.log (id, ts, client_name, pid, log_level, message) FROM stdin;
 
 
 --
+-- TOC entry 4390 (class 0 OID 54081)
+-- Dependencies: 377
 -- Data for Name: migrations; Type: TABLE DATA; Schema: timetable; Owner: postgres
 --
 
@@ -9212,6 +9918,8 @@ COPY timetable.migrations (id, version) FROM stdin;
 
 
 --
+-- TOC entry 4391 (class 0 OID 54087)
+-- Dependencies: 378
 -- Data for Name: run_status; Type: TABLE DATA; Schema: timetable; Owner: postgres
 --
 
@@ -9220,6 +9928,8 @@ COPY timetable.run_status (run_status, start_status, execution_status, chain_id,
 
 
 --
+-- TOC entry 4393 (class 0 OID 54093)
+-- Dependencies: 380
 -- Data for Name: task_chain; Type: TABLE DATA; Schema: timetable; Owner: postgres
 --
 
@@ -9229,6 +9939,8 @@ COPY timetable.task_chain (chain_id, parent_id, task_id, run_uid, database_conne
 
 
 --
+-- TOC entry 4395 (class 0 OID 54102)
+-- Dependencies: 382
 -- Data for Name: ano; Type: TABLE DATA; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -9243,6 +9955,8 @@ COPY valores_fiscales.ano (id, descripcion) FROM stdin;
 
 
 --
+-- TOC entry 4397 (class 0 OID 54107)
+-- Dependencies: 384
 -- Data for Name: construccion; Type: TABLE DATA; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -9551,6 +10265,8 @@ COPY valores_fiscales.construccion (valor_fiscal, id, tipo_construccion_id, ano_
 
 
 --
+-- TOC entry 4400 (class 0 OID 54122)
+-- Dependencies: 388
 -- Data for Name: sector; Type: TABLE DATA; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -9779,6 +10495,8 @@ COPY valores_fiscales.sector (descripcion, parroquia_id, id) FROM stdin;
 
 
 --
+-- TOC entry 4401 (class 0 OID 54128)
+-- Dependencies: 389
 -- Data for Name: terreno; Type: TABLE DATA; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -11101,6 +11819,8 @@ COPY valores_fiscales.terreno (valor_fiscal, sector_id, id, ano_id) FROM stdin;
 
 
 --
+-- TOC entry 4399 (class 0 OID 54112)
+-- Dependencies: 386
 -- Data for Name: tipo_construccion; Type: TABLE DATA; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -11159,6 +11879,8 @@ M50	50
 
 
 --
+-- TOC entry 4487 (class 0 OID 0)
+-- Dependencies: 221
 -- Name: actividad_economica_contribuy_id_actividad_economica_contri_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11166,6 +11888,8 @@ SELECT pg_catalog.setval('impuesto.actividad_economica_contribuy_id_actividad_ec
 
 
 --
+-- TOC entry 4488 (class 0 OID 0)
+-- Dependencies: 223
 -- Name: actividad_economica_exoneraci_id_actividad_economica_exoner_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11173,6 +11897,8 @@ SELECT pg_catalog.setval('impuesto.actividad_economica_exoneraci_id_actividad_ec
 
 
 --
+-- TOC entry 4489 (class 0 OID 0)
+-- Dependencies: 224
 -- Name: actividad_economica_id_actividad_economica_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11180,6 +11906,8 @@ SELECT pg_catalog.setval('impuesto.actividad_economica_id_actividad_economica_se
 
 
 --
+-- TOC entry 4490 (class 0 OID 0)
+-- Dependencies: 226
 -- Name: avaluo_inmueble_id_avaluo_inmueble_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11187,6 +11915,8 @@ SELECT pg_catalog.setval('impuesto.avaluo_inmueble_id_avaluo_inmueble_seq', 117,
 
 
 --
+-- TOC entry 4491 (class 0 OID 0)
+-- Dependencies: 228
 -- Name: categoria_propaganda_id_categoria_propaganda_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11194,6 +11924,8 @@ SELECT pg_catalog.setval('impuesto.categoria_propaganda_id_categoria_propaganda_
 
 
 --
+-- TOC entry 4492 (class 0 OID 0)
+-- Dependencies: 231
 -- Name: contribuyente_exoneracion_id_contribuyente_exoneracion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11201,6 +11933,8 @@ SELECT pg_catalog.setval('impuesto.contribuyente_exoneracion_id_contribuyente_ex
 
 
 --
+-- TOC entry 4493 (class 0 OID 0)
+-- Dependencies: 232
 -- Name: contribuyente_id_contribuyente_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11208,13 +11942,17 @@ SELECT pg_catalog.setval('impuesto.contribuyente_id_contribuyente_seq', 63, true
 
 
 --
+-- TOC entry 4494 (class 0 OID 0)
+-- Dependencies: 234
 -- Name: convenio_id_convenio_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.convenio_id_convenio_seq', 1, false);
+SELECT pg_catalog.setval('impuesto.convenio_id_convenio_seq', 32, true);
 
 
 --
+-- TOC entry 4495 (class 0 OID 0)
+-- Dependencies: 236
 -- Name: credito_fiscal_id_credito_fiscal_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11222,6 +11960,8 @@ SELECT pg_catalog.setval('impuesto.credito_fiscal_id_credito_fiscal_seq', 1, fal
 
 
 --
+-- TOC entry 4496 (class 0 OID 0)
+-- Dependencies: 238
 -- Name: dias_feriados_id_dia_feriado_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11229,20 +11969,26 @@ SELECT pg_catalog.setval('impuesto.dias_feriados_id_dia_feriado_seq', 47, true);
 
 
 --
+-- TOC entry 4497 (class 0 OID 0)
+-- Dependencies: 240
 -- Name: evento_fraccion_id_evento_fraccion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.evento_fraccion_id_evento_fraccion_seq', 1, false);
+SELECT pg_catalog.setval('impuesto.evento_fraccion_id_evento_fraccion_seq', 12, true);
 
 
 --
+-- TOC entry 4498 (class 0 OID 0)
+-- Dependencies: 242
 -- Name: evento_solicitud_id_evento_solicitud_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.evento_solicitud_id_evento_solicitud_seq', 288, true);
+SELECT pg_catalog.setval('impuesto.evento_solicitud_id_evento_solicitud_seq', 451, true);
 
 
 --
+-- TOC entry 4499 (class 0 OID 0)
+-- Dependencies: 244
 -- Name: factor_id_factor_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11250,13 +11996,17 @@ SELECT pg_catalog.setval('impuesto.factor_id_factor_seq', 1, false);
 
 
 --
+-- TOC entry 4500 (class 0 OID 0)
+-- Dependencies: 245
 -- Name: fraccion_id_fraccion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.fraccion_id_fraccion_seq', 1, false);
+SELECT pg_catalog.setval('impuesto.fraccion_id_fraccion_seq', 9, true);
 
 
 --
+-- TOC entry 4501 (class 0 OID 0)
+-- Dependencies: 248
 -- Name: inmueble_contribuyente_id_inmueble_contribuyente_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11264,6 +12014,8 @@ SELECT pg_catalog.setval('impuesto.inmueble_contribuyente_id_inmueble_contribuye
 
 
 --
+-- TOC entry 4502 (class 0 OID 0)
+-- Dependencies: 250
 -- Name: liquidacion_descuento_id_liquidacion_descuento_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11271,13 +12023,17 @@ SELECT pg_catalog.setval('impuesto.liquidacion_descuento_id_liquidacion_descuent
 
 
 --
+-- TOC entry 4503 (class 0 OID 0)
+-- Dependencies: 251
 -- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.liquidacion_id_liquidacion_seq', 867, true);
+SELECT pg_catalog.setval('impuesto.liquidacion_id_liquidacion_seq', 877, true);
 
 
 --
+-- TOC entry 4504 (class 0 OID 0)
+-- Dependencies: 253
 -- Name: multa_id_multa_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11285,6 +12041,8 @@ SELECT pg_catalog.setval('impuesto.multa_id_multa_seq', 33, true);
 
 
 --
+-- TOC entry 4505 (class 0 OID 0)
+-- Dependencies: 257
 -- Name: plazo_exoneracion_id_plazo_exoneracion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11292,6 +12050,8 @@ SELECT pg_catalog.setval('impuesto.plazo_exoneracion_id_plazo_exoneracion_seq', 
 
 
 --
+-- TOC entry 4506 (class 0 OID 0)
+-- Dependencies: 259
 -- Name: procedimiento_exoneracion_id_procedimiento_exoneracion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11299,6 +12059,8 @@ SELECT pg_catalog.setval('impuesto.procedimiento_exoneracion_id_procedimiento_ex
 
 
 --
+-- TOC entry 4507 (class 0 OID 0)
+-- Dependencies: 261
 -- Name: ramo_id_ramo_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11306,6 +12068,8 @@ SELECT pg_catalog.setval('impuesto.ramo_id_ramo_seq', 1, true);
 
 
 --
+-- TOC entry 4508 (class 0 OID 0)
+-- Dependencies: 264
 -- Name: registro_municipal_id_registro_municipal_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11313,6 +12077,8 @@ SELECT pg_catalog.setval('impuesto.registro_municipal_id_registro_municipal_seq'
 
 
 --
+-- TOC entry 4509 (class 0 OID 0)
+-- Dependencies: 262
 -- Name: registro_municipal_referencia_municipal_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11320,13 +12086,17 @@ SELECT pg_catalog.setval('impuesto.registro_municipal_referencia_municipal_seq',
 
 
 --
+-- TOC entry 4510 (class 0 OID 0)
+-- Dependencies: 266
 -- Name: solicitud_id_solicitud_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.solicitud_id_solicitud_seq', 200, true);
+SELECT pg_catalog.setval('impuesto.solicitud_id_solicitud_seq', 282, true);
 
 
 --
+-- TOC entry 4511 (class 0 OID 0)
+-- Dependencies: 270
 -- Name: subramo_id_subramo_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11334,6 +12104,8 @@ SELECT pg_catalog.setval('impuesto.subramo_id_subramo_seq', 102, true);
 
 
 --
+-- TOC entry 4512 (class 0 OID 0)
+-- Dependencies: 272
 -- Name: tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11341,6 +12113,8 @@ SELECT pg_catalog.setval('impuesto.tabulador_aseo_actividad_econ_id_tabulador_as
 
 
 --
+-- TOC entry 4513 (class 0 OID 0)
+-- Dependencies: 274
 -- Name: tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11348,6 +12122,8 @@ SELECT pg_catalog.setval('impuesto.tabulador_aseo_residencial_id_tabulador_aseo_
 
 
 --
+-- TOC entry 4514 (class 0 OID 0)
+-- Dependencies: 277
 -- Name: tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11355,6 +12131,8 @@ SELECT pg_catalog.setval('impuesto.tabulador_gas_actividad_econo_id_tabulador_ga
 
 
 --
+-- TOC entry 4515 (class 0 OID 0)
+-- Dependencies: 278
 -- Name: tabulador_gas_id_tabulador_gas_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11362,6 +12140,8 @@ SELECT pg_catalog.setval('impuesto.tabulador_gas_id_tabulador_gas_seq', 1, false
 
 
 --
+-- TOC entry 4516 (class 0 OID 0)
+-- Dependencies: 280
 -- Name: tabulador_gas_residencial_id_tabulador_gas_residencial_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11369,6 +12149,8 @@ SELECT pg_catalog.setval('impuesto.tabulador_gas_residencial_id_tabulador_gas_re
 
 
 --
+-- TOC entry 4517 (class 0 OID 0)
+-- Dependencies: 282
 -- Name: tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11376,6 +12158,8 @@ SELECT pg_catalog.setval('impuesto.tipo_aviso_propaganda_id_tipo_aviso_propagand
 
 
 --
+-- TOC entry 4518 (class 0 OID 0)
+-- Dependencies: 284
 -- Name: tipo_multa_id_tipo_multa_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11383,6 +12167,8 @@ SELECT pg_catalog.setval('impuesto.tipo_multa_id_tipo_multa_seq', 1, true);
 
 
 --
+-- TOC entry 4519 (class 0 OID 0)
+-- Dependencies: 286
 -- Name: usuario_enlazado_id_usuario_enlazado_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11390,6 +12176,8 @@ SELECT pg_catalog.setval('impuesto.usuario_enlazado_id_usuario_enlazado_seq', 1,
 
 
 --
+-- TOC entry 4520 (class 0 OID 0)
+-- Dependencies: 288
 -- Name: verificacion_email_id_verificacion_email_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
@@ -11397,13 +12185,17 @@ SELECT pg_catalog.setval('impuesto.verificacion_email_id_verificacion_email_seq'
 
 
 --
+-- TOC entry 4521 (class 0 OID 0)
+-- Dependencies: 290
 -- Name: verificacion_telefono_id_verificacion_telefono_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.verificacion_telefono_id_verificacion_telefono_seq', 85, true);
+SELECT pg_catalog.setval('impuesto.verificacion_telefono_id_verificacion_telefono_seq', 86, true);
 
 
 --
+-- TOC entry 4522 (class 0 OID 0)
+-- Dependencies: 292
 -- Name: bancos_id_banco_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11411,6 +12203,8 @@ SELECT pg_catalog.setval('public.bancos_id_banco_seq', 36, true);
 
 
 --
+-- TOC entry 4523 (class 0 OID 0)
+-- Dependencies: 295
 -- Name: campos_id_campo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11418,6 +12212,8 @@ SELECT pg_catalog.setval('public.campos_id_campo_seq', 13, true);
 
 
 --
+-- TOC entry 4524 (class 0 OID 0)
+-- Dependencies: 297
 -- Name: cargo_id_cargo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11425,6 +12221,8 @@ SELECT pg_catalog.setval('public.cargo_id_cargo_seq', 21, true);
 
 
 --
+-- TOC entry 4525 (class 0 OID 0)
+-- Dependencies: 298
 -- Name: casos_sociales_id_caso_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11432,6 +12230,8 @@ SELECT pg_catalog.setval('public.casos_sociales_id_caso_seq', 2, true);
 
 
 --
+-- TOC entry 4526 (class 0 OID 0)
+-- Dependencies: 300
 -- Name: certificados_id_certificado_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11439,6 +12239,8 @@ SELECT pg_catalog.setval('public.certificados_id_certificado_seq', 1, false);
 
 
 --
+-- TOC entry 4527 (class 0 OID 0)
+-- Dependencies: 305
 -- Name: detalles_facturas_id_detalle_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11446,6 +12248,8 @@ SELECT pg_catalog.setval('public.detalles_facturas_id_detalle_seq', 1, false);
 
 
 --
+-- TOC entry 4528 (class 0 OID 0)
+-- Dependencies: 306
 -- Name: evento_multa_id_evento_multa_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11453,6 +12257,8 @@ SELECT pg_catalog.setval('public.evento_multa_id_evento_multa_seq', 41, true);
 
 
 --
+-- TOC entry 4529 (class 0 OID 0)
+-- Dependencies: 307
 -- Name: eventos_casos_sociales_id_evento_caso_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11460,13 +12266,17 @@ SELECT pg_catalog.setval('public.eventos_casos_sociales_id_evento_caso_seq', 2, 
 
 
 --
+-- TOC entry 4530 (class 0 OID 0)
+-- Dependencies: 308
 -- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.eventos_tramite_id_evento_tramite_seq', 670, true);
+SELECT pg_catalog.setval('public.eventos_tramite_id_evento_tramite_seq', 673, true);
 
 
 --
+-- TOC entry 4531 (class 0 OID 0)
+-- Dependencies: 310
 -- Name: facturas_tramites_id_factura_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11474,6 +12284,8 @@ SELECT pg_catalog.setval('public.facturas_tramites_id_factura_seq', 1, false);
 
 
 --
+-- TOC entry 4532 (class 0 OID 0)
+-- Dependencies: 312
 -- Name: inmueble_urbano_id_inmueble_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11481,6 +12293,8 @@ SELECT pg_catalog.setval('public.inmueble_urbano_id_inmueble_seq', 366, true);
 
 
 --
+-- TOC entry 4533 (class 0 OID 0)
+-- Dependencies: 316
 -- Name: instituciones_id_institucion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11488,6 +12302,8 @@ SELECT pg_catalog.setval('public.instituciones_id_institucion_seq', 1, false);
 
 
 --
+-- TOC entry 4534 (class 0 OID 0)
+-- Dependencies: 317
 -- Name: multa_id_multa_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11495,13 +12311,17 @@ SELECT pg_catalog.setval('public.multa_id_multa_seq', 14, true);
 
 
 --
+-- TOC entry 4535 (class 0 OID 0)
+-- Dependencies: 321
 -- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.notificaciones_id_notificacion_seq', 658, true);
+SELECT pg_catalog.setval('public.notificaciones_id_notificacion_seq', 662, true);
 
 
 --
+-- TOC entry 4536 (class 0 OID 0)
+-- Dependencies: 322
 -- Name: operaciones_id_operacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11509,6 +12329,8 @@ SELECT pg_catalog.setval('public.operaciones_id_operacion_seq', 1, true);
 
 
 --
+-- TOC entry 4537 (class 0 OID 0)
+-- Dependencies: 325
 -- Name: operatividad_terminal_id_operatividad_terminal_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11516,6 +12338,8 @@ SELECT pg_catalog.setval('public.operatividad_terminal_id_operatividad_terminal_
 
 
 --
+-- TOC entry 4538 (class 0 OID 0)
+-- Dependencies: 328
 -- Name: ordenanzas_id_ordenanza_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11523,6 +12347,8 @@ SELECT pg_catalog.setval('public.ordenanzas_id_ordenanza_seq', 57, true);
 
 
 --
+-- TOC entry 4539 (class 0 OID 0)
+-- Dependencies: 331
 -- Name: ordenanzas_tramites_id_ordenanza_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11530,6 +12356,8 @@ SELECT pg_catalog.setval('public.ordenanzas_tramites_id_ordenanza_tramite_seq', 
 
 
 --
+-- TOC entry 4540 (class 0 OID 0)
+-- Dependencies: 334
 -- Name: pagos_id_pago_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11537,6 +12365,8 @@ SELECT pg_catalog.setval('public.pagos_id_pago_seq', 246, true);
 
 
 --
+-- TOC entry 4541 (class 0 OID 0)
+-- Dependencies: 335
 -- Name: parroquias_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11544,6 +12374,8 @@ SELECT pg_catalog.setval('public.parroquias_id_seq', 1, false);
 
 
 --
+-- TOC entry 4542 (class 0 OID 0)
+-- Dependencies: 337
 -- Name: permiso_de_acceso_id_permiso_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11551,6 +12383,8 @@ SELECT pg_catalog.setval('public.permiso_de_acceso_id_permiso_seq', 39, true);
 
 
 --
+-- TOC entry 4543 (class 0 OID 0)
+-- Dependencies: 339
 -- Name: propietario_id_propietario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11558,6 +12392,8 @@ SELECT pg_catalog.setval('public.propietario_id_propietario_seq', 18, true);
 
 
 --
+-- TOC entry 4544 (class 0 OID 0)
+-- Dependencies: 341
 -- Name: propietarios_inmuebles_id_propietario_inmueble_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11565,6 +12401,8 @@ SELECT pg_catalog.setval('public.propietarios_inmuebles_id_propietario_inmueble_
 
 
 --
+-- TOC entry 4545 (class 0 OID 0)
+-- Dependencies: 343
 -- Name: recaudos_id_recaudo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11572,6 +12410,8 @@ SELECT pg_catalog.setval('public.recaudos_id_recaudo_seq', 1, true);
 
 
 --
+-- TOC entry 4546 (class 0 OID 0)
+-- Dependencies: 345
 -- Name: recuperacion_id_recuperacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11579,6 +12419,8 @@ SELECT pg_catalog.setval('public.recuperacion_id_recuperacion_seq', 1, false);
 
 
 --
+-- TOC entry 4547 (class 0 OID 0)
+-- Dependencies: 347
 -- Name: tarifas_inspeccion_id_tarifa_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11586,6 +12428,8 @@ SELECT pg_catalog.setval('public.tarifas_inspeccion_id_tarifa_seq', 57, true);
 
 
 --
+-- TOC entry 4548 (class 0 OID 0)
+-- Dependencies: 349
 -- Name: templates_certificados_id_template_certificado_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11593,6 +12437,8 @@ SELECT pg_catalog.setval('public.templates_certificados_id_template_certificado_
 
 
 --
+-- TOC entry 4549 (class 0 OID 0)
+-- Dependencies: 352
 -- Name: tipos_tramites_id_tipo_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11600,6 +12446,8 @@ SELECT pg_catalog.setval('public.tipos_tramites_id_tipo_tramite_seq', 28, true);
 
 
 --
+-- TOC entry 4550 (class 0 OID 0)
+-- Dependencies: 353
 -- Name: tipos_usuarios_id_tipo_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11607,20 +12455,26 @@ SELECT pg_catalog.setval('public.tipos_usuarios_id_tipo_usuario_seq', 1, false);
 
 
 --
+-- TOC entry 4551 (class 0 OID 0)
+-- Dependencies: 355
 -- Name: tramites_id_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 298, true);
+SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 299, true);
 
 
 --
+-- TOC entry 4552 (class 0 OID 0)
+-- Dependencies: 358
 -- Name: usuarios_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 124, true);
+SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 125, true);
 
 
 --
+-- TOC entry 4553 (class 0 OID 0)
+-- Dependencies: 360
 -- Name: valores_id_valor_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11628,6 +12482,8 @@ SELECT pg_catalog.setval('public.valores_id_valor_seq', 2, true);
 
 
 --
+-- TOC entry 4554 (class 0 OID 0)
+-- Dependencies: 363
 -- Name: variables_de_costo_id_variable_de_costo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11635,6 +12491,8 @@ SELECT pg_catalog.setval('public.variables_de_costo_id_variable_de_costo_seq', 1
 
 
 --
+-- TOC entry 4555 (class 0 OID 0)
+-- Dependencies: 361
 -- Name: variables_id_var_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11642,6 +12500,8 @@ SELECT pg_catalog.setval('public.variables_id_var_seq', 1, false);
 
 
 --
+-- TOC entry 4556 (class 0 OID 0)
+-- Dependencies: 366
 -- Name: variables_ordenanzas_id_variable_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -11649,6 +12509,8 @@ SELECT pg_catalog.setval('public.variables_ordenanzas_id_variable_seq', 5, true)
 
 
 --
+-- TOC entry 4557 (class 0 OID 0)
+-- Dependencies: 368
 -- Name: base_task_task_id_seq; Type: SEQUENCE SET; Schema: timetable; Owner: postgres
 --
 
@@ -11656,6 +12518,8 @@ SELECT pg_catalog.setval('timetable.base_task_task_id_seq', 1, true);
 
 
 --
+-- TOC entry 4558 (class 0 OID 0)
+-- Dependencies: 370
 -- Name: chain_execution_config_chain_execution_config_seq; Type: SEQUENCE SET; Schema: timetable; Owner: postgres
 --
 
@@ -11663,6 +12527,8 @@ SELECT pg_catalog.setval('timetable.chain_execution_config_chain_execution_confi
 
 
 --
+-- TOC entry 4559 (class 0 OID 0)
+-- Dependencies: 373
 -- Name: database_connection_database_connection_seq; Type: SEQUENCE SET; Schema: timetable; Owner: postgres
 --
 
@@ -11670,6 +12536,8 @@ SELECT pg_catalog.setval('timetable.database_connection_database_connection_seq'
 
 
 --
+-- TOC entry 4560 (class 0 OID 0)
+-- Dependencies: 376
 -- Name: log_id_seq; Type: SEQUENCE SET; Schema: timetable; Owner: postgres
 --
 
@@ -11677,6 +12545,8 @@ SELECT pg_catalog.setval('timetable.log_id_seq', 1, false);
 
 
 --
+-- TOC entry 4561 (class 0 OID 0)
+-- Dependencies: 379
 -- Name: run_status_run_status_seq; Type: SEQUENCE SET; Schema: timetable; Owner: postgres
 --
 
@@ -11684,6 +12554,8 @@ SELECT pg_catalog.setval('timetable.run_status_run_status_seq', 1, false);
 
 
 --
+-- TOC entry 4562 (class 0 OID 0)
+-- Dependencies: 381
 -- Name: task_chain_chain_id_seq; Type: SEQUENCE SET; Schema: timetable; Owner: postgres
 --
 
@@ -11691,6 +12563,8 @@ SELECT pg_catalog.setval('timetable.task_chain_chain_id_seq', 1, true);
 
 
 --
+-- TOC entry 4563 (class 0 OID 0)
+-- Dependencies: 383
 -- Name: ano_fiscal_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -11698,6 +12572,8 @@ SELECT pg_catalog.setval('valores_fiscales.ano_fiscal_id_seq', 6, true);
 
 
 --
+-- TOC entry 4564 (class 0 OID 0)
+-- Dependencies: 385
 -- Name: construccion_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -11705,6 +12581,8 @@ SELECT pg_catalog.setval('valores_fiscales.construccion_id_seq', 305, true);
 
 
 --
+-- TOC entry 4565 (class 0 OID 0)
+-- Dependencies: 391
 -- Name: sector_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -11712,6 +12590,8 @@ SELECT pg_catalog.setval('valores_fiscales.sector_id_seq', 220, true);
 
 
 --
+-- TOC entry 4566 (class 0 OID 0)
+-- Dependencies: 392
 -- Name: terreno_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -11719,6 +12599,8 @@ SELECT pg_catalog.setval('valores_fiscales.terreno_id_seq', 1315, true);
 
 
 --
+-- TOC entry 4567 (class 0 OID 0)
+-- Dependencies: 393
 -- Name: tipo_construccion_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -11726,6 +12608,7 @@ SELECT pg_catalog.setval('valores_fiscales.tipo_construccion_id_seq', 50, true);
 
 
 --
+-- TOC entry 3818 (class 2606 OID 54219)
 -- Name: actividad_economica_contribuyente actividad_economica_contribuyente_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11734,6 +12617,7 @@ ALTER TABLE ONLY impuesto.actividad_economica_contribuyente
 
 
 --
+-- TOC entry 3820 (class 2606 OID 54221)
 -- Name: actividad_economica_exoneracion actividad_economica_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11742,6 +12626,7 @@ ALTER TABLE ONLY impuesto.actividad_economica_exoneracion
 
 
 --
+-- TOC entry 3814 (class 2606 OID 54223)
 -- Name: actividad_economica actividad_economica_numero_referencia_key; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11750,6 +12635,7 @@ ALTER TABLE ONLY impuesto.actividad_economica
 
 
 --
+-- TOC entry 3816 (class 2606 OID 54225)
 -- Name: actividad_economica actividad_economica_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11758,6 +12644,7 @@ ALTER TABLE ONLY impuesto.actividad_economica
 
 
 --
+-- TOC entry 3822 (class 2606 OID 54227)
 -- Name: avaluo_inmueble avaluo_inmueble_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11766,6 +12653,7 @@ ALTER TABLE ONLY impuesto.avaluo_inmueble
 
 
 --
+-- TOC entry 3824 (class 2606 OID 54229)
 -- Name: categoria_propaganda categoria_propaganda_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11774,6 +12662,7 @@ ALTER TABLE ONLY impuesto.categoria_propaganda
 
 
 --
+-- TOC entry 3830 (class 2606 OID 54231)
 -- Name: contribuyente_exoneracion contribuyente_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11782,6 +12671,7 @@ ALTER TABLE ONLY impuesto.contribuyente_exoneracion
 
 
 --
+-- TOC entry 3826 (class 2606 OID 54233)
 -- Name: contribuyente contribuyente_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11790,6 +12680,7 @@ ALTER TABLE ONLY impuesto.contribuyente
 
 
 --
+-- TOC entry 3828 (class 2606 OID 54235)
 -- Name: contribuyente contribuyente_tipo_documento_documento_key; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11798,6 +12689,7 @@ ALTER TABLE ONLY impuesto.contribuyente
 
 
 --
+-- TOC entry 3832 (class 2606 OID 54237)
 -- Name: convenio convenio_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11806,6 +12698,7 @@ ALTER TABLE ONLY impuesto.convenio
 
 
 --
+-- TOC entry 3834 (class 2606 OID 54239)
 -- Name: credito_fiscal credito_fiscal_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11814,6 +12707,7 @@ ALTER TABLE ONLY impuesto.credito_fiscal
 
 
 --
+-- TOC entry 3836 (class 2606 OID 54241)
 -- Name: dias_feriados dias_feriados_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11822,6 +12716,7 @@ ALTER TABLE ONLY impuesto.dias_feriados
 
 
 --
+-- TOC entry 3838 (class 2606 OID 54243)
 -- Name: evento_fraccion evento_fraccion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11830,6 +12725,7 @@ ALTER TABLE ONLY impuesto.evento_fraccion
 
 
 --
+-- TOC entry 3840 (class 2606 OID 54245)
 -- Name: evento_solicitud evento_solicitud_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11838,6 +12734,7 @@ ALTER TABLE ONLY impuesto.evento_solicitud
 
 
 --
+-- TOC entry 3842 (class 2606 OID 54247)
 -- Name: factor factor_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11846,6 +12743,7 @@ ALTER TABLE ONLY impuesto.factor
 
 
 --
+-- TOC entry 3794 (class 2606 OID 54249)
 -- Name: fraccion fraccion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11854,6 +12752,7 @@ ALTER TABLE ONLY impuesto.fraccion
 
 
 --
+-- TOC entry 3844 (class 2606 OID 54251)
 -- Name: liquidacion_descuento liquidacion_descuento_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11862,6 +12761,7 @@ ALTER TABLE ONLY impuesto.liquidacion_descuento
 
 
 --
+-- TOC entry 3804 (class 2606 OID 54253)
 -- Name: liquidacion liquidacion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11870,6 +12770,7 @@ ALTER TABLE ONLY impuesto.liquidacion
 
 
 --
+-- TOC entry 3846 (class 2606 OID 54255)
 -- Name: multa multa_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11878,6 +12779,7 @@ ALTER TABLE ONLY impuesto.multa
 
 
 --
+-- TOC entry 3850 (class 2606 OID 54257)
 -- Name: plazo_exoneracion plazo_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11886,6 +12788,7 @@ ALTER TABLE ONLY impuesto.plazo_exoneracion
 
 
 --
+-- TOC entry 3852 (class 2606 OID 54259)
 -- Name: ramo_exoneracion procedimiento_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11894,6 +12797,7 @@ ALTER TABLE ONLY impuesto.ramo_exoneracion
 
 
 --
+-- TOC entry 3854 (class 2606 OID 54261)
 -- Name: ramo ramo_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11902,6 +12806,7 @@ ALTER TABLE ONLY impuesto.ramo
 
 
 --
+-- TOC entry 3856 (class 2606 OID 54263)
 -- Name: registro_municipal registro_municipal_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11910,6 +12815,7 @@ ALTER TABLE ONLY impuesto.registro_municipal
 
 
 --
+-- TOC entry 3796 (class 2606 OID 54265)
 -- Name: solicitud solicitud_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11918,6 +12824,7 @@ ALTER TABLE ONLY impuesto.solicitud
 
 
 --
+-- TOC entry 3858 (class 2606 OID 54267)
 -- Name: subramo subramo_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11926,6 +12833,7 @@ ALTER TABLE ONLY impuesto.subramo
 
 
 --
+-- TOC entry 3860 (class 2606 OID 54269)
 -- Name: tabulador_aseo_actividad_economica tabulador_aseo_actividad_economica_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11934,6 +12842,7 @@ ALTER TABLE ONLY impuesto.tabulador_aseo_actividad_economica
 
 
 --
+-- TOC entry 3862 (class 2606 OID 54271)
 -- Name: tabulador_aseo_residencial tabulador_aseo_residencial_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11942,6 +12851,7 @@ ALTER TABLE ONLY impuesto.tabulador_aseo_residencial
 
 
 --
+-- TOC entry 3866 (class 2606 OID 54273)
 -- Name: tabulador_gas_actividad_economica tabulador_gas_actividad_economica_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11950,6 +12860,7 @@ ALTER TABLE ONLY impuesto.tabulador_gas_actividad_economica
 
 
 --
+-- TOC entry 3864 (class 2606 OID 54275)
 -- Name: tabulador_gas tabulador_gas_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11958,6 +12869,7 @@ ALTER TABLE ONLY impuesto.tabulador_gas
 
 
 --
+-- TOC entry 3868 (class 2606 OID 54277)
 -- Name: tabulador_gas_residencial tabulador_gas_residencial_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11966,6 +12878,7 @@ ALTER TABLE ONLY impuesto.tabulador_gas_residencial
 
 
 --
+-- TOC entry 3870 (class 2606 OID 54279)
 -- Name: tipo_aviso_propaganda tipo_aviso_propaganda_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11974,6 +12887,7 @@ ALTER TABLE ONLY impuesto.tipo_aviso_propaganda
 
 
 --
+-- TOC entry 3872 (class 2606 OID 54281)
 -- Name: tipo_multa tipo_multa_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11982,6 +12896,7 @@ ALTER TABLE ONLY impuesto.tipo_multa
 
 
 --
+-- TOC entry 3874 (class 2606 OID 54283)
 -- Name: usuario_enlazado usuario_enlazado_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11990,6 +12905,7 @@ ALTER TABLE ONLY impuesto.usuario_enlazado
 
 
 --
+-- TOC entry 3876 (class 2606 OID 54285)
 -- Name: verificacion_email verificacion_email_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -11998,6 +12914,7 @@ ALTER TABLE ONLY impuesto.verificacion_email
 
 
 --
+-- TOC entry 3878 (class 2606 OID 54287)
 -- Name: verificacion_telefono verificacion_telefono_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12006,6 +12923,7 @@ ALTER TABLE ONLY impuesto.verificacion_telefono
 
 
 --
+-- TOC entry 3880 (class 2606 OID 54289)
 -- Name: banco bancos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12014,6 +12932,7 @@ ALTER TABLE ONLY public.banco
 
 
 --
+-- TOC entry 3882 (class 2606 OID 54291)
 -- Name: campo campos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12022,6 +12941,7 @@ ALTER TABLE ONLY public.campo
 
 
 --
+-- TOC entry 3884 (class 2606 OID 54293)
 -- Name: cargo cargo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12030,6 +12950,7 @@ ALTER TABLE ONLY public.cargo
 
 
 --
+-- TOC entry 3798 (class 2606 OID 54295)
 -- Name: caso_social casos_sociales_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12038,6 +12959,7 @@ ALTER TABLE ONLY public.caso_social
 
 
 --
+-- TOC entry 3886 (class 2606 OID 54297)
 -- Name: certificado certificados_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12046,6 +12968,7 @@ ALTER TABLE ONLY public.certificado
 
 
 --
+-- TOC entry 3888 (class 2606 OID 54299)
 -- Name: cuenta_funcionario cuentas_funcionarios_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12054,6 +12977,7 @@ ALTER TABLE ONLY public.cuenta_funcionario
 
 
 --
+-- TOC entry 3890 (class 2606 OID 54301)
 -- Name: datos_google datos_google_id_google_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12062,6 +12986,7 @@ ALTER TABLE ONLY public.datos_google
 
 
 --
+-- TOC entry 3892 (class 2606 OID 54303)
 -- Name: datos_google datos_google_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12070,6 +12995,7 @@ ALTER TABLE ONLY public.datos_google
 
 
 --
+-- TOC entry 3806 (class 2606 OID 54305)
 -- Name: evento_multa evento_multa_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12078,6 +13004,7 @@ ALTER TABLE ONLY public.evento_multa
 
 
 --
+-- TOC entry 3810 (class 2606 OID 54307)
 -- Name: evento_tramite eventos_tramite_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12086,6 +13013,7 @@ ALTER TABLE ONLY public.evento_tramite
 
 
 --
+-- TOC entry 3894 (class 2606 OID 54309)
 -- Name: factura_tramite facturas_tramites_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12094,6 +13022,7 @@ ALTER TABLE ONLY public.factura_tramite
 
 
 --
+-- TOC entry 3896 (class 2606 OID 54311)
 -- Name: inmueble_urbano inmueble_urbano_cod_catastral_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12102,6 +13031,7 @@ ALTER TABLE ONLY public.inmueble_urbano
 
 
 --
+-- TOC entry 3898 (class 2606 OID 54313)
 -- Name: inmueble_urbano inmueble_urbano_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12110,6 +13040,7 @@ ALTER TABLE ONLY public.inmueble_urbano
 
 
 --
+-- TOC entry 3800 (class 2606 OID 54315)
 -- Name: institucion instituciones_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12118,6 +13049,7 @@ ALTER TABLE ONLY public.institucion
 
 
 --
+-- TOC entry 3808 (class 2606 OID 54317)
 -- Name: multa multa_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12126,6 +13058,7 @@ ALTER TABLE ONLY public.multa
 
 
 --
+-- TOC entry 3848 (class 2606 OID 54319)
 -- Name: notificacion notificaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12134,6 +13067,7 @@ ALTER TABLE ONLY public.notificacion
 
 
 --
+-- TOC entry 3902 (class 2606 OID 54321)
 -- Name: operacion operacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12142,6 +13076,7 @@ ALTER TABLE ONLY public.operacion
 
 
 --
+-- TOC entry 3904 (class 2606 OID 54323)
 -- Name: ordenanza ordenanzas_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12150,6 +13085,7 @@ ALTER TABLE ONLY public.ordenanza
 
 
 --
+-- TOC entry 3906 (class 2606 OID 54325)
 -- Name: ordenanza_tramite ordenanzas_tramites_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12158,6 +13094,7 @@ ALTER TABLE ONLY public.ordenanza_tramite
 
 
 --
+-- TOC entry 3910 (class 2606 OID 54327)
 -- Name: pago pagos_id_banco_referencia_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12166,6 +13103,7 @@ ALTER TABLE ONLY public.pago
 
 
 --
+-- TOC entry 3914 (class 2606 OID 54329)
 -- Name: pago_manual pagos_manuales_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12174,6 +13112,7 @@ ALTER TABLE ONLY public.pago_manual
 
 
 --
+-- TOC entry 3912 (class 2606 OID 54331)
 -- Name: pago pagos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12182,6 +13121,7 @@ ALTER TABLE ONLY public.pago
 
 
 --
+-- TOC entry 3900 (class 2606 OID 54333)
 -- Name: parroquia parroquia_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12190,6 +13130,7 @@ ALTER TABLE ONLY public.parroquia
 
 
 --
+-- TOC entry 3916 (class 2606 OID 54335)
 -- Name: permiso_de_acceso permiso_de_acceso_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12198,6 +13139,7 @@ ALTER TABLE ONLY public.permiso_de_acceso
 
 
 --
+-- TOC entry 3918 (class 2606 OID 54337)
 -- Name: propietario propietario_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12206,6 +13148,7 @@ ALTER TABLE ONLY public.propietario
 
 
 --
+-- TOC entry 3920 (class 2606 OID 54339)
 -- Name: propietario_inmueble propietarios_inmuebles_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12214,6 +13157,7 @@ ALTER TABLE ONLY public.propietario_inmueble
 
 
 --
+-- TOC entry 3922 (class 2606 OID 54341)
 -- Name: recaudo recaudos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12222,6 +13166,7 @@ ALTER TABLE ONLY public.recaudo
 
 
 --
+-- TOC entry 3924 (class 2606 OID 54343)
 -- Name: recuperacion recuperacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12230,6 +13175,7 @@ ALTER TABLE ONLY public.recuperacion
 
 
 --
+-- TOC entry 3926 (class 2606 OID 54345)
 -- Name: seccion secciones_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12238,6 +13184,7 @@ ALTER TABLE ONLY public.seccion
 
 
 --
+-- TOC entry 3908 (class 2606 OID 54347)
 -- Name: tarifa_inspeccion tarifas_inspeccion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12246,6 +13193,7 @@ ALTER TABLE ONLY public.tarifa_inspeccion
 
 
 --
+-- TOC entry 3928 (class 2606 OID 54349)
 -- Name: template_certificado templates_certificados_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12254,6 +13202,7 @@ ALTER TABLE ONLY public.template_certificado
 
 
 --
+-- TOC entry 3802 (class 2606 OID 54351)
 -- Name: tipo_tramite tipos_tramites_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12262,6 +13211,7 @@ ALTER TABLE ONLY public.tipo_tramite
 
 
 --
+-- TOC entry 3930 (class 2606 OID 54353)
 -- Name: tipo_usuario tipos_usuarios_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12270,6 +13220,7 @@ ALTER TABLE ONLY public.tipo_usuario
 
 
 --
+-- TOC entry 3812 (class 2606 OID 54355)
 -- Name: tramite tramites_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12278,6 +13229,7 @@ ALTER TABLE ONLY public.tramite
 
 
 --
+-- TOC entry 3932 (class 2606 OID 54357)
 -- Name: usuario usuarios_cedula_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12286,6 +13238,7 @@ ALTER TABLE ONLY public.usuario
 
 
 --
+-- TOC entry 3934 (class 2606 OID 54359)
 -- Name: usuario usuarios_nombre_de_usuario_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12294,6 +13247,7 @@ ALTER TABLE ONLY public.usuario
 
 
 --
+-- TOC entry 3936 (class 2606 OID 54361)
 -- Name: usuario usuarios_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12302,6 +13256,7 @@ ALTER TABLE ONLY public.usuario
 
 
 --
+-- TOC entry 3938 (class 2606 OID 54363)
 -- Name: valor valores_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12310,6 +13265,7 @@ ALTER TABLE ONLY public.valor
 
 
 --
+-- TOC entry 3942 (class 2606 OID 54365)
 -- Name: variable_de_costo variable_de_costo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12318,6 +13274,7 @@ ALTER TABLE ONLY public.variable_de_costo
 
 
 --
+-- TOC entry 3944 (class 2606 OID 54367)
 -- Name: variable_ordenanza variables_ordenanzas_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12326,6 +13283,7 @@ ALTER TABLE ONLY public.variable_ordenanza
 
 
 --
+-- TOC entry 3940 (class 2606 OID 54369)
 -- Name: variable variables_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12334,6 +13292,7 @@ ALTER TABLE ONLY public.variable
 
 
 --
+-- TOC entry 3946 (class 2606 OID 54371)
 -- Name: base_task base_task_name_key; Type: CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
@@ -12342,6 +13301,7 @@ ALTER TABLE ONLY timetable.base_task
 
 
 --
+-- TOC entry 3948 (class 2606 OID 54373)
 -- Name: base_task base_task_pkey; Type: CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
@@ -12350,6 +13310,7 @@ ALTER TABLE ONLY timetable.base_task
 
 
 --
+-- TOC entry 3950 (class 2606 OID 54375)
 -- Name: chain_execution_config chain_execution_config_chain_name_key; Type: CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
@@ -12358,6 +13319,7 @@ ALTER TABLE ONLY timetable.chain_execution_config
 
 
 --
+-- TOC entry 3952 (class 2606 OID 54377)
 -- Name: chain_execution_config chain_execution_config_pkey; Type: CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
@@ -12366,6 +13328,7 @@ ALTER TABLE ONLY timetable.chain_execution_config
 
 
 --
+-- TOC entry 3954 (class 2606 OID 54379)
 -- Name: chain_execution_parameters chain_execution_parameters_pkey; Type: CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
@@ -12374,6 +13337,7 @@ ALTER TABLE ONLY timetable.chain_execution_parameters
 
 
 --
+-- TOC entry 3956 (class 2606 OID 54381)
 -- Name: database_connection database_connection_pkey; Type: CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
@@ -12382,6 +13346,7 @@ ALTER TABLE ONLY timetable.database_connection
 
 
 --
+-- TOC entry 3958 (class 2606 OID 54383)
 -- Name: log log_pkey; Type: CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
@@ -12390,6 +13355,7 @@ ALTER TABLE ONLY timetable.log
 
 
 --
+-- TOC entry 3960 (class 2606 OID 54385)
 -- Name: migrations migrations_pkey; Type: CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
@@ -12398,6 +13364,7 @@ ALTER TABLE ONLY timetable.migrations
 
 
 --
+-- TOC entry 3962 (class 2606 OID 54387)
 -- Name: run_status run_status_pkey; Type: CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
@@ -12406,6 +13373,7 @@ ALTER TABLE ONLY timetable.run_status
 
 
 --
+-- TOC entry 3964 (class 2606 OID 54389)
 -- Name: task_chain task_chain_parent_id_key; Type: CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
@@ -12414,6 +13382,7 @@ ALTER TABLE ONLY timetable.task_chain
 
 
 --
+-- TOC entry 3966 (class 2606 OID 54391)
 -- Name: task_chain task_chain_pkey; Type: CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
@@ -12422,6 +13391,7 @@ ALTER TABLE ONLY timetable.task_chain
 
 
 --
+-- TOC entry 3968 (class 2606 OID 54393)
 -- Name: ano ano_fiscal_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -12430,6 +13400,7 @@ ALTER TABLE ONLY valores_fiscales.ano
 
 
 --
+-- TOC entry 3970 (class 2606 OID 54395)
 -- Name: construccion construccion_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -12438,6 +13409,7 @@ ALTER TABLE ONLY valores_fiscales.construccion
 
 
 --
+-- TOC entry 3976 (class 2606 OID 54397)
 -- Name: sector sector_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -12446,6 +13418,7 @@ ALTER TABLE ONLY valores_fiscales.sector
 
 
 --
+-- TOC entry 3978 (class 2606 OID 54399)
 -- Name: terreno terreno_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -12454,6 +13427,7 @@ ALTER TABLE ONLY valores_fiscales.terreno
 
 
 --
+-- TOC entry 3972 (class 2606 OID 54401)
 -- Name: tipo_construccion tipo_construccion_descripcion_key; Type: CONSTRAINT; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -12462,6 +13436,7 @@ ALTER TABLE ONLY valores_fiscales.tipo_construccion
 
 
 --
+-- TOC entry 3974 (class 2606 OID 54403)
 -- Name: tipo_construccion tipo_construccion_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -12470,6 +13445,7 @@ ALTER TABLE ONLY valores_fiscales.tipo_construccion
 
 
 --
+-- TOC entry 4085 (class 2620 OID 54404)
 -- Name: evento_fraccion eventos_fraccion_trigger; Type: TRIGGER; Schema: impuesto; Owner: postgres
 --
 
@@ -12477,6 +13453,7 @@ CREATE TRIGGER eventos_fraccion_trigger BEFORE INSERT ON impuesto.evento_fraccio
 
 
 --
+-- TOC entry 4086 (class 2620 OID 54405)
 -- Name: evento_solicitud eventos_solicitud_trigger; Type: TRIGGER; Schema: impuesto; Owner: postgres
 --
 
@@ -12484,6 +13461,7 @@ CREATE TRIGGER eventos_solicitud_trigger BEFORE INSERT ON impuesto.evento_solici
 
 
 --
+-- TOC entry 4084 (class 2620 OID 54406)
 -- Name: tramite codigo_tramite_trg; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -12491,6 +13469,7 @@ CREATE TRIGGER codigo_tramite_trg BEFORE INSERT ON public.tramite FOR EACH ROW E
 
 
 --
+-- TOC entry 4079 (class 2620 OID 54407)
 -- Name: caso_social codigos_casos_sociales_trigger; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -12498,6 +13477,7 @@ CREATE TRIGGER codigos_casos_sociales_trigger BEFORE INSERT ON public.caso_socia
 
 
 --
+-- TOC entry 4082 (class 2620 OID 54408)
 -- Name: multa codigos_multas_trigger; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -12505,6 +13485,7 @@ CREATE TRIGGER codigos_multas_trigger BEFORE INSERT ON public.multa FOR EACH ROW
 
 
 --
+-- TOC entry 4080 (class 2620 OID 54409)
 -- Name: evento_caso_social eventos_casos_sociales_trigger; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -12512,6 +13493,7 @@ CREATE TRIGGER eventos_casos_sociales_trigger BEFORE INSERT ON public.evento_cas
 
 
 --
+-- TOC entry 4081 (class 2620 OID 54410)
 -- Name: evento_multa eventos_multa_trigger; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -12519,6 +13501,7 @@ CREATE TRIGGER eventos_multa_trigger BEFORE INSERT ON public.evento_multa FOR EA
 
 
 --
+-- TOC entry 4083 (class 2620 OID 54411)
 -- Name: evento_tramite eventos_tramite_trigger; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -12526,6 +13509,7 @@ CREATE TRIGGER eventos_tramite_trigger BEFORE INSERT ON public.evento_tramite FO
 
 
 --
+-- TOC entry 4087 (class 2620 OID 54412)
 -- Name: notificacion insert_notificaciones_trigger; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -12533,6 +13517,7 @@ CREATE TRIGGER insert_notificaciones_trigger BEFORE INSERT ON public.notificacio
 
 
 --
+-- TOC entry 4088 (class 2620 OID 54413)
 -- Name: valor tipos_tramites_costo_utmm_trig; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -12540,6 +13525,7 @@ CREATE TRIGGER tipos_tramites_costo_utmm_trig AFTER UPDATE ON public.valor FOR E
 
 
 --
+-- TOC entry 4089 (class 2620 OID 54414)
 -- Name: base_task trig_task_chain_fixer; Type: TRIGGER; Schema: timetable; Owner: postgres
 --
 
@@ -12547,6 +13533,7 @@ CREATE TRIGGER trig_task_chain_fixer BEFORE DELETE ON timetable.base_task FOR EA
 
 
 --
+-- TOC entry 3995 (class 2606 OID 54415)
 -- Name: actividad_economica_contribuyente actividad_economica_contribuyente_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12555,6 +13542,7 @@ ALTER TABLE ONLY impuesto.actividad_economica_contribuyente
 
 
 --
+-- TOC entry 3996 (class 2606 OID 54420)
 -- Name: actividad_economica_contribuyente actividad_economica_contribuyente_numero_referencia_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12563,6 +13551,7 @@ ALTER TABLE ONLY impuesto.actividad_economica_contribuyente
 
 
 --
+-- TOC entry 3997 (class 2606 OID 54425)
 -- Name: actividad_economica_exoneracion actividad_economica_exoneracion_id_actividad_economica_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12571,6 +13560,7 @@ ALTER TABLE ONLY impuesto.actividad_economica_exoneracion
 
 
 --
+-- TOC entry 3998 (class 2606 OID 54430)
 -- Name: actividad_economica_exoneracion actividad_economica_exoneracion_id_plazo_exoneracion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12579,6 +13569,7 @@ ALTER TABLE ONLY impuesto.actividad_economica_exoneracion
 
 
 --
+-- TOC entry 3999 (class 2606 OID 54435)
 -- Name: avaluo_inmueble avaluo_inmueble_id_inmueble_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12587,6 +13578,7 @@ ALTER TABLE ONLY impuesto.avaluo_inmueble
 
 
 --
+-- TOC entry 4001 (class 2606 OID 54440)
 -- Name: contribuyente_exoneracion contribuyente_exoneracion_id_actividad_economica_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12595,6 +13587,7 @@ ALTER TABLE ONLY impuesto.contribuyente_exoneracion
 
 
 --
+-- TOC entry 4002 (class 2606 OID 54445)
 -- Name: contribuyente_exoneracion contribuyente_exoneracion_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12603,6 +13596,7 @@ ALTER TABLE ONLY impuesto.contribuyente_exoneracion
 
 
 --
+-- TOC entry 4003 (class 2606 OID 54450)
 -- Name: contribuyente_exoneracion contribuyente_exoneracion_id_plazo_exoneracion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12611,6 +13605,7 @@ ALTER TABLE ONLY impuesto.contribuyente_exoneracion
 
 
 --
+-- TOC entry 4000 (class 2606 OID 54455)
 -- Name: contribuyente contribuyente_id_parroquia_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12619,6 +13614,7 @@ ALTER TABLE ONLY impuesto.contribuyente
 
 
 --
+-- TOC entry 4004 (class 2606 OID 54460)
 -- Name: convenio convenio_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12627,6 +13623,7 @@ ALTER TABLE ONLY impuesto.convenio
 
 
 --
+-- TOC entry 4005 (class 2606 OID 54465)
 -- Name: evento_fraccion evento_fraccion_id_fraccion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12635,6 +13632,7 @@ ALTER TABLE ONLY impuesto.evento_fraccion
 
 
 --
+-- TOC entry 4006 (class 2606 OID 54470)
 -- Name: evento_solicitud evento_solicitud_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12643,6 +13641,7 @@ ALTER TABLE ONLY impuesto.evento_solicitud
 
 
 --
+-- TOC entry 3979 (class 2606 OID 54475)
 -- Name: fraccion fraccion_id_convenio_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12651,6 +13650,7 @@ ALTER TABLE ONLY impuesto.fraccion
 
 
 --
+-- TOC entry 4007 (class 2606 OID 54480)
 -- Name: inmueble_contribuyente_natural inmueble_contribuyente_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12659,6 +13659,7 @@ ALTER TABLE ONLY impuesto.inmueble_contribuyente_natural
 
 
 --
+-- TOC entry 4008 (class 2606 OID 54485)
 -- Name: inmueble_contribuyente_natural inmueble_contribuyente_id_inmueble_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12667,6 +13668,7 @@ ALTER TABLE ONLY impuesto.inmueble_contribuyente_natural
 
 
 --
+-- TOC entry 4009 (class 2606 OID 54490)
 -- Name: liquidacion_descuento liquidacion_descuento_id_liquidacion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12675,6 +13677,7 @@ ALTER TABLE ONLY impuesto.liquidacion_descuento
 
 
 --
+-- TOC entry 3986 (class 2606 OID 54495)
 -- Name: liquidacion liquidacion_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12683,6 +13686,7 @@ ALTER TABLE ONLY impuesto.liquidacion
 
 
 --
+-- TOC entry 3987 (class 2606 OID 54500)
 -- Name: liquidacion liquidacion_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12691,6 +13695,7 @@ ALTER TABLE ONLY impuesto.liquidacion
 
 
 --
+-- TOC entry 3988 (class 2606 OID 54505)
 -- Name: liquidacion liquidacion_id_subramo_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12699,6 +13704,7 @@ ALTER TABLE ONLY impuesto.liquidacion
 
 
 --
+-- TOC entry 4010 (class 2606 OID 54510)
 -- Name: multa multa_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12707,6 +13713,7 @@ ALTER TABLE ONLY impuesto.multa
 
 
 --
+-- TOC entry 4011 (class 2606 OID 54515)
 -- Name: multa multa_id_tipo_multa_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12715,6 +13722,7 @@ ALTER TABLE ONLY impuesto.multa
 
 
 --
+-- TOC entry 4012 (class 2606 OID 54520)
 -- Name: ramo_exoneracion procedimiento_exoneracion_id_plazo_exoneracion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12723,6 +13731,7 @@ ALTER TABLE ONLY impuesto.ramo_exoneracion
 
 
 --
+-- TOC entry 4013 (class 2606 OID 54525)
 -- Name: ramo_exoneracion ramo_exoneracion_id_ramo_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12731,6 +13740,7 @@ ALTER TABLE ONLY impuesto.ramo_exoneracion
 
 
 --
+-- TOC entry 4014 (class 2606 OID 54530)
 -- Name: registro_municipal registro_municipal_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12739,6 +13749,7 @@ ALTER TABLE ONLY impuesto.registro_municipal
 
 
 --
+-- TOC entry 4015 (class 2606 OID 54535)
 -- Name: registro_municipal_verificacion registro_municipal_verificacion_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12747,6 +13758,7 @@ ALTER TABLE ONLY impuesto.registro_municipal_verificacion
 
 
 --
+-- TOC entry 4016 (class 2606 OID 54540)
 -- Name: registro_municipal_verificacion registro_municipal_verificacion_id_verificacion_telefono_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12755,6 +13767,7 @@ ALTER TABLE ONLY impuesto.registro_municipal_verificacion
 
 
 --
+-- TOC entry 3980 (class 2606 OID 54545)
 -- Name: solicitud solicitud_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12763,6 +13776,7 @@ ALTER TABLE ONLY impuesto.solicitud
 
 
 --
+-- TOC entry 3981 (class 2606 OID 54550)
 -- Name: solicitud solicitud_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12771,6 +13785,7 @@ ALTER TABLE ONLY impuesto.solicitud
 
 
 --
+-- TOC entry 3982 (class 2606 OID 54555)
 -- Name: solicitud solicitud_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12779,6 +13794,7 @@ ALTER TABLE ONLY impuesto.solicitud
 
 
 --
+-- TOC entry 4017 (class 2606 OID 54560)
 -- Name: subramo subramo_id_ramo_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12787,6 +13803,7 @@ ALTER TABLE ONLY impuesto.subramo
 
 
 --
+-- TOC entry 4018 (class 2606 OID 54565)
 -- Name: tabulador_aseo_actividad_economica tabulador_aseo_actividad_economica_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12795,6 +13812,7 @@ ALTER TABLE ONLY impuesto.tabulador_aseo_actividad_economica
 
 
 --
+-- TOC entry 4019 (class 2606 OID 54570)
 -- Name: tabulador_aseo_actividad_economica tabulador_aseo_actividad_economica_numero_referencia_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12803,6 +13821,7 @@ ALTER TABLE ONLY impuesto.tabulador_aseo_actividad_economica
 
 
 --
+-- TOC entry 4020 (class 2606 OID 54575)
 -- Name: tabulador_aseo_residencial tabulador_aseo_residencial_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12811,6 +13830,7 @@ ALTER TABLE ONLY impuesto.tabulador_aseo_residencial
 
 
 --
+-- TOC entry 4022 (class 2606 OID 54580)
 -- Name: tabulador_gas_actividad_economica tabulador_gas_actividad_economica_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12819,6 +13839,7 @@ ALTER TABLE ONLY impuesto.tabulador_gas_actividad_economica
 
 
 --
+-- TOC entry 4023 (class 2606 OID 54585)
 -- Name: tabulador_gas_actividad_economica tabulador_gas_actividad_economica_numero_referencia_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12827,6 +13848,7 @@ ALTER TABLE ONLY impuesto.tabulador_gas_actividad_economica
 
 
 --
+-- TOC entry 4021 (class 2606 OID 54590)
 -- Name: tabulador_gas tabulador_gas_id_actividad_economica_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12835,6 +13857,7 @@ ALTER TABLE ONLY impuesto.tabulador_gas
 
 
 --
+-- TOC entry 4024 (class 2606 OID 54595)
 -- Name: tabulador_gas_residencial tabulador_gas_residencial_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12843,6 +13866,7 @@ ALTER TABLE ONLY impuesto.tabulador_gas_residencial
 
 
 --
+-- TOC entry 4025 (class 2606 OID 54600)
 -- Name: tipo_aviso_propaganda tipo_aviso_propaganda_id_categoria_propaganda_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12851,6 +13875,7 @@ ALTER TABLE ONLY impuesto.tipo_aviso_propaganda
 
 
 --
+-- TOC entry 4026 (class 2606 OID 54605)
 -- Name: tipo_aviso_propaganda tipo_aviso_propaganda_id_valor_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12859,6 +13884,7 @@ ALTER TABLE ONLY impuesto.tipo_aviso_propaganda
 
 
 --
+-- TOC entry 4027 (class 2606 OID 54610)
 -- Name: usuario_enlazado usuario_enlazado_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12867,6 +13893,7 @@ ALTER TABLE ONLY impuesto.usuario_enlazado
 
 
 --
+-- TOC entry 4028 (class 2606 OID 54615)
 -- Name: verificacion_email verificacion_email_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12875,6 +13902,7 @@ ALTER TABLE ONLY impuesto.verificacion_email
 
 
 --
+-- TOC entry 4029 (class 2606 OID 54620)
 -- Name: verificacion_telefono verificacion_telefono_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
@@ -12883,6 +13911,7 @@ ALTER TABLE ONLY impuesto.verificacion_telefono
 
 
 --
+-- TOC entry 4030 (class 2606 OID 54625)
 -- Name: campo_tramite campos_tramites_id_campo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12891,6 +13920,7 @@ ALTER TABLE ONLY public.campo_tramite
 
 
 --
+-- TOC entry 4031 (class 2606 OID 54630)
 -- Name: campo_tramite campos_tramites_id_seccion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12899,6 +13929,7 @@ ALTER TABLE ONLY public.campo_tramite
 
 
 --
+-- TOC entry 4032 (class 2606 OID 54635)
 -- Name: campo_tramite campos_tramites_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12907,6 +13938,7 @@ ALTER TABLE ONLY public.campo_tramite
 
 
 --
+-- TOC entry 4033 (class 2606 OID 54640)
 -- Name: cargo cargo_id_institucion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12915,6 +13947,7 @@ ALTER TABLE ONLY public.cargo
 
 
 --
+-- TOC entry 4034 (class 2606 OID 54645)
 -- Name: cargo cargo_id_tipo_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12923,6 +13956,7 @@ ALTER TABLE ONLY public.cargo
 
 
 --
+-- TOC entry 3983 (class 2606 OID 54650)
 -- Name: caso_social casos_sociales_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12931,6 +13965,7 @@ ALTER TABLE ONLY public.caso_social
 
 
 --
+-- TOC entry 3984 (class 2606 OID 54655)
 -- Name: caso_social casos_sociales_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12939,6 +13974,7 @@ ALTER TABLE ONLY public.caso_social
 
 
 --
+-- TOC entry 4035 (class 2606 OID 54660)
 -- Name: certificado certificados_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12947,6 +13983,7 @@ ALTER TABLE ONLY public.certificado
 
 
 --
+-- TOC entry 4036 (class 2606 OID 54665)
 -- Name: cuenta_funcionario cuentas_funcionarios_id_cargo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12955,6 +13992,7 @@ ALTER TABLE ONLY public.cuenta_funcionario
 
 
 --
+-- TOC entry 4037 (class 2606 OID 54670)
 -- Name: cuenta_funcionario cuentas_funcionarios_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12963,6 +14001,7 @@ ALTER TABLE ONLY public.cuenta_funcionario
 
 
 --
+-- TOC entry 4038 (class 2606 OID 54675)
 -- Name: datos_facebook datos_facebook_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12971,6 +14010,7 @@ ALTER TABLE ONLY public.datos_facebook
 
 
 --
+-- TOC entry 4039 (class 2606 OID 54680)
 -- Name: datos_google datos_google_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12979,6 +14019,7 @@ ALTER TABLE ONLY public.datos_google
 
 
 --
+-- TOC entry 4040 (class 2606 OID 54685)
 -- Name: detalle_factura detalles_facturas_id_factura_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12987,6 +14028,7 @@ ALTER TABLE ONLY public.detalle_factura
 
 
 --
+-- TOC entry 3989 (class 2606 OID 54690)
 -- Name: evento_multa evento_multa_id_multa_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12995,6 +14037,7 @@ ALTER TABLE ONLY public.evento_multa
 
 
 --
+-- TOC entry 3992 (class 2606 OID 54695)
 -- Name: evento_tramite eventos_tramite_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13003,6 +14046,7 @@ ALTER TABLE ONLY public.evento_tramite
 
 
 --
+-- TOC entry 4041 (class 2606 OID 54700)
 -- Name: factura_tramite facturas_tramites_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13011,6 +14055,7 @@ ALTER TABLE ONLY public.factura_tramite
 
 
 --
+-- TOC entry 4042 (class 2606 OID 54705)
 -- Name: inmueble_urbano inmueble_urbano_id_parroquia_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13019,6 +14064,7 @@ ALTER TABLE ONLY public.inmueble_urbano
 
 
 --
+-- TOC entry 4043 (class 2606 OID 54710)
 -- Name: inmueble_urbano inmueble_urbano_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13027,6 +14073,7 @@ ALTER TABLE ONLY public.inmueble_urbano
 
 
 --
+-- TOC entry 4044 (class 2606 OID 54715)
 -- Name: institucion_banco instituciones_bancos_id_banco_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13035,6 +14082,7 @@ ALTER TABLE ONLY public.institucion_banco
 
 
 --
+-- TOC entry 4045 (class 2606 OID 54720)
 -- Name: institucion_banco instituciones_bancos_id_institucion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13043,6 +14091,7 @@ ALTER TABLE ONLY public.institucion_banco
 
 
 --
+-- TOC entry 3990 (class 2606 OID 54725)
 -- Name: multa multa_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13051,6 +14100,7 @@ ALTER TABLE ONLY public.multa
 
 
 --
+-- TOC entry 3991 (class 2606 OID 54730)
 -- Name: multa multa_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13059,6 +14109,7 @@ ALTER TABLE ONLY public.multa
 
 
 --
+-- TOC entry 4046 (class 2606 OID 54735)
 -- Name: ordenanza ordenanzas_id_valor_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13067,6 +14118,7 @@ ALTER TABLE ONLY public.ordenanza
 
 
 --
+-- TOC entry 4047 (class 2606 OID 54740)
 -- Name: ordenanza_tramite ordenanzas_tramites_id_tarifa_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13075,6 +14127,7 @@ ALTER TABLE ONLY public.ordenanza_tramite
 
 
 --
+-- TOC entry 4048 (class 2606 OID 54745)
 -- Name: ordenanza_tramite ordenanzas_tramites_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13083,6 +14136,7 @@ ALTER TABLE ONLY public.ordenanza_tramite
 
 
 --
+-- TOC entry 4052 (class 2606 OID 54750)
 -- Name: pago pagos_id_banco_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13091,6 +14145,7 @@ ALTER TABLE ONLY public.pago
 
 
 --
+-- TOC entry 4053 (class 2606 OID 54755)
 -- Name: pago_manual pagos_manuales_id_pago_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13099,6 +14154,7 @@ ALTER TABLE ONLY public.pago_manual
 
 
 --
+-- TOC entry 4054 (class 2606 OID 54760)
 -- Name: pago_manual pagos_manuales_id_usuario_funcionario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13107,6 +14163,7 @@ ALTER TABLE ONLY public.pago_manual
 
 
 --
+-- TOC entry 4055 (class 2606 OID 54765)
 -- Name: permiso_de_acceso permiso_de_acceso_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13115,6 +14172,7 @@ ALTER TABLE ONLY public.permiso_de_acceso
 
 
 --
+-- TOC entry 4056 (class 2606 OID 54770)
 -- Name: permiso_de_acceso permiso_de_acceso_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13123,6 +14181,7 @@ ALTER TABLE ONLY public.permiso_de_acceso
 
 
 --
+-- TOC entry 4057 (class 2606 OID 54775)
 -- Name: propietario_inmueble propietarios_inmuebles_id_inmueble_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13131,6 +14190,7 @@ ALTER TABLE ONLY public.propietario_inmueble
 
 
 --
+-- TOC entry 4058 (class 2606 OID 54780)
 -- Name: propietario_inmueble propietarios_inmuebles_id_propietario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13139,6 +14199,7 @@ ALTER TABLE ONLY public.propietario_inmueble
 
 
 --
+-- TOC entry 4059 (class 2606 OID 54785)
 -- Name: recuperacion recuperacion_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13147,6 +14208,7 @@ ALTER TABLE ONLY public.recuperacion
 
 
 --
+-- TOC entry 4049 (class 2606 OID 54790)
 -- Name: tarifa_inspeccion tarifas_inspeccion_id_ordenanza_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13155,6 +14217,7 @@ ALTER TABLE ONLY public.tarifa_inspeccion
 
 
 --
+-- TOC entry 4050 (class 2606 OID 54795)
 -- Name: tarifa_inspeccion tarifas_inspeccion_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13163,6 +14226,7 @@ ALTER TABLE ONLY public.tarifa_inspeccion
 
 
 --
+-- TOC entry 4051 (class 2606 OID 54800)
 -- Name: tarifa_inspeccion tarifas_inspeccion_id_variable_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13171,6 +14235,7 @@ ALTER TABLE ONLY public.tarifa_inspeccion
 
 
 --
+-- TOC entry 4060 (class 2606 OID 54805)
 -- Name: template_certificado templates_certificados_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13179,6 +14244,7 @@ ALTER TABLE ONLY public.template_certificado
 
 
 --
+-- TOC entry 3985 (class 2606 OID 54810)
 -- Name: tipo_tramite tipos_tramites_id_institucion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13187,6 +14253,7 @@ ALTER TABLE ONLY public.tipo_tramite
 
 
 --
+-- TOC entry 4061 (class 2606 OID 54815)
 -- Name: tipo_tramite_recaudo tipos_tramites_recaudos_id_recaudo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13195,6 +14262,7 @@ ALTER TABLE ONLY public.tipo_tramite_recaudo
 
 
 --
+-- TOC entry 4062 (class 2606 OID 54820)
 -- Name: tipo_tramite_recaudo tipos_tramites_recaudos_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13203,6 +14271,7 @@ ALTER TABLE ONLY public.tipo_tramite_recaudo
 
 
 --
+-- TOC entry 4063 (class 2606 OID 54825)
 -- Name: tramite_archivo_recaudo tramites_archivos_recaudos_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13211,6 +14280,7 @@ ALTER TABLE ONLY public.tramite_archivo_recaudo
 
 
 --
+-- TOC entry 3993 (class 2606 OID 54830)
 -- Name: tramite tramites_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13219,6 +14289,7 @@ ALTER TABLE ONLY public.tramite
 
 
 --
+-- TOC entry 3994 (class 2606 OID 54835)
 -- Name: tramite tramites_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13227,6 +14298,7 @@ ALTER TABLE ONLY public.tramite
 
 
 --
+-- TOC entry 4064 (class 2606 OID 54840)
 -- Name: usuario usuario_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13235,6 +14307,7 @@ ALTER TABLE ONLY public.usuario
 
 
 --
+-- TOC entry 4065 (class 2606 OID 54845)
 -- Name: usuario usuarios_id_tipo_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13243,6 +14316,7 @@ ALTER TABLE ONLY public.usuario
 
 
 --
+-- TOC entry 4066 (class 2606 OID 54850)
 -- Name: variable_de_costo variable_de_costo_id_operacion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13251,6 +14325,7 @@ ALTER TABLE ONLY public.variable_de_costo
 
 
 --
+-- TOC entry 4067 (class 2606 OID 54855)
 -- Name: variable_de_costo variable_de_costo_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -13259,6 +14334,7 @@ ALTER TABLE ONLY public.variable_de_costo
 
 
 --
+-- TOC entry 4068 (class 2606 OID 54860)
 -- Name: chain_execution_config chain_execution_config_chain_id_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
@@ -13267,6 +14343,7 @@ ALTER TABLE ONLY timetable.chain_execution_config
 
 
 --
+-- TOC entry 4069 (class 2606 OID 54865)
 -- Name: chain_execution_parameters chain_execution_parameters_chain_execution_config_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
@@ -13275,6 +14352,7 @@ ALTER TABLE ONLY timetable.chain_execution_parameters
 
 
 --
+-- TOC entry 4070 (class 2606 OID 54870)
 -- Name: chain_execution_parameters chain_execution_parameters_chain_id_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
@@ -13283,6 +14361,7 @@ ALTER TABLE ONLY timetable.chain_execution_parameters
 
 
 --
+-- TOC entry 4071 (class 2606 OID 54875)
 -- Name: task_chain task_chain_database_connection_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
@@ -13291,6 +14370,7 @@ ALTER TABLE ONLY timetable.task_chain
 
 
 --
+-- TOC entry 4072 (class 2606 OID 54880)
 -- Name: task_chain task_chain_parent_id_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
@@ -13299,6 +14379,7 @@ ALTER TABLE ONLY timetable.task_chain
 
 
 --
+-- TOC entry 4073 (class 2606 OID 54885)
 -- Name: task_chain task_chain_task_id_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: postgres
 --
 
@@ -13307,6 +14388,7 @@ ALTER TABLE ONLY timetable.task_chain
 
 
 --
+-- TOC entry 4074 (class 2606 OID 54890)
 -- Name: construccion construccion_ano_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -13315,6 +14397,7 @@ ALTER TABLE ONLY valores_fiscales.construccion
 
 
 --
+-- TOC entry 4075 (class 2606 OID 54895)
 -- Name: construccion construccion_tipo_construccion_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -13323,6 +14406,7 @@ ALTER TABLE ONLY valores_fiscales.construccion
 
 
 --
+-- TOC entry 4076 (class 2606 OID 54900)
 -- Name: sector sector_parroquia_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -13331,6 +14415,7 @@ ALTER TABLE ONLY valores_fiscales.sector
 
 
 --
+-- TOC entry 4077 (class 2606 OID 54905)
 -- Name: terreno terreno_ano_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: postgres
 --
 
@@ -13339,12 +14424,15 @@ ALTER TABLE ONLY valores_fiscales.terreno
 
 
 --
+-- TOC entry 4078 (class 2606 OID 54910)
 -- Name: terreno terreno_sector_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: postgres
 --
 
 ALTER TABLE ONLY valores_fiscales.terreno
     ADD CONSTRAINT terreno_sector_id_fkey FOREIGN KEY (sector_id) REFERENCES valores_fiscales.sector(id);
 
+
+-- Completed on 2020-07-01 16:23:12 -04
 
 --
 -- PostgreSQL database dump complete

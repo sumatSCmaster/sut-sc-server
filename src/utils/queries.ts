@@ -556,25 +556,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_PP_SETTLEMENTS_FOR_CONTRIBUTOR: 'SELECT * FROM impuesto.solicitud_view sv WHERE contribuyente = $1 AND "descripcionRamo" = \'PP\'',
 
   GET_FINES_BY_APPLICATION: 'SELECT * FROM impuesto.multa WHERE id_solicitud = $1',
-  GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID: (typePick) => {
-    const type = {
-      AE: {
-        table: 'ae_desglose',
-        column: 'id_aforo',
-      },
-      SM: {
-        table: 'sm_desglose',
-        column: 'id_inmueble',
-      },
-      IU: {
-        table: 'iu_desglose',
-      },
-      PP: {
-        table: 'pp_desglose',
-      },
-    };
-    return `SELECT * FROM impuesto.${type[typePick].table} d INNER JOIN impuesto.liquidacion l ON d.id_liquidacion = l.id_liquidacion INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud WHERE l.id_solicitud = $1;`;
-  },
+  GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID: `SELECT datos FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud WHERE l.id_solicitud = $1 AND l.id_subramo = $2;`,
   CREATE_TAX_PAYMENT_APPLICATION: "SELECT * FROM impuesto.insert_solicitud($1, (SELECT id_tipo_tramite FROM tipo_tramite WHERE nombre_tramite = 'Pago de Impuestos'), $2)",
   UPDATE_TAX_APPLICATION_PAYMENT: 'SELECT * FROM impuesto.update_solicitud_state ($1, $2)',
   COMPLETE_TAX_APPLICATION_PAYMENT: 'SELECT * FROM impuesto.complete_solicitud_state($1, $2, null, true)',
@@ -712,6 +694,14 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         INNER JOIN impuesto.liquidacion l ON l.id_registro_municipal = rm.id_registro_municipal 
         INNER JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sub.id_ramo 
         INNER JOIN impuesto.solicitud_state s ON s.id = l.id_solicitud WHERE l.fecha_liquidacion BETWEEN $1 AND $2;`,
+  GET_SETTLEMENT_REPORT_BY_BRANCH: `SELECT (c.tipo_documento || '-' || c.documento) AS "Documento", rm.referencia_municipal AS "RIM", c.razon_social AS "Razon Social", 
+        r.descripcion AS "Ramo", s.id AS "Planilla", l.fecha_liquidacion AS "Fecha Liquidacion", s.fecha AS "Fecha Recaudacion", 
+        (CASE WHEN s.state = 'finalizado' THEN 'PAGADO' ELSE 'VIGENTE' END) AS "Estatus", l.monto as "Monto" 
+        FROM impuesto.contribuyente c 
+        INNER JOIN impuesto.registro_municipal rm ON rm.id_contribuyente = c.id_contribuyente 
+        INNER JOIN impuesto.liquidacion l ON l.id_registro_municipal = rm.id_registro_municipal 
+        INNER JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sub.id_ramo 
+        INNER JOIN impuesto.solicitud_state s ON s.id = l.id_solicitud WHERE l.fecha_liquidacion BETWEEN $1 AND $2 AND r.id_ramo = $3;`,
 
   //EXONERACIONES
   GET_CONTRIBUTOR: 'SELECT id_contribuyente as id, razon_social AS "razonSocial", denominacion_comercial AS "denominacionComercial" FROM impuesto.contribuyente c WHERE c.tipo_documento = $1 AND c.documento = $2;',
@@ -784,6 +774,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_FRACTION_BY_AGREEMENT_AND_FRACTION_ID: 'SELECT * FROM impuesto.fraccion WHERE id_convenio = $1 AND id_fraccion = $2',
   UPDATE_FRACTION_STATE: 'SELECT * FROM impuesto.update_fraccion_state ($1, $2)',
   COMPLETE_FRACTION_STATE: 'SELECT * FROM impuesto.complete_fraccion_state ($1, $2, true)',
+  SEARCH_CONTRIBUTOR_BY_NAME: 'SELECT * FROM impuesto.contribuyente WHERE razon_social ILIKE = $1',
   GET_CONTRIBUTOR_WITH_BRANCH: 'SELECT * FROM impuesto.registro_municipal r INNER JOIN impuesto.contribuyente c ON r.id_contribuyente = c.id_contribuyente WHERE r.referencia_municipal = $1',
   CHANGE_SETTLEMENT_TO_NEW_APPLICATION:
     "UPDATE impuesto.liquidacion SET id_solicitud = $1 WHERE id_registro_municipal = $2 AND id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = '1' AND id_ramo = $3) AND id_liquidacion IN (SELECT id_liquidacion  FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud_state ss ON ss.id = l.id_solicitud  WHERE ss.state = 'ingresardatos');",
@@ -801,6 +792,8 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   UPDATE_BRANCH_INFO: 'UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombre_representante = $2, telefono_celular = $3, email = $4, actualizado = $5 WHERE referencia_municipal = $6 RETURNING *',
   GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR:
     'SELECT ae.id_actividad_economica AS id, ae.numero_referencia as "numeroReferencia", ae.descripcion FROM impuesto.actividad_economica_contribuyente aec INNER JOIN impuesto.actividad_economica ae ON ae.numero_referencia = aec.numero_referencia WHERE id_contribuyente = $1;',
+  GET_BRANCHES: 'SELECT id_ramo AS id, codigo, descripcion, descripcion_corta FROM impuesto.ramo;',
+  GET_SUT_ESTATE_BY_ID: 'SELECT * FROM inmueble_urbano WHERE id_inmueble = $1',
   gtic: {
     GET_NATURAL_CONTRIBUTOR: 'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 ORDER BY co_contribuyente DESC',
     GET_JURIDICAL_CONTRIBUTOR: 'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE tx_rif = $1 AND tx_tp_doc = $2 AND nu_referencia IS NOT NULL ORDER BY co_contribuyente DESC',

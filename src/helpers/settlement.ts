@@ -20,6 +20,7 @@ import { query } from 'express-validator';
 import { sendNotification } from './notification';
 import { sendRimVerification, verifyCode, resendCode } from './verification';
 import { hasLinkedContributor } from './user';
+import e from 'express';
 import S3Client from '@utils/s3';
 import ExcelJs from 'exceljs';
 import * as fs from 'fs';
@@ -184,7 +185,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
             return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
           });
           IU = estates
-            .filter((el) => el.avaluo)
+            .filter((el) => +el.avaluo)
             .map((el) => {
               return {
                 id: el.id_inmueble,
@@ -909,19 +910,22 @@ const externalUserForLinkingExists = async ({ user, password, gtic }: { user: st
 export const getAgreementFractionById = async ({ id }): Promise<Solicitud & any> => {
   const client = await pool.connect();
   try {
-    const application = await Promise.all(
-      (await client.query(queries.GET_AGREEMENT_FRACTION_BY_ID, [id])).rows.map(async (el) => ({
-        id: el.id_fraccion,
-        idConvenio: el.id_convenio,
-        monto: el.monto,
-        fecha: el.fecha,
-        fechaAprobacion: el.fecha_aprobado,
-        aprobado: el.aprobado,
-        estado: (await client.query(queries.GET_AGREEMENT_FRACTION_STATE, [el.id_fraccion])).rows[0]?.state,
-      }))
-    );
-    return application[0];
+    const application = (await client.query(queries.GET_AGREEMENT_FRACTION_BY_ID, [id])).rows[0];
+
+    const fraction = {
+      id: application.id_fraccion,
+      idConvenio: application.id_convenio,
+      monto: application.monto,
+      fecha: application.fecha,
+      fechaAprobacion: application.fecha_aprobado,
+      aprobado: application.aprobado,
+      estado: (await client.query(queries.GET_AGREEMENT_FRACTION_STATE, [application.id_fraccion])).rows[0]?.state,
+    };
+
+    console.log(fraction);
+    return fraction;
   } catch (error) {
+    console.log(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -938,12 +942,12 @@ export const getAgreements = async ({ user }: { user: Usuario }) => {
   try {
     const hasApplications = (await client.query(queries.GET_AGREEMENTS_BY_USER, [user.id])).rows.length > 0;
     if (!hasApplications) throw { status: 404, message: 'El usuario no posee convenios' };
-    const applications: Solicitud[] = await Promise.all(
+    const applications: any[] = await Promise.all(
       (await client.query(queries.GET_AGREEMENTS_BY_USER, [user.id])).rows.map(async (el) => {
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
         const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
         return {
-          id: el.id_solicitud,
+          id: el.id_convenio,
           cantPorciones: el.cantidad,
           usuario: user,
           tipo: 'CONVENIO',
@@ -956,37 +960,17 @@ export const getAgreements = async ({ user }: { user: Usuario }) => {
             ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
             : undefined,
           fecha: el.fecha,
+          ramo: (
+            await client.query('SELECT r.descripcion FROM impuesto.ramo r INNER JOIN impuesto.subramo s ON r.id_ramo = s.id_ramo INNER JOIN impuesto.liquidacion l ON s.id_subramo = l.id_subramo WHERE id_liquidacion = $1', [
+              liquidaciones[0]?.id_liquidacion,
+            ])
+          ).rows[0]?.descripcion,
           monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0]?.monto_total,
-          liquidaciones: liquidaciones
-            .filter((el) => el.tipoProcedimiento !== 'MULTAS')
-            .map((el) => {
-              return {
-                id: el.id_liquidacion,
-                ramo: el.tipoProcedimiento,
-                fecha: el.datos.fecha,
-                monto: +el.monto,
-                certificado: el.certificado,
-                recibo: el.recibo,
-              };
-            }),
-          multas: liquidaciones
-            .filter((el) => el.tipoProcedimiento === 'MULTAS')
-            .map((el) => {
-              return {
-                id: el.id_liquidacion,
-                ramo: el.tipoProcedimiento,
-                fecha: el.datos.fecha,
-                monto: +el.monto,
-                descripcion: el.datos.descripcion,
-                certificado: el.certificado,
-                recibo: el.recibo,
-              };
-            }),
-          porciones: (await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [el.id_convenio])).rows.map((el) => getAgreementFractionById(el.id_fraccion)),
+          porciones: await Promise.all((await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [el.id_convenio])).rows.map(async (el) => await getAgreementFractionById({ id: el.id_fraccion }))),
         };
       })
     );
-    return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', solicitudes: applications };
+    return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', convenios: applications };
   } catch (error) {
     throw {
       status: 500,
@@ -1180,6 +1164,63 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
       status: 500,
       error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+const formatContributor = async (contributor, client: PoolClient) => {
+  try {
+    const branches = (await client.query('SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = $1', [contributor.id_contribuyente])).rows;
+    return {
+      id: contributor.id_contribuyente,
+      tipoDocumento: contributor.tipo_documento,
+      tipoContribuyente: contributor.tipo_contribuyente,
+      documento: contributor.documento,
+      razonSocial: contributor.razon_social,
+      denomComercial: contributor.denominacion_comercial || undefined,
+      siglas: contributor.siglas || undefined,
+      parroquia: contributor.parroquia,
+      sector: contributor.sector,
+      direccion: contributor.direccion,
+      puntoReferencia: contributor.punto_referencia,
+      verificado: contributor.verificado,
+      sucursales: branches.length > 0 ? branches.map((el) => formatBranch(el)) : undefined,
+    };
+  } catch (e) {
+    throw e;
+  }
+};
+
+const formatBranch = (branch) => {
+  return {
+    id: branch.id_registro_municipal,
+    referenciaMunicipal: branch.referencia_municipal,
+    fechaAprobacion: branch.fecha_aprobacion,
+    telefono: branch.telefono_celular,
+    email: branch.email,
+    denomComercial: branch.denominacion_comercial,
+    nombreRepresentante: branch.nombre_representante,
+    actualizado: branch.actualizado,
+  };
+};
+
+export const contributorSearch = async ({ document, docType, name }) => {
+  const client = await pool.connect();
+  let contribuyentes: any[] = [];
+  try {
+    if ((!document && !name) || (document.length < 6 && name.length < 3)) throw { status: 406, message: 'Debe aportar mas datos para la busqueda' };
+    contribuyentes = document && document.length > 6 ? (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows : (await client.query(queries.SEARCH_CONTRIBUTOR_BY_NAME, [`%${name}%`])).rows;
+    const contributorExists = contribuyentes.length > 0;
+    if (!contributorExists) return { status: 404, message: 'No existe un contribuyente registrado con ese documento' };
+    contribuyentes = await Promise.all(contribuyentes.map(async (el) => await formatContributor(el, client)));
+    return { status: 200, message: 'Contribuyente obtenido', contribuyentes };
+  } catch (error) {
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al obtener contribuyentes en busqueda',
     };
   } finally {
     client.release();
@@ -1897,6 +1938,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
           case 'convenio':
             const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [benefittedUser, contributorWithBranch.id_contribuyente])).rows[0];
             await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [applicationAG.id_solicitud, applicationStateEvents.INGRESARDATOS]);
+            await client.query('UPDATE impuesto.solicitud SET tipo_solicitud = $1 WHERE id_solicitud = $2', ['CONVENIO', applicationAG.id_solicitud]);
             const agreement = (await client.query(queries.CREATE_AGREEMENT, [applicationAG.id_solicitud, x.porciones.length])).rows[0];
             const settlementsAG = (await client.query(queries.CHANGE_SETTLEMENT_TO_NEW_APPLICATION, [applicationAG.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
             await client.query(queries.CHANGE_SETTLEMENT_BRANCH_TO_AGREEMENT, [x.idRamo, applicationAG.id_solicitud]);
@@ -1924,7 +1966,7 @@ export const createCertificateForApplication = async ({ settlement, media, user 
     client.query('BEGIN');
     const applicationView = (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement])).rows[0];
     if (applicationView[media]) return { status: 200, message: 'Certificado generado satisfactoriamente', media: applicationView[media] };
-    const dir = await certificateCreationHandler(applicationView.tipoLiquidacion, media, {
+    const dir = await certificateCreationHandler(applicationView.descripcionCortaRamo, media, {
       gticPool: gtic,
       pool: client,
       user,
@@ -1946,25 +1988,22 @@ export const createCertificateForApplication = async ({ settlement, media, user 
   }
 };
 const mesesCardinal = {
-  Enero: 'Primer',
-  Febrero: 'Segundo',
-  Marzo: 'Tercer',
-  Abril: 'Cuarto',
-  Mayo: 'Quinto',
-  Junio: 'Sexto',
-  Julio: 'Séptimo',
-  Agosto: 'Octavo',
-  Septiembre: 'Noveno',
-  Octubre: 'Décimo',
-  Noviembre: 'Undécimo',
-  Diciembre: 'Duodécimo',
+  enero: 'Primer',
+  febrero: 'Segundo',
+  marzo: 'Tercer',
+  abril: 'Cuarto',
+  mayo: 'Quinto',
+  junio: 'Sexto',
+  julio: 'Séptimo',
+  agosto: 'Octavo',
+  septiembre: 'Noveno',
+  octubre: 'Décimo',
+  noviembre: 'Undécimo',
+  diciembre: 'Duodécimo',
 };
 const createSolvencyForApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
-    const isJuridical = application.tipoContribuyente === 'JURIDICO';
-    const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
-    const payloadContribuyente = isJuridical ? [application.documento, application.rim, application.nacionalidad] : [application.nacionalidad, application.nacionalidad];
-    const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
+    const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-AE.pug`), {
@@ -1973,15 +2012,15 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
         institucion: 'SEDEMAT',
         QR: linkQr,
         datos: {
-          contribuyente: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente + datosContribuyente.ap_contribuyente,
-          rim: application.rim,
-          cedulaORif: application.nacionalidad + '-' + application.documento,
-          direccion: datosContribuyente.tx_direccion,
-          representanteLegal: datosContribuyente.nb_representante_legal,
-          periodo: mesesCardinal[application.mes],
-          anio: application.anio,
+          contribuyente: application.razonSocial,
+          rim: referencia?.referencia_municipal,
+          cedulaORif: application.tipoDocumento + '-' + application.documento,
+          direccion: application.direccion,
+          representanteLegal: referencia?.nombre_representante,
+          periodo: mesesCardinal[application.datos.fecha.mes],
+          anio: application.datos.fecha.anio,
           fecha: moment().format('MM-DD-YYYY'),
-          fechaLetra: `${moment().date()} de ${application.mes} de ${application.anio}`,
+          fechaLetra: `${moment().date()} de ${application.datos.fecha.mes} de ${application.datos.fecha.anio}`,
         },
       });
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`);
@@ -2026,25 +2065,38 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
   try {
     console.log('culo');
     const isJuridical = application.tipoContribuyente === 'JURIDICO';
+    const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
     const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
-    const payloadContribuyente = isJuridical ? [application.documento, application.rim, application.nacionalidad] : [application.nacionalidad, application.nacionalidad];
+    const payloadContribuyente = isJuridical ? [application.documento, referencia?.referencia_municipal, application.tipoDocumento] : [application.tipoDocumento, application.nacionalidad];
     const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
-    const inmueblesContribuyente = (await gticPool.query(queries.gtic.GET_ESTATES_BY_CONTRIBUTOR, [datosContribuyente.co_contribuyente])).rows;
+    const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
+    let inmueblesContribuyente: any[] = (await Promise.all(breakdownData[0].datos.desglose.map((row) => {
+      return pool.query(queries.GET_SUT_ESTATE_BY_ID, [row.inmueble]);
+    })));
+    inmueblesContribuyente = inmueblesContribuyente.map(result => result.rows[0]);
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     let certInfo;
     let motivo;
     let ramo;
     let certInfoArray: any[] = [];
     console.log('appli', application);
-    if (application.tipoLiquidacion === 'SM') {
-      motivo = (await gticPool.query(queries.gtic.GET_MOTIVE_BY_TYPE_ID, [idTiposSolicitud.SM])).rows[0];
-      ramo = (await gticPool.query(queries.gtic.GET_BRANCH_BY_TYPE_ID, [idTiposSolicitud.SM])).rows[0];
-      const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID('SM'), [application.id])).rows;
-      const totalIva = +breakdownData.map((row) => (row.monto_gas ? +row.monto_aseo + +row.monto_gas : +row.monto_aseo)).reduce((prev, next) => prev + next, 0) * 0.16;
-      const totalMonto = +breakdownData.map((row) => (row.monto_gas ? +row.monto_aseo + +row.monto_gas : +row.monto_aseo)).reduce((prev, next) => prev + next, 0);
-      console.log('culo2');
-      console.log(breakdownData);
-      console.log(totalIva, totalMonto);
+    if (application.descripcionCortaRamo === 'SM') {
+      motivo = application.descripcionSubramo;
+      ramo = application.descripcionRamo;
+      
+      console.log('breakdownData', breakdownData)
+      console.log('datos sample',breakdownData[0].datos)
+      const totalIva = +breakdownData.map((row) => {
+        return row.datos.desglose.reduce((prev, next) => {
+          return prev + (next.montoGas ? next.montoAseo + +next.montoGas : +next.montoAseo)
+        }, 0)
+      }).reduce((prev, next) => prev + next, 0) * 0.16;
+
+      const totalMonto = +breakdownData.map((row) => {
+        return row.datos.desglose.reduce((prev, next) => {
+          return prev + (next.montoGas ? next.montoAseo + +next.montoGas : +next.montoAseo)
+        }, 0)
+      }).reduce((prev, next) => prev + next, 0);
       for (const el of inmueblesContribuyente) {
         console.log('AAAAAAAAAAAAAAAAAAA');
         certInfo = {
@@ -2053,29 +2105,34 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
           fecha: moment().format('MM-DD-YYYY'),
 
           datos: {
-            nroSolicitud: 856535, //TODO: Reemplazar con el valor de co_solicitud creado en GTIC
-            nroPlanilla: 10010111, //TODO: Ver donde se guarda esto
-            motivo: motivo.tx_motivo,
-            nroFactura: `${application.anio}-${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
-            tipoTramite: `${ramo.nb_ramo} - ${ramo.tx_ramo}`,
-            cuentaOContrato: el.cuenta_contrato,
-            tipoInmueble: el.tx_tp_inmueble,
+            nroSolicitud: application.id,
+            nroPlanilla: 10010111,
+            motivo: motivo,
+            nroFactura: `${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
+            tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
+            tipoInmueble: el.tipo_inmueble,
             fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
             fechaLiq: moment(application.fechaCreacion).format('DD/MM/YYYY'),
             fechaVenc: moment(application.fechaCreacion).endOf('month').format('DD/MM/YYYY'),
             propietario: {
-              rif: `${application.nacionalidad}-${application.documento}`,
-              denomComercial: datosContribuyente.tx_denom_comercial,
-              direccion: datosContribuyente.tx_direccion,
-              razonSocial: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente.trim() + datosContribuyente.ap_contribuyente.trim(),
+              rif: `${application.tipoDocumento}-${application.documento}`,
+              denomComercial: application.denominacionComercial,
+              direccion: application.direccion || 'Dirección Sin Asignar',
+              razonSocial: application.razonSocial,
             },
             items: breakdownData
-              .filter((row) => row.id_inmueble === +el.co_inmueble)
+              .map((row) => {
+                console.log(el, row)
+                return {
+                  desglose: row.datos.desglose.find((desglose) => desglose.inmueble === +el.id_inmueble),
+                  fecha: row.datos.fecha,
+                };
+              })
               .map((row) => {
                 return {
-                  direccion: el.direccion_inmueble,
-                  periodos: `${row.mes} ${row.anio}`.toUpperCase(),
-                  impuesto: row.monto_gas ? formatCurrency(+row.monto_gas + +row.monto_aseo) : formatCurrency(row.monto_aseo),
+                  direccion: el.direccion || 'Dirección Sin Asignar',
+                  periodos: `${row.fecha.month} ${row.fecha.year}`.toUpperCase(),
+                  impuesto: row.desglose.montoGas ? formatCurrency(+row.desglose.montoGas + +row.desglose.montoAseo) : formatCurrency(row.desglose.montoAseo),
                 };
               }),
             totalIva: `${formatCurrency(totalIva)} Bs.S`,
@@ -2083,8 +2140,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
             montoTotalImpuesto: `${formatCurrency(
               +breakdownData
-                .filter((row) => row.id_inmueble === +el.co_inmueble)
-                .map((row) => (row.monto_gas ? +row.monto_aseo + +row.monto_gas : +row.monto_aseo))
+                .map((row) => {
+                  return {
+                    desglose: row.datos.desglose.find((desglose) => desglose.inmueble === +el.id_inmueble),
+                    fecha: row.datos.fecha,
+                  };
+                })
+                .map((row) => (row.desglose.montoGas ? +row.desglose.montoAseo + +row.desglose.montoGas : +row.desglose.montoAseo))
                 .reduce((prev, next) => prev + next, 0) + totalIva
             )} Bs.S`,
             interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
@@ -2098,26 +2160,25 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
 
         certInfoArray.push({ ...certInfo });
       }
-    } else if (application.tipoLiquidacion === 'IU') {
+    } else if (application.descripcionCortaRamo === 'IU') {
       motivo = (await gticPool.query(queries.gtic.GET_MOTIVE_BY_TYPE_ID, [idTiposSolicitud.IU])).rows[0];
       ramo = (await gticPool.query(queries.gtic.GET_BRANCH_BY_TYPE_ID, [idTiposSolicitud.IU])).rows[0];
-      const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID('IU'), [application.id])).rows;
+      const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id])).rows;
       const totalIva = breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0) * 0.16;
       const totalMonto = +breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0);
 
       for (const el of inmueblesContribuyente) {
-        console.log('AAAAAAAAAAAAAAAAAAA');
         certInfo = {
           QR: linkQr,
           moment: require('moment'),
           fecha: moment().format('MM-DD-YYYY'),
 
           datos: {
-            nroSolicitud: 856535, //TODO: Reemplazar con el valor de co_solicitud creado en GTIC
-            nroPlanilla: 10010111, //TODO: Ver donde se guarda esto
-            motivo: motivo.tx_motivo,
-            nroFactura: `${application.anio}-${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
-            tipoTramite: `${ramo.nb_ramo} - ${ramo.tx_ramo}`,
+            nroSolicitud: application.id,
+            nroPlanilla: 10010111,
+            motivo: motivo,
+            nroFactura: `${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
+            tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
             cuentaOContrato: el.cuenta_contrato,
             tipoInmueble: el.tx_tp_inmueble,
             fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
@@ -2125,9 +2186,9 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             fechaVenc: moment(application.fechaCreacion).endOf('month').format('DD/MM/YYYY'),
             propietario: {
               rif: `${application.nacionalidad}-${application.documento}`,
-              denomComercial: datosContribuyente.tx_denom_comercial,
-              direccion: datosContribuyente.tx_direccion,
-              razonSocial: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente.trim() + datosContribuyente.ap_contribuyente.trim(),
+              denomComercial: application.denominacionComercial,
+              direccion: application.direccion,
+              razonSocial: application.razonSocial,
             },
             items: breakdownData
               .filter((row) => row.id_inmueble === +el.co_inmueble)
@@ -2305,6 +2366,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
     const UTMM = (await pool.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const impuesto = UTMM * 2;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+    const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
     moment.locale('es');
 
     const certAE = {
@@ -2318,10 +2380,10 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
         motivo: `D${application.mes.substr(0, 3).toUpperCase()}${application.anio}`,
         porcion: '1/1',
         categoria: applicationInfo.tx_ramo,
-        rif: `${application.nacionalidad}-${application.documento}`,
-        ref: application.rim,
-        razonSocial: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente + datosContribuyente.ap_contribuyente,
-        direccion: datosContribuyente.tx_direccion,
+        rif: `${application.tipoDocumento}-${application.documento}`,
+        ref: referencia.referencia_municipal,
+        razonSocial: application.razonSocial,
+        direccion: application.direccion,
         fechaCre: moment(application.fechaCreacion).format('YYYY-MM-DD'),
         fechaLiq: moment().format('YYYY-MM-DD'),
         fechaVenc: moment().date(31).format('YYYY-MM-DD'),
@@ -2394,7 +2456,7 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
     let motivo = (await gticPool.query(queries.gtic.GET_MOTIVE_BY_TYPE_ID, [idTiposSolicitud.PP])).rows[0];
     let ramo = (await gticPool.query(queries.gtic.GET_BRANCH_BY_TYPE_ID, [idTiposSolicitud.PP])).rows[0];
     const subarticulos = (await gticPool.query(queries.gtic.GET_PUBLICITY_SUBARTICLES)).rows;
-    const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID('PP'), [application.id])).rows;
+    const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id])).rows;
     const totalIva = +breakdownData.map((row) => row.monto).reduce((prev, next) => +prev + +next, 0) * 0.16;
     const totalMonto = +breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0);
     return new Promise(async (res, rej) => {
@@ -2588,7 +2650,7 @@ const fixatedAmount = (num) => {
   return parseFloat(num.toPrecision(15)).toFixed(2);
 };
 
-export const getSettlementsReport = async (user, payload: { from: Date; to: Date }) => {
+export const getSettlementsReport = async (user, payload: { from: Date; to: Date; ramo: number }) => {
   const client = await pool.connect();
   try {
     return new Promise(async (res, rej) => {
@@ -2609,7 +2671,7 @@ export const getSettlementsReport = async (user, payload: { from: Date; to: Date
 
       const sheet = workbook.addWorksheet('Reporte');
 
-      const result = await client.query(queries.GET_SETTLEMENTS_REPORT, [payload.from, payload.to]);
+      const result = await client.query(payload.ramo ? queries.GET_SETTLEMENT_REPORT_BY_BRANCH : queries.GET_SETTLEMENTS_REPORT, payload.ramo ? [payload.from, payload.to, payload.ramo] : [payload.from, payload.to]);
 
       console.log(result);
 
@@ -2754,7 +2816,7 @@ const applicationStateEvents = {
 const breakdownCaseHandler = (settlementType, breakdown) => {
   // const query = breakdownCases(settlementType);
   const payload = switchcase({
-    AE: { aforo: breakdown.aforo, montoDeclarado: breakdown.montoDeclarado },
+    AE: { aforo: breakdown.aforo, montoDeclarado: breakdown.montoDeclarado, montoCobrado: breakdown.montoCobrado },
     SM: { inmueble: breakdown.inmueble, montoAseo: +breakdown.montoAseo, montoGas: breakdown.montoGas },
     IU: { inmueble: breakdown.inmueble, monto: breakdown.monto },
     PP: { subarticulo: breakdown.subarticulo, monto: breakdown.monto, cantidad: breakdown.cantidad },
@@ -2768,6 +2830,7 @@ const certificateCreationHandler = async (process, media, payload: CertificatePa
     if (result) return await result(payload);
     throw new Error('No se encontró el tipo de certificado seleccionado');
   } catch (e) {
+    console.log(e)
     throw errorMessageExtractor(e);
   }
 };
