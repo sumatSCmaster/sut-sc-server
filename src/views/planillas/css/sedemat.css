@@ -45,9 +45,15 @@
   -webkit-align-items:center;
   -webkit-justify-content: center;
 }
-.end > p{
+.end > p, .end{
   text-align: end !important;
+  display: -webkit-flex;
+  align-items: center;
+  justify-content: flex-end;
+  -webkit-align-items: center;
+  -webkit-justify-content: flex-end;
 }
+
 .td > p {
   margin: 0;
   text-align: left;

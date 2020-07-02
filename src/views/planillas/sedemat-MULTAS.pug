@@ -47,7 +47,7 @@ block content
         div(style={'text-align':'center'}) Monto (Bs)
       hr.divider
       each item in datos.items
-        div.row-constancy
+        div.row-constancy.break-page
           div(style={'text-align':'start' }) #{item.descripcion}
           div(style={'text-align':'center' }) #{item.fecha}
           div(style={'text-align':'center' }) #{new Intl.NumberFormat('de-DE').format(item.monto)}

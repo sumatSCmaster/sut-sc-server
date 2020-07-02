@@ -12,17 +12,17 @@ block header
       div(style={'border':'1px solid grey'})
         div.tr(style={'font-size': '12px'})
           div(style={'-webkit-flex': 1})
-            .td(style={'-webkit-flex': 1,'border-color':'grey'}).center.border-right.border-bottom
+            div(style={'-webkit-flex': 1,'border-color':'grey'}).td.center.border-right.border-bottom
               p(style={'margin': '0 auto','padding':'0'})
                 b Mes
-            .td(style={'-webkit-flex': 1}).center
-              p(style={'margin': '0 auto','padding':'auto 15px', 'font-size':'20px','border-right':'1px solid grey'}) 
+            div(style={'-webkit-flex': 1}).td.center
+              p(style={'margin': '0 auto','padding':'auto 15px', 'font-size':'20px','border-right':'1px solid grey', 'width':'100%'}) 
                 b #{moment().format('MM')}                
           div(style={'-webkit-flex': 1})
-            .td(style={'-webkit-flex': 1}).center
-              p(style={'margin': '0 auto','padding':'0','border-bottom':'1px solid grey'})
+            div(style={'-webkit-flex': 1}).td.center
+              p(style={'margin': '0 auto','padding':'0','border-bottom':'1px solid grey', 'width':'100%'})
                 b Año
-            .td(style={'-webkit-flex': 1}).center
+            div(style={'-webkit-flex': 1}).td.center
               p(style={'margin': '0 auto', 'padding':'auto 0', 'font-size':'20px'}) 
                 b #{datos.anio}
 block title
@@ -50,7 +50,7 @@ block content
         .td
           p
             b Dirección:
-            span &nbsp;#{datos.direccion}.&nbsp;
+            span &nbsp;#{datos.direccion ? datos.direccion : 'Dirección Sin Asignar'}.&nbsp;
       .tr
         .td
           p
