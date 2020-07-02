@@ -2117,7 +2117,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             propietario: {
               rif: `${application.tipoDocumento}-${application.documento}`,
               denomComercial: application.denominacionComercial,
-              direccion: application.direccion,
+              direccion: application.direccion || 'Dirección Sin Asignar',
               razonSocial: application.razonSocial,
             },
             items: breakdownData
@@ -2130,7 +2130,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               })
               .map((row) => {
                 return {
-                  direccion: el.direccion,
+                  direccion: el.direccion || 'Dirección Sin Asignar',
                   periodos: `${row.fecha.month} ${row.fecha.year}`.toUpperCase(),
                   impuesto: row.desglose.montoGas ? formatCurrency(+row.desglose.montoGas + +row.desglose.montoAseo) : formatCurrency(row.desglose.montoAseo),
                 };
