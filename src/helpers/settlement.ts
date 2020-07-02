@@ -2395,239 +2395,93 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
   }
 };
 
+//TODO: terminar esto
 const createReceiptForAEApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
-    const economicActivities = (await pool.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [application.contribuyente])).rows
-    const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
+    const isJuridical = application.tipoContribuyente === 'JURIDICO';
+    const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
+    const payloadContribuyente = isJuridical ? [application.documento, application.rim, application.nacionalidad] : [application.nacionalidad, application.nacionalidad];
+    const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
+    const economicActivities = (await gticPool.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [datosContribuyente.co_contribuyente])).rows[0];
+    const applicationInfo = (await gticPool.query(queries.gtic.GET_INFO_FOR_AE_CERTIFICATE)).rows[0];
     const UTMM = (await pool.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-    const impuestoRecibo = UTMM * 2;
+    const impuesto = UTMM * 2;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
     moment.locale('es');
-    let certInfoArray: any[] = [];
-    let certAE;
-    for(const el of breakdownData){
-      certAE = {
-        fecha: moment().format('YYYY-MM-DD'),
-        tramite: 'PAGO DE IMPUESTOS',
-        moment: require('moment'),
-        QR: linkQr,
-        datos: {
-          nroSolicitud: application.id,
-          nroPlanilla: new Date().getTime().toString().slice(7),
-          motivo: `D${el.datos.fecha.month.substr(0, 3).toUpperCase()}${el.datos.fecha.year}`,
-          porcion: '1/1',
-          categoria: application.descripcionRamo,
-          rif: `${application.tipoDocumento}-${application.documento}`,
-          ref: referencia.referencia_municipal,
-          razonSocial: application.razonSocial,
-          direccion: application.direccion || 'Dirección Sin Asignar',
-          fechaCre: moment(application.fechaCreacion).format('YYYY-MM-DD'),
-          fechaLiq: moment().format('YYYY-MM-DD'),
-          fechaVenc: moment().date(31).format('YYYY-MM-DD'),
-          items: economicActivities.map((row) => {
-            let desglose = el.datos.desglose.find((d) => d.aforo === row.id);
-            return {
-            codigo: row.numeroReferencia,
-            descripcion: row.descripcion,
-            montoDeclarado: desglose.montoDeclarado,
-            alicuota: row.alicuota / 100,
-            minTrib: row.minimoTributable,
-            impuesto: el.datos.montoCobrado || 0,
-            }
-          }),
-        
-          tramitesInternos: impuestoRecibo,
-          totalTasaRev: 0.0,
-          anticipoYRetenciones: 0.0,
-          interesMora: 0.0,
-          montoTotal: +application.montoLiquidacion + impuestoRecibo,
-          observacion: 'Pago por Impuesto de Actividad Economica - VIA WEB',
-          estatus: 'PAGADO',
-          totalLiq: +application.montoLiquidacion + impuestoRecibo,
-          totalRecaudado: +application.montoLiquidacion + impuestoRecibo,
-          totalCred: 0.0,
-        },
-      };
-      certAE.totalImpuestoDet = certAE.datos.items.reduce((prev, next) => prev + (+next.impuesto),0)
 
-      certInfoArray.push(certAE)
-    }
-    
-
-
+    const certAE = {
+      fecha: moment().format('YYYY-MM-DD'),
+      tramite: 'PAGO DE IMPUESTOS',
+      moment: require('moment'),
+      QR: linkQr,
+      datos: {
+        nroSolicitud: application.id,
+        nroPlanilla: new Date().getTime().toString().slice(7),
+        motivo: `D${application.mes.substr(0, 3).toUpperCase()}${application.anio}`,
+        porcion: '1/1',
+        categoria: applicationInfo.tx_ramo,
+        rif: `${application.tipoDocumento}-${application.documento}`,
+        ref: referencia.referencia_municipal,
+        razonSocial: application.razonSocial,
+        direccion: application.direccion,
+        fechaCre: moment(application.fechaCreacion).format('YYYY-MM-DD'),
+        fechaLiq: moment().format('YYYY-MM-DD'),
+        fechaVenc: moment().date(31).format('YYYY-MM-DD'),
+        codigo: economicActivities.nu_ref_actividad,
+        descripcion: economicActivities.tx_actividad,
+        montoDeclarado: (application.montoLiquidacion / (economicActivities.nu_porc_alicuota / 100)).toFixed(2),
+        alicuota: economicActivities.nu_porc_alicuota / 100,
+        minTrib: Math.floor(economicActivities.nu_ut),
+        impuesto: application.montoLiquidacion,
+        totalImpuestoDet: application.montoLiquidacion,
+        tramitesInternos: impuesto,
+        totalTasaRev: 0.0,
+        anticipoYRetenciones: 0.0,
+        interesMora: 0.0,
+        montoTotal: application.montoLiquidacion + impuesto,
+        observacion: 'Pago por Impuesto de Actividad Economica - VIA WEB',
+        estatus: 'PAGADO',
+        totalLiq: application.montoLiquidacion + impuesto,
+        totalRecaudado: 0.0,
+        totalCred: 0.0,
+      },
+    };
     return new Promise(async (res, rej) => {
-      try {
-        console.log('AAAAAAAA')
-        let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-AE.pug`), certInfo));
-        console.log(htmlArray.length)
-        const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
-        const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
-        const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
-
-        let buffersArray: any[] = await Promise.all(
-          htmlArray.map((html) => {
-            return new Promise((res, rej) => {
-              pdf
-                .create(html, {
-                  format: 'Letter',
-                  border: '5mm',
-                  header: { height: '0px' },
-                  base: 'file://' + resolve(__dirname, '../views/planillas/') + '/',
-                })
-                .toBuffer((err, buffer) => {
-                  if (err) {
-                    rej(err);
-                  } else {
-                    res(buffer);
-                  }
-                });
-            });
-          })
-        );
-        console.log(buffersArray)
-
-        if (dev) {
-          mkdir(dirname(pdfDir), { recursive: true }, (e) => {
-            if (e) {
-              rej(e);
+      const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-AE.pug`), certAE);
+      const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
+      const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
+      const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+      if (dev) {
+        pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
+          await pool.query(queries.UPDATE_RECEIPT_FOR_SETTLEMENTS, [dir, application.idProcedimiento, application.id]);
+          res(dir);
+        });
+      } else {
+        try {
+          pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toBuffer(async (err, buffer) => {
+            if (err) {
+              rej(err);
             } else {
-
-              if (buffersArray.length === 1) {
-
-                writeFile(pdfDir, buffersArray[0], async (err) => {
-                  if (err) {
-                    rej(err);
-                  } else {
-                    res(dir);
-                  }
-                });
-              } else {
-                let letter = 'A';
-                let reduced: any = buffersArray.reduce((prev: any, next) => {
-                  prev[letter] = next;
-                  let codePoint = letter.codePointAt(0);
-                  if (codePoint !== undefined) {
-                    letter = String.fromCodePoint(++codePoint);
-                  }
-                  return prev;
-                }, {});
-
-                pdftk
-                  .input(reduced)
-                  .cat(`${Object.keys(reduced).join(' ')}`)
-                  .output(pdfDir)
-                  .then((buffer) => {
-                    console.log('a', buffer)
-                    res(dir);
-                  })
-                  .catch((e) => {
-                    console.log(e);
-                    rej(e);
-                  });
-              }
-            }
-          });
-        } else {
-          try {
-            if (buffersArray.length === 1) {
               const bucketParams = {
                 Bucket: 'sut-maracaibo',
                 Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
               };
               await S3Client.putObject({
                 ...bucketParams,
-                Body: buffersArray[0],
+                Body: buffer,
                 ACL: 'public-read',
                 ContentType: 'application/pdf',
               }).promise();
               res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
-            } else {
-              let letter = 'A';
-              let reduced: any = buffersArray.reduce((prev: any, next) => {
-                prev[letter] = next;
-                let codePoint = letter.codePointAt(0);
-                if (codePoint !== undefined) {
-                  letter = String.fromCodePoint(++codePoint);
-                }
-                return prev;
-              }, {});
-
-              pdftk
-                .input(reduced)
-                .cat(`${Object.keys(reduced).join(' ')}`)
-                .output()
-                .then(async (buffer) => {
-                  const bucketParams = {
-                    Bucket: 'sut-maracaibo',
-                    Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
-                  };
-                  await S3Client.putObject({
-                    ...bucketParams,
-                    Body: buffer,
-                    ACL: 'public-read',
-                    ContentType: 'application/pdf',
-                  }).promise();
-                  res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
-                })
-                .catch((e) => {
-                  console.log(e);
-                  rej(e);
-                });
             }
-          } catch (e) {
-            rej(e)
-          } finally {
-          }
+          });
+        } catch (e) {
+          throw e;
+        } finally {
         }
-      } catch (e) {
-        rej({
-          message: 'Error en generacion de certificado de AE',
-          e: errorMessageExtractor(e),
-        })
       }
     });
-
-
-
-    // return new Promise(async (res, rej) => {
-
-
-
-    //   // const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-AE.pug`), certAE);
-    //   // const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
-    //   // const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
-    //   // const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
-    //   // if (dev) {
-    //   //   pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
-    //   //     await pool.query(queries.UPDATE_RECEIPT_FOR_SETTLEMENTS, [dir, application.idProcedimiento, application.id]);
-    //   //     res(dir);
-    //   //   });
-    //   // } else {
-    //   //   try {
-    //   //     pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toBuffer(async (err, buffer) => {
-    //   //       if (err) {
-    //   //         rej(err);
-    //   //       } else {
-    //   //         const bucketParams = {
-    //   //           Bucket: 'sut-maracaibo',
-    //   //           Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
-    //   //         };
-    //   //         await S3Client.putObject({
-    //   //           ...bucketParams,
-    //   //           Body: buffer,
-    //   //           ACL: 'public-read',
-    //   //           ContentType: 'application/pdf',
-    //   //         }).promise();
-    //   //         res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
-    //   //       }
-    //   //     });
-    //   //   } catch (e) {
-    //   //     throw e;
-    //   //   } finally {
-    //   //   }
-    //   // }
-    // });
   } catch (error) {
     throw errorMessageExtractor(error);
   }
