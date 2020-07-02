@@ -114,82 +114,83 @@ block content
             b MIN. TRIB
         div(style={'-webkit-flex': 1.5}).th.border-bottom.center
           p
-            b IMPUESTO     
-      div.tr
-        div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
-          p #{datos.codigo}
-        div(style={'-webkit-flex': 3.5}).td.border-right.border-bottom.center
-          p #{datos.descripcion}
-        div(style={'-webkit-flex': 1.5}).td.border-right.border-bottom.center
-          p #{datos.montoDeclarado}
-        div(style={'-webkit-flex': 1.5}).td.border-right.border-bottom.center
-          p #{datos.alicuota}
-        div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
-          p #{datos.minTrib}
-        div(style={'-webkit-flex': 1.5}).td.border-bottom.center
-          p #{datos.impuesto}
-      div.tr
+            b IMPUESTO    
+      each item in datos.items
+        div.tr.break-page
+          div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+            p #{item.codigo}
+          div(style={'-webkit-flex': 3.5}).td.border-right.border-bottom.center
+            p #{item.descripcion}
+          div(style={'-webkit-flex': 1.5}).td.border-right.border-bottom.center
+            p #{item.montoDeclarado}
+          div(style={'-webkit-flex': 1.5}).td.border-right.border-bottom.center
+            p #{item.alicuota}
+          div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+            p #{item.minTrib}
+          div(style={'-webkit-flex': 1.5}).td.border-bottom.center
+            p #{item.impuesto}
+      div.tr.break-page
         div(style={'-webkit-flex': 1}).td.border-bottom.center
           p
             b TRAMITES INTERNOS
-      div.tr
+      div.tr.break-page
         div(style={'-webkit-flex': 8}).td.border-right.border-bottom.center
           p
             b CONCEPTO
         div(style={'-webkit-flex': 2}).td.border-bottom.center
           p
             b IMPUESTO
-      div.tr
+      div.tr.break-page
         div(style={'-webkit-flex': 8}).td.border-right
           p SOLVENCIA DE ACTIVIDADES ECONÓMICAS
         div(style={'-webkit-flex': 2}).td.center
           p 1.000.000
-    div(style={'text-align': '-webkit-right'})
-      div(style={'width': '50%','border-bottom':0}).table
-        div.tr
-          div(style={'-webkit-flex': 6}).td.border-right.border-bottom.center
-            p
-              b Total Impuestos Determinado:
-          div(style={'-webkit-flex': 4}).td.border-bottom
-            p #{datos.totalImpuestoDet}
-        div.tr
-          div(style={'-webkit-flex': 6}).td.border-right.border-bottom.center
-            p
-              b Tramites Internos:
-          div(style={'-webkit-flex': 4}).td.border-bottom
-            p #{datos.tramitesInternos}
-        div.tr
-          div(style={'-webkit-flex': 6}).td.border-right.border-bottom.center
-            p
-              b Total Tasa Renovacion Licencia:
-          div(style={'-webkit-flex': 4}).td.border-bottom
-            p #{datos.totalTasaRev}
-        div.tr
-          div(style={'-webkit-flex': 6}).td.border-right.border-bottom.center
-            p
-              b Menos Anticipos y Retenciones:
-          div(style={'-webkit-flex': 4}).td.border-bottom
-            p #{datos.anticipoYRetenciones}
-        div.tr
-          div(style={'-webkit-flex': 6}).td.border-right.border-bottom.center
-            p
-              b Intereses de Mora:
-          div(style={'-webkit-flex': 4}).td.border-bottom
-            p #{datos.interesMora}
-        div.tr
-          div(style={'-webkit-flex': 6}).td.border-right.center
-            p
-              b Monto Total Planilla:
-          div(style={'-webkit-flex': 4}).td
-            p #{datos.montoTotal}
-      div(style={'margin':0}).table
-        div.tr
+    div(style={'margin-top':'20px'}).table.break-page
+      div.tr.break-page
+        div(style={'-webkit-flex': 6}).td.border-right.border-bottom.center
+          p
+            b Total Impuestos Determinado:
+        div(style={'-webkit-flex': 4}).td.border-bottom
+          p #{datos.totalImpuestoDet}
+      div.tr.break-page
+        div(style={'-webkit-flex': 6}).td.border-right.border-bottom.center
+          p
+            b Tramites Internos:
+        div(style={'-webkit-flex': 4}).td.border-bottom
+          p #{datos.tramitesInternos}
+      div.tr.break-page
+        div(style={'-webkit-flex': 6}).td.border-right.border-bottom.center
+          p
+            b Total Tasa Renovacion Licencia:
+        div(style={'-webkit-flex': 4}).td.border-bottom
+          p #{datos.totalTasaRev}
+      div.tr.break-page
+        div(style={'-webkit-flex': 6}).td.border-right.border-bottom.center
+          p
+            b Menos Anticipos y Retenciones:
+        div(style={'-webkit-flex': 4}).td.border-bottom
+          p #{datos.anticipoYRetenciones}
+      div.tr.break-page
+        div(style={'-webkit-flex': 6}).td.border-right.border-bottom.center
+          p
+            b Intereses de Mora:
+        div(style={'-webkit-flex': 4}).td.border-bottom
+          p #{datos.interesMora}
+      div.tr
+        div(style={'-webkit-flex': 6}).td.border-right.center
+          p
+            b Monto Total Planilla:
+        div(style={'-webkit-flex': 4}).td
+          p #{datos.montoTotal}
+
+      div(style={'margin-top':'20px'}).table
+        div.tr.break-page
           div(style={'-webkit-flex': 2}).td.border-bottom.border-right
             p
               b OBSERVACIÓN:
           div(style={'-webkit-flex': 8}).td.border-bottom
             p #{datos.observacion}
-        div.tr
+        div.tr.break-page
           div(style={'-webkit-flex': 2}).td.border-bottom.border-right
             p
               b ESTATUS:
