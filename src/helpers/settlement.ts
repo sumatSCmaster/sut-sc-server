@@ -1808,6 +1808,8 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
     const fraccion = (await client.query(queries.GET_FRACTION_BY_AGREEMENT_AND_FRACTION_ID, [agreement, fragment])).rows[0];
     const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
     if (pagoSum < fraccion.monto) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
+    const state =
+      user.tipoUsuario === 4 ? (await client.query(queries.UPDATE_FRACTION_STATE, [fragment, applicationStateEvents.VALIDAR])).rows[0] : (await client.query(queries.COMPLETE_FRACTION_STATE, [fragment, applicationStateEvents.APROBARCAJERO])).rows[0];
     await Promise.all(
       payment.map(async (el) => {
         if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
@@ -1821,8 +1823,6 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
         user.tipoUsuario === 4 ? await insertPaymentReference(el, fragment, client) : await insertPaymentCashier(el, fragment, client);
       })
     );
-    const state =
-      user.tipoUsuario === 4 ? (await client.query(queries.UPDATE_FRACTION_STATE, [fragment, applicationStateEvents.VALIDAR])).rows[0] : (await client.query(queries.COMPLETE_FRACTION_STATE, [fragment, applicationStateEvents.APROBARCAJERO])).rows[0];
     client.query('COMMIT');
     const applicationInstance = await getAgreementFractionById({ id: fragment });
     console.log(applicationInstance);
@@ -2070,10 +2070,12 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     const payloadContribuyente = isJuridical ? [application.documento, referencia?.referencia_municipal, application.tipoDocumento] : [application.tipoDocumento, application.nacionalidad];
     const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
     const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
-    let inmueblesContribuyente: any[] = (await Promise.all(breakdownData[0].datos.desglose.map((row) => {
-      return pool.query(queries.GET_SUT_ESTATE_BY_ID, [row.inmueble]);
-    })));
-    inmueblesContribuyente = inmueblesContribuyente.map(result => result.rows[0]);
+    let inmueblesContribuyente: any[] = await Promise.all(
+      breakdownData[0].datos.desglose.map((row) => {
+        return pool.query(queries.GET_SUT_ESTATE_BY_ID, [row.inmueble]);
+      })
+    );
+    inmueblesContribuyente = inmueblesContribuyente.map((result) => result.rows[0]);
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     let certInfo;
     let motivo;
@@ -2083,20 +2085,25 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     if (application.descripcionCortaRamo === 'SM') {
       motivo = application.descripcionSubramo;
       ramo = application.descripcionRamo;
-      
-      console.log('breakdownData', breakdownData)
-      console.log('datos sample',breakdownData[0].datos)
-      const totalIva = +breakdownData.map((row) => {
-        return row.datos.desglose.reduce((prev, next) => {
-          return prev + (next.montoGas ? next.montoAseo + +next.montoGas : +next.montoAseo)
-        }, 0)
-      }).reduce((prev, next) => prev + next, 0) * 0.16;
 
-      const totalMonto = +breakdownData.map((row) => {
-        return row.datos.desglose.reduce((prev, next) => {
-          return prev + (next.montoGas ? next.montoAseo + +next.montoGas : +next.montoAseo)
-        }, 0)
-      }).reduce((prev, next) => prev + next, 0);
+      console.log('breakdownData', breakdownData);
+      console.log('datos sample', breakdownData[0].datos);
+      const totalIva =
+        +breakdownData
+          .map((row) => {
+            return row.datos.desglose.reduce((prev, next) => {
+              return prev + (next.montoGas ? next.montoAseo + +next.montoGas : +next.montoAseo);
+            }, 0);
+          })
+          .reduce((prev, next) => prev + next, 0) * 0.16;
+
+      const totalMonto = +breakdownData
+        .map((row) => {
+          return row.datos.desglose.reduce((prev, next) => {
+            return prev + (next.montoGas ? next.montoAseo + +next.montoGas : +next.montoAseo);
+          }, 0);
+        })
+        .reduce((prev, next) => prev + next, 0);
       for (const el of inmueblesContribuyente) {
         console.log('AAAAAAAAAAAAAAAAAAA');
         certInfo = {
@@ -2117,12 +2124,12 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             propietario: {
               rif: `${application.tipoDocumento}-${application.documento}`,
               denomComercial: application.denominacionComercial,
-              direccion: application.direccion || 'Dirección Sin Asignar',
+              direccion: application.direccion,
               razonSocial: application.razonSocial,
             },
             items: breakdownData
               .map((row) => {
-                console.log(el, row)
+                console.log(el, row);
                 return {
                   desglose: row.datos.desglose.find((desglose) => desglose.inmueble === +el.id_inmueble),
                   fecha: row.datos.fecha,
@@ -2130,7 +2137,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               })
               .map((row) => {
                 return {
-                  direccion: el.direccion || 'Dirección Sin Asignar',
+                  direccion: el.direccion,
                   periodos: `${row.fecha.month} ${row.fecha.year}`.toUpperCase(),
                   impuesto: row.desglose.montoGas ? formatCurrency(+row.desglose.montoGas + +row.desglose.montoAseo) : formatCurrency(row.desglose.montoAseo),
                 };
@@ -2830,7 +2837,7 @@ const certificateCreationHandler = async (process, media, payload: CertificatePa
     if (result) return await result(payload);
     throw new Error('No se encontró el tipo de certificado seleccionado');
   } catch (e) {
-    console.log(e)
+    console.log(e);
     throw errorMessageExtractor(e);
   }
 };
