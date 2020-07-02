@@ -1568,8 +1568,8 @@ export const insertSettlements = async ({ process, user }) => {
       const lastSavedFine = (await client.query(queries.GET_LAST_FINE_FOR_LATE_APPLICATION, [contributorReference.id_registro_municipal])).rows[0];
       if (lastSavedFine && moment(lastSavedFine.fecha_liquidacion).year() === now.year() && moment(lastSavedFine.fecha_liquidacion).month() < now.month()) {
         finingAmount = lastSavedFine.datos.monto;
-        const proposedFiningDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month();
-        const finingDate = moment().month(lastSavedFine.fecha_liquidacion).month() < proposedFiningDate ? moment().month(lastSavedFine.fecha_liquidacion).month() : proposedFiningDate;
+        const proposedFiningDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month);
+        const finingDate = Math.floor(proposedFiningDate.diff(moment(lastSavedFine.fecha_liquidacion), 'M'));
         finingMonths = new Array(now.month() - finingDate).fill({});
         if (finingMonths.length > 0) {
           let counter = finingDate;
