@@ -1183,7 +1183,7 @@ const formatContributor = async (contributor, client: PoolClient) => {
       razonSocial: contributor.razon_social,
       denomComercial: contributor.denominacion_comercial || undefined,
       siglas: contributor.siglas || undefined,
-      parroquia: contributor.parroquia,
+      parroquia: contributor.id_parroquia,
       sector: contributor.sector,
       direccion: contributor.direccion,
       puntoReferencia: contributor.punto_referencia,
