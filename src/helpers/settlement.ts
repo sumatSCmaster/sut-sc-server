@@ -1571,7 +1571,7 @@ export const insertSettlements = async ({ process, user }) => {
         console.log('cayendo en 1');
         finingAmount = lastSavedFine.datos.monto;
         const proposedFiningDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month();
-        const finingDate = moment(lastSavedFine.fecha_liquidacion).month() < proposedFiningDate ? moment(lastSavedFine.fecha_liquidacion).month() : proposedFiningDate;
+        const finingDate = (moment(lastSavedFine.fecha_liquidacion).month() < proposedFiningDate ? moment(lastSavedFine.fecha_liquidacion).month() : proposedFiningDate) + 1;
         console.log(finingDate);
         finingMonths = new Array(now.month() - finingDate).fill({});
         if (finingMonths.length > 0) {
