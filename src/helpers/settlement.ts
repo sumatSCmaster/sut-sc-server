@@ -1109,9 +1109,13 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
 export const getApplicationsAndSettlementsForContributor = async ({ referencia, docType, document, typeUser }) => {
   const client = await pool.connect();
   try {
+    const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows[0];
+    if (!contributor) throw { status: 404, message: 'El contribuyente no existe' };
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-    const userApplications = (referencia ? await client.query(queries.GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR, [referencia, document, docType]) : await client.query(queries.GET_APPLICATION_INSTANCES_FOR_NATURAL_CONTRIBUTOR, [document, docType]))
-      .rows;
+    const userApplications = (referencia
+      ? await client.query(queries.GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR, [contributor.id_contribuyente, referencia])
+      : await client.query(queries.GET_APPLICATION_INSTANCES_FOR_NATURAL_CONTRIBUTOR, [contributor.id_contribuyente])
+    ).rows;
     const hasApplications = userApplications.length > 0;
     if (!hasApplications) return { status: 404, message: 'El usuario no tiene solicitudes' };
     const applications: Solicitud[] = await Promise.all(
@@ -2395,10 +2399,9 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
   }
 };
 
-
 const createReceiptForAEApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
-    const economicActivities = (await pool.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [application.contribuyente])).rows
+    const economicActivities = (await pool.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [application.contribuyente])).rows;
     const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
     const UTMM = (await pool.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const impuestoRecibo = UTMM * 2;
@@ -2407,7 +2410,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
     moment.locale('es');
     let certInfoArray: any[] = [];
     let certAE;
-    for(const el of breakdownData){
+    for (const el of breakdownData) {
       certAE = {
         fecha: moment().format('YYYY-MM-DD'),
         tramite: 'PAGO DE IMPUESTOS',
@@ -2429,15 +2432,15 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
           items: economicActivities.map((row) => {
             let desglose = el.datos.desglose.find((d) => d.aforo === row.id);
             return {
-            codigo: row.numeroReferencia,
-            descripcion: row.descripcion,
-            montoDeclarado: desglose.montoDeclarado,
-            alicuota: row.alicuota / 100,
-            minTrib: row.minimoTributable,
-            impuesto: el.datos.montoCobrado || 0,
-            }
+              codigo: row.numeroReferencia,
+              descripcion: row.descripcion,
+              montoDeclarado: desglose.montoDeclarado,
+              alicuota: row.alicuota / 100,
+              minTrib: row.minimoTributable,
+              impuesto: el.datos.montoCobrado || 0,
+            };
           }),
-        
+
           tramitesInternos: impuestoRecibo,
           totalTasaRev: 0.0,
           anticipoYRetenciones: 0.0,
@@ -2450,18 +2453,16 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
           totalCred: 0.0,
         },
       };
-      certAE.totalImpuestoDet = certAE.datos.items.reduce((prev, next) => prev + (+next.impuesto),0)
+      certAE.totalImpuestoDet = certAE.datos.items.reduce((prev, next) => prev + +next.impuesto, 0);
 
-      certInfoArray.push(certAE)
+      certInfoArray.push(certAE);
     }
-    
-
 
     return new Promise(async (res, rej) => {
       try {
-        console.log('AAAAAAAA')
+        console.log('AAAAAAAA');
         let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-AE.pug`), certInfo));
-        console.log(htmlArray.length)
+        console.log(htmlArray.length);
         const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
         const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
         const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
@@ -2486,16 +2487,14 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
             });
           })
         );
-        console.log(buffersArray)
+        console.log(buffersArray);
 
         if (dev) {
           mkdir(dirname(pdfDir), { recursive: true }, (e) => {
             if (e) {
               rej(e);
             } else {
-
               if (buffersArray.length === 1) {
-
                 writeFile(pdfDir, buffersArray[0], async (err) => {
                   if (err) {
                     rej(err);
@@ -2519,7 +2518,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
                   .cat(`${Object.keys(reduced).join(' ')}`)
                   .output(pdfDir)
                   .then((buffer) => {
-                    console.log('a', buffer)
+                    console.log('a', buffer);
                     res(dir);
                   })
                   .catch((e) => {
@@ -2577,7 +2576,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
                 });
             }
           } catch (e) {
-            rej(e)
+            rej(e);
           } finally {
           }
         }
@@ -2585,15 +2584,11 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
         rej({
           message: 'Error en generacion de certificado de AE',
           e: errorMessageExtractor(e),
-        })
+        });
       }
     });
 
-
-
     // return new Promise(async (res, rej) => {
-
-
 
     //   // const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-AE.pug`), certAE);
     //   // const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
@@ -2723,8 +2718,6 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
   }
 };
 
-
-
 const createFineDocument = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
@@ -2747,8 +2740,8 @@ const createFineDocument = async ({ gticPool, pool, user, application }: Certifi
             return {
               fecha: `${row.datos.fecha.month.toUpperCase()} ${row.datos.fecha.year}`,
               descripcion: row.datos.descripcion,
-              monto: row.monto
-            }
+              monto: row.monto,
+            };
           }),
         },
       });
@@ -2787,9 +2780,6 @@ const createFineDocument = async ({ gticPool, pool, user, application }: Certifi
     throw errorMessageExtractor(error);
   }
 };
-
-
-
 
 export const createAccountStatement = async ({ contributor, reference, typeUser }) => {
   const client = await pool.connect();
@@ -3043,7 +3033,7 @@ const certificateCases = switchcase({
   SM: { recibo: createReceiptForSMOrIUApplication },
   IU: { recibo: createReceiptForSMOrIUApplication },
   PP: { recibo: createReceiptForPPApplication },
-  MUL: { multa: createFineDocument }
+  MUL: { multa: createFineDocument },
 })(null);
 
 const breakdownCases = switchcase({
