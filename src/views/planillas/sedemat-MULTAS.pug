@@ -48,10 +48,6 @@ block content
       hr.divider
       each item in datos.items
         div.row-constancy
-          div(style={'text-align':'start' }) MULTA POR PAGO FUERA DE PLAZO
-          div(style={'text-align':'center' }) #{moment(item.fecha).format('DD/MM/YYYY')}
-          div(style={'text-align':'center' }) #{new Intl.NumberFormat('de-DE').format(item.monto)}    
-  div(style={'text-align':'start', 'width': '90%'})
-    p
-      b Nota:
-      | El precio de la Unidad Tributaria Municipal de Maracaibo (UTMM) para la fecha es de Bs. #{UTMM}
+          div(style={'text-align':'start' }) #{item.descripcion}
+          div(style={'text-align':'center' }) #{item.fecha}
+          div(style={'text-align':'center' }) #{new Intl.NumberFormat('de-DE').format(item.monto)}
