@@ -2802,7 +2802,7 @@ const applicationStateEvents = {
 const breakdownCaseHandler = (settlementType, breakdown) => {
   // const query = breakdownCases(settlementType);
   const payload = switchcase({
-    AE: { aforo: breakdown.aforo, montoDeclarado: breakdown.montoDeclarado },
+    AE: { aforo: breakdown.aforo, montoDeclarado: breakdown.montoDeclarado, montoCobrado: breakdown.montoCobrado },
     SM: { inmueble: breakdown.inmueble, montoAseo: +breakdown.montoAseo, montoGas: breakdown.montoGas },
     IU: { inmueble: breakdown.inmueble, monto: breakdown.monto },
     PP: { subarticulo: breakdown.subarticulo, monto: breakdown.monto, cantidad: breakdown.cantidad },
