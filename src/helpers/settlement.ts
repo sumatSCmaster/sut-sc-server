@@ -2577,6 +2577,74 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
   }
 };
 
+
+
+const createFineDocument = async ({ gticPool, pool, user, application }: CertificatePayload) => {
+  try {
+    const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
+    const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
+    const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+    return new Promise(async (res, rej) => {
+      const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-MULTAS.pug`), {
+        moment: require('moment'),
+        institucion: 'SEDEMAT',
+        QR: linkQr,
+        datos: {
+          razonSocial: application.razonSocial,
+          tipoDocumento: application.tipoDocumento,
+          documentoIden: application.documento,
+          rim: referencia?.referencia_municipal,
+          direccion: application.direccion || 'Sin Asignar',
+          telefono: referencia.telefono_celular,
+          email: referencia.email,
+          items: breakdownData.map((row) => {
+            return {
+              fecha: `${row.datos.fecha.month.toUpperCase()} ${row.datos.fecha.year}`,
+              descripcion: row.datos.descripcion,
+              monto: row.datos.monto
+            }
+          }),
+        },
+      });
+      const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/MUL/${application.idLiquidacion}/mult.pdf`);
+      const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/MUL/${application.idLiquidacion}/mult.pdf`;
+      if (dev) {
+        pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
+          res(dir);
+        });
+      } else {
+        try {
+          pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toBuffer(async (err, buffer) => {
+            if (err) {
+              rej(err);
+            } else {
+              const bucketParams = {
+                Bucket: 'sut-maracaibo',
+                Key: `/sedemat/${application.id}/MUL/${application.idLiquidacion}/solvencia.pdf`,
+              };
+              await S3Client.putObject({
+                ...bucketParams,
+                Body: buffer,
+                ACL: 'public-read',
+                ContentType: 'application/pdf',
+              }).promise();
+              res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+            }
+          });
+        } catch (e) {
+          throw e;
+        } finally {
+        }
+      }
+    });
+  } catch (error) {
+    throw errorMessageExtractor(error);
+  }
+};
+
+
+
+
 export const createAccountStatement = async ({ contributor, reference, typeUser }) => {
   const client = await pool.connect();
   const gtic = await gticPool.connect();
@@ -2829,6 +2897,7 @@ const certificateCases = switchcase({
   SM: { recibo: createReceiptForSMOrIUApplication },
   IU: { recibo: createReceiptForSMOrIUApplication },
   PP: { recibo: createReceiptForPPApplication },
+  MUL: { multa: createFineDocument }
 })(null);
 
 const breakdownCases = switchcase({
