@@ -33,7 +33,8 @@ export const validatePayments = async (body, user) => {
   try {
     await client.query('BEGIN');
     const res = await client.query(queries.VALIDATE_PAYMENTS, [body]);
-    console.log(res);
+    console.log(res.rows);
+    console.log(res.rows[0])
     const data = await Promise.all(
       res.rows[0].validate_payments.data.map(async (el) => {
         const pagoValidado = {
