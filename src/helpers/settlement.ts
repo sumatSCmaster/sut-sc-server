@@ -1811,7 +1811,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
 export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fragment, user }) => {
   const client = await pool.connect();
   try {
-    client.query('BEGIN');
+    await client.query('BEGIN');
     const fraccion = (await client.query(queries.GET_FRACTION_BY_AGREEMENT_AND_FRACTION_ID, [agreement, fragment])).rows[0];
     const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
     if (pagoSum < fraccion.monto) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
@@ -1830,7 +1830,7 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
         user.tipoUsuario === 4 ? await insertPaymentReference(el, fragment, client) : await insertPaymentCashier(el, fragment, client);
       })
     );
-    client.query('COMMIT');
+    await client.query('COMMIT');
     const applicationInstance = await getAgreementFractionById({ id: fragment });
     console.log(applicationInstance);
     await sendNotification(
