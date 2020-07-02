@@ -1570,8 +1570,8 @@ export const insertSettlements = async ({ process, user }) => {
       if (lastSavedFine && moment(lastSavedFine.fecha_liquidacion).year() === now.year() && moment(lastSavedFine.fecha_liquidacion).month() < now.month()) {
         console.log('cayendo en 1');
         finingAmount = lastSavedFine.datos.monto;
-        const proposedFiningDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month);
-        const finingDate = Math.floor(proposedFiningDate.diff(moment(lastSavedFine.fecha_liquidacion), 'M'));
+        const proposedFiningDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month();
+        const finingDate = moment(lastSavedFine.fecha_liquidacion).month() < proposedFiningDate ? moment(lastSavedFine.fecha_liquidacion).month() : proposedFiningDate;
         console.log(finingDate);
         finingMonths = new Array(now.month() - finingDate).fill({});
         if (finingMonths.length > 0) {
