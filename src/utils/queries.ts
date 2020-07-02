@@ -626,22 +626,22 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   UPDATE_CODE: 'UPDATE impuesto.verificacion_telefono SET codigo_verificacion = $1, fecha_verificacion = CURRENT_TIMESTAMP WHERE id_usuario = $2',
 
   //REPORTES
-  GET_INGRESS: `SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, COUNT(*) as "cantidadIng", SUM(monto) as ingresado 
+  GET_INGRESS: `SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, r.descripcion, COUNT(*) as "cantidadIng", SUM(monto) as ingresado 
         FROM impuesto.liquidacion l 
         INNER JOIN impuesto.solicitud s ON l.id_solicitud = s.id_solicitud 
         INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) 
             AS state FROM impuesto.evento_solicitud es GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud 
         INNER JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo 
-        INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_subramo 
+        INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo 
         WHERE state = 'finalizado' AND fecha_liquidacion BETWEEN $1 AND $2 
         GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion;`,
-  GET_LIQUIDATED: `SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, COUNT(*) as "cantidadLiq", SUM(monto) as liquidado \
+  GET_LIQUIDATED: `SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, r.descripcion, COUNT(*) as "cantidadLiq", SUM(monto) as liquidado \
         FROM impuesto.liquidacion l  \
         INNER JOIN impuesto.solicitud s ON l.id_solicitud = s.id_solicitud \
         INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) \
             AS state FROM impuesto.evento_solicitud es GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud \
         INNER JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo \
-        INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_subramo \
+        INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo \
         WHERE state != 'finalizado' AND fecha_liquidacion BETWEEN $1 AND $2 \
         GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion;`,
   GET_TRANSFERS_BY_BANK: `SELECT b.id_banco, b.nombre AS banco, SUM(p.monto) as monto
@@ -793,6 +793,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR:
     'SELECT ae.id_actividad_economica AS id, ae.numero_referencia as "numeroReferencia", ae.descripcion, ae.alicuota, ae.minimo_tributable AS "minimoTributable" FROM impuesto.actividad_economica_contribuyente aec INNER JOIN impuesto.actividad_economica ae ON ae.numero_referencia = aec.numero_referencia WHERE id_contribuyente = $1;',
   GET_BRANCHES: 'SELECT id_ramo AS id, codigo, descripcion, descripcion_corta FROM impuesto.ramo;',
+  GET_BRANCHES_FOR_REPORT: 'SELECT id_ramo AS id, codigo AS "ramo", descripcion, descripcion_corta FROM impuesto.ramo;',
   GET_SUT_ESTATE_BY_ID: 'SELECT * FROM inmueble_urbano WHERE id_inmueble = $1',
   gtic: {
     GET_NATURAL_CONTRIBUTOR: 'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 ORDER BY co_contribuyente DESC',

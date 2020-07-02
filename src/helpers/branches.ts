@@ -8,6 +8,7 @@ import { renderFile } from 'pug';
 import { errorMessageExtractor } from './errors';
 import { QueryResult } from 'pg';
 import * as pdf from 'html-pdf';
+import { groupBy } from 'lodash'
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -24,6 +25,7 @@ export const getBranches = async () => {
     client.release()
   }
 }
+
 
 export const generateBranchesReport = async (user, payload: { from: Date, to: Date, alcaldia:boolean }) => {
     const client = await pool.connect();
@@ -81,8 +83,27 @@ export const generateBranchesReport = async (user, payload: { from: Date, to: Da
                 return val;
             });
 
+            
             console.log('FINAL RES', result)
-          
+            console.log('FILTERED THING',groupBy(result, (res) => res.codigo))
+            let final = groupBy(result, (res) => res.codigo);
+            let branches = (await client.query(queries.GET_BRANCHES_FOR_REPORT)).rows.filter((row) => row.ramo in final)
+            console.log(branches)
+            branches = branches.map((branch) => {
+              return {
+                ...branch,
+                subRamo: final[branch.ramo]
+              }
+            }).map((branch) => {
+              return {
+                ...branch,
+                liquidadoTotal: branch.subRamo.reduce((prev, next) => prev + (+next.liquidado) , 0),
+                cantidadLiqTotal:branch.subRamo.reduce((prev, next) => prev + (+next.cantidadLiq) , 0),
+                ingresadoTotal: branch.subRamo.reduce((prev, next) => prev + (+next.ingresado) , 0),
+                cantidadIngTotal: branch.subRamo.reduce((prev, next) => prev + (+next.cantidadIng) , 0),
+              }
+            })
+            console.log(branches)
           if(!alcaldia) {
             const transfersByBank =(await client.query(queries.GET_TRANSFERS_BY_BANK, [payload.from, payload.to])).rows;
             const totalTranfersByBank = +transfersByBank.reduce((prev, next) => prev + +(next.monto) ,0);
