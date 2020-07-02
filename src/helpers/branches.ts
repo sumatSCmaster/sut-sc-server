@@ -25,10 +25,12 @@ export const getBranches = async () => {
   }
 }
 
-export const generateBranchesReport = async (user, payload: { from: Date, to: Date }) => {
+export const generateBranchesReport = async (user, payload: { from: Date, to: Date, alcaldia:boolean }) => {
     const client = await pool.connect();
     try {
         return new Promise(async (res, rej) => {
+            const alcaldia = payload.alcaldia;
+            let pagos = {};
             const ingress = await client.query(queries.GET_INGRESS, [payload.from, payload.to]);
             const liquidated = await client.query(queries.GET_LIQUIDATED, [payload.from, payload.to]);
             let pivot;
@@ -80,24 +82,44 @@ export const generateBranchesReport = async (user, payload: { from: Date, to: Da
             });
 
             console.log('FINAL RES', result)
-
-          const transfersByBank =(await client.query(queries.GET_TRANSFERS_BY_BANK, [payload.from, payload.to])).rows;
-          const totalTranfersByBank = +transfersByBank.reduce((prev, next) => prev + +(next.monto) ,0);
-
-          const cash = (await client.query(queries.GET_CASH_REPORT, [payload.from, payload.to])).rows
-          const cashTotal = +cash[0].monto || 0
-
-          const pos = +(await client.query(queries.GET_POS, [payload.from, payload.to])).rows[0].total || 0;
           
-          const check = +(await client.query(queries.GET_CHECKS, [payload.from, payload.to])).rows[0].total || 0;
-          
-          console.log('transfersBybank', transfersByBank)
-          console.log('totaltransfersbybank', totalTranfersByBank)
-          console.log('cash',cash)
-          console.log('pos',pos)
-          console.log('check',check)
-
-          const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-RPR.pug`), {
+          if(!alcaldia) {
+            const transfersByBank =(await client.query(queries.GET_TRANSFERS_BY_BANK, [payload.from, payload.to])).rows;
+            const totalTranfersByBank = +transfersByBank.reduce((prev, next) => prev + +(next.monto) ,0);
+            
+            const cash = (await client.query(queries.GET_CASH_REPORT, [payload.from, payload.to])).rows
+            const cashTotal = +cash[0].monto || 0
+            
+            const pos = +(await client.query(queries.GET_POS, [payload.from, payload.to])).rows[0].total || 0;
+            
+            const check = +(await client.query(queries.GET_CHECKS, [payload.from, payload.to])).rows[0].total || 0;
+            
+            console.log('transfersBybank', transfersByBank)
+            console.log('totaltransfersbybank', totalTranfersByBank)
+            console.log('cash',cash)
+            console.log('pos',pos)
+            console.log('check',check)
+            pagos = {
+              total: totalTranfersByBank + cashTotal + pos + check,
+              transferencias:{
+                total: totalTranfersByBank,
+                items: transfersByBank
+              },
+              efectivo:{
+                total: cashTotal,
+                items: cash
+              },
+              punto:{
+                total: pos
+                
+              },
+              cheques:{
+                total: check,
+                
+              }
+            }
+          }
+          const html = renderFile(resolve(__dirname, alcaldia ? `../views/planillas/sedemat-RPRA.pug` : `../views/planillas/sedemat-RPR.pug`), {
             moment: require('moment'),
             institucion: 'SEDEMAT',
             datos: {
@@ -107,29 +129,11 @@ export const generateBranchesReport = async (user, payload: { from: Date, to: Da
                 liquidadoTotal: liquidated.rows.reduce((prev, next) => prev + (+next.liquidado), 0),
                 ingresadoTotal: ingress.rows.reduce((prev, next) => prev + (+next.ingresado), 0),
                 cantidadIngTotal: ingress.rows.reduce((prev, next) =>  prev + (+next.cantidadIng), 0) ,
-                metodoPago: {
-                  total: totalTranfersByBank + cashTotal + pos + check,
-                  transferencias:{
-                    total: totalTranfersByBank,
-                    items: transfersByBank
-                  },
-                  efectivo:{
-                    total: cashTotal,
-                    items: cash
-                  },
-                  punto:{
-                    total: pos
-                    
-                  },
-                  cheques:{
-                    total: check,
-                    
-                  }
-                }
+                metodoPago: pagos
               }
           });
-          const pdfDir = resolve(__dirname, `../../archivos/sedemat/reportes/RPR.pdf`);
-          const dir = `${process.env.SERVER_URL}/sedemat/reportes/RPR.pdf`;
+          const pdfDir = resolve(__dirname, alcaldia ? `../../archivos/sedemat/reportes/RPRA.pdf` : `../../archivos/sedemat/reportes/RPR.pdf`);
+          const dir = alcaldia ? `${process.env.SERVER_URL}/sedemat/reportes/RPRA.pdf` : `${process.env.SERVER_URL}/sedemat/reportes/RPR.pdf`;
           if (dev) {
             pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
               
@@ -145,7 +149,7 @@ export const generateBranchesReport = async (user, payload: { from: Date, to: Da
                   } else {
                     const bucketParams = {
                       Bucket: 'sut-maracaibo',
-                      Key: '/sedemat/reportes/RPR.pdf',
+                      Key: alcaldia ? '/sedemat/reportes/RPRA.pdf' : '/sedemat/reportes/RPR.pdf',
                     };
                     await S3Client.putObject({
                       ...bucketParams,
