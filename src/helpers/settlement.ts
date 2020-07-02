@@ -1882,6 +1882,37 @@ export const validateApplication = async (body, user, client) => {
   }
 };
 
+export const validateAgreementFraction = async (body, user, client: PoolClient) => {
+  try {
+    //este metodo es para validar los convenios y llevarlos al estado de finalizado
+    const state = (await client.query(queries.COMPLETE_FRACTION_STATE, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
+    const agreement = (await client.query(queries.GET_AGREEMENT_FRACTION_BY_ID, [body.idTramite])).rows[0];
+    const fractions = (await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [agreement.id_convenio])).rows;
+    if (!fractions.every((fraction) => fraction.aprobado)) return;
+    const applicationState = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [agreement.id_solicitud, applicationStateEvents.APROBARCAJERO])).rows[0].state;
+    await client.query('UPDATE impuesto.solicitud SET aprobado = true, fecha_aprobado = now() WHERE id_solicitud = $1', [agreement.id_solicitud]);
+    const applicationInstance = await getAgreementFractionById({ id: body.idTramite });
+    applicationInstance.aprobado = true;
+    // await sendNotification(
+    //   user,
+    //   `Se ha finalizado un pago de convenios para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
+    //   'UPDATE_APPLICATION',
+    //   'IMPUESTO',
+    //   { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
+    //   client
+    // );
+
+    return;
+  } catch (error) {
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al validar el pago',
+    };
+  } finally {
+  }
+};
+
 export const approveContributorSignUp = async ({ procedure, client }: { procedure: any; client: PoolClient }) => {
   try {
     const { datos, usuario } = procedure;
