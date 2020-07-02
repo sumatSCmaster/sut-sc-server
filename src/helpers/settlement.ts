@@ -1629,7 +1629,7 @@ export const insertSettlements = async ({ process, user }) => {
       } else {
         console.log('cayendo en 2');
         finingAmount = 10;
-        const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month();
+        const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month() + 1;
         finingMonths = new Array(now.month() - finingDate).fill({});
         console.log('finingMonths', finingMonths);
         if (finingMonths.length > 0) {
