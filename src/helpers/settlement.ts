@@ -2050,15 +2050,16 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
         institucion: 'SEDEMAT',
         QR: linkQr,
         datos: {
+          codigo: application.id,
           contribuyente: application.razonSocial,
           rim: referencia?.referencia_municipal,
           cedulaORif: application.tipoDocumento + '-' + application.documento,
           direccion: application.direccion,
           representanteLegal: referencia?.nombre_representante,
-          periodo: mesesCardinal[application.datos.fecha.mes],
-          anio: application.datos.fecha.anio,
+          periodo: mesesCardinal[application.datos.fecha.month],
+          anio: application.datos.fecha.year,
           fecha: moment().format('MM-DD-YYYY'),
-          fechaLetra: `${moment().date()} de ${application.datos.fecha.mes} de ${application.datos.fecha.anio}`,
+          fechaLetra: `${moment().date()} de ${application.datos.fecha.month} de ${application.datos.fecha.year}`,
         },
       });
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`);
