@@ -7,7 +7,7 @@ block content
     p 
       b FECHA:
       span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
-    -var sub
+    -var sub = []
   div.table
     .tr
       .th.border-bottom.center
@@ -37,7 +37,7 @@ block content
         p
           b CANT.
     each item in datos.ingresos
-      - sub = item.subRamo
+      -sub = item.subRamo
         .tr.break-page
           div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
             p #{item.ramo}

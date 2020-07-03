@@ -22,22 +22,19 @@ block content
             br
             | #{datos.tipoDocumento}-#{datos.documentoIden}
           p
-            b RIM:&nbsp;
-            br
-            | #{datos.rim}           
-        div(style={'margin-left':'5%'})
-          p
             b Dirección:&nbsp;
             br
-            | #{datos.direccion}
+            | #{datos.direccion}            
+    
+        div(style={'margin-left':'5%'})
+          p
+            b RIM:&nbsp;
+            br
+            | #{datos.rim}
           p
             b Teléfono:&nbsp;
             br
-            | #{datos.telefono}
-          p
-            b Correo:&nbsp;
-            br
-            | #{datos.correo}          
+            | #{datos.telefono}        
         div(style={'-webkit-flex': '0.5'}).center
           img#QR(src=QR style={'margin-bottom': '10px'})
     div           
