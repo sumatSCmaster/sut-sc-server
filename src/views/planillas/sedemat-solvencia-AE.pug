@@ -50,7 +50,7 @@ block content
         .td
           p
             b Dirección:
-            span &nbsp;#{datos.direccion ? datos.direccion : 'Dirección Sin Asignar'}.&nbsp;
+            span &nbsp;#{datos.direccion ? (datos.direccion.trim() !== '' ? datos.direccion : 'Dirección Sin Asignar') : 'Dirección Sin Asignar'}.&nbsp;
       .tr
         .td
           p
