@@ -1891,10 +1891,10 @@ export const validateApplication = async (body, user, client) => {
 export const validateAgreementFraction = async (body, user, client: PoolClient) => {
   try {
     //este metodo es para validar los convenios y llevarlos al estado de finalizado
-    const state = (await client.query(queries.COMPLETE_FRACTION_STATE, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
     const agreement = (await client.query('SELECT c.* FROM impuesto.convenio c INNER JOIN impuesto.fraccion f ON c.id_convenio = f.id_convenio WHERE f.id_fraccion = $1', [body.idTramite])).rows[0];
+    const state = (await client.query(queries.COMPLETE_FRACTION_STATE, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
     const fractions = (await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [agreement.id_convenio])).rows;
-    if (!fractions.every((fraction) => fraction.aprobado)) return;
+    if (!body.solicitudAprobada) return;
     const applicationState = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [agreement.id_solicitud, applicationStateEvents.APROBARCAJERO])).rows[0].state;
     const applicationInstance = await getAgreementFractionById({ id: body.idTramite });
     applicationInstance.aprobado = true;

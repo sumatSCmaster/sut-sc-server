@@ -52,7 +52,7 @@ export const validatePayments = async (body, user) => {
           fechaDeAprobacion: el.fechadeaprobacion,
           tipoTramite: el.tipotramite,
           documento: el.documento,
-          nacionalidad: el.nacionalidad,
+          nacionalidad: el.nacionalidad || el.tipo_documento,
           solicitudAprobada: el.solicitudAprobada || undefined,
           concepto: el.concepto,
         };
