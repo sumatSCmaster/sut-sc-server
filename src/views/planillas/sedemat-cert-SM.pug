@@ -7,13 +7,10 @@ block content
     p 
       b FECHA:
       span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
-    p 
-      b Codigo de Tramite:
-      span &nbsp; #{codigo}
   div.titleWithQR
     p#title
       b #{titulo}
-    .QR
+    div
       img#QR(src=QR, alt='QR')
   div#planilla
     div(style={'margin-bottom':'20px'})
