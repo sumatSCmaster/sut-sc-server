@@ -105,7 +105,7 @@ block content
           p Dirección:
         div(style={'-webkit-flex': 8}).td
           p 
-            span &nbsp; #{datos.propietario.direccion}
+            span &nbsp; #{datos.propietario.direccion ? datos.propietario.direccion : 'Dirección Sin Asingar'}
     div
       div(style={'display':'-webkit-flex'})
         div.table(style={'-webkit-flex': 5.5})
@@ -123,7 +123,7 @@ block content
             div(style={'-webkit-flex': 5.5}).tr
               div(style={'border-top':'1px solid #000', 'width':'100%'}).td.border-right.center
                 p 
-                  span &nbsp; #{datos.items[0].direccion}
+                  span &nbsp; #{datos.items[0].direccion ? datos.items[0].direccion : 'Dirección Sin Asingar'}
             div(style={'-webkit-flex': 2.5}).border-right
               each item in datos.items
                   div(style={'border-top':'1px solid #000'}).td.center.break-page

@@ -1813,7 +1813,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
 export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fragment, user }) => {
   const client = await pool.connect();
   try {
-    client.query('BEGIN');
+    await client.query('BEGIN');
     const fraccion = (await client.query(queries.GET_FRACTION_BY_AGREEMENT_AND_FRACTION_ID, [agreement, fragment])).rows[0];
     const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
     if (pagoSum < fraccion.monto) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
@@ -1832,7 +1832,7 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
         user.tipoUsuario === 4 ? await insertPaymentReference(el, fragment, client) : await insertPaymentCashier(el, fragment, client);
       })
     );
-    client.query('COMMIT');
+    await client.query('COMMIT');
     const applicationInstance = await getAgreementFractionById({ id: fragment });
     console.log(applicationInstance);
     await sendNotification(
@@ -1891,10 +1891,10 @@ export const validateApplication = async (body, user, client) => {
 export const validateAgreementFraction = async (body, user, client: PoolClient) => {
   try {
     //este metodo es para validar los convenios y llevarlos al estado de finalizado
-    const state = (await client.query(queries.COMPLETE_FRACTION_STATE, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
     const agreement = (await client.query('SELECT c.* FROM impuesto.convenio c INNER JOIN impuesto.fraccion f ON c.id_convenio = f.id_convenio WHERE f.id_fraccion = $1', [body.idTramite])).rows[0];
+    const state = (await client.query(queries.COMPLETE_FRACTION_STATE, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
     const fractions = (await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [agreement.id_convenio])).rows;
-    if (!fractions.every((fraction) => fraction.aprobado)) return;
+    if (!body.solicitudAprobada) return;
     const applicationState = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [agreement.id_solicitud, applicationStateEvents.APROBARCAJERO])).rows[0].state;
     const applicationInstance = await getAgreementFractionById({ id: body.idTramite });
     applicationInstance.aprobado = true;
@@ -2051,15 +2051,16 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
         institucion: 'SEDEMAT',
         QR: linkQr,
         datos: {
+          codigo: application.id,
           contribuyente: application.razonSocial,
           rim: referencia?.referencia_municipal,
           cedulaORif: application.tipoDocumento + '-' + application.documento,
           direccion: application.direccion,
           representanteLegal: referencia?.nombre_representante,
-          periodo: mesesCardinal[application.datos.fecha.mes],
-          anio: application.datos.fecha.anio,
+          periodo: mesesCardinal[application.datos.fecha.month],
+          anio: application.datos.fecha.year,
           fecha: moment().format('MM-DD-YYYY'),
-          fechaLetra: `${moment().date()} de ${application.datos.fecha.mes} de ${application.datos.fecha.anio}`,
+          fechaLetra: `${moment().date()} de ${application.datos.fecha.month} de ${application.datos.fecha.year}`,
         },
       });
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`);

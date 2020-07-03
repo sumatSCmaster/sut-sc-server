@@ -5,7 +5,7 @@
 -- Dumped from database version 12.3 (Ubuntu 12.3-1.pgdg18.04+1)
 -- Dumped by pg_dump version 12.3 (Ubuntu 12.3-1.pgdg18.04+1)
 
--- Started on 2020-07-01 16:23:12 -04
+-- Started on 2020-07-02 19:16:32 -04
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -106,7 +106,7 @@ CREATE TYPE timetable.task_kind AS ENUM (
 ALTER TYPE timetable.task_kind OWNER TO postgres;
 
 --
--- TOC entry 448 (class 1255 OID 53293)
+-- TOC entry 447 (class 1255 OID 53293)
 -- Name: complete_fraccion_state(integer, text); Type: FUNCTION; Schema: impuesto; Owner: postgres
 --
 
@@ -129,7 +129,7 @@ $$;
 ALTER FUNCTION impuesto.complete_fraccion_state(_id_fraccion integer, event text) OWNER TO postgres;
 
 --
--- TOC entry 450 (class 1255 OID 53294)
+-- TOC entry 449 (class 1255 OID 53294)
 -- Name: complete_fraccion_state(integer, text, boolean); Type: FUNCTION; Schema: impuesto; Owner: postgres
 --
 
@@ -175,7 +175,7 @@ $$;
 ALTER FUNCTION impuesto.complete_solicitud_state(_id_solicitud integer, event text, _datos json, _aprobado boolean) OWNER TO postgres;
 
 --
--- TOC entry 451 (class 1255 OID 53296)
+-- TOC entry 450 (class 1255 OID 53296)
 -- Name: eventos_fraccion_trigger_func(); Type: FUNCTION; Schema: impuesto; Owner: postgres
 --
 
@@ -235,7 +235,7 @@ $$;
 ALTER FUNCTION impuesto.eventos_solicitud_trigger_func() OWNER TO postgres;
 
 --
--- TOC entry 447 (class 1255 OID 53298)
+-- TOC entry 446 (class 1255 OID 53298)
 -- Name: fraccion_transicion(text, text); Type: FUNCTION; Schema: impuesto; Owner: postgres
 --
 
@@ -295,7 +295,7 @@ CREATE TABLE impuesto.fraccion (
 ALTER TABLE impuesto.fraccion OWNER TO postgres;
 
 --
--- TOC entry 415 (class 1255 OID 53306)
+-- TOC entry 414 (class 1255 OID 53306)
 -- Name: insert_fraccion(integer, numeric, integer, date); Type: FUNCTION; Schema: impuesto; Owner: postgres
 --
 
@@ -362,7 +362,7 @@ $$;
 ALTER FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer, _id_contribuyente integer) OWNER TO postgres;
 
 --
--- TOC entry 411 (class 1255 OID 53315)
+-- TOC entry 415 (class 1255 OID 53315)
 -- Name: solicitud_transicion(text, text); Type: FUNCTION; Schema: impuesto; Owner: postgres
 --
 
@@ -384,6 +384,7 @@ CREATE FUNCTION impuesto.solicitud_transicion(state text, event text) RETURNS te
         WHEN 'ingresardatos' THEN
             CASE event
                 WHEN 'validar_pi' THEN 'validando'
+				WHEN 'aprobacioncajero_pi' THEN 'finalizado'
                 ELSE 'error'
             END
         WHEN 'validando' THEN
@@ -400,7 +401,7 @@ $$;
 ALTER FUNCTION impuesto.solicitud_transicion(state text, event text) OWNER TO postgres;
 
 --
--- TOC entry 449 (class 1255 OID 53316)
+-- TOC entry 448 (class 1255 OID 53316)
 -- Name: update_fraccion_state(integer, text); Type: FUNCTION; Schema: impuesto; Owner: postgres
 --
 
@@ -420,7 +421,7 @@ $$;
 ALTER FUNCTION impuesto.update_fraccion_state(_id_fraccion integer, event text) OWNER TO postgres;
 
 --
--- TOC entry 412 (class 1255 OID 53317)
+-- TOC entry 411 (class 1255 OID 53317)
 -- Name: update_solicitud_state(integer, text); Type: FUNCTION; Schema: impuesto; Owner: postgres
 --
 
@@ -440,7 +441,7 @@ $$;
 ALTER FUNCTION impuesto.update_solicitud_state(_id_solicitud integer, event text) OWNER TO postgres;
 
 --
--- TOC entry 413 (class 1255 OID 53318)
+-- TOC entry 412 (class 1255 OID 53318)
 -- Name: casos_sociales_transicion(text, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -487,7 +488,7 @@ $$;
 ALTER FUNCTION public.casos_sociales_transicion(state text, event text) OWNER TO postgres;
 
 --
--- TOC entry 414 (class 1255 OID 53319)
+-- TOC entry 413 (class 1255 OID 53319)
 -- Name: codigo_caso(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1497,7 +1498,7 @@ CREATE FUNCTION public.update_tramite_state(_id_tramite integer, event text, _da
 ALTER FUNCTION public.update_tramite_state(_id_tramite integer, event text, _datos json, _costo numeric, _url_planilla character varying) OWNER TO postgres;
 
 --
--- TOC entry 436 (class 1255 OID 53425)
+-- TOC entry 451 (class 1255 OID 53425)
 -- Name: validate_payments(jsonb); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1561,14 +1562,10 @@ BEGIN
             END IF;
 
             IF (SELECT concepto FROM pago WHERE id_pago = idPago) = 'CONVENIO' THEN
-    
-                IF (SELECT (SELECT SUM(monto) FROM impuesto.fraccion WHERE id_convenio = (SELECT id_procedimiento FROM pago WHERE id_pago = idPago)) <= (SELECT SUM(monto) FROM pago WHERE id_procedimiento = (SELECT id_procedimiento FROM pago WHERE id_pago = idPago) AND aprobado = true)) THEN 
-                    UPDATE impuesto.solicitud SET aprobado = true, fecha_aprobado = NOW() WHERE id_solicitud = (SELECT s.id_solicitud FROM pago INNER JOIN impuesto.convenio c ON p.id_procedimiento = c.id_convenio INNER JOIN impuesto.solicitud s ON c.id_solicitud = s.id_solicitud WHERE id_pago = idPago);
-                END IF;
-
-                select row_to_json(row)::jsonb into dataPago from (select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, solicitud.id_solicitud AS idProcedimiento, pago.referencia, pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, solicitud.aprobado as "solicitudAprobada", pago.concepto, contribuyente.tipo_documento AS nacionalidad, contribuyente.documento from pago 
-                INNER JOIN impuesto.solicitud ON pago.id_procedimiento = solicitud.id_solicitud 
-                INNER JOIN impuesto.contribuyente ON solicitud.id_contribuyente = contribuyente.id_contribuyente
+                UPDATE impuesto.fraccion SET aprobado = true, fecha_aprobado = NOW() WHERE id_fraccion = (SELECT id_procedimiento FROM pago WHERE id_pago = idPago);
+                
+                select row_to_json(row)::jsonb into dataPago from (select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, (SELECT id_procedimiento FROM pago WHERE id_pago = idPago) AS idProcedimiento, pago.referencia, pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, pago.concepto from pago 
+                INNER JOIN impuesto.fraccion ON fraccion.id_fraccion = pago.id_procedimiento
                 where pago.id_pago = idPago) row;
             END IF;
             
@@ -1587,7 +1584,7 @@ $$;
 ALTER FUNCTION public.validate_payments(inputcsvjson jsonb, OUT outputjson jsonb) OWNER TO postgres;
 
 --
--- TOC entry 437 (class 1255 OID 53426)
+-- TOC entry 436 (class 1255 OID 53426)
 -- Name: _validate_json_schema_type(text, jsonb); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
@@ -1615,7 +1612,7 @@ $$;
 ALTER FUNCTION timetable._validate_json_schema_type(type text, data jsonb) OWNER TO postgres;
 
 --
--- TOC entry 438 (class 1255 OID 53427)
+-- TOC entry 437 (class 1255 OID 53427)
 -- Name: cron_element_to_array(text, text); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
@@ -1728,7 +1725,7 @@ $_$;
 ALTER FUNCTION timetable.cron_element_to_array(element text, element_type text) OWNER TO postgres;
 
 --
--- TOC entry 439 (class 1255 OID 53428)
+-- TOC entry 438 (class 1255 OID 53428)
 -- Name: get_running_jobs(bigint); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
@@ -1754,7 +1751,7 @@ $_$;
 ALTER FUNCTION timetable.get_running_jobs(bigint) OWNER TO postgres;
 
 --
--- TOC entry 440 (class 1255 OID 53429)
+-- TOC entry 439 (class 1255 OID 53429)
 -- Name: get_task_id(text); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
@@ -1768,7 +1765,7 @@ $_$;
 ALTER FUNCTION timetable.get_task_id(task_name text) OWNER TO postgres;
 
 --
--- TOC entry 441 (class 1255 OID 53430)
+-- TOC entry 440 (class 1255 OID 53430)
 -- Name: insert_base_task(text, bigint); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
@@ -1799,7 +1796,7 @@ $$;
 ALTER FUNCTION timetable.insert_base_task(task_name text, parent_task_id bigint) OWNER TO postgres;
 
 --
--- TOC entry 442 (class 1255 OID 53431)
+-- TOC entry 441 (class 1255 OID 53431)
 -- Name: is_cron_in_time(timetable.cron, timestamp with time zone); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
@@ -1834,7 +1831,7 @@ $$;
 ALTER FUNCTION timetable.is_cron_in_time(run_at timetable.cron, ts timestamp with time zone) OWNER TO postgres;
 
 --
--- TOC entry 443 (class 1255 OID 53432)
+-- TOC entry 442 (class 1255 OID 53432)
 -- Name: job_add(text, text, text, timetable.task_kind, timetable.cron, integer, boolean, boolean); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
@@ -1873,7 +1870,7 @@ $$;
 ALTER FUNCTION timetable.job_add(task_name text, task_function text, client_name text, task_type timetable.task_kind, run_at timetable.cron, max_instances integer, live boolean, self_destruct boolean) OWNER TO postgres;
 
 --
--- TOC entry 444 (class 1255 OID 53433)
+-- TOC entry 443 (class 1255 OID 53433)
 -- Name: task_chain_delete(bigint, bigint); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
@@ -1948,7 +1945,7 @@ $$;
 ALTER FUNCTION timetable.task_chain_delete(config_ bigint, chain_id_ bigint) OWNER TO postgres;
 
 --
--- TOC entry 445 (class 1255 OID 53434)
+-- TOC entry 444 (class 1255 OID 53434)
 -- Name: trig_chain_fixer(); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
@@ -1999,7 +1996,7 @@ $$;
 ALTER FUNCTION timetable.trig_chain_fixer() OWNER TO postgres;
 
 --
--- TOC entry 446 (class 1255 OID 53435)
+-- TOC entry 445 (class 1255 OID 53435)
 -- Name: validate_json_schema(jsonb, jsonb, jsonb); Type: FUNCTION; Schema: timetable; Owner: postgres
 --
 
@@ -6707,15 +6704,8 @@ COPY impuesto.actividad_economica (id_actividad_economica, numero_referencia, de
 --
 
 COPY impuesto.actividad_economica_contribuyente (id_actividad_economica_contribuyente, id_contribuyente, numero_referencia) FROM stdin;
-19	57	2005001
-20	57	3053002
-21	58	3001001
-22	58	3010001
-23	58	3062001
-24	61	2047001
-25	62	1004001
-26	62	1008001
-27	62	1017001
+32	66	2005001
+33	66	3053002
 \.
 
 
@@ -6736,37 +6726,12 @@ COPY impuesto.actividad_economica_exoneracion (id_actividad_economica_exoneracio
 --
 
 COPY impuesto.avaluo_inmueble (id_avaluo_inmueble, id_inmueble, avaluo, anio) FROM stdin;
-87	336	0	2020
-88	337	0	2020
-89	338	0	2020
-90	339	0	2020
-91	340	0	2020
-92	341	0	2020
-93	342	0	2020
-94	343	0	2020
-95	344	0	2020
-96	345	0	2020
-97	346	0	2020
-98	347	0	2020
-99	348	0	2020
-100	349	0	2020
-101	350	0	2020
-102	351	0	2020
-103	352	0	2020
-104	353	0	2020
-105	354	0	2020
-106	355	0	2020
-107	356	0	2020
-108	357	0	2020
-109	358	0	2020
-110	359	0	2020
-111	360	0	2020
-112	361	0	2020
-113	362	0	2020
-114	363	0	2020
-115	364	0	2020
-116	365	0	2020
-117	366	0	2020
+130	379	0	2020
+131	380	0	2020
+132	381	0	2020
+133	382	0	2020
+134	383	0	2020
+135	384	0	2020
 \.
 
 
@@ -6801,12 +6766,7 @@ COPY impuesto.categoria_propaganda (id_categoria_propaganda, descripcion) FROM s
 --
 
 COPY impuesto.contribuyente (id_contribuyente, tipo_documento, documento, razon_social, denominacion_comercial, siglas, id_parroquia, sector, direccion, punto_referencia, verificado, tipo_contribuyente) FROM stdin;
-57	J	304689713	CORPORACION DIGITEL, C.A.	CORPORACION GSM		\N		\N		t	JURIDICO
-58	J	308620483	FARMACIA COVIDES C.A.	FARMACIA COVIDES C.A.		64	INDIO MARA	Avenida 65 Calle  22A, Local Nro.  MZN	EDIF. IPSFA	t	JURIDICO
-59	V	400197520	Wak Casa de Software CA	Wak Casa de Software CA	WAK	72	Tierra Negra	Av 21 Calle 86	Diagonal CDO	t	JURIDICO
-61	J	413060540	SERVICIOS INFORMATICOS WAKUPLUS CA	SERVICIOS INFORMATICOS WAKUPLUS CA	SERVICIOS INFORMATICOS WAKUPLUS CA	72	DELICIAS	Avenida 15 Y 14A-74 Calle 74, Local Nro. 7	5 DE JULIO	t	JURIDICO
-62	J	303836216	COCA-COLA FEMSA DE VZLA S.A	COCA-COLA FEMSA DE VZLA S.A	COCA-COLA FEMSA DE VZLA S.A	68	ZONA INDUSTRIAL NORTE AV. 16 ENTRE CALLE 23 Y 32 NO. 23-274, SEGÚN AVALUO DCE-2142-2018	Avenida 16 Calle  23 Y 32, Local Nro. 3	FRENTE URB. MARA NORTE	t	JURIDICO
-63	J	400197520	WAK CASA DE SOFTWARE, C.A.	WAK CASA DE SOFTWARE, C.A.		\N		\N		t	JURIDICO
+66	J	304689713	CORPORACION DIGITEL, C.A.	CORPORACION GSM		\N		\N		t	JURIDICO
 \.
 
 
@@ -6827,8 +6787,8 @@ COPY impuesto.contribuyente_exoneracion (id_contribuyente_exoneracion, id_plazo_
 --
 
 COPY impuesto.convenio (id_convenio, id_solicitud, cantidad) FROM stdin;
-31	278	2
-32	281	2
+37	305	2
+38	306	2
 \.
 
 
@@ -6873,14 +6833,19 @@ COPY impuesto.dias_feriados (id_dia_feriado, dia, descripcion) FROM stdin;
 --
 
 COPY impuesto.evento_fraccion (id_evento_fraccion, id_fraccion, event, "time") FROM stdin;
-5	6	iniciar	2020-07-01 16:20:14.353543
-6	7	iniciar	2020-07-01 16:20:14.353543
-7	8	iniciar	2020-07-01 16:20:14.353543
-8	9	iniciar	2020-07-01 16:20:14.353543
-9	6	ingresardatos_pi	2020-07-01 16:20:14.353543
-10	7	ingresardatos_pi	2020-07-01 16:20:14.353543
-11	8	ingresardatos_pi	2020-07-01 16:20:14.353543
-12	9	ingresardatos_pi	2020-07-01 16:20:14.353543
+33	18	iniciar	2020-07-02 16:29:57.846051
+34	19	iniciar	2020-07-02 16:29:57.846051
+35	20	iniciar	2020-07-02 16:29:57.846051
+36	21	iniciar	2020-07-02 16:29:57.846051
+37	18	ingresardatos_pi	2020-07-02 16:29:57.846051
+38	19	ingresardatos_pi	2020-07-02 16:29:57.846051
+39	20	ingresardatos_pi	2020-07-02 16:29:57.846051
+40	21	ingresardatos_pi	2020-07-02 16:29:57.846051
+41	18	validar_pi	2020-07-02 16:33:27.938213
+42	19	validar_pi	2020-07-02 16:34:16.319772
+43	20	validar_pi	2020-07-02 17:03:47.6158
+44	21	validar_pi	2020-07-02 17:07:31.000843
+45	18	finalizar_pi	2020-07-02 18:00:09.183988
 \.
 
 
@@ -6891,71 +6856,14 @@ COPY impuesto.evento_fraccion (id_evento_fraccion, id_fraccion, event, "time") F
 --
 
 COPY impuesto.evento_solicitud (id_evento_solicitud, id_solicitud, event, "time") FROM stdin;
-224	172	iniciar	2020-06-26 20:37:44.78505
-225	172	aprobacioncajero_pi	2020-06-26 20:37:44.78505
-226	173	iniciar	2020-06-26 20:41:34.42527
-227	173	ingresardatos_pi	2020-06-26 20:41:34.42527
-228	173	validar_pi	2020-06-26 22:42:37.250062
-229	174	iniciar	2020-06-26 22:45:58.308127
-230	174	ingresardatos_pi	2020-06-26 22:45:58.308127
-233	177	iniciar	2020-06-26 23:14:02.414925
-234	178	iniciar	2020-06-26 23:14:02.414925
-235	179	iniciar	2020-06-26 23:14:02.414925
-236	180	iniciar	2020-06-26 23:14:02.414925
-237	177	aprobacioncajero_pi	2020-06-26 23:14:02.414925
-238	178	aprobacioncajero_pi	2020-06-26 23:14:02.414925
-239	179	aprobacioncajero_pi	2020-06-26 23:14:02.414925
-240	180	aprobacioncajero_pi	2020-06-26 23:14:02.414925
-241	181	iniciar	2020-06-26 23:17:14.942023
-242	181	ingresardatos_pi	2020-06-26 23:17:14.942023
-243	181	validar_pi	2020-06-26 23:46:26.337192
-245	182	iniciar	2020-06-27 00:39:26.883557
-246	183	iniciar	2020-06-27 00:39:26.883557
-247	182	aprobacioncajero_pi	2020-06-27 00:39:26.883557
-248	183	aprobacioncajero_pi	2020-06-27 00:39:26.883557
-249	184	iniciar	2020-06-27 00:39:26.883557
-250	185	iniciar	2020-06-27 00:39:26.883557
-251	186	iniciar	2020-06-27 00:59:40.771429
-252	187	iniciar	2020-06-27 00:59:40.771429
-253	188	iniciar	2020-06-27 00:59:40.771429
-254	189	iniciar	2020-06-27 00:59:40.771429
-255	186	aprobacioncajero_pi	2020-06-27 00:59:40.771429
-256	187	aprobacioncajero_pi	2020-06-27 00:59:40.771429
-257	188	aprobacioncajero_pi	2020-06-27 00:59:40.771429
-258	189	aprobacioncajero_pi	2020-06-27 00:59:40.771429
-259	190	iniciar	2020-06-27 00:59:40.771429
-260	191	iniciar	2020-06-27 00:59:40.771429
-261	192	iniciar	2020-06-27 00:59:40.771429
-263	193	iniciar	2020-06-27 01:36:27.549939
-264	193	ingresardatos_pi	2020-06-27 01:36:27.549939
-265	194	iniciar	2020-06-27 01:51:18.474879
-266	194	ingresardatos_pi	2020-06-27 01:51:18.474879
-267	195	iniciar	2020-06-27 01:51:25.462511
-268	195	ingresardatos_pi	2020-06-27 01:51:25.462511
-275	181	finalizar_pi	2020-06-27 03:57:30.760909
-278	198	iniciar	2020-06-27 04:18:41.761589
-279	198	ingresardatos_pi	2020-06-27 04:18:41.761589
-280	198	validar_pi	2020-06-27 04:18:59.56197
-281	174	validar_pi	2020-06-27 04:30:50.793404
-282	198	finalizar_pi	2020-06-27 04:44:04.819951
-283	199	iniciar	2020-06-27 16:36:18.140369
-284	199	ingresardatos_pi	2020-06-27 16:36:18.140369
-285	199	validar_pi	2020-06-27 16:50:27.55877
-286	200	iniciar	2020-06-27 17:01:41.369458
-287	200	ingresardatos_pi	2020-06-27 17:01:41.369458
-288	200	validar_pi	2020-06-30 12:58:42.828701
-442	278	iniciar	2020-07-01 16:20:14.353543
-290	202	iniciar	2020-07-01 15:55:15.769117
-291	202	ingresardatos_pi	2020-07-01 15:55:15.769117
-443	279	iniciar	2020-07-01 16:20:14.353543
-444	280	iniciar	2020-07-01 16:20:14.353543
-445	281	iniciar	2020-07-01 16:20:14.353543
-446	282	iniciar	2020-07-01 16:20:14.353543
-447	278	ingresardatos_pi	2020-07-01 16:20:14.353543
-448	279	ingresardatos_pi	2020-07-01 16:20:14.353543
-449	280	ingresardatos_pi	2020-07-01 16:20:14.353543
-450	281	ingresardatos_pi	2020-07-01 16:20:14.353543
-451	282	ingresardatos_pi	2020-07-01 16:20:14.353543
+494	303	iniciar	2020-07-02 15:33:27.892659
+495	303	aprobacioncajero_pi	2020-07-02 15:33:27.892659
+496	304	iniciar	2020-07-02 15:34:46.514159
+497	304	ingresardatos_pi	2020-07-02 15:34:46.514159
+498	305	iniciar	2020-07-02 16:29:57.846051
+499	306	iniciar	2020-07-02 16:29:57.846051
+500	305	ingresardatos_pi	2020-07-02 16:29:57.846051
+501	306	ingresardatos_pi	2020-07-02 16:29:57.846051
 \.
 
 
@@ -6976,10 +6884,10 @@ COPY impuesto.factor (id_factor, descripcion, valor) FROM stdin;
 --
 
 COPY impuesto.fraccion (id_fraccion, id_convenio, monto, porcion, fecha, aprobado, fecha_aprobado) FROM stdin;
-6	31	163158578.15	1	2020-01-07	f	\N
-7	31	10000000.00	2	2020-01-07	f	\N
-8	32	10000000.00	1	2020-02-07	f	\N
-9	32	5000000.00	2	2020-03-07	f	\N
+19	37	1000000.00	2	2020-02-07	f	\N
+20	38	10000000.00	1	2020-02-07	f	\N
+21	38	5000000.00	2	2020-02-07	f	\N
+18	37	8000000.00	1	2020-02-07	t	2020-07-02
 \.
 
 
@@ -7000,192 +6908,17 @@ COPY impuesto.inmueble_contribuyente_natural (id_inmueble_contribuyente, id_inmu
 --
 
 COPY impuesto.liquidacion (id_liquidacion, id_solicitud, monto, certificado, recibo, fecha_liquidacion, id_subramo, datos, fecha_vencimiento, id_registro_municipal, remitido) FROM stdin;
-715	174	0	\N	\N	2020-06-26	9	{"desglose":[{"inmueble":337,"monto":"0.00"}],"fecha":{"month":"enero","year":2020}}	2020-06-30	19	f
-716	174	0	\N	\N	2020-06-26	9	{"desglose":[{"inmueble":337,"monto":"0.00"}],"fecha":{"month":"febrero","year":2020}}	2020-02-29	19	f
-717	174	0	\N	\N	2020-06-26	9	{"desglose":[{"inmueble":337,"monto":"0.00"}],"fecha":{"month":"marzo","year":2020}}	2020-03-31	19	f
-692	172	309973947.02	\N	\N	2020-05-05	10	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	22	f
-693	172	263158578.15	\N	\N	2020-04-28	9	{"fecha":{"month":"abril","year":2020}}	2020-06-30	22	f
-694	172	22400000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-06-30	22	f
-695	172	279426342.85	\N	\N	2020-04-24	10	{"fecha":{"month":"abril","year":2020}}	2020-06-30	22	f
-696	172	222170329.10	\N	\N	2020-03-02	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	22	f
-697	172	20228432.70	\N	\N	2020-02-14	66	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	22	f
-698	172	186591315.09	\N	\N	2020-02-04	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	22	f
-699	173	5000000	\N	\N	2020-06-26	30	{"fecha":{"month":"enero","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":10}	2020-01-31	19	f
-700	173	10000000	\N	\N	2020-06-26	30	{"fecha":{"month":"febrero","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":20}	2020-02-29	19	f
-701	173	15000000	\N	\N	2020-06-26	30	{"fecha":{"month":"marzo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":30}	2020-03-31	19	f
-702	173	20000000	\N	\N	2020-06-26	30	{"fecha":{"month":"abril","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":40}	2020-04-30	19	f
-703	173	25000000	\N	\N	2020-06-26	30	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":50}	2020-05-31	19	f
-704	173	30000000	\N	\N	2020-06-26	30	{"fecha":{"month":"junio","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":60}	2020-06-30	19	f
-705	173	3000000	\N	\N	2020-06-26	10	{"desglose":[{"aforo":75,"montoDeclarado":"50000000.00"},{"aforo":185,"montoDeclarado":"50000000.00"}],"fecha":{"month":"enero","year":2020}}	2020-06-30	19	f
-706	173	3000000	\N	\N	2020-06-26	10	{"desglose":[{"aforo":75,"montoDeclarado":"50000000.00"},{"aforo":185,"montoDeclarado":"50000000.00"}],"fecha":{"month":"febrero","year":2020}}	2020-02-29	19	f
-707	173	3000000	\N	\N	2020-06-26	10	{"desglose":[{"aforo":75,"montoDeclarado":"50000000.00"},{"aforo":185,"montoDeclarado":"50000000.00"}],"fecha":{"month":"marzo","year":2020}}	2020-03-31	19	f
-708	173	3000000	\N	\N	2020-06-26	10	{"desglose":[{"aforo":75,"montoDeclarado":"50000000.00"},{"aforo":185,"montoDeclarado":"50000000.00"}],"fecha":{"month":"abril","year":2020}}	2020-06-30	19	f
-709	173	3000000	\N	\N	2020-06-26	10	{"desglose":[{"aforo":75,"montoDeclarado":"50000000.00"},{"aforo":185,"montoDeclarado":"50000000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	19	f
-710	173	8932000	\N	\N	2020-06-26	66	{"desglose":[{"inmueble":337,"montoAseo":4400000,"montoGas":"3300000.00"}],"fecha":{"month":"enero","year":2020}}	2020-06-30	19	f
-711	173	8932000	\N	\N	2020-06-26	66	{"desglose":[{"inmueble":337,"montoAseo":4400000,"montoGas":"3300000.00"}],"fecha":{"month":"febrero","year":2020}}	2020-02-29	19	f
-712	173	8932000	\N	\N	2020-06-26	66	{"desglose":[{"inmueble":337,"montoAseo":4400000,"montoGas":"3300000.00"}],"fecha":{"month":"marzo","year":2020}}	2020-03-31	19	f
-713	173	8932000	\N	\N	2020-06-26	66	{"desglose":[{"inmueble":337,"montoAseo":4400000,"montoGas":"3300000.00"}],"fecha":{"month":"abril","year":2020}}	2020-06-30	19	f
-714	173	8932000	\N	\N	2020-06-26	66	{"desglose":[{"inmueble":337,"montoAseo":4400000,"montoGas":"3300000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	19	f
-718	174	0	\N	\N	2020-06-26	9	{"desglose":[{"inmueble":337,"monto":"0.00"}],"fecha":{"month":"abril","year":2020}}	2020-06-30	19	f
-719	174	0	\N	\N	2020-06-26	9	{"desglose":[{"inmueble":337,"monto":"0.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	19	f
-828	193	5000000	\N	\N	2020-06-27	30	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":10}	2020-05-31	28	f
-829	193	10000000	\N	\N	2020-06-27	30	{"fecha":{"month":"junio","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":20}	2020-06-30	28	f
-830	193	10000000	\N	\N	2020-06-27	10	{"desglose":[{"aforo":19,"montoDeclarado":"500000000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	28	f
-831	193	28999.999999999996	\N	\N	2020-06-27	66	{"desglose":[{"inmueble":349,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":350,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	28	f
-832	193	28999.999999999996	\N	\N	2020-06-27	66	{"desglose":[{"inmueble":349,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":350,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"junio","year":2020}}	2020-06-30	28	f
-859	199	28999.999999999996	\N	\N	2020-06-27	66	{"desglose":[{"inmueble":343,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":344,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"abril","year":2020}}	2020-06-30	24	f
-860	199	28999.999999999996	\N	\N	2020-06-27	66	{"desglose":[{"inmueble":343,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":344,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	24	f
-861	199	28999.999999999996	\N	\N	2020-06-27	66	{"desglose":[{"inmueble":343,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":344,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"junio","year":2020}}	2020-06-30	24	f
-720	177	369409.41	\N	\N	2020-04-22	52	{"fecha":{"month":"abril","year":2020}}	2020-06-30	23	f
-721	177	505635.97	\N	\N	2020-03-10	52	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	23	f
-722	177	0.00	\N	\N	2020-02-20	52	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	23	f
-723	177	945.00	\N	\N	2020-01-30	11	{"fecha":{"month":"enero","year":2020}}	2020-06-30	23	f
-724	178	22400000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-06-30	24	f
-725	178	54141217.24	\N	\N	2020-04-24	9	{"fecha":{"month":"abril","year":2020}}	2020-06-30	24	f
-726	178	21864572.31	\N	\N	2020-03-09	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	24	f
-727	178	53360000.00	\N	\N	2020-03-09	66	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	24	f
-728	178	5600000.00	\N	\N	2020-02-19	12	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	24	f
-729	178	19818046.10	\N	\N	2020-02-05	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	24	f
-730	178	13920000.00	\N	\N	2020-02-05	66	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	24	f
-731	178	18560000.00	\N	\N	2020-01-07	66	{"fecha":{"month":"enero","year":2020}}	2020-06-30	24	f
-732	179	22400000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-06-30	25	f
-733	180	22400000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-06-30	27	f
-734	180	55915480.00	\N	\N	2020-03-03	66	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	27	f
-735	181	5000000	\N	\N	2020-06-26	30	{"fecha":{"month":"enero","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":10}	2020-01-31	27	f
-736	181	10000000	\N	\N	2020-06-26	30	{"fecha":{"month":"febrero","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":20}	2020-02-29	27	f
-737	181	15000000	\N	\N	2020-06-26	30	{"fecha":{"month":"marzo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":30}	2020-03-31	27	f
-738	181	20000000	\N	\N	2020-06-26	30	{"fecha":{"month":"abril","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":40}	2020-04-30	27	f
-739	181	25000000	\N	\N	2020-06-26	30	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":50}	2020-05-31	27	f
-740	181	30000000	\N	\N	2020-06-26	30	{"fecha":{"month":"junio","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":60}	2020-06-30	27	f
-741	181	6200000	\N	\N	2020-06-26	10	{"desglose":[{"aforo":131,"montoDeclarado":"10000000.00"},{"aforo":140,"montoDeclarado":"10000000.00"},{"aforo":194,"montoDeclarado":"100000000.00"}],"fecha":{"month":"enero","year":2020}}	2020-06-30	27	f
-742	181	5560000	\N	\N	2020-06-26	10	{"desglose":[{"aforo":131,"montoDeclarado":"100000000.00"},{"aforo":140,"montoDeclarado":"50000000.00"},{"aforo":194,"montoDeclarado":"52000000.00"}],"fecha":{"month":"febrero","year":2020}}	2020-02-29	27	f
-743	181	5500000	\N	\N	2020-06-26	10	{"desglose":[{"aforo":131,"montoDeclarado":"50000000.00"},{"aforo":140,"montoDeclarado":"50000000.00"},{"aforo":194,"montoDeclarado":"50000000.00"}],"fecha":{"month":"marzo","year":2020}}	2020-03-31	27	f
-744	181	5500000	\N	\N	2020-06-26	10	{"desglose":[{"aforo":131,"montoDeclarado":"50000000.00"},{"aforo":140,"montoDeclarado":"50000000.00"},{"aforo":194,"montoDeclarado":"50000000.00"}],"fecha":{"month":"abril","year":2020}}	2020-06-30	27	f
-745	181	3320000	\N	\N	2020-06-26	10	{"desglose":[{"aforo":131,"montoDeclarado":"1000000.00"},{"aforo":140,"montoDeclarado":"1000000.00"},{"aforo":194,"montoDeclarado":"10000000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	27	f
-746	181	28999.999999999996	\N	\N	2020-06-26	66	{"desglose":[{"inmueble":347,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":348,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"enero","year":2020}}	2020-06-30	27	f
-747	181	28999.999999999996	\N	\N	2020-06-26	66	{"desglose":[{"inmueble":347,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":348,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"febrero","year":2020}}	2020-02-29	27	f
-748	181	28999.999999999996	\N	\N	2020-06-26	66	{"desglose":[{"inmueble":347,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":348,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"marzo","year":2020}}	2020-03-31	27	f
-749	181	28999.999999999996	\N	\N	2020-06-26	66	{"desglose":[{"inmueble":347,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":348,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"abril","year":2020}}	2020-06-30	27	f
-750	181	28999.999999999996	\N	\N	2020-06-26	66	{"desglose":[{"inmueble":347,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":348,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	27	f
-833	194	12500000	\N	\N	2020-06-27	\N	{"desglose":[{"subarticulo":208,"monto":"12500000.00","cantidad":"5"}],"fecha":{"month":"enero","year":2020}}	2020-06-30	28	f
-834	194	4000000	\N	\N	2020-06-27	\N	{"desglose":[{"subarticulo":202,"monto":"4000000.00","cantidad":"2"}],"fecha":{"month":"febrero","year":2020}}	2020-02-29	28	f
-835	194	2000000	\N	\N	2020-06-27	\N	{"desglose":[{"subarticulo":202,"monto":"2000000.00","cantidad":"1"}],"fecha":{"month":"marzo","year":2020}}	2020-03-31	28	f
-836	194	66000000	\N	\N	2020-06-27	\N	{"desglose":[{"subarticulo":206,"monto":"66000000.00","cantidad":"44"}],"fecha":{"month":"abril","year":2020}}	2020-06-30	28	f
-751	182	12754200.00	\N	\N	2020-05-06	66	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	28	f
-752	182	1000000.00	\N	\N	2020-05-06	10	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	28	f
-753	182	2500000.00	\N	\N	2020-05-06	10	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	28	f
-754	182	400000.00	\N	\N	2020-02-28	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	28	f
-755	183	12754200.00	\N	\N	2020-05-06	66	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	29	f
-756	183	1000000.00	\N	\N	2020-05-06	10	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	29	f
-757	183	2500000.00	\N	\N	2020-05-06	10	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	29	f
-758	183	400000.00	\N	\N	2020-02-28	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	29	f
-837	194	9000000	\N	\N	2020-06-27	\N	{"desglose":[{"subarticulo":201,"monto":"9000000.00","cantidad":"6"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	28	f
-759	184	2500000.00	\N	\N	\N	\N	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	28	f
-760	185	2500000.00	\N	\N	\N	\N	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	29	f
-838	194	66000000	\N	\N	2020-06-27	\N	{"desglose":[{"subarticulo":206,"monto":"66000000.00","cantidad":"44"}],"fecha":{"month":"junio","year":2020}}	2020-06-30	28	f
-839	195	12500000	\N	\N	2020-06-27	\N	{"desglose":[{"subarticulo":208,"monto":"12500000.00","cantidad":"5"}],"fecha":{"month":"enero","year":2020}}	2020-06-30	28	f
-840	195	4000000	\N	\N	2020-06-27	\N	{"desglose":[{"subarticulo":202,"monto":"4000000.00","cantidad":"2"}],"fecha":{"month":"febrero","year":2020}}	2020-02-29	28	f
-841	195	2000000	\N	\N	2020-06-27	\N	{"desglose":[{"subarticulo":202,"monto":"2000000.00","cantidad":"1"}],"fecha":{"month":"marzo","year":2020}}	2020-03-31	28	f
-842	195	66000000	\N	\N	2020-06-27	\N	{"desglose":[{"subarticulo":206,"monto":"66000000.00","cantidad":"44"}],"fecha":{"month":"abril","year":2020}}	2020-06-30	28	f
-843	195	9000000	\N	\N	2020-06-27	\N	{"desglose":[{"subarticulo":201,"monto":"9000000.00","cantidad":"6"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	28	f
-844	195	66000000	\N	\N	2020-06-27	\N	{"desglose":[{"subarticulo":206,"monto":"66000000.00","cantidad":"44"}],"fecha":{"month":"junio","year":2020}}	2020-06-30	28	f
-862	200	25520000	\N	\N	2020-06-27	66	{"desglose":[{"inmueble":342,"montoAseo":16500000,"montoGas":"5500000.00"}],"fecha":{"month":"enero","year":2020}}	2020-06-30	23	f
-863	200	25520000	\N	\N	2020-06-27	66	{"desglose":[{"inmueble":342,"montoAseo":16500000,"montoGas":"5500000.00"}],"fecha":{"month":"febrero","year":2020}}	2020-02-29	23	f
-864	200	25520000	\N	\N	2020-06-27	66	{"desglose":[{"inmueble":342,"montoAseo":16500000,"montoGas":"5500000.00"}],"fecha":{"month":"marzo","year":2020}}	2020-03-31	23	f
-865	200	25520000	\N	\N	2020-06-27	66	{"desglose":[{"inmueble":342,"montoAseo":16500000,"montoGas":"5500000.00"}],"fecha":{"month":"abril","year":2020}}	2020-06-30	23	f
-866	200	25520000	\N	\N	2020-06-27	66	{"desglose":[{"inmueble":342,"montoAseo":16500000,"montoGas":"5500000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	23	f
-819	189	318011124.77	\N	\N	2020-02-10	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	33	f
-867	200	25520000	\N	\N	2020-06-27	66	{"desglose":[{"inmueble":342,"montoAseo":16500000,"montoGas":"5500000.00"}],"fecha":{"month":"junio","year":2020}}	2020-06-30	23	f
-845	198	8932000	\N	\N	2020-06-27	66	{"desglose":[{"inmueble":338,"montoAseo":4400000,"montoGas":"3300000.00"}],"fecha":{"month":"enero","year":2020}}	2020-06-30	20	f
-846	198	8932000	\N	\N	2020-06-27	66	{"desglose":[{"inmueble":338,"montoAseo":4400000,"montoGas":"3300000.00"}],"fecha":{"month":"febrero","year":2020}}	2020-02-29	20	f
-847	198	8932000	\N	\N	2020-06-27	66	{"desglose":[{"inmueble":338,"montoAseo":4400000,"montoGas":"3300000.00"}],"fecha":{"month":"marzo","year":2020}}	2020-03-31	20	f
-848	198	8932000	\N	\N	2020-06-27	66	{"desglose":[{"inmueble":338,"montoAseo":4400000,"montoGas":"3300000.00"}],"fecha":{"month":"abril","year":2020}}	2020-06-30	20	f
-849	198	8932000	\N	\N	2020-06-27	66	{"desglose":[{"inmueble":338,"montoAseo":4400000,"montoGas":"3300000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	20	f
-850	198	8932000	\N	\N	2020-06-27	66	{"desglose":[{"inmueble":338,"montoAseo":4400000,"montoGas":"3300000.00"}],"fecha":{"month":"junio","year":2020}}	2020-06-30	20	f
-761	186	823407712.33	\N	\N	2020-05-13	10	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	30	f
-762	186	185600000.00	\N	\N	2020-05-13	66	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	30	f
-763	186	315.00	\N	\N	2020-05-07	11	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	30	f
-764	186	2475.00	\N	\N	2020-05-06	11	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	30	f
-765	186	125576068.05	\N	\N	2020-04-24	9	{"fecha":{"month":"abril","year":2020}}	2020-06-30	30	f
-766	186	125576068.05	\N	\N	2020-04-24	9	{"fecha":{"month":"abril","year":2020}}	2020-06-30	30	f
-767	186	19126.84	\N	\N	2020-04-24	11	{"fecha":{"month":"abril","year":2020}}	2020-06-30	30	f
-768	186	100400000.00	\N	\N	2020-04-23	12	{"fecha":{"month":"abril","year":2020}}	2020-06-30	30	f
-769	186	100400000.00	\N	\N	2020-04-23	12	{"fecha":{"month":"abril","year":2020}}	2020-06-30	30	f
-770	186	100400000.00	\N	\N	2020-04-23	12	{"fecha":{"month":"abril","year":2020}}	2020-06-30	30	f
-771	186	100400000.00	\N	\N	2020-04-23	12	{"fecha":{"month":"abril","year":2020}}	2020-06-30	30	f
-772	186	458756568.91	\N	\N	2020-04-20	10	{"fecha":{"month":"abril","year":2020}}	2020-06-30	30	f
-773	186	366175332.22	\N	\N	2020-03-10	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	30	f
-774	186	31619815.40	\N	\N	2020-03-10	66	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	30	f
-775	186	375582497.61	\N	\N	2020-03-02	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	30	f
-776	186	396275691.71	\N	\N	2020-02-10	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	30	f
-777	186	5400.00	\N	\N	2020-02-10	11	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	30	f
-778	186	6000.00	\N	\N	2020-02-10	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	30	f
-779	186	12827815.40	\N	\N	2020-01-15	66	{"fecha":{"month":"enero","year":2020}}	2020-06-30	30	f
-780	187	233245942.29	\N	\N	2020-05-06	52	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	31	f
-781	187	4863602622.67	\N	\N	2020-04-28	52	{"fecha":{"month":"abril","year":2020}}	2020-06-30	31	f
-782	187	178760471.22	\N	\N	2020-03-10	52	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	31	f
-783	187	181680959.01	\N	\N	2020-02-12	52	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	31	f
-784	188	10650698280.00	\N	\N	2020-05-06	10	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	32	f
-785	188	10296000.00	\N	\N	2020-04-29	66	{"fecha":{"month":"abril","year":2020}}	2020-06-30	32	f
-786	188	0.00	\N	\N	2020-04-27	66	{"fecha":{"month":"abril","year":2020}}	2020-06-30	32	f
-787	188	1053.18	\N	\N	2020-04-24	11	{"fecha":{"month":"abril","year":2020}}	2020-06-30	32	f
-788	188	10711438960.00	\N	\N	2020-04-07	10	{"fecha":{"month":"abril","year":2020}}	2020-06-30	32	f
-789	188	7488000.00	\N	\N	2020-03-06	66	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	32	f
-790	188	8890497680.00	\N	\N	2020-03-03	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	32	f
-791	188	532313.85	\N	\N	2020-02-19	9	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	32	f
-792	188	7488000.00	\N	\N	2020-02-19	66	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	32	f
-793	188	1159855.88	\N	\N	2020-02-19	9	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	32	f
-794	188	19364012.97	\N	\N	2020-02-19	9	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	32	f
-795	188	1747127.80	\N	\N	2020-02-19	9	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	32	f
-796	188	6596835240.00	\N	\N	2020-02-07	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	32	f
-797	188	9449600.00	\N	\N	2020-01-27	66	{"fecha":{"month":"enero","year":2020}}	2020-06-30	32	f
-798	188	1159855.88	\N	\N	2020-01-22	9	{"fecha":{"month":"enero","year":2020}}	2020-06-30	32	f
-799	188	1747127.80	\N	\N	2020-01-22	9	{"fecha":{"month":"enero","year":2020}}	2020-06-30	32	f
-800	188	432313.85	\N	\N	2020-01-22	9	{"fecha":{"month":"enero","year":2020}}	2020-06-30	32	f
-801	188	19364012.97	\N	\N	2020-01-22	9	{"fecha":{"month":"enero","year":2020}}	2020-06-30	32	f
-802	188	5616000.00	\N	\N	2020-01-15	66	{"fecha":{"month":"enero","year":2020}}	2020-06-30	32	f
-803	189	166400000.00	\N	\N	2020-05-13	66	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	33	f
-804	189	503692308.34	\N	\N	2020-05-13	10	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	33	f
-805	189	7920.00	\N	\N	2020-05-06	11	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	33	f
-806	189	128000000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-06-30	33	f
-807	189	6075.00	\N	\N	2020-04-28	11	{"fecha":{"month":"abril","year":2020}}	2020-06-30	33	f
-808	189	128000000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-06-30	33	f
-809	189	128000000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-06-30	33	f
-810	189	128000000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-06-30	33	f
-811	189	106309307.71	\N	\N	2020-04-24	9	{"fecha":{"month":"abril","year":2020}}	2020-06-30	33	f
-812	189	163826011.54	\N	\N	2020-04-20	10	{"fecha":{"month":"abril","year":2020}}	2020-06-30	33	f
-813	189	14976000.00	\N	\N	2020-03-10	66	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	33	f
-814	189	340243897.25	\N	\N	2020-03-10	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	33	f
-815	189	300427412.47	\N	\N	2020-03-02	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	33	f
-816	189	2640463158.80	\N	\N	2020-03-02	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	33	f
-817	189	14976000.00	\N	\N	2020-03-02	66	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	33	f
-818	189	7488000.00	\N	\N	2020-02-10	66	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	33	f
-820	189	7577600.00	\N	\N	2020-01-15	66	{"fecha":{"month":"enero","year":2020}}	2020-06-30	33	f
-851	199	5000000	\N	\N	2020-06-27	30	{"fecha":{"month":"marzo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":10}	2020-03-31	24	f
-852	199	10000000	\N	\N	2020-06-27	30	{"fecha":{"month":"abril","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":20}	2020-04-30	24	f
-853	199	15000000	\N	\N	2020-06-27	30	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":30}	2020-05-31	24	f
-854	199	20000000	\N	\N	2020-06-27	30	{"fecha":{"month":"junio","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":40}	2020-06-30	24	f
-855	199	19000000	\N	\N	2020-06-27	10	{"desglose":[{"aforo":131,"montoDeclarado":"30000000.00"},{"aforo":140,"montoDeclarado":"50000000.00"},{"aforo":194,"montoDeclarado":"500000000.00"}],"fecha":{"month":"marzo","year":2020}}	2020-03-31	24	f
-821	190	6000.00	\N	\N	\N	\N	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	30	f
-822	190	21252.04	\N	\N	\N	\N	{"fecha":{"month":"abril","year":2020}}	2020-06-30	30	f
-823	190	2750.00	\N	\N	\N	\N	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	30	f
-824	190	350.00	\N	\N	\N	\N	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	30	f
-825	191	1170.20	\N	\N	\N	\N	{"fecha":{"month":"abril","year":2020}}	2020-06-30	32	f
-826	192	6750.00	\N	\N	\N	\N	{"fecha":{"month":"abril","year":2020}}	2020-06-30	33	f
-827	192	8800.00	\N	\N	\N	\N	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	33	f
-856	199	5950000	\N	\N	2020-06-27	10	{"desglose":[{"aforo":131,"montoDeclarado":"5000000.00"},{"aforo":140,"montoDeclarado":"50000000.00"},{"aforo":194,"montoDeclarado":"65000000.00"}],"fecha":{"month":"abril","year":2020}}	2020-06-30	24	f
-857	199	12930000	\N	\N	2020-06-27	10	{"desglose":[{"aforo":131,"montoDeclarado":"650000000.00"},{"aforo":140,"montoDeclarado":"65000000.00"},{"aforo":194,"montoDeclarado":"56000000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	24	f
-858	199	28999.999999999996	\N	\N	2020-06-27	66	{"desglose":[{"inmueble":343,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":344,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"marzo","year":2020}}	2020-03-31	24	f
-868	281	5000000.00	\N	\N	2020-07-01	101	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":10}	2020-05-31	22	f
-869	281	10000000.00	\N	\N	2020-07-01	101	{"fecha":{"month":"junio","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":20}	2020-06-30	22	f
-870	279	36938523723.69	\N	\N	2020-07-01	10	{"desglose":[{"aforo":75,"montoDeclarado":"123412312.00"},{"aforo":185,"montoDeclarado":"1231234124123.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	22	f
-871	279	371737023.69	\N	\N	2020-07-01	10	{"desglose":[{"aforo":75,"montoDeclarado":"123412341.00"},{"aforo":185,"montoDeclarado":"12341234123.00"}],"fecha":{"month":"junio","year":2020}}	2020-06-30	22	f
-875	282	29000.00	\N	\N	2020-07-01	66	{"desglose":[{"inmueble":340,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":341,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	22	f
-876	282	29000.00	\N	\N	2020-07-01	66	{"desglose":[{"inmueble":340,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":341,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"junio","year":2020}}	2020-06-30	22	f
-872	282	29000.00	\N	\N	2020-07-01	66	{"desglose":[{"inmueble":340,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":341,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"febrero","year":2020}}	2020-02-29	22	f
-873	282	29000.00	\N	\N	2020-07-01	66	{"desglose":[{"inmueble":340,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":341,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"marzo","year":2020}}	2020-03-31	22	f
-874	282	29000.00	\N	\N	2020-07-01	66	{"desglose":[{"inmueble":340,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":341,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"abril","year":2020}}	2020-07-31	22	f
-877	282	29000.00	\N	\N	2020-07-01	66	{"desglose":[{"inmueble":340,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":341,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"julio","year":2020}}	2020-07-31	22	f
+916	303	309973947.02	\N	\N	2020-05-05	10	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	49	f
+917	303	263158578.15	\N	\N	2020-04-28	9	{"fecha":{"month":"abril","year":2020}}	2020-07-31	49	f
+918	303	22400000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-07-31	49	f
+919	303	279426342.85	\N	\N	2020-04-24	10	{"fecha":{"month":"abril","year":2020}}	2020-07-31	49	f
+920	303	222170329.10	\N	\N	2020-03-02	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	49	f
+921	303	20228432.70	\N	\N	2020-02-14	66	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	49	f
+922	303	186591315.09	\N	\N	2020-02-04	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	49	f
+925	305	4500000.00	\N	\N	2020-07-02	99	{"desglose":[{"aforo":75,"montoDeclarado":"100000000.00","montoCobrado":1500000},{"aforo":185,"montoDeclarado":"100000000.00","montoCobrado":3000000}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	49	f
+926	305	4500000.00	\N	\N	2020-07-02	99	{"desglose":[{"aforo":75,"montoDeclarado":"100000000.00","montoCobrado":1500000},{"aforo":185,"montoDeclarado":"100000000.00","montoCobrado":3000000}],"fecha":{"month":"junio","year":2020}}	2020-06-30	49	f
+923	306	5000000.00	\N	\N	2020-07-02	101	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":10}	2020-05-31	49	f
+924	306	10000000.00	\N	\N	2020-07-02	101	{"fecha":{"month":"junio","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":20}	2020-06-30	49	f
 \.
 
 
@@ -7345,23 +7078,11 @@ COPY impuesto.ramo_exoneracion (id_ramo_exoneracion, id_plazo_exoneracion, id_ra
 --
 
 COPY impuesto.registro_municipal (id_registro_municipal, id_contribuyente, referencia_municipal, fecha_aprobacion, telefono_celular, telefono_habitacion, email, denominacion_comercial, nombre_representante, actualizado) FROM stdin;
-19	57	2900014139	2020-06-26	4129661659	\N	orderleep@gmail.com	CORPORACION DIGITEL, C.A.	ROBERTO JOSE ORTA	t
-20	57	2900013536	2020-06-26	4129661659	\N	romayjj@gmail.com	CORPORACION DIGITEL, C.A.  PALACIO DE EVENTOS	FRANCISCO  HUNG	t
-21	57	2900026280	2020-06-26	4129661659	\N	ffrazo@gmail.com	CORPORACION DIGITEL, C.A.	DEMERIS RUIZ	t
-27	58	2900013829	2020-06-26	4129661659	\N	orderleep@gmail.com	FARMACIA COVIDES, C.A. ( LOCATEL BELLA VISTA )	LILIANA SANCHEZ	t
-28	61	7000002467	2020-06-27	4146224064	\N	wakapluswakuplus@gmail.com	SERVICIOS INFORMATICOS WAKUPLUS CA	MANUEL MARULANDA	t
-29	61	7000002467	2020-06-27	4146224064	\N	wakapluswakuplus@gmail.com	SERVICIOS INFORMATICOS WAKUPLUS CA	MANUEL MARULANDA	t
-30	62	7000002164	2020-06-27	4247134807	\N	lismar.guerrero@kof.com.mx	COCA-COLA FEMSA DE VZLA S.A	Daniel Salas	t
-31	62	AR00000030	2020-06-27	4140646227	\N	natalie.rodriguez@kof.com.mx	COCA COLA	0	f
-32	62	2000060814	2020-06-27	261	\N	natalie.rodriguez@kof.com.mx	COCA-COLA FEMSA DE VENEZUELA, S.A.		f
-33	62	2900030265	2020-06-27	414	\N	maria.carrero@kof.com.mx	COCA-COLA FEMSA DE VZLA S.A	LEONDINA DELLA FIGLIUOLA	f
-34	63	2900034653	2020-06-27	0	\N	0	WAK CASA DE SOFTWARE, C.A.	JHONNATHAN JOSE ROMAY CAMACHO	t
-24	58	207R002131	2020-06-26	4129661659	\N	romayjj@gmail.com	FARMACIA COVIDES, C.A.  LOCATEL ( I.P.S.F.A. )	JOSE ABELD	t
-25	58	207R002132	2020-06-26	2122643821	\N		RARMACIA COVIDES, C.A. ( LOCATEL I.P.S.F.A. )	JOSE ABEID	\N
-26	58	207P000358	2020-06-26	02617590502	\N		FARMACIA COVIDES C.A.-	LILIANA SANCHEZ.-	\N
-23	58	AR20200024	2020-06-26	1	\N		FARMACIA COVIDES C.A.	IVECO	t
-18	57	2900011266	2020-06-26	4078376304	\N	snider8520@gmail.com	CORPORACION GSM	OSWALDO CISNEROS	t
-22	57	2900011265	2020-06-26	4078376304	\N	snider8520@gmail.com	CORPORACION DIGITEL, C.A.	ALFRED TULIO HUNG RIVERO	t
+45	66	2900011266	2020-07-02	41472123445	\N	snider8520@gmail.com	CORPORACION GSM	OSWALDO CISNEROS	t
+46	66	2900014139	2020-07-02	41472123445	\N	snider8520@gmail.com	CORPORACION DIGITEL, C.A.	ROBERTO JOSE ORTA	t
+47	66	2900013536	2020-07-02	41472123445	\N	snider8520@gmail.com	CORPORACION DIGITEL, C.A.  PALACIO DE EVENTOS	FRANCISCO  HUNG	t
+48	66	2900026280	2020-07-02	41472123445	\N	snider8520@gmail.com	CORPORACION DIGITEL, C.A.	DEMERIS RUIZ	t
+49	66	2900011265	2020-07-02	41472123445	\N	snider8520@gmail.com	CORPORACION DIGITEL, C.A.	ALFRED TULIO HUNG RIVERO	t
 \.
 
 
@@ -7372,13 +7093,11 @@ COPY impuesto.registro_municipal (id_registro_municipal, id_contribuyente, refer
 --
 
 COPY impuesto.registro_municipal_verificacion (id_registro_municipal, id_verificacion_telefono) FROM stdin;
-19	81
-20	82
-21	83
-27	84
-24	85
-18	86
-22	86
+45	89
+46	89
+47	89
+48	89
+49	89
 \.
 
 
@@ -7389,37 +7108,10 @@ COPY impuesto.registro_municipal_verificacion (id_registro_municipal, id_verific
 --
 
 COPY impuesto.solicitud (id_solicitud, id_usuario, aprobado, fecha, fecha_aprobado, id_tipo_tramite, id_contribuyente, tipo_solicitud) FROM stdin;
-193	117	f	2020-06-27	\N	5	61	\N
-194	117	f	2020-06-27	\N	5	61	\N
-195	117	f	2020-06-27	\N	5	61	\N
-172	\N	t	2020-05-05	2020-06-26	5	57	\N
-173	58	f	2020-06-26	\N	5	57	\N
-174	58	f	2020-06-26	\N	5	57	\N
-181	122	t	2020-06-26	2020-06-27	5	58	\N
-177	\N	t	2020-04-22	2020-06-26	5	58	\N
-178	\N	t	2020-04-28	2020-06-26	5	58	\N
-179	\N	t	2020-04-28	2020-06-26	5	58	\N
-180	122	t	2020-04-28	2020-06-26	5	58	\N
-198	58	t	2020-06-27	2020-06-27	5	57	\N
-199	124	f	2020-06-27	\N	5	58	\N
-200	116	f	2020-06-27	\N	5	58	\N
-182	117	t	2020-05-06	2020-06-27	5	61	\N
-183	117	t	2020-05-06	2020-06-27	5	61	\N
-184	117	f	2020-05-06	\N	5	61	\N
-185	117	f	2020-05-06	\N	5	61	\N
-186	117	t	2020-05-13	2020-06-27	5	62	\N
-187	\N	t	2020-05-06	2020-06-27	5	62	\N
-188	\N	t	2020-05-06	2020-06-27	5	62	\N
-189	\N	t	2020-05-13	2020-06-27	5	62	\N
-190	117	f	2020-05-13	\N	5	62	\N
-191	\N	f	2020-05-06	\N	5	62	\N
-192	\N	f	2020-05-13	\N	5	62	\N
-202	125	f	2020-07-01	\N	5	57	\N
-279	\N	f	2020-07-01	\N	5	57	\N
-280	\N	f	2020-07-01	\N	5	57	\N
-282	\N	f	2020-07-01	\N	5	57	\N
-278	\N	f	2020-07-01	\N	5	57	CONVENIO
-281	\N	f	2020-07-01	\N	5	57	CONVENIO
+303	125	t	2020-05-05	2020-07-02	5	66	\N
+304	125	f	2020-07-02	\N	5	66	\N
+305	125	f	2020-07-02	\N	5	66	CONVENIO
+306	125	f	2020-07-02	\N	5	66	CONVENIO
 \.
 
 
@@ -8124,7 +7816,7 @@ COPY impuesto.verificacion_telefono (id_verificacion_telefono, codigo_verificaci
 83	062801	2020-06-26 19:04:24.049606-04	t	121	4129661659
 84	310569	2020-06-26 19:14:02.661491-04	t	122	4129661659
 85	505131	2020-06-27 12:30:31.169715-04	t	124	4129661659
-86	664885	2020-07-01 15:52:21.927678-04	t	125	4078376304
+89	892311	2020-07-02 15:33:28.014111-04	t	125	41472123445
 \.
 
 
@@ -8768,6 +8460,21 @@ COPY public.evento_tramite (id_evento_tramite, id_tramite, event, "time") FROM s
 671	299	iniciar	2020-07-01 15:57:12.02261-04
 672	299	revisar_bc	2020-07-01 15:57:12.02261-04
 673	299	aprobar_bc	2020-07-01 16:20:14.353543-04
+674	300	iniciar	2020-07-01 16:31:51.815778-04
+675	300	revisar_bc	2020-07-01 16:31:51.815778-04
+676	300	aprobar_bc	2020-07-01 16:32:01.488921-04
+677	301	iniciar	2020-07-01 17:01:03.89446-04
+678	301	revisar_bc	2020-07-01 17:01:03.89446-04
+679	301	aprobar_bc	2020-07-01 17:01:11.715229-04
+680	302	iniciar	2020-07-02 09:30:45.830525-04
+681	302	revisar_bc	2020-07-02 09:30:45.830525-04
+682	302	aprobar_bc	2020-07-02 09:31:11.917855-04
+683	303	iniciar	2020-07-02 16:15:56.98197-04
+684	303	validar_lae	2020-07-02 16:15:56.98197-04
+685	303	enproceso_lae	2020-07-02 16:24:44.979002-04
+686	304	iniciar	2020-07-02 16:28:45.795646-04
+687	304	revisar_bc	2020-07-02 16:28:45.795646-04
+688	304	aprobar_bc	2020-07-02 16:29:57.846051-04
 \.
 
 
@@ -8789,37 +8496,12 @@ COPY public.factura_tramite (id_factura, id_tramite) FROM stdin;
 
 COPY public.inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, fecha_creacion, fecha_actualizacion, fecha_ultimo_avaluo, tipo_inmueble, id_registro_municipal) FROM stdin;
 21	231315U01004083001001P0500	Calle 73 entre Av. 3E y 3F	108	200	300	2020-03-20 16:46:01.230084-04	2020-03-20 16:46:01.230084-04	\N	\N	\N
-336	\N		\N	\N	\N	2020-06-26 16:37:44.78505-04	2020-06-26 16:37:44.78505-04	\N	COMERCIAL	18
-337	\N		\N	\N	\N	2020-06-26 16:37:44.78505-04	2020-06-26 16:37:44.78505-04	\N	COMERCIAL	19
-338	\N		\N	\N	\N	2020-06-26 16:37:44.78505-04	2020-06-26 16:37:44.78505-04	\N	COMERCIAL	20
-339	\N	Parroquia MANUEL DAGNINO Sector   Avenida   Calle  , Local Nro.  , Pto de Ref.	\N	\N	\N	2020-06-26 16:37:44.78505-04	2020-06-26 16:37:44.78505-04	\N	COMERCIAL	21
-340	\N	Parroquia CHIQUINQUIRA Sector 5 DE JULIO BFERCON Avenida   Calle  , Local Nro.  , Pto de Ref.	\N	\N	\N	2020-06-26 16:37:44.78505-04	2020-06-26 16:37:44.78505-04	\N	RESIDENCIAL	22
-341	\N	Parroquia CHIQUINQUIRA Sector 5 DE JULIO Avenida 16 Calle 77, Local Nro. bfercom, Pto de Ref. al lado de la torre bod	\N	\N	\N	2020-06-26 16:37:44.78505-04	2020-06-26 16:37:44.78505-04	\N	COMERCIAL	22
-342	\N	Parroquia CHIQUINQUIRA Sector  INDIO MARA Avenida  65 Calle  22A, Local Nro.  MZN, Pto de Ref.   EDIF. IPSFA	\N	\N	\N	2020-06-26 19:14:02.414925-04	2020-06-26 19:14:02.414925-04	\N	COMERCIAL	23
-343	\N	Parroquia OLEGARIO VILLALOBOS Sector SCT   BELLA VISTA(OLEGARIO V) AVENIDA 4 BELLA VISTA 1684520 LOCAL 67-13 LOCAL EDF. BLITZ 67-13   FTE. CHURRASCO BAR-GRILL MBO Maracaibo ZUL Avenida 4 Calle 0, Apartamento Nro. 67-13, Pto de Ref. 0	\N	\N	\N	2020-06-26 19:14:02.414925-04	2020-06-26 19:14:02.414925-04	\N	RESIDENCIAL	24
-344	\N	Parroquia CHIQUINQUIRA Sector INDIO MARA Avenida 22A Calle 65, Local Nro. MZN., Pto de Ref. EDIF. IPSFA	\N	\N	\N	2020-06-26 19:14:02.414925-04	2020-06-26 19:14:02.414925-04	\N	COMERCIAL	24
-345	\N	Parroquia CHIQUINQUIRA Sector - Avenida - Calle -, Local Nro. -, Pto de Ref. -	\N	\N	\N	2020-06-26 19:14:02.414925-04	2020-06-26 19:14:02.414925-04	\N	COMERCIAL	25
-346	\N		\N	\N	\N	2020-06-26 19:14:02.414925-04	2020-06-26 19:14:02.414925-04	\N	COMERCIAL	26
-347	\N	Parroquia CHIQUINQUIRA Sector SCT   PARAISO AVENIDA 22 1674040   PB PB LDO. CUARTEL LIBERTADOR MBO Maracaibo ZUL Avenida 22A Calle 65, Local Nro. P A, Pto de Ref. IPFA	\N	\N	\N	2020-06-26 19:14:02.414925-04	2020-06-26 19:14:02.414925-04	\N	RESIDENCIAL	27
-348	\N	Parroquia OLEGARIO VILLALOBOS Sector INDIO MARA Avenida 22A Calle 65, Local Nro. 3, Pto de Ref. IPFA	\N	\N	\N	2020-06-26 19:14:02.414925-04	2020-06-26 19:14:02.414925-04	\N	COMERCIAL	27
-349	\N	Parroquia OLEGARIO VILLALOBOS Sector DELICIAS Avenida 15 Y 14A-74 Calle 74, Local Nro. 7, Pto de Ref. 5 DE JULIO	\N	\N	\N	2020-06-26 20:39:26.883557-04	2020-06-26 20:39:26.883557-04	\N	RESIDENCIAL	28
-350	\N	Parroquia OLEGARIO VILLALOBOS Sector DELICIAS Avenida  15 Y 14A-74 Calle 74, Local Nro. 7, Pto de Ref. 5 DE JULIO	\N	\N	\N	2020-06-26 20:39:26.883557-04	2020-06-26 20:39:26.883557-04	\N	COMERCIAL	28
-351	\N	Parroquia OLEGARIO VILLALOBOS Sector DELICIAS Avenida 15 Y 14A-74 Calle 74, Local Nro. 7, Pto de Ref. 5 DE JULIO	\N	\N	\N	2020-06-26 20:39:26.883557-04	2020-06-26 20:39:26.883557-04	\N	RESIDENCIAL	29
-352	\N	Parroquia OLEGARIO VILLALOBOS Sector DELICIAS  Avenida 14A Y 15 DELICIAS Calle 74, Local Nro. 7, Pto de Ref. 5 DE JULIO CON DELICIAS	\N	\N	\N	2020-06-26 20:39:26.883557-04	2020-06-26 20:39:26.883557-04	\N	COMERCIAL	29
-353	\N	Parroquia IDELFONSO VASQUEZ Sector ZONA INDUSTRIAL NORTE AV. 16 ENTRE CALLE 23 Y 32 NO. 23-274, ANTES 15J-170 SEGÚN AVALUO DCE-2142-2018 Avenida 16 Calle 23 Y 32, Local Nro. 23-274, Pto de Ref.	\N	\N	\N	2020-06-26 20:59:40.771429-04	2020-06-26 20:59:40.771429-04	\N	RESIDENCIAL	30
-354	\N	Parroquia IDELFONSO VASQUEZ Sector ZONA INDUSTRIAL NORTE AV. 16 ENTRE CALLE 23 Y 32 NO. 23-274, SEGÚN AVALUO DCE-2142-2018 Avenida 16 Calle  23 Y 32, Local Nro. 3, Pto de Ref. FRENTE URB. MARA NORTE	\N	\N	\N	2020-06-26 20:59:40.771429-04	2020-06-26 20:59:40.771429-04	\N	COMERCIAL	30
-355	\N	Parroquia LUIS HURTADO HIGUERA Sector ZONA IND. NORTE Avenida 16 Calle  , Galpon Nro. 5, Pto de Ref. FRT. URB. MARA NORTE	\N	\N	\N	2020-06-26 20:59:40.771429-04	2020-06-26 20:59:40.771429-04	\N	COMERCIAL	31
-356	\N	Parroquia LUIS HURTADO HIGUERA Sector SCT ZONA INDUSTRIAL SUR AVENIDA 62 ENTRE CALLE 146 Y AV 66 # 146-308, 256-69,146-121, 147-131 y 146-308 LDO. TROQUEMAR MBO Maracaibo ZUL Avenida 62 Y 66 Calle  146 , Local Nro.  , Pto de Ref.	\N	\N	\N	2020-06-26 20:59:40.771429-04	2020-06-26 20:59:40.771429-04	\N	RESIDENCIAL	32
-357	\N	Parroquia IDELFONSO VASQUEZ Sector ZONA NORTE Avenida 16 Calle  , Local Nro. 23-274, Pto de Ref.	\N	\N	\N	2020-06-26 20:59:40.771429-04	2020-06-26 20:59:40.771429-04	\N	RESIDENCIAL	32
-358	\N	Parroquia LUIS HURTADO HIGUERA Sector ZONA IND. NORTE    MBO MARACAIBO ZUL Avenida  16  Calle  , Galpon Nro.  23-274, Pto de Ref. FTE URB MARA NORTE	\N	\N	\N	2020-06-26 20:59:40.771429-04	2020-06-26 20:59:40.771429-04	\N	RESIDENCIAL	32
-359	\N	Parroquia LUIS HURTADO HIGUERA Sector ZONA INDUSTRIAL SUR AV 64 CALLE 146 NO 146-121 Avenida 66 Calle 146, Casa Nro. 146-121, Pto de Ref.	\N	\N	\N	2020-06-26 20:59:40.771429-04	2020-06-26 20:59:40.771429-04	\N	RESIDENCIAL	32
-360	\N	Parroquia LUIS HURTADO HIGUERA Sector ZONA INDUSTRIAL SUR  Avenida 62 Calle 147 Y 148, Casa Nro. 147-267, Pto de Ref.	\N	\N	\N	2020-06-26 20:59:40.771429-04	2020-06-26 20:59:40.771429-04	\N	RESIDENCIAL	32
-361	\N	Parroquia LUIS HURTADO HIGUERA Sector ZONA INDUSTRIAL SUR  Avenida 147 Y66 Calle 62, Casa Nro. 14-308, Pto de Ref.	\N	\N	\N	2020-06-26 20:59:40.771429-04	2020-06-26 20:59:40.771429-04	\N	RESIDENCIAL	32
-362	\N	Parroquia LUIS HURTADO HIGUERA Sector ZONA INDUSTRIAL SUR  Avenida 62E Calle 147, Casa Nro. 147-131, Pto de Ref.	\N	\N	\N	2020-06-26 20:59:40.771429-04	2020-06-26 20:59:40.771429-04	\N	RESIDENCIAL	32
-363	\N	Parroquia LUIS HURTADO HIGUERA Sector ZONA INDUSTRIAL  Avenida 62 Calle 147, Local Nro. 147-267, Pto de Ref.	\N	\N	\N	2020-06-26 20:59:40.771429-04	2020-06-26 20:59:40.771429-04	\N	COMERCIAL	32
-364	\N	Parroquia LUIS HURTADO HIGUERA Sector ZONA INDUSTRIAL Avenida 146-148 Calle 66, Local Nro. 146-774., Pto de Ref.	\N	\N	\N	2020-06-26 20:59:40.771429-04	2020-06-26 20:59:40.771429-04	\N	RESIDENCIAL	33
-365	\N	Parroquia LUIS HURTADO HIGUERA Sector     Avenida     Calle    , Local Nro. 3, Pto de Ref.	\N	\N	\N	2020-06-26 20:59:40.771429-04	2020-06-26 20:59:40.771429-04	\N	COMERCIAL	33
-366	\N		\N	\N	\N	2020-06-26 21:49:59.701231-04	2020-06-26 21:49:59.701231-04	\N	COMERCIAL	34
+379	\N		\N	\N	\N	2020-07-02 15:33:27.892659-04	2020-07-02 15:33:27.892659-04	\N	COMERCIAL	45
+380	\N		\N	\N	\N	2020-07-02 15:33:27.892659-04	2020-07-02 15:33:27.892659-04	\N	COMERCIAL	46
+381	\N		\N	\N	\N	2020-07-02 15:33:27.892659-04	2020-07-02 15:33:27.892659-04	\N	COMERCIAL	47
+382	\N	Parroquia MANUEL DAGNINO Sector   Avenida   Calle  , Local Nro.  , Pto de Ref.	\N	\N	\N	2020-07-02 15:33:27.892659-04	2020-07-02 15:33:27.892659-04	\N	COMERCIAL	48
+383	\N	Parroquia CHIQUINQUIRA Sector 5 DE JULIO BFERCON Avenida   Calle  , Local Nro.  , Pto de Ref.	\N	\N	\N	2020-07-02 15:33:27.892659-04	2020-07-02 15:33:27.892659-04	\N	RESIDENCIAL	49
+384	\N	Parroquia CHIQUINQUIRA Sector 5 DE JULIO Avenida 16 Calle 77, Local Nro. bfercom, Pto de Ref. al lado de la torre bod	\N	\N	\N	2020-07-02 15:33:27.892659-04	2020-07-02 15:33:27.892659-04	\N	COMERCIAL	49
 \.
 
 
@@ -9054,6 +8736,49 @@ COPY public.notificacion (id_notificacion, id_procedimiento, emisor, receptor, d
 660	202	V-2190823091	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-07-01 15:55:15.815913-04	ingresardatos	IMPUESTO
 661	299	V-1923812093	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-07-01 15:57:12.152887-04	enrevision	TRAMITE
 662	299	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Beneficio de Contribuyente	f	2020-07-01 16:20:14.470068-04	finalizado	TRAMITE
+663	300	V-1923812093	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-07-01 16:31:51.918331-04	enrevision	TRAMITE
+664	300	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Beneficio de Contribuyente	f	2020-07-01 16:32:01.561284-04	finalizado	TRAMITE
+665	289	V-2190823091	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-07-01 17:00:20.21697-04	ingresardatos	IMPUESTO
+666	289	V-2190823091	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-07-01 17:00:20.21697-04	ingresardatos	IMPUESTO
+667	301	V-1923812093	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-07-01 17:01:03.931498-04	enrevision	TRAMITE
+668	301	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Beneficio de Contribuyente	f	2020-07-01 17:01:11.756902-04	finalizado	TRAMITE
+673	294	V-2190823091	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-07-02 09:28:21.90054-04	ingresardatos	IMPUESTO
+674	294	V-2190823091	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-07-02 09:28:21.90054-04	ingresardatos	IMPUESTO
+675	302	V-1923812093	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-07-02 09:30:46.209192-04	enrevision	TRAMITE
+676	302	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Beneficio de Contribuyente	f	2020-07-02 09:31:12.017882-04	finalizado	TRAMITE
+681	299	V-2190823091	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-07-02 12:05:13.291868-04	ingresardatos	IMPUESTO
+682	299	V-2190823091	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-07-02 12:05:13.291868-04	ingresardatos	IMPUESTO
+683	299	V-2190823091	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-07-02 12:05:52.013632-04	{"state":"validando"}	IMPUESTO
+684	299	V-2190823091	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-07-02 12:05:52.013632-04	{"state":"validando"}	IMPUESTO
+685	299	V-1923812093	V-2190823091	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-07-02 12:08:36.286455-04	finalizado	IMPUESTO
+686	299	V-1923812093	V-2190823091	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-07-02 12:08:36.294372-04	finalizado	IMPUESTO
+687	299	V-1923812093	V-2190823091	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-07-02 12:08:36.301666-04	finalizado	IMPUESTO
+688	299	V-1923812093	V-2190823091	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-07-02 12:08:36.310091-04	finalizado	IMPUESTO
+689	299	V-1923812093	V-2190823091	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-07-02 12:08:36.318366-04	finalizado	IMPUESTO
+690	299	V-1923812093	V-2190823091	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-07-02 12:08:36.326719-04	finalizado	IMPUESTO
+691	299	V-1923812093	V-2190823091	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-07-02 12:08:36.335068-04	finalizado	IMPUESTO
+692	299	V-1923812093	V-2190823091	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-07-02 12:08:36.343326-04	finalizado	IMPUESTO
+693	299	V-1923812093	V-2190823091	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-07-02 12:08:36.351641-04	finalizado	IMPUESTO
+694	299	V-1923812093	V-2190823091	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-07-02 12:08:36.359997-04	finalizado	IMPUESTO
+695	299	V-1923812093	V-2190823091	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-07-02 12:08:36.368362-04	finalizado	IMPUESTO
+696	299	V-1923812093	V-2190823091	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-07-02 12:08:36.37666-04	finalizado	IMPUESTO
+697	299	V-1923812093	V-2190823091	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-07-02 12:08:36.384989-04	finalizado	IMPUESTO
+698	299	V-1923812093	V-2190823091	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-07-02 12:08:36.393334-04	finalizado	IMPUESTO
+699	299	V-1923812093	V-2190823091	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-07-02 12:08:36.401662-04	finalizado	IMPUESTO
+700	299	V-1923812093	V-1	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-07-02 12:08:36.418944-04	finalizado	IMPUESTO
+701	301	V-2190823091	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-07-02 12:26:17.395778-04	ingresardatos	IMPUESTO
+702	301	V-2190823091	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-07-02 12:26:17.395778-04	ingresardatos	IMPUESTO
+703	302	V-2190823091	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-07-02 15:15:29.080475-04	ingresardatos	IMPUESTO
+704	302	V-2190823091	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-07-02 15:15:29.080475-04	ingresardatos	IMPUESTO
+705	304	V-2190823091	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-07-02 15:34:46.559595-04	ingresardatos	IMPUESTO
+706	304	V-2190823091	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-07-02 15:34:46.559595-04	ingresardatos	IMPUESTO
+707	303	V-2190823091	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-07-02 16:15:59.384236-04	validando	TRAMITE
+708	303	V-2190823091	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-07-02 16:15:59.422506-04	validando	TRAMITE
+709	303	V-1923812093	V-2190823091	Se ha validado el pago de su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-02 16:24:45.053031-04	enproceso	TRAMITE
+710	303	V-1923812093	V-1	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-02 16:24:45.064781-04	enproceso	TRAMITE
+711	303	V-1923812093	V-1231931298	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-02 16:24:45.069695-04	enproceso	TRAMITE
+712	304	V-1923812093	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-07-02 16:28:45.944225-04	enrevision	TRAMITE
+713	304	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Beneficio de Contribuyente	f	2020-07-02 16:29:57.983381-04	finalizado	TRAMITE
 \.
 
 
@@ -9242,6 +8967,17 @@ COPY public.pago (id_pago, id_procedimiento, referencia, monto, fecha_de_pago, a
 244	199	\N	87995999.999999999984	2020-06-29	f	\N	2020-06-27 12:50:27.55877-04	IMPUESTO	EFECTIVO
 245	200	\N	123000000	2020-07-01	t	\N	2020-06-30 08:58:42.828701-04	IMPUESTO	EFECTIVO
 246	200	87999	200000000	2020-07-01	t	4	2020-06-30 08:58:42.828701-04	IMPUESTO	TRANSFERENCIA
+247	14	12341234123	10000000	2020-07-02	f	1	\N	CONVENIO	TRANSFERENCIA
+248	14	5454787987	10000000	2020-07-03	f	2	\N	CONVENIO	TRANSFERENCIA
+251	15	123412341238	121354657481	2020-07-02	f	1	\N	CONVENIO	TRANSFERENCIA
+252	16	24124123123	80000000	2020-07-29	f	1	\N	CONVENIO	TRANSFERENCIA
+253	17	12351235123	10000000	2020-07-09	f	2	\N	CONVENIO	TRANSFERENCIA
+254	299	88888888	18000000	2020-07-02	t	1	2020-07-02 12:08:36.130559-04	IMPUESTO	TRANSFERENCIA
+255	303	123456789	1000000.0	2020-07-02	t	1	2020-07-02 16:24:44.979002-04	TRAMITE	TRANSFERENCIA
+257	19	123412345	8000000	2020-07-02	f	1	\N	CONVENIO	TRANSFERENCIA
+258	20	1234123456	10000000	2020-07-02	f	1	\N	CONVENIO	TRANSFERENCIA
+259	21	12341234567	5000000	2020-07-02	f	1	\N	CONVENIO	TRANSFERENCIA
+256	18	12341234	8000000	2020-07-02	t	1	2020-07-02 18:00:09.183988-04	CONVENIO	TRANSFERENCIA
 \.
 
 
@@ -9742,7 +9478,12 @@ COPY public.tipo_usuario (id_tipo_usuario, descripcion) FROM stdin;
 
 COPY public.tramite (id_tramite, id_tipo_tramite, datos, costo, fecha_creacion, codigo_tramite, consecutivo, id_usuario, url_planilla, url_certificado, aprobado, fecha_culminacion) FROM stdin;
 298	27	{"usuario":{"documentoIdentidad":"400197520","razonSocial":"Wak Casa de Software CA","denominacionComercial":"Wak Casa de Software CA","siglas":"WAK","parroquia":"OLEGARIO VILLALOBOS","sector":"Tierra Negra","direccion":"Av 21 Calle 86","puntoReferencia":"Diagonal CDO","tipoContribuyente":"JURIDICO","tipoDocumento":"J","codCat":null},"funcionario":{"documentoIdentidad":"400197520","razonSocial":"Wak Casa de Software CA","denominacionComercial":"Wak Casa de Software CA","siglas":"WAK","parroquia":"OLEGARIO VILLALOBOS","sector":"Tierra Negra","direccion":"Av 21 Calle 86","puntoReferencia":"Diagonal CDO","tipoContribuyente":"JURIDICO","tipoDocumento":"V"}}	\N	2020-06-26 18:49:43.696424-04	SEDEMAT-26062020-27-0001	1	119	\N	\N	t	2020-06-26 19:51:45.215522-04
+302	26	{"funcionario":{"beneficios":[{"idRamo":"8","tipoBeneficio":"pagoCompleto"},{"idRamo":"9","tipoBeneficio":"remision"},{"idRamo":"11","tipoBeneficio":"pagoCompleto"},{"idRamo":"29","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":80000000,"fechaDePago":"02-07-2020"},{"porcion":"2","monto":10000000,"fechaDePago":"02-07-2020"}]},{"idRamo":"64","tipoBeneficio":"pagoCompleto"}],"contribuyente":{"id":64,"tipoDocumento":"J","documento":"304689713","registroMunicipal":"2900011265","razonSocial":"CORPORACION DIGITEL, C.A.","denomComercial":"CORPORACION GSM","sector":"","direccion":null,"puntoReferencia":"","verificado":true,"liquidaciones":[{"id":8,"ramo":"PROPIEDAD INMOBILIARIA","monto":"1578951468.90"},{"id":9,"ramo":"ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES","monto":"6029155928.64"},{"id":11,"ramo":"PROPAGANDAS Y AVISOS COMERCIALES","monto":"134400000.00"},{"id":29,"ramo":"MULTAS","monto":"90000000.00"},{"id":64,"ramo":"SERVICIOS MUNICIPALES","monto":"122414596.20"}],"totalDeuda":7954921993.740001}}}	\N	2020-07-02 09:30:45.830525-04	SEDEMAT-02072020-26-0001	1	83	\N	\N	t	2020-07-02 09:31:11.917855-04
 299	26	{"funcionario":{"beneficios":[{"idRamo":"8","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":163158578.15,"fechaDePago":"01-07-2020"},{"porcion":"2","monto":10000000,"fechaDePago":"01-07-2020"}]},{"idRamo":"9","tipoBeneficio":"pagoCompleto"},{"idRamo":"11","tipoBeneficio":"pagoCompleto"},{"idRamo":"29","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":10000000,"fechaDePago":"02-07-2020"},{"porcion":"2","monto":5000000,"fechaDePago":"03-07-2020"}]},{"idRamo":"64","tipoBeneficio":"pagoCompleto"}],"contribuyente":{"id":57,"tipoDocumento":"J","documento":"304689713","registroMunicipal":"2900011265","razonSocial":"CORPORACION DIGITEL, C.A.","denomComercial":"CORPORACION GSM","sector":"","direccion":null,"puntoReferencia":"","verificado":true,"liquidaciones":[{"id":8,"ramo":"PROPIEDAD INMOBILIARIA","monto":"263158578.15"},{"id":9,"ramo":"ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES","monto":"38308422681.44"},{"id":11,"ramo":"PROPAGANDAS Y AVISOS COMERCIALES","monto":"22400000.00"},{"id":29,"ramo":"MULTAS","monto":"15000000.00"},{"id":64,"ramo":"SERVICIOS MUNICIPALES","monto":"20402432.70"}],"totalDeuda":38629383692.29}}}	\N	2020-07-01 15:57:12.02261-04	SEDEMAT-01072020-26-0001	1	83	\N	\N	t	2020-07-01 16:20:14.353543-04
+300	26	{"funcionario":{"beneficios":[{"idRamo":"8","tipoBeneficio":"pagoCompleto"},{"idRamo":"9","tipoBeneficio":"pagoCompleto"},{"idRamo":"11","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":34400000,"fechaDePago":"01-07-2020"},{"porcion":"2","monto":100000000,"fechaDePago":"01-07-2020"}]},{"idRamo":"29","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":80000000,"fechaDePago":"01-07-2020"},{"porcion":"2","monto":10000000,"fechaDePago":"01-07-2020"}]},{"idRamo":"64","tipoBeneficio":"pagoCompleto"}],"contribuyente":{"id":57,"tipoDocumento":"J","documento":"304689713","registroMunicipal":"2900011265","razonSocial":"CORPORACION DIGITEL, C.A.","denomComercial":"CORPORACION GSM","sector":"","direccion":null,"puntoReferencia":"","verificado":true,"liquidaciones":[{"id":8,"ramo":"PROPIEDAD INMOBILIARIA","monto":"1578951468.90"},{"id":9,"ramo":"ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES","monto":"229850536088.64"},{"id":11,"ramo":"PROPAGANDAS Y AVISOS COMERCIALES","monto":"134400000.00"},{"id":29,"ramo":"MULTAS","monto":"90000000.00"},{"id":64,"ramo":"SERVICIOS MUNICIPALES","monto":"122414596.20"}],"totalDeuda":231776302153.74002}}}	\N	2020-07-01 16:31:51.815778-04	SEDEMAT-01072020-26-0002	2	83	\N	\N	t	2020-07-01 16:32:01.488921-04
+304	26	{"funcionario":{"beneficios":[{"idRamo":"9","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":8000000,"fechaDePago":"02-07-2020"},{"porcion":"2","monto":1000000,"fechaDePago":"02-07-2020"}]},{"idRamo":"29","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":10000000,"fechaDePago":"02-07-2020"},{"porcion":"2","monto":5000000,"fechaDePago":"02-07-2020"}]}],"contribuyente":{"id":66,"tipoDocumento":"J","documento":"304689713","registroMunicipal":"2900011265","razonSocial":"CORPORACION DIGITEL, C.A.","denomComercial":"CORPORACION GSM","sector":"","direccion":null,"puntoReferencia":"","verificado":true,"liquidaciones":[{"id":9,"ramo":"ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES","monto":"9000000.00"},{"id":29,"ramo":"MULTAS","monto":"15000000.00"}],"totalDeuda":24000000}}}	\N	2020-07-02 16:28:45.795646-04	SEDEMAT-02072020-26-0002	2	83	\N	\N	t	2020-07-02 16:29:57.846051-04
+303	28	{"usuario":{"telefono":"1231412341","correo":"impuestos_digitel@digitel.com.ve","denominacionComercial":"aaaaaaaaaaaaaaaaaaaaaa","nombreRepresentante":"yomismosoy","codCat":null,"contribuyente":{"id":66,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"304689713","razonSocial":"CORPORACION DIGITEL, C.A.","denomComercial":"CORPORACION GSM","sector":"","direccion":null,"puntoReferencia":"","verificado":true,"verificacionTelefono":true}}}	1000000.0	2020-07-02 16:15:56.98197-04	SEDEMAT-02072020-28-0001	1	125	http://localhost:5000/tramites/SEDEMAT-02072020-28-0001/planilla.pdf	\N	f	\N
+301	26	{"funcionario":{"beneficios":[{"idRamo":"8","tipoBeneficio":"pagoCompleto"},{"idRamo":"9","tipoBeneficio":"pagoCompleto"},{"idRamo":"11","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":20000000,"fechaDePago":"01-07-2020"},{"porcion":"2","monto":2400000,"fechaDePago":"01-07-2020"}]},{"idRamo":"64","tipoBeneficio":"pagoCompleto"}],"contribuyente":{"id":64,"tipoDocumento":"J","documento":"304689713","registroMunicipal":"2900011265","razonSocial":"CORPORACION DIGITEL, C.A.","denomComercial":"CORPORACION GSM","sector":"","direccion":null,"puntoReferencia":"","verificado":true,"liquidaciones":[{"id":8,"ramo":"PROPIEDAD INMOBILIARIA","monto":"263158578.15"},{"id":9,"ramo":"ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES","monto":"998161934.06"},{"id":11,"ramo":"PROPAGANDAS Y AVISOS COMERCIALES","monto":"22400000.00"},{"id":64,"ramo":"SERVICIOS MUNICIPALES","monto":"20402432.70"}],"totalDeuda":1304122944.91}}}	\N	2020-07-01 17:01:03.89446-04	SEDEMAT-01072020-26-0003	3	83	\N	\N	t	2020-07-01 17:01:11.715229-04
 \.
 
 
@@ -9754,6 +9495,7 @@ COPY public.tramite (id_tramite, id_tipo_tramite, datos, costo, fecha_creacion, 
 
 COPY public.tramite_archivo_recaudo (id_tramite, url_archivo_recaudo) FROM stdin;
 298	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT-26062020-27-0001/DocIdentidad.png
+303	http://localhost:5000/tramites/SEDEMAT-02072020-28-0001/CCNT.png
 \.
 
 
@@ -9764,6 +9506,7 @@ COPY public.tramite_archivo_recaudo (id_tramite, url_archivo_recaudo) FROM stdin
 --
 
 COPY public.usuario (id_usuario, nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, id_tipo_usuario, password, telefono, id_contribuyente) FROM stdin;
+126	marditos todos	mardita@sea.com	aaaaa	9999999999	V	4	$2a$10$LH3KXN6iK.G5Dtlvnd/Z/Ovw7A.0f5fLcZRv4zJb8cQpo.5EiRb0m	1241231231	\N
 118	Jose Andres Sanchez	jsanchez.waku@gmail.com	asdasdasd	25848973	V	4	$2a$10$Rsw1oZfuB2.u3X410AGUYedDg9W3WW89DEvBMhLvd7HJfhNcIDcoa	1231241231	\N
 116	Cajero SEDEMAT	cajero@sedemat.com	SEDEMAT	1023910231	V	3	$2a$10$EUnmYqbqHl6Aw2FoUYofmOebPprOKWkHFJY3OE2GthBQhwi4pSGvO	1092831209	\N
 55	Super Usuario	super@user.com	Super Usuario	1	V	1	$2a$10$VVT8CHvO3jEEoj/djKK4Z.CGPO9JAHw1NMUIK6QwM3BEwElf68kUW	\N	\N
@@ -9778,6 +9521,9 @@ COPY public.usuario (id_usuario, nombre_completo, nombre_de_usuario, direccion, 
 72	Administrador Terminal	terminal@admin.com	Terminal	128488188	V	2	$2a$10$hIeSExSylu8RY2bVPk6dPeLzKIR7Wo0yNjvRyqxR/QwZqTYEEf4wq	1723817728	\N
 73	Funcionario Terminal	funcionario@terminal.com	Terminal	1028124812	V	3	$2a$10$4oNhbsHJuAaFE.xY8bS1HOPakehWJmx6IkGbuaU57nBqro7iLsgg.	1092471093	\N
 75	Funcionario SEDEPAR	funcionario@sedepar.com	SEDEPAR	1289417241	V	3	$2a$10$8.dFFea0jSaDPFYmH4GM9urNDgGy6SawTnqALfevVvQdzodEkR7fS	1974102937	\N
+119	Jhonnatan Romay	romayjj@gmail.com	Av 21 calle 86	18496685	V	4	$2a$10$Mfw/1FYYPxQOiXzfEM19wen5RTTychOjBke778b/kYKJYv2iXhCX.	4146053291	\N
+124	Raul Fuentes	jj5star@hotmail.com	av 21 calle 86	10555777	V	4	$2a$10$qCFDSaIdAEZi3dH4RLXT/uQk2qQ0IQOkmES2ycbXXKH2bkJNNBUSW	4146053291	\N
+125	digitel	impuestos_digitel@digitel.com.ve	lkasjdkasjkdja	2190823091	V	4	$2a$10$xhMAl1K0jjqQTy7QN6zFfej9..S/yEtLcgCQPMW6Jsi3en4azy0YO	1231412341	66
 76	Administrador SEDEPAR	admin@sedepar.com	SEDEPAR	1294712034	V	2	$2a$10$mIBjS3jXMabi8XXohLECoeyKOUr.rZc8jlQXvdZcaSaZT88YLYLaG	8374198241	\N
 77	Administrador Policia	admin@policia.com	Policia	1249712091	V	2	$2a$10$P.v8kW77Xzm1ecmVsuBVuu.5avlhiv8izDmK51hW2/Jj6q/j/beNi	1029471204	\N
 78	Funcionario Policia	funcionario@policia.com	Policia	1293712049	V	3	$2a$10$e.DuvVSdwlr23z1I8B/STeX5V.8V3rhoeXgRWokiP.dEmf3A/eoPK	1927312029	\N
@@ -9788,13 +9534,10 @@ COPY public.usuario (id_usuario, nombre_completo, nombre_de_usuario, direccion, 
 68	Funcionario CPU	funcionario@cpu.com	CPU	1283190247	V	3	$2a$10$qLVJeDD5mKiXlhrNQEJDtOX9baIZcjY3zwMmepViWXp.VENHwaOda	9271092741	\N
 83	Admin SEDEMAT	admin@sedemat.com	SEDEMAT	1923812093	V	2	$2a$10$24HQ9feMqbPag1esm.IhIOkaAYcQlTKeKlTZlU8xg78bLqeQuCCMC	1902831092	\N
 117	Funcionario SEDEMAT	funcionario@sedemat.com	daidajiwjfiieajdk	1231931298	V	3	$2a$10$fbutta0xyv6uPZEaOP/D8uTRFNOl1/3eZ61SpOmqFyLSmJl31NzWy	4243828238	\N
-58	External User	external@user.com	Aqui	27139153	V	4	$2a$10$1az9AKXYIZ48FrTXXnb24.QT89PZuCTh2n0zabqVW7G8YyKinYNXe	4127645681	57
-120	Rafael Lares	cedgob2020@gmail.com	Av 21 Calle 86	15592914	V	4	$2a$10$z5gRrl3ezE0Ksj/Q4.A2gevmo/llADCLtfjKdDEfwL2Jv9gIMOYq6	4129661659	57
-121	Brian Maldonado	bhmadolnado@gmail.com	av 16	9747320	V	4	$2a$10$lnO3K4QhVgPft.9pqZBlt.M6mfASHTHX.Fqs./8xKgC7EPd8LZIfe	4129661659	57
-122	Jhon Jose Romay	jhonjromy@gmail.com	av 21	16079142	V	4	$2a$10$RcZ6dQf5Tdi0wgcq2lH8a.VG4ab4z8nx68V1ZdRwE58MHBVU3y4t.	4129661659	58
-119	Jhonnatan Romay	romayjj@gmail.com	Av 21 calle 86	18496685	V	4	$2a$10$Mfw/1FYYPxQOiXzfEM19wen5RTTychOjBke778b/kYKJYv2iXhCX.	4146053291	59
-124	Raul Fuentes	jj5star@hotmail.com	av 21 calle 86	10555777	V	4	$2a$10$qCFDSaIdAEZi3dH4RLXT/uQk2qQ0IQOkmES2ycbXXKH2bkJNNBUSW	4146053291	58
-125	digitel	impuestos_digitel@digitel.com.ve	lkasjdkasjkdja	2190823091	V	4	$2a$10$xhMAl1K0jjqQTy7QN6zFfej9..S/yEtLcgCQPMW6Jsi3en4azy0YO	1231412341	57
+58	External User	external@user.com	Aqui	27139153	V	4	$2a$10$1az9AKXYIZ48FrTXXnb24.QT89PZuCTh2n0zabqVW7G8YyKinYNXe	4127645681	\N
+120	Rafael Lares	cedgob2020@gmail.com	Av 21 Calle 86	15592914	V	4	$2a$10$z5gRrl3ezE0Ksj/Q4.A2gevmo/llADCLtfjKdDEfwL2Jv9gIMOYq6	4129661659	\N
+121	Brian Maldonado	bhmadolnado@gmail.com	av 16	9747320	V	4	$2a$10$lnO3K4QhVgPft.9pqZBlt.M6mfASHTHX.Fqs./8xKgC7EPd8LZIfe	4129661659	\N
+122	Jhon Jose Romay	jhonjromy@gmail.com	av 21	16079142	V	4	$2a$10$RcZ6dQf5Tdi0wgcq2lH8a.VG4ab4z8nx68V1ZdRwE58MHBVU3y4t.	4129661659	\N
 \.
 
 
@@ -11884,7 +11627,7 @@ M50	50
 -- Name: actividad_economica_contribuy_id_actividad_economica_contri_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq', 27, true);
+SELECT pg_catalog.setval('impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq', 33, true);
 
 
 --
@@ -11911,7 +11654,7 @@ SELECT pg_catalog.setval('impuesto.actividad_economica_id_actividad_economica_se
 -- Name: avaluo_inmueble_id_avaluo_inmueble_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.avaluo_inmueble_id_avaluo_inmueble_seq', 117, true);
+SELECT pg_catalog.setval('impuesto.avaluo_inmueble_id_avaluo_inmueble_seq', 135, true);
 
 
 --
@@ -11938,7 +11681,7 @@ SELECT pg_catalog.setval('impuesto.contribuyente_exoneracion_id_contribuyente_ex
 -- Name: contribuyente_id_contribuyente_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.contribuyente_id_contribuyente_seq', 63, true);
+SELECT pg_catalog.setval('impuesto.contribuyente_id_contribuyente_seq', 66, true);
 
 
 --
@@ -11947,7 +11690,7 @@ SELECT pg_catalog.setval('impuesto.contribuyente_id_contribuyente_seq', 63, true
 -- Name: convenio_id_convenio_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.convenio_id_convenio_seq', 32, true);
+SELECT pg_catalog.setval('impuesto.convenio_id_convenio_seq', 38, true);
 
 
 --
@@ -11974,7 +11717,7 @@ SELECT pg_catalog.setval('impuesto.dias_feriados_id_dia_feriado_seq', 47, true);
 -- Name: evento_fraccion_id_evento_fraccion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.evento_fraccion_id_evento_fraccion_seq', 12, true);
+SELECT pg_catalog.setval('impuesto.evento_fraccion_id_evento_fraccion_seq', 75, true);
 
 
 --
@@ -11983,7 +11726,7 @@ SELECT pg_catalog.setval('impuesto.evento_fraccion_id_evento_fraccion_seq', 12, 
 -- Name: evento_solicitud_id_evento_solicitud_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.evento_solicitud_id_evento_solicitud_seq', 451, true);
+SELECT pg_catalog.setval('impuesto.evento_solicitud_id_evento_solicitud_seq', 519, true);
 
 
 --
@@ -12001,7 +11744,7 @@ SELECT pg_catalog.setval('impuesto.factor_id_factor_seq', 1, false);
 -- Name: fraccion_id_fraccion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.fraccion_id_fraccion_seq', 9, true);
+SELECT pg_catalog.setval('impuesto.fraccion_id_fraccion_seq', 21, true);
 
 
 --
@@ -12028,7 +11771,7 @@ SELECT pg_catalog.setval('impuesto.liquidacion_descuento_id_liquidacion_descuent
 -- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.liquidacion_id_liquidacion_seq', 877, true);
+SELECT pg_catalog.setval('impuesto.liquidacion_id_liquidacion_seq', 926, true);
 
 
 --
@@ -12073,7 +11816,7 @@ SELECT pg_catalog.setval('impuesto.ramo_id_ramo_seq', 1, true);
 -- Name: registro_municipal_id_registro_municipal_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.registro_municipal_id_registro_municipal_seq', 34, true);
+SELECT pg_catalog.setval('impuesto.registro_municipal_id_registro_municipal_seq', 49, true);
 
 
 --
@@ -12091,7 +11834,7 @@ SELECT pg_catalog.setval('impuesto.registro_municipal_referencia_municipal_seq',
 -- Name: solicitud_id_solicitud_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.solicitud_id_solicitud_seq', 282, true);
+SELECT pg_catalog.setval('impuesto.solicitud_id_solicitud_seq', 306, true);
 
 
 --
@@ -12190,7 +11933,7 @@ SELECT pg_catalog.setval('impuesto.verificacion_email_id_verificacion_email_seq'
 -- Name: verificacion_telefono_id_verificacion_telefono_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: postgres
 --
 
-SELECT pg_catalog.setval('impuesto.verificacion_telefono_id_verificacion_telefono_seq', 86, true);
+SELECT pg_catalog.setval('impuesto.verificacion_telefono_id_verificacion_telefono_seq', 89, true);
 
 
 --
@@ -12271,7 +12014,7 @@ SELECT pg_catalog.setval('public.eventos_casos_sociales_id_evento_caso_seq', 2, 
 -- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.eventos_tramite_id_evento_tramite_seq', 673, true);
+SELECT pg_catalog.setval('public.eventos_tramite_id_evento_tramite_seq', 688, true);
 
 
 --
@@ -12289,7 +12032,7 @@ SELECT pg_catalog.setval('public.facturas_tramites_id_factura_seq', 1, false);
 -- Name: inmueble_urbano_id_inmueble_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.inmueble_urbano_id_inmueble_seq', 366, true);
+SELECT pg_catalog.setval('public.inmueble_urbano_id_inmueble_seq', 384, true);
 
 
 --
@@ -12316,7 +12059,7 @@ SELECT pg_catalog.setval('public.multa_id_multa_seq', 14, true);
 -- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.notificaciones_id_notificacion_seq', 662, true);
+SELECT pg_catalog.setval('public.notificaciones_id_notificacion_seq', 721, true);
 
 
 --
@@ -12361,7 +12104,7 @@ SELECT pg_catalog.setval('public.ordenanzas_tramites_id_ordenanza_tramite_seq', 
 -- Name: pagos_id_pago_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.pagos_id_pago_seq', 246, true);
+SELECT pg_catalog.setval('public.pagos_id_pago_seq', 259, true);
 
 
 --
@@ -12460,7 +12203,7 @@ SELECT pg_catalog.setval('public.tipos_usuarios_id_tipo_usuario_seq', 1, false);
 -- Name: tramites_id_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 299, true);
+SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 304, true);
 
 
 --
@@ -12469,7 +12212,7 @@ SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 299, true);
 -- Name: usuarios_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 125, true);
+SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 126, true);
 
 
 --
@@ -14432,7 +14175,7 @@ ALTER TABLE ONLY valores_fiscales.terreno
     ADD CONSTRAINT terreno_sector_id_fkey FOREIGN KEY (sector_id) REFERENCES valores_fiscales.sector(id);
 
 
--- Completed on 2020-07-01 16:23:12 -04
+-- Completed on 2020-07-02 19:16:33 -04
 
 --
 -- PostgreSQL database dump complete
