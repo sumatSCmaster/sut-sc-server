@@ -1625,7 +1625,7 @@ export const insertSettlements = async ({ process, user }) => {
         }
       } else {
         finingAmount = 10;
-        const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month() + 1;
+        const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month();
         finingMonths = new Array(now.month() - finingDate).fill({});
         if (finingMonths.length > 0) {
           let counter = finingDate;
