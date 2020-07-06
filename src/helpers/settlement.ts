@@ -1692,10 +1692,8 @@ export const insertSettlements = async ({ process, user }) => {
       return x;
     });
 
-    console.log(impuestosExt);
-
     const settlement: Liquidacion[] = await Promise.all(
-      impuestosExt.map(async (el) => {
+      impuestos.map(async (el) => {
         const datos = {
           desglose: el.desglose ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
           fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },
