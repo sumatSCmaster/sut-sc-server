@@ -2433,7 +2433,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
           fechaLiq: moment().format('YYYY-MM-DD'),
           fechaVenc: moment().date(31).format('YYYY-MM-DD'),
           items: economicActivities.map((row) => {
-            let desglose = el.datos.desglose.find((d) => d.aforo === row.id);
+            let desglose = el.datos.desglose ? el.datos.desglose.find((d) => d.aforo === row.id) : { montoDeclarado: 0};
             return {
               codigo: row.numeroReferencia,
               descripcion: row.descripcion,
