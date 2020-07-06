@@ -1687,7 +1687,7 @@ export const insertSettlements = async ({ process, user }) => {
       if (x.ramo === 'AE') {
         const costoSolvencia = 2 * UTMM;
         x.monto = +x.monto - costoSolvencia;
-        j.push({ monto: costoSolvencia, ramo: 'SAE', fechaCancelada: x.fechaCancelada, desglose: [{ monto: 2 }] });
+        j.push({ monto: costoSolvencia, ramo: 'SAE', fechaCancelada: x.fechaCancelada });
       }
       return x;
     });
@@ -1698,6 +1698,7 @@ export const insertSettlements = async ({ process, user }) => {
           desglose: el.desglose ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
           fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },
         };
+        console.log(el.ramo);
         const liquidacion = (
           await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
             application.id_solicitud,
@@ -2433,7 +2434,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
           fechaLiq: moment().format('YYYY-MM-DD'),
           fechaVenc: moment().date(31).format('YYYY-MM-DD'),
           items: economicActivities.map((row) => {
-            let desglose = el.datos.desglose ? el.datos.desglose.find((d) => d.aforo === row.id) : { montoDeclarado: 0};
+            let desglose = el.datos.desglose ? el.datos.desglose.find((d) => d.aforo === row.id) : { montoDeclarado: 0 };
             return {
               codigo: row.numeroReferencia,
               descripcion: row.descripcion,
