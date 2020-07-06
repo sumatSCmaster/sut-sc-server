@@ -68,8 +68,15 @@ export const getAvailableProceduresOfInstitution = async (req: { params: { [id: 
   }
 };
 
+const esDaniel = ({tipoUsuario, institucion}) => {
+  return tipoUsuario === 2 && institucion.id_institucion === 9
+}
+
 const getProcedureInstances = async (user, client: PoolClient) => {
   try {
+    if(esDaniel(user)){
+      return []
+    }
     let response = (await procedureInstanceHandler(user, client)).rows; //TODO: corregir el handler para que no sea tan forzado
     const takings = (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [response.map((el) => +el.id)])).rows;
     if (user.tipoUsuario === 3) {
