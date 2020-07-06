@@ -1692,6 +1692,8 @@ export const insertSettlements = async ({ process, user }) => {
       return x;
     });
 
+    console.log(impuestosExt);
+
     const settlement: Liquidacion[] = await Promise.all(
       impuestosExt.map(async (el) => {
         const datos = {
