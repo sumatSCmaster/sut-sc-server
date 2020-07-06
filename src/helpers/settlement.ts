@@ -1687,7 +1687,7 @@ export const insertSettlements = async ({ process, user }) => {
       if (x.ramo === 'AE') {
         const costoSolvencia = 2 * UTMM;
         x.monto = +x.monto - costoSolvencia;
-        j.push({ monto: costoSolvencia, ramo: 'SAE', fechaCancelada: x.fechaCancelada });
+        j.push({ monto: costoSolvencia, ramo: 'SAE', fechaCancelada: x.fechaCancelada, desglose: [{ monto: 2 }] });
       }
       return x;
     });
@@ -2151,7 +2151,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
           moment: require('moment'),
           fecha: moment().format('MM-DD-YYYY'),
           institucion: 'SEDEMAT',
-          titulo:'Factura De Servicios Municipales',
+          titulo: 'Factura De Servicios Municipales',
           datos: {
             nroSolicitud: application.id,
             nroPlanilla: 10010111,
@@ -3069,6 +3069,7 @@ const breakdownCaseHandler = (settlementType, breakdown) => {
     SM: { inmueble: breakdown.inmueble, montoAseo: +breakdown.montoAseo, montoGas: breakdown.montoGas },
     IU: { inmueble: breakdown.inmueble, monto: breakdown.monto },
     PP: { subarticulo: breakdown.subarticulo, monto: breakdown.monto, cantidad: breakdown.cantidad },
+    SAE: { monto: breakdown.monto },
   })(null)(settlementType);
   return payload;
 };
