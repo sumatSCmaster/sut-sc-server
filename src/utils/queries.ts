@@ -630,7 +630,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         FROM impuesto.liquidacion l 
         INNER JOIN impuesto.solicitud s ON l.id_solicitud = s.id_solicitud 
         INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) 
-            AS state FROM impuesto.evento_solicitud es GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud 
+            AS state FROM impuesto.evento_solicitud es GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud AND ev.id_solicitud = l.id_solicitud
         INNER JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo 
         INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo 
         WHERE state = 'finalizado' AND fecha_liquidacion BETWEEN $1 AND $2 
@@ -639,7 +639,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         FROM impuesto.liquidacion l  \
         INNER JOIN impuesto.solicitud s ON l.id_solicitud = s.id_solicitud \
         INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) \
-            AS state FROM impuesto.evento_solicitud es GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud \
+            AS state FROM impuesto.evento_solicitud es GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud AND ev.id_solicitud = l.id_solicitud \
         INNER JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo \
         INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo \
         WHERE state != 'finalizado' AND fecha_liquidacion BETWEEN $1 AND $2 \
@@ -693,7 +693,8 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         INNER JOIN impuesto.registro_municipal rm ON rm.id_contribuyente = c.id_contribuyente 
         INNER JOIN impuesto.liquidacion l ON l.id_registro_municipal = rm.id_registro_municipal 
         INNER JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sub.id_ramo 
-        INNER JOIN impuesto.solicitud_state s ON s.id = l.id_solicitud WHERE l.fecha_liquidacion BETWEEN $1 AND $2;`,
+        INNER JOIN impuesto.solicitud_state s ON s.id = l.id_solicitud WHERE l.fecha_liquidacion BETWEEN $1 AND $2
+        ORDER BY l.fecha_liquidacion ASC;`,
   GET_SETTLEMENT_REPORT_BY_BRANCH: `SELECT (c.tipo_documento || '-' || c.documento) AS "Documento", rm.referencia_municipal AS "RIM", c.razon_social AS "Razon Social", 
         r.descripcion AS "Ramo", s.id AS "Planilla", l.fecha_liquidacion AS "Fecha Liquidacion", s.fecha AS "Fecha Recaudacion", 
         (CASE WHEN s.state = 'finalizado' THEN 'PAGADO' ELSE 'VIGENTE' END) AS "Estatus", l.monto as "Monto" 
@@ -701,7 +702,8 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         INNER JOIN impuesto.registro_municipal rm ON rm.id_contribuyente = c.id_contribuyente 
         INNER JOIN impuesto.liquidacion l ON l.id_registro_municipal = rm.id_registro_municipal 
         INNER JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sub.id_ramo 
-        INNER JOIN impuesto.solicitud_state s ON s.id = l.id_solicitud WHERE l.fecha_liquidacion BETWEEN $1 AND $2 AND r.id_ramo = $3;`,
+        INNER JOIN impuesto.solicitud_state s ON s.id = l.id_solicitud WHERE l.fecha_liquidacion BETWEEN $1 AND $2 AND r.id_ramo = $3
+        ORDER BY l.fecha_liquidacion ASC;`,
 
   //EXONERACIONES
   GET_CONTRIBUTOR: 'SELECT id_contribuyente as id, razon_social AS "razonSocial", denominacion_comercial AS "denominacionComercial" FROM impuesto.contribuyente c WHERE c.tipo_documento = $1 AND c.documento = $2;',

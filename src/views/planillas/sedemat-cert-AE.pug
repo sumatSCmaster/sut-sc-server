@@ -180,32 +180,32 @@ block content
         div(style={'-webkit-flex': 4}).td
           p #{datos.montoTotal}
 
-      div(style={'margin-top':'20px'}).table
-        div.tr.break-page
-          div(style={'-webkit-flex': 2}).td.border-bottom.border-right
-            p
-              b OBSERVACIÓN:
-          div(style={'-webkit-flex': 8}).td.border-bottom
-            p #{datos.observacion}
-        div.tr.break-page
-          div(style={'-webkit-flex': 2}).td.border-bottom.border-right
-            p
-              b ESTATUS:
-          div(style={'-webkit-flex': 8}).td.border-bottom
-            p #{datos.estatus}
-        div(style={'background-color':'rgba(0,0,0,0.2)'}).tr
-          div(style={'-webkit-flex': 1}).td.border-right.center
-            p
-              b Total Liquidado:
-              span &nbsp; #{datos.totalLiq}
-          div(style={'-webkit-flex': 1}).td.border-right.center
-            p
-              b Total Recaudado:
-              span &nbsp; #{datos.totalRecaudado}
-          div(style={'-webkit-flex': 1}).td.center
-            p
-              b Total Credito Fiscal:
-              span &nbsp; #{datos.totalCred}
+    div(style={'margin-top':'20px'}).table.break-page
+      div.tr.break-page
+        div(style={'-webkit-flex': 2}).td.border-bottom.border-right
+          p
+            b OBSERVACIÓN:
+        div(style={'-webkit-flex': 8}).td.border-bottom
+          p #{datos.observacion}
+      div.tr.break-page
+        div(style={'-webkit-flex': 2}).td.border-bottom.border-right
+          p
+            b ESTATUS:
+        div(style={'-webkit-flex': 8}).td.border-bottom
+          p #{datos.estatus}
+      div(style={'background-color':'rgba(0,0,0,0.2)'}).tr
+        div(style={'-webkit-flex': 1}).td.border-right.center
+          p
+            b Total Liquidado:
+            span &nbsp; #{datos.totalLiq}
+        div(style={'-webkit-flex': 1}).td.border-right.center
+          p
+            b Total Recaudado:
+            span &nbsp; #{datos.totalRecaudado}
+        div(style={'-webkit-flex': 1}).td.center
+          p
+            b Total Credito Fiscal:
+            span &nbsp; #{datos.totalCred}
     div(style={'text-align': 'justify', 'margin-top':'10px', 'font-size':'12px'})
       p.
        "JURO QUE SON VERDADEROS TODOS LOS DATOS SUMINISTRADOS EN ESTE FORMULARIO, QUE HAN SIDO ELABORADOS O EXAMINADOS

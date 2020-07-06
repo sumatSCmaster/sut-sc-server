@@ -48,10 +48,17 @@ router.use('/activities', activities);
 router.use(resources);
 
 router.get('/', (req, res) => {
+  console.log(req)
   res.status(200).json({
     status: 200,
     message: 'Ok',
   });
+});
+
+router.post('/twilio/webhook', (req, res) => {
+  console.log(req);
+  res.writeHead(200, {'Content-Type': 'text/xml'});
+  res.end('si')
 });
 
 export default router;
