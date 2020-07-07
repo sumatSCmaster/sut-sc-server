@@ -240,6 +240,42 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: credito_fiscal; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.credito_fiscal (
+    id_credito_fiscal integer NOT NULL,
+    id_persona integer NOT NULL,
+    concepto character varying NOT NULL,
+    credito numeric NOT NULL,
+    CONSTRAINT credito_fiscal_concepto_check CHECK (((concepto)::text = ANY (ARRAY['NATURAL'::text, 'JURIDICO'::text])))
+);
+
+
+ALTER TABLE impuesto.credito_fiscal OWNER TO postgres;
+
+--
+-- Name: insert_credito(integer, character varying, numeric); Type: FUNCTION; Schema: impuesto; Owner: postgres
+--
+
+CREATE FUNCTION impuesto.insert_credito(_id_persona integer, _concepto character varying, _credito numeric) RETURNS SETOF impuesto.credito_fiscal
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+        INSERT INTO impuesto.credito_fiscal AS cf (id_persona, concepto, credito) VALUES (_id_persona, _concepto, _credito)
+            ON CONFLICT (id_persona, concepto) DO UPDATE SET credito = cf.credito + EXCLUDED.credito;
+        
+        RETURN QUERY SELECT * FROM impuesto.credito_fiscal WHERE id_persona = _id_persona AND concepto = _concepto;
+        
+                
+    RETURN;
+    END;
+$$;
+
+
+ALTER FUNCTION impuesto.insert_credito(_id_persona integer, _concepto character varying, _credito numeric) OWNER TO postgres;
+
+--
 -- Name: solicitud; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -1389,8 +1425,9 @@ BEGIN
         AND fecha_de_pago = (inputRow ->> 'Fecha')::date;
 
         IF idPago IS NOT NULL THEN
-            --aprueba el pago y guarda el momento en que se aprobo el pago
-            UPDATE pago SET aprobado = true, fecha_de_aprobacion = (SELECT NOW()::timestamptz) WHERE id_pago = idPago;
+
+            --aprueba el pago, guarda el momento en que se aprobo el pago y actualiza el monto al real
+            UPDATE pago SET aprobado = true, fecha_de_aprobacion = (SELECT NOW()::timestamptz), monto = (inputRow ->> 'Monto')::numeric WHERE id_pago = idPago;
 
             --obtiene el resultado del row y lo convierte en json 
             IF (SELECT concepto FROM pago WHERE id_pago = idPago) = 'TRAMITE' THEN
@@ -1421,7 +1458,8 @@ BEGIN
                 UPDATE impuesto.fraccion SET aprobado = true, fecha_aprobado = NOW() WHERE id_fraccion = (SELECT id_procedimiento FROM pago WHERE id_pago = idPago);
     
                 select row_to_json(row)::jsonb into dataPago from (select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, (SELECT id_procedimiento FROM pago WHERE id_pago = idPago) AS idProcedimiento, pago.referencia, pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, pago.concepto, contribuyente.tipo_documento AS nacionalidad, contribuyente.documento,
-    (SELECT true = ALL(SELECT aprobado FROM impuesto.fraccion WHERE id_convenio = (SELECT id_convenio FROM impuesto.fraccion WHERE id_fraccion = (SELECT id_procedimiento FROM pago WHERE id_pago = idPago) ))) AS "solicitudAprobada"               
+    (SELECT true = ALL(SELECT aprobado FROM impuesto.fraccion WHERE id_convenio = (SELECT id_convenio FROM impuesto.fraccion WHERE id_fraccion = (SELECT id_procedimiento FROM pago WHERE id_pago = idPago) ))) AS "solicitudAprobada"        
+       
     from pago 
                 INNER JOIN impuesto.fraccion ON fraccion.id_fraccion = pago.id_procedimiento
     INNER JOIN impuesto.convenio ON fraccion.id_convenio = convenio.id_convenio
@@ -2140,17 +2178,17 @@ CREATE TABLE impuesto.actividad_economica (
 ALTER TABLE impuesto.actividad_economica OWNER TO postgres;
 
 --
--- Name: actividad_economica_contribuyente; Type: TABLE; Schema: impuesto; Owner: postgres
+-- Name: actividad_economica_sucursal; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
-CREATE TABLE impuesto.actividad_economica_contribuyente (
+CREATE TABLE impuesto.actividad_economica_sucursal (
     id_actividad_economica_contribuyente integer NOT NULL,
     id_registro_municipal integer NOT NULL,
     numero_referencia integer NOT NULL
 );
 
 
-ALTER TABLE impuesto.actividad_economica_contribuyente OWNER TO postgres;
+ALTER TABLE impuesto.actividad_economica_sucursal OWNER TO postgres;
 
 --
 -- Name: actividad_economica_contribuy_id_actividad_economica_contri_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
@@ -2171,7 +2209,7 @@ ALTER TABLE impuesto.actividad_economica_contribuy_id_actividad_economica_contri
 -- Name: actividad_economica_contribuy_id_actividad_economica_contri_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: postgres
 --
 
-ALTER SEQUENCE impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq OWNED BY impuesto.actividad_economica_contribuyente.id_actividad_economica_contribuyente;
+ALTER SEQUENCE impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq OWNED BY impuesto.actividad_economica_sucursal.id_actividad_economica_contribuyente;
 
 
 --
@@ -2415,20 +2453,6 @@ ALTER TABLE impuesto.convenio_id_convenio_seq OWNER TO postgres;
 
 ALTER SEQUENCE impuesto.convenio_id_convenio_seq OWNED BY impuesto.convenio.id_convenio;
 
-
---
--- Name: credito_fiscal; Type: TABLE; Schema: impuesto; Owner: postgres
---
-
-CREATE TABLE impuesto.credito_fiscal (
-    id_credito_fiscal integer NOT NULL,
-    id_persona integer NOT NULL,
-    concepto character varying NOT NULL,
-    credito numeric NOT NULL
-);
-
-
-ALTER TABLE impuesto.credito_fiscal OWNER TO postgres;
 
 --
 -- Name: credito_fiscal_id_credito_fiscal_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
@@ -4273,7 +4297,8 @@ CREATE TABLE public.pago (
     fecha_de_aprobacion timestamp with time zone,
     concepto character varying DEFAULT 'TRAMITE'::character varying,
     metodo_pago character varying DEFAULT 'TRANSFERENCIA'::character varying,
-    CONSTRAINT pago_concepto_check CHECK (((concepto)::text = ANY (ARRAY['TRAMITE'::text, 'MULTA'::text, 'IMPUESTO'::text, 'CONVENIO'::text]))),
+    id_usuario integer,
+    CONSTRAINT pago_concepto_check CHECK (((concepto)::text = ANY (ARRAY['TRAMITE'::text, 'MULTA'::text, 'IMPUESTO'::text, 'CONVENIO'::text, 'CREDITOFISCAL'::text]))),
     CONSTRAINT pago_metodo_pago_check CHECK (((metodo_pago)::text = ANY (ARRAY['TRANSFERENCIA'::text, 'EFECTIVO'::text, 'CHEQUE'::text, 'PUNTO DE VENTA'::text])))
 );
 
@@ -5379,17 +5404,17 @@ ALTER TABLE ONLY impuesto.actividad_economica ALTER COLUMN id_actividad_economic
 
 
 --
--- Name: actividad_economica_contribuyente id_actividad_economica_contribuyente; Type: DEFAULT; Schema: impuesto; Owner: postgres
---
-
-ALTER TABLE ONLY impuesto.actividad_economica_contribuyente ALTER COLUMN id_actividad_economica_contribuyente SET DEFAULT nextval('impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq'::regclass);
-
-
---
 -- Name: actividad_economica_exoneracion id_actividad_economica_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: postgres
 --
 
 ALTER TABLE ONLY impuesto.actividad_economica_exoneracion ALTER COLUMN id_actividad_economica_exoneracion SET DEFAULT nextval('impuesto.actividad_economica_exoneraci_id_actividad_economica_exoner_seq'::regclass);
+
+
+--
+-- Name: actividad_economica_sucursal id_actividad_economica_contribuyente; Type: DEFAULT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.actividad_economica_sucursal ALTER COLUMN id_actividad_economica_contribuyente SET DEFAULT nextval('impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq'::regclass);
 
 
 --
@@ -6139,18 +6164,18 @@ COPY impuesto.actividad_economica (id_actividad_economica, numero_referencia, de
 
 
 --
--- Data for Name: actividad_economica_contribuyente; Type: TABLE DATA; Schema: impuesto; Owner: postgres
---
-
-COPY impuesto.actividad_economica_contribuyente (id_actividad_economica_contribuyente, id_registro_municipal, numero_referencia) FROM stdin;
-\.
-
-
---
 -- Data for Name: actividad_economica_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: postgres
 --
 
 COPY impuesto.actividad_economica_exoneracion (id_actividad_economica_exoneracion, id_plazo_exoneracion, id_actividad_economica) FROM stdin;
+\.
+
+
+--
+-- Data for Name: actividad_economica_sucursal; Type: TABLE DATA; Schema: impuesto; Owner: postgres
+--
+
+COPY impuesto.actividad_economica_sucursal (id_actividad_economica_contribuyente, id_registro_municipal, numero_referencia) FROM stdin;
 \.
 
 
@@ -9688,61 +9713,61 @@ COPY public.ordenanza_tramite (id_ordenanza_tramite, id_tramite, id_tarifa, utmm
 -- Data for Name: pago; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.pago (id_pago, id_procedimiento, referencia, monto, fecha_de_pago, aprobado, id_banco, fecha_de_aprobacion, concepto, metodo_pago) FROM stdin;
-235	165	29688874	100000000	2020-06-26	f	1	\N	IMPUESTO	TRANSFERENCIA
-236	165	40000587	76960210	2020-06-26	f	2	\N	IMPUESTO	TRANSFERENCIA
-237	170	1	31231241241	2020-06-26	f	1	\N	IMPUESTO	TRANSFERENCIA
-238	171	123	123124123123123	2020-06-26	f	1	\N	IMPUESTO	TRANSFERENCIA
-239	173	29877744	100000000	2020-06-26	f	1	\N	IMPUESTO	TRANSFERENCIA
-240	173	47000000	64660000	2020-06-26	f	2	\N	IMPUESTO	TRANSFERENCIA
-285	325	123412345	1000000.0	2020-06-30	t	1	2020-07-01 10:28:11.778756-04	TRAMITE	TRANSFERENCIA
-289	242	8888899999	56145000	2020-07-01	t	21	2020-07-01 10:36:28.350918-04	IMPUESTO	PUNTO DE VENTA
-290	247	890765444	25000000	2020-07-01	t	21	2020-07-01 10:55:15.967365-04	IMPUESTO	TRANSFERENCIA
-291	247	7899	30000000	2020-07-01	t	14	2020-07-01 10:55:15.967365-04	IMPUESTO	PUNTO DE VENTA
-292	247	9012121212	2265000	2020-07-01	t	8	2020-07-01 10:55:15.967365-04	IMPUESTO	CHEQUE
-293	245	\N	63000000	2020-07-01	t	\N	2020-07-01 11:07:41.002446-04	IMPUESTO	EFECTIVO
-294	249	456789999	124500000	2020-07-01	t	2	2020-07-01 11:38:52.404891-04	IMPUESTO	TRANSFERENCIA
-295	250	123456789	17600000	2020-07-01	t	1	2020-07-01 13:15:06.309225-04	IMPUESTO	TRANSFERENCIA
-296	250	1234567888	50000000	2020-07-01	t	1	2020-07-01 13:21:42.133087-04	IMPUESTO	TRANSFERENCIA
-297	250	12345687	50000000	2020-07-01	t	1	2020-07-01 13:43:41.384891-04	IMPUESTO	TRANSFERENCIA
-298	251	383456768	21558000	2020-07-23	f	1	\N	IMPUESTO	TRANSFERENCIA
-299	328	383438345	1000000.0	2020-07-02	t	1	2020-07-02 11:52:56.023119-04	TRAMITE	TRANSFERENCIA
-241	181	123456	131225000	2020-06-26	t	1	2020-06-26 23:57:30.760909-04	IMPUESTO	TRANSFERENCIA
-243	174	\N	0	2020-06-29	t	\N	2020-06-27 00:30:50.793404-04	IMPUESTO	EFECTIVO
-242	198	123123	60000000	2020-06-29	t	1	2020-06-27 00:44:04.819951-04	IMPUESTO	TRANSFERENCIA
-244	199	\N	87995999.999999999984	2020-06-29	f	\N	2020-06-27 12:50:27.55877-04	IMPUESTO	EFECTIVO
-245	200	\N	123000000	2020-07-01	t	\N	2020-06-30 08:58:42.828701-04	IMPUESTO	EFECTIVO
-246	200	87999	200000000	2020-07-01	t	4	2020-06-30 08:58:42.828701-04	IMPUESTO	TRANSFERENCIA
-248	300	2	20000000	2020-06-29	f	1	\N	TRAMITE	TRANSFERENCIA
-249	301	12	20000000	2020-06-30	f	1	\N	TRAMITE	TRANSFERENCIA
-250	303	3	600000000	2020-06-30	f	1	\N	TRAMITE	TRANSFERENCIA
-251	304	4	2400000000	2020-06-30	f	1	\N	TRAMITE	TRANSFERENCIA
-252	306	5	3000000	2020-06-22	f	1	\N	TRAMITE	TRANSFERENCIA
-253	311	6	200000.0	2020-06-30	f	1	\N	TRAMITE	TRANSFERENCIA
-254	312	7	3000000	2020-06-30	f	1	\N	TRAMITE	TRANSFERENCIA
-255	313	8	3000000	2020-06-30	f	1	\N	TRAMITE	TRANSFERENCIA
-256	317	9	2500000	2020-06-30	f	1	\N	TRAMITE	TRANSFERENCIA
-257	209	10	16645000	2020-07-01	f	1	\N	IMPUESTO	TRANSFERENCIA
-258	319	11	1000000.0	2020-06-30	f	1	\N	TRAMITE	TRANSFERENCIA
-259	213	245465468	57616000	2020-06-29	f	3	\N	IMPUESTO	TRANSFERENCIA
-260	214	25212512	116048000	2020-07-01	f	2	\N	IMPUESTO	TRANSFERENCIA
-262	217	25212515	55485000	2020-07-01	f	2	\N	IMPUESTO	TRANSFERENCIA
-263	226	11	57616000	2020-06-29	f	2	\N	IMPUESTO	TRANSFERENCIA
-265	227	25212515	55936000	2020-07-01	f	1	\N	IMPUESTO	TRANSFERENCIA
-268	228	13	57616000	2020-07-01	f	1	\N	IMPUESTO	TRANSFERENCIA
-269	230	25212515	56116000	2020-07-01	f	3	\N	IMPUESTO	TRANSFERENCIA
-270	233	4521532	115145000	2020-07-01	f	2	\N	IMPUESTO	TRANSFERENCIA
-271	235	252125216	56203000	2020-07-01	f	1	\N	IMPUESTO	TRANSFERENCIA
-273	241	25212510	56150000	2020-07-01	f	2	\N	IMPUESTO	TRANSFERENCIA
-288	206	\N	61674000	2020-07-01	t	\N	2020-07-01 10:26:35.441993-04	IMPUESTO	EFECTIVO
-287	326	489000111	1000000.0	2020-07-01	t	1	2020-07-01 10:28:11.778756-04	TRAMITE	TRANSFERENCIA
-302	252	123456789	100000000	2020-07-02	f	2	\N	IMPUESTO	TRANSFERENCIA
-303	252	123456786	32280000	2020-07-02	f	1	\N	IMPUESTO	TRANSFERENCIA
-304	253	1212	5000000	2020-07-02	t	14	2020-07-02 15:51:02.733564-04	IMPUESTO	PUNTO DE VENTA
-305	253	\N	11000000	2020-07-02	t	\N	2020-07-02 15:51:02.733564-04	IMPUESTO	EFECTIVO
-306	262	89895	50000000	2020-07-03	t	14	2020-07-03 11:04:09.710614-04	IMPUESTO	PUNTO DE VENTA
-307	262	\N	69970000	2020-07-03	t	\N	2020-07-03 11:04:09.710614-04	IMPUESTO	EFECTIVO
-308	329	67789099	1000000.0	2020-07-03	f	1	\N	TRAMITE	TRANSFERENCIA
+COPY public.pago (id_pago, id_procedimiento, referencia, monto, fecha_de_pago, aprobado, id_banco, fecha_de_aprobacion, concepto, metodo_pago, id_usuario) FROM stdin;
+235	165	29688874	100000000	2020-06-26	f	1	\N	IMPUESTO	TRANSFERENCIA	\N
+236	165	40000587	76960210	2020-06-26	f	2	\N	IMPUESTO	TRANSFERENCIA	\N
+237	170	1	31231241241	2020-06-26	f	1	\N	IMPUESTO	TRANSFERENCIA	\N
+238	171	123	123124123123123	2020-06-26	f	1	\N	IMPUESTO	TRANSFERENCIA	\N
+239	173	29877744	100000000	2020-06-26	f	1	\N	IMPUESTO	TRANSFERENCIA	\N
+240	173	47000000	64660000	2020-06-26	f	2	\N	IMPUESTO	TRANSFERENCIA	\N
+285	325	123412345	1000000.0	2020-06-30	t	1	2020-07-01 10:28:11.778756-04	TRAMITE	TRANSFERENCIA	\N
+289	242	8888899999	56145000	2020-07-01	t	21	2020-07-01 10:36:28.350918-04	IMPUESTO	PUNTO DE VENTA	\N
+290	247	890765444	25000000	2020-07-01	t	21	2020-07-01 10:55:15.967365-04	IMPUESTO	TRANSFERENCIA	\N
+291	247	7899	30000000	2020-07-01	t	14	2020-07-01 10:55:15.967365-04	IMPUESTO	PUNTO DE VENTA	\N
+292	247	9012121212	2265000	2020-07-01	t	8	2020-07-01 10:55:15.967365-04	IMPUESTO	CHEQUE	\N
+293	245	\N	63000000	2020-07-01	t	\N	2020-07-01 11:07:41.002446-04	IMPUESTO	EFECTIVO	\N
+294	249	456789999	124500000	2020-07-01	t	2	2020-07-01 11:38:52.404891-04	IMPUESTO	TRANSFERENCIA	\N
+295	250	123456789	17600000	2020-07-01	t	1	2020-07-01 13:15:06.309225-04	IMPUESTO	TRANSFERENCIA	\N
+296	250	1234567888	50000000	2020-07-01	t	1	2020-07-01 13:21:42.133087-04	IMPUESTO	TRANSFERENCIA	\N
+297	250	12345687	50000000	2020-07-01	t	1	2020-07-01 13:43:41.384891-04	IMPUESTO	TRANSFERENCIA	\N
+298	251	383456768	21558000	2020-07-23	f	1	\N	IMPUESTO	TRANSFERENCIA	\N
+299	328	383438345	1000000.0	2020-07-02	t	1	2020-07-02 11:52:56.023119-04	TRAMITE	TRANSFERENCIA	\N
+241	181	123456	131225000	2020-06-26	t	1	2020-06-26 23:57:30.760909-04	IMPUESTO	TRANSFERENCIA	\N
+243	174	\N	0	2020-06-29	t	\N	2020-06-27 00:30:50.793404-04	IMPUESTO	EFECTIVO	\N
+242	198	123123	60000000	2020-06-29	t	1	2020-06-27 00:44:04.819951-04	IMPUESTO	TRANSFERENCIA	\N
+244	199	\N	87995999.999999999984	2020-06-29	f	\N	2020-06-27 12:50:27.55877-04	IMPUESTO	EFECTIVO	\N
+245	200	\N	123000000	2020-07-01	t	\N	2020-06-30 08:58:42.828701-04	IMPUESTO	EFECTIVO	\N
+246	200	87999	200000000	2020-07-01	t	4	2020-06-30 08:58:42.828701-04	IMPUESTO	TRANSFERENCIA	\N
+248	300	2	20000000	2020-06-29	f	1	\N	TRAMITE	TRANSFERENCIA	\N
+249	301	12	20000000	2020-06-30	f	1	\N	TRAMITE	TRANSFERENCIA	\N
+250	303	3	600000000	2020-06-30	f	1	\N	TRAMITE	TRANSFERENCIA	\N
+251	304	4	2400000000	2020-06-30	f	1	\N	TRAMITE	TRANSFERENCIA	\N
+252	306	5	3000000	2020-06-22	f	1	\N	TRAMITE	TRANSFERENCIA	\N
+253	311	6	200000.0	2020-06-30	f	1	\N	TRAMITE	TRANSFERENCIA	\N
+254	312	7	3000000	2020-06-30	f	1	\N	TRAMITE	TRANSFERENCIA	\N
+255	313	8	3000000	2020-06-30	f	1	\N	TRAMITE	TRANSFERENCIA	\N
+256	317	9	2500000	2020-06-30	f	1	\N	TRAMITE	TRANSFERENCIA	\N
+257	209	10	16645000	2020-07-01	f	1	\N	IMPUESTO	TRANSFERENCIA	\N
+258	319	11	1000000.0	2020-06-30	f	1	\N	TRAMITE	TRANSFERENCIA	\N
+259	213	245465468	57616000	2020-06-29	f	3	\N	IMPUESTO	TRANSFERENCIA	\N
+260	214	25212512	116048000	2020-07-01	f	2	\N	IMPUESTO	TRANSFERENCIA	\N
+262	217	25212515	55485000	2020-07-01	f	2	\N	IMPUESTO	TRANSFERENCIA	\N
+263	226	11	57616000	2020-06-29	f	2	\N	IMPUESTO	TRANSFERENCIA	\N
+265	227	25212515	55936000	2020-07-01	f	1	\N	IMPUESTO	TRANSFERENCIA	\N
+268	228	13	57616000	2020-07-01	f	1	\N	IMPUESTO	TRANSFERENCIA	\N
+269	230	25212515	56116000	2020-07-01	f	3	\N	IMPUESTO	TRANSFERENCIA	\N
+270	233	4521532	115145000	2020-07-01	f	2	\N	IMPUESTO	TRANSFERENCIA	\N
+271	235	252125216	56203000	2020-07-01	f	1	\N	IMPUESTO	TRANSFERENCIA	\N
+273	241	25212510	56150000	2020-07-01	f	2	\N	IMPUESTO	TRANSFERENCIA	\N
+288	206	\N	61674000	2020-07-01	t	\N	2020-07-01 10:26:35.441993-04	IMPUESTO	EFECTIVO	\N
+287	326	489000111	1000000.0	2020-07-01	t	1	2020-07-01 10:28:11.778756-04	TRAMITE	TRANSFERENCIA	\N
+302	252	123456789	100000000	2020-07-02	f	2	\N	IMPUESTO	TRANSFERENCIA	\N
+303	252	123456786	32280000	2020-07-02	f	1	\N	IMPUESTO	TRANSFERENCIA	\N
+304	253	1212	5000000	2020-07-02	t	14	2020-07-02 15:51:02.733564-04	IMPUESTO	PUNTO DE VENTA	\N
+305	253	\N	11000000	2020-07-02	t	\N	2020-07-02 15:51:02.733564-04	IMPUESTO	EFECTIVO	\N
+306	262	89895	50000000	2020-07-03	t	14	2020-07-03 11:04:09.710614-04	IMPUESTO	PUNTO DE VENTA	\N
+307	262	\N	69970000	2020-07-03	t	\N	2020-07-03 11:04:09.710614-04	IMPUESTO	EFECTIVO	\N
+308	329	67789099	1000000.0	2020-07-03	f	1	\N	TRAMITE	TRANSFERENCIA	\N
 \.
 
 
@@ -12996,10 +13021,10 @@ SELECT pg_catalog.setval('valores_fiscales.tipo_construccion_id_seq', 50, true);
 
 
 --
--- Name: actividad_economica_contribuyente actividad_economica_contribuyente_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+-- Name: actividad_economica_sucursal actividad_economica_contribuyente_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.actividad_economica_contribuyente
+ALTER TABLE ONLY impuesto.actividad_economica_sucursal
     ADD CONSTRAINT actividad_economica_contribuyente_pkey PRIMARY KEY (id_actividad_economica_contribuyente);
 
 
@@ -13073,6 +13098,14 @@ ALTER TABLE ONLY impuesto.contribuyente
 
 ALTER TABLE ONLY impuesto.convenio
     ADD CONSTRAINT convenio_pkey PRIMARY KEY (id_convenio);
+
+
+--
+-- Name: credito_fiscal credito_fiscal_id_persona_concepto_key; Type: CONSTRAINT; Schema: impuesto; Owner: postgres
+--
+
+ALTER TABLE ONLY impuesto.credito_fiscal
+    ADD CONSTRAINT credito_fiscal_id_persona_concepto_key UNIQUE (id_persona, concepto);
 
 
 --
@@ -13817,18 +13850,18 @@ CREATE TRIGGER trig_task_chain_fixer BEFORE DELETE ON timetable.base_task FOR EA
 
 
 --
--- Name: actividad_economica_contribuyente actividad_economica_contribuyente_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+-- Name: actividad_economica_sucursal actividad_economica_contribuyente_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.actividad_economica_contribuyente
+ALTER TABLE ONLY impuesto.actividad_economica_sucursal
     ADD CONSTRAINT actividad_economica_contribuyente_id_registro_municipal_fkey FOREIGN KEY (id_registro_municipal) REFERENCES impuesto.registro_municipal(id_registro_municipal);
 
 
 --
--- Name: actividad_economica_contribuyente actividad_economica_contribuyente_numero_referencia_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
+-- Name: actividad_economica_sucursal actividad_economica_contribuyente_numero_referencia_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: postgres
 --
 
-ALTER TABLE ONLY impuesto.actividad_economica_contribuyente
+ALTER TABLE ONLY impuesto.actividad_economica_sucursal
     ADD CONSTRAINT actividad_economica_contribuyente_numero_referencia_fkey FOREIGN KEY (numero_referencia) REFERENCES impuesto.actividad_economica(numero_referencia);
 
 
@@ -14350,6 +14383,14 @@ ALTER TABLE ONLY public.ordenanza_tramite
 
 ALTER TABLE ONLY public.ordenanza_tramite
     ADD CONSTRAINT ordenanzas_tramites_id_tramite_fkey FOREIGN KEY (id_tramite) REFERENCES public.tramite(id_tramite);
+
+
+--
+-- Name: pago pago_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.pago
+    ADD CONSTRAINT pago_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuario(id_usuario);
 
 
 --
