@@ -354,6 +354,7 @@ const structureSettlements = (x: any) => {
     codigoRamo: nullStringCheck(x.nb_ramo),
     monto: nullStringCheck(x.nu_monto),
     fechaLiquidacion: x.fe_liquidacion,
+    fechaVencimiento: x.fe_vencimiento,
     fecha: { month: moment(x.fe_liquidacion).toDate().toLocaleDateString('ES', { month: 'long' }), year: moment(x.fe_liquidacion).year() },
   };
 };
@@ -605,6 +606,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
           const vigentes = liquidacionesVigentes.concat(multasVigentes);
           const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
           const registry = (await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [contributor.id_contribuyente, registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado || false])).rows[0];
+          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [registry.id_registro_municipal, 'JURIDICO', datosSucursal.creditoFiscal])).rows[0];
           const estates =
             inmuebles.length > 0
               ? await Promise.all(
@@ -670,7 +672,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
           const vigentes = liquidacionesVigentes.concat(multasVigentes);
           const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
           let registry;
-
+          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [contributor.id_contribuyente, 'NATURAL', datosSucursal.creditoFiscal])).rows[0];
           if (registroMunicipal) {
             registry = (await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [contributor.id_contribuyente, registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado || false])).rows[0];
             const estates =
@@ -1111,6 +1113,7 @@ export const getAgreementsForContributor = async ({ reference, docType, document
   const client = await pool.connect();
   try {
     const user = (await client.query(queries.GET_USER_IN_CHARGE_OF_BRANCH, [reference, docType, document])).rows[0];
+    if (!user) throw { status: 404, message: 'El contribuyente no existe o la sucursal no está actualizada' };
     const hasApplications = (await client.query(queries.GET_AGREEMENTS_BY_USER, [user.id])).rows.length > 0;
     if (!hasApplications) throw { status: 404, message: 'El usuario no posee convenios' };
     const applications: any[] = await Promise.all(
@@ -1509,6 +1512,7 @@ export const initialUserLinking = async (linkingData, user) => {
               representado || false,
             ])
           ).rows[0];
+          const credit = (await client.query('INSERT INTO impuesto.credito_fiscal (id_persona, concepto, credito) VALUES ($1, $2, $3)', [registry.id_registro_municipal, 'JURIDICO', datosSucursal.creditoFiscal])).rows[0];
           const estates =
             inmuebles.length > 0
               ? await Promise.all(
@@ -1576,7 +1580,7 @@ export const initialUserLinking = async (linkingData, user) => {
           const vigentes = liquidacionesVigentes.concat(multasVigentes);
           const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
           let registry;
-
+          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [contributor.id_contribuyente, 'NATURAL', datosSucursal.creditoFiscal])).rows[0];
           if (registroMunicipal) {
             registry = (
               await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [
