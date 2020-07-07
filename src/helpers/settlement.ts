@@ -1107,6 +1107,52 @@ export const getAgreements = async ({ user }: { user: Usuario }) => {
   }
 };
 
+export const getAgreementsForContributor = async ({ reference, docType, document, typeUser }) => {
+  const client = await pool.connect();
+  try {
+    const user = (await client.query(queries.GET_USER_IN_CHARGE_OF_BRANCH, [reference, docType, document])).rows[0];
+    const hasApplications = (await client.query(queries.GET_AGREEMENTS_BY_USER, [user.id])).rows.length > 0;
+    if (!hasApplications) throw { status: 404, message: 'El usuario no posee convenios' };
+    const applications: any[] = await Promise.all(
+      (await client.query(queries.GET_AGREEMENTS_BY_USER, [user.id])).rows.map(async (el) => {
+        const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
+        const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
+        return {
+          id: el.id_convenio,
+          cantPorciones: el.cantidad,
+          usuario: user,
+          tipo: 'CONVENIO',
+          contribuyente: structureContributor(docs),
+          aprobado: el.aprobado,
+          documento: docs.documento,
+          tipoDocumento: docs.tipo_documento,
+          estado: (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0]?.state,
+          referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
+            ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
+            : undefined,
+          fecha: el.fecha,
+          ramo: (
+            await client.query('SELECT r.descripcion FROM impuesto.ramo r INNER JOIN impuesto.subramo s ON r.id_ramo = s.id_ramo INNER JOIN impuesto.liquidacion l ON s.id_subramo = l.id_subramo WHERE id_liquidacion = $1', [
+              liquidaciones[0]?.id_liquidacion,
+            ])
+          ).rows[0]?.descripcion,
+          monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0]?.monto_total,
+          porciones: await Promise.all((await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [el.id_convenio])).rows.map(async (el) => await getAgreementFractionById({ id: el.id_fraccion }))),
+        };
+      })
+    );
+    return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', convenios: applications };
+  } catch (error) {
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<Solicitud & any> => {
   const client = await pool.connect();
   try {
@@ -2049,7 +2095,7 @@ export const approveContributorSignUp = async ({ procedure, client }: { procedur
     const parish = (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [parroquia])).rows[0]?.id;
     const contributor = (await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [tipoDocumento, documentoIdentidad, razonSocial, denominacionComercial, siglas, parish, sector, direccion, puntoReferencia, true, tipoContribuyente])).rows[0];
     await client.query(queries.ASSIGN_CONTRIBUTOR_TO_USER, [contributor.id_contribuyente, usuario]);
-    await client.query(queries.ADD_VERIFIED_CONTRIBUTOR, [usuario]);
+    const x = (await client.query(queries.ADD_VERIFIED_CONTRIBUTOR, [usuario])).rows[0];
     console.log(procedure);
     return true;
   } catch (error) {
@@ -2070,6 +2116,8 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
         return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [contribuyente.id, x.codigo]);
       })
     );
+    const verifiedId = (await client.query('SELECT * FROM impuesto.verificacion_telefono WHERE id_usuario = $1', [usuario.id])).rows[0]?.id_verificacion_telefono;
+    await client.query('INSERT INTO impuesto.registro_municipal_verificacion VALUES ($1, $2) RETURNING *', [registry.id_registro_municipal, verifiedId]);
     console.log(data);
     return data;
   } catch (error) {
