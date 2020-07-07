@@ -1000,7 +1000,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
           documento: docs.documento,
           tipoDocumento: docs.tipo_documento,
           estado: (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state,
-          referenciaMunicipal: liquidaciones[0]?.registro_municipal
+          referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
             ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
             : undefined,
           fecha: el.fecha,
