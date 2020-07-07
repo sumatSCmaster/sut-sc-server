@@ -5,15 +5,15 @@ import { ActividadEconomica, Ramo } from '@root/interfaces/sigt';
 
 const pool = Pool.getInstance();
 
-export const getContributorExonerations = async({ typeDoc, doc }) => {
+export const getContributorExonerations = async({ typeDoc, doc, ref }) => {
     const client = await pool.connect()
     try{
-        const contributor = (await client.query(queries.GET_CONTRIBUTOR, [typeDoc, doc])).rows[0];
+        const contributor = (await client.query(queries.GET_CONTRIBUTOR, [typeDoc, doc, ref])).rows[0];
         if(!contributor){
             throw new Error('No se ha hallado el contribuyente');
         }
-        const contributorEconomicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [contributor.id]))
-        const contributorExonerations = await client.query(queries.GET_CONTRIBUTOR_EXONERATIONS, [typeDoc, doc]);
+        const contributorEconomicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [contributor.id_registro_municipal]))
+        const contributorExonerations = await client.query(queries.GET_CONTRIBUTOR_EXONERATIONS, [typeDoc, doc, ref]);
         const activeExonerations = contributorExonerations.rows.filter((row) => row.active);
         
         let generalExoneration = activeExonerations.find(row => !row.id_actividad_economica);
@@ -100,17 +100,17 @@ export const getBranchExonerations = async () => {
     }
 }
 
-export const createContributorExoneration = async ({typeDoc, doc, from, activities}: { typeDoc: string, doc: string, from: Date, activities: ActividadEconomica[]  }) => {
+export const createContributorExoneration = async ({typeDoc, doc, ref, from, activities}: { typeDoc: string, doc: string, ref:string, from: Date, activities: ActividadEconomica[]  }) => {
     const client = await pool.connect()
     try{
         await client.query('BEGIN');
         const exoneration = (await client.query(queries.CREATE_EXONERATION, [from])).rows[0];
         console.log(exoneration)
-        const contributor = (await client.query(queries.GET_CONTRIBUTOR,[typeDoc, doc]))
+        const contributor = (await client.query(queries.GET_CONTRIBUTOR,[typeDoc, doc, ref]))
         if(!contributor.rows[0]){
             throw new Error('No se ha hallado el contribuyente');
         }
-        const idContributor = contributor.rows[0].id;
+        const idContributor = contributor.rows[0].id_registro_municipal;
     
         if(activities){
             await Promise.all(activities.map(async (row) => {

@@ -264,7 +264,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         tipoDocumento: contributor.tipo_documento,
         AE,
         SM,
-        IU,
+        IU: (IU.length > 0 && IU) || undefined,
         PP,
         montoAcarreado: addMissingCarriedAmounts(montoAcarreado),
       },
@@ -1000,7 +1000,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
           documento: docs.documento,
           tipoDocumento: docs.tipo_documento,
           estado: (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state,
-          referenciaMunicipal: liquidaciones[0]?.registro_municipal
+          referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
             ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
             : undefined,
           fecha: el.fecha,
@@ -1625,7 +1625,7 @@ export const insertSettlements = async ({ process, user }) => {
         }
       } else {
         finingAmount = 10;
-        const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month() + 1;
+        const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month();
         finingMonths = new Array(now.month() - finingDate).fill({});
         if (finingMonths.length > 0) {
           let counter = finingDate;
@@ -2151,8 +2151,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
           QR: linkQr,
           moment: require('moment'),
           fecha: moment().format('MM-DD-YYYY'),
+          titulo: 'FACTURA POR SERVICIOS MUNICIPALES',
           institucion: 'SEDEMAT',
-          titulo: 'Factura De Servicios Municipales',
           datos: {
             nroSolicitud: application.id,
             nroPlanilla: 10010111,
