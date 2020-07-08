@@ -21,6 +21,7 @@ import holiday from './holidays';
 import branches from './branches';
 import exonerations from './exonerations';
 import activities from './activities';
+import cashier from './cashier';
 
 const router = Router();
 
@@ -45,6 +46,7 @@ router.use('/holiday', holiday);
 router.use('/branches', branches);
 router.use('/exonerations', exonerations);
 router.use('/activities', activities);
+router.use('/cashier', cashier)
 router.use(resources);
 
 router.get('/', (req, res) => {

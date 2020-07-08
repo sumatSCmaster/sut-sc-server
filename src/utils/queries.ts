@@ -705,7 +705,25 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         INNER JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sub.id_ramo 
         INNER JOIN impuesto.solicitud_state s ON s.id = l.id_solicitud WHERE l.fecha_liquidacion BETWEEN $1 AND $2 AND r.id_ramo = $3
         ORDER BY l.fecha_liquidacion ASC;`,
-
+          //CIERRE DE CAJA
+  GET_CASHIER_POS: `SELECT b.nombre as banco, SUM(p.monto) as monto, COUNT(*) as transacciones
+        FROM pago p 
+        INNER JOIN banco b ON b.id_banco = p.id_pago
+        WHERE p.fecha_de_pago = $1 AND p.metodo_pago = 'PUNTO DE VENTA' AND id_usuario = $2
+        GROUP BY b.nombre;`,
+  GET_CASHIER_CASH: `SELECT SUM(p.monto) as monto, COUNT(*) as transacciones
+        FROM pago p 
+        INNER JOIN banco b ON b.id_banco = p.id_pago
+        WHERE p.fecha_de_pago = $1 AND p.metodo_pago = 'EFECTIVO' AND id_usuario = $2;`,
+  GET_CASHIER_CHECKS: `SELECT SUM(p.monto) as monto, COUNT(*) as transacciones
+        FROM pago p 
+        INNER JOIN banco b ON b.id_banco = p.id_pago
+        WHERE p.fecha_de_pago = $1 AND p.metodo_pago = 'CHEQUE' AND id_usuario = $2;`,
+  GET_CASHIER_TRANSFERS: `SELECT b.id_banco as id, b.nombre as banco, SUM(p.monto) as monto, COUNT(*) as transacciones
+        FROM pago p 
+        INNER JOIN banco b ON b.id_banco = p.id_pago
+        WHERE p.fecha_de_pago = $1 AND p.metodo_pago = 'TRANSFERENCIA' AND id_usuario = $2
+        GROUP BY b.id_banco, b.nombre;`,
   //EXONERACIONES
   GET_CONTRIBUTOR: 'SELECT c.id_contribuyente as id, razon_social AS "razonSocial", rm.denominacion_comercial AS "denominacionComercial", rm.referencia_municipal AS "referenciaMunicipal" FROM impuesto.contribuyente c INNER JOIN impuesto.registro_municipal rm ON rm.id_contribuyente = c.id_contribuyente WHERE c.tipo_documento = $1 AND c.documento = $2 AND rm.referencia_municipal = $3;',
   CREATE_EXONERATION: 'INSERT INTO impuesto.plazo_exoneracion (id_plazo_exoneracion, fecha_inicio) VALUES (default, $1) RETURNING *;',
