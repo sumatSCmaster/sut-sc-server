@@ -1845,10 +1845,10 @@ export const insertSettlements = async ({ process, user }) => {
         }
       } else {
         finingAmount = 10;
-        const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month();
+        const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month() + 1;
         finingMonths = new Array(now.month() - finingDate).fill({});
         if (finingMonths.length > 0) {
-          let counter = finingDate;
+          let counter = finingDate - 1;
           finingMonths = await Promise.all(
             finingMonths.map((el, i) => {
               const multa = Promise.resolve(
