@@ -423,7 +423,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                         await Promise.all(
                           agreementRegistry.map(async (j) => {
                             const solicitudConvenio = j.tx_observacion1.split(':')[1];
-                            const solicitud = (await gtic.query('SELECT * t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
+                            const solicitud = (await gtic.query('SELECT * FROM t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
                             const isCurrentAgreement = solicitud.length > 0;
                             if (isCurrentAgreement) {
                               const liquidaciones = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_solicitud = $1', [solicitud[0].co_convenio])).rows.map((x) => structureSettlements(j));
@@ -492,7 +492,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                           await Promise.all(
                             agreementRegistry.map(async (j) => {
                               const solicitudConvenio = j.tx_observacion1.split(':')[1];
-                              const solicitud = (await gtic.query('SELECT * t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
+                              const solicitud = (await gtic.query('SELECT * FROM t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
                               const isCurrentAgreement = solicitud.length > 0;
                               if (isCurrentAgreement) {
                                 const liquidaciones = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_solicitud = $1', [solicitud[0].co_convenio])).rows.map((x) => structureSettlements(j));
@@ -816,7 +816,7 @@ export const logInExternalLinking = async ({ credentials }) => {
                         await Promise.all(
                           agreementRegistry.map(async (j) => {
                             const solicitudConvenio = j.tx_observacion1.split(':')[1];
-                            const solicitud = (await gtic.query('SELECT * t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
+                            const solicitud = (await gtic.query('SELECT * FROM t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
                             const isCurrentAgreement = solicitud.length > 0;
                             if (isCurrentAgreement) {
                               const liquidaciones = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_solicitud = $1', [solicitud[0].co_convenio])).rows.map((x) => structureSettlements(j));
@@ -884,7 +884,7 @@ export const logInExternalLinking = async ({ credentials }) => {
                           await Promise.all(
                             agreementRegistry.map(async (j) => {
                               const solicitudConvenio = j.tx_observacion1.split(':')[1];
-                              const solicitud = (await gtic.query('SELECT * t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
+                              const solicitud = (await gtic.query('SELECT * FROM t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
                               const isCurrentAgreement = solicitud.length > 0;
                               if (isCurrentAgreement) {
                                 const liquidaciones = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_solicitud = $1', [solicitud[0].co_convenio])).rows.map((x) => structureSettlements(j));
@@ -2077,12 +2077,13 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
 export const validateApplication = async (body, user, client) => {
   try {
     if (!body.solicitudAprobada) return;
-    if (body.concepto === 'CONVENIO' && body.solicitudAprobada) {
-      //este metodo es para validar los convenios y llevarlos al estado de finalizado
-      const state = (await client.query(queries.COMPLETE_FRACTION_STATE, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
-    }
     const state = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
     const solicitud = (await client.query(queries.GET_APPLICATION_BY_ID, [body.idTramite])).rows[0];
+    const totalLiquidacion = +(await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [body.idTramite])).rows[0].monto_total;
+    const totalPago = +(await client.query('SELECT sum(monto) as monto_total FROM pago WHERE id_procedimiento = $1 AND concepto = $2', [body.idTramite, 'IMPUESTO'])).rows[0].monto_total;
+    const saldoPositivo = totalPago - totalLiquidacion;
+    if (saldoPositivo > 0) {
+    }
     const applicationInstance = await getApplicationsAndSettlementsById({ id: body.idTramite, user: solicitud.id_usuario });
     applicationInstance.aprobado = true;
     await sendNotification(
@@ -2113,6 +2114,15 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
     const fractions = (await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [agreement.id_convenio])).rows;
     if (!body.solicitudAprobada) return;
     const applicationState = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [agreement.id_solicitud, applicationStateEvents.APROBARCAJERO])).rows[0].state;
+    const totalLiquidacion = +(await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [agreement.id_solicitud])).rows[0].monto_total;
+    const totalPago = (await Promise.all(fractions.map(async (e) => +(await client.query('SELECT sum(monto) as monto_total FROM pago WHERE id_procedimiento = $1 AND concepto = $2', [e.id_fraccion, 'CONVENIO'])).rows[0].monto_total))).reduce(
+      (x, j) => x + j
+    );
+    const saldoPositivo = totalPago - totalLiquidacion;
+    if (saldoPositivo > 0) {
+      // const a = await getApplicationsAndSettlementsById()
+      await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [, , saldoPositivo]);
+    }
     const applicationInstance = await getAgreementFractionById({ id: body.idTramite });
     applicationInstance.aprobado = true;
     // await sendNotification(
