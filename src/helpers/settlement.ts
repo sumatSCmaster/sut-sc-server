@@ -160,10 +160,10 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
               el.tipo_inmueble === 'COMERCIAL'
                 ? el.metros_construccion && el.metros_construccion !== 0
                   ? 0.15 * el.metros_construccion
-                  : (await client.query(queries.GET_AE_CLEANING_TARIFF, [contributor.id_contribuyente])).rows[0].monto
+                  : (await client.query(queries.GET_AE_CLEANING_TARIFF, [branch.id_registro_municipal])).rows[0].monto
                 : (await client.query(queries.GET_RESIDENTIAL_CLEANING_TARIFF)).rows[0].monto;
             const tarifaAseo = calculoAseo / UTMM > 300 ? UTMM * 300 : calculoAseo;
-            const calculoGas = el.tipo_inmueble === 'COMERCIAL' ? (await client.query(queries.GET_AE_GAS_TARIFF, [contributor.id_contribuyente])).rows[0].monto : (await client.query(queries.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].monto;
+            const calculoGas = el.tipo_inmueble === 'COMERCIAL' ? (await client.query(queries.GET_AE_GAS_TARIFF, [branch.id_registro_municipal])).rows[0].monto : (await client.query(queries.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].monto;
             const tarifaGas = calculoGas / UTMM > 300 ? UTMM * 300 : calculoGas;
             return { id: el.id_inmueble, tipoInmueble: el.tipo_inmueble, direccionInmueble: el.direccion, tarifaAseo, tarifaGas, deuda: debtSM };
           })
