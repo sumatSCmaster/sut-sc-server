@@ -14,12 +14,12 @@ import { dirname } from 'path';
 import * as pdf from 'html-pdf';
 import * as qr from 'qrcode';
 import * as pdftk from 'node-pdftk';
-import bcrypt from 'bcryptjs';
+import bcrypt, { genSaltSync, hashSync } from 'bcryptjs';
 import md5 from 'md5';
 import { query } from 'express-validator';
 import { sendNotification } from './notification';
 import { sendRimVerification, verifyCode, resendCode } from './verification';
-import { hasLinkedContributor } from './user';
+import { hasLinkedContributor, signUpUser } from './user';
 import e from 'express';
 import S3Client from '@utils/s3';
 import ExcelJs from 'exceljs';
@@ -2159,6 +2159,46 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
   }
 };
 
+export const internalContributorSignUp = async (contributor) => {
+  const client = await pool.connect();
+  const { correo, denominacionComercial, direccion, doc, puntoReferencia, razonSocial, sector, parroquia, siglas, telefono, tipoContribuyente, tipoDocumento } = contributor;
+  try {
+    const user = { nombreCompleto: razonSocial, nombreUsuario: correo, direccion, cedula: doc, nacionalidad: tipoDocumento, password: '', telefono };
+    const salt = genSaltSync(10);
+    user.password = hashSync('123456', salt);
+    const sutUser = await signUpUser(user);
+    const procedure = {
+      datos: {
+        funcionario: {
+          documentoIdentidad: doc,
+          razonSocial,
+          denominacionComercial,
+          siglas,
+          parroquia,
+          sector,
+          direccion,
+          puntoReferencia,
+          tipoContribuyente,
+          tipoDocumento,
+        },
+      },
+      usuario: sutUser.user.id,
+    };
+    const data = await approveContributorSignUp({ procedure, client });
+    return { status: 201, message: 'Contribuyente registrado', contribuyente: data };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al insertar referencias de pago',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 export const approveContributorSignUp = async ({ procedure, client }: { procedure: any; client: PoolClient }) => {
   try {
     const { datos, usuario } = procedure;
@@ -2168,7 +2208,7 @@ export const approveContributorSignUp = async ({ procedure, client }: { procedur
     await client.query(queries.ASSIGN_CONTRIBUTOR_TO_USER, [contributor.id_contribuyente, usuario]);
     const x = (await client.query(queries.ADD_VERIFIED_CONTRIBUTOR, [usuario])).rows[0];
     console.log(procedure);
-    return true;
+    return structureContributor(contributor);
   } catch (error) {
     console.log(error);
     throw error;
@@ -2184,7 +2224,7 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
     data.funcionario.referenciaMunicipal = registry.referencia_municipal;
     await Promise.all(
       actividadesEconomicas!.map(async (x) => {
-        return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [contribuyente.id, x.codigo]);
+        return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.codigo]);
       })
     );
     const verifiedId = (await client.query('SELECT * FROM impuesto.verificacion_telefono WHERE id_usuario = $1', [usuario.id])).rows[0]?.id_verificacion_telefono;
