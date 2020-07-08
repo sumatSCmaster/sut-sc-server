@@ -34,24 +34,47 @@ block content
           p
             b Teléfono:&nbsp;
             br
-            | #{datos.telefono}        
+            | #{datos.telefono}
+          p
+            b Cajero:&nbsp;
+            br
+            | #{datos.cajero}                 
         div(style={'-webkit-flex': '0.5'}).center
           img#QR(src=QR style={'margin-bottom': '10px'})
     div           
       div(style={'font-size':'20px', 'font-weight':'bold'}).row-constancy
         div(style={'text-align':'start', }) Descripción
-        div.center Metodo de Pago
         div.center Fecha
         div.center Monto (Bs)
       hr.divider
       each item in datos.items
         div.row-constancy.break-page
           div(style={'text-align':'start' }) #{item.descripcion}
-          div.center #{item.tipoPago}
           div.center #{moment(item.fecha).format('DD/MM/YYYY')}
           div.center #{new Intl.NumberFormat('de-DE').format(item.monto)}
       hr.divider
       div.row-constancy.break-page
-        div(style={'-webkit-flex': '3'}).end Total Bs.
+        div(style={'-webkit-flex': '2'}).end Total Bs.
         div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE').format(datos.total)}
+    div(style={'text-align':'-webkit-right', 'width':'100%'}).break-page
+      div.ticket.break-page(style={'margin':'2% 0', 'border':'2px solid #3387ca', 'width':'55%'})
+        div.ticket-data.break-page
+          div(style={'-webkit-flex': '4'})
+            p(style={'margin': '5px'})
+              b METODO DE PAGO   
+          div(style={'-webkit-flex': '3'}).center
+            p(style={'margin': '5px'})
+              b TRANSACIONES 
+          div(style={'-webkit-flex': '3'}).center
+            p(style={'margin': '5px'})
+              b MONTO Bs.
+        hr.divider
+        each item in datos.metodoPago
+          div.ticket-data.break-page
+            div(style={'-webkit-flex': '4'})
+              p(style={'margin': '5px'}) #{item.tipo}
+            div(style={'-webkit-flex': '3'}).center
+              p(style={'margin': '5px'}) #{item.transacciones}
+            div(style={'-webkit-flex': '3'}).center
+              p(style={'margin': '5px'}) #{new Intl.NumberFormat('de-DE').format(item.monto)}                   
 block footer
