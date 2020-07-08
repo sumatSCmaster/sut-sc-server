@@ -2721,6 +2721,103 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
   }
 };
 
+
+const createPatentDocument = async ({ gticPool, pool, user, application }: CertificatePayload) => {
+  try {
+    const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
+    const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
+    const economicActivities = (await pool.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [referencia?.referencia_municipal])).rows
+    
+    const payment = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [application.id, 'TRAMITE'])).rows
+    const cashier = (await pool.query(queries.GET_USER_INFO_BY_ID, [payment[0].id_usuario])).rows
+    const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+    return new Promise(async (res, rej) => {
+      const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-LAE.pug`), {
+        moment: require('moment'),
+        institucion: 'SEDEMAT',
+        QR: linkQr,
+        datos:{
+          contribuyente: {
+            razonSocial: application.razonSocial,
+            denomComercial: application.denomComercial,
+            rif: `${application.tipoDocumento}-${application.documento}`,
+            rim:referencia?.referencia_municipal,
+            direccion: application.direccion,
+          },
+          nroSolicitud:application.id,
+          nroPlanilla: 112,
+          motivo: application.descripcionSubramo,
+          usuario: user.nombreCompleto,
+          cajero: cashier[0].nombreCompleto,
+          fechaLiq: breakdownData[0].fecha_liquidacion,
+          fechaVenc: breakdownData[0].fecha_vencimiento,
+          capitalSubs:'',
+          fechaReg: application.fechaCreacion,
+          fechaInsc:application.fechaCreacion,
+          tipoSoc: '',
+          fechaSolt: application.fechaCreacion,
+          tipoDocumento: application.tipoDocumento,
+          nroReg: 0,
+          actividades: economicActivities.map((row) => {
+            return {
+              codigo: row.numeroReferencia,
+              descripcion:row.descripcion,
+              alicuota:row.alicuota,
+              periodo: application.datos.fecha.year,
+              fechaIni: application.fechaCreacion
+            }
+          }),
+          metodoPago: payment.map((row) => {
+            return {
+              monto: row.monto,
+              formaPago: row.metodo_pago,
+              banco: row.nombre,
+              fecha: row.fecha_de_pago,
+              nro: row.referencia
+            }
+          }),
+          totalLiq: 1000000,
+          totalRecaudado: payment.reduce((prev, next) => prev + next.monto, 0),
+          totalCred: '',
+        }
+      });
+      const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/patente.pdf`);
+      const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/patente.pdf`;
+      if (dev) {
+        pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
+          res(dir);
+        });
+      } else {
+        try {
+          pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toBuffer(async (err, buffer) => {
+            if (err) {
+              rej(err);
+            } else {
+              const bucketParams = {
+                Bucket: 'sut-maracaibo',
+                Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/patente.pdf`,
+              };
+              await S3Client.putObject({
+                ...bucketParams,
+                Body: buffer,
+                ACL: 'public-read',
+                ContentType: 'application/pdf',
+              }).promise();
+              res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+            }
+          });
+        } catch (e) {
+          throw e;
+        } finally {
+        }
+      }
+    });
+  } catch (error) {
+    throw errorMessageExtractor(error);
+  }
+};
+
+
 const createFineDocument = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
@@ -3032,7 +3129,7 @@ const addMissingCarriedAmounts = (amountObject) => {
 };
 
 const certificateCases = switchcase({
-  AE: { recibo: createReceiptForAEApplication, solvencia: createSolvencyForApplication },
+  AE: { recibo: createReceiptForAEApplication, solvencia: createSolvencyForApplication, patente: createPatentDocument },
   SM: { recibo: createReceiptForSMOrIUApplication },
   IU: { recibo: createReceiptForSMOrIUApplication },
   PP: { recibo: createReceiptForPPApplication },
