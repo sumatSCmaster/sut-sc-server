@@ -109,7 +109,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     //AE
     if (branch && branch.referencia_municipal && !AEApplicationExists) {
-      const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [contributor.id_contribuyente])).rows;
+      const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
       if (economicActivities.length === 0) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
       let lastEA = (await client.query(lastSettlementQuery, [codigosRamo.AE, lastSettlementPayload])).rows[0];
       const lastEAPayment = (lastEA && moment(lastEA.fecha_liquidacion)) || moment().month(0);
@@ -413,6 +413,9 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                     const liquidaciones = await Promise.all((await gtic.query(queries.gtic.GET_SETTLEMENTS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureSettlements(j)));
                     const creditoFiscal = (await gtic.query(queries.gtic.GET_FISCAL_CREDIT_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows[0];
                     const multas = await Promise.all((await gtic.query(queries.gtic.GET_FININGS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureFinings(j)));
+                    const actividadesEconomicas = await Promise.all(
+                      (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [x.co_contribuyente])).rows.map((j) => ({ id: x.nu_ref_actividad, descripcion: x.tx_actividad, alicuota: x.nu_porc_alicuota, minimoTributable: x.nu_ut }))
+                    );
                     const agreementRegistry = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_estatus = 4 AND co_contribuyente = $1', [x.co_contribuyente])).rows;
                     const hasAgreements = agreementRegistry.length > 0;
                     if (hasAgreements) {
@@ -469,7 +472,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                       representado: nullStringCheck(x.nu_referencia) === reference,
                       creditoFiscal: creditoFiscal ? creditoFiscal.mo_haber : 0,
                     };
-                    return { datosSucursal, inmuebles, liquidaciones, multas };
+                    return { datosSucursal, inmuebles, liquidaciones, multas, convenios, actividadesEconomicas };
                   })
                 : (await gtic.query(queries.gtic.GET_NATURAL_CONTRIBUTOR, [el.nu_cedula, el.tx_tp_doc])).rows.map(async (x) => {
                     let datos;
@@ -479,6 +482,9 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                       const liquidaciones = await Promise.all((await gtic.query(queries.gtic.GET_SETTLEMENTS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureSettlements(j)));
                       const creditoFiscal = (await gtic.query(queries.gtic.GET_FISCAL_CREDIT_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows[0];
                       const multas = await Promise.all((await gtic.query(queries.gtic.GET_FININGS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureFinings(j)));
+                      const actividadesEconomicas = await Promise.all(
+                        (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [x.co_contribuyente])).rows.map((j) => ({ id: x.nu_ref_actividad, descripcion: x.tx_actividad, alicuota: x.nu_porc_alicuota, minimoTributable: x.nu_ut }))
+                      );
                       const agreementRegistry = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_estatus = 4 AND co_contribuyente = $1', [x.co_contribuyente])).rows;
                       const hasAgreements = agreementRegistry.length > 0;
                       if (hasAgreements) {
@@ -541,6 +547,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                         liquidaciones,
                         multas,
                         convenios,
+                        actividadesEconomicas,
                       };
                     } else {
                       const liquidaciones = await Promise.all((await gtic.query(queries.gtic.GET_SETTLEMENTS_BY_CONTRIBUTOR, [x.co_contribuyente])).rows.map((j) => structureSettlements(j)));
@@ -587,17 +594,17 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
     const { datosContribuyente, sucursales, actividadesEconomicas } = linkingData[0];
     const { tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, tipoContribuyente } = datosContribuyente;
     const contributor = (await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, true, tipoContribuyente])).rows[0];
-    if (actividadesEconomicas!.length > 0) {
-      await Promise.all(
-        actividadesEconomicas!.map(async (x) => {
-          return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [contributor.id_contribuyente, x.id]);
-        })
-      );
-    }
+    // if (actividadesEconomicas!.length > 0) {
+    //   await Promise.all(
+    //     actividadesEconomicas!.map(async (x) => {
+    //       return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [contributor.id_contribuyente, x.id]);
+    //     })
+    //   );
+    // }
     if (datosContribuyente.tipoContribuyente === 'JURIDICO') {
       const rims: number[] = await Promise.all(
         await sucursales.map(async (x) => {
-          const { inmuebles, liquidaciones, multas, datosSucursal } = x;
+          const { inmuebles, liquidaciones, multas, datosSucursal, actividadesEconomicas } = x;
           const liquidacionesPagas = liquidaciones.filter((el) => el.estado === 'PAGADO');
           const liquidacionesVigentes = liquidaciones.filter((el) => el.estado !== 'PAGADO');
           const multasPagas = multas.filter((el) => el.estado === 'PAGADO');
@@ -606,6 +613,13 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
           const vigentes = liquidacionesVigentes.concat(multasVigentes);
           const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
           const registry = (await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [contributor.id_contribuyente, registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado || false])).rows[0];
+          if (actividadesEconomicas!.length > 0) {
+            await Promise.all(
+              actividadesEconomicas!.map(async (x) => {
+                return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.id]);
+              })
+            );
+          }
           const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [registry.id_registro_municipal, 'JURIDICO', datosSucursal.creditoFiscal])).rows[0];
           const estates =
             inmuebles.length > 0
@@ -675,6 +689,13 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
           const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [contributor.id_contribuyente, 'NATURAL', datosSucursal.creditoFiscal])).rows[0];
           if (registroMunicipal) {
             registry = (await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [contributor.id_contribuyente, registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado || false])).rows[0];
+            if (x.actividadesEconomicas!.length > 0) {
+              await Promise.all(
+                actividadesEconomicas!.map(async (x) => {
+                  return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.id]);
+                })
+              );
+            }
             const estates =
               inmuebles.length > 0
                 ? await Promise.all(
@@ -785,6 +806,9 @@ export const logInExternalLinking = async ({ credentials }) => {
                     const liquidaciones = await Promise.all((await gtic.query(queries.gtic.GET_SETTLEMENTS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureSettlements(j)));
                     const creditoFiscal = (await gtic.query(queries.gtic.GET_FISCAL_CREDIT_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows[0];
                     const multas = await Promise.all((await gtic.query(queries.gtic.GET_FININGS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureFinings(j)));
+                    const actividadesEconomicas = await Promise.all(
+                      (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [x.co_contribuyente])).rows.map((j) => ({ id: x.nu_ref_actividad, descripcion: x.tx_actividad, alicuota: x.nu_porc_alicuota, minimoTributable: x.nu_ut }))
+                    );
                     const agreementRegistry = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_estatus = 4 AND co_contribuyente = $1', [x.co_contribuyente])).rows;
                     const hasAgreements = agreementRegistry.length > 0;
                     if (hasAgreements) {
@@ -840,7 +864,7 @@ export const logInExternalLinking = async ({ credentials }) => {
                       registroMunicipal: nullStringCheck(x.nu_referencia),
                       creditoFiscal: creditoFiscal ? creditoFiscal.mo_haber : 0,
                     };
-                    return { datosSucursal, inmuebles, liquidaciones, multas };
+                    return { datosSucursal, inmuebles, liquidaciones, multas, convenios, actividadesEconomicas };
                   })
                 : (await gtic.query(queries.gtic.GET_NATURAL_CONTRIBUTOR, [el.nu_cedula, el.tx_tp_doc])).rows.map(async (x) => {
                     let datos;
@@ -850,6 +874,9 @@ export const logInExternalLinking = async ({ credentials }) => {
                       const liquidaciones = await Promise.all((await gtic.query(queries.gtic.GET_SETTLEMENTS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureSettlements(j)));
                       const creditoFiscal = (await gtic.query(queries.gtic.GET_FISCAL_CREDIT_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows[0];
                       const multas = await Promise.all((await gtic.query(queries.gtic.GET_FININGS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureFinings(j)));
+                      const actividadesEconomicas = await Promise.all(
+                        (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [x.co_contribuyente])).rows.map((j) => ({ id: x.nu_ref_actividad, descripcion: x.tx_actividad, alicuota: x.nu_porc_alicuota, minimoTributable: x.nu_ut }))
+                      );
                       const agreementRegistry = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_estatus = 4 AND co_contribuyente = $1', [x.co_contribuyente])).rows;
                       const hasAgreements = agreementRegistry.length > 0;
                       if (hasAgreements) {
@@ -910,6 +937,8 @@ export const logInExternalLinking = async ({ credentials }) => {
                         inmuebles,
                         liquidaciones,
                         multas,
+                        convenios,
+                        actividadesEconomicas,
                       };
                     } else {
                       const liquidaciones = await Promise.all((await gtic.query(queries.gtic.GET_SETTLEMENTS_BY_CONTRIBUTOR, [x.co_contribuyente])).rows.map((j) => structureSettlements(j)));
@@ -1483,17 +1512,17 @@ export const initialUserLinking = async (linkingData, user) => {
     }
     const contributor = (await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, true, tipoContribuyente])).rows[0];
     await client.query(queries.ASSIGN_CONTRIBUTOR_TO_USER, [contributor.id_contribuyente, user.id]);
-    if (actividadesEconomicas && actividadesEconomicas.length > 0) {
-      await Promise.all(
-        actividadesEconomicas.map(async (x) => {
-          return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [contributor.id_contribuyente, x.id]);
-        })
-      );
-    }
+    // if (actividadesEconomicas && actividadesEconomicas.length > 0) {
+    //   await Promise.all(
+    //     actividadesEconomicas.map(async (x) => {
+    //       return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [contributor.id_contribuyente, x.id]);
+    //     })
+    //   );
+    // }
     if (datosContribuyente.tipoContribuyente === 'JURIDICO') {
       const rims: number[] = await Promise.all(
         await sucursales.map(async (x) => {
-          const { inmuebles, liquidaciones, multas, datosSucursal } = x;
+          const { inmuebles, liquidaciones, multas, datosSucursal, actividadesEconomicas } = x;
           const liquidacionesPagas = liquidaciones.filter((el) => el.estado === 'PAGADO');
           const liquidacionesVigentes = liquidaciones.filter((el) => el.estado !== 'PAGADO');
           const multasPagas = multas.filter((el) => el.estado === 'PAGADO');
@@ -1512,6 +1541,13 @@ export const initialUserLinking = async (linkingData, user) => {
               representado || false,
             ])
           ).rows[0];
+          if (actividadesEconomicas!.length > 0) {
+            await Promise.all(
+              actividadesEconomicas!.map(async (x) => {
+                return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.id]);
+              })
+            );
+          }
           const credit = (await client.query('INSERT INTO impuesto.credito_fiscal (id_persona, concepto, credito) VALUES ($1, $2, $3)', [registry.id_registro_municipal, 'JURIDICO', datosSucursal.creditoFiscal])).rows[0];
           const estates =
             inmuebles.length > 0
@@ -1593,6 +1629,13 @@ export const initialUserLinking = async (linkingData, user) => {
                 representado || false,
               ])
             ).rows[0];
+            if (x.actividadesEconomicas!.length > 0) {
+              await Promise.all(
+                actividadesEconomicas!.map(async (x) => {
+                  return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.id]);
+                })
+              );
+            }
             const estates =
               inmuebles.length > 0
                 ? await Promise.all(
