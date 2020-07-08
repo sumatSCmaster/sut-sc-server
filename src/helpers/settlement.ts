@@ -422,7 +422,8 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                       convenios = (
                         await Promise.all(
                           agreementRegistry.map(async (j) => {
-                            const solicitudConvenio = j.tx_observacion1.split(':')[1];
+                            const solicitudConvenio = +j.tx_observacion1.split(':')[1];
+                            if (solicitudConvenio === NaN) return;
                             const solicitud = (await gtic.query('SELECT * FROM t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
                             const isCurrentAgreement = solicitud.length > 0;
                             if (isCurrentAgreement) {
@@ -2083,6 +2084,12 @@ export const validateApplication = async (body, user, client) => {
     const totalPago = +(await client.query('SELECT sum(monto) as monto_total FROM pago WHERE id_procedimiento = $1 AND concepto = $2', [body.idTramite, 'IMPUESTO'])).rows[0].monto_total;
     const saldoPositivo = totalPago - totalLiquidacion;
     if (saldoPositivo > 0) {
+      const fixatedApplication = await getApplicationsAndSettlementsById({ id: body.idTramite, user });
+      const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
+        ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
+        : undefined;
+      const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', saldoPositivo] : [fixatedApplication.contribuyente.id, 'NATURAL', saldoPositivo];
+      await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
     }
     const applicationInstance = await getApplicationsAndSettlementsById({ id: body.idTramite, user: solicitud.id_usuario });
     applicationInstance.aprobado = true;
@@ -2120,8 +2127,12 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
     );
     const saldoPositivo = totalPago - totalLiquidacion;
     if (saldoPositivo > 0) {
-      // const a = await getApplicationsAndSettlementsById()
-      await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [, , saldoPositivo]);
+      const fixatedApplication = await getApplicationsAndSettlementsById({ id: agreement.id_solicitud, user });
+      const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
+        ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
+        : undefined;
+      const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', saldoPositivo] : [fixatedApplication.contribuyente.id, 'NATURAL', saldoPositivo];
+      await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
     }
     const applicationInstance = await getAgreementFractionById({ id: body.idTramite });
     applicationInstance.aprobado = true;
