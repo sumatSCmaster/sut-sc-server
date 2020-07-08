@@ -75,7 +75,7 @@ block content
           div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
             p #{datos.metodoPago.efectivo.transacciones}
           div(style={'-webkit-flex':'3'}).td.center.border-bottom
-            p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.efectivo.total)}
+            p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.efectivo.total ? datos.metodoPago.efectivo.total : 0)}
         .tr.break-page
           div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
             p(style={'padding-left':'10px'})
@@ -83,7 +83,7 @@ block content
           div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
             p #{datos.metodoPago.cheques.transacciones}            
           div(style={'-webkit-flex':'3'}).td.center.border-bottom
-            p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.cheques.total)}
+            p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.cheques.total ? datos.metodoPago.cheques.total : 0)}
         .tr.break-page
           div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
             p(style={'padding-left':'10px'})
@@ -97,29 +97,29 @@ block content
             p(style={'padding-left':'10px'})
               b TRANSFERENCIA BOD
           div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
-            p #{datos.metodoPago.transferencias.bod.transacciones ? datos.metodoPago.transferencias.bod.transacciones : 0}            
+            p #{datos.metodoPago.transferencias.bod ? datos.metodoPago.transferencias.bod.transacciones : 0}            
           div(style={'-webkit-flex':'3'}).td.center.border-bottom
-            p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.bod.total ? datos.metodoPago.transferencias.bod.total : 0)}
+            p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.bod ? datos.metodoPago.transferencias.bod.total : 0)}
         .tr.break-page
           div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
             p(style={'padding-left':'10px'})
               b TRANSFERENCIA BANESCO
           div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
-            p #{datos.metodoPago.transferencias.banesco.transacciones ? datos.metodoPago.transferencias.banesco.transacciones : 0}            
+            p #{datos.metodoPago.transferencias.banesco ? datos.metodoPago.transferencias.banesco.transacciones : 0}            
           div(style={'-webkit-flex':'3'}).td.center.border-bottom
-            p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.banesco.total ? datos.metodoPago.transferencias.banesco.total : 0)}
+            p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.banesco ? datos.metodoPago.transferencias.banesco.total : 0)}
         .tr
           div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
             p(style={'padding-left':'10px'})
               b TRANSFERENCIA BNC
           div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
-            p #{datos.metodoPago.transferencias.bnc.transacciones ? datos.metodoPago.transferencias.bnc.transacciones : 0}            
+            p #{datos.metodoPago.transferencias.bnc ? datos.metodoPago.transferencias.bnc.transacciones : 0}            
           div(style={'-webkit-flex':'3'}).td.center.border-bottom
-            p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.bnc.total ? datos.metodoPago.transferencias.bnc.total : 0)}
+            p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.bnc ? datos.metodoPago.transferencias.bnc.total : 0)}
         .tr
           div(style={'-webkit-flex':'4',}).th.border-right
             p
-              b TOTALES Bs. 
+              b TOTALES
           div(style={'-webkit-flex':'3'}).td.center.border-right
             p #{datos.metodoPago.transacciones}            
           div(style={'-webkit-flex':'3'}).td.center
