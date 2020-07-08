@@ -423,7 +423,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                         await Promise.all(
                           agreementRegistry.map(async (j) => {
                             const solicitudConvenio = +j.tx_observacion1.split(':')[1];
-                            if (solicitudConvenio === NaN) return;
+                            if (isNaN(solicitudConvenio)) return;
                             const solicitud = (await gtic.query('SELECT * FROM t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
                             const isCurrentAgreement = solicitud.length > 0;
                             if (isCurrentAgreement) {
@@ -493,7 +493,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                           await Promise.all(
                             agreementRegistry.map(async (j) => {
                               const solicitudConvenio = +j.tx_observacion1.split(':')[1];
-                              if (solicitudConvenio === NaN) return;
+                              if (isNaN(solicitudConvenio)) return;
                               const solicitud = (await gtic.query('SELECT * FROM t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
                               const isCurrentAgreement = solicitud.length > 0;
                               if (isCurrentAgreement) {
@@ -818,7 +818,7 @@ export const logInExternalLinking = async ({ credentials }) => {
                         await Promise.all(
                           agreementRegistry.map(async (j) => {
                             const solicitudConvenio = +j.tx_observacion1.split(':')[1];
-                            if (solicitudConvenio === NaN) return;
+                            if (isNaN(solicitudConvenio)) return;
                             const solicitud = (await gtic.query('SELECT * FROM t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
                             const isCurrentAgreement = solicitud.length > 0;
                             if (isCurrentAgreement) {
@@ -887,7 +887,7 @@ export const logInExternalLinking = async ({ credentials }) => {
                           await Promise.all(
                             agreementRegistry.map(async (j) => {
                               const solicitudConvenio = +j.tx_observacion1.split(':')[1];
-                              if (solicitudConvenio === NaN) return;
+                              if (isNaN(solicitudConvenio)) return;
                               const solicitud = (await gtic.query('SELECT * FROM t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
                               const isCurrentAgreement = solicitud.length > 0;
                               if (isCurrentAgreement) {
