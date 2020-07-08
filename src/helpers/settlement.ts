@@ -2748,7 +2748,7 @@ const createPatentDocument = async ({ gticPool, pool, user, application }: Certi
           nroPlanilla: 112,
           motivo: application.descripcionSubramo,
           usuario: user.nombreCompleto,
-          cajero: cashier[0].nombreCompleto,
+          cajero: cashier[0]?.nombreCompleto,
           fechaLiq: breakdownData[0].fecha_liquidacion,
           fechaVenc: breakdownData[0].fecha_vencimiento,
           capitalSubs:'',
