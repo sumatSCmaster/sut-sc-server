@@ -151,12 +151,15 @@ router.post('/taxPayer', authenticate('jwt'), async (req, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-router.post('/taxPayer/internal', authenticate('jwt'), async (req, res) => {
-  console.log('??????????????????????????');
-  const [error, data] = await fulfill(internalContributorSignUp(req.body));
-  if (error) res.status(500).json(error);
-  if (data) res.status(data.status).json(data);
-});
+router.post(
+  '/taxPayer/internal',
+  /*authenticate('jwt'),*/ async (req, res) => {
+    console.log('??????????????????????????');
+    const [error, data] = await fulfill(internalContributorSignUp(req.body));
+    if (error) res.status(500).json(error);
+    if (data) res.status(data.status).json(data);
+  }
+);
 
 router.put('/taxPayer/verify', authenticate('jwt'), async (req, res) => {
   const { codigo } = req.body;
