@@ -2164,6 +2164,7 @@ export const internalContributorSignUp = async (contributor) => {
   const { correo, denominacionComercial, direccion, doc, puntoReferencia, razonSocial, sector, parroquia, siglas, telefono, tipoContribuyente, tipoDocumento } = contributor;
   try {
     await client.query('BEGIN');
+    console.log('???');
     const user = { nombreCompleto: razonSocial, nombreUsuario: correo, direccion, cedula: doc, nacionalidad: tipoDocumento, password: '', telefono };
     const salt = genSaltSync(10);
     user.password = hashSync('123456', salt);
@@ -2198,7 +2199,7 @@ export const internalContributorSignUp = async (contributor) => {
     throw {
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al insertar referencias de pago',
+      message: errorMessageGenerator(error) || 'Error al crear contribuyente por metodo interno',
     };
   } finally {
     client.release();
