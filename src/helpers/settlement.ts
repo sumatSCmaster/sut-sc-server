@@ -2238,7 +2238,9 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
     const { usuario, funcionario } = data;
     const { actividadesEconomicas } = funcionario;
     const { contribuyente } = usuario;
-    const registry = (await client.query(queries.ADD_BRANCH_FOR_CONTRIBUTOR, [contribuyente.id, funcionario.telefono, funcionario.correo, funcionario.denominacionComercial, funcionario.nombreRepresentante])).rows[0];
+    const registry = (
+      await client.query(queries.ADD_BRANCH_FOR_CONTRIBUTOR, [contribuyente.id, funcionario.telefono, funcionario.correo, funcionario.denominacionComercial, funcionario.nombreRepresentante, funcionario.capitalSuscrito, funcionario.tipoSociedad])
+    ).rows[0];
     data.funcionario.referenciaMunicipal = registry.referencia_municipal;
     await Promise.all(
       actividadesEconomicas!.map(async (x) => {
