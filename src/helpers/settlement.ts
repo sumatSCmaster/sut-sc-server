@@ -24,6 +24,7 @@ import e from 'express';
 import S3Client from '@utils/s3';
 import ExcelJs from 'exceljs';
 import * as fs from 'fs';
+import { procedureInit } from './procedures';
 const written = require('written-number');
 
 const gticPool = GticPool.getInstance();
@@ -2248,6 +2249,8 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
         return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.codigo]);
       })
     );
+    data.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [data.idTramite, 'TRAMITE'])).rows.map((row) => ({ monto: row.monto, formaPago: row.metodo_pago, banco: row.nombre, fecha: row.fecha_de_pago, nro: row.referencia }));
+
     const verifiedId = (await client.query('SELECT * FROM impuesto.verificacion_telefono WHERE id_usuario = $1', [usuario.id])).rows[0]?.id_verificacion_telefono;
     await client.query('INSERT INTO impuesto.registro_municipal_verificacion VALUES ($1, $2) RETURNING *', [registry.id_registro_municipal, verifiedId]);
     console.log(data);
