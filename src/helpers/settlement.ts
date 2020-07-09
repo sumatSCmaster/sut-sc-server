@@ -1177,12 +1177,12 @@ export const getAgreementsForContributor = async ({ reference, docType, document
         };
       })
     );
-    return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', convenios: applications };
+    return { status: 200, message: 'Convenios obtenidos satisfactoriamente', convenios: applications };
   } catch (error) {
     throw {
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
+      message: errorMessageGenerator(error) || 'Error al obtener convenios de contribuyente',
     };
   } finally {
     client.release();
