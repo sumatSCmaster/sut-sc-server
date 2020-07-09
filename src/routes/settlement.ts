@@ -20,6 +20,8 @@ import {
   getSettlementsReport,
   getAgreements,
   contributorSearch,
+  getAgreementsForContributor,
+  internalContributorSignUp,
 } from '@helpers/settlement';
 import { Usuario } from '@root/interfaces/sigt';
 
@@ -68,6 +70,14 @@ router.get('/search/taxPayer', authenticate('jwt'), async (req: any, res) => {
 
 router.get('/agreements', authenticate('jwt'), async (req: any, res) => {
   const [err, data] = await fulfill(getAgreements({ user: req.user }));
+  if (err) res.status(err.status).json(err);
+  if (data) res.status(data.status).json(data);
+});
+
+router.get('/agreements/:tipoContribuyente', authenticate('jwt'), async (req: any, res) => {
+  const { tipoDocumento, documento, referencia } = req.query;
+  const { tipoContribuyente } = req.params;
+  const [err, data] = await fulfill(getAgreementsForContributor({ reference: referencia, docType: tipoDocumento, document: documento, typeUser: tipoContribuyente }));
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
 });
@@ -137,6 +147,12 @@ router.post(
 router.post('/taxPayer', authenticate('jwt'), async (req, res) => {
   const { datosEnlace } = req.body;
   const [error, data] = await fulfill(initialUserLinking(datosEnlace, req.user));
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+});
+
+router.post('/taxPayer/official', authenticate('jwt'), async (req, res) => {
+  const [error, data] = await fulfill(internalContributorSignUp(req.body));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });

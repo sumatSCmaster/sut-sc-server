@@ -1,0 +1,126 @@
+extends default
+block css
+  link(rel="stylesheet", href="css/sedemat.css")
+block title
+block content
+  div#fecha
+    p 
+      b FECHA:
+      span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+  div
+    p
+      h2 CIERRE DE CAJA
+  div#planilla(style={'font-size':'13px'})
+    div(style={'margin-top':'50px'}).table
+      .tr
+        .th.center.border-bottom 
+          p
+            b DATOS DE CAJA
+      .tr
+        div(style={'-webkit-flex':'5'}).td.border-right
+          p 
+            b CAJERO:
+            span &nbsp; #{datos.cajero}
+        div(style={'-webkit-flex':'5'}).td
+          p 
+            b FECHA:
+            span &nbsp; #{datos.fecha}
+    div(style={'margin-top':'100px'}).table
+      .tr
+        .th.center.border-bottom 
+          p
+            b PUNTO DE VENTA
+      .tr
+        div(style={'-webkit-flex':'3'}).th.border-right.center.border-bottom 
+          p 
+            b BANCO
+        div(style={'-webkit-flex':'2'}).th.border-right.center.border-bottom 
+          p 
+            b TRANSACCIONES
+        div(style={'-webkit-flex':'2'}).th.center.border-bottom 
+          p 
+            b MONTO Bs.
+      each item in datos.metodoPago.punto.items
+        .tr
+          div(style={'-webkit-flex':'3'}).td.border-right.center
+            p #{item.banco}
+          div(style={'-webkit-flex':'2'}).td.border-right.center
+            p #{item.transacciones}
+          div(style={'-webkit-flex':'2'}).td.center
+            p #{new Intl.NumberFormat('de-DE').format(item.monto)}       
+    div(style={'margin-top':'100px', 'width':'100%'}).break-page
+      div(style={'width':'60%'}).table.break-page
+        .tr.break-page
+          div(style={'-webkit-flex':'4'}).th.center.border-bottom.border-right
+            p
+              b METODO DE PAGO
+          div(style={'-webkit-flex':'3'}).th.center.border-bottom.border-right
+            p
+              b TRANSACCIONES            
+          div(style={'-webkit-flex':'3'}).th.center.border-bottom
+            p
+              b MONTO BS.   
+        .tr.break-page
+          div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
+            p(style={'padding-left':'10px'})
+              b PUNTO DE VENTA
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
+            p #{datos.metodoPago.punto.transacciones}            
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom
+            p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.punto.total)}
+        .tr.break-page
+          div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
+            p(style={'padding-left':'10px'})
+              b EFECTIVO
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
+            p #{datos.metodoPago.efectivo.transacciones}
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom
+            p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.efectivo.total ? datos.metodoPago.efectivo.total : 0)}
+        .tr.break-page
+          div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
+            p(style={'padding-left':'10px'})
+              b CHEQUES
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
+            p #{datos.metodoPago.cheques.transacciones}            
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom
+            p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.cheques.total ? datos.metodoPago.cheques.total : 0)}
+        .tr.break-page
+          div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
+            p(style={'padding-left':'10px'})
+              b CREDITO FISCAL
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
+            p #{datos.metodoPago.credFiscal.transacciones}            
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom
+            p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.credFiscal.total)}          
+        .tr.break-page
+          div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
+            p(style={'padding-left':'10px'})
+              b TRANSFERENCIA BOD
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
+            p #{datos.metodoPago.transferencias.bod ? datos.metodoPago.transferencias.bod.transacciones : 0}            
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom
+            p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.bod ? datos.metodoPago.transferencias.bod.total : 0)}
+        .tr.break-page
+          div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
+            p(style={'padding-left':'10px'})
+              b TRANSFERENCIA BANESCO
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
+            p #{datos.metodoPago.transferencias.banesco ? datos.metodoPago.transferencias.banesco.transacciones : 0}            
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom
+            p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.banesco ? datos.metodoPago.transferencias.banesco.total : 0)}
+        .tr
+          div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
+            p(style={'padding-left':'10px'})
+              b TRANSFERENCIA BNC
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
+            p #{datos.metodoPago.transferencias.bnc ? datos.metodoPago.transferencias.bnc.transacciones : 0}            
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom
+            p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.bnc ? datos.metodoPago.transferencias.bnc.total : 0)}
+        .tr
+          div(style={'-webkit-flex':'4',}).th.border-right
+            p
+              b TOTALES
+          div(style={'-webkit-flex':'3'}).td.center.border-right
+            p #{datos.metodoPago.transacciones}            
+          div(style={'-webkit-flex':'3'}).td.center
+            p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.total)}  
