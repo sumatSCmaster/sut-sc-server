@@ -2247,6 +2247,8 @@ export const approveContributorSignUp = async ({ procedure, client }: { procedur
 
 export const approveContributorAELicense = async ({ data, client }: { data: any; client: PoolClient }) => {
   try {
+    console.log(data);
+    const user = (await client.query(queries.GET_PROCEDURE_DATA, [data.idTramite])).rows[0].usuario;
     const { usuario, funcionario } = data;
     const { actividadesEconomicas } = funcionario;
     const { contribuyente } = usuario;
@@ -2261,7 +2263,7 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
     );
     data.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [data.idTramite, 'TRAMITE'])).rows.map((row) => ({ monto: row.monto, formaPago: row.metodo_pago, banco: row.nombre, fecha: row.fecha_de_pago, nro: row.referencia }));
 
-    const verifiedId = (await client.query('SELECT * FROM impuesto.verificacion_telefono WHERE id_usuario = $1', [usuario.id])).rows[0]?.id_verificacion_telefono;
+    const verifiedId = (await client.query('SELECT * FROM impuesto.verificacion_telefono WHERE id_usuario = $1', [user])).rows[0]?.id_verificacion_telefono;
     await client.query('INSERT INTO impuesto.registro_municipal_verificacion VALUES ($1, $2) RETURNING *', [registry.id_registro_municipal, verifiedId]);
     console.log(data);
     return data;
