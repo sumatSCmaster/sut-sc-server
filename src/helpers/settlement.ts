@@ -2071,6 +2071,11 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
     );
     const state =
       user.tipoUsuario === 4 ? (await client.query(queries.UPDATE_FRACTION_STATE, [fragment, applicationStateEvents.VALIDAR])).rows[0] : (await client.query(queries.COMPLETE_FRACTION_STATE, [fragment, applicationStateEvents.APROBARCAJERO])).rows[0];
+    const fractions = (await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [agreement])).rows;
+    if (fractions.every((x) => x.aprobado)) {
+      const convenio = (await client.query('SELECT c.* FROM impuesto.convenio c INNER JOIN impuesto.fraccion f ON c.id_convenio = f.id_convenio WHERE f.id_fraccion = $1', [fragment])).rows[0];
+      const applicationState = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [convenio.id_solicitud, applicationStateEvents.APROBARCAJERO])).rows[0].state;
+    }
     await client.query('COMMIT');
     const applicationInstance = await getAgreementFractionById({ id: fragment });
     console.log(applicationInstance);
