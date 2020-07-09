@@ -90,6 +90,12 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     if ((!branch && reference) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEMAT' };
     const lastSettlementQuery = contributor.tipo_contribuyente === 'JURIDICO' ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
     const lastSettlementPayload = contributor.tipo_contribuyente === 'JURIDICO' ? branch.referencia_municipal : contributor.id_contribuyente;
+    const fiscalCredit = (
+      await client.query('SELECT credito FROM impuesto.credito_fiscal WHERE id_persona = $1 AND concepto = $2', [
+        contributor.tipo_contribuyente === 'JURIDICO' ? branch.id_registro_municipal : contributor.id_contribuyente,
+        contributor.tipo_contribuyente,
+      ])
+    ).rows[0].credito;
     const AEApplicationExists = contributor.tipo_contribuyente === 'JURIDICO' || reference ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.AE, reference])).rows[0] : false;
     const SMApplicationExists =
       contributor.tipo_contribuyente === 'JURIDICO'
@@ -262,6 +268,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         rim: reference,
         documento: contributor.documento,
         tipoDocumento: contributor.tipo_documento,
+        creditoFiscal: fiscalCredit,
         AE,
         SM,
         IU: (IU.length > 0 && IU) || undefined,
