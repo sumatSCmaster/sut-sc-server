@@ -588,6 +588,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
     } else if (resources.tipoTramite === 28) {
       const { aprobado } = procedure;
       procedure.datos.idTramite = procedure.idTramite;
+      procedure.datos.usuario.id = procedure.usuario;
       procedure.datos = await approveContributorAELicense({ data: datos, client });
       dir = await createCertificate(procedure, client);
       respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, true]);
