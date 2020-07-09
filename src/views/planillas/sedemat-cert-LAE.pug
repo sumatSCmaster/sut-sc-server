@@ -52,7 +52,7 @@ block content
           p 
             b Fecha Inscripcion:
         div(style={'-webkit-flex': 1.5}).td.center.border-bottom
-          p #{datos.fechaInsc}
+          p #{moment().format('DD/MM/YYYY')}
       .tr
         div(style={'-webkit-flex': 2}).td.center.border-right
           p 
@@ -79,7 +79,7 @@ block content
           p
             b DENOM. COMERCIAL:
         div(style={'-webkit-flex': 6}).td.border-bottom.border-right
-          p #{datos.funcionario.contribuyente.denominacionComercial}
+          p #{datos.funcionario.denominacionComercial}
         div(style={'-webkit-flex': 2}).td.border-bottom
           p
             b REF:&nbsp;
@@ -120,7 +120,7 @@ block content
           div(style={'-webkit-flex': 1.5}).td.border-right.center
             p #{item.alicuota}
           div(style={'-webkit-flex': 1}).td.border-right.center
-            p #{item.periodo}
+            p #{moment().format('YYYY')}
           div(style={'-webkit-flex': 1.5}).td.center
             p #{item.fechaIni}
     div(style={'margin-top':'20px'}).table.break-page
@@ -157,14 +157,14 @@ block content
         div(style={'-webkit-flex': 2.5}).td.border-bottom.center
           p
             b MONTO CANCELADO
-      each item in datos.metodoPago
+      each item in datos.funcionario.pago
         div.tr.break-page
           div(style={'-webkit-flex': 2}).td.border-right.center
             p #{item.formaPago}
           div(style={'-webkit-flex': 3}).td.border-right.center
             p #{item.banco}
           div(style={'-webkit-flex': 1}).td.border-right.center
-            p #{item.fecha}
+            p #{moment(item.fecha).format('DD/MM/YYYY')}
           div(style={'-webkit-flex': 1.5}).td.border-right.center
             p #{item.nro}
           div(style={'-webkit-flex': 2.5}).td.center
