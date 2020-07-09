@@ -2163,10 +2163,13 @@ export const internalContributorSignUp = async (contributor) => {
   const client = await pool.connect();
   const { correo, denominacionComercial, direccion, doc, puntoReferencia, razonSocial, sector, parroquia, siglas, telefono, tipoContribuyente, tipoDocumento } = contributor;
   try {
+    await client.query('BEGIN');
     const user = { nombreCompleto: razonSocial, nombreUsuario: correo, direccion, cedula: doc, nacionalidad: tipoDocumento, password: '', telefono };
     const salt = genSaltSync(10);
     user.password = hashSync('123456', salt);
+    console.log('si');
     const sutUser = await signUpUser(user);
+    console.log('no');
     const procedure = {
       datos: {
         funcionario: {
@@ -2184,7 +2187,10 @@ export const internalContributorSignUp = async (contributor) => {
       },
       usuario: sutUser.user.id,
     };
+    console.log('yas');
     const data = await approveContributorSignUp({ procedure, client });
+    console.log('supalo');
+    await client.query('COMMIT');
     return { status: 201, message: 'Contribuyente registrado', contribuyente: data };
   } catch (error) {
     client.query('ROLLBACK');
@@ -3004,39 +3010,38 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
   }
 };
 
-
 const createPatentDocument = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
     const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
-    const economicActivities = (await pool.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [referencia?.referencia_municipal])).rows
-    
-    const payment = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [application.id, 'TRAMITE'])).rows
-    const cashier = (await pool.query(queries.GET_USER_INFO_BY_ID, [payment[0].id_usuario])).rows
+    const economicActivities = (await pool.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [referencia?.referencia_municipal])).rows;
+
+    const payment = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [application.id, 'TRAMITE'])).rows;
+    const cashier = (await pool.query(queries.GET_USER_INFO_BY_ID, [payment[0].id_usuario])).rows;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-LAE.pug`), {
         moment: require('moment'),
         institucion: 'SEDEMAT',
         QR: linkQr,
-        datos:{
+        datos: {
           contribuyente: {
             razonSocial: application.razonSocial,
             denomComercial: application.denomComercial,
             rif: `${application.tipoDocumento}-${application.documento}`,
-            rim:referencia?.referencia_municipal,
+            rim: referencia?.referencia_municipal,
             direccion: application.direccion,
           },
-          nroSolicitud:application.id,
+          nroSolicitud: application.id,
           nroPlanilla: 112,
           motivo: application.descripcionSubramo,
           usuario: user.nombreCompleto,
           cajero: cashier[0]?.nombreCompleto,
           fechaLiq: breakdownData[0].fecha_liquidacion,
           fechaVenc: breakdownData[0].fecha_vencimiento,
-          capitalSubs:'',
+          capitalSubs: '',
           fechaReg: application.fechaCreacion,
-          fechaInsc:application.fechaCreacion,
+          fechaInsc: application.fechaCreacion,
           tipoSoc: '',
           fechaSolt: application.fechaCreacion,
           tipoDocumento: application.tipoDocumento,
@@ -3044,11 +3049,11 @@ const createPatentDocument = async ({ gticPool, pool, user, application }: Certi
           actividades: economicActivities.map((row) => {
             return {
               codigo: row.numeroReferencia,
-              descripcion:row.descripcion,
-              alicuota:row.alicuota,
+              descripcion: row.descripcion,
+              alicuota: row.alicuota,
               periodo: application.datos.fecha.year,
-              fechaIni: application.fechaCreacion
-            }
+              fechaIni: application.fechaCreacion,
+            };
           }),
           metodoPago: payment.map((row) => {
             return {
@@ -3056,13 +3061,13 @@ const createPatentDocument = async ({ gticPool, pool, user, application }: Certi
               formaPago: row.metodo_pago,
               banco: row.nombre,
               fecha: row.fecha_de_pago,
-              nro: row.referencia
-            }
+              nro: row.referencia,
+            };
           }),
           totalLiq: 1000000,
           totalRecaudado: payment.reduce((prev, next) => prev + next.monto, 0),
           totalCred: '',
-        }
+        },
       });
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/patente.pdf`);
       const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/patente.pdf`;
@@ -3099,7 +3104,6 @@ const createPatentDocument = async ({ gticPool, pool, user, application }: Certi
     throw errorMessageExtractor(error);
   }
 };
-
 
 const createFineDocument = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
