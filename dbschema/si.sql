@@ -276,6 +276,46 @@ $$;
 ALTER FUNCTION impuesto.insert_credito(_id_persona integer, _concepto character varying, _credito numeric) OWNER TO postgres;
 
 --
+-- Name: fraccion; Type: TABLE; Schema: impuesto; Owner: postgres
+--
+
+CREATE TABLE impuesto.fraccion (
+    id_fraccion integer NOT NULL,
+    id_convenio integer NOT NULL,
+    monto numeric NOT NULL,
+    porcion integer NOT NULL,
+    fecha date,
+    aprobado boolean DEFAULT false,
+    fecha_aprobado date
+);
+
+
+ALTER TABLE impuesto.fraccion OWNER TO postgres;
+
+--
+-- Name: insert_fraccion(integer, numeric, integer, date); Type: FUNCTION; Schema: impuesto; Owner: postgres
+--
+
+CREATE FUNCTION impuesto.insert_fraccion(_id_convenio integer, _monto numeric, _porcion integer, _fecha date) RETURNS SETOF impuesto.fraccion
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    fraccionRow impuesto.fraccion%ROWTYPE;
+    BEGIN
+        INSERT INTO impuesto.fraccion (id_convenio, monto, porcion, fecha) VALUES (_id_convenio,  _monto, _porcion, _fecha) RETURNING * into fraccionRow;
+        
+        INSERT INTO impuesto.evento_fraccion values (default, fraccionRow.id_fraccion, 'iniciar', now());
+            
+        RETURN QUERY SELECT * FROM impuesto.fraccion WHERE id_fraccion=fraccionRow.id_fraccion;
+                
+        RETURN;
+    END;
+$$;
+
+
+ALTER FUNCTION impuesto.insert_fraccion(_id_convenio integer, _monto numeric, _porcion integer, _fecha date) OWNER TO postgres;
+
+--
 -- Name: solicitud; Type: TABLE; Schema: impuesto; Owner: postgres
 --
 
@@ -322,7 +362,8 @@ CREATE TABLE impuesto.solicitud (
     fecha date,
     fecha_aprobado date,
     id_tipo_tramite integer,
-    id_contribuyente integer
+    id_contribuyente integer,
+    tipo_solicitud character varying
 );
 
 
@@ -2655,24 +2696,7 @@ ALTER SEQUENCE impuesto.factor_id_factor_seq OWNED BY impuesto.factor.id_factor;
 
 
 --
--- Name: fraccion; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
---
-
-CREATE TABLE impuesto.fraccion (
-    id_fraccion integer NOT NULL,
-    id_convenio integer NOT NULL,
-    monto numeric NOT NULL,
-    porcion integer NOT NULL,
-    fecha date,
-    aprobado boolean DEFAULT false,
-    fecha_aprobado date
-);
-
-
-ALTER TABLE impuesto.fraccion OWNER TO pooijyzcnnfrso;
-
---
--- Name: fraccion_id_fraccion_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
+-- Name: fraccion_id_fraccion_seq; Type: SEQUENCE; Schema: impuesto; Owner: postgres
 --
 
 CREATE SEQUENCE impuesto.fraccion_id_fraccion_seq
@@ -7536,90 +7560,88 @@ COPY impuesto.registro_municipal_verificacion (id_registro_municipal, id_verific
 -- Data for Name: solicitud; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
-COPY impuesto.solicitud (id_solicitud, id_usuario, aprobado, fecha, fecha_aprobado, id_tipo_tramite, id_contribuyente) FROM stdin;
-213	130	f	2020-06-30	\N	5	67
-214	127	f	2020-06-30	\N	5	64
-193	117	f	2020-06-27	\N	5	61
-194	117	f	2020-06-27	\N	5	61
-195	117	f	2020-06-27	\N	5	61
-242	139	t	2020-07-01	2020-07-01	5	74
-215	132	t	2020-03-06	2020-06-30	5	68
-216	132	t	2020-03-06	2020-06-30	5	68
-217	132	f	2020-06-30	\N	5	68
-246	151	t	2020-03-10	2020-07-01	5	81
-172	\N	t	2020-05-05	2020-06-26	5	57
-173	58	f	2020-06-26	\N	5	57
-174	58	f	2020-06-26	\N	5	57
-247	151	t	2020-07-01	2020-07-01	5	81
-245	142	t	2020-07-01	2020-07-01	5	75
-248	130	f	2020-07-01	\N	5	67
-181	122	t	2020-06-26	2020-06-27	5	58
-177	\N	t	2020-04-22	2020-06-26	5	58
-218	131	t	2020-03-13	2020-06-30	5	69
-178	\N	t	2020-04-28	2020-06-26	5	58
-179	\N	t	2020-04-28	2020-06-26	5	58
-180	122	t	2020-04-28	2020-06-26	5	58
-219	131	t	2020-04-28	2020-06-30	5	69
-198	58	t	2020-06-27	2020-06-27	5	57
-199	124	f	2020-06-27	\N	5	58
-200	116	f	2020-06-27	\N	5	58
-182	117	t	2020-05-06	2020-06-27	5	61
-183	117	t	2020-05-06	2020-06-27	5	61
-184	117	f	2020-05-06	\N	5	61
-185	117	f	2020-05-06	\N	5	61
-249	116	t	2020-07-01	2020-07-01	5	80
-220	131	t	2020-04-28	2020-06-30	5	69
-221	131	t	2020-04-28	2020-06-30	5	69
-186	117	t	2020-05-13	2020-06-27	5	62
-201	127	t	2020-03-09	2020-06-30	5	64
-187	\N	t	2020-05-06	2020-06-27	5	62
-188	\N	t	2020-05-06	2020-06-27	5	62
-202	\N	t	2020-03-09	2020-06-30	5	64
-189	\N	t	2020-05-13	2020-06-27	5	62
-190	117	f	2020-05-13	\N	5	62
-191	\N	f	2020-05-06	\N	5	62
-192	\N	f	2020-05-13	\N	5	62
-222	\N	t	2020-04-28	2020-06-30	5	69
-203	\N	t	2020-03-09	2020-06-30	5	64
-223	131	t	2020-04-28	2020-06-30	5	69
-204	128	t	2020-03-11	2020-06-30	5	65
-205	128	f	2020-03-11	\N	5	65
-250	149	t	2020-07-01	2020-07-01	5	79
-224	131	t	2020-04-28	2020-06-30	5	69
-207	129	t	2020-05-04	2020-06-30	5	66
-208	129	f	2020-05-04	\N	5	66
-209	129	f	2020-06-30	\N	5	66
-251	152	f	2020-07-02	\N	5	66
-225	131	t	2020-04-28	2020-06-30	5	69
-226	131	f	2020-06-30	\N	5	69
-227	132	f	2020-06-30	\N	5	68
-210	\N	t	2020-03-04	2020-06-30	5	67
-228	131	f	2020-06-30	\N	5	69
-211	130	t	2020-03-04	2020-06-30	5	67
-212	\N	t	2020-03-04	2020-06-30	5	67
-252	153	f	2020-07-02	\N	5	82
-229	135	t	2020-04-28	2020-06-30	5	70
-230	135	f	2020-06-30	\N	5	70
-253	116	t	2020-07-02	2020-07-02	5	61
-231	136	t	2020-02-07	2020-06-30	5	71
-232	136	f	2020-02-07	\N	5	71
-233	136	f	2020-06-30	\N	5	71
-234	137	t	2020-03-02	2020-07-01	5	72
-235	137	f	2020-07-01	\N	5	72
-236	138	t	2020-05-07	2020-07-01	5	73
-237	\N	t	2020-03-03	2020-07-01	5	73
-261	116	f	2020-07-02	\N	5	75
-238	\N	t	2020-03-03	2020-07-01	5	73
-262	154	t	2020-07-03	2020-07-03	5	58
-239	139	t	2020-03-05	2020-07-01	5	74
-240	139	t	2020-03-06	2020-07-01	5	74
-241	139	f	2020-07-01	\N	5	74
-243	142	t	2020-03-06	2020-07-01	5	75
-244	142	f	2020-03-06	\N	5	75
-206	128	t	2020-06-30	2020-07-01	5	65
-268	116	f	2020-07-06	\N	5	58
-269	116	f	2020-07-07	\N	5	58
-270	116	f	2020-07-07	\N	5	58
+COPY impuesto.solicitud (id_solicitud, id_usuario, aprobado, fecha, fecha_aprobado, id_tipo_tramite, id_contribuyente, tipo_solicitud) FROM stdin;
+213	130	f	2020-06-30	\N	5	67	\N
+214	127	f	2020-06-30	\N	5	64	\N
+193	117	f	2020-06-27	\N	5	61	\N
+194	117	f	2020-06-27	\N	5	61	\N
+195	117	f	2020-06-27	\N	5	61	\N
+242	139	t	2020-07-01	2020-07-01	5	74	\N
+215	132	t	2020-03-06	2020-06-30	5	68	\N
+216	132	t	2020-03-06	2020-06-30	5	68	\N
+217	132	f	2020-06-30	\N	5	68	\N
+246	151	t	2020-03-10	2020-07-01	5	81	\N
+172	\N	t	2020-05-05	2020-06-26	5	57	\N
+173	58	f	2020-06-26	\N	5	57	\N
+174	58	f	2020-06-26	\N	5	57	\N
+247	151	t	2020-07-01	2020-07-01	5	81	\N
+245	142	t	2020-07-01	2020-07-01	5	75	\N
+248	130	f	2020-07-01	\N	5	67	\N
+181	122	t	2020-06-26	2020-06-27	5	58	\N
+177	\N	t	2020-04-22	2020-06-26	5	58	\N
+218	131	t	2020-03-13	2020-06-30	5	69	\N
+178	\N	t	2020-04-28	2020-06-26	5	58	\N
+179	\N	t	2020-04-28	2020-06-26	5	58	\N
+180	122	t	2020-04-28	2020-06-26	5	58	\N
+219	131	t	2020-04-28	2020-06-30	5	69	\N
+198	58	t	2020-06-27	2020-06-27	5	57	\N
+199	124	f	2020-06-27	\N	5	58	\N
+200	116	f	2020-06-27	\N	5	58	\N
+182	117	t	2020-05-06	2020-06-27	5	61	\N
+183	117	t	2020-05-06	2020-06-27	5	61	\N
+184	117	f	2020-05-06	\N	5	61	\N
+185	117	f	2020-05-06	\N	5	61	\N
+249	116	t	2020-07-01	2020-07-01	5	80	\N
+220	131	t	2020-04-28	2020-06-30	5	69	\N
+221	131	t	2020-04-28	2020-06-30	5	69	\N
+186	117	t	2020-05-13	2020-06-27	5	62	\N
+201	127	t	2020-03-09	2020-06-30	5	64	\N
+187	\N	t	2020-05-06	2020-06-27	5	62	\N
+188	\N	t	2020-05-06	2020-06-27	5	62	\N
+202	\N	t	2020-03-09	2020-06-30	5	64	\N
+189	\N	t	2020-05-13	2020-06-27	5	62	\N
+190	117	f	2020-05-13	\N	5	62	\N
+191	\N	f	2020-05-06	\N	5	62	\N
+192	\N	f	2020-05-13	\N	5	62	\N
+222	\N	t	2020-04-28	2020-06-30	5	69	\N
+203	\N	t	2020-03-09	2020-06-30	5	64	\N
+223	131	t	2020-04-28	2020-06-30	5	69	\N
+204	128	t	2020-03-11	2020-06-30	5	65	\N
+205	128	f	2020-03-11	\N	5	65	\N
+250	149	t	2020-07-01	2020-07-01	5	79	\N
+224	131	t	2020-04-28	2020-06-30	5	69	\N
+207	129	t	2020-05-04	2020-06-30	5	66	\N
+208	129	f	2020-05-04	\N	5	66	\N
+209	129	f	2020-06-30	\N	5	66	\N
+251	152	f	2020-07-02	\N	5	66	\N
+225	131	t	2020-04-28	2020-06-30	5	69	\N
+226	131	f	2020-06-30	\N	5	69	\N
+227	132	f	2020-06-30	\N	5	68	\N
+210	\N	t	2020-03-04	2020-06-30	5	67	\N
+228	131	f	2020-06-30	\N	5	69	\N
+211	130	t	2020-03-04	2020-06-30	5	67	\N
+212	\N	t	2020-03-04	2020-06-30	5	67	\N
+252	153	f	2020-07-02	\N	5	82	\N
+229	135	t	2020-04-28	2020-06-30	5	70	\N
+230	135	f	2020-06-30	\N	5	70	\N
+253	116	t	2020-07-02	2020-07-02	5	61	\N
+231	136	t	2020-02-07	2020-06-30	5	71	\N
+232	136	f	2020-02-07	\N	5	71	\N
+233	136	f	2020-06-30	\N	5	71	\N
+234	137	t	2020-03-02	2020-07-01	5	72	\N
+235	137	f	2020-07-01	\N	5	72	\N
+236	138	t	2020-05-07	2020-07-01	5	73	\N
+237	\N	t	2020-03-03	2020-07-01	5	73	\N
+261	116	f	2020-07-02	\N	5	75	\N
+238	\N	t	2020-03-03	2020-07-01	5	73	\N
+262	154	t	2020-07-03	2020-07-03	5	58	\N
+239	139	t	2020-03-05	2020-07-01	5	74	\N
+240	139	t	2020-03-06	2020-07-01	5	74	\N
+241	139	f	2020-07-01	\N	5	74	\N
+243	142	t	2020-03-06	2020-07-01	5	75	\N
+244	142	f	2020-03-06	\N	5	75	\N
+206	128	t	2020-06-30	2020-07-01	5	65	\N
+268	116	f	2020-07-06	\N	5	58	\N
 \.
 
 
