@@ -15,9 +15,7 @@ export const finingInit = async (procedure, user: Usuario) => {
   let costo, respState;
   try {
     client.query('BEGIN');
-    const response = (
-      await client.query(queries.FINING_INIT, [tipoTramite, JSON.stringify({ funcionario: datos }), procedure.nacionalidad, procedure.cedula, user.id])
-    ).rows[0];
+    const response = (await client.query(queries.FINING_INIT, [tipoTramite, JSON.stringify({ funcionario: datos }), procedure.nacionalidad, procedure.cedula, user.id])).rows[0];
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_FINING, [response.idTramite])).rows[0];
     const utmm = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
@@ -44,14 +42,7 @@ export const finingInit = async (procedure, user: Usuario) => {
       cedula: response.cedula,
       nacionalidad: response.nacionalidad,
     };
-    await sendNotification(
-      user,
-      `Se le ha asignado una multa al titular de la cédula ${multa.nacionalidad}-${multa.cedula}`,
-      'CREATE_FINING',
-      'MULTA',
-      multa,
-      client
-    );
+    await sendNotification(user, `Se le ha asignado una multa al titular de la cédula ${multa.nacionalidad}-${multa.cedula}`, 'CREATE_FINING', 'MULTA', multa, client);
     client.query('COMMIT');
 
     const userExists = (await client.query(queries.CHECK_IF_USER_EXISTS, [multa.cedula, multa.nacionalidad])).rows;
@@ -97,6 +88,7 @@ const addPaymentFining = async (procedure, user: Usuario) => {
     if (pago && nextEvent.startsWith('validar')) {
       pago.costo = resources.costo;
       pago.concepto = 'MULTA';
+      pago.user = user.id;
       await insertPaymentReference(pago, procedure.idTramite, client);
     }
 
@@ -122,14 +114,7 @@ const addPaymentFining = async (procedure, user: Usuario) => {
       cedula: response.cedula,
       nacionalidad: response.nacionalidad,
     };
-    await sendNotification(
-      user,
-      `Se añadieron los datos de pago para una multa asignada al titular de la cédula ${multa.nacionalidad}-${multa.cedula}`,
-      'UPDATE_FINING',
-      'MULTA',
-      multa,
-      client
-    );
+    await sendNotification(user, `Se añadieron los datos de pago para una multa asignada al titular de la cédula ${multa.nacionalidad}-${multa.cedula}`, 'UPDATE_FINING', 'MULTA', multa, client);
     client.query('COMMIT');
     const userExists = (await client.query(queries.CHECK_IF_USER_EXISTS, [multa.cedula, multa.nacionalidad])).rows;
     if (userExists.length > 0) {
@@ -154,7 +139,7 @@ const addPaymentFining = async (procedure, user: Usuario) => {
   }
 };
 
-export const validateFining = async (procedure, user: Usuario, client ) => {
+export const validateFining = async (procedure, user: Usuario, client) => {
   let dir, respState;
   try {
     const resources = (await client.query(queries.GET_RESOURCES_FOR_FINING, [procedure.idTramite])).rows[0];
@@ -195,14 +180,7 @@ export const validateFining = async (procedure, user: Usuario, client ) => {
       cedula: response.cedula,
       nacionalidad: response.nacionalidad,
     };
-    await sendNotification(
-      user,
-      `Se ha validado el pago de una multa asignada al titular de la cédula ${multa.nacionalidad}-${multa.cedula}`,
-      'UPDATE_FINING',
-      'MULTA',
-      multa,
-      client
-    );
+    await sendNotification(user, `Se ha validado el pago de una multa asignada al titular de la cédula ${multa.nacionalidad}-${multa.cedula}`, 'UPDATE_FINING', 'MULTA', multa, client);
     const userExists = (await client.query(queries.CHECK_IF_USER_EXISTS, [multa.cedula, multa.nacionalidad])).rows;
     if (userExists.length > 0) {
       sendEmail({

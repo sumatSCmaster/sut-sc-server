@@ -24,6 +24,7 @@ import e from 'express';
 import S3Client from '@utils/s3';
 import ExcelJs from 'exceljs';
 import * as fs from 'fs';
+import { procedureInit } from './procedures';
 const written = require('written-number');
 
 const gticPool = GticPool.getInstance();
@@ -90,6 +91,12 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     if ((!branch && reference) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEMAT' };
     const lastSettlementQuery = contributor.tipo_contribuyente === 'JURIDICO' ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
     const lastSettlementPayload = contributor.tipo_contribuyente === 'JURIDICO' ? branch.referencia_municipal : contributor.id_contribuyente;
+    const fiscalCredit = (
+      await client.query('SELECT credito FROM impuesto.credito_fiscal WHERE id_persona = $1 AND concepto = $2', [
+        contributor.tipo_contribuyente === 'JURIDICO' ? branch.id_registro_municipal : contributor.id_contribuyente,
+        contributor.tipo_contribuyente,
+      ])
+    ).rows[0].credito;
     const AEApplicationExists = contributor.tipo_contribuyente === 'JURIDICO' || reference ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.AE, reference])).rows[0] : false;
     const SMApplicationExists =
       contributor.tipo_contribuyente === 'JURIDICO'
@@ -262,6 +269,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         rim: reference,
         documento: contributor.documento,
         tipoDocumento: contributor.tipo_documento,
+        creditoFiscal: fiscalCredit,
         AE,
         SM,
         IU: (IU.length > 0 && IU) || undefined,
@@ -1177,12 +1185,12 @@ export const getAgreementsForContributor = async ({ reference, docType, document
         };
       })
     );
-    return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', convenios: applications };
+    return { status: 200, message: 'Convenios obtenidos satisfactoriamente', convenios: applications };
   } catch (error) {
     throw {
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
+      message: errorMessageGenerator(error) || 'Error al obtener convenios de contribuyente',
     };
   } finally {
     client.release();
@@ -1333,6 +1341,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
           usuario: el.usuario,
           contribuyente: structureContributor(docs),
           aprobado: el.aprobado,
+          creditoFiscal: (await client.query('SELECT credito FROM impuesto.credito_fiscal WHERE id_persona = $1 AND concepto = $2', [typeUser === 'JURIDICO' ? liquidaciones[0]?.id_registro_municipal : el.id_contribuyente, typeUser])).rows[0].credito,
           fecha: el.fecha,
           documento: docs.documento,
           tipoDocumento: docs.tipo_documento,
@@ -1421,11 +1430,13 @@ export const contributorSearch = async ({ document, docType, name }) => {
   const client = await pool.connect();
   let contribuyentes: any[] = [];
   try {
+    console.log(document, name);
+    console.log(!document && !name);
     if (!document && !name) throw { status: 406, message: 'Debe aportar algun parametro para la busqueda' };
-    if (document.length < 6 && name.length < 3) throw { status: 406, message: 'Debe aportar mas datos para la busqueda' };
+    if (document && document.length < 6 && name && name.length < 3) throw { status: 406, message: 'Debe aportar mas datos para la busqueda' };
     contribuyentes = document && document.length > 6 ? (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows : (await client.query(queries.SEARCH_CONTRIBUTOR_BY_NAME, [`%${name}%`])).rows;
     const contributorExists = contribuyentes.length > 0;
-    if (!contributorExists) return { status: 404, message: 'No existe un contribuyente registrado con ese documento' };
+    if (!contributorExists) return { status: 404, message: 'No existen coincidencias con la razon social o documento proporcionado' };
     contribuyentes = await Promise.all(contribuyentes.map(async (el) => await formatContributor(el, client)));
     return { status: 200, message: 'Contribuyente obtenido', contribuyentes };
   } catch (error) {
@@ -1999,6 +2010,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
         }
         el.fecha = paymentDate;
         el.concepto = 'IMPUESTO';
+        el.user = user.id;
         user.tipoUsuario === 4 ? await insertPaymentReference(el, application, client) : await insertPaymentCashier(el, application, client);
       })
     );
@@ -2038,8 +2050,6 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
     const fraccion = (await client.query(queries.GET_FRACTION_BY_AGREEMENT_AND_FRACTION_ID, [agreement, fragment])).rows[0];
     const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
     if (pagoSum < fraccion.monto) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
-    const state =
-      user.tipoUsuario === 4 ? (await client.query(queries.UPDATE_FRACTION_STATE, [fragment, applicationStateEvents.VALIDAR])).rows[0] : (await client.query(queries.COMPLETE_FRACTION_STATE, [fragment, applicationStateEvents.APROBARCAJERO])).rows[0];
     await Promise.all(
       payment.map(async (el) => {
         if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
@@ -2050,9 +2060,12 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
         }
         el.fecha = paymentDate;
         el.concepto = 'CONVENIO';
+        el.user = user.id;
         user.tipoUsuario === 4 ? await insertPaymentReference(el, fragment, client) : await insertPaymentCashier(el, fragment, client);
       })
     );
+    const state =
+      user.tipoUsuario === 4 ? (await client.query(queries.UPDATE_FRACTION_STATE, [fragment, applicationStateEvents.VALIDAR])).rows[0] : (await client.query(queries.COMPLETE_FRACTION_STATE, [fragment, applicationStateEvents.APROBARCAJERO])).rows[0];
     await client.query('COMMIT');
     const applicationInstance = await getAgreementFractionById({ id: fragment });
     console.log(applicationInstance);
@@ -2163,10 +2176,14 @@ export const internalContributorSignUp = async (contributor) => {
   const client = await pool.connect();
   const { correo, denominacionComercial, direccion, doc, puntoReferencia, razonSocial, sector, parroquia, siglas, telefono, tipoContribuyente, tipoDocumento } = contributor;
   try {
+    await client.query('BEGIN');
+    console.log('???');
     const user = { nombreCompleto: razonSocial, nombreUsuario: correo, direccion, cedula: doc, nacionalidad: tipoDocumento, password: '', telefono };
     const salt = genSaltSync(10);
     user.password = hashSync('123456', salt);
+    console.log('si');
     const sutUser = await signUpUser(user);
+    console.log('no');
     const procedure = {
       datos: {
         funcionario: {
@@ -2184,7 +2201,10 @@ export const internalContributorSignUp = async (contributor) => {
       },
       usuario: sutUser.user.id,
     };
+    console.log('yas');
     const data = await approveContributorSignUp({ procedure, client });
+    console.log('supalo');
+    await client.query('COMMIT');
     return { status: 201, message: 'Contribuyente registrado', contribuyente: data };
   } catch (error) {
     client.query('ROLLBACK');
@@ -2192,7 +2212,7 @@ export const internalContributorSignUp = async (contributor) => {
     throw {
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al insertar referencias de pago',
+      message: errorMessageGenerator(error) || 'Error al crear contribuyente por metodo interno',
     };
   } finally {
     client.release();
@@ -2220,13 +2240,17 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
     const { usuario, funcionario } = data;
     const { actividadesEconomicas } = funcionario;
     const { contribuyente } = usuario;
-    const registry = (await client.query(queries.ADD_BRANCH_FOR_CONTRIBUTOR, [contribuyente.id, funcionario.telefono, funcionario.correo, funcionario.denominacionComercial, funcionario.nombreRepresentante])).rows[0];
+    const registry = (
+      await client.query(queries.ADD_BRANCH_FOR_CONTRIBUTOR, [contribuyente.id, funcionario.telefono, funcionario.correo, funcionario.denominacionComercial, funcionario.nombreRepresentante, funcionario.capitalSuscrito, funcionario.tipoSociedad])
+    ).rows[0];
     data.funcionario.referenciaMunicipal = registry.referencia_municipal;
     await Promise.all(
       actividadesEconomicas!.map(async (x) => {
         return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.codigo]);
       })
     );
+    data.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [data.idTramite, 'TRAMITE'])).rows.map((row) => ({ monto: row.monto, formaPago: row.metodo_pago, banco: row.nombre, fecha: row.fecha_de_pago, nro: row.referencia }));
+
     const verifiedId = (await client.query('SELECT * FROM impuesto.verificacion_telefono WHERE id_usuario = $1', [usuario.id])).rows[0]?.id_verificacion_telefono;
     await client.query('INSERT INTO impuesto.registro_municipal_verificacion VALUES ($1, $2) RETURNING *', [registry.id_registro_municipal, verifiedId]);
     console.log(data);
@@ -3004,39 +3028,38 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
   }
 };
 
-
 const createPatentDocument = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
     const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
-    const economicActivities = (await pool.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [referencia?.referencia_municipal])).rows
-    
-    const payment = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [application.id])).rows
-    const cashier = (await pool.query(queries.GET_USER_INFO_BY_ID, [payment[0].id_usuario])).rows
+    const economicActivities = (await pool.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [referencia?.referencia_municipal])).rows;
+
+    const payment = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [application.id, 'TRAMITE'])).rows;
+    const cashier = (await pool.query(queries.GET_USER_INFO_BY_ID, [payment[0].id_usuario])).rows;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-LAE.pug`), {
         moment: require('moment'),
         institucion: 'SEDEMAT',
         QR: linkQr,
-        datos:{
+        datos: {
           contribuyente: {
             razonSocial: application.razonSocial,
             denomComercial: application.denomComercial,
             rif: `${application.tipoDocumento}-${application.documento}`,
-            rim:referencia?.referencia_municipal,
+            rim: referencia?.referencia_municipal,
             direccion: application.direccion,
           },
-          nroSolicitud:application.id,
+          nroSolicitud: application.id,
           nroPlanilla: 112,
           motivo: application.descripcionSubramo,
           usuario: user.nombreCompleto,
           cajero: cashier[0]?.nombreCompleto,
           fechaLiq: breakdownData[0].fecha_liquidacion,
           fechaVenc: breakdownData[0].fecha_vencimiento,
-          capitalSubs:'',
+          capitalSubs: '',
           fechaReg: application.fechaCreacion,
-          fechaInsc:application.fechaCreacion,
+          fechaInsc: application.fechaCreacion,
           tipoSoc: '',
           fechaSolt: application.fechaCreacion,
           tipoDocumento: application.tipoDocumento,
@@ -3044,11 +3067,11 @@ const createPatentDocument = async ({ gticPool, pool, user, application }: Certi
           actividades: economicActivities.map((row) => {
             return {
               codigo: row.numeroReferencia,
-              descripcion:row.descripcion,
-              alicuota:row.alicuota,
+              descripcion: row.descripcion,
+              alicuota: row.alicuota,
               periodo: application.datos.fecha.year,
-              fechaIni: application.fechaCreacion
-            }
+              fechaIni: application.fechaCreacion,
+            };
           }),
           metodoPago: payment.map((row) => {
             return {
@@ -3056,13 +3079,13 @@ const createPatentDocument = async ({ gticPool, pool, user, application }: Certi
               formaPago: row.metodo_pago,
               banco: row.nombre,
               fecha: row.fecha_de_pago,
-              nro: row.referencia
-            }
+              nro: row.referencia,
+            };
           }),
           totalLiq: 1000000,
           totalRecaudado: payment.reduce((prev, next) => prev + next.monto, 0),
           totalCred: '',
-        }
+        },
       });
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/patente.pdf`);
       const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/patente.pdf`;
@@ -3099,7 +3122,6 @@ const createPatentDocument = async ({ gticPool, pool, user, application }: Certi
     throw errorMessageExtractor(error);
   }
 };
-
 
 const createFineDocument = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
