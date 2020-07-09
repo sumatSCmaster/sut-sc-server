@@ -6,9 +6,7 @@ import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { renderFile } from 'pug';
 import { errorMessageExtractor } from './errors';
-import { QueryResult } from 'pg';
 import * as pdf from 'html-pdf';
-import { groupBy } from 'lodash'
 
 const dev = process.env.NODE_ENV !== 'production';
 

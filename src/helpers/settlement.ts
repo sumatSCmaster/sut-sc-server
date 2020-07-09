@@ -3011,7 +3011,7 @@ const createPatentDocument = async ({ gticPool, pool, user, application }: Certi
     const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
     const economicActivities = (await pool.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [referencia?.referencia_municipal])).rows
     
-    const payment = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [application.id, 'TRAMITE'])).rows
+    const payment = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [application.id])).rows
     const cashier = (await pool.query(queries.GET_USER_INFO_BY_ID, [payment[0].id_usuario])).rows
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     return new Promise(async (res, rej) => {
