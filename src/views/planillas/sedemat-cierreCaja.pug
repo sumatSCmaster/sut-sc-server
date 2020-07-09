@@ -24,7 +24,7 @@ block content
         div(style={'-webkit-flex':'5'}).td
           p 
             b FECHA:
-            span &nbsp; #{datos.fecha}
+            span &nbsp; #{moment(datos.fecha).format('DD/MM/YYYY')}
     div(style={'margin-top':'100px'}).table
       .tr
         .th.center.border-bottom 

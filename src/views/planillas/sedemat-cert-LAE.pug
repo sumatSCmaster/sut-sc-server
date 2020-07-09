@@ -21,74 +21,44 @@ block content
               b Nro. Solicitud
           div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
             p
-              b Nro. Planilla
-          div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
-            p
               b MOTIVO
-          div(style={'-webkit-flex': 1.5}).td.border-right.border-bottom.center
+          div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
             p
               b Liquidador
-          div(style={'-webkit-flex': 1.5}).td.border-bottom.center
+          div(style={'-webkit-flex': 2}).td.border-bottom.center
             p
               b Cajero
         div.tr
           div(style={'-webkit-flex': 1}).td.border-right.center
-            p  #{datos.nroSolicitud}
+            p  #{datos.codigo}
           div(style={'-webkit-flex': 1}).td.border-right.center
-            p  #{datos.nroPlanilla}
-          div(style={'-webkit-flex': 1}).td.border-right.center
-            p  #{datos.motivo}
-          div(style={'-webkit-flex': 1.5}).td.border-right.center
-            p  #{datos.usuario}
-          div(style={'-webkit-flex': 1.5}).td.center
+            p  RG2020
+          div(style={'-webkit-flex': 2}).td.border-right.center
+            p  #{datos.usuario.contribuyente.razonSocial}
+          div(style={'-webkit-flex': 2}).td.center
             p  #{datos.cajero}
     div.table(style={'font-size':'13px','margin-top':'20px'})
       .tr
-        div(style={'-webkit-flex': 4,'padding-right':'1px'}).td.center.border-right.border-bottom
+        div(style={'-webkit-flex': 1,'padding-right':'1px'}).td.center.border-right.border-bottom
           p 
             b Tipo De Trámite: 112 - Licencia de Actividad Económica
-        div(style={'-webkit-flex': 1.5,'padding-right':'1px'}).td.center.border-right.border-bottom
-          p 
-            b Fecha Liquidación:
-        div(style={'-webkit-flex': 1.5,'padding-right':'1px'}).td.center.border-right.border-bottom
-          p #{datos.fechaLiq}
-        div(style={'-webkit-flex': 1.5,'padding-right':'1px'}).td.center.border-right.border-bottom
-          p 
-            b Fecha Vencimiento:
-        div(style={'-webkit-flex': 1.5}).td.center.border-bottom
-          p #{datos.fechaVenc}
       .tr
-        div(style={'-webkit-flex': 1.5}).td.center.border-right.border-bottom
+        div(style={'-webkit-flex': 2}).td.center.border-right.border-bottom
           p 
-            b Capital Subscrito:
-        div(style={'-webkit-flex': 2.5}).td.center.border-right.border-bottom
-          p #{datos.capitalSubs}            
-        div(style={'-webkit-flex': 1.5}).td.center.border-right.border-bottom
-          p 
-            b Fecha Registro: 
-        div(style={'-webkit-flex': 1.5}).td.center.border-right.border-bottom
-          p #{datos.fechaReg}
+            b Capital Suscrito:
+        div(style={'-webkit-flex': 5}).td.center.border-right.border-bottom
+          p #{datos.funcionario.capital}
         div(style={'-webkit-flex': 1.5}).td.center.border-right.border-bottom
           p 
             b Fecha Inscripcion:
         div(style={'-webkit-flex': 1.5}).td.center.border-bottom
           p #{datos.fechaInsc}
       .tr
-        div(style={'-webkit-flex': 1.5}).td.center.border-right
+        div(style={'-webkit-flex': 2}).td.center.border-right
           p 
             b Tipo de sociedad:
-        div(style={'-webkit-flex': 2.5}).td.center.border-right
-          p #{datos.tipoSoc}            
-        div(style={'-webkit-flex': 1.5}).td.center.border-right
-          p 
-            b Fecha Solicitud:
-        div(style={'-webkit-flex': 1.5}).td.center.border-right
-          p #{datos.fechaSolt}
-        div(style={'-webkit-flex': 1.5}).td.center.border-right
-          p 
-            b Numero Registro:
-        div(style={'-webkit-flex': 1.5}).td.center
-          p #{datos.nroReg}                    
+        div(style={'-webkit-flex': 8}).td.center.border-right
+          p #{datos.funcionario.tipoSolicitud}                  
     div.table(style={'font-size':'13px','margin-top':'20px'})
       div.tr
         div.th(style={'-webkit-flex': 1}).border-bottom.center
@@ -99,27 +69,27 @@ block content
           p
             b RAZÓN SOCIAL:
         div(style={'-webkit-flex': 6}).td.border-bottom.border-right
-          p #{datos.contribuyente.razonSocial}
+          p #{datos.usuario.contribuyente.razonSocial}
         div(style={'-webkit-flex': 2}).td.border-bottom
           p
             b RIF:&nbsp;
-            span #{datos.contribuyente.rif}            
+            span #{datos.usuario.contribuyente.tipoDocumento}-#{datos.usuario.contribuyente.documento}
       div.tr
         div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
           p
             b DENOM. COMERCIAL:
         div(style={'-webkit-flex': 6}).td.border-bottom.border-right
-          p #{datos.contribuyente.denomComercial}
+          p #{datos.funcionario.contribuyente.denominacionComercial}
         div(style={'-webkit-flex': 2}).td.border-bottom
           p
             b REF:&nbsp;
-            span #{datos.contribuyente.rim}          
+            span #{datos.referenciaMunicipal}          
       div.tr
         div(style={'-webkit-flex': 2}).td.border-right.center
           p
             b DIRECCIÓN:
         div(style={'-webkit-flex': 8, 'padding-left':'5px'}).td
-          p #{datos.contribuyente.direccion}
+          p #{datos.usuario.contribuyente.direccion}
     div.table
       .tr
         .th.center.border-bottom
@@ -141,7 +111,7 @@ block content
         div(style={'-webkit-flex': 1.5}).td.border-bottom.center
           p
             b FECHA INICIO    
-      each item in datos.actividades
+      each item in datos.funcionario.actividadesEconomicas
         div.tr.break-page
           div(style={'-webkit-flex': 1}).td.border-right.center
             p #{item.codigo}
@@ -165,8 +135,7 @@ block content
         div(style={'-webkit-flex': 8}).td.border-right
           p Pago por Licencia de Actividad Económica
         div(style={'-webkit-flex': 2}).td.center
-          p 1.000.000
-
+          p #{new Intl.NumberFormat('de-DE').format(2*UTMM)}
     div(style={'margin-top':'20px'}).table.break-page
       .tr.break-page
         .th.center.border-bottom
@@ -205,13 +174,13 @@ block content
         div(style={'-webkit-flex': 1}).td.border-right.center
           p
             b Total Liquidado:
-            span &nbsp;Bs #{new Intl.NumberFormat('de-DE').format(datos.totalLiq)}
+            span &nbsp;Bs #{new Intl.NumberFormat('de-DE').format(datos.funcionario.totalLiq)}
         div(style={'-webkit-flex': 1}).td.border-right.center
           p
             b Total Recaudado:
-            span &nbsp;Bs #{new Intl.NumberFormat('de-DE').format(datos.totalRecaudado)}
+            span &nbsp;Bs #{new Intl.NumberFormat('de-DE').format(datos.funcionario.totalRecaudado)}
         div(style={'-webkit-flex': 1}).td.center
           p
             b Total Credito Fiscal:
-            span &nbsp;Bs #{new Intl.NumberFormat('de-DE').format(datos.totalCred)}
+            span &nbsp;Bs #{new Intl.NumberFormat('de-DE').format(datos.funcionario.totalCred)}
 block footer
