@@ -3412,7 +3412,7 @@ const addMissingCarriedAmounts = (amountObject) => {
 };
 
 const certificateCases = switchcase({
-  AE: { recibo: createReceiptForAEApplication, solvencia: createSolvencyForApplication, patente: createPatentDocument },
+  AE: { recibo: createReceiptForAEApplication, solvencia: createSolvencyForApplication},
   SM: { recibo: createReceiptForSMOrIUApplication },
   IU: { recibo: createReceiptForSMOrIUApplication },
   PP: { recibo: createReceiptForPPApplication },

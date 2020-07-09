@@ -731,6 +731,14 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         INNER JOIN banco b ON b.id_banco = p.id_pago
         WHERE p.fecha_de_pago = $1 AND p.metodo_pago = 'TRANSFERENCIA' AND id_usuario = $2
         GROUP BY b.id_banco, b.nombre;`,
+  GET_ALL_CASHIERS_TOTAL: `SELECT u.nombre_completo, SUM(p.monto) AS monto
+    FROM pago p INNER JOIN usuario u USING (id_usuario)
+    WHERE p.fecha_de_pago = $1
+    GROUP BY u.nombre_completo;`,
+  GET_ALL_CASHIERS_METHODS_TOTAL: `SELECT p.metodo_pago, SUM(p.monto) AS monto, COUNT(*) AS transacciones
+    FROM pago p 
+    WHERE p.fecha_de_pago = $1 AND p.id_usuario IS NOT NULL
+    GROUP BY p.metodo_pago;`,
   //EXONERACIONES
   GET_CONTRIBUTOR:
     'SELECT c.id_contribuyente as id, razon_social AS "razonSocial", rm.denominacion_comercial AS "denominacionComercial", rm.referencia_municipal AS "referenciaMunicipal" FROM impuesto.contribuyente c INNER JOIN impuesto.registro_municipal rm ON rm.id_contribuyente = c.id_contribuyente WHERE c.tipo_documento = $1 AND c.documento = $2 AND rm.referencia_municipal = $3;',
