@@ -2050,8 +2050,6 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
     const fraccion = (await client.query(queries.GET_FRACTION_BY_AGREEMENT_AND_FRACTION_ID, [agreement, fragment])).rows[0];
     const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
     if (pagoSum < fraccion.monto) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
-    const state =
-      user.tipoUsuario === 4 ? (await client.query(queries.UPDATE_FRACTION_STATE, [fragment, applicationStateEvents.VALIDAR])).rows[0] : (await client.query(queries.COMPLETE_FRACTION_STATE, [fragment, applicationStateEvents.APROBARCAJERO])).rows[0];
     await Promise.all(
       payment.map(async (el) => {
         if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
@@ -2066,6 +2064,8 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
         user.tipoUsuario === 4 ? await insertPaymentReference(el, fragment, client) : await insertPaymentCashier(el, fragment, client);
       })
     );
+    const state =
+      user.tipoUsuario === 4 ? (await client.query(queries.UPDATE_FRACTION_STATE, [fragment, applicationStateEvents.VALIDAR])).rows[0] : (await client.query(queries.COMPLETE_FRACTION_STATE, [fragment, applicationStateEvents.APROBARCAJERO])).rows[0];
     await client.query('COMMIT');
     const applicationInstance = await getAgreementFractionById({ id: fragment });
     console.log(applicationInstance);
