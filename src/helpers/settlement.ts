@@ -1997,7 +1997,9 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    console.log('coro1');
     const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0];
+    console.log('coro2');
     const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
     if (pagoSum < solicitud.monto_total) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
     await Promise.all(
@@ -2014,10 +2016,13 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
         user.tipoUsuario === 4 ? await insertPaymentReference(el, application, client) : await insertPaymentCashier(el, application, client);
       })
     );
+    console.log('coro3');
     const state =
       user.tipoUsuario === 4
         ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0]
         : (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.APROBARCAJERO])).rows[0];
+    console.log('coro4');
+
     await client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
     console.log(applicationInstance);
@@ -3434,7 +3439,7 @@ const addMissingCarriedAmounts = (amountObject) => {
 };
 
 const certificateCases = switchcase({
-  AE: { recibo: createReceiptForAEApplication, solvencia: createSolvencyForApplication},
+  AE: { recibo: createReceiptForAEApplication, solvencia: createSolvencyForApplication },
   SM: { recibo: createReceiptForSMOrIUApplication },
   IU: { recibo: createReceiptForSMOrIUApplication },
   PP: { recibo: createReceiptForPPApplication },
