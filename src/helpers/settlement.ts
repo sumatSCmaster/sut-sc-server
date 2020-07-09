@@ -1999,6 +1999,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
         }
         el.fecha = paymentDate;
         el.concepto = 'IMPUESTO';
+        el.user = user.id;
         user.tipoUsuario === 4 ? await insertPaymentReference(el, application, client) : await insertPaymentCashier(el, application, client);
       })
     );
@@ -2050,6 +2051,7 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
         }
         el.fecha = paymentDate;
         el.concepto = 'CONVENIO';
+        el.user = user.id;
         user.tipoUsuario === 4 ? await insertPaymentReference(el, fragment, client) : await insertPaymentCashier(el, fragment, client);
       })
     );

@@ -68,14 +68,14 @@ export const getAvailableProceduresOfInstitution = async (req: { params: { [id: 
   }
 };
 
-const esDaniel = ({tipoUsuario, institucion}) => {
-  return tipoUsuario === 2 && institucion.id_institucion === 9
-}
+const esDaniel = ({ tipoUsuario, institucion }) => {
+  return tipoUsuario === 2 && institucion.id_institucion === 9;
+};
 
 const getProcedureInstances = async (user, client: PoolClient) => {
   try {
-    if(esDaniel(user)){
-      return []
+    if (esDaniel(user)) {
+      return [];
     }
     let response = (await procedureInstanceHandler(user, client)).rows; //TODO: corregir el handler para que no sea tan forzado
     const takings = (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [response.map((el) => +el.id)])).rows;
@@ -175,7 +175,7 @@ const getSettlementInstances = async (user, client: PoolClient) => {
     let payload = [user.id];
     let response = (await client.query(query, payload)).rows;
     return response.map((el) => {
-      const liquidacion: Liquidacion & { pagado: string; aprobado: string, nombreCorto: string } = {
+      const liquidacion: Liquidacion & { pagado: string; aprobado: string; nombreCorto: string } = {
         id: el.id_liquidacion,
         ramo: el.descripcion,
         nombreCorto: el.descripcion_corta,
@@ -418,6 +418,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
     if (pago && resources.sufijo !== 'tl' && nextEvent.startsWith('validar')) {
       pago.costo = costo;
       pago.concepto = 'TRAMITE';
+      pago.user = user.id;
       await insertPaymentReference(pago, response.id, client);
     }
 
@@ -427,6 +428,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
         if (pago) {
           pago.costo = costo;
           pago.concepto = 'TRAMITE';
+          pago.user = user.id;
           await insertPaymentReference(pago, response.id, client);
         }
         dir = await createRequestForm(response, client);
@@ -656,6 +658,7 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
     if (pago && nextEvent.startsWith('validar')) {
       pago.costo = resources.costo;
       pago.concepto = 'TRAMITE';
+      pago.user = user.id;
       await insertPaymentReference(pago, procedure.idTramite, client);
     }
 
