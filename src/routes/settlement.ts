@@ -152,6 +152,7 @@ router.post('/taxPayer', authenticate('jwt'), async (req, res) => {
 });
 
 router.post('/taxPayer/official', authenticate('jwt'), async (req, res) => {
+  console.log('??????????????????????????');
   const [error, data] = await fulfill(internalContributorSignUp(req.body));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
