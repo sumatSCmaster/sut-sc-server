@@ -541,7 +541,10 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo INNER JOIN impuesto.solicitud_state sst ON sst.id = s.id_solicitud',
   GET_SETTLEMENT_INSTANCES_BY_ID:
     'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo INNER JOIN impuesto.solicitud_state sst ON sst.id = s.id_solicitud WHERE s.id_usuario = $1;',
+  GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID: 
+    `SELECT r.descripcion AS "descripcionRamo", sr.descripcion AS "descripcionSubramo", l.monto, l.fecha_liquidacion AS "fechaLiquidacion" FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo INNER JOIN impuesto.solicitud_state sst ON sst.id = s.id_solicitud WHERE s.id_solicitud = $1;`,
   GET_APPLICATION_VIEW_BY_SETTLEMENT: 'SELECT * FROM impuesto.solicitud_view WHERE "idLiquidacion" = $1',
+  GET_APPLICATION_VIEW_BY_ID: 'SELECT * FROM impuesto.solicitud_view WHERE id = $1',
   GET_LAST_FINE_FOR_LATE_APPLICATION:
     "SELECT * FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud s \
     ON l.id_solicitud = s.id_solicitud INNER JOIN impuesto.contribuyente c ON s.id_contribuyente = c.id_contribuyente WHERE \
@@ -608,7 +611,11 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR:
     'SELECT ae.* FROM impuesto.actividad_economica ae INNER JOIN impuesto.actividad_economica_sucursal aec ON ae.numero_referencia = aec.numero_referencia INNER JOIN impuesto.registro_municipal rm ON aec.id_registro_municipal = rm.id_registro_municipal WHERE rm.id_registro_municipal = $1',
   REGISTRY_BY_SETTLEMENT_ID: 'SELECT * FROM impuesto.registro_municipal rm INNER JOIN impuesto.liquidacion l ON l.id_registro_municipal = rm.id_registro_municipal WHERE l.id_liquidacion = $1;',
-  GET_PAYMENT_FROM_REQ_ID: 'SELECT * FROM pago p LEFT JOIN banco b ON b.id_banco = p.id_banco WHERE id_procedimiento = $1 AND concepto = $2',
+  GET_PAYMENT_FROM_REQ_ID: "SELECT * FROM pago p LEFT JOIN banco b ON b.id_banco = p.id_banco WHERE id_procedimiento = $1 AND concepto = 'IMPUESTO'",
+  GET_PAYMENT_FROM_REQ_ID_GROUP_BY_PAYMENT_TYPE: `SELECT p.metodo_pago AS tipo, SUM(p.monto) AS monto, COUNT(*) AS transacciones
+      FROM pago p
+      WHERE p.concepto = 'IMPUESTO' AND p.id_procedimiento = $1
+      GROUP BY p.metodo_pago;`,
   //Dias feriados
   GET_HOLIDAYS_BASED_ON_PAYMENT_DATE: "SELECT * FROM impuesto.dias_feriados WHERE dia BETWEEN $1::date AND ($1::date + interval '7 days');",
   GET_HOLIDAYS: 'SELECT id_dia_feriado as id, dia, descripcion \
