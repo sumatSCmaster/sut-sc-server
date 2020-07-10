@@ -25,6 +25,7 @@ import S3Client from '@utils/s3';
 import ExcelJs from 'exceljs';
 import * as fs from 'fs';
 import { procedureInit } from './procedures';
+import { generateReceipt } from './receipt';
 const written = require('written-number');
 
 const gticPool = GticPool.getInstance();
@@ -1994,14 +1995,11 @@ export const insertSettlements = async ({ process, user }) => {
   }
 };
 
-//TODO: revisar mayana
 export const addTaxApplicationPayment = async ({ payment, application, user }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    console.log('coro1');
     const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0];
-    console.log('coro2');
     const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
     if (pagoSum < solicitud.monto_total) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
     await Promise.all(
@@ -2016,18 +2014,26 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
         el.concepto = 'IMPUESTO';
         el.user = user.id;
         user.tipoUsuario === 4 ? await insertPaymentReference(el, application, client) : await insertPaymentCashier(el, application, client);
+        if (el.metodoPago === 'CREDITO FISCAL') {
+          const fixatedApplication = await getApplicationsAndSettlementsById({ id: application, user });
+          const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
+            ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
+            : undefined;
+          const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', -el.costo] : [fixatedApplication.contribuyente.id, 'NATURAL', -el.costo];
+          await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
+        }
       })
     );
-    console.log('coro3');
     const state =
       user.tipoUsuario === 4
         ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0]
         : (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.APROBARCAJERO])).rows[0];
-    console.log('coro4');
 
     await client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
-    console.log(applicationInstance);
+    if (user.tipoUsuario === 4) {
+      applicationInstance.recibo = await generateReceipt({ application });
+    }
     await sendNotification(
       user,
       `Se ${user.tipoUsuario === 4 ? `han ingresado los datos de pago` : `ha validado el pago`} de una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
