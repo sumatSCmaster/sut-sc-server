@@ -77,7 +77,7 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
                   cheques: cashierChecks[0],
                   transferencias: cashierTransfersByBank,
                   transacciones: +cashierPosTransactions + +cashierCash[0].transacciones + +cashierChecks[0].transacciones + +cashierTransfersTransactions + +cashierCredit[0].transacciones, 
-                  total: (+cashierPosTotal) + (+cashierCash[0].total) + (+cashierChecks[0].total) + (+cashierTransfersTotal)
+                  total: (+cashierPosTotal) + (+cashierCash[0].total) + (+cashierChecks[0].total) + (+cashierTransfersTotal) +(+cashierCredit[0].total)
                 },
         }
           });
