@@ -719,7 +719,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         GROUP BY b.nombre;`,
   GET_CASHIER_CASH: `SELECT SUM(p.monto) as total, COUNT(*) as transacciones
         FROM pago p 
-        INNER JOIN banco b ON b.id_banco = p.id_banco
+        LEFT JOIN banco b ON b.id_banco = p.id_banco
         WHERE p.fecha_de_pago = $1 AND p.metodo_pago = 'EFECTIVO' AND id_usuario = $2;`,
   GET_CASHIER_CHECKS: `SELECT SUM(p.monto) as total, COUNT(*) as transacciones
         FROM pago p 
@@ -727,7 +727,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         WHERE p.fecha_de_pago = $1 AND p.metodo_pago = 'CHEQUE' AND id_usuario = $2;`,
   GET_CASHIER_CREDIT: `SELECT SUM(p.monto) as total, COUNT(*) as transacciones
         FROM pago p 
-        INNER JOIN banco b ON b.id_banco = p.id_banco
+        LEFT JOIN banco b ON b.id_banco = p.id_banco
         WHERE p.fecha_de_pago = $1 AND p.metodo_pago = 'CREDITO_FISCAL' AND id_usuario = $2;`,
   GET_CASHIER_TRANSFERS: `SELECT b.id_banco as id, b.nombre as banco, SUM(p.monto) as monto, COUNT(*) as transacciones
         FROM pago p 
