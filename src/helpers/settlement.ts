@@ -81,7 +81,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
   const client = await pool.connect();
   const gtic = await gticPool.connect();
   const montoAcarreado: any = {};
-  let AE, SM, IU, PP;
+  let AE, SM, PP;
+  let IU: any[] = [];
   try {
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [type, document])).rows[0];
     if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
