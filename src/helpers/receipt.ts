@@ -7,7 +7,7 @@ import queries from '@utils/queries';
 import { renderFile } from 'pug';
 import { errorMessageExtractor } from './errors';
 import * as pdf from 'html-pdf';
-
+import * as qr from 'qrcode';
 const dev = process.env.NODE_ENV !== 'production';
 
 const pool = Pool.getInstance();
@@ -23,9 +23,13 @@ export const generateReceipt = async (payload: { application: number }) => {
 
   try {
     return new Promise(async (res, rej) => {
+      const pdfDir = resolve(__dirname, `../../archivos/sedemat/recibo/${applicationView.id}/cierre.pdf`);
+      const dir = `${process.env.SERVER_URL}/sedemat/recibo/${applicationView.id}/cierre.pdf`;
+      const linkQr = await qr.toDataURL(dev ? dir : `${process.env.AWS_ACCESS_URL}/sedemat/recibo/${applicationView.id}/cierre.pdf`, { errorCorrectionLevel: 'H' });
       const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-recibo.pug`), {
         moment: require('moment'),
         institucion: 'SEDEMAT',
+        QR: linkQr,
         datos: {
           razonSocial: applicationView.razonSocial,
           tipoDocumento: applicationView.tipoDocumento,
@@ -36,7 +40,7 @@ export const generateReceipt = async (payload: { application: number }) => {
           telefono: referencia?.telefono_celular,
           items: breakdownData.map((row) => {
             return {
-              descripcion: `${row.datos.descripcion ? row.datos.descripcion : `${row.datos.descripcionRamo} - ${row.datos.descripcionSubramo}`} (${row.datos.fecha.month} ${row.datos.fecha.year})`,
+              descripcion: `${row.datos.descripcion ? row.datos.descripcion : `${row.descripcionRamo} - ${row.descripcionSubramo}`} (${row.datos.fecha.month} ${row.datos.fecha.year})`,
               fecha: row.fechaLiquidacion,
               monto: row.monto,
             };
@@ -45,8 +49,7 @@ export const generateReceipt = async (payload: { application: number }) => {
           total: paymentTotal,
         },
       });
-      const pdfDir = resolve(__dirname, `../../archivos/sedemat/recibo/${applicationView.id}/cierre.pdf`);
-      const dir = `${process.env.SERVER_URL}/sedemat/recibo/${applicationView.id}/cierre.pdf`;
+      
       if (dev) {
         pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
           res(dir);
