@@ -2032,7 +2032,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
 
     await client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
-    if (user.tipoUsuario === 4) {
+    if (user.tipoUsuario !== 4) {
       applicationInstance.recibo = await generateReceipt({ application });
     }
     await sendNotification(
