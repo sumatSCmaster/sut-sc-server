@@ -20,13 +20,7 @@ export const generateReceipt = async (payload: { application: number }) => {
   const cashier = (await client.query(queries.GET_USER_INFO_BY_ID, [payment[0].id_usuario])).rows;
   const breakdownData = (await client.query(queries.GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID, [applicationView.id])).rows;
   const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [applicationView.idLiquidacion])).rows[0];
-  breakdownData.map((row) => {
-    return {
-      descripcion: `${row.datos.descripcion ? row.datos.descripcion : `${row.datos.descripcionRamo} - ${row.datos.descripcionSubramo}`} (${row.datos.fecha.month} ${row.datos.fecha.year})`,
-      fecha: row.fechaLiquidacion,
-      monto: row.monto,
-    };
-  });
+
   try {
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-recibo.pug`), {
