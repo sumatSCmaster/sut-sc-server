@@ -97,24 +97,44 @@ block header
             b MONTO TOTAL
         div(style={'-webkit-flex':'1.7','padding-left' : '8px'}).td.center
           p Bs #{new Intl.NumberFormat('de-DE').format(saldoFinal)}
-    .table.break-page
-      .tr.break-page
-        .th.center.border-bottom
-          p
-            b ACTIVIDADES DEL CONTRIBUYENTE
-      .tr.break-page
-        div(style={'-webkit-flex':'2'}).th.center.border-right
-          p
-            b Numero Actividad
-        div(style={'-webkit-flex':'8'}).th.center
-          p
-            b Descripcion Actividad
-      each  item in actividadesContribuyente
-        div(style={'border-top':'1px solid #000'}).tr.break-page
-          div(style={'-webkit-flex':'2'}).td.center.border-right
-            p  #{item.id}   
-          div(style={'-webkit-flex':'8'}).td.center
-            p #{item.nombreActividad}        
+    if datosLiquidacion.length >= 20 
+      div(style={'margin-top':'150px'}).table.break-page
+        .tr.break-page
+          .th.center.border-bottom
+            p
+              b ACTIVIDADES DEL CONTRIBUYENTE
+        .tr.break-page
+          div(style={'-webkit-flex':'2'}).th.center.border-right
+            p
+              b Numero Actividad
+          div(style={'-webkit-flex':'8'}).th.center
+            p
+              b Descripcion Actividad
+        each  item in actividadesContribuyente
+          div(style={'border-top':'1px solid #000'}).tr.break-page
+            div(style={'-webkit-flex':'2'}).td.center.border-right
+              p  #{item.id}   
+            div(style={'-webkit-flex':'8'}).td.center
+              p #{item.nombreActividad}  
+    else
+      .table.break-page
+        .tr.break-page
+          .th.center.border-bottom
+            p
+              b ACTIVIDADES DEL CONTRIBUYENTE
+        .tr.break-page
+          div(style={'-webkit-flex':'2'}).th.center.border-right
+            p
+              b Numero Actividad
+          div(style={'-webkit-flex':'8'}).th.center
+            p
+              b Descripcion Actividad
+        each  item in actividadesContribuyente
+          div(style={'border-top':'1px solid #000'}).tr.break-page
+            div(style={'-webkit-flex':'2'}).td.center.border-right
+              p  #{item.id}   
+            div(style={'-webkit-flex':'8'}).td.center
+              p #{item.nombreActividad}        
                        
 block title
 block content
