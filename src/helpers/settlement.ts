@@ -2003,6 +2003,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
     const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0];
     const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
     if (pagoSum < solicitud.monto_total) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
+    const creditoPositivo = pagoSum - solicitud.monto_total;
     await Promise.all(
       payment.map(async (el) => {
         if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
@@ -2016,16 +2017,12 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
         el.user = user.id;
         user.tipoUsuario === 4 ? await insertPaymentReference(el, application, client) : await insertPaymentCashier(el, application, client);
         if (el.metodoPago === 'CREDITO_FISCAL') {
-          const fixatedApplication = await getApplicationsAndSettlementsById({ id: application, user });
-          const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
-            ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
-            : undefined;
-          console.log(idReferenciaMunicipal);
-          const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', -el.costo] : [fixatedApplication.contribuyente.id, 'NATURAL', -el.costo];
-          await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
+          await updateFiscalCredit({ id: application, user, amount: -el.costo, client });
         }
       })
     );
+    if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
+
     const state =
       user.tipoUsuario === 4
         ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0]
@@ -2056,6 +2053,15 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
   } finally {
     client.release();
   }
+};
+
+const updateFiscalCredit = async ({ id, user, amount, client }) => {
+  const fixatedApplication = await getApplicationsAndSettlementsById({ id, user });
+  const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
+    ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
+    : undefined;
+  const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', amount] : [fixatedApplication.contribuyente.id, 'NATURAL', amount];
+  await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
 };
 
 export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fragment, user }) => {
@@ -3218,12 +3224,14 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
     const branch = reference && (await client.query('SELECT r.* FROM impuesto.registro_municipal r WHERE referencia_municipal = $1', [reference])).rows[0];
     const contributorQuery = typeUser === 'JURIDICO' ? queries.GET_SETTLEMENTS_FOR_CODE_AND_RIM : queries.GET_SETTLEMENTS_FOR_CODE_AND_CONTRIBUTOR;
     const contributorPayload = typeUser === 'JURIDICO' ? branch.referencia_municipal : contribuyente.id_contribuyente;
-    const economicActivities = (
-      await client.query(
-        'SELECT id_actividad_economica AS id, ae.numero_referencia AS "numeroReferencia", descripcion as "nombreActividad", alicuota, minimo_tributable AS "minimoTributable" FROM impuesto.actividad_economica ae INNER JOIN impuesto.actividad_economica_contribuyente aec ON ae.numero_referencia = aec.numero_referencia WHERE aec.id_contribuyente = $1',
-        [contribuyente.id_contribuyente]
-      )
-    ).rows;
+    const economicActivities =
+      reference &&
+      (
+        await client.query(
+          'SELECT id_actividad_economica AS id, ae.numero_referencia AS "numeroReferencia", descripcion as "nombreActividad", alicuota, minimo_tributable AS "minimoTributable" FROM impuesto.actividad_economica ae INNER JOIN impuesto.actividad_economica_sucursal aec ON ae.numero_referencia = aec.numero_referencia WHERE aec.id_registro_municipal = $1',
+          [branch.id_registro_municipal]
+        )
+      ).rows;
     const ae =
       (economicActivities.length > 0 &&
         (await client.query(contributorQuery, [codigosRamo.AE, contributorPayload])).rows.map((el) => {
