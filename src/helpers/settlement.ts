@@ -25,6 +25,7 @@ import S3Client from '@utils/s3';
 import ExcelJs from 'exceljs';
 import * as fs from 'fs';
 import { procedureInit } from './procedures';
+import { generateReceipt } from './receipt';
 const written = require('written-number');
 
 const gticPool = GticPool.getInstance();
@@ -81,7 +82,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
   const client = await pool.connect();
   const gtic = await gticPool.connect();
   const montoAcarreado: any = {};
-  let AE, SM, IU, PP;
+  let AE, SM, PP;
+  let IU: any[] = [];
   try {
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [type, document])).rows[0];
     if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
@@ -91,12 +93,13 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     if ((!branch && reference) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEMAT' };
     const lastSettlementQuery = contributor.tipo_contribuyente === 'JURIDICO' ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
     const lastSettlementPayload = contributor.tipo_contribuyente === 'JURIDICO' ? branch.referencia_municipal : contributor.id_contribuyente;
-    const fiscalCredit = (
-      await client.query('SELECT credito FROM impuesto.credito_fiscal WHERE id_persona = $1 AND concepto = $2', [
-        contributor.tipo_contribuyente === 'JURIDICO' ? branch.id_registro_municipal : contributor.id_contribuyente,
-        contributor.tipo_contribuyente,
-      ])
-    ).rows[0].credito;
+    const fiscalCredit =
+      (
+        await client.query('SELECT credito FROM impuesto.credito_fiscal WHERE id_persona = $1 AND concepto = $2', [
+          contributor.tipo_contribuyente === 'JURIDICO' ? branch.id_registro_municipal : contributor.id_contribuyente,
+          contributor.tipo_contribuyente,
+        ])
+      ).rows[0]?.credito || 0;
     const AEApplicationExists = contributor.tipo_contribuyente === 'JURIDICO' || reference ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.AE, reference])).rows[0] : false;
     const SMApplicationExists =
       contributor.tipo_contribuyente === 'JURIDICO'
@@ -1992,7 +1995,6 @@ export const insertSettlements = async ({ process, user }) => {
   }
 };
 
-//TODO: revisar mayana
 export const addTaxApplicationPayment = async ({ payment, application, user }) => {
   const client = await pool.connect();
   try {
@@ -2012,15 +2014,26 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
         el.concepto = 'IMPUESTO';
         el.user = user.id;
         user.tipoUsuario === 4 ? await insertPaymentReference(el, application, client) : await insertPaymentCashier(el, application, client);
+        if (el.metodoPago === 'CREDITO FISCAL') {
+          const fixatedApplication = await getApplicationsAndSettlementsById({ id: application, user });
+          const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
+            ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
+            : undefined;
+          const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', -el.costo] : [fixatedApplication.contribuyente.id, 'NATURAL', -el.costo];
+          await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
+        }
       })
     );
     const state =
       user.tipoUsuario === 4
         ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0]
         : (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.APROBARCAJERO])).rows[0];
+
     await client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
-    console.log(applicationInstance);
+    if (user.tipoUsuario === 4) {
+      applicationInstance.recibo = await generateReceipt({ application });
+    }
     await sendNotification(
       user,
       `Se ${user.tipoUsuario === 4 ? `han ingresado los datos de pago` : `ha validado el pago`} de una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
@@ -2066,6 +2079,11 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
     );
     const state =
       user.tipoUsuario === 4 ? (await client.query(queries.UPDATE_FRACTION_STATE, [fragment, applicationStateEvents.VALIDAR])).rows[0] : (await client.query(queries.COMPLETE_FRACTION_STATE, [fragment, applicationStateEvents.APROBARCAJERO])).rows[0];
+    const fractions = (await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [agreement])).rows;
+    if (fractions.every((x) => x.aprobado)) {
+      const convenio = (await client.query('SELECT c.* FROM impuesto.convenio c INNER JOIN impuesto.fraccion f ON c.id_convenio = f.id_convenio WHERE f.id_fraccion = $1', [fragment])).rows[0];
+      const applicationState = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [convenio.id_solicitud, applicationStateEvents.APROBARCAJERO])).rows[0].state;
+    }
     await client.query('COMMIT');
     const applicationInstance = await getAgreementFractionById({ id: fragment });
     console.log(applicationInstance);
@@ -2237,6 +2255,8 @@ export const approveContributorSignUp = async ({ procedure, client }: { procedur
 
 export const approveContributorAELicense = async ({ data, client }: { data: any; client: PoolClient }) => {
   try {
+    console.log(data);
+    const user = (await client.query(queries.GET_PROCEDURE_DATA, [data.idTramite])).rows[0].usuario;
     const { usuario, funcionario } = data;
     const { actividadesEconomicas } = funcionario;
     const { contribuyente } = usuario;
@@ -2251,7 +2271,7 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
     );
     data.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [data.idTramite, 'TRAMITE'])).rows.map((row) => ({ monto: row.monto, formaPago: row.metodo_pago, banco: row.nombre, fecha: row.fecha_de_pago, nro: row.referencia }));
 
-    const verifiedId = (await client.query('SELECT * FROM impuesto.verificacion_telefono WHERE id_usuario = $1', [usuario.id])).rows[0]?.id_verificacion_telefono;
+    const verifiedId = (await client.query('SELECT * FROM impuesto.verificacion_telefono WHERE id_usuario = $1', [user])).rows[0]?.id_verificacion_telefono;
     await client.query('INSERT INTO impuesto.registro_municipal_verificacion VALUES ($1, $2) RETURNING *', [registry.id_registro_municipal, verifiedId]);
     console.log(data);
     return data;
@@ -3434,7 +3454,7 @@ const addMissingCarriedAmounts = (amountObject) => {
 };
 
 const certificateCases = switchcase({
-  AE: { recibo: createReceiptForAEApplication, solvencia: createSolvencyForApplication, patente: createPatentDocument },
+  AE: { recibo: createReceiptForAEApplication, solvencia: createSolvencyForApplication },
   SM: { recibo: createReceiptForSMOrIUApplication },
   IU: { recibo: createReceiptForSMOrIUApplication },
   PP: { recibo: createReceiptForPPApplication },

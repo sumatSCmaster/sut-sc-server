@@ -6,9 +6,7 @@ import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { renderFile } from 'pug';
 import { errorMessageExtractor } from './errors';
-import { QueryResult } from 'pg';
 import * as pdf from 'html-pdf';
-import { groupBy } from 'lodash'
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -123,4 +121,70 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
       } finally {
         client.release()
       }
+}
+
+
+
+export const generateAllCashiersReport = async (user, payload : { day: Date }) => {
+  const client = await pool.connect();
+  const payment = (await client.query(queries.GET_ALL_CASHIERS_TOTAL, [payload.day])).rows
+  const paymentTotal = payment.reduce((prev, next) => prev + (+next.monto), 0);
+
+  const paymentBreakdown = (await client.query(queries.GET_ALL_CASHIERS_METHODS_TOTAL, [payload.day])).rows;
+  try {
+      return new Promise(async (res, rej) => {
+          
+        const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-recibo.pug`), {
+          moment: require('moment'),
+          institucion: 'SEDEMAT',
+          datos: {
+              items: payment.map((row) => {
+                  return {
+                      cajero: row.nombre_completo,
+                      monto: row.monto
+                  }
+              }),
+              metodoPago: paymentBreakdown,
+              total: paymentTotal
+            }
+        });
+        const pdfDir = resolve(__dirname, `../../archivos/sedemat/cajaAll/cierre.pdf`);
+        const dir = `${process.env.SERVER_URL}/sedemat/cajaAll/cierre.pdf`;
+        if (dev) {
+          pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
+            
+            res(dir);
+          });
+        } else {
+          try {
+            pdf
+              .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
+              .toBuffer(async (err, buffer) => {
+                if (err) {
+                  rej(err);
+                } else {
+                  const bucketParams = {
+                    Bucket: 'sut-maracaibo',
+                    Key: `/sedemat/cajaAll/cierre.pdf`,
+                  };
+                  await S3Client.putObject({
+                    ...bucketParams,
+                    Body: buffer,
+                    ACL: 'public-read',
+                    ContentType: 'application/pdf',
+                  }).promise();
+                  res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+                }
+              });
+          } catch (e) {
+            throw e;
+          } finally {
+          }
+        }
+      });
+    } catch (error) {
+      throw errorMessageExtractor(error);
+    } finally {
+      client.release()
+    }
 }
