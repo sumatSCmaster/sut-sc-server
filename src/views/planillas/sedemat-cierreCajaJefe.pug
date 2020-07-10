@@ -12,12 +12,12 @@ block content
       h2 CIERRE DE CAJEROS
     div           
       div(style={'font-size':'20px', 'font-weight':'bold'}).row-constancy
-        div(style={'text-align':'start', }) Descripción
+        div(style={'text-align':'start', }) Cajero
         div.center Monto (Bs)
       hr.divider
       each item in datos.items
         div.row-constancy.break-page
-          div(style={'text-align':'start' }) #{item.descripcion}
+          div(style={'text-align':'start' }) #{item.cajero}
           div.center #{new Intl.NumberFormat('de-DE').format(item.monto)}
       hr.divider
       div.row-constancy.break-page
