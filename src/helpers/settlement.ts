@@ -2020,6 +2020,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
           const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
             ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
             : undefined;
+          console.log(idReferenciaMunicipal);
           const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', -el.costo] : [fixatedApplication.contribuyente.id, 'NATURAL', -el.costo];
           await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
         }
