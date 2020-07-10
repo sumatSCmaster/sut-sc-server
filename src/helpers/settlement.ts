@@ -2015,7 +2015,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
         el.concepto = 'IMPUESTO';
         el.user = user.id;
         user.tipoUsuario === 4 ? await insertPaymentReference(el, application, client) : await insertPaymentCashier(el, application, client);
-        if (el.metodoPago === 'CREDITO FISCAL') {
+        if (el.metodoPago === 'CREDITO_FISCAL') {
           const fixatedApplication = await getApplicationsAndSettlementsById({ id: application, user });
           const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
             ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
