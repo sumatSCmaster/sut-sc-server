@@ -1344,7 +1344,8 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
           usuario: el.usuario,
           contribuyente: structureContributor(docs),
           aprobado: el.aprobado,
-          creditoFiscal: (await client.query('SELECT credito FROM impuesto.credito_fiscal WHERE id_persona = $1 AND concepto = $2', [typeUser === 'JURIDICO' ? liquidaciones[0]?.id_registro_municipal : el.id_contribuyente, typeUser])).rows[0].credito,
+          creditoFiscal:
+            (await client.query('SELECT credito FROM impuesto.credito_fiscal WHERE id_persona = $1 AND concepto = $2', [typeUser === 'JURIDICO' ? liquidaciones[0]?.id_registro_municipal : el.id_contribuyente, typeUser])).rows[0]?.credito || 0,
           fecha: el.fecha,
           documento: docs.documento,
           tipoDocumento: docs.tipo_documento,
@@ -2014,11 +2015,12 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
         el.concepto = 'IMPUESTO';
         el.user = user.id;
         user.tipoUsuario === 4 ? await insertPaymentReference(el, application, client) : await insertPaymentCashier(el, application, client);
-        if (el.metodoPago === 'CREDITO FISCAL') {
+        if (el.metodoPago === 'CREDITO_FISCAL') {
           const fixatedApplication = await getApplicationsAndSettlementsById({ id: application, user });
           const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
             ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
             : undefined;
+          console.log(idReferenciaMunicipal);
           const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', -el.costo] : [fixatedApplication.contribuyente.id, 'NATURAL', -el.costo];
           await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
         }
@@ -2031,7 +2033,7 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
 
     await client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
-    if (user.tipoUsuario === 4) {
+    if (user.tipoUsuario !== 4) {
       applicationInstance.recibo = await generateReceipt({ application });
     }
     await sendNotification(
