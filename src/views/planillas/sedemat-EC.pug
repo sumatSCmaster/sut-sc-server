@@ -13,42 +13,42 @@ block header
       img#logo(src='images/sedemat.png')
   img#divider(src='images/Divider.png')
   div(style={'padding': '0 10px'})
-    .table
-      .tr
+    .table.break-page
+      .tr.break-page
         .th.center.border-bottom
           p
             b DATOS DEL CONTRIBUYENTE
-      .tr
+      .tr.break-page
         div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
           p Nombre o Razón Social
         div(style={'-webkit-flex':'7'}).td.border-bottom
           p #{datosContribuyente.nombreORazon}
-      .tr
+      .tr.break-page
         div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
           p RIF
         div(style={'-webkit-flex':'7'}).td.border-bottom
           p #{datosContribuyente.cedulaORif}
-      .tr
+      .tr.break-page
         div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
           p Referencia
         div(style={'-webkit-flex':'7'}).td.border-bottom
           p #{datosContribuyente.rim}
-      .tr
+      .tr.break-page
         div(style={'-webkit-flex':'3'}).td.border-right.border-bottom
           p Dirección
         div(style={'-webkit-flex':'7'}).td.border-bottom
           p #{datosContribuyente.direccion}
-      .tr
+      .tr.break-page
         div(style={'-webkit-flex':'3'}).td.border-right
           p Teléfóno
         div(style={'-webkit-flex':'7'}).td
           p #{datosContribuyente.telefono}
-    div(style={'margin-top':'20px'}).table
-      .tr
+    div(style={'margin-top':'20px'}).table.break-page
+      .tr.break-page
         .th.center.border-bottom
           p
             b ESTADO DE CUENTA DEL CONTRIBUYENTE
-      .tr
+      .tr.break-page
         div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
           p
             b PLANILLA
@@ -97,7 +97,7 @@ block header
             b MONTO TOTAL
         div(style={'-webkit-flex':'1.7','padding-left' : '8px'}).td.center
           p Bs #{new Intl.NumberFormat('de-DE').format(saldoFinal)}
-    .table
+    .table.break-page
       .tr.break-page
         .th.center.border-bottom
           p

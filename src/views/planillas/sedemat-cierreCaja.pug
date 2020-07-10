@@ -11,7 +11,7 @@ block content
     p
       h2 CIERRE DE CAJA
   div#planilla(style={'font-size':'13px'})
-    div(style={'margin-top':'50px'}).table
+    div(style={'margin-top':'100px'}).table
       .tr
         .th.center.border-bottom 
           p
@@ -25,7 +25,7 @@ block content
           p 
             b FECHA:
             span &nbsp; #{moment(datos.fecha).format('DD/MM/YYYY')}
-    div(style={'margin-top':'100px'}).table
+    div(style={'margin-top':'150px'}).table
       .tr
         .th.center.border-bottom 
           p
@@ -48,7 +48,7 @@ block content
             p #{item.transacciones}
           div(style={'-webkit-flex':'2'}).td.center
             p #{new Intl.NumberFormat('de-DE').format(item.monto)}       
-    div(style={'margin-top':'100px', 'width':'100%'}).break-page
+    div(style={'margin-top':'150px', 'width':'100%'}).break-page
       div(style={'width':'60%'}).table.break-page
         .tr.break-page
           div(style={'-webkit-flex':'4'}).th.center.border-bottom.border-right

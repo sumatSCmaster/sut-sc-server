@@ -30,16 +30,16 @@ block content
               b Cajero
         div.tr
           div(style={'-webkit-flex': 1}).td.border-right.center
-            p  #{datos.codigo}
+            p  #{datos.idTramite}
           div(style={'-webkit-flex': 1}).td.border-right.center
             p  RG2020
           div(style={'-webkit-flex': 2}).td.border-right.center
             p  #{datos.usuario.contribuyente.razonSocial}
           div(style={'-webkit-flex': 2}).td.center
-            p  #{datos.cajero}
+            p  #{datos.cajero ? datos.cajero : 'N/A'}
     div.table(style={'font-size':'13px','margin-top':'20px'})
       .tr
-        div(style={'-webkit-flex': 1,'padding-right':'1px'}).td.center.border-right.border-bottom
+        div(style={'-webkit-flex': 1,'padding-right':'1px'}).td.center.border-bottom
           p 
             b Tipo De Trámite: 112 - Licencia de Actividad Económica
       .tr
@@ -57,7 +57,7 @@ block content
         div(style={'-webkit-flex': 2}).td.center.border-right
           p 
             b Tipo de sociedad:
-        div(style={'-webkit-flex': 8}).td.center.border-right
+        div(style={'-webkit-flex': 8, 'padding-left': '1px'}).td.center
           p #{datos.funcionario.tipoSolicitud}                  
     div.table(style={'font-size':'13px','margin-top':'20px'})
       div.tr
@@ -83,7 +83,7 @@ block content
         div(style={'-webkit-flex': 2}).td.border-bottom
           p
             b REF:&nbsp;
-            span #{datos.referenciaMunicipal}          
+            span #{datos.funcionario.referenciaMunicipal}          
       div.tr
         div(style={'-webkit-flex': 2}).td.border-right.center
           p
@@ -96,32 +96,32 @@ block content
           p
             b ACTIVIDADES
       div.tr
-        div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+        div(style={'-webkit-flex': 1}).td.border-right.center
           p
             b CÓDIGO
-        div(style={'-webkit-flex': 5}).td.border-right.border-bottom.center
+        div(style={'-webkit-flex': 5}).td.border-right.center
           p
             b DESCRIPCIÓN
-        div(style={'-webkit-flex': 1.5}).td.border-right.border-bottom.center
+        div(style={'-webkit-flex': 1.5}).td.border-right.center
           p
             b ALICUOTA
-        div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+        div(style={'-webkit-flex': 1}).td.border-right.center
           p
             b PERIODO
-        div(style={'-webkit-flex': 1.5}).td.border-bottom.center
+        div(style={'-webkit-flex': 1.5}).td.center
           p
             b FECHA INICIO    
       each item in datos.funcionario.actividadesEconomicas
         div.tr.break-page
-          div(style={'-webkit-flex': 1}).td.border-right.center
+          div(style={'-webkit-flex': 1}).td.border-right.center.border-top
             p #{item.codigo}
-          div(style={'-webkit-flex': 5}).td.border-right.center
+          div(style={'-webkit-flex': 5}).td.border-right.center.border-top
             p #{item.descripcion}
-          div(style={'-webkit-flex': 1.5}).td.border-right.center
+          div(style={'-webkit-flex': 1.5}).td.border-right.center.border-top
             p #{item.alicuota}
-          div(style={'-webkit-flex': 1}).td.border-right.center
+          div(style={'-webkit-flex': 1}).td.border-right.center.border-top
             p #{moment().format('YYYY')}
-          div(style={'-webkit-flex': 1.5}).td.center
+          div(style={'-webkit-flex': 1.5}).td.center.border-top
             p #{item.fechaIni}
     div(style={'margin-top':'20px'}).table.break-page
       div.tr.break-page
@@ -142,45 +142,45 @@ block content
           p
             b ESTATUS DE PAGO 
       div.tr.break-page
-        div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+        div(style={'-webkit-flex': 2}).td.border-right.center
           p
             b Forma de Pago
-        div(style={'-webkit-flex': 3}).td.border-bottom.border-right.center
+        div(style={'-webkit-flex': 3}).td.border-right.center
           p
             b BANCO
-        div(style={'-webkit-flex': 1}).td.border-bottom.border-right.center
+        div(style={'-webkit-flex': 1}).td.border-right.center
           p
             b Fecha
-        div(style={'-webkit-flex': 1.5}).td.border-bottom.border-right.center
+        div(style={'-webkit-flex': 1.5}).td.border-right.center
           p
             b N°DEPOSITO
-        div(style={'-webkit-flex': 2.5}).td.border-bottom.center
+        div(style={'-webkit-flex': 2.5}).td.center
           p
             b MONTO CANCELADO
       each item in datos.funcionario.pago
         div.tr.break-page
-          div(style={'-webkit-flex': 2}).td.border-right.center
+          div(style={'-webkit-flex': 2}).td.border-right.center.border-top
             p #{item.formaPago}
-          div(style={'-webkit-flex': 3}).td.border-right.center
+          div(style={'-webkit-flex': 3}).td.border-right.center.border-top
             p #{item.banco}
-          div(style={'-webkit-flex': 1}).td.border-right.center
+          div(style={'-webkit-flex': 1}).td.border-right.center.border-top
             p #{moment(item.fecha).format('DD/MM/YYYY')}
-          div(style={'-webkit-flex': 1.5}).td.border-right.center
+          div(style={'-webkit-flex': 1.5}).td.border-right.center.border-top
             p #{item.nro}
-          div(style={'-webkit-flex': 2.5}).td.center
+          div(style={'-webkit-flex': 2.5}).td.center.border-top
             p Bs #{new Intl.NumberFormat('de-DE').format(item.monto)}         
     div(style={'margin-top':'20px'}).table.break-page
       div(style={'background-color':'rgba(0,0,0,0.2)'}).tr
         div(style={'-webkit-flex': 1}).td.border-right.center
           p
             b Total Liquidado:
-            span &nbsp;Bs #{new Intl.NumberFormat('de-DE').format(datos.funcionario.totalLiq)}
+            span &nbsp;Bs #{new Intl.NumberFormat('de-DE').format(datos.funcionario.totalLiq ? datos.funcionario.totalLiq : 0)}
         div(style={'-webkit-flex': 1}).td.border-right.center
           p
             b Total Recaudado:
-            span &nbsp;Bs #{new Intl.NumberFormat('de-DE').format(datos.funcionario.totalRecaudado)}
+            span &nbsp;Bs #{new Intl.NumberFormat('de-DE').format(datos.funcionario.totalRecaudado ? datos.funcionario.totalRecaudado : 0)}
         div(style={'-webkit-flex': 1}).td.center
           p
             b Total Credito Fiscal:
-            span &nbsp;Bs #{new Intl.NumberFormat('de-DE').format(datos.funcionario.totalCred)}
+            span &nbsp;Bs #{new Intl.NumberFormat('de-DE').format(datos.funcionario.totalCred ? datos.funcionario.totalCred : 0)}
 block footer

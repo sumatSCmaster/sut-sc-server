@@ -30,10 +30,11 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
 
     const cashierChecks = (await client.query(queries.GET_CASHIER_CHECKS, [payload.day, userId])).rows
     const cashierTransfers = (await client.query(queries.GET_CASHIER_TRANSFERS, [payload.day, userId])).rows
+    console.log(cashierTransfers)
     const cashierTransfersTotal = +cashierTransfers.reduce((prev, next) => prev + (+next.monto) ,0);
     const cashierTransfersTransactions = +cashierTransfers.reduce((prev, next) => prev + (+next.transacciones) ,0);
     const cashierTransfersByBank = cashierTransfers.reduce((prev, next) => {
-        switch(next.id_banco){
+        switch(next.id){
             case 1:
                 prev.bod = {
                     total: next.monto,
@@ -77,8 +78,8 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
                   },
                   cheques: cashierChecks[0],
                   transferencias: cashierTransfersByBank,
-                  transacciones: cashierPosTransactions + cashierCash[0].transacciones + cashierChecks[0].transacciones + cashierTransfersTransactions,
-                  total: cashierPosTotal + cashierCash[0].monto + cashierChecks[0].monto + cashierTransfersTotal
+                  transacciones: +cashierPosTransactions + +cashierCash[0].transacciones + +cashierChecks[0].transacciones + +cashierTransfersTransactions,
+                  total: (+cashierPosTotal) + (+cashierCash[0].monto) + (+cashierChecks[0].monto) + (+cashierTransfersTotal)
                 },
         }
           });

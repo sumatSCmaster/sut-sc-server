@@ -714,27 +714,27 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   //CIERRE DE CAJA
   GET_CASHIER_POS: `SELECT b.nombre as banco, SUM(p.monto) as monto, COUNT(*) as transacciones
         FROM pago p 
-        INNER JOIN banco b ON b.id_banco = p.id_pago
+        INNER JOIN banco b ON b.id_banco = p.id_banco
         WHERE p.fecha_de_pago = $1 AND p.metodo_pago = 'PUNTO DE VENTA' AND id_usuario = $2
         GROUP BY b.nombre;`,
   GET_CASHIER_CASH: `SELECT SUM(p.monto) as monto, COUNT(*) as transacciones
         FROM pago p 
-        INNER JOIN banco b ON b.id_banco = p.id_pago
+        INNER JOIN banco b ON b.id_banco = p.id_banco
         WHERE p.fecha_de_pago = $1 AND p.metodo_pago = 'EFECTIVO' AND id_usuario = $2;`,
   GET_CASHIER_CHECKS: `SELECT SUM(p.monto) as monto, COUNT(*) as transacciones
         FROM pago p 
-        INNER JOIN banco b ON b.id_banco = p.id_pago
+        INNER JOIN banco b ON b.id_banco = p.id_banco
         WHERE p.fecha_de_pago = $1 AND p.metodo_pago = 'CHEQUE' AND id_usuario = $2;`,
   GET_CASHIER_TRANSFERS: `SELECT b.id_banco as id, b.nombre as banco, SUM(p.monto) as monto, COUNT(*) as transacciones
         FROM pago p 
-        INNER JOIN banco b ON b.id_banco = p.id_pago
+        INNER JOIN banco b ON b.id_banco = p.id_banco
         WHERE p.fecha_de_pago = $1 AND p.metodo_pago = 'TRANSFERENCIA' AND id_usuario = $2
         GROUP BY b.id_banco, b.nombre;`,
   GET_ALL_CASHIERS_TOTAL: `SELECT u.nombre_completo, SUM(p.monto) AS monto
     FROM pago p INNER JOIN usuario u USING (id_usuario)
-    WHERE p.fecha_de_pago = $1
+    WHERE p.fecha_de_pago = $1 AND u.id_tipo_usuario = 3
     GROUP BY u.nombre_completo;`,
-  GET_ALL_CASHIERS_METHODS_TOTAL: `SELECT p.metodo_pago, SUM(p.monto) AS monto, COUNT(*) AS transacciones
+  GET_ALL_CASHIERS_METHODS_TOTAL: `SELECT p.metodo_pago AS tipo, SUM(p.monto) AS monto, COUNT(*) AS transacciones
     FROM pago p 
     WHERE p.fecha_de_pago = $1 AND p.id_usuario IS NOT NULL
     GROUP BY p.metodo_pago;`,
