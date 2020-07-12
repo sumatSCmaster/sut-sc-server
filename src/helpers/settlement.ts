@@ -2238,7 +2238,7 @@ export const internalContributorSignUp = async (contributor) => {
     throw {
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al crear contribuyente por metodo interno',
+      message: errorMessageGenerator(error) || error.message || 'Error al crear contribuyente por metodo interno',
     };
   } finally {
     client.release();
