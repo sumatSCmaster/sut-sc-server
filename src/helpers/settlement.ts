@@ -19,12 +19,12 @@ import md5 from 'md5';
 import { query } from 'express-validator';
 import { sendNotification } from './notification';
 import { sendRimVerification, verifyCode, resendCode } from './verification';
-import { hasLinkedContributor, signUpUser } from './user';
+import { hasLinkedContributor, signUpUser, getUserByUsername } from './user';
 import e from 'express';
 import S3Client from '@utils/s3';
 import ExcelJs from 'exceljs';
 import * as fs from 'fs';
-import { procedureInit } from './procedures';
+import { procedureInit, initProcedureAnalist, processProcedure } from './procedures';
 import { generateReceipt } from './receipt';
 const written = require('written-number');
 
@@ -2193,6 +2193,25 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
       message: errorMessageGenerator(error) || 'Error al validar el pago',
     };
   } finally {
+  }
+};
+
+export const internalLicenseApproval = async (license, official: Usuario) => {
+  const client = await pool.connect();
+  try {
+    const user = await getUserByUsername(license.username);
+    const procedure = (await initProcedureAnalist({ tipoTramite: 28, datos: license.datos, pago: license.pago }, user as Usuario)).tramite;
+    return await processProcedure({ idTramite: procedure, datos: license.datos }, official);
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al aprobar licencia de actividades economicas por interno',
+    };
+  } finally {
+    client.release();
   }
 };
 
