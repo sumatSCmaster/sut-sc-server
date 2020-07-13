@@ -36,21 +36,6 @@ const getNoiceState = (s: string): string => {
   }
 };
 
-const getNoiceSettlement = (s: string): string => {
-  switch (s) {
-    case 'AE':
-      return 'Actividad Economica';
-    case 'SM':
-      return 'Servicios Municipales';
-    case 'IU':
-      return 'Inmuebles Urbanos';
-    case 'PP':
-      return 'Publicidad y Propaganda';
-    default:
-      return 'N/A';
-  }
-};
-
 //dios mio que ternario tan feo
 export const getStats = (user: Usuario) => {
   if (user.tipoUsuario === IDsTipoUsuario.Superuser) return getSuperUserStats();
@@ -536,7 +521,7 @@ const getOfficialApplicationStats = async () => {
     const completedMonthGains = isFiniteNumber((((monthCompleted - lastMonthCompleted) / monthCompleted) * 100).toFixed(2));
     // GRAFICO 4 - LISTO
     const countByStatus = (await client.query(queries.GET_RAISED_MONEY_BY_BRANCH)).rows.map((r) => ({
-      x: getNoiceSettlement(r.tipoLiquidacion),
+      x: r.descripcionRamo,
       y: +parseFloat(r.sum).toFixed(2),
     }));
     // GRAFICO 5

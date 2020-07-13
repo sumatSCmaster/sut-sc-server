@@ -56,7 +56,7 @@ const queries = {
     WHERE tu.descripcion = 'Funcionario' AND u.cedula = $1",
   CHECK_IF_DIRECTOR: "SELECT 1 FROM usuario u \
     INNER JOIN tipo_usuario tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
-    WHERE tu.descripcion = 'Director' AND u.cedula = $1",
+    WHERE tu.descripcion = 'Director/Gerente' AND u.cedula = $1",
   CHECK_IF_ADMIN: "SELECT 1 FROM usuario u \
     INNER JOIN tipo_usuario tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
     WHERE tu.descripcion = 'Administrador' AND u.cedula = $1",
