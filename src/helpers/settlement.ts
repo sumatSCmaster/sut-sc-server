@@ -1941,7 +1941,7 @@ export const insertSettlements = async ({ process, user }) => {
             el.ramo,
             datos,
             moment().month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
-            contributorReference.id_registro_municipal || null,
+            (contributorReference && contributorReference.id_registro_municipal) || null,
           ])
         ).rows[0];
 
@@ -3225,13 +3225,14 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
     const contributorQuery = typeUser === 'JURIDICO' ? queries.GET_SETTLEMENTS_FOR_CODE_AND_RIM : queries.GET_SETTLEMENTS_FOR_CODE_AND_CONTRIBUTOR;
     const contributorPayload = typeUser === 'JURIDICO' ? branch.referencia_municipal : contribuyente.id_contribuyente;
     const economicActivities =
-      reference &&
-      (
-        await client.query(
-          'SELECT id_actividad_economica AS id, ae.numero_referencia AS "numeroReferencia", descripcion as "nombreActividad", alicuota, minimo_tributable AS "minimoTributable" FROM impuesto.actividad_economica ae INNER JOIN impuesto.actividad_economica_sucursal aec ON ae.numero_referencia = aec.numero_referencia WHERE aec.id_registro_municipal = $1',
-          [branch.id_registro_municipal]
-        )
-      ).rows;
+      (reference &&
+        (
+          await client.query(
+            'SELECT id_actividad_economica AS id, ae.numero_referencia AS "numeroReferencia", descripcion as "nombreActividad", alicuota, minimo_tributable AS "minimoTributable" FROM impuesto.actividad_economica ae INNER JOIN impuesto.actividad_economica_sucursal aec ON ae.numero_referencia = aec.numero_referencia WHERE aec.id_registro_municipal = $1',
+            [branch.id_registro_municipal]
+          )
+        ).rows) ||
+      [];
     const ae =
       (economicActivities.length > 0 &&
         (await client.query(contributorQuery, [codigosRamo.AE, contributorPayload])).rows.map((el) => {
