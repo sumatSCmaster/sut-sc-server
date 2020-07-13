@@ -133,7 +133,7 @@ export const generateAllCashiersReport = async (user, payload : { day: Date }) =
   try {
       return new Promise(async (res, rej) => {
           
-        const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-recibo.pug`), {
+        const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-cierreCajaJefe.pug`), {
           moment: require('moment'),
           institucion: 'SEDEMAT',
           datos: {
