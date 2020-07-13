@@ -94,12 +94,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const lastSettlementQuery = contributor.tipo_contribuyente === 'JURIDICO' ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
     const lastSettlementPayload = contributor.tipo_contribuyente === 'JURIDICO' ? branch.referencia_municipal : contributor.id_contribuyente;
     const fiscalCredit =
-      (
-        await client.query('SELECT credito FROM impuesto.credito_fiscal WHERE id_persona = $1 AND concepto = $2', [
-          contributor.tipo_contribuyente === 'JURIDICO' ? branch.id_registro_municipal : contributor.id_contribuyente,
-          contributor.tipo_contribuyente,
-        ])
-      ).rows[0]?.credito || 0;
+      (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.tipo_contribuyente === 'JURIDICO' ? branch.id_registro_municipal : contributor.id_contribuyente, contributor.tipo_contribuyente])).rows[0]?.credito || 0;
     const AEApplicationExists = contributor.tipo_contribuyente === 'JURIDICO' || reference ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.AE, reference])).rows[0] : false;
     const SMApplicationExists =
       contributor.tipo_contribuyente === 'JURIDICO'
@@ -120,7 +115,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     //AE
     if (branch && branch.referencia_municipal && !AEApplicationExists) {
       const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
-      if (economicActivities.length === 0) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
+      if (economicActivities.length === 0) throw { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
       let lastEA = (await client.query(lastSettlementQuery, [codigosRamo.AE, lastSettlementPayload])).rows[0];
       const lastEAPayment = (lastEA && moment(lastEA.fecha_liquidacion)) || moment().month(0);
       const pastMonthEA = (lastEA && moment(lastEA.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
@@ -1344,8 +1339,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
           usuario: el.usuario,
           contribuyente: structureContributor(docs),
           aprobado: el.aprobado,
-          creditoFiscal:
-            (await client.query('SELECT credito FROM impuesto.credito_fiscal WHERE id_persona = $1 AND concepto = $2', [typeUser === 'JURIDICO' ? liquidaciones[0]?.id_registro_municipal : el.id_contribuyente, typeUser])).rows[0]?.credito || 0,
+          creditoFiscal: (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [typeUser === 'JURIDICO' ? liquidaciones[0]?.id_registro_municipal : el.id_contribuyente, typeUser])).rows[0]?.credito || 0,
           fecha: el.fecha,
           documento: docs.documento,
           tipoDocumento: docs.tipo_documento,
@@ -1408,16 +1402,17 @@ const formatContributor = async (contributor, client: PoolClient) => {
       parroquia: contributor.id_parroquia,
       sector: contributor.sector,
       direccion: contributor.direccion,
+      creditoFiscal: (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.id_contribuyente, 'NATURAL'])).rows[0]?.credito || 0,
       puntoReferencia: contributor.punto_referencia,
       verificado: contributor.verificado,
-      sucursales: branches.length > 0 ? branches.map((el) => formatBranch(el)) : undefined,
+      sucursales: branches.length > 0 ? await Promise.all(branches.map((el) => formatBranch(el, client))) : undefined,
     };
   } catch (e) {
     throw e;
   }
 };
 
-const formatBranch = (branch) => {
+const formatBranch = async (branch, client) => {
   return {
     id: branch.id_registro_municipal,
     referenciaMunicipal: branch.referencia_municipal,
@@ -1426,6 +1421,9 @@ const formatBranch = (branch) => {
     email: branch.email,
     denomComercial: branch.denominacion_comercial,
     nombreRepresentante: branch.nombre_representante,
+    capitalSuscrito: branch.capital_suscrito,
+    creditoFiscal: (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [branch.id_registro_municipal, 'JURIDICO'])).rows[0]?.credito || 0,
+    tipoSociedad: branch.tipo_sociedad,
     actualizado: branch.actualizado,
   };
 };
@@ -1836,7 +1834,7 @@ export const insertSettlements = async ({ process, user }) => {
             })
           );
         }
-        if (now.date() > 10) {
+        if (now.date() > 15) {
           const rightfulMonth = now.month() - 1;
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
@@ -1892,7 +1890,7 @@ export const insertSettlements = async ({ process, user }) => {
             })
           );
         }
-        if (now.date() > 10) {
+        if (now.date() > 15) {
           const rightfulMonth = moment().month(now.month()).month() - 1;
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
