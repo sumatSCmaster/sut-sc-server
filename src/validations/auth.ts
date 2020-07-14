@@ -167,6 +167,7 @@ const validations = {
   tipoContribuyente: check('tramite.datos.tipoContribuyente').exists().withMessage('Debe incluir el tipo de contribuyente').isString().isLength({ min: 1 }).withMessage('El tipo de contribuyente no puede ser vacio'),
   documentoIdentidad: check('tramite.datos.documentoIdentidad').exists().withMessage('Debe incluir el documento de identidad').isString().isLength({ min: 1 }).withMessage('El documento de identidad no puede ser vacio'),
   actividadesEconomicas: check('tramite.datos.actividadesEconomicas').exists().withMessage('Debe incluir las actividades economicas').isArray().isLength({ min: 1 }).withMessage('Debe poseer al menos una actividad economica'),
+  capitalSuscrito: check('tramite.datos.capitalSuscrito').exists().withMessage('Debe incluir el capital suscrito').isInt().isLength({ min: 1 }).withMessage('El capital suscrito no puede ser vacio'),
 };
 
 export const createSuperuser = [
