@@ -53,7 +53,7 @@ export const checkContributorExists = () => async (req: any, res, next) => {
   const { user } = req;
   const { doc, ref, pref, contrib } = req.query;
   try {
-    if (user.tipoUsuario !== 3) return next();
+    if (user.tipoUsuario === 4) return next();
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [pref, doc])).rows[0];
     const branchIsUpdated = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [ref, contributor.id_contribuyente])).rows[0]?.actualizado;
     if (!contributor || (contributor && ref && !branchIsUpdated)) {
