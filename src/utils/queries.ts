@@ -750,7 +750,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
                 VALUES (default, $1, $2, $3);`,
   INSERT_EXONERATION_CONTRIBUTOR: 'INSERT INTO impuesto.contribuyente_exoneracion (id_contribuyente_exoneracion, id_plazo_exoneracion, id_registro_municipal) VALUES (default, $1, $2);',
   INSERT_EXONERATION_ACTIVITY: 'INSERT INTO impuesto.actividad_economica_exoneracion (id_actividad_economica_exoneracion, id_plazo_exoneracion, id_actividad_economica) VALUES (default, $1, $2);',
-  INSERT_EXONERATION_BRANCH: 'INSERT INTO impuesto.ramo_exoneracion (id_actividad_economica_exoneracion, id_plazo_exoneracion, id_ramo) VALUES (default, $1, $2);',
+  INSERT_EXONERATION_BRANCH: 'INSERT INTO impuesto.ramo_exoneracion (id_ramo_exoneracion, id_plazo_exoneracion, id_ramo) VALUES (default, $1, $2);',
 
   GET_EXONERATED_ACTIVITY_BY_CONTRIBUTOR:
     'SELECT * FROM impuesto.plazo_exoneracion pe \
@@ -852,6 +852,8 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_BRANCHES: 'SELECT id_ramo AS id, codigo, descripcion, descripcion_corta FROM impuesto.ramo;',
   GET_BRANCHES_FOR_REPORT: 'SELECT id_ramo AS id, codigo AS "ramo", descripcion, descripcion_corta FROM impuesto.ramo;',
   GET_SUT_ESTATE_BY_ID: 'SELECT * FROM inmueble_urbano WHERE id_inmueble = $1',
+  GET_ESTATES_BY_RIM: 'SELECT cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble" FROM inmueble_urbano WHERE id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $1);',
+  GET_APPRAISALS_BY_ID: 'SELECT anio, avaluo FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1',
   gtic: {
     GET_NATURAL_CONTRIBUTOR: 'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 ORDER BY co_contribuyente DESC',
     GET_JURIDICAL_CONTRIBUTOR: 'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE tx_rif = $1 AND tx_tp_doc = $2 AND nu_referencia IS NOT NULL ORDER BY co_contribuyente DESC',
