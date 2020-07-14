@@ -587,10 +587,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
       if (procedure.sufijo === 'rc' && aprobado) await approveContributorSignUp({ procedure: (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0], client });
     } else if (resources.tipoTramite === 28) {
       const { aprobado } = procedure;
-      datos.idTramite = procedure.idTramite;
-      procedure.datos = await approveContributorAELicense({ data: datos, client });
-      dir = await createCertificate(procedure, client);
-      respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, true]);
+      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
     } else {
       if (nextEvent.startsWith('finalizar')) {
         procedure.datos = datos;
@@ -708,9 +705,7 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
 export const reviseProcedure = async (procedure, user: Usuario) => {
   const client = await pool.connect();
   const { aprobado, observaciones } = procedure.revision;
-  let dir,
-    respState,
-    datos = null;
+  let dir, respState, datos;
   try {
     client.query('BEGIN');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.idTramite])).rows[0];
@@ -746,6 +741,12 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       }
     } else {
       if (aprobado) {
+        if (resources.tipoTramite === 28) {
+          const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
+          datos = prevData.datos;
+          datos.idTramite = procedure.idTramite;
+          procedure.datos = await approveContributorAELicense({ data: datos, client });
+        }
         if (procedure.sufijo !== 'bc') dir = await createCertificate(procedure, client);
         respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, aprobado]);
       } else {
@@ -930,7 +931,7 @@ const procedureEvents = switchcase({
   },
   rc: { iniciado: 'procesar_rc', enproceso: { true: 'aprobar_rc', false: 'rechazar_rc' } },
   bc: { iniciado: 'revisar_bc', enrevision: { true: 'aprobar_bc', false: 'rechazar_bc' } },
-  lae: { iniciado: 'validar_lae', validando: 'enproceso_lae', enproceso: { true: 'aprobar_lae', false: 'rechazar_lae' } },
+  lae: { iniciado: 'validar_lae', validando: 'enproceso_lae', enproceso: { true: 'revisar_lae', false: 'rechazar_lae', enrevision: { true: 'aprobar_lae', false: 'rechazar_lae' } } },
 })(null);
 
 const procedureEventHandler = (suffix, state) => {
