@@ -24,8 +24,8 @@ export const generateReceipt = async (payload: { application: number }) => {
   try {
     return new Promise(async (res, rej) => {
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/recibo/${applicationView.id}/cierre.pdf`);
-      const dir = `${process.env.SERVER_URL}/sedemat/recibo/${applicationView.id}/cierre.pdf`;
-      const linkQr = await qr.toDataURL(dev ? dir : `${process.env.AWS_ACCESS_URL}/sedemat/recibo/${applicationView.id}/cierre.pdf`, { errorCorrectionLevel: 'H' });
+      const dir = `${process.env.SERVER_URL}/sedemat/recibo/${applicationView.id}/recibo.pdf`;
+      const linkQr = await qr.toDataURL(dev ? dir : `${process.env.AWS_ACCESS_URL}/sedemat/recibo/${applicationView.id}/recibo.pdf`, { errorCorrectionLevel: 'H' });
       const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-recibo.pug`), {
         moment: require('moment'),
         institucion: 'SEDEMAT',
@@ -62,7 +62,7 @@ export const generateReceipt = async (payload: { application: number }) => {
             } else {
               const bucketParams = {
                 Bucket: 'sut-maracaibo',
-                Key: `/sedemat/recibo/${applicationView.id}/cierre.pdf`,
+                Key: `/sedemat/recibo/${applicationView.id}/recibo.pdf`,
               };
               await S3Client.putObject({
                 ...bucketParams,
