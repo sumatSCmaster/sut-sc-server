@@ -2310,7 +2310,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
   try {
     const { contribuyente, beneficios } = data.funcionario;
     const contributorWithBranch = (await client.query(queries.GET_CONTRIBUTOR_WITH_BRANCH, [contribuyente.registroMunicipal])).rows[0];
-    const benefittedUser = (await client.query(queries.GET_USER_BY_APPLICATION_AND_RIM, [contributorWithBranch.id_registro_municipal])).rows[0].id_usuario;
+    const benefittedUser = (await client.query(queries.GET_USER_IN_CHARGE_OF_BRANCH_BY_ID, [contributorWithBranch.id_registro_municipal])).rows[0];
     await Promise.all(
       beneficios.map(async (x) => {
         switch (x.tipoBeneficio) {
