@@ -56,7 +56,10 @@ export const checkContributorExists = () => async (req: any, res, next) => {
     if (user.tipoUsuario === 4) return next();
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [pref, doc])).rows[0];
     const branchIsUpdated = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [ref, contributor.id_contribuyente])).rows[0]?.actualizado;
-    if (!contributor || (contributor && ref && !branchIsUpdated)) {
+    console.log(branchIsUpdated);
+    console.log();
+    if (!contributor || (!!contributor && !!ref && !branchIsUpdated)) {
+      console.log('que es');
       const x = await externalLinkingForCashier({ document: doc, docType: pref, reference: ref, user, typeUser: contrib });
       res.status(202).json({ status: 202, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: x });
     } else {
@@ -2281,11 +2284,30 @@ export const approveContributorSignUp = async ({ procedure, client }: { procedur
   }
 };
 
-export const internalUserLinking = async ({ data }) => {
+export const internalUserLinking = async (data) => {
   const client = await pool.connect();
+  const { username, documento, tipoDocumento, tipoContribuyente, referenciaMunicipal } = data;
   try {
-    const user = await getUserByUsername(data.username);
-    return;
+    await client.query('BEGIN');
+    const user = await getUserByUsername(username);
+    if (!user) throw { status: 404, message: 'El usuario proporcionado no existe en SUT' };
+    const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [tipoDocumento, documento])).rows[0];
+    if (!contributor) throw { status: 404, message: 'El contribuyente proporcionado no existe' };
+    await client.query(queries.ASSIGN_CONTRIBUTOR_TO_USER, [contributor.id_contribuyente, user.id]);
+    if (tipoContribuyente === 'JURIDICO') {
+      if (!referenciaMunicipal) throw { status: 404, message: 'Debe proporcionar un RIM para realizar el enlace para un contribuyente juridico' };
+      const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [referenciaMunicipal, contributor.id_contribuyente])).rows[0];
+      if (!branch) throw { status: 404, message: 'La sucursal proporcionada no existe' };
+      await client.query('UPDATE impuesto.verificacion_telefono SET id_usuario = $1 WHERE id_verificacion_telefono = (SELECT id_verificacion_telefono FROM impuesto.registro_municipal_verificacion WHERE id_registro_municipal = $2 LIMIT 1)', [
+        user.id,
+        branch.id_registro_municipal,
+      ]);
+      await client.query('UPDATE impuesto.solicitud s SET id_usuario = $1 FROM impuesto.liquidacion l WHERE s.id_solicitud = l.id_solicitud AND l.id_registro_municipal = $2', [user.id, branch.id_registro_municipal]);
+    } else {
+      await client.query('UPDATE impuesto.solicitud s SET id_usuario = $1 WHERE id_contribuyente = $2', [user.id, contributor.id_contribuyente]);
+    }
+    await client.query('COMMIT');
+    return user;
   } catch (error) {
     client.query('ROLLBACK');
     console.log(error);
