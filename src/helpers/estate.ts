@@ -90,3 +90,84 @@ export const createPersonalEstate = async (procedure) => {
     client.release();
   }
 };
+
+// SEDEMAT
+
+export const taxPayerEstatesByRIM = async (ref) => {
+  const client = await pool.connect();
+  try{
+    const estates = (await client.query(queries.GET_ESTATES_BY_RIM, [ref])).rows;
+    const estatesWithAppraisals = await Promise.all(estates.map((row) => {
+      return new Promise(async (res, rej) => {
+        res({
+          ...row,
+          avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [row.id])).rows
+        })
+      })
+    }));
+
+    return estatesWithAppraisals;
+
+  } catch (e) {
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+export const userEstates = async ({ typeDoc, doc }) => {
+  const client = await pool.connect();
+  try{
+    const estates = (await client.query(queries.GET_ESTATES_BY_USER_INFO, [typeDoc, doc])).rows;
+    const estatesWithAppraisals = await Promise.all(estates.map((row) => {
+      return new Promise(async (res, rej) => {
+        res({
+          ...row,
+          avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [row.id])).rows
+        })
+      })
+    }));
+
+    return estatesWithAppraisals;
+
+  } catch (e) {
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+export const createBareEstateNatural = async ({ idContributor, codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno }) => {
+  const client = await pool.connect();
+  try{
+    await client.query('BEGIN');
+    const estate = (await client.query(queries.CREATE_BARE_ESTATE_NATURAL, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno])).rows[0];
+    (await client.query(queries.LINK_ESTATE_WITH_NATURAL_CONTRIBUTOR, [estate.id, idContributor]))
+
+    await client.query('COMMIT');
+
+    return estate;
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+export const createBareEstateCommercial = async ({ rim, codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno }) => {
+  const client = await pool.connect();
+  try{
+    await client.query('BEGIN');
+    const estate = (await client.query(queries.CREATE_BARE_ESTATE_COMMERCIAL, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, rim])).rows[0];
+
+    await client.query('COMMIT')
+
+    return estate
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+}
