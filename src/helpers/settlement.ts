@@ -57,7 +57,7 @@ export const checkContributorExists = () => async (req: any, res, next) => {
     const contributorExists = (await client.query(queries.TAX_PAYER_EXISTS, [pref, doc])).rowCount > 0;
     if (!contributorExists) {
       const x = await externalLinkingForCashier({ document: doc, docType: pref, reference: ref, user, typeUser: contrib });
-      return x.linked && next();
+      res.status(202).json({ status: 202, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: x });
     } else {
       return next();
     }
@@ -598,6 +598,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
         })
         .filter((el) => el)
     );
+    return linkingData;
     await client.query('BEGIN');
     const { datosContribuyente, sucursales, actividadesEconomicas } = linkingData[0];
     const { tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, tipoContribuyente } = datosContribuyente;
