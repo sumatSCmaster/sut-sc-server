@@ -2201,7 +2201,7 @@ export const internalLicenseApproval = async (license, official: Usuario) => {
   try {
     const user = await getUserByUsername(license.username);
     const procedure = (await initProcedureAnalist({ tipoTramite: 28, datos: license.datos, pago: license.pago }, user as Usuario)).tramite;
-    return await processProcedure({ idTramite: procedure, datos: license.datos }, official);
+    return await processProcedure({ idTramite: procedure, datos: license.datos, aprobado: true }, official);
   } catch (error) {
     client.query('ROLLBACK');
     console.log(error);
