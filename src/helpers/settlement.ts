@@ -1521,7 +1521,7 @@ export const initialUserLinking = async (linkingData, user) => {
             return representado ? updatedRegistry.id_registro_municipal : undefined;
           })
         );
-        await client.query(queries.ASSIGN_CONTRIBUTOR_TO_USER, [contributorExists[0].id_contribuyente, user.id]);
+        user.tipoUsuario === 4 && (await client.query(queries.ASSIGN_CONTRIBUTOR_TO_USER, [contributorExists[0].id_contribuyente, user.id]));
         await client.query('COMMIT');
         await sendRimVerification(VerificationValue.CellPhone, { idRim: rims.filter((el) => el), content: datosContacto.telefono, user: user.id });
         hasNewCode = true;
@@ -1719,11 +1719,11 @@ export const initialUserLinking = async (linkingData, user) => {
               })
             );
           }
-          return representado ? registry.id_registro_municipal : undefined;
+          return representado ? registry && registry.id_registro_municipal : undefined;
         })
       );
       await client.query('COMMIT');
-      await sendRimVerification(VerificationValue.CellPhone, { content: datosContacto.telefono, user: user.id, idRim: rims.filter((el) => el) });
+      rims.filter((el) => el).length > 0 && (await sendRimVerification(VerificationValue.CellPhone, { content: datosContacto.telefono, user: user.id, idRim: rims.filter((el) => el) }));
       payload = { rims: rims.filter((el) => el) };
     }
     client.query('COMMIT');
@@ -2203,9 +2203,13 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
 export const internalLicenseApproval = async (license, official: Usuario) => {
   const client = await pool.connect();
   try {
+    await client.query('BEGIN');
     const user = await getUserByUsername(license.username);
+    if (!user) throw { status: 404, message: 'El usuario proporcionado no existe en SUT' };
     const procedure = (await initProcedureAnalist({ tipoTramite: 28, datos: license.datos, pago: license.pago }, user as Usuario)).tramite;
-    return await processProcedure({ idTramite: procedure, datos: license.datos, aprobado: true }, official);
+    const res = await processProcedure({ idTramite: procedure, datos: license.datos, aprobado: true }, official);
+    await client.query('COMMIT');
+    return res;
   } catch (error) {
     client.query('ROLLBACK');
     console.log(error);
@@ -2224,13 +2228,10 @@ export const internalContributorSignUp = async (contributor) => {
   const { correo, denominacionComercial, direccion, doc, puntoReferencia, razonSocial, sector, parroquia, siglas, telefono, tipoContribuyente, tipoDocumento } = contributor;
   try {
     await client.query('BEGIN');
-    console.log('???');
     const user = { nombreCompleto: razonSocial, nombreUsuario: correo, direccion, cedula: doc, nacionalidad: tipoDocumento, password: '', telefono };
     const salt = genSaltSync(10);
     user.password = hashSync('123456', salt);
-    console.log('si');
     const sutUser = await signUpUser(user);
-    console.log('no');
     const procedure = {
       datos: {
         funcionario: {
@@ -2248,9 +2249,7 @@ export const internalContributorSignUp = async (contributor) => {
       },
       usuario: sutUser.user.id,
     };
-    console.log('yas');
     const data = await approveContributorSignUp({ procedure, client });
-    console.log('supalo');
     await client.query('COMMIT');
     return { status: 201, message: 'Contribuyente registrado', contribuyente: data };
   } catch (error) {
@@ -2279,6 +2278,24 @@ export const approveContributorSignUp = async ({ procedure, client }: { procedur
   } catch (error) {
     console.log(error);
     throw error;
+  }
+};
+
+export const internalUserLinking = async ({ data }) => {
+  const client = await pool.connect();
+  try {
+    const user = await getUserByUsername(data.username);
+    return;
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al realizar enlace de usuario por interno',
+    };
+  } finally {
+    client.release();
   }
 };
 
