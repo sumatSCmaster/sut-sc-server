@@ -587,6 +587,13 @@ export const processProcedure = async (procedure, user: Usuario) => {
       if (procedure.sufijo === 'rc' && aprobado) await approveContributorSignUp({ procedure: (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0], client });
     } else if (resources.tipoTramite === 28) {
       const { aprobado } = procedure;
+      datos.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
+        monto: row.monto,
+        formaPago: row.metodo_pago,
+        banco: row.nombre,
+        fecha: row.fecha_de_pago,
+        nro: row.referencia,
+      }));
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
     } else {
       if (nextEvent.startsWith('finalizar')) {
