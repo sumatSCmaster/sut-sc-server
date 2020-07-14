@@ -54,10 +54,13 @@ export const checkContributorExists = () => async (req: any, res, next) => {
   const { doc, ref, pref, contrib } = req.query;
   try {
     if (user.tipoUsuario !== 3) return next();
-    const contributorExists = (await client.query(queries.TAX_PAYER_EXISTS, [pref, doc])).rowCount > 0;
-    if (!contributorExists) {
-      const x = await externalLinkingForCashier({ document: doc, docType: pref, reference: ref, user, typeUser: contrib });
-      res.status(202).json({ status: 202, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: x });
+    const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [pref, doc])).rows[0];
+    if (!contributor) {
+      const branchIsUpdated = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [ref, contributor.id_contribuyente])).rows[0]?.actualizado;
+      if ((ref && !branchIsUpdated) || !ref) {
+        const x = await externalLinkingForCashier({ document: doc, docType: pref, reference: ref, user, typeUser: contrib });
+        res.status(202).json({ status: 202, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: x });
+      } else return next();
     } else {
       return next();
     }
