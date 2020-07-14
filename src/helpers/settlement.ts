@@ -55,12 +55,10 @@ export const checkContributorExists = () => async (req: any, res, next) => {
   try {
     if (user.tipoUsuario !== 3) return next();
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [pref, doc])).rows[0];
-    if (!contributor) {
-      const branchIsUpdated = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [ref, contributor.id_contribuyente])).rows[0]?.actualizado;
-      if ((ref && !branchIsUpdated) || !ref) {
-        const x = await externalLinkingForCashier({ document: doc, docType: pref, reference: ref, user, typeUser: contrib });
-        res.status(202).json({ status: 202, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: x });
-      } else return next();
+    const branchIsUpdated = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [ref, contributor.id_contribuyente])).rows[0]?.actualizado;
+    if (!contributor || (contributor && ref && !branchIsUpdated)) {
+      const x = await externalLinkingForCashier({ document: doc, docType: pref, reference: ref, user, typeUser: contrib });
+      res.status(202).json({ status: 202, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: x });
     } else {
       return next();
     }
@@ -406,6 +404,8 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
       (await gtic.query(contributorQuery, [document, docType])).rows
         .map(async (el) => {
           console.log(el);
+          const contributorExists = (await client.query(queries.TAX_PAYER_EXISTS, [el.tx_tp_doc, el.tx_dist_contribuyente === 'J' ? el.tx_rif : el.nu_cedula])).rows;
+          if (contributorExists.length > 0) return getLinkedContributorData(contributorExists[0]);
           return {
             datosContribuyente: await getTaxPayerInfo({
               docType: el.tx_tp_doc,
@@ -602,180 +602,180 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
         .filter((el) => el)
     );
     return linkingData;
-    await client.query('BEGIN');
-    const { datosContribuyente, sucursales, actividadesEconomicas } = linkingData[0];
-    const { tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, tipoContribuyente } = datosContribuyente;
-    const contributor = (await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, true, tipoContribuyente])).rows[0];
-    // if (actividadesEconomicas!.length > 0) {
-    //   await Promise.all(
-    //     actividadesEconomicas!.map(async (x) => {
-    //       return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [contributor.id_contribuyente, x.id]);
+    // await client.query('BEGIN');
+    // const { datosContribuyente, sucursales, actividadesEconomicas } = linkingData[0];
+    // const { tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, tipoContribuyente } = datosContribuyente;
+    // const contributor = (await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, true, tipoContribuyente])).rows[0];
+    // // if (actividadesEconomicas!.length > 0) {
+    // //   await Promise.all(
+    // //     actividadesEconomicas!.map(async (x) => {
+    // //       return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [contributor.id_contribuyente, x.id]);
+    // //     })
+    // //   );
+    // // }
+    // if (datosContribuyente.tipoContribuyente === 'JURIDICO') {
+    //   const rims: number[] = await Promise.all(
+    //     await sucursales.map(async (x) => {
+    //       const { inmuebles, liquidaciones, multas, datosSucursal, actividadesEconomicas } = x;
+    //       const liquidacionesPagas = liquidaciones.filter((el) => el.estado === 'PAGADO');
+    //       const liquidacionesVigentes = liquidaciones.filter((el) => el.estado !== 'PAGADO');
+    //       const multasPagas = multas.filter((el) => el.estado === 'PAGADO');
+    //       const multasVigentes = multas.filter((el) => el.estado !== 'PAGADO');
+    //       const pagados = liquidacionesPagas.concat(multasPagas);
+    //       const vigentes = liquidacionesVigentes.concat(multasVigentes);
+    //       const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
+    //       const registry = (await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [contributor.id_contribuyente, registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado || false])).rows[0];
+    //       if (actividadesEconomicas!.length > 0) {
+    //         await Promise.all(
+    //           actividadesEconomicas!.map(async (x) => {
+    //             return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.id]);
+    //           })
+    //         );
+    //       }
+    //       const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [registry.id_registro_municipal, 'JURIDICO', datosSucursal.creditoFiscal])).rows[0];
+    //       const estates =
+    //         inmuebles.length > 0
+    //           ? await Promise.all(
+    //               inmuebles.map(async (el) => {
+    //                 const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_registro_municipal, el.direccion, el.tipoInmueble])).rows[0];
+    //                 console.log(inmueble);
+    //                 await client.query(queries.INSERT_ESTATE_VALUE, [inmueble.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
+    //               })
+    //             )
+    //           : undefined;
+    //       if (pagados.length > 0) {
+    //         const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
+    //         await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
+    //         await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
+    //         await Promise.all(
+    //           pagados.map(async (el) => {
+    //             const settlement = (
+    //               await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+    //                 application.id_solicitud,
+    //                 fixatedAmount(+el.monto),
+    //                 el.ramo,
+    //                 { fecha: el.fecha },
+    //                 moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
+    //                 registry.id_registro_municipal,
+    //               ])
+    //             ).rows[0];
+    //             await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
+    //           })
+    //         );
+    //       }
+
+    //       if (vigentes.length > 0) {
+    //         const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
+    //         await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
+    //         await Promise.all(
+    //           vigentes.map(async (el) => {
+    //             const settlement = (
+    //               await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+    //                 application.id_solicitud,
+    //                 fixatedAmount(+el.monto),
+    //                 el.ramo,
+    //                 { fecha: el.fecha },
+    //                 moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
+    //                 registry.id_registro_municipal,
+    //               ])
+    //             ).rows[0];
+    //             await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
+    //           })
+    //         );
+    //       }
+    //       return representado ? registry.id_registro_municipal : undefined;
+    //     })
+    //   );
+    // } else {
+    //   const rims: number[] = await Promise.all(
+    //     await sucursales.map(async (x) => {
+    //       const { inmuebles, liquidaciones, multas, datosSucursal } = x;
+    //       const liquidacionesPagas = liquidaciones.filter((el) => el.estado === 'PAGADO');
+    //       const liquidacionesVigentes = liquidaciones.filter((el) => el.estado !== 'PAGADO');
+    //       const multasPagas = multas.filter((el) => el.estado === 'PAGADO');
+    //       const multasVigentes = multas.filter((el) => el.estado !== 'PAGADO');
+    //       const pagados = liquidacionesPagas.concat(multasPagas);
+    //       const vigentes = liquidacionesVigentes.concat(multasVigentes);
+    //       const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
+    //       let registry;
+    //       const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [contributor.id_contribuyente, 'NATURAL', datosSucursal.creditoFiscal])).rows[0];
+    //       if (registroMunicipal) {
+    //         registry = (await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [contributor.id_contribuyente, registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado || false])).rows[0];
+    //         if (x.actividadesEconomicas!.length > 0) {
+    //           await Promise.all(
+    //             actividadesEconomicas!.map(async (x) => {
+    //               return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.id]);
+    //             })
+    //           );
+    //         }
+    //         const estates =
+    //           inmuebles.length > 0
+    //             ? await Promise.all(
+    //                 inmuebles.map(async (el) => {
+    //                   const inmueble = await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_registro_municipal, el.direccion, el.tipoInmueble]);
+    //                   await client.query(queries.INSERT_ESTATE_VALUE, [inmueble.rows[0].id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
+    //                 })
+    //               )
+    //             : undefined;
+    //       } else {
+    //         const estates =
+    //           inmuebles.length > 0
+    //             ? await Promise.all(
+    //                 inmuebles.map(async (el) => {
+    //                   const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [(registry && registry.id_registro_municipal) || null, el.direccion, el.tipoInmueble])).rows[0];
+    //                   await client.query(queries.LINK_ESTATE_WITH_NATURAL_CONTRIBUTOR, [inmueble.id_inmueble, contributor.id_contribuyente]);
+    //                   await client.query(queries.INSERT_ESTATE_VALUE, [inmueble.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
+    //                   return 0;
+    //                 })
+    //               )
+    //             : undefined;
+    //       }
+    //       if (pagados.length > 0) {
+    //         const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+    //         await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
+    //         await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
+    //         await Promise.all(
+    //           pagados.map(async (el) => {
+    //             const settlement = (
+    //               await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+    //                 application.id_solicitud,
+    //                 fixatedAmount(+el.monto),
+    //                 el.ramo,
+    //                 { fecha: el.fecha },
+    //                 moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
+    //                 (registry && registry.id_registro_municipal) || null,
+    //               ])
+    //             ).rows[0];
+    //             await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
+    //           })
+    //         );
+    //       }
+
+    //       if (vigentes.length > 0) {
+    //         const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+    //         await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
+    //         await Promise.all(
+    //           vigentes.map(async (el) => {
+    //             const settlement = (
+    //               await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+    //                 application.id_solicitud,
+    //                 fixatedAmount(+el.monto),
+    //                 el.ramo,
+    //                 { fecha: el.fecha },
+    //                 moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
+    //                 (registry && registry.id_registro_municipal) || null,
+    //               ])
+    //             ).rows[0];
+    //             await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
+    //           })
+    //         );
+    //       }
+    //       return representado ? registry.id_registro_municipal : undefined;
     //     })
     //   );
     // }
-    if (datosContribuyente.tipoContribuyente === 'JURIDICO') {
-      const rims: number[] = await Promise.all(
-        await sucursales.map(async (x) => {
-          const { inmuebles, liquidaciones, multas, datosSucursal, actividadesEconomicas } = x;
-          const liquidacionesPagas = liquidaciones.filter((el) => el.estado === 'PAGADO');
-          const liquidacionesVigentes = liquidaciones.filter((el) => el.estado !== 'PAGADO');
-          const multasPagas = multas.filter((el) => el.estado === 'PAGADO');
-          const multasVigentes = multas.filter((el) => el.estado !== 'PAGADO');
-          const pagados = liquidacionesPagas.concat(multasPagas);
-          const vigentes = liquidacionesVigentes.concat(multasVigentes);
-          const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
-          const registry = (await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [contributor.id_contribuyente, registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado || false])).rows[0];
-          if (actividadesEconomicas!.length > 0) {
-            await Promise.all(
-              actividadesEconomicas!.map(async (x) => {
-                return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.id]);
-              })
-            );
-          }
-          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [registry.id_registro_municipal, 'JURIDICO', datosSucursal.creditoFiscal])).rows[0];
-          const estates =
-            inmuebles.length > 0
-              ? await Promise.all(
-                  inmuebles.map(async (el) => {
-                    const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_registro_municipal, el.direccion, el.tipoInmueble])).rows[0];
-                    console.log(inmueble);
-                    await client.query(queries.INSERT_ESTATE_VALUE, [inmueble.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
-                  })
-                )
-              : undefined;
-          if (pagados.length > 0) {
-            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
-            await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
-            await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
-            await Promise.all(
-              pagados.map(async (el) => {
-                const settlement = (
-                  await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
-                    application.id_solicitud,
-                    fixatedAmount(+el.monto),
-                    el.ramo,
-                    { fecha: el.fecha },
-                    moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
-                    registry.id_registro_municipal,
-                  ])
-                ).rows[0];
-                await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
-              })
-            );
-          }
-
-          if (vigentes.length > 0) {
-            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
-            await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
-            await Promise.all(
-              vigentes.map(async (el) => {
-                const settlement = (
-                  await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
-                    application.id_solicitud,
-                    fixatedAmount(+el.monto),
-                    el.ramo,
-                    { fecha: el.fecha },
-                    moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
-                    registry.id_registro_municipal,
-                  ])
-                ).rows[0];
-                await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
-              })
-            );
-          }
-          return representado ? registry.id_registro_municipal : undefined;
-        })
-      );
-    } else {
-      const rims: number[] = await Promise.all(
-        await sucursales.map(async (x) => {
-          const { inmuebles, liquidaciones, multas, datosSucursal } = x;
-          const liquidacionesPagas = liquidaciones.filter((el) => el.estado === 'PAGADO');
-          const liquidacionesVigentes = liquidaciones.filter((el) => el.estado !== 'PAGADO');
-          const multasPagas = multas.filter((el) => el.estado === 'PAGADO');
-          const multasVigentes = multas.filter((el) => el.estado !== 'PAGADO');
-          const pagados = liquidacionesPagas.concat(multasPagas);
-          const vigentes = liquidacionesVigentes.concat(multasVigentes);
-          const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
-          let registry;
-          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [contributor.id_contribuyente, 'NATURAL', datosSucursal.creditoFiscal])).rows[0];
-          if (registroMunicipal) {
-            registry = (await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [contributor.id_contribuyente, registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado || false])).rows[0];
-            if (x.actividadesEconomicas!.length > 0) {
-              await Promise.all(
-                actividadesEconomicas!.map(async (x) => {
-                  return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.id]);
-                })
-              );
-            }
-            const estates =
-              inmuebles.length > 0
-                ? await Promise.all(
-                    inmuebles.map(async (el) => {
-                      const inmueble = await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_registro_municipal, el.direccion, el.tipoInmueble]);
-                      await client.query(queries.INSERT_ESTATE_VALUE, [inmueble.rows[0].id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
-                    })
-                  )
-                : undefined;
-          } else {
-            const estates =
-              inmuebles.length > 0
-                ? await Promise.all(
-                    inmuebles.map(async (el) => {
-                      const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [(registry && registry.id_registro_municipal) || null, el.direccion, el.tipoInmueble])).rows[0];
-                      await client.query(queries.LINK_ESTATE_WITH_NATURAL_CONTRIBUTOR, [inmueble.id_inmueble, contributor.id_contribuyente]);
-                      await client.query(queries.INSERT_ESTATE_VALUE, [inmueble.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
-                      return 0;
-                    })
-                  )
-                : undefined;
-          }
-          if (pagados.length > 0) {
-            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
-            await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
-            await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
-            await Promise.all(
-              pagados.map(async (el) => {
-                const settlement = (
-                  await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
-                    application.id_solicitud,
-                    fixatedAmount(+el.monto),
-                    el.ramo,
-                    { fecha: el.fecha },
-                    moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
-                    (registry && registry.id_registro_municipal) || null,
-                  ])
-                ).rows[0];
-                await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
-              })
-            );
-          }
-
-          if (vigentes.length > 0) {
-            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
-            await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
-            await Promise.all(
-              vigentes.map(async (el) => {
-                const settlement = (
-                  await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
-                    application.id_solicitud,
-                    fixatedAmount(+el.monto),
-                    el.ramo,
-                    { fecha: el.fecha },
-                    moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
-                    (registry && registry.id_registro_municipal) || null,
-                  ])
-                ).rows[0];
-                await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
-              })
-            );
-          }
-          return representado ? registry.id_registro_municipal : undefined;
-        })
-      );
-    }
-    await client.query('COMMIT');
-    return { linked: true };
+    // await client.query('COMMIT');
+    // return { linked: true };
   } catch (error) {
     await client.query('ROLLBACK');
     console.log(error);
