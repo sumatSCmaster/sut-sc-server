@@ -827,12 +827,11 @@ const insertOrdinancesByProcedure = async (ordinances, id, type, client: PoolCli
   );
 };
 
-export const initProcedureAnalist = async (procedure, user: Usuario) => {
-  const client = await pool.connect();
+export const initProcedureAnalist = async (procedure, user: Usuario, client: PoolClient) => {
+  // const client = await pool.connect();
   const { tipoTramite, datos, pago } = procedure;
   let costo, respState, dir, cert, datosP;
   try {
-    client.query('BEGIN');
     datosP = { usuario: datos };
     const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify(datosP), user.id])).rows[0];
     response.idTramite = response.id;
@@ -891,8 +890,6 @@ export const initProcedureAnalist = async (procedure, user: Usuario) => {
       aprobado: response.aprobado,
     };
     // await sendNotification(user, `Un trámite de tipo ${tramite.nombreTramiteLargo} ha sido creado`, 'CREATE_PROCEDURE', 'TRAMITE', tramite, client);
-    client.query('COMMIT');
-
     // sendEmail({
     //   ...tramite,
     //   codigo: tramite.codigoTramite,
@@ -908,14 +905,13 @@ export const initProcedureAnalist = async (procedure, user: Usuario) => {
     };
   } catch (e) {
     console.log(e);
-    client.query('ROLLBACK');
     throw {
       status: 500,
       error: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error al realizar el tramite por interno',
     };
   } finally {
-    client.release();
+    // client.release();
   }
 };
 
