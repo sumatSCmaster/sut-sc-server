@@ -20,7 +20,6 @@ import { query } from 'express-validator';
 import { sendNotification } from './notification';
 import { sendRimVerification, verifyCode, resendCode } from './verification';
 import { hasLinkedContributor, signUpUser, getUserByUsername } from './user';
-import e from 'express';
 import S3Client from '@utils/s3';
 import ExcelJs from 'exceljs';
 import * as fs from 'fs';
@@ -162,15 +161,16 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
           const date = addMonths(new Date(lastSMPayment.toDate()), index);
           return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
         });
+        //user el helper del get de servicios municipales
         SM = await Promise.all(
           estates.map(async (el) => {
             const calculoAseo =
               el.tipo_inmueble === 'COMERCIAL'
                 ? el.metros_construccion && el.metros_construccion !== 0
-                  ? 0.15 * el.metros_construccion
+                  ? 0.1 * el.metros_construccion
                   : (await client.query(queries.GET_AE_CLEANING_TARIFF, [branch.id_registro_municipal])).rows[0].monto
                 : (await client.query(queries.GET_RESIDENTIAL_CLEANING_TARIFF)).rows[0].monto;
-            const tarifaAseo = calculoAseo / UTMM > 300 ? UTMM * 300 : calculoAseo;
+            const tarifaAseo = calculoAseo / UTMM > 150 ? UTMM * 150 : calculoAseo;
             const calculoGas = el.tipo_inmueble === 'COMERCIAL' ? (await client.query(queries.GET_AE_GAS_TARIFF, [branch.id_registro_municipal])).rows[0].monto : (await client.query(queries.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].monto;
             const tarifaGas = calculoGas / UTMM > 300 ? UTMM * 300 : calculoGas;
             return { id: el.id_inmueble, tipoInmueble: el.tipo_inmueble, direccionInmueble: el.direccion, tarifaAseo, tarifaGas, deuda: debtSM };
@@ -2215,7 +2215,7 @@ export const internalLicenseApproval = async (license, official: Usuario) => {
     const userContributor = await hasLinkedContributor(user.id);
     if (license.datos.contribuyente.id !== userContributor?.id) throw { status: 401, message: 'El usuario proporcionado no tiene permisos para crear licencias a este contribuyente' };
     const procedure = (await initProcedureAnalist({ tipoTramite: 28, datos: license.datos, pago: license.pago }, user as Usuario)).tramite;
-    const res = await processProcedure({ idTramite: procedure, datos: license.datos, aprobado: true }, official);
+    const res = await processProcedure({ idTramite: procedure.id, datos: license.datos, aprobado: true }, official);
     await client.query('COMMIT');
     return res;
   } catch (error) {
