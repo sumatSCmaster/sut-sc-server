@@ -2212,6 +2212,8 @@ export const internalLicenseApproval = async (license, official: Usuario) => {
     await client.query('BEGIN');
     const user = await getUserByUsername(license.username);
     if (!user) throw { status: 404, message: 'El usuario proporcionado no existe en SUT' };
+    const userContributor = await hasLinkedContributor(user.id);
+    if (license.datos.contribuyente.id !== userContributor?.id) throw { status: 401, message: 'El usuario proporcionado no tiene permisos para crear licencias a este contribuyente' };
     const procedure = (await initProcedureAnalist({ tipoTramite: 28, datos: license.datos, pago: license.pago }, user as Usuario)).tramite;
     const res = await processProcedure({ idTramite: procedure, datos: license.datos, aprobado: true }, official);
     await client.query('COMMIT');
