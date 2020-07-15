@@ -809,6 +809,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_AGREEMENT_FRACTION_BY_ID: 'SELECT * FROM impuesto.fraccion WHERE id_fraccion = $1',
   GET_AGREEMENT_FRACTION_STATE: 'SELECT state FROM impuesto.fraccion_state WHERE id = $1',
   GET_AGREEMENTS_BY_USER: 'SELECT * FROM impuesto.convenio c INNER JOIN impuesto.solicitud s ON c.id_solicitud = s.id_solicitud WHERE s.id_usuario = $1',
+  GET_AGREEMENTS_BY_RIM: "SELECT DISTINCT ON (id_solicitud) * FROM impuesto.convenio INNER JOIN impuesto.solicitud USING (id_solicitud) INNER JOIN impuesto.liquidacion USING (id_solicitud) WHERE id_contribuyente = $1 AND tipo_solicitud = 'CONVENIO'",
   GET_FRACTIONS_BY_AGREEMENT_ID: 'SELECT * FROM impuesto.fraccion f WHERE f.id_convenio = $1',
   APPLICATION_TOTAL_AMOUNT_BY_ID: 'SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1',
   GET_APPLICATION_STATE: 'SELECT state FROM impuesto.solicitud_state WHERE id = $1',
@@ -855,7 +856,8 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_RIM_DATA: `SELECT id_registro_municipal AS id, referencia_municipal as "rim", telefono_celular AS "telefonoCelular", 
     telefono_habitacion AS "telefonoHabitacion", email, denominacion_comercial AS "denominacionComercial", nombre_representante AS "nombreRepresentante"
     FROM impuesto.registro_municipal WHERE referencia_municipal = $1`,
-  GET_ESTATES_BY_RIM: 'SELECT id_inmueble AS id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble" FROM inmueble_urbano WHERE id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $1);',
+  GET_ESTATES_BY_RIM:
+    'SELECT id_inmueble AS id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble" FROM inmueble_urbano WHERE id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $1);',
   GET_ESTATES_BY_USER_INFO: `SELECT id_inmueble AS id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble" 
     FROM inmueble_urbaano iu 
@@ -880,7 +882,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_ESTATE_BY_CODCAT: `SELECT id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
    metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble" FROM inmueble_urbano WHERE cod_catastral = $1;`,
   LINK_ESTATE_WITH_RIM: `UPDATE inmueble_urbano SET id_registro_municipal = $1 WHERE cod_catastral = $2;`,
-   gtic: {
+  gtic: {
     GET_NATURAL_CONTRIBUTOR: 'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 ORDER BY co_contribuyente DESC',
     GET_JURIDICAL_CONTRIBUTOR: 'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE tx_rif = $1 AND tx_tp_doc = $2 AND nu_referencia IS NOT NULL ORDER BY co_contribuyente DESC',
     GET_CONTRIBUTOR_BY_ID: 'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE co_contribuyente = $1',

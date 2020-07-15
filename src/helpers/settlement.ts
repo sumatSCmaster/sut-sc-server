@@ -1158,11 +1158,15 @@ export const getAgreementsForContributor = async ({ reference, docType, document
   const client = await pool.connect();
   try {
     const user = (await client.query(queries.GET_USER_IN_CHARGE_OF_BRANCH, [reference, docType, document])).rows[0];
-    if (!user) throw { status: 404, message: 'El contribuyente no existe o la sucursal no está actualizada' };
-    const hasApplications = (await client.query(queries.GET_AGREEMENTS_BY_USER, [user.id])).rows.length > 0;
-    if (!hasApplications) throw { status: 404, message: 'El usuario no posee convenios' };
+    if (!reference) throw { status: 404, message: 'Debe proporcionar un RIM para realizar el enlace para un contribuyente juridico' };
+    const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows[0];
+    if (!contributor) throw { status: 404, message: 'El contribuyente proporcionado no existe' };
+    const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
+    if (!branch) throw { status: 404, message: 'La sucursal proporcionada no existe' };
+    const agreements = (await client.query(queries.GET_AGREEMENTS_BY_RIM, [branch.id_registro_municipal])).rows;
+    if (!(agreements.length > 0)) throw { status: 404, message: 'El usuario no posee convenios' };
     const applications: any[] = await Promise.all(
-      (await client.query(queries.GET_AGREEMENTS_BY_USER, [user.id])).rows.map(async (el) => {
+      agreements.map(async (el) => {
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
         const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
         return {
