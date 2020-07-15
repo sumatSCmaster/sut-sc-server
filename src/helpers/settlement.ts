@@ -2206,6 +2206,31 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
   }
 };
 
+export const internalUserImport = async ({ reference, docType, document, typeUser, user }) => {
+  const client = await pool.connect();
+  try {
+    const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows[0];
+    const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
+    if (!!reference && !branch) throw { status: 404, message: 'No existe la sucursal solicitada' };
+    const branchIsUpdated = branch?.actualizado;
+    if (!contributor || (!!contributor && !!reference && !branchIsUpdated)) {
+      const x = await externalLinkingForCashier({ document, docType, reference, user, typeUser });
+      return { status: 202, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: x };
+    } else {
+      return { status: 200, message: 'El usuario ya esta registrado y actualizado, proceda a enlazarlo' };
+    }
+  } catch (error) {
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || errorMessageExtractor(error) || 'Error al obtener la informacion del usuario',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 export const internalLicenseApproval = async (license, official: Usuario) => {
   const client = await pool.connect();
   try {

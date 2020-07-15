@@ -24,6 +24,7 @@ import {
   internalContributorSignUp,
   internalLicenseApproval,
   internalUserLinking,
+  internalUserImport,
 } from '@helpers/settlement';
 import { Usuario } from '@root/interfaces/sigt';
 
@@ -55,6 +56,14 @@ router.get('/accountStatement/:contributor', async (req: any, res) => {
       if (err) res.status(500).json({ status: 500, message: 'Error al procesar el pdf' });
       res.contentType('application/pdf').send(buffer);
     });
+});
+
+router.get('/import', authenticate('jwt'), async (req: any, res) => {
+  const { user } = req;
+  const { doc, ref, pref, contrib } = req.query;
+  const [err, data] = await fulfill(internalUserImport({ document: doc, reference: ref, docType: pref, typeUser: contrib, user }));
+  if (err) res.status(err.status).json(err);
+  if (data) res.status(data.status).json(data);
 });
 
 router.get('/instances', authenticate('jwt'), async (req: any, res) => {
