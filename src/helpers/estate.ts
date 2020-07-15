@@ -93,10 +93,18 @@ export const createPersonalEstate = async (procedure) => {
 
 // SEDEMAT
 
-export const taxPayerEstatesByRIM = async (ref) => {
+export const taxPayerEstatesByRIM = async ({ typeDoc, rif, rim }) => {
   const client = await pool.connect();
   try{
-    const estates = (await client.query(queries.GET_ESTATES_BY_RIM, [ref])).rows;
+    const rimData = (await client.query(queries.GET_RIM_DATA, [rim]));
+    if (rimData.rowCount === 0) {
+      throw new Error('RIM no encontrado');
+    }
+    const contributor = (await client.query(queries.GET_CONTRIBUTOR, [typeDoc, rif, rim]));
+    if (contributor.rowCount === 0) {
+      throw new Error('Contribuyente no encontrado');
+    }
+    const estates = (await client.query(queries.GET_ESTATES_BY_RIM, [rim])).rows;
     const estatesWithAppraisals = await Promise.all(estates.map((row) => {
       return new Promise(async (res, rej) => {
         res({
@@ -106,10 +114,13 @@ export const taxPayerEstatesByRIM = async (ref) => {
       })
     }));
 
-    return estatesWithAppraisals;
+    return {status: 200, contribuyente: contributor.rows[0], inmuebles: estatesWithAppraisals};
 
   } catch (e) {
-    throw e;
+    throw {
+      error: e,
+      message: errorMessageExtractor(e)
+    };
   } finally {
     client.release();
   }
@@ -129,6 +140,97 @@ export const userEstates = async ({ typeDoc, doc }) => {
     }));
 
     return estatesWithAppraisals;
+
+  } catch (e) {
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+export const parishEstates = async ({ idParroquia }) => {
+  const client = await pool.connect();
+  try{
+    const estates = (await client.query(queries.GET_PARISH_ESTATES, [idParroquia])).rows;
+    const estatesWithAppraisals = await Promise.all(estates.map((row) => {
+      return new Promise(async (res, rej) => {
+        res({
+          ...row,
+          avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [row.id])).rows,
+          rim: (await client.query(queries.GET_RIM_DATA, [row.idRim])).rows[0],
+        })
+      })
+    }));
+
+    return estatesWithAppraisals;
+
+  } catch (e) {
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+
+export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos }) => {
+  const client = await pool.connect();
+  try{
+    await client.query('BEGIN');
+    const estate = (await client.query(queries.CREATE_BARE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble])).rows[0];
+    console.log(estate);
+    const appraisals = await Promise.all(avaluos.map((row) => {
+      return client.query(queries.INSERT_ESTATE_VALUE, [estate.id, row.avaluo, row.anio])
+    }))
+    await client.query('COMMIT');
+
+    return {status: 200, inmueble: {...estate, avaluos}};
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble }) => {
+  const client = await pool.connect();
+  try{
+    await client.query('BEGIN');
+    const estate = (await client.query(queries.UPDATE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, id])).rows[0];
+
+    await client.query('COMMIT');
+
+    return estate;
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+
+export const linkCommercial = async ({ codCat, rim }) => {
+  const client = await pool.connect();
+  try{
+    const rimData = (await client.query(queries.GET_RIM_DATA, [rim]));
+    if (rimData.rowCount === 0) {
+      throw new Error('RIM no encontrado');
+    }
+
+    const estate = (await client.query(queries.GET_ESTATE_BY_CODCAT, [codCat]));
+
+    if(estate.rowCount === 0){
+      throw new Error('Inmueble no encontrado.')
+    }
+
+    (await client.query(queries.LINK_ESTATE_WITH_RIM, [rimData.rows[0].id, codCat]))
+
+    return {
+      status: 200,
+      ...estate.rows[0],
+      avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows
+    };
 
   } catch (e) {
     throw e;

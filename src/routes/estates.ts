@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
-import { getEstatesInfo, getEstateInfoByCod, createPersonalEstate } from '@helpers/estate';
+import { getEstatesInfo, getEstateInfoByCod, createPersonalEstate, taxPayerEstatesByRIM, createBareEstate, linkCommercial } from '@helpers/estate';
 import { authenticate } from 'passport';
 
 const router = Router();
@@ -23,5 +23,26 @@ router.post('/', authenticate('jwt'), async (req, res) => {
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
+
+//SEDEMAT
+
+router.get('/sedemat/contributor/rim/', async(req, res) => {
+  const [error, data] = await fulfill(taxPayerEstatesByRIM(req.body));
+  console.log(error)
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+});
+
+router.post('/sedemat/', async (req, res) => {
+  const [error, data] = await fulfill(createBareEstate(req.body));
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+});
+
+router.post('/sedemat/rim/link/', async (req, res) => {
+  const [error, data] = await fulfill(linkCommercial(req.body));
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+})
 
 export default router;
