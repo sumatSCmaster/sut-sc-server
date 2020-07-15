@@ -594,6 +594,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
         fecha: row.fecha_de_pago,
         nro: row.referencia,
       }));
+      console.log('creo y me parec q se rompio aki');
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
     } else {
       if (nextEvent.startsWith('finalizar')) {
