@@ -2303,6 +2303,7 @@ export const internalUserLinking = async (data) => {
       if (!referenciaMunicipal) throw { status: 404, message: 'Debe proporcionar un RIM para realizar el enlace para un contribuyente juridico' };
       const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [referenciaMunicipal, contributor.id_contribuyente])).rows[0];
       if (!branch) throw { status: 404, message: 'La sucursal proporcionada no existe' };
+      if (!branch.actualizado) throw { status: 403, message: 'Debe pasar por el proceso de actualización para la sucursal seleccionada' };
       await client.query('UPDATE impuesto.verificacion_telefono SET id_usuario = $1 WHERE id_verificacion_telefono = (SELECT id_verificacion_telefono FROM impuesto.registro_municipal_verificacion WHERE id_registro_municipal = $2 LIMIT 1)', [
         user.id,
         branch.id_registro_municipal,
