@@ -22,6 +22,8 @@ import {
   contributorSearch,
   getAgreementsForContributor,
   internalContributorSignUp,
+  internalLicenseApproval,
+  internalUserLinking,
 } from '@helpers/settlement';
 import { Usuario } from '@root/interfaces/sigt';
 
@@ -144,9 +146,22 @@ router.post(
 //   if (data) res.status(data.status).json(data);
 // });
 
+router.post('/linking', authenticate('jwt'), async (req, res) => {
+  const { datosEnlace } = req.body;
+  const [error, data] = await fulfill(internalUserLinking(datosEnlace));
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+});
+
 router.post('/taxPayer', authenticate('jwt'), async (req, res) => {
   const { datosEnlace } = req.body;
   const [error, data] = await fulfill(initialUserLinking(datosEnlace, req.user));
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+});
+
+router.post('/license', authenticate('jwt'), async (req: any, res) => {
+  const [error, data] = await fulfill(internalLicenseApproval(req.body, req.user));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });

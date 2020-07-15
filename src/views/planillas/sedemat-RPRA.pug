@@ -37,7 +37,7 @@ block content
         p
           b CANT.
     each item in datos.ingresos
-      -sub = item.subRamo
+      - sub = item.subRamo
         .tr.break-page
           div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
             p #{item.ramo}
@@ -46,11 +46,11 @@ block content
           div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
             p #{new Intl.NumberFormat('de-DE').format(item.liquidadoTotal)}
           div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
-            p #{item.cantidadLiqTotal}
+            p #{item.cantidadLiqTotal ? item.cantidadLiqTotal : 0}
           div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
             p #{new Intl.NumberFormat('de-DE').format(item.ingresadoTotal)}
           div(style={'-webkit-flex':'1'}).td.center.border-bottom
-            p #{item.cantidadIngTotal}  
+            p #{item.cantidadIngTotal ? item.cantidadIngTotal : 0}  
       if sub.length > 1
         each subRamo in sub
           .tr.break-page
@@ -61,11 +61,11 @@ block content
             div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
               p #{new Intl.NumberFormat('de-DE').format(subRamo.liquidado)}
             div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
-              p #{subRamo.cantidadLiq}
+              p #{subRamo.cantidadLiq ? subRamo.cantidadLiq : 0}
             div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
               p #{new Intl.NumberFormat('de-DE').format(subRamo.ingresado)}
             div(style={'-webkit-flex':'1'}).td.center.border-bottom
-              p #{subRamo.cantidadIng}        
+              p #{subRamo.cantidadIng ? subRamo.cantidadIng : 0}   
     .tr.break-page
       div(style={'-webkit-flex':'4'}).th.center.border-right
         p

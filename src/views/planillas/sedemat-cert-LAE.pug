@@ -30,7 +30,7 @@ block content
               b Cajero
         div.tr
           div(style={'-webkit-flex': 1}).td.border-right.center
-            p  #{datos.idTramite}
+            p  #{datos.idTramite ? datos.idTramite : 'POR CREAR'}
           div(style={'-webkit-flex': 1}).td.border-right.center
             p  RG2020
           div(style={'-webkit-flex': 2}).td.border-right.center
@@ -58,7 +58,7 @@ block content
           p 
             b Tipo de sociedad:
         div(style={'-webkit-flex': 8, 'padding-left': '1px'}).td.center
-          p #{datos.funcionario.tipoSolicitud}                  
+          p #{datos.funcionario.tipoSociedadContrib}                  
     div.table(style={'font-size':'13px','margin-top':'20px'})
       div.tr
         div.th(style={'-webkit-flex': 1}).border-bottom.center
@@ -83,7 +83,7 @@ block content
         div(style={'-webkit-flex': 2}).td.border-bottom
           p
             b REF:&nbsp;
-            span #{datos.funcionario.referenciaMunicipal}          
+            span #{datos.funcionario.referenciaMunicipal ? datos.funcionario.referenciaMunicipal : 'POR CREAR'}          
       div.tr
         div(style={'-webkit-flex': 2}).td.border-right.center
           p

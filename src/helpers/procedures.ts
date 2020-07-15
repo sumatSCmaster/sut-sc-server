@@ -2,7 +2,7 @@ import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { Institucion, TipoTramite, Campo, Tramite, Usuario, Liquidacion } from '@interfaces/sigt';
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
-import { insertPaymentReference } from './banks';
+import { insertPaymentReference, insertPaymentCashier } from './banks';
 import { PoolClient } from 'pg';
 import switchcase from '@utils/switch';
 import { sendNotification } from './notification';
@@ -587,10 +587,14 @@ export const processProcedure = async (procedure, user: Usuario) => {
       if (procedure.sufijo === 'rc' && aprobado) await approveContributorSignUp({ procedure: (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0], client });
     } else if (resources.tipoTramite === 28) {
       const { aprobado } = procedure;
-      datos.idTramite = procedure.idTramite;
-      procedure.datos = await approveContributorAELicense({ data: datos, client });
-      dir = await createCertificate(procedure, client);
-      respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, true]);
+      datos.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
+        monto: row.monto,
+        formaPago: row.metodo_pago,
+        banco: row.nombre,
+        fecha: row.fecha_de_pago,
+        nro: row.referencia,
+      }));
+      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
     } else {
       if (nextEvent.startsWith('finalizar')) {
         procedure.datos = datos;
@@ -708,9 +712,7 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
 export const reviseProcedure = async (procedure, user: Usuario) => {
   const client = await pool.connect();
   const { aprobado, observaciones } = procedure.revision;
-  let dir,
-    respState,
-    datos = null;
+  let dir, respState, datos;
   try {
     client.query('BEGIN');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.idTramite])).rows[0];
@@ -746,6 +748,12 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       }
     } else {
       if (aprobado) {
+        if (resources.tipoTramite === 28) {
+          const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
+          datos = prevData.datos;
+          datos.idTramite = procedure.idTramite;
+          procedure.datos = await approveContributorAELicense({ data: datos, client });
+        }
         if (procedure.sufijo !== 'bc') dir = await createCertificate(procedure, client);
         respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, aprobado]);
       } else {
@@ -818,6 +826,98 @@ const insertOrdinancesByProcedure = async (ordinances, id, type, client: PoolCli
   );
 };
 
+export const initProcedureAnalist = async (procedure, user: Usuario) => {
+  const client = await pool.connect();
+  const { tipoTramite, datos, pago } = procedure;
+  let costo, respState, dir, cert, datosP;
+  try {
+    client.query('BEGIN');
+    datosP = { usuario: datos };
+    const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify(datosP), user.id])).rows[0];
+    response.idTramite = response.id;
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.idTramite])).rows[0];
+    response.sufijo = resources.sufijo;
+    costo = isNotPrepaidProcedure({ suffix: resources.sufijo, user }) ? null : pago.costo || resources.costo_base;
+    const nextEvent = await getNextEventForProcedure(response, client);
+
+    if (pago && resources.sufijo !== 'tl' && nextEvent.startsWith('validar')) {
+      pago.costo = costo;
+      pago.concepto = 'TRAMITE';
+      pago.user = user.id;
+      await insertPaymentCashier(pago, response.id, client);
+    }
+
+    if (resources.sufijo === 'tl') {
+      const pointerEvent = user.tipoUsuario === 4;
+      if (pointerEvent) {
+        if (pago) {
+          pago.costo = costo;
+          pago.concepto = 'TRAMITE';
+          pago.user = user.id;
+          await insertPaymentReference(pago, response.id, client);
+        }
+        dir = await createRequestForm(response, client);
+        respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent[pointerEvent.toString()], null, costo, dir]);
+      } else {
+        cert = await createCertificate(response, client);
+        respState = await client.query(queries.COMPLETE_STATE, [response.idTramite, nextEvent[pointerEvent.toString()], null, dir || null, true]);
+      }
+    } else {
+      if (resources.planilla) dir = await createRequestForm(response, client);
+      if (response.sufijo === 'bc') datosP = { funcionario: datos };
+      respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, response.sufijo === 'bc' ? JSON.stringify(datosP) : null, costo, dir]);
+    }
+
+    const ultEvent = await getNextEventForProcedure(response, client);
+    respState = await client.query(queries.UPDATE_STATE, [response.id, ultEvent, null, costo, dir]);
+
+    const tramite: Partial<Tramite> = {
+      id: response.id,
+      tipoTramite: response.tipotramite,
+      estado: respState.rows[0].state,
+      datos: datosP,
+      planilla: dir,
+      certificado: cert,
+      costo,
+      fechaCreacion: response.fechacreacion,
+      fechaCulminacion: response.fechaculminacion,
+      codigoTramite: response.codigotramite,
+      usuario: response.usuario,
+      nombreLargo: response.nombrelargo,
+      nombreCorto: response.nombrecorto,
+      nombreTramiteLargo: response.nombretramitelargo,
+      nombreTramiteCorto: response.nombretramitecorto,
+      aprobado: response.aprobado,
+    };
+    // await sendNotification(user, `Un trámite de tipo ${tramite.nombreTramiteLargo} ha sido creado`, 'CREATE_PROCEDURE', 'TRAMITE', tramite, client);
+    client.query('COMMIT');
+
+    // sendEmail({
+    //   ...tramite,
+    //   codigo: tramite.codigoTramite,
+    //   nombreUsuario: user.nombreUsuario,
+    //   nombreCompletoUsuario: user.nombreCompleto,
+    //   estado: respState.rows[0].state,
+    // });
+
+    return {
+      status: 201,
+      message: 'Tramite iniciado!',
+      tramite,
+    };
+  } catch (e) {
+    console.log(e);
+    client.query('ROLLBACK');
+    throw {
+      status: 500,
+      error: errorMessageExtractor(e),
+      message: errorMessageGenerator(e) || 'Error al realizar el tramite por interno',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 const getNextEventForProcedure = async (procedure, client): Promise<any> => {
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
   const nextEvent = procedureEventHandler(procedure.sufijo, response.state);
@@ -838,7 +938,7 @@ const procedureEvents = switchcase({
   },
   rc: { iniciado: 'procesar_rc', enproceso: { true: 'aprobar_rc', false: 'rechazar_rc' } },
   bc: { iniciado: 'revisar_bc', enrevision: { true: 'aprobar_bc', false: 'rechazar_bc' } },
-  lae: { iniciado: 'validar_lae', validando: 'enproceso_lae', enproceso: { true: 'aprobar_lae', false: 'rechazar_lae' } },
+  lae: { iniciado: 'validar_lae', validando: 'enproceso_lae', enproceso: { true: 'revisar_lae', false: 'rechazar_lae', enrevision: { true: 'aprobar_lae', false: 'rechazar_lae' } } },
 })(null);
 
 const procedureEventHandler = (suffix, state) => {

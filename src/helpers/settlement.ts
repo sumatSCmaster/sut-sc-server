@@ -19,12 +19,12 @@ import md5 from 'md5';
 import { query } from 'express-validator';
 import { sendNotification } from './notification';
 import { sendRimVerification, verifyCode, resendCode } from './verification';
-import { hasLinkedContributor, signUpUser } from './user';
+import { hasLinkedContributor, signUpUser, getUserByUsername } from './user';
 import e from 'express';
 import S3Client from '@utils/s3';
 import ExcelJs from 'exceljs';
 import * as fs from 'fs';
-import { procedureInit } from './procedures';
+import { procedureInit, initProcedureAnalist, processProcedure } from './procedures';
 import { generateReceipt } from './receipt';
 const written = require('written-number');
 
@@ -53,11 +53,14 @@ export const checkContributorExists = () => async (req: any, res, next) => {
   const { user } = req;
   const { doc, ref, pref, contrib } = req.query;
   try {
-    if (user.tipoUsuario !== 3) return next();
-    const contributorExists = (await client.query(queries.TAX_PAYER_EXISTS, [pref, doc])).rowCount > 0;
-    if (!contributorExists) {
+    if (user.tipoUsuario === 4) return next();
+    const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [pref, doc])).rows[0];
+    const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [ref, contributor.id_contribuyente])).rows[0];
+    if (!!ref && !branch) res.status(404).send({ status: 404, message: 'No existe la sucursal solicitada' });
+    const branchIsUpdated = branch?.actualizado;
+    if (!contributor || (!!contributor && !!ref && !branchIsUpdated)) {
       const x = await externalLinkingForCashier({ document: doc, docType: pref, reference: ref, user, typeUser: contrib });
-      return x.linked && next();
+      res.status(202).json({ status: 202, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: x });
     } else {
       return next();
     }
@@ -403,6 +406,8 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
       (await gtic.query(contributorQuery, [document, docType])).rows
         .map(async (el) => {
           console.log(el);
+          const contributorExists = (await client.query(queries.TAX_PAYER_EXISTS, [el.tx_tp_doc, el.tx_dist_contribuyente === 'J' ? el.tx_rif : el.nu_cedula])).rows;
+          if (contributorExists.length > 0) return getLinkedContributorData(contributorExists[0]);
           return {
             datosContribuyente: await getTaxPayerInfo({
               docType: el.tx_tp_doc,
@@ -598,180 +603,181 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
         })
         .filter((el) => el)
     );
-    await client.query('BEGIN');
-    const { datosContribuyente, sucursales, actividadesEconomicas } = linkingData[0];
-    const { tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, tipoContribuyente } = datosContribuyente;
-    const contributor = (await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, true, tipoContribuyente])).rows[0];
-    // if (actividadesEconomicas!.length > 0) {
-    //   await Promise.all(
-    //     actividadesEconomicas!.map(async (x) => {
-    //       return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [contributor.id_contribuyente, x.id]);
+    return linkingData;
+    // await client.query('BEGIN');
+    // const { datosContribuyente, sucursales, actividadesEconomicas } = linkingData[0];
+    // const { tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, tipoContribuyente } = datosContribuyente;
+    // const contributor = (await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, true, tipoContribuyente])).rows[0];
+    // // if (actividadesEconomicas!.length > 0) {
+    // //   await Promise.all(
+    // //     actividadesEconomicas!.map(async (x) => {
+    // //       return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [contributor.id_contribuyente, x.id]);
+    // //     })
+    // //   );
+    // // }
+    // if (datosContribuyente.tipoContribuyente === 'JURIDICO') {
+    //   const rims: number[] = await Promise.all(
+    //     await sucursales.map(async (x) => {
+    //       const { inmuebles, liquidaciones, multas, datosSucursal, actividadesEconomicas } = x;
+    //       const liquidacionesPagas = liquidaciones.filter((el) => el.estado === 'PAGADO');
+    //       const liquidacionesVigentes = liquidaciones.filter((el) => el.estado !== 'PAGADO');
+    //       const multasPagas = multas.filter((el) => el.estado === 'PAGADO');
+    //       const multasVigentes = multas.filter((el) => el.estado !== 'PAGADO');
+    //       const pagados = liquidacionesPagas.concat(multasPagas);
+    //       const vigentes = liquidacionesVigentes.concat(multasVigentes);
+    //       const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
+    //       const registry = (await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [contributor.id_contribuyente, registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado || false])).rows[0];
+    //       if (actividadesEconomicas!.length > 0) {
+    //         await Promise.all(
+    //           actividadesEconomicas!.map(async (x) => {
+    //             return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.id]);
+    //           })
+    //         );
+    //       }
+    //       const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [registry.id_registro_municipal, 'JURIDICO', datosSucursal.creditoFiscal])).rows[0];
+    //       const estates =
+    //         inmuebles.length > 0
+    //           ? await Promise.all(
+    //               inmuebles.map(async (el) => {
+    //                 const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_registro_municipal, el.direccion, el.tipoInmueble])).rows[0];
+    //                 console.log(inmueble);
+    //                 await client.query(queries.INSERT_ESTATE_VALUE, [inmueble.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
+    //               })
+    //             )
+    //           : undefined;
+    //       if (pagados.length > 0) {
+    //         const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
+    //         await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
+    //         await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
+    //         await Promise.all(
+    //           pagados.map(async (el) => {
+    //             const settlement = (
+    //               await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+    //                 application.id_solicitud,
+    //                 fixatedAmount(+el.monto),
+    //                 el.ramo,
+    //                 { fecha: el.fecha },
+    //                 moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
+    //                 registry.id_registro_municipal,
+    //               ])
+    //             ).rows[0];
+    //             await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
+    //           })
+    //         );
+    //       }
+
+    //       if (vigentes.length > 0) {
+    //         const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
+    //         await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
+    //         await Promise.all(
+    //           vigentes.map(async (el) => {
+    //             const settlement = (
+    //               await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+    //                 application.id_solicitud,
+    //                 fixatedAmount(+el.monto),
+    //                 el.ramo,
+    //                 { fecha: el.fecha },
+    //                 moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
+    //                 registry.id_registro_municipal,
+    //               ])
+    //             ).rows[0];
+    //             await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
+    //           })
+    //         );
+    //       }
+    //       return representado ? registry.id_registro_municipal : undefined;
+    //     })
+    //   );
+    // } else {
+    //   const rims: number[] = await Promise.all(
+    //     await sucursales.map(async (x) => {
+    //       const { inmuebles, liquidaciones, multas, datosSucursal } = x;
+    //       const liquidacionesPagas = liquidaciones.filter((el) => el.estado === 'PAGADO');
+    //       const liquidacionesVigentes = liquidaciones.filter((el) => el.estado !== 'PAGADO');
+    //       const multasPagas = multas.filter((el) => el.estado === 'PAGADO');
+    //       const multasVigentes = multas.filter((el) => el.estado !== 'PAGADO');
+    //       const pagados = liquidacionesPagas.concat(multasPagas);
+    //       const vigentes = liquidacionesVigentes.concat(multasVigentes);
+    //       const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
+    //       let registry;
+    //       const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [contributor.id_contribuyente, 'NATURAL', datosSucursal.creditoFiscal])).rows[0];
+    //       if (registroMunicipal) {
+    //         registry = (await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [contributor.id_contribuyente, registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado || false])).rows[0];
+    //         if (x.actividadesEconomicas!.length > 0) {
+    //           await Promise.all(
+    //             actividadesEconomicas!.map(async (x) => {
+    //               return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.id]);
+    //             })
+    //           );
+    //         }
+    //         const estates =
+    //           inmuebles.length > 0
+    //             ? await Promise.all(
+    //                 inmuebles.map(async (el) => {
+    //                   const inmueble = await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_registro_municipal, el.direccion, el.tipoInmueble]);
+    //                   await client.query(queries.INSERT_ESTATE_VALUE, [inmueble.rows[0].id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
+    //                 })
+    //               )
+    //             : undefined;
+    //       } else {
+    //         const estates =
+    //           inmuebles.length > 0
+    //             ? await Promise.all(
+    //                 inmuebles.map(async (el) => {
+    //                   const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [(registry && registry.id_registro_municipal) || null, el.direccion, el.tipoInmueble])).rows[0];
+    //                   await client.query(queries.LINK_ESTATE_WITH_NATURAL_CONTRIBUTOR, [inmueble.id_inmueble, contributor.id_contribuyente]);
+    //                   await client.query(queries.INSERT_ESTATE_VALUE, [inmueble.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
+    //                   return 0;
+    //                 })
+    //               )
+    //             : undefined;
+    //       }
+    //       if (pagados.length > 0) {
+    //         const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+    //         await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
+    //         await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
+    //         await Promise.all(
+    //           pagados.map(async (el) => {
+    //             const settlement = (
+    //               await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+    //                 application.id_solicitud,
+    //                 fixatedAmount(+el.monto),
+    //                 el.ramo,
+    //                 { fecha: el.fecha },
+    //                 moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
+    //                 (registry && registry.id_registro_municipal) || null,
+    //               ])
+    //             ).rows[0];
+    //             await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
+    //           })
+    //         );
+    //       }
+
+    //       if (vigentes.length > 0) {
+    //         const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+    //         await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
+    //         await Promise.all(
+    //           vigentes.map(async (el) => {
+    //             const settlement = (
+    //               await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+    //                 application.id_solicitud,
+    //                 fixatedAmount(+el.monto),
+    //                 el.ramo,
+    //                 { fecha: el.fecha },
+    //                 moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
+    //                 (registry && registry.id_registro_municipal) || null,
+    //               ])
+    //             ).rows[0];
+    //             await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
+    //           })
+    //         );
+    //       }
+    //       return representado ? registry.id_registro_municipal : undefined;
     //     })
     //   );
     // }
-    if (datosContribuyente.tipoContribuyente === 'JURIDICO') {
-      const rims: number[] = await Promise.all(
-        await sucursales.map(async (x) => {
-          const { inmuebles, liquidaciones, multas, datosSucursal, actividadesEconomicas } = x;
-          const liquidacionesPagas = liquidaciones.filter((el) => el.estado === 'PAGADO');
-          const liquidacionesVigentes = liquidaciones.filter((el) => el.estado !== 'PAGADO');
-          const multasPagas = multas.filter((el) => el.estado === 'PAGADO');
-          const multasVigentes = multas.filter((el) => el.estado !== 'PAGADO');
-          const pagados = liquidacionesPagas.concat(multasPagas);
-          const vigentes = liquidacionesVigentes.concat(multasVigentes);
-          const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
-          const registry = (await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [contributor.id_contribuyente, registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado || false])).rows[0];
-          if (actividadesEconomicas!.length > 0) {
-            await Promise.all(
-              actividadesEconomicas!.map(async (x) => {
-                return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.id]);
-              })
-            );
-          }
-          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [registry.id_registro_municipal, 'JURIDICO', datosSucursal.creditoFiscal])).rows[0];
-          const estates =
-            inmuebles.length > 0
-              ? await Promise.all(
-                  inmuebles.map(async (el) => {
-                    const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_registro_municipal, el.direccion, el.tipoInmueble])).rows[0];
-                    console.log(inmueble);
-                    await client.query(queries.INSERT_ESTATE_VALUE, [inmueble.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
-                  })
-                )
-              : undefined;
-          if (pagados.length > 0) {
-            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
-            await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
-            await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
-            await Promise.all(
-              pagados.map(async (el) => {
-                const settlement = (
-                  await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
-                    application.id_solicitud,
-                    fixatedAmount(+el.monto),
-                    el.ramo,
-                    { fecha: el.fecha },
-                    moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
-                    registry.id_registro_municipal,
-                  ])
-                ).rows[0];
-                await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
-              })
-            );
-          }
-
-          if (vigentes.length > 0) {
-            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
-            await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
-            await Promise.all(
-              vigentes.map(async (el) => {
-                const settlement = (
-                  await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
-                    application.id_solicitud,
-                    fixatedAmount(+el.monto),
-                    el.ramo,
-                    { fecha: el.fecha },
-                    moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
-                    registry.id_registro_municipal,
-                  ])
-                ).rows[0];
-                await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
-              })
-            );
-          }
-          return representado ? registry.id_registro_municipal : undefined;
-        })
-      );
-    } else {
-      const rims: number[] = await Promise.all(
-        await sucursales.map(async (x) => {
-          const { inmuebles, liquidaciones, multas, datosSucursal } = x;
-          const liquidacionesPagas = liquidaciones.filter((el) => el.estado === 'PAGADO');
-          const liquidacionesVigentes = liquidaciones.filter((el) => el.estado !== 'PAGADO');
-          const multasPagas = multas.filter((el) => el.estado === 'PAGADO');
-          const multasVigentes = multas.filter((el) => el.estado !== 'PAGADO');
-          const pagados = liquidacionesPagas.concat(multasPagas);
-          const vigentes = liquidacionesVigentes.concat(multasVigentes);
-          const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
-          let registry;
-          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [contributor.id_contribuyente, 'NATURAL', datosSucursal.creditoFiscal])).rows[0];
-          if (registroMunicipal) {
-            registry = (await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [contributor.id_contribuyente, registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado || false])).rows[0];
-            if (x.actividadesEconomicas!.length > 0) {
-              await Promise.all(
-                actividadesEconomicas!.map(async (x) => {
-                  return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.id]);
-                })
-              );
-            }
-            const estates =
-              inmuebles.length > 0
-                ? await Promise.all(
-                    inmuebles.map(async (el) => {
-                      const inmueble = await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_registro_municipal, el.direccion, el.tipoInmueble]);
-                      await client.query(queries.INSERT_ESTATE_VALUE, [inmueble.rows[0].id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
-                    })
-                  )
-                : undefined;
-          } else {
-            const estates =
-              inmuebles.length > 0
-                ? await Promise.all(
-                    inmuebles.map(async (el) => {
-                      const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [(registry && registry.id_registro_municipal) || null, el.direccion, el.tipoInmueble])).rows[0];
-                      await client.query(queries.LINK_ESTATE_WITH_NATURAL_CONTRIBUTOR, [inmueble.id_inmueble, contributor.id_contribuyente]);
-                      await client.query(queries.INSERT_ESTATE_VALUE, [inmueble.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
-                      return 0;
-                    })
-                  )
-                : undefined;
-          }
-          if (pagados.length > 0) {
-            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
-            await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
-            await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
-            await Promise.all(
-              pagados.map(async (el) => {
-                const settlement = (
-                  await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
-                    application.id_solicitud,
-                    fixatedAmount(+el.monto),
-                    el.ramo,
-                    { fecha: el.fecha },
-                    moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
-                    (registry && registry.id_registro_municipal) || null,
-                  ])
-                ).rows[0];
-                await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
-              })
-            );
-          }
-
-          if (vigentes.length > 0) {
-            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
-            await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
-            await Promise.all(
-              vigentes.map(async (el) => {
-                const settlement = (
-                  await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
-                    application.id_solicitud,
-                    fixatedAmount(+el.monto),
-                    el.ramo,
-                    { fecha: el.fecha },
-                    moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
-                    (registry && registry.id_registro_municipal) || null,
-                  ])
-                ).rows[0];
-                await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
-              })
-            );
-          }
-          return representado ? registry.id_registro_municipal : undefined;
-        })
-      );
-    }
-    await client.query('COMMIT');
-    return { linked: true };
+    // await client.query('COMMIT');
+    // return { linked: true };
   } catch (error) {
     await client.query('ROLLBACK');
     console.log(error);
@@ -1305,7 +1311,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
         };
       })
     );
-    return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', solicitudes: applications };
+    return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', solicitudes: applications.filter((el) => el.liquidaciones.length > 0 && el.multas!.length > 0) };
   } catch (error) {
     throw {
       status: 500,
@@ -1517,7 +1523,7 @@ export const initialUserLinking = async (linkingData, user) => {
             return representado ? updatedRegistry.id_registro_municipal : undefined;
           })
         );
-        await client.query(queries.ASSIGN_CONTRIBUTOR_TO_USER, [contributorExists[0].id_contribuyente, user.id]);
+        user.tipoUsuario === 4 && (await client.query(queries.ASSIGN_CONTRIBUTOR_TO_USER, [contributorExists[0].id_contribuyente, user.id]));
         await client.query('COMMIT');
         await sendRimVerification(VerificationValue.CellPhone, { idRim: rims.filter((el) => el), content: datosContacto.telefono, user: user.id });
         hasNewCode = true;
@@ -1715,11 +1721,11 @@ export const initialUserLinking = async (linkingData, user) => {
               })
             );
           }
-          return representado ? registry.id_registro_municipal : undefined;
+          return representado ? registry && registry.id_registro_municipal : undefined;
         })
       );
       await client.query('COMMIT');
-      await sendRimVerification(VerificationValue.CellPhone, { content: datosContacto.telefono, user: user.id, idRim: rims.filter((el) => el) });
+      rims.filter((el) => el).length > 0 && (await sendRimVerification(VerificationValue.CellPhone, { content: datosContacto.telefono, user: user.id, idRim: rims.filter((el) => el) }));
       payload = { rims: rims.filter((el) => el) };
     }
     client.query('COMMIT');
@@ -1939,7 +1945,7 @@ export const insertSettlements = async ({ process, user }) => {
             el.ramo,
             datos,
             moment().month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
-            contributorReference.id_registro_municipal || null,
+            (contributorReference && contributorReference.id_registro_municipal) || null,
           ])
         ).rows[0];
 
@@ -2196,18 +2202,38 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
   }
 };
 
+export const internalLicenseApproval = async (license, official: Usuario) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const user = await getUserByUsername(license.username);
+    if (!user) throw { status: 404, message: 'El usuario proporcionado no existe en SUT' };
+    const procedure = (await initProcedureAnalist({ tipoTramite: 28, datos: license.datos, pago: license.pago }, user as Usuario)).tramite;
+    const res = await processProcedure({ idTramite: procedure, datos: license.datos, aprobado: true }, official);
+    await client.query('COMMIT');
+    return res;
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al aprobar licencia de actividades economicas por interno',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 export const internalContributorSignUp = async (contributor) => {
   const client = await pool.connect();
   const { correo, denominacionComercial, direccion, doc, puntoReferencia, razonSocial, sector, parroquia, siglas, telefono, tipoContribuyente, tipoDocumento } = contributor;
   try {
     await client.query('BEGIN');
-    console.log('???');
     const user = { nombreCompleto: razonSocial, nombreUsuario: correo, direccion, cedula: doc, nacionalidad: tipoDocumento, password: '', telefono };
     const salt = genSaltSync(10);
     user.password = hashSync('123456', salt);
-    console.log('si');
     const sutUser = await signUpUser(user);
-    console.log('no');
     const procedure = {
       datos: {
         funcionario: {
@@ -2225,9 +2251,7 @@ export const internalContributorSignUp = async (contributor) => {
       },
       usuario: sutUser.user.id,
     };
-    console.log('yas');
     const data = await approveContributorSignUp({ procedure, client });
-    console.log('supalo');
     await client.query('COMMIT');
     return { status: 201, message: 'Contribuyente registrado', contribuyente: data };
   } catch (error) {
@@ -2259,6 +2283,43 @@ export const approveContributorSignUp = async ({ procedure, client }: { procedur
   }
 };
 
+export const internalUserLinking = async (data) => {
+  const client = await pool.connect();
+  const { username, documento, tipoDocumento, tipoContribuyente, referenciaMunicipal } = data;
+  try {
+    await client.query('BEGIN');
+    const user = await getUserByUsername(username);
+    if (!user) throw { status: 404, message: 'El usuario proporcionado no existe en SUT' };
+    const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [tipoDocumento, documento])).rows[0];
+    if (!contributor) throw { status: 404, message: 'El contribuyente proporcionado no existe' };
+    await client.query(queries.ASSIGN_CONTRIBUTOR_TO_USER, [contributor.id_contribuyente, user.id]);
+    if (tipoContribuyente === 'JURIDICO') {
+      if (!referenciaMunicipal) throw { status: 404, message: 'Debe proporcionar un RIM para realizar el enlace para un contribuyente juridico' };
+      const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [referenciaMunicipal, contributor.id_contribuyente])).rows[0];
+      if (!branch) throw { status: 404, message: 'La sucursal proporcionada no existe' };
+      await client.query('UPDATE impuesto.verificacion_telefono SET id_usuario = $1 WHERE id_verificacion_telefono = (SELECT id_verificacion_telefono FROM impuesto.registro_municipal_verificacion WHERE id_registro_municipal = $2 LIMIT 1)', [
+        user.id,
+        branch.id_registro_municipal,
+      ]);
+      await client.query('UPDATE impuesto.solicitud s SET id_usuario = $1 FROM impuesto.liquidacion l WHERE s.id_solicitud = l.id_solicitud AND l.id_registro_municipal = $2', [user.id, branch.id_registro_municipal]);
+    } else {
+      await client.query('UPDATE impuesto.solicitud s SET id_usuario = $1 WHERE id_contribuyente = $2', [user.id, contributor.id_contribuyente]);
+    }
+    await client.query('COMMIT');
+    return user;
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al realizar enlace de usuario por interno',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 export const approveContributorAELicense = async ({ data, client }: { data: any; client: PoolClient }) => {
   try {
     console.log(data);
@@ -2275,8 +2336,6 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
         return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.codigo]);
       })
     );
-    data.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [data.idTramite, 'TRAMITE'])).rows.map((row) => ({ monto: row.monto, formaPago: row.metodo_pago, banco: row.nombre, fecha: row.fecha_de_pago, nro: row.referencia }));
-
     const verifiedId = (await client.query('SELECT * FROM impuesto.verificacion_telefono WHERE id_usuario = $1', [user])).rows[0]?.id_verificacion_telefono;
     await client.query('INSERT INTO impuesto.registro_municipal_verificacion VALUES ($1, $2) RETURNING *', [registry.id_registro_municipal, verifiedId]);
     console.log(data);
@@ -2291,12 +2350,13 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
   try {
     const { contribuyente, beneficios } = data.funcionario;
     const contributorWithBranch = (await client.query(queries.GET_CONTRIBUTOR_WITH_BRANCH, [contribuyente.registroMunicipal])).rows[0];
-    const benefittedUser = (await client.query(queries.GET_USER_BY_APPLICATION_AND_RIM, [contributorWithBranch.id_registro_municipal])).rows[0].id_usuario;
+    const benefittedUser = (await client.query(queries.GET_USER_IN_CHARGE_OF_BRANCH_BY_ID, [contributorWithBranch.id_registro_municipal])).rows[0];
+    if (!benefittedUser) throw { status: 404, message: 'No existe un usuario encargado de esta sucursal' };
     await Promise.all(
       beneficios.map(async (x) => {
         switch (x.tipoBeneficio) {
           case 'pagoCompleto':
-            const applicationFP = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [benefittedUser, contributorWithBranch.id_contribuyente])).rows[0];
+            const applicationFP = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [benefittedUser.id, contributorWithBranch.id_contribuyente])).rows[0];
             await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [applicationFP.id_solicitud, applicationStateEvents.INGRESARDATOS]);
             const benefitFullPayment = (await client.query(queries.CHANGE_SETTLEMENT_TO_NEW_APPLICATION, [applicationFP.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
             return benefitFullPayment;
@@ -2308,7 +2368,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             const benefitRemission = (await client.query(queries.SET_SETTLEMENTS_AS_FORWARDED_BY_RIM, [contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
             return benefitRemission;
           case 'convenio':
-            const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [benefittedUser, contributorWithBranch.id_contribuyente])).rows[0];
+            const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [benefittedUser.id, contributorWithBranch.id_contribuyente])).rows[0];
             await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [applicationAG.id_solicitud, applicationStateEvents.INGRESARDATOS]);
             await client.query('UPDATE impuesto.solicitud SET tipo_solicitud = $1 WHERE id_solicitud = $2', ['CONVENIO', applicationAG.id_solicitud]);
             const agreement = (await client.query(queries.CREATE_AGREEMENT, [applicationAG.id_solicitud, x.porciones.length])).rows[0];
@@ -3223,13 +3283,14 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
     const contributorQuery = typeUser === 'JURIDICO' ? queries.GET_SETTLEMENTS_FOR_CODE_AND_RIM : queries.GET_SETTLEMENTS_FOR_CODE_AND_CONTRIBUTOR;
     const contributorPayload = typeUser === 'JURIDICO' ? branch.referencia_municipal : contribuyente.id_contribuyente;
     const economicActivities =
-      reference &&
-      (
-        await client.query(
-          'SELECT id_actividad_economica AS id, ae.numero_referencia AS "numeroReferencia", descripcion as "nombreActividad", alicuota, minimo_tributable AS "minimoTributable" FROM impuesto.actividad_economica ae INNER JOIN impuesto.actividad_economica_sucursal aec ON ae.numero_referencia = aec.numero_referencia WHERE aec.id_registro_municipal = $1',
-          [branch.id_registro_municipal]
-        )
-      ).rows;
+      (reference &&
+        (
+          await client.query(
+            'SELECT id_actividad_economica AS id, ae.numero_referencia AS "numeroReferencia", descripcion as "nombreActividad", alicuota, minimo_tributable AS "minimoTributable" FROM impuesto.actividad_economica ae INNER JOIN impuesto.actividad_economica_sucursal aec ON ae.numero_referencia = aec.numero_referencia WHERE aec.id_registro_municipal = $1',
+            [branch.id_registro_municipal]
+          )
+        ).rows) ||
+      [];
     const ae =
       (economicActivities.length > 0 &&
         (await client.query(contributorQuery, [codigosRamo.AE, contributorPayload])).rows.map((el) => {
