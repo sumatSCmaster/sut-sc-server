@@ -60,8 +60,8 @@ router.get('/accountStatement/:contributor', async (req: any, res) => {
 
 router.get('/import', authenticate('jwt'), async (req: any, res) => {
   const { user } = req;
-  const { doc, ref, pref, contrib } = req.query;
-  const [err, data] = await fulfill(internalUserImport({ document: doc, reference: ref, docType: pref, typeUser: contrib, user }));
+  const { documento, referencia, tipoDocumento, tipoContribuyente } = req.query;
+  const [err, data] = await fulfill(internalUserImport({ document: documento, reference: referencia, docType: tipoDocumento, typeUser: tipoContribuyente, user }));
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
 });
