@@ -2260,11 +2260,18 @@ export const internalContributorSignUp = async (contributor) => {
   const client = await pool.connect();
   const { correo, denominacionComercial, direccion, doc, puntoReferencia, razonSocial, sector, parroquia, siglas, telefono, tipoContribuyente, tipoDocumento } = contributor;
   try {
+    let pivotUser;
     await client.query('BEGIN');
-    const user = { nombreCompleto: razonSocial, nombreUsuario: correo, direccion, cedula: doc, nacionalidad: tipoDocumento, password: '', telefono };
-    const salt = genSaltSync(10);
-    user.password = hashSync('123456', salt);
-    const sutUser = await signUpUser(user);
+    const userExists = await getUserByUsername(correo);
+    if (!userExists) {
+      const user = { nombreCompleto: razonSocial, nombreUsuario: correo, direccion, cedula: doc, nacionalidad: tipoDocumento, password: '', telefono };
+      const salt = genSaltSync(10);
+      user.password = hashSync('123456', salt);
+      const sutUser = await signUpUser(user);
+      pivotUser = sutUser.user.id;
+    } else {
+      pivotUser = userExists.id;
+    }
     const procedure = {
       datos: {
         funcionario: {
@@ -2280,7 +2287,7 @@ export const internalContributorSignUp = async (contributor) => {
           tipoDocumento,
         },
       },
-      usuario: sutUser.user.id,
+      usuario: pivotUser,
     };
     const data = await approveContributorSignUp({ procedure, client });
     await client.query('COMMIT');
