@@ -963,6 +963,7 @@ export const processProcedureAnalist = async (procedure, user: Usuario, client) 
       }));
       console.log('creo y me parec q se rompio aki');
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
+      console.log('que es');
     } else {
       if (nextEvent.startsWith('finalizar')) {
         procedure.datos = datos;
@@ -1011,8 +1012,6 @@ export const processProcedureAnalist = async (procedure, user: Usuario, client) 
       error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al procesar el trámite',
     };
-  } finally {
-    client.release();
   }
 };
 
