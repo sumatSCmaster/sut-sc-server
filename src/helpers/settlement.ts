@@ -2331,7 +2331,7 @@ export const internalUserLinking = async (data) => {
     if (!user) throw { status: 404, message: 'El usuario proporcionado no existe en SUT' };
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [tipoDocumento, documento])).rows[0];
     if (!contributor) throw { status: 404, message: 'El contribuyente proporcionado no existe' };
-    if (await hasLinkedContributor(user.id)) throw { status: 409, message: 'El usuario suministrado ya tiene un contribuyente asociado' };
+    if (!!(await hasLinkedContributor(user.id))) throw { status: 409, message: 'El usuario suministrado ya tiene un contribuyente asociado' };
     await client.query(queries.ASSIGN_CONTRIBUTOR_TO_USER, [contributor.id_contribuyente, user.id]);
     if (tipoContribuyente === 'JURIDICO') {
       if (!referenciaMunicipal) throw { status: 404, message: 'Debe proporcionar un RIM para realizar el enlace para un contribuyente juridico' };
