@@ -23,7 +23,7 @@ import { hasLinkedContributor, signUpUser, getUserByUsername } from './user';
 import S3Client from '@utils/s3';
 import ExcelJs from 'exceljs';
 import * as fs from 'fs';
-import { procedureInit, initProcedureAnalist, processProcedure } from './procedures';
+import { procedureInit, initProcedureAnalist, processProcedure, processProcedureAnalist } from './procedures';
 import { generateReceipt } from './receipt';
 const written = require('written-number');
 
@@ -2240,8 +2240,8 @@ export const internalLicenseApproval = async (license, official: Usuario) => {
     const userContributor = await hasLinkedContributor(user.id);
     if (license.datos.contribuyente.id !== userContributor?.id) throw { status: 401, message: 'El usuario proporcionado no tiene permisos para crear licencias a este contribuyente' };
     const procedure = (await initProcedureAnalist({ tipoTramite: 28, datos: license.datos, pago: license.pago }, user as Usuario, client)).tramite;
+    const res = await processProcedureAnalist({ idTramite: procedure.id, datos: license.datos, aprobado: true }, official, client);
     await client.query('COMMIT');
-    const res = await processProcedure({ idTramite: procedure.id, datos: license.datos, aprobado: true }, official);
     return res;
   } catch (error) {
     client.query('ROLLBACK');
