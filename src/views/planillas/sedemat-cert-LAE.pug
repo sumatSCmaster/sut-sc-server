@@ -11,7 +11,7 @@ block content
     p#title
       b PATENTE DE LICENCIA DE ACTIVIDAD ECONÓMICA
       br
-      b #{datos.funcionario.referenciaMunicipal ? datos.funcionario.referenciaMunicipal : 'POR CREAR'}    
+      b RIM: #{datos.funcionario.referenciaMunicipal ? datos.funcionario.referenciaMunicipal : 'POR CREAR'}    
     div
       img#QR(src=QR, alt='QR')
   div#planilla(style={'font-size':'13px'})
