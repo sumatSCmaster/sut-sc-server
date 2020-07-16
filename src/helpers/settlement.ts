@@ -2240,8 +2240,8 @@ export const internalLicenseApproval = async (license, official: Usuario) => {
     const userContributor = await hasLinkedContributor(user.id);
     if (license.datos.contribuyente.id !== userContributor?.id) throw { status: 401, message: 'El usuario proporcionado no tiene permisos para crear licencias a este contribuyente' };
     const procedure = (await initProcedureAnalist({ tipoTramite: 28, datos: license.datos, pago: license.pago }, user as Usuario, client)).tramite;
-    const res = await processProcedure({ idTramite: procedure.id, datos: license.datos, aprobado: true }, official);
     await client.query('COMMIT');
+    const res = await processProcedure({ idTramite: procedure.id, datos: license.datos, aprobado: true }, official);
     return res;
   } catch (error) {
     client.query('ROLLBACK');
