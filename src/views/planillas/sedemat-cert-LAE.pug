@@ -60,7 +60,26 @@ block content
           p 
             b Tipo de sociedad:
         div(style={'-webkit-flex': 8, 'padding-left': '1px'}).td.center
-          p #{datos.funcionario.tipoSociedadContrib}                  
+          p #{datos.funcionario.tipoSociedadContrib}
+      if datos.funcionario.estadoLicencia === 'TEMPORAL'
+        .tr
+          div(style={'-webkit-flex': 2}).td.center.border-right
+            p 
+              b Estado de la Licencia
+          div(style={'-webkit-flex': 3}).td.center.border-right
+            p #{datos.funcionario.estadoLicencia}
+          div(style={'-webkit-flex': 2}).td.center.border-right
+            p 
+              b Fecha de Vencimiento
+          div(style={'-webkit-flex': 3}).td.center
+            p #{moment().add(3,'months').format('DD/MM/YYYY')}
+      else
+        .tr
+          div(style={'-webkit-flex': 2}).td.center.border-right
+            p 
+              b Estado de la Licencia
+          div(style={'-webkit-flex': 8}).td.center
+            p #{datos.funcionario.estadoLicencia}                             
     div.table(style={'font-size':'13px','margin-top':'20px'})
       div.tr
         div.th(style={'-webkit-flex': 1}).border-bottom.center
