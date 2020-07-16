@@ -910,12 +910,10 @@ export const initProcedureAnalist = async (procedure, user: Usuario, client: Poo
       error: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error al realizar el tramite por interno',
     };
-  } finally {
-    // client.release();
   }
 };
 
-export const processProcedureAnalist = async (procedure, user: Usuario, client) => {
+export const processProcedureAnalist = async (procedure, user: Usuario, client: PoolClient) => {
   let { datos, bill } = procedure;
   let dir,
     respState,
