@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
 import { authenticate } from 'passport';
-import { getMunicipalServicesByContributor, updateGasStateForEstate } from '@helpers/services';
+import { getMunicipalServicesByContributor, updateGasStateForEstate, updateGasTariffScales, getServicesTariffScales, createMunicipalServicesScale } from '@helpers/services';
 
 const router = Router();
 
@@ -19,5 +19,26 @@ router.put('/gas/:id', authenticate('jwt'), async (req, res) => {
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
+
+router.get('/scales', authenticate('jwt'), async (req, res) => {
+  const [error, data] = await fulfill(getServicesTariffScales());
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+});
+
+router.put('/scales/:id', authenticate('jwt'), async (req, res) => {
+  const { id } = req.params;
+  const { indicador } = req.body;
+  const [error, data] = await fulfill(updateGasTariffScales(id, indicador));
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+});
+
+// router.post('/scales', authenticate('jwt'), async (req, res) => {
+//   const { descripcion, indicador } = req.body;
+//   const [error, data] = await fulfill(createMunicipalServicesScale({ description: descripcion, tariff: indicador }));
+//   if (error) res.status(500).json(error);
+//   if (data) res.status(data.status).json(data);
+// });
 
 export default router;

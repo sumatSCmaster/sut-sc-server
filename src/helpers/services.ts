@@ -140,3 +140,63 @@ export const updateGasStateForEstate = async ({ estateId, gasState }) => {
     client.release();
   }
 };
+
+export const getServicesTariffScales = async () => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const scales = (await client.query('SELECT id_baremo as id, descripcion, indicador FROM impuesto.baremo_servicio_municipal')).rows;
+    await client.query('COMMIT');
+    return { status: 200, message: 'Baremo de tarifas de servicio municipal obtenido', scales };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener baremos de tarifas de servicio municipal',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const updateGasTariffScales = async (id, tariff) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('UPDATE impuesto.baremo_servicio_municipal SET indicador = $1 WHERE id_baremo = $2', [tariff, id]);
+    await client.query('COMMIT');
+    return { status: 200, message: 'Valor del baremo seleccionado actualizado satisfactoriamente' };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al actualizar el valor seleccionado',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const createMunicipalServicesScale = async ({ description, tariff }) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const scale = (await client.query('INSERT INTO impuesto.baremo_servicio_municipal (descripcion, indicador) VALUES ($1, $2) RETURNING *', [description, tariff])).rows[0];
+    await client.query('COMMIT');
+    return { status: 200, message: 'Nuevo valor del baremo de servicios municipales agregado', baremo: { id: scale.id_baremo, descripcion: scale.descripcion, indicador: scale.indicador } };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || '',
+    };
+  } finally {
+    client.release();
+  }
+};
