@@ -224,16 +224,23 @@ export const linkCommercial = async ({ codCat, rim }) => {
       throw new Error('Inmueble no encontrado.')
     }
 
+    if(estate.rows[0].enlazado){
+      throw new Error('El inmueble ya está enlazado')
+    }
+
     (await client.query(queries.LINK_ESTATE_WITH_RIM, [rimData.rows[0].id, codCat]))
 
     return {
       status: 200,
-      ...estate.rows[0],
-      avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows
+      message: 'Inmueble enlazado',
+      inmueble: {...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
     };
 
   } catch (e) {
-    throw e;
+    throw {
+      error: e,
+      message: e.message
+    };
   } finally {
     client.release();
   }
