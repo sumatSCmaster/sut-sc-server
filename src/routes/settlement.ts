@@ -158,6 +158,7 @@ router.post(
 router.post('/linking', authenticate('jwt'), async (req, res) => {
   const { datosEnlace } = req.body;
   const [error, data] = await fulfill(internalUserLinking(datosEnlace));
+  console.log(error);
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
