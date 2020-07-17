@@ -580,7 +580,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                         creditoFiscal: creditoFiscal ? creditoFiscal.mo_haber : 0,
                       };
                       datos = {
-                        datosSucursal,
+                        // datosSucursal,
                         inmuebles,
                         liquidaciones,
                         multas,

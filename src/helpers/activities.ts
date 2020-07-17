@@ -3,6 +3,7 @@ import { resolve } from 'path';
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import * as pdf from 'html-pdf';
+import { errorMessageExtractor, errorMessageGenerator } from './errors';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -20,4 +21,18 @@ export const getActivities = async () => {
   }
 };
 
-export const getMunicipalReferenceActivities = ({ typeUser, docType, document, reference }) => {};
+export const getMunicipalReferenceActivities = async ({ docType, document, reference }) => {
+  const client = await pool.connect();
+  try {
+    return;
+  } catch (error) {
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || '',
+    };
+  } finally {
+    client.release();
+  }
+};
