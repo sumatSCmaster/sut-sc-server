@@ -2353,10 +2353,9 @@ export const internalUserLinking = async (data) => {
     console.log(error);
     console.log(...error);
     throw {
-      status: 500,
+      status: error.status || 500,
       error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || error.message || 'Error al realizar enlace de usuario por interno',
-      ...error.error,
     };
   } finally {
     client.release();
