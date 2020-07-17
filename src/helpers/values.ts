@@ -53,7 +53,7 @@ export const updateUsdValue = async (value) => {
     return {
       status: 200,
       message: 'Se ha actualizado el valor del USD',
-      utmm: result.valor_en_bs,
+      usd: result.valor_en_bs,
     };
   } catch (e) {
     client.query('ROLLBACK');
@@ -73,7 +73,7 @@ export const getUsdValue = async () => {
     return {
       status: 200,
       message: 'Se ha obtenido el valor del USD',
-      utmm: result.valor_en_bs,
+      usd: result.valor_en_bs,
     };
   } catch (e) {
     throw {
