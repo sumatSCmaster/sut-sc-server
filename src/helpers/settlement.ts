@@ -2209,8 +2209,9 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
 export const internalUserImport = async ({ reference, docType, document, typeUser, user }) => {
   const client = await pool.connect();
   try {
+    if (typeUser === 'JURIDICO' && !reference) throw { status: 403, message: 'Debe proporcionar un RIM para importar un contribuyente juridico' };
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows[0];
-    const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
+    const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor?.id_contribuyente])).rows[0];
     if (!!reference && !branch) throw { status: 404, message: 'No existe la sucursal solicitada' };
     const branchIsUpdated = branch?.actualizado;
     if (!contributor || (!!contributor && !!reference && !branchIsUpdated)) {
