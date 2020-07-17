@@ -69,21 +69,19 @@ export const getAvailableProceduresOfInstitution = async (req: { params: { [id: 
 };
 
 const esDaniel = ({ tipoUsuario, institucion }) => {
-  return tipoUsuario === 2 && institucion.id_institucion === 9;
+  return tipoUsuario === 2 && institucion.id === 9;
 };
+
 
 const getProcedureInstances = async (user, client: PoolClient) => {
   try {
-    if (esDaniel(user)) {
-      return [];
-    }
     let response = (await procedureInstanceHandler(user, client)).rows; //TODO: corregir el handler para que no sea tan forzado
     const takings = (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [response.map((el) => +el.id)])).rows;
     if (user.tipoUsuario === 3) {
       const permissions = (await client.query(queries.GET_USER_PERMISSIONS, [user.id])).rows.map((row) => +row.id_tipo_tramite) || [];
       response = response.filter((tram) => permissions.includes(tram.tipotramite));
     }
-    return Promise.all(
+    const res: any[] = await Promise.all(
       response.map(async (el) => {
         let ordinances;
         if (!el.pagoPrevio) {
@@ -127,6 +125,7 @@ const getProcedureInstances = async (user, client: PoolClient) => {
         return tramite;
       })
     );
+    return esDaniel(user) ? res.filter((row) => row.tipoTramite !== 27 ) : res
   } catch (error) {
     console.log(errorMessageExtractor(error));
     throw new Error('Error al obtener instancias de tramite');
