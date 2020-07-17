@@ -51,7 +51,7 @@ block content
             p #{new Intl.NumberFormat('de-DE').format(item.ingresadoTotal)}
           div(style={'-webkit-flex':'1'}).td.center.border-bottom
             p #{item.cantidadIngTotal ? item.cantidadIngTotal : 0}  
-      if sub.length > 1
+      if sub.length > 0
         each subRamo in sub
           .tr.break-page
             div(style={'-webkit-flex':'1'}).td.end.border-right.border-bottom
@@ -59,13 +59,13 @@ block content
             div(style={'-webkit-flex':'3'}).td.center.border-right.border-bottom
               p #{subRamo.descripcion}
             div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-              p #{new Intl.NumberFormat('de-DE').format(subRamo.liquidado)}
+              p #{new Intl.NumberFormat('de-DE').format(subRamo.liquidado ? subRamo.liquidado : 0)}
             div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
               p #{subRamo.cantidadLiq ? subRamo.cantidadLiq : 0}
             div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-              p #{new Intl.NumberFormat('de-DE').format(subRamo.ingresado)}
+              p #{new Intl.NumberFormat('de-DE').format(subRamo.ingresado ? subRamo.ingresado : 0)}
             div(style={'-webkit-flex':'1'}).td.center.border-bottom
-              p #{subRamo.cantidadIng ? subRamo.cantidadIng : 0}   
+              p #{subRamo.cantidadIng ? subRamo.cantidadIng : 0} 
     .tr.break-page
       div(style={'-webkit-flex':'4'}).th.center.border-right
         p
