@@ -69,7 +69,7 @@ export const getAvailableProceduresOfInstitution = async (req: { params: { [id: 
 };
 
 const esDaniel = ({ tipoUsuario, institucion }) => {
-  return tipoUsuario === 2 && institucion.id_institucion === 9;
+  return tipoUsuario === 2 && institucion.id === 9;
 };
 
 
