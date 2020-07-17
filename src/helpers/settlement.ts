@@ -2297,7 +2297,7 @@ export const internalContributorSignUp = async (contributor) => {
     client.query('ROLLBACK');
     console.log(error);
     throw {
-      status: 500,
+      status: error.status || 500,
       error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || error.message || 'Error al crear contribuyente por metodo interno',
     };
@@ -2347,11 +2347,10 @@ export const internalUserLinking = async (data) => {
       await client.query('UPDATE impuesto.solicitud s SET id_usuario = $1 WHERE id_contribuyente = $2', [user.id, contributor.id_contribuyente]);
     }
     await client.query('COMMIT');
-    return user;
+    return { status: 201, message: 'Usuario enlazado satisfactoriamente', usuario: user };
   } catch (error) {
     client.query('ROLLBACK');
     console.log(error);
-    console.log(...error);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),

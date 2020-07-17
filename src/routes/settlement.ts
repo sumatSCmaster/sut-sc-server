@@ -159,7 +159,7 @@ router.post('/linking', authenticate('jwt'), async (req, res) => {
   const { datosEnlace } = req.body;
   const [error, data] = await fulfill(internalUserLinking(datosEnlace));
   console.log(error);
-  if (error) res.status(500).json(error);
+  if (error) res.status(error.status).json(error);
   if (data) res.status(data.status).json(data);
 });
 
@@ -172,14 +172,14 @@ router.post('/taxPayer', authenticate('jwt'), async (req, res) => {
 
 router.post('/license', authenticate('jwt'), async (req: any, res) => {
   const [error, data] = await fulfill(internalLicenseApproval(req.body, req.user));
-  if (error) res.status(500).json(error);
+  if (error) res.status(error.status).json(error);
   if (data) res.status(data.status).json(data);
 });
 
 router.post('/internal', authenticate('jwt'), async (req, res) => {
   console.log('??????????????????????????');
   const [error, data] = await fulfill(internalContributorSignUp(req.body));
-  if (error) res.status(500).json(error);
+  if (error) res.status(error.status).json(error);
   if (data) res.status(data.status).json(data);
 });
 
