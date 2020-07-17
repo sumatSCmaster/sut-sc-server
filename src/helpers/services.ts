@@ -55,7 +55,7 @@ export const getMunicipalServicesByContributor = async ({ reference, document, d
         };
       })
     );
-    return res;
+    return { status: 200, message: 'Servicios municipales obtenidos por contribuyente', inmuebles: res };
   } catch (error) {
     client.query('ROLLBACK');
     console.log(error);
