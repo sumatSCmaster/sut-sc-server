@@ -48,18 +48,18 @@ block content
         div(style={'-webkit-flex': 2}).td.center.border-right.border-bottom
           p 
             b Capital Suscrito:
-        div(style={'-webkit-flex': 5}).td.center.border-right.border-bottom
+        div(style={'-webkit-flex': 4}).td.center.border-right.border-bottom
           p #{datos.funcionario.capitalSuscrito}
-        div(style={'-webkit-flex': 1.5}).td.center.border-right.border-bottom
+        div(style={'-webkit-flex': 3}).td.center.border-right.border-bottom
           p 
             b Fecha Inscripcion:
         div(style={'-webkit-flex': 1.5}).td.center.border-bottom
           p #{moment().format('DD/MM/YYYY')}
       .tr
-        div(style={'-webkit-flex': 2}).td.center.border-right
+        div(style={'-webkit-flex': 2}).td.center.border-right.border-bottom
           p 
             b Tipo de sociedad:
-        div(style={'-webkit-flex': 8, 'padding-left': '1px'}).td.center
+        div(style={'-webkit-flex': 8, 'padding-left': '1px'}).td.center.border-bottom
           p #{datos.funcionario.tipoSociedadContrib}
       if datos.funcionario.estadoLicencia === 'TEMPORAL'
         .tr
