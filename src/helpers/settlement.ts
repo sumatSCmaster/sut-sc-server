@@ -25,6 +25,7 @@ import ExcelJs from 'exceljs';
 import * as fs from 'fs';
 import { procedureInit, initProcedureAnalist, processProcedure, processProcedureAnalist } from './procedures';
 import { generateReceipt } from './receipt';
+import { getCleaningTariffForEstate, getGasTariffForEstate } from './services';
 const written = require('written-number');
 
 const gticPool = GticPool.getInstance();
@@ -164,15 +165,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         //user el helper del get de servicios municipales
         SM = await Promise.all(
           estates.map(async (el) => {
-            const calculoAseo =
-              el.tipo_inmueble === 'COMERCIAL'
-                ? el.metros_construccion && el.metros_construccion !== 0
-                  ? 0.1 * el.metros_construccion
-                  : (await client.query(queries.GET_AE_CLEANING_TARIFF, [branch.id_registro_municipal])).rows[0].monto
-                : (await client.query(queries.GET_RESIDENTIAL_CLEANING_TARIFF)).rows[0].monto;
-            const tarifaAseo = calculoAseo / UTMM > 150 ? UTMM * 150 : calculoAseo;
-            const calculoGas = el.tipo_inmueble === 'COMERCIAL' ? (await client.query(queries.GET_AE_GAS_TARIFF, [branch.id_registro_municipal])).rows[0].monto : (await client.query(queries.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].monto;
-            const tarifaGas = calculoGas / UTMM > 300 ? UTMM * 300 : calculoGas;
+            const tarifaAseo = await getCleaningTariffForEstate({ estate: el, branchId: branch.id_registro_municipal, client });
+            const tarifaGas = await getGasTariffForEstate({ estate: el, branchId: branch.id_registro_municipal, client });
             return { id: el.id_inmueble, tipoInmueble: el.tipo_inmueble, codCat: el.cod_catastral, direccionInmueble: el.direccion, tarifaAseo, tarifaGas, deuda: debtSM };
           })
         );
