@@ -12,10 +12,9 @@ router.get('/', authenticate('jwt'), async (req, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-router.put('/gas/:id', authenticate('jwt'), async (req, res) => {
-  const { id } = req.params;
-  const { estado } = req.body;
-  const [error, data] = await fulfill(updateGasStateForEstate({ estateId: id, gasState: estado }));
+router.put('/gas', authenticate('jwt'), async (req, res) => {
+  const { inmuebles } = req.body;
+  const [error, data] = await fulfill(updateGasStateForEstate({ estates: inmuebles }));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });

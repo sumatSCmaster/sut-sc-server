@@ -108,35 +108,40 @@ export const getGasTariffForEstate = async ({ estate, branchId, client }) => {
   }
 };
 
-export const updateGasStateForEstate = async ({ estateId, gasState }) => {
+export const updateGasStateForEstate = async ({ estates }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query('UPDATE inmueble_urbano SET posee_gas = $1 WHERE id_inmueble = $2', [gasState, estateId]);
+    const inmuebles = await Promise.all(
+      estates.map(async (el) => {
+        await client.query('UPDATE inmueble_urbano SET posee_gas = $1 WHERE id_inmueble = $2', [el.id, el.estado]);
+        const estate = (await client.query(queries.GET_ESTATE_BY_ID, [el.id])).rows[0];
+        const inmueble = {
+          id: estate.id_inmueble,
+          codCat: estate.cod_catastral,
+          direccion: estate.direccion,
+          parroquia: estate.id_parroquia,
+          metrosConstruccion: estate.metros_construccion,
+          metrosTerreno: estate.metros_terreno,
+          tipoInmueble: estate.tipo_inmueble,
+          poseeGas: estate.posee_gas,
+          fechaCreacion: estate.fecha_creacion,
+          fechaActualizacion: estate.fecha_actualizacion,
+          tarifaGas: await getGasTariffForEstate({ estate, branchId: estate.id_registro_municipal, client }),
+          tarifaAseo: await getCleaningTariffForEstate({ estate, branchId: estate.id_registro_municipal, client }),
+        };
+        return inmueble;
+      })
+    );
     await client.query('COMMIT');
-    const estate = (await client.query(queries.GET_ESTATE_BY_ID, [estateId])).rows[0];
-    const inmueble = {
-      id: estate.id_inmueble,
-      codCat: estate.cod_catastral,
-      direccion: estate.direccion,
-      parroquia: estate.id_parroquia,
-      metrosConstruccion: estate.metros_construccion,
-      metrosTerreno: estate.metros_terreno,
-      tipoInmueble: estate.tipo_inmueble,
-      poseeGas: estate.posee_gas,
-      fechaCreacion: estate.fecha_creacion,
-      fechaActualizacion: estate.fecha_actualizacion,
-      tarifaGas: await getGasTariffForEstate({ estate, branchId: estate.id_registro_municipal, client }),
-      tarifaAseo: await getCleaningTariffForEstate({ estate, branchId: estate.id_registro_municipal, client }),
-    };
-    return inmueble;
+    return { status: 200, message: 'Estado del gas actualizado', inmuebles };
   } catch (error) {
     client.query('ROLLBACK');
     console.log(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || error.message || '',
+      message: errorMessageGenerator(error) || error.message || 'Error al actualizar el estado del gas de los inmuebles',
     };
   } finally {
     client.release();
