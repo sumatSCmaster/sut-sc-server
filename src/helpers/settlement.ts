@@ -262,7 +262,6 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
               const date = addMonths(new Date(lastPPPayment.toDate()), index);
               const momentDate = moment(date);
               const exonerado = await isExonerated({ branch: codigosRamo.PP, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') });
-
               return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
             })
           );
@@ -273,7 +272,6 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
             const date = addMonths(moment(`${now.year()}-01-01`).toDate(), index);
             const momentDate = moment(date);
             const exonerado = await isExonerated({ branch: codigosRamo.PP, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') });
-
             return { month: date.toLocaleString('ES', { month: 'long' }), year: date.getFullYear(), exonerado };
           })
         );
