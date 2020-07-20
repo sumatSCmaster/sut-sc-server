@@ -24,6 +24,7 @@ import activities from './activities';
 import cashier from './cashier';
 import receipt from './receipt';
 import services from './services';
+import retention from './retention';
 
 const router = Router();
 
@@ -51,6 +52,7 @@ router.use('/activities', activities);
 router.use('/cashier', cashier);
 router.use('/receipt', receipt);
 router.use('/services', services);
+router.use('/retention', retention);
 router.use(resources);
 
 router.get('/', (req, res) => {
