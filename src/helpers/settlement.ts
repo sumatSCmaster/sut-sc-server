@@ -173,7 +173,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
             const tarifaAseo = calculoAseo / UTMM > 150 ? UTMM * 150 : calculoAseo;
             const calculoGas = el.tipo_inmueble === 'COMERCIAL' ? (await client.query(queries.GET_AE_GAS_TARIFF, [branch.id_registro_municipal])).rows[0].monto : (await client.query(queries.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].monto;
             const tarifaGas = calculoGas / UTMM > 300 ? UTMM * 300 : calculoGas;
-            return { id: el.id_inmueble, tipoInmueble: el.tipo_inmueble, direccionInmueble: el.direccion, tarifaAseo, tarifaGas, deuda: debtSM };
+            return { id: el.id_inmueble, tipoInmueble: el.tipo_inmueble, codCat: el.cod_catastral, direccionInmueble: el.direccion, tarifaAseo, tarifaGas, deuda: debtSM };
           })
         );
       }
@@ -199,6 +199,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
             .map((el) => {
               return {
                 id: el.id_inmueble,
+                codCat: el.cod_catastral,
                 direccionInmueble: el.direccion,
                 ultimoAvaluo: el.avaluo,
                 impuestoInmueble: (el.avaluo * 0.01) / 12,
