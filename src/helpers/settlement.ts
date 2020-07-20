@@ -81,6 +81,30 @@ const truthyCheck = (x) => {
   return false;
 };
 
+const isExonerated = async ({ branch, contributor, activity, startingDate }): Promise<boolean> => {
+  const client = await pool.connect();
+  try {
+    if (branch === codigosRamo.AE) {
+      const branchIsExonerated = (await client.query(queries.BRANCH_IS_EXONERATED, [branch, startingDate])).rows[0];
+      if (branchIsExonerated) return !!branchIsExonerated;
+      const activityIsExonerated = (await client.query(queries.ECONOMIC_ACTIVITY_IS_EXONERATED, [activity, startingDate])).rows[0];
+      if (activityIsExonerated) return !!activityIsExonerated;
+      const contributorIsExonerated = (await client.query(queries.CONTRIBUTOR_IS_EXONERATED, [contributor, startingDate])).rows[0];
+      if (contributorIsExonerated) return !!contributorIsExonerated;
+      return !!(await client.query(queries.CONTRIBUTOR_ECONOMIC_ACTIVIES_IS_EXONERATED, [contributor, activity, startingDate])).rows[0];
+    } else {
+      const branchIsExonerated = (await client.query(queries.BRANCH_IS_EXONERATED, [branch, startingDate])).rows[0];
+      if (branchIsExonerated) return !!branchIsExonerated;
+      return !!(await client.query(queries.CONTRIBUTOR_IS_EXONERATED, [contributor, startingDate])).rows[0];
+    }
+    return false;
+  } catch (e) {
+    throw e;
+  } finally {
+    client.release();
+  }
+};
+
 export const getSettlements = async ({ document, reference, type, user }: { document: string; reference: string | null; type: string; user: Usuario }) => {
   const client = await pool.connect();
   const gtic = await gticPool.connect();
@@ -129,20 +153,26 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         fecha: { month: pastMonthEA.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthEA.year() },
       };
       if (dateInterpolation !== 0) {
-        AE = economicActivities.map((el) => {
-          return {
-            id: el.id_actividad_economica,
-            minimoTributable: Math.round(el.minimo_tributable) * UTMM,
-            nombreActividad: el.descripcion,
-            idContribuyente: branch.id_registro_municipal,
-            alicuota: el.alicuota / 100,
-            costoSolvencia: UTMM * 2,
-            deuda: new Array(dateInterpolation).fill({ month: null, year: null }).map((value, index) => {
-              const date = addMonths(new Date(lastEAPayment.toDate()), index);
-              return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
-            }),
-          };
-        });
+        AE = await Promise.all(
+          economicActivities.map(async (el) => {
+            return {
+              id: el.id_actividad_economica,
+              minimoTributable: Math.round(el.minimo_tributable) * UTMM,
+              nombreActividad: el.descripcion,
+              idContribuyente: branch.id_registro_municipal,
+              alicuota: el.alicuota / 100,
+              costoSolvencia: UTMM * 2,
+              deuda: await Promise.all(
+                new Array(dateInterpolation).fill({ month: null, year: null }).map(async (value, index) => {
+                  const date = addMonths(new Date(lastEAPayment.toDate()), index);
+                  const momentDate = moment(date);
+                  const exonerado = await isExonerated({ branch: codigosRamo.AE, contributor: branch?.id_registro_municipal, activity: el.id_actividad_economica, startingDate: momentDate.startOf('month') });
+                  return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
+                })
+              ),
+            };
+          })
+        );
       }
     }
     //SM
@@ -162,7 +192,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
           const date = addMonths(new Date(lastSMPayment.toDate()), index);
           return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
         });
-        //user el helper del get de servicios municipales
+
         SM = await Promise.all(
           estates.map(async (el) => {
             const tarifaAseo = await getCleaningTariffForEstate({ estate: el, branchId: branch.id_registro_municipal, client });
