@@ -257,16 +257,26 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
           fecha: { month: pastMonthPP.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthPP.year() },
         };
         if (dateInterpolationPP > 0) {
-          debtPP = new Array(dateInterpolationPP + 1).fill({ month: null, year: null }).map((value, index) => {
-            const date = addMonths(new Date(lastPPPayment.toDate()), index);
-            return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
-          });
+          debtPP = await Promise.all(
+            new Array(dateInterpolationPP + 1).fill({ month: null, year: null }).map(async (value, index) => {
+              const date = addMonths(new Date(lastPPPayment.toDate()), index);
+              const momentDate = moment(date);
+              const exonerado = await isExonerated({ branch: codigosRamo.PP, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') });
+
+              return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
+            })
+          );
         }
       } else {
-        debtPP = new Array(now.month() + 1).fill({ month: null, year: null }).map((value, index) => {
-          const date = addMonths(moment(`${now.year()}-01-01`).toDate(), index);
-          return { month: date.toLocaleString('ES', { month: 'long' }), year: date.getFullYear() };
-        });
+        debtPP = await Promise.all(
+          new Array(now.month() + 1).fill({ month: null, year: null }).map(async (value, index) => {
+            const date = addMonths(moment(`${now.year()}-01-01`).toDate(), index);
+            const momentDate = moment(date);
+            const exonerado = await isExonerated({ branch: codigosRamo.PP, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') });
+
+            return { month: date.toLocaleString('ES', { month: 'long' }), year: date.getFullYear(), exonerado };
+          })
+        );
       }
       if (debtPP) {
         const publicityArticles = (await client.query(queries.GET_PUBLICITY_CATEGORIES)).rows;
