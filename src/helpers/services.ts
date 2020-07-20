@@ -71,6 +71,8 @@ export const getMunicipalServicesByContributor = async ({ reference, document, d
 
 export const getCleaningTariffForEstate = async ({ estate, branchId, client }) => {
   try {
+    // if (!estate && !branchId) return (await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto;
+    if (!estate && !!branchId) return (await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto;
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const USD = (await client.query(queries.GET_USD_VALUE)).rows[0].valor_en_bs;
     const costoMts = +(await client.query('SELECT indicador FROM impuesto.baremo_servicio_municipal WHERE id_baremo = 1')).rows[0].indicador;
@@ -114,7 +116,7 @@ export const updateGasStateForEstate = async ({ estates }) => {
     await client.query('BEGIN');
     const inmuebles = await Promise.all(
       estates.map(async (el) => {
-        await client.query('UPDATE inmueble_urbano SET posee_gas = $1 WHERE id_inmueble = $2', [el.id, el.estado]);
+        await client.query('UPDATE inmueble_urbano SET posee_gas = $1 WHERE id_inmueble = $2', [el.estado, el.id]);
         const estate = (await client.query(queries.GET_ESTATE_BY_ID, [el.id])).rows[0];
         const inmueble = {
           id: estate.id_inmueble,
