@@ -188,10 +188,14 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
           monto: lastSM && lastSM.mo_pendiente ? parseFloat(lastSM.mo_pendiente) : 0,
           fecha: { month: pastMonthSM.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthSM.year() },
         };
-        const debtSM = new Array(dateInterpolationSM + 1).fill({ month: null, year: null }).map((value, index) => {
-          const date = addMonths(new Date(lastSMPayment.toDate()), index);
-          return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
-        });
+        const debtSM = await Promise.all(
+          new Array(dateInterpolationSM + 1).fill({ month: null, year: null }).map(async (value, index) => {
+            const date = addMonths(new Date(lastSMPayment.toDate()), index);
+            const momentDate = moment(date);
+            const exonerado = await isExonerated({ branch: codigosRamo.SM, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') });
+            return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
+          })
+        );
 
         SM = await Promise.all(
           estates.map(async (el) => {
@@ -214,10 +218,14 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
           fecha: { month: pastMonthIU.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthIU.year() },
         };
         if (dateInterpolationIU > 0) {
-          const debtIU = new Array(dateInterpolationIU + 1).fill({ month: null, year: null }).map((value, index) => {
-            const date = addMonths(new Date(lastIUPayment.toDate()), index);
-            return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
-          });
+          const debtIU = await Promise.all(
+            new Array(dateInterpolationIU + 1).fill({ month: null, year: null }).map(async (value, index) => {
+              const date = addMonths(new Date(lastIUPayment.toDate()), index);
+              const momentDate = moment(date);
+              const exonerado = await isExonerated({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') });
+              return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
+            })
+          );
           IU = estates
             .filter((el) => +el.avaluo)
             .map((el) => {

@@ -796,12 +796,14 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_ESTATES_FOR_JURIDICAL_CONTRIBUTOR:
     'SELECT DISTINCT ON(ai.id_inmueble) * FROM impuesto.avaluo_inmueble ai INNER JOIN inmueble_urbano iu ON ai.id_inmueble = iu.id_inmueble WHERE id_registro_municipal = $1 AND anio = EXTRACT("year" FROM CURRENT_DATE)',
   GET_ESTATES_DATA_FOR_CONTRIBUTOR: 'SELECT * FROM inmueble_urbano WHERE id_registro_municipal = $1',
-  ECONOMIC_ACTIVITY_IS_EXONERATED: 'SELECT * FROM impuesto.actividad_economica_exoneracion INNER JOIN impuesto.plazo_exoneracion USING (id_plazo_exoneracion) WHERE id_actividad_economica = $1 AND fecha_inicio >= $2 AND fecha_fin IS NULL',
-  BRANCH_IS_EXONERATED: 'SELECT * FROM impuesto.ramo_exoneracion INNER JOIN impuesto.plazo_exoneracion USING (id_plazo_exoneracion) WHERE id_ramo = (SELECT id_ramo FROM impuesto.ramo WHERE codigo = $1) AND fecha_inicio >= $2 AND fecha_fin IS NULL',
+  ECONOMIC_ACTIVITY_IS_EXONERATED:
+    'SELECT * FROM impuesto.actividad_economica_exoneracion INNER JOIN impuesto.plazo_exoneracion USING (id_plazo_exoneracion) WHERE id_actividad_economica = $1 AND fecha_inicio <= $2 AND (fecha_fin IS NULL OR fecha_fin >= now()::date)',
+  BRANCH_IS_EXONERATED:
+    'SELECT * FROM impuesto.ramo_exoneracion INNER JOIN impuesto.plazo_exoneracion USING (id_plazo_exoneracion) WHERE id_ramo = (SELECT id_ramo FROM impuesto.ramo WHERE codigo = $1) AND fecha_inicio <= $2 AND (fecha_fin IS NULL OR fecha_fin >= now()::date)',
   CONTRIBUTOR_IS_EXONERATED:
-    'SELECT * FROM impuesto.contribuyente_exoneracion INNER JOIN impuesto.plazo_exoneracion USING (id_plazo_exoneracion) WHERE id_registro_municipal = $1 AND id_actividad_economica IS NULL AND fecha_inicio >= $2 AND fecha_fin IS NULL',
+    'SELECT * FROM impuesto.contribuyente_exoneracion INNER JOIN impuesto.plazo_exoneracion USING (id_plazo_exoneracion) WHERE id_registro_municipal = $1 AND id_actividad_economica IS NULL AND fecha_inicio <= $2 AND (fecha_fin IS NULL OR fecha_fin >= now()::date)',
   CONTRIBUTOR_ECONOMIC_ACTIVIES_IS_EXONERATED:
-    'SELECT * FROM impuesto.contribuyente_exoneracion INNER JOIN impuesto.plazo_exoneracion USING (id_plazo_exoneracion) WHERE id_registro_municipal = $1 AND id_actividad_economica = $2 AND fecha_inicio >= $3 AND fecha_fin IS NULL',
+    'SELECT * FROM impuesto.contribuyente_exoneracion INNER JOIN impuesto.plazo_exoneracion USING (id_plazo_exoneracion) WHERE id_registro_municipal = $1 AND id_actividad_economica = $2 AND fecha_inicio <= $3 AND (fecha_fin IS NULL OR fecha_fin >= now()::date)',
   GET_LAST_AE_SETTLEMENT_BY_AE_ID: 'SELECT * FROM impuesto.get_last_settlement_by_ae($1, $2)',
   GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID: 'SELECT * FROM impuesto.get_last_settlement_by_estate($1, $2)',
   GET_ESTATE_BY_ID: 'SELECT * FROM inmueble_urbano WHERE id_inmueble = $1',
