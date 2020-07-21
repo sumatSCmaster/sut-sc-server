@@ -155,7 +155,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       if (dateInterpolation !== 0) {
         AE = await Promise.all(
           economicActivities.map(async (el) => {
-            const lastMonthPayment = (await client.query(queries.GET_LAST_AE_SETTLEMENT_BY_AE_ID, [el.id_actividad_economica, el.id_registro_municipal])).rows[0];
+            const lastMonthPayment = (await client.query(queries.GET_LAST_AE_SETTLEMENT_BY_AE_ID, [el.id_actividad_economica, branch.id_registro_municipal])).rows[0];
+            console.log(lastMonthPayment);
             console.log('sim');
             const paymentDate = (!!lastMonthPayment && moment(lastMonthPayment.fecha_liquidacion)) || lastEAPayment;
             const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M'))) || dateInterpolation;
@@ -232,7 +233,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                 .map(async (el) => {
                   let paymentDate: Moment = lastIUPayment;
                   let interpolation = dateInterpolationIU;
-                  const lastMonthPayment = (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID, [el.id_inmueble, el.id_registro_municipal])).rows[0];
+                  const lastMonthPayment = (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID, [el.id_inmueble, branch.id_registro_municipal])).rows[0];
                   if (lastMonthPayment) {
                     paymentDate = moment(lastMonthPayment.fecha_liquidacion);
                     paymentDate = paymentDate.isSameOrBefore(lastIUPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
