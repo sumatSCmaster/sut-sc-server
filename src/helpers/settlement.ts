@@ -224,27 +224,35 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
           fecha: { month: pastMonthIU.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthIU.year() },
         };
         if (dateInterpolationIU > 0) {
-          const debtIU = await Promise.all(
-            new Array(dateInterpolationIU + 1).fill({ month: null, year: null }).map(async (value, index) => {
-              const date = addMonths(new Date(lastIUPayment.toDate()), index);
-              const momentDate = moment(date);
-              const exonerado = await isExonerated({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') });
-              return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
-            })
-          );
-          IU = estates
-            .filter((el) => +el.avaluo)
-            .map((el) => {
-              return {
-                id: el.id_inmueble,
-                codCat: el.cod_catastral,
-                direccionInmueble: el.direccion,
-                ultimoAvaluo: el.avaluo,
-                impuestoInmueble: (el.avaluo * 0.01) / 12,
-                deuda: debtIU,
-              };
-            })
-            .filter((el) => el.id);
+          IU = (
+            await Promise.all(
+              estates
+                .filter((el) => +el.avaluo)
+                .map(async (el) => {
+                  let paymentDate: Moment = lastIUPayment;
+                  const lastMonthPayment = (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID, [el.id_inmueble, el.id_registro_municipal])).rows[0];
+                  if (lastMonthPayment) {
+                    paymentDate = moment(lastMonthPayment.fecha_liquidacion);
+                    paymentDate = paymentDate.isSameOrBefore(lastIUPayment) ? paymentDate : lastIUPayment;
+                  }
+                  return {
+                    id: el.id_inmueble,
+                    codCat: el.cod_catastral,
+                    direccionInmueble: el.direccion,
+                    ultimoAvaluo: el.avaluo,
+                    impuestoInmueble: (el.avaluo * 0.01) / 12,
+                    deuda: await Promise.all(
+                      new Array(dateInterpolationIU + 1).fill({ month: null, year: null }).map(async (value, index) => {
+                        const date = addMonths(new Date(paymentDate.toDate()), index);
+                        const momentDate = moment(date);
+                        const exonerado = await isExonerated({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') });
+                        return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
+                      })
+                    ),
+                  };
+                })
+            )
+          ).filter((el) => el.id);
         }
       }
     }
