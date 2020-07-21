@@ -1441,7 +1441,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
 
 const formatContributor = async (contributor, client: PoolClient) => {
   try {
-    const branches = (await client.query('SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = $1', [contributor.id_contribuyente])).rows;
+    const branches = (await client.query(queries.GET_BRANCHES_BY_CONTRIBUTOR_ID, [contributor.id_contribuyente])).rows;
     return {
       id: contributor.id_contribuyente,
       tipoDocumento: contributor.tipo_documento,
@@ -1463,7 +1463,7 @@ const formatContributor = async (contributor, client: PoolClient) => {
   }
 };
 
-const formatBranch = async (branch, client) => {
+export const formatBranch = async (branch, client) => {
   return {
     id: branch.id_registro_municipal,
     referenciaMunicipal: branch.referencia_municipal,
@@ -1476,6 +1476,7 @@ const formatBranch = async (branch, client) => {
     creditoFiscal: (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [branch.id_registro_municipal, 'JURIDICO'])).rows[0]?.credito || 0,
     tipoSociedad: branch.tipo_sociedad,
     actualizado: branch.actualizado,
+    actividadesEconomicas: (await client.query(queries.GET_ECONOMIC_ACTIVITY_BY_RIM, [branch.id_registro_municipal])).rows,
   };
 };
 
@@ -2021,6 +2022,10 @@ export const insertSettlements = async ({ process, user }) => {
     //   registroMunicipal: process.rim,
     // };
     const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
+    if (settlement.reduce((x, y) => x + +y.monto, 0) === 0) {
+      (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.VALIDAR])).rows[0].state;
+      await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
+    }
     await client.query('COMMIT');
     const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
     await sendNotification(
@@ -2411,12 +2416,31 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
     const { actividadesEconomicas } = funcionario;
     const { contribuyente } = usuario;
     const registry = (
-      await client.query(queries.ADD_BRANCH_FOR_CONTRIBUTOR, [contribuyente.id, funcionario.telefono, funcionario.correo, funcionario.denominacionComercial, funcionario.nombreRepresentante, funcionario.capitalSuscrito, funcionario.tipoSociedad])
+      await client.query(queries.ADD_BRANCH_FOR_CONTRIBUTOR, [
+        contribuyente.id,
+        funcionario.telefono,
+        funcionario.correo,
+        funcionario.denominacionComercial,
+        funcionario.nombreRepresentante,
+        funcionario.capitalSuscrito,
+        funcionario.tipoSociedad,
+        funcionario.estadoLicencia,
+      ])
     ).rows[0];
     data.funcionario.referenciaMunicipal = registry.referencia_municipal;
     await Promise.all(
       actividadesEconomicas!.map(async (x) => {
-        return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.codigo]);
+        const settlement = (
+          await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+            null,
+            fixatedAmount(0),
+            'AE',
+            { month: moment(x.desde).toDate().toLocaleString('es-ES', { month: 'long' }), year: moment(x.desde).year() },
+            moment(x.desde).endOf('month').format('MM-DD-YYYY'),
+            registry.id_registro_municipal,
+          ])
+        ).rows[0];
+        return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.codigo, x.desde]);
       })
     );
     const verifiedId = (await client.query('SELECT * FROM impuesto.verificacion_telefono WHERE id_usuario = $1', [user])).rows[0]?.id_verificacion_telefono;
