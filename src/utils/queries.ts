@@ -762,30 +762,30 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     'SELECT * FROM impuesto.contribuyente_exoneracion ce INNER JOIN impuesto.plazo_exoneracion pe ON pe.id_plazo_exoneracion = ce.id_plazo_exoneracion \
     WHERE id_registro_municipal = $1 AND id_actividad_economica IS NULL AND fecha_fin IS NULL',
   GET_CONTRIBUTOR_HAS_ACTIVITY: 'SELECT * FROM impuesto.actividad_economica ae INNER JOIN impuesto.actividad_economica_sucursal aec ON aec.numero_referencia = ae.numero_referencia WHERE id_registro_municipal = $2 AND id_actividad_economica = $2',
-  GET_CONTRIBUTOR_EXONERATIONS: `SELECT pe.*, ce.*, ae.*, c.*, rm.*, (pe.fecha_fin IS NULL ) AS active \
+  GET_CONTRIBUTOR_EXONERATIONS: `SELECT pe.*, ce.*, ae.*, c.*, rm.*, (pe.fecha_fin IS NULL OR NOW() BETWEEN pe.fecha_inicio AND pe.fecha_fin ) AS active \
         FROM impuesto.plazo_exoneracion pe \
         INNER JOIN impuesto.contribuyente_exoneracion ce ON ce.id_plazo_exoneracion = pe.id_plazo_exoneracion \
         INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = ce.id_registro_municipal
         INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = rm.id_contribuyente \
         LEFT JOIN impuesto.actividad_economica ae ON ae.id_actividad_economica = ce.id_actividad_economica \
         WHERE c.tipo_documento = $1 AND c.documento = $2 AND rm.id_registro_municipal = $3 ORDER BY pe.id_plazo_exoneracion DESC;`,
-  GET_ACTIVITY_EXONERATIONS: `SELECT pe.*, ae.*, (pe.fecha_fin IS NULL ) AS active 
+  GET_ACTIVITY_EXONERATIONS: `SELECT pe.*, ae.*, (pe.fecha_fin IS NULL OR NOW() BETWEEN pe.fecha_inicio AND pe.fecha_fin) AS active 
         FROM impuesto.plazo_exoneracion pe
         INNER JOIN impuesto.actividad_economica_exoneracion aee ON aee.id_plazo_exoneracion = pe.id_plazo_exoneracion
         INNER JOIN impuesto.actividad_economica ae ON aee.id_actividad_economica = ae.id_actividad_economica
         ORDER BY pe.id_plazo_exoneracion DESC;`,
-  GET_ACTIVITY_IS_EXONERATED: `SELECT pe.id_plazo_exoneracion AS id, ae.descripcion, (pe.fecha_fin IS NULL ) AS active 
+  GET_ACTIVITY_IS_EXONERATED: `SELECT pe.id_plazo_exoneracion AS id, ae.descripcion, (pe.fecha_fin IS NULL OR NOW() BETWEEN pe.fecha_inicio AND pe.fecha_fin ) AS active 
         FROM impuesto.plazo_exoneracion pe
         INNER JOIN impuesto.actividad_economica_exoneracion aee ON aee.id_plazo_exoneracion = pe.id_plazo_exoneracion
         INNER JOIN impuesto.actividad_economica ae ON aee.id_actividad_economica = ae.id_actividad_economica
         WHERE ae.id_actividad_economica = $1 AND (pe.fecha_fin IS NULL)
         ORDER BY pe.id_plazo_exoneracion DESC;`,
-  GET_BRANCH_EXONERATIONS: `SELECT pe.*, r.*, (pe.fecha_fin IS NULL) AS active 
+  GET_BRANCH_EXONERATIONS: `SELECT pe.*, r.*, (pe.fecha_fin IS NULL OR NOW() BETWEEN pe.fecha_inicio AND pe.fecha_fin) AS active 
         FROM impuesto.plazo_exoneracion pe
         INNER JOIN impuesto.ramo_exoneracion re ON re.id_plazo_exoneracion = pe.id_plazo_exoneracion
         INNER JOIN impuesto.ramo r ON r.id_ramo = re.id_ramo
         ORDER BY pe.id_plazo_exoneracion DESC;`,
-  GET_BRANCH_IS_EXONERATED: `SELECT pe.*, re.*, (pe.fecha_fin IS NULL ) AS active 
+  GET_BRANCH_IS_EXONERATED: `SELECT pe.*, re.*, (pe.fecha_fin IS NULL OR NOW() BETWEEN pe.fecha_inicio AND pe.fecha_fin) AS active 
         FROM impuesto.plazo_exoneracion pe
         INNER JOIN impuesto.ramo_exoneracion re ON re.id_plazo_exoneracion = pe.id_plazo_exoneracion
         WHERE id_ramo = $1 AND ( pe.fecha_fin IS NULL)
@@ -879,7 +879,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     telefono_habitacion AS "telefonoHabitacion", email, denominacion_comercial AS "denominacionComercial", nombre_representante AS "nombreRepresentante"
     FROM impuesto.registro_municipal WHERE referencia_municipal = $1`,
   GET_ESTATES_BY_RIM:
-    'SELECT id_inmueble AS id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble" FROM inmueble_urbano WHERE id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $1);',
+    'SELECT id_inmueble AS id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble" FROM inmueble_urbano WHERE id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $1 ORDER BY id_registro_municipal DESC LIMIT 1);',
   GET_ESTATES_BY_USER_INFO: `SELECT id_inmueble AS id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble" 
     FROM inmueble_urbaano iu 
