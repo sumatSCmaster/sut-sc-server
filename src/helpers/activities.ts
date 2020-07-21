@@ -43,10 +43,20 @@ export const getMunicipalReferenceActivities = async ({ docType, document }) => 
   }
 };
 
-export const updateContributorActivities = async ({ branchId, activities, status }) => {
+export const updateContributorActivities = async ({ branchId, activities, branchInfo }) => {
   const client = await pool.connect();
+  const { denomComercial, nombreRepresentante, telefonoMovil, email, estadoLicencia } = branchInfo;
   try {
-    if (status) await client.query(queries.UPDATE_LICENSE_STATUS, [status, branchId]);
+    const updatedRegistry = (
+      await client.query('UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombre_representante = $2, telefono_celular = $3, email = $4, estado_licencia = $5 WHERE id_registro_municipal = $6', [
+        denomComercial,
+        nombreRepresentante,
+        telefonoMovil,
+        email,
+        estadoLicencia,
+        branchId,
+      ])
+    ).rows[0];
     await Promise.all(activities.map(async (x) => await client.query(queries.UPDATE_ECONOMIC_ACTIVITIES_FOR_BRANCH, [branchId, x.codigo, x.desde])));
     return { status: 200, message: 'Actividades ecónomicas y/o estado de licencia actualizado' };
   } catch (error) {
