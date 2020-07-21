@@ -161,7 +161,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
             if (lastMonthPayment) {
               console.log('sim');
               paymentDate = moment(lastMonthPayment.fecha_liquidacion);
-              paymentDate = paymentDate.isSameOrBefore(lastEAPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
+              // paymentDate = paymentDate.isSameOrBefore(lastEAPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
               interpolation = Math.floor(now.diff(paymentDate, 'M'));
             }
             return {
