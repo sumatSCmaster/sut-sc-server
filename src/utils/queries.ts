@@ -809,7 +809,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_ESTATE_BY_ID: 'SELECT * FROM inmueble_urbano WHERE id_inmueble = $1',
   GET_BRANCHES_BY_CONTRIBUTOR_ID: 'SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = $1',
   GET_ECONOMIC_ACTIVITY_BY_RIM:
-    'SELECT ae.id_actividad_economica as id, ae.numero_referencia as codigo, ae.descripcion, ae.alicuota, ae.minimo_tributable as "minimoTributable", aes.aplicable_desde as "fechaInicioActividad", aes.tipo_licencia AS "tipoLicencia" FROM impuesto.actividad_economica_sucursal aes INNER JOIN impuesto.actividad_economica ae USING (numero_referencia) WHERE id_registro_municipal = $1',
+    'SELECT ae.id_actividad_economica as id, ae.numero_referencia as codigo, ae.descripcion, ae.alicuota, ae.minimo_tributable as "minimoTributable", aes.aplicable_desde as "fechaInicioActividad" FROM impuesto.actividad_economica_sucursal aes INNER JOIN impuesto.actividad_economica ae USING (numero_referencia) WHERE id_registro_municipal = $1',
   GET_ESTATES_FOR_NATURAL_CONTRIBUTOR:
     'SELECT DISTINCT ON (ai.anio) ai.*,iu.* FROM impuesto.avaluo_inmueble ai INNER JOIN inmueble_urbano iu ON ai.id_inmueble = iu.id_inmueble INNER JOIN impuesto.inmueble_contribuyente_natural icn ON iu.id_inmueble = icn.id_inmueble WHERE icn.id_contribuyente = $1 AND anio = EXTRACT("year" FROM CURRENT_DATE)',
   GET_AE_CLEANING_TARIFF:

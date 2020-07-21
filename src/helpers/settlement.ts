@@ -1476,6 +1476,7 @@ export const formatBranch = async (branch, client) => {
     creditoFiscal: (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [branch.id_registro_municipal, 'JURIDICO'])).rows[0]?.credito || 0,
     tipoSociedad: branch.tipo_sociedad,
     actualizado: branch.actualizado,
+    estadoLicencia: branch.estado_licencia,
     actividadesEconomicas: (await client.query(queries.GET_ECONOMIC_ACTIVITY_BY_RIM, [branch.id_registro_municipal])).rows,
   };
 };
