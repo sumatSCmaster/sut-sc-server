@@ -155,6 +155,12 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       if (dateInterpolation !== 0) {
         AE = await Promise.all(
           economicActivities.map(async (el) => {
+            let paymentDate: Moment = lastEAPayment;
+            const lastMonthPayment = (await client.query(queries.GET_LAST_AE_SETTLEMENT_BY_AE_ID, [el.id_actividad_economica, el.id_registro_municipal])).rows[0];
+            if (lastMonthPayment) {
+              paymentDate = moment(lastMonthPayment.fecha_liquidacion);
+              paymentDate = paymentDate.isSameOrBefore(lastEAPayment) ? paymentDate : lastEAPayment;
+            }
             return {
               id: el.id_actividad_economica,
               minimoTributable: Math.round(el.minimo_tributable) * UTMM,
@@ -164,7 +170,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
               costoSolvencia: UTMM * 2,
               deuda: await Promise.all(
                 new Array(dateInterpolation).fill({ month: null, year: null }).map(async (value, index) => {
-                  const date = addMonths(new Date(lastEAPayment.toDate()), index);
+                  const date = addMonths(new Date(paymentDate.toDate()), index);
                   const momentDate = moment(date);
                   const exonerado = await isExonerated({ branch: codigosRamo.AE, contributor: branch?.id_registro_municipal, activity: el.id_actividad_economica, startingDate: momentDate.startOf('month') });
                   return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
