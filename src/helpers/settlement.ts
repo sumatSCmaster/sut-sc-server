@@ -2454,7 +2454,7 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
             null,
             fixatedAmount(0),
             'AE',
-            { month: moment(x.desde).toDate().toLocaleString('es-ES', { month: 'long' }), year: moment(x.desde).year() },
+            { month: moment(x.desde).toDate().toLocaleString('es-ES', { month: 'long' }), year: moment(x.desde).year(), desglose: [{ aforo: x.id }] },
             moment(x.desde).endOf('month').format('MM-DD-YYYY'),
             registry.id_registro_municipal,
           ])
