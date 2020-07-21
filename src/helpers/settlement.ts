@@ -156,10 +156,12 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         AE = await Promise.all(
           economicActivities.map(async (el) => {
             let paymentDate: Moment = lastEAPayment;
+            let interpolation = dateInterpolation;
             const lastMonthPayment = (await client.query(queries.GET_LAST_AE_SETTLEMENT_BY_AE_ID, [el.id_actividad_economica, el.id_registro_municipal])).rows[0];
             if (lastMonthPayment) {
               paymentDate = moment(lastMonthPayment.fecha_liquidacion);
-              paymentDate = paymentDate.isSameOrBefore(lastEAPayment) ? paymentDate : lastEAPayment;
+              paymentDate = paymentDate.isSameOrBefore(lastEAPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
+              interpolation = Math.floor(now.diff(paymentDate, 'M'));
             }
             return {
               id: el.id_actividad_economica,
@@ -169,7 +171,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
               alicuota: el.alicuota / 100,
               costoSolvencia: UTMM * 2,
               deuda: await Promise.all(
-                new Array(dateInterpolation).fill({ month: null, year: null }).map(async (value, index) => {
+                new Array(interpolation).fill({ month: null, year: null }).map(async (value, index) => {
                   const date = addMonths(new Date(paymentDate.toDate()), index);
                   const momentDate = moment(date);
                   const exonerado = await isExonerated({ branch: codigosRamo.AE, contributor: branch?.id_registro_municipal, activity: el.id_actividad_economica, startingDate: momentDate.startOf('month') });
@@ -230,10 +232,12 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                 .filter((el) => +el.avaluo)
                 .map(async (el) => {
                   let paymentDate: Moment = lastIUPayment;
+                  let interpolation = dateInterpolationIU;
                   const lastMonthPayment = (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID, [el.id_inmueble, el.id_registro_municipal])).rows[0];
                   if (lastMonthPayment) {
                     paymentDate = moment(lastMonthPayment.fecha_liquidacion);
-                    paymentDate = paymentDate.isSameOrBefore(lastIUPayment) ? paymentDate : lastIUPayment;
+                    paymentDate = paymentDate.isSameOrBefore(lastIUPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
+                    interpolation = Math.floor(now.diff(paymentDate, 'M'));
                   }
                   return {
                     id: el.id_inmueble,
@@ -242,7 +246,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                     ultimoAvaluo: el.avaluo,
                     impuestoInmueble: (el.avaluo * 0.01) / 12,
                     deuda: await Promise.all(
-                      new Array(dateInterpolationIU + 1).fill({ month: null, year: null }).map(async (value, index) => {
+                      new Array(interpolation + 1).fill({ month: null, year: null }).map(async (value, index) => {
                         const date = addMonths(new Date(paymentDate.toDate()), index);
                         const momentDate = moment(date);
                         const exonerado = await isExonerated({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') });
