@@ -2459,6 +2459,7 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
             registry.id_registro_municipal,
           ])
         ).rows[0];
+        await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [x.desde, settlement.id_liquidacion]);
         return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.codigo, x.desde]);
       })
     );
