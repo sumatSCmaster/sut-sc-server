@@ -52,7 +52,7 @@ router.use('/activities', activities);
 router.use('/cashier', cashier);
 router.use('/receipt', receipt);
 router.use('/services', services);
-router.use('/retention', retention);
+router.use('/retentions', retention);
 router.use(resources);
 
 router.get('/', (req, res) => {

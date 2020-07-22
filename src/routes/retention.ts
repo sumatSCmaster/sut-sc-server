@@ -14,6 +14,13 @@ router.get('/', authenticate('jwt'), async (req, res) => {
   if (data) res.status(data.status).json(data);
 });
 
+router.post('/', authenticate('jwt'), async (req, res) => {
+  const { doc, ref, pref } = req.query;
+  const [err, data] = await fulfill(getRetentionMonths({ document: doc, reference: ref ? ref : null, docType: pref, user: req.user as Usuario }));
+  if (err) res.status(err.status).json(err);
+  if (data) res.status(data.status).json(data);
+});
+
 router.post('/report/', authenticate('jwt'), async (req, res) => {
   const [error, data] = await fulfill(processRetentionFile(req.file));
   console.log(error, data);
