@@ -3517,7 +3517,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
   }
 };
 
-const fixatedAmount = (num) => {
+export const fixatedAmount = (num) => {
   return parseFloat(num.toPrecision(15)).toFixed(2);
 };
 
