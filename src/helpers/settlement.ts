@@ -1604,7 +1604,7 @@ export const initialUserLinking = async (linkingData, user) => {
       }
     }
     const contributor = (await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, true, tipoContribuyente])).rows[0];
-    await client.query(queries.ASSIGN_CONTRIBUTOR_TO_USER, [contributor.id_contribuyente, user.id]);
+    user.tipoUsuario === 4 && (await client.query(queries.ASSIGN_CONTRIBUTOR_TO_USER, [contributor.id_contribuyente, user.id]));
     // if (actividadesEconomicas && actividadesEconomicas.length > 0) {
     //   await Promise.all(
     //     actividadesEconomicas.map(async (x) => {
@@ -1707,10 +1707,10 @@ export const initialUserLinking = async (linkingData, user) => {
           const multasVigentes = multas.filter((el) => el.estado !== 'PAGADO');
           const pagados = liquidacionesPagas.concat(multasPagas);
           const vigentes = liquidacionesVigentes.concat(multasVigentes);
-          const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
           let registry;
-          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [contributor.id_contribuyente, 'NATURAL', datosSucursal.creditoFiscal])).rows[0];
-          if (registroMunicipal) {
+          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [contributor.id_contribuyente, 'NATURAL', datosSucursal?.creditoFiscal || 0])).rows[0];
+          if (datosSucursal?.registroMunicipal) {
+            const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
             registry = (
               await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [
                 contributor.id_contribuyente,
@@ -1791,7 +1791,7 @@ export const initialUserLinking = async (linkingData, user) => {
               })
             );
           }
-          return representado ? registry && registry.id_registro_municipal : undefined;
+          return datosSucursal?.representado ? registry && registry.id_registro_municipal : undefined;
         })
       );
       await client.query('COMMIT');
