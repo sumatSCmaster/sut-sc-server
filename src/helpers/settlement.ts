@@ -371,6 +371,8 @@ export const getTaxPayerInfo = async ({ docType, document, type, gtic, client })
         razonSocial: `${naturalContributor.nb_contribuyente} ${naturalContributor.ap_contribuyente}`.replace('null', '').trim(),
         telefonoMovil: nullStringCheck(naturalContributor.nu_telf_movil).trim(),
         telefonoHabitacion: nullStringCheck(naturalContributor.nu_telf_hab).trim(),
+        siglas: nullStringCheck(naturalContributor.tx_siglas).trim(),
+        denomComercial: nullStringCheck(naturalContributor.tx_denom_comercial).trim(),
         email: nullStringCheck(naturalContributor.tx_email).trim(),
         parroquia: naturalContributor.tx_direccion ? (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [naturalContributor.tx_direccion.split('Parroquia')[1].split('Sector')[0].trim()])).rows[0]?.id || undefined : undefined,
         sector: nullStringCheck(naturalContributor.sector).trim(),
