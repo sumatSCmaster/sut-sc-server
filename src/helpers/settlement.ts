@@ -45,6 +45,7 @@ const codigosRamo = {
   SM: 122,
   PP: 114,
   IU: 111,
+  RD0: 915,
 };
 const formatCurrency = (number: number) => new Intl.NumberFormat('de-DE').format(number);
 
@@ -118,8 +119,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     console.log('branch', branch);
     console.log('contributor', contributor);
     if ((!branch && reference) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEMAT' };
-    const lastSettlementQuery = contributor.tipo_contribuyente === 'JURIDICO' ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
-    const lastSettlementPayload = contributor.tipo_contribuyente === 'JURIDICO' ? branch.referencia_municipal : contributor.id_contribuyente;
+    const lastSettlementQuery = contributor.tipo_contribuyente === 'JURIDICO' || (!!reference && branch) ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
+    const lastSettlementPayload = contributor.tipo_contribuyente === 'JURIDICO' || (!!reference && branch) ? branch.referencia_municipal : contributor.id_contribuyente;
     const fiscalCredit =
       (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.tipo_contribuyente === 'JURIDICO' ? branch.id_registro_municipal : contributor.id_contribuyente, contributor.tipo_contribuyente])).rows[0]?.credito || 0;
     const AEApplicationExists = contributor.tipo_contribuyente === 'JURIDICO' || reference ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.AE, reference])).rows[0] : false;
@@ -231,14 +232,16 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
               estates
                 .filter((el) => +el.avaluo)
                 .map(async (el) => {
-                  let paymentDate: Moment = lastIUPayment;
-                  let interpolation = dateInterpolationIU;
+                  // let paymentDate: Moment = lastIUPayment;
+                  // let interpolation = dateInterpolationIU;
                   const lastMonthPayment = (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID, [el.id_inmueble, branch.id_registro_municipal])).rows[0];
-                  if (lastMonthPayment) {
-                    paymentDate = moment(lastMonthPayment.fecha_liquidacion);
-                    paymentDate = paymentDate.isSameOrBefore(lastIUPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
-                    interpolation = Math.floor(now.diff(paymentDate, 'M'));
-                  }
+                  const paymentDate = (!!lastMonthPayment && moment(lastMonthPayment.fecha_liquidacion)) || lastIUPayment;
+                  const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M'))) || dateInterpolationIU;
+                  // if (lastMonthPayment) {
+                  //   paymentDate = moment(lastMonthPayment.fecha_liquidacion);
+                  //   paymentDate = paymentDate.isSameOrBefore(lastIUPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
+                  //   interpolation = Math.floor(now.diff(paymentDate, 'M'));
+                  // }
                   return {
                     id: el.id_inmueble,
                     codCat: el.cod_catastral,

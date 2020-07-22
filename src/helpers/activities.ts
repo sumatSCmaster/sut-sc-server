@@ -5,6 +5,7 @@ import queries from '@utils/queries';
 import * as pdf from 'html-pdf';
 import { errorMessageExtractor, errorMessageGenerator } from './errors';
 import { formatBranch } from './settlement';
+import moment from 'moment';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -47,6 +48,7 @@ export const updateContributorActivities = async ({ branchId, activities, branch
   const client = await pool.connect();
   const { denomComercial, nombreRepresentante, telefonoMovil, email, estadoLicencia } = branchInfo;
   try {
+    await client.query('BEGIN');
     const updatedRegistry = (
       await client.query('UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombre_representante = $2, telefono_celular = $3, email = $4, estado_licencia = $5 WHERE id_registro_municipal = $6', [
         denomComercial,
@@ -57,10 +59,31 @@ export const updateContributorActivities = async ({ branchId, activities, branch
         branchId,
       ])
     ).rows[0];
-    await Promise.all(activities.map(async (x) => await client.query(queries.UPDATE_ECONOMIC_ACTIVITIES_FOR_BRANCH, [branchId, x.codigo, x.desde])));
+    await client.query('DELETE FROM impuesto.actividad_economica_sucursal WHERE id_registro_municipal = $1', [branchId]);
+    await Promise.all(
+      activities.map(async (x) => {
+        const ae = (await client.query(queries.UPDATE_ECONOMIC_ACTIVITIES_FOR_BRANCH, [branchId, x.codigo, x.desde])).rows[0];
+        const aeExists = (await client.query(queries.GET_LAST_AE_SETTLEMENT_BY_AE_ID, [x.id, branchId])).rows[0];
+        const settlement =
+          !!aeExists &&
+          (
+            await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+              null,
+              0.0,
+              'AE',
+              { month: moment(x.desde).toDate().toLocaleString('es-ES', { month: 'long' }), year: moment(x.desde).year(), desglose: [{ aforo: x.id }] },
+              moment(x.desde).endOf('month').format('MM-DD-YYYY'),
+              branchId,
+            ])
+          ).rows[0];
+        await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [x.desde, settlement.id_liquidacion]);
+      })
+    );
+    await client.query('COMMIT');
     return { status: 200, message: 'Actividades ecónomicas y/o estado de licencia actualizado' };
   } catch (error) {
     console.log(error);
+    await client.query('ROLLBACK');
     throw {
       status: 500,
       error: errorMessageExtractor(error),
