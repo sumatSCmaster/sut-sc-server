@@ -368,7 +368,7 @@ export const getTaxPayerInfo = async ({ docType, document, type, gtic, client })
         tipoContribuyente: type,
         documento: document,
         tipoDocumento: docType,
-        nombreCompleto: `${naturalContributor.nb_contribuyente} ${naturalContributor.ap_contribuyente}`.replace('null', '').trim(),
+        razonSocial: `${naturalContributor.nb_contribuyente} ${naturalContributor.ap_contribuyente}`.replace('null', '').trim(),
         telefonoMovil: nullStringCheck(naturalContributor.nu_telf_movil).trim(),
         telefonoHabitacion: nullStringCheck(naturalContributor.nu_telf_hab).trim(),
         email: nullStringCheck(naturalContributor.tx_email).trim(),
