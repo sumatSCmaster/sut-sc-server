@@ -46,18 +46,14 @@ export const getMunicipalReferenceActivities = async ({ docType, document }) => 
 
 export const updateContributorActivities = async ({ branchId, activities, branchInfo }) => {
   const client = await pool.connect();
-  const { denomComercial, nombreRepresentante, telefonoMovil, email, estadoLicencia } = branchInfo;
+  const { denomComercial, nombreRepresentante, telefonoMovil, email, estadoLicencia, tipoSociedad, capitalSuscrito } = branchInfo;
   try {
     await client.query('BEGIN');
     const updatedRegistry = (
-      await client.query('UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombre_representante = $2, telefono_celular = $3, email = $4, estado_licencia = $5 WHERE id_registro_municipal = $6', [
-        denomComercial,
-        nombreRepresentante,
-        telefonoMovil,
-        email,
-        estadoLicencia,
-        branchId,
-      ])
+      await client.query(
+        'UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombre_representante = $2, telefono_celular = $3, email = $4, estado_licencia = $5, tipo_sociedad = $6, capital_suscrito = $7 WHERE id_registro_municipal = $8',
+        [denomComercial, nombreRepresentante, telefonoMovil, email, estadoLicencia, tipoSociedad, capitalSuscrito, branchId]
+      )
     ).rows[0];
     await client.query('DELETE FROM impuesto.actividad_economica_sucursal WHERE id_registro_municipal = $1', [branchId]);
     await Promise.all(
