@@ -39,7 +39,7 @@ export const getRetentionMonths = async ({ document, reference, docType, user }:
     if (!!RD0ApplicationExists) throw { status: 409, message: 'Ya existe una declaración de retenciones para este mes' };
     const now = moment(new Date());
 
-    let lastRD = (await client.query(queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM, [codigosRamo.AE, branch.referencia_municipal])).rows[0];
+    let lastRD = (await client.query(queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM, [codigosRamo.RD0, branch.referencia_municipal])).rows[0];
     const lastRDPayment = (lastRD && moment(lastRD.fecha_liquidacion)) || moment().month(0);
     const RDDate = moment([lastRDPayment.year(), lastRDPayment.month(), 1]);
     const dateInterpolation = Math.floor(now.diff(RDDate, 'M'));
@@ -53,7 +53,20 @@ export const getRetentionMonths = async ({ document, reference, docType, user }:
         })
       );
     }
-    return { status: 200, message: 'Deuda de retención obtenida satisfactoriamente', retencion: debtRD };
+    return {
+      status: 200,
+      message: 'Deuda de retención obtenida satisfactoriamente',
+      retenciones: {
+        RD: debtRD,
+        contribuyente: contributor.id_contribuyente,
+        razonSocial: contributor.razon_social,
+        siglas: contributor.siglas,
+        rim: reference,
+        documento: contributor.documento,
+        tipoDocumento: contributor.tipo_documento,
+        // creditoFiscal: fiscalCredit,
+      },
+    };
   } catch (error) {
     client.query('ROLLBACK');
     console.log(error);
