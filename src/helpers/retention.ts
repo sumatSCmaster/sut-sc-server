@@ -70,10 +70,9 @@ export const getRetentionMonths = async ({ document, reference, docType, user }:
 //TODO: hacer el desglose de retencion y apuntar al ramo de retencion
 export const insertRetentions = async ({ process, user }) => {
   const client = await pool.connect();
-  const { impuestos } = process;
+  const { retenciones } = process;
   //Esto hay que sacarlo de db
   const finingAmount = 10;
-  const maxFining = 100;
   let finingMonths: any;
   try {
     client.query('BEGIN');
@@ -84,13 +83,12 @@ export const insertRetentions = async ({ process, user }) => {
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, process.contribuyente])).rows[0];
 
-    const hasRD = impuestos.find((el) => el.ramo === 'RD');
-    if (hasRD) {
+    if (retenciones.length > 0) {
       const now = moment().locale('ES');
       const pivot = moment().locale('ES');
-      const onlyRD = impuestos
-        .filter((el) => el.ramo === 'RD0')
-        .sort((a, b) => (pivot.month(a.fechaCancelada.month).toDate() === pivot.month(b.fechaCancelada.month).toDate() ? 0 : pivot.month(a.fechaCancelada.month).toDate() > pivot.month(b.fechaCancelada.month).toDate() ? 1 : -1));
+      const onlyRD = retenciones.sort((a, b) =>
+        pivot.month(a.fechaCancelada.month).toDate() === pivot.month(b.fechaCancelada.month).toDate() ? 0 : pivot.month(a.fechaCancelada.month).toDate() > pivot.month(b.fechaCancelada.month).toDate() ? 1 : -1
+      );
       const lastSavedFine = (await client.query(queries.GET_LAST_FINE_FOR_LATE_RETENTION, [contributorReference.id_registro_municipal])).rows[0];
       if (lastSavedFine && moment(lastSavedFine.fecha_liquidacion).year() === now.year() && moment(lastSavedFine.fecha_liquidacion).month() < now.month()) {
         const proposedFiningDate = moment().locale('ES').month(onlyRD[0].fechaCancelada.month).month();
@@ -203,23 +201,29 @@ export const insertRetentions = async ({ process, user }) => {
     }
 
     const settlement: Liquidacion[] = await Promise.all(
-      impuestos.map(async (el) => {
+      retenciones.map(async (el) => {
         const datos = {
           //   desglose: el.desglose ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
-          desglose: {},
           fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },
+          // desglose: el.items,
         };
-        console.log(el.ramo);
+        // console.log(el.ramo);
         const liquidacion = (
           await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
             application.id_solicitud,
             fixatedAmount(+el.monto),
-            el.ramo,
+            'RD0',
             datos,
             moment().month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
             (contributorReference && contributorReference.id_registro_municipal) || null,
           ])
         ).rows[0];
+
+        await Promise.all(
+          el.items.map(
+            async (x) => await client.query(queries.CREATE_RETENTION_DETAIL, [liquidacion.id_liquidacion, x.rif, x.rim, x.razonSocial, x.tipoServicio, x.fecha, x.baseImponible, x.montoRetenido, x.porcentaje, x.codActividad, x.numeroFactura])
+          )
+        );
 
         return {
           id: liquidacion.id_liquidacion,
@@ -228,15 +232,15 @@ export const insertRetentions = async ({ process, user }) => {
           monto: liquidacion.monto,
           certificado: liquidacion.certificado,
           recibo: liquidacion.recibo,
-          desglose: datos.desglose,
+          // desglose: datos.desglose,
         };
       })
     );
 
-    const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
+    let state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
     if (settlement.reduce((x, y) => x + +y.monto, 0) === 0) {
       (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.VALIDAR])).rows[0].state;
-      await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
+      state = await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
     }
     await client.query('COMMIT');
     const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
@@ -248,7 +252,7 @@ export const insertRetentions = async ({ process, user }) => {
     //   { ...solicitud, estado: state, nombreCorto: 'SEDEMAT' },
     //   client
     // );
-    return { status: 201, message: 'Liquidaciones de retenciones creadas satisfactoriamente', solicitud };
+    return { status: 201, message: 'Declaracion de retencion creada satisfactoriamente', solicitud };
   } catch (error) {
     console.log(error);
     client.query('ROLLBACK');

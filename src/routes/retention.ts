@@ -1,7 +1,7 @@
 import { Router } from 'express';
 
 import { fulfill } from '@utils/resolver';
-import { processRetentionFile, getRetentionMonths } from '@helpers/retention';
+import { processRetentionFile, getRetentionMonths, insertRetentions } from '@helpers/retention';
 import { authenticate } from 'passport';
 import { Usuario } from '@root/interfaces/sigt';
 
@@ -14,10 +14,9 @@ router.get('/', authenticate('jwt'), async (req, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-router.post('/', authenticate('jwt'), async (req, res) => {
-  const { doc, ref, pref } = req.query;
-  const [err, data] = await fulfill(getRetentionMonths({ document: doc, reference: ref ? ref : null, docType: pref, user: req.user as Usuario }));
-  if (err) res.status(err.status).json(err);
+router.post('/init', authenticate('jwt'), async (req, res) => {
+  const [error, data] = await fulfill(insertRetentions({ process: req.body, user: req.user }));
+  if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
 
