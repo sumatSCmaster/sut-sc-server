@@ -1335,49 +1335,51 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
   try {
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const applications: Solicitud[] = await Promise.all(
-      (await client.query(queries.GET_APPLICATION_INSTANCES_BY_USER, [user.id])).rows.map(async (el) => {
-        const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
-        const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
-        return {
-          id: el.id_solicitud,
-          usuario: user,
-          contribuyente: structureContributor(docs),
-          aprobado: el.aprobado,
-          documento: docs.documento,
-          tipoDocumento: docs.tipo_documento,
-          estado: (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state,
-          referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
-            ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
-            : undefined,
-          fecha: el.fecha,
-          monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
-          liquidaciones: liquidaciones
-            .filter((el) => el.tipoProcedimiento !== 'MULTAS')
-            .map((el) => {
-              return {
-                id: el.id_liquidacion,
-                ramo: el.tipoProcedimiento,
-                fecha: el.datos.fecha,
-                monto: +el.monto,
-                certificado: el.certificado,
-                recibo: el.recibo,
-              };
-            }),
-          multas: liquidaciones
-            .filter((el) => el.tipoProcedimiento === 'MULTAS')
-            .map((el) => {
-              return {
-                id: el.id_liquidacion,
-                ramo: el.tipoProcedimiento,
-                fecha: el.datos.fecha,
-                monto: +el.monto,
-                descripcion: el.datos.descripcion,
-                certificado: el.certificado,
-                recibo: el.recibo,
-              };
-            }),
-        };
-      })
+      (await client.query(queries.GET_APPLICATION_INSTANCES_BY_USER, [user.id])).rows
+        .filter((el) => el.tipo_solicitud !== 'CONVENIO')
+        .map(async (el) => {
+          const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
+          const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
+          return {
+            id: el.id_solicitud,
+            usuario: user,
+            contribuyente: structureContributor(docs),
+            aprobado: el.aprobado,
+            documento: docs.documento,
+            tipoDocumento: docs.tipo_documento,
+            estado: (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state,
+            referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
+              ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
+              : undefined,
+            fecha: el.fecha,
+            monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
+            liquidaciones: liquidaciones
+              .filter((el) => el.tipoProcedimiento !== 'MULTAS')
+              .map((el) => {
+                return {
+                  id: el.id_liquidacion,
+                  ramo: el.tipoProcedimiento,
+                  fecha: el.datos.fecha,
+                  monto: +el.monto,
+                  certificado: el.certificado,
+                  recibo: el.recibo,
+                };
+              }),
+            multas: liquidaciones
+              .filter((el) => el.tipoProcedimiento === 'MULTAS')
+              .map((el) => {
+                return {
+                  id: el.id_liquidacion,
+                  ramo: el.tipoProcedimiento,
+                  fecha: el.datos.fecha,
+                  monto: +el.monto,
+                  descripcion: el.datos.descripcion,
+                  certificado: el.certificado,
+                  recibo: el.recibo,
+                };
+              }),
+          };
+        })
     );
     return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', solicitudes: applications.filter((el) => el.liquidaciones.length > 0 && el.multas!.length > 0) };
   } catch (error) {
@@ -1404,51 +1406,53 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
     const hasApplications = userApplications.length > 0;
     if (!hasApplications) return { status: 404, message: 'El usuario no tiene solicitudes' };
     const applications: Solicitud[] = await Promise.all(
-      userApplications.map(async (el) => {
-        const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
-        const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
+      userApplications
+        .filter((el) => el.tipo_solicitud !== 'CONVENIO')
+        .map(async (el) => {
+          const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
+          const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
 
-        return {
-          id: el.id_solicitud,
-          usuario: el.usuario,
-          contribuyente: structureContributor(docs),
-          aprobado: el.aprobado,
-          creditoFiscal: (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [typeUser === 'JURIDICO' ? liquidaciones[0]?.id_registro_municipal : el.id_contribuyente, typeUser])).rows[0]?.credito || 0,
-          fecha: el.fecha,
-          documento: docs.documento,
-          tipoDocumento: docs.tipo_documento,
-          estado: (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state,
-          referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
-            ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
-            : undefined,
-          monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
-          liquidaciones: liquidaciones
-            .filter((el) => el.tipoProcedimiento !== 'MULTAS')
-            .map((el) => {
-              return {
-                id: el.id_liquidacion,
-                ramo: el.tipoProcedimiento,
-                fecha: el.datos.fecha,
-                monto: +el.monto,
-                certificado: el.certificado,
-                recibo: el.recibo,
-              };
-            }),
-          multas: liquidaciones
-            .filter((el) => el.tipoProcedimiento === 'MULTAS')
-            .map((el) => {
-              return {
-                id: el.id_liquidacion,
-                ramo: el.tipoProcedimiento,
-                fecha: el.datos.fecha,
-                monto: +el.monto,
-                descripcion: el.datos.descripcion,
-                certificado: el.certificado,
-                recibo: el.recibo,
-              };
-            }),
-        };
-      })
+          return {
+            id: el.id_solicitud,
+            usuario: el.usuario,
+            contribuyente: structureContributor(docs),
+            aprobado: el.aprobado,
+            creditoFiscal: (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [typeUser === 'JURIDICO' ? liquidaciones[0]?.id_registro_municipal : el.id_contribuyente, typeUser])).rows[0]?.credito || 0,
+            fecha: el.fecha,
+            documento: docs.documento,
+            tipoDocumento: docs.tipo_documento,
+            estado: (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state,
+            referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
+              ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
+              : undefined,
+            monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
+            liquidaciones: liquidaciones
+              .filter((el) => el.tipoProcedimiento !== 'MULTAS')
+              .map((el) => {
+                return {
+                  id: el.id_liquidacion,
+                  ramo: el.tipoProcedimiento,
+                  fecha: el.datos.fecha,
+                  monto: +el.monto,
+                  certificado: el.certificado,
+                  recibo: el.recibo,
+                };
+              }),
+            multas: liquidaciones
+              .filter((el) => el.tipoProcedimiento === 'MULTAS')
+              .map((el) => {
+                return {
+                  id: el.id_liquidacion,
+                  ramo: el.tipoProcedimiento,
+                  fecha: el.datos.fecha,
+                  monto: +el.monto,
+                  descripcion: el.datos.descripcion,
+                  certificado: el.certificado,
+                  recibo: el.recibo,
+                };
+              }),
+          };
+        })
     );
     return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', solicitudes: applications };
   } catch (error) {
@@ -2133,6 +2137,65 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
   }
 };
 
+export const addTaxApplicationPaymentRetention = async ({ payment, application, user }) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0];
+    const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
+    if (pagoSum < solicitud.monto_total) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
+    const creditoPositivo = pagoSum - solicitud.monto_total;
+    await Promise.all(
+      payment.map(async (el) => {
+        if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
+        const nearbyHolidays = (await client.query(queries.GET_HOLIDAYS_BASED_ON_PAYMENT_DATE, [el.fecha])).rows;
+        const paymentDate = checkIfWeekend(moment(el.fecha));
+        if (nearbyHolidays.length > 0) {
+          while (nearbyHolidays.find((el) => moment(el.dia).format('YYYY-MM-DD') === paymentDate.format('YYYY-MM-DD'))) paymentDate.add({ days: 1 });
+        }
+        el.fecha = paymentDate;
+        el.concepto = 'RETENCION';
+        el.user = user.id;
+        user.tipoUsuario === 4 ? await insertPaymentReference(el, application, client) : await insertPaymentCashier(el, application, client);
+        if (el.metodoPago === 'CREDITO_FISCAL') {
+          await updateFiscalCredit({ id: application, user, amount: -el.costo, client });
+        }
+      })
+    );
+    if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
+
+    const state =
+      user.tipoUsuario === 4
+        ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0]
+        : (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.APROBARCAJERO])).rows[0];
+
+    await client.query('COMMIT');
+    const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
+    if (user.tipoUsuario !== 4) {
+      applicationInstance.recibo = await generateReceipt({ application });
+    }
+    await sendNotification(
+      user,
+      `Se ${user.tipoUsuario === 4 ? `han ingresado los datos de pago` : `ha validado el pago`} de una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
+      'UPDATE_APPLICATION',
+      'IMPUESTO',
+      { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
+      client
+    );
+    return { status: 200, message: 'Pago añadido para la solicitud declarada', solicitud: applicationInstance };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al insertar referencias de pago',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 const updateFiscalCredit = async ({ id, user, amount, client }) => {
   const fixatedApplication = await getApplicationsAndSettlementsById({ id, user });
   const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
@@ -2201,7 +2264,7 @@ export const validateApplication = async (body, user, client) => {
     const state = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
     const solicitud = (await client.query(queries.GET_APPLICATION_BY_ID, [body.idTramite])).rows[0];
     const totalLiquidacion = +(await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [body.idTramite])).rows[0].monto_total;
-    const totalPago = +(await client.query('SELECT sum(monto) as monto_total FROM pago WHERE id_procedimiento = $1 AND concepto = $2', [body.idTramite, 'IMPUESTO'])).rows[0].monto_total;
+    const totalPago = +(await client.query('SELECT sum(monto) as monto_total FROM pago WHERE id_procedimiento = $1 AND concepto = $2', [body.idTramite, body.concepto])).rows[0].monto_total;
     const saldoPositivo = totalPago - totalLiquidacion;
     if (saldoPositivo > 0) {
       const fixatedApplication = await getApplicationsAndSettlementsById({ id: body.idTramite, user });
@@ -2211,6 +2274,12 @@ export const validateApplication = async (body, user, client) => {
       const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', saldoPositivo] : [fixatedApplication.contribuyente.id, 'NATURAL', saldoPositivo];
       await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
     }
+
+    if (body.concepto === 'RETENCION') {
+      /*TODO: logica de añadir retenciones a la tabla correspondiente, esto tiene que buscar los datos de la tabla 
+      detalle_retencion joineando con liquidacion y solicitud. Eso hay que meterlo en la tabla credito_fiscal_retencion (?) y ya, listo*/
+    }
+
     const applicationInstance = await getApplicationsAndSettlementsById({ id: body.idTramite, user: solicitud.id_usuario });
     applicationInstance.aprobado = true;
     await sendNotification(
