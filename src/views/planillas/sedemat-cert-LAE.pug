@@ -50,7 +50,7 @@ block content
             b Capital Suscrito:
         div(style={'-webkit-flex': 4}).td.center.border-right.border-bottom
           p #{datos.funcionario.capitalSuscrito}
-        div(style={'-webkit-flex': 3}).td.center.border-right.border-bottom
+        div(style={'-webkit-flex': 2.5}).td.center.border-right.border-bottom
           p 
             b Fecha Inscripcion:
         div(style={'-webkit-flex': 1.5}).td.center.border-bottom
@@ -156,7 +156,7 @@ block content
         div(style={'-webkit-flex': 8}).td.border-right
           p Pago por Licencia de Actividad Económica
         div(style={'-webkit-flex': 2}).td.center
-          p #{new Intl.NumberFormat('de-DE').format(2*UTMM)}
+          p #{new Intl.NumberFormat('de-DE').format((2*UTMM)? (2*UTMM) : 0)}
     div(style={'margin-top':'20px'}).table.break-page
       .tr.break-page
         .th.center.border-bottom
