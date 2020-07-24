@@ -93,6 +93,7 @@ export const insertRepairs = async ({ process, user }) => {
     const userHasContributor = userContributor.length > 0;
     if (!userHasContributor) throw { status: 404, message: 'El usuario no esta asociado con ningun contribuyente' };
     const contributorReference = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [process.rim, userContributor[0].id_contribuyente])).rows[0];
+    if (!!process.rim && !contributorReference) throw { status: 404, message: 'El rim proporcionado no existe' };
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, userContributor[0].id_contribuyente])).rows[0];
 
@@ -149,14 +150,14 @@ export const insertRepairs = async ({ process, user }) => {
     //   { ...solicitud, estado: state, nombreCorto: 'SEDEMAT' },
     //   client
     // );
-    return { status: 201, message: 'Declaracion de retencion creada satisfactoriamente', solicitud };
+    return { status: 201, message: 'Reparo fiscal iniciado', solicitud };
   } catch (error) {
     console.log(error);
     client.query('ROLLBACK');
     throw {
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al crear solicitud de retenciones',
+      message: errorMessageGenerator(error) || 'Error al iniciar un reparo fiscal',
     };
   } finally {
     client.release();
