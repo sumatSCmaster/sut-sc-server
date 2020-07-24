@@ -72,7 +72,6 @@ const esDaniel = ({ tipoUsuario, institucion }) => {
   return tipoUsuario === 2 && institucion.id === 9;
 };
 
-
 const getProcedureInstances = async (user, client: PoolClient) => {
   try {
     let response = (await procedureInstanceHandler(user, client)).rows; //TODO: corregir el handler para que no sea tan forzado
@@ -125,7 +124,7 @@ const getProcedureInstances = async (user, client: PoolClient) => {
         return tramite;
       })
     );
-    return esDaniel(user) ? res.filter((row) => row.tipoTramite !== 27 ) : res
+    return esDaniel(user) ? res.filter((row) => row.tipoTramite !== 27) : res;
   } catch (error) {
     console.log(errorMessageExtractor(error));
     throw new Error('Error al obtener instancias de tramite');
@@ -593,6 +592,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
         fecha: row.fecha_de_pago,
         nro: row.referencia,
       }));
+      console.log(datos);
       console.log('creo y me parec q se rompio aki');
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
     } else {

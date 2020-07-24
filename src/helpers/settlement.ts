@@ -1486,6 +1486,7 @@ const formatContributor = async (contributor, client: PoolClient) => {
       creditoFiscal: (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.id_contribuyente, 'NATURAL'])).rows[0]?.credito || 0,
       puntoReferencia: contributor.punto_referencia,
       verificado: contributor.verificado,
+      esAgenteRetencion: contributor.es_agente_retencion,
       sucursales: branches.length > 0 ? await Promise.all(branches.map((el) => formatBranch(el, client))) : undefined,
     };
   } catch (e) {
@@ -2145,6 +2146,7 @@ export const addTaxApplicationPaymentRetention = async ({ payment, application, 
   try {
     await client.query('BEGIN');
     const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0];
+    const applicationType = (await client.query('SELECT tipo_solicitud FROM impuesto.solicitud WHERE id_solicitud = $1', [application])).rows[0].tipo_solicitud;
     const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
     if (pagoSum < solicitud.monto_total) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
     const creditoPositivo = pagoSum - solicitud.monto_total;
@@ -2157,7 +2159,7 @@ export const addTaxApplicationPaymentRetention = async ({ payment, application, 
           while (nearbyHolidays.find((el) => moment(el.dia).format('YYYY-MM-DD') === paymentDate.format('YYYY-MM-DD'))) paymentDate.add({ days: 1 });
         }
         el.fecha = paymentDate;
-        el.concepto = 'RETENCION';
+        el.concepto = applicationType;
         el.user = user.id;
         user.tipoUsuario === 4 ? await insertPaymentReference(el, application, client) : await insertPaymentCashier(el, application, client);
         if (el.metodoPago === 'CREDITO_FISCAL') {
@@ -2171,6 +2173,11 @@ export const addTaxApplicationPaymentRetention = async ({ payment, application, 
       user.tipoUsuario === 4
         ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0]
         : (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.APROBARCAJERO])).rows[0];
+
+    if (user.tipoUsuario === 4 && applicationType === 'RETENCION') {
+      const retentionDetail = (await client.query(queries.GET_RETENTION_DETAIL_BY_APPLICATION_ID, [application])).rows;
+      await Promise.all(retentionDetail.map(async (x) => await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [x.rif, x.numero_referencia, x.monto_retenido, true])));
+    }
 
     await client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
@@ -2281,6 +2288,8 @@ export const validateApplication = async (body, user, client) => {
     if (body.concepto === 'RETENCION') {
       /*TODO: logica de añadir retenciones a la tabla correspondiente, esto tiene que buscar los datos de la tabla 
       detalle_retencion joineando con liquidacion y solicitud. Eso hay que meterlo en la tabla credito_fiscal_retencion (?) y ya, listo*/
+      const retentionDetail = (await client.query(queries.GET_RETENTION_DETAIL_BY_APPLICATION_ID, [body.idTramite])).rows;
+      await Promise.all(retentionDetail.map(async (x) => await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [x.rif, x.numero_referencia, x.monto_retenido, true])));
     }
 
     const applicationInstance = await getApplicationsAndSettlementsById({ id: body.idTramite, user: solicitud.id_usuario });

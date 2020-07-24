@@ -310,7 +310,7 @@ export const hasLinkedContributor = async (user) => {
     const contributor = (await client.query('SELECT c.* FROM impuesto.CONTRIBUYENTE c INNER JOIN USUARIO u ON c.id_contribuyente = u.id_contribuyente WHERE u.id_usuario = $1', [user])).rows[0];
     if (!contributor) return null;
     const verificacionTelefono = (await client.query('SELECT * FROM impuesto.verificacion_telefono v INNER JOIN usuario u ON v.id_usuario = u.id_usuario WHERE u.id_usuario = $1', [user])).rows[0];
-    const isRetentionAgent = (await client.query("SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = $1 AND referencia_municipal ILIKE 'AR%'", [contributor.id_contribuyente])).rows.length > 0;
+    // const isRetentionAgent = (await client.query("SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = $1 AND referencia_municipal ILIKE 'AR%'", [contributor.id_contribuyente])).rows.length > 0;
     const contribuyente = {
       id: contributor.id_contribuyente,
       tipoDocumento: contributor.tipo_documento,
@@ -325,7 +325,7 @@ export const hasLinkedContributor = async (user) => {
       puntoReferencia: contributor.punto_referencia,
       verificado: contributor.verificado,
       verificacionTelefono: (verificacionTelefono && verificacionTelefono.verificado) || false,
-      esAgenteRetencion: isRetentionAgent,
+      esAgenteRetencion: contributor.es_agente_retencion,
     };
     return contribuyente;
   } catch (e) {

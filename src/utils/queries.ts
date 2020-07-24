@@ -571,6 +571,11 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   COMPLETE_TAX_APPLICATION_PAYMENT: 'SELECT * FROM impuesto.complete_solicitud_state($1, $2, null, true)',
   CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION: 'SELECT * FROM insert_liquidacion($1,$2,$3,$4,$5, $6)',
   CREATE_RETENTION_DETAIL: 'SELECT * FROM impuesto.insert_retencion($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)',
+  GET_RETENTION_DETAIL_BY_APPLICATION_ID: 'SELECT dr.* FROM impuesto.detalle_retencion dr INNER JOIN impuesto.liquidacion l USING (id_liquidacion) INNER JOIN impuesto.solicitud USING (id_solicitud) WHERE l.id_solicitud = $1',
+  CREATE_RETENTION_FISCAL_CREDIT: 'INSERT INTO impuesto.retencion (rif, rim, monto, activo) VALUES ($1,$2,$3,$4) RETURNING *;',
+  SET_RETENTION_AGENT_STATE: 'UPDATE impuesto.contribuyente SET es_agente_retencion = $1 WHERE id_contribuyente = $2',
+  GET_RETENTION_AGENTS: "SELECT * FROM impuesto.contribuyente c INNER JOIN impuesto.registro_municipal r USING (id_contribuyente) WHERE c.es_agente_retencion = true AND r.referencia_municipal ILIKE 'AR%'",
+  CREATE_NEW_RETENTION_AGENT_RIM: 'SELECT * FROM impuesto.insert_agente_retencion($1,$2)',
   CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM:
     "SELECT * FROM impuesto.solicitud_state s INNER JOIN impuesto.liquidacion l on s.id = l.id_solicitud INNER JOIN impuesto.subramo sr ON\
       l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND l.id_registro_municipal =\

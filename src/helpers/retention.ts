@@ -280,6 +280,94 @@ export const insertRetentions = async ({ process, user }) => {
   }
 };
 
+export const createRetentionAgent = async ({ docType, document }) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const agent = (await client.query(queries.CREATE_NEW_RETENTION_AGENT_RIM, [docType, document])).rows[0];
+    const agenteRetencion = {
+      id: agent.id_contribuyente,
+      tipoDocumento: agent.tipo_documento,
+      tipoContribuyente: agent.tipo_contribuyente,
+      documento: agent.documento,
+      razonSocial: agent.razon_social,
+      denomComercial: agent.denominacion_comercial || undefined,
+      siglas: agent.siglas || undefined,
+      parroquia: agent.id_parroquia,
+      sector: agent.sector,
+      direccion: agent.direccion,
+      puntoReferencia: agent.punto_referencia,
+      verificado: agent.verificado,
+      esAgenteRetencion: agent.es_agente_retencion,
+      referenciaMunicipal: agent.referencia_municipal,
+    };
+    await client.query('COMMIT');
+    return { status: 201, message: 'Agente de retencion creado', agenteRetencion };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al crear nuevo agente de retencion',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const updateRetentionAgentStatus = async ({ id, status }) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(queries.SET_RETENTION_AGENT_STATE, [status, id]);
+    await client.query('COMMIT');
+    return { status: 200, message: 'Estado de agente de retencion actualizado' };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al actualizar estado de agente de retencion',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const getRetentionAgents = async () => {
+  const client = await pool.connect();
+  try {
+    const retentionAgents = (await client.query(queries.GET_RETENTION_AGENTS)).rows.map((contributor) => ({
+      id: contributor.id_contribuyente,
+      tipoDocumento: contributor.tipo_documento,
+      tipoContribuyente: contributor.tipo_contribuyente,
+      documento: contributor.documento,
+      razonSocial: contributor.razon_social,
+      denomComercial: contributor.denominacion_comercial || undefined,
+      siglas: contributor.siglas || undefined,
+      parroquia: contributor.id_parroquia,
+      sector: contributor.sector,
+      direccion: contributor.direccion,
+      puntoReferencia: contributor.punto_referencia,
+      verificado: contributor.verificado,
+      esAgenteRetencion: contributor.es_agente_retencion,
+      referenciaMunicipal: contributor.referencia_municipal,
+    }));
+    return { status: 200, message: 'Agentes de retencion obtenidos', agentesRetencion: retentionAgents };
+  } catch (error) {
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener agentes de retencion',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 const addMonths = (date: Date, months): Date => {
   const d = date.getDate();
   date.setMonth(date.getMonth() + +months);
