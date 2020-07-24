@@ -143,7 +143,7 @@ block content
           div(style={'-webkit-flex': 1}).td.border-right.center.border-top
             p #{moment().format('YYYY')}
           div(style={'-webkit-flex': 1.5}).td.center.border-top
-            p #{item.desde}
+            p #{moment(item.desde).format('DD/MM/YYYY')}
     div(style={'margin-top':'20px'}).table.break-page
       div.tr.break-page
         div(style={'-webkit-flex': 8}).th.border-right.border-bottom.center
