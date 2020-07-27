@@ -102,8 +102,8 @@ export const generateBranchesReport = async (user, payload: { from: Date, to: Da
                 ingresadoTotal: branch.subRamo.reduce((prev, next) => prev + (+next.ingresado) , 0),
                 cantidadIngTotal: branch.subRamo.reduce((prev, next) => prev + (+next.cantidadIng) , 0),
               }
-            })
-            console.log(branches)
+            }).filter((branch) => branch.subRamo.reduce((prev, next) => prev + (+next.ingresado) + (+next.liquidado), 0) > 0)
+            console.log('branches', branches)
           if(!alcaldia) {
             const transfersByBank =(await client.query(queries.GET_TRANSFERS_BY_BANK, [payload.from, payload.to])).rows;
             const totalTranfersByBank = +transfersByBank.reduce((prev, next) => prev + +(next.monto) ,0);
