@@ -38,22 +38,22 @@ block content
           b CANT.
     each item in datos.ingresos
       - sub = item.subRamo
-      .tr.break-page.title
-        div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
-          p #{item.ramo}
-        div(style={'-webkit-flex':'3'}).td.center.border-right.border-bottom
-          p #{item.descripcion}
-        div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-          p #{new Intl.NumberFormat('de-DE').format(item.liquidadoTotal)}
-        div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
-          p #{item.cantidadLiqTotal ? item.cantidadLiqTotal : 0}
-        div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-          p #{new Intl.NumberFormat('de-DE').format(item.ingresadoTotal)}
-        div(style={'-webkit-flex':'1'}).td.center.border-bottom
-          p #{item.cantidadIngTotal ? item.cantidadIngTotal : 0}  
+        .tr.break-page.title
+          div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+            p #{item.ramo}
+          div(style={'-webkit-flex':'3'}).td.center.border-right.border-bottom
+            p #{item.descripcion}
+          div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
+            p #{new Intl.NumberFormat('de-DE').format(item.liquidadoTotal)}
+          div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+            p #{item.cantidadLiqTotal ? item.cantidadLiqTotal : 0}
+          div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
+            p #{new Intl.NumberFormat('de-DE').format(item.ingresadoTotal)}
+          div(style={'-webkit-flex':'1'}).td.center.border-bottom
+            p #{item.cantidadIngTotal ? item.cantidadIngTotal : 0}  
       if sub.length > 1 
         each subRamo in sub
-          if (subRamo.liquidado > 0 && subRamo.ingresado > 0)
+          if (subRamo.liquidado && subRamo.ingresado)
             .tr.break-page.sub-title
               div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
                 p #{subRamo.ramo}
@@ -81,50 +81,50 @@ block content
         p #{datos.cantidadIngTotal ? datos.cantidadIngTotal : 0}   
   div(style={'margin-top':'20px', 'text-align':'-webkit-right', 'width':'100%'}).break-page
     div(style={'width':'50%'}).table.break-page
-      .tr
+      .tr.break-page
         div(style={'-webkit-flex':'6'}).th.center.border-bottom.border-right
           p
             b METODOS DE PAGO
         div(style={'-webkit-flex':'4'}).th.center.border-bottom
           p
             b MONTO BS.   
-      .tr
+      .tr.break-page
         div(style={'-webkit-flex':'6', 'text-align':'start'}).th.border-bottom.border-right
           p(style={'padding-left':'10px'})
             b PUNTO DE VENTA
         div(style={'-webkit-flex':'4'}).td.center.border-bottom
           p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.punto.total ? datos.metodoPago.punto.total : 0)}
-      .tr
+      .tr.break-page
         div(style={'-webkit-flex':'6', 'text-align':'start'}).th.border-bottom.border-right
           p(style={'padding-left':'10px'})
             b EFECTIVO
         div(style={'-webkit-flex':'4'}).td.center.border-bottom
           p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.efectivo.total ? datos.metodoPago.efectivo.total : 0)}
-      .tr
+      .tr.break-page
         div(style={'-webkit-flex':'6', 'text-align':'start'}).th.border-bottom.border-right
           p(style={'padding-left':'10px'})
             b CHEQUES
         div(style={'-webkit-flex':'4'}).td.center.border-bottom
           p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.cheques.total ? datos.metodoPago.cheques.total : 0)}
-      .tr
+      .tr.break-page
         div(style={'-webkit-flex':'6', 'text-align':'start'}).th.border-bottom.border-right
           p(style={'padding-left':'10px'})
             b TRANSFERENCIA BOD
         div(style={'-webkit-flex':'4'}).td.center.border-bottom
           p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.items.find(el => el.id_banco === 1) ? datos.metodoPago.transferencias.items.find(el => el.id_banco === 1).monto : 0)}
-      .tr
+      .tr.break-page
         div(style={'-webkit-flex':'6', 'text-align':'start'}).th.border-bottom.border-right
           p(style={'padding-left':'10px'})
             b TRANSFERENCIA BANESCO
         div(style={'-webkit-flex':'4'}).td.center.border-bottom
           p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.items.find(el => el.id_banco === 2) ? datos.metodoPago.transferencias.items.find(el => el.id_banco === 2).monto : 0)}
-      .tr
+      .tr.break-page
         div(style={'-webkit-flex':'6', 'text-align':'start'}).th.border-bottom.border-right
           p(style={'padding-left':'10px'})
             b TRANSFERENCIA BNC
         div(style={'-webkit-flex':'4'}).td.center.border-bottom
           p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.items.find(el => el.id_banco === 3) ? datos.metodoPago.transferencias.items.find(el => el.id_banco === 3).monto : 0)}
-      .tr
+      .tr.break-page
         div(style={'-webkit-flex':'6',}).th.border-right
           p
             b TOTALES Bs. 
