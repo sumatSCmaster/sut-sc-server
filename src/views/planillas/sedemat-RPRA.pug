@@ -38,22 +38,22 @@ block content
           b CANT.
     each item in datos.ingresos
       - sub = item.subRamo
-        .tr.break-page.title
-          div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
-            p #{item.ramo}
-          div(style={'-webkit-flex':'3'}).td.center.border-right.border-bottom
-            p #{item.descripcion}
-          div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-            p #{new Intl.NumberFormat('de-DE').format(item.liquidadoTotal)}
-          div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
-            p #{item.cantidadLiqTotal ? item.cantidadLiqTotal : 0}
-          div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-            p #{new Intl.NumberFormat('de-DE').format(item.ingresadoTotal)}
-          div(style={'-webkit-flex':'1'}).td.center.border-bottom
-            p #{item.cantidadIngTotal ? item.cantidadIngTotal : 0}  
+      .tr.break-page.title
+        div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+          p #{item.ramo}
+        div(style={'-webkit-flex':'3'}).td.center.border-right.border-bottom
+          p #{item.descripcion}
+        div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
+          p #{new Intl.NumberFormat('de-DE').format(item.liquidadoTotal)}
+        div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+          p #{item.cantidadLiqTotal ? item.cantidadLiqTotal : 0}
+        div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
+          p #{new Intl.NumberFormat('de-DE').format(item.ingresadoTotal)}
+        div(style={'-webkit-flex':'1'}).td.center.border-bottom
+          p #{item.cantidadIngTotal ? item.cantidadIngTotal : 0}  
       if sub.length > 1
         each subRamo in sub
-          if (subRamo.liquidado && subRamo.ingresado)
+          if (subRamo.liquidado > 0 && subRamo.ingresado > 0)
             .tr.break-page.sub-title
               div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
                 p #{subRamo.ramo}
@@ -74,11 +74,11 @@ block content
         p
           b TOTALES
       div(style={'-webkit-flex':'2'}).td.center.border-right
-        p Bs #{new Intl.NumberFormat('de-DE').format(datos.liquidadoTotal)}
+        p #{new Intl.NumberFormat('de-DE').format(datos.liquidadoTotal ? datos.liquidadoTotal : 0)}
       div(style={'-webkit-flex':'1'}).td.center.border-right
         p #{datos.cantidadLiqTotal}          
       div(style={'-webkit-flex':'2'}).td.center.border-right
-        p Bs #{new Intl.NumberFormat('de-DE').format(datos.ingresadoTotal)}
+        p #{new Intl.NumberFormat('de-DE').format(datos.ingresadoTotal ? datos.ingresadoTotal : 0)}
       div(style={'-webkit-flex':'1'}).td.center
         p #{datos.cantidadIngTotal}                       
 block footer         
