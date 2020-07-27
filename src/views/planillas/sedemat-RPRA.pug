@@ -53,7 +53,7 @@ block content
             p #{item.cantidadIngTotal ? item.cantidadIngTotal : 0}  
       if sub.length > 1
         each subRamo in sub
-          if (subRamo.liquidado > 0 && subRamo.ingresado > 0)
+          if (subRamo.liquidado && subRamo.ingresado)
             .tr.break-page.sub-title
               div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
                 p #{subRamo.ramo}
@@ -66,7 +66,9 @@ block content
               div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
                 p #{new Intl.NumberFormat('de-DE').format(subRamo.ingresado ? subRamo.ingresado : 0)}
               div(style={'-webkit-flex':'1'}).td.center.border-bottom
-                p #{subRamo.cantidadIng ? subRamo.cantidadIng : 0} 
+                p #{subRamo.cantidadIng ? subRamo.cantidadIng : 0}
+          else
+            div no
     .tr.break-page
       div(style={'-webkit-flex':'4'}).th.center.border-right
         p
