@@ -7,7 +7,13 @@ import { Usuario } from '@root/interfaces/sigt';
 
 const router = Router();
 
-router.get('/', authenticate('jwt'), async (req, res) => {
+const isRetentionAgent = (req, res, next) => {
+  const { ref } = req.query;
+  if (!!ref && (ref as String).startsWith('AR')) next();
+  else res.status(401).json({ status: 401, message: 'Debe proporcionar un RIM de Agente de Retención' });
+};
+
+router.get('/', isRetentionAgent, authenticate('jwt'), async (req, res) => {
   const { doc, ref, pref } = req.query;
   const [err, data] = await fulfill(getRetentionMonths({ document: doc, reference: ref ? ref : null, docType: pref, user: req.user as Usuario }));
   if (err) res.status(err.status).json(err);
