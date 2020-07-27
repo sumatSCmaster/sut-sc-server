@@ -35,6 +35,10 @@
   vertical-align: middle;
 }
 
+.title {
+  font-weight: bold;
+}
+
 .sub-title {
   color: rgba(0, 0, 0, 0.6)
 }
