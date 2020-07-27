@@ -149,7 +149,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_APPROVED_STATE_FOR_PROCEDURE: 'SELECT aprobado FROM tramite WHERE id_tramite =$1',
   GET_STATE_AND_TYPE_OF_PROCEDURE: 'SELECT state, tipotramite FROM tramites_state_with_resources WHERE id=$1',
   GET_PROCEDURE_DATA: 'SELECT datos, id_usuario as usuario FROM tramite WHERE id_tramite=$1',
-  GET_SOCIAL_CASES_STATE: 'SELECT * FROM CASOS_SOCIALES_STATE WHERE tipotramite=$1',
+  GET_SOCIAL_CASES_STATE: 'SELECT * FROM CASOS_SOCIALES_STATE WHERE tipotramite=$1 ORDER BY fechacreacion DESC',
   GET_ID_FROM_PROCEDURE_STATE_BY_CODE: 'SELECT id FROM TRAMITES_STATE_WITH_RESOURCES WHERE codigotramite=$1',
   GET_PROCEDURE_STATE_AND_TYPE_INFORMATION: 'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado \
   FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
@@ -167,13 +167,13 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, \
     tipo_tramite.pago_previo AS "pagoPrevio"  FROM tramites_state INNER JOIN tipo_tramite ON tramites_state.tipotramite = \
     tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = \
-    tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 AND tramites_state.state=\'enproceso\' ORDER BY tramites_state.fechacreacion;',
+    tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 AND tramites_state.state=\'enproceso\' ORDER BY tramites_state.fechacreacion DESC;',
   GET_ALL_PROCEDURES_EXCEPT_VALIDATING_ONES:
     'SELECT tramites_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
   nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, \
   tipo_tramite.pago_previo AS "pagoPrevio"  FROM tramites_state INNER JOIN tipo_tramite ON tramites_state.tipotramite = \
   tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = \
-  tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 AND tramites_state.state!=\'validando\' ORDER BY tramites_state.fechacreacion;',
+  tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 AND tramites_state.state!=\'validando\' ORDER BY tramites_state.fechacreacion DESC;',
   GET_RESOURCES_FOR_PROCEDURE:
     'SELECT DISTINCT tt.sufijo, tt.costo_base, usr.nombre_completo as nombrecompleto, \
     usr.nombre_de_usuario as nombreusuario, tr.costo, tt.planilla, tr.id_tipo_tramite AS "tipoTramite" FROM tipo_tramite tt INNER JOIN tramite tr ON\
@@ -194,8 +194,8 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_PROCEDURE_BY_ID: 'SELECT * FROM tramites_state_with_resources WHERE id=$1',
   GET_SOCIAL_CASE_BY_ID: 'SELECT * FROM casos_sociales_state WHERE id=$1',
   GET_CERTIFICATE_BY_PROCEDURE_ID: 'SELECT certificado AS "urlCertificado" FROM tramites_state_with_resources WHERE id = $1',
-  GET_PROCEDURE_INSTANCES_FOR_USER: 'SELECT * FROM tramites_state_with_resources WHERE usuario = $1 ORDER BY fechacreacion;',
-  GET_ALL_PROCEDURE_INSTANCES: 'SELECT * FROM tramites_state_with_resources ORDER BY fechacreacion;',
+  GET_PROCEDURE_INSTANCES_FOR_USER: 'SELECT * FROM tramites_state_with_resources WHERE usuario = $1 ORDER BY fechacreacion DESC;',
+  GET_ALL_PROCEDURE_INSTANCES: 'SELECT * FROM tramites_state_with_resources ORDER BY fechacreacion DESC;',
   GET_ONE_PROCEDURE_INFO: 'SELECT id_tipo_tramite as id, id_institucion AS "idInstitucion", nombre_tramite AS "nombre", costo_base as costo, \
     nombre_corto as "nombreCorto"  FROM tipo_tramite WHERE id_tipo_tramite = $1;',
   VALIDATE_FIELDS_FROM_PROCEDURE: 'SELECT DISTINCT camp.validacion, camp.tipo FROM campo_tramite ct INNER JOIN campo camp ON\
@@ -497,10 +497,10 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
 
   //Multa
   FINING_INIT: 'SELECT * FROM insert_multa($1, $2, $3, $4, $5);',
-  GET_ALL_FINES: 'SELECT * FROM multa_state ORDER BY fechacreacion;',
-  GET_FINES_DIRECTOR_OR_ADMIN: 'SELECT * FROM multa_state WHERE nombrelargo = $1 ORDER BY fechacreacion;',
-  GET_FINES_OFFICIAL: "SELECT * FROM multa_state WHERE nombrelargo = $1 AND state != 'validando' ORDER BY fechacreacion;",
-  GET_FINES_EXTERNAL_USER: 'SELECT * FROM multa_state WHERE cedula = $1 AND nacionalidad = $2;',
+  GET_ALL_FINES: 'SELECT * FROM multa_state ORDER BY fechacreacion DESC;',
+  GET_FINES_DIRECTOR_OR_ADMIN: 'SELECT * FROM multa_state WHERE nombrelargo = $1 ORDER BY fechacreacion DESC;',
+  GET_FINES_OFFICIAL: "SELECT * FROM multa_state WHERE nombrelargo = $1 AND state != 'validando' ORDER BY fechacreacion DESC;",
+  GET_FINES_EXTERNAL_USER: 'SELECT * FROM multa_state WHERE cedula = $1 AND nacionalidad = $2 ORDER BY fechacreacion DESC;',
   GET_RESOURCES_FOR_FINING: 'SELECT DISTINCT tt.sufijo, tt.costo_base,\
   ml.costo FROM tipo_tramite tt INNER JOIN multa ml ON\
   tt.id_tipo_tramite=ml.id_tipo_tramite WHERE ml.id_multa = $1',
@@ -519,7 +519,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   //IMPUESTOS SEDEMAT
   TAX_PAYER_EXISTS: 'SELECT * FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2',
   GET_APPLICATION_BY_ID: 'SELECT * FROM impuesto.solicitud WHERE id_solicitud = $1',
-  GET_APPLICATION_INSTANCES_BY_USER: 'SELECT * FROM impuesto.solicitud WHERE id_usuario = $1',
+  GET_APPLICATION_INSTANCES_BY_USER: 'SELECT * FROM impuesto.solicitud WHERE id_usuario = $1 ORDER BY fecha DESC',
   GET_APPLICATION_DEBTS_BY_MUNICIPAL_REGISTRY:
     "SELECT rm.id_ramo, rm.descripcion, SUM(l.monto) AS monto FROM impuesto.ramo rm INNER JOIN impuesto.subramo sr ON rm.id_ramo = sr.id_ramo\
     INNER JOIN impuesto.liquidacion l ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.registro_municipal r ON l.id_registro_municipal = r.id_registro_municipal\
@@ -535,14 +535,14 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
        ev.state = 'ingresardatos' AND c.id_contribuyente = $1 GROUP BY rm.descripcion, rm.id_ramo HAVING SUM(l.monto) > 0",
   GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR:
     'SELECT DISTINCT ON (s.id_solicitud) * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud WHERE s.id_contribuyente = $1\
-     AND l.id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $2 AND id_contribuyente = $1 LIMIT 1)',
-  GET_APPLICATION_INSTANCES_FOR_NATURAL_CONTRIBUTOR: 'SELECT DISTINCT ON (s.id_solicitud) * FROM impuesto.solicitud s INNER JOIN impuesto.contribuyente c ON s.id_contribuyente = c.id_contribuyente WHERE c.id_contribuyente = $1',
+     AND l.id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $2 AND id_contribuyente = $1 LIMIT 1) ORDER BY s.fecha DESC',
+  GET_APPLICATION_INSTANCES_FOR_NATURAL_CONTRIBUTOR: 'SELECT DISTINCT ON (s.id_solicitud) * FROM impuesto.solicitud s INNER JOIN impuesto.contribuyente c ON s.id_contribuyente = c.id_contribuyente WHERE c.id_contribuyente = $1 ORDER BY s.fecha DESC',
   GET_SETTLEMENTS_BY_APPLICATION_INSTANCE:
     'SELECT l.*, r.descripcion AS "tipoProcedimiento" FROM impuesto.liquidacion l INNER JOIN impuesto.subramo sr ON l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo r ON sr.id_ramo = r.id_ramo WHERE id_solicitud = $1 ORDER BY l.fecha_liquidacion DESC',
   GET_SETTLEMENT_INSTANCES:
     'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo INNER JOIN impuesto.solicitud_state sst ON sst.id = s.id_solicitud',
   GET_SETTLEMENT_INSTANCES_BY_ID:
-    'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo INNER JOIN impuesto.solicitud_state sst ON sst.id = s.id_solicitud WHERE s.id_usuario = $1;',
+    'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo INNER JOIN impuesto.solicitud_state sst ON sst.id = s.id_solicitud WHERE s.id_usuario = $1 ORDER BY s.fecha DESC;',
   GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID: `SELECT r.descripcion AS "descripcionRamo", sr.descripcion AS "descripcionSubramo", l.monto, l.datos,l.fecha_liquidacion AS "fechaLiquidacion" FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo INNER JOIN impuesto.solicitud_state sst ON sst.id = s.id_solicitud WHERE s.id_solicitud = $1;`,
   GET_APPLICATION_VIEW_BY_SETTLEMENT: 'SELECT * FROM impuesto.solicitud_view WHERE "idLiquidacion" = $1',
   GET_APPLICATION_VIEW_BY_ID: 'SELECT * FROM impuesto.solicitud_view WHERE id = $1',
@@ -841,9 +841,9 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   LINK_ESTATE_WITH_NATURAL_CONTRIBUTOR: 'INSERT INTO impuesto.inmueble_contribuyente_natural (id_inmueble, id_contribuyente) VALUES ($1, $2) RETURNING *',
   GET_AGREEMENT_FRACTION_BY_ID: 'SELECT * FROM impuesto.fraccion WHERE id_fraccion = $1',
   GET_AGREEMENT_FRACTION_STATE: 'SELECT state FROM impuesto.fraccion_state WHERE id = $1',
-  GET_AGREEMENTS_BY_USER: 'SELECT * FROM impuesto.convenio c INNER JOIN impuesto.solicitud s ON c.id_solicitud = s.id_solicitud WHERE s.id_usuario = $1',
+  GET_AGREEMENTS_BY_USER: 'SELECT * FROM impuesto.convenio c INNER JOIN impuesto.solicitud s ON c.id_solicitud = s.id_solicitud WHERE s.id_usuario = $1 ORDER BY s.fecha DESC',
   GET_AGREEMENTS_BY_RIM:
-    "SELECT DISTINCT ON (id_solicitud) * FROM impuesto.convenio INNER JOIN impuesto.solicitud USING (id_solicitud) INNER JOIN impuesto.liquidacion USING (id_solicitud) WHERE id_registro_contribuyente = $1 AND tipo_solicitud = 'CONVENIO'",
+    "SELECT DISTINCT ON (id_solicitud) * FROM impuesto.convenio INNER JOIN impuesto.solicitud s USING (id_solicitud) INNER JOIN impuesto.liquidacion USING (id_solicitud) WHERE id_registro_contribuyente = $1 AND tipo_solicitud = 'CONVENIO' ORDER BY s.fecha DESC",
   GET_FRACTIONS_BY_AGREEMENT_ID: 'SELECT * FROM impuesto.fraccion f WHERE f.id_convenio = $1',
   APPLICATION_TOTAL_AMOUNT_BY_ID: 'SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1',
   GET_APPLICATION_STATE: 'SELECT state FROM impuesto.solicitud_state WHERE id = $1',
