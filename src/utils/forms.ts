@@ -7,7 +7,7 @@ import { resolve } from 'path';
 import * as pdf from 'html-pdf';
 import * as qr from 'qrcode';
 import { errorMessageGenerator, errorMessageExtractor } from '@helpers/errors';
-const  written = require('written-number');
+const written = require('written-number');
 
 const pool = Pool.getInstance();
 
@@ -94,6 +94,7 @@ export const createMockCertificate = async (procedure) => {
   try {
     const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION_MOCK, [procedure])).rows[0];
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${tramite.id}`, { errorCorrectionLevel: 'H' });
+    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const datosCertificado = {
       id: tramite.id,
       fecha: tramite.fechacreacion,
@@ -106,13 +107,14 @@ export const createMockCertificate = async (procedure) => {
       tipoTramite: tramite.tipotramite,
       certificado: tramite.sufijo === 'ompu' ? (tramite.aprobado ? tramite.formatocertificado : tramite.formatorechazo) : tramite.formatocertificado,
     };
-    console.log('datos:', datosCertificado.datos, 'datos.funcionario:', datosCertificado.datos.funcionario)
+    console.log('datos:', datosCertificado.datos, 'datos.funcionario:', datosCertificado.datos.funcionario);
     const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
       ...datosCertificado,
       cache: false,
       moment: require('moment'),
+      UTMM,
       QR: linkQr,
-      written
+      written,
     });
     return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
   } catch (error) {
