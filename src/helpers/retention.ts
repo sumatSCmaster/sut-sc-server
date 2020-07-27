@@ -229,6 +229,7 @@ export const insertRetentions = async ({ process, user }) => {
             application.id_solicitud,
             fixatedAmount(+el.monto),
             'RD0',
+            el.descripcion || 'Pago ordinario',
             datos,
             moment().month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
             (contributorReference && contributorReference.id_registro_municipal) || null,

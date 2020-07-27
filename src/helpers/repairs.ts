@@ -115,6 +115,7 @@ export const insertRepairs = async ({ process, user }) => {
               application.id_solicitud,
               fixatedAmount(+el.reduce((i, j) => i + j.monto, 0) * 1.3),
               'REP',
+              'Pago ordinario',
               datos,
               moment().month(month).endOf('month').format('MM-DD-YYYY'),
               (contributorReference && contributorReference.id_registro_municipal) || null,

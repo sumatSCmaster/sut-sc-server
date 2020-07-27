@@ -438,6 +438,7 @@ const structureSettlements = (x: any) => {
     estado: nullStringCheck(x.co_estatus === 1 ? 'VIGENTE' : 'PAGADO'),
     ramo: nullStringCheck(x.tx_ramo),
     codigoRamo: nullStringCheck(x.nb_ramo),
+    descripcion: 'Migracion',
     monto: nullStringCheck(x.nu_monto),
     fechaLiquidacion: x.fe_liquidacion,
     fechaVencimiento: x.fe_vencimiento,
@@ -1662,7 +1663,7 @@ export const initialUserLinking = async (linkingData, user) => {
               })
             );
           }
-          const credit = (await client.query('INSERT INTO impuesto.credito_fiscal (id_persona, concepto, credito) VALUES ($1, $2, $3)', [registry.id_registro_municipal, 'JURIDICO', datosSucursal.creditoFiscal])).rows[0];
+          const credit = (await client.query('INSERT INTO impuesto.credito_fiscal (id_persona, concepto, credito) VALUES ($1, $2, $3)', [registry.id_registro_municipal, 'JURIDICO', fixatedAmount(datosSucursal?.creditoFiscal || 0)])).rows[0];
           const estates =
             inmuebles.length > 0
               ? await Promise.all(
@@ -1683,6 +1684,7 @@ export const initialUserLinking = async (linkingData, user) => {
                     application.id_solicitud,
                     fixatedAmount(+el.monto),
                     el.ramo,
+                    el.descripcion,
                     { fecha: el.fecha },
                     moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
                     registry.id_registro_municipal,
@@ -1703,6 +1705,7 @@ export const initialUserLinking = async (linkingData, user) => {
                     application.id_solicitud,
                     fixatedAmount(+el.monto),
                     el.ramo,
+                    el.descripcion,
                     { fecha: el.fecha },
                     moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
                     registry.id_registro_municipal,
@@ -1729,7 +1732,7 @@ export const initialUserLinking = async (linkingData, user) => {
           const pagados = liquidacionesPagas.concat(multasPagas);
           const vigentes = liquidacionesVigentes.concat(multasVigentes);
           let registry;
-          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [contributor.id_contribuyente, 'NATURAL', datosSucursal?.creditoFiscal || 0])).rows[0];
+          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [contributor.id_contribuyente, 'NATURAL', fixatedAmount(datosSucursal?.creditoFiscal || 0)])).rows[0];
           if (datosSucursal?.registroMunicipal) {
             const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
             registry = (
@@ -1783,6 +1786,7 @@ export const initialUserLinking = async (linkingData, user) => {
                     application.id_solicitud,
                     fixatedAmount(+el.monto),
                     el.ramo,
+                    el.descripcion,
                     { fecha: el.fecha },
                     moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
                     (registry && registry.id_registro_municipal) || null,
@@ -1803,6 +1807,7 @@ export const initialUserLinking = async (linkingData, user) => {
                     application.id_solicitud,
                     fixatedAmount(+el.monto),
                     el.ramo,
+                    el.descripcion,
                     { fecha: el.fecha },
                     moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
                     (registry && registry.id_registro_municipal) || null,
@@ -1870,7 +1875,6 @@ export const resendUserCode = async ({ user }) => {
   }
 };
 
-//FIXME: acoplar a los estandares actuales de SUT
 export const insertSettlements = async ({ process, user }) => {
   const client = await pool.connect();
   const { impuestos } = process;
@@ -1885,8 +1889,9 @@ export const insertSettlements = async ({ process, user }) => {
     if (!userHasContributor) throw { status: 404, message: 'El usuario no esta asociado con ningun contribuyente' };
     const contributorReference = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [process.rim, process.contribuyente])).rows[0];
     console.log(contributorReference);
+    const benefittedUser = (await client.query(queries.GET_USER_IN_CHARGE_OF_BRANCH_BY_ID, [contributorReference?.id_registro_municipal])).rows[0];
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-    const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, process.contribuyente])).rows[0];
+    const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(user.tipoUsuario !== 4 && benefittedUser.id) || user.id, process.contribuyente])).rows[0];
 
     const hasAE = impuestos.find((el) => el.ramo === 'AE');
     if (hasAE) {
@@ -2019,37 +2024,46 @@ export const insertSettlements = async ({ process, user }) => {
         x.monto = +x.monto - costoSolvencia;
         j.push({ monto: costoSolvencia, ramo: 'SAE', fechaCancelada: x.fechaCancelada });
       }
+      if (x.ramo === 'SM') {
+        const liquidacionGas = { ramo: branchNames['SM'], fechaCancelada: x.fechaCancelada, monto: x.desglose[0].montoGas, desglose: x.desglose, descripcion: 'Pago del Servicio de Gas' };
+        const liquidacionAseo = { ramo: branchNames['SM'], fechaCancelada: x.fechaCancelada, monto: x.desglose[0].montoAseo, desglose: x.desglose, descripcion: 'Pago del Servicio de Aseo' };
+        j.push(liquidacionAseo);
+        j.push(liquidacionGas);
+      }
       return x;
     });
 
     const settlement: Liquidacion[] = await Promise.all(
-      impuestos.map(async (el) => {
-        const datos = {
-          desglose: el.desglose ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
-          fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },
-        };
-        console.log(el.ramo);
-        const liquidacion = (
-          await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
-            application.id_solicitud,
-            fixatedAmount(+el.monto),
-            el.ramo,
-            datos,
-            moment().month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
-            (contributorReference && contributorReference.id_registro_municipal) || null,
-          ])
-        ).rows[0];
+      impuestos
+        .filter((el) => el.ramo !== 'SM')
+        .map(async (el) => {
+          const datos = {
+            desglose: el.desglose ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
+            fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },
+          };
+          console.log(el.ramo);
+          const liquidacion = (
+            await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+              application.id_solicitud,
+              fixatedAmount(+el.monto),
+              el.ramo,
+              el.descripcion || 'Pago ordinario',
+              datos,
+              moment().month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
+              (contributorReference && contributorReference.id_registro_municipal) || null,
+            ])
+          ).rows[0];
 
-        return {
-          id: liquidacion.id_liquidacion,
-          ramo: branchNames[el.ramo],
-          fecha: datos.fecha,
-          monto: liquidacion.monto,
-          certificado: liquidacion.certificado,
-          recibo: liquidacion.recibo,
-          desglose: datos.desglose,
-        };
-      })
+          return {
+            id: liquidacion.id_liquidacion,
+            ramo: branchNames[el.ramo],
+            fecha: datos.fecha,
+            monto: liquidacion.monto,
+            certificado: liquidacion.certificado,
+            recibo: liquidacion.recibo,
+            desglose: datos.desglose,
+          };
+        })
     );
 
     // const solicitud: Solicitud & { registroMunicipal: string } = {
@@ -2224,7 +2238,7 @@ const updateFiscalCredit = async ({ id, user, amount, client }) => {
   const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
     ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
     : undefined;
-  const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', amount] : [fixatedApplication.contribuyente.id, 'NATURAL', amount];
+  const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', fixatedAmount(amount)] : [fixatedApplication.contribuyente.id, 'NATURAL', fixatedAmount(amount)];
   await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
 };
 
@@ -2553,6 +2567,7 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
             null,
             fixatedAmount(0),
             'AE',
+            'Pago ordinario',
             { month: moment(x.desde).toDate().toLocaleString('es-ES', { month: 'long' }), year: moment(x.desde).year(), desglose: [{ aforo: x.id }] },
             moment(x.desde).endOf('month').format('MM-DD-YYYY'),
             registry.id_registro_municipal,
@@ -3782,11 +3797,12 @@ const applicationStateEvents = {
 const breakdownCaseHandler = (settlementType, breakdown) => {
   // const query = breakdownCases(settlementType);
   const payload = switchcase({
-    AE: { aforo: breakdown.aforo, montoDeclarado: breakdown.montoDeclarado, montoCobrado: breakdown.montoCobrado },
-    SM: { inmueble: breakdown.inmueble, montoAseo: +breakdown.montoAseo, montoGas: breakdown.montoGas },
-    IU: { inmueble: breakdown.inmueble, monto: breakdown.monto },
-    PP: { subarticulo: breakdown.subarticulo, monto: breakdown.monto, cantidad: breakdown.cantidad },
-    SAE: { monto: breakdown.monto },
+    'AE': { aforo: breakdown.aforo, montoDeclarado: breakdown.montoDeclarado, montoCobrado: breakdown.montoCobrado },
+    'SM': { inmueble: breakdown.inmueble, montoAseo: +breakdown.montoAseo, montoGas: breakdown.montoGas },
+    'SERVICIOS MUNICIPALES': { inmueble: breakdown.inmueble },
+    'IU': { inmueble: breakdown.inmueble, monto: breakdown.monto },
+    'PP': { subarticulo: breakdown.subarticulo, monto: breakdown.monto, cantidad: breakdown.cantidad },
+    'SAE': { monto: breakdown.monto },
   })(null)(settlementType);
   return payload;
 };

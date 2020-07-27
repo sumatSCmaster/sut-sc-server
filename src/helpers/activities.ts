@@ -67,6 +67,7 @@ export const updateContributorActivities = async ({ branchId, activities, branch
               null,
               0.0,
               'AE',
+              'Pago ordinario',
               { month: moment(x.desde).toDate().toLocaleString('es-ES', { month: 'long' }), year: moment(x.desde).year(), desglose: [{ aforo: x.id }] },
               moment(x.desde).endOf('month').format('MM-DD-YYYY'),
               branchId,
