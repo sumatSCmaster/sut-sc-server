@@ -37,20 +37,21 @@ block content
         p
           b CANT.
     each item in datos.ingresos
-      - sub = item.subRamo
-      .tr.break-page.title
-        div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
-          p #{item.ramo}
-        div(style={'-webkit-flex':'3'}).td.center.border-right.border-bottom
-          p #{item.descripcion}
-        div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-          p #{new Intl.NumberFormat('de-DE').format(item.liquidadoTotal)}
-        div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
-          p #{item.cantidadLiqTotal ? item.cantidadLiqTotal : 0}
-        div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-          p #{new Intl.NumberFormat('de-DE').format(item.ingresadoTotal)}
-        div(style={'-webkit-flex':'1'}).td.center.border-bottom
-          p #{item.cantidadIngTotal ? item.cantidadIngTotal : 0}  
+      if ((item.liquidadoTotal > 0 && item.ingresadoTotal >= 0) && (item.liquidliquidadoTotalado !== null && item.ingresadoTotal !== null))
+        - sub = item.subRamo
+        .tr.break-page.title
+          div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+            p #{item.ramo}
+          div(style={'-webkit-flex':'3'}).td.center.border-right.border-bottom
+            p #{item.descripcion}
+          div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
+            p #{new Intl.NumberFormat('de-DE').format(item.liquidadoTotal)}
+          div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+            p #{item.cantidadLiqTotal ? item.cantidadLiqTotal : 0}
+          div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
+            p #{new Intl.NumberFormat('de-DE').format(item.ingresadoTotal)}
+          div(style={'-webkit-flex':'1'}).td.center.border-bottom
+            p #{item.cantidadIngTotal ? item.cantidadIngTotal : 0}  
       if sub.length > 1
         each subRamo in sub
           if ((subRamo.liquidado > 0 && subRamo.ingresado > 0) && (subRamo.liquidado !== null && subRamo.ingresado !== null))
