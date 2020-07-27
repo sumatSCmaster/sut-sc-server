@@ -186,36 +186,49 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     }
     //SM
     const estates = (await client.query(branch ? queries.GET_ESTATES_FOR_JURIDICAL_CONTRIBUTOR : queries.GET_ESTATES_FOR_NATURAL_CONTRIBUTOR, [branch ? branch.id_registro_municipal : contributor.id_contribuyente])).rows;
+    if (!SMApplicationExists) {
+      let lastSM = (await client.query(lastSettlementQuery, [codigosRamo.SM, lastSettlementPayload])).rows[0];
+      const lastSMPayment = (lastSM && moment(lastSM.fecha_liquidacion)) || moment().month(0);
+      const pastMonthSM = (lastSM && moment(lastSM.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
+      const SMDate = moment([lastSMPayment.year(), lastSMPayment.month(), 1]);
+      const dateInterpolationSM = Math.floor(now.diff(SMDate, 'M'));
+      montoAcarreado.SM = {
+        monto: lastSM && lastSM.mo_pendiente ? parseFloat(lastSM.mo_pendiente) : 0,
+        fecha: { month: pastMonthSM.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthSM.year() },
+      };
+      const debtSM = await Promise.all(
+        new Array(dateInterpolationSM + 1).fill({ month: null, year: null }).map(async (value, index) => {
+          const date = addMonths(new Date(lastSMPayment.toDate()), index);
+          const momentDate = moment(date);
+          const exonerado = await isExonerated({ branch: codigosRamo.SM, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') });
+          return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
+        })
+      );
+
+      SM =
+        estates.length > 0
+          ? await Promise.all(
+              estates.map(async (el) => {
+                const tarifaAseo = await getCleaningTariffForEstate({ estate: el, branchId: branch.id_registro_municipal, client });
+                const tarifaGas = await getGasTariffForEstate({ estate: el, branchId: branch.id_registro_municipal, client });
+                return { id: el.id_inmueble, tipoInmueble: el.tipo_inmueble, codCat: el.cod_catastral, direccionInmueble: el.direccion, tarifaAseo, tarifaGas, deuda: debtSM };
+              })
+            )
+          : [
+              {
+                id: 0,
+                tipoInmueble: null,
+                codCat: null,
+                direccionInmueble: null,
+                tarifaGas: await getGasTariffForEstate({ estate: null, branchId: branch.id_registro_municipal, client }),
+                tarifaAseo: await getCleaningTariffForEstate({ estate: null, branchId: branch.id_registro_municipal, client }),
+                deuda: debtSM,
+              },
+            ];
+    }
+
+    //IU
     if (estates.length > 0) {
-      if (!SMApplicationExists) {
-        let lastSM = (await client.query(lastSettlementQuery, [codigosRamo.SM, lastSettlementPayload])).rows[0];
-        const lastSMPayment = (lastSM && moment(lastSM.fecha_liquidacion)) || moment().month(0);
-        const pastMonthSM = (lastSM && moment(lastSM.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
-        const SMDate = moment([lastSMPayment.year(), lastSMPayment.month(), 1]);
-        const dateInterpolationSM = Math.floor(now.diff(SMDate, 'M'));
-        montoAcarreado.SM = {
-          monto: lastSM && lastSM.mo_pendiente ? parseFloat(lastSM.mo_pendiente) : 0,
-          fecha: { month: pastMonthSM.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthSM.year() },
-        };
-        const debtSM = await Promise.all(
-          new Array(dateInterpolationSM + 1).fill({ month: null, year: null }).map(async (value, index) => {
-            const date = addMonths(new Date(lastSMPayment.toDate()), index);
-            const momentDate = moment(date);
-            const exonerado = await isExonerated({ branch: codigosRamo.SM, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') });
-            return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
-          })
-        );
-
-        SM = await Promise.all(
-          estates.map(async (el) => {
-            const tarifaAseo = await getCleaningTariffForEstate({ estate: el, branchId: branch.id_registro_municipal, client });
-            const tarifaGas = await getGasTariffForEstate({ estate: el, branchId: branch.id_registro_municipal, client });
-            return { id: el.id_inmueble, tipoInmueble: el.tipo_inmueble, codCat: el.cod_catastral, direccionInmueble: el.direccion, tarifaAseo, tarifaGas, deuda: debtSM };
-          })
-        );
-      }
-
-      //IU
       if (!IUApplicationExists) {
         let lastIU = (await client.query(lastSettlementQuery, [codigosRamo.IU, lastSettlementPayload])).rows[0];
         const lastIUPayment = (lastIU && moment(lastIU.fecha_liquidacion)) || moment().month(0);

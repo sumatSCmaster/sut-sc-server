@@ -96,10 +96,10 @@ export const getCleaningTariffForEstate = async ({ estate, branchId, client }) =
 
 export const getGasTariffForEstate = async ({ estate, branchId, client }) => {
   try {
+    if (!estate && !!branchId) return (await client.query(queries.GET_AE_GAS_TARIFF, [branchId])).rows[0].monto;
     if (!estate.posee_gas) return 0;
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-    const calculoGas = estate.tipo_inmueble === 'COMERCIAL' ? (await client.query(queries.GET_AE_GAS_TARIFF, [branchId])).rows[0].monto : (await client.query(queries.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].monto;
-    const tarifaGas = calculoGas / UTMM > 300 ? UTMM * 300 : calculoGas;
+    const tarifaGas = estate.tipo_inmueble === 'COMERCIAL' ? (await client.query(queries.GET_AE_GAS_TARIFF, [branchId])).rows[0].monto : (await client.query(queries.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].monto;
     return +tarifaGas;
   } catch (error) {
     throw {
