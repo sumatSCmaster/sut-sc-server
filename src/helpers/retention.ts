@@ -287,6 +287,9 @@ export const createRetentionAgent = async ({ docType, document }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows[0];
+    if (!contributor) throw { status: 404, message: 'El contribuyente ingresado no existe' };
+    if (contributor.es_agente_retencion) throw { status: 403, message: 'El contribuyente ingresado ya es un agente de retención' };
     const agent = (await client.query(queries.CREATE_NEW_RETENTION_AGENT_RIM, [docType, document])).rows[0];
     const agenteRetencion = {
       id: agent.id_contribuyente,
