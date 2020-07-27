@@ -35,6 +35,10 @@
   vertical-align: middle;
 }
 
+.title {
+  color: rgba(0, 0, 0, 0.2)
+}
+
 .tr {
   width: 100%;
   display: flex;

@@ -38,7 +38,7 @@ block content
           b CANT.
     each item in datos.ingresos
       - sub = item.subRamo
-        .tr.break-page
+        .tr.break-page.title
           div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
             p #{item.ramo}
           div(style={'-webkit-flex':'3'}).td.center.border-right.border-bottom
@@ -51,10 +51,10 @@ block content
             p #{new Intl.NumberFormat('de-DE').format(item.ingresadoTotal)}
           div(style={'-webkit-flex':'1'}).td.center.border-bottom
             p #{item.cantidadIngTotal ? item.cantidadIngTotal : 0}  
-      if sub.length > 0
+      if sub.length > 1
         each subRamo in sub
           .tr.break-page
-            div(style={'-webkit-flex':'1'}).td.end.border-right.border-bottom
+            div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
               p #{subRamo.ramo}
             div(style={'-webkit-flex':'3'}).td.center.border-right.border-bottom
               p #{subRamo.descripcion}
