@@ -1640,7 +1640,7 @@ export const initialUserLinking = async (linkingData, user) => {
     if (datosContribuyente.tipoContribuyente === 'JURIDICO') {
       const rims: number[] = await Promise.all(
         await sucursales.map(async (x) => {
-          const { inmuebles, liquidaciones, multas, datosSucursal, actividadesEconomicas } = x;
+          const { inmuebles, liquidaciones, multas, datosSucursal, actividadesEconomicas, convenios } = x;
           const liquidacionesPagas = liquidaciones.filter((el) => el.estado === 'PAGADO');
           const liquidacionesVigentes = liquidaciones.filter((el) => el.estado !== 'PAGADO');
           const multasPagas = multas.filter((el) => el.estado === 'PAGADO');
@@ -1666,7 +1666,7 @@ export const initialUserLinking = async (linkingData, user) => {
               })
             );
           }
-          const credit = (await client.query('INSERT INTO impuesto.credito_fiscal (id_persona, concepto, credito) VALUES ($1, $2, $3)', [registry.id_registro_municipal, 'JURIDICO', fixatedAmount(datosSucursal?.creditoFiscal || 0)])).rows[0];
+          const credit = (await client.query('INSERT INTO impuesto.credito_fiscal (id_persona, concepto, credito) VALUES ($1, $2, $3)', [registry.id_registro_municipal, 'JURIDICO', fixatedAmount(+datosSucursal?.creditoFiscal || 0)])).rows[0];
           const estates =
             inmuebles.length > 0
               ? await Promise.all(
@@ -1727,7 +1727,7 @@ export const initialUserLinking = async (linkingData, user) => {
     } else {
       const rims: number[] = await Promise.all(
         await sucursales.map(async (x) => {
-          const { inmuebles, liquidaciones, multas, datosSucursal } = x;
+          const { inmuebles, liquidaciones, multas, datosSucursal, convenios } = x;
           const liquidacionesPagas = liquidaciones.filter((el) => el.estado === 'PAGADO');
           const liquidacionesVigentes = liquidaciones.filter((el) => el.estado !== 'PAGADO');
           const multasPagas = multas.filter((el) => el.estado === 'PAGADO');
@@ -1735,7 +1735,7 @@ export const initialUserLinking = async (linkingData, user) => {
           const pagados = liquidacionesPagas.concat(multasPagas);
           const vigentes = liquidacionesVigentes.concat(multasVigentes);
           let registry;
-          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [contributor.id_contribuyente, 'NATURAL', fixatedAmount(datosSucursal?.creditoFiscal || 0)])).rows[0];
+          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [contributor.id_contribuyente, 'NATURAL', fixatedAmount(+datosSucursal?.creditoFiscal || 0)])).rows[0];
           if (datosSucursal?.registroMunicipal) {
             const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
             registry = (
