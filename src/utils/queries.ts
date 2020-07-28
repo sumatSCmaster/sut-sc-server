@@ -658,7 +658,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo 
         INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo 
         GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion
-        ORDER BY descripcion;`,
+        ORDER BY ramo;`,
   GET_LIQUIDATED: `SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadLiq", SUM(monto) as liquidado 
         FROM (SELECT *  FROM impuesto.liquidacion WHERE fecha_liquidacion BETWEEN $1 AND $2 ) l 
         INNER JOIN (SELECT *, s.id_solicitud AS id_solicitud_q FROM impuesto.solicitud s 
@@ -668,7 +668,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo 
         INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo 
         GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion
-        ORDER BY descripcion;`,
+        ORDER BY ramo;`,
   GET_TRANSFERS_BY_BANK: `SELECT b.id_banco, b.nombre AS banco, SUM(p.monto) as monto
         FROM pago p
         INNER JOIN banco b ON b.id_banco = p.id_banco
