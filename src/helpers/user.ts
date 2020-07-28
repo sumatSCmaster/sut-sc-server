@@ -339,3 +339,15 @@ export const hasLinkedContributor = async (user) => {
     client.release();
   }
 };
+
+export const getUsersByContributor = async (contributor) => {
+  const client = await pool.connect();
+  try {
+    const users = await client.query('SELECT id_usuario as id, nombre_de_usuario as correo FROM usuario WHERE id_contribuyente = $1', [contributor]);
+    return users.rows;
+  } catch (e) {
+    throw e;
+  } finally {
+    client.release();
+  }
+};

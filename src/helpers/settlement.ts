@@ -19,7 +19,7 @@ import md5 from 'md5';
 import { query } from 'express-validator';
 import { sendNotification } from './notification';
 import { sendRimVerification, verifyCode, resendCode } from './verification';
-import { hasLinkedContributor, signUpUser, getUserByUsername } from './user';
+import { hasLinkedContributor, signUpUser, getUserByUsername, getUsersByContributor } from './user';
 import S3Client from '@utils/s3';
 import ExcelJs from 'exceljs';
 import * as fs from 'fs';
@@ -350,6 +350,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         SM,
         IU: (IU.length > 0 && IU) || undefined,
         PP,
+        usuarios: await getUsersByContributor(contributor.id_contribuyente),
         montoAcarreado: addMissingCarriedAmounts(montoAcarreado),
       },
     };

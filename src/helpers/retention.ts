@@ -9,6 +9,7 @@ import { renderFile } from 'pug';
 import { errorMessageExtractor, errorMessageGenerator } from './errors';
 import { Usuario, Liquidacion } from '@root/interfaces/sigt';
 import { fixatedAmount, getApplicationsAndSettlementsById } from './settlement';
+import { getUsersByContributor } from './user';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -64,6 +65,7 @@ export const getRetentionMonths = async ({ document, reference, docType, user }:
         rim: reference,
         documento: contributor.documento,
         tipoDocumento: contributor.tipo_documento,
+        usuarios: await getUsersByContributor(contributor.id_contribuyente),
         // creditoFiscal: fiscalCredit,
       },
     };
