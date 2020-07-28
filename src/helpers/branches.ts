@@ -119,13 +119,15 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
 
         const check = +(await client.query(queries.GET_CHECKS, [payload.from, payload.to])).rows[0].total || 0;
 
+        const cred = +(await client.query(queries.GET_CREDIT_REPORT, [payload.from, payload.to])).rows[0].total || 0;
+
         console.log('transfersBybank', transfersByBank);
         console.log('totaltransfersbybank', totalTranfersByBank);
         console.log('cash', cash);
         console.log('pos', pos);
         console.log('check', check);
         pagos = {
-          total: totalTranfersByBank + cashTotal + pos + check,
+          total: totalTranfersByBank + cashTotal + pos + check + cred,
           transferencias: {
             total: totalTranfersByBank,
             items: transfersByBank,
@@ -140,6 +142,7 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
           cheques: {
             total: check,
           },
+          creditoFiscal: cred
         };
       }
       const html = renderFile(resolve(__dirname, alcaldia ? `../views/planillas/sedemat-RPRA.pug` : `../views/planillas/sedemat-RPR.pug`), {
