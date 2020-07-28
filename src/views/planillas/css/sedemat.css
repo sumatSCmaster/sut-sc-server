@@ -40,14 +40,13 @@
 }
 
 .sub-title {
-  color: rgba(0, 0, 0, 0.6)
+  color: rgba(0, 0, 0, 0.6);
 }
 
 .tr {
   width: 100%;
   display: flex;
   display: -webkit-flex;
-  min-height: max-content;
 }
 .center > p, .center{
   text-align: center !important;

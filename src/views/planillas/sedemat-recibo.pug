@@ -10,37 +10,38 @@ block content
   div#planilla
     div
       h2 RECIBO
-    div.ticket(style={'margin':'2% 7.5%', 'border':'2px solid #3387ca'})
-      div.ticket-data
-        div
-          p
-            b Razon Social:&nbsp;
-            br
-            | #{datos.razonSocial}
-          p
-            b Documento:&nbsp;
-            br
-            | #{datos.tipoDocumento}-#{datos.documentoIden}
-          p
-            b Dirección:&nbsp;
-            br
-            | #{datos.direccion}            
-    
-        div(style={'margin-left':'5%'})
-          p
-            b RIM:&nbsp;
-            br
-            | #{datos.rim}
-          p
-            b Teléfono:&nbsp;
-            br
-            | #{datos.telefono}
-          p
-            b Cajero:&nbsp;
-            br
-            | #{datos.cajero}                 
-        div(style={'-webkit-flex': '0.5'}).center
-          img#QR(src=QR style={'margin-bottom': '10px'})
+    div.center
+      div.ticket(style={'border':'2px solid #3387ca'})
+        div.ticket-data
+          div
+            p
+              b Razon Social:&nbsp;
+              br
+              | #{datos.razonSocial}
+            p
+              b Documento:&nbsp;
+              br
+              | #{datos.tipoDocumento}-#{datos.documentoIden}
+            p
+              b Dirección:&nbsp;
+              br
+              | #{datos.direccion}            
+      
+          div(style={'margin-left':'5%'})
+            p
+              b RIM:&nbsp;
+              br
+              | #{datos.rim}
+            p
+              b Teléfono:&nbsp;
+              br
+              | #{datos.telefono}
+            p
+              b Cajero:&nbsp;
+              br
+              | #{datos.cajero}                 
+          div(style={'-webkit-flex': '0.5'}).center
+            img#QR(src=QR style={'margin-bottom': '10px'})
     div           
       div(style={'font-size':'20px', 'font-weight':'bold'}).row-constancy
         div(style={'text-align':'start', }) Descripción
