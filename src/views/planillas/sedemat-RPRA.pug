@@ -8,6 +8,7 @@ block content
       b FECHA:
       span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
     -var sub = []
+    -var aux = ['501','236']
   div.table
     .tr
       .th.border-bottom.center
@@ -38,7 +39,7 @@ block content
           b CANT.
     each item in datos.ingresos
       - sub = item.subRamo
-      if item.ramo === '501' || item.ramo === '236'
+      if aux.includes(item.ramo)
       else
         .tr.break-page.title
           div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom

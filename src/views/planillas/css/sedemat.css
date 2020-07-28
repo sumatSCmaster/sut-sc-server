@@ -47,7 +47,7 @@
   width: 100%;
   display: flex;
   display: -webkit-flex;
-  min-height: 45px;
+  min-height: max-content;
 }
 .center > p, .center{
   text-align: center !important;
