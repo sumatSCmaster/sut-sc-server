@@ -236,7 +236,7 @@ export const updateEstate = async ({ id, direccion, idParroquia, metrosConstrucc
 }
 
 
-export const linkCommercial = async ({ codCat, rim }) => {
+export const linkCommercial = async ({ codCat, rim, relacion }) => {
   const client = await pool.connect();
   try{
     const rimData = (await client.query(queries.GET_RIM_DATA, [rim]));
@@ -254,7 +254,7 @@ export const linkCommercial = async ({ codCat, rim }) => {
       throw new Error('El inmueble ya está enlazado')
     }
 
-    (await client.query(queries.LINK_ESTATE_WITH_RIM, [rimData.rows[0].id, codCat]))
+    (await client.query(queries.LINK_ESTATE_WITH_RIM, [rimData.rows[0].id, codCat, relacion]))
 
     return {
       status: 200,
