@@ -1893,7 +1893,7 @@ export const insertSettlements = async ({ process, user }) => {
     console.log(contributorReference);
     const benefittedUser = (await client.query(queries.GET_USER_IN_CHARGE_OF_BRANCH_BY_ID, [contributorReference?.id_registro_municipal])).rows[0];
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-    const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(user.tipoUsuario !== 4 && benefittedUser.id) || user.id, process.contribuyente])).rows[0];
+    const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(user.tipoUsuario !== 4 && process.usuario) || user.id, process.contribuyente])).rows[0];
 
     const hasAE = impuestos.find((el) => el.ramo === 'AE');
     if (hasAE) {
