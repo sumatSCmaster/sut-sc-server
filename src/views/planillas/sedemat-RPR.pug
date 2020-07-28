@@ -125,6 +125,12 @@ block content
           div(style={'-webkit-flex':'4'}).td.center.border-bottom
             p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.transferencias.items.find(el => el.id_banco === 3) ? datos.metodoPago.transferencias.items.find(el => el.id_banco === 3).monto : 0)}
         .tr.break-page
+          div(style={'-webkit-flex':'6', 'text-align':'start'}).th.border-bottom.border-right
+            p(style={'padding-left':'10px'})
+              b CREDITO FISCAL
+          div(style={'-webkit-flex':'4'}).td.center.border-bottom
+            p #{new Intl.NumberFormat('de-DE').format(datos.metodoPago.creditoFiscal ? datos.metodoPago.creditoFiscal : 0)}            
+        .tr.break-page
           div(style={'-webkit-flex':'6',}).th.border-right
             p
               b TOTALES Bs. 
