@@ -38,7 +38,7 @@ block content
           b CANT.
     each item in datos.ingresos
       - sub = item.subRamo
-      if item.ramo === '501'
+      if item.ramo === '501' || item.ramo === '236'
       else
         .tr.break-page.title
           div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
