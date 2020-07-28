@@ -1473,6 +1473,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
     );
     return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', solicitudes: applications };
   } catch (error) {
+    console.log(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -1936,7 +1937,7 @@ export const insertSettlements = async ({ process, user }) => {
             })
           );
         }
-        if (now.date() > 15) {
+        if (now.date() > 10) {
           const rightfulMonth = now.month() - 1;
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
@@ -1992,7 +1993,7 @@ export const insertSettlements = async ({ process, user }) => {
             })
           );
         }
-        if (now.date() > 15) {
+        if (now.date() > 10) {
           const rightfulMonth = moment().month(now.month()).month() - 1;
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
@@ -2028,7 +2029,7 @@ export const insertSettlements = async ({ process, user }) => {
         const liquidacionGas = { ramo: branchNames['SM'], fechaCancelada: x.fechaCancelada, monto: x.desglose[0].montoGas, desglose: x.desglose, descripcion: 'Pago del Servicio de Gas' };
         const liquidacionAseo = { ramo: branchNames['SM'], fechaCancelada: x.fechaCancelada, monto: x.desglose[0].montoAseo, desglose: x.desglose, descripcion: 'Pago del Servicio de Aseo' };
         j.push(liquidacionAseo);
-        j.push(liquidacionGas);
+        !!liquidacionGas.monto && j.push(liquidacionGas);
       }
       return x;
     });

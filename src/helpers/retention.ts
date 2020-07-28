@@ -139,7 +139,7 @@ export const insertRetentions = async ({ process, user }) => {
             })
           );
         }
-        if (now.date() > 15) {
+        if (now.date() > 10) {
           const rightfulMonth = now.month() - 1;
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_RETENTION, [
@@ -192,7 +192,7 @@ export const insertRetentions = async ({ process, user }) => {
             })
           );
         }
-        if (now.date() > 15) {
+        if (now.date() > 10) {
           const rightfulMonth = moment().month(now.month()).month() - 1;
           const multa = (
             await client.query(queries.CREATE_FINING_FOR_LATE_RETENTION, [
