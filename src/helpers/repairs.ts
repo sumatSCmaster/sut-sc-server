@@ -45,13 +45,12 @@ export const getRepairYears = async ({ document, reference, docType, user }: { d
     const lastREPPayment = (lastREP && moment(lastREP.fecha_liquidacion)) || moment().month(0);
     const REPDate = moment([lastREPPayment.year(), lastREPPayment.month(), 1]);
     const dateInterpolation = Math.floor(now.diff(REPDate, 'year'));
-    if (dateInterpolation > 0) {
-      debtREP = new Array(4).fill({}).map((x, i) => lastREPPayment.year() - i);
-    }
+    debtREP = new Array(4).fill({}).map((x, i) => lastREPPayment.year() - i);
+
     return {
       status: 200,
       message: 'Deuda de reparos obtenida satisfactoriamente',
-      retenciones: {
+      reparos: {
         REP: debtREP,
         contribuyente: contributor.id_contribuyente,
         razonSocial: contributor.razon_social,
