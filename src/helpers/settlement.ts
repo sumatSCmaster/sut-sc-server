@@ -1666,6 +1666,8 @@ export const initialUserLinking = async (linkingData, user) => {
               })
             );
           }
+          if (convenios!.length > 0) {
+          }
           const credit = (await client.query('INSERT INTO impuesto.credito_fiscal (id_persona, concepto, credito) VALUES ($1, $2, $3)', [registry.id_registro_municipal, 'JURIDICO', fixatedAmount(+datosSucursal?.creditoFiscal || 0)])).rows[0];
           const estates =
             inmuebles.length > 0
@@ -1755,6 +1757,8 @@ export const initialUserLinking = async (linkingData, user) => {
                   return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.id, moment().startOf('year').format('YYYY-MM-DD')]);
                 })
               );
+            }
+            if (convenios!.length > 0) {
             }
             const estates =
               inmuebles.length > 0
