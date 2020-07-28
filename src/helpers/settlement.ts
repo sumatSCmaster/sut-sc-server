@@ -1398,7 +1398,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
           };
         })
     );
-    return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', solicitudes: applications.filter((el) => el.liquidaciones.length > 0 && el.multas!.length > 0) };
+    return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', solicitudes: applications.filter((el) => el.liquidaciones.length > 0 || el.multas!.length > 0) };
   } catch (error) {
     throw {
       status: 500,
