@@ -506,7 +506,9 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                     const actividadesEconomicas = await Promise.all(
                       (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [x.co_contribuyente])).rows.map((x) => ({ id: x.nu_ref_actividad, descripcion: x.tx_actividad, alicuota: x.nu_porc_alicuota, minimoTributable: x.nu_ut }))
                     );
-                    const agreementRegistry = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_estatus = 4 AND co_contribuyente = $1', [x.co_contribuyente])).rows;
+                    const agreementRegistry = (
+                      await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_estatus = 4 AND co_contribuyente = $1 AND anio_liquidacion = EXTRACT("year" FROM CURRENT_DATE)', [x.co_contribuyente])
+                    ).rows;
                     const hasAgreements = agreementRegistry.length > 0;
                     if (hasAgreements) {
                       convenios = (
@@ -514,14 +516,16 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                           agreementRegistry.map(async (j) => {
                             const solicitudConvenio = +j.tx_observacion1.split(':')[1];
                             if (isNaN(solicitudConvenio)) return;
-                            const solicitud = (await gtic.query('SELECT * FROM t15_solicitud WHERE co_solicitud = $1 AND co_estatus !== 5', [solicitudConvenio])).rows;
+                            const solicitud = (await gtic.query('SELECT * FROM t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
                             const isCurrentAgreement = solicitud.length > 0;
                             if (isCurrentAgreement) {
                               const liquidaciones = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_solicitud = $1', [solicitud[0].co_convenio])).rows.map((x) => structureSettlements(j));
                               return (
                                 (liquidaciones.length > 0 && {
                                   id: +solicitudConvenio,
+                                  estado: j.co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
                                   cantPorciones: liquidaciones.length,
+                                  idRamo: (await client.query('SELECT id_ramo FROM impuesto.ramo WHERE codigo = $1', [j.nb_ramo])).rows[0].id,
                                   porciones: liquidaciones.map((i) => {
                                     i.codigoRamo = j.nb_ramo;
                                     i.ramo = j.tx_ramo;
@@ -591,6 +595,8 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                                 return (
                                   (liquidaciones.length > 0 && {
                                     id: +solicitudConvenio,
+                                    estado: j.co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
+                                    idRamo: (await client.query('SELECT id_ramo FROM impuesto.ramo WHERE codigo = $1', [j.nb_ramo])).rows[0].id,
                                     cantPorciones: liquidaciones.length,
                                     porciones: liquidaciones.map((i) => {
                                       i.codigoRamo = j.nb_ramo;
@@ -917,6 +923,8 @@ export const logInExternalLinking = async ({ credentials }) => {
                               return (
                                 (liquidaciones.length > 0 && {
                                   id: +solicitudConvenio,
+                                  estado: j.co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
+                                  idRamo: (await client.query('SELECT id_ramo FROM impuesto.ramo WHERE codigo = $1', [j.nb_ramo])).rows[0].id,
                                   cantPorciones: liquidaciones.length,
                                   porciones: liquidaciones.map((i) => {
                                     i.codigoRamo = j.nb_ramo;
@@ -986,6 +994,8 @@ export const logInExternalLinking = async ({ credentials }) => {
                                 return (
                                   (liquidaciones.length > 0 && {
                                     id: +solicitudConvenio,
+                                    estado: j.co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
+                                    idRamo: (await client.query('SELECT id_ramo FROM impuesto.ramo WHERE codigo = $1', [j.nb_ramo])).rows[0].id,
                                     cantPorciones: liquidaciones.length,
                                     porciones: liquidaciones.map((i) => {
                                       i.codigoRamo = j.nb_ramo;
@@ -1667,6 +1677,38 @@ export const initialUserLinking = async (linkingData, user) => {
             );
           }
           if (convenios!.length > 0) {
+            await Promise.all(
+              convenios.map(async (el) => {
+                const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+                await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [applicationAG.id_solicitud, applicationStateEvents.INGRESARDATOS]);
+                el.estado === 'PAGADO' && (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [applicationAG.id_solicitud, applicationStateEvents.APROBARCAJERO]));
+                await client.query('UPDATE impuesto.solicitud SET tipo_solicitud = $1 WHERE id_solicitud = $2', ['CONVENIO', applicationAG.id_solicitud]);
+                const agreement = (await client.query(queries.CREATE_AGREEMENT, [applicationAG.id_solicitud, el.cantPorciones])).rows[0];
+                const benefitAgreement = await Promise.all(
+                  el.porciones.map(async (el, i) => {
+                    const liquidacion = (
+                      await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+                        applicationAG.id_solicitud,
+                        fixatedAmount(+el.monto),
+                        el.ramo,
+                        el.descripcion,
+                        { fecha: el.fecha },
+                        moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
+                        registry.id_registro_municipal,
+                      ])
+                    ).rows[0];
+                    await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, liquidacion.id_liquidacion]);
+                    const fraccion = (await client.query(queries.CREATE_AGREEMENT_FRACTION, [agreement.id_convenio, fixatedAmount(+el.monto), i + 1, el.fechaVencimiento])).rows[0];
+                    await client.query(queries.UPDATE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.INGRESARDATOS]);
+                    if (el.estado === 'PAGADO') {
+                      await client.query(queries.COMPLETE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.APROBARCAJERO]);
+                    }
+                  })
+                );
+                await client.query(queries.CHANGE_SETTLEMENT_BRANCH_TO_AGREEMENT, [el.idRamo, applicationAG.id_solicitud]);
+                return benefitAgreement;
+              })
+            );
           }
           const credit = (await client.query('INSERT INTO impuesto.credito_fiscal (id_persona, concepto, credito) VALUES ($1, $2, $3)', [registry.id_registro_municipal, 'JURIDICO', fixatedAmount(+datosSucursal?.creditoFiscal || 0)])).rows[0];
           const estates =
@@ -1759,6 +1801,38 @@ export const initialUserLinking = async (linkingData, user) => {
               );
             }
             if (convenios!.length > 0) {
+              await Promise.all(
+                convenios.map(async (el) => {
+                  const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+                  await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [applicationAG.id_solicitud, applicationStateEvents.INGRESARDATOS]);
+                  el.estado === 'PAGADO' && (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [applicationAG.id_solicitud, applicationStateEvents.APROBARCAJERO]));
+                  await client.query('UPDATE impuesto.solicitud SET tipo_solicitud = $1 WHERE id_solicitud = $2', ['CONVENIO', applicationAG.id_solicitud]);
+                  const agreement = (await client.query(queries.CREATE_AGREEMENT, [applicationAG.id_solicitud, el.cantPorciones])).rows[0];
+                  const benefitAgreement = await Promise.all(
+                    el.porciones.map(async (el, i) => {
+                      const liquidacion = (
+                        await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+                          applicationAG.id_solicitud,
+                          fixatedAmount(+el.monto),
+                          el.ramo,
+                          el.descripcion,
+                          { fecha: el.fecha },
+                          moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
+                          registry.id_registro_municipal,
+                        ])
+                      ).rows[0];
+                      await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, liquidacion.id_liquidacion]);
+                      const fraccion = (await client.query(queries.CREATE_AGREEMENT_FRACTION, [agreement.id_convenio, fixatedAmount(+el.monto), i + 1, el.fechaVencimiento])).rows[0];
+                      await client.query(queries.UPDATE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.INGRESARDATOS]);
+                      if (el.estado === 'PAGADO') {
+                        await client.query(queries.COMPLETE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.APROBARCAJERO]);
+                      }
+                    })
+                  );
+                  await client.query(queries.CHANGE_SETTLEMENT_BRANCH_TO_AGREEMENT, [el.idRamo, applicationAG.id_solicitud]);
+                  return benefitAgreement;
+                })
+              );
             }
             const estates =
               inmuebles.length > 0
