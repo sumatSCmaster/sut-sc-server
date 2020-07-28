@@ -38,9 +38,7 @@
 .title {
   font-weight: bold;
 }
-.title div p, .sub-title div p {
-  padding: 5px 0;
-}
+
 .sub-title {
   color: rgba(0, 0, 0, 0.6);
 }
@@ -49,7 +47,6 @@
   width: 100%;
   display: flex;
   display: -webkit-flex;
-  min-height: max-content;
 }
 .center > p, .center{
   text-align: center !important;
