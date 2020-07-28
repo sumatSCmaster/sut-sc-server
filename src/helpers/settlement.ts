@@ -514,7 +514,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                           agreementRegistry.map(async (j) => {
                             const solicitudConvenio = +j.tx_observacion1.split(':')[1];
                             if (isNaN(solicitudConvenio)) return;
-                            const solicitud = (await gtic.query('SELECT * FROM t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
+                            const solicitud = (await gtic.query('SELECT * FROM t15_solicitud WHERE co_solicitud = $1 AND co_estatus !== 5', [solicitudConvenio])).rows;
                             const isCurrentAgreement = solicitud.length > 0;
                             if (isCurrentAgreement) {
                               const liquidaciones = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_solicitud = $1', [solicitud[0].co_convenio])).rows.map((x) => structureSettlements(j));

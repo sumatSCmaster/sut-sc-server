@@ -9,6 +9,7 @@ import { renderFile } from 'pug';
 import { errorMessageExtractor, errorMessageGenerator } from './errors';
 import { Usuario, Liquidacion } from '@root/interfaces/sigt';
 import { fixatedAmount, getApplicationsAndSettlementsById } from './settlement';
+import { getUsersByContributor } from './user';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -20,50 +21,45 @@ const codigosRamo = {
   PP: 114,
   IU: 111,
   RD0: 915,
+  REP: 910,
 };
 
 export const processRetentionFile = async (file) => {
   return {};
 };
 
-export const getRetentionMonths = async ({ document, reference, docType, user }: { document: string; reference: string; docType: string; user: Usuario }) => {
+export const getRepairYears = async ({ document, reference, docType, user }: { document: string; reference: string; docType: string; user: Usuario }) => {
   const client = await pool.connect();
-  let debtRD;
+  let debtREP;
   try {
     if (!reference) throw { status: 403, message: 'Debe incluir un RIM de Agente de Retención' };
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows[0];
     if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
     if (!branch) throw { status: 404, message: 'No existe el RIM de Agente de Retención proporcionado' };
-    const RD0ApplicationExists = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.RD0, reference])).rows[0];
-    if (!!RD0ApplicationExists) throw { status: 409, message: 'Ya existe una declaración de retenciones para este mes' };
+    const REPApplicationExists = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_IN_YEAR_FOR_CODE_AND_RIM, [codigosRamo.REP, reference])).rows[0];
+    if (!!REPApplicationExists) throw { status: 409, message: 'Ya existe una declaración de retenciones para este mes' };
     const now = moment(new Date());
 
-    let lastRD = (await client.query(queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM, [codigosRamo.RD0, branch.referencia_municipal])).rows[0];
-    const lastRDPayment = (lastRD && moment(lastRD.fecha_liquidacion)) || moment().month(0);
-    const RDDate = moment([lastRDPayment.year(), lastRDPayment.month(), 1]);
-    const dateInterpolation = Math.floor(now.diff(RDDate, 'M'));
+    let lastREP = (await client.query(queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM, [codigosRamo.RD0, branch.referencia_municipal])).rows[0];
+    const lastREPPayment = (lastREP && moment(lastREP.fecha_liquidacion)) || moment().month(0);
+    const REPDate = moment([lastREPPayment.year(), lastREPPayment.month(), 1]);
+    const dateInterpolation = Math.floor(now.diff(REPDate, 'year'));
     if (dateInterpolation > 0) {
-      debtRD = await Promise.all(
-        new Array(dateInterpolation).fill({ month: null, year: null }).map(async (value, index) => {
-          const date = addMonths(new Date(lastRDPayment.toDate()), index);
-          const momentDate = moment(date);
-          const exonerado = await isExonerated({ branch: codigosRamo.RD0, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') });
-          return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
-        })
-      );
+      debtREP = new Array(4).fill({}).map((x, i) => lastREPPayment.year() - i);
     }
     return {
       status: 200,
-      message: 'Deuda de retención obtenida satisfactoriamente',
+      message: 'Deuda de reparos obtenida satisfactoriamente',
       retenciones: {
-        RD: debtRD,
+        REP: debtREP,
         contribuyente: contributor.id_contribuyente,
         razonSocial: contributor.razon_social,
         siglas: contributor.siglas,
         rim: reference,
         documento: contributor.documento,
         tipoDocumento: contributor.tipo_documento,
+        usuarios: await getUsersByContributor(contributor.id_contribuyente),
         // creditoFiscal: fiscalCredit,
       },
     };
