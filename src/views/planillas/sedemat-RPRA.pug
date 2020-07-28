@@ -37,8 +37,9 @@ block content
         p
           b CANT.
     each item in datos.ingresos
-      if ((item.liquidadoTotal > 0 && item.ingresadoTotal >= 0) && (item.liquidliquidadoTotalado !== null && item.ingresadoTotal !== null))
-        - sub = item.subRamo
+      - sub = item.subRamo
+      if item.ramo === '501'
+      else
         .tr.break-page.title
           div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
             p #{item.ramo}
@@ -52,9 +53,8 @@ block content
             p #{new Intl.NumberFormat('de-DE').format(item.ingresadoTotal)}
           div(style={'-webkit-flex':'1'}).td.center.border-bottom
             p #{item.cantidadIngTotal ? item.cantidadIngTotal : 0}  
-      if sub.length > 1
-        each subRamo in sub
-          if ((subRamo.liquidado > 0 && subRamo.ingresado > 0) && (subRamo.liquidado !== null && subRamo.ingresado !== null))
+        if sub.length > 1
+          each subRamo in sub
             .tr.break-page.sub-title
               div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
                 p #{subRamo.ramo}
