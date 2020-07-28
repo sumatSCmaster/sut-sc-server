@@ -37,12 +37,12 @@
 
 .title {
   font-weight: bold;
+}
+.title div p, .sub-title div p {
   padding: 5px 0;
 }
-
 .sub-title {
   color: rgba(0, 0, 0, 0.6);
-  padding: 5px 0;
 }
 
 .tr {
