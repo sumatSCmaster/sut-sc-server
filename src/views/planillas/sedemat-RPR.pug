@@ -8,6 +8,7 @@ block content
       b FECHA:
       span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
     -var sub = []
+    -var i = 0
   div.table
     .tr
       .th.border-bottom.center
@@ -38,6 +39,7 @@ block content
           b CANT.
     each item in datos.ingresos
       - sub = item.subRamo
+      - i++
         .tr.break-page.title
           div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
             p #{item.ramo}
@@ -53,6 +55,7 @@ block content
             p #{item.cantidadIngTotal ? item.cantidadIngTotal : 0}  
       if sub.length > 1 
         each subRamo in sub
+          -i++
           .tr.break-page.sub-title
             div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
               p #{subRamo.ramo}
@@ -78,7 +81,7 @@ block content
         p #{new Intl.NumberFormat('de-DE').format(datos.ingresadoTotal ? datos.ingresadoTotal : 0)}
       div(style={'-webkit-flex':'1'}).td.center
         p #{datos.cantidadIngTotal ? datos.cantidadIngTotal : 0}   
-  div(style={'margin-top':'20px', 'text-align':'-webkit-right', 'width':'100%'}).break-page
+  div(style={'margin-top': i > 20 ? '100px' : '20px', 'text-align':'-webkit-right', 'width':'100%'}).break-page
     div(style={'width':'50%'}).table.break-page
       .tr.break-page
         div(style={'-webkit-flex':'6'}).th.center.border-bottom.border-right

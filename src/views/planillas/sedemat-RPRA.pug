@@ -7,8 +7,9 @@ block content
     p 
       b FECHA:
       span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
-    -var sub = []
-    -var aux = ['501','236']
+    -var sub = [];
+    -var aux = ['501','236'];
+    -var i = 0;
   div.table
     .tr
       .th.border-bottom.center
@@ -41,6 +42,7 @@ block content
       - sub = item.subRamo
       if aux.includes(item.ramo)
       else
+        - i++
         .tr.break-page.title
           div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
             p #{item.ramo}
@@ -56,6 +58,7 @@ block content
             p #{item.cantidadIngTotal ? item.cantidadIngTotal : 0}  
         if sub.length > 1
           each subRamo in sub
+            - i++
             .tr.break-page.sub-title
               div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
                 p #{subRamo.ramo}
