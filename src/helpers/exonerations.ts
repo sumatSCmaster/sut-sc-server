@@ -115,11 +115,9 @@ export const createContributorExoneration = async ({typeDoc, doc, ref, from, act
         if(!contributor.rows[0]){
             throw new Error('No se ha hallado el contribuyente');
         }
-        const idContributor = contributor.rows[0].idRegistroMunicipal;
-        console.log(idContributor)
+        const idContributor = +contributor.rows[0].idRegistroMunicipal;
         if(activities){
             await Promise.all(activities.map(async (row) => {
-                console.log('a')
                 if((await client.query(queries.GET_EXONERATED_ACTIVITY_BY_CONTRIBUTOR, [idContributor, row.id])).rowCount > 0){
                     throw new Error(`La actividad ${row.nombreActividad} ya esta exonerada para este contribuyente`)
                 }else if(!((await client.query(queries.GET_CONTRIBUTOR_HAS_ACTIVITY, [idContributor, row.id])).rowCount > 0)) {
