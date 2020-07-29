@@ -658,10 +658,11 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
 
   //REPORTES
   GET_INGRESS: `SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadIng", SUM(monto)as ingresado 
-        FROM (SELECT *  FROM impuesto.liquidacion WHERE fecha_liquidacion BETWEEN $1 AND $2 ) l 
-        INNER JOIN (SELECT *, s.id_solicitud AS id_solicitud_q FROM impuesto.solicitud s 
+        FROM (SELECT *  FROM impuesto.liquidacion) l 
+        LEFT JOIN (SELECT *, s.id_solicitud AS id_solicitud_q 
+                        FROM impuesto.solicitud s 
                         INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) 
-            AS state FROM impuesto.evento_solicitud es GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud WHERE state = 'finalizado' ) 
+            AS state FROM impuesto.evento_solicitud es GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud WHERE fecha_aprobado BETWEEN $1 AND $2) 
         se ON l.id_solicitud = se.id_solicitud_q
         RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo 
         INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo 
@@ -677,19 +678,28 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo 
         GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion
         ORDER BY ramo;`,
-  GET_TRANSFERS_BY_BANK: `SELECT id_banco, banco, SUM(monto) AS monto FROM (SELECT b.id_banco, b.nombre AS banco, SUM(p.monto) as monto
-        FROM pago p
-        INNER JOIN banco b ON b.id_banco = p.id_banco
-        WHERE p.concepto IN ('IMPUESTO', 'CONVENIO') AND p.aprobado = true AND p.metodo_pago = 'TRANSFERENCIA' AND p.fecha_de_pago BETWEEN $1 AND $2
-        GROUP BY b.id_banco, b.nombre
-        UNION
-        SELECT b.id_banco, b.nombre AS banco, SUM(ROUND(p.monto)) as monto
-        FROM (SELECT * FROM pago p 
-                INNER JOIN tramite t ON t.id_tramite = p.id_procedimiento 
-                INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite 
-                WHERE p.concepto = 'TRAMITE' AND p.aprobado = true AND tt.id_institucion = 9 AND p.metodo_pago = 'TRANSFERENCIA' AND p.fecha_de_pago BETWEEN $1 AND $2) p
-        INNER JOIN banco b ON b.id_banco = p.id_banco
-        GROUP BY b.id_banco, b.nombre) x GROUP BY id_banco, banco;`,
+  GET_TRANSFERS_BY_BANK: `WITH liquidaciones AS (SELECT l.id_liquidacion
+    FROM (SELECT *  FROM impuesto.liquidacion) l 
+    LEFT JOIN (SELECT *, s.id_solicitud AS id_solicitud_q 
+                    FROM impuesto.solicitud s 
+                    INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) 
+        AS state FROM impuesto.evento_solicitud es GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud WHERE fecha_aprobado BETWEEN $1 AND $2) 
+    se ON l.id_solicitud = se.id_solicitud_q
+    )
+    
+    SELECT id_banco, banco, SUM(monto) AS monto FROM (SELECT b.id_banco, b.nombre AS banco, SUM(p.monto) as monto
+            FROM pago p
+            INNER JOIN banco b ON b.id_banco = p.id_banco
+            WHERE p.concepto IN ('IMPUESTO', 'CONVENIO') AND p.aprobado = true AND p.metodo_pago = 'TRANSFERENCIA' AND p.id_procedimiento IN (SELECT * FROM liquidaciones)
+            GROUP BY b.id_banco, b.nombre
+            UNION
+            SELECT b.id_banco, b.nombre AS banco, SUM(ROUND(p.monto)) as monto
+            FROM (SELECT * FROM pago p 
+                    INNER JOIN tramite t ON t.id_tramite = p.id_procedimiento 
+                    INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite 
+                    WHERE p.concepto = 'TRAMITE' AND p.aprobado = true AND tt.id_institucion = 9 AND p.metodo_pago = 'TRANSFERENCIA' AND p.fecha_de_aprobacion BETWEEN $1 AND $2) p
+            INNER JOIN banco b ON b.id_banco = p.id_banco
+            GROUP BY b.id_banco, b.nombre) x GROUP BY id_banco, banco;`,
   GET_CASH_REPORT: `SELECT 'BS' as moneda, SUM(x.monto) AS monto FROM(
     SELECT SUM(p.monto) AS monto
     FROM pago p
@@ -702,6 +712,8 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
             WHERE p.concepto = 'TRAMITE' AND tt.id_institucion = 9 AND p.metodo_pago = 'EFECTIVO' AND p.fecha_de_pago BETWEEN $1 AND $2) p
   ) x GROUP BY moneda;`,
   GET_CREDIT_REPORT: `SELECT sum(monto) as total FROM pago WHERE metodo_pago = 'CREDITO_FISCAL' AND fecha_de_pago BETWEEN $1 AND $2`,
+  GET_CREDIT_INGRESS_BY_INTERVAL: `SELECT COALESCE(SUM(credito), 0) AS ingresado, COALESCE(COUNT(*), 0) AS cantidadIng FROM impuesto.credito_fiscal WHERE credito > 0 AND fecha_creacion BETWEEN $1 AND $2;`,
+  GET_RETENTION_CREDIT_INGRESS_BY_INTERVAL: `SELECT COALESCE(SUM(monto),0) AS ingresado, COALESCE(COUNT(*), 0) AS cantidadIng FROM impuesto.retencion WHERE monto > 0 AND fecha BETWEEN $1 AND $2;`,
   GET_POS: `SELECT SUM(monto) as total FROM (SELECT SUM(p.monto) as monto
         FROM pago p
         WHERE p.concepto IN ('IMPUESTO', 'CONVENIO') AND p.metodo_pago = 'PUNTO DE VENTA' AND p.fecha_de_pago BETWEEN $1 AND $2
