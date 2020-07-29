@@ -111,11 +111,12 @@ export const createContributorExoneration = async ({typeDoc, doc, ref, from, act
         const exoneration = (await client.query(queries.CREATE_EXONERATION, [from])).rows[0];
         console.log(exoneration)
         const contributor = (await client.query(queries.GET_CONTRIBUTOR,[typeDoc, doc, ref]))
+        console.log(contributor.rows)
         if(!contributor.rows[0]){
             throw new Error('No se ha hallado el contribuyente');
         }
         const idContributor = contributor.rows[0].id_registro_municipal;
-    
+        
         if(activities){
             await Promise.all(activities.map(async (row) => {
                 if((await client.query(queries.GET_EXONERATED_ACTIVITY_BY_CONTRIBUTOR, [idContributor, row.id])).rowCount > 0){
