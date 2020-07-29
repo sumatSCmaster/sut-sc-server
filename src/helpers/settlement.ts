@@ -26,8 +26,8 @@ import * as fs from 'fs';
 import { procedureInit, initProcedureAnalist, processProcedure, processProcedureAnalist } from './procedures';
 import { generateReceipt } from './receipt';
 import { getCleaningTariffForEstate, getGasTariffForEstate } from './services';
+import { uniqBy } from 'lodash';
 const written = require('written-number');
-
 const gticPool = GticPool.getInstance();
 const pool = Pool.getInstance();
 
@@ -539,7 +539,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                           })
                         )
                       ).filter((el) => el);
-                      convenios = convenios.length > 0 ? convenios : undefined;
+                      convenios = convenios.length > 0 ? uniqBy(convenios, 'id') : undefined;
                     }
                     inmuebles.push({
                       id: x.co_contribuyente,
@@ -611,7 +611,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                             })
                           )
                         ).filter((el) => el);
-                        convenios = convenios.length > 0 ? convenios : undefined;
+                        convenios = convenios.length > 0 ? uniqBy(convenios, 'id') : undefined;
                       }
                       inmuebles.push({
                         id: x.co_contribuyente,
@@ -939,7 +939,7 @@ export const logInExternalLinking = async ({ credentials }) => {
                           })
                         )
                       ).filter((el) => el);
-                      convenios = convenios.length > 0 ? convenios : undefined;
+                      convenios = convenios.length > 0 ? uniqBy(convenios, 'id') : undefined;
                     }
                     inmuebles.push({
                       id: x.co_contribuyente,
@@ -1010,7 +1010,7 @@ export const logInExternalLinking = async ({ credentials }) => {
                             })
                           )
                         ).filter((el) => el);
-                        convenios = convenios.length > 0 ? convenios : undefined;
+                        convenios = convenios.length > 0 ? uniqBy(convenios, 'id') : undefined;
                       }
                       inmuebles.push({
                         id: x.co_contribuyente,
