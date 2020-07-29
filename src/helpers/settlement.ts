@@ -436,7 +436,7 @@ const structureEstates = (x: any) => {
 const structureSettlements = (x: any) => {
   return {
     id: nullStringCheck(x.co_liquidacion),
-    estado: nullStringCheck(+x.co_estatus === 1 ? 'VIGENTE' : 'PAGADO'),
+    estado: +x.co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
     ramo: nullStringCheck(x.tx_ramo),
     codigoRamo: nullStringCheck(x.nb_ramo),
     descripcion: 'Migracion',
