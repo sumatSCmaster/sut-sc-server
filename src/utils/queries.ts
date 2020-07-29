@@ -80,8 +80,9 @@ const queries = {
   GET_JOBS_BY_TYPES_AND_INSTITUTION: 'SELECT id_cargo AS id, descripcion FROM cargo WHERE id_tipo_usuario = $1 AND id_institucion = $2',
 
   //BANKS
-  INSERT_PAYMENT: 'INSERT INTO pago (id_procedimiento, referencia, monto, id_banco, fecha_de_pago, concepto, id_usuario) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *;',
-  INSERT_PAYMENT_CASHIER: 'INSERT INTO pago (id_procedimiento, referencia, monto, id_banco, fecha_de_pago, concepto ,aprobado, fecha_de_aprobacion, metodo_pago, id_usuario) VALUES ($1, $2, $3, $4, $5, $6, true, now(), $7, $8) RETURNING *;',
+  INSERT_PAYMENT: 'INSERT INTO pago (id_procedimiento, referencia, monto, id_banco, fecha_de_pago, concepto, id_banco_destino, id_usuario) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *;',
+  INSERT_PAYMENT_CASHIER:
+    'INSERT INTO pago (id_procedimiento, referencia, monto, id_banco, fecha_de_pago, concepto, id_banco_destino, aprobado, fecha_de_aprobacion, metodo_pago, id_usuario) VALUES ($1, $2, $3, $4, $5, $6, true, now(), $7, $8, $9) RETURNING *;',
 
   GET_ALL_BANKS: 'SELECT id_banco as id, nombre, validador  FROM banco',
   VALIDATE_PAYMENTS: 'SELECT validate_payments($1);',

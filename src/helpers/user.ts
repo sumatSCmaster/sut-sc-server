@@ -20,10 +20,11 @@ export const getUserByUsername = async (username: string): Promise<Usuario | nul
     const resType = typeResult.rows[0];
     const resGoogle = googleData.rows[0];
     const resOfficial = officialData.rows[0];
-    const user: Usuario = {
+    const user: Usuario & { verificado: Boolean } = {
       id: resBase.id_usuario,
       nombreCompleto: resBase.nombre_completo,
       nombreUsuario: resBase.nombre_de_usuario,
+      verificado: resBase.verificado,
       password: resBase.password,
       direccion: resBase.direccion,
       cedula: resBase.cedula,
