@@ -1688,8 +1688,10 @@ export const initialUserLinking = async (linkingData, user) => {
             await Promise.all(
               convenios.map(async (el) => {
                 const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+                await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [el.porciones[0].fechaLiquidacion, applicationAG.id_solicitud]);
                 await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [applicationAG.id_solicitud, applicationStateEvents.INGRESARDATOS]);
                 el.estado === 'PAGADO' && (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [applicationAG.id_solicitud, applicationStateEvents.APROBARCAJERO]));
+                el.estado === 'PAGADO' && (await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [el.porciones[0].fechaLiquidacion, applicationAG.id_solicitud]));
                 await client.query('UPDATE impuesto.solicitud SET tipo_solicitud = $1 WHERE id_solicitud = $2', ['CONVENIO', applicationAG.id_solicitud]);
                 const agreement = (await client.query(queries.CREATE_AGREEMENT, [applicationAG.id_solicitud, el.cantPorciones])).rows[0];
                 const benefitAgreement = await Promise.all(
@@ -1730,8 +1732,8 @@ export const initialUserLinking = async (linkingData, user) => {
               : undefined;
           if (pagados.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
-            await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
+            await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               pagados.map(async (el) => {
                 const settlement = (
@@ -1812,8 +1814,10 @@ export const initialUserLinking = async (linkingData, user) => {
               await Promise.all(
                 convenios.map(async (el) => {
                   const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+                  await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [el.porciones[0].fechaLiquidacion, applicationAG.id_solicitud]);
                   await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [applicationAG.id_solicitud, applicationStateEvents.INGRESARDATOS]);
                   el.estado === 'PAGADO' && (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [applicationAG.id_solicitud, applicationStateEvents.APROBARCAJERO]));
+                  el.estado === 'PAGADO' && (await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [el.porciones[0].fechaLiquidacion, applicationAG.id_solicitud]));
                   await client.query('UPDATE impuesto.solicitud SET tipo_solicitud = $1 WHERE id_solicitud = $2', ['CONVENIO', applicationAG.id_solicitud]);
                   const agreement = (await client.query(queries.CREATE_AGREEMENT, [applicationAG.id_solicitud, el.cantPorciones])).rows[0];
                   const benefitAgreement = await Promise.all(
@@ -1866,8 +1870,8 @@ export const initialUserLinking = async (linkingData, user) => {
           }
           if (pagados.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
-            await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
+            await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               pagados.map(async (el) => {
                 const settlement = (
