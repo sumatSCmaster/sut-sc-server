@@ -2657,7 +2657,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
 
         return {
           id: liquidacion.id_liquidacion,
-          ramo: branchNames[el.ramo],
+          ramo: el.ramo,
           fecha: datos.fecha,
           monto: liquidacion.monto,
           certificado: liquidacion.certificado,
