@@ -45,7 +45,7 @@ export const getRepairYears = async ({ document, reference, docType, user }: { d
     const lastREPPayment = (lastREP && moment(lastREP.fecha_liquidacion)) || moment().month(0);
     const REPDate = moment([lastREPPayment.year(), lastREPPayment.month(), 1]);
     const dateInterpolation = Math.floor(now.diff(REPDate, 'year'));
-    debtREP = new Array(4).fill({}).map((x, i) => now.year() - i);
+    debtREP = new Array(5).fill({}).map((x, i) => now.year() - i);
 
     return {
       status: 200,
