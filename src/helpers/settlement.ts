@@ -1513,6 +1513,7 @@ const formatContributor = async (contributor, client: PoolClient) => {
       puntoReferencia: contributor.punto_referencia,
       verificado: contributor.verificado,
       esAgenteRetencion: contributor.es_agente_retencion,
+      usuarios: await getUsersByContributor(contributor.id_contribuyente),
       sucursales: branches.length > 0 ? await Promise.all(branches.map((el) => formatBranch(el, client))) : undefined,
     };
   } catch (e) {
@@ -2624,20 +2625,15 @@ export const internalUserLinking = async (data) => {
 export const createSpecialSettlement = async ({ process, user }) => {
   const client = await pool.connect();
   const { impuestos } = process;
-  //Esto hay que sacarlo de db
-  const augment = 10;
-  const maxFining = 100;
-  let finingMonths: MultaImpuesto[] | undefined, finingAmount;
   try {
     client.query('BEGIN');
     const userContributor = (await client.query(queries.TAX_PAYER_EXISTS, [process.tipoDocumento, process.documento])).rows;
     const userHasContributor = userContributor.length > 0;
     if (!userHasContributor) throw { status: 404, message: 'El usuario no esta asociado con ningun contribuyente' };
-    const contributorReference = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [process.rim, process.contribuyente])).rows[0];
+    const contributorReference = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [process.rim, userContributor[0].id_contribuyente])).rows[0];
     if (!contributorReference) throw { status: 404, message: 'La sucursal solicitada no existe' };
-    console.log(contributorReference);
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-    const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.tipoUsuario !== 4 && process.usuario, process.contribuyente])).rows[0];
+    const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(user.tipoUsuario !== 4 && process.usuario) || user.id, userContributor[0].id_contribuyente])).rows[0];
 
     const settlement: Liquidacion[] = await Promise.all(
       impuestos.map(async (el) => {
