@@ -9,6 +9,8 @@ block content
       span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
     -var sub = [];
     -var aux = ['501','236'];
+    -var auxLiq = 0;
+    -var auxIng = 0;
   div#planilla
     div.table
       .tr
@@ -41,6 +43,8 @@ block content
       each item in datos.ingresos
         - sub = item.subRamo
         if aux.includes(item.ramo)
+        - auxLiq += item.liquidadoTotal
+        - auxIng += item.ingresadoTotal
         else
           .tr.break-page.title
             div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
@@ -57,29 +61,31 @@ block content
               p #{item.cantidadIngTotal ? item.cantidadIngTotal : 0}  
           if sub.length > 1
             each subRamo in sub
-              .tr.break-page.sub-title
-                div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
-                  p #{subRamo.ramo}
-                div(style={'-webkit-flex':'3'}).td.center.border-right.border-bottom
-                  p #{subRamo.descripcion}
-                div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-                  p #{new Intl.NumberFormat('de-DE').format(subRamo.liquidado ? subRamo.liquidado : 0)}
-                div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
-                  p #{subRamo.cantidadLiq ? subRamo.cantidadLiq : 0}
-                div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-                  p #{new Intl.NumberFormat('de-DE').format(subRamo.ingresado ? subRamo.ingresado : 0)}
-                div(style={'-webkit-flex':'1'}).td.center.border-bottom
-                  p #{subRamo.cantidadIng ? subRamo.cantidadIng : 0}
+              if (!subRamo.liquidado) && (!subRamo.ingresado)
+              else
+                .tr.break-page.sub-title
+                  div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+                    p #{subRamo.ramo}
+                  div(style={'-webkit-flex':'3'}).td.center.border-right.border-bottom
+                    p #{subRamo.descripcion}
+                  div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
+                    p #{new Intl.NumberFormat('de-DE').format(subRamo.liquidado ? subRamo.liquidado : 0)}
+                  div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+                    p #{subRamo.cantidadLiq ? subRamo.cantidadLiq : 0}
+                  div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
+                    p #{new Intl.NumberFormat('de-DE').format(subRamo.ingresado ? subRamo.ingresado : 0)}
+                  div(style={'-webkit-flex':'1'}).td.center.border-bottom
+                    p #{subRamo.cantidadIng ? subRamo.cantidadIng : 0}
       .tr.break-page
         div(style={'-webkit-flex':'4'}).th.center.border-right
           p
             b TOTALES
         div(style={'-webkit-flex':'2'}).td.center.border-right
-          p #{new Intl.NumberFormat('de-DE').format(datos.liquidadoTotal ? datos.liquidadoTotal : 0)}
+          p #{new Intl.NumberFormat('de-DE').format(datos.liquidadoTotal ? datos.liquidadoTotal - (auxLiq) : 0)}
         div(style={'-webkit-flex':'1'}).td.center.border-right
           p #{datos.cantidadLiqTotal}          
         div(style={'-webkit-flex':'2'}).td.center.border-right
-          p #{new Intl.NumberFormat('de-DE').format(datos.ingresadoTotal ? datos.ingresadoTotal : 0)}
+          p #{new Intl.NumberFormat('de-DE').format(datos.ingresadoTotal ? datos.ingresadoTotal - (auxIng) : 0)}
         div(style={'-webkit-flex':'1'}).td.center
           p #{datos.cantidadIngTotal}                       
 block footer         
