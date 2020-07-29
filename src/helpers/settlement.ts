@@ -2688,7 +2688,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
     //   multas: finingMonths,
     //   registroMunicipal: process.rim,
     // };
-    const costoSolicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0].monto_total;
+    const costoSolicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application.id_solicitud])).rows[0].monto_total;
     const pagoSum = process.pago.map((e) => e.costo).reduce((e, i) => e + i, 0);
     if (pagoSum < costoSolicitud) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
     const creditoPositivo = pagoSum - costoSolicitud;
@@ -2703,13 +2703,13 @@ export const createSpecialSettlement = async ({ process, user }) => {
         el.fecha = paymentDate;
         el.concepto = 'IMPUESTO';
         el.user = user.id;
-        user.tipoUsuario === 4 ? await insertPaymentReference(el, application, client) : await insertPaymentCashier(el, application, client);
+        user.tipoUsuario === 4 ? await insertPaymentReference(el, application.id_solicitud, client) : await insertPaymentCashier(el, application.id_solicitud, client);
         if (el.metodoPago === 'CREDITO_FISCAL') {
-          await updateFiscalCredit({ id: application, user, amount: -el.costo, client });
+          await updateFiscalCredit({ id: application.id_solicitud, user, amount: -el.costo, client });
         }
       })
     );
-    if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
+    if (creditoPositivo > 0) await updateFiscalCredit({ id: application.id_solicitud, user, amount: creditoPositivo, client });
 
     (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
     const state = await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
