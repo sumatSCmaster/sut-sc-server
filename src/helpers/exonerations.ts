@@ -115,7 +115,7 @@ export const createContributorExoneration = async ({typeDoc, doc, ref, from, act
         if(!contributor.rows[0]){
             throw new Error('No se ha hallado el contribuyente');
         }
-        const idContributor = contributor.rows[0].id_registro_municipal;
+        const idContributor = contributor.rows[0].idRegistroMunicipal;
         
         if(activities){
             await Promise.all(activities.map(async (row) => {
