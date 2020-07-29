@@ -189,19 +189,19 @@ block content
           div(style={'-webkit-flex': 1.5}).td.border-right.center.border-top
             p #{item.nro}
           div(style={'-webkit-flex': 2.5}).td.center.border-top
-            p Bs #{new Intl.NumberFormat('de-DE').format(item.monto)}         
+            p Bs #{new Intl.NumberFormat('de-DE').format(item.monto ? (item.monto).toFixed(2) : 0)}         
     div(style={'margin-top':'20px'}).table.break-page
       div(style={'background-color':'rgba(0,0,0,0.2)'}).tr
         div(style={'-webkit-flex': 1}).td.border-right.center
           p
             b Total Liquidado:
-            span &nbsp;Bs #{new Intl.NumberFormat('de-DE').format(datos.funcionario.totalLiq ? datos.funcionario.totalLiq : 0)}
+            span &nbsp;Bs #{new Intl.NumberFormat('de-DE').format(datos.funcionario.totalLiq ? (datos.funcionario.totalLiq).toFixed(2) : 0)}
         div(style={'-webkit-flex': 1}).td.border-right.center
           p
             b Total Recaudado:
-            span &nbsp;Bs #{new Intl.NumberFormat('de-DE').format(datos.funcionario.totalRecaudado ? datos.funcionario.totalRecaudado : 0)}
+            span &nbsp;Bs #{new Intl.NumberFormat('de-DE').format(datos.funcionario.totalRecaudado ?( datos.funcionario.totalRecaudado).toFixed(2) : 0)}
         div(style={'-webkit-flex': 1}).td.center
           p
             b Total Credito Fiscal:
-            span &nbsp;Bs #{new Intl.NumberFormat('de-DE').format(datos.funcionario.totalCred ? datos.funcionario.totalCred : 0)}
+            span &nbsp;Bs #{new Intl.NumberFormat('de-DE').format(datos.funcionario.totalCred ? (datos.funcionario.totalCred).toFixed(2) : 0)}
 block footer
