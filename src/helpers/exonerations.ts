@@ -125,7 +125,7 @@ export const createContributorExoneration = async ({typeDoc, doc, ref, from, act
                 }else if(!((await client.query(queries.GET_CONTRIBUTOR_HAS_ACTIVITY, [idContributor, row.id])).rowCount > 0)) {
                     throw new Error(`El contribuyente no tiene esa actividad economica.`)
                 } else {
-                    console.log('b')
+                    console.log('bc')
                     return client.query(queries.INSERT_CONTRIBUTOR_EXONERATED_ACTIVITY, [exoneration.id_plazo_exoneracion, idContributor, row.id]);
                 }
             }))
