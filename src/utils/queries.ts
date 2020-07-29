@@ -637,7 +637,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
       FROM pago p
       WHERE p.concepto = 'IMPUESTO' AND p.id_procedimiento = $1
       GROUP BY p.metodo_pago;`,
-  GET_RECEIPT_RECORDS_BY_USER: 'SELECT id_registro_recibo AS id, fecha, recibo, razon_social AS "razonSocial", rim FROM impuesto.registro_recibo WHERE id_usuario = $1',
+  GET_RECEIPT_RECORDS_BY_USER: 'SELECT id_registro_recibo AS id, fecha, recibo, razon_social AS "razonSocial", rim FROM impuesto.registro_recibo WHERE id_usuario = $1 ORDER BY fecha DESC;',
   INSERT_RECEIPT_RECORD: `INSERT INTO impuesto.registro_recibo (id_usuario, recibo, razon_social, rim) VALUES ($1, $2, $3, $4) ON CONFLICT (id_usuario, recibo) DO NOTHING;`,
   //Dias feriados
   GET_HOLIDAYS_BASED_ON_PAYMENT_DATE: "SELECT * FROM impuesto.dias_feriados WHERE dia BETWEEN $1::date AND ($1::date + interval '7 days');",
@@ -786,14 +786,14 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_EXONERATED_CONTRIBUTOR_STATUS:
     'SELECT * FROM impuesto.contribuyente_exoneracion ce INNER JOIN impuesto.plazo_exoneracion pe ON pe.id_plazo_exoneracion = ce.id_plazo_exoneracion \
     WHERE id_registro_municipal = $1 AND id_actividad_economica IS NULL AND fecha_fin IS NULL',
-  GET_CONTRIBUTOR_HAS_ACTIVITY: 'SELECT * FROM impuesto.actividad_economica ae INNER JOIN impuesto.actividad_economica_sucursal aec ON aec.numero_referencia = ae.numero_referencia WHERE id_registro_municipal = $2 AND id_actividad_economica = $2',
+  GET_CONTRIBUTOR_HAS_ACTIVITY: 'SELECT * FROM impuesto.actividad_economica ae INNER JOIN impuesto.actividad_economica_sucursal aec ON aec.numero_referencia = ae.numero_referencia WHERE id_registro_municipal = $1 AND id_actividad_economica = $2',
   GET_CONTRIBUTOR_EXONERATIONS: `SELECT pe.*, ce.*, ae.*, c.*, rm.*, ((pe.fecha_fin IS NULL) OR (NOW() BETWEEN pe.fecha_inicio AND pe.fecha_fin)) AS active \
         FROM impuesto.plazo_exoneracion pe \
         INNER JOIN impuesto.contribuyente_exoneracion ce ON ce.id_plazo_exoneracion = pe.id_plazo_exoneracion \
         INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = ce.id_registro_municipal
         INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = rm.id_contribuyente \
         LEFT JOIN impuesto.actividad_economica ae ON ae.id_actividad_economica = ce.id_actividad_economica \
-        WHERE c.tipo_documento = $1 AND c.documento = $2 AND rm.id_registro_municipal = $3 ORDER BY pe.id_plazo_exoneracion DESC;`,
+        WHERE c.tipo_documento = $1 AND c.documento = $2 AND rm.referencia_municipal = $3 ORDER BY pe.id_plazo_exoneracion DESC;`,
   GET_ACTIVITY_EXONERATIONS: `SELECT pe.*, ae.*, ((pe.fecha_fin IS NULL) OR (NOW() BETWEEN pe.fecha_inicio AND (pe.fecha_fin))) AS active
         FROM impuesto.plazo_exoneracion pe
         INNER JOIN impuesto.actividad_economica_exoneracion aee ON aee.id_plazo_exoneracion = pe.id_plazo_exoneracion

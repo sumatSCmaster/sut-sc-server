@@ -28,6 +28,7 @@ export const generateReceipt = async (payload: { application: number }) => {
     return new Promise(async (res, rej) => {
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/recibo/${applicationView.id}/cierre.pdf`);
       const dir = `${process.env.SERVER_URL}/sedemat/recibo/${applicationView.id}/recibo.pdf`;
+      let total = 0;
       const linkQr = await qr.toDataURL(dev ? dir : `${process.env.AWS_ACCESS_URL}/sedemat/recibo/${applicationView.id}/recibo.pdf`, { errorCorrectionLevel: 'H' });
       const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-recibo.pug`), {
         moment: require('moment'),
@@ -42,6 +43,7 @@ export const generateReceipt = async (payload: { application: number }) => {
           rim: referencia?.referencia_municipal,
           telefono: referencia?.telefono_celular,
           items: breakdownData.map((row) => {
+            total += row.monto;
             return {
               descripcion: `${row.datos.descripcion ? row.datos.descripcion : `${row.descripcionRamo} - ${row.descripcionSubramo}`} (${row.datos.fecha.month} ${row.datos.fecha.year})`,
               fecha: row.fechaLiquidacion,
@@ -49,7 +51,8 @@ export const generateReceipt = async (payload: { application: number }) => {
             };
           }),
           metodoPago: payment,
-          total: paymentTotal,
+          total: total,
+          credito: paymentTotal - total
         },
       });
       if (dev) {

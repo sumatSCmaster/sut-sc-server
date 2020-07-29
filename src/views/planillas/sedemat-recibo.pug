@@ -55,6 +55,9 @@ block content
           div.center #{new Intl.NumberFormat('de-DE').format(item.monto)}
       hr.divider
       div.row-constancy.break-page
+        div(style={'-webkit-flex': '2'}).end Credito Fiscal
+        div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE').format(datos.credito? datos.credito: 0)}      
+      div.row-constancy.break-page
         div(style={'-webkit-flex': '2'}).end Total Bs.
         div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE').format(datos.total)}
     div(style={'text-align':'-webkit-right', 'width':'100%'}).break-page
