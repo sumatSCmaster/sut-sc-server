@@ -12,7 +12,7 @@ export const getContributorExonerations = async({ typeDoc, doc, ref }) => {
         if(!contributor){
             throw new Error('No se ha hallado el contribuyente');
         }
-        const contributorEconomicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [contributor.id_registro_municipal]))
+        const contributorEconomicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [contributor.idRegistroMunicipal]))
         const contributorExonerations = await client.query(queries.GET_CONTRIBUTOR_EXONERATIONS, [typeDoc, doc, ref]);
         const activeExonerations = contributorExonerations.rows.filter((row) => row.active);
         
@@ -29,11 +29,13 @@ export const getContributorExonerations = async({ typeDoc, doc, ref }) => {
             exoneracionGeneral: generalExoneration ? {
                 id: generalExoneration.id_plazo_exoneracion,
                 fechaInicio: generalExoneration.fecha_inicio,
+                fechaFin: generalExoneration.fecha_fin
             } : {},
             exoneracionesDeActividadesEconomicas: activityExonerations.map((row) => {
                 return {
                     id: row.id_plazo_exoneracion,
                     fechaInicio: row.fecha_inicio,
+                    fechaFin: row.fecha_fin,
                     numeroReferencia: row.numeroReferencia,
                     descripcion: row.descripcion
                 }
@@ -42,7 +44,7 @@ export const getContributorExonerations = async({ typeDoc, doc, ref }) => {
 
     } catch (e) {
         console.error(e)
-        throw e;
+        throw { message: errorMessageExtractor(e) }
     } finally {
         client.release()
     }
@@ -60,7 +62,8 @@ export const getActivityExonerations = async() => {
                 return {
                     id: row.id_plazo_exoneracion,
                     fechaInicio: row.fecha_inicio,
-                    numeroReferencia: row.numeroReferencia,
+                    fechaFin: row.fecha_fin,
+                    numeroReferencia: row.numero_referencia,
                     descripcion: row.descripcion
                 }
             })
@@ -86,6 +89,7 @@ export const getBranchExonerations = async () => {
                 return {
                     id: row.id_plazo_exoneracion,
                     fechaInicio: row.fecha_inicio,
+                    fechaFin: row.fecha_fin,
                     codigo: row.codigo,
                     descripcion: row.descripcion
                 }
@@ -194,7 +198,10 @@ export const createBranchExoneration = async ({ from, branches }: { from: Date, 
 
         await client.query('COMMIT');
         return {
-            message: 'Exoneraciones creadas'   
+            message: 'Exoneraciones creadas',
+            exoneraciones: (await Promise.all(branches.map(async (row) => {
+                return (await client.query(queries.GET_BRANCH_IS_EXONERATED, [row.id])).rows[0]
+            })))
         }
 
     } catch (e) {
