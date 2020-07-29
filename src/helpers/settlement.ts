@@ -2641,6 +2641,8 @@ export const createSpecialSettlement = async ({ process, user }) => {
 
     const settlement: Liquidacion[] = await Promise.all(
       impuestos.map(async (el) => {
+        const isSpecialSettlement = (await client.query(queries.IS_SPECIAL_SETTLEMENT, [el.ramo])).rows.length > 0;
+        if (!isSpecialSettlement) throw { status: 403, message: 'Error al insertar liquidacion especial' };
         const datos = {
           desglose: el.desglose ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
           fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },

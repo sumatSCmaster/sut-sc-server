@@ -899,6 +899,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_BRANCHES: 'SELECT id_ramo AS id, codigo, descripcion, descripcion_corta, liquidacion_especial AS "liquidacionEspecial" FROM impuesto.ramo;',
   GET_BRANCHES_FOR_REPORT: 'SELECT id_ramo AS id, codigo AS "ramo", descripcion, descripcion_corta FROM impuesto.ramo;',
   GET_SUT_ESTATE_BY_ID: 'SELECT * FROM inmueble_urbano WHERE id_inmueble = $1',
+  IS_SPECIAL_SETTLEMENT: 'SELECT * FROM impuesto.ramo WHERE codigo = (SELECT codigo FROM impuesto.ramo WHERE (descripcion = $1 OR descripcion_corta = $1)) AND codigo IN (SELECT codigo FROM impuesto.ramo WHERE liquidacion_especial = true);',
   GET_RIM_DATA: `SELECT id_registro_municipal AS id, referencia_municipal as "rim", telefono_celular AS "telefonoCelular", 
     telefono_habitacion AS "telefonoHabitacion", email, denominacion_comercial AS "denominacionComercial", nombre_representante AS "nombreRepresentante"
     FROM impuesto.registro_municipal WHERE referencia_municipal = $1`,
