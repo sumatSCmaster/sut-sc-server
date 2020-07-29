@@ -2106,8 +2106,8 @@ export const insertSettlements = async ({ process, user }) => {
         j.push({ monto: costoSolvencia, ramo: 'SAE', fechaCancelada: x.fechaCancelada });
       }
       if (x.ramo === 'SM') {
-        const liquidacionGas = { ramo: branchNames['SM'], fechaCancelada: x.fechaCancelada, monto: x.desglose[0].montoGas, desglose: x.desglose, descripcion: 'Pago del Servicio de Gas' };
-        const liquidacionAseo = { ramo: branchNames['SM'], fechaCancelada: x.fechaCancelada, monto: x.desglose[0].montoAseo, desglose: x.desglose, descripcion: 'Pago del Servicio de Aseo' };
+        const liquidacionGas = { ramo: branchNames['SM'], fechaCancelada: x.fechaCancelada, monto: +x.desglose[0].montoGas * 1.16, desglose: x.desglose, descripcion: 'Pago del Servicio de Gas' };
+        const liquidacionAseo = { ramo: branchNames['SM'], fechaCancelada: x.fechaCancelada, monto: +x.desglose[0].montoAseo * 1.16, desglose: x.desglose, descripcion: 'Pago del Servicio de Aseo' };
         j.push(liquidacionAseo);
         !!liquidacionGas.monto && j.push(liquidacionGas);
       }
