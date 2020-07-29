@@ -1167,6 +1167,13 @@ const externalUserForLinkingExists = async ({ user, password, gtic }: { user: st
   }
 };
 
+export const createSettlementForProcedure = (process, client, user) => {
+  try {
+  } catch (e) {
+    throw e;
+  }
+};
+
 //TODO: get de fracciones
 export const getAgreementFractionById = async ({ id }): Promise<Solicitud & any> => {
   const client = await pool.connect();

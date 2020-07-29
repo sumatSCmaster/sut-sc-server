@@ -78,7 +78,7 @@ export const validatePayments = async (body, user) => {
 export const insertPaymentReference = async (payment: any, procedure: number, client: PoolClient) => {
   const { referencia, banco, costo, fecha, concepto, user, destino } = payment;
   try {
-    return await client.query(queries.INSERT_PAYMENT, [procedure, referencia, costo, banco, fecha, concepto, destino || banco, user]);
+    return await client.query(queries.INSERT_PAYMENT, [procedure, referencia, costo, banco, fecha, concepto, (!!destino && destino) || banco, user]);
   } catch (e) {
     throw errorMessageExtractor(e);
   }
@@ -87,7 +87,7 @@ export const insertPaymentReference = async (payment: any, procedure: number, cl
 export const insertPaymentCashier = async (payment: any, procedure: number, client: PoolClient) => {
   const { referencia, banco, costo, fecha, concepto, metodoPago, user, destino } = payment;
   try {
-    return await client.query(queries.INSERT_PAYMENT_CASHIER, [procedure, referencia || null, costo, banco || null, fecha, concepto, destino || banco, metodoPago, user]);
+    return await client.query(queries.INSERT_PAYMENT_CASHIER, [procedure, referencia || null, costo, banco || null, fecha, concepto, (!!destino && destino) || banco, metodoPago, user]);
   } catch (e) {
     throw errorMessageExtractor(e);
   }
