@@ -43,8 +43,8 @@ block content
       each item in datos.ingresos
         - sub = item.subRamo
         if aux.includes(item.ramo)
-        - auxLiq += item.liquidadoTotal
-        - auxIng += item.ingresadoTotal
+          - auxLiq += item.liquidadoTotal
+          - auxIng += item.ingresadoTotal
         else
           .tr.break-page.title
             div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
