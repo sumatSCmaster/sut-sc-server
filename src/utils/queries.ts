@@ -792,7 +792,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = ce.id_registro_municipal
         INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = rm.id_contribuyente \
         LEFT JOIN impuesto.actividad_economica ae ON ae.id_actividad_economica = ce.id_actividad_economica \
-        WHERE c.tipo_documento = $1 AND c.documento = $2 AND rm.id_registro_municipal = $3 ORDER BY pe.id_plazo_exoneracion DESC;`,
+        WHERE c.tipo_documento = $1 AND c.documento = $2 AND rm.referencia_municipal = $3 ORDER BY pe.id_plazo_exoneracion DESC;`,
   GET_ACTIVITY_EXONERATIONS: `SELECT pe.*, ae.*, ((pe.fecha_fin IS NULL) OR (NOW() BETWEEN pe.fecha_inicio AND (pe.fecha_fin))) AS active
         FROM impuesto.plazo_exoneracion pe
         INNER JOIN impuesto.actividad_economica_exoneracion aee ON aee.id_plazo_exoneracion = pe.id_plazo_exoneracion
