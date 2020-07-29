@@ -244,7 +244,7 @@ export const linkCommercial = async ({ codCat, rim, relacion }) => {
       throw new Error('RIM no encontrado');
     }
 
-    const estate = (await client.query(queries.GET_ESTATE_BY_CODCAT, [codCat]));
+    let estate = (await client.query(queries.GET_ESTATE_BY_CODCAT, [codCat]));
 
     if(estate.rowCount === 0){
       throw new Error('Inmueble no encontrado.')
@@ -255,6 +255,8 @@ export const linkCommercial = async ({ codCat, rim, relacion }) => {
     }
 
     (await client.query(queries.LINK_ESTATE_WITH_RIM, [rimData.rows[0].id, codCat, relacion]))
+
+    estate = (await client.query(queries.GET_ESTATE_BY_CODCAT, [codCat]));
 
     return {
       status: 200,
