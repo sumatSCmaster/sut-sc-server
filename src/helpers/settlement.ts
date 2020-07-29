@@ -436,7 +436,7 @@ const structureEstates = (x: any) => {
 const structureSettlements = (x: any) => {
   return {
     id: nullStringCheck(x.co_liquidacion),
-    estado: nullStringCheck(x.co_estatus === 1 ? 'VIGENTE' : 'PAGADO'),
+    estado: nullStringCheck(+x.co_estatus === 1 ? 'VIGENTE' : 'PAGADO'),
     ramo: nullStringCheck(x.tx_ramo),
     codigoRamo: nullStringCheck(x.nb_ramo),
     descripcion: 'Migracion',
@@ -519,13 +519,13 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                             const solicitud = (await gtic.query('SELECT * FROM t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
                             const isCurrentAgreement = solicitud.length > 0;
                             if (isCurrentAgreement) {
-                              const liquidaciones = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_solicitud = $1', [solicitud[0].co_convenio])).rows.map((x) => structureSettlements(j));
+                              const liquidaciones = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_solicitud = $1', [solicitud[0].co_solicitud])).rows.map((x) => structureSettlements(x));
                               return (
                                 (liquidaciones.length > 0 && {
                                   id: +solicitudConvenio,
-                                  estado: j.co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
+                                  estado: solicitud[0].co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
                                   cantPorciones: liquidaciones.length,
-                                  idRamo: (await client.query('SELECT id_ramo FROM impuesto.ramo WHERE codigo = $1', [j.nb_ramo])).rows[0].id,
+                                  idRamo: (await client.query('SELECT id_ramo AS id FROM impuesto.ramo WHERE codigo = $1', [j.nb_ramo])).rows[0].id,
                                   porciones: liquidaciones.map((i) => {
                                     i.codigoRamo = j.nb_ramo;
                                     i.ramo = j.tx_ramo;
@@ -591,11 +591,11 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                               const solicitud = (await gtic.query('SELECT * FROM t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
                               const isCurrentAgreement = solicitud.length > 0;
                               if (isCurrentAgreement) {
-                                const liquidaciones = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_solicitud = $1', [solicitud[0].co_convenio])).rows.map((x) => structureSettlements(j));
+                                const liquidaciones = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_solicitud = $1', [solicitud[0].co_solicitud])).rows.map((x) => structureSettlements(x));
                                 return (
                                   (liquidaciones.length > 0 && {
                                     id: +solicitudConvenio,
-                                    estado: j.co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
+                                    estado: solicitud[0].co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
                                     idRamo: (await client.query('SELECT id_ramo FROM impuesto.ramo WHERE codigo = $1', [j.nb_ramo])).rows[0].id,
                                     cantPorciones: liquidaciones.length,
                                     porciones: liquidaciones.map((i) => {
@@ -919,11 +919,11 @@ export const logInExternalLinking = async ({ credentials }) => {
                             const solicitud = (await gtic.query('SELECT * FROM t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
                             const isCurrentAgreement = solicitud.length > 0;
                             if (isCurrentAgreement) {
-                              const liquidaciones = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_solicitud = $1', [solicitud[0].co_convenio])).rows.map((x) => structureSettlements(j));
+                              const liquidaciones = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_solicitud = $1', [solicitud[0].co_solicitud])).rows.map((x) => structureSettlements(x));
                               return (
                                 (liquidaciones.length > 0 && {
                                   id: +solicitudConvenio,
-                                  estado: j.co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
+                                  estado: solicitud[0].co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
                                   idRamo: (await client.query('SELECT id_ramo FROM impuesto.ramo WHERE codigo = $1', [j.nb_ramo])).rows[0].id,
                                   cantPorciones: liquidaciones.length,
                                   porciones: liquidaciones.map((i) => {
@@ -990,11 +990,11 @@ export const logInExternalLinking = async ({ credentials }) => {
                               const solicitud = (await gtic.query('SELECT * FROM t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
                               const isCurrentAgreement = solicitud.length > 0;
                               if (isCurrentAgreement) {
-                                const liquidaciones = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_solicitud = $1', [solicitud[0].co_convenio])).rows.map((x) => structureSettlements(j));
+                                const liquidaciones = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_solicitud = $1', [solicitud[0].co_solicitud])).rows.map((x) => structureSettlements(x));
                                 return (
                                   (liquidaciones.length > 0 && {
                                     id: +solicitudConvenio,
-                                    estado: j.co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
+                                    estado: solicitud[0].co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
                                     idRamo: (await client.query('SELECT id_ramo FROM impuesto.ramo WHERE codigo = $1', [j.nb_ramo])).rows[0].id,
                                     cantPorciones: liquidaciones.length,
                                     porciones: liquidaciones.map((i) => {
@@ -1676,7 +1676,7 @@ export const initialUserLinking = async (linkingData, user) => {
               })
             );
           }
-          if (convenios!.length > 0) {
+          if (convenios?.length > 0) {
             await Promise.all(
               convenios.map(async (el) => {
                 const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
@@ -1800,7 +1800,7 @@ export const initialUserLinking = async (linkingData, user) => {
                 })
               );
             }
-            if (convenios!.length > 0) {
+            if (convenios?.length > 0) {
               await Promise.all(
                 convenios.map(async (el) => {
                   const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
