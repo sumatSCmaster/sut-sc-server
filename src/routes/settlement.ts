@@ -25,6 +25,7 @@ import {
   internalLicenseApproval,
   internalUserLinking,
   internalUserImport,
+  createSpecialSettlement,
 } from '@helpers/settlement';
 import { Usuario } from '@root/interfaces/sigt';
 
@@ -179,6 +180,12 @@ router.post('/license', authenticate('jwt'), async (req: any, res) => {
 router.post('/internal', authenticate('jwt'), async (req, res) => {
   console.log('??????????????????????????');
   const [error, data] = await fulfill(internalContributorSignUp(req.body));
+  if (error) res.status(error.status).json(error);
+  if (data) res.status(data.status).json(data);
+});
+
+router.post('/special', authenticate('jwt'), async (req, res) => {
+  const [error, data] = await fulfill(createSpecialSettlement({ process: req.body, user: req.user }));
   if (error) res.status(error.status).json(error);
   if (data) res.status(data.status).json(data);
 });

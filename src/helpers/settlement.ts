@@ -2621,6 +2621,118 @@ export const internalUserLinking = async (data) => {
   }
 };
 
+export const createSpecialSettlement = async ({ process, user }) => {
+  const client = await pool.connect();
+  const { impuestos } = process;
+  //Esto hay que sacarlo de db
+  const augment = 10;
+  const maxFining = 100;
+  let finingMonths: MultaImpuesto[] | undefined, finingAmount;
+  try {
+    client.query('BEGIN');
+    const userContributor = (await client.query(queries.TAX_PAYER_EXISTS, [process.tipoDocumento, process.documento])).rows;
+    const userHasContributor = userContributor.length > 0;
+    if (!userHasContributor) throw { status: 404, message: 'El usuario no esta asociado con ningun contribuyente' };
+    const contributorReference = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [process.rim, process.contribuyente])).rows[0];
+    if (!contributorReference) throw { status: 404, message: 'La sucursal solicitada no existe' };
+    console.log(contributorReference);
+    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.tipoUsuario !== 4 && process.usuario, process.contribuyente])).rows[0];
+
+    const settlement: Liquidacion[] = await Promise.all(
+      impuestos.map(async (el) => {
+        const datos = {
+          desglose: el.desglose ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
+          fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },
+        };
+        const liquidacion = (
+          await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+            application.id_solicitud,
+            fixatedAmount(+el.monto),
+            el.ramo,
+            el.descripcion || 'Pago ordinario',
+            datos,
+            moment().month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
+            (contributorReference && contributorReference.id_registro_municipal) || null,
+          ])
+        ).rows[0];
+
+        return {
+          id: liquidacion.id_liquidacion,
+          ramo: branchNames[el.ramo],
+          fecha: datos.fecha,
+          monto: liquidacion.monto,
+          certificado: liquidacion.certificado,
+          recibo: liquidacion.recibo,
+          desglose: datos.desglose,
+        };
+      })
+    );
+
+    // const solicitud: Solicitud & { registroMunicipal: string } = {
+    //   id: application.id_solicitud,
+    //   usuario: user,
+    //   contribuyente: application.contribuyente,
+    //   aprobado: application.aprobado,
+    //   fecha: application.fecha,
+    //   monto: finingMonths
+    //     ?.concat(settlement)
+    //     .map((el) => +el.monto)
+    //     .reduce((x, j) => x + j, 0) as number,
+    //   liquidaciones: settlement,
+    //   multas: finingMonths,
+    //   registroMunicipal: process.rim,
+    // };
+    const costoSolicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0].monto_total;
+    const pagoSum = process.payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
+    if (pagoSum < costoSolicitud) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
+    const creditoPositivo = pagoSum - costoSolicitud;
+    await Promise.all(
+      process.payment.map(async (el) => {
+        if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
+        const nearbyHolidays = (await client.query(queries.GET_HOLIDAYS_BASED_ON_PAYMENT_DATE, [el.fecha])).rows;
+        const paymentDate = checkIfWeekend(moment(el.fecha));
+        if (nearbyHolidays.length > 0) {
+          while (nearbyHolidays.find((el) => moment(el.dia).format('YYYY-MM-DD') === paymentDate.format('YYYY-MM-DD'))) paymentDate.add({ days: 1 });
+        }
+        el.fecha = paymentDate;
+        el.concepto = 'IMPUESTO';
+        el.user = user.id;
+        user.tipoUsuario === 4 ? await insertPaymentReference(el, application, client) : await insertPaymentCashier(el, application, client);
+        if (el.metodoPago === 'CREDITO_FISCAL') {
+          await updateFiscalCredit({ id: application, user, amount: -el.costo, client });
+        }
+      })
+    );
+    if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
+
+    (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
+    const state = await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
+
+    await client.query('COMMIT');
+    const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
+    await sendNotification(
+      user,
+      `Se ha completado una solicitud de pago especial para el contribuyente con el documento de identidad: ${solicitud.tipoDocumento}-${solicitud.documento}`,
+      'CREATE_APPLICATION',
+      'IMPUESTO',
+      { ...solicitud, estado: state, nombreCorto: 'SEDEMAT' },
+      client
+    );
+    return { status: 201, message: 'Solicitud de liquidacion especial creada satisfactoriamente', solicitud };
+  } catch (error) {
+    console.log(error);
+    client.query('ROLLBACK');
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al crear liquidaciones especiales',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 export const approveContributorAELicense = async ({ data, client }: { data: any; client: PoolClient }) => {
   try {
     console.log(data);
