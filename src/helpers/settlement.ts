@@ -2833,7 +2833,7 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
 
 export const approveContributorBenefits = async ({ data, client }: { data: any; client: PoolClient }) => {
   try {
-    const { contribuyente, beneficios } = data.funcionario;
+    const { contribuyente, beneficios, usuario } = data.funcionario;
     const contributorWithBranch = (await client.query(queries.GET_CONTRIBUTOR_WITH_BRANCH, [contribuyente.registroMunicipal])).rows[0];
     const benefittedUser = (await client.query(queries.GET_USER_IN_CHARGE_OF_BRANCH_BY_ID, [contributorWithBranch.id_registro_municipal])).rows[0];
     if (!benefittedUser) throw { status: 404, message: 'No existe un usuario encargado de esta sucursal' };
@@ -3856,6 +3856,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
       cache: false,
       moment: require('moment'),
       written,
+      institucion: 'SEDEMAT',
     });
     return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
   } catch (error) {
