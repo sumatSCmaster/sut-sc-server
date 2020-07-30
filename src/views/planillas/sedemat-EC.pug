@@ -1,18 +1,9 @@
 extends default
 block css
-  link(rel="stylesheet", href="css/sedemat.css")
-block header
-  header#header
-    div.header-child
-      img#alcaldia(src='images/LogoAlcaldia.png')
-    div.header-child
-        p Alcaldida Bolivariana de Maracaibo
-        p Servicio Desconcentrado Municipal de Administración Tributaria
-        p R.I.F.: G-20002908-0
-    div.header-child
-      img#logo(src='images/sedemat.png')
-  img#divider(src='images/Divider.png')
-  div(style={'padding': '0 10px'})
+  link(rel="stylesheet", href="css/sedemat.css")            
+block title
+block content
+  div#planilla
     .table.break-page
       .tr.break-page
         .th.center.border-bottom
@@ -135,7 +126,4 @@ block header
               p  #{item.id}   
             div(style={'-webkit-flex':'8'}).td.center
               p #{item.nombreActividad}        
-                       
-block title
-block content
 block footer         
