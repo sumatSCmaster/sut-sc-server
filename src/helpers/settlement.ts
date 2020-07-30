@@ -1624,7 +1624,7 @@ export const getEntireDebtsForContributor = async ({ reference, docType, documen
 
 const getDefaultInterestByApplication = async ({ id, date, state, client }) => {
   try {
-    return (
+    const value =
       (state === 'ingresardatos' &&
         moment(date).month() < moment().month() &&
         (
@@ -1636,8 +1636,9 @@ const getDefaultInterestByApplication = async ({ id, date, state, client }) => {
           .filter((el) => !!['AE', 'SM', 'IU', 'PP'].find((x) => x === el.tipoProcedimiento))
           .map((p) => +p.monto * 0.3324 * (moment().diff(moment(date).endOf('month'), 'days') - 1))
           .reduce((x, j) => x + j, 0)) ||
-      undefined
-    );
+      undefined;
+    console.log('getDefaultInterestByApplication -> value', value);
+    return value;
   } catch (e) {
     throw e;
   }
