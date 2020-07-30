@@ -1625,7 +1625,7 @@ export const getEntireDebtsForContributor = async ({ reference, docType, documen
 const getDefaultInterestByApplication = async ({ id, date, state, client }) => {
   try {
     return (
-      (state === applicationStateEvents.INGRESARDATOS &&
+      (state === 'ingresardatos' &&
         moment(date).month() < moment().month() &&
         (
           await client.query(
