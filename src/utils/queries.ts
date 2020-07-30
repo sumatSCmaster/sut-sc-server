@@ -678,8 +678,8 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo 
         GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion
         ORDER BY ramo;`,
-  GET_TRANSFERS_BY_BANK: `WITH liquidaciones AS (SELECT l.id_liquidacion
-    FROM (SELECT *  FROM impuesto.liquidacion) l 
+  GET_TRANSFERS_BY_BANK: `WITH liquidaciones AS (SELECT DISTINCT l.id_solicitud
+    FROM ((SELECT DISTINCT l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto  FROM impuesto.liquidacion l WHERE id_solicitud IS NOT NULL AND id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE fecha_aprobado BETWEEN $1 AND $2) UNION SELECT l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto FROM impuesto.liquidacion l WHERE id_solicitud IS NULL AND fecha_liquidacion BETWEEN $1 AND $2 order by id_solicitud)) l 
     LEFT JOIN (SELECT *, s.id_solicitud AS id_solicitud_q 
                     FROM impuesto.solicitud s 
                     INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) 
@@ -687,19 +687,19 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     se ON l.id_solicitud = se.id_solicitud_q
     )
     
-    SELECT id_banco, banco, SUM(monto) AS monto FROM (SELECT b.id_banco, b.nombre AS banco, SUM(p.monto) as monto
+    SELECT id_banco, banco, SUM(monto) AS monto FROM (SELECT p.id_banco_destino AS "id_banco", b.nombre AS banco, SUM(p.monto) as monto
             FROM pago p
             INNER JOIN banco b ON b.id_banco = p.id_banco_destino
             WHERE p.concepto IN ('IMPUESTO', 'CONVENIO') AND p.aprobado = true AND p.metodo_pago = 'TRANSFERENCIA' AND p.id_procedimiento IN (SELECT * FROM liquidaciones)
-            GROUP BY b.id_banco, b.nombre
+            GROUP BY p.id_banco_destino, b.nombre
             UNION
-            SELECT b.id_banco, b.nombre AS banco, SUM(ROUND(p.monto)) as monto
+            SELECT p.id_banco_destino AS "id_banco", b.nombre AS banco, SUM(ROUND(p.monto)) as monto
             FROM (SELECT * FROM pago p 
                     INNER JOIN tramite t ON t.id_tramite = p.id_procedimiento 
                     INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite 
                     WHERE p.concepto = 'TRAMITE' AND p.aprobado = true AND tt.id_institucion = 9 AND p.metodo_pago = 'TRANSFERENCIA' AND p.fecha_de_aprobacion BETWEEN $1 AND $2) p
             INNER JOIN banco b ON b.id_banco = p.id_banco_destino
-            GROUP BY b.id_banco, b.nombre) x GROUP BY id_banco, banco;`,
+            GROUP BY p.id_banco_destino, b.nombre) x GROUP BY id_banco, banco;`,
   GET_CASH_REPORT: `SELECT 'BS' as moneda, SUM(x.monto) AS monto FROM(
     SELECT SUM(p.monto) AS monto
     FROM pago p
