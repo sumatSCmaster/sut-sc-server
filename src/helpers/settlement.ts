@@ -1638,7 +1638,7 @@ const getDefaultInterestByApplication = async ({ id, date, state, client }) => {
           .reduce((x, j) => x + j, 0)) ||
       undefined;
     console.log('getDefaultInterestByApplication -> value', id, value);
-    return fixatedAmount(+value);
+    return +fixatedAmount(+value);
   } catch (e) {
     throw e;
   }
