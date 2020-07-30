@@ -1310,6 +1310,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
       (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows.map(async (el) => {
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
         const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
+        const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
         return {
           id: el.id_solicitud,
           usuario: typeof user === 'object' ? user : { id: user },
@@ -1318,7 +1319,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
           tipo: el.tipo_solicitud,
           documento: docs.documento,
           tipoDocumento: docs.tipo_documento,
-          estado: (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state,
+          estado: state,
           referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
             ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
             : undefined,
@@ -1349,6 +1350,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
                 recibo: el.recibo,
               };
             }),
+          interesMoratorio: await getDefaultInterestByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
         };
       })
     );
@@ -2232,6 +2234,27 @@ export const addTaxApplicationPayment = async ({ payment, application, user }) =
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    if (!!payment.interesesMoratorio) {
+      const fixatedApplication = await getApplicationsAndSettlementsById({ id: application, user });
+      const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
+        ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
+        : undefined;
+      const datos = {
+        fecha: { month: moment().toDate().toLocaleDateString('ES', { month: 'long' }), year: moment().year() },
+      };
+      const liquidacion = (
+        await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [application, fixatedAmount(+payment.interesesMoratorio), 'INTERESES', 'Pago ordinario', datos, moment().endOf('month').format('MM-DD-YYYY'), idReferenciaMunicipal])
+      ).rows[0];
+
+      return {
+        id: liquidacion.id_liquidacion,
+        ramo: 'INTERESES',
+        fecha: datos.fecha,
+        monto: liquidacion.monto,
+        certificado: liquidacion.certificado,
+        recibo: liquidacion.recibo,
+      };
+    }
     const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0];
     const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
     if (pagoSum < solicitud.monto_total) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
