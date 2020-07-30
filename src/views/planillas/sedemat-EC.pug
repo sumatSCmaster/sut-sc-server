@@ -2,6 +2,9 @@ extends default
 block css
   link(rel="stylesheet", href="css/sedemat.css")            
 block title
+  - var limit = 22;
+  - var data = datosLiquidacion.slice(0,limit);
+  - var aux = datosLiquidacion.slice(limit, datosLiquidacion.length);
 block content
   div#planilla
     .table.break-page
@@ -34,60 +37,170 @@ block content
           p Teléfóno
         div(style={'-webkit-flex':'7'}).td
           p #{datosContribuyente.telefono}
-    div(style={'margin-top':'20px'}).table
-      .tr.break-page
-        .th.center.border-bottom
-          p
-            b ESTADO DE CUENTA DEL CONTRIBUYENTE
-      .tr.break-page
-        div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
-          p
-            b PLANILLA
-        div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
-          p
-            b SOLICITUD
-        div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
-          p
-            b PORCIÓN
-        div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
-          p
-            b FECHA LIQ.
-        div(style={'-webkit-flex':'1.25'}).th.center.border-right.border-bottom
-          p
-            b FECHA DE VENC.
-        div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
-          p
-            b MOTIVO
-        div(style={'-webkit-flex':'1.25'}).th.center.border-right.border-bottom
-          p
-            b Estado
-        div(style={'-webkit-flex':'2'}).th.center.border-bottom
-          p
-            b MONTO PORCIÓN
-      each item in datosLiquidacion
+    if datosLiquidacion.length > 22
+      div(style={'margin-top':'20px'}).table.break-page
         .tr.break-page
-          div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
-            p #{item.planilla}
-          div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
-            p #{item.solicitud}
-          div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
-            p #{item.porcion}
-          div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
-            p #{item.fechaLiquidacion}
-          div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom
-            p #{item.fechaVencimiento}
-          div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
-            p #{item.motivo}
-          div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom
-            p #{item.estado}
-          div(style={'-webkit-flex':'2'}).td.center.border-bottom
-            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)}
-      .tr.break-page
-        div(style={'-webkit-flex':'8'}).th.center.border-right
-          p
-            b MONTO TOTAL
-        div(style={'-webkit-flex':'1.7','padding-left' : '8px'}).td.center
-          p Bs #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(saldoFinal? (saldoFinal) : 0)}
+          .th.center.border-bottom
+            p
+              b ESTADO DE CUENTA DEL CONTRIBUYENTE
+        .tr.break-page
+          div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
+            p
+              b PLANILLA
+          div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
+            p
+              b SOLICITUD
+          div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
+            p
+              b PORCIÓN
+          div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
+            p
+              b FECHA LIQ.
+          div(style={'-webkit-flex':'1.25'}).th.center.border-right.border-bottom
+            p
+              b FECHA DE VENC.
+          div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
+            p
+              b MOTIVO
+          div(style={'-webkit-flex':'1.25'}).th.center.border-right.border-bottom
+            p
+              b Estado
+          div(style={'-webkit-flex':'2'}).th.center.border-bottom
+            p
+              b MONTO PORCIÓN
+        each item in datosLiquidacion
+          .tr.break-page
+            div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
+              p #{item.planilla}
+            div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
+              p #{item.solicitud}
+            div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+              p #{item.porcion}
+            div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
+              p #{item.fechaLiquidacion}
+            div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom
+              p #{item.fechaVencimiento}
+            div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+              p #{item.motivo}
+            div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom
+              p #{item.estado}
+            div(style={'-webkit-flex':'2'}).td.center.border-bottom
+              p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)}
+        .tr.break-page
+          div(style={'-webkit-flex':'8'}).th.center.border-right
+            p
+              b MONTO TOTAL
+          div(style={'-webkit-flex':'1.7','padding-left' : '8px'}).td.center
+            p Bs #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(saldoFinal? (saldoFinal) : 0)}
+    else 
+      div(style={'margin-top':'20px', 'border-bottom':'none'}).table.break-page
+        .tr.break-page
+          .th.center.border-bottom
+            p
+              b ESTADO DE CUENTA DEL CONTRIBUYENTE
+        .tr.break-page
+          div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
+            p
+              b PLANILLA
+          div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
+            p
+              b SOLICITUD
+          div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
+            p
+              b PORCIÓN
+          div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
+            p
+              b FECHA LIQ.
+          div(style={'-webkit-flex':'1.25'}).th.center.border-right.border-bottom
+            p
+              b FECHA DE VENC.
+          div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
+            p
+              b MOTIVO
+          div(style={'-webkit-flex':'1.25'}).th.center.border-right.border-bottom
+            p
+              b Estado
+          div(style={'-webkit-flex':'2'}).th.center.border-bottom
+            p
+              b MONTO PORCIÓN
+        each item in data
+          .tr.break-page
+            div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
+              p #{item.planilla}
+            div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
+              p #{item.solicitud}
+            div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+              p #{item.porcion}
+            div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
+              p #{item.fechaLiquidacion}
+            div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom
+              p #{item.fechaVencimiento}
+            div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+              p #{item.motivo}
+            div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom
+              p #{item.estado}
+            div(style={'-webkit-flex':'2'}).td.center.border-bottom
+              p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)}
+      div(style={'margin-top':'20px'}).table.break-page
+        .tr.break-page
+          .th.center.border-bottom
+            p
+              b ESTADO DE CUENTA DEL CONTRIBUYENTE
+        .tr.break-page
+          div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
+            p
+              b PLANILLA
+          div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
+            p
+              b SOLICITUD
+          div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
+            p
+              b PORCIÓN
+          div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
+            p
+              b FECHA LIQ.
+          div(style={'-webkit-flex':'1.25'}).th.center.border-right.border-bottom
+            p
+              b FECHA DE VENC.
+          div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
+            p
+              b MOTIVO
+          div(style={'-webkit-flex':'1.25'}).th.center.border-right.border-bottom
+            p
+              b Estado
+          div(style={'-webkit-flex':'2'}).th.center.border-bottom
+            p
+              b MONTO PORCIÓN
+        each item in aux
+          .tr.break-page
+            div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
+              p #{item.planilla}
+            div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
+              p #{item.solicitud}
+            div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+              p #{item.porcion}
+            div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
+              p #{item.fechaLiquidacion}
+            div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom
+              p #{item.fechaVencimiento}
+            div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+              p #{item.motivo}
+            div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom
+              p #{item.estado}
+            div(style={'-webkit-flex':'2'}).td.center.border-bottom
+              p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)}
+        .tr.break-page
+          div(style={'-webkit-flex':'8'}).th.center.border-right
+            p
+              b MONTO TOTAL
+          div(style={'-webkit-flex':'1.7','padding-left' : '8px'}).td.center
+            p Bs #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(saldoFinal? (saldoFinal) : 0)}              
+        .tr.break-page
+          div(style={'-webkit-flex':'8'}).th.center.border-right
+            p
+              b MONTO TOTAL
+          div(style={'-webkit-flex':'1.7','padding-left' : '8px'}).td.center
+            p Bs #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(saldoFinal? (saldoFinal) : 0)}      
     if datosLiquidacion.length >= 20 
       div(style={'margin-top':'150px'}).table
         .tr.break-page
