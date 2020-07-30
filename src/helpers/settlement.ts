@@ -2231,11 +2231,11 @@ export const insertSettlements = async ({ process, user }) => {
   }
 };
 
-export const addTaxApplicationPayment = async ({ payment, application, user }) => {
+export const addTaxApplicationPayment = async ({ payment, interest, application, user }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    if (!!payment.interesesMoratorio) {
+    if (!!interest) {
       const fixatedApplication = await getApplicationsAndSettlementsById({ id: application, user });
       const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
         ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
