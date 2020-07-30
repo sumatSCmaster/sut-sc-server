@@ -2735,11 +2735,11 @@ export const createSpecialSettlement = async ({ process, user }) => {
     //   registroMunicipal: process.rim,
     // };
     const costoSolicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application.id_solicitud])).rows[0].monto_total;
-    const pagoSum = process.pago.map((e) => e.costo).reduce((e, i) => e + i, 0);
+    const pagoSum = process.pagos.map((e) => e.costo).reduce((e, i) => e + i, 0);
     if (pagoSum < costoSolicitud) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
     const creditoPositivo = pagoSum - costoSolicitud;
     await Promise.all(
-      process.pago.map(async (el) => {
+      process.pagos.map(async (el) => {
         if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
         const nearbyHolidays = (await client.query(queries.GET_HOLIDAYS_BASED_ON_PAYMENT_DATE, [el.fecha])).rows;
         const paymentDate = checkIfWeekend(moment(el.fecha));
