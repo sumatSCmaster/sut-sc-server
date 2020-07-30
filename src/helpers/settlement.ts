@@ -2243,17 +2243,10 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
       const datos = {
         fecha: { month: moment().toDate().toLocaleDateString('ES', { month: 'long' }), year: moment().year() },
       };
-      const liquidacion = (await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [application, fixatedAmount(+interest), 'INTERESES', 'Pago ordinario', datos, moment().endOf('month').format('MM-DD-YYYY'), idReferenciaMunicipal]))
-        .rows[0];
-
-      return {
-        id: liquidacion.id_liquidacion,
-        ramo: 'INTERESES',
-        fecha: datos.fecha,
-        monto: liquidacion.monto,
-        certificado: liquidacion.certificado,
-        recibo: liquidacion.recibo,
-      };
+      console.log('si');
+      const liquidacion = (
+        await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [application, fixatedAmount(+interest), 'INTERESES', 'Pago ordinario', datos, moment().endOf('month').format('MM-DD-YYYY'), idReferenciaMunicipal || null])
+      ).rows[0];
     }
     const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0];
     const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
