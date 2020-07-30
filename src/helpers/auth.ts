@@ -80,7 +80,7 @@ export async function getUserData(id, tipoUsuario) {
       telefono: userData.telefono,
       contribuyente: await hasLinkedContributor(id),
     };
-    if (tipoUsuario !== 4) {
+    if (tipoUsuario !== 4 && tipoUsuario !== 1) {
       const officialData = await client.query(queries.GET_OFFICIAL_DATA_FROM_USERNAME, [user.nombreUsuario]);
       user = await addInstitute(user);
       user.cuentaFuncionario = officialData.rows[0];
