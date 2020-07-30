@@ -37,7 +37,7 @@ block content
           p Teléfóno
         div(style={'-webkit-flex':'7'}).td
           p #{datosContribuyente.telefono}
-    if datosLiquidacion.length > 22
+    if datosLiquidacion.length < limit
       div(style={'margin-top':'20px'}).table.break-page
         .tr.break-page
           .th.center.border-bottom
