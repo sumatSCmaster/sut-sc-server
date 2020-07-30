@@ -2243,9 +2243,8 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
       const datos = {
         fecha: { month: moment().toDate().toLocaleDateString('ES', { month: 'long' }), year: moment().year() },
       };
-      const liquidacion = (
-        await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [application, fixatedAmount(+payment.interesesMoratorio), 'INTERESES', 'Pago ordinario', datos, moment().endOf('month').format('MM-DD-YYYY'), idReferenciaMunicipal])
-      ).rows[0];
+      const liquidacion = (await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [application, fixatedAmount(+interest), 'INTERESES', 'Pago ordinario', datos, moment().endOf('month').format('MM-DD-YYYY'), idReferenciaMunicipal]))
+        .rows[0];
 
       return {
         id: liquidacion.id_liquidacion,
