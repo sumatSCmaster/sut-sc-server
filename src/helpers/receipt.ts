@@ -17,18 +17,22 @@ export const generateReceipt = async (payload: { application: number }) => {
   const applicationView = (await client.query(queries.GET_APPLICATION_VIEW_BY_ID, [payload.application])).rows[0];
   const payment = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_GROUP_BY_PAYMENT_TYPE, [applicationView.id])).rows;
   const paymentRows = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [applicationView.id, 'IMPUESTO'])).rows
-  console.log(paymentRows)
+  console.log('payment', payment)
+  console.log('paymentRows' ,paymentRows)
   const paymentTotal = payment.reduce((prev, next) => prev + (+next.monto) , 0);
+  console.log('paymentTotal', paymentTotal)
   const cashier = (await client.query(queries.GET_USER_INFO_BY_ID, [paymentRows[0].id_usuario])).rows;
   const breakdownData = (await client.query(queries.GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID, [applicationView.id])).rows;
   const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [applicationView.idLiquidacion])).rows[0];
-
+  console.log('breakdowndata', breakdownData)
+  
   try {
 
     return new Promise(async (res, rej) => {
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/recibo/${applicationView.id}/cierre.pdf`);
       const dir = `${process.env.SERVER_URL}/sedemat/recibo/${applicationView.id}/recibo.pdf`;
-      let total = 0;
+      let total = breakdownData.reduce((prev,next) => prev + (+next.monto), 0);
+      console.log('total',total)
       const linkQr = await qr.toDataURL(dev ? dir : `${process.env.AWS_ACCESS_URL}/sedemat/recibo/${applicationView.id}/recibo.pdf`, { errorCorrectionLevel: 'H' });
       const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-recibo.pug`), {
         moment: require('moment'),
@@ -43,7 +47,6 @@ export const generateReceipt = async (payload: { application: number }) => {
           rim: referencia?.referencia_municipal,
           telefono: referencia?.telefono_celular,
           items: breakdownData.map((row) => {
-            total += row.monto;
             return {
               descripcion: `${row.datos.descripcion ? row.datos.descripcion : `${row.descripcionRamo} - ${row.descripcionSubramo}`} (${row.datos.fecha.month} ${row.datos.fecha.year})`,
               fecha: row.fechaLiquidacion,
