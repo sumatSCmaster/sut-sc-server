@@ -1760,9 +1760,12 @@ export const initialUserLinking = async (linkingData, user) => {
                 )
               : undefined;
           if (pagados.length > 0) {
+            console.log('aqui');
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
             await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
+            console.log('aqiu2');
             await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
+            console.log('aqwuiqe13');
             await Promise.all(
               pagados.map(async (el) => {
                 const settlement = (
@@ -1776,6 +1779,7 @@ export const initialUserLinking = async (linkingData, user) => {
                     registry.id_registro_municipal,
                   ])
                 ).rows[0];
+                console.log('33292');
                 await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
               })
             );
@@ -1783,7 +1787,8 @@ export const initialUserLinking = async (linkingData, user) => {
 
           if (vigentes.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
-            await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
+            console.log('asiad');
+            await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [vigentes[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
                 const settlement = (
@@ -1921,7 +1926,7 @@ export const initialUserLinking = async (linkingData, user) => {
 
           if (vigentes.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
-            await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
+            await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [vigentes[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
                 const settlement = (
