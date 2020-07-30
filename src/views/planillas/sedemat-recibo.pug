@@ -52,14 +52,14 @@ block content
         div.row-constancy.break-page
           div(style={'text-align':'start' }) #{item.descripcion}
           div.center #{moment(item.fecha).format('DD/MM/YYYY')}
-          div.center #{new Intl.NumberFormat('de-DE').format(item.monto ? (item.monto).toFixed(2) : 0)}
+          div.center #{new Intl.NumberFormat('de-DE').format(item.monto ? (item.monto) : 0)}
       hr.divider
       div.row-constancy.break-page
         div(style={'-webkit-flex': '2'}).end Credito Fiscal
-        div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE').format(datos.credito? (datos.credito).toFixed(2): 0)}      
+        div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE').format(datos.credito? (datos.credito): 0)}      
       div.row-constancy.break-page
         div(style={'-webkit-flex': '2'}).end Total Bs.
-        div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE').format(datos.total ? (datos.total).toFixed(2): 0)}
+        div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE').format(datos.total ? (datos.total): 0)}
     div(style={'text-align':'-webkit-right', 'width':'100%'}).break-page
       div.ticket.break-page(style={'margin':'2% 0', 'border':'2px solid #3387ca', 'width':'55%'})
         div.ticket-data.break-page
@@ -80,5 +80,5 @@ block content
             div(style={'-webkit-flex': '3'}).center
               p(style={'margin': '5px'}) #{item.transacciones}
             div(style={'-webkit-flex': '3'}).center
-              p(style={'margin': '5px'}) #{new Intl.NumberFormat('de-DE').format(item.monto ? (item.monto).toFixed(2) : 0)}                   
+              p(style={'margin': '5px'}) #{new Intl.NumberFormat('de-DE').format(item.monto ? (item.monto) : 0)}                   
 block footer

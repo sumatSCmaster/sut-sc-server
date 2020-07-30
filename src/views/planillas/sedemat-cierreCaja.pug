@@ -47,7 +47,7 @@ block content
           div(style={'-webkit-flex':'2'}).td.border-right.center
             p #{item.transacciones}
           div(style={'-webkit-flex':'2'}).td.center
-            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.monto? (item.monto).toFixed(2) : 0)}       
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.monto? (item.monto) : 0)}       
     div(style={'margin-top':'150px', 'width':'100%'}).break-page
       div(style={'width':'60%'}).table.break-page
         .tr.break-page
@@ -67,7 +67,7 @@ block content
           div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
             p #{datos.metodoPago.punto.transacciones}            
           div(style={'-webkit-flex':'3'}).td.center.border-bottom
-            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.punto.total ? (datos.metodoPago.punto.total).toFixed(2) : 0)}
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.punto.total ? (datos.metodoPago.punto.total) : 0)}
         .tr.break-page
           div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
             p(style={'padding-left':'10px'})
@@ -75,7 +75,7 @@ block content
           div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
             p #{datos.metodoPago.efectivo.transacciones}
           div(style={'-webkit-flex':'3'}).td.center.border-bottom
-            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.efectivo.total ? (datos.metodoPago.efectivo.total).toFixed(2) : 0)}
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.efectivo.total ? (datos.metodoPago.efectivo.total) : 0)}
         .tr.break-page
           div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
             p(style={'padding-left':'10px'})
@@ -83,7 +83,7 @@ block content
           div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
             p #{datos.metodoPago.cheques.transacciones}            
           div(style={'-webkit-flex':'3'}).td.center.border-bottom
-            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.cheques.total ? (datos.metodoPago.cheques.total).toFixed(2) : 0)}
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.cheques.total ? (datos.metodoPago.cheques.total) : 0)}
         .tr.break-page
           div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
             p(style={'padding-left':'10px'})
@@ -91,7 +91,7 @@ block content
           div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
             p #{datos.metodoPago.credFiscal.transacciones}            
           div(style={'-webkit-flex':'3'}).td.center.border-bottom
-            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.credFiscal.total ?  (datos.metodoPago.credFiscal.total).toFixed(2):0 )}          
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.credFiscal.total ?  (datos.metodoPago.credFiscal.total):0 )}          
         .tr.break-page
           div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
             p(style={'padding-left':'10px'})
@@ -99,7 +99,7 @@ block content
           div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
             p #{datos.metodoPago.transferencias.bod ? datos.metodoPago.transferencias.bod.transacciones : 0}            
           div(style={'-webkit-flex':'3'}).td.center.border-bottom
-            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.bod ? (datos.metodoPago.transferencias.bod.total).toFixed(2) : 0)}
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.bod ? (datos.metodoPago.transferencias.bod.total) : 0)}
         .tr.break-page
           div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
             p(style={'padding-left':'10px'})
@@ -107,7 +107,7 @@ block content
           div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
             p #{datos.metodoPago.transferencias.banesco ? datos.metodoPago.transferencias.banesco.transacciones : 0}            
           div(style={'-webkit-flex':'3'}).td.center.border-bottom
-            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.banesco ? (datos.metodoPago.transferencias.banesco.total).toFixed(2): 0)}
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.banesco ? (datos.metodoPago.transferencias.banesco.total): 0)}
         .tr
           div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
             p(style={'padding-left':'10px'})
@@ -115,7 +115,7 @@ block content
           div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
             p #{datos.metodoPago.transferencias.bnc ? datos.metodoPago.transferencias.bnc.transacciones : 0}            
           div(style={'-webkit-flex':'3'}).td.center.border-bottom
-            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.bnc ? (datos.metodoPago.transferencias.bnc.total).toFixed(2) : 0)}
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.bnc ? (datos.metodoPago.transferencias.bnc.total) : 0)}
         .tr
           div(style={'-webkit-flex':'4',}).th.border-right
             p
@@ -123,4 +123,4 @@ block content
           div(style={'-webkit-flex':'3'}).td.center.border-right
             p #{datos.metodoPago.transacciones}            
           div(style={'-webkit-flex':'3'}).td.center
-            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.total ? (datos.metodoPago.total).toFixed(2):0)}  
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.total ? (datos.metodoPago.total):0)}  

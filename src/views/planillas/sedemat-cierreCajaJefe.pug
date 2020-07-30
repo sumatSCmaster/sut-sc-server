@@ -22,7 +22,7 @@ block content
       hr.divider
       div.row-constancy.break-page
         div(style={'-webkit-flex': '2'}).end Total Bs.
-        div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.total? (datos.total).toFixed(2): 0)}
+        div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.total? (datos.total): 0)}
     div(style={'text-align':'-webkit-right', 'width':'100%'}).break-page
       div.ticket.break-page(style={'margin':'2% 0', 'border':'2px solid #3387ca', 'width':'55%'})
         div.ticket-data.break-page
@@ -43,5 +43,5 @@ block content
             div(style={'-webkit-flex': '3'}).center
               p(style={'margin': '5px'}) #{item.transacciones}
             div(style={'-webkit-flex': '3'}).center
-              p(style={'margin': '5px'}) #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.monto ? (item.monto).toFixed(2) : 0)}                   
+              p(style={'margin': '5px'}) #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.monto ? (item.monto) : 0)}                   
 block footer

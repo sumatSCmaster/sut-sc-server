@@ -96,7 +96,7 @@ block header
           p
             b MONTO TOTAL
         div(style={'-webkit-flex':'1.7','padding-left' : '8px'}).td.center
-          p Bs #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(saldoFinal? (saldoFinal).toFixed(2) : 0)}
+          p Bs #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(saldoFinal? (saldoFinal) : 0)}
     if datosLiquidacion.length >= 20 
       div(style={'margin-top':'150px'}).table.break-page
         .tr.break-page
