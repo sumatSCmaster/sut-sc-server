@@ -155,7 +155,7 @@ export const insertRetentions = async ({ process, user }) => {
                 descripcion: 'Multa por Declaracion Fuera de Plazo (AR)',
                 monto: finingAmount,
               },
-              moment().endOf('month').format('MM-DD-YYYY'),
+              moment().locale('ES').endOf('month').format('MM-DD-YYYY'),
               (contributorReference && contributorReference.id_registro_municipal) || null,
             ])
           ).rows[0];
@@ -233,7 +233,7 @@ export const insertRetentions = async ({ process, user }) => {
             'RD0',
             el.descripcion || 'Pago ordinario',
             datos,
-            moment().month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
+            moment().locale('ES').month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
             (contributorReference && contributorReference.id_registro_municipal) || null,
           ])
         ).rows[0];

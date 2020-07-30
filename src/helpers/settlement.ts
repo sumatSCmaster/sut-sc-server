@@ -1254,7 +1254,7 @@ export const getAgreementsForContributor = async ({ reference, docType, document
   const client = await pool.connect();
   try {
     const user = (await client.query(queries.GET_USER_IN_CHARGE_OF_BRANCH, [reference, docType, document])).rows[0];
-    if (!reference) throw { status: 404, message: 'Debe proporcionar un RIM para realizar el enlace para un contribuyente juridico' };
+    if (!reference) throw { status: 404, message: 'Debe proporcionar un RIM que posea encargado' };
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows[0];
     if (!contributor) throw { status: 404, message: 'El contribuyente proporcionado no existe' };
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
@@ -1291,6 +1291,7 @@ export const getAgreementsForContributor = async ({ reference, docType, document
     );
     return { status: 200, message: 'Convenios obtenidos satisfactoriamente', convenios: applications };
   } catch (error) {
+    console.log(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -1373,6 +1374,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
         .map(async (el) => {
           const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
           const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
+          const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
           return {
             id: el.id_solicitud,
             usuario: user,
@@ -1381,7 +1383,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
             documento: docs.documento,
             tipoDocumento: docs.tipo_documento,
             tipo: el.tipo_solicitud,
-            estado: (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state,
+            estado: state,
             referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
               ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
               : undefined,
@@ -1412,6 +1414,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
                   recibo: el.recibo,
                 };
               }),
+            interesMoratorio: await getDefaultInterestByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
           };
         })
     );
@@ -1445,6 +1448,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
         .map(async (el) => {
           const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
           const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
+          const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
 
           return {
             id: el.id_solicitud,
@@ -1456,7 +1460,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
             documento: docs.documento,
             tipoDocumento: docs.tipo_documento,
             tipo: el.tipo_solicitud,
-            estado: (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state,
+            estado: state,
             referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
               ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
               : undefined,
@@ -1486,6 +1490,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
                   recibo: el.recibo,
                 };
               }),
+            interesMoratorio: await getDefaultInterestByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
           };
         })
     );
@@ -1615,6 +1620,27 @@ export const getEntireDebtsForContributor = async ({ reference, docType, documen
   }
 };
 
+const getDefaultInterestByApplication = async ({ id, date, state, client }) => {
+  try {
+    return (
+      (state === applicationStateEvents.INGRESARDATOS &&
+        moment(date).month() < moment().month() &&
+        (
+          await client.query(
+            'SELECT l.*, s.*, r.descripcion_corta as "tipoProcedimiento" FROM impuesto.liquidacion l INNER JOIN  (SELECT id_subramo, MAX(fecha_vencimiento) AS max_fecha FROM impuesto.liquidacion WHERE id_solicitud = $1 GROUP BY id_subramo) s ON s.id_subramo = l.id_subramo AND s.max_fecha = l.fecha_vencimiento INNER JOIN impuesto.subramo sr ON l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo r USING (id_ramo) WHERE id_solicitud = $1;',
+            [id]
+          )
+        ).rows
+          .filter((el) => !!['AE', 'SM', 'IU', 'PP'].find((x) => x === el.tipoProcedimiento))
+          .map((p) => +p.monto * 0.3324 * (moment().diff(date, 'days') - 1))
+          .reduce((x, j) => x + j, 0)) ||
+      undefined
+    );
+  } catch (e) {
+    throw e;
+  }
+};
+
 export const initialUserLinking = async (linkingData, user) => {
   const client = await pool.connect();
   const { datosContribuyente, sucursales, datosContacto, actividadesEconomicas } = linkingData;
@@ -1703,7 +1729,7 @@ export const initialUserLinking = async (linkingData, user) => {
                         el.ramo,
                         el.descripcion,
                         { fecha: el.fecha },
-                        moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
+                        moment().locale('ES').month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
                         registry.id_registro_municipal,
                       ])
                     ).rows[0];
@@ -1743,7 +1769,7 @@ export const initialUserLinking = async (linkingData, user) => {
                     el.ramo,
                     el.descripcion,
                     { fecha: el.fecha },
-                    moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
+                    moment().locale('ES').month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
                     registry.id_registro_municipal,
                   ])
                 ).rows[0];
@@ -1764,7 +1790,7 @@ export const initialUserLinking = async (linkingData, user) => {
                     el.ramo,
                     el.descripcion,
                     { fecha: el.fecha },
-                    moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
+                    moment().locale('ES').month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
                     registry.id_registro_municipal,
                   ])
                 ).rows[0];
@@ -1829,7 +1855,7 @@ export const initialUserLinking = async (linkingData, user) => {
                           el.ramo,
                           el.descripcion,
                           { fecha: el.fecha },
-                          moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
+                          moment().locale('ES').month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
                           registry.id_registro_municipal,
                         ])
                       ).rows[0];
@@ -1881,7 +1907,7 @@ export const initialUserLinking = async (linkingData, user) => {
                     el.ramo,
                     el.descripcion,
                     { fecha: el.fecha },
-                    moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
+                    moment().locale('ES').month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
                     (registry && registry.id_registro_municipal) || null,
                   ])
                 ).rows[0];
@@ -1902,7 +1928,7 @@ export const initialUserLinking = async (linkingData, user) => {
                     el.ramo,
                     el.descripcion,
                     { fecha: el.fecha },
-                    moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
+                    moment().locale('ES').month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
                     (registry && registry.id_registro_municipal) || null,
                   ])
                 ).rows[0];
@@ -2142,7 +2168,7 @@ export const insertSettlements = async ({ process, user }) => {
               el.ramo,
               el.descripcion || 'Pago ordinario',
               datos,
-              moment().month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
+              moment().locale('ES').month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
               (contributorReference && contributorReference.id_registro_municipal) || null,
             ])
           ).rows[0];

@@ -112,7 +112,7 @@ export const insertRepairs = async ({ process, user }) => {
               'REP',
               'Pago ordinario',
               datos,
-              moment().month(month).endOf('month').format('MM-DD-YYYY'),
+              moment().locale('ES').month(month).endOf('month').format('MM-DD-YYYY'),
               (contributorReference && contributorReference.id_registro_municipal) || null,
             ])
           ).rows[0];
