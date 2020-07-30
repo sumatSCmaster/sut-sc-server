@@ -1634,7 +1634,7 @@ const getDefaultInterestByApplication = async ({ id, date, state, client }) => {
           )
         ).rows
           .filter((el) => !!['AE', 'SM', 'IU', 'PP'].find((x) => x === el.tipoProcedimiento))
-          .map((p) => +p.monto * 0.3324 * (moment().diff(date, 'days') - 1))
+          .map((p) => +p.monto * 0.3324 * (moment().diff(moment(date).endOf('month'), 'days') - 1))
           .reduce((x, j) => x + j, 0)) ||
       undefined
     );
