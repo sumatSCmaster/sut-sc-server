@@ -98,7 +98,7 @@ export const insertRetentions = async ({ process, user }) => {
     if (!contributorReference) throw { status: 404, message: 'El agente de retención proporcionado no existe' };
     const benefittedUser = (await client.query(queries.GET_USER_IN_CHARGE_OF_BRANCH_BY_ID, [contributorReference.id_registro_municipal])).rows[0];
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-    const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(user.tipoUsuario !== 4 && process.usuario) || user.id, process.contribuyente])).rows[0];
+    const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.tipoUsuario !== 4 ? process.usuario || null : user.id, process.contribuyente])).rows[0];
     await client.query('UPDATE impuesto.solicitud SET tipo_solicitud = $1 WHERE id_solicitud = $2', ['RETENCION', application.id_solicitud]);
 
     if (retenciones.length > 0) {
