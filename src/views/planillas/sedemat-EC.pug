@@ -90,13 +90,13 @@ block header
           div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom
             p #{item.estado}
           div(style={'-webkit-flex':'2'}).td.center.border-bottom
-            p #{new Intl.NumberFormat('de-DE').format(item.montoPorcion)}
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)}
       .tr.break-page
         div(style={'-webkit-flex':'8'}).th.center.border-right
           p
             b MONTO TOTAL
         div(style={'-webkit-flex':'1.7','padding-left' : '8px'}).td.center
-          p Bs #{new Intl.NumberFormat('de-DE').format(saldoFinal? (saldoFinal).toFixed(2) : 0)}
+          p Bs #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(saldoFinal? (saldoFinal).toFixed(2) : 0)}
     if datosLiquidacion.length >= 20 
       div(style={'margin-top':'150px'}).table.break-page
         .tr.break-page

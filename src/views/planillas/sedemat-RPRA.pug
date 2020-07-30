@@ -52,11 +52,11 @@ block content
             div(style={'-webkit-flex':'3'}).td.center.border-right.border-bottom
               p #{item.descripcion}
             div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-              p #{new Intl.NumberFormat('de-DE').format((item.liquidadoTotal).toFixed(2))}
+              p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format((item.liquidadoTotal).toFixed(2))}
             div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
               p #{item.cantidadLiqTotal ? item.cantidadLiqTotal : 0}
             div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-              p #{new Intl.NumberFormat('de-DE').format((item.ingresadoTotal).toFixed(2))}
+              p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format((item.ingresadoTotal).toFixed(2))}
             div(style={'-webkit-flex':'1'}).td.center.border-bottom
               p #{item.cantidadIngTotal ? item.cantidadIngTotal : 0}  
           if sub.length > 1
@@ -69,11 +69,11 @@ block content
                   div(style={'-webkit-flex':'3'}).td.center.border-right.border-bottom
                     p #{subRamo.descripcion}
                   div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-                    p #{new Intl.NumberFormat('de-DE').format(subRamo.liquidado ? (subRamo.liquidado).toFixed(2) : 0)}
+                    p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(subRamo.liquidado ? (subRamo.liquidado).toFixed(2) : 0)}
                   div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
                     p #{subRamo.cantidadLiq ? subRamo.cantidadLiq : 0}
                   div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-                    p #{new Intl.NumberFormat('de-DE').format(subRamo.ingresado ? (subRamo.ingresado).toFixed(2) : 0)}
+                    p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(subRamo.ingresado ? (subRamo.ingresado).toFixed(2) : 0)}
                   div(style={'-webkit-flex':'1'}).td.center.border-bottom
                     p #{subRamo.cantidadIng ? subRamo.cantidadIng : 0}
       .tr.break-page
@@ -81,11 +81,11 @@ block content
           p
             b TOTALES
         div(style={'-webkit-flex':'2'}).td.center.border-right
-          p #{new Intl.NumberFormat('de-DE').format(datos.liquidadoTotal ? (datos.liquidadoTotal - (auxLiq)).toFixed(2) : 0)}
+          p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.liquidadoTotal ? (datos.liquidadoTotal - (auxLiq)).toFixed(2) : 0)}
         div(style={'-webkit-flex':'1'}).td.center.border-right
           p #{datos.cantidadLiqTotal}          
         div(style={'-webkit-flex':'2'}).td.center.border-right
-          p #{new Intl.NumberFormat('de-DE').format(datos.ingresadoTotal ? (datos.ingresadoTotal - (auxIng)).toFixed(2) : 0)}
+          p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.ingresadoTotal ? (datos.ingresadoTotal - (auxIng)).toFixed(2) : 0)}
         div(style={'-webkit-flex':'1'}).td.center
           p #{datos.cantidadIngTotal}                       
 block footer         
