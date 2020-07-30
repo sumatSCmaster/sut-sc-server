@@ -1637,7 +1637,7 @@ const getDefaultInterestByApplication = async ({ id, date, state, client }) => {
           .map((p) => +p.monto * 0.3324 * (moment().diff(moment(date).endOf('month'), 'days') - 1))
           .reduce((x, j) => x + j, 0)) ||
       undefined;
-    console.log('getDefaultInterestByApplication -> value', value);
+    console.log('getDefaultInterestByApplication -> value', id, value);
     return value;
   } catch (e) {
     throw e;
