@@ -1787,6 +1787,7 @@ export const initialUserLinking = async (linkingData, user) => {
 
           if (vigentes.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
+            await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS]);
             console.log('asiad');
             await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [vigentes[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
@@ -1926,6 +1927,7 @@ export const initialUserLinking = async (linkingData, user) => {
 
           if (vigentes.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
+            await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS]);
             await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [vigentes[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
