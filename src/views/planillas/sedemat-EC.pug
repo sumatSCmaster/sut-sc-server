@@ -34,7 +34,7 @@ block content
           p Teléfóno
         div(style={'-webkit-flex':'7'}).td
           p #{datosContribuyente.telefono}
-    div(style={'margin-top':'20px'}).table.break-page
+    div(style={'margin-top':'20px'}).table
       .tr.break-page
         .th.center.border-bottom
           p
@@ -89,7 +89,7 @@ block content
         div(style={'-webkit-flex':'1.7','padding-left' : '8px'}).td.center
           p Bs #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(saldoFinal? (saldoFinal) : 0)}
     if datosLiquidacion.length >= 20 
-      div(style={'margin-top':'150px'}).table.break-page
+      div(style={'margin-top':'150px'}).table
         .tr.break-page
           .th.center.border-bottom
             p
@@ -108,7 +108,7 @@ block content
             div(style={'-webkit-flex':'8'}).td.center
               p #{item.nombreActividad}  
     else
-      .table.break-page
+      .table
         .tr.break-page
           .th.center.border-bottom
             p
