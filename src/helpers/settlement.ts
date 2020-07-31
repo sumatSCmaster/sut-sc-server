@@ -26,7 +26,7 @@ import * as fs from 'fs';
 import { procedureInit, initProcedureAnalist, processProcedure, processProcedureAnalist } from './procedures';
 import { generateReceipt } from './receipt';
 import { getCleaningTariffForEstate, getGasTariffForEstate } from './services';
-import { uniqBy } from 'lodash';
+import { uniqBy, chunk } from 'lodash';
 const written = require('written-number');
 const gticPool = GticPool.getInstance();
 const pool = Pool.getInstance();
@@ -3864,7 +3864,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
     const datosCertificado: accountStatement = {
       actividadesContribuyente: economicActivities,
       datosContribuyente,
-      datosLiquidacion: statement,
+      datosLiquidacion: chunk(statement,20),
       saldoFinal,
     };
     console.log(datosCertificado);
