@@ -1,0 +1,157 @@
+extends default
+block css
+  link(rel="stylesheet", href="css/sedemat.css")
+block title
+block content
+  div#fecha
+    p 
+      b FECHA:
+      span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+  div.titleWithQR
+    p#title
+      b LIQUIDACIÓN ESPECIALES
+    div
+      img#QR(src=QR, alt='QR')
+  div#planilla(style={'font-size':'13px'})
+    div(style={'margin-bottom':'20px'})
+      div.table(style={'width':'90%', 'font-size':'16px', 'font-weight': 'bold'})
+        div.tr
+          div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+            p 
+              b Nro. Solicitud
+          div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+            p
+              b MOTIVO
+          div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+            p
+              b Porción
+          div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+            p
+              b Liquidador
+          div(style={'-webkit-flex': 2}).td.border-bottom.center
+            p
+              b Cajero
+        div.tr
+          div(style={'-webkit-flex': 1}).td.border-right.center
+            p  #{datos.nroSolicitud}
+          div(style={'-webkit-flex': 1}).td.border-right.center
+            p  #{datos.motivo}
+          div(style={'-webkit-flex': 1}).td.border-right.center
+            p  #{datos.porcion}
+          div(style={'-webkit-flex': 2}).td.border-right.center
+            p  USUARIO WEB
+          div(style={'-webkit-flex': 2}).td.center
+            p  
+    div.table(style={'font-size':'14px'})
+      div.tr
+        div.td(style={'-webkit-flex': 1}).border-right.border-bottom.center
+          p
+            b RAMO:
+        div.td(style={'-webkit-flex': 5}).border-right.border-bottom
+          p #{datos.categoria}
+        div.td(style={'-webkit-flex': 0.5}).border-right.border-bottom.center
+          p
+            b RIF:
+        div(style={'-webkit-flex': 1.5}).td.border-right.border-bottom
+          p   #{datos.rif}
+        div.td(style={'-webkit-flex': 0.5}).border-right.border-bottom.center
+          p
+            b REF:
+        div(style={'-webkit-flex': 1.5}).td.border-bottom
+          p #{datos.ref}
+      div.tr
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p
+            b RAZÓN SOCIAL:
+        div(style={'-webkit-flex': 8}).td.border-bottom
+          p #{datos.razonSocial}
+      div.tr
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p
+            b DIRECCIÓN:
+        div(style={'-webkit-flex': 8}).td.border-bottom
+          p #{datos.direccion}
+      div.tr
+        div(style={'-webkit-flex': 2}).td.border-right.center
+          p
+            b FECHA CREACIÓN:
+        div(style={'-webkit-flex': 1.5}).td.border-right.center
+          p #{datos.fechaCre}
+        div(style={'-webkit-flex': 2}).td.border-right.center
+          p
+            b FECHA LIQUIDACIÓN:      
+        div(style={'-webkit-flex': 1.5}).td.border-right.center
+          p #{datos.fechaLiq}
+        div(style={'-webkit-flex': 1.5}).td.border-right.center
+          p
+            b FECHA VENCIMIENTO:         
+        div(style={'-webkit-flex': 1.5}).td.center
+          p #{datos.fechaVenc}
+    div.table
+      div.tr
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p
+            b CÓDIGO
+        div(style={'-webkit-flex': 5}).th.border-right.border-bottom.center
+          p
+            b DESCRIPCIÓN
+        div(style={'-webkit-flex': 3}).th.border-bottom.center
+          p
+            b IMPUESTO    
+      each item in datos.items
+        div.tr.break-page
+          div(style={'-webkit-flex': 2}).td.border-right.center
+            p #{item.codigo}
+          div(style={'-webkit-flex': 5}).td.border-right.center
+            p #{item.descripcion}
+          div(style={'-webkit-flex': 3}).td.center
+            p #{item.impuesto}
+    div(style={'margin-top':'20px'}).table.break-page
+      div.tr.break-page
+        div(style={'-webkit-flex': 2}).td.border-bottom.border-right
+          p
+            b ESTATUS:
+        div(style={'-webkit-flex': 8}).td.border-bottom
+          p #{datos.estatus}
+      div.tr.break-page
+        div(style={'-webkit-flex': 2}).td.border-right.center
+          p
+            b Forma de Pago
+        div(style={'-webkit-flex': 3}).td.border-right.center
+          p
+            b BANCO
+        div(style={'-webkit-flex': 1}).td.border-right.center
+          p
+            b Fecha
+        div(style={'-webkit-flex': 1.5}).td.border-right.center
+          p
+            b N°DEPOSITO
+        div(style={'-webkit-flex': 2.5}).td.center
+          p
+            b MONTO CANCELADO
+      each item in datos.metodoPago
+        div.tr.break-page
+          div(style={'-webkit-flex': 2}).td.border-right.center.border-top
+            p #{item.formaPago}
+          div(style={'-webkit-flex': 3}).td.border-right.center.border-top
+            p #{item.banco}
+          div(style={'-webkit-flex': 1}).td.border-right.center.border-top
+            p #{moment(item.fecha).format('DD/MM/YYYY')}
+          div(style={'-webkit-flex': 1.5}).td.border-right.center.border-top
+            p #{item.nro}
+          div(style={'-webkit-flex': 2.5}).td.center.border-top
+            p Bs #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.monto ? (item.monto) : 0)}            
+      div(style={'background-color':'rgba(0,0,0,0.2)'}).tr
+        div(style={'-webkit-flex': 1}).td.border-right.center.border-top
+          p
+            b Total Liquidado:
+            span &nbsp; #{datos.totalLiq}
+        div(style={'-webkit-flex': 1}).td.border-right.center.border-top
+          p
+            b Total Recaudado:
+            span &nbsp; #{datos.totalRecaudado}
+        div(style={'-webkit-flex': 1}).td.center.border-top
+          p
+            b Total Credito Fiscal:
+            span &nbsp; #{datos.totalCred}
+block footer

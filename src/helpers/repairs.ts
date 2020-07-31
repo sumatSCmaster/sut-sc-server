@@ -10,6 +10,7 @@ import { errorMessageExtractor, errorMessageGenerator } from './errors';
 import { Usuario, Liquidacion } from '@root/interfaces/sigt';
 import { fixatedAmount, getApplicationsAndSettlementsById } from './settlement';
 import { getUsersByContributor } from './user';
+import { generateRepairReceipt } from './receipt';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -139,6 +140,7 @@ export const insertRepairs = async ({ process, user }) => {
     }
     await client.query('COMMIT');
     const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
+    solicitud.recibo = await generateRepairReceipt({application:application.id_solicitud, breakdownData: settlements.flat(), total: process.total})
     // await sendNotification(
     //   user,
     //   `Se ha iniciado una solicitud para el contribuyente con el documento de identidad: ${solicitud.tipoDocumento}-${solicitud.documento}`,

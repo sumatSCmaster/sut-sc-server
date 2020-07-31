@@ -3308,6 +3308,8 @@ const createReceiptForSpecialApplication = async ({ pool, user, application }) =
     const impuestoRecibo = UTMM * 2;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
+    const payment = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [application.id, 'IMPUESTO'])).rows;
+
     moment.locale('es');
     let certInfoArray: any[] = [];
     let certAE;
@@ -3335,7 +3337,15 @@ const createReceiptForSpecialApplication = async ({ pool, user, application }) =
             descripcion: el.descripcion,
             impuesto: el.monto
           }],
-
+          metodoPago: payment.map((row) => {
+            return {
+              monto: row.monto,
+              formaPago: row.metodo_pago,
+              banco: row.nombre,
+              fecha: row.fecha_de_pago,
+              nro: row.referencia,
+            };
+          }),
           tramitesInternos: 0.0,
           totalTasaRev: 0.0,
           anticipoYRetenciones: 0.0,
@@ -3356,7 +3366,7 @@ const createReceiptForSpecialApplication = async ({ pool, user, application }) =
     return new Promise(async (res, rej) => {
       try {
         console.log('AAAAAAAA');
-        let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-AE.pug`), certInfo));
+        let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-LE.pug`), certInfo));
         console.log(htmlArray.length);
         const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`);
         const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`;
