@@ -8,6 +8,7 @@ import { renderFile } from 'pug';
 import { errorMessageExtractor } from './errors';
 import * as pdf from 'html-pdf';
 import * as qr from 'qrcode';
+import { chunk } from 'lodash'
 const dev = process.env.NODE_ENV !== 'production';
 
 const pool = Pool.getInstance();
@@ -46,13 +47,13 @@ export const generateReceipt = async (payload: { application: number }) => {
           cajero: cashier?.[0]?.nombreCompleto,
           rim: referencia?.referencia_municipal,
           telefono: referencia?.telefono_celular,
-          items: breakdownData.map((row) => {
+          items: chunk(breakdownData.map((row) => {
             return {
               descripcion: `${row.datos.descripcion ? row.datos.descripcion : `${row.descripcionRamo} - ${row.descripcionSubramo}`} (${row.datos.fecha.month} ${row.datos.fecha.year})`,
               fecha: row.fechaLiquidacion,
               monto: row.monto,
             };
-          }),
+          }),14),
           metodoPago: payment,
           total: total,
           credito: paymentTotal - total
