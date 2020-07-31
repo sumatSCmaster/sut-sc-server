@@ -3864,7 +3864,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
     const datosCertificado: accountStatement = {
       actividadesContribuyente: economicActivities,
       datosContribuyente,
-      datosLiquidacion: chunk(statement,20),
+      datosLiquidacion: chunk(statement, 20),
       saldoFinal,
     };
     console.log(datosCertificado);
@@ -4100,7 +4100,7 @@ interface CertificatePayload {
 interface accountStatement {
   datosContribuyente: Contribuyente;
   actividadesContribuyente: AE[];
-  datosLiquidacion: datoLiquidacion[];
+  datosLiquidacion: datoLiquidacion[][];
   saldoFinal: number;
 }
 
