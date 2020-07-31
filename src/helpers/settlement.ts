@@ -3868,6 +3868,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
       saldoFinal,
     };
     console.log(datosCertificado);
+    console.log('chunk', chunk(statement,20))
     const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-EC.pug`), {
       ...datosCertificado,
       cache: false,
