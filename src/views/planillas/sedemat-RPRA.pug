@@ -77,7 +77,7 @@ block content
                       p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(subRamo.ingresado ? (subRamo.ingresado) : 0)}
                     div(style={'-webkit-flex':'1'}).td.center.border-bottom
                       p #{subRamo.cantidadIng ? subRamo.cantidadIng : 0}
-    .table
+    .table.break-page
       .tr.break-page
         div(style={'-webkit-flex':'4'}).th.center.border-right
           p
