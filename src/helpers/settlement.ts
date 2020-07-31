@@ -56,7 +56,7 @@ export const checkContributorExists = () => async (req: any, res, next) => {
   try {
     if (user.tipoUsuario === 4) return next();
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [pref, doc])).rows[0];
-    const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [ref, contributor.id_contribuyente])).rows[0];
+    const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [ref, contributor?.id_contribuyente])).rows[0];
     if (!!ref && !branch) res.status(404).send({ status: 404, message: 'No existe la sucursal solicitada' });
     const branchIsUpdated = branch?.actualizado;
     if (!contributor || (!!contributor && !!ref && !branchIsUpdated)) {
@@ -349,7 +349,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         documento: contributor.documento,
         tipoDocumento: contributor.tipo_documento,
         creditoFiscal: fiscalCredit,
-        AE,
+        AE: (AE.length > 0 && AE) || undefined,
         SM,
         IU: (IU.length > 0 && IU) || undefined,
         PP,
