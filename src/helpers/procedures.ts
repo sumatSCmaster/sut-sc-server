@@ -794,9 +794,9 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
     console.log(error);
     client.query('ROLLBACK');
     throw {
-      status: 500,
+      status: error.status || 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al revisar el tramite',
+      message: errorMessageGenerator(error) || error.message || 'Error al revisar el tramite',
     };
   } finally {
     client.release();
