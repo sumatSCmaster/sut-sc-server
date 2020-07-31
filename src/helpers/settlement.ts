@@ -110,7 +110,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
   const client = await pool.connect();
   const gtic = await gticPool.connect();
   const montoAcarreado: any = {};
-  let AE, SM, PP;
+  let SM, PP;
+  let AE: any[] = [];
   let IU: any[] = [];
   try {
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [type, document])).rows[0];
@@ -1170,8 +1171,14 @@ const externalUserForLinkingExists = async ({ user, password, gtic }: { user: st
   }
 };
 
-export const createSettlementForProcedure = (process, client, user) => {
+export const createSettlementForProcedure = async (process, client) => {
+  const { referenciaMunicipal, monto, ramo } = process;
   try {
+    const datos = {
+      fecha: { month: moment().toDate().toLocaleDateString('ES', { month: 'long' }), year: moment().year() },
+    };
+    console.log('si');
+    const liquidacion = (await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [null, fixatedAmount(+process.monto), 'INTERESES', 'Pago ordinario', datos, moment().endOf('month').format('MM-DD-YYYY'), null])).rows[0];
   } catch (e) {
     throw e;
   }
