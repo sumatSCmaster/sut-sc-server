@@ -1176,9 +1176,10 @@ export const createSettlementForProcedure = async (process, client) => {
   try {
     const datos = {
       fecha: { month: moment().toDate().toLocaleDateString('ES', { month: 'long' }), year: moment().year() },
+      descripcion: 'TRAMITE',
     };
     console.log('si');
-    const liquidacion = (await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [null, fixatedAmount(+process.monto), 'INTERESES', 'Pago ordinario', datos, moment().endOf('month').format('MM-DD-YYYY'), null])).rows[0];
+    const liquidacion = (await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [null, fixatedAmount(monto), ramo, 'Pago ordinario', datos, moment().endOf('month').format('MM-DD-YYYY'), referenciaMunicipal])).rows[0];
   } catch (e) {
     throw e;
   }
@@ -2804,7 +2805,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
 export const approveContributorAELicense = async ({ data, client }: { data: any; client: PoolClient }) => {
   try {
     console.log(data);
-    const user = (await client.query(queries.GET_PROCEDURE_DATA, [data.idTramite])).rows[0].usuario;
+    const { usuario: user, costo } = (await client.query(queries.GET_PROCEDURE_DATA, [data.idTramite])).rows[0];
     const { usuario, funcionario } = data;
     const { actividadesEconomicas } = funcionario;
     const { contribuyente } = usuario;
@@ -2838,6 +2839,7 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
         return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.codigo, x.desde]);
       })
     );
+    await createSettlementForProcedure({ monto: costo, referenciaMunicipal: registry.id_registro_municipal, ramo: 'AE' }, client);
     const verifiedId = (await client.query('SELECT * FROM impuesto.verificacion_telefono WHERE id_usuario = $1', [user])).rows[0]?.id_verificacion_telefono;
     await client.query('INSERT INTO impuesto.registro_municipal_verificacion VALUES ($1, $2) RETURNING *', [registry.id_registro_municipal, verifiedId]);
     console.log(data);
@@ -2853,12 +2855,12 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
     const { contribuyente, beneficios, usuario } = data.funcionario;
     const contributorWithBranch = (await client.query(queries.GET_CONTRIBUTOR_WITH_BRANCH, [contribuyente.registroMunicipal])).rows[0];
     const benefittedUser = (await client.query(queries.GET_USER_IN_CHARGE_OF_BRANCH_BY_ID, [contributorWithBranch.id_registro_municipal])).rows[0];
-    if (!benefittedUser) throw { status: 404, message: 'No existe un usuario encargado de esta sucursal' };
+    // if (!benefittedUser) throw { status: 404, message: 'No existe un usuario encargado de esta sucursal' };
     await Promise.all(
       beneficios.map(async (x) => {
         switch (x.tipoBeneficio) {
           case 'pagoCompleto':
-            const applicationFP = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [benefittedUser.id, contributorWithBranch.id_contribuyente])).rows[0];
+            const applicationFP = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [usuario || benefittedUser?.id, contributorWithBranch.id_contribuyente])).rows[0];
             await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [applicationFP.id_solicitud, applicationStateEvents.INGRESARDATOS]);
             const benefitFullPayment = (await client.query(queries.CHANGE_SETTLEMENT_TO_NEW_APPLICATION, [applicationFP.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
             return benefitFullPayment;
@@ -2870,12 +2872,13 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             const benefitRemission = (await client.query(queries.SET_SETTLEMENTS_AS_FORWARDED_BY_RIM, [contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
             return benefitRemission;
           case 'convenio':
-            const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [benefittedUser.id, contributorWithBranch.id_contribuyente])).rows[0];
+            const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [usuario || benefittedUser?.id, contributorWithBranch.id_contribuyente])).rows[0];
             await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [applicationAG.id_solicitud, applicationStateEvents.INGRESARDATOS]);
             await client.query('UPDATE impuesto.solicitud SET tipo_solicitud = $1 WHERE id_solicitud = $2', ['CONVENIO', applicationAG.id_solicitud]);
             const agreement = (await client.query(queries.CREATE_AGREEMENT, [applicationAG.id_solicitud, x.porciones.length])).rows[0];
             const settlementsAG = (await client.query(queries.CHANGE_SETTLEMENT_TO_NEW_APPLICATION, [applicationAG.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
-            await client.query(queries.CHANGE_SETTLEMENT_BRANCH_TO_AGREEMENT, [x.idRamo, applicationAG.id_solicitud]);
+            const costo = (await client.query(queries.CHANGE_SETTLEMENT_BRANCH_TO_AGREEMENT, [x.idRamo, applicationAG.id_solicitud])).rows.reduce((x, j) => x + +j.monto, 0);
+            if (costo > x.porciones.reduce((x, j) => x + +j.monto, 0)) throw { status: 403, message: 'La suma de las fracciones del convenio debe ser exactamente igual al total de la deuda' };
             const benefitAgreement = await Promise.all(
               x.porciones.map(async (el) => {
                 const fraccion = (await client.query(queries.CREATE_AGREEMENT_FRACTION, [agreement.id_convenio, fixatedAmount(+el.monto), el.porcion, el.fechaDePago])).rows[0];
