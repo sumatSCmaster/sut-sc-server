@@ -35,37 +35,37 @@ block content
         div(style={'-webkit-flex':'7'}).td
           p #{datosContribuyente.telefono}
     each liquidacion in datosLiquidacion
-      each item in liquidacion
-        div(style={'margin-top':'20px'}).table.break-page
-          .tr.break-page
-            .th.center.border-bottom
-              p
-                b ESTADO DE CUENTA DEL CONTRIBUYENTE
-          .tr.break-page
-            div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
-              p
-                b PLANILLA
-            div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
-              p
-                b SOLICITUD
-            div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
-              p
-                b PORCIÓN
-            div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
-              p
-                b FECHA LIQ.
-            div(style={'-webkit-flex':'1.25'}).th.center.border-right.border-bottom
-              p
-                b FECHA DE VENC.
-            div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
-              p
-                b MOTIVO
-            div(style={'-webkit-flex':'1.25'}).th.center.border-right.border-bottom
-              p
-                b Estado
-            div(style={'-webkit-flex':'2'}).th.center.border-bottom
-              p
-                b MONTO PORCIÓN
+      div(style={'margin-top':'20px'}).table.break-page
+        .tr.break-page
+          .th.center.border-bottom
+            p
+              b ESTADO DE CUENTA DEL CONTRIBUYENTE
+        .tr.break-page
+          div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
+            p
+              b PLANILLA
+          div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
+            p
+              b SOLICITUD
+          div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
+            p
+              b PORCIÓN
+          div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
+            p
+              b FECHA LIQ.
+          div(style={'-webkit-flex':'1.25'}).th.center.border-right.border-bottom
+            p
+              b FECHA DE VENC.
+          div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
+            p
+              b MOTIVO
+          div(style={'-webkit-flex':'1.25'}).th.center.border-right.border-bottom
+            p
+              b Estado
+          div(style={'-webkit-flex':'2'}).th.center.border-bottom
+            p
+              b MONTO PORCIÓN
+        each item in liquidacion
           .tr.break-page
             div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
               p #{item.planilla}
