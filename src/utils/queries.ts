@@ -994,7 +994,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     SELECT DISTINCT ON (ae.nu_ref_actividad) * FROM tb041_contrib_act ca \
     INNER JOIN tb004_contribuyente c ON ca.co_contribuyente = c.co_contribuyente \
     INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo \
-    INNER JOIN tb039_ae_act ividad ae ON ca.nu_ref_actividad = ae.nu_ref_actividad \
+    INNER JOIN tb039_ae_actividad ae ON ca.nu_ref_actividad = ae.nu_ref_actividad \
     INNER JOIN (SELECT MAX(co_ordenanza) as co_ordenanza, nu_anio FROM tb035_anio_ordenanza GROUP BY nu_anio order by co_ordenanza) ao ON ao.co_ordenanza = ae.co_ordenanza \
     WHERE tc.tx_tp_doc = $1 AND c.nu_cedula = $2 \
     AND ca.co_ordenanza = (SELECT co_ordenanza FROM ultima_ordenanza) \
