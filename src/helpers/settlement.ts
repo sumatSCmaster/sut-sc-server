@@ -2347,7 +2347,6 @@ export const addTaxApplicationPaymentRetention = async ({ payment, application, 
         }
       })
     );
-    if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
 
     const state =
       user.tipoUsuario === 4
@@ -2362,6 +2361,7 @@ export const addTaxApplicationPaymentRetention = async ({ payment, application, 
     await client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
     if (user.tipoUsuario !== 4) {
+      if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
       applicationInstance.recibo = await generateReceipt({ application });
     }
     await sendNotification(
