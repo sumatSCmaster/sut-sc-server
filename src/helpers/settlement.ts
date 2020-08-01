@@ -218,7 +218,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                 return { id: el.id_inmueble, tipoInmueble: el.tipo_inmueble, codCat: el.cod_catastral, direccionInmueble: el.direccion, tarifaAseo, tarifaGas, deuda: debtSM };
               })
             )
-          : [
+          : !!branch?.id_registro_municipal
+          ? [
               {
                 id: 0,
                 tipoInmueble: null,
@@ -228,7 +229,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                 tarifaAseo: await getCleaningTariffForEstate({ estate: null, branchId: branch.id_registro_municipal, client }),
                 deuda: debtSM,
               },
-            ];
+            ]
+          : undefined;
     }
 
     //IU
