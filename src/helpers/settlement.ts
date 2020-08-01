@@ -1961,7 +1961,8 @@ export const initialUserLinking = async (linkingData, user) => {
         })
       );
       await client.query('COMMIT');
-      rims.filter((el) => el).length > 0 && (await sendRimVerification(VerificationValue.CellPhone, { content: datosContacto.telefono, user: user.id, idRim: rims.filter((el) => el) }));
+      (rims.filter((el) => el).length > 0 && (await sendRimVerification(VerificationValue.CellPhone, { content: datosContacto.telefono, user: user.id, idRim: rims.filter((el) => el) }))) ||
+        (user.tipoUsuario === 4 && (await client.query(queries.ADD_VERIFIED_CONTRIBUTOR, [user.id])).rows[0]);
       payload = { rims: rims.filter((el) => el) };
     }
     client.query('COMMIT');
