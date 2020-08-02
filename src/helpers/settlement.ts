@@ -3001,48 +3001,27 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
 const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
     console.log('culo');
-    const isJuridical = application.tipoContribuyente === 'JURIDICO';
-    const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
-    const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
-    const payloadContribuyente = isJuridical ? [application.documento, referencia?.referencia_municipal, application.tipoDocumento] : [application.tipoDocumento, application.nacionalidad];
-    const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
-    const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
-    let inmueblesContribuyente: any[] = await Promise.all(
-      breakdownData[0].datos.desglose.map((row) => {
-        return pool.query(queries.GET_SUT_ESTATE_BY_ID, [row.inmueble]);
-      })
-    );
-    inmueblesContribuyente = inmueblesContribuyente.map((result) => result.rows[0]);
-    const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     let certInfo;
     let motivo;
     let ramo;
     let certInfoArray: any[] = [];
-    console.log('appli', application);
-    if (application.descripcionCortaRamo === 'SM') {
-      motivo = application.descripcionSubramo;
-      ramo = application.descripcionRamo;
-
-      console.log('breakdownData', breakdownData);
-      console.log('datos sample', breakdownData[0].datos);
-      const totalIva =
-        +breakdownData
-          .map((row) => {
-            return row.datos.desglose.reduce((prev, next) => {
-              return prev + (next.montoGas ? next.montoAseo + +next.montoGas : +next.montoAseo);
-            }, 0);
-          })
-          .reduce((prev, next) => prev + next, 0) * 0.16;
-
-      const totalMonto = +breakdownData
-        .map((row) => {
-          return row.datos.desglose.reduce((prev, next) => {
-            return prev + (next.montoGas ? next.montoAseo + +next.montoGas : +next.montoAseo);
-          }, 0);
-        })
-        .reduce((prev, next) => prev + next, 0);
-      for (const el of inmueblesContribuyente) {
-        console.log('AAAAAAAAAAAAAAAAAAA');
+    motivo = application.descripcionSubramo;
+    ramo = application.descripcionRamo;
+    const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+    if(application.idSubramo === 107 || application.idSubramo === 108){
+      const breakdownGas = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 107])).rows.map((row) => ({ ...row, monto: row.monto / 1.16}));
+      const breakdownAseo: any[] = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 108])).rows.map((row) => ({ ...row, monto: row.monto / 1.16}));
+      const breakdownJoin = breakdownGas.reduce((prev: any[], next) => {
+        let i = prev.findIndex((aseoRow) => aseoRow.datos.fecha.month === next.datos.fecha.month && aseoRow.datos.fecha.year === next.datos.fecha.year)
+        if(i > -1){
+          prev[i].monto += next.monto;
+        }
+        return prev;
+      }, breakdownAseo)
+      const totalMonto = breakdownJoin.reduce((prev, next) => prev + (+next.monto) ,0) 
+      const totalIva = totalMonto * 0.16
+      
+      if(breakdownAseo[0].datos.desglose[0].inmueble === 0){
         certInfo = {
           QR: linkQr,
           moment: require('moment'),
@@ -3055,7 +3034,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             motivo: motivo,
             nroFactura: `${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
             tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
-            tipoInmueble: el.tipo_inmueble,
+            tipoInmueble: 'NO DISPONIBLE',
             fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
             fechaLiq: moment(application.fechaCreacion).format('DD/MM/YYYY'),
             fechaVenc: moment(application.fechaCreacion).endOf('month').format('DD/MM/YYYY'),
@@ -3065,96 +3044,18 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               direccion: application.direccion,
               razonSocial: application.razonSocial,
             },
-            items: breakdownData
-              .map((row) => {
-                console.log(el, row);
-                return {
-                  desglose: row.datos.desglose.find((desglose) => desglose.inmueble === +el.id_inmueble),
-                  fecha: row.datos.fecha,
-                };
-              })
+            items: breakdownJoin
               .map((row) => {
                 return {
-                  direccion: el.direccion,
-                  periodos: `${row.fecha.month} ${row.fecha.year}`.toUpperCase(),
-                  impuesto: row.desglose.montoGas ? formatCurrency(+row.desglose.montoGas + +row.desglose.montoAseo) : formatCurrency(row.desglose.montoAseo),
-                };
-              }),
-            totalIva: `${formatCurrency(totalIva)} Bs.S`,
-            totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
-            totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
-            montoTotalImpuesto: `${formatCurrency(
-              +breakdownData
-                .map((row) => {
-                  return {
-                    desglose: row.datos.desglose.find((desglose) => desglose.inmueble === +el.id_inmueble),
-                    fecha: row.datos.fecha,
-                  };
-                })
-                .map((row) => (row.desglose.montoGas ? +row.desglose.montoAseo + +row.desglose.montoGas : +row.desglose.montoAseo))
-                .reduce((prev, next) => prev + next, 0) + totalIva
-            )} Bs.S`,
-            interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
-            estatus: 'PAGADO',
-            observacion: 'Pago por Servicios Municipales',
-            totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
-            totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
-            totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
-          },
-        };
-
-        certInfoArray.push({ ...certInfo });
-      }
-    } else if (application.descripcionCortaRamo === 'IU') {
-      motivo = (await gticPool.query(queries.gtic.GET_MOTIVE_BY_TYPE_ID, [idTiposSolicitud.IU])).rows[0];
-      ramo = (await gticPool.query(queries.gtic.GET_BRANCH_BY_TYPE_ID, [idTiposSolicitud.IU])).rows[0];
-      const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id])).rows;
-      const totalIva = breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0) * 0.16;
-      const totalMonto = +breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0);
-
-      for (const el of inmueblesContribuyente) {
-        certInfo = {
-          QR: linkQr,
-          moment: require('moment'),
-          fecha: moment().format('MM-DD-YYYY'),
-
-          datos: {
-            nroSolicitud: application.id,
-            nroPlanilla: 10010111,
-            motivo: motivo,
-            nroFactura: `${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
-            tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
-            cuentaOContrato: el.cuenta_contrato,
-            tipoInmueble: el.tx_tp_inmueble,
-            fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
-            fechaLiq: moment(application.fechaCreacion).format('DD/MM/YYYY'),
-            fechaVenc: moment(application.fechaCreacion).endOf('month').format('DD/MM/YYYY'),
-            propietario: {
-              rif: `${application.nacionalidad}-${application.documento}`,
-              denomComercial: application.denominacionComercial,
-              direccion: application.direccion,
-              razonSocial: application.razonSocial,
-            },
-            items: breakdownData
-              .filter((row) => row.id_inmueble === +el.co_inmueble)
-              .map((row) => {
-                return {
-                  direccion: el.direccion_inmueble,
-                  periodos: `${row.mes} ${row.anio}`.toUpperCase(),
+                  direccion: 'No disponible',
+                  periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
                   impuesto: formatCurrency(row.monto),
                 };
               }),
             totalIva: `${formatCurrency(totalIva)} Bs.S`,
             totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
-            totalIvaPagar: `${formatCurrency(
-              totalIva //TODO: Retencion
-            )} Bs.S`,
-            montoTotalImpuesto: `${formatCurrency(
-              +breakdownData
-                .filter((row) => row.id_inmueble === +el.co_inmueble)
-                .map((row) => row.monto)
-                .reduce((prev, next) => prev + next, 0) + totalIva
-            )} Bs.S`,
+            totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
+            montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
             interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
             estatus: 'PAGADO',
             observacion: 'Pago por Servicios Municipales',
@@ -3165,8 +3066,206 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
         };
 
         certInfoArray.push({ ...certInfo });
+      } else {
+        console.log(breakdownJoin[0].datos.desglose)
+        let inmueblesContribuyente: any[] = await Promise.all(
+          breakdownJoin[0].datos.desglose.map((row) => {
+            return pool.query(queries.GET_SUT_ESTATE_BY_ID, [row.inmueble]);
+          })
+        );
+        inmueblesContribuyente = inmueblesContribuyente.map((result) => result.rows[0]);
+        console.log('BREAKDOWN JOIN', breakdownJoin)
+        console.log(inmueblesContribuyente)
+        for(let el of inmueblesContribuyente){
+          certInfo = {
+            QR: linkQr,
+            moment: require('moment'),
+            fecha: moment().format('MM-DD-YYYY'),
+            titulo: 'FACTURA POR SERVICIOS MUNICIPALES',
+            institucion: 'SEDEMAT',
+            datos: {
+              nroSolicitud: application.id,
+              nroPlanilla: 10010111,
+              motivo: motivo,
+              nroFactura: `${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
+              tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
+              tipoInmueble: el?.tipo_inmueble || 'NO DISPONIBLE',
+              fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
+              fechaLiq: moment(application.fechaCreacion).format('DD/MM/YYYY'),
+              fechaVenc: moment(application.fechaCreacion).endOf('month').format('DD/MM/YYYY'),
+              propietario: {
+                rif: `${application.tipoDocumento}-${application.documento}`,
+                denomComercial: application.denominacionComercial,
+                direccion: application.direccion,
+                razonSocial: application.razonSocial,
+              },
+              items: breakdownJoin
+                .map((row) => {
+                  return {
+                    direccion: el?.direccion || 'No disponible',
+                    periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
+                    impuesto: formatCurrency(row.monto),
+                  };
+                }),
+              totalIva: `${formatCurrency(totalIva)} Bs.S`,
+              totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
+              totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
+              montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+              interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
+              estatus: 'PAGADO',
+              observacion: 'Pago por Servicios Municipales',
+              totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+              totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+              totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
+            },
+          };
+          certInfoArray.push({ ...certInfo });
+        }
       }
+    } else if (application.idSubramo === 238){
+      const breakdownData: any[] = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 238])).rows.map((row) => ({ ...row, monto: row.monto / 1.16}));
+      
+      const totalMonto = breakdownData.reduce((prev, next) => prev + (+next.monto) ,0) 
+      const totalIva = totalMonto * 0.16
+      certInfo = {
+        QR: linkQr,
+        moment: require('moment'),
+        fecha: moment().format('MM-DD-YYYY'),
+        titulo: 'FACTURA POR SERVICIOS MUNICIPALES',
+        institucion: 'SEDEMAT',
+        datos: {
+          nroSolicitud: application.id,
+          nroPlanilla: 10010111,
+          motivo: motivo,
+          nroFactura: `${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
+          tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
+          tipoInmueble: 'NO DISPONIBLE',
+          fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
+          fechaLiq: moment(application.fechaCreacion).format('DD/MM/YYYY'),
+          fechaVenc: moment(application.fechaCreacion).endOf('month').format('DD/MM/YYYY'),
+          propietario: {
+            rif: `${application.tipoDocumento}-${application.documento}`,
+            denomComercial: application.denominacionComercial,
+            direccion: application.direccion,
+            razonSocial: application.razonSocial,
+          },
+          items: breakdownData
+            .map((row) => {
+              return {
+                direccion: 'No disponible',
+                periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
+                impuesto: formatCurrency(row.monto),
+              };
+            }),
+          totalIva: `${formatCurrency(totalIva)} Bs.S`,
+          totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
+          totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
+          montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+          interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
+          estatus: 'PAGADO',
+          observacion: 'Pago por Servicios Municipales',
+          totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+          totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+          totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
+        },
+      };
+
+      certInfoArray.push({ ...certInfo });
     }
+    // const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
+    // let inmueblesContribuyente: any[] = await Promise.all(
+    //   breakdownData[0].datos.desglose.map((row) => {
+    //     return pool.query(queries.GET_SUT_ESTATE_BY_ID, [row.inmueble]);
+    //   })
+    // );
+    // inmueblesContribuyente = inmueblesContribuyente.map((result) => result.rows[0]);
+    
+    
+    // console.log('appli', application);
+    // if (application.descripcionCortaRamo === 'SM') {
+    //   motivo = application.descripcionSubramo;
+    //   ramo = application.descripcionRamo;
+    //   const totalIva =
+    //     +breakdownData
+    //       .map((row) => {
+    //         return row.datos.desglose.reduce((prev, next) => {
+    //           return prev + (next.montoGas ? next.montoAseo + +next.montoGas : +next.montoAseo);
+    //         }, 0);
+    //       })
+    //       .reduce((prev, next) => prev + next, 0) * 0.16;
+
+    //   const totalMonto = +breakdownData
+    //     .map((row) => {
+    //       return row.datos.desglose.reduce((prev, next) => {
+    //         return prev + (next.montoGas ? next.montoAseo + +next.montoGas : +next.montoAseo);
+    //       }, 0);
+    //     })
+    //     .reduce((prev, next) => prev + next, 0);
+    //   for (const el of inmueblesContribuyente) {
+    //     console.log('AAAAAAAAAAAAAAAAAAA');
+    //     certInfo = {
+    //       QR: linkQr,
+    //       moment: require('moment'),
+    //       fecha: moment().format('MM-DD-YYYY'),
+    //       titulo: 'FACTURA POR SERVICIOS MUNICIPALES',
+    //       institucion: 'SEDEMAT',
+    //       datos: {
+    //         nroSolicitud: application.id,
+    //         nroPlanilla: 10010111,
+    //         motivo: motivo,
+    //         nroFactura: `${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
+    //         tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
+    //         tipoInmueble: el.tipo_inmueble,
+    //         fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
+    //         fechaLiq: moment(application.fechaCreacion).format('DD/MM/YYYY'),
+    //         fechaVenc: moment(application.fechaCreacion).endOf('month').format('DD/MM/YYYY'),
+    //         propietario: {
+    //           rif: `${application.tipoDocumento}-${application.documento}`,
+    //           denomComercial: application.denominacionComercial,
+    //           direccion: application.direccion,
+    //           razonSocial: application.razonSocial,
+    //         },
+    //         items: breakdownData
+    //           .map((row) => {
+    //             console.log(el, row);
+    //             return {
+    //               desglose: row.datos.desglose.find((desglose) => desglose.inmueble === +el.id_inmueble),
+    //               fecha: row.datos.fecha,
+    //             };
+    //           })
+    //           .map((row) => {
+    //             return {
+    //               direccion: el.direccion,
+    //               periodos: `${row.fecha.month} ${row.fecha.year}`.toUpperCase(),
+    //               impuesto: row.desglose.montoGas ? formatCurrency(+row.desglose.montoGas + +row.desglose.montoAseo) : formatCurrency(row.desglose.montoAseo),
+    //             };
+    //           }),
+    //         totalIva: `${formatCurrency(totalIva)} Bs.S`,
+    //         totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
+    //         totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
+    //         montoTotalImpuesto: `${formatCurrency(
+    //           +breakdownData
+    //             .map((row) => {
+    //               return {
+    //                 desglose: row.datos.desglose.find((desglose) => desglose.inmueble === +el.id_inmueble),
+    //                 fecha: row.datos.fecha,
+    //               };
+    //             })
+    //             .map((row) => (row.desglose.montoGas ? +row.desglose.montoAseo + +row.desglose.montoGas : +row.desglose.montoAseo))
+    //             .reduce((prev, next) => prev + next, 0) + totalIva
+    //         )} Bs.S`,
+    //         interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
+    //         estatus: 'PAGADO',
+    //         observacion: 'Pago por Servicios Municipales',
+    //         totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+    //         totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+    //         totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
+    //       },
+    //     };
+
+    //     certInfoArray.push({ ...certInfo });
+    //   }
+    // } 
 
     return new Promise(async (res, rej) => {
       try {
@@ -3223,10 +3322,9 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 pdftk
                   .input(reduced)
                   .cat(`${Object.keys(reduced).join(' ')}`)
-                  .output('../../xd.pdf')
+                  .output(pdfDir)
                   .then((buffer) => {
-                    console.log('finalbuf', buffer);
-                    res(dir);
+                    res(pdfDir);
                   })
                   .catch((e) => {
                     console.log(e);
