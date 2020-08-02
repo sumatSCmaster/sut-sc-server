@@ -163,7 +163,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
               console.log('sim');
               console.log(!!lastMonthPayment);
               const paymentDate = (!!lastMonthPayment && moment(lastMonthPayment.fecha_liquidacion)) || lastEAPayment;
-              const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M'))) || 0;
+              const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M'))) || (!lastMonthPayment && dateInterpolation) || 0;
               // paymentDate = paymentDate.isSameOrBefore(lastEAPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
               if (interpolation === 0) return null;
               return {
@@ -445,7 +445,7 @@ const structureSettlements = (x: any) => {
     estado: +x.co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
     ramo: nullStringCheck(x.tx_ramo),
     codigoRamo: nullStringCheck(x.nb_ramo),
-    descripcion: 'Migracion',
+    descripcion: 'Liquidacion por enlace de GTIC',
     monto: nullStringCheck(x.nu_monto),
     fechaLiquidacion: x.fe_liquidacion,
     fechaVencimiento: x.fe_vencimiento,
@@ -1762,7 +1762,7 @@ export const initialUserLinking = async (linkingData, user) => {
               })
             );
           }
-          const credit = (await client.query('INSERT INTO impuesto.credito_fiscal (id_persona, concepto, credito) VALUES ($1, $2, $3)', [registry.id_registro_municipal, 'JURIDICO', fixatedAmount(+datosSucursal?.creditoFiscal || 0)])).rows[0];
+          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [registry.id_registro_municipal, 'JURIDICO', fixatedAmount(+datosSucursal?.creditoFiscal || 0), true])).rows[0];
           // const estates =
           //   inmuebles.length > 0
           //     ? await Promise.all(
@@ -1773,12 +1773,9 @@ export const initialUserLinking = async (linkingData, user) => {
           //       )
           //     : undefined;
           if (pagados.length > 0) {
-            console.log('aqui');
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
             await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
-            console.log('aqiu2');
             await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
-            console.log('aqwuiqe13');
             await Promise.all(
               pagados.map(async (el) => {
                 const settlement = (
@@ -1792,7 +1789,6 @@ export const initialUserLinking = async (linkingData, user) => {
                     registry.id_registro_municipal,
                   ])
                 ).rows[0];
-                console.log('33292');
                 await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
               })
             );
@@ -1801,7 +1797,6 @@ export const initialUserLinking = async (linkingData, user) => {
           if (vigentes.length > 0) {
             const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
             await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS]);
-            console.log('asiad');
             await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [vigentes[0].fechaLiquidacion, application.id_solicitud]);
             await Promise.all(
               vigentes.map(async (el) => {
@@ -1837,7 +1832,7 @@ export const initialUserLinking = async (linkingData, user) => {
           const pagados = liquidacionesPagas.concat(multasPagas);
           const vigentes = liquidacionesVigentes.concat(multasVigentes);
           let registry;
-          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [contributor.id_contribuyente, 'NATURAL', fixatedAmount(+datosSucursal?.creditoFiscal || 0)])).rows[0];
+          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [contributor.id_contribuyente, 'NATURAL', fixatedAmount(+datosSucursal?.creditoFiscal || 0), true])).rows[0];
           if (datosSucursal?.registroMunicipal) {
             const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
             registry = (
@@ -2225,7 +2220,7 @@ export const insertSettlements = async ({ process, user }) => {
     // };
     const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
     if (settlement.reduce((x, y) => x + +y.monto, 0) === 0) {
-      (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.VALIDAR])).rows[0].state;
+      // (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.VALIDAR])).rows[0].state;
       await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
     }
     await client.query('COMMIT');
@@ -2290,7 +2285,6 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
         }
       })
     );
-    if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
 
     const state =
       user.tipoUsuario === 4
@@ -2300,6 +2294,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
     await client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
     if (user.tipoUsuario !== 4) {
+      if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
       applicationInstance.recibo = await generateReceipt({ application });
     }
     await sendNotification(
@@ -2394,7 +2389,7 @@ const updateFiscalCredit = async ({ id, user, amount, client }) => {
   const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
     ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
     : undefined;
-  const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', fixatedAmount(amount)] : [fixatedApplication.contribuyente.id, 'NATURAL', fixatedAmount(amount)];
+  const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', fixatedAmount(amount), false] : [fixatedApplication.contribuyente.id, 'NATURAL', fixatedAmount(amount), false];
   await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
 };
 
@@ -2464,7 +2459,7 @@ export const validateApplication = async (body, user, client) => {
       const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
         ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
         : undefined;
-      const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', saldoPositivo] : [fixatedApplication.contribuyente.id, 'NATURAL', saldoPositivo];
+      const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', saldoPositivo, false] : [fixatedApplication.contribuyente.id, 'NATURAL', saldoPositivo, false];
       await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
     }
 
@@ -2515,7 +2510,7 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
       const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
         ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
         : undefined;
-      const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', saldoPositivo] : [fixatedApplication.contribuyente.id, 'NATURAL', saldoPositivo];
+      const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', saldoPositivo, false] : [fixatedApplication.contribuyente.id, 'NATURAL', saldoPositivo, false];
       await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
     }
     const applicationInstance = await getAgreementFractionById({ id: body.idTramite });
@@ -4309,7 +4304,7 @@ const breakdownCaseHandler = (settlementType, breakdown) => {
   const payload = switchcase({
     'AE': { aforo: breakdown.aforo, montoDeclarado: breakdown.montoDeclarado, montoCobrado: breakdown.montoCobrado },
     'SM': { inmueble: breakdown.inmueble, montoAseo: +breakdown.montoAseo, montoGas: breakdown.montoGas },
-    'SERVICIOS MUNICIPALES': { inmueble: breakdown.inmueble },
+    'SERVICIOS MUNICIPALES': { inmueble: breakdown.inmueble, montoAseo: +breakdown.montoAseo, montoGas: +breakdown.montoGas },
     'IU': { inmueble: breakdown.inmueble, monto: breakdown.monto },
     'PP': { subarticulo: breakdown.subarticulo, monto: breakdown.monto, cantidad: breakdown.cantidad },
     'SAE': { monto: breakdown.monto },
