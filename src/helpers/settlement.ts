@@ -159,10 +159,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
           await Promise.all(
             economicActivities.map(async (el) => {
               const lastMonthPayment = (await client.query(queries.GET_LAST_AE_SETTLEMENT_BY_AE_ID, [el.id_actividad_economica, branch.id_registro_municipal])).rows[0];
-              console.log(lastMonthPayment);
-              console.log('sim');
-              console.log(!!lastMonthPayment);
-              const paymentDate = (!!lastMonthPayment && moment(lastMonthPayment.fecha_liquidacion)) || lastEAPayment;
+              const paymentDate = (!!lastMonthPayment && moment(lastMonthPayment.fecha_liquidacion).startOf('month')) || lastEAPayment;
               const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M'))) || (!lastMonthPayment && dateInterpolation) || 0;
               // paymentDate = paymentDate.isSameOrBefore(lastEAPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
               if (interpolation === 0) return null;
