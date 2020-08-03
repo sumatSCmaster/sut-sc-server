@@ -2838,7 +2838,7 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
         return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.codigo, x.desde]);
       })
     );
-    await createSettlementForProcedure({ monto: costo, referenciaMunicipal: registry.id_registro_municipal, ramo: 'AE' }, client);
+    await createSettlementForProcedure({ monto: +costo, referenciaMunicipal: registry.id_registro_municipal, ramo: 'AE' }, client);
     const verifiedId = (await client.query('SELECT * FROM impuesto.verificacion_telefono WHERE id_usuario = $1', [user])).rows[0]?.id_verificacion_telefono;
     await client.query('INSERT INTO impuesto.registro_municipal_verificacion VALUES ($1, $2) RETURNING *', [registry.id_registro_municipal, verifiedId]);
     console.log(data);
