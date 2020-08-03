@@ -455,10 +455,10 @@ const structureFinings = (x: any) => {
     id: nullStringCheck(x.co_decl_multa),
     estado: nullStringCheck(x.in_activo ? 'VIGENTE' : 'PAGADO'),
     monto: nullStringCheck(x.nu_monto),
-    fechaLiquidacion: x.created_at,
+    fechaLiquidacion: x.fecha_liquidacion,
     ramo: 'MULTAS',
     descripcion: 'Liquidacion por enlace de GTIC',
-    fecha: { month: moment(x.created_at).toDate().toLocaleDateString('ES', { month: 'long' }), year: moment(x.created_at).year() },
+    fecha: { month: moment(x.fecha_liquidacion).toDate().toLocaleDateString('ES', { month: 'long' }), year: moment(x.fecha_liquidacion).year() },
   };
 };
 
