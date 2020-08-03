@@ -440,7 +440,7 @@ const structureSettlements = (x: any) => {
   return {
     id: nullStringCheck(x.co_liquidacion),
     estado: +x.co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
-    ramo: nullStringCheck(x.tx_ramo),
+    ramo: x.nb_ramo === 236 ? nullStringCheck(x.tx_ramo) : 'TASA ADMINISTRATIVA DE SOLVENCIA DE AE',
     codigoRamo: nullStringCheck(x.nb_ramo),
     descripcion: 'Liquidacion por enlace de GTIC',
     monto: nullStringCheck(x.nu_monto),
@@ -2723,15 +2723,13 @@ export const createSpecialSettlement = async ({ process, user }) => {
             (contributorReference && contributorReference.id_registro_municipal) || null,
           ])
         ).rows[0];
-        const recibo = await createReceiptForSpecialApplication({ pool: client, user, application: (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [liquidacion.id_liquidacion])).rows[0] });
-        await client.query('UPDATE impuesto.liquidacion SET recibo = $1 WHERE id_solicitud = $2', [recibo, application.id_solicitud]);
         return {
           id: liquidacion.id_liquidacion,
           ramo: el.ramo,
           fecha: datos.fecha,
           monto: liquidacion.monto,
           certificado: liquidacion.certificado,
-          recibo,
+          recibo: liquidacion.recibo,
           desglose: datos.desglose,
         };
       })
@@ -2779,6 +2777,8 @@ export const createSpecialSettlement = async ({ process, user }) => {
 
     await client.query('COMMIT');
     const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
+    const recibo = await createReceiptForSpecialApplication({ pool: client, user, application: (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement[0].id])).rows[0] });
+    await client.query('UPDATE impuesto.liquidacion SET recibo = $1 WHERE id_solicitud = $2', [recibo, application.id_solicitud]);
     await sendNotification(
       user,
       `Se ha completado una solicitud de pago especial para el contribuyente con el documento de identidad: ${solicitud.tipoDocumento}-${solicitud.documento}`,
