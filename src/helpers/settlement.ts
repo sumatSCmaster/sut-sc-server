@@ -189,7 +189,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const estates = (await client.query(branch ? queries.GET_ESTATES_FOR_JURIDICAL_CONTRIBUTOR : queries.GET_ESTATES_FOR_NATURAL_CONTRIBUTOR, [branch ? branch.id_registro_municipal : contributor.id_contribuyente])).rows;
     if (!SMApplicationExists) {
       let lastSM = (await client.query(lastSettlementQuery, [codigosRamo.SM, lastSettlementPayload])).rows[0];
-      const lastSMPayment = (lastSM && moment(lastSM.fecha_liquidacion)) || moment().month(0);
+      const lastSMPayment = (lastSM && moment(lastSM.fecha_liquidacion).add(1, 'M')) || moment().month(0);
       const pastMonthSM = (lastSM && moment(lastSM.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
       const SMDate = moment([lastSMPayment.year(), lastSMPayment.month(), 1]);
       const dateInterpolationSM = Math.floor(now.diff(SMDate, 'M'));
@@ -234,7 +234,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     if (estates.length > 0) {
       if (!IUApplicationExists) {
         let lastIU = (await client.query(lastSettlementQuery, [codigosRamo.IU, lastSettlementPayload])).rows[0];
-        const lastIUPayment = (lastIU && moment(lastIU.fecha_liquidacion)) || moment().month(0);
+        const lastIUPayment = (lastIU && moment(lastIU.fecha_liquidacion).add(1, 'M')) || moment().month(0);
         const pastMonthIU = (lastIU && moment(lastIU.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
         const IUDate = moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
         const dateInterpolationIU = Math.floor(now.diff(IUDate, 'M'));
@@ -285,7 +285,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       let debtPP;
       let lastPP = (await client.query(lastSettlementQuery, [codigosRamo.PP, lastSettlementPayload])).rows[0];
       if (lastPP) {
-        const lastPPPayment = moment(lastPP.fecha_liquidacion);
+        const lastPPPayment = moment(lastPP.fecha_liquidacion).add(1, 'M');
         const pastMonthPP = moment(lastPP.fecha_liquidacion).subtract(1, 'M');
         const PPDate = moment([lastPPPayment.year(), lastPPPayment.month(), 1]);
         const dateInterpolationPP = Math.floor(now.diff(PPDate, 'M'));
@@ -3008,20 +3008,20 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     motivo = application.descripcionSubramo;
     ramo = application.descripcionRamo;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
-    if(application.idSubramo === 107 || application.idSubramo === 108){
-      const breakdownGas = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 107])).rows.map((row) => ({ ...row, monto: row.monto / 1.16}));
-      const breakdownAseo: any[] = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 108])).rows.map((row) => ({ ...row, monto: row.monto / 1.16}));
+    if (application.idSubramo === 107 || application.idSubramo === 108) {
+      const breakdownGas = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 107])).rows.map((row) => ({ ...row, monto: row.monto / 1.16 }));
+      const breakdownAseo: any[] = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 108])).rows.map((row) => ({ ...row, monto: row.monto / 1.16 }));
       const breakdownJoin = breakdownGas.reduce((prev: any[], next) => {
-        let i = prev.findIndex((aseoRow) => aseoRow.datos.fecha.month === next.datos.fecha.month && aseoRow.datos.fecha.year === next.datos.fecha.year)
-        if(i > -1){
+        let i = prev.findIndex((aseoRow) => aseoRow.datos.fecha.month === next.datos.fecha.month && aseoRow.datos.fecha.year === next.datos.fecha.year);
+        if (i > -1) {
           prev[i].monto += next.monto;
         }
         return prev;
-      }, breakdownAseo)
-      const totalMonto = breakdownJoin.reduce((prev, next) => prev + (+next.monto) ,0) 
-      const totalIva = totalMonto * 0.16
-      
-      if(breakdownAseo[0].datos.desglose[0].inmueble === 0){
+      }, breakdownAseo);
+      const totalMonto = breakdownJoin.reduce((prev, next) => prev + +next.monto, 0);
+      const totalIva = totalMonto * 0.16;
+
+      if (breakdownAseo[0].datos.desglose[0].inmueble === 0) {
         certInfo = {
           QR: linkQr,
           moment: require('moment'),
@@ -3044,14 +3044,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               direccion: application.direccion,
               razonSocial: application.razonSocial,
             },
-            items: breakdownJoin
-              .map((row) => {
-                return {
-                  direccion: 'No disponible',
-                  periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                  impuesto: formatCurrency(row.monto),
-                };
-              }),
+            items: breakdownJoin.map((row) => {
+              return {
+                direccion: 'No disponible',
+                periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
+                impuesto: formatCurrency(row.monto),
+              };
+            }),
             totalIva: `${formatCurrency(totalIva)} Bs.S`,
             totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
             totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
@@ -3067,16 +3066,16 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
 
         certInfoArray.push({ ...certInfo });
       } else {
-        console.log(breakdownJoin[0].datos.desglose)
+        console.log(breakdownJoin[0].datos.desglose);
         let inmueblesContribuyente: any[] = await Promise.all(
           breakdownJoin[0].datos.desglose.map((row) => {
             return pool.query(queries.GET_SUT_ESTATE_BY_ID, [row.inmueble]);
           })
         );
         inmueblesContribuyente = inmueblesContribuyente.map((result) => result.rows[0]);
-        console.log('BREAKDOWN JOIN', breakdownJoin)
-        console.log(inmueblesContribuyente)
-        for(let el of inmueblesContribuyente){
+        console.log('BREAKDOWN JOIN', breakdownJoin);
+        console.log(inmueblesContribuyente);
+        for (let el of inmueblesContribuyente) {
           certInfo = {
             QR: linkQr,
             moment: require('moment'),
@@ -3099,14 +3098,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 direccion: application.direccion,
                 razonSocial: application.razonSocial,
               },
-              items: breakdownJoin
-                .map((row) => {
-                  return {
-                    direccion: el?.direccion || 'No disponible',
-                    periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                    impuesto: formatCurrency(row.monto),
-                  };
-                }),
+              items: breakdownJoin.map((row) => {
+                return {
+                  direccion: el?.direccion || 'No disponible',
+                  periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
+                  impuesto: formatCurrency(row.monto),
+                };
+              }),
               totalIva: `${formatCurrency(totalIva)} Bs.S`,
               totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
               totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
@@ -3122,11 +3120,11 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
           certInfoArray.push({ ...certInfo });
         }
       }
-    } else if (application.idSubramo === 238){
-      const breakdownData: any[] = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 238])).rows.map((row) => ({ ...row, monto: row.monto / 1.16}));
-      
-      const totalMonto = breakdownData.reduce((prev, next) => prev + (+next.monto) ,0) 
-      const totalIva = totalMonto * 0.16
+    } else if (application.idSubramo === 238) {
+      const breakdownData: any[] = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 238])).rows.map((row) => ({ ...row, monto: row.monto / 1.16 }));
+
+      const totalMonto = breakdownData.reduce((prev, next) => prev + +next.monto, 0);
+      const totalIva = totalMonto * 0.16;
       certInfo = {
         QR: linkQr,
         moment: require('moment'),
@@ -3149,14 +3147,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             direccion: application.direccion,
             razonSocial: application.razonSocial,
           },
-          items: breakdownData
-            .map((row) => {
-              return {
-                direccion: 'No disponible',
-                periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                impuesto: formatCurrency(row.monto),
-              };
-            }),
+          items: breakdownData.map((row) => {
+            return {
+              direccion: 'No disponible',
+              periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
+              impuesto: formatCurrency(row.monto),
+            };
+          }),
           totalIva: `${formatCurrency(totalIva)} Bs.S`,
           totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
           totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
@@ -3179,8 +3176,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     //   })
     // );
     // inmueblesContribuyente = inmueblesContribuyente.map((result) => result.rows[0]);
-    
-    
+
     // console.log('appli', application);
     // if (application.descripcionCortaRamo === 'SM') {
     //   motivo = application.descripcionSubramo;
@@ -3265,7 +3261,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
 
     //     certInfoArray.push({ ...certInfo });
     //   }
-    // } 
+    // }
 
     return new Promise(async (res, rej) => {
       try {
