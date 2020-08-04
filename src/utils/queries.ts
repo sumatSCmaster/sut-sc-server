@@ -671,14 +671,14 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         ORDER BY ramo)
     UNION
     (SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadIng", SUM(f.monto)as ingresado 
-        FROM (SELECT * FROM impuesto.fraccion WHERE fecha_aprobado BETWEEN $1 AND $2) f
-        INNER JOIN impuesto.convenio USING (id_convenio)
-        INNER JOIN impuesto.solicitud USING (id_solicitud)
-        INNER JOIN impuesto.liquidacion l USING (id_solicitud)
-        RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo 
-        INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo 
-        GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion
-        ORDER BY ramo)) x
+      FROM (SELECT * FROM impuesto.fraccion WHERE fecha_aprobado BETWEEN $1 AND $2) f
+      INNER JOIN impuesto.convenio USING (id_convenio)
+      INNER JOIN impuesto.solicitud USING (id_solicitud)
+      INNER JOIN (SELECT DISTINCT ON (id_solicitud) id_solicitud, id_subramo, id_liquidacion FROM impuesto.liquidacion ) l USING (id_solicitud)
+      RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo 
+      INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo 
+      GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion
+      ORDER BY ramo)) x
         GROUP BY ramo, descripcion, codigo;`,
   GET_LIQUIDATED: `SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadLiq", SUM(monto) as liquidado 
         FROM (SELECT *  FROM impuesto.liquidacion WHERE fecha_liquidacion BETWEEN $1 AND $2 ) l 
