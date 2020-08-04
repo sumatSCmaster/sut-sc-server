@@ -952,7 +952,7 @@ export const processProcedureAnalist = async (procedure, user: Usuario, client: 
     } else if (resources.tipoTramite === 28) {
       const { aprobado } = procedure;
       console.log('pofavo', resources , procedure)
-      datos.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
+      datos.funcionario.pago = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
         monto: row.monto,
         formaPago: row.metodo_pago,
         banco: row.nombre,
