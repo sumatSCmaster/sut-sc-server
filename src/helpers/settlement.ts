@@ -242,41 +242,43 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
           monto: lastIU && lastIU.mo_pendiente ? parseFloat(lastIU.mo_pendiente) : 0,
           fecha: { month: pastMonthIU.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthIU.year() },
         };
-        if (dateInterpolationIU > 0) {
-          IU = (
-            await Promise.all(
-              estates
-                .filter((el) => +el.avaluo)
-                .map(async (el) => {
-                  // let paymentDate: Moment = lastIUPayment;
-                  // let interpolation = dateInterpolationIU;
-                  const lastMonthPayment = (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID, [el.id_inmueble, branch.id_registro_municipal])).rows[0];
-                  const paymentDate = (!!lastMonthPayment && moment(lastMonthPayment.fecha_liquidacion)) || lastIUPayment;
-                  const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M'))) || dateInterpolationIU;
-                  // if (lastMonthPayment) {
-                  //   paymentDate = moment(lastMonthPayment.fecha_liquidacion);
-                  //   paymentDate = paymentDate.isSameOrBefore(lastIUPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
-                  //   interpolation = Math.floor(now.diff(paymentDate, 'M'));
-                  // }
-                  return {
-                    id: el.id_inmueble,
-                    codCat: el.cod_catastral,
-                    direccionInmueble: el.direccion,
-                    ultimoAvaluo: el.avaluo,
-                    impuestoInmueble: (el.avaluo * 0.01) / 12,
-                    deuda: await Promise.all(
-                      new Array(interpolation + 1).fill({ month: null, year: null }).map(async (value, index) => {
-                        const date = addMonths(new Date(paymentDate.toDate()), index);
-                        const momentDate = moment(date);
-                        const exonerado = await isExonerated({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') });
-                        return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
-                      })
-                    ),
-                  };
-                })
-            )
-          ).filter((el) => el.id);
-        }
+        // if (dateInterpolationIU > 0) {
+        IU = (
+          await Promise.all(
+            estates
+              .filter((el) => +el.avaluo)
+              .map(async (el) => {
+                // let paymentDate: Moment = lastIUPayment;
+                // let interpolation = dateInterpolationIU;
+                const lastMonthPayment = (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID, [el.id_inmueble, branch.id_registro_municipal])).rows[0];
+                const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment).startOf('month').isSameOrAfter(IUDate) ? moment(lastMonthPayment.fecha_liquidacion).startOf('month') : IUDate) : IUDate;
+                const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M'))) || (!lastMonthPayment && dateInterpolationIU) || 0;
+                // paymentDate = paymentDate.isSameOrBefore(lastEAPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
+                if (interpolation === 0) return null;
+                // if (lastMonthPayment) {
+                //   paymentDate = moment(lastMonthPayment.fecha_liquidacion);
+                //   paymentDate = paymentDate.isSameOrBefore(lastIUPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
+                //   interpolation = Math.floor(now.diff(paymentDate, 'M'));
+                // }
+                return {
+                  id: el.id_inmueble,
+                  codCat: el.cod_catastral,
+                  direccionInmueble: el.direccion,
+                  ultimoAvaluo: el.avaluo,
+                  impuestoInmueble: (el.avaluo * 0.01) / 12,
+                  deuda: await Promise.all(
+                    new Array(interpolation + 1).fill({ month: null, year: null }).map(async (value, index) => {
+                      const date = addMonths(new Date(paymentDate.toDate()), index);
+                      const momentDate = moment(date);
+                      const exonerado = await isExonerated({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') });
+                      return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
+                    })
+                  ),
+                };
+              })
+          )
+        ).filter((el) => el);
+        // }
       }
     }
 
@@ -288,21 +290,21 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         const lastPPPayment = moment(lastPP.fecha_liquidacion).add(1, 'M');
         const pastMonthPP = moment(lastPP.fecha_liquidacion).subtract(1, 'M');
         const PPDate = moment([lastPPPayment.year(), lastPPPayment.month(), 1]);
-        const dateInterpolationPP = Math.floor(now.diff(PPDate, 'M'));
+        const dateInterpolationPP = Math.floor(now.diff(PPDate, 'M')); /*now.isSameOrBefore(PPDate) && now.diff(PPDate, 'd') < 0 ? 0 : now.diff(PPDate, 'M') + 1;*/
         montoAcarreado.PP = {
           monto: lastPP && lastPP.mo_pendiente ? parseFloat(lastPP.mo_pendiente) : 0,
           fecha: { month: pastMonthPP.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthPP.year() },
         };
-        if (dateInterpolationPP > 0) {
-          debtPP = await Promise.all(
-            new Array(dateInterpolationPP + 1).fill({ month: null, year: null }).map(async (value, index) => {
-              const date = addMonths(new Date(lastPPPayment.toDate()), index);
-              const momentDate = moment(date);
-              const exonerado = await isExonerated({ branch: codigosRamo.PP, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') });
-              return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
-            })
-          );
-        }
+        // if (dateInterpolationPP > 0) {
+        debtPP = await Promise.all(
+          new Array(dateInterpolationPP + 1).fill({ month: null, year: null }).map(async (value, index) => {
+            const date = addMonths(new Date(lastPPPayment.toDate()), index);
+            const momentDate = moment(date);
+            const exonerado = await isExonerated({ branch: codigosRamo.PP, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') });
+            return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
+          })
+        );
+        // }
       } else {
         debtPP = await Promise.all(
           new Array(now.month() + 1).fill({ month: null, year: null }).map(async (value, index) => {
