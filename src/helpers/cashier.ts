@@ -28,7 +28,7 @@ export const getCashierReceipts = async (payload: { id: string | number }) => {
 
 
 export const generateCashierReport = async (user, payload: { day: Date }) => {
-    if(user.institucion.id === 9){
+    if(user.institucion.id !== 9){
         throw new Error('El usuario en sesión no tiene permisos.');
     }
     const client = await pool.connect();
