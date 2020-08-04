@@ -178,18 +178,32 @@ block content
         div(style={'-webkit-flex': 2.5}).td.center
           p
             b MONTO CANCELADO
-      each item in datos.funcionario.pago
-        div.tr.break-page
-          div(style={'-webkit-flex': 2}).td.border-right.center.border-top
-            p #{item.formaPago}
-          div(style={'-webkit-flex': 3}).td.border-right.center.border-top
-            p #{item.banco}
-          div(style={'-webkit-flex': 1}).td.border-right.center.border-top
-            p #{moment(item.fecha).format('DD/MM/YYYY')}
-          div(style={'-webkit-flex': 1.5}).td.border-right.center.border-top
-            p #{item.nro}
-          div(style={'-webkit-flex': 2.5}).td.center.border-top
-            p Bs #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.monto ? (item.monto) : 0)}         
+      if datos.funcionario.pago.length > 0
+        each item in datos.funcionario.pago
+          div.tr.break-page
+            div(style={'-webkit-flex': 2}).td.border-right.center.border-top
+              p #{item.formaPago}
+            div(style={'-webkit-flex': 3}).td.border-right.center.border-top
+              p #{bancos.find(e => e.id === item.banco).nombre}
+            div(style={'-webkit-flex': 1}).td.border-right.center.border-top
+              p #{moment(item.fecha).format('DD/MM/YYYY')}
+            div(style={'-webkit-flex': 1.5}).td.border-right.center.border-top
+              p #{item.nro}
+            div(style={'-webkit-flex': 2.5}).td.center.border-top
+              p Bs #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.monto ? (item.monto) : 0)} 
+      else
+        each item in datos.usuario.pago
+          div.tr.break-page
+            div(style={'-webkit-flex': 2}).td.border-right.center.border-top
+              p #{item.formaPago}
+            div(style={'-webkit-flex': 3}).td.border-right.center.border-top
+              p #{bancos.find(e => e.id === item.banco).nombre}
+            div(style={'-webkit-flex': 1}).td.border-right.center.border-top
+              p #{moment(item.fecha).format('DD/MM/YYYY')}
+            div(style={'-webkit-flex': 1.5}).td.border-right.center.border-top
+              p #{item.nro}
+            div(style={'-webkit-flex': 2.5}).td.center.border-top
+              p Bs #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.monto ? (item.monto) : 0)}                 
     div(style={'margin-top':'20px'}).table.break-page
       div(style={'background-color':'rgba(0,0,0,0.2)'}).tr
         div(style={'-webkit-flex': 1}).td.border-right.center
