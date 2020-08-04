@@ -177,7 +177,13 @@ const generateHtmlMail = (link, username) =>  (`<center>
                           class="m_-8834691710559868579device_txt"
                           style="color: #757575; font-family: 'Roboto', OpenSans, 'Open Sans', Arial, sans-serif; font-size: 24px; font-weight: normal; line-height: 33px; margin: 0; padding: 0 25px 0 25px; text-align: center;"
                         >
-                          <button class="btn"  target='_blank' href="${link}">Recuperar</button>
+                          <a style="color: #fff;
+                          background-color: #4285f5;
+                          border: none;
+                          border-radius: 15px;
+                          padding: 5px 15px;
+                          font-size: 20px;
+                          margin-top: 10px;" target='_blank' href="${link}">Recuperar</a>
                         </td>
                       </tr>
                       <tr>
