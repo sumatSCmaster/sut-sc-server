@@ -7,6 +7,7 @@ import { resolve } from 'path';
 import * as pdf from 'html-pdf';
 import * as qr from 'qrcode';
 import { errorMessageGenerator, errorMessageExtractor } from '@helpers/errors';
+import { getAllBanks } from '@helpers/banks';
 const written = require('written-number');
 
 const pool = Pool.getInstance();
@@ -44,6 +45,7 @@ export const createCertificate = async (procedure, client: PoolClient): Promise<
     tipoTramite: tramite.tipotramite,
     UTMM,
     costoFormateado,
+    bancos: (await getAllBanks()).banks
   };
   const form = (await createForm(procedureData, client)) as string;
   return form;
@@ -106,6 +108,7 @@ export const createMockCertificate = async (procedure) => {
       estado: 'finalizado',
       tipoTramite: tramite.tipotramite,
       certificado: tramite.sufijo === 'ompu' ? (tramite.aprobado ? tramite.formatocertificado : tramite.formatorechazo) : tramite.formatocertificado,
+      bancos: (await getAllBanks()).banks
     };
     console.log('datos:', datosCertificado.datos, 'datos.funcionario:', datosCertificado.datos.funcionario);
     const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
