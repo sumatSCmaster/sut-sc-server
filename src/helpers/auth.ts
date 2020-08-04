@@ -15,13 +15,13 @@ export const forgotPassword = async (email) => {
     const emailExists = (await client.query(queries.EMAIL_EXISTS, [email])).rowCount > 0;
     if (emailExists) {
       const recuperacion = (await client.query(queries.ADD_PASSWORD_RECOVERY, [email, uuidv4()])).rows[0];
-      await transporter.sendMail({
+      console.log(await transporter.sendMail({
         from: process.env.MAIL_ADDRESS || 'info@sutmaracaibo.com',
         to: email,
         subject: 'Recuperación de contraseña',
         text: `Enlace de recuperacion: ${process.env.CLIENT_URL}/olvidoContraseña?recvId=${recuperacion.token_recuperacion}`,
         html: `Enlace de recuperacion: <a>${process.env.CLIENT_URL}/olvidoContraseña?recvId=${recuperacion.token_recuperacion}</a>`,
-      });
+      }));
       return { status: 200, message: 'Revise su bandeja de correo' };
     } else {
       return { status: 404, message: 'Información inválida' };
