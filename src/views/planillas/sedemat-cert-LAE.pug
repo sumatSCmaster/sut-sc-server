@@ -156,7 +156,7 @@ block content
         div(style={'-webkit-flex': 8}).td.border-right
           p Pago por Licencia de Actividad Económica
         div(style={'-webkit-flex': 2}).td.center
-          p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format((2*UTMM)? (2*UTMM) : 0)}
+          p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format((2*(parseFloat(UTMM))))}
     div(style={'margin-top':'20px'}).table.break-page
       .tr.break-page
         .th.center.border-bottom

@@ -28,9 +28,8 @@ export const getCashierReceipts = async (payload: { id: string | number }) => {
 
 
 export const generateCashierReport = async (user, payload: { day: Date }) => {
-    const allowedId = [22,25,23,33];
-    if(allowedId.includes(user.institucion.cargo.id)){
-        throw new Error('El usuario en sesión no es un cajero');
+    if(user.institucion.id === 9){
+        throw new Error('El usuario en sesión no tiene permisos.');
     }
     const client = await pool.connect();
     const userId = user.id;
