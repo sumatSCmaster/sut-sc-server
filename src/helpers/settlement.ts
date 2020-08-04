@@ -94,6 +94,8 @@ const isExonerated = async ({ branch, contributor, activity, startingDate }): Pr
       if (contributorIsExonerated) return !!contributorIsExonerated;
       return !!(await client.query(queries.CONTRIBUTOR_ECONOMIC_ACTIVIES_IS_EXONERATED, [contributor, activity, startingDate])).rows[0];
     } else {
+      if (branch === codigosRamo.SM) {
+      }
       const branchIsExonerated = (await client.query(queries.BRANCH_IS_EXONERATED, [branch, startingDate])).rows[0];
       if (branchIsExonerated) return !!branchIsExonerated;
       return !!(await client.query(queries.CONTRIBUTOR_IS_EXONERATED, [contributor, startingDate])).rows[0];
@@ -442,7 +444,7 @@ const structureSettlements = (x: any) => {
   return {
     id: nullStringCheck(x.co_liquidacion),
     estado: +x.co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
-    ramo: x.nb_ramo === 236 ? nullStringCheck(x.tx_ramo) : 'TASA ADMINISTRATIVA DE SOLVENCIA DE AE',
+    ramo: x.nb_ramo === 236 ? 'TASA ADMINISTRATIVA DE SOLVENCIA DE AE' : nullStringCheck(x.tx_ramo),
     codigoRamo: nullStringCheck(x.nb_ramo),
     descripcion: 'Liquidacion por enlace de GTIC',
     monto: nullStringCheck(x.nu_monto),
