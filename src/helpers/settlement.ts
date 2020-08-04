@@ -1590,7 +1590,7 @@ export const formatBranch = async (branch, client) => {
     actividadesEconomicas: (await client.query(queries.GET_ECONOMIC_ACTIVITY_BY_RIM, [branch.id_registro_municipal])).rows,
     liquidaciones: (
       await client.query(
-        'SELECT *,s.descripcion AS "descripcionSubramo", r.descripcion AS "descripcionRamo" FROM impuesto.liquidacion LEFT JOIN impuesto.subramo s USING (id_subramo) INNER JOIN impuesto.ramo r USING (id_ramo) WHERE liquidacion.id_registro_municipal= $1 ORDER BY fecha_liquidacion DESC',
+        'SELECT *,s.descripcion AS "descripcionSubramo", r.descripcion AS "descripcionRamo" FROM impuesto.solicitud_state sl RIGHT JOIN impuesto.liquidacion l ON sl.id = l.id_solicitud LEFT JOIN impuesto.subramo s USING (id_subramo) INNER JOIN impuesto.ramo r USING (id_ramo) WHERE l.id_registro_municipal= $1 ORDER BY fecha_liquidacion DESC',
         [branch.id_registro_municipal]
       )
     ).rows.map((el) => ({
@@ -1598,6 +1598,7 @@ export const formatBranch = async (branch, client) => {
       fechaLiquidacion: el.fecha_liquidacion,
       fechaVencimiento: el.fecha_vencimiento,
       monto: +el.monto,
+      estado: el.state || 'finalizado',
       certificado: el.certificado,
       recibo: el.recibo,
       ramo: {
@@ -2611,7 +2612,7 @@ export const internalLicenseApproval = async (license, official: Usuario) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    console.log(license.datos.funcionario, license)
+    console.log(license.datos.funcionario, license);
     const user = await getUserByUsername(license.username);
     if (!user) throw { status: 404, message: 'El usuario proporcionado no existe en SUT' };
     const userContributor = await hasLinkedContributor(user.id);
