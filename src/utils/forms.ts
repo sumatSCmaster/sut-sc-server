@@ -111,6 +111,8 @@ export const createMockCertificate = async (procedure) => {
       bancos: (await getAllBanks()).banks
     };
     console.log('datos:', datosCertificado.datos, 'datos.funcionario:', datosCertificado.datos.funcionario);
+
+    console.log('--------------->', datosCertificado.bancos)
     const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
       ...datosCertificado,
       cache: false,
