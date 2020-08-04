@@ -16,7 +16,7 @@ export const forgotPassword = async (email) => {
     if (emailExists) {
       const recuperacion = (await client.query(queries.ADD_PASSWORD_RECOVERY, [email, uuidv4()])).rows[0];
       await transporter.sendMail({
-        from: 'waku@wakusoftware.com',
+        from: process.env.MAIL_ADDRESS || 'info@sutmaracaibo.com',
         to: email,
         subject: 'Recuperación de contraseña',
         text: `Enlace de recuperacion: ${process.env.CLIENT_URL}/olvidoContraseña?recvId=${recuperacion.token_recuperacion}`,
@@ -27,6 +27,7 @@ export const forgotPassword = async (email) => {
       return { status: 404, message: 'Información inválida' };
     }
   } catch (e) {
+    console.log(e)
     throw {
       status: 500,
       error: errorMessageExtractor(e),
