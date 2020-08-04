@@ -184,7 +184,7 @@ block content
             div(style={'-webkit-flex': 2}).td.border-right.center.border-top
               p #{item.formaPago}
             div(style={'-webkit-flex': 3}).td.border-right.center.border-top
-              p #{bancos.find(e => e.id === item.banco).nombre}
+              p #{bancos.find(e => e.id === item.banco).nombre ? bancos.find(e => e.id === item.banco).nombre : ''}
             div(style={'-webkit-flex': 1}).td.border-right.center.border-top
               p #{moment(item.fecha).format('DD/MM/YYYY')}
             div(style={'-webkit-flex': 1.5}).td.border-right.center.border-top
@@ -197,7 +197,7 @@ block content
             div(style={'-webkit-flex': 2}).td.border-right.center.border-top
               p #{item.formaPago}
             div(style={'-webkit-flex': 3}).td.border-right.center.border-top
-              p #{bancos.find(e => e.id === item.banco).nombre}
+              p #{bancos.find(e => e.id === item.banco).nombre ? bancos.find(e => e.id === item.banco).nombre : ''}
             div(style={'-webkit-flex': 1}).td.border-right.center.border-top
               p #{moment(item.fecha).format('DD/MM/YYYY')}
             div(style={'-webkit-flex': 1.5}).td.border-right.center.border-top
