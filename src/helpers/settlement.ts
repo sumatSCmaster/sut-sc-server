@@ -1567,6 +1567,27 @@ export const formatBranch = async (branch, client) => {
     actualizado: branch.actualizado,
     estadoLicencia: branch.estado_licencia,
     actividadesEconomicas: (await client.query(queries.GET_ECONOMIC_ACTIVITY_BY_RIM, [branch.id_registro_municipal])).rows,
+    liquidaciones: (
+      await client.query(
+        'SELECT *,s.descripcion AS "descripcionSubramo", r.descripcion AS "descripcionRamo" FROM impuesto.liquidacion LEFT JOIN impuesto.subramo s USING (id_subramo) INNER JOIN impuesto.ramo r USING (id_ramo) WHERE liquidacion.id_registro_municipal= $1 ORDER BY fecha_liquidacion DESC',
+        [branch.id_registro_municipal]
+      )
+    ).rows.map((el) => ({
+      id: el.id_liquidacion,
+      fechaLiquidacion: el.fecha_liquidacion,
+      fechaVencimiento: el.fecha_vencimiento,
+      monto: +el.monto,
+      certificado: el.certificado,
+      recibo: el.recibo,
+      ramo: {
+        id: el.id_ramo,
+        descripcion: el.descripcionRamo,
+      },
+      subramo: {
+        id: el.id_subramo,
+        descripcion: el.descripcionSubramo,
+      },
+    })),
   };
 };
 

@@ -1,5 +1,5 @@
 import { resolve } from 'path';
-import { chunk } from 'lodash'
+import { chunk } from 'lodash';
 import moment, { Moment } from 'moment';
 import S3Client from '@utils/s3';
 import Pool from '@utils/Pool';
@@ -18,7 +18,12 @@ export const getBranches = async () => {
   const client = await pool.connect();
   try {
     const branches = await client.query(queries.GET_BRANCHES);
-    return branches.rows;
+    return Promise.all(
+      branches.rows.map(async (el) => {
+        el.subramos = await client.query(queries.GET_SUBRANCHES_BY_ID, [el.id]);
+        return el;
+      })
+    );
   } catch (e) {
     throw e;
   } finally {
@@ -108,8 +113,8 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
         })
         .filter((branch) => branch.subRamo.reduce((prev, next) => prev + +next.ingresado + +next.liquidado, 0) > 0);
       console.log('branches', branches);
-      console.log(branches[0].subRamo)
-      let compens: any = { 
+      console.log(branches[0].subRamo);
+      let compens: any = {
         id: 53,
         ramo: '925',
         descripcion: 'COMPENSACIONES',
@@ -119,26 +124,26 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
             ramo: '925.1',
             descripcion: 'COMPENSACIONES - Credito fiscal por pago excesivo',
             codigo: '925',
-            ...((await client.query(queries.GET_CREDIT_INGRESS_BY_INTERVAL, [payload.from, payload.to])).rows[0 ]),
+            ...(await client.query(queries.GET_CREDIT_INGRESS_BY_INTERVAL, [payload.from, payload.to])).rows[0],
             liquidado: 0,
-            cantidadLiq: 0
+            cantidadLiq: 0,
           },
           {
             ramo: '925.2',
             descripcion: 'COMPENSACIONES - Credito fiscal por agente de retencion',
             codigo: '925',
-            ...((await client.query(queries.GET_RETENTION_CREDIT_INGRESS_BY_INTERVAL, [payload.from, payload.to])).rows[0]),
+            ...(await client.query(queries.GET_RETENTION_CREDIT_INGRESS_BY_INTERVAL, [payload.from, payload.to])).rows[0],
             liquidado: 0,
-            cantidadLiq: 0
-          }
-        ]
-       }
+            cantidadLiq: 0,
+          },
+        ],
+      };
       compens.liquidadoTotal = compens.cantidadLiqTotal = 0;
-      compens.ingresadoTotal = compens.subRamo.reduce((prev, next) => prev + (+next.ingresado), 0)
-      compens.cantidadIngTotal = compens.subRamo.reduce((prev, next) => prev + (+next.cantidadIng), 0)
+      compens.ingresadoTotal = compens.subRamo.reduce((prev, next) => prev + +next.ingresado, 0);
+      compens.cantidadIngTotal = compens.subRamo.reduce((prev, next) => prev + +next.cantidadIng, 0);
       branches = branches.concat(compens);
-      console.log(compens)
-      console.log('branches 2',branches)
+      console.log(compens);
+      console.log('branches 2', branches);
       if (!alcaldia) {
         const transfersByBank = (await client.query(queries.GET_TRANSFERS_BY_BANK, [payload.from, payload.to])).rows;
         const totalTranfersByBank = +transfersByBank.reduce((prev, next) => prev + +next.monto, 0);
@@ -173,7 +178,7 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
           cheques: {
             total: check,
           },
-          creditoFiscal: cred
+          creditoFiscal: cred,
         };
       }
       const html = renderFile(resolve(__dirname, alcaldia ? `../views/planillas/sedemat-RPRA.pug` : `../views/planillas/sedemat-RPR.pug`), {
