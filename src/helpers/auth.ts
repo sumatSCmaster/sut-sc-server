@@ -155,7 +155,7 @@ const generateHtmlMail = (link, username) =>  (`<center>
                           class="m_-8834691710559868579whom"
                           style="color: #4285f4; font-family: 'Roboto', OpenSans, 'Open Sans', Arial, sans-serif; font-size: 32px; font-weight: normal; line-height: 46px; margin: 0; padding: 0 25px 0 25px; text-align: center;"
                         >
-                          <h3>Hola, <span>${username}</span></h3>
+                          Hola, <span style="text-decoration: none;">${username}</span>
                         </td>
                       </tr>
 
