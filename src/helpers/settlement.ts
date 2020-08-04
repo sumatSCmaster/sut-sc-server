@@ -2779,6 +2779,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
     const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
     const recibo = await createReceiptForSpecialApplication({ pool: client, user, application: (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement[0].id])).rows[0] });
     await client.query('UPDATE impuesto.liquidacion SET recibo = $1 WHERE id_solicitud = $2', [recibo, application.id_solicitud]);
+    application.recibo = recibo;
     await sendNotification(
       user,
       `Se ha completado una solicitud de pago especial para el contribuyente con el documento de identidad: ${solicitud.tipoDocumento}-${solicitud.documento}`,
