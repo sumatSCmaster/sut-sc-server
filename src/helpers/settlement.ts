@@ -1191,6 +1191,27 @@ export const createSettlementForProcedure = async (process, client) => {
   }
 };
 
+export const patchSettlement = async ({ id, settlement }) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const prevSettlement = (await client.query('SELECT * FROM impuesto.liquidacion WHERE id_liquidacion = $1', [id])).rows[0];
+
+    await client.query('COMMIT');
+    return;
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al realizar la correcion de la liquidacion',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 //TODO: get de fracciones
 export const getAgreementFractionById = async ({ id }): Promise<Solicitud & any> => {
   const client = await pool.connect();

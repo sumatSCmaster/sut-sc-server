@@ -26,6 +26,7 @@ import {
   internalUserLinking,
   internalUserImport,
   createSpecialSettlement,
+  patchSettlement,
 } from '@helpers/settlement';
 import { Usuario } from '@root/interfaces/sigt';
 
@@ -215,6 +216,14 @@ router.put('/:id/payment/:fragment', authenticate('jwt'), async (req: any, res) 
   const { procedimiento } = req.body;
   const { id, fragment } = req.params;
   const [error, data] = await fulfill(addTaxApplicationPaymentAgreement({ payment: procedimiento.pagos, agreement: id, fragment, user: req.user }));
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+});
+
+router.patch('/:id', authenticate('jwt'), async (req, res) => {
+  const { liquidacion } = req.body;
+  const { id } = req.params;
+  const [error, data] = await fulfill(patchSettlement({ id, settlement: liquidacion }));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });

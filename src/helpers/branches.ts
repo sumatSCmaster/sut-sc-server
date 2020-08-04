@@ -20,7 +20,7 @@ export const getBranches = async () => {
     const branches = await client.query(queries.GET_BRANCHES);
     return Promise.all(
       branches.rows.map(async (el) => {
-        el.subramos = await client.query(queries.GET_SUBRANCHES_BY_ID, [el.id]);
+        el.subramos = (await client.query(queries.GET_SUBRANCHES_BY_ID, [el.id])).rows;
         return el;
       })
     );
