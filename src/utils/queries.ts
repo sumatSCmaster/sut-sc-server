@@ -670,7 +670,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion
         ORDER BY ramo)
     UNION
-    (SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadIng", SUM(l.monto)as ingresado 
+    (SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadIng", SUM(f.monto)as ingresado 
         FROM (SELECT * FROM impuesto.fraccion WHERE fecha_aprobado BETWEEN $1 AND $2) f
         INNER JOIN impuesto.convenio USING (id_convenio)
         INNER JOIN impuesto.solicitud USING (id_solicitud)
