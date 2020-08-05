@@ -103,7 +103,7 @@ const validationHandler = async ({ concept, body, user, client }) => {
 export const listTaxPayments = async () => {
   const client = await pool.connect();
   try {
-    let data = (await client.query(`SELECT s.*, p.*, b.nombre AS "nombreBanco" FROM impuesto.solicitud_state s INNER JOIN pago p ON p.id_procedimiento = s.id INNER JOIN banco b ON b.id_banco = p.id_banco AND b.id_banco = p.id_banco_destino WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND p.aprobado = false ORDER BY id_procedimiento, id_pago;`));
+    let data = (await client.query(`SELECT s.*, p.*, b.nombre AS "nombreBanco", c.documento, c.tipo_documento AS "tipoDocumento" FROM impuesto.solicitud_state s INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente INNER JOIN pago p ON p.id_procedimiento = s.id INNER JOIN banco b ON b.id_banco = p.id_banco AND b.id_banco = p.id_banco_destino WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND p.aprobado = false ORDER BY id_procedimiento, id_pago;`));
     data = data.rowCount > 0 ? data.rows.reduce((prev, next) => {
       let index = prev.findIndex((row) => row.id === next.id)
       if(index === -1){
@@ -111,6 +111,8 @@ export const listTaxPayments = async () => {
           id: next.id,
           fechaSolicitud: next.fecha,
           estado: next.state,
+          tipoDocumento: next.tipoDocumento,
+          documento: next.documento,
           pagos: [{
             id: next.id_pago,
             referencia: next.referencia,
