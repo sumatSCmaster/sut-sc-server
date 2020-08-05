@@ -23,6 +23,9 @@ import exonerations from './exonerations';
 import activities from './activities';
 import cashier from './cashier';
 import receipt from './receipt';
+import services from './services';
+import retention from './retention';
+import repairs from './repairs';
 
 const router = Router();
 
@@ -47,12 +50,15 @@ router.use('/holiday', holiday);
 router.use('/branches', branches);
 router.use('/exonerations', exonerations);
 router.use('/activities', activities);
-router.use('/cashier', cashier)
-router.use('/receipt', receipt)
+router.use('/cashier', cashier);
+router.use('/receipt', receipt);
+router.use('/services', services);
+router.use('/retentions', retention);
+router.use('/repairs', repairs);
 router.use(resources);
 
 router.get('/', (req, res) => {
-  console.log(req)
+  console.log(req);
   res.status(200).json({
     status: 200,
     message: 'Ok',
@@ -61,8 +67,8 @@ router.get('/', (req, res) => {
 
 router.post('/twilio/webhook', (req, res) => {
   console.log(req);
-  res.writeHead(200, {'Content-Type': 'text/xml'});
-  res.end('si')
+  res.writeHead(200, { 'Content-Type': 'text/xml' });
+  res.end('si');
 });
 
 export default router;

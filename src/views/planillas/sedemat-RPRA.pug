@@ -7,75 +7,87 @@ block content
     p 
       b FECHA:
       span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
-    -var sub = []
-  div.table
-    .tr
-      .th.border-bottom.center
-        p
-          b ACUMULADO DE INGRESOS
-    .tr
-      .td
-        p #{datos.acumuladoIngresos}
-  div(style={'margin-top':'20px'}).table
-    .tr
-      div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
-        p
-          b RAMO
-      div(style={'-webkit-flex':'3'}).th.center.border-right.border-bottom
-        p
-          b DESCRIPCIÓN
-      div(style={'-webkit-flex':'2'}).th.center.border-right.border-bottom
-        p
-          b LIQUIDADO
-      div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
-        p
-          b CANT. 
-      div(style={'-webkit-flex':'2'}).th.center.border-right.border-bottom
-        p
-          b INGRESADO
-      div(style={'-webkit-flex':'1'}).th.center.border-bottom
-        p
-          b CANT.
+    -var sub = [];
+    -var aux = ['501','236'];
+    -var auxLiq = 0;
+    -var auxIng = 0;
+  div#planilla
+    div.table
+      .tr
+        .th.border-bottom.center
+          p
+            b ACUMULADO DE INGRESOS
+      .tr
+        .td
+          p #{datos.acumuladoIngresos}
     each item in datos.ingresos
-      - sub = item.subRamo
+      div(style={'margin-top':'20px'}).table.break-page
         .tr.break-page
-          div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
-            p #{item.ramo}
-          div(style={'-webkit-flex':'3'}).td.center.border-right.border-bottom
-            p #{item.descripcion}
-          div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-            p #{new Intl.NumberFormat('de-DE').format(item.liquidadoTotal)}
-          div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
-            p #{item.cantidadLiqTotal ? item.cantidadLiqTotal : 0}
-          div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-            p #{new Intl.NumberFormat('de-DE').format(item.ingresadoTotal)}
-          div(style={'-webkit-flex':'1'}).td.center.border-bottom
-            p #{item.cantidadIngTotal ? item.cantidadIngTotal : 0}  
-      if sub.length > 1
-        each subRamo in sub
-          .tr.break-page
-            div(style={'-webkit-flex':'1'}).td.end.border-right.border-bottom
-              p #{subRamo.ramo}
-            div(style={'-webkit-flex':'3'}).td.center.border-right.border-bottom
-              p #{subRamo.descripcion}
-            div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-              p #{new Intl.NumberFormat('de-DE').format(subRamo.liquidado)}
-            div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
-              p #{subRamo.cantidadLiq ? subRamo.cantidadLiq : 0}
-            div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-              p #{new Intl.NumberFormat('de-DE').format(subRamo.ingresado)}
-            div(style={'-webkit-flex':'1'}).td.center.border-bottom
-              p #{subRamo.cantidadIng ? subRamo.cantidadIng : 0}   
-    .tr.break-page
-      div(style={'-webkit-flex':'4'}).th.center.border-right
-        p
-          b TOTALES
-      div(style={'-webkit-flex':'2'}).td.center.border-right
-        p Bs #{new Intl.NumberFormat('de-DE').format(datos.liquidadoTotal)}
-      div(style={'-webkit-flex':'1'}).td.center.border-right
-        p #{datos.cantidadLiqTotal}          
-      div(style={'-webkit-flex':'2'}).td.center.border-right
-        p Bs #{new Intl.NumberFormat('de-DE').format(datos.ingresadoTotal)}
-      div(style={'-webkit-flex':'1'}).td.center
-        p #{datos.cantidadIngTotal}                       
+          div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
+            p
+              b RAMO
+          div(style={'-webkit-flex':'3'}).th.center.border-right.border-bottom
+            p
+              b DESCRIPCIÓN
+          div(style={'-webkit-flex':'2'}).th.center.border-right.border-bottom
+            p
+              b LIQUIDADO
+          div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
+            p
+              b CANT. 
+          div(style={'-webkit-flex':'2'}).th.center.border-right.border-bottom
+            p
+              b INGRESADO
+          div(style={'-webkit-flex':'1'}).th.center.border-bottom
+            p
+              b CANT.
+        each row in item
+          - sub = row.subRamo
+          if aux.includes(row.ramo)
+            - auxLiq += row.liquidadoTotal
+            - auxIng += row.ingresadoTotal
+          else
+            .tr.break-page.title
+              div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+                p #{row.ramo}
+              div(style={'-webkit-flex':'3'}).td.center.border-right.border-bottom
+                p #{row.descripcion}
+              div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
+                p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format((row.liquidadoTotal))}
+              div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+                p #{row.cantidadLiqTotal ? row.cantidadLiqTotal : 0}
+              div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
+                p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format((row.ingresadoTotal))}
+              div(style={'-webkit-flex':'1'}).td.center.border-bottom
+                p #{row.cantidadIngTotal ? row.cantidadIngTotal : 0}  
+            if sub.length > 1
+              each subRamo in sub
+                if (!subRamo.liquidado) && (!subRamo.ingresado)
+                else
+                  .tr.break-page.sub-title
+                    div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+                      p #{subRamo.ramo}
+                    div(style={'-webkit-flex':'3'}).td.center.border-right.border-bottom
+                      p #{subRamo.descripcion}
+                    div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
+                      p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(subRamo.liquidado ? (subRamo.liquidado) : 0)}
+                    div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+                      p #{subRamo.cantidadLiq ? subRamo.cantidadLiq : 0}
+                    div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
+                      p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(subRamo.ingresado ? (subRamo.ingresado) : 0)}
+                    div(style={'-webkit-flex':'1'}).td.center.border-bottom
+                      p #{subRamo.cantidadIng ? subRamo.cantidadIng : 0}
+    .table.break-page
+      .tr.break-page
+        div(style={'-webkit-flex':'4'}).th.center.border-right
+          p
+            b TOTALES
+        div(style={'-webkit-flex':'2'}).td.center.border-right
+          p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.liquidadoTotal ? (datos.liquidadoTotal - (auxLiq)) : 0)}
+        div(style={'-webkit-flex':'1'}).td.center.border-right
+          p #{datos.cantidadLiqTotal}          
+        div(style={'-webkit-flex':'2'}).td.center.border-right
+          p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.ingresadoTotal ? (datos.ingresadoTotal - (auxIng)) : 0)}
+        div(style={'-webkit-flex':'1'}).td.center
+          p #{datos.cantidadIngTotal}                       
 block footer         

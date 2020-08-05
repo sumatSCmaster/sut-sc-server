@@ -55,14 +55,14 @@ export const getMunicipalServicesByContributor = async ({ reference, document, d
         };
       })
     );
-    return res;
+    return { status: 200, message: 'Servicios municipales obtenidos por contribuyente', inmuebles: res };
   } catch (error) {
     client.query('ROLLBACK');
     console.log(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || error.message || '',
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener los servicios municipales del contribuyente',
     };
   } finally {
     client.release();
@@ -71,15 +71,20 @@ export const getMunicipalServicesByContributor = async ({ reference, document, d
 
 export const getCleaningTariffForEstate = async ({ estate, branchId, client }) => {
   try {
+    // if (!estate && !branchId) return (await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto;
+    if (!estate && !!branchId) return (await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto;
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const USD = (await client.query(queries.GET_USD_VALUE)).rows[0].valor_en_bs;
+    const costoMts = +(await client.query('SELECT indicador FROM impuesto.baremo_servicio_municipal WHERE id_baremo = 1')).rows[0].indicador;
+    const limiteAseo = +(await client.query('SELECT indicador FROM impuesto.baremo_servicio_municipal WHERE id_baremo = 2')).rows[0].indicador;
     const calculoAseo =
       estate.tipo_inmueble === 'COMERCIAL'
         ? estate.metros_construccion && estate.metros_construccion !== 0
-          ? 0.1 * estate.metros_construccion
+          ? costoMts * USD * estate.metros_construccion
           : (await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto
         : (await client.query(queries.GET_RESIDENTIAL_CLEANING_TARIFF)).rows[0].monto;
-    const tarifaAseo = calculoAseo / UTMM > 150 ? UTMM * 150 : calculoAseo;
-    return tarifaAseo;
+    const tarifaAseo = calculoAseo / UTMM > limiteAseo ? UTMM * limiteAseo : calculoAseo;
+    return +tarifaAseo;
   } catch (error) {
     throw {
       status: 500,
@@ -91,15 +96,116 @@ export const getCleaningTariffForEstate = async ({ estate, branchId, client }) =
 
 export const getGasTariffForEstate = async ({ estate, branchId, client }) => {
   try {
+    if (!estate && !!branchId) return (await client.query(queries.GET_AE_GAS_TARIFF, [branchId])).rows[0].monto;
+    if (!estate.posee_gas) return 0;
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-    const calculoGas = estate.tipo_inmueble === 'COMERCIAL' ? (await client.query(queries.GET_AE_GAS_TARIFF, [branchId])).rows[0].monto : (await client.query(queries.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].monto;
-    const tarifaGas = calculoGas / UTMM > 300 ? UTMM * 300 : calculoGas;
-    return tarifaGas;
+    const tarifaGas = estate.tipo_inmueble === 'COMERCIAL' ? (await client.query(queries.GET_AE_GAS_TARIFF, [branchId])).rows[0].monto : (await client.query(queries.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].monto;
+    return +tarifaGas;
   } catch (error) {
     throw {
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || error.message || 'Error al obtener la tarifa de aseo',
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener la tarifa de gas',
     };
+  }
+};
+
+export const updateGasStateForEstate = async ({ estates }) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const inmuebles = await Promise.all(
+      estates.map(async (el) => {
+        await client.query('UPDATE inmueble_urbano SET posee_gas = $1 WHERE id_inmueble = $2', [el.estado, el.id]);
+        const estate = (await client.query(queries.GET_ESTATE_BY_ID, [el.id])).rows[0];
+        const inmueble = {
+          id: estate.id_inmueble,
+          codCat: estate.cod_catastral,
+          direccion: estate.direccion,
+          parroquia: estate.id_parroquia,
+          metrosConstruccion: estate.metros_construccion,
+          metrosTerreno: estate.metros_terreno,
+          tipoInmueble: estate.tipo_inmueble,
+          poseeGas: estate.posee_gas,
+          fechaCreacion: estate.fecha_creacion,
+          fechaActualizacion: estate.fecha_actualizacion,
+          tarifaGas: await getGasTariffForEstate({ estate, branchId: estate.id_registro_municipal, client }),
+          tarifaAseo: await getCleaningTariffForEstate({ estate, branchId: estate.id_registro_municipal, client }),
+        };
+        return inmueble;
+      })
+    );
+    await client.query('COMMIT');
+    return { status: 200, message: 'Estado del gas actualizado', inmuebles };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al actualizar el estado del gas de los inmuebles',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const getServicesTariffScales = async () => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const scales = (await client.query('SELECT id_baremo as id, descripcion, indicador FROM impuesto.baremo_servicio_municipal')).rows;
+    await client.query('COMMIT');
+    return { status: 200, message: 'Baremo de tarifas de servicio municipal obtenido', scales };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener baremos de tarifas de servicio municipal',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const updateGasTariffScales = async (id, tariff) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('UPDATE impuesto.baremo_servicio_municipal SET indicador = $1 WHERE id_baremo = $2', [tariff, id]);
+    await client.query('COMMIT');
+    return { status: 200, message: 'Valor del baremo seleccionado actualizado satisfactoriamente' };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al actualizar el valor seleccionado',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const createMunicipalServicesScale = async ({ description, tariff }) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const scale = (await client.query('INSERT INTO impuesto.baremo_servicio_municipal (descripcion, indicador) VALUES ($1, $2) RETURNING *', [description, tariff])).rows[0];
+    await client.query('COMMIT');
+    return { status: 200, message: 'Nuevo valor del baremo de servicios municipales agregado', baremo: { id: scale.id_baremo, descripcion: scale.descripcion, indicador: scale.indicador } };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || '',
+    };
+  } finally {
+    client.release();
   }
 };

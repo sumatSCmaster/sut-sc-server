@@ -7,12 +7,13 @@ import cors from 'cors';
 import router from './routes';
 import { resolve } from 'path';
 import { JwtStrategy, LocalStrategy, GoogleStrategy, FacebookStrategy } from './utils/Strategies';
+import Pool from '@utils/Pool';
 
 require('dotenv').config();
 const app = express();
 
 app.use(compression());
-app.use(express.json());
+app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use(
@@ -38,6 +39,14 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser((user: string, done) => {
   done(null, JSON.parse(user));
+});
+
+app.use((req, res, next) => {
+  const { totalCount, waitingCount, idleCount } = Pool.getInstance();
+  console.log('idleCount', idleCount);
+  console.log('waitingCount', waitingCount);
+  console.log('totalCount', totalCount);
+  return next();
 });
 
 app.use(passport.initialize());

@@ -76,18 +76,18 @@ export const validatePayments = async (body, user) => {
 };
 
 export const insertPaymentReference = async (payment: any, procedure: number, client: PoolClient) => {
-  const { referencia, banco, costo, fecha, concepto, user } = payment;
+  const { referencia, banco, costo, fecha, concepto, user, destino } = payment;
   try {
-    return await client.query(queries.INSERT_PAYMENT, [procedure, referencia, costo, banco, fecha, concepto, user]);
+    return await client.query(queries.INSERT_PAYMENT, [procedure, referencia, costo, banco, fecha, concepto, destino || banco, user]);
   } catch (e) {
     throw errorMessageExtractor(e);
   }
 };
 
 export const insertPaymentCashier = async (payment: any, procedure: number, client: PoolClient) => {
-  const { referencia, banco, costo, fecha, concepto, metodoPago, user } = payment;
+  const { referencia, banco, costo, fecha, concepto, metodoPago, user, destino } = payment;
   try {
-    return await client.query(queries.INSERT_PAYMENT_CASHIER, [procedure, referencia || null, costo, banco || null, fecha, concepto, metodoPago, user]);
+    return await client.query(queries.INSERT_PAYMENT_CASHIER, [procedure, referencia || null, costo, banco || null, fecha, concepto, metodoPago, user, destino || banco]);
   } catch (e) {
     throw errorMessageExtractor(e);
   }
@@ -96,6 +96,58 @@ export const insertPaymentCashier = async (payment: any, procedure: number, clie
 const validateCases = switchcase({ IMPUESTO: validateApplication, TRAMITE: validateProcedure, MULTA: validateFining })(null);
 
 const validationHandler = async ({ concept, body, user, client }) => {
-  const executedMethod = switchcase({ IMPUESTO: validateApplication, CONVENIO: validateAgreementFraction, TRAMITE: validateProcedure, MULTA: validateFining })(null)(concept);
+  const executedMethod = switchcase({ IMPUESTO: validateApplication, RETENCION: validateApplication, CONVENIO: validateAgreementFraction, TRAMITE: validateProcedure, MULTA: validateFining })(null)(concept);
   return executedMethod ? await executedMethod(body, user, client) : { status: 400, message: 'No existe un caso de validacion definido con este concepto' };
 };
+
+export const listTaxPayments = async () => {
+  const client = await pool.connect();
+  try {
+    let data = (await client.query(`SELECT s.*, p.*, b.nombre AS "nombreBanco" FROM impuesto.solicitud_state s INNER JOIN pago p ON p.id_procedimiento = s.id INNER JOIN banco b ON b.id_banco = p.id_banco AND b.id_banco = p.id_banco_destino WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND p.aprobado = false ORDER BY id_procedimiento, id_pago;`));
+    data = data.rowCount > 0 ? data.rows.reduce((prev, next) => {
+      let index = prev.findIndex((row) => row.id === next.id)
+      if(index === -1){
+        prev.push({
+          id: next.id,
+          fechaSolicitud: next.fecha,
+          estado: next.state,
+          pagos: [{
+            id: next.id_pago,
+            referencia: next.id_referencia,
+            monto: next.monto,
+            fechaDePago: next.fecha_de_pago,
+            banco: next.nombre
+          }]
+        })
+      }else{
+        prev[index].pagos.push({
+          id: next.id_pago,
+          referencia: next.id_referencia,
+          monto: next.monto,
+          fechaDePago: next.fecha_de_pago,
+          banco: next.nombre
+        })
+      }
+      return prev;
+    }, []) : []
+    return {status: 200, data}
+  } catch (e) {
+    console.log(e)
+    throw e
+  } finally {
+    client.release();
+  }
+};
+
+export const updatePayment = async ({ id, fecha, referencia, monto }) => {
+  const client = await pool.connect();
+  try {
+    let res = (await client.query('UPDATE pago SET fecha_de_pago = $1, referencia = $2, monto = $3 WHERE id_pago = $4 RETURNING *', [fecha, referencia, monto, id]))
+    return { status: 200, data: res.rows }
+  } catch (e) {
+    console.log(e)
+    throw e
+  } finally {
+    client.release();
+  }
+}

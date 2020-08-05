@@ -14,9 +14,9 @@ import {
 const router = Router();
 
 router.get('/', authenticate('jwt'), async (req: any, res) => {
-  const { cuentaFuncionario } = req.user;
-  if (cuentaFuncionario.id_institucion) {
-    const [err, data] = await fulfill(getOrdinancesByInstitution(cuentaFuncionario.id_institucion));
+  const { institucion } = req.user;
+  if (institucion.id) {
+    const [err, data] = await fulfill(getOrdinancesByInstitution(institucion.id));
     if (err) res.status(500).json(err);
     if (data) res.status(200).json(data);
   } else {

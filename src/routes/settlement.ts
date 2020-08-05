@@ -24,6 +24,9 @@ import {
   internalContributorSignUp,
   internalLicenseApproval,
   internalUserLinking,
+  internalUserImport,
+  createSpecialSettlement,
+  patchSettlement,
 } from '@helpers/settlement';
 import { Usuario } from '@root/interfaces/sigt';
 
@@ -55,6 +58,14 @@ router.get('/accountStatement/:contributor', async (req: any, res) => {
       if (err) res.status(500).json({ status: 500, message: 'Error al procesar el pdf' });
       res.contentType('application/pdf').send(buffer);
     });
+});
+
+router.get('/import', authenticate('jwt'), async (req: any, res) => {
+  const { user } = req;
+  const { documento, referencia, tipoDocumento, tipoContribuyente } = req.query;
+  const [err, data] = await fulfill(internalUserImport({ document: documento, reference: referencia, docType: tipoDocumento, typeUser: tipoContribuyente, user }));
+  if (err) res.status(err.status).json(err);
+  if (data) res.status(data.status).json(data);
 });
 
 router.get('/instances', authenticate('jwt'), async (req: any, res) => {
@@ -149,7 +160,8 @@ router.post(
 router.post('/linking', authenticate('jwt'), async (req, res) => {
   const { datosEnlace } = req.body;
   const [error, data] = await fulfill(internalUserLinking(datosEnlace));
-  if (error) res.status(500).json(error);
+  console.log(error);
+  if (error) res.status(error.status).json(error);
   if (data) res.status(data.status).json(data);
 });
 
@@ -162,14 +174,20 @@ router.post('/taxPayer', authenticate('jwt'), async (req, res) => {
 
 router.post('/license', authenticate('jwt'), async (req: any, res) => {
   const [error, data] = await fulfill(internalLicenseApproval(req.body, req.user));
-  if (error) res.status(500).json(error);
+  if (error) res.status(error.status).json(error);
   if (data) res.status(data.status).json(data);
 });
 
 router.post('/internal', authenticate('jwt'), async (req, res) => {
   console.log('??????????????????????????');
   const [error, data] = await fulfill(internalContributorSignUp(req.body));
-  if (error) res.status(500).json(error);
+  if (error) res.status(error.status).json(error);
+  if (data) res.status(data.status).json(data);
+});
+
+router.post('/special', authenticate('jwt'), async (req, res) => {
+  const [error, data] = await fulfill(createSpecialSettlement({ process: req.body, user: req.user }));
+  if (error) res.status(error.status).json(error);
   if (data) res.status(data.status).json(data);
 });
 
@@ -189,7 +207,7 @@ router.put('/taxPayer/resend', authenticate('jwt'), async (req, res) => {
 router.put('/:id/payment', authenticate('jwt'), async (req: any, res) => {
   const { procedimiento } = req.body;
   const { id } = req.params;
-  const [error, data] = await fulfill(addTaxApplicationPayment({ payment: procedimiento.pagos, application: id, user: req.user }));
+  const [error, data] = await fulfill(addTaxApplicationPayment({ payment: procedimiento.pagos, interest: procedimiento.interesMoratorio, application: id, user: req.user }));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
@@ -198,6 +216,14 @@ router.put('/:id/payment/:fragment', authenticate('jwt'), async (req: any, res) 
   const { procedimiento } = req.body;
   const { id, fragment } = req.params;
   const [error, data] = await fulfill(addTaxApplicationPaymentAgreement({ payment: procedimiento.pagos, agreement: id, fragment, user: req.user }));
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+});
+
+router.patch('/:id', authenticate('jwt'), async (req, res) => {
+  const { liquidacion } = req.body;
+  const { id } = req.params;
+  const [error, data] = await fulfill(patchSettlement({ id, settlement: liquidacion }));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });

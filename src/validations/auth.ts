@@ -169,6 +169,7 @@ const validations = {
   actividadesEconomicas: check('tramite.datos.actividadesEconomicas').exists().withMessage('Debe incluir las actividades economicas').isArray().isLength({ min: 1 }).withMessage('Debe poseer al menos una actividad economica'),
   capitalSuscrito: check('tramite.datos.capitalSuscrito').exists().withMessage('Debe incluir el capital suscrito').isInt().isLength({ min: 1 }).withMessage('El capital suscrito no puede ser vacio'),
   tipoSociedadContrib: check('tramite.datos.tipoSociedadContrib').exists().withMessage('Debe incluir el tipo de sociedad del contribuyente').isString().isLength({ min: 1 }).withMessage('El tipo de sociedad del contribuyente no puede ser vacio'),
+  estadoLicencia: check('tramite.datos.estadoLicencia').exists().withMessage('Debe incluir el estado de la licencia').isString().isLength({ min: 1 }).withMessage('El estado de la licencia no puede ser vacio'),
 };
 
 export const createSuperuser = [
@@ -316,6 +317,16 @@ export const isOfficialAdmin = (req, res, next) => {
 
 export const isSuperuser = (req, res, next) => {
   if (req.user.tipoUsuario === userTypes.Superuser) next();
+  else {
+    res.send({
+      status: 401,
+      response: 'Sólo los superusuarios pueden realizar esta operacion',
+    });
+  }
+};
+
+export const isSuperuserOrDaniel = (req, res, next) => {
+  if (req.user.tipoUsuario === userTypes.Superuser || req.user.institucion.cargo.id === 24) next();
   else {
     res.send({
       status: 401,

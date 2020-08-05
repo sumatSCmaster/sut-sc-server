@@ -142,17 +142,11 @@ block content
           div(style={'-webkit-flex': 4.5}).td.border-bottom.end
             p #{datos.totalIvaPagar}
         div.tr
-          div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
-            p
-              b TOTAL IMPUESTO A PAGAR
-          div(style={'-webkit-flex': 4.5}).td.border-bottom.end
-            p #{datos.montoTotalImpuesto}
-        div.tr            
           div(style={'-webkit-flex': 5.5}).td.border-right
             p
-              b Intereses Moratorios
+              b TOTAL IMPUESTO A PAGAR
           div(style={'-webkit-flex': 4.5}).td.end
-            p #{datos.interesMoratorio}
+            p #{datos.montoTotalImpuesto}
     div.table.break-page
       div.tr
         div(style={'-webkit-flex': 2}).th.border-bottom.border-right
@@ -178,8 +172,4 @@ block content
           p
             b Total Recaudado:
             span &nbsp; #{datos.totalRecaudado}
-        div(style={'-webkit-flex': 1}).td.center
-          p
-            b Total Credito Fiscal:
-            span &nbsp; #{datos.totalCred}
 block footer

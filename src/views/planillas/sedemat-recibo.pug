@@ -10,52 +10,57 @@ block content
   div#planilla
     div
       h2 RECIBO
-    div.ticket(style={'margin':'2% 7.5%', 'border':'2px solid #3387ca'})
-      div.ticket-data
-        div
-          p
-            b Razon Social:&nbsp;
-            br
-            | #{datos.razonSocial}
-          p
-            b Documento:&nbsp;
-            br
-            | #{datos.tipoDocumento}-#{datos.documentoIden}
-          p
-            b Dirección:&nbsp;
-            br
-            | #{datos.direccion}            
-    
-        div(style={'margin-left':'5%'})
-          p
-            b RIM:&nbsp;
-            br
-            | #{datos.rim}
-          p
-            b Teléfono:&nbsp;
-            br
-            | #{datos.telefono}
-          p
-            b Cajero:&nbsp;
-            br
-            | #{datos.cajero}                 
-        div(style={'-webkit-flex': '0.5'}).center
-          img#QR(src=QR style={'margin-bottom': '10px'})
+    div.center
+      div.ticket(style={'border':'2px solid #3387ca'})
+        div.ticket-data
+          div
+            p
+              b Razon Social:&nbsp;
+              br
+              | #{datos.razonSocial}
+            p
+              b Documento:&nbsp;
+              br
+              | #{datos.tipoDocumento}-#{datos.documentoIden}
+            p
+              b Dirección:&nbsp;
+              br
+              | #{datos.direccion}            
+      
+          div(style={'margin-left':'5%'})
+            p
+              b RIM:&nbsp;
+              br
+              | #{datos.rim}
+            p
+              b Teléfono:&nbsp;
+              br
+              | #{datos.telefono}
+            p
+              b Cajero:&nbsp;
+              br
+              | #{datos.cajero}                 
+          div(style={'-webkit-flex': '0.5'}).center
+            img#QR(src=QR style={'margin-bottom': '10px'})
     div           
-      div(style={'font-size':'20px', 'font-weight':'bold'}).row-constancy
-        div(style={'text-align':'start', }) Descripción
-        div.center Fecha
-        div.center Monto (Bs)
-      hr.divider
-      each item in datos.items
-        div.row-constancy.break-page
-          div(style={'text-align':'start' }) #{item.descripcion}
-          div.center #{moment(item.fecha).format('DD/MM/YYYY')}
-          div.center #{new Intl.NumberFormat('de-DE').format(item.monto)}
+      each item in datos.items           
+        div(style={'font-size':'20px', 'font-weight':'bold'}).row-constancy
+          div(style={'text-align':'start', }) Descripción
+          div.center Fecha
+          div.center Monto (Bs)
+        hr.divider
+        each row in item
+          div.row-constancy.break-page
+            div(style={'text-align':'start' }) #{row.descripcion}
+            div.center #{moment(row.fecha).format('DD/MM/YYYY')}
+            div.center #{new Intl.NumberFormat('de-DE').format(row.monto)}
       hr.divider
       div.row-constancy.break-page
+        div(style={'-webkit-flex': '2'}).end Credito Fiscal
+        div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.credito? (datos.credito): 0)}      
+      div.row-constancy.break-page
         div(style={'-webkit-flex': '2'}).end Total Bs.
-        div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE').format(datos.total)}
+        div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.total ? (datos.total): 0)}
     div(style={'text-align':'-webkit-right', 'width':'100%'}).break-page
       div.ticket.break-page(style={'margin':'2% 0', 'border':'2px solid #3387ca', 'width':'55%'})
         div.ticket-data.break-page
@@ -76,5 +81,5 @@ block content
             div(style={'-webkit-flex': '3'}).center
               p(style={'margin': '5px'}) #{item.transacciones}
             div(style={'-webkit-flex': '3'}).center
-              p(style={'margin': '5px'}) #{new Intl.NumberFormat('de-DE').format(item.monto)}                   
+              p(style={'margin': '5px'}) #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.monto ? (item.monto) : 0)}                   
 block footer

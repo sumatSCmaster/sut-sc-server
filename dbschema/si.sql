@@ -2,10 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.3 (Ubuntu 12.3-1.pgdg18.04+1)
--- Dumped by pg_dump version 12.3 (Ubuntu 12.3-1.pgdg18.04+1)
-
--- Started on 2020-07-09 09:24:04 -04
+-- Dumped from database version 12.3 (Ubuntu 12.3-1.pgdg16.04+1)
+-- Dumped by pg_dump version 12.3 (Ubuntu 12.3-1.pgdg20.04+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -19,41 +17,44 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- TOC entry 10 (class 2615 OID 69753)
--- Name: impuesto; Type: SCHEMA; Schema: -; Owner: -
+-- Name: impuesto; Type: SCHEMA; Schema: -; Owner: pooijyzcnnfrso
 --
 
 CREATE SCHEMA impuesto;
 
 
+ALTER SCHEMA impuesto OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 8 (class 2615 OID 69754)
--- Name: timetable; Type: SCHEMA; Schema: -; Owner: -
+-- Name: timetable; Type: SCHEMA; Schema: -; Owner: pooijyzcnnfrso
 --
 
 CREATE SCHEMA timetable;
 
 
+ALTER SCHEMA timetable OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 9 (class 2615 OID 69755)
--- Name: valores_fiscales; Type: SCHEMA; Schema: -; Owner: -
+-- Name: valores_fiscales; Type: SCHEMA; Schema: -; Owner: pooijyzcnnfrso
 --
 
 CREATE SCHEMA valores_fiscales;
 
 
+ALTER SCHEMA valores_fiscales OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 774 (class 1247 OID 69757)
--- Name: cron; Type: DOMAIN; Schema: timetable; Owner: -
+-- Name: cron; Type: DOMAIN; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE DOMAIN timetable.cron AS text
 	CONSTRAINT cron_check CHECK ((((substr(VALUE, 1, 6) = ANY (ARRAY['@every'::text, '@after'::text])) AND ((substr(VALUE, 7))::interval IS NOT NULL)) OR (VALUE = '@reboot'::text) OR (VALUE ~ '^(((\d+,)+\d+|(\d+(\/|-)\d+)|(\*(\/|-)\d+)|\d+|\*) +){4}(((\d+,)+\d+|(\d+(\/|-)\d+)|(\*(\/|-)\d+)|\d+|\*) ?)$'::text)));
 
 
+ALTER DOMAIN timetable.cron OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 778 (class 1247 OID 69760)
--- Name: execution_status; Type: TYPE; Schema: timetable; Owner: -
+-- Name: execution_status; Type: TYPE; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE TYPE timetable.execution_status AS ENUM (
@@ -64,9 +65,10 @@ CREATE TYPE timetable.execution_status AS ENUM (
 );
 
 
+ALTER TYPE timetable.execution_status OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 866 (class 1247 OID 69770)
--- Name: log_type; Type: TYPE; Schema: timetable; Owner: -
+-- Name: log_type; Type: TYPE; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE TYPE timetable.log_type AS ENUM (
@@ -79,9 +81,10 @@ CREATE TYPE timetable.log_type AS ENUM (
 );
 
 
+ALTER TYPE timetable.log_type OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 869 (class 1247 OID 69784)
--- Name: task_kind; Type: TYPE; Schema: timetable; Owner: -
+-- Name: task_kind; Type: TYPE; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE TYPE timetable.task_kind AS ENUM (
@@ -91,9 +94,10 @@ CREATE TYPE timetable.task_kind AS ENUM (
 );
 
 
+ALTER TYPE timetable.task_kind OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 451 (class 1255 OID 71432)
--- Name: complete_fraccion_state(integer, text); Type: FUNCTION; Schema: impuesto; Owner: -
+-- Name: complete_fraccion_state(integer, text); Type: FUNCTION; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION impuesto.complete_fraccion_state(_id_fraccion integer, event text) RETURNS TABLE(state text)
@@ -112,9 +116,10 @@ CREATE FUNCTION impuesto.complete_fraccion_state(_id_fraccion integer, event tex
 $$;
 
 
+ALTER FUNCTION impuesto.complete_fraccion_state(_id_fraccion integer, event text) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 394 (class 1255 OID 69791)
--- Name: complete_fraccion_state(integer, text, boolean); Type: FUNCTION; Schema: impuesto; Owner: -
+-- Name: complete_fraccion_state(integer, text, boolean); Type: FUNCTION; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION impuesto.complete_fraccion_state(_id_fraccion integer, event text, _aprobado boolean DEFAULT NULL::boolean) RETURNS TABLE(state text)
@@ -133,9 +138,10 @@ CREATE FUNCTION impuesto.complete_fraccion_state(_id_fraccion integer, event tex
 $$;
 
 
+ALTER FUNCTION impuesto.complete_fraccion_state(_id_fraccion integer, event text, _aprobado boolean) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 397 (class 1255 OID 69792)
--- Name: complete_solicitud_state(integer, text, json, boolean); Type: FUNCTION; Schema: impuesto; Owner: -
+-- Name: complete_solicitud_state(integer, text, json, boolean); Type: FUNCTION; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION impuesto.complete_solicitud_state(_id_solicitud integer, event text, _datos json DEFAULT NULL::json, _aprobado boolean DEFAULT NULL::boolean) RETURNS TABLE(state text)
@@ -154,9 +160,10 @@ CREATE FUNCTION impuesto.complete_solicitud_state(_id_solicitud integer, event t
 $$;
 
 
+ALTER FUNCTION impuesto.complete_solicitud_state(_id_solicitud integer, event text, _datos json, _aprobado boolean) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 452 (class 1255 OID 69793)
--- Name: eventos_fraccion_trigger_func(); Type: FUNCTION; Schema: impuesto; Owner: -
+-- Name: eventos_fraccion_trigger_func(); Type: FUNCTION; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION impuesto.eventos_fraccion_trigger_func() RETURNS trigger
@@ -182,9 +189,10 @@ END
 $$;
 
 
+ALTER FUNCTION impuesto.eventos_fraccion_trigger_func() OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 398 (class 1255 OID 69794)
--- Name: eventos_solicitud_trigger_func(); Type: FUNCTION; Schema: impuesto; Owner: -
+-- Name: eventos_solicitud_trigger_func(); Type: FUNCTION; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION impuesto.eventos_solicitud_trigger_func() RETURNS trigger
@@ -210,9 +218,10 @@ END
 $$;
 
 
+ALTER FUNCTION impuesto.eventos_solicitud_trigger_func() OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 450 (class 1255 OID 69795)
--- Name: fraccion_transicion(text, text); Type: FUNCTION; Schema: impuesto; Owner: -
+-- Name: fraccion_transicion(text, text); Type: FUNCTION; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION impuesto.fraccion_transicion(state text, event text) RETURNS text
@@ -233,6 +242,8 @@ CREATE FUNCTION impuesto.fraccion_transicion(state text, event text) RETURNS tex
         WHEN 'ingresardatos' THEN
             CASE event
                 WHEN 'validar_pi' THEN 'validando'
+                WHEN 'aprobacioncajero_pi' THEN 'finalizado'
+
                 ELSE 'error'
             END
         WHEN 'validando' THEN
@@ -246,13 +257,212 @@ CREATE FUNCTION impuesto.fraccion_transicion(state text, event text) RETURNS tex
 $$;
 
 
+ALTER FUNCTION impuesto.fraccion_transicion(state text, event text) OWNER TO pooijyzcnnfrso;
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
--- TOC entry 205 (class 1259 OID 69796)
--- Name: credito_fiscal; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: liquidacion; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+CREATE TABLE impuesto.liquidacion (
+    id_liquidacion integer NOT NULL,
+    id_solicitud integer,
+    monto numeric,
+    certificado character varying,
+    recibo character varying,
+    fecha_liquidacion date DEFAULT now(),
+    id_subramo integer,
+    datos json,
+    fecha_vencimiento date,
+    id_registro_municipal integer,
+    remitido boolean DEFAULT false
+);
+
+
+ALTER TABLE impuesto.liquidacion OWNER TO pooijyzcnnfrso;
+
+--
+-- Name: get_last_settlement_by_ae(integer, integer); Type: FUNCTION; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+CREATE FUNCTION impuesto.get_last_settlement_by_ae(_aforo integer, _id_registro_municipal integer) RETURNS SETOF impuesto.liquidacion
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    liquidacion impuesto.liquidacion%ROWTYPE;
+	x impuesto.liquidacion%ROWTYPE;
+	id integer;
+BEGIN
+    FOR x IN (SELECT * FROM impuesto.liquidacion WHERE id_registro_municipal = _id_registro_municipal AND id_subramo = 10 ORDER BY fecha_liquidacion DESC)
+    LOOP 
+	IF EXISTS(SELECT * FROM json_to_recordset((x.datos #> '{desglose}')) AS x(aforo int, "montoDeclarado" numeric, "montoPagado" numeric) WHERE aforo = _aforo)
+	THEN RETURN QUERY SELECT * FROM impuesto.liquidacion WHERE id_liquidacion = x.id_liquidacion;
+	RETURN;
+	END IF;
+    END LOOP;
+END;
+$$;
+
+
+ALTER FUNCTION impuesto.get_last_settlement_by_ae(_aforo integer, _id_registro_municipal integer) OWNER TO pooijyzcnnfrso;
+
+--
+-- Name: get_last_settlement_by_estate(integer, integer); Type: FUNCTION; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+CREATE FUNCTION impuesto.get_last_settlement_by_estate(_estate integer, _id_registro_municipal integer) RETURNS SETOF impuesto.liquidacion
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    liquidacion impuesto.liquidacion%ROWTYPE;
+	x impuesto.liquidacion%ROWTYPE;
+	id integer;
+BEGIN
+    FOR x IN (SELECT * FROM impuesto.liquidacion WHERE id_registro_municipal = _id_registro_municipal AND id_subramo = 9 ORDER BY fecha_liquidacion DESC)
+    LOOP 
+	IF EXISTS(SELECT * FROM json_to_recordset((x.datos #> '{desglose}')) AS x(inmueble int, monto numeric) WHERE inmueble = _estate)
+	THEN RETURN QUERY SELECT * FROM impuesto.liquidacion WHERE id_liquidacion = x.id_liquidacion;
+	RETURN;	
+	END IF;
+    END LOOP;
+END;
+$$;
+
+
+ALTER FUNCTION impuesto.get_last_settlement_by_estate(_estate integer, _id_registro_municipal integer) OWNER TO pooijyzcnnfrso;
+
+--
+-- Name: contribuyente; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+CREATE TABLE impuesto.contribuyente (
+    id_contribuyente integer NOT NULL,
+    tipo_documento character(1) NOT NULL,
+    documento character varying NOT NULL,
+    razon_social character varying NOT NULL,
+    denominacion_comercial character varying NOT NULL,
+    siglas character varying NOT NULL,
+    id_parroquia integer,
+    sector character varying,
+    direccion character varying,
+    punto_referencia character varying,
+    verificado boolean,
+    tipo_contribuyente character varying,
+    es_agente_retencion boolean DEFAULT false
+);
+
+
+ALTER TABLE impuesto.contribuyente OWNER TO pooijyzcnnfrso;
+
+--
+-- Name: registro_municipal_referencia_municipal_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+CREATE SEQUENCE impuesto.registro_municipal_referencia_municipal_seq
+    START WITH 8000000000
+    INCREMENT BY 1
+    MINVALUE 8000000000
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.registro_municipal_referencia_municipal_seq OWNER TO pooijyzcnnfrso;
+
+--
+-- Name: registro_municipal; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+CREATE TABLE impuesto.registro_municipal (
+    id_registro_municipal bigint NOT NULL,
+    id_contribuyente integer NOT NULL,
+    referencia_municipal character varying DEFAULT nextval('impuesto.registro_municipal_referencia_municipal_seq'::regclass),
+    fecha_aprobacion date,
+    telefono_celular character varying,
+    telefono_habitacion character varying,
+    email character varying,
+    denominacion_comercial character varying,
+    nombre_representante character varying,
+    actualizado boolean DEFAULT false,
+    capital_suscrito numeric,
+    tipo_sociedad character varying,
+    estado_licencia character varying
+);
+
+
+ALTER TABLE impuesto.registro_municipal OWNER TO pooijyzcnnfrso;
+
+--
+-- Name: contribuyente_registro; Type: VIEW; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+CREATE VIEW impuesto.contribuyente_registro AS
+ SELECT c.id_contribuyente,
+    c.tipo_documento,
+    c.documento,
+    c.razon_social,
+    c.denominacion_comercial,
+    c.siglas,
+    c.id_parroquia,
+    c.sector,
+    c.direccion,
+    c.punto_referencia,
+    c.verificado,
+    c.tipo_contribuyente,
+    c.es_agente_retencion,
+    rm.id_registro_municipal,
+    rm.referencia_municipal,
+    rm.fecha_aprobacion,
+    rm.telefono_celular,
+    rm.telefono_habitacion,
+    rm.email,
+    rm.nombre_representante,
+    rm.actualizado,
+    rm.capital_suscrito,
+    rm.tipo_sociedad,
+    rm.estado_licencia
+   FROM (impuesto.contribuyente c
+     JOIN impuesto.registro_municipal rm USING (id_contribuyente));
+
+
+ALTER TABLE impuesto.contribuyente_registro OWNER TO pooijyzcnnfrso;
+
+--
+-- Name: insert_agente_retencion(character varying, character varying); Type: FUNCTION; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+CREATE FUNCTION impuesto.insert_agente_retencion(_tipodoc character varying, _rif character varying) RETURNS SETOF impuesto.contribuyente_registro
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    cont impuesto.contribuyente%ROWTYPE;
+BEGIN
+
+    IF EXISTS (SELECT * FROM impuesto.registro_municipal rm INNER JOIN impuesto.contribuyente c USING (id_contribuyente) WHERE c.tipo_documento = _tipoDoc AND c.documento = _rif AND rm.referencia_municipal LIKE 'AR%') THEN
+        SELECT * INTO cont FROM Impuesto.contribuyente c WHERE c.tipo_documento = _tipoDoc AND c.documento = _rif;
+
+        UPDATE impuesto.contribuyente SET es_agente_retencion = true WHERE id_contribuyente = cont.id_contribuyente;
+
+    ELSE
+        SELECT * INTO cont FROM Impuesto.contribuyente c WHERE c.tipo_documento = _tipoDoc AND c.documento = _rif;
+
+        INSERT INTO impuesto.registro_municipal (referencia_municipal, denominacion_comercial) VALUES (CONCAT('AR', LPAD( nextval('impuesto.rim_retencion')::text, 6, '0'::text ) ), cont.denominacion_comercial);
+
+        UPDATE impuesto.contribuyente SET es_agente_retencion = true WHERE id_contribuyente = cont.id_contribuyente;
+    END IF;
+
+    
+    RETURN;
+END;
+$$;
+
+
+ALTER FUNCTION impuesto.insert_agente_retencion(_tipodoc character varying, _rif character varying) OWNER TO pooijyzcnnfrso;
+
+--
+-- Name: credito_fiscal; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.credito_fiscal (
@@ -260,21 +470,22 @@ CREATE TABLE impuesto.credito_fiscal (
     id_persona integer NOT NULL,
     concepto character varying NOT NULL,
     credito numeric NOT NULL,
+    fecha_creacion date DEFAULT now(),
     CONSTRAINT credito_fiscal_concepto_check CHECK (((concepto)::text = ANY (ARRAY['NATURAL'::text, 'JURIDICO'::text])))
 );
 
 
+ALTER TABLE impuesto.credito_fiscal OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 412 (class 1255 OID 69803)
--- Name: insert_credito(integer, character varying, numeric); Type: FUNCTION; Schema: impuesto; Owner: -
+-- Name: insert_credito(integer, character varying, numeric); Type: FUNCTION; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION impuesto.insert_credito(_id_persona integer, _concepto character varying, _credito numeric) RETURNS SETOF impuesto.credito_fiscal
     LANGUAGE plpgsql
     AS $$
     BEGIN
-        INSERT INTO impuesto.credito_fiscal AS cf (id_persona, concepto, credito) VALUES (_id_persona, _concepto, _credito)
-            ON CONFLICT (id_persona, concepto) DO UPDATE SET credito = cf.credito + EXCLUDED.credito;
+        INSERT INTO impuesto.credito_fiscal AS cf (id_persona, concepto, credito) VALUES (_id_persona, _concepto, _credito);
         
         RETURN QUERY SELECT * FROM impuesto.credito_fiscal WHERE id_persona = _id_persona AND concepto = _concepto;
         
@@ -284,9 +495,10 @@ CREATE FUNCTION impuesto.insert_credito(_id_persona integer, _concepto character
 $$;
 
 
+ALTER FUNCTION impuesto.insert_credito(_id_persona integer, _concepto character varying, _credito numeric) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 206 (class 1259 OID 69804)
--- Name: fraccion; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: fraccion; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.fraccion (
@@ -300,9 +512,10 @@ CREATE TABLE impuesto.fraccion (
 );
 
 
+ALTER TABLE impuesto.fraccion OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 418 (class 1255 OID 69811)
--- Name: insert_fraccion(integer, numeric, integer, date); Type: FUNCTION; Schema: impuesto; Owner: -
+-- Name: insert_fraccion(integer, numeric, integer, date); Type: FUNCTION; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION impuesto.insert_fraccion(_id_convenio integer, _monto numeric, _porcion integer, _fecha date) RETURNS SETOF impuesto.fraccion
@@ -322,9 +535,62 @@ DECLARE
 $$;
 
 
+ALTER FUNCTION impuesto.insert_fraccion(_id_convenio integer, _monto numeric, _porcion integer, _fecha date) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 207 (class 1259 OID 69812)
--- Name: solicitud; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: detalle_retencion; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+CREATE TABLE impuesto.detalle_retencion (
+    id_detalle_retencion integer NOT NULL,
+    rif character varying,
+    numero_referencia character varying,
+    razon_social character varying,
+    tipo_retencion character varying,
+    fecha_retencion date,
+    base_imponible numeric,
+    monto_retenido numeric,
+    codigo_actividad character varying,
+    porcentaje numeric,
+    numero_factura character varying,
+    id_liquidacion integer
+);
+
+
+ALTER TABLE impuesto.detalle_retencion OWNER TO pooijyzcnnfrso;
+
+--
+-- Name: insert_retencion(integer, character varying, character varying, character varying, character varying, date, numeric, numeric, numeric, character varying, character varying); Type: FUNCTION; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+CREATE FUNCTION impuesto.insert_retencion(_id_liquidacion integer, _rif character varying, _numero_referencia character varying, _razon_social character varying, _tipo_retencion character varying, _fecha_retencion date, _base_imponible numeric, _monto_retenido numeric, _porcentaje numeric, _codigo_actividad character varying, _numero_factura character varying) RETURNS SETOF impuesto.detalle_retencion
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    cont impuesto.contribuyente%ROWTYPE;
+BEGIN
+
+    IF EXISTS (SELECT * FROM impuesto.contribuyente WHERE TRIM(LOWER(CONCAT(tipo_documento, documento))) = LOWER(_rif) ) THEN
+        SELECT * INTO cont FROM impuesto.contribuyente WHERE TRIM(LOWER(CONCAT(tipo_documento, documento))) = LOWER(_rif);
+
+        IF EXISTS (SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = cont.id_contribuyente) AND _numero_referencia = 0 THEN
+            RAISE EXCEPTION 'ERROR';
+        END IF;
+
+    END IF;
+
+    RETURN QUERY INSERT INTO impuesto.detalle_retencion (rif, numero_referencia, razon_social, tipo_retencion, fecha_retencion, base_imponible, monto_retenido, codigo_actividad, porcentaje, numero_factura, id_liquidacion ) 
+        VALUES (_rif, _numero_referencia, _razon_social, _tipo_retencion, _fecha_retencion, _base_imponible, _monto_retenido, _codigo_actividad, _porcentaje, _numero_factura, _id_liquidacion ) RETURNING *;
+
+    RETURN;
+END;
+$$;
+
+
+ALTER FUNCTION impuesto.insert_retencion(_id_liquidacion integer, _rif character varying, _numero_referencia character varying, _razon_social character varying, _tipo_retencion character varying, _fecha_retencion date, _base_imponible numeric, _monto_retenido numeric, _porcentaje numeric, _codigo_actividad character varying, _numero_factura character varying) OWNER TO pooijyzcnnfrso;
+
+--
+-- Name: solicitud; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.solicitud (
@@ -335,13 +601,14 @@ CREATE TABLE impuesto.solicitud (
     fecha_aprobado date,
     id_tipo_tramite integer,
     id_contribuyente integer,
-    tipo_solicitud character varying
+    tipo_solicitud character varying DEFAULT 'IMPUESTO'::character varying
 );
 
 
+ALTER TABLE impuesto.solicitud OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 413 (class 1255 OID 69819)
--- Name: insert_solicitud(integer, integer, integer); Type: FUNCTION; Schema: impuesto; Owner: -
+-- Name: insert_solicitud(integer, integer, integer); Type: FUNCTION; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer, _id_contribuyente integer) RETURNS SETOF impuesto.solicitud
@@ -361,9 +628,10 @@ DECLARE
 $$;
 
 
+ALTER FUNCTION impuesto.insert_solicitud(_id_usuario integer, _id_tipo_tramite integer, _id_contribuyente integer) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 414 (class 1255 OID 69820)
--- Name: solicitud_transicion(text, text); Type: FUNCTION; Schema: impuesto; Owner: -
+-- Name: solicitud_transicion(text, text); Type: FUNCTION; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION impuesto.solicitud_transicion(state text, event text) RETURNS text
@@ -398,9 +666,10 @@ CREATE FUNCTION impuesto.solicitud_transicion(state text, event text) RETURNS te
 $$;
 
 
+ALTER FUNCTION impuesto.solicitud_transicion(state text, event text) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 399 (class 1255 OID 71426)
--- Name: update_fraccion_state(integer, text); Type: FUNCTION; Schema: impuesto; Owner: -
+-- Name: update_fraccion_state(integer, text); Type: FUNCTION; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION impuesto.update_fraccion_state(_id_fraccion integer, event text) RETURNS TABLE(state text)
@@ -416,9 +685,10 @@ CREATE FUNCTION impuesto.update_fraccion_state(_id_fraccion integer, event text)
 $$;
 
 
+ALTER FUNCTION impuesto.update_fraccion_state(_id_fraccion integer, event text) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 415 (class 1255 OID 69821)
--- Name: update_solicitud_state(integer, text); Type: FUNCTION; Schema: impuesto; Owner: -
+-- Name: update_solicitud_state(integer, text); Type: FUNCTION; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION impuesto.update_solicitud_state(_id_solicitud integer, event text) RETURNS TABLE(state text)
@@ -434,9 +704,10 @@ CREATE FUNCTION impuesto.update_solicitud_state(_id_solicitud integer, event tex
 $$;
 
 
+ALTER FUNCTION impuesto.update_solicitud_state(_id_solicitud integer, event text) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 416 (class 1255 OID 69822)
--- Name: casos_sociales_transicion(text, text); Type: FUNCTION; Schema: public; Owner: -
+-- Name: casos_sociales_transicion(text, text); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.casos_sociales_transicion(state text, event text) RETURNS text
@@ -479,9 +750,10 @@ CREATE FUNCTION public.casos_sociales_transicion(state text, event text) RETURNS
 $$;
 
 
+ALTER FUNCTION public.casos_sociales_transicion(state text, event text) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 417 (class 1255 OID 69823)
--- Name: codigo_caso(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: codigo_caso(); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.codigo_caso() RETURNS trigger
@@ -514,9 +786,10 @@ BEGIN
  $$;
 
 
+ALTER FUNCTION public.codigo_caso() OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 419 (class 1255 OID 69824)
--- Name: codigo_multa(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: codigo_multa(); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.codigo_multa() RETURNS trigger
@@ -549,9 +822,10 @@ BEGIN
 $$;
 
 
+ALTER FUNCTION public.codigo_multa() OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 420 (class 1255 OID 69825)
--- Name: codigo_tramite(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: codigo_tramite(); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.codigo_tramite() RETURNS trigger
@@ -585,9 +859,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.codigo_tramite() OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 421 (class 1255 OID 69826)
--- Name: complete_multa_state(integer, text, json, character varying, boolean); Type: FUNCTION; Schema: public; Owner: -
+-- Name: complete_multa_state(integer, text, json, character varying, boolean); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.complete_multa_state(_id_multa integer, event text, _datos json DEFAULT NULL::json, _url_certificado character varying DEFAULT NULL::character varying, _aprobado boolean DEFAULT NULL::boolean) RETURNS TABLE(state text)
@@ -609,9 +884,10 @@ CREATE FUNCTION public.complete_multa_state(_id_multa integer, event text, _dato
 $$;
 
 
+ALTER FUNCTION public.complete_multa_state(_id_multa integer, event text, _datos json, _url_certificado character varying, _aprobado boolean) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 422 (class 1255 OID 69827)
--- Name: complete_tramite_state(integer, text, json, character varying, boolean); Type: FUNCTION; Schema: public; Owner: -
+-- Name: complete_tramite_state(integer, text, json, character varying, boolean); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.complete_tramite_state(_id_tramite integer, event text, _datos json DEFAULT NULL::json, _url_certificado character varying DEFAULT NULL::character varying, _aprobado boolean DEFAULT NULL::boolean) RETURNS TABLE(state text)
@@ -634,9 +910,10 @@ CREATE FUNCTION public.complete_tramite_state(_id_tramite integer, event text, _
                                                               $$;
 
 
+ALTER FUNCTION public.complete_tramite_state(_id_tramite integer, event text, _datos json, _url_certificado character varying, _aprobado boolean) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 423 (class 1255 OID 69828)
--- Name: evento_tramite_trigger_func(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: evento_tramite_trigger_func(); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.evento_tramite_trigger_func() RETURNS trigger
@@ -662,9 +939,10 @@ DECLARE
                                 $$;
 
 
+ALTER FUNCTION public.evento_tramite_trigger_func() OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 424 (class 1255 OID 69829)
--- Name: eventos_casos_sociales_trigger_func(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: eventos_casos_sociales_trigger_func(); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.eventos_casos_sociales_trigger_func() RETURNS trigger
@@ -690,9 +968,10 @@ END
 $$;
 
 
+ALTER FUNCTION public.eventos_casos_sociales_trigger_func() OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 425 (class 1255 OID 69830)
--- Name: eventos_multa_trigger_func(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: eventos_multa_trigger_func(); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.eventos_multa_trigger_func() RETURNS trigger
@@ -718,9 +997,10 @@ END
 $$;
 
 
+ALTER FUNCTION public.eventos_multa_trigger_func() OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 395 (class 1255 OID 69831)
--- Name: eventos_tramite_trigger_func(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: eventos_tramite_trigger_func(); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.eventos_tramite_trigger_func() RETURNS trigger
@@ -746,9 +1026,10 @@ DECLARE
                                 $$;
 
 
+ALTER FUNCTION public.eventos_tramite_trigger_func() OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 1353 (class 1255 OID 69832)
--- Name: caso_social_fsm(text); Type: AGGREGATE; Schema: public; Owner: -
+-- Name: caso_social_fsm(text); Type: AGGREGATE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE AGGREGATE public.caso_social_fsm(text) (
@@ -758,9 +1039,10 @@ CREATE AGGREGATE public.caso_social_fsm(text) (
 );
 
 
+ALTER AGGREGATE public.caso_social_fsm(text) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 208 (class 1259 OID 69833)
--- Name: caso_social; Type: TABLE; Schema: public; Owner: -
+-- Name: caso_social; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.caso_social (
@@ -776,9 +1058,10 @@ CREATE TABLE public.caso_social (
 );
 
 
+ALTER TABLE public.caso_social OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 209 (class 1259 OID 69840)
--- Name: evento_caso_social; Type: TABLE; Schema: public; Owner: -
+-- Name: evento_caso_social; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.evento_caso_social (
@@ -789,9 +1072,10 @@ CREATE TABLE public.evento_caso_social (
 );
 
 
+ALTER TABLE public.evento_caso_social OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 210 (class 1259 OID 69847)
--- Name: institucion; Type: TABLE; Schema: public; Owner: -
+-- Name: institucion; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.institucion (
@@ -801,9 +1085,10 @@ CREATE TABLE public.institucion (
 );
 
 
+ALTER TABLE public.institucion OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 211 (class 1259 OID 69853)
--- Name: tipo_tramite; Type: TABLE; Schema: public; Owner: -
+-- Name: tipo_tramite; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.tipo_tramite (
@@ -823,9 +1108,10 @@ CREATE TABLE public.tipo_tramite (
 );
 
 
+ALTER TABLE public.tipo_tramite OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 212 (class 1259 OID 69859)
--- Name: casos_sociales_state; Type: VIEW; Schema: public; Owner: -
+-- Name: casos_sociales_state; Type: VIEW; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE VIEW public.casos_sociales_state AS
@@ -851,9 +1137,10 @@ CREATE VIEW public.casos_sociales_state AS
           GROUP BY evento_caso_social.id_caso) ev ON ((cs.id_caso = ev.id_caso)));
 
 
+ALTER TABLE public.casos_sociales_state OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 396 (class 1255 OID 69864)
--- Name: insert_caso(integer, json, integer); Type: FUNCTION; Schema: public; Owner: -
+-- Name: insert_caso(integer, json, integer); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.insert_caso(_id_tipo_tramite integer, datos json, _id_usuario integer) RETURNS SETOF public.casos_sociales_state
@@ -874,29 +1161,10 @@ DECLARE
                     $$;
 
 
---
--- TOC entry 213 (class 1259 OID 69865)
--- Name: liquidacion; Type: TABLE; Schema: impuesto; Owner: -
---
-
-CREATE TABLE impuesto.liquidacion (
-    id_liquidacion integer NOT NULL,
-    id_solicitud integer,
-    monto numeric,
-    certificado character varying,
-    recibo character varying,
-    fecha_liquidacion date DEFAULT now(),
-    id_subramo integer,
-    datos json,
-    fecha_vencimiento date,
-    id_registro_municipal integer,
-    remitido boolean DEFAULT false
-);
-
+ALTER FUNCTION public.insert_caso(_id_tipo_tramite integer, datos json, _id_usuario integer) OWNER TO pooijyzcnnfrso;
 
 --
--- TOC entry 426 (class 1255 OID 69873)
--- Name: insert_liquidacion(integer, numeric, character varying, json, date, integer); Type: FUNCTION; Schema: public; Owner: -
+-- Name: insert_liquidacion(integer, numeric, character varying, json, date, integer); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.insert_liquidacion(_id_solicitud integer, _monto numeric DEFAULT NULL::numeric, _ramo character varying DEFAULT NULL::character varying, _datos json DEFAULT NULL::json, _fecha date DEFAULT NULL::date, _id_registro_municipal integer DEFAULT NULL::integer) RETURNS SETOF impuesto.liquidacion
@@ -919,9 +1187,10 @@ DECLARE
 $$;
 
 
+ALTER FUNCTION public.insert_liquidacion(_id_solicitud integer, _monto numeric, _ramo character varying, _datos json, _fecha date, _id_registro_municipal integer) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 427 (class 1255 OID 69874)
--- Name: multa_transicion(text, text); Type: FUNCTION; Schema: public; Owner: -
+-- Name: multa_transicion(text, text); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.multa_transicion(state text, event text) RETURNS text
@@ -953,9 +1222,10 @@ CREATE FUNCTION public.multa_transicion(state text, event text) RETURNS text
 $$;
 
 
+ALTER FUNCTION public.multa_transicion(state text, event text) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 1354 (class 1255 OID 69875)
--- Name: multa_fsm(text); Type: AGGREGATE; Schema: public; Owner: -
+-- Name: multa_fsm(text); Type: AGGREGATE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE AGGREGATE public.multa_fsm(text) (
@@ -965,9 +1235,10 @@ CREATE AGGREGATE public.multa_fsm(text) (
 );
 
 
+ALTER AGGREGATE public.multa_fsm(text) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 214 (class 1259 OID 69876)
--- Name: evento_multa; Type: TABLE; Schema: public; Owner: -
+-- Name: evento_multa; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.evento_multa (
@@ -978,9 +1249,10 @@ CREATE TABLE public.evento_multa (
 );
 
 
+ALTER TABLE public.evento_multa OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 215 (class 1259 OID 69883)
--- Name: multa; Type: TABLE; Schema: public; Owner: -
+-- Name: multa; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.multa (
@@ -1001,9 +1273,10 @@ CREATE TABLE public.multa (
 );
 
 
+ALTER TABLE public.multa OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 216 (class 1259 OID 69892)
--- Name: multa_state; Type: VIEW; Schema: public; Owner: -
+-- Name: multa_state; Type: VIEW; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE VIEW public.multa_state AS
@@ -1033,9 +1306,10 @@ CREATE VIEW public.multa_state AS
           GROUP BY evento_multa.id_multa) ev ON ((m.id_multa = ev.id_multa)));
 
 
+ALTER TABLE public.multa_state OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 428 (class 1255 OID 69897)
--- Name: insert_multa(integer, json, character varying, bigint, integer); Type: FUNCTION; Schema: public; Owner: -
+-- Name: insert_multa(integer, json, character varying, bigint, integer); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.insert_multa(_id_tipo_tramite integer, datos json, _nacionalidad character varying, _cedula bigint, _id_usuario integer) RETURNS SETOF public.multa_state
@@ -1056,9 +1330,10 @@ DECLARE
 $$;
 
 
+ALTER FUNCTION public.insert_multa(_id_tipo_tramite integer, datos json, _nacionalidad character varying, _cedula bigint, _id_usuario integer) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 429 (class 1255 OID 69898)
--- Name: insert_notificacion_trigger_func(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: insert_notificacion_trigger_func(); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.insert_notificacion_trigger_func() RETURNS trigger
@@ -1075,9 +1350,10 @@ END
 $$;
 
 
+ALTER FUNCTION public.insert_notificacion_trigger_func() OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 430 (class 1255 OID 69899)
--- Name: tramites_eventos_transicion(text, text); Type: FUNCTION; Schema: public; Owner: -
+-- Name: tramites_eventos_transicion(text, text); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.tramites_eventos_transicion(state text, event text) RETURNS text
@@ -1123,7 +1399,7 @@ SELECT CASE state
             WHEN 'ingresardatos_pd' THEN 'ingresardatos'
             WHEN 'finalizar_pa' THEN 'finalizado'
             WHEN 'revisar_cr' THEN 'enrevision'
-			WHEN 'aprobar_lae' THEN 'finalizado'
+			WHEN 'revisar_lae' THEN 'enrevision'
             WHEN 'rechazar_lae' THEN 'finalizado'
             WHEN 'aprobar_rc' THEN 'finalizado'
             WHEN 'rechazar_rc' THEN 'finalizado'
@@ -1135,6 +1411,8 @@ SELECT CASE state
         CASE event
             WHEN 'finalizar_cr' THEN 'finalizado'
             WHEN 'rechazar_cr' THEN 'enproceso'
+			WHEN 'aprobar_lae' THEN 'finalizado'
+			WHEN 'rechazar_lae' THEN 'finalizado'
             WHEN 'ingresardatos_ompu' THEN 'ingresardatos'
             WHEN 'rechazar_ompu' THEN 'enproceso'
             WHEN 'aprobar_bc' THEN 'finalizado'
@@ -1146,9 +1424,10 @@ END
 $$;
 
 
+ALTER FUNCTION public.tramites_eventos_transicion(state text, event text) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 1355 (class 1255 OID 69900)
--- Name: tramite_evento_fsm(text); Type: AGGREGATE; Schema: public; Owner: -
+-- Name: tramite_evento_fsm(text); Type: AGGREGATE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE AGGREGATE public.tramite_evento_fsm(text) (
@@ -1158,9 +1437,10 @@ CREATE AGGREGATE public.tramite_evento_fsm(text) (
 );
 
 
+ALTER AGGREGATE public.tramite_evento_fsm(text) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 217 (class 1259 OID 69901)
--- Name: evento_tramite; Type: TABLE; Schema: public; Owner: -
+-- Name: evento_tramite; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.evento_tramite (
@@ -1171,9 +1451,10 @@ CREATE TABLE public.evento_tramite (
 );
 
 
+ALTER TABLE public.evento_tramite OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 218 (class 1259 OID 69908)
--- Name: tramite; Type: TABLE; Schema: public; Owner: -
+-- Name: tramite; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.tramite (
@@ -1192,9 +1473,10 @@ CREATE TABLE public.tramite (
 );
 
 
+ALTER TABLE public.tramite OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 219 (class 1259 OID 69916)
--- Name: tramites_state_with_resources; Type: VIEW; Schema: public; Owner: -
+-- Name: tramites_state_with_resources; Type: VIEW; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE VIEW public.tramites_state_with_resources AS
@@ -1224,9 +1506,10 @@ CREATE VIEW public.tramites_state_with_resources AS
           GROUP BY evento_tramite.id_tramite) ev ON ((t.id_tramite = ev.id_tramite)));
 
 
+ALTER TABLE public.tramites_state_with_resources OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 431 (class 1255 OID 69921)
--- Name: insert_tramite(integer, json, integer); Type: FUNCTION; Schema: public; Owner: -
+-- Name: insert_tramite(integer, json, integer); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.insert_tramite(_id_tipo_tramite integer, datos json, _id_usuario integer) RETURNS SETOF public.tramites_state_with_resources
@@ -1247,9 +1530,10 @@ DECLARE
                     $$;
 
 
+ALTER FUNCTION public.insert_tramite(_id_tipo_tramite integer, datos json, _id_usuario integer) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 432 (class 1255 OID 69922)
--- Name: revisar_pagos_fin_de_dia(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: revisar_pagos_fin_de_dia(); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.revisar_pagos_fin_de_dia() RETURNS void
@@ -1275,9 +1559,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.revisar_pagos_fin_de_dia() OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 433 (class 1255 OID 69923)
--- Name: tipos_tramites_costo_utmm_trigger_func(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: tipos_tramites_costo_utmm_trigger_func(); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.tipos_tramites_costo_utmm_trigger_func() RETURNS trigger
@@ -1293,9 +1578,10 @@ DECLARE
 $$;
 
 
+ALTER FUNCTION public.tipos_tramites_costo_utmm_trigger_func() OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 434 (class 1255 OID 69924)
--- Name: tramite_eventos_trigger_func(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: tramite_eventos_trigger_func(); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.tramite_eventos_trigger_func() RETURNS trigger
@@ -1321,9 +1607,10 @@ DECLARE
                                 $$;
 
 
+ALTER FUNCTION public.tramite_eventos_trigger_func() OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 435 (class 1255 OID 69925)
--- Name: update_caso_state(integer, text, json); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_caso_state(integer, text, json); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.update_caso_state(_id_caso integer, event text, _datos json DEFAULT NULL::json) RETURNS TABLE(state text)
@@ -1341,9 +1628,10 @@ CREATE FUNCTION public.update_caso_state(_id_caso integer, event text, _datos js
                                                               $$;
 
 
+ALTER FUNCTION public.update_caso_state(_id_caso integer, event text, _datos json) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 436 (class 1255 OID 69926)
--- Name: update_multa_state(integer, text, json); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_multa_state(integer, text, json); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.update_multa_state(_id_multa integer, event text, _datos json DEFAULT NULL::json) RETURNS TABLE(state text)
@@ -1361,9 +1649,10 @@ CREATE FUNCTION public.update_multa_state(_id_multa integer, event text, _datos 
 $$;
 
 
+ALTER FUNCTION public.update_multa_state(_id_multa integer, event text, _datos json) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 437 (class 1255 OID 69927)
--- Name: update_multa_state(integer, text, json, numeric, character varying); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_multa_state(integer, text, json, numeric, character varying); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.update_multa_state(_id_multa integer, event text, _datos json DEFAULT NULL::json, _costo numeric DEFAULT NULL::numeric, _url_boleta character varying DEFAULT NULL::character varying) RETURNS TABLE(state text)
@@ -1387,9 +1676,10 @@ CREATE FUNCTION public.update_multa_state(_id_multa integer, event text, _datos 
 $$;
 
 
+ALTER FUNCTION public.update_multa_state(_id_multa integer, event text, _datos json, _costo numeric, _url_boleta character varying) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 438 (class 1255 OID 69928)
--- Name: update_tramite_state(integer, text, json, numeric, character varying); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_tramite_state(integer, text, json, numeric, character varying); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.update_tramite_state(_id_tramite integer, event text, _datos json DEFAULT NULL::json, _costo numeric DEFAULT NULL::numeric, _url_planilla character varying DEFAULT NULL::character varying) RETURNS TABLE(state text)
@@ -1413,9 +1703,10 @@ CREATE FUNCTION public.update_tramite_state(_id_tramite integer, event text, _da
                                                               $$;
 
 
+ALTER FUNCTION public.update_tramite_state(_id_tramite integer, event text, _datos json, _costo numeric, _url_planilla character varying) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 439 (class 1255 OID 69929)
--- Name: validate_payments(jsonb); Type: FUNCTION; Schema: public; Owner: -
+-- Name: validate_payments(jsonb); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION public.validate_payments(inputcsvjson jsonb, OUT outputjson jsonb) RETURNS jsonb
@@ -1434,7 +1725,7 @@ BEGIN
 
     jsonArray := ARRAY[]::jsonb[];
 
-    --Iterar json 
+    --Iterar json
     FOR inputRow IN
         SELECT jsonb_array_elements FROM jsonb_array_elements(inputData)
     LOOP
@@ -1444,7 +1735,7 @@ BEGIN
         SELECT id_pago::int into idPago FROM pago
         WHERE aprobado = false
         AND id_banco = inputBanco
-        AND referencia = (inputRow ->> 'Referencia') 
+        AND referencia = (inputRow ->> 'Referencia')
         AND monto <= (inputRow ->> 'Monto')::numeric
         AND fecha_de_pago = (inputRow ->> 'Fecha')::date;
 
@@ -1453,48 +1744,62 @@ BEGIN
             --aprueba el pago, guarda el momento en que se aprobo el pago y actualiza el monto al real
             UPDATE pago SET aprobado = true, fecha_de_aprobacion = (SELECT NOW()::timestamptz), monto = (inputRow ->> 'Monto')::numeric WHERE id_pago = idPago;
 
-            --obtiene el resultado del row y lo convierte en json 
+            --obtiene el resultado del row y lo convierte en json
             IF (SELECT concepto FROM pago WHERE id_pago = idPago) = 'TRAMITE' THEN
-                select row_to_json(row)::jsonb into dataPago from (select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, pago.id_procedimiento AS idProcedimiento, pago.referencia, pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, tramite.codigo_tramite AS "codigoTramite", tipo_tramite.sufijo AS sufijo, tipo_tramite.id_tipo_tramite AS tipotramite, pago.concepto  from pago 
-                INNER JOIN tramite ON pago.id_procedimiento = tramite.id_tramite 
+                select row_to_json(row)::jsonb into dataPago from (select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, pago.id_procedimiento AS idProcedimiento, pago.referencia, pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, tramite.codigo_tramite AS "codigoTramite", tipo_tramite.sufijo AS sufijo, tipo_tramite.id_tipo_tramite AS tipotramite, pago.concepto  from pago
+                INNER JOIN tramite ON pago.id_procedimiento = tramite.id_tramite
                 INNER JOIN tipo_tramite ON tipo_tramite.id_tipo_tramite = tramite.id_tipo_tramite where pago.id_pago = idPago) row;
             END IF;
 
             IF (SELECT concepto FROM pago WHERE id_pago = idPago) = 'MULTA' THEN
-                select row_to_json(row)::jsonb into dataPago from (select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, pago.id_procedimiento AS idProcedimiento, pago.referencia, pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, multa.codigo_multa AS "codigoMulta", tipo_tramite.sufijo AS sufijo, tipo_tramite.id_tipo_tramite AS tipotramite, pago.concepto  from pago 
-                INNER JOIN multa ON pago.id_procedimiento = multa.id_multa 
+                select row_to_json(row)::jsonb into dataPago from (select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, pago.id_procedimiento AS idProcedimiento, pago.referencia, pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, multa.codigo_multa AS "codigoMulta", tipo_tramite.sufijo AS sufijo, tipo_tramite.id_tipo_tramite AS tipotramite, pago.concepto  from pago
+                INNER JOIN multa ON pago.id_procedimiento = multa.id_multa
                 INNER JOIN tipo_tramite ON tipo_tramite.id_tipo_tramite = multa.id_tipo_tramite where pago.id_pago = idPago) row;
             END IF;
 
             IF (SELECT concepto FROM pago WHERE id_pago = idPago) = 'IMPUESTO' THEN
-    
-                IF (SELECT true = ALL(SELECT aprobado FROM pago WHERE id_procedimiento = (SELECT id_procedimiento FROM pago WHERE id_pago = idPago))) THEN 
+
+                IF (SELECT true = ALL(SELECT aprobado FROM pago WHERE id_procedimiento = (SELECT id_procedimiento FROM pago WHERE id_pago = idPago))) THEN
                     UPDATE impuesto.solicitud SET aprobado = true, fecha_aprobado = NOW() WHERE id_solicitud = (SELECT id_procedimiento FROM pago WHERE id_pago = idPago);
                 END IF;
 
-                select row_to_json(row)::jsonb into dataPago from (select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, pago.id_procedimiento AS idProcedimiento, pago.referencia, pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, solicitud.aprobado as "solicitudAprobada", pago.concepto, contribuyente.tipo_documento AS nacionalidad, contribuyente.documento from pago 
-                INNER JOIN impuesto.solicitud ON pago.id_procedimiento = solicitud.id_solicitud 
+                select row_to_json(row)::jsonb into dataPago from (select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, pago.id_procedimiento AS idProcedimiento, pago.referencia, pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, solicitud.aprobado as "solicitudAprobada", pago.concepto, contribuyente.tipo_documento AS nacionalidad, contribuyente.documento from pago
+                INNER JOIN impuesto.solicitud ON pago.id_procedimiento = solicitud.id_solicitud
                 INNER JOIN impuesto.contribuyente ON solicitud.id_contribuyente = contribuyente.id_contribuyente
                 where pago.id_pago = idPago) row;
             END IF;
 
             IF (SELECT concepto FROM pago WHERE id_pago = idPago) = 'CONVENIO' THEN
                 UPDATE impuesto.fraccion SET aprobado = true, fecha_aprobado = NOW() WHERE id_fraccion = (SELECT id_procedimiento FROM pago WHERE id_pago = idPago);
-    
+
                 select row_to_json(row)::jsonb into dataPago from (select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, (SELECT id_procedimiento FROM pago WHERE id_pago = idPago) AS idProcedimiento, pago.referencia, pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, pago.concepto, contribuyente.tipo_documento AS nacionalidad, contribuyente.documento,
-    (SELECT true = ALL(SELECT aprobado FROM impuesto.fraccion WHERE id_convenio = (SELECT id_convenio FROM impuesto.fraccion WHERE id_fraccion = (SELECT id_procedimiento FROM pago WHERE id_pago = idPago) ))) AS "solicitudAprobada"        
-       
-    from pago 
-                INNER JOIN impuesto.fraccion ON fraccion.id_fraccion = pago.id_procedimiento
-    INNER JOIN impuesto.convenio ON fraccion.id_convenio = convenio.id_convenio
-    INNER JOIN impuesto.solicitud ON solicitud.id_solicitud = convenio.id_solicitud
-    INNER JOIN impuesto.contribuyente ON solicitud.id_contribuyente = contribuyente.id_contribuyente
+    (SELECT true = ALL(SELECT aprobado FROM impuesto.fraccion WHERE id_convenio = (SELECT id_convenio FROM impuesto.fraccion WHERE id_fraccion = (SELECT id_procedimiento FROM pago WHERE id_pago = idPago) ))) AS "solicitudAprobada"
+
+            from pago
+                        INNER JOIN impuesto.fraccion ON fraccion.id_fraccion = pago.id_procedimiento
+            INNER JOIN impuesto.convenio ON fraccion.id_convenio = convenio.id_convenio
+            INNER JOIN impuesto.solicitud ON solicitud.id_solicitud = convenio.id_solicitud
+            INNER JOIN impuesto.contribuyente ON solicitud.id_contribuyente = contribuyente.id_contribuyente
+                        where pago.id_pago = idPago) row;
+            END IF;
+
+            IF (SELECT concepto FROM pago WHERE id_pago = idPago) = 'RETENCION' THEN
+
+                IF (SELECT true = ALL(SELECT aprobado FROM pago WHERE id_procedimiento = (SELECT id_procedimiento FROM pago WHERE id_pago = idPago))) THEN
+                    UPDATE impuesto.solicitud SET aprobado = true, fecha_aprobado = NOW() WHERE id_solicitud = (SELECT id_procedimiento FROM pago WHERE id_pago = idPago);
+                END IF;
+
+                select row_to_json(row)::jsonb into dataPago from (select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, pago.id_procedimiento AS idProcedimiento, pago.referencia, pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, solicitud.aprobado as "solicitudAprobada", pago.concepto, contribuyente.tipo_documento AS nacionalidad, contribuyente.documento from pago
+                INNER JOIN impuesto.solicitud ON pago.id_procedimiento = solicitud.id_solicitud
+                INNER JOIN impuesto.contribuyente ON solicitud.id_contribuyente = contribuyente.id_contribuyente
                 where pago.id_pago = idPago) row;
             END IF;
-            
+
             --agrega el json de la row y lo almacena en el array
-            jsonArray := array_append(jsonArray, dataPago);   
+            jsonArray := array_append(jsonArray, dataPago);
         END IF;
+
+
 
     END LOOP;
     --devuelve el array de json
@@ -1504,9 +1809,10 @@ END;
 $$;
 
 
+ALTER FUNCTION public.validate_payments(inputcsvjson jsonb, OUT outputjson jsonb) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 440 (class 1255 OID 69930)
--- Name: _validate_json_schema_type(text, jsonb); Type: FUNCTION; Schema: timetable; Owner: -
+-- Name: _validate_json_schema_type(text, jsonb); Type: FUNCTION; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION timetable._validate_json_schema_type(type text, data jsonb) RETURNS boolean
@@ -1530,9 +1836,10 @@ END;
 $$;
 
 
+ALTER FUNCTION timetable._validate_json_schema_type(type text, data jsonb) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 441 (class 1255 OID 69931)
--- Name: cron_element_to_array(text, text); Type: FUNCTION; Schema: timetable; Owner: -
+-- Name: cron_element_to_array(text, text); Type: FUNCTION; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION timetable.cron_element_to_array(element text, element_type text) RETURNS integer[]
@@ -1641,9 +1948,10 @@ END;
 $_$;
 
 
+ALTER FUNCTION timetable.cron_element_to_array(element text, element_type text) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 442 (class 1255 OID 69932)
--- Name: get_running_jobs(bigint); Type: FUNCTION; Schema: timetable; Owner: -
+-- Name: get_running_jobs(bigint); Type: FUNCTION; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION timetable.get_running_jobs(bigint) RETURNS SETOF record
@@ -1665,9 +1973,10 @@ CREATE FUNCTION timetable.get_running_jobs(bigint) RETURNS SETOF record
 $_$;
 
 
+ALTER FUNCTION timetable.get_running_jobs(bigint) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 443 (class 1255 OID 69933)
--- Name: get_task_id(text); Type: FUNCTION; Schema: timetable; Owner: -
+-- Name: get_task_id(text); Type: FUNCTION; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION timetable.get_task_id(task_name text) RETURNS bigint
@@ -1677,9 +1986,10 @@ CREATE FUNCTION timetable.get_task_id(task_name text) RETURNS bigint
 $_$;
 
 
+ALTER FUNCTION timetable.get_task_id(task_name text) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 444 (class 1255 OID 69934)
--- Name: insert_base_task(text, bigint); Type: FUNCTION; Schema: timetable; Owner: -
+-- Name: insert_base_task(text, bigint); Type: FUNCTION; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION timetable.insert_base_task(task_name text, parent_task_id bigint) RETURNS bigint
@@ -1706,9 +2016,10 @@ END
 $$;
 
 
+ALTER FUNCTION timetable.insert_base_task(task_name text, parent_task_id bigint) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 445 (class 1255 OID 69935)
--- Name: is_cron_in_time(timetable.cron, timestamp with time zone); Type: FUNCTION; Schema: timetable; Owner: -
+-- Name: is_cron_in_time(timetable.cron, timestamp with time zone); Type: FUNCTION; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION timetable.is_cron_in_time(run_at timetable.cron, ts timestamp with time zone) RETURNS boolean
@@ -1739,9 +2050,10 @@ END;
 $$;
 
 
+ALTER FUNCTION timetable.is_cron_in_time(run_at timetable.cron, ts timestamp with time zone) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 446 (class 1255 OID 69936)
--- Name: job_add(text, text, text, timetable.task_kind, timetable.cron, integer, boolean, boolean); Type: FUNCTION; Schema: timetable; Owner: -
+-- Name: job_add(text, text, text, timetable.task_kind, timetable.cron, integer, boolean, boolean); Type: FUNCTION; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION timetable.job_add(task_name text, task_function text, client_name text, task_type timetable.task_kind DEFAULT 'SQL'::timetable.task_kind, run_at timetable.cron DEFAULT NULL::text, max_instances integer DEFAULT NULL::integer, live boolean DEFAULT false, self_destruct boolean DEFAULT false) RETURNS bigint
@@ -1776,9 +2088,10 @@ RETURNING chain_execution_config
 $$;
 
 
+ALTER FUNCTION timetable.job_add(task_name text, task_function text, client_name text, task_type timetable.task_kind, run_at timetable.cron, max_instances integer, live boolean, self_destruct boolean) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 447 (class 1255 OID 69937)
--- Name: task_chain_delete(bigint, bigint); Type: FUNCTION; Schema: timetable; Owner: -
+-- Name: task_chain_delete(bigint, bigint); Type: FUNCTION; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION timetable.task_chain_delete(config_ bigint, chain_id_ bigint) RETURNS boolean
@@ -1849,9 +2162,10 @@ END
 $$;
 
 
+ALTER FUNCTION timetable.task_chain_delete(config_ bigint, chain_id_ bigint) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 448 (class 1255 OID 69938)
--- Name: trig_chain_fixer(); Type: FUNCTION; Schema: timetable; Owner: -
+-- Name: trig_chain_fixer(); Type: FUNCTION; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION timetable.trig_chain_fixer() RETURNS trigger
@@ -1898,9 +2212,10 @@ CREATE FUNCTION timetable.trig_chain_fixer() RETURNS trigger
 $$;
 
 
+ALTER FUNCTION timetable.trig_chain_fixer() OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 449 (class 1255 OID 69939)
--- Name: validate_json_schema(jsonb, jsonb, jsonb); Type: FUNCTION; Schema: timetable; Owner: -
+-- Name: validate_json_schema(jsonb, jsonb, jsonb); Type: FUNCTION; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE FUNCTION timetable.validate_json_schema(schema jsonb, data jsonb, root_schema jsonb DEFAULT NULL::jsonb) RETURNS boolean
@@ -2148,9 +2463,10 @@ END;
 $_$;
 
 
+ALTER FUNCTION timetable.validate_json_schema(schema jsonb, data jsonb, root_schema jsonb) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 1356 (class 1255 OID 69941)
--- Name: fraccion_fsm(text); Type: AGGREGATE; Schema: impuesto; Owner: -
+-- Name: fraccion_fsm(text); Type: AGGREGATE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE AGGREGATE impuesto.fraccion_fsm(text) (
@@ -2160,9 +2476,10 @@ CREATE AGGREGATE impuesto.fraccion_fsm(text) (
 );
 
 
+ALTER AGGREGATE impuesto.fraccion_fsm(text) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 1357 (class 1255 OID 69942)
--- Name: solicitud_fsm(text); Type: AGGREGATE; Schema: impuesto; Owner: -
+-- Name: solicitud_fsm(text); Type: AGGREGATE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE AGGREGATE impuesto.solicitud_fsm(text) (
@@ -2172,9 +2489,10 @@ CREATE AGGREGATE impuesto.solicitud_fsm(text) (
 );
 
 
+ALTER AGGREGATE impuesto.solicitud_fsm(text) OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 220 (class 1259 OID 69943)
--- Name: actividad_economica; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: actividad_economica; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.actividad_economica (
@@ -2186,21 +2504,24 @@ CREATE TABLE impuesto.actividad_economica (
 );
 
 
+ALTER TABLE impuesto.actividad_economica OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 221 (class 1259 OID 69949)
--- Name: actividad_economica_sucursal; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: actividad_economica_sucursal; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.actividad_economica_sucursal (
     id_actividad_economica_contribuyente integer NOT NULL,
     id_registro_municipal integer NOT NULL,
-    numero_referencia integer NOT NULL
+    numero_referencia integer NOT NULL,
+    aplicable_desde date
 );
 
 
+ALTER TABLE impuesto.actividad_economica_sucursal OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 222 (class 1259 OID 69952)
--- Name: actividad_economica_contribuy_id_actividad_economica_contri_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: actividad_economica_contribuy_id_actividad_economica_contri_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq
@@ -2212,18 +2533,17 @@ CREATE SEQUENCE impuesto.actividad_economica_contribuy_id_actividad_economica_co
     CACHE 1;
 
 
+ALTER TABLE impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4415 (class 0 OID 0)
--- Dependencies: 222
--- Name: actividad_economica_contribuy_id_actividad_economica_contri_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: actividad_economica_contribuy_id_actividad_economica_contri_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq OWNED BY impuesto.actividad_economica_sucursal.id_actividad_economica_contribuyente;
 
 
 --
--- TOC entry 223 (class 1259 OID 69954)
--- Name: actividad_economica_exoneracion; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: actividad_economica_exoneracion; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.actividad_economica_exoneracion (
@@ -2233,9 +2553,10 @@ CREATE TABLE impuesto.actividad_economica_exoneracion (
 );
 
 
+ALTER TABLE impuesto.actividad_economica_exoneracion OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 224 (class 1259 OID 69957)
--- Name: actividad_economica_exoneraci_id_actividad_economica_exoner_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: actividad_economica_exoneraci_id_actividad_economica_exoner_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.actividad_economica_exoneraci_id_actividad_economica_exoner_seq
@@ -2247,18 +2568,17 @@ CREATE SEQUENCE impuesto.actividad_economica_exoneraci_id_actividad_economica_ex
     CACHE 1;
 
 
+ALTER TABLE impuesto.actividad_economica_exoneraci_id_actividad_economica_exoner_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4416 (class 0 OID 0)
--- Dependencies: 224
--- Name: actividad_economica_exoneraci_id_actividad_economica_exoner_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: actividad_economica_exoneraci_id_actividad_economica_exoner_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.actividad_economica_exoneraci_id_actividad_economica_exoner_seq OWNED BY impuesto.actividad_economica_exoneracion.id_actividad_economica_exoneracion;
 
 
 --
--- TOC entry 225 (class 1259 OID 69959)
--- Name: actividad_economica_id_actividad_economica_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: actividad_economica_id_actividad_economica_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.actividad_economica_id_actividad_economica_seq
@@ -2270,18 +2590,17 @@ CREATE SEQUENCE impuesto.actividad_economica_id_actividad_economica_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.actividad_economica_id_actividad_economica_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4417 (class 0 OID 0)
--- Dependencies: 225
--- Name: actividad_economica_id_actividad_economica_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: actividad_economica_id_actividad_economica_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.actividad_economica_id_actividad_economica_seq OWNED BY impuesto.actividad_economica.id_actividad_economica;
 
 
 --
--- TOC entry 226 (class 1259 OID 69961)
--- Name: avaluo_inmueble; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: avaluo_inmueble; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.avaluo_inmueble (
@@ -2292,9 +2611,10 @@ CREATE TABLE impuesto.avaluo_inmueble (
 );
 
 
+ALTER TABLE impuesto.avaluo_inmueble OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 227 (class 1259 OID 69967)
--- Name: avaluo_inmueble_id_avaluo_inmueble_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: avaluo_inmueble_id_avaluo_inmueble_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.avaluo_inmueble_id_avaluo_inmueble_seq
@@ -2306,18 +2626,52 @@ CREATE SEQUENCE impuesto.avaluo_inmueble_id_avaluo_inmueble_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.avaluo_inmueble_id_avaluo_inmueble_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4418 (class 0 OID 0)
--- Dependencies: 227
--- Name: avaluo_inmueble_id_avaluo_inmueble_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: avaluo_inmueble_id_avaluo_inmueble_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.avaluo_inmueble_id_avaluo_inmueble_seq OWNED BY impuesto.avaluo_inmueble.id_avaluo_inmueble;
 
 
 --
--- TOC entry 228 (class 1259 OID 69969)
--- Name: categoria_propaganda; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: baremo_servicio_municipal; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+CREATE TABLE impuesto.baremo_servicio_municipal (
+    id_baremo integer NOT NULL,
+    descripcion character varying,
+    indicador numeric
+);
+
+
+ALTER TABLE impuesto.baremo_servicio_municipal OWNER TO pooijyzcnnfrso;
+
+--
+-- Name: baremo_servicio_municipal_id_baremo_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+CREATE SEQUENCE impuesto.baremo_servicio_municipal_id_baremo_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.baremo_servicio_municipal_id_baremo_seq OWNER TO pooijyzcnnfrso;
+
+--
+-- Name: baremo_servicio_municipal_id_baremo_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+ALTER SEQUENCE impuesto.baremo_servicio_municipal_id_baremo_seq OWNED BY impuesto.baremo_servicio_municipal.id_baremo;
+
+
+--
+-- Name: categoria_propaganda; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.categoria_propaganda (
@@ -2326,9 +2680,10 @@ CREATE TABLE impuesto.categoria_propaganda (
 );
 
 
+ALTER TABLE impuesto.categoria_propaganda OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 229 (class 1259 OID 69975)
--- Name: categoria_propaganda_id_categoria_propaganda_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: categoria_propaganda_id_categoria_propaganda_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.categoria_propaganda_id_categoria_propaganda_seq
@@ -2340,39 +2695,17 @@ CREATE SEQUENCE impuesto.categoria_propaganda_id_categoria_propaganda_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.categoria_propaganda_id_categoria_propaganda_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4419 (class 0 OID 0)
--- Dependencies: 229
--- Name: categoria_propaganda_id_categoria_propaganda_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: categoria_propaganda_id_categoria_propaganda_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.categoria_propaganda_id_categoria_propaganda_seq OWNED BY impuesto.categoria_propaganda.id_categoria_propaganda;
 
 
 --
--- TOC entry 230 (class 1259 OID 69977)
--- Name: contribuyente; Type: TABLE; Schema: impuesto; Owner: -
---
-
-CREATE TABLE impuesto.contribuyente (
-    id_contribuyente integer NOT NULL,
-    tipo_documento character(1) NOT NULL,
-    documento character varying NOT NULL,
-    razon_social character varying NOT NULL,
-    denominacion_comercial character varying NOT NULL,
-    siglas character varying NOT NULL,
-    id_parroquia integer,
-    sector character varying,
-    direccion character varying,
-    punto_referencia character varying,
-    verificado boolean,
-    tipo_contribuyente character varying
-);
-
-
---
--- TOC entry 231 (class 1259 OID 69983)
--- Name: contribuyente_exoneracion; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: contribuyente_exoneracion; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.contribuyente_exoneracion (
@@ -2383,9 +2716,10 @@ CREATE TABLE impuesto.contribuyente_exoneracion (
 );
 
 
+ALTER TABLE impuesto.contribuyente_exoneracion OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 232 (class 1259 OID 69986)
--- Name: contribuyente_exoneracion_id_contribuyente_exoneracion_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: contribuyente_exoneracion_id_contribuyente_exoneracion_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.contribuyente_exoneracion_id_contribuyente_exoneracion_seq
@@ -2397,18 +2731,17 @@ CREATE SEQUENCE impuesto.contribuyente_exoneracion_id_contribuyente_exoneracion_
     CACHE 1;
 
 
+ALTER TABLE impuesto.contribuyente_exoneracion_id_contribuyente_exoneracion_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4420 (class 0 OID 0)
--- Dependencies: 232
--- Name: contribuyente_exoneracion_id_contribuyente_exoneracion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: contribuyente_exoneracion_id_contribuyente_exoneracion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.contribuyente_exoneracion_id_contribuyente_exoneracion_seq OWNED BY impuesto.contribuyente_exoneracion.id_contribuyente_exoneracion;
 
 
 --
--- TOC entry 233 (class 1259 OID 69988)
--- Name: contribuyente_id_contribuyente_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: contribuyente_id_contribuyente_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.contribuyente_id_contribuyente_seq
@@ -2420,18 +2753,17 @@ CREATE SEQUENCE impuesto.contribuyente_id_contribuyente_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.contribuyente_id_contribuyente_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4421 (class 0 OID 0)
--- Dependencies: 233
--- Name: contribuyente_id_contribuyente_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: contribuyente_id_contribuyente_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.contribuyente_id_contribuyente_seq OWNED BY impuesto.contribuyente.id_contribuyente;
 
 
 --
--- TOC entry 234 (class 1259 OID 69990)
--- Name: convenio; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: convenio; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.convenio (
@@ -2441,9 +2773,10 @@ CREATE TABLE impuesto.convenio (
 );
 
 
+ALTER TABLE impuesto.convenio OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 235 (class 1259 OID 69993)
--- Name: convenio_id_convenio_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: convenio_id_convenio_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.convenio_id_convenio_seq
@@ -2455,18 +2788,17 @@ CREATE SEQUENCE impuesto.convenio_id_convenio_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.convenio_id_convenio_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4422 (class 0 OID 0)
--- Dependencies: 235
--- Name: convenio_id_convenio_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: convenio_id_convenio_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.convenio_id_convenio_seq OWNED BY impuesto.convenio.id_convenio;
 
 
 --
--- TOC entry 236 (class 1259 OID 69995)
--- Name: credito_fiscal_id_credito_fiscal_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: credito_fiscal_id_credito_fiscal_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.credito_fiscal_id_credito_fiscal_seq
@@ -2478,18 +2810,39 @@ CREATE SEQUENCE impuesto.credito_fiscal_id_credito_fiscal_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.credito_fiscal_id_credito_fiscal_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4423 (class 0 OID 0)
--- Dependencies: 236
--- Name: credito_fiscal_id_credito_fiscal_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: credito_fiscal_id_credito_fiscal_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.credito_fiscal_id_credito_fiscal_seq OWNED BY impuesto.credito_fiscal.id_credito_fiscal;
 
 
 --
--- TOC entry 237 (class 1259 OID 69997)
--- Name: dias_feriados; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: detalle_retencion_id_detalle_retencion_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+CREATE SEQUENCE impuesto.detalle_retencion_id_detalle_retencion_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.detalle_retencion_id_detalle_retencion_seq OWNER TO pooijyzcnnfrso;
+
+--
+-- Name: detalle_retencion_id_detalle_retencion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+ALTER SEQUENCE impuesto.detalle_retencion_id_detalle_retencion_seq OWNED BY impuesto.detalle_retencion.id_detalle_retencion;
+
+
+--
+-- Name: dias_feriados; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.dias_feriados (
@@ -2499,9 +2852,10 @@ CREATE TABLE impuesto.dias_feriados (
 );
 
 
+ALTER TABLE impuesto.dias_feriados OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 238 (class 1259 OID 70003)
--- Name: dias_feriados_id_dia_feriado_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: dias_feriados_id_dia_feriado_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.dias_feriados_id_dia_feriado_seq
@@ -2513,18 +2867,17 @@ CREATE SEQUENCE impuesto.dias_feriados_id_dia_feriado_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.dias_feriados_id_dia_feriado_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4424 (class 0 OID 0)
--- Dependencies: 238
--- Name: dias_feriados_id_dia_feriado_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: dias_feriados_id_dia_feriado_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.dias_feriados_id_dia_feriado_seq OWNED BY impuesto.dias_feriados.id_dia_feriado;
 
 
 --
--- TOC entry 239 (class 1259 OID 70005)
--- Name: evento_fraccion; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: evento_fraccion; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.evento_fraccion (
@@ -2535,9 +2888,10 @@ CREATE TABLE impuesto.evento_fraccion (
 );
 
 
+ALTER TABLE impuesto.evento_fraccion OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 240 (class 1259 OID 70012)
--- Name: evento_fraccion_id_evento_fraccion_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: evento_fraccion_id_evento_fraccion_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.evento_fraccion_id_evento_fraccion_seq
@@ -2549,18 +2903,17 @@ CREATE SEQUENCE impuesto.evento_fraccion_id_evento_fraccion_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.evento_fraccion_id_evento_fraccion_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4425 (class 0 OID 0)
--- Dependencies: 240
--- Name: evento_fraccion_id_evento_fraccion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: evento_fraccion_id_evento_fraccion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.evento_fraccion_id_evento_fraccion_seq OWNED BY impuesto.evento_fraccion.id_evento_fraccion;
 
 
 --
--- TOC entry 241 (class 1259 OID 70014)
--- Name: evento_solicitud; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: evento_solicitud; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.evento_solicitud (
@@ -2571,9 +2924,10 @@ CREATE TABLE impuesto.evento_solicitud (
 );
 
 
+ALTER TABLE impuesto.evento_solicitud OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 242 (class 1259 OID 70021)
--- Name: evento_solicitud_id_evento_solicitud_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: evento_solicitud_id_evento_solicitud_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.evento_solicitud_id_evento_solicitud_seq
@@ -2585,18 +2939,17 @@ CREATE SEQUENCE impuesto.evento_solicitud_id_evento_solicitud_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.evento_solicitud_id_evento_solicitud_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4426 (class 0 OID 0)
--- Dependencies: 242
--- Name: evento_solicitud_id_evento_solicitud_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: evento_solicitud_id_evento_solicitud_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.evento_solicitud_id_evento_solicitud_seq OWNED BY impuesto.evento_solicitud.id_evento_solicitud;
 
 
 --
--- TOC entry 243 (class 1259 OID 70023)
--- Name: factor; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: factor; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.factor (
@@ -2606,9 +2959,10 @@ CREATE TABLE impuesto.factor (
 );
 
 
+ALTER TABLE impuesto.factor OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 244 (class 1259 OID 70029)
--- Name: factor_id_factor_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: factor_id_factor_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.factor_id_factor_seq
@@ -2620,18 +2974,17 @@ CREATE SEQUENCE impuesto.factor_id_factor_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.factor_id_factor_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4427 (class 0 OID 0)
--- Dependencies: 244
--- Name: factor_id_factor_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: factor_id_factor_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.factor_id_factor_seq OWNED BY impuesto.factor.id_factor;
 
 
 --
--- TOC entry 245 (class 1259 OID 70031)
--- Name: fraccion_id_fraccion_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: fraccion_id_fraccion_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.fraccion_id_fraccion_seq
@@ -2643,18 +2996,17 @@ CREATE SEQUENCE impuesto.fraccion_id_fraccion_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.fraccion_id_fraccion_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4428 (class 0 OID 0)
--- Dependencies: 245
--- Name: fraccion_id_fraccion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: fraccion_id_fraccion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.fraccion_id_fraccion_seq OWNED BY impuesto.fraccion.id_fraccion;
 
 
 --
--- TOC entry 393 (class 1259 OID 71428)
--- Name: fraccion_state; Type: VIEW; Schema: impuesto; Owner: -
+-- Name: fraccion_state; Type: VIEW; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE VIEW impuesto.fraccion_state AS
@@ -2670,9 +3022,10 @@ CREATE VIEW impuesto.fraccion_state AS
           GROUP BY ef.id_fraccion) ev ON ((f.id_fraccion = ev.id_fraccion)));
 
 
+ALTER TABLE impuesto.fraccion_state OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 246 (class 1259 OID 70033)
--- Name: inmueble_contribuyente_natural; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: inmueble_contribuyente_natural; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.inmueble_contribuyente_natural (
@@ -2682,9 +3035,10 @@ CREATE TABLE impuesto.inmueble_contribuyente_natural (
 );
 
 
+ALTER TABLE impuesto.inmueble_contribuyente_natural OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 247 (class 1259 OID 70036)
--- Name: inmueble_contribuyente_id_inmueble_contribuyente_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: inmueble_contribuyente_id_inmueble_contribuyente_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.inmueble_contribuyente_id_inmueble_contribuyente_seq
@@ -2696,18 +3050,17 @@ CREATE SEQUENCE impuesto.inmueble_contribuyente_id_inmueble_contribuyente_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.inmueble_contribuyente_id_inmueble_contribuyente_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4429 (class 0 OID 0)
--- Dependencies: 247
--- Name: inmueble_contribuyente_id_inmueble_contribuyente_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: inmueble_contribuyente_id_inmueble_contribuyente_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.inmueble_contribuyente_id_inmueble_contribuyente_seq OWNED BY impuesto.inmueble_contribuyente_natural.id_inmueble_contribuyente;
 
 
 --
--- TOC entry 248 (class 1259 OID 70038)
--- Name: liquidacion_descuento; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: liquidacion_descuento; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.liquidacion_descuento (
@@ -2717,9 +3070,10 @@ CREATE TABLE impuesto.liquidacion_descuento (
 );
 
 
+ALTER TABLE impuesto.liquidacion_descuento OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 249 (class 1259 OID 70044)
--- Name: liquidacion_descuento_id_liquidacion_descuento_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: liquidacion_descuento_id_liquidacion_descuento_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.liquidacion_descuento_id_liquidacion_descuento_seq
@@ -2731,18 +3085,17 @@ CREATE SEQUENCE impuesto.liquidacion_descuento_id_liquidacion_descuento_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.liquidacion_descuento_id_liquidacion_descuento_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4430 (class 0 OID 0)
--- Dependencies: 249
--- Name: liquidacion_descuento_id_liquidacion_descuento_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: liquidacion_descuento_id_liquidacion_descuento_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.liquidacion_descuento_id_liquidacion_descuento_seq OWNED BY impuesto.liquidacion_descuento.id_liquidacion_descuento;
 
 
 --
--- TOC entry 250 (class 1259 OID 70046)
--- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.liquidacion_id_liquidacion_seq
@@ -2754,18 +3107,17 @@ CREATE SEQUENCE impuesto.liquidacion_id_liquidacion_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.liquidacion_id_liquidacion_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4431 (class 0 OID 0)
--- Dependencies: 250
--- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.liquidacion_id_liquidacion_seq OWNED BY impuesto.liquidacion.id_liquidacion;
 
 
 --
--- TOC entry 251 (class 1259 OID 70048)
--- Name: multa; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: multa; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.multa (
@@ -2778,9 +3130,10 @@ CREATE TABLE impuesto.multa (
 );
 
 
+ALTER TABLE impuesto.multa OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 252 (class 1259 OID 70054)
--- Name: multa_id_multa_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: multa_id_multa_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.multa_id_multa_seq
@@ -2792,18 +3145,17 @@ CREATE SEQUENCE impuesto.multa_id_multa_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.multa_id_multa_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4432 (class 0 OID 0)
--- Dependencies: 252
--- Name: multa_id_multa_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: multa_id_multa_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.multa_id_multa_seq OWNED BY impuesto.multa.id_multa;
 
 
 --
--- TOC entry 253 (class 1259 OID 70056)
--- Name: notificacion; Type: TABLE; Schema: public; Owner: -
+-- Name: notificacion; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.notificacion (
@@ -2820,9 +3172,10 @@ CREATE TABLE public.notificacion (
 );
 
 
+ALTER TABLE public.notificacion OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 254 (class 1259 OID 70064)
--- Name: notificacion_impuesto_view; Type: VIEW; Schema: impuesto; Owner: -
+-- Name: notificacion_impuesto_view; Type: VIEW; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE VIEW impuesto.notificacion_impuesto_view AS
@@ -2845,9 +3198,10 @@ CREATE VIEW impuesto.notificacion_impuesto_view AS
      JOIN public.tipo_tramite tt ON ((tt.id_tipo_tramite = s.id_tipo_tramite)));
 
 
+ALTER TABLE impuesto.notificacion_impuesto_view OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 255 (class 1259 OID 70069)
--- Name: plazo_exoneracion; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: plazo_exoneracion; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.plazo_exoneracion (
@@ -2857,9 +3211,10 @@ CREATE TABLE impuesto.plazo_exoneracion (
 );
 
 
+ALTER TABLE impuesto.plazo_exoneracion OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 256 (class 1259 OID 70072)
--- Name: plazo_exoneracion_id_plazo_exoneracion_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: plazo_exoneracion_id_plazo_exoneracion_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.plazo_exoneracion_id_plazo_exoneracion_seq
@@ -2871,18 +3226,17 @@ CREATE SEQUENCE impuesto.plazo_exoneracion_id_plazo_exoneracion_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.plazo_exoneracion_id_plazo_exoneracion_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4433 (class 0 OID 0)
--- Dependencies: 256
--- Name: plazo_exoneracion_id_plazo_exoneracion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: plazo_exoneracion_id_plazo_exoneracion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.plazo_exoneracion_id_plazo_exoneracion_seq OWNED BY impuesto.plazo_exoneracion.id_plazo_exoneracion;
 
 
 --
--- TOC entry 257 (class 1259 OID 70074)
--- Name: ramo_exoneracion; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: ramo_exoneracion; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.ramo_exoneracion (
@@ -2892,9 +3246,10 @@ CREATE TABLE impuesto.ramo_exoneracion (
 );
 
 
+ALTER TABLE impuesto.ramo_exoneracion OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 258 (class 1259 OID 70077)
--- Name: procedimiento_exoneracion_id_procedimiento_exoneracion_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: procedimiento_exoneracion_id_procedimiento_exoneracion_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq
@@ -2906,18 +3261,17 @@ CREATE SEQUENCE impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_
     CACHE 1;
 
 
+ALTER TABLE impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4434 (class 0 OID 0)
--- Dependencies: 258
--- Name: procedimiento_exoneracion_id_procedimiento_exoneracion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: procedimiento_exoneracion_id_procedimiento_exoneracion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq OWNED BY impuesto.ramo_exoneracion.id_ramo_exoneracion;
 
 
 --
--- TOC entry 259 (class 1259 OID 70079)
--- Name: ramo; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: ramo; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.ramo (
@@ -2928,9 +3282,10 @@ CREATE TABLE impuesto.ramo (
 );
 
 
+ALTER TABLE impuesto.ramo OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 260 (class 1259 OID 70085)
--- Name: ramo_id_ramo_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: ramo_id_ramo_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.ramo_id_ramo_seq
@@ -2942,50 +3297,17 @@ CREATE SEQUENCE impuesto.ramo_id_ramo_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.ramo_id_ramo_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4435 (class 0 OID 0)
--- Dependencies: 260
--- Name: ramo_id_ramo_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: ramo_id_ramo_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.ramo_id_ramo_seq OWNED BY impuesto.ramo.id_ramo;
 
 
 --
--- TOC entry 261 (class 1259 OID 70087)
--- Name: registro_municipal_referencia_municipal_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
---
-
-CREATE SEQUENCE impuesto.registro_municipal_referencia_municipal_seq
-    START WITH 8000000000
-    INCREMENT BY 1
-    MINVALUE 8000000000
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- TOC entry 262 (class 1259 OID 70089)
--- Name: registro_municipal; Type: TABLE; Schema: impuesto; Owner: -
---
-
-CREATE TABLE impuesto.registro_municipal (
-    id_registro_municipal bigint NOT NULL,
-    id_contribuyente integer NOT NULL,
-    referencia_municipal character varying DEFAULT nextval('impuesto.registro_municipal_referencia_municipal_seq'::regclass),
-    fecha_aprobacion date,
-    telefono_celular character varying,
-    telefono_habitacion character varying,
-    email character varying,
-    denominacion_comercial character varying,
-    nombre_representante character varying,
-    actualizado boolean DEFAULT false
-);
-
-
---
--- TOC entry 263 (class 1259 OID 70097)
--- Name: registro_municipal_id_registro_municipal_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: registro_municipal_id_registro_municipal_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.registro_municipal_id_registro_municipal_seq
@@ -2996,18 +3318,17 @@ CREATE SEQUENCE impuesto.registro_municipal_id_registro_municipal_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.registro_municipal_id_registro_municipal_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4436 (class 0 OID 0)
--- Dependencies: 263
--- Name: registro_municipal_id_registro_municipal_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: registro_municipal_id_registro_municipal_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.registro_municipal_id_registro_municipal_seq OWNED BY impuesto.registro_municipal.id_registro_municipal;
 
 
 --
--- TOC entry 264 (class 1259 OID 70099)
--- Name: registro_municipal_verificacion; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: registro_municipal_verificacion; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.registro_municipal_verificacion (
@@ -3016,9 +3337,62 @@ CREATE TABLE impuesto.registro_municipal_verificacion (
 );
 
 
+ALTER TABLE impuesto.registro_municipal_verificacion OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 265 (class 1259 OID 70102)
--- Name: solicitud_id_solicitud_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: retencion; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+CREATE TABLE impuesto.retencion (
+    id_retencion integer NOT NULL,
+    rif character varying,
+    rim character varying,
+    monto numeric,
+    fecha date DEFAULT now(),
+    activo boolean DEFAULT false
+);
+
+
+ALTER TABLE impuesto.retencion OWNER TO pooijyzcnnfrso;
+
+--
+-- Name: retencion_id_retencion_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+CREATE SEQUENCE impuesto.retencion_id_retencion_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.retencion_id_retencion_seq OWNER TO pooijyzcnnfrso;
+
+--
+-- Name: retencion_id_retencion_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+ALTER SEQUENCE impuesto.retencion_id_retencion_seq OWNED BY impuesto.retencion.id_retencion;
+
+
+--
+-- Name: rim_retencion; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+CREATE SEQUENCE impuesto.rim_retencion
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.rim_retencion OWNER TO pooijyzcnnfrso;
+
+--
+-- Name: solicitud_id_solicitud_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.solicitud_id_solicitud_seq
@@ -3030,18 +3404,17 @@ CREATE SEQUENCE impuesto.solicitud_id_solicitud_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.solicitud_id_solicitud_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4437 (class 0 OID 0)
--- Dependencies: 265
--- Name: solicitud_id_solicitud_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: solicitud_id_solicitud_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.solicitud_id_solicitud_seq OWNED BY impuesto.solicitud.id_solicitud;
 
 
 --
--- TOC entry 266 (class 1259 OID 70104)
--- Name: solicitud_state; Type: VIEW; Schema: impuesto; Owner: -
+-- Name: solicitud_state; Type: VIEW; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE VIEW impuesto.solicitud_state AS
@@ -3058,9 +3431,10 @@ CREATE VIEW impuesto.solicitud_state AS
           GROUP BY es.id_solicitud) ev ON ((s.id_solicitud = ev.id_solicitud)));
 
 
+ALTER TABLE impuesto.solicitud_state OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 267 (class 1259 OID 70109)
--- Name: subramo; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: subramo; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.subramo (
@@ -3071,9 +3445,10 @@ CREATE TABLE impuesto.subramo (
 );
 
 
+ALTER TABLE impuesto.subramo OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 268 (class 1259 OID 70115)
--- Name: solicitud_view; Type: VIEW; Schema: impuesto; Owner: -
+-- Name: solicitud_view; Type: VIEW; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE VIEW impuesto.solicitud_view AS
@@ -3110,9 +3485,10 @@ CREATE VIEW impuesto.solicitud_view AS
      JOIN impuesto.ramo r ON ((r.id_ramo = sr.id_ramo)));
 
 
+ALTER TABLE impuesto.solicitud_view OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 269 (class 1259 OID 70120)
--- Name: subramo_id_subramo_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: subramo_id_subramo_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.subramo_id_subramo_seq
@@ -3124,18 +3500,17 @@ CREATE SEQUENCE impuesto.subramo_id_subramo_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.subramo_id_subramo_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4438 (class 0 OID 0)
--- Dependencies: 269
--- Name: subramo_id_subramo_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: subramo_id_subramo_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.subramo_id_subramo_seq OWNED BY impuesto.subramo.id_subramo;
 
 
 --
--- TOC entry 270 (class 1259 OID 70122)
--- Name: tabulador_aseo_actividad_economica; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: tabulador_aseo_actividad_economica; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.tabulador_aseo_actividad_economica (
@@ -3149,9 +3524,10 @@ CREATE TABLE impuesto.tabulador_aseo_actividad_economica (
 );
 
 
+ALTER TABLE impuesto.tabulador_aseo_actividad_economica OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 271 (class 1259 OID 70129)
--- Name: tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq
@@ -3163,18 +3539,17 @@ CREATE SEQUENCE impuesto.tabulador_aseo_actividad_econ_id_tabulador_aseo_activid
     CACHE 1;
 
 
+ALTER TABLE impuesto.tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4439 (class 0 OID 0)
--- Dependencies: 271
--- Name: tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq OWNED BY impuesto.tabulador_aseo_actividad_economica.id_tabulador_aseo_actividad_economica;
 
 
 --
--- TOC entry 272 (class 1259 OID 70131)
--- Name: tabulador_aseo_residencial; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: tabulador_aseo_residencial; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.tabulador_aseo_residencial (
@@ -3187,9 +3562,10 @@ CREATE TABLE impuesto.tabulador_aseo_residencial (
 );
 
 
+ALTER TABLE impuesto.tabulador_aseo_residencial OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 273 (class 1259 OID 70138)
--- Name: tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq
@@ -3201,18 +3577,17 @@ CREATE SEQUENCE impuesto.tabulador_aseo_residencial_id_tabulador_aseo_residencia
     CACHE 1;
 
 
+ALTER TABLE impuesto.tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4440 (class 0 OID 0)
--- Dependencies: 273
--- Name: tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq OWNED BY impuesto.tabulador_aseo_residencial.id_tabulador_aseo_residencial;
 
 
 --
--- TOC entry 274 (class 1259 OID 70140)
--- Name: tabulador_gas; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: tabulador_gas; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.tabulador_gas (
@@ -3222,9 +3597,10 @@ CREATE TABLE impuesto.tabulador_gas (
 );
 
 
+ALTER TABLE impuesto.tabulador_gas OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 275 (class 1259 OID 70146)
--- Name: tabulador_gas_actividad_economica; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_actividad_economica; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.tabulador_gas_actividad_economica (
@@ -3238,9 +3614,10 @@ CREATE TABLE impuesto.tabulador_gas_actividad_economica (
 );
 
 
+ALTER TABLE impuesto.tabulador_gas_actividad_economica OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 276 (class 1259 OID 70153)
--- Name: tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq
@@ -3252,18 +3629,17 @@ CREATE SEQUENCE impuesto.tabulador_gas_actividad_econo_id_tabulador_gas_activida
     CACHE 1;
 
 
+ALTER TABLE impuesto.tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4441 (class 0 OID 0)
--- Dependencies: 276
--- Name: tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq OWNED BY impuesto.tabulador_gas_actividad_economica.id_tabulador_gas_actividad_economica;
 
 
 --
--- TOC entry 277 (class 1259 OID 70155)
--- Name: tabulador_gas_id_tabulador_gas_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_id_tabulador_gas_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.tabulador_gas_id_tabulador_gas_seq
@@ -3275,18 +3651,17 @@ CREATE SEQUENCE impuesto.tabulador_gas_id_tabulador_gas_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.tabulador_gas_id_tabulador_gas_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4442 (class 0 OID 0)
--- Dependencies: 277
--- Name: tabulador_gas_id_tabulador_gas_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_id_tabulador_gas_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.tabulador_gas_id_tabulador_gas_seq OWNED BY impuesto.tabulador_gas.id_tabulador_gas;
 
 
 --
--- TOC entry 278 (class 1259 OID 70157)
--- Name: tabulador_gas_residencial; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_residencial; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.tabulador_gas_residencial (
@@ -3299,9 +3674,10 @@ CREATE TABLE impuesto.tabulador_gas_residencial (
 );
 
 
+ALTER TABLE impuesto.tabulador_gas_residencial OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 279 (class 1259 OID 70164)
--- Name: tabulador_gas_residencial_id_tabulador_gas_residencial_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_residencial_id_tabulador_gas_residencial_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.tabulador_gas_residencial_id_tabulador_gas_residencial_seq
@@ -3313,18 +3689,17 @@ CREATE SEQUENCE impuesto.tabulador_gas_residencial_id_tabulador_gas_residencial_
     CACHE 1;
 
 
+ALTER TABLE impuesto.tabulador_gas_residencial_id_tabulador_gas_residencial_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4443 (class 0 OID 0)
--- Dependencies: 279
--- Name: tabulador_gas_residencial_id_tabulador_gas_residencial_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_residencial_id_tabulador_gas_residencial_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.tabulador_gas_residencial_id_tabulador_gas_residencial_seq OWNED BY impuesto.tabulador_gas_residencial.id_tabulador_gas_residencial;
 
 
 --
--- TOC entry 280 (class 1259 OID 70166)
--- Name: tipo_aviso_propaganda; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: tipo_aviso_propaganda; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.tipo_aviso_propaganda (
@@ -3337,9 +3712,10 @@ CREATE TABLE impuesto.tipo_aviso_propaganda (
 );
 
 
+ALTER TABLE impuesto.tipo_aviso_propaganda OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 281 (class 1259 OID 70173)
--- Name: tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq
@@ -3351,18 +3727,17 @@ CREATE SEQUENCE impuesto.tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4444 (class 0 OID 0)
--- Dependencies: 281
--- Name: tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq OWNED BY impuesto.tipo_aviso_propaganda.id_tipo_aviso_propaganda;
 
 
 --
--- TOC entry 282 (class 1259 OID 70175)
--- Name: tipo_multa; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: tipo_multa; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.tipo_multa (
@@ -3371,9 +3746,10 @@ CREATE TABLE impuesto.tipo_multa (
 );
 
 
+ALTER TABLE impuesto.tipo_multa OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 283 (class 1259 OID 70181)
--- Name: tipo_multa_id_tipo_multa_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: tipo_multa_id_tipo_multa_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.tipo_multa_id_tipo_multa_seq
@@ -3385,18 +3761,17 @@ CREATE SEQUENCE impuesto.tipo_multa_id_tipo_multa_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.tipo_multa_id_tipo_multa_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4445 (class 0 OID 0)
--- Dependencies: 283
--- Name: tipo_multa_id_tipo_multa_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: tipo_multa_id_tipo_multa_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.tipo_multa_id_tipo_multa_seq OWNED BY impuesto.tipo_multa.id_tipo_multa;
 
 
 --
--- TOC entry 284 (class 1259 OID 70183)
--- Name: usuario_enlazado; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: usuario_enlazado; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.usuario_enlazado (
@@ -3406,9 +3781,10 @@ CREATE TABLE impuesto.usuario_enlazado (
 );
 
 
+ALTER TABLE impuesto.usuario_enlazado OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 285 (class 1259 OID 70189)
--- Name: usuario_enlazado_id_usuario_enlazado_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: usuario_enlazado_id_usuario_enlazado_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.usuario_enlazado_id_usuario_enlazado_seq
@@ -3420,18 +3796,52 @@ CREATE SEQUENCE impuesto.usuario_enlazado_id_usuario_enlazado_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.usuario_enlazado_id_usuario_enlazado_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4446 (class 0 OID 0)
--- Dependencies: 285
--- Name: usuario_enlazado_id_usuario_enlazado_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: usuario_enlazado_id_usuario_enlazado_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.usuario_enlazado_id_usuario_enlazado_seq OWNED BY impuesto.usuario_enlazado.id_usuario_enlazado;
 
 
 --
--- TOC entry 286 (class 1259 OID 70191)
--- Name: verificacion_email; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: usuario_inmueble; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+CREATE TABLE impuesto.usuario_inmueble (
+    id_usuario_inmueble integer NOT NULL,
+    id_usuario integer NOT NULL,
+    id_inmueble integer NOT NULL
+);
+
+
+ALTER TABLE impuesto.usuario_inmueble OWNER TO pooijyzcnnfrso;
+
+--
+-- Name: usuario_inmueble_id_usuario_inmueble_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+CREATE SEQUENCE impuesto.usuario_inmueble_id_usuario_inmueble_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE impuesto.usuario_inmueble_id_usuario_inmueble_seq OWNER TO pooijyzcnnfrso;
+
+--
+-- Name: usuario_inmueble_id_usuario_inmueble_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+ALTER SEQUENCE impuesto.usuario_inmueble_id_usuario_inmueble_seq OWNED BY impuesto.usuario_inmueble.id_usuario_inmueble;
+
+
+--
+-- Name: verificacion_email; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.verificacion_email (
@@ -3443,9 +3853,10 @@ CREATE TABLE impuesto.verificacion_email (
 );
 
 
+ALTER TABLE impuesto.verificacion_email OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 287 (class 1259 OID 70199)
--- Name: verificacion_email_id_verificacion_email_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: verificacion_email_id_verificacion_email_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.verificacion_email_id_verificacion_email_seq
@@ -3457,18 +3868,17 @@ CREATE SEQUENCE impuesto.verificacion_email_id_verificacion_email_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.verificacion_email_id_verificacion_email_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4447 (class 0 OID 0)
--- Dependencies: 287
--- Name: verificacion_email_id_verificacion_email_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: verificacion_email_id_verificacion_email_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.verificacion_email_id_verificacion_email_seq OWNED BY impuesto.verificacion_email.id_verificacion_email;
 
 
 --
--- TOC entry 288 (class 1259 OID 70201)
--- Name: verificacion_telefono; Type: TABLE; Schema: impuesto; Owner: -
+-- Name: verificacion_telefono; Type: TABLE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE impuesto.verificacion_telefono (
@@ -3481,9 +3891,10 @@ CREATE TABLE impuesto.verificacion_telefono (
 );
 
 
+ALTER TABLE impuesto.verificacion_telefono OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 289 (class 1259 OID 70209)
--- Name: verificacion_telefono_id_verificacion_telefono_seq; Type: SEQUENCE; Schema: impuesto; Owner: -
+-- Name: verificacion_telefono_id_verificacion_telefono_seq; Type: SEQUENCE; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE impuesto.verificacion_telefono_id_verificacion_telefono_seq
@@ -3495,18 +3906,17 @@ CREATE SEQUENCE impuesto.verificacion_telefono_id_verificacion_telefono_seq
     CACHE 1;
 
 
+ALTER TABLE impuesto.verificacion_telefono_id_verificacion_telefono_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4448 (class 0 OID 0)
--- Dependencies: 289
--- Name: verificacion_telefono_id_verificacion_telefono_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: -
+-- Name: verificacion_telefono_id_verificacion_telefono_seq; Type: SEQUENCE OWNED BY; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE impuesto.verificacion_telefono_id_verificacion_telefono_seq OWNED BY impuesto.verificacion_telefono.id_verificacion_telefono;
 
 
 --
--- TOC entry 290 (class 1259 OID 70211)
--- Name: banco; Type: TABLE; Schema: public; Owner: -
+-- Name: banco; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.banco (
@@ -3516,9 +3926,10 @@ CREATE TABLE public.banco (
 );
 
 
+ALTER TABLE public.banco OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 291 (class 1259 OID 70218)
--- Name: bancos_id_banco_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: bancos_id_banco_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.bancos_id_banco_seq
@@ -3530,18 +3941,17 @@ CREATE SEQUENCE public.bancos_id_banco_seq
     CACHE 1;
 
 
+ALTER TABLE public.bancos_id_banco_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4449 (class 0 OID 0)
--- Dependencies: 291
--- Name: bancos_id_banco_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: bancos_id_banco_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.bancos_id_banco_seq OWNED BY public.banco.id_banco;
 
 
 --
--- TOC entry 292 (class 1259 OID 70220)
--- Name: campo; Type: TABLE; Schema: public; Owner: -
+-- Name: campo; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.campo (
@@ -3553,9 +3963,10 @@ CREATE TABLE public.campo (
 );
 
 
+ALTER TABLE public.campo OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 293 (class 1259 OID 70226)
--- Name: campo_tramite; Type: TABLE; Schema: public; Owner: -
+-- Name: campo_tramite; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.campo_tramite (
@@ -3568,9 +3979,10 @@ CREATE TABLE public.campo_tramite (
 );
 
 
+ALTER TABLE public.campo_tramite OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 294 (class 1259 OID 70233)
--- Name: campos_id_campo_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: campos_id_campo_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.campos_id_campo_seq
@@ -3582,18 +3994,17 @@ CREATE SEQUENCE public.campos_id_campo_seq
     CACHE 1;
 
 
+ALTER TABLE public.campos_id_campo_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4450 (class 0 OID 0)
--- Dependencies: 294
--- Name: campos_id_campo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: campos_id_campo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.campos_id_campo_seq OWNED BY public.campo.id_campo;
 
 
 --
--- TOC entry 295 (class 1259 OID 70235)
--- Name: cargo; Type: TABLE; Schema: public; Owner: -
+-- Name: cargo; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.cargo (
@@ -3604,9 +4015,10 @@ CREATE TABLE public.cargo (
 );
 
 
+ALTER TABLE public.cargo OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 296 (class 1259 OID 70241)
--- Name: cargo_id_cargo_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: cargo_id_cargo_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.cargo_id_cargo_seq
@@ -3618,18 +4030,17 @@ CREATE SEQUENCE public.cargo_id_cargo_seq
     CACHE 1;
 
 
+ALTER TABLE public.cargo_id_cargo_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4451 (class 0 OID 0)
--- Dependencies: 296
--- Name: cargo_id_cargo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: cargo_id_cargo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.cargo_id_cargo_seq OWNED BY public.cargo.id_cargo;
 
 
 --
--- TOC entry 297 (class 1259 OID 70243)
--- Name: casos_sociales_id_caso_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: casos_sociales_id_caso_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.casos_sociales_id_caso_seq
@@ -3641,18 +4052,17 @@ CREATE SEQUENCE public.casos_sociales_id_caso_seq
     CACHE 1;
 
 
+ALTER TABLE public.casos_sociales_id_caso_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4452 (class 0 OID 0)
--- Dependencies: 297
--- Name: casos_sociales_id_caso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: casos_sociales_id_caso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.casos_sociales_id_caso_seq OWNED BY public.caso_social.id_caso;
 
 
 --
--- TOC entry 298 (class 1259 OID 70245)
--- Name: certificado; Type: TABLE; Schema: public; Owner: -
+-- Name: certificado; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.certificado (
@@ -3662,9 +4072,10 @@ CREATE TABLE public.certificado (
 );
 
 
+ALTER TABLE public.certificado OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 299 (class 1259 OID 70251)
--- Name: certificados_id_certificado_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: certificados_id_certificado_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.certificados_id_certificado_seq
@@ -3676,18 +4087,17 @@ CREATE SEQUENCE public.certificados_id_certificado_seq
     CACHE 1;
 
 
+ALTER TABLE public.certificados_id_certificado_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4453 (class 0 OID 0)
--- Dependencies: 299
--- Name: certificados_id_certificado_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: certificados_id_certificado_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.certificados_id_certificado_seq OWNED BY public.certificado.id_certificado;
 
 
 --
--- TOC entry 300 (class 1259 OID 70253)
--- Name: cuenta_funcionario; Type: TABLE; Schema: public; Owner: -
+-- Name: cuenta_funcionario; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.cuenta_funcionario (
@@ -3696,9 +4106,10 @@ CREATE TABLE public.cuenta_funcionario (
 );
 
 
+ALTER TABLE public.cuenta_funcionario OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 301 (class 1259 OID 70256)
--- Name: datos_facebook; Type: TABLE; Schema: public; Owner: -
+-- Name: datos_facebook; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.datos_facebook (
@@ -3707,9 +4118,10 @@ CREATE TABLE public.datos_facebook (
 );
 
 
+ALTER TABLE public.datos_facebook OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 302 (class 1259 OID 70262)
--- Name: datos_google; Type: TABLE; Schema: public; Owner: -
+-- Name: datos_google; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.datos_google (
@@ -3718,9 +4130,10 @@ CREATE TABLE public.datos_google (
 );
 
 
+ALTER TABLE public.datos_google OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 303 (class 1259 OID 70268)
--- Name: detalle_factura; Type: TABLE; Schema: public; Owner: -
+-- Name: detalle_factura; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.detalle_factura (
@@ -3731,9 +4144,10 @@ CREATE TABLE public.detalle_factura (
 );
 
 
+ALTER TABLE public.detalle_factura OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 304 (class 1259 OID 70274)
--- Name: detalles_facturas_id_detalle_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: detalles_facturas_id_detalle_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.detalles_facturas_id_detalle_seq
@@ -3745,18 +4159,17 @@ CREATE SEQUENCE public.detalles_facturas_id_detalle_seq
     CACHE 1;
 
 
+ALTER TABLE public.detalles_facturas_id_detalle_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4454 (class 0 OID 0)
--- Dependencies: 304
--- Name: detalles_facturas_id_detalle_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: detalles_facturas_id_detalle_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.detalles_facturas_id_detalle_seq OWNED BY public.detalle_factura.id_detalle;
 
 
 --
--- TOC entry 305 (class 1259 OID 70276)
--- Name: evento_multa_id_evento_multa_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: evento_multa_id_evento_multa_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.evento_multa_id_evento_multa_seq
@@ -3768,18 +4181,17 @@ CREATE SEQUENCE public.evento_multa_id_evento_multa_seq
     CACHE 1;
 
 
+ALTER TABLE public.evento_multa_id_evento_multa_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4455 (class 0 OID 0)
--- Dependencies: 305
--- Name: evento_multa_id_evento_multa_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: evento_multa_id_evento_multa_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.evento_multa_id_evento_multa_seq OWNED BY public.evento_multa.id_evento_multa;
 
 
 --
--- TOC entry 306 (class 1259 OID 70278)
--- Name: eventos_casos_sociales_id_evento_caso_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: eventos_casos_sociales_id_evento_caso_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.eventos_casos_sociales_id_evento_caso_seq
@@ -3791,18 +4203,17 @@ CREATE SEQUENCE public.eventos_casos_sociales_id_evento_caso_seq
     CACHE 1;
 
 
+ALTER TABLE public.eventos_casos_sociales_id_evento_caso_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4456 (class 0 OID 0)
--- Dependencies: 306
--- Name: eventos_casos_sociales_id_evento_caso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: eventos_casos_sociales_id_evento_caso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.eventos_casos_sociales_id_evento_caso_seq OWNED BY public.evento_caso_social.id_evento_caso;
 
 
 --
--- TOC entry 307 (class 1259 OID 70280)
--- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.eventos_tramite_id_evento_tramite_seq
@@ -3814,18 +4225,17 @@ CREATE SEQUENCE public.eventos_tramite_id_evento_tramite_seq
     CACHE 1;
 
 
+ALTER TABLE public.eventos_tramite_id_evento_tramite_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4457 (class 0 OID 0)
--- Dependencies: 307
--- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.eventos_tramite_id_evento_tramite_seq OWNED BY public.evento_tramite.id_evento_tramite;
 
 
 --
--- TOC entry 308 (class 1259 OID 70282)
--- Name: factura_tramite; Type: TABLE; Schema: public; Owner: -
+-- Name: factura_tramite; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.factura_tramite (
@@ -3834,9 +4244,10 @@ CREATE TABLE public.factura_tramite (
 );
 
 
+ALTER TABLE public.factura_tramite OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 309 (class 1259 OID 70285)
--- Name: facturas_tramites_id_factura_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: facturas_tramites_id_factura_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.facturas_tramites_id_factura_seq
@@ -3848,18 +4259,17 @@ CREATE SEQUENCE public.facturas_tramites_id_factura_seq
     CACHE 1;
 
 
+ALTER TABLE public.facturas_tramites_id_factura_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4458 (class 0 OID 0)
--- Dependencies: 309
--- Name: facturas_tramites_id_factura_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: facturas_tramites_id_factura_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.facturas_tramites_id_factura_seq OWNED BY public.factura_tramite.id_factura;
 
 
 --
--- TOC entry 310 (class 1259 OID 70287)
--- Name: inmueble_urbano; Type: TABLE; Schema: public; Owner: -
+-- Name: inmueble_urbano; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.inmueble_urbano (
@@ -3873,13 +4283,15 @@ CREATE TABLE public.inmueble_urbano (
     fecha_actualizacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     fecha_ultimo_avaluo timestamp with time zone,
     tipo_inmueble character varying,
-    id_registro_municipal integer
+    id_registro_municipal integer,
+    posee_gas boolean DEFAULT true
 );
 
 
+ALTER TABLE public.inmueble_urbano OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 311 (class 1259 OID 70295)
--- Name: inmueble_urbano_id_inmueble_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: inmueble_urbano_id_inmueble_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.inmueble_urbano_id_inmueble_seq
@@ -3891,18 +4303,17 @@ CREATE SEQUENCE public.inmueble_urbano_id_inmueble_seq
     CACHE 1;
 
 
+ALTER TABLE public.inmueble_urbano_id_inmueble_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4459 (class 0 OID 0)
--- Dependencies: 311
--- Name: inmueble_urbano_id_inmueble_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: inmueble_urbano_id_inmueble_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.inmueble_urbano_id_inmueble_seq OWNED BY public.inmueble_urbano.id_inmueble;
 
 
 --
--- TOC entry 312 (class 1259 OID 70297)
--- Name: parroquia; Type: TABLE; Schema: public; Owner: -
+-- Name: parroquia; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.parroquia (
@@ -3911,9 +4322,10 @@ CREATE TABLE public.parroquia (
 );
 
 
+ALTER TABLE public.parroquia OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 313 (class 1259 OID 70303)
--- Name: inmueble_urbano_view; Type: VIEW; Schema: public; Owner: -
+-- Name: inmueble_urbano_view; Type: VIEW; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE VIEW public.inmueble_urbano_view AS
@@ -3931,9 +4343,10 @@ CREATE VIEW public.inmueble_urbano_view AS
      JOIN public.parroquia p ON ((inmueble_urbano.id_parroquia = p.id)));
 
 
+ALTER TABLE public.inmueble_urbano_view OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 314 (class 1259 OID 70307)
--- Name: institucion_banco; Type: TABLE; Schema: public; Owner: -
+-- Name: institucion_banco; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.institucion_banco (
@@ -3946,9 +4359,10 @@ CREATE TABLE public.institucion_banco (
 );
 
 
+ALTER TABLE public.institucion_banco OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 315 (class 1259 OID 70314)
--- Name: instituciones_id_institucion_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: instituciones_id_institucion_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.instituciones_id_institucion_seq
@@ -3960,18 +4374,17 @@ CREATE SEQUENCE public.instituciones_id_institucion_seq
     CACHE 1;
 
 
+ALTER TABLE public.instituciones_id_institucion_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4460 (class 0 OID 0)
--- Dependencies: 315
--- Name: instituciones_id_institucion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: instituciones_id_institucion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.instituciones_id_institucion_seq OWNED BY public.institucion.id_institucion;
 
 
 --
--- TOC entry 316 (class 1259 OID 70316)
--- Name: multa_id_multa_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: multa_id_multa_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.multa_id_multa_seq
@@ -3983,18 +4396,17 @@ CREATE SEQUENCE public.multa_id_multa_seq
     CACHE 1;
 
 
+ALTER TABLE public.multa_id_multa_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4461 (class 0 OID 0)
--- Dependencies: 316
--- Name: multa_id_multa_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: multa_id_multa_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.multa_id_multa_seq OWNED BY public.multa.id_multa;
 
 
 --
--- TOC entry 317 (class 1259 OID 70318)
--- Name: notificacion_impuesto_view; Type: VIEW; Schema: public; Owner: -
+-- Name: notificacion_impuesto_view; Type: VIEW; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE VIEW public.notificacion_impuesto_view AS
@@ -4017,9 +4429,10 @@ CREATE VIEW public.notificacion_impuesto_view AS
      JOIN public.tipo_tramite tt ON ((tt.id_tipo_tramite = s.id_tipo_tramite)));
 
 
+ALTER TABLE public.notificacion_impuesto_view OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 318 (class 1259 OID 70323)
--- Name: notificacion_multa_view; Type: VIEW; Schema: public; Owner: -
+-- Name: notificacion_multa_view; Type: VIEW; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE VIEW public.notificacion_multa_view AS
@@ -4052,9 +4465,10 @@ CREATE VIEW public.notificacion_multa_view AS
      JOIN public.multa_state m ON ((n.id_procedimiento = m.id)));
 
 
+ALTER TABLE public.notificacion_multa_view OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 319 (class 1259 OID 70328)
--- Name: notificacion_tramite_view; Type: VIEW; Schema: public; Owner: -
+-- Name: notificacion_tramite_view; Type: VIEW; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE VIEW public.notificacion_tramite_view AS
@@ -4086,9 +4500,10 @@ CREATE VIEW public.notificacion_tramite_view AS
      JOIN public.tramites_state_with_resources t ON ((n.id_procedimiento = t.id)));
 
 
+ALTER TABLE public.notificacion_tramite_view OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 320 (class 1259 OID 70333)
--- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.notificaciones_id_notificacion_seq
@@ -4100,18 +4515,17 @@ CREATE SEQUENCE public.notificaciones_id_notificacion_seq
     CACHE 1;
 
 
+ALTER TABLE public.notificaciones_id_notificacion_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4462 (class 0 OID 0)
--- Dependencies: 320
--- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.notificaciones_id_notificacion_seq OWNED BY public.notificacion.id_notificacion;
 
 
 --
--- TOC entry 321 (class 1259 OID 70335)
--- Name: operaciones_id_operacion_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: operaciones_id_operacion_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.operaciones_id_operacion_seq
@@ -4122,9 +4536,10 @@ CREATE SEQUENCE public.operaciones_id_operacion_seq
     CACHE 1;
 
 
+ALTER TABLE public.operaciones_id_operacion_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 322 (class 1259 OID 70337)
--- Name: operacion; Type: TABLE; Schema: public; Owner: -
+-- Name: operacion; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.operacion (
@@ -4133,9 +4548,10 @@ CREATE TABLE public.operacion (
 );
 
 
+ALTER TABLE public.operacion OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 323 (class 1259 OID 70344)
--- Name: operatividad_terminal; Type: TABLE; Schema: public; Owner: -
+-- Name: operatividad_terminal; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.operatividad_terminal (
@@ -4150,9 +4566,10 @@ CREATE TABLE public.operatividad_terminal (
 );
 
 
+ALTER TABLE public.operatividad_terminal OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 324 (class 1259 OID 70353)
--- Name: operatividad_terminal_id_operatividad_terminal_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: operatividad_terminal_id_operatividad_terminal_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.operatividad_terminal_id_operatividad_terminal_seq
@@ -4164,18 +4581,17 @@ CREATE SEQUENCE public.operatividad_terminal_id_operatividad_terminal_seq
     CACHE 1;
 
 
+ALTER TABLE public.operatividad_terminal_id_operatividad_terminal_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4463 (class 0 OID 0)
--- Dependencies: 324
--- Name: operatividad_terminal_id_operatividad_terminal_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: operatividad_terminal_id_operatividad_terminal_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.operatividad_terminal_id_operatividad_terminal_seq OWNED BY public.operatividad_terminal.id_operatividad_terminal;
 
 
 --
--- TOC entry 325 (class 1259 OID 70355)
--- Name: ordenanza; Type: TABLE; Schema: public; Owner: -
+-- Name: ordenanza; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.ordenanza (
@@ -4187,9 +4603,10 @@ CREATE TABLE public.ordenanza (
 );
 
 
+ALTER TABLE public.ordenanza OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 326 (class 1259 OID 70362)
--- Name: ordenanza_tramite; Type: TABLE; Schema: public; Owner: -
+-- Name: ordenanza_tramite; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.ordenanza_tramite (
@@ -4204,9 +4621,10 @@ CREATE TABLE public.ordenanza_tramite (
 );
 
 
+ALTER TABLE public.ordenanza_tramite OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 327 (class 1259 OID 70368)
--- Name: ordenanzas_id_ordenanza_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: ordenanzas_id_ordenanza_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.ordenanzas_id_ordenanza_seq
@@ -4218,18 +4636,17 @@ CREATE SEQUENCE public.ordenanzas_id_ordenanza_seq
     CACHE 1;
 
 
+ALTER TABLE public.ordenanzas_id_ordenanza_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4464 (class 0 OID 0)
--- Dependencies: 327
--- Name: ordenanzas_id_ordenanza_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: ordenanzas_id_ordenanza_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.ordenanzas_id_ordenanza_seq OWNED BY public.ordenanza.id_ordenanza;
 
 
 --
--- TOC entry 328 (class 1259 OID 70370)
--- Name: tarifa_inspeccion; Type: TABLE; Schema: public; Owner: -
+-- Name: tarifa_inspeccion; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.tarifa_inspeccion (
@@ -4242,9 +4659,10 @@ CREATE TABLE public.tarifa_inspeccion (
 );
 
 
+ALTER TABLE public.tarifa_inspeccion OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 329 (class 1259 OID 70376)
--- Name: ordenanzas_instancias_tramites; Type: VIEW; Schema: public; Owner: -
+-- Name: ordenanzas_instancias_tramites; Type: VIEW; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE VIEW public.ordenanzas_instancias_tramites AS
@@ -4261,9 +4679,10 @@ CREATE VIEW public.ordenanzas_instancias_tramites AS
      JOIN public.ordenanza o ON ((o.id_ordenanza = ti.id_ordenanza)));
 
 
+ALTER TABLE public.ordenanzas_instancias_tramites OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 330 (class 1259 OID 70381)
--- Name: ordenanzas_tramites_id_ordenanza_tramite_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: ordenanzas_tramites_id_ordenanza_tramite_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.ordenanzas_tramites_id_ordenanza_tramite_seq
@@ -4275,18 +4694,17 @@ CREATE SEQUENCE public.ordenanzas_tramites_id_ordenanza_tramite_seq
     CACHE 1;
 
 
+ALTER TABLE public.ordenanzas_tramites_id_ordenanza_tramite_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4465 (class 0 OID 0)
--- Dependencies: 330
--- Name: ordenanzas_tramites_id_ordenanza_tramite_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: ordenanzas_tramites_id_ordenanza_tramite_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.ordenanzas_tramites_id_ordenanza_tramite_seq OWNED BY public.ordenanza_tramite.id_ordenanza_tramite;
 
 
 --
--- TOC entry 331 (class 1259 OID 70383)
--- Name: pago; Type: TABLE; Schema: public; Owner: -
+-- Name: pago; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.pago (
@@ -4302,13 +4720,14 @@ CREATE TABLE public.pago (
     metodo_pago character varying DEFAULT 'TRANSFERENCIA'::character varying,
     id_usuario integer,
     CONSTRAINT pago_concepto_check CHECK (((concepto)::text = ANY (ARRAY['TRAMITE'::text, 'MULTA'::text, 'IMPUESTO'::text, 'CONVENIO'::text, 'CREDITOFISCAL'::text]))),
-    CONSTRAINT pago_metodo_pago_check CHECK (((metodo_pago)::text = ANY (ARRAY['TRANSFERENCIA'::text, 'EFECTIVO'::text, 'CHEQUE'::text, 'PUNTO DE VENTA'::text])))
+    CONSTRAINT pago_metodo_pago_check CHECK (((metodo_pago)::text = ANY (ARRAY['TRANSFERENCIA'::text, 'EFECTIVO'::text, 'CHEQUE'::text, 'PUNTO DE VENTA'::text, 'CREDITO_FISCAL'::text])))
 );
 
 
+ALTER TABLE public.pago OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 332 (class 1259 OID 70394)
--- Name: pago_manual; Type: TABLE; Schema: public; Owner: -
+-- Name: pago_manual; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.pago_manual (
@@ -4317,9 +4736,10 @@ CREATE TABLE public.pago_manual (
 );
 
 
+ALTER TABLE public.pago_manual OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 333 (class 1259 OID 70397)
--- Name: pagos_id_pago_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: pagos_id_pago_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.pagos_id_pago_seq
@@ -4331,18 +4751,17 @@ CREATE SEQUENCE public.pagos_id_pago_seq
     CACHE 1;
 
 
+ALTER TABLE public.pagos_id_pago_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4466 (class 0 OID 0)
--- Dependencies: 333
--- Name: pagos_id_pago_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: pagos_id_pago_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.pagos_id_pago_seq OWNED BY public.pago.id_pago;
 
 
 --
--- TOC entry 334 (class 1259 OID 70399)
--- Name: parroquias_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: parroquias_id_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.parroquias_id_seq
@@ -4354,18 +4773,17 @@ CREATE SEQUENCE public.parroquias_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.parroquias_id_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4467 (class 0 OID 0)
--- Dependencies: 334
--- Name: parroquias_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: parroquias_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.parroquias_id_seq OWNED BY public.parroquia.id;
 
 
 --
--- TOC entry 335 (class 1259 OID 70401)
--- Name: permiso_de_acceso; Type: TABLE; Schema: public; Owner: -
+-- Name: permiso_de_acceso; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.permiso_de_acceso (
@@ -4375,9 +4793,10 @@ CREATE TABLE public.permiso_de_acceso (
 );
 
 
+ALTER TABLE public.permiso_de_acceso OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 336 (class 1259 OID 70404)
--- Name: permiso_de_acceso_id_permiso_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: permiso_de_acceso_id_permiso_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.permiso_de_acceso_id_permiso_seq
@@ -4389,18 +4808,17 @@ CREATE SEQUENCE public.permiso_de_acceso_id_permiso_seq
     CACHE 1;
 
 
+ALTER TABLE public.permiso_de_acceso_id_permiso_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4468 (class 0 OID 0)
--- Dependencies: 336
--- Name: permiso_de_acceso_id_permiso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: permiso_de_acceso_id_permiso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.permiso_de_acceso_id_permiso_seq OWNED BY public.permiso_de_acceso.id_permiso;
 
 
 --
--- TOC entry 337 (class 1259 OID 70406)
--- Name: propietario; Type: TABLE; Schema: public; Owner: -
+-- Name: propietario; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.propietario (
@@ -4412,9 +4830,10 @@ CREATE TABLE public.propietario (
 );
 
 
+ALTER TABLE public.propietario OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 338 (class 1259 OID 70412)
--- Name: propietario_id_propietario_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: propietario_id_propietario_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.propietario_id_propietario_seq
@@ -4426,18 +4845,17 @@ CREATE SEQUENCE public.propietario_id_propietario_seq
     CACHE 1;
 
 
+ALTER TABLE public.propietario_id_propietario_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4469 (class 0 OID 0)
--- Dependencies: 338
--- Name: propietario_id_propietario_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: propietario_id_propietario_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.propietario_id_propietario_seq OWNED BY public.propietario.id_propietario;
 
 
 --
--- TOC entry 339 (class 1259 OID 70414)
--- Name: propietario_inmueble; Type: TABLE; Schema: public; Owner: -
+-- Name: propietario_inmueble; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.propietario_inmueble (
@@ -4447,9 +4865,10 @@ CREATE TABLE public.propietario_inmueble (
 );
 
 
+ALTER TABLE public.propietario_inmueble OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 340 (class 1259 OID 70417)
--- Name: propietarios_inmuebles_id_propietario_inmueble_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: propietarios_inmuebles_id_propietario_inmueble_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.propietarios_inmuebles_id_propietario_inmueble_seq
@@ -4461,18 +4880,17 @@ CREATE SEQUENCE public.propietarios_inmuebles_id_propietario_inmueble_seq
     CACHE 1;
 
 
+ALTER TABLE public.propietarios_inmuebles_id_propietario_inmueble_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4470 (class 0 OID 0)
--- Dependencies: 340
--- Name: propietarios_inmuebles_id_propietario_inmueble_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: propietarios_inmuebles_id_propietario_inmueble_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.propietarios_inmuebles_id_propietario_inmueble_seq OWNED BY public.propietario_inmueble.id_propietario_inmueble;
 
 
 --
--- TOC entry 341 (class 1259 OID 70419)
--- Name: recaudo; Type: TABLE; Schema: public; Owner: -
+-- Name: recaudo; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.recaudo (
@@ -4485,9 +4903,10 @@ CREATE TABLE public.recaudo (
 );
 
 
+ALTER TABLE public.recaudo OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 342 (class 1259 OID 70427)
--- Name: recaudos_id_recaudo_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: recaudos_id_recaudo_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.recaudos_id_recaudo_seq
@@ -4499,18 +4918,17 @@ CREATE SEQUENCE public.recaudos_id_recaudo_seq
     CACHE 1;
 
 
+ALTER TABLE public.recaudos_id_recaudo_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4471 (class 0 OID 0)
--- Dependencies: 342
--- Name: recaudos_id_recaudo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: recaudos_id_recaudo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.recaudos_id_recaudo_seq OWNED BY public.recaudo.id_recaudo;
 
 
 --
--- TOC entry 343 (class 1259 OID 70429)
--- Name: recuperacion; Type: TABLE; Schema: public; Owner: -
+-- Name: recuperacion; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.recuperacion (
@@ -4522,9 +4940,10 @@ CREATE TABLE public.recuperacion (
 );
 
 
+ALTER TABLE public.recuperacion OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 344 (class 1259 OID 70436)
--- Name: recuperacion_id_recuperacion_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: recuperacion_id_recuperacion_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.recuperacion_id_recuperacion_seq
@@ -4536,18 +4955,17 @@ CREATE SEQUENCE public.recuperacion_id_recuperacion_seq
     CACHE 1;
 
 
+ALTER TABLE public.recuperacion_id_recuperacion_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4472 (class 0 OID 0)
--- Dependencies: 344
--- Name: recuperacion_id_recuperacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: recuperacion_id_recuperacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.recuperacion_id_recuperacion_seq OWNED BY public.recuperacion.id_recuperacion;
 
 
 --
--- TOC entry 345 (class 1259 OID 70438)
--- Name: seccion; Type: TABLE; Schema: public; Owner: -
+-- Name: seccion; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.seccion (
@@ -4556,9 +4974,10 @@ CREATE TABLE public.seccion (
 );
 
 
+ALTER TABLE public.seccion OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 346 (class 1259 OID 70444)
--- Name: tarifas_inspeccion_id_tarifa_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: tarifas_inspeccion_id_tarifa_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.tarifas_inspeccion_id_tarifa_seq
@@ -4570,18 +4989,17 @@ CREATE SEQUENCE public.tarifas_inspeccion_id_tarifa_seq
     CACHE 1;
 
 
+ALTER TABLE public.tarifas_inspeccion_id_tarifa_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4473 (class 0 OID 0)
--- Dependencies: 346
--- Name: tarifas_inspeccion_id_tarifa_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: tarifas_inspeccion_id_tarifa_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.tarifas_inspeccion_id_tarifa_seq OWNED BY public.tarifa_inspeccion.id_tarifa;
 
 
 --
--- TOC entry 347 (class 1259 OID 70446)
--- Name: template_certificado; Type: TABLE; Schema: public; Owner: -
+-- Name: template_certificado; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.template_certificado (
@@ -4591,9 +5009,10 @@ CREATE TABLE public.template_certificado (
 );
 
 
+ALTER TABLE public.template_certificado OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 348 (class 1259 OID 70452)
--- Name: templates_certificados_id_template_certificado_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: templates_certificados_id_template_certificado_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.templates_certificados_id_template_certificado_seq
@@ -4605,18 +5024,17 @@ CREATE SEQUENCE public.templates_certificados_id_template_certificado_seq
     CACHE 1;
 
 
+ALTER TABLE public.templates_certificados_id_template_certificado_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4474 (class 0 OID 0)
--- Dependencies: 348
--- Name: templates_certificados_id_template_certificado_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: templates_certificados_id_template_certificado_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.templates_certificados_id_template_certificado_seq OWNED BY public.template_certificado.id_template_certificado;
 
 
 --
--- TOC entry 349 (class 1259 OID 70454)
--- Name: tipo_tramite_recaudo; Type: TABLE; Schema: public; Owner: -
+-- Name: tipo_tramite_recaudo; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.tipo_tramite_recaudo (
@@ -4626,9 +5044,10 @@ CREATE TABLE public.tipo_tramite_recaudo (
 );
 
 
+ALTER TABLE public.tipo_tramite_recaudo OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 350 (class 1259 OID 70457)
--- Name: tipo_usuario; Type: TABLE; Schema: public; Owner: -
+-- Name: tipo_usuario; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.tipo_usuario (
@@ -4637,9 +5056,10 @@ CREATE TABLE public.tipo_usuario (
 );
 
 
+ALTER TABLE public.tipo_usuario OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 351 (class 1259 OID 70463)
--- Name: tipos_tramites_id_tipo_tramite_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: tipos_tramites_id_tipo_tramite_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.tipos_tramites_id_tipo_tramite_seq
@@ -4651,18 +5071,17 @@ CREATE SEQUENCE public.tipos_tramites_id_tipo_tramite_seq
     CACHE 1;
 
 
+ALTER TABLE public.tipos_tramites_id_tipo_tramite_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4475 (class 0 OID 0)
--- Dependencies: 351
--- Name: tipos_tramites_id_tipo_tramite_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: tipos_tramites_id_tipo_tramite_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.tipos_tramites_id_tipo_tramite_seq OWNED BY public.tipo_tramite.id_tipo_tramite;
 
 
 --
--- TOC entry 352 (class 1259 OID 70465)
--- Name: tipos_usuarios_id_tipo_usuario_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: tipos_usuarios_id_tipo_usuario_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.tipos_usuarios_id_tipo_usuario_seq
@@ -4674,18 +5093,17 @@ CREATE SEQUENCE public.tipos_usuarios_id_tipo_usuario_seq
     CACHE 1;
 
 
+ALTER TABLE public.tipos_usuarios_id_tipo_usuario_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4476 (class 0 OID 0)
--- Dependencies: 352
--- Name: tipos_usuarios_id_tipo_usuario_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: tipos_usuarios_id_tipo_usuario_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.tipos_usuarios_id_tipo_usuario_seq OWNED BY public.tipo_usuario.id_tipo_usuario;
 
 
 --
--- TOC entry 353 (class 1259 OID 70467)
--- Name: tramite_archivo_recaudo; Type: TABLE; Schema: public; Owner: -
+-- Name: tramite_archivo_recaudo; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.tramite_archivo_recaudo (
@@ -4694,9 +5112,10 @@ CREATE TABLE public.tramite_archivo_recaudo (
 );
 
 
+ALTER TABLE public.tramite_archivo_recaudo OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 354 (class 1259 OID 70473)
--- Name: tramites_id_tramite_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: tramites_id_tramite_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.tramites_id_tramite_seq
@@ -4708,18 +5127,17 @@ CREATE SEQUENCE public.tramites_id_tramite_seq
     CACHE 1;
 
 
+ALTER TABLE public.tramites_id_tramite_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4477 (class 0 OID 0)
--- Dependencies: 354
--- Name: tramites_id_tramite_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: tramites_id_tramite_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.tramites_id_tramite_seq OWNED BY public.tramite.id_tramite;
 
 
 --
--- TOC entry 355 (class 1259 OID 70475)
--- Name: tramites_state; Type: VIEW; Schema: public; Owner: -
+-- Name: tramites_state; Type: VIEW; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE VIEW public.tramites_state AS
@@ -4742,9 +5160,10 @@ CREATE VIEW public.tramites_state AS
           GROUP BY evento_tramite.id_tramite) ev ON ((t.id_tramite = ev.id_tramite)));
 
 
+ALTER TABLE public.tramites_state OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 356 (class 1259 OID 70480)
--- Name: usuario; Type: TABLE; Schema: public; Owner: -
+-- Name: usuario; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.usuario (
@@ -4758,13 +5177,14 @@ CREATE TABLE public.usuario (
     password character varying,
     telefono character varying,
     id_contribuyente integer,
-    CONSTRAINT usuarios_nacionalidad_check CHECK ((nacionalidad = ANY (ARRAY['V'::bpchar, 'E'::bpchar])))
+    CONSTRAINT usuario_nacionalidad_check CHECK ((nacionalidad = ANY (ARRAY['V'::bpchar, 'E'::bpchar, 'J'::bpchar, 'P'::bpchar, 'G'::bpchar])))
 );
 
 
+ALTER TABLE public.usuario OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 357 (class 1259 OID 70487)
--- Name: usuarios_id_usuario_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: usuarios_id_usuario_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.usuarios_id_usuario_seq
@@ -4776,18 +5196,17 @@ CREATE SEQUENCE public.usuarios_id_usuario_seq
     CACHE 1;
 
 
+ALTER TABLE public.usuarios_id_usuario_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4478 (class 0 OID 0)
--- Dependencies: 357
--- Name: usuarios_id_usuario_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: usuarios_id_usuario_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.usuarios_id_usuario_seq OWNED BY public.usuario.id_usuario;
 
 
 --
--- TOC entry 358 (class 1259 OID 70489)
--- Name: valor; Type: TABLE; Schema: public; Owner: -
+-- Name: valor; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.valor (
@@ -4797,9 +5216,10 @@ CREATE TABLE public.valor (
 );
 
 
+ALTER TABLE public.valor OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 359 (class 1259 OID 70495)
--- Name: valores_id_valor_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: valores_id_valor_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.valores_id_valor_seq
@@ -4811,18 +5231,17 @@ CREATE SEQUENCE public.valores_id_valor_seq
     CACHE 1;
 
 
+ALTER TABLE public.valores_id_valor_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4479 (class 0 OID 0)
--- Dependencies: 359
--- Name: valores_id_valor_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: valores_id_valor_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.valores_id_valor_seq OWNED BY public.valor.id_valor;
 
 
 --
--- TOC entry 360 (class 1259 OID 70497)
--- Name: variables_id_var_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: variables_id_var_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.variables_id_var_seq
@@ -4833,9 +5252,10 @@ CREATE SEQUENCE public.variables_id_var_seq
     CACHE 1;
 
 
+ALTER TABLE public.variables_id_var_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 361 (class 1259 OID 70499)
--- Name: variable; Type: TABLE; Schema: public; Owner: -
+-- Name: variable; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.variable (
@@ -4844,9 +5264,10 @@ CREATE TABLE public.variable (
 );
 
 
+ALTER TABLE public.variable OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 362 (class 1259 OID 70506)
--- Name: variables_de_costo_id_variable_de_costo_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: variables_de_costo_id_variable_de_costo_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.variables_de_costo_id_variable_de_costo_seq
@@ -4857,9 +5278,10 @@ CREATE SEQUENCE public.variables_de_costo_id_variable_de_costo_seq
     CACHE 1;
 
 
+ALTER TABLE public.variables_de_costo_id_variable_de_costo_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 363 (class 1259 OID 70508)
--- Name: variable_de_costo; Type: TABLE; Schema: public; Owner: -
+-- Name: variable_de_costo; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.variable_de_costo (
@@ -4871,9 +5293,10 @@ CREATE TABLE public.variable_de_costo (
 );
 
 
+ALTER TABLE public.variable_de_costo OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 364 (class 1259 OID 70515)
--- Name: variable_ordenanza; Type: TABLE; Schema: public; Owner: -
+-- Name: variable_ordenanza; Type: TABLE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE public.variable_ordenanza (
@@ -4883,9 +5306,10 @@ CREATE TABLE public.variable_ordenanza (
 );
 
 
+ALTER TABLE public.variable_ordenanza OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 365 (class 1259 OID 70521)
--- Name: variables_ordenanzas_id_variable_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: variables_ordenanzas_id_variable_seq; Type: SEQUENCE; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE public.variables_ordenanzas_id_variable_seq
@@ -4897,18 +5321,17 @@ CREATE SEQUENCE public.variables_ordenanzas_id_variable_seq
     CACHE 1;
 
 
+ALTER TABLE public.variables_ordenanzas_id_variable_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4480 (class 0 OID 0)
--- Dependencies: 365
--- Name: variables_ordenanzas_id_variable_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: variables_ordenanzas_id_variable_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE public.variables_ordenanzas_id_variable_seq OWNED BY public.variable_ordenanza.id_variable;
 
 
 --
--- TOC entry 366 (class 1259 OID 70523)
--- Name: base_task; Type: TABLE; Schema: timetable; Owner: -
+-- Name: base_task; Type: TABLE; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE timetable.base_task (
@@ -4924,9 +5347,10 @@ END)
 );
 
 
+ALTER TABLE timetable.base_task OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 367 (class 1259 OID 70531)
--- Name: base_task_task_id_seq; Type: SEQUENCE; Schema: timetable; Owner: -
+-- Name: base_task_task_id_seq; Type: SEQUENCE; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE timetable.base_task_task_id_seq
@@ -4937,18 +5361,17 @@ CREATE SEQUENCE timetable.base_task_task_id_seq
     CACHE 1;
 
 
+ALTER TABLE timetable.base_task_task_id_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4481 (class 0 OID 0)
--- Dependencies: 367
--- Name: base_task_task_id_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: -
+-- Name: base_task_task_id_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE timetable.base_task_task_id_seq OWNED BY timetable.base_task.task_id;
 
 
 --
--- TOC entry 368 (class 1259 OID 70533)
--- Name: chain_execution_config; Type: TABLE; Schema: timetable; Owner: -
+-- Name: chain_execution_config; Type: TABLE; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE timetable.chain_execution_config (
@@ -4965,9 +5388,10 @@ CREATE TABLE timetable.chain_execution_config (
 );
 
 
+ALTER TABLE timetable.chain_execution_config OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 369 (class 1259 OID 70542)
--- Name: chain_execution_config_chain_execution_config_seq; Type: SEQUENCE; Schema: timetable; Owner: -
+-- Name: chain_execution_config_chain_execution_config_seq; Type: SEQUENCE; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE timetable.chain_execution_config_chain_execution_config_seq
@@ -4978,18 +5402,17 @@ CREATE SEQUENCE timetable.chain_execution_config_chain_execution_config_seq
     CACHE 1;
 
 
+ALTER TABLE timetable.chain_execution_config_chain_execution_config_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4482 (class 0 OID 0)
--- Dependencies: 369
--- Name: chain_execution_config_chain_execution_config_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: -
+-- Name: chain_execution_config_chain_execution_config_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE timetable.chain_execution_config_chain_execution_config_seq OWNED BY timetable.chain_execution_config.chain_execution_config;
 
 
 --
--- TOC entry 370 (class 1259 OID 70544)
--- Name: chain_execution_parameters; Type: TABLE; Schema: timetable; Owner: -
+-- Name: chain_execution_parameters; Type: TABLE; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE timetable.chain_execution_parameters (
@@ -5001,9 +5424,10 @@ CREATE TABLE timetable.chain_execution_parameters (
 );
 
 
+ALTER TABLE timetable.chain_execution_parameters OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 371 (class 1259 OID 70551)
--- Name: database_connection; Type: TABLE; Schema: timetable; Owner: -
+-- Name: database_connection; Type: TABLE; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE timetable.database_connection (
@@ -5013,9 +5437,10 @@ CREATE TABLE timetable.database_connection (
 );
 
 
+ALTER TABLE timetable.database_connection OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 372 (class 1259 OID 70557)
--- Name: database_connection_database_connection_seq; Type: SEQUENCE; Schema: timetable; Owner: -
+-- Name: database_connection_database_connection_seq; Type: SEQUENCE; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE timetable.database_connection_database_connection_seq
@@ -5026,18 +5451,17 @@ CREATE SEQUENCE timetable.database_connection_database_connection_seq
     CACHE 1;
 
 
+ALTER TABLE timetable.database_connection_database_connection_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4483 (class 0 OID 0)
--- Dependencies: 372
--- Name: database_connection_database_connection_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: -
+-- Name: database_connection_database_connection_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE timetable.database_connection_database_connection_seq OWNED BY timetable.database_connection.database_connection;
 
 
 --
--- TOC entry 373 (class 1259 OID 70559)
--- Name: execution_log; Type: TABLE; Schema: timetable; Owner: -
+-- Name: execution_log; Type: TABLE; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE timetable.execution_log (
@@ -5054,9 +5478,10 @@ CREATE TABLE timetable.execution_log (
 );
 
 
+ALTER TABLE timetable.execution_log OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 374 (class 1259 OID 70566)
--- Name: log; Type: TABLE; Schema: timetable; Owner: -
+-- Name: log; Type: TABLE; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE timetable.log (
@@ -5069,9 +5494,10 @@ CREATE TABLE timetable.log (
 );
 
 
+ALTER TABLE timetable.log OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 375 (class 1259 OID 70573)
--- Name: log_id_seq; Type: SEQUENCE; Schema: timetable; Owner: -
+-- Name: log_id_seq; Type: SEQUENCE; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE timetable.log_id_seq
@@ -5082,18 +5508,17 @@ CREATE SEQUENCE timetable.log_id_seq
     CACHE 1;
 
 
+ALTER TABLE timetable.log_id_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4484 (class 0 OID 0)
--- Dependencies: 375
--- Name: log_id_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: -
+-- Name: log_id_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE timetable.log_id_seq OWNED BY timetable.log.id;
 
 
 --
--- TOC entry 376 (class 1259 OID 70575)
--- Name: migrations; Type: TABLE; Schema: timetable; Owner: -
+-- Name: migrations; Type: TABLE; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE timetable.migrations (
@@ -5102,9 +5527,10 @@ CREATE TABLE timetable.migrations (
 );
 
 
+ALTER TABLE timetable.migrations OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 377 (class 1259 OID 70581)
--- Name: run_status; Type: TABLE; Schema: timetable; Owner: -
+-- Name: run_status; Type: TABLE; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE timetable.run_status (
@@ -5119,9 +5545,10 @@ CREATE TABLE timetable.run_status (
 );
 
 
+ALTER TABLE timetable.run_status OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 378 (class 1259 OID 70585)
--- Name: run_status_run_status_seq; Type: SEQUENCE; Schema: timetable; Owner: -
+-- Name: run_status_run_status_seq; Type: SEQUENCE; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE timetable.run_status_run_status_seq
@@ -5132,18 +5559,17 @@ CREATE SEQUENCE timetable.run_status_run_status_seq
     CACHE 1;
 
 
+ALTER TABLE timetable.run_status_run_status_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4485 (class 0 OID 0)
--- Dependencies: 378
--- Name: run_status_run_status_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: -
+-- Name: run_status_run_status_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE timetable.run_status_run_status_seq OWNED BY timetable.run_status.run_status;
 
 
 --
--- TOC entry 379 (class 1259 OID 70587)
--- Name: task_chain; Type: TABLE; Schema: timetable; Owner: -
+-- Name: task_chain; Type: TABLE; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE timetable.task_chain (
@@ -5156,9 +5582,10 @@ CREATE TABLE timetable.task_chain (
 );
 
 
+ALTER TABLE timetable.task_chain OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 380 (class 1259 OID 70594)
--- Name: task_chain_chain_id_seq; Type: SEQUENCE; Schema: timetable; Owner: -
+-- Name: task_chain_chain_id_seq; Type: SEQUENCE; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE timetable.task_chain_chain_id_seq
@@ -5169,18 +5596,17 @@ CREATE SEQUENCE timetable.task_chain_chain_id_seq
     CACHE 1;
 
 
+ALTER TABLE timetable.task_chain_chain_id_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4486 (class 0 OID 0)
--- Dependencies: 380
--- Name: task_chain_chain_id_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: -
+-- Name: task_chain_chain_id_seq; Type: SEQUENCE OWNED BY; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE timetable.task_chain_chain_id_seq OWNED BY timetable.task_chain.chain_id;
 
 
 --
--- TOC entry 381 (class 1259 OID 70596)
--- Name: ano; Type: TABLE; Schema: valores_fiscales; Owner: -
+-- Name: ano; Type: TABLE; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE valores_fiscales.ano (
@@ -5189,9 +5615,10 @@ CREATE TABLE valores_fiscales.ano (
 );
 
 
+ALTER TABLE valores_fiscales.ano OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 382 (class 1259 OID 70599)
--- Name: ano_fiscal_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: -
+-- Name: ano_fiscal_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE valores_fiscales.ano_fiscal_id_seq
@@ -5203,18 +5630,17 @@ CREATE SEQUENCE valores_fiscales.ano_fiscal_id_seq
     CACHE 1;
 
 
+ALTER TABLE valores_fiscales.ano_fiscal_id_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4487 (class 0 OID 0)
--- Dependencies: 382
--- Name: ano_fiscal_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: -
+-- Name: ano_fiscal_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE valores_fiscales.ano_fiscal_id_seq OWNED BY valores_fiscales.ano.id;
 
 
 --
--- TOC entry 383 (class 1259 OID 70601)
--- Name: construccion; Type: TABLE; Schema: valores_fiscales; Owner: -
+-- Name: construccion; Type: TABLE; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE valores_fiscales.construccion (
@@ -5225,9 +5651,10 @@ CREATE TABLE valores_fiscales.construccion (
 );
 
 
+ALTER TABLE valores_fiscales.construccion OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 384 (class 1259 OID 70604)
--- Name: construccion_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: -
+-- Name: construccion_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE valores_fiscales.construccion_id_seq
@@ -5238,18 +5665,17 @@ CREATE SEQUENCE valores_fiscales.construccion_id_seq
     CACHE 1;
 
 
+ALTER TABLE valores_fiscales.construccion_id_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4488 (class 0 OID 0)
--- Dependencies: 384
--- Name: construccion_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: -
+-- Name: construccion_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE valores_fiscales.construccion_id_seq OWNED BY valores_fiscales.construccion.id;
 
 
 --
--- TOC entry 385 (class 1259 OID 70606)
--- Name: tipo_construccion; Type: TABLE; Schema: valores_fiscales; Owner: -
+-- Name: tipo_construccion; Type: TABLE; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE valores_fiscales.tipo_construccion (
@@ -5258,9 +5684,10 @@ CREATE TABLE valores_fiscales.tipo_construccion (
 );
 
 
+ALTER TABLE valores_fiscales.tipo_construccion OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 386 (class 1259 OID 70612)
--- Name: get_all_construcciones; Type: VIEW; Schema: valores_fiscales; Owner: -
+-- Name: get_all_construcciones; Type: VIEW; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 CREATE VIEW valores_fiscales.get_all_construcciones AS
@@ -5275,9 +5702,10 @@ CREATE VIEW valores_fiscales.get_all_construcciones AS
      JOIN valores_fiscales.ano ON ((construccion.ano_id = ano.id)));
 
 
+ALTER TABLE valores_fiscales.get_all_construcciones OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 387 (class 1259 OID 70616)
--- Name: sector; Type: TABLE; Schema: valores_fiscales; Owner: -
+-- Name: sector; Type: TABLE; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE valores_fiscales.sector (
@@ -5287,9 +5715,10 @@ CREATE TABLE valores_fiscales.sector (
 );
 
 
+ALTER TABLE valores_fiscales.sector OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 388 (class 1259 OID 70622)
--- Name: terreno; Type: TABLE; Schema: valores_fiscales; Owner: -
+-- Name: terreno; Type: TABLE; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 CREATE TABLE valores_fiscales.terreno (
@@ -5300,9 +5729,10 @@ CREATE TABLE valores_fiscales.terreno (
 );
 
 
+ALTER TABLE valores_fiscales.terreno OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 389 (class 1259 OID 70625)
--- Name: get_all_terrenos; Type: VIEW; Schema: valores_fiscales; Owner: -
+-- Name: get_all_terrenos; Type: VIEW; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 CREATE VIEW valores_fiscales.get_all_terrenos AS
@@ -5320,9 +5750,10 @@ CREATE VIEW valores_fiscales.get_all_terrenos AS
      JOIN valores_fiscales.ano ON ((terreno.ano_id = ano.id)));
 
 
+ALTER TABLE valores_fiscales.get_all_terrenos OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 390 (class 1259 OID 70629)
--- Name: sector_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: -
+-- Name: sector_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE valores_fiscales.sector_id_seq
@@ -5334,18 +5765,17 @@ CREATE SEQUENCE valores_fiscales.sector_id_seq
     CACHE 1;
 
 
+ALTER TABLE valores_fiscales.sector_id_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4489 (class 0 OID 0)
--- Dependencies: 390
--- Name: sector_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: -
+-- Name: sector_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE valores_fiscales.sector_id_seq OWNED BY valores_fiscales.sector.id;
 
 
 --
--- TOC entry 391 (class 1259 OID 70631)
--- Name: terreno_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: -
+-- Name: terreno_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE valores_fiscales.terreno_id_seq
@@ -5356,18 +5786,17 @@ CREATE SEQUENCE valores_fiscales.terreno_id_seq
     CACHE 1;
 
 
+ALTER TABLE valores_fiscales.terreno_id_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4490 (class 0 OID 0)
--- Dependencies: 391
--- Name: terreno_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: -
+-- Name: terreno_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE valores_fiscales.terreno_id_seq OWNED BY valores_fiscales.terreno.id;
 
 
 --
--- TOC entry 392 (class 1259 OID 70633)
--- Name: tipo_construccion_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: -
+-- Name: tipo_construccion_id_seq; Type: SEQUENCE; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 CREATE SEQUENCE valores_fiscales.tipo_construccion_id_seq
@@ -5379,635 +5808,584 @@ CREATE SEQUENCE valores_fiscales.tipo_construccion_id_seq
     CACHE 1;
 
 
+ALTER TABLE valores_fiscales.tipo_construccion_id_seq OWNER TO pooijyzcnnfrso;
+
 --
--- TOC entry 4491 (class 0 OID 0)
--- Dependencies: 392
--- Name: tipo_construccion_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: -
+-- Name: tipo_construccion_id_seq; Type: SEQUENCE OWNED BY; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 ALTER SEQUENCE valores_fiscales.tipo_construccion_id_seq OWNED BY valores_fiscales.tipo_construccion.id;
 
 
 --
--- TOC entry 3684 (class 2604 OID 70635)
--- Name: actividad_economica id_actividad_economica; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: actividad_economica id_actividad_economica; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.actividad_economica ALTER COLUMN id_actividad_economica SET DEFAULT nextval('impuesto.actividad_economica_id_actividad_economica_seq'::regclass);
 
 
 --
--- TOC entry 3686 (class 2604 OID 70636)
--- Name: actividad_economica_exoneracion id_actividad_economica_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: actividad_economica_exoneracion id_actividad_economica_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.actividad_economica_exoneracion ALTER COLUMN id_actividad_economica_exoneracion SET DEFAULT nextval('impuesto.actividad_economica_exoneraci_id_actividad_economica_exoner_seq'::regclass);
 
 
 --
--- TOC entry 3685 (class 2604 OID 70637)
--- Name: actividad_economica_sucursal id_actividad_economica_contribuyente; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: actividad_economica_sucursal id_actividad_economica_contribuyente; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.actividad_economica_sucursal ALTER COLUMN id_actividad_economica_contribuyente SET DEFAULT nextval('impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq'::regclass);
 
 
 --
--- TOC entry 3687 (class 2604 OID 70638)
--- Name: avaluo_inmueble id_avaluo_inmueble; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: avaluo_inmueble id_avaluo_inmueble; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.avaluo_inmueble ALTER COLUMN id_avaluo_inmueble SET DEFAULT nextval('impuesto.avaluo_inmueble_id_avaluo_inmueble_seq'::regclass);
 
 
 --
--- TOC entry 3688 (class 2604 OID 70639)
--- Name: categoria_propaganda id_categoria_propaganda; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: baremo_servicio_municipal id_baremo; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+ALTER TABLE ONLY impuesto.baremo_servicio_municipal ALTER COLUMN id_baremo SET DEFAULT nextval('impuesto.baremo_servicio_municipal_id_baremo_seq'::regclass);
+
+
+--
+-- Name: categoria_propaganda id_categoria_propaganda; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.categoria_propaganda ALTER COLUMN id_categoria_propaganda SET DEFAULT nextval('impuesto.categoria_propaganda_id_categoria_propaganda_seq'::regclass);
 
 
 --
--- TOC entry 3689 (class 2604 OID 70640)
--- Name: contribuyente id_contribuyente; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: contribuyente id_contribuyente; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.contribuyente ALTER COLUMN id_contribuyente SET DEFAULT nextval('impuesto.contribuyente_id_contribuyente_seq'::regclass);
 
 
 --
--- TOC entry 3690 (class 2604 OID 70641)
--- Name: contribuyente_exoneracion id_contribuyente_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: contribuyente_exoneracion id_contribuyente_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.contribuyente_exoneracion ALTER COLUMN id_contribuyente_exoneracion SET DEFAULT nextval('impuesto.contribuyente_exoneracion_id_contribuyente_exoneracion_seq'::regclass);
 
 
 --
--- TOC entry 3691 (class 2604 OID 70642)
--- Name: convenio id_convenio; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: convenio id_convenio; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.convenio ALTER COLUMN id_convenio SET DEFAULT nextval('impuesto.convenio_id_convenio_seq'::regclass);
 
 
 --
--- TOC entry 3658 (class 2604 OID 70643)
--- Name: credito_fiscal id_credito_fiscal; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: credito_fiscal id_credito_fiscal; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.credito_fiscal ALTER COLUMN id_credito_fiscal SET DEFAULT nextval('impuesto.credito_fiscal_id_credito_fiscal_seq'::regclass);
 
 
 --
--- TOC entry 3692 (class 2604 OID 70644)
--- Name: dias_feriados id_dia_feriado; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: detalle_retencion id_detalle_retencion; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+ALTER TABLE ONLY impuesto.detalle_retencion ALTER COLUMN id_detalle_retencion SET DEFAULT nextval('impuesto.detalle_retencion_id_detalle_retencion_seq'::regclass);
+
+
+--
+-- Name: dias_feriados id_dia_feriado; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.dias_feriados ALTER COLUMN id_dia_feriado SET DEFAULT nextval('impuesto.dias_feriados_id_dia_feriado_seq'::regclass);
 
 
 --
--- TOC entry 3694 (class 2604 OID 70645)
--- Name: evento_fraccion id_evento_fraccion; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: evento_fraccion id_evento_fraccion; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.evento_fraccion ALTER COLUMN id_evento_fraccion SET DEFAULT nextval('impuesto.evento_fraccion_id_evento_fraccion_seq'::regclass);
 
 
 --
--- TOC entry 3696 (class 2604 OID 70646)
--- Name: evento_solicitud id_evento_solicitud; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: evento_solicitud id_evento_solicitud; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.evento_solicitud ALTER COLUMN id_evento_solicitud SET DEFAULT nextval('impuesto.evento_solicitud_id_evento_solicitud_seq'::regclass);
 
 
 --
--- TOC entry 3697 (class 2604 OID 70647)
--- Name: factor id_factor; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: factor id_factor; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.factor ALTER COLUMN id_factor SET DEFAULT nextval('impuesto.factor_id_factor_seq'::regclass);
 
 
 --
--- TOC entry 3661 (class 2604 OID 70648)
--- Name: fraccion id_fraccion; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: fraccion id_fraccion; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.fraccion ALTER COLUMN id_fraccion SET DEFAULT nextval('impuesto.fraccion_id_fraccion_seq'::regclass);
 
 
 --
--- TOC entry 3698 (class 2604 OID 70649)
--- Name: inmueble_contribuyente_natural id_inmueble_contribuyente; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: inmueble_contribuyente_natural id_inmueble_contribuyente; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.inmueble_contribuyente_natural ALTER COLUMN id_inmueble_contribuyente SET DEFAULT nextval('impuesto.inmueble_contribuyente_id_inmueble_contribuyente_seq'::regclass);
 
 
 --
--- TOC entry 3672 (class 2604 OID 70650)
--- Name: liquidacion id_liquidacion; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: liquidacion id_liquidacion; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.liquidacion ALTER COLUMN id_liquidacion SET DEFAULT nextval('impuesto.liquidacion_id_liquidacion_seq'::regclass);
 
 
 --
--- TOC entry 3699 (class 2604 OID 70651)
--- Name: liquidacion_descuento id_liquidacion_descuento; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: liquidacion_descuento id_liquidacion_descuento; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.liquidacion_descuento ALTER COLUMN id_liquidacion_descuento SET DEFAULT nextval('impuesto.liquidacion_descuento_id_liquidacion_descuento_seq'::regclass);
 
 
 --
--- TOC entry 3700 (class 2604 OID 70652)
--- Name: multa id_multa; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: multa id_multa; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.multa ALTER COLUMN id_multa SET DEFAULT nextval('impuesto.multa_id_multa_seq'::regclass);
 
 
 --
--- TOC entry 3704 (class 2604 OID 70653)
--- Name: plazo_exoneracion id_plazo_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: plazo_exoneracion id_plazo_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.plazo_exoneracion ALTER COLUMN id_plazo_exoneracion SET DEFAULT nextval('impuesto.plazo_exoneracion_id_plazo_exoneracion_seq'::regclass);
 
 
 --
--- TOC entry 3706 (class 2604 OID 70654)
--- Name: ramo id_ramo; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: ramo id_ramo; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.ramo ALTER COLUMN id_ramo SET DEFAULT nextval('impuesto.ramo_id_ramo_seq'::regclass);
 
 
 --
--- TOC entry 3705 (class 2604 OID 70655)
--- Name: ramo_exoneracion id_ramo_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: ramo_exoneracion id_ramo_exoneracion; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.ramo_exoneracion ALTER COLUMN id_ramo_exoneracion SET DEFAULT nextval('impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq'::regclass);
 
 
 --
--- TOC entry 3709 (class 2604 OID 70656)
--- Name: registro_municipal id_registro_municipal; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: registro_municipal id_registro_municipal; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.registro_municipal ALTER COLUMN id_registro_municipal SET DEFAULT nextval('impuesto.registro_municipal_id_registro_municipal_seq'::regclass);
 
 
 --
--- TOC entry 3663 (class 2604 OID 70657)
--- Name: solicitud id_solicitud; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: retencion id_retencion; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+ALTER TABLE ONLY impuesto.retencion ALTER COLUMN id_retencion SET DEFAULT nextval('impuesto.retencion_id_retencion_seq'::regclass);
+
+
+--
+-- Name: solicitud id_solicitud; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.solicitud ALTER COLUMN id_solicitud SET DEFAULT nextval('impuesto.solicitud_id_solicitud_seq'::regclass);
 
 
 --
--- TOC entry 3710 (class 2604 OID 70658)
--- Name: subramo id_subramo; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: subramo id_subramo; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.subramo ALTER COLUMN id_subramo SET DEFAULT nextval('impuesto.subramo_id_subramo_seq'::regclass);
 
 
 --
--- TOC entry 3712 (class 2604 OID 70659)
--- Name: tabulador_aseo_actividad_economica id_tabulador_aseo_actividad_economica; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: tabulador_aseo_actividad_economica id_tabulador_aseo_actividad_economica; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tabulador_aseo_actividad_economica ALTER COLUMN id_tabulador_aseo_actividad_economica SET DEFAULT nextval('impuesto.tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq'::regclass);
 
 
 --
--- TOC entry 3714 (class 2604 OID 70660)
--- Name: tabulador_aseo_residencial id_tabulador_aseo_residencial; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: tabulador_aseo_residencial id_tabulador_aseo_residencial; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tabulador_aseo_residencial ALTER COLUMN id_tabulador_aseo_residencial SET DEFAULT nextval('impuesto.tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq'::regclass);
 
 
 --
--- TOC entry 3715 (class 2604 OID 70661)
--- Name: tabulador_gas id_tabulador_gas; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: tabulador_gas id_tabulador_gas; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tabulador_gas ALTER COLUMN id_tabulador_gas SET DEFAULT nextval('impuesto.tabulador_gas_id_tabulador_gas_seq'::regclass);
 
 
 --
--- TOC entry 3717 (class 2604 OID 70662)
--- Name: tabulador_gas_actividad_economica id_tabulador_gas_actividad_economica; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_actividad_economica id_tabulador_gas_actividad_economica; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tabulador_gas_actividad_economica ALTER COLUMN id_tabulador_gas_actividad_economica SET DEFAULT nextval('impuesto.tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq'::regclass);
 
 
 --
--- TOC entry 3719 (class 2604 OID 70663)
--- Name: tabulador_gas_residencial id_tabulador_gas_residencial; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_residencial id_tabulador_gas_residencial; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tabulador_gas_residencial ALTER COLUMN id_tabulador_gas_residencial SET DEFAULT nextval('impuesto.tabulador_gas_residencial_id_tabulador_gas_residencial_seq'::regclass);
 
 
 --
--- TOC entry 3721 (class 2604 OID 70664)
--- Name: tipo_aviso_propaganda id_tipo_aviso_propaganda; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: tipo_aviso_propaganda id_tipo_aviso_propaganda; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tipo_aviso_propaganda ALTER COLUMN id_tipo_aviso_propaganda SET DEFAULT nextval('impuesto.tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq'::regclass);
 
 
 --
--- TOC entry 3722 (class 2604 OID 70665)
--- Name: tipo_multa id_tipo_multa; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: tipo_multa id_tipo_multa; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tipo_multa ALTER COLUMN id_tipo_multa SET DEFAULT nextval('impuesto.tipo_multa_id_tipo_multa_seq'::regclass);
 
 
 --
--- TOC entry 3723 (class 2604 OID 70666)
--- Name: usuario_enlazado id_usuario_enlazado; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: usuario_enlazado id_usuario_enlazado; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.usuario_enlazado ALTER COLUMN id_usuario_enlazado SET DEFAULT nextval('impuesto.usuario_enlazado_id_usuario_enlazado_seq'::regclass);
 
 
 --
--- TOC entry 3726 (class 2604 OID 70667)
--- Name: verificacion_email id_verificacion_email; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: usuario_inmueble id_usuario_inmueble; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+ALTER TABLE ONLY impuesto.usuario_inmueble ALTER COLUMN id_usuario_inmueble SET DEFAULT nextval('impuesto.usuario_inmueble_id_usuario_inmueble_seq'::regclass);
+
+
+--
+-- Name: verificacion_email id_verificacion_email; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.verificacion_email ALTER COLUMN id_verificacion_email SET DEFAULT nextval('impuesto.verificacion_email_id_verificacion_email_seq'::regclass);
 
 
 --
--- TOC entry 3729 (class 2604 OID 70668)
--- Name: verificacion_telefono id_verificacion_telefono; Type: DEFAULT; Schema: impuesto; Owner: -
+-- Name: verificacion_telefono id_verificacion_telefono; Type: DEFAULT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.verificacion_telefono ALTER COLUMN id_verificacion_telefono SET DEFAULT nextval('impuesto.verificacion_telefono_id_verificacion_telefono_seq'::regclass);
 
 
 --
--- TOC entry 3731 (class 2604 OID 70669)
--- Name: banco id_banco; Type: DEFAULT; Schema: public; Owner: -
+-- Name: banco id_banco; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.banco ALTER COLUMN id_banco SET DEFAULT nextval('public.bancos_id_banco_seq'::regclass);
 
 
 --
--- TOC entry 3732 (class 2604 OID 70670)
--- Name: campo id_campo; Type: DEFAULT; Schema: public; Owner: -
+-- Name: campo id_campo; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.campo ALTER COLUMN id_campo SET DEFAULT nextval('public.campos_id_campo_seq'::regclass);
 
 
 --
--- TOC entry 3734 (class 2604 OID 70671)
--- Name: cargo id_cargo; Type: DEFAULT; Schema: public; Owner: -
+-- Name: cargo id_cargo; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.cargo ALTER COLUMN id_cargo SET DEFAULT nextval('public.cargo_id_cargo_seq'::regclass);
 
 
 --
--- TOC entry 3665 (class 2604 OID 70672)
--- Name: caso_social id_caso; Type: DEFAULT; Schema: public; Owner: -
+-- Name: caso_social id_caso; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.caso_social ALTER COLUMN id_caso SET DEFAULT nextval('public.casos_sociales_id_caso_seq'::regclass);
 
 
 --
--- TOC entry 3735 (class 2604 OID 70673)
--- Name: certificado id_certificado; Type: DEFAULT; Schema: public; Owner: -
+-- Name: certificado id_certificado; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.certificado ALTER COLUMN id_certificado SET DEFAULT nextval('public.certificados_id_certificado_seq'::regclass);
 
 
 --
--- TOC entry 3736 (class 2604 OID 70674)
--- Name: detalle_factura id_detalle; Type: DEFAULT; Schema: public; Owner: -
+-- Name: detalle_factura id_detalle; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.detalle_factura ALTER COLUMN id_detalle SET DEFAULT nextval('public.detalles_facturas_id_detalle_seq'::regclass);
 
 
 --
--- TOC entry 3667 (class 2604 OID 70675)
--- Name: evento_caso_social id_evento_caso; Type: DEFAULT; Schema: public; Owner: -
+-- Name: evento_caso_social id_evento_caso; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.evento_caso_social ALTER COLUMN id_evento_caso SET DEFAULT nextval('public.eventos_casos_sociales_id_evento_caso_seq'::regclass);
 
 
 --
--- TOC entry 3674 (class 2604 OID 70676)
--- Name: evento_multa id_evento_multa; Type: DEFAULT; Schema: public; Owner: -
+-- Name: evento_multa id_evento_multa; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.evento_multa ALTER COLUMN id_evento_multa SET DEFAULT nextval('public.evento_multa_id_evento_multa_seq'::regclass);
 
 
 --
--- TOC entry 3680 (class 2604 OID 70677)
--- Name: evento_tramite id_evento_tramite; Type: DEFAULT; Schema: public; Owner: -
+-- Name: evento_tramite id_evento_tramite; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.evento_tramite ALTER COLUMN id_evento_tramite SET DEFAULT nextval('public.eventos_tramite_id_evento_tramite_seq'::regclass);
 
 
 --
--- TOC entry 3737 (class 2604 OID 70678)
--- Name: factura_tramite id_factura; Type: DEFAULT; Schema: public; Owner: -
+-- Name: factura_tramite id_factura; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.factura_tramite ALTER COLUMN id_factura SET DEFAULT nextval('public.facturas_tramites_id_factura_seq'::regclass);
 
 
 --
--- TOC entry 3740 (class 2604 OID 70679)
--- Name: inmueble_urbano id_inmueble; Type: DEFAULT; Schema: public; Owner: -
+-- Name: inmueble_urbano id_inmueble; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.inmueble_urbano ALTER COLUMN id_inmueble SET DEFAULT nextval('public.inmueble_urbano_id_inmueble_seq'::regclass);
 
 
 --
--- TOC entry 3668 (class 2604 OID 70680)
--- Name: institucion id_institucion; Type: DEFAULT; Schema: public; Owner: -
+-- Name: institucion id_institucion; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.institucion ALTER COLUMN id_institucion SET DEFAULT nextval('public.instituciones_id_institucion_seq'::regclass);
 
 
 --
--- TOC entry 3677 (class 2604 OID 70681)
--- Name: multa id_multa; Type: DEFAULT; Schema: public; Owner: -
+-- Name: multa id_multa; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.multa ALTER COLUMN id_multa SET DEFAULT nextval('public.multa_id_multa_seq'::regclass);
 
 
 --
--- TOC entry 3702 (class 2604 OID 70682)
--- Name: notificacion id_notificacion; Type: DEFAULT; Schema: public; Owner: -
+-- Name: notificacion id_notificacion; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.notificacion ALTER COLUMN id_notificacion SET DEFAULT nextval('public.notificaciones_id_notificacion_seq'::regclass);
 
 
 --
--- TOC entry 3746 (class 2604 OID 70683)
--- Name: operatividad_terminal id_operatividad_terminal; Type: DEFAULT; Schema: public; Owner: -
+-- Name: operatividad_terminal id_operatividad_terminal; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.operatividad_terminal ALTER COLUMN id_operatividad_terminal SET DEFAULT nextval('public.operatividad_terminal_id_operatividad_terminal_seq'::regclass);
 
 
 --
--- TOC entry 3749 (class 2604 OID 70684)
--- Name: ordenanza id_ordenanza; Type: DEFAULT; Schema: public; Owner: -
+-- Name: ordenanza id_ordenanza; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.ordenanza ALTER COLUMN id_ordenanza SET DEFAULT nextval('public.ordenanzas_id_ordenanza_seq'::regclass);
 
 
 --
--- TOC entry 3750 (class 2604 OID 70685)
--- Name: ordenanza_tramite id_ordenanza_tramite; Type: DEFAULT; Schema: public; Owner: -
+-- Name: ordenanza_tramite id_ordenanza_tramite; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.ordenanza_tramite ALTER COLUMN id_ordenanza_tramite SET DEFAULT nextval('public.ordenanzas_tramites_id_ordenanza_tramite_seq'::regclass);
 
 
 --
--- TOC entry 3755 (class 2604 OID 70686)
--- Name: pago id_pago; Type: DEFAULT; Schema: public; Owner: -
+-- Name: pago id_pago; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.pago ALTER COLUMN id_pago SET DEFAULT nextval('public.pagos_id_pago_seq'::regclass);
 
 
 --
--- TOC entry 3741 (class 2604 OID 70687)
--- Name: parroquia id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: parroquia id; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.parroquia ALTER COLUMN id SET DEFAULT nextval('public.parroquias_id_seq'::regclass);
 
 
 --
--- TOC entry 3758 (class 2604 OID 70688)
--- Name: permiso_de_acceso id_permiso; Type: DEFAULT; Schema: public; Owner: -
+-- Name: permiso_de_acceso id_permiso; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.permiso_de_acceso ALTER COLUMN id_permiso SET DEFAULT nextval('public.permiso_de_acceso_id_permiso_seq'::regclass);
 
 
 --
--- TOC entry 3759 (class 2604 OID 70689)
--- Name: propietario id_propietario; Type: DEFAULT; Schema: public; Owner: -
+-- Name: propietario id_propietario; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.propietario ALTER COLUMN id_propietario SET DEFAULT nextval('public.propietario_id_propietario_seq'::regclass);
 
 
 --
--- TOC entry 3760 (class 2604 OID 70690)
--- Name: propietario_inmueble id_propietario_inmueble; Type: DEFAULT; Schema: public; Owner: -
+-- Name: propietario_inmueble id_propietario_inmueble; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.propietario_inmueble ALTER COLUMN id_propietario_inmueble SET DEFAULT nextval('public.propietarios_inmuebles_id_propietario_inmueble_seq'::regclass);
 
 
 --
--- TOC entry 3763 (class 2604 OID 70691)
--- Name: recaudo id_recaudo; Type: DEFAULT; Schema: public; Owner: -
+-- Name: recaudo id_recaudo; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.recaudo ALTER COLUMN id_recaudo SET DEFAULT nextval('public.recaudos_id_recaudo_seq'::regclass);
 
 
 --
--- TOC entry 3765 (class 2604 OID 70692)
--- Name: recuperacion id_recuperacion; Type: DEFAULT; Schema: public; Owner: -
+-- Name: recuperacion id_recuperacion; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.recuperacion ALTER COLUMN id_recuperacion SET DEFAULT nextval('public.recuperacion_id_recuperacion_seq'::regclass);
 
 
 --
--- TOC entry 3751 (class 2604 OID 70693)
--- Name: tarifa_inspeccion id_tarifa; Type: DEFAULT; Schema: public; Owner: -
+-- Name: tarifa_inspeccion id_tarifa; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.tarifa_inspeccion ALTER COLUMN id_tarifa SET DEFAULT nextval('public.tarifas_inspeccion_id_tarifa_seq'::regclass);
 
 
 --
--- TOC entry 3766 (class 2604 OID 70694)
--- Name: template_certificado id_template_certificado; Type: DEFAULT; Schema: public; Owner: -
+-- Name: template_certificado id_template_certificado; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.template_certificado ALTER COLUMN id_template_certificado SET DEFAULT nextval('public.templates_certificados_id_template_certificado_seq'::regclass);
 
 
 --
--- TOC entry 3669 (class 2604 OID 70695)
--- Name: tipo_tramite id_tipo_tramite; Type: DEFAULT; Schema: public; Owner: -
+-- Name: tipo_tramite id_tipo_tramite; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.tipo_tramite ALTER COLUMN id_tipo_tramite SET DEFAULT nextval('public.tipos_tramites_id_tipo_tramite_seq'::regclass);
 
 
 --
--- TOC entry 3767 (class 2604 OID 70696)
--- Name: tipo_usuario id_tipo_usuario; Type: DEFAULT; Schema: public; Owner: -
+-- Name: tipo_usuario id_tipo_usuario; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.tipo_usuario ALTER COLUMN id_tipo_usuario SET DEFAULT nextval('public.tipos_usuarios_id_tipo_usuario_seq'::regclass);
 
 
 --
--- TOC entry 3683 (class 2604 OID 70697)
--- Name: tramite id_tramite; Type: DEFAULT; Schema: public; Owner: -
+-- Name: tramite id_tramite; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.tramite ALTER COLUMN id_tramite SET DEFAULT nextval('public.tramites_id_tramite_seq'::regclass);
 
 
 --
--- TOC entry 3768 (class 2604 OID 70698)
--- Name: usuario id_usuario; Type: DEFAULT; Schema: public; Owner: -
+-- Name: usuario id_usuario; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.usuario ALTER COLUMN id_usuario SET DEFAULT nextval('public.usuarios_id_usuario_seq'::regclass);
 
 
 --
--- TOC entry 3770 (class 2604 OID 70699)
--- Name: valor id_valor; Type: DEFAULT; Schema: public; Owner: -
+-- Name: valor id_valor; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.valor ALTER COLUMN id_valor SET DEFAULT nextval('public.valores_id_valor_seq'::regclass);
 
 
 --
--- TOC entry 3773 (class 2604 OID 70700)
--- Name: variable_ordenanza id_variable; Type: DEFAULT; Schema: public; Owner: -
+-- Name: variable_ordenanza id_variable; Type: DEFAULT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.variable_ordenanza ALTER COLUMN id_variable SET DEFAULT nextval('public.variables_ordenanzas_id_variable_seq'::regclass);
 
 
 --
--- TOC entry 3775 (class 2604 OID 70701)
--- Name: base_task task_id; Type: DEFAULT; Schema: timetable; Owner: -
+-- Name: base_task task_id; Type: DEFAULT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.base_task ALTER COLUMN task_id SET DEFAULT nextval('timetable.base_task_task_id_seq'::regclass);
 
 
 --
--- TOC entry 3780 (class 2604 OID 70702)
--- Name: chain_execution_config chain_execution_config; Type: DEFAULT; Schema: timetable; Owner: -
+-- Name: chain_execution_config chain_execution_config; Type: DEFAULT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.chain_execution_config ALTER COLUMN chain_execution_config SET DEFAULT nextval('timetable.chain_execution_config_chain_execution_config_seq'::regclass);
 
 
 --
--- TOC entry 3782 (class 2604 OID 70703)
--- Name: database_connection database_connection; Type: DEFAULT; Schema: timetable; Owner: -
+-- Name: database_connection database_connection; Type: DEFAULT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.database_connection ALTER COLUMN database_connection SET DEFAULT nextval('timetable.database_connection_database_connection_seq'::regclass);
 
 
 --
--- TOC entry 3785 (class 2604 OID 70704)
--- Name: log id; Type: DEFAULT; Schema: timetable; Owner: -
+-- Name: log id; Type: DEFAULT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.log ALTER COLUMN id SET DEFAULT nextval('timetable.log_id_seq'::regclass);
 
 
 --
--- TOC entry 3787 (class 2604 OID 70705)
--- Name: run_status run_status; Type: DEFAULT; Schema: timetable; Owner: -
+-- Name: run_status run_status; Type: DEFAULT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.run_status ALTER COLUMN run_status SET DEFAULT nextval('timetable.run_status_run_status_seq'::regclass);
 
 
 --
--- TOC entry 3789 (class 2604 OID 70706)
--- Name: task_chain chain_id; Type: DEFAULT; Schema: timetable; Owner: -
+-- Name: task_chain chain_id; Type: DEFAULT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.task_chain ALTER COLUMN chain_id SET DEFAULT nextval('timetable.task_chain_chain_id_seq'::regclass);
 
 
 --
--- TOC entry 3790 (class 2604 OID 70707)
--- Name: ano id; Type: DEFAULT; Schema: valores_fiscales; Owner: -
+-- Name: ano id; Type: DEFAULT; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY valores_fiscales.ano ALTER COLUMN id SET DEFAULT nextval('valores_fiscales.ano_fiscal_id_seq'::regclass);
 
 
 --
--- TOC entry 3791 (class 2604 OID 70708)
--- Name: construccion id; Type: DEFAULT; Schema: valores_fiscales; Owner: -
+-- Name: construccion id; Type: DEFAULT; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY valores_fiscales.construccion ALTER COLUMN id SET DEFAULT nextval('valores_fiscales.construccion_id_seq'::regclass);
 
 
 --
--- TOC entry 3793 (class 2604 OID 70709)
--- Name: sector id; Type: DEFAULT; Schema: valores_fiscales; Owner: -
+-- Name: sector id; Type: DEFAULT; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY valores_fiscales.sector ALTER COLUMN id SET DEFAULT nextval('valores_fiscales.sector_id_seq'::regclass);
 
 
 --
--- TOC entry 3794 (class 2604 OID 70710)
--- Name: terreno id; Type: DEFAULT; Schema: valores_fiscales; Owner: -
+-- Name: terreno id; Type: DEFAULT; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY valores_fiscales.terreno ALTER COLUMN id SET DEFAULT nextval('valores_fiscales.terreno_id_seq'::regclass);
 
 
 --
--- TOC entry 3792 (class 2604 OID 70711)
--- Name: tipo_construccion id; Type: DEFAULT; Schema: valores_fiscales; Owner: -
+-- Name: tipo_construccion id; Type: DEFAULT; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY valores_fiscales.tipo_construccion ALTER COLUMN id SET DEFAULT nextval('valores_fiscales.tipo_construccion_id_seq'::regclass);
 
 
 --
--- TOC entry 4248 (class 0 OID 69943)
--- Dependencies: 220
--- Data for Name: actividad_economica; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: actividad_economica; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.actividad_economica (id_actividad_economica, numero_referencia, descripcion, alicuota, minimo_tributable) FROM stdin;
@@ -6235,31 +6613,90 @@ COPY impuesto.actividad_economica (id_actividad_economica, numero_referencia, de
 
 
 --
--- TOC entry 4251 (class 0 OID 69954)
--- Dependencies: 223
--- Data for Name: actividad_economica_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: actividad_economica_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.actividad_economica_exoneracion (id_actividad_economica_exoneracion, id_plazo_exoneracion, id_actividad_economica) FROM stdin;
+2	24	6
+3	24	8
+4	24	7
+5	28	1
+6	30	11
 \.
 
 
 --
--- TOC entry 4249 (class 0 OID 69949)
--- Dependencies: 221
--- Data for Name: actividad_economica_sucursal; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: actividad_economica_sucursal; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
-COPY impuesto.actividad_economica_sucursal (id_actividad_economica_contribuyente, id_registro_municipal, numero_referencia) FROM stdin;
-50	80	2005001
-51	80	3053002
+COPY impuesto.actividad_economica_sucursal (id_actividad_economica_contribuyente, id_registro_municipal, numero_referencia, aplicable_desde) FROM stdin;
+50	80	2005001	\N
+51	80	3053002	\N
+52	81	2013001	\N
+56	86	3010001	\N
+57	87	3001001	\N
+58	87	3010001	\N
+59	88	3001001	\N
+60	88	3010001	\N
+61	89	3001001	\N
+62	89	3010001	\N
+63	90	3001001	\N
+64	90	3010001	\N
+65	91	3001001	\N
+66	91	3010001	\N
+67	92	3001001	\N
+68	92	3010001	\N
+69	93	3001001	\N
+70	93	3010001	\N
+71	94	2077001	\N
+72	95	2032001	\N
+74	96	2047001	\N
+75	99	3001001	\N
+76	100	3001001	\N
+77	101	3049001	\N
+78	101	3054001	\N
+79	101	3001001	\N
+84	102	3001001	\N
+85	102	3049001	\N
+86	102	3054001	\N
+88	103	3054001	\N
+89	103	3001001	\N
+90	103	3049001	\N
+93	105	20270012	\N
+97	107	2029001	\N
+98	107	2030001	\N
+99	107	2031001	\N
+100	108	2029001	\N
+101	108	2030001	\N
+102	108	2031001	\N
+103	109	2032001	\N
+104	82	2034001	\N
+105	110	2029001	\N
+106	110	2030001	\N
+107	110	2031001	\N
+116	113	2032001	2020-06-26
+117	113	2031001	2020-03-05
+118	113	2029001	2019-07-12
+119	113	2033001	2018-07-18
+120	114	3007001	2019-12-01
+53	83	3001001	2020-07-01
+54	83	3010001	2020-03-05
+55	83	3062001	2020-03-14
+124	83	2029001	2019-07-03
+94	106	2029001	2020-07-01
+95	106	2030001	2020-07-02
+96	106	2031001	2020-07-20
+128	106	2032001	2020-07-15
+137	115	3007001	2020-01-10
+138	115	2045001	2020-02-01
+139	116	3007001	2020-01-02
+140	116	2031001	2020-03-02
+141	116	2045001	2020-06-02
 \.
 
 
 --
--- TOC entry 4254 (class 0 OID 69961)
--- Dependencies: 226
--- Data for Name: avaluo_inmueble; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: avaluo_inmueble; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.avaluo_inmueble (id_avaluo_inmueble, id_inmueble, avaluo, anio) FROM stdin;
@@ -6269,13 +6706,85 @@ COPY impuesto.avaluo_inmueble (id_avaluo_inmueble, id_inmueble, avaluo, anio) FR
 187	436	0	2020
 188	437	0	2020
 189	438	0	2020
+190	439	0	2020
+191	440	0	2020
+192	441	0	2020
+193	442	0	2020
+194	443	0	2020
+195	444	0	2020
+196	445	0	2020
+197	446	0	2020
+198	447	0	2020
+199	448	0	2020
+200	449	0	2020
+201	450	0	2020
+202	451	0	2020
+203	452	0	2020
+204	453	0	2020
+205	454	0	2020
+206	455	0	2020
+207	456	0	2020
+208	457	0	2020
+209	458	0	2020
+210	459	0	2020
+211	460	0	2020
+212	461	0	2020
+213	462	0	2020
+214	463	0	2020
+215	464	0	2020
+216	465	0	2020
+217	466	0	2020
+218	467	0	2020
+219	468	0	2020
+220	469	0	2020
+221	470	0	2020
+222	471	0	2020
+223	472	0	2020
+224	473	0	2020
+225	474	0	2020
+226	475	0	2020
+227	476	0	2020
+228	477	0	2020
+229	478	0	2020
+230	479	0	2020
+231	481	22222	2020
+232	482	123123	2020
+233	483	123123	2020
+234	484	12312333	2020
+235	485	1231231	2020
+236	485	123123	2017
+237	486	35454751234867	2020
+238	487	123123	2020
+239	487	123132	2019
+240	488	12313	2016
+241	488	123123	2017
+242	489	1313	2016
+243	489	12313	2017
+244	490	686768	2020
+245	491	25000000000	2020
+246	491	200000000	2019
+247	491	500000000	2016
+248	491	500000000	2017
+249	491	4700000000	2018
+250	492	16000000	2020
+251	493	560000000	2020
+252	494	300000000	2020
+253	495	50000000	2020
 \.
 
 
 --
--- TOC entry 4256 (class 0 OID 69969)
--- Dependencies: 228
--- Data for Name: categoria_propaganda; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: baremo_servicio_municipal; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+COPY impuesto.baremo_servicio_municipal (id_baremo, descripcion, indicador) FROM stdin;
+1	Costo por Metro Cuadrado para Servicio de Gas	0.1
+2	Límite del Costo para Servicio de Gas	150
+\.
+
+
+--
+-- Data for Name: categoria_propaganda; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.categoria_propaganda (id_categoria_propaganda, descripcion) FROM stdin;
@@ -6297,20 +6806,37 @@ COPY impuesto.categoria_propaganda (id_categoria_propaganda, descripcion) FROM s
 
 
 --
--- TOC entry 4258 (class 0 OID 69977)
--- Dependencies: 230
--- Data for Name: contribuyente; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: contribuyente; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
-COPY impuesto.contribuyente (id_contribuyente, tipo_documento, documento, razon_social, denominacion_comercial, siglas, id_parroquia, sector, direccion, punto_referencia, verificado, tipo_contribuyente) FROM stdin;
-84	J	304689713	CORPORACION DIGITEL, C.A.	CORPORACION GSM		\N		\N		t	JURIDICO
+COPY impuesto.contribuyente (id_contribuyente, tipo_documento, documento, razon_social, denominacion_comercial, siglas, id_parroquia, sector, direccion, punto_referencia, verificado, tipo_contribuyente, es_agente_retencion) FROM stdin;
+84	J	304689713	CORPORACION DIGITEL, C.A.	CORPORACION GSM		\N		\N		t	JURIDICO	f
+85	J	070015357	POLICLINICA MCBO C A	POLICLINICA MARACAIBO		72	SANTA RITA	Avenida 8 Calle 71, Local Nro. 1	SANTA RITA	t	JURIDICO	f
+86	J	308620483	FARMACIA COVIDES C.A.	FARMACIA COVIDES C.A.		64	INDIO MARA	Avenida 65 Calle  22A, Local Nro.  MZN	EDIF. IPSFA	t	JURIDICO	f
+87	J	000202001	FARMATODO, C.A.	FARMATODO, C.A. FARMACIA FUERZAS ARMADAS		65	PARCELAMIENTO LA VILLA	Avenida 14B Calle 45, Local Nro. 789	frente a ferretotal	t	JURIDICO	f
+88	V	123456789	Julio Sanchez	Julio Sanchez	si	76	tucupita	x ahi x alla	mmmm cerca d ahi	t	NATURAL	f
+89	V	12543654	jose sanchez	comercializadora	CMCLZDR	69	123	mcbo	mcbo	t	NATURAL	f
+90	J	313520209	TALLER DE TORNOS Y EMBOBINADOS D Y M,CA	TALLER DE TORNOS Y EMBOBINADOS D Y M,CA		64	NUEVA VIA	Avenida 16 Y 16B Calle 93, Local Nro. 16-32	FDO CEMENTERIO CUADRADO	t	JURIDICO	f
+91	J	317355598	MSL GROUPAGE, C.A. (SUCURSAL)	MSL GROUPAGE, C.A. (SUCURSAL)		72	BELLA VISTA	Avenida 4 Calle 67, Local Nro.  71	SUCURSAL	t	JURIDICO	f
+95	J	413060540	SERVICIOS INFORMATICOS WAKUPLUS CA	SERVICIOS INFORMATICOS WAKUPLUS CA	SERVICIOS INFORMATICOS WAKUPLUS CA	72	DELICIAS	Avenida 15 Y 14A-74 Calle 74, Local Nro. 7	5 DE JULIO	t	JURIDICO	f
+96	J	311456759	MEGA 72 C.A	MEGA 72 C.A		72	0	Avenida 0 Calle 0, Casa Nro. 0	0	t	JURIDICO	f
+97	J	400000005	Mi empresa CA	Lo q se CA	MECA	63	sabaneta	av 21 calle 86	lo que sea	t	JURIDICO	f
+98	J	306020403	DISTRIBUIDORA J.K. C.A.	DISTRIBUIDORA J.K. C.A.		65	18 DE OCTUBRE	Avenida 2 Calle IJ, Casa Nro. 3--75	plaza de 18 de octubre	t	JURIDICO	f
+99	J	003257176	FERRETOTAL CARACAS C.A.	FERRETOTAL CARACAS C.A. (SUCURSAL)		73		Avenida Calle  , Casa Nro.  		t	JURIDICO	f
+100	V	18921679	Triny Rosales	Empanadas triny	EMPTR	62	Cañada Honda	av 21 calle 86	en visoca	t	NATURAL	f
+101	J	312645978	Comercializadora	comercializadora	CMCLZDR	68	123	mcbo	mcbo	t	JURIDICO	f
+103	J	312645976	jose coro	comercializadora	corocoro	61	bolivar	mcbo	mcbo	t	JURIDICO	f
+104	J	356789134	jose coro	comercializadora	corocoro	65	bolivar	mcbo	mcbo	t	JURIDICO	f
+105	J	4005	mi casa es esta CA	Empanadas Triny	CCA	62	Cañada Honda	Av 21 residencias visoca	diagolanl	t	JURIDICO	f
+106	J	192837465	jose coro	comercializadora	corocorocoro	65	bolivar	mcbo	mcbo	t	JURIDICO	f
+107	J	192837466	jose coro segundo	comercializadora	CMCLZDR	61	123	mcbo	mcbo	t	JURIDICO	f
+111	V	7566202	ANTERO TROMPIZ	ANTERO TROMPIZ		\N		\N		t	NATURAL	f
+112	V	14628028	CARLOS URBINA			73	SECTOR AMPARO	Avenida 145 Calle 98C-3, Casa Nro. 485	ENTRANDO POR LOS PLATANEROS	t	NATURAL	f
 \.
 
 
 --
--- TOC entry 4259 (class 0 OID 69983)
--- Dependencies: 231
--- Data for Name: contribuyente_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: contribuyente_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.contribuyente_exoneracion (id_contribuyente_exoneracion, id_plazo_exoneracion, id_registro_municipal, id_actividad_economica) FROM stdin;
@@ -6318,35 +6844,83 @@ COPY impuesto.contribuyente_exoneracion (id_contribuyente_exoneracion, id_plazo_
 
 
 --
--- TOC entry 4262 (class 0 OID 69990)
--- Dependencies: 234
--- Data for Name: convenio; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: convenio; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.convenio (id_convenio, id_solicitud, cantidad) FROM stdin;
 5	275	2
+9	314	2
+12	321	2
+13	346	2
+14	352	2
+15	353	2
+16	355	3
+17	363	2
+18	367	2
+19	368	2
+20	371	2
+21	372	2
+22	373	3
 \.
 
 
 --
--- TOC entry 4236 (class 0 OID 69796)
--- Dependencies: 205
--- Data for Name: credito_fiscal; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: credito_fiscal; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
-COPY impuesto.credito_fiscal (id_credito_fiscal, id_persona, concepto, credito) FROM stdin;
-1	76	JURIDICO	0
-2	77	JURIDICO	0
-3	78	JURIDICO	0
-4	79	JURIDICO	0
-5	80	JURIDICO	190980.48
+COPY impuesto.credito_fiscal (id_credito_fiscal, id_persona, concepto, credito, fecha_creacion) FROM stdin;
+1	76	JURIDICO	0	2020-07-23
+2	77	JURIDICO	0	2020-07-23
+3	78	JURIDICO	0	2020-07-23
+4	79	JURIDICO	0	2020-07-23
+5	80	JURIDICO	190980.48	2020-07-23
+6	81	JURIDICO	14382764.53	2020-07-23
+7	82	JURIDICO	55.00	2020-07-23
+8	84	JURIDICO	1730508.75	2020-07-23
+9	85	JURIDICO	31434.00	2020-07-23
+11	86	JURIDICO	0	2020-07-23
+13	88	JURIDICO	35806187.10	2020-07-23
+14	89	JURIDICO	24701454.42	2020-07-23
+15	90	JURIDICO	16697591.84	2020-07-23
+16	91	JURIDICO	177311322.08	2020-07-23
+22	94	JURIDICO	51198.65	2020-07-23
+23	95	JURIDICO	0	2020-07-23
+24	97	JURIDICO	0	2020-07-23
+27	98	JURIDICO	0	2020-07-23
+28	99	JURIDICO	144000.40	2020-07-23
+25	96	JURIDICO	6913000	2020-07-23
+12	87	JURIDICO	534.49	2020-07-23
+18	93	JURIDICO	23018428.96	2020-07-23
+17	92	JURIDICO	16179134.16	2020-07-23
+10	83	JURIDICO	8414799.340000001	2020-07-23
+34	100	JURIDICO	50000.00	2020-07-23
+35	101	JURIDICO	0	2020-07-23
+36	102	JURIDICO	89635.98	2020-07-23
+37	103	JURIDICO	53360.00	2020-07-23
+38	111	NATURAL	0	2020-07-23
+39	112	NATURAL	0	2020-07-23
 \.
 
 
 --
--- TOC entry 4265 (class 0 OID 69997)
--- Dependencies: 237
--- Data for Name: dias_feriados; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: detalle_retencion; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+COPY impuesto.detalle_retencion (id_detalle_retencion, rif, numero_referencia, razon_social, tipo_retencion, fecha_retencion, base_imponible, monto_retenido, codigo_actividad, porcentaje, numero_factura, id_liquidacion) FROM stdin;
+28	J3124123124	2900011265	 lo que sea .ca	C	2020-07-21	200000000	2000000	123123	0.01	123124123	1902
+29	V1234123	2900011265	freddie mercurio	S	2237-02-04	200000000	2000000	123	0.01	123123124	1902
+30	J1234123	0	Digitel C.A	C	2020-07-21	2123123	21231.23	123	0.01	1234123	1902
+31	J3124123124	2900011265	 lo que sea .ca	C	2020-07-21	200000000	2000000	123123	0.01	123124123	1903
+32	V1234123	2900011265	freddie mercurio	S	2237-02-04	200000000	2000000	123	0.01	123123124	1903
+33	J1234123	0	Digitel C.A	C	2020-07-21	2123123	21231.23	123	0.01	1234123	1903
+34	J3124123124	2900011265	 lo que sea .ca	C	2020-07-21	200000000	2000000	123123	0.01	123124123	1904
+35	V1234123	2900011265	freddie mercurio	S	2237-02-04	200000000	2000000	123	0.01	123123124	1904
+36	J1234123	0	Digitel C.A	C	2020-07-21	2123123	21231.23	123	0.01	1234123	1904
+\.
+
+
+--
+-- Data for Name: dias_feriados; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.dias_feriados (id_dia_feriado, dia, descripcion) FROM stdin;
@@ -6368,9 +6942,7 @@ COPY impuesto.dias_feriados (id_dia_feriado, dia, descripcion) FROM stdin;
 
 
 --
--- TOC entry 4267 (class 0 OID 70005)
--- Dependencies: 239
--- Data for Name: evento_fraccion; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: evento_fraccion; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.evento_fraccion (id_evento_fraccion, id_fraccion, event, "time") FROM stdin;
@@ -6378,13 +6950,68 @@ COPY impuesto.evento_fraccion (id_evento_fraccion, id_fraccion, event, "time") F
 6	7	iniciar	2020-07-09 08:27:59.653175
 7	6	ingresardatos_pi	2020-07-09 08:27:59.653175
 8	7	ingresardatos_pi	2020-07-09 08:27:59.653175
+16	8	iniciar	2020-07-10 17:40:22.836976
+17	9	iniciar	2020-07-10 17:40:22.836976
+18	8	ingresardatos_pi	2020-07-10 17:40:22.836976
+19	9	ingresardatos_pi	2020-07-10 17:40:22.836976
+20	6	aprobacioncajero_pi	2020-07-10 17:41:17.348487
+21	10	iniciar	2020-07-10 19:44:47.523322
+22	11	iniciar	2020-07-10 19:44:47.523322
+23	10	ingresardatos_pi	2020-07-10 19:44:47.523322
+24	11	ingresardatos_pi	2020-07-10 19:44:47.523322
+25	7	aprobacioncajero_pi	2020-07-13 15:52:50.598093
+26	12	iniciar	2020-07-13 16:44:08.749839
+27	13	iniciar	2020-07-13 16:44:08.749839
+28	12	ingresardatos_pi	2020-07-13 16:44:08.749839
+29	13	ingresardatos_pi	2020-07-13 16:44:08.749839
+30	12	aprobacioncajero_pi	2020-07-13 16:51:06.153378
+31	14	iniciar	2020-07-13 19:40:08.930921
+32	15	iniciar	2020-07-13 19:40:08.930921
+33	14	ingresardatos_pi	2020-07-13 19:40:08.930921
+34	15	ingresardatos_pi	2020-07-13 19:40:08.930921
+35	16	iniciar	2020-07-14 13:05:41.991268
+36	17	iniciar	2020-07-14 13:05:41.991268
+37	16	ingresardatos_pi	2020-07-14 13:05:41.991268
+38	17	ingresardatos_pi	2020-07-14 13:05:41.991268
+39	18	iniciar	2020-07-14 13:36:04.589736
+40	19	iniciar	2020-07-14 13:36:04.589736
+41	20	iniciar	2020-07-14 13:36:04.589736
+42	18	ingresardatos_pi	2020-07-14 13:36:04.589736
+43	19	ingresardatos_pi	2020-07-14 13:36:04.589736
+44	20	ingresardatos_pi	2020-07-14 13:36:04.589736
+45	21	iniciar	2020-07-15 13:41:54.298424
+46	22	iniciar	2020-07-15 13:41:54.298424
+47	21	ingresardatos_pi	2020-07-15 13:41:54.298424
+48	22	ingresardatos_pi	2020-07-15 13:41:54.298424
+49	23	iniciar	2020-07-15 16:42:59.372042
+50	24	iniciar	2020-07-15 16:42:59.372042
+51	25	iniciar	2020-07-15 16:42:59.372042
+52	26	iniciar	2020-07-15 16:42:59.372042
+53	23	ingresardatos_pi	2020-07-15 16:42:59.372042
+54	24	ingresardatos_pi	2020-07-15 16:42:59.372042
+55	25	ingresardatos_pi	2020-07-15 16:42:59.372042
+56	26	ingresardatos_pi	2020-07-15 16:42:59.372042
+57	27	iniciar	2020-07-15 16:56:12.835542
+58	28	iniciar	2020-07-15 16:56:12.835542
+59	29	iniciar	2020-07-15 16:56:12.835542
+60	30	iniciar	2020-07-15 16:56:12.835542
+61	27	ingresardatos_pi	2020-07-15 16:56:12.835542
+62	28	ingresardatos_pi	2020-07-15 16:56:12.835542
+63	29	ingresardatos_pi	2020-07-15 16:56:12.835542
+64	30	ingresardatos_pi	2020-07-15 16:56:12.835542
+65	31	iniciar	2020-07-15 16:57:09.206336
+66	32	iniciar	2020-07-15 16:57:09.206336
+67	33	iniciar	2020-07-15 16:57:09.206336
+68	31	ingresardatos_pi	2020-07-15 16:57:09.206336
+69	32	ingresardatos_pi	2020-07-15 16:57:09.206336
+70	33	ingresardatos_pi	2020-07-15 16:57:09.206336
+71	23	aprobacioncajero_pi	2020-07-15 17:22:58.322455
+72	24	validar_pi	2020-07-15 17:28:47.568725
 \.
 
 
 --
--- TOC entry 4269 (class 0 OID 70014)
--- Dependencies: 241
--- Data for Name: evento_solicitud; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: evento_solicitud; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.evento_solicitud (id_evento_solicitud, id_solicitud, event, "time") FROM stdin;
@@ -6394,13 +7021,215 @@ COPY impuesto.evento_solicitud (id_evento_solicitud, id_solicitud, event, "time"
 458	270	ingresardatos_pi	2020-07-09 08:12:37.689752
 467	275	iniciar	2020-07-09 08:27:59.653175
 468	275	ingresardatos_pi	2020-07-09 08:27:59.653175
+469	276	iniciar	2020-07-09 14:04:57.003454
+470	276	aprobacioncajero_pi	2020-07-09 14:04:57.003454
+471	277	iniciar	2020-07-09 14:06:40.280264
+472	277	ingresardatos_pi	2020-07-09 14:06:40.280264
+473	278	iniciar	2020-07-09 14:08:07.045071
+474	278	ingresardatos_pi	2020-07-09 14:08:07.045071
+475	277	validar_pi	2020-07-09 14:15:27.051053
+476	278	validar_pi	2020-07-09 14:16:38.780877
+477	279	iniciar	2020-07-10 12:03:13.465943
+478	280	iniciar	2020-07-10 12:03:13.465943
+479	281	iniciar	2020-07-10 12:03:13.465943
+480	282	iniciar	2020-07-10 12:03:13.465943
+481	279	aprobacioncajero_pi	2020-07-10 12:03:13.465943
+482	280	aprobacioncajero_pi	2020-07-10 12:03:13.465943
+483	281	aprobacioncajero_pi	2020-07-10 12:03:13.465943
+484	282	aprobacioncajero_pi	2020-07-10 12:03:13.465943
+485	283	iniciar	2020-07-10 12:05:40.028672
+486	283	ingresardatos_pi	2020-07-10 12:05:40.028672
+487	283	aprobacioncajero_pi	2020-07-10 13:20:44.682294
+488	284	iniciar	2020-07-10 15:49:57.76097
+489	285	iniciar	2020-07-10 15:49:57.76097
+490	286	iniciar	2020-07-10 15:49:57.76097
+491	287	iniciar	2020-07-10 15:49:57.76097
+492	288	iniciar	2020-07-10 15:49:57.76097
+493	289	iniciar	2020-07-10 15:49:57.76097
+494	290	iniciar	2020-07-10 15:49:57.76097
+495	284	aprobacioncajero_pi	2020-07-10 15:49:57.76097
+496	285	aprobacioncajero_pi	2020-07-10 15:49:57.76097
+497	286	aprobacioncajero_pi	2020-07-10 15:49:57.76097
+498	287	aprobacioncajero_pi	2020-07-10 15:49:57.76097
+499	288	aprobacioncajero_pi	2020-07-10 15:49:57.76097
+500	289	aprobacioncajero_pi	2020-07-10 15:49:57.76097
+501	290	aprobacioncajero_pi	2020-07-10 15:49:57.76097
+502	291	iniciar	2020-07-10 15:49:57.76097
+503	292	iniciar	2020-07-10 15:49:57.76097
+504	293	iniciar	2020-07-10 15:49:57.76097
+505	294	iniciar	2020-07-10 15:49:57.76097
+506	295	iniciar	2020-07-10 15:49:57.76097
+507	296	iniciar	2020-07-10 15:49:57.76097
+508	297	iniciar	2020-07-10 15:49:57.76097
+509	298	iniciar	2020-07-10 15:53:53.798013
+510	298	ingresardatos_pi	2020-07-10 15:53:53.798013
+511	298	aprobacioncajero_pi	2020-07-10 15:55:26.712598
+512	299	iniciar	2020-07-10 15:58:14.973462
+513	299	ingresardatos_pi	2020-07-10 15:58:14.973462
+514	299	aprobacioncajero_pi	2020-07-10 15:59:40.607466
+515	300	iniciar	2020-07-10 16:00:26.882307
+516	300	ingresardatos_pi	2020-07-10 16:00:26.882307
+517	301	iniciar	2020-07-10 16:26:16.682286
+518	301	ingresardatos_pi	2020-07-10 16:26:16.682286
+519	301	aprobacioncajero_pi	2020-07-10 16:27:28.188027
+520	302	iniciar	2020-07-10 16:30:10.841389
+521	302	ingresardatos_pi	2020-07-10 16:30:10.841389
+522	302	aprobacioncajero_pi	2020-07-10 16:32:10.368419
+523	303	iniciar	2020-07-10 16:46:15.751052
+524	303	ingresardatos_pi	2020-07-10 16:46:15.751052
+537	310	iniciar	2020-07-10 17:33:04.947948
+538	310	ingresardatos_pi	2020-07-10 17:33:04.947948
+539	310	aprobacioncajero_pi	2020-07-10 17:33:56.336678
+540	311	iniciar	2020-07-10 17:36:13.373302
+541	311	ingresardatos_pi	2020-07-10 17:36:13.373302
+542	312	iniciar	2020-07-10 17:38:48.696094
+543	312	ingresardatos_pi	2020-07-10 17:38:48.696094
+544	313	iniciar	2020-07-10 17:40:22.836976
+545	314	iniciar	2020-07-10 17:40:22.836976
+546	315	iniciar	2020-07-10 17:40:22.836976
+547	316	iniciar	2020-07-10 17:40:22.836976
+548	313	ingresardatos_pi	2020-07-10 17:40:22.836976
+549	314	ingresardatos_pi	2020-07-10 17:40:22.836976
+550	315	ingresardatos_pi	2020-07-10 17:40:22.836976
+551	316	ingresardatos_pi	2020-07-10 17:40:22.836976
+560	321	iniciar	2020-07-10 19:44:47.523322
+561	322	iniciar	2020-07-10 19:44:47.523322
+562	321	ingresardatos_pi	2020-07-10 19:44:47.523322
+563	322	ingresardatos_pi	2020-07-10 19:44:47.523322
+564	323	iniciar	2020-07-13 00:45:58.613416
+565	323	ingresardatos_pi	2020-07-13 00:45:58.613416
+570	303	aprobacioncajero_pi	2020-07-13 01:31:30.980018
+571	328	iniciar	2020-07-13 13:05:24.278176
+572	328	ingresardatos_pi	2020-07-13 13:05:24.278176
+573	328	aprobacioncajero_pi	2020-07-13 13:08:48.211087
+574	329	iniciar	2020-07-13 13:29:53.967998
+575	329	aprobacioncajero_pi	2020-07-13 13:29:53.967998
+576	330	iniciar	2020-07-13 13:32:04.212903
+577	330	aprobacioncajero_pi	2020-07-13 13:32:04.212903
+578	331	iniciar	2020-07-13 13:39:59.276087
+579	332	iniciar	2020-07-13 13:39:59.276087
+580	331	aprobacioncajero_pi	2020-07-13 13:39:59.276087
+581	332	aprobacioncajero_pi	2020-07-13 13:39:59.276087
+582	333	iniciar	2020-07-13 13:39:59.276087
+583	334	iniciar	2020-07-13 13:39:59.276087
+584	335	iniciar	2020-07-13 13:40:21.728724
+585	335	ingresardatos_pi	2020-07-13 13:40:21.728724
+586	335	aprobacioncajero_pi	2020-07-13 13:43:11.43049
+587	336	iniciar	2020-07-13 13:43:25.240907
+588	337	iniciar	2020-07-13 13:43:25.240907
+589	336	aprobacioncajero_pi	2020-07-13 13:43:25.240907
+590	337	aprobacioncajero_pi	2020-07-13 13:43:25.240907
+591	338	iniciar	2020-07-13 13:46:28.002889
+592	338	ingresardatos_pi	2020-07-13 13:46:28.002889
+593	339	iniciar	2020-07-13 13:46:58.89753
+594	339	ingresardatos_pi	2020-07-13 13:46:58.89753
+595	338	aprobacioncajero_pi	2020-07-13 13:48:15.334305
+596	339	aprobacioncajero_pi	2020-07-13 13:49:31.196749
+597	340	iniciar	2020-07-13 15:46:11.072425
+598	340	ingresardatos_pi	2020-07-13 15:46:11.072425
+599	340	aprobacioncajero_pi	2020-07-13 15:49:43.016642
+600	275	aprobacioncajero_pi	2020-07-13 15:52:50.598093
+601	341	iniciar	2020-07-13 16:22:13.907522
+602	341	ingresardatos_pi	2020-07-13 16:22:13.907522
+603	341	aprobacioncajero_pi	2020-07-13 16:27:24.960877
+604	342	iniciar	2020-07-13 16:41:24.7627
+605	342	ingresardatos_pi	2020-07-13 16:41:24.7627
+606	343	iniciar	2020-07-13 16:42:27.380158
+607	343	ingresardatos_pi	2020-07-13 16:42:27.380158
+608	344	iniciar	2020-07-13 16:44:08.749839
+609	345	iniciar	2020-07-13 16:44:08.749839
+610	346	iniciar	2020-07-13 16:44:08.749839
+611	347	iniciar	2020-07-13 16:44:08.749839
+612	344	ingresardatos_pi	2020-07-13 16:44:08.749839
+613	345	ingresardatos_pi	2020-07-13 16:44:08.749839
+614	346	ingresardatos_pi	2020-07-13 16:44:08.749839
+615	347	ingresardatos_pi	2020-07-13 16:44:08.749839
+616	343	aprobacioncajero_pi	2020-07-13 16:44:23.08662
+617	348	iniciar	2020-07-13 17:02:06.992831
+618	348	ingresardatos_pi	2020-07-13 17:02:06.992831
+619	348	aprobacioncajero_pi	2020-07-13 17:04:40.260167
+620	349	iniciar	2020-07-13 17:06:24.272644
+621	349	ingresardatos_pi	2020-07-13 17:06:24.272644
+622	350	iniciar	2020-07-13 18:46:18.62149
+623	350	ingresardatos_pi	2020-07-13 18:46:18.62149
+624	350	aprobacioncajero_pi	2020-07-13 18:59:38.037471
+625	351	iniciar	2020-07-13 19:29:29.131607
+626	351	ingresardatos_pi	2020-07-13 19:29:29.131607
+627	352	iniciar	2020-07-13 19:40:08.930921
+628	352	ingresardatos_pi	2020-07-13 19:40:08.930921
+629	353	iniciar	2020-07-14 13:05:41.991268
+630	353	ingresardatos_pi	2020-07-14 13:05:41.991268
+631	354	iniciar	2020-07-14 13:10:37.853072
+632	354	ingresardatos_pi	2020-07-14 13:10:37.853072
+633	355	iniciar	2020-07-14 13:36:04.589736
+634	355	ingresardatos_pi	2020-07-14 13:36:04.589736
+635	356	iniciar	2020-07-14 17:12:30.798115
+636	356	aprobacioncajero_pi	2020-07-14 17:12:30.798115
+637	357	iniciar	2020-07-14 18:06:20.787145
+638	357	ingresardatos_pi	2020-07-14 18:06:20.787145
+639	358	iniciar	2020-07-14 23:30:57.546707
+640	359	iniciar	2020-07-14 23:30:57.546707
+641	360	iniciar	2020-07-14 23:30:57.546707
+642	358	aprobacioncajero_pi	2020-07-14 23:30:57.546707
+643	359	aprobacioncajero_pi	2020-07-14 23:30:57.546707
+644	360	aprobacioncajero_pi	2020-07-14 23:30:57.546707
+645	361	iniciar	2020-07-14 23:42:11.698698
+646	361	ingresardatos_pi	2020-07-14 23:42:11.698698
+647	362	iniciar	2020-07-15 12:34:40.674303
+648	362	ingresardatos_pi	2020-07-15 12:34:40.674303
+649	363	iniciar	2020-07-15 13:41:54.298424
+650	363	ingresardatos_pi	2020-07-15 13:41:54.298424
+651	364	iniciar	2020-07-15 16:35:45.462845
+652	364	ingresardatos_pi	2020-07-15 16:35:45.462845
+653	365	iniciar	2020-07-15 16:38:42.964142
+654	365	ingresardatos_pi	2020-07-15 16:38:42.964142
+655	366	iniciar	2020-07-15 16:42:59.372042
+656	367	iniciar	2020-07-15 16:42:59.372042
+657	368	iniciar	2020-07-15 16:42:59.372042
+658	366	ingresardatos_pi	2020-07-15 16:42:59.372042
+659	367	ingresardatos_pi	2020-07-15 16:42:59.372042
+660	368	ingresardatos_pi	2020-07-15 16:42:59.372042
+661	369	iniciar	2020-07-15 16:52:02.233938
+662	369	ingresardatos_pi	2020-07-15 16:52:02.233938
+663	370	iniciar	2020-07-15 16:56:12.835542
+664	371	iniciar	2020-07-15 16:56:12.835542
+665	372	iniciar	2020-07-15 16:56:12.835542
+666	370	ingresardatos_pi	2020-07-15 16:56:12.835542
+667	371	ingresardatos_pi	2020-07-15 16:56:12.835542
+668	372	ingresardatos_pi	2020-07-15 16:56:12.835542
+669	373	iniciar	2020-07-15 16:57:09.206336
+670	373	ingresardatos_pi	2020-07-15 16:57:09.206336
+671	374	iniciar	2020-07-15 20:59:51.66042
+672	374	ingresardatos_pi	2020-07-15 20:59:51.66042
+673	375	iniciar	2020-07-15 21:34:30.714018
+674	375	ingresardatos_pi	2020-07-15 21:34:30.714018
+675	376	iniciar	2020-07-20 15:31:30.889108
+676	376	ingresardatos_pi	2020-07-20 15:31:30.889108
+677	377	iniciar	2020-07-20 17:14:30.598953
+678	377	ingresardatos_pi	2020-07-20 17:14:30.598953
+679	378	iniciar	2020-07-20 17:18:51.054977
+680	378	ingresardatos_pi	2020-07-20 17:18:51.054977
+681	379	iniciar	2020-07-21 17:30:12.760065
+682	379	ingresardatos_pi	2020-07-21 17:30:12.760065
+683	380	iniciar	2020-07-21 17:30:47.788345
+684	380	ingresardatos_pi	2020-07-21 17:30:47.788345
+685	381	iniciar	2020-07-22 21:35:24.237034
+686	381	ingresardatos_pi	2020-07-22 21:35:24.237034
+687	382	iniciar	2020-07-23 19:44:28.537126
+688	382	ingresardatos_pi	2020-07-23 19:44:28.537126
+689	383	iniciar	2020-07-23 21:51:18.248773
+690	383	ingresardatos_pi	2020-07-23 21:51:18.248773
+691	384	iniciar	2020-07-24 03:32:19.206073
+692	384	ingresardatos_pi	2020-07-24 03:32:19.206073
+708	400	iniciar	2020-07-24 19:09:03.840762
+709	400	ingresardatos_pi	2020-07-24 19:09:03.840762
+710	401	iniciar	2020-07-24 19:31:34.132088
+711	401	ingresardatos_pi	2020-07-24 19:31:34.132088
 \.
 
 
 --
--- TOC entry 4271 (class 0 OID 70023)
--- Dependencies: 243
--- Data for Name: factor; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: factor; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.factor (id_factor, descripcion, valor) FROM stdin;
@@ -6408,21 +7237,43 @@ COPY impuesto.factor (id_factor, descripcion, valor) FROM stdin;
 
 
 --
--- TOC entry 4237 (class 0 OID 69804)
--- Dependencies: 206
--- Data for Name: fraccion; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: fraccion; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.fraccion (id_fraccion, id_convenio, monto, porcion, fecha, aprobado, fecha_aprobado) FROM stdin;
-6	5	100000.00	1	2020-09-07	f	\N
-7	5	74000.00	2	2020-09-07	f	\N
+8	9	2000000.00	1	2020-07-17	f	\N
+9	9	1060000.00	2	2020-07-31	f	\N
+6	5	100000.00	1	2020-09-07	t	2020-07-10
+10	12	2000000.00	1	2020-07-18	f	\N
+11	12	1000000.00	2	2020-07-31	f	\N
+7	5	74000.00	2	2020-09-07	t	2020-07-13
+13	13	4000000.00	2	2020-07-13	f	\N
+12	13	20000000.00	1	2020-07-13	t	2020-07-13
+14	14	75000.00	1	2020-07-20	f	\N
+15	14	70000.00	2	2020-08-03	f	\N
+16	15	4090000.00	1	2020-07-17	f	\N
+17	15	5000000.00	2	2020-07-24	f	\N
+18	16	50000000.00	1	2020-07-17	f	\N
+19	16	50000000.00	2	2020-07-24	f	\N
+20	16	48500000.00	3	2020-07-31	f	\N
+21	17	10000000.00	1	2020-07-15	f	\N
+22	17	8000000.00	2	2020-07-15	f	\N
+24	18	4020000.00	2	2020-07-29	f	\N
+25	19	100000000.00	1	2020-07-22	f	\N
+26	19	15500000.00	2	2020-07-29	f	\N
+27	20	4000000.00	1	2020-07-22	f	\N
+28	20	2420000.00	2	2020-07-29	f	\N
+29	21	100000000.00	1	2020-07-22	f	\N
+30	21	34000000.00	2	2020-07-22	f	\N
+31	22	50000000.00	1	2020-07-21	f	\N
+32	22	50000000.00	2	2020-07-28	f	\N
+33	22	34000000.00	3	2020-08-04	f	\N
+23	18	3000000.00	1	2020-07-22	t	2020-07-15
 \.
 
 
 --
--- TOC entry 4274 (class 0 OID 70033)
--- Dependencies: 246
--- Data for Name: inmueble_contribuyente_natural; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: inmueble_contribuyente_natural; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.inmueble_contribuyente_natural (id_inmueble_contribuyente, id_inmueble, id_contribuyente) FROM stdin;
@@ -6430,9 +7281,7 @@ COPY impuesto.inmueble_contribuyente_natural (id_inmueble_contribuyente, id_inmu
 
 
 --
--- TOC entry 4243 (class 0 OID 69865)
--- Dependencies: 213
--- Data for Name: liquidacion; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: liquidacion; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.liquidacion (id_liquidacion, id_solicitud, monto, certificado, recibo, fecha_liquidacion, id_subramo, datos, fecha_vencimiento, id_registro_municipal, remitido) FROM stdin;
@@ -6449,13 +7298,439 @@ COPY impuesto.liquidacion (id_liquidacion, id_solicitud, monto, certificado, rec
 1349	275	29000.00	\N	\N	2020-07-09	102	{"desglose":[{"inmueble":437,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":438,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	80	f
 1350	275	29000.00	\N	\N	2020-07-09	102	{"desglose":[{"inmueble":437,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":438,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"junio","year":2020}}	2020-06-30	80	f
 1351	275	29000.00	\N	\N	2020-07-09	102	{"desglose":[{"inmueble":437,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":438,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"julio","year":2020}}	2020-07-31	80	f
+1367	277	1000000.00	\N	\N	2020-07-09	100	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	81	f
+1368	277	1000000.00	\N	\N	2020-07-09	100	{"fecha":{"month":"junio","year":2020}}	2020-06-30	81	f
+1369	278	29000.00	\N	\N	2020-07-09	66	{"desglose":[{"inmueble":439,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":440,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	81	f
+1370	278	29000.00	\N	\N	2020-07-09	66	{"desglose":[{"inmueble":439,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":440,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"junio","year":2020}}	2020-06-30	81	f
+1371	278	29000.00	\N	\N	2020-07-09	66	{"desglose":[{"inmueble":439,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":440,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"julio","year":2020}}	2020-07-31	81	f
+1372	278	10000000.00	\N	\N	2020-07-09	12	{"desglose":[{"subarticulo":231,"monto":"10000000.00","cantidad":"5"}],"fecha":{"month":"abril","year":2020}}	2020-07-31	81	f
+1352	276	65558629.60	\N	\N	2020-05-05	66	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	81	f
+1353	276	42348439.23	\N	\N	2020-05-04	10	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	81	f
+1354	276	22400000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-07-31	81	f
+1355	276	62975493.06	\N	\N	2020-04-27	10	{"fecha":{"month":"abril","year":2020}}	2020-07-31	81	f
+1356	276	48552805.76	\N	\N	2020-04-24	9	{"fecha":{"month":"abril","year":2020}}	2020-07-31	81	f
+1357	276	44660000.00	\N	\N	2020-04-23	66	{"fecha":{"month":"abril","year":2020}}	2020-07-31	81	f
+1358	276	32480000.00	\N	\N	2020-03-09	66	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	81	f
+1359	276	63426261.20	\N	\N	2020-03-04	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	81	f
+1360	276	27025051.06	\N	\N	2020-02-10	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	81	f
+1361	276	32480000.00	\N	\N	2020-02-10	66	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	81	f
+1362	276	400000.00	\N	\N	2020-02-10	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	81	f
+1363	276	21483200.00	\N	\N	2020-01-06	66	{"fecha":{"month":"enero","year":2020}}	2020-07-31	81	f
+1364	277	5000000.00	\N	\N	2020-07-09	30	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":10}	2020-05-31	81	f
+1365	277	2000000.00	\N	\N	2020-07-09	10	{"desglose":[{"aforo":83,"montoDeclarado":"2000000.00","montoCobrado":2000000}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	81	f
+1366	277	2000000.00	\N	\N	2020-07-09	10	{"desglose":[{"aforo":83,"montoDeclarado":"2000000.00","montoCobrado":2000000}],"fecha":{"month":"junio","year":2020}}	2020-06-30	81	f
+1373	278	0.00	\N	\N	2020-07-09	12	{"desglose":[],"fecha":{"month":"mayo","year":2020}}	2020-05-31	81	f
+1374	278	0.00	\N	\N	2020-07-09	12	{"desglose":[],"fecha":{"month":"junio","year":2020}}	2020-06-30	81	f
+1375	278	0.00	\N	\N	2020-07-09	12	{"desglose":[],"fecha":{"month":"julio","year":2020}}	2020-07-31	81	f
+1463	299	5000000.00	\N	\N	2020-07-10	30	{"fecha":{"month":"abril","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":10}	2020-04-30	91	f
+1464	299	10000000.00	\N	\N	2020-07-10	30	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":20}	2020-05-31	91	f
+1465	299	3030000.00	\N	\N	2020-07-10	10	{"desglose":[{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"1500000.00","montoCobrado":30000}],"fecha":{"month":"abril","year":2020}}	2020-07-31	91	f
+1466	299	3030000.00	\N	\N	2020-07-10	10	{"desglose":[{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"1500000.00","montoCobrado":30000}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	91	f
+1376	279	369409.41	\N	\N	2020-04-22	52	{"fecha":{"month":"abril","year":2020}}	2020-07-31	82	f
+1377	279	505635.97	\N	\N	2020-03-10	52	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	82	f
+1378	279	0.00	\N	\N	2020-02-20	52	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	82	f
+1379	279	945.00	\N	\N	2020-01-30	11	{"fecha":{"month":"enero","year":2020}}	2020-07-31	82	f
+1768	\N	0.00	\N	\N	2020-07-21	10	{"month":"junio","year":2020}	2020-06-30	113	f
+1769	\N	0.00	\N	\N	2020-07-21	10	{"month":"marzo","year":2020}	2020-03-31	113	f
+1770	\N	0.00	\N	\N	2020-07-21	10	{"month":"julio","year":2019}	2019-07-31	113	f
+1771	\N	0.00	\N	\N	2020-07-21	10	{"month":"julio","year":2018}	2018-07-31	113	f
+1772	\N	0.00	\N	\N	2020-07-21	10	{"month":"diciembre","year":2019}	2019-12-31	114	f
+1467	299	3030000.00	\N	\N	2020-07-10	10	{"desglose":[{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"1500000.00","montoCobrado":30000}],"fecha":{"month":"junio","year":2020}}	2020-06-30	91	f
+1468	299	1000000.00	\N	\N	2020-07-10	100	{"fecha":{"month":"abril","year":2020}}	2020-07-31	91	f
+1469	299	1000000.00	\N	\N	2020-07-10	100	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	91	f
+1380	280	22400000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-07-31	84	f
+1470	299	1000000.00	\N	\N	2020-07-10	100	{"fecha":{"month":"junio","year":2020}}	2020-06-30	91	f
+1381	281	22400000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-07-31	83	f
+1382	281	54141217.24	\N	\N	2020-04-24	9	{"fecha":{"month":"abril","year":2020}}	2020-07-31	83	f
+1383	281	21864572.31	\N	\N	2020-03-09	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	83	f
+1384	281	53360000.00	\N	\N	2020-03-09	66	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	83	f
+1385	281	5600000.00	\N	\N	2020-02-19	12	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	83	f
+1386	281	19818046.10	\N	\N	2020-02-05	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	83	f
+1387	281	13920000.00	\N	\N	2020-02-05	66	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	83	f
+1388	281	18560000.00	\N	\N	2020-01-07	66	{"fecha":{"month":"enero","year":2020}}	2020-07-31	83	f
+1389	282	22400000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-07-31	86	f
+1390	282	55915480.00	\N	\N	2020-03-03	66	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	86	f
+1391	283	29000.00	\N	\N	2020-07-10	66	{"desglose":[{"inmueble":444,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":445,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"marzo","year":2020}}	2020-03-31	83	f
+1392	283	29000.00	\N	\N	2020-07-10	66	{"desglose":[{"inmueble":444,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":445,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"abril","year":2020}}	2020-07-31	83	f
+1393	283	29000.00	\N	\N	2020-07-10	66	{"desglose":[{"inmueble":444,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":445,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	83	f
+1394	283	29000.00	\N	\N	2020-07-10	66	{"desglose":[{"inmueble":444,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":445,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"junio","year":2020}}	2020-06-30	83	f
+1395	283	29000.00	\N	\N	2020-07-10	66	{"desglose":[{"inmueble":444,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":445,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"julio","year":2020}}	2020-07-31	83	f
+1479	302	7500000.00	\N	\N	2020-07-10	12	{"desglose":[{"subarticulo":194,"monto":"7500000.00","cantidad":"5"}],"fecha":{"month":"abril","year":2020}}	2020-07-31	89	f
+1480	302	0.00	\N	\N	2020-07-10	12	{"desglose":[],"fecha":{"month":"mayo","year":2020}}	2020-05-31	89	f
+1481	302	0.00	\N	\N	2020-07-10	12	{"desglose":[],"fecha":{"month":"junio","year":2020}}	2020-06-30	89	f
+1482	302	0.00	\N	\N	2020-07-10	12	{"desglose":[],"fecha":{"month":"julio","year":2020}}	2020-07-31	89	f
+1491	310	29000.00	\N	\N	2020-07-10	66	{"desglose":[{"inmueble":459,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":460,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"abril","year":2020}}	2020-07-31	93	f
+1492	310	29000.00	\N	\N	2020-07-10	66	{"desglose":[{"inmueble":459,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":460,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	93	f
+1493	310	29000.00	\N	\N	2020-07-10	66	{"desglose":[{"inmueble":459,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":460,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"junio","year":2020}}	2020-06-30	93	f
+1494	310	29000.00	\N	\N	2020-07-10	66	{"desglose":[{"inmueble":459,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":460,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"julio","year":2020}}	2020-07-31	93	f
+1525	329	2000000.00	\N	\N	2020-03-04	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	94	f
+1526	329	8352000.00	\N	\N	2020-03-04	66	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	94	f
+1527	329	2000000.00	\N	\N	2020-02-10	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	94	f
+1528	329	8352000.00	\N	\N	2020-02-10	66	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	94	f
+1529	329	8352000.00	\N	\N	2020-01-07	66	{"fecha":{"month":"enero","year":2020}}	2020-07-31	94	f
+1539	331	12754200.00	\N	\N	2020-05-06	66	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	97	f
+1540	331	1000000.00	\N	\N	2020-05-06	10	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	97	f
+1541	331	2500000.00	\N	\N	2020-05-06	10	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	97	f
+1542	331	400000.00	\N	\N	2020-02-28	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	97	f
+1543	332	12754200.00	\N	\N	2020-05-06	66	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	96	f
+1544	332	1000000.00	\N	\N	2020-05-06	10	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	96	f
+1545	332	2500000.00	\N	\N	2020-05-06	10	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	96	f
+1546	332	400000.00	\N	\N	2020-02-28	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	96	f
+1471	300	7500000.00	\N	\N	2020-07-10	12	{"desglose":[{"subarticulo":194,"monto":"7500000.00","cantidad":"5"}],"fecha":{"month":"abril","year":2020}}	2020-07-31	91	f
+1472	300	0.00	\N	\N	2020-07-10	12	{"desglose":[],"fecha":{"month":"mayo","year":2020}}	2020-05-31	91	f
+1473	300	0.00	\N	\N	2020-07-10	12	{"desglose":[],"fecha":{"month":"junio","year":2020}}	2020-06-30	91	f
+1474	300	0.00	\N	\N	2020-07-10	12	{"desglose":[],"fecha":{"month":"julio","year":2020}}	2020-07-31	91	f
+1512	328	3030000.00	\N	\N	2020-07-13	10	{"desglose":[{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"1500000.00","montoCobrado":30000}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	88	f
+1513	328	3030000.00	\N	\N	2020-07-13	10	{"desglose":[{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"1500000.00","montoCobrado":30000}],"fecha":{"month":"junio","year":2020}}	2020-06-30	88	f
+1514	328	29000.00	\N	\N	2020-07-13	66	{"desglose":[{"inmueble":450,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":451,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"abril","year":2020}}	2020-07-31	88	f
+1495	311	7500000.00	\N	\N	2020-07-10	12	{"desglose":[{"subarticulo":194,"monto":"7500000.00","cantidad":"5"}],"fecha":{"month":"abril","year":2020}}	2020-07-31	93	f
+1496	311	0.00	\N	\N	2020-07-10	12	{"desglose":[],"fecha":{"month":"mayo","year":2020}}	2020-05-31	93	f
+1497	311	0.00	\N	\N	2020-07-10	12	{"desglose":[],"fecha":{"month":"junio","year":2020}}	2020-06-30	93	f
+1498	311	0.00	\N	\N	2020-07-10	12	{"desglose":[],"fecha":{"month":"julio","year":2020}}	2020-07-31	93	f
+1515	328	29000.00	\N	\N	2020-07-13	66	{"desglose":[{"inmueble":450,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":451,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	88	f
+1488	321	1000000.00	\N	\N	2020-07-10	\N	{"fecha":{"month":"abril","year":2020}}	2020-07-31	89	f
+1489	321	1000000.00	\N	\N	2020-07-10	\N	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	89	f
+1490	321	1000000.00	\N	\N	2020-07-10	\N	{"fecha":{"month":"junio","year":2020}}	2020-06-30	89	f
+1504	323	29000.00	\N	\N	2020-07-13	66	{"desglose":[{"inmueble":448,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":449,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"abril","year":2020}}	2020-07-31	87	f
+1505	323	29000.00	\N	\N	2020-07-13	66	{"desglose":[{"inmueble":448,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":449,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	87	f
+1506	323	29000.00	\N	\N	2020-07-13	66	{"desglose":[{"inmueble":448,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":449,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"junio","year":2020}}	2020-06-30	87	f
+1507	323	29000.00	\N	\N	2020-07-13	66	{"desglose":[{"inmueble":448,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":449,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"julio","year":2020}}	2020-07-31	87	f
+1508	328	5000000.00	\N	\N	2020-07-13	30	{"fecha":{"month":"abril","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":10}	2020-04-30	88	f
+1509	328	10000000.00	\N	\N	2020-07-13	30	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":20}	2020-05-31	88	f
+1510	328	15000000.00	\N	\N	2020-07-13	30	{"fecha":{"month":"junio","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":30}	2020-07-31	88	f
+1511	328	3030000.00	\N	\N	2020-07-13	10	{"desglose":[{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"1500000.00","montoCobrado":30000}],"fecha":{"month":"abril","year":2020}}	2020-07-31	88	f
+1516	328	29000.00	\N	\N	2020-07-13	66	{"desglose":[{"inmueble":450,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":451,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"junio","year":2020}}	2020-06-30	88	f
+1517	328	29000.00	\N	\N	2020-07-13	66	{"desglose":[{"inmueble":450,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":451,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"julio","year":2020}}	2020-07-31	88	f
+1483	303	5000000.00	\N	\N	2020-07-10	30	{"fecha":{"month":"abril","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":10}	2020-04-30	89	t
+1484	303	10000000.00	\N	\N	2020-07-10	30	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":20}	2020-05-31	89	t
+1518	328	67500000.00	\N	\N	2020-07-13	12	{"desglose":[{"subarticulo":194,"monto":"67500000.00","cantidad":"45"}],"fecha":{"month":"abril","year":2020}}	2020-07-31	88	f
+1485	353	3030000.00	\N	\N	2020-07-10	99	{"desglose":[{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"1500000.00","montoCobrado":30000}],"fecha":{"month":"abril","year":2020}}	2020-07-31	89	f
+1486	353	3030000.00	\N	\N	2020-07-10	99	{"desglose":[{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"1500000.00","montoCobrado":30000}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	89	f
+1487	353	3030000.00	\N	\N	2020-07-10	99	{"desglose":[{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"1500000.00","montoCobrado":30000}],"fecha":{"month":"junio","year":2020}}	2020-06-30	89	f
+1475	301	29000.00	\N	\N	2020-07-10	66	{"desglose":[{"inmueble":452,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":453,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"abril","year":2020}}	2020-07-31	89	f
+1476	301	29000.00	\N	\N	2020-07-10	66	{"desglose":[{"inmueble":452,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":453,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	89	f
+1477	301	29000.00	\N	\N	2020-07-10	66	{"desglose":[{"inmueble":452,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":453,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"junio","year":2020}}	2020-06-30	89	f
+1396	284	22400000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-07-31	87	f
+1397	284	308223647.48	\N	\N	2020-04-22	10	{"fecha":{"month":"abril","year":2020}}	2020-07-31	87	f
+1398	284	53360000.00	\N	\N	2020-04-22	66	{"fecha":{"month":"abril","year":2020}}	2020-07-31	87	f
+1399	284	245341821.88	\N	\N	2020-03-10	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	87	f
+1400	284	27840000.00	\N	\N	2020-03-10	66	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	87	f
+1401	284	1000000.00	\N	\N	2020-02-13	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	87	f
+1402	284	206009755.69	\N	\N	2020-02-13	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	87	f
+1403	284	10440000.00	\N	\N	2020-01-17	66	{"fecha":{"month":"enero","year":2020}}	2020-07-31	87	f
+1404	285	22400000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-07-31	88	f
+1405	285	267260763.00	\N	\N	2020-04-22	10	{"fecha":{"month":"abril","year":2020}}	2020-07-31	88	f
+1406	285	53360000.00	\N	\N	2020-04-22	66	{"fecha":{"month":"abril","year":2020}}	2020-07-31	88	f
+1407	285	254324285.68	\N	\N	2020-03-10	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	88	f
+1408	285	27840000.00	\N	\N	2020-03-10	66	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	88	f
+1409	285	220150334.96	\N	\N	2020-02-13	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	88	f
+1410	285	1000000.00	\N	\N	2020-02-13	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	88	f
+1411	285	10440000.00	\N	\N	2020-01-17	66	{"fecha":{"month":"enero","year":2020}}	2020-07-31	88	f
+1412	286	22400000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-07-31	89	f
+1413	286	214094526.13	\N	\N	2020-04-22	10	{"fecha":{"month":"abril","year":2020}}	2020-07-31	89	f
+1414	286	53360000.00	\N	\N	2020-04-22	66	{"fecha":{"month":"abril","year":2020}}	2020-07-31	89	f
+1415	286	182713050.68	\N	\N	2020-03-10	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	89	f
+1416	286	27840000.00	\N	\N	2020-03-10	66	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	89	f
+1417	286	1000000.00	\N	\N	2020-02-13	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	89	f
+1418	286	153714488.29	\N	\N	2020-02-13	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	89	f
+1419	286	10440000.00	\N	\N	2020-01-17	66	{"fecha":{"month":"enero","year":2020}}	2020-07-31	89	f
+1420	287	22400000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-07-31	90	f
+1421	287	58439693.67	\N	\N	2020-04-22	10	{"fecha":{"month":"abril","year":2020}}	2020-07-31	90	f
+1422	287	2000000.00	\N	\N	2020-03-27	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	90	f
+1423	287	113652894.37	\N	\N	2020-03-27	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	90	f
+1424	287	1000000.00	\N	\N	2020-02-13	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	90	f
+1425	287	90139081.15	\N	\N	2020-02-13	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	90	f
+1426	288	22400000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-07-31	91	f
+1427	288	35360000.00	\N	\N	2020-04-22	66	{"fecha":{"month":"abril","year":2020}}	2020-07-31	91	f
+1428	288	262354442.99	\N	\N	2020-04-22	10	{"fecha":{"month":"abril","year":2020}}	2020-07-31	91	f
+1429	288	13920000.00	\N	\N	2020-03-10	66	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	91	f
+1430	288	215987393.79	\N	\N	2020-03-10	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	91	f
+1431	288	13920000.00	\N	\N	2020-02-13	66	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	91	f
+1432	288	1000000.00	\N	\N	2020-02-13	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	91	f
+1433	288	186623180.86	\N	\N	2020-02-13	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	91	f
+1434	288	10440000.00	\N	\N	2020-01-17	66	{"fecha":{"month":"enero","year":2020}}	2020-07-31	91	f
+1435	289	22400000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-07-31	92	f
+1436	289	245540952.42	\N	\N	2020-04-22	10	{"fecha":{"month":"abril","year":2020}}	2020-07-31	92	f
+1437	289	53360000.00	\N	\N	2020-04-22	66	{"fecha":{"month":"abril","year":2020}}	2020-07-31	92	f
+1438	289	235466663.74	\N	\N	2020-03-10	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	92	f
+1439	289	27840000.00	\N	\N	2020-03-10	66	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	92	f
+1440	289	194218977.42	\N	\N	2020-02-13	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	92	f
+1441	289	1000000.00	\N	\N	2020-02-13	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	92	f
+1442	289	10440000.00	\N	\N	2020-01-17	66	{"fecha":{"month":"enero","year":2020}}	2020-07-31	92	f
+1443	290	22400000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-07-31	93	f
+1444	290	249484060.42	\N	\N	2020-04-22	10	{"fecha":{"month":"abril","year":2020}}	2020-07-31	93	f
+1445	290	53360000.00	\N	\N	2020-04-22	66	{"fecha":{"month":"abril","year":2020}}	2020-07-31	93	f
+1446	290	239252276.52	\N	\N	2020-03-10	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	93	f
+1447	290	27840000.00	\N	\N	2020-03-10	66	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	93	f
+1448	290	191433955.27	\N	\N	2020-02-13	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	93	f
+1449	290	1000000.00	\N	\N	2020-02-13	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	93	f
+1450	290	10440000.00	\N	\N	2020-01-17	66	{"fecha":{"month":"enero","year":2020}}	2020-07-31	93	f
+1478	301	29000.00	\N	\N	2020-07-10	66	{"desglose":[{"inmueble":452,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":453,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"julio","year":2020}}	2020-07-31	89	f
+1523	328	1000000.00	\N	\N	2020-07-13	100	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	88	f
+1451	291	1000000.00	\N	\N	\N	\N	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	87	f
+1452	292	1000000.00	\N	\N	\N	\N	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	88	f
+1453	293	1000000.00	\N	\N	\N	\N	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	89	f
+1454	294	1000000.00	\N	\N	\N	\N	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	90	f
+1455	294	2000000.00	\N	\N	\N	\N	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	90	f
+1456	295	1000000.00	\N	\N	\N	\N	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	91	f
+1457	296	1000000.00	\N	\N	\N	\N	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	92	f
+1458	297	1000000.00	\N	\N	\N	\N	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	93	f
+1459	298	29000.00	\N	\N	2020-07-10	66	{"desglose":[{"inmueble":455,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":456,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"abril","year":2020}}	2020-07-31	91	f
+1460	298	29000.00	\N	\N	2020-07-10	66	{"desglose":[{"inmueble":455,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":456,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	91	f
+1461	298	29000.00	\N	\N	2020-07-10	66	{"desglose":[{"inmueble":455,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":456,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"junio","year":2020}}	2020-06-30	91	f
+1462	298	29000.00	\N	\N	2020-07-10	66	{"desglose":[{"inmueble":455,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":456,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"julio","year":2020}}	2020-07-31	91	f
+1524	328	1000000.00	\N	\N	2020-07-13	100	{"fecha":{"month":"junio","year":2020}}	2020-06-30	88	f
+1547	333	2500000.00	\N	\N	\N	\N	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	97	f
+1499	347	5000000.00	\N	\N	2020-07-10	30	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":10}	2020-05-31	80	t
+1502	344	1000000.00	\N	\N	2020-07-10	100	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	80	t
+1548	334	2500000.00	\N	\N	\N	\N	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	96	f
+1500	314	1530000.00	\N	\N	2020-07-10	99	{"desglose":[{"aforo":75,"montoDeclarado":"1000000.00","montoCobrado":1500000},{"aforo":185,"montoDeclarado":"1000000.00","montoCobrado":30000}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	80	f
+1501	314	1530000.00	\N	\N	2020-07-10	99	{"desglose":[{"aforo":75,"montoDeclarado":"1000000.00","montoCobrado":1500000},{"aforo":185,"montoDeclarado":"1000000.00","montoCobrado":30000}],"fecha":{"month":"junio","year":2020}}	2020-06-30	80	f
+1519	328	0.00	\N	\N	2020-07-13	12	{"desglose":[],"fecha":{"month":"mayo","year":2020}}	2020-05-31	88	f
+1520	328	0.00	\N	\N	2020-07-13	12	{"desglose":[],"fecha":{"month":"junio","year":2020}}	2020-06-30	88	f
+1521	328	0.00	\N	\N	2020-07-13	12	{"desglose":[],"fecha":{"month":"julio","year":2020}}	2020-07-31	88	f
+1522	328	1000000.00	\N	\N	2020-07-13	100	{"fecha":{"month":"abril","year":2020}}	2020-07-31	88	f
+1549	335	5000000.00	\N	\N	2020-07-13	30	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":10}	2020-05-31	96	f
+1550	335	10000000.00	\N	\N	2020-07-13	30	{"fecha":{"month":"junio","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":20}	2020-07-31	96	f
+1551	335	4000000.00	\N	\N	2020-07-13	10	{"desglose":[{"aforo":19,"montoDeclarado":"50000000.00","montoCobrado":2000000},{"aforo":19,"montoDeclarado":"50000000.00","montoCobrado":2000000}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	96	f
+1552	335	24000000.00	\N	\N	2020-07-13	10	{"desglose":[{"aforo":19,"montoDeclarado":"600000000.00","montoCobrado":12000000},{"aforo":19,"montoDeclarado":"600000000.00","montoCobrado":12000000}],"fecha":{"month":"junio","year":2020}}	2020-06-30	96	f
+1530	330	4000000.00	\N	\N	2020-05-07	10	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	95	f
+1531	330	5455526.40	\N	\N	2020-05-07	66	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	95	f
+1532	330	400000.01	\N	\N	2020-04-06	10	{"fecha":{"month":"abril","year":2020}}	2020-07-31	95	f
+1533	330	4640000.00	\N	\N	2020-04-06	66	{"fecha":{"month":"abril","year":2020}}	2020-07-31	95	f
+1534	330	1600000.00	\N	\N	2020-03-02	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	95	f
+1535	330	4640000.00	\N	\N	2020-03-02	66	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	95	f
+1536	330	4640000.00	\N	\N	2020-02-05	66	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	95	f
+1537	330	1600000.00	\N	\N	2020-02-05	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	95	f
+1538	330	3480000.00	\N	\N	2020-01-15	66	{"fecha":{"month":"enero","year":2020}}	2020-07-31	95	f
+1553	335	1000000.00	\N	\N	2020-07-13	100	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	96	f
+1554	335	1000000.00	\N	\N	2020-07-13	100	{"fecha":{"month":"junio","year":2020}}	2020-06-30	96	f
+1555	336	42352273.60	\N	\N	2020-05-08	52	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	98	f
+1556	336	42352273.60	\N	\N	2020-05-04	52	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	98	f
+1557	336	36909096.43	\N	\N	2020-04-22	52	{"fecha":{"month":"abril","year":2020}}	2020-07-31	98	f
+1558	336	23602822.69	\N	\N	2020-03-09	52	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	98	f
+1503	344	1000000.00	\N	\N	2020-07-10	100	{"fecha":{"month":"junio","year":2020}}	2020-06-30	80	t
+1582	340	3060000.00	\N	\N	2020-07-13	10	{"desglose":[{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"3000000.00","montoCobrado":60000}],"fecha":{"month":"abril","year":2020}}	2020-07-31	87	f
+1583	340	3030000.00	\N	\N	2020-07-13	10	{"desglose":[{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"1500000.00","montoCobrado":30000}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	87	f
+1584	340	3030000.00	\N	\N	2020-07-13	10	{"desglose":[{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"1500000.00","montoCobrado":30000}],"fecha":{"month":"junio","year":2020}}	2020-06-30	87	f
+1585	340	135000000.00	\N	\N	2020-07-13	12	{"desglose":[{"subarticulo":196,"monto":"135000000.00","cantidad":"54"}],"fecha":{"month":"abril","year":2020}}	2020-07-31	87	f
+1586	340	0.00	\N	\N	2020-07-13	12	{"desglose":[],"fecha":{"month":"mayo","year":2020}}	2020-05-31	87	f
+1587	340	0.00	\N	\N	2020-07-13	12	{"desglose":[],"fecha":{"month":"junio","year":2020}}	2020-06-30	87	f
+1559	337	69600000.00	\N	\N	2020-05-07	66	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	99	f
+1560	337	377563945.61	\N	\N	2020-05-07	10	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	99	f
+1561	337	25520000.00	\N	\N	2020-04-30	66	{"fecha":{"month":"abril","year":2020}}	2020-07-31	99	f
+1562	337	22400000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-07-31	99	f
+1563	337	318201883.52	\N	\N	2020-04-28	10	{"fecha":{"month":"abril","year":2020}}	2020-07-31	99	f
+1564	337	158572499.22	\N	\N	2020-04-24	9	{"fecha":{"month":"abril","year":2020}}	2020-07-31	99	f
+1565	337	205890461.81	\N	\N	2020-03-09	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	99	f
+1566	337	3529296.37	\N	\N	2020-03-06	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	99	f
+1567	337	13920000.00	\N	\N	2020-03-06	66	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	99	f
+1568	337	2800000.00	\N	\N	2020-02-21	12	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	99	f
+1569	337	2800000.00	\N	\N	2020-02-21	12	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	99	f
+1570	337	182631569.73	\N	\N	2020-02-10	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	99	f
+1571	337	13920000.00	\N	\N	2020-02-10	66	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	99	f
+1572	337	18560000.00	\N	\N	2020-01-10	66	{"fecha":{"month":"enero","year":2020}}	2020-07-31	99	f
+1573	338	29000.00	\N	\N	2020-07-13	66	{"desglose":[{"inmueble":470,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":471,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	99	f
+1574	338	29000.00	\N	\N	2020-07-13	66	{"desglose":[{"inmueble":470,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":471,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"junio","year":2020}}	2020-06-30	99	f
+1575	338	29000.00	\N	\N	2020-07-13	66	{"desglose":[{"inmueble":470,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":471,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"julio","year":2020}}	2020-07-31	99	f
+1576	339	29000.00	\N	\N	2020-07-13	66	{"desglose":[{"inmueble":467,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":468,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	96	f
+1577	339	29000.00	\N	\N	2020-07-13	66	{"desglose":[{"inmueble":467,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":468,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"junio","year":2020}}	2020-06-30	96	f
+1578	339	29000.00	\N	\N	2020-07-13	66	{"desglose":[{"inmueble":467,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":468,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"julio","year":2020}}	2020-07-31	96	f
+1579	340	5000000.00	\N	\N	2020-07-13	30	{"fecha":{"month":"abril","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":10}	2020-04-30	87	f
+1580	340	10000000.00	\N	\N	2020-07-13	30	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":20}	2020-05-31	87	f
+1581	340	15000000.00	\N	\N	2020-07-13	30	{"fecha":{"month":"junio","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":30}	2020-07-31	87	f
+1588	340	0.00	\N	\N	2020-07-13	12	{"desglose":[],"fecha":{"month":"julio","year":2020}}	2020-07-31	87	f
+1589	340	1000000.00	\N	\N	2020-07-13	100	{"fecha":{"month":"abril","year":2020}}	2020-07-31	87	f
+1590	340	1000000.00	\N	\N	2020-07-13	100	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	87	f
+1591	340	1000000.00	\N	\N	2020-07-13	100	{"fecha":{"month":"junio","year":2020}}	2020-06-30	87	f
+1592	341	5000000.00	\N	\N	2020-07-13	30	{"fecha":{"month":"abril","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":10}	2020-04-30	90	f
+1593	341	10000000.00	\N	\N	2020-07-13	30	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":20}	2020-05-31	90	f
+1594	341	3030000.00	\N	\N	2020-07-13	10	{"desglose":[{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"1500000.00","montoCobrado":30000}],"fecha":{"month":"abril","year":2020}}	2020-07-31	90	f
+1595	341	3030000.00	\N	\N	2020-07-13	10	{"desglose":[{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"1500000.00","montoCobrado":30000}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	90	f
+1596	341	3030000.00	\N	\N	2020-07-13	10	{"desglose":[{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"1500000.00","montoCobrado":30000}],"fecha":{"month":"junio","year":2020}}	2020-06-30	90	f
+1597	341	1000000.00	\N	\N	2020-07-13	100	{"fecha":{"month":"abril","year":2020}}	2020-07-31	90	f
+1598	341	1000000.00	\N	\N	2020-07-13	100	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	90	f
+1599	341	1000000.00	\N	\N	2020-07-13	100	{"fecha":{"month":"junio","year":2020}}	2020-06-30	90	f
+1604	343	5000000.00	\N	\N	2020-07-13	30	{"fecha":{"month":"abril","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":10}	2020-04-30	93	f
+1605	343	10000000.00	\N	\N	2020-07-13	30	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":20}	2020-05-31	93	f
+1606	343	3030000.00	\N	\N	2020-07-13	10	{"desglose":[{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"1500000.00","montoCobrado":30000}],"fecha":{"month":"abril","year":2020}}	2020-07-31	93	f
+1607	343	3030000.00	\N	\N	2020-07-13	10	{"desglose":[{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"1500000.00","montoCobrado":30000}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	93	f
+1608	343	3030000.00	\N	\N	2020-07-13	10	{"desglose":[{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"1500000.00","montoCobrado":30000}],"fecha":{"month":"junio","year":2020}}	2020-06-30	93	f
+1609	343	1000000.00	\N	\N	2020-07-13	100	{"fecha":{"month":"abril","year":2020}}	2020-07-31	93	f
+1610	343	1000000.00	\N	\N	2020-07-13	100	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	93	f
+1611	343	1000000.00	\N	\N	2020-07-13	100	{"fecha":{"month":"junio","year":2020}}	2020-06-30	93	f
+1600	346	24000000.00	\N	\N	2020-07-13	\N	{"desglose":[{"subarticulo":200,"monto":"24000000.00","cantidad":"12"}],"fecha":{"month":"abril","year":2020}}	2020-07-31	80	f
+1601	346	0.00	\N	\N	2020-07-13	\N	{"desglose":[],"fecha":{"month":"mayo","year":2020}}	2020-05-31	80	f
+1602	346	0.00	\N	\N	2020-07-13	\N	{"desglose":[],"fecha":{"month":"junio","year":2020}}	2020-06-30	80	f
+1603	346	0.00	\N	\N	2020-07-13	\N	{"desglose":[],"fecha":{"month":"julio","year":2020}}	2020-07-31	80	f
+1612	348	5000000.00	\N	\N	2020-07-13	30	{"fecha":{"month":"abril","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":10}	2020-04-30	92	f
+1613	348	10000000.00	\N	\N	2020-07-13	30	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":20}	2020-05-31	92	f
+1614	348	3030000.00	\N	\N	2020-07-13	10	{"desglose":[{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"1500000.00","montoCobrado":30000}],"fecha":{"month":"abril","year":2020}}	2020-07-31	92	f
+1615	348	3030000.00	\N	\N	2020-07-13	10	{"desglose":[{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"1500000.00","montoCobrado":30000}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	92	f
+1616	348	3030000.00	\N	\N	2020-07-13	10	{"desglose":[{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"1500000.00","montoCobrado":30000}],"fecha":{"month":"junio","year":2020}}	2020-06-30	92	f
+1617	348	29000.00	\N	\N	2020-07-13	66	{"desglose":[{"inmueble":457,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":458,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"abril","year":2020}}	2020-07-31	92	f
+1618	348	29000.00	\N	\N	2020-07-13	66	{"desglose":[{"inmueble":457,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":458,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	92	f
+1619	348	29000.00	\N	\N	2020-07-13	66	{"desglose":[{"inmueble":457,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":458,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"junio","year":2020}}	2020-06-30	92	f
+1620	348	29000.00	\N	\N	2020-07-13	66	{"desglose":[{"inmueble":457,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":458,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"julio","year":2020}}	2020-07-31	92	f
+1621	348	1000000.00	\N	\N	2020-07-13	100	{"fecha":{"month":"abril","year":2020}}	2020-07-31	92	f
+1622	348	1000000.00	\N	\N	2020-07-13	100	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	92	f
+1623	348	1000000.00	\N	\N	2020-07-13	100	{"fecha":{"month":"junio","year":2020}}	2020-06-30	92	f
+1624	349	7500000.00	\N	\N	2020-07-13	12	{"desglose":[{"subarticulo":253,"monto":"7500000.00","cantidad":"5"}],"fecha":{"month":"abril","year":2020}}	2020-07-31	92	f
+1625	349	0.00	\N	\N	2020-07-13	12	{"desglose":[],"fecha":{"month":"mayo","year":2020}}	2020-05-31	92	f
+1626	349	0.00	\N	\N	2020-07-13	12	{"desglose":[],"fecha":{"month":"junio","year":2020}}	2020-06-30	92	f
+1627	349	0.00	\N	\N	2020-07-13	12	{"desglose":[],"fecha":{"month":"julio","year":2020}}	2020-07-31	92	f
+1628	350	5000000.00	\N	\N	2020-07-13	30	{"fecha":{"month":"marzo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":10}	2020-03-31	83	f
+1629	350	10000000.00	\N	\N	2020-07-13	30	{"fecha":{"month":"abril","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":20}	2020-04-30	83	f
+1630	350	15000000.00	\N	\N	2020-07-13	30	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":30}	2020-05-31	83	f
+1643	352	29000.00	\N	\N	2020-07-13	102	{"desglose":[{"inmueble":446,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":447,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"julio","year":2020}}	2020-07-31	86	f
+1631	350	5500000.00	\N	\N	2020-07-13	10	{"desglose":[{"aforo":131,"montoDeclarado":"50000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"50000000.00","montoCobrado":1000000},{"aforo":194,"montoDeclarado":"50000000.00","montoCobrado":1500000}],"fecha":{"month":"marzo","year":2020}}	2020-03-31	83	f
+1632	350	10529999.97	\N	\N	2020-07-13	10	{"desglose":[{"aforo":131,"montoDeclarado":"590000000.00","montoCobrado":8850000},{"aforo":140,"montoDeclarado":"5800000.00","montoCobrado":1500000},{"aforo":194,"montoDeclarado":"5999999.00","montoCobrado":179999.97}],"fecha":{"month":"abril","year":2020}}	2020-07-31	83	f
+1633	350	5770000.00	\N	\N	2020-07-13	10	{"desglose":[{"aforo":131,"montoDeclarado":"56000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"56000000.00","montoCobrado":1120000},{"aforo":194,"montoDeclarado":"55000000.00","montoCobrado":1650000}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	83	f
+1634	350	5800000.00	\N	\N	2020-07-13	10	{"desglose":[{"aforo":131,"montoDeclarado":"56000000.00","montoCobrado":3000000},{"aforo":140,"montoDeclarado":"56000000.00","montoCobrado":1120000},{"aforo":194,"montoDeclarado":"56000000.00","montoCobrado":1680000}],"fecha":{"month":"junio","year":2020}}	2020-06-30	83	f
+1635	350	1000000.00	\N	\N	2020-07-13	100	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	83	f
+1636	350	1000000.00	\N	\N	2020-07-13	100	{"fecha":{"month":"abril","year":2020}}	2020-07-31	83	f
+1637	350	1000000.00	\N	\N	2020-07-13	100	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	83	f
+1638	350	1000000.00	\N	\N	2020-07-13	100	{"fecha":{"month":"junio","year":2020}}	2020-06-30	83	f
+1655	357	0.00	\N	\N	2020-07-14	12	{"desglose":[],"fecha":{"month":"mayo","year":2020}}	2020-05-31	100	f
+1656	357	0.00	\N	\N	2020-07-14	12	{"desglose":[],"fecha":{"month":"junio","year":2020}}	2020-06-30	100	f
+1657	357	0.00	\N	\N	2020-07-14	12	{"desglose":[],"fecha":{"month":"julio","year":2020}}	2020-07-31	100	f
+1642	352	29000.00	\N	\N	2020-07-13	102	{"desglose":[{"inmueble":446,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":447,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"junio","year":2020}}	2020-06-30	86	f
+1641	352	29000.00	\N	\N	2020-07-13	102	{"desglose":[{"inmueble":446,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":447,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	86	f
+1640	352	29000.00	\N	\N	2020-07-13	102	{"desglose":[{"inmueble":446,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":447,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"abril","year":2020}}	2020-07-31	86	f
+1639	352	29000.00	\N	\N	2020-07-13	102	{"desglose":[{"inmueble":446,"montoAseo":18000,"montoGas":"7000.00"},{"inmueble":447,"montoAseo":18000,"montoGas":"7000.00"}],"fecha":{"month":"marzo","year":2020}}	2020-03-31	86	f
+1644	355	148500000.00	\N	\N	2020-07-14	\N	{"desglose":[{"subarticulo":194,"monto":"148500000.00","cantidad":"99"}],"fecha":{"month":"abril","year":2020}}	2020-07-31	90	f
+1645	355	0.00	\N	\N	2020-07-14	\N	{"desglose":[],"fecha":{"month":"mayo","year":2020}}	2020-05-31	90	f
+1646	355	0.00	\N	\N	2020-07-14	\N	{"desglose":[],"fecha":{"month":"junio","year":2020}}	2020-06-30	90	f
+1647	355	0.00	\N	\N	2020-07-14	\N	{"desglose":[],"fecha":{"month":"julio","year":2020}}	2020-07-31	90	f
+1648	356	76209596.28	\N	\N	2020-05-08	10	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	100	f
+1649	356	22400000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-07-31	100	f
+1650	356	45928290.29	\N	\N	2020-04-09	10	{"fecha":{"month":"abril","year":2020}}	2020-07-31	100	f
+1651	356	41760000.00	\N	\N	2020-03-06	66	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	100	f
+1652	356	43898585.06	\N	\N	2020-03-06	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	100	f
+1653	356	40512689.15	\N	\N	2020-02-05	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	100	f
+1654	357	132000000.00	\N	\N	2020-07-14	12	{"desglose":[{"subarticulo":194,"monto":"132000000.00","cantidad":"88"}],"fecha":{"month":"abril","year":2020}}	2020-07-31	100	f
+1658	358	20596541.42	\N	\N	2020-05-05	10	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	101	f
+1659	358	22400000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-07-31	101	f
+1660	358	23565679.37	\N	\N	2020-04-24	9	{"fecha":{"month":"abril","year":2020}}	2020-07-31	101	f
+1661	358	0.00	\N	\N	2020-04-23	66	{"fecha":{"month":"abril","year":2020}}	2020-07-31	101	f
+1662	358	17401466.20	\N	\N	2020-04-14	10	{"fecha":{"month":"abril","year":2020}}	2020-07-31	101	f
+1663	358	4640000.00	\N	\N	2020-03-05	66	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	101	f
+1664	358	24337225.68	\N	\N	2020-03-02	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	101	f
+1665	358	18986143.10	\N	\N	2020-02-07	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	101	f
+1666	358	4640000.00	\N	\N	2020-02-04	66	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	101	f
+1667	358	7424000.00	\N	\N	2020-01-08	66	{"fecha":{"month":"enero","year":2020}}	2020-07-31	101	f
+1668	359	30182356.36	\N	\N	2020-05-06	10	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	102	f
+1669	359	22400000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-07-31	102	f
+1670	359	33621492.21	\N	\N	2020-04-24	9	{"fecha":{"month":"abril","year":2020}}	2020-07-31	102	f
+1671	359	17043518.64	\N	\N	2020-04-14	10	{"fecha":{"month":"abril","year":2020}}	2020-07-31	102	f
+1672	359	4640000.00	\N	\N	2020-03-05	66	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	102	f
+1673	359	21694045.87	\N	\N	2020-03-02	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	102	f
+1674	359	24208501.00	\N	\N	2020-02-07	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	102	f
+1675	359	4640000.00	\N	\N	2020-02-04	66	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	102	f
+1676	359	5220000.00	\N	\N	2020-01-20	66	{"fecha":{"month":"enero","year":2020}}	2020-07-31	102	f
+1677	360	35506556.92	\N	\N	2020-05-05	10	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	103	f
+1678	360	22400000.00	\N	\N	2020-04-28	12	{"fecha":{"month":"abril","year":2020}}	2020-07-31	103	f
+1679	360	38159184.93	\N	\N	2020-04-24	9	{"fecha":{"month":"abril","year":2020}}	2020-07-31	103	f
+1680	360	24559784.64	\N	\N	2020-04-14	10	{"fecha":{"month":"abril","year":2020}}	2020-07-31	103	f
+1681	360	9280000.00	\N	\N	2020-03-05	66	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	103	f
+1682	360	46041110.18	\N	\N	2020-03-02	10	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	103	f
+1683	360	34580543.61	\N	\N	2020-02-05	10	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	103	f
+1684	360	4640000.00	\N	\N	2020-02-05	66	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	103	f
+1685	360	7424000.00	\N	\N	2020-01-08	66	{"fecha":{"month":"enero","year":2020}}	2020-07-31	103	f
+1690	363	18000000.00	\N	\N	2020-07-15	\N	{"desglose":[{"subarticulo":201,"monto":"18000000.00","cantidad":"12"}],"fecha":{"month":"abril","year":2020}}	2020-07-31	80	f
+1691	363	0.00	\N	\N	2020-07-15	\N	{"desglose":[],"fecha":{"month":"mayo","year":2020}}	2020-05-31	80	f
+1692	363	0.00	\N	\N	2020-07-15	\N	{"desglose":[],"fecha":{"month":"junio","year":2020}}	2020-06-30	80	f
+1693	363	0.00	\N	\N	2020-07-15	\N	{"desglose":[],"fecha":{"month":"julio","year":2020}}	2020-07-31	80	f
+1686	372	134000000.00	\N	\N	2020-07-14	\N	{"desglose":[{"subarticulo":200,"monto":"134000000.00","cantidad":"67"}],"fecha":{"month":"abril","year":2020}}	2020-07-31	101	f
+1687	372	0.00	\N	\N	2020-07-14	\N	{"desglose":[],"fecha":{"month":"mayo","year":2020}}	2020-05-31	101	f
+1688	372	0.00	\N	\N	2020-07-14	\N	{"desglose":[],"fecha":{"month":"junio","year":2020}}	2020-06-30	101	f
+1689	372	0.00	\N	\N	2020-07-14	\N	{"desglose":[],"fecha":{"month":"julio","year":2020}}	2020-07-31	101	f
+1698	365	5000000.00	\N	\N	2020-07-15	30	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":10}	2020-05-31	102	t
+1701	366	1000000.00	\N	\N	2020-07-15	100	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	102	f
+1702	366	1000000.00	\N	\N	2020-07-15	100	{"fecha":{"month":"junio","year":2020}}	2020-06-30	102	f
+1699	367	3810000.00	\N	\N	2020-07-15	99	{"desglose":[{"aforo":181,"montoDeclarado":"2000000.00","montoCobrado":60000},{"aforo":186,"montoDeclarado":"11500000.00","montoCobrado":345000},{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":181,"montoDeclarado":"2000000.00","montoCobrado":60000},{"aforo":186,"montoDeclarado":"11500000.00","montoCobrado":345000}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	102	f
+1700	367	3210000.00	\N	\N	2020-07-15	99	{"desglose":[{"aforo":181,"montoDeclarado":"2000000.00","montoCobrado":60000},{"aforo":186,"montoDeclarado":"1500000.00","montoCobrado":45000},{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":181,"montoDeclarado":"2000000.00","montoCobrado":60000},{"aforo":186,"montoDeclarado":"1500000.00","montoCobrado":45000}],"fecha":{"month":"junio","year":2020}}	2020-06-30	102	f
+1694	368	115500000.00	\N	\N	2020-07-15	\N	{"desglose":[{"subarticulo":194,"monto":"115500000.00","cantidad":"77"}],"fecha":{"month":"abril","year":2020}}	2020-04-30	102	f
+1695	368	0.00	\N	\N	2020-07-15	\N	{"desglose":[],"fecha":{"month":"mayo","year":2020}}	2020-05-31	102	f
+1696	368	0.00	\N	\N	2020-07-15	\N	{"desglose":[],"fecha":{"month":"junio","year":2020}}	2020-06-30	102	f
+1697	368	0.00	\N	\N	2020-07-15	\N	{"desglose":[],"fecha":{"month":"julio","year":2020}}	2020-07-31	102	f
+1712	374	0.00	\N	\N	2020-07-15	12	{"desglose":[],"fecha":{"month":"mayo","year":2020}}	2020-05-31	105	f
+1713	374	0.00	\N	\N	2020-07-15	12	{"desglose":[],"fecha":{"month":"junio","year":2020}}	2020-06-30	105	f
+1703	369	5000000.00	\N	\N	2020-07-15	30	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":10}	2020-05-31	101	t
+1706	370	1000000.00	\N	\N	2020-07-15	100	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	101	f
+1707	370	1000000.00	\N	\N	2020-07-15	100	{"fecha":{"month":"junio","year":2020}}	2020-06-30	101	f
+1714	374	0.00	\N	\N	2020-07-15	12	{"desglose":[],"fecha":{"month":"julio","year":2020}}	2020-07-31	105	f
+1704	371	3210000.00	\N	\N	2020-07-15	99	{"desglose":[{"aforo":181,"montoDeclarado":"2000000.00","montoCobrado":60000},{"aforo":186,"montoDeclarado":"1500000.00","montoCobrado":45000},{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":181,"montoDeclarado":"2000000.00","montoCobrado":60000},{"aforo":186,"montoDeclarado":"1500000.00","montoCobrado":45000}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	101	f
+1705	371	3210000.00	\N	\N	2020-07-15	99	{"desglose":[{"aforo":181,"montoDeclarado":"2000000.00","montoCobrado":60000},{"aforo":186,"montoDeclarado":"1500000.00","montoCobrado":45000},{"aforo":131,"montoDeclarado":"3000000.00","montoCobrado":3000000},{"aforo":181,"montoDeclarado":"2000000.00","montoCobrado":60000},{"aforo":186,"montoDeclarado":"1500000.00","montoCobrado":45000}],"fecha":{"month":"junio","year":2020}}	2020-06-30	101	f
+1708	374	1152000000.00	\N	\N	2020-07-15	12	{"desglose":[{"subarticulo":217,"monto":"1152000000.00","cantidad":"576"}],"fecha":{"month":"enero","year":2020}}	2020-07-31	105	f
+1709	374	0.00	\N	\N	2020-07-15	12	{"desglose":[],"fecha":{"month":"febrero","year":2020}}	2020-02-29	105	f
+1710	374	0.00	\N	\N	2020-07-15	12	{"desglose":[],"fecha":{"month":"marzo","year":2020}}	2020-03-31	105	f
+1711	374	0.00	\N	\N	2020-07-15	12	{"desglose":[],"fecha":{"month":"abril","year":2020}}	2020-07-31	105	f
+1715	375	5000000.00	\N	\N	2020-07-15	30	{"fecha":{"month":"enero","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":10}	2020-01-31	105	f
+1716	375	10000000.00	\N	\N	2020-07-15	30	{"fecha":{"month":"febrero","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":20}	2020-02-29	105	f
+1717	375	15000000.00	\N	\N	2020-07-15	30	{"fecha":{"month":"marzo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":30}	2020-03-31	105	f
+1718	375	20000000.00	\N	\N	2020-07-15	30	{"fecha":{"month":"abril","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":40}	2020-04-30	105	f
+1719	375	25000000.00	\N	\N	2020-07-15	30	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":50}	2020-05-31	105	f
+1720	375	2000000.00	\N	\N	2020-07-15	10	{"desglose":[{"aforo":48,"montoDeclarado":"2000000.00","montoCobrado":2000000}],"fecha":{"month":"enero","year":2020}}	2020-07-31	105	f
+1721	375	2000000.00	\N	\N	2020-07-15	10	{"desglose":[{"aforo":48,"montoDeclarado":"2000000.00","montoCobrado":2000000}],"fecha":{"month":"febrero","year":2020}}	2020-02-29	105	f
+1722	375	2000000.00	\N	\N	2020-07-15	10	{"desglose":[{"aforo":48,"montoDeclarado":"2000000.00","montoCobrado":2000000}],"fecha":{"month":"marzo","year":2020}}	2020-03-31	105	f
+1723	375	2000000.00	\N	\N	2020-07-15	10	{"desglose":[{"aforo":48,"montoDeclarado":"2000000.00","montoCobrado":2000000}],"fecha":{"month":"abril","year":2020}}	2020-07-31	105	f
+1724	375	2000000.00	\N	\N	2020-07-15	10	{"desglose":[{"aforo":48,"montoDeclarado":"2000000.00","montoCobrado":2000000}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	105	f
+1725	375	2000000.00	\N	\N	2020-07-15	10	{"desglose":[{"aforo":48,"montoDeclarado":"2000000.00","montoCobrado":2000000}],"fecha":{"month":"junio","year":2020}}	2020-06-30	105	f
+1726	375	1000000.00	\N	\N	2020-07-15	100	{"fecha":{"month":"enero","year":2020}}	2020-07-31	105	f
+1727	375	1000000.00	\N	\N	2020-07-15	100	{"fecha":{"month":"febrero","year":2020}}	2020-02-29	105	f
+1728	375	1000000.00	\N	\N	2020-07-15	100	{"fecha":{"month":"marzo","year":2020}}	2020-03-31	105	f
+1729	375	1000000.00	\N	\N	2020-07-15	100	{"fecha":{"month":"abril","year":2020}}	2020-07-31	105	f
+1730	375	1000000.00	\N	\N	2020-07-15	100	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	105	f
+1899	401	5000000.00	\N	\N	2020-07-24	30	{"fecha":{"month":"abril","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo (AR)","monto":10}	2020-04-30	82	f
+1900	401	5000000.00	\N	\N	2020-07-24	30	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo (AR)","monto":10}	2020-05-31	82	f
+1901	401	5000000.00	\N	\N	2020-07-24	30	{"fecha":{"month":"junio","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo (AR)","monto":10}	2020-07-31	82	f
+1902	401	4021231.23	\N	\N	2020-07-24	52	{"fecha":{"month":"abril","year":2020}}	2020-07-31	82	f
+1903	401	4021231.23	\N	\N	2020-07-24	52	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	82	f
+1904	401	4021231.23	\N	\N	2020-07-24	52	{"fecha":{"month":"junio","year":2020}}	2020-06-30	82	f
+1731	375	1000000.00	\N	\N	2020-07-15	100	{"fecha":{"month":"junio","year":2020}}	2020-06-30	105	f
+1755	379	0.00	\N	\N	2020-07-21	9	{"desglose":[{"inmueble":493,"monto":0}],"fecha":{"month":"febrero","year":2020}}	2020-02-29	110	f
+1756	379	0.00	\N	\N	2020-07-21	9	{"desglose":[{"inmueble":493,"monto":0}],"fecha":{"month":"marzo","year":2020}}	2020-03-31	110	f
+1757	379	0.00	\N	\N	2020-07-21	9	{"desglose":[{"inmueble":493,"monto":0}],"fecha":{"month":"abril","year":2020}}	2020-07-31	110	f
+1758	379	0.00	\N	\N	2020-07-21	9	{"desglose":[{"inmueble":493,"monto":0}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	110	f
+1741	378	136068000.00	\N	\N	2020-07-20	66	{"desglose":[{"inmueble":476,"montoAseo":18000,"montoGas":7000},{"inmueble":477,"montoAseo":23100000,"montoGas":11000000},{"inmueble":482,"montoAseo":18000,"montoGas":0},{"inmueble":486,"montoAseo":75000000,"montoGas":11000000},{"inmueble":491,"montoAseo":4900000,"montoGas":11000000},{"inmueble":492,"montoAseo":18000,"montoGas":7000}],"fecha":{"month":"marzo","year":2020}}	2020-03-31	102	f
+1742	378	136068000.00	\N	\N	2020-07-20	66	{"desglose":[{"inmueble":476,"montoAseo":18000,"montoGas":7000},{"inmueble":477,"montoAseo":23100000,"montoGas":11000000},{"inmueble":482,"montoAseo":18000,"montoGas":0},{"inmueble":486,"montoAseo":75000000,"montoGas":11000000},{"inmueble":491,"montoAseo":4900000,"montoGas":11000000},{"inmueble":492,"montoAseo":18000,"montoGas":7000}],"fecha":{"month":"abril","year":2020}}	2020-07-31	102	f
+1743	378	136068000.00	\N	\N	2020-07-20	66	{"desglose":[{"inmueble":476,"montoAseo":18000,"montoGas":7000},{"inmueble":477,"montoAseo":23100000,"montoGas":11000000},{"inmueble":482,"montoAseo":18000,"montoGas":0},{"inmueble":486,"montoAseo":75000000,"montoGas":11000000},{"inmueble":491,"montoAseo":4900000,"montoGas":11000000},{"inmueble":492,"montoAseo":18000,"montoGas":7000}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	102	f
+1744	378	136068000.00	\N	\N	2020-07-20	66	{"desglose":[{"inmueble":476,"montoAseo":18000,"montoGas":7000},{"inmueble":477,"montoAseo":23100000,"montoGas":11000000},{"inmueble":482,"montoAseo":18000,"montoGas":0},{"inmueble":486,"montoAseo":75000000,"montoGas":11000000},{"inmueble":491,"montoAseo":4900000,"montoGas":11000000},{"inmueble":492,"montoAseo":18000,"montoGas":7000}],"fecha":{"month":"junio","year":2020}}	2020-06-30	102	f
+1745	378	136068000.00	\N	\N	2020-07-20	66	{"desglose":[{"inmueble":476,"montoAseo":18000,"montoGas":7000},{"inmueble":477,"montoAseo":23100000,"montoGas":11000000},{"inmueble":482,"montoAseo":18000,"montoGas":0},{"inmueble":486,"montoAseo":75000000,"montoGas":11000000},{"inmueble":491,"montoAseo":4900000,"montoGas":11000000},{"inmueble":492,"montoAseo":18000,"montoGas":7000}],"fecha":{"month":"julio","year":2020}}	2020-07-31	102	f
+1754	379	466666.67	\N	\N	2020-07-21	9	{"desglose":[{"inmueble":493,"monto":466666.6666666667}],"fecha":{"month":"enero","year":2020}}	2020-07-31	110	f
+1759	379	0.00	\N	\N	2020-07-21	9	{"desglose":[{"inmueble":493,"monto":0}],"fecha":{"month":"junio","year":2020}}	2020-06-30	110	f
+1760	379	0.00	\N	\N	2020-07-21	9	{"desglose":[{"inmueble":493,"monto":0}],"fecha":{"month":"julio","year":2020}}	2020-07-31	110	f
+1761	380	250000.00	\N	\N	2020-07-21	9	{"desglose":[{"inmueble":494,"monto":250000}],"fecha":{"month":"enero","year":2020}}	2020-07-31	96	f
+1762	380	0.00	\N	\N	2020-07-21	9	{"desglose":[{"inmueble":494,"monto":0}],"fecha":{"month":"febrero","year":2020}}	2020-02-29	96	f
+1763	380	0.00	\N	\N	2020-07-21	9	{"desglose":[{"inmueble":494,"monto":0}],"fecha":{"month":"marzo","year":2020}}	2020-03-31	96	f
+1764	380	0.00	\N	\N	2020-07-21	9	{"desglose":[{"inmueble":494,"monto":0}],"fecha":{"month":"abril","year":2020}}	2020-07-31	96	f
+1765	380	0.00	\N	\N	2020-07-21	9	{"desglose":[{"inmueble":494,"monto":0}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	96	f
+1766	380	0.00	\N	\N	2020-07-21	9	{"desglose":[{"inmueble":494,"monto":0}],"fecha":{"month":"junio","year":2020}}	2020-06-30	96	f
+1767	380	0.00	\N	\N	2020-07-21	9	{"desglose":[{"inmueble":494,"monto":0}],"fecha":{"month":"julio","year":2020}}	2020-07-31	96	f
+1780	381	3000330.00	\N	\N	2020-07-22	10	{"desglose":[{"aforo":131,"montoDeclarado":"10000.00","montoCobrado":3000000},{"aforo":181,"montoDeclarado":"1000.00","montoCobrado":30},{"aforo":186,"montoDeclarado":"10000.00","montoCobrado":300}],"fecha":{"month":"junio","year":2020}}	2020-06-30	103	f
+1781	381	1000000.00	\N	\N	2020-07-22	100	{"fecha":{"month":"mayo","year":2020}}	2020-05-31	103	f
+1773	\N	0.00	\N	\N	2020-01-10	10	{"month":"enero","year":2020,"desglose":[{"aforo":137}]}	2020-01-31	115	f
+1774	\N	0.00	\N	\N	2020-03-10	10	{"month":"marzo","year":2020,"desglose":[{"aforo":214}]}	2020-03-31	115	f
+1775	\N	0.00	\N	\N	2020-06-10	10	{"month":"junio","year":2020,"desglose":[{"aforo":11}]}	2020-06-30	115	f
+1776	\N	0	\N	\N	2020-02-01	10	{"month":"febrero","year":2020,"desglose":[{"aforo":17}]}	2020-02-29	115	f
+1777	381	5000000.00	\N	\N	2020-07-22	30	{"fecha":{"month":"mayo","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":10}	2020-05-31	103	f
+1778	381	10000000.00	\N	\N	2020-07-22	30	{"fecha":{"month":"junio","year":2020},"descripcion":"Multa por Declaracion Fuera de Plazo","monto":20}	2020-07-31	103	f
+1779	381	3000060.00	\N	\N	2020-07-22	10	{"desglose":[{"aforo":131,"montoDeclarado":"1000.00","montoCobrado":3000000},{"aforo":181,"montoDeclarado":"1000.00","montoCobrado":30},{"aforo":186,"montoDeclarado":"1000.00","montoCobrado":30}],"fecha":{"month":"mayo","year":2020}}	2020-05-31	103	f
+1782	381	1000000.00	\N	\N	2020-07-22	100	{"fecha":{"month":"junio","year":2020}}	2020-06-30	103	f
+1786	382	365406.60	\N	\N	2020-07-23	49	{"fecha":{"month":"marzo","year":"2018"},"desglose":[{"aforo":19,"monto":234234,"mes":"marzo"},{"aforo":44,"monto":23424,"mes":"marzo"},{"aforo":92,"monto":23424,"mes":"marzo"}]}	2020-03-31	\N	f
+1787	382	30451.20	\N	\N	2020-07-23	49	{"fecha":{"month":"diciembre","year":"2018"},"desglose":[{"aforo":93,"monto":23424,"mes":"diciembre"}]}	2020-07-31	\N	f
+1788	382	5535072.40	\N	\N	2020-07-23	49	{"fecha":{"month":"febrero","year":"2020"},"desglose":[{"aforo":24,"monto":23424,"mes":"febrero"},{"aforo":78,"monto":4234324,"mes":"febrero"}]}	2020-02-29	\N	f
+1783	\N	0.00	\N	\N	2020-01-02	10	{"month":"enero","year":2020,"desglose":[{"aforo":137}]}	2020-01-31	116	f
+1784	\N	0.00	\N	\N	2020-03-02	10	{"month":"marzo","year":2020,"desglose":[{"aforo":3}]}	2020-03-31	116	f
+1785	\N	0.00	\N	\N	2020-06-02	10	{"month":"junio","year":2020,"desglose":[{"aforo":17}]}	2020-06-30	116	f
+1789	382	304504.20	\N	\N	2020-07-23	49	{"fecha":{"month":"septiembre","year":"2020"},"desglose":[{"aforo":92,"monto":234234,"mes":"septiembre"}]}	2020-09-30	\N	f
+1790	382	30451.20	\N	\N	2020-07-23	49	{"fecha":{"month":"diciembre","year":"2020"},"desglose":[{"aforo":93,"monto":23424,"mes":"diciembre"}]}	2020-07-31	\N	f
 \.
 
 
 --
--- TOC entry 4276 (class 0 OID 70038)
--- Dependencies: 248
--- Data for Name: liquidacion_descuento; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: liquidacion_descuento; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.liquidacion_descuento (id_liquidacion_descuento, id_liquidacion, porcentaje_descuento) FROM stdin;
@@ -6463,9 +7738,7 @@ COPY impuesto.liquidacion_descuento (id_liquidacion_descuento, id_liquidacion, p
 
 
 --
--- TOC entry 4279 (class 0 OID 70048)
--- Dependencies: 251
--- Data for Name: multa; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: multa; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.multa (id_multa, id_solicitud, id_tipo_multa, monto, mes, anio) FROM stdin;
@@ -6473,22 +7746,22 @@ COPY impuesto.multa (id_multa, id_solicitud, id_tipo_multa, monto, mes, anio) FR
 
 
 --
--- TOC entry 4282 (class 0 OID 70069)
--- Dependencies: 255
--- Data for Name: plazo_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: plazo_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.plazo_exoneracion (id_plazo_exoneracion, fecha_inicio, fecha_fin) FROM stdin;
 21	2020-06-26	\N
 22	2020-06-26	\N
 23	2020-06-26	\N
+24	2020-01-02	2020-07-30
+28	2020-07-21	2020-07-21
+29	2020-01-21	\N
+30	2020-07-21	\N
 \.
 
 
 --
--- TOC entry 4286 (class 0 OID 70079)
--- Dependencies: 259
--- Data for Name: ramo; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: ramo; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.ramo (id_ramo, codigo, descripcion, descripcion_corta) FROM stdin;
@@ -6536,10 +7809,8 @@ COPY impuesto.ramo (id_ramo, codigo, descripcion, descripcion_corta) FROM stdin;
 44	901	APORTES GUBERNAMENTALES Y OTROS	\N
 45	902	APORTE DEL I.N.H.	\N
 46	903	TRANSFERENCIAS	\N
-47	910	REPAROS FISCALES	\N
 48	911	REPAROS FISCALES (IND. Y COM.)	\N
 49	912	REPARO POR RETENCIONES NO ENTERADAS	\N
-50	915	RETENCIONES DECRETO 048	\N
 51	918	COMPENS.RETENCIONES DEC.048	\N
 52	920	DEDUCCIONES,ADELANTOS,Y OTROS GASTOS	\N
 53	925	COMPENSACIONES	\N
@@ -6588,38 +7859,68 @@ COPY impuesto.ramo (id_ramo, codigo, descripcion, descripcion_corta) FROM stdin;
 64	122	SERVICIOS MUNICIPALES	SM
 11	114	PROPAGANDAS Y AVISOS COMERCIALES	PP
 1	236	TASA ADMINISTRATIVA DE SOLVENCIA DE AE	SAE
+50	915	RETENCIONES DECRETO 048	RD0
+47	910	REPAROS FISCALES	REP
 \.
 
 
 --
--- TOC entry 4284 (class 0 OID 70074)
--- Dependencies: 257
--- Data for Name: ramo_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: ramo_exoneracion; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.ramo_exoneracion (id_ramo_exoneracion, id_plazo_exoneracion, id_ramo) FROM stdin;
+2	29	8
 \.
 
 
 --
--- TOC entry 4289 (class 0 OID 70089)
--- Dependencies: 262
--- Data for Name: registro_municipal; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: registro_municipal; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
-COPY impuesto.registro_municipal (id_registro_municipal, id_contribuyente, referencia_municipal, fecha_aprobacion, telefono_celular, telefono_habitacion, email, denominacion_comercial, nombre_representante, actualizado) FROM stdin;
-76	84	2900011266	2020-07-09	4147212342	\N	snider8520@gmail.com	CORPORACION GSM	OSWALDO CISNEROS	t
-77	84	2900014139	2020-07-09	4147212342	\N	snider8520@gmail.com	CORPORACION DIGITEL, C.A.	ROBERTO JOSE ORTA	t
-78	84	2900013536	2020-07-09	4147212342	\N	snider8520@gmail.com	CORPORACION DIGITEL, C.A.  PALACIO DE EVENTOS	FRANCISCO  HUNG	t
-79	84	2900026280	2020-07-09	4147212342	\N	snider8520@gmail.com	CORPORACION DIGITEL, C.A.	DEMERIS RUIZ	t
-80	84	2900011265	2020-07-09	4147212342	\N	snider8520@gmail.com	CORPORACION DIGITEL, C.A.	ALFRED TULIO HUNG RIVERO	t
+COPY impuesto.registro_municipal (id_registro_municipal, id_contribuyente, referencia_municipal, fecha_aprobacion, telefono_celular, telefono_habitacion, email, denominacion_comercial, nombre_representante, actualizado, capital_suscrito, tipo_sociedad, estado_licencia) FROM stdin;
+76	84	2900011266	2020-07-09	4147212342	\N	snider8520@gmail.com	CORPORACION GSM	OSWALDO CISNEROS	t	\N	\N	\N
+77	84	2900014139	2020-07-09	4147212342	\N	snider8520@gmail.com	CORPORACION DIGITEL, C.A.	ROBERTO JOSE ORTA	t	\N	\N	\N
+78	84	2900013536	2020-07-09	4147212342	\N	snider8520@gmail.com	CORPORACION DIGITEL, C.A.  PALACIO DE EVENTOS	FRANCISCO  HUNG	t	\N	\N	\N
+79	84	2900026280	2020-07-09	4147212342	\N	snider8520@gmail.com	CORPORACION DIGITEL, C.A.	DEMERIS RUIZ	t	\N	\N	\N
+80	84	2900011265	2020-07-09	4147212342	\N	snider8520@gmail.com	CORPORACION DIGITEL, C.A.	ALFRED TULIO HUNG RIVERO	t	\N	\N	\N
+81	85	2000082650	2020-07-09	4246336236	\N	prueba2@gmail.com	POLICLINICA MARACAIBO	DR.ROBERTO DE VICENTE RIOS	t	\N	\N	\N
+84	86	207R002132	2020-07-10	4127645681	\N	gab.tc@icloud.com	RARMACIA COVIDES, C.A. ( LOCATEL I.P.S.F.A. )	JOSE ABEID	t	\N	\N	\N
+87	87	204C000237	2020-07-10	4246336236	\N	prueba3@gmail.com	FARMATODO, C.A. FARMACIA FUERZAS ARMADAS	RAFAEL ZUBILLAGA	t	\N	\N	\N
+88	87	203C000844	2020-07-10	4246336236	\N	prueba3@gmail.com	FARMATODO, C.A. FARMACIA LA ESQUINA	RAFAEL ZUBILLAGA	t	\N	\N	\N
+89	87	203C000845	2020-07-10	4246336236	\N	prueba3@gmail.com	FARMACIA TORRE EUROPA	RAFAEL ZUBILLAGA	t	\N	\N	\N
+90	87	2900000031	2020-07-10	4246336236	\N	prueba3@gmail.com	FARMACIA LAGOMAR	RAFAEL T ZUBILLAGA	t	\N	\N	\N
+91	87	2900040085	2020-07-10	4246336236	\N	prueba3@gmail.com	FARMATODO, C.A. FARMACIA FRANCISCO	ARMANDO ZUBILLAGA	t	\N	\N	\N
+92	87	2900003892	2020-07-10	4246336236	\N	prueba3@gmail.com	FARMACIA INDIO  MARA	VICTOR MICHELENA	t	\N	\N	\N
+93	87	2900041800	2020-07-10	4246336236	\N	prueba3@gmail.com	FARMATODO, C.A. (FARMACIA NERIDA)	ARMANDO ZUBILLAGA	t	\N	\N	\N
+94	90	2900004854	2020-07-13	261	\N	edssoncardenas@gmail.com	TALLER DE TORNOS Y EMBOBINADOS D Y M,CA	DOUGLAS CHACIN	t	\N	\N	\N
+95	91	7000000999	2020-07-13	414	\N	diegosalazar2702@gmail.com	MSL GROUPAGE, C.A. (SUCURSAL)	MSL GROUPAGE, C.A.	t	\N	\N	\N
+96	95	7000002467	2020-07-13	4146224064	\N	wakapluswakuplus@gmail.com	SERVICIOS INFORMATICOS WAKUPLUS CA	MANUEL MARULANDA	t	\N	\N	\N
+97	95	7000002467	2020-07-13	4146224064	\N	wakapluswakuplus@gmail.com	SERVICIOS INFORMATICOS WAKUPLUS CA	MANUEL MARULANDA	t	\N	\N	\N
+98	96	AR20200005	2020-07-13	4246336236	\N	yury@hotmail.com	MEGA 72 C.A	LILIA MATIAS DE TEXEIRA	t	\N	\N	\N
+99	96	2900003475	2020-07-13	4246336236	\N	yury@hotmail.com	MEGA 72 C.A	LILIA MATIAS DE TEXEIRA	t	\N	\N	\N
+86	86	2900013829	2020-07-10	4127645681	\N	covides@gmail.com	FARMACIA COVIDES, C.A. ( LOCATEL BELLA VISTA )	LILIANA SANCHEZ	t	\N	\N	\N
+100	98	204R000441	2020-07-14	4246336236	\N	prueba7@gmail.com	DISTRIBUIDORA J.K. C.A.	JASAT MASEN	t	\N	\N	\N
+85	86	207P000358	2020-07-10	4127645681	\N	gab.tc@icloud.com	FARMACIA COVIDES C.A.-	LILIANA SANCHEZ.-	t	\N	\N	\N
+82	86	AR20200024	2020-07-10	4127645681	\N	gab.tc@icloud.com	FARMACIA COVIDES C.A.	IVECO	t	\N	\N	\N
+101	99	2900049654	2020-07-14	4246336236	\N	prueba6@gmail.com	FERRETOTAL CARACAS C.A. (SUCURSAL)	CARLOS PEREZ	t	\N	\N	\N
+102	99	2000812803	2020-07-14	4246336236	\N	prueba6@gmail.com	FERRETOTAL CARACAS C.A.	ALEJANDRO KERI	t	\N	\N	\N
+103	99	2900040570	2020-07-14	4246336236	\N	prueba6@gmail.com	FERRETOTAL CARACAS C.A. (SUCURSAL)	ALEJANDRO KERI JESURUM	t	\N	\N	\N
+105	100	8000000008	2020-07-15	4146053291	\N	trosales@gmail.com	Empanadas Triny	Triny Rosales	t	40000000	\N	\N
+107	101	8000000010	2020-07-16	4246336236	\N	rodrigolamus@gmail.com	e	wgweg	t	58	\N	\N
+108	101	8000000011	2020-07-16	4246336236	\N	rodrigolamus@gmail.com	comercializadora	jose sanchez	t	50000000	\N	\N
+109	105	8000000012	2020-07-19	+584146053291	\N	orderleep@gmail.com	Empanadas Triny	Triny Rosales	t	5000000	\N	\N
+110	106	8000000013	2020-07-21	4246336236	\N	prueba13@gmail.com	comercializadora	jose coro	t	360000000	\N	\N
+113	86	8000000016	2020-07-21	1231241231	\N	prueba10@gmail.com	FARMACIA COVIDES	JOSE CORO	t	12039109	\N	PERMANENTE
+114	89	8000000017	2020-07-21	4246336236	\N	prueba4@gmail.com	comercializadora	jose sanchez	t	50000000	\N	PERMANENTE
+83	86	207R002131	2020-07-10	4127645681	\N	\N	FARMACIA COVIDES, C.A.  LOCATEL ( I.P.S.F.A. )	JOSE ABELD	t	\N	\N	PERMANENTE
+106	101	8000000009	2020-07-16	4246336236	\N	\N	comercializadora	jose sanchez	t	50000000	\N	PERMANENTE
+115	107	8000000018	2020-07-21	4246336236	\N	\N	comercializadora	jose coro segundo	t	50000000	\N	PERMANENTE
+116	107	8000000019	2020-07-23	4246336236	\N	prueba14@gmail.com	comercializadora	jose coro	t	50000000	\N	PERMANENTE
 \.
 
 
 --
--- TOC entry 4291 (class 0 OID 70099)
--- Dependencies: 264
--- Data for Name: registro_municipal_verificacion; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: registro_municipal_verificacion; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.registro_municipal_verificacion (id_registro_municipal, id_verificacion_telefono) FROM stdin;
@@ -6628,26 +7929,156 @@ COPY impuesto.registro_municipal_verificacion (id_registro_municipal, id_verific
 78	107
 79	107
 80	107
+81	108
+83	109
+84	109
+87	110
+88	110
+89	110
+90	110
+91	110
+92	110
+93	110
+98	113
+99	113
+86	115
+100	117
+85	118
+82	119
+101	120
+102	120
+103	120
+105	121
+106	122
+107	122
+108	122
+109	126
+110	127
+113	128
+114	112
+115	129
+116	129
 \.
 
 
 --
--- TOC entry 4238 (class 0 OID 69812)
--- Dependencies: 207
--- Data for Name: solicitud; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: retencion; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+COPY impuesto.retencion (id_retencion, rif, rim, monto, fecha, activo) FROM stdin;
+\.
+
+
+--
+-- Data for Name: solicitud; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.solicitud (id_solicitud, id_usuario, aprobado, fecha, fecha_aprobado, id_tipo_tramite, id_contribuyente, tipo_solicitud) FROM stdin;
-269	155	t	2020-05-05	2020-07-09	5	84	\N
-270	155	f	2020-07-09	\N	5	84	\N
-275	155	f	2020-07-09	\N	5	84	CONVENIO
+353	116	f	2020-07-14	\N	5	87	CONVENIO
+314	155	f	2020-07-10	\N	5	84	CONVENIO
+355	157	f	2020-07-14	\N	5	87	CONVENIO
+401	209	f	2020-07-24	\N	5	86	RETENCION
+321	116	f	2020-07-10	\N	5	87	CONVENIO
+352	119	f	2020-07-13	\N	5	86	CONVENIO
+269	155	t	2020-05-05	2020-07-09	5	84	IMPUESTO
+363	155	f	2020-07-15	\N	5	84	CONVENIO
+367	165	f	2020-07-15	\N	5	99	CONVENIO
+275	155	t	2020-07-09	2020-07-13	5	84	CONVENIO
+368	165	f	2020-07-15	\N	5	99	CONVENIO
+346	155	f	2020-07-13	\N	5	84	CONVENIO
+371	165	f	2020-07-15	\N	5	99	CONVENIO
+372	165	f	2020-07-15	\N	5	99	CONVENIO
+373	165	f	2020-07-15	\N	5	99	CONVENIO
+382	83	f	2020-07-23	\N	5	107	IMPUESTO
+383	118	f	2020-07-23	\N	5	86	RETENCION
+384	118	f	2020-07-24	\N	5	86	RETENCION
+270	155	f	2020-07-09	\N	5	84	IMPUESTO
+276	156	t	2020-05-05	2020-07-09	5	85	IMPUESTO
+277	156	f	2020-07-09	\N	5	85	IMPUESTO
+278	156	f	2020-07-09	\N	5	85	IMPUESTO
+354	116	f	2020-07-14	\N	5	87	IMPUESTO
+279	\N	t	2020-04-22	2020-07-10	5	86	IMPUESTO
+310	116	t	2020-07-10	2020-07-10	5	87	IMPUESTO
+400	118	f	2020-07-24	\N	5	86	RETENCION
+311	116	f	2020-07-10	\N	5	87	IMPUESTO
+280	58	t	2020-04-28	2020-07-10	5	86	IMPUESTO
+312	155	f	2020-07-10	\N	5	84	IMPUESTO
+313	155	f	2020-07-10	\N	5	84	IMPUESTO
+282	\N	t	2020-04-28	2020-07-10	5	86	IMPUESTO
+315	155	f	2020-07-10	\N	5	84	IMPUESTO
+316	155	f	2020-07-10	\N	5	84	IMPUESTO
+356	173	t	2020-05-08	2020-07-14	5	98	IMPUESTO
+357	116	f	2020-07-14	\N	5	98	IMPUESTO
+284	157	t	2020-04-28	2020-07-10	5	87	IMPUESTO
+285	157	t	2020-04-28	2020-07-10	5	87	IMPUESTO
+322	116	f	2020-07-10	\N	5	87	IMPUESTO
+286	157	t	2020-04-28	2020-07-10	5	87	IMPUESTO
+287	157	t	2020-04-28	2020-07-10	5	87	IMPUESTO
+323	157	f	2020-07-13	\N	5	87	IMPUESTO
+288	157	t	2020-04-28	2020-07-10	5	87	IMPUESTO
+289	157	t	2020-04-28	2020-07-10	5	87	IMPUESTO
+290	157	t	2020-04-28	2020-07-10	5	87	IMPUESTO
+291	157	f	2020-04-28	\N	5	87	IMPUESTO
+292	157	f	2020-04-28	\N	5	87	IMPUESTO
+293	157	f	2020-04-28	\N	5	87	IMPUESTO
+294	157	f	2020-04-28	\N	5	87	IMPUESTO
+295	157	f	2020-04-28	\N	5	87	IMPUESTO
+296	157	f	2020-04-28	\N	5	87	IMPUESTO
+297	157	f	2020-04-28	\N	5	87	IMPUESTO
+298	116	t	2020-07-10	2020-07-10	5	87	IMPUESTO
+299	116	t	2020-07-10	2020-07-10	5	87	IMPUESTO
+300	116	f	2020-07-10	\N	5	87	IMPUESTO
+301	116	t	2020-07-10	2020-07-10	5	87	IMPUESTO
+303	157	t	2020-07-10	2020-07-13	5	87	IMPUESTO
+302	116	t	2020-07-10	2020-07-10	5	87	IMPUESTO
+328	116	t	2020-07-13	2020-07-13	5	87	IMPUESTO
+281	194	t	2020-04-28	2020-07-10	5	86	IMPUESTO
+283	194	t	2020-07-10	2020-07-10	5	86	IMPUESTO
+329	116	t	2020-03-04	2020-07-13	5	90	IMPUESTO
+358	165	t	2020-05-05	2020-07-14	5	99	IMPUESTO
+350	194	t	2020-07-13	2020-07-13	5	86	IMPUESTO
+330	116	t	2020-05-07	2020-07-13	5	91	IMPUESTO
+359	165	t	2020-05-06	2020-07-14	5	99	IMPUESTO
+376	117	f	2020-07-20	\N	5	99	IMPUESTO
+360	165	t	2020-05-05	2020-07-14	5	99	IMPUESTO
+331	116	t	2020-05-06	2020-07-13	5	95	IMPUESTO
+361	116	f	2020-07-14	\N	5	99	IMPUESTO
+332	116	t	2020-05-06	2020-07-13	5	95	IMPUESTO
+333	116	f	2020-05-06	\N	5	95	IMPUESTO
+334	116	f	2020-05-06	\N	5	95	IMPUESTO
+362	116	f	2020-07-15	\N	5	84	IMPUESTO
+335	116	t	2020-07-13	2020-07-13	5	95	IMPUESTO
+336	164	t	2020-05-08	2020-07-13	5	96	IMPUESTO
+364	116	f	2020-07-15	\N	5	99	IMPUESTO
+365	165	f	2020-07-15	\N	5	99	IMPUESTO
+337	164	t	2020-05-07	2020-07-13	5	96	IMPUESTO
+366	165	f	2020-07-15	\N	5	99	IMPUESTO
+338	116	t	2020-07-13	2020-07-13	5	96	IMPUESTO
+339	116	t	2020-07-13	2020-07-13	5	95	IMPUESTO
+340	117	t	2020-07-13	2020-07-13	5	87	IMPUESTO
+341	117	t	2020-07-13	2020-07-13	5	87	IMPUESTO
+342	118	f	2020-07-13	\N	5	84	IMPUESTO
+344	155	f	2020-07-13	\N	5	84	IMPUESTO
+345	155	f	2020-07-13	\N	5	84	IMPUESTO
+347	155	f	2020-07-13	\N	5	84	IMPUESTO
+369	116	f	2020-07-15	\N	5	99	IMPUESTO
+343	117	t	2020-07-13	2020-07-13	5	87	IMPUESTO
+370	165	f	2020-07-15	\N	5	99	IMPUESTO
+348	117	t	2020-07-13	2020-07-13	5	87	IMPUESTO
+349	117	f	2020-07-13	\N	5	87	IMPUESTO
+377	117	f	2020-07-20	\N	5	99	IMPUESTO
+351	119	f	2020-07-13	\N	5	86	IMPUESTO
+378	117	f	2020-07-20	\N	5	99	IMPUESTO
+374	116	f	2020-07-15	\N	5	100	IMPUESTO
+375	116	f	2020-07-15	\N	5	100	IMPUESTO
+379	117	f	2020-07-21	\N	5	106	IMPUESTO
+380	117	f	2020-07-21	\N	5	95	IMPUESTO
+381	165	f	2020-07-22	\N	5	99	IMPUESTO
 \.
 
 
 --
--- TOC entry 4293 (class 0 OID 70109)
--- Dependencies: 267
--- Data for Name: subramo; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: subramo; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.subramo (id_subramo, id_ramo, subindice, descripcion) FROM stdin;
@@ -6750,246 +8181,244 @@ COPY impuesto.subramo (id_subramo, id_ramo, subindice, descripcion) FROM stdin;
 100	1	1	Pago ordinario
 101	29	2	Convenio de Pago
 102	64	2	Convenio de Pago
+103	8	2	Convenio de Pago
+104	11	2	Convenio de Pago
+105	29	3	Multa por Declaracion Tardia (Agente de Retención)
+106	47	2	Convenio de Pago
 \.
 
 
 --
--- TOC entry 4295 (class 0 OID 70122)
--- Dependencies: 270
--- Data for Name: tabulador_aseo_actividad_economica; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: tabulador_aseo_actividad_economica; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.tabulador_aseo_actividad_economica (id_tabulador_aseo_actividad_economica, id_usuario, numero_referencia, monto, fecha_creacion, fecha_desde, fecha_hasta) FROM stdin;
-1	83	1001001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-2	83	1002001	4950000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-3	83	1003001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-4	83	1004001	9900000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-5	83	1005001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-6	83	1006001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-7	83	1007001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-8	83	1008001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-9	83	1009001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-10	83	1010001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-11	83	1011001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-12	83	1012001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-13	83	1013001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-14	83	1014001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-15	83	1015001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-16	83	1016001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-17	83	1017001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-18	83	1018001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-19	83	1019001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-20	83	1020001	4950000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-21	83	1021001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-22	83	1022001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-23	83	1023001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-24	83	1024001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-25	83	1025001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-26	83	1026001	6600000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-27	83	1027001	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-28	83	1028001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-29	83	1029001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-30	83	1030001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-31	83	1033001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-32	83	1034001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-33	83	1036001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-34	83	1037001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-35	83	1038001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-36	83	1039001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-37	83	1040001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-38	83	1041001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-39	83	1042001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-40	83	1043001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-41	83	1044001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-42	83	1045001	6600000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-43	83	1046001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-44	83	1047001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-45	83	1048001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-46	83	2001001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-47	83	2002001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-48	83	2003001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-49	83	2004001	6600000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-50	83	2005001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-51	83	2006001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-52	83	2007001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-53	83	2008001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-54	83	2009001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-55	83	2010001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-56	83	2011001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-57	83	2012001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-58	83	2013001	33000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-59	83	2014001	16500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-60	83	2016001	8250000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-61	83	2015001	9900000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-62	83	2017001	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-63	83	2018001	22000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-64	83	2019001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-65	83	2020001	19800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-66	83	2021001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-67	83	2022001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-68	83	2023001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-69	83	2024002	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-70	83	2025003	16500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-71	83	2026001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-72	83	2028001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-73	83	2029001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-74	83	2030001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-75	83	2031001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-76	83	2032001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-77	83	2033001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-78	83	2034001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-79	83	2035001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-80	83	2036001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-81	83	2037001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-82	83	2038001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-83	83	2039001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-84	83	2040001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-85	83	2042001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-86	83	2043002	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-87	83	2044001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-88	83	2045001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-89	83	2046001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-90	83	2047001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-91	83	2048001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-92	83	2049002	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-93	83	2051001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-94	83	2052001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-95	83	2053001	4950000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-96	83	2054001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-97	83	2055001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-98	83	2056001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-99	83	2057001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-100	83	2058001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-101	83	2059001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-102	83	2060001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-103	83	2061001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-104	83	2062001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-105	83	2063001	4950000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-106	83	2064001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-107	83	2065001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-108	83	2066001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-109	83	2067001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-110	83	2068001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-111	83	2069002	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-112	83	2070003	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-113	83	2071001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-114	83	2072001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-115	83	2073001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-116	83	3001001	16500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-117	83	3002001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-118	83	3003002	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-119	83	3004001	4950000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-120	83	3005001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-121	83	3006001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-122	83	3007001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-123	83	3008001	6050000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-124	83	3009001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-125	83	3010001	12100000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-126	83	3011001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-127	83	3012001	6050000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-128	83	3013001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-129	83	3014001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-130	83	3015001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-131	83	3016001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-132	83	3017002	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-133	83	3019002	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-134	83	3020001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-135	83	3021001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-136	83	3022001	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-137	83	3023001	4950000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-138	83	3024001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-139	83	3025001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-140	83	3026001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-141	83	3027001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-142	83	3028001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-143	83	3030002	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-144	83	3031001	7150000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-145	83	3032001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-146	83	3033002	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-147	83	3034001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-148	83	3035001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-149	83	3036001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-150	83	3037001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-151	83	3038001	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-152	83	3039001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-153	83	3040001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-154	83	3041001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-155	83	3042001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-156	83	3043001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-157	83	3044001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-158	83	3045002	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-159	83	3046001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-160	83	3047001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-161	83	3048001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-162	83	3049001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-163	83	3050001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-164	83	3051001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-165	83	3052001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-166	83	3053002	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-167	83	3054001	6050000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-168	83	3055001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-169	83	3056001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-170	83	3057001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-171	83	3058001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-172	83	3059001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-173	83	3060001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-174	83	3061001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-175	83	3062001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-176	83	3063001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-177	83	3064001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-178	83	3065001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-179	83	3066001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-180	83	3067001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-181	83	3068001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-182	83	3070001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-183	83	3072002	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-184	83	3073001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-185	83	3074001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-186	83	3075001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-187	83	3076001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-188	83	3077001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-189	83	3078001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-190	83	3079001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-191	83	3080001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-192	83	3081001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-193	83	3082001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-194	83	3083001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-195	83	20230011	16500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-196	83	20230012	22000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-197	83	20230013	33000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-198	83	20270011	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-199	83	20270012	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-200	83	30240011	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-201	83	30240012	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-202	83	30640011	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-203	83	30640012	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-204	83	1032001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-205	83	1035001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-206	83	2027001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-207	83	2041001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-208	83	2050001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-209	83	3018001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-210	83	3029001	11000000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-211	83	3069001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-212	83	3071001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+2	83	1002001	6930000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+3	83	1003001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+5	83	1005001	12320000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+6	83	1006001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+7	83	1007001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+8	83	1008001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+9	83	1009001	5390000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+10	83	1010001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+11	83	1011001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+12	83	1012001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+13	83	1013001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+14	83	1014001	5390000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+15	83	1015001	5390000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+16	83	1016001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+17	83	1017001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+18	83	1018001	15400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+19	83	1019001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+20	83	1020001	6930000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+22	83	1022001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+23	83	1023001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+24	83	1024001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+25	83	1025001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+26	83	1026001	9240000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+27	83	1027001	10780000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+28	83	1028001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+29	83	1029001	5390000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+30	83	1030001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+31	83	1033001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+32	83	1034001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+33	83	1036001	3850000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+34	83	1037001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+35	83	1038001	3850000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+36	83	1039001	3850000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+37	83	1040001	3080000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+39	83	1042001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+40	83	1043001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+41	83	1044001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+42	83	1045001	9240000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+43	83	1046001	3080000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+44	83	1047001	5390000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+45	83	1048001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+46	83	2001001	15400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+47	83	2002001	12320000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+48	83	2003001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+49	83	2004001	9240000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+50	83	2005001	3850000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+51	83	2006001	3850000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+52	83	2007001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+53	83	2008001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+54	83	2009001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+56	83	2011001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+57	83	2012001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+58	83	2013001	46200000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+59	83	2014001	23100000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+61	83	2015001	13860000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+60	83	2016001	11550000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+62	83	2017001	10780000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+63	83	2018001	30800000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+64	83	2019001	15400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+65	83	2020001	27720000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+66	83	2021001	15400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+67	83	2022001	15400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+68	83	2023001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+69	83	2024002	12320000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+70	83	2025003	23100000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+71	83	2026001	15400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+73	83	2029001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+74	83	2030001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+75	83	2031001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+76	83	2032001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+77	83	2033001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+78	83	2034001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+79	83	2035001	3850000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+80	83	2036001	12320000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+81	83	2037001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+82	83	2038001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+83	83	2039001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+84	83	2040001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+85	83	2042001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+86	83	2043002	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+87	83	2044001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+88	83	2045001	5390000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+90	83	2047001	3080000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+91	83	2048001	12320000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+92	83	2049002	10780000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+93	83	2051001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+94	83	2052001	12320000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+95	83	2053001	6930000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+96	83	2054001	3080000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+97	83	2055001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+98	83	2056001	5390000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+99	83	2057001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+100	83	2058001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+101	83	2059001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+102	83	2060001	3850000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+103	83	2061001	5390000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+104	83	2062001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+105	83	2063001	6930000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+107	83	2065001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+108	83	2066001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+109	83	2067001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+110	83	2068001	12320000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+113	83	2071001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+114	83	2072001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+115	83	2073001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+116	83	3001001	23100000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+117	83	3002001	12320000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+118	83	3003002	10780000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+119	83	3004001	6930000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+120	83	3005001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+1	83	1001001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+4	83	1004001	13860000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+21	83	1021001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+204	83	1032001	5390000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+205	83	1035001	3850000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+38	83	1041001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+55	83	2010001	3850000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+195	83	20230011	23100000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+196	83	20230012	30800000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+197	83	20230013	46200000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+206	83	2027001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+198	83	20270011	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+199	83	20270012	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+72	83	2028001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+207	83	2041001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+89	83	2046001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+208	83	2050001	12320000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+106	83	2064001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+111	83	2069002	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+112	83	2070003	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+121	83	3006001	15400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+122	83	3007001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+123	83	3008001	8470000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+124	83	3009001	15400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+125	83	3010001	16940000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+126	83	3011001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+127	83	3012001	8470000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+128	83	3013001	5390000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+129	83	3014001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+130	83	3015001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+131	83	3016001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+132	83	3017002	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+209	83	3018001	5390000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+133	83	3019002	5390000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+134	83	3020001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+135	83	3021001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+136	83	3022001	10780000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+137	83	3023001	6930000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+138	83	3024001	3850000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+200	83	30240011	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+201	83	30240012	3080000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+139	83	3025001	3080000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+140	83	3026001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+141	83	3027001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+142	83	3028001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+210	83	3029001	15400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+143	83	3030002	15400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+144	83	3031001	10010000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+145	83	3032001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+146	83	3033002	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+147	83	3034001	15400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+148	83	3035001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+149	83	3036001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+150	83	3037001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+151	83	3038001	10780000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+152	83	3039001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+153	83	3040001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+154	83	3041001	3080000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+155	83	3042001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+156	83	3043001	3850000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+157	83	3044001	5390000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+158	83	3045002	3080000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+159	83	3046001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+160	83	3047001	5390000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+161	83	3048001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+162	83	3049001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+163	83	3050001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+164	83	3051001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+165	83	3052001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+166	83	3053002	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+167	83	3054001	8470000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+168	83	3055001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+169	83	3056001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+170	83	3057001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+171	83	3058001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+172	83	3059001	5390000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+173	83	3060001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+174	83	3061001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+175	83	3062001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+176	83	3063001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+177	83	3064001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+202	83	30640011	5390000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+203	83	30640012	3850000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+178	83	3065001	5390000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+179	83	3066001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+180	83	3067001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+181	83	3068001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+211	83	3069001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+182	83	3070001	3080000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+212	83	3071001	7700000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+183	83	3072002	5390000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+184	83	3073001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+185	83	3074001	3080000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+186	83	3075001	3850000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+187	83	3076001	3850000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+188	83	3077001	3850000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+189	83	3078001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+190	83	3079001	4620000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+191	83	3080001	6160000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+192	83	3081001	5390000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+193	83	3082001	5390000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+194	83	3083001	5390000.00	2020-06-11 04:00:00+00	2020-06-11	\N
 \.
 
 
 --
--- TOC entry 4297 (class 0 OID 70131)
--- Dependencies: 272
--- Data for Name: tabulador_aseo_residencial; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: tabulador_aseo_residencial; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.tabulador_aseo_residencial (id_tabulador_aseo_residencial, id_usuario, monto, fecha_creacion, fecha_desde, fecha_hasta) FROM stdin;
-1	83	18000	2020-06-11 13:49:10.551481-04	2020-06-11	\N
+1	83	18000	2020-06-11 17:49:10.551481+00	2020-06-11	\N
 \.
 
 
 --
--- TOC entry 4299 (class 0 OID 70140)
--- Dependencies: 274
--- Data for Name: tabulador_gas; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: tabulador_gas; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.tabulador_gas (id_tabulador_gas, id_actividad_economica, monto) FROM stdin;
@@ -6997,242 +8426,236 @@ COPY impuesto.tabulador_gas (id_tabulador_gas, id_actividad_economica, monto) FR
 
 
 --
--- TOC entry 4300 (class 0 OID 70146)
--- Dependencies: 275
--- Data for Name: tabulador_gas_actividad_economica; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: tabulador_gas_actividad_economica; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.tabulador_gas_actividad_economica (id_tabulador_gas_actividad_economica, id_usuario, numero_referencia, monto, fecha_creacion, fecha_desde, fecha_hasta) FROM stdin;
-1	83	1002001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-2	83	1003001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-3	83	1004001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-4	83	2007001	4950000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-5	83	1005001	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-6	83	1006001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-7	83	1007001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-8	83	1008001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-9	83	1009001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-10	83	1010001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-11	83	1011001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-12	83	1012001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-13	83	1013001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-14	83	1014001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-15	83	1015001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-16	83	1016001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-17	83	1017001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-18	83	1018001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-19	83	1019001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-20	83	1020001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-21	83	1021001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-22	83	1022001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-23	83	1023001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-24	83	1024001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-25	83	1025001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-26	83	1026001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-27	83	1027001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-28	83	1028001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-29	83	1029001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-30	83	1030001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-31	83	1031001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-32	83	1032001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-33	83	1033001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-34	83	1034001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-35	83	1035001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-36	83	1036001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-37	83	1037001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-38	83	1039001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-39	83	1040001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-40	83	1041001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-41	83	1042001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-42	83	1043001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-43	83	1044001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-44	83	1045001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-45	83	1046001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-46	83	1047001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-47	83	1048001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-48	83	2001001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-49	83	2002001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-50	83	2003001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-51	83	2004001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-52	83	2005001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-53	83	2006001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-54	83	2008001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-55	83	2009001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-56	83	2010001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-57	83	2011001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-58	83	2012001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-59	83	2014001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-60	83	2015001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-61	83	2016001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-62	83	2017001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-63	83	2018001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-64	83	2019001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-65	83	2020001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-66	83	2021001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-67	83	2022001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-68	83	2023001	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-69	83	2024002	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-70	83	2025003	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-71	83	2026001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-72	83	2029001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-73	83	2028001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-74	83	2027001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-75	83	2030001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-76	83	2031001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-77	83	2032001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-78	83	2033001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-79	83	2034001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-80	83	2035001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-81	83	2036001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-82	83	2037001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-83	83	2038001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-84	83	2039001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-85	83	2040001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-86	83	2041001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-87	83	2042001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-88	83	2043002	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-89	83	2045001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-90	83	2046001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-91	83	2047001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-92	83	2048001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-93	83	2049002	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-94	83	2051001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-95	83	2052001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-96	83	2053001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-97	83	2054001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-98	83	2055001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-99	83	2056001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-100	83	2057001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-101	83	2058001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-102	83	2059001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-103	83	2060001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-104	83	2061001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-105	83	2062001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-106	83	2063001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-107	83	2064001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-108	83	2065001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-109	83	2066001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-110	83	2067001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-111	83	2068001	8800000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-112	83	2069002	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-113	83	2070003	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-114	83	2071001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-115	83	2072001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-116	83	3001001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-117	83	3002001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-118	83	3003002	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-119	83	2073001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-120	83	3004001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-121	83	3005001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-122	83	3006001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-123	83	3007001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-124	83	3009001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-125	83	3008001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-126	83	3010001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-127	83	3011001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-128	83	3012001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-129	83	3013001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-130	83	3014001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-131	83	3015001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-132	83	3016001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-133	83	3017002	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-134	83	3019002	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-135	83	3020001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-136	83	3021001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-137	83	3022001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-138	83	3023001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-139	83	3024001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-140	83	3025001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-141	83	3026001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-142	83	3027001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-143	83	3028001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-144	83	3029001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-145	83	3030002	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-146	83	3031001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-147	83	3032001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-148	83	3033002	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-149	83	3034001	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-150	83	3035001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-151	83	3036001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-152	83	3037001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-153	83	3038001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-154	83	3039001	4400000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-155	83	3040001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-156	83	3041001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-157	83	3042001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-158	83	3043001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-159	83	3044001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-160	83	3045002	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-161	83	3046001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-162	83	3047001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-163	83	3048001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-164	83	3050001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-165	83	3051001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-166	83	3052001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-167	83	3053002	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-168	83	3054001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-169	83	3055001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-170	83	3056001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-171	83	3057001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-172	83	3058001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-173	83	3059001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-174	83	3060001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-175	83	3061001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-176	83	3062001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-177	83	3063001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-178	83	3064001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-179	83	3065001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-180	83	3067001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-181	83	3068001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-182	83	3069001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-183	83	3070001	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-184	83	3071001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-185	83	3072002	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-186	83	3073001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-187	83	3074001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-188	83	3075001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-189	83	3076001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-190	83	3077001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-191	83	3078001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-192	83	3079001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-193	83	3080001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-194	83	3081001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-195	83	3082001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-196	83	3083001	2640000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-197	83	20230011	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-198	83	20230012	6600000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-199	83	20230013	7700000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-200	83	20270011	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-201	83	20270012	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-202	83	30240011	1100000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-203	83	30240012	1650000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-204	83	30640011	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-205	83	30640012	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-206	83	1038001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-207	83	2013001	5500000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-208	83	2044001	3300000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-209	83	2050001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-210	83	3018001	2750000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-211	83	3049001	2200000.00	2020-06-11 00:00:00-04	2020-06-11	\N
-212	83	3066001	3850000.00	2020-06-11 00:00:00-04	2020-06-11	\N
+2	83	1003001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+3	83	1004001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+6	83	1006001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+7	83	1007001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+8	83	1008001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+9	83	1009001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+10	83	1010001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+11	83	1011001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+12	83	1012001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+13	83	1013001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+14	83	1014001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+15	83	1015001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+16	83	1016001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+17	83	1017001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+18	83	1018001	17600000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+20	83	1020001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+21	83	1021001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+22	83	1022001	8800000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+23	83	1023001	8800000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+24	83	1024001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+25	83	1025001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+26	83	1026001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+27	83	1027001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+28	83	1028001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+29	83	1029001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+30	83	1030001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+31	83	1031001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+32	83	1032001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+33	83	1033001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+34	83	1034001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+35	83	1035001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+36	83	1036001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+37	83	1037001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+38	83	1039001	2200000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+40	83	1041001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+41	83	1042001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+42	83	1043001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+43	83	1044001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+44	83	1045001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+45	83	1046001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+46	83	1047001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+47	83	1048001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+48	83	2001001	17600000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+49	83	2002001	6600000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+50	83	2003001	2200000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+51	83	2004001	8800000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+52	83	2005001	2200000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+53	83	2006001	2200000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+4	83	2007001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+54	83	2008001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+56	83	2010001	2200000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+57	83	2011001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+58	83	2012001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+59	83	2014001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+60	83	2015001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+61	83	2016001	2200000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+62	83	2017001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+63	83	2018001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+64	83	2019001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+65	83	2020001	17600000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+66	83	2021001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+67	83	2022001	6600000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+68	83	2023001	15400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+69	83	2024002	5500000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+70	83	2025003	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+71	83	2026001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+73	83	2028001	2200000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+72	83	2029001	2200000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+75	83	2030001	2200000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+76	83	2031001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+77	83	2032001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+78	83	2033001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+79	83	2034001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+80	83	2035001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+81	83	2036001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+82	83	2037001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+83	83	2038001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+84	83	2039001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+85	83	2040001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+86	83	2041001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+87	83	2042001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+88	83	2043002	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+90	83	2046001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+91	83	2047001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+92	83	2048001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+93	83	2049002	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+94	83	2051001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+95	83	2052001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+96	83	2053001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+97	83	2054001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+98	83	2055001	6600000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+99	83	2056001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+100	83	2057001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+101	83	2058001	5500000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+102	83	2059001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+103	83	2060001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+104	83	2061001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+105	83	2062001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+107	83	2064001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+108	83	2065001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+109	83	2066001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+110	83	2067001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+111	83	2068001	6600000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+112	83	2069002	6600000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+113	83	2070003	5500000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+114	83	2071001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+115	83	2072001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+119	83	2073001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+116	83	3001001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+117	83	3002001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+118	83	3003002	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+120	83	3004001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+1	83	1002001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+5	83	1005001	15400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+19	83	1019001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+206	83	1038001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+39	83	1040001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+55	83	2009001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+207	83	2013001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+197	83	20230011	6600000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+198	83	20230012	13200000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+199	83	20230013	15400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+74	83	2027001	6600000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+200	83	20270011	6600000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+201	83	20270012	6600000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+208	83	2044001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+89	83	2045001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+209	83	2050001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+106	83	2063001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+121	83	3005001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+122	83	3006001	11000000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+123	83	3007001	6600000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+125	83	3008001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+124	83	3009001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+126	83	3010001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+127	83	3011001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+128	83	3012001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+129	83	3013001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+130	83	3014001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+131	83	3015001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+132	83	3016001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+133	83	3017002	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+210	83	3018001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+134	83	3019002	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+135	83	3020001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+136	83	3021001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+137	83	3022001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+138	83	3023001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+139	83	3024001	2200000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+202	83	30240011	2200000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+203	83	30240012	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+140	83	3025001	2200000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+141	83	3026001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+142	83	3027001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+143	83	3028001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+144	83	3029001	5500000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+145	83	3030002	5500000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+146	83	3031001	5500000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+147	83	3032001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+148	83	3033002	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+149	83	3034001	15400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+150	83	3035001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+151	83	3036001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+152	83	3037001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+153	83	3038001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+154	83	3039001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+155	83	3040001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+156	83	3041001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+157	83	3042001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+158	83	3043001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+159	83	3044001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+160	83	3045002	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+161	83	3046001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+162	83	3047001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+163	83	3048001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+211	83	3049001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+164	83	3050001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+165	83	3051001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+166	83	3052001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+167	83	3053002	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+168	83	3054001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+169	83	3055001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+170	83	3056001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+171	83	3057001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+172	83	3058001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+173	83	3059001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+174	83	3060001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+175	83	3061001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+176	83	3062001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+177	83	3063001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+178	83	3064001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+204	83	30640011	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+205	83	30640012	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+179	83	3065001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+212	83	3066001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+180	83	3067001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+181	83	3068001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+182	83	3069001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+183	83	3070001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+184	83	3071001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+185	83	3072002	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+186	83	3073001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+187	83	3074001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+188	83	3075001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+189	83	3076001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+190	83	3077001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+191	83	3078001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+192	83	3079001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+193	83	3080001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+194	83	3081001	3300000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+195	83	3082001	6600000.00	2020-06-11 04:00:00+00	2020-06-11	\N
+196	83	3083001	4400000.00	2020-06-11 04:00:00+00	2020-06-11	\N
 \.
 
 
 --
--- TOC entry 4303 (class 0 OID 70157)
--- Dependencies: 278
--- Data for Name: tabulador_gas_residencial; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: tabulador_gas_residencial; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.tabulador_gas_residencial (id_tabulador_gas_residencial, id_usuario, monto, fecha_creacion, fecha_desde, fecha_hasta) FROM stdin;
-1	83	7000	2020-06-11 13:48:49.040513-04	2020-06-11	\N
+1	83	7000	2020-06-11 17:48:49.040513+00	2020-06-11	\N
 \.
 
 
 --
--- TOC entry 4305 (class 0 OID 70166)
--- Dependencies: 280
--- Data for Name: tipo_aviso_propaganda; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: tipo_aviso_propaganda; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.tipo_aviso_propaganda (id_tipo_aviso_propaganda, id_categoria_propaganda, descripcion, parametro, monto, id_valor) FROM stdin;
@@ -7302,9 +8725,7 @@ COPY impuesto.tipo_aviso_propaganda (id_tipo_aviso_propaganda, id_categoria_prop
 
 
 --
--- TOC entry 4307 (class 0 OID 70175)
--- Dependencies: 282
--- Data for Name: tipo_multa; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: tipo_multa; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.tipo_multa (id_tipo_multa, descripcion) FROM stdin;
@@ -7313,9 +8734,7 @@ COPY impuesto.tipo_multa (id_tipo_multa, descripcion) FROM stdin;
 
 
 --
--- TOC entry 4309 (class 0 OID 70183)
--- Dependencies: 284
--- Data for Name: usuario_enlazado; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: usuario_enlazado; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.usuario_enlazado (id_usuario_enlazado, id_contribuyente, email) FROM stdin;
@@ -7323,9 +8742,15 @@ COPY impuesto.usuario_enlazado (id_usuario_enlazado, id_contribuyente, email) FR
 
 
 --
--- TOC entry 4311 (class 0 OID 70191)
--- Dependencies: 286
--- Data for Name: verificacion_email; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: usuario_inmueble; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+COPY impuesto.usuario_inmueble (id_usuario_inmueble, id_usuario, id_inmueble) FROM stdin;
+\.
+
+
+--
+-- Data for Name: verificacion_email; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.verificacion_email (id_verificacion_email, id_registro_municipal, codigo_recuperacion, fecha_recuperacion, verificado) FROM stdin;
@@ -7333,47 +8758,62 @@ COPY impuesto.verificacion_email (id_verificacion_email, id_registro_municipal, 
 
 
 --
--- TOC entry 4313 (class 0 OID 70201)
--- Dependencies: 288
--- Data for Name: verificacion_telefono; Type: TABLE DATA; Schema: impuesto; Owner: -
+-- Data for Name: verificacion_telefono; Type: TABLE DATA; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 COPY impuesto.verificacion_telefono (id_verificacion_telefono, codigo_verificacion, fecha_verificacion, verificado, id_usuario, telefono) FROM stdin;
-78	119783	2020-06-26 00:25:19.786699-04	t	118	4147212344124
-81	254200	2020-06-26 16:37:44.916513-04	t	58	4129661659
-82	638501	2020-06-26 19:01:55.167478-04	t	120	4129661659
-83	062801	2020-06-26 19:04:24.049606-04	t	121	4129661659
-84	310569	2020-06-26 19:14:02.661491-04	t	122	4129661659
-85	505131	2020-06-27 12:30:31.169715-04	t	124	4129661659
-86	513908	2020-06-30 13:36:19.389316-04	t	127	4121100342
-87	955434	2020-06-30 13:49:53.472559-04	t	128	4121100342
-88	088925	2020-06-30 14:50:42.605834-04	t	129	4246336236
-89	247826	2020-06-30 14:58:29.260825-04	t	130	4121100342
-90	900190	2020-06-30 15:13:34.089421-04	t	132	4121100342
-91	313699	2020-06-30 15:29:55.67457-04	t	131	4246336236
-92	706679	2020-06-30 15:42:34.387211-04	t	135	4121100342
-93	734396	2020-06-30 16:10:04.534182-04	t	136	4121100342
-94	405656	2020-07-01 07:57:41.956301-04	t	137	4121100342
-95	961888	2020-07-01 08:20:56.945935-04	t	138	4121100342
-96	934563	2020-07-01 08:35:30.630005-04	t	139	4121100342
-97	256802	2020-07-01 09:11:33.516843-04	t	142	4246336236
-98	\N	2020-07-01 09:26:28.837352-04	t	143	\N
-99	\N	2020-07-01 09:27:18.764155-04	t	145	\N
-100	\N	2020-07-01 10:04:09.930643-04	t	149	\N
-101	\N	2020-07-01 10:04:22.233935-04	t	150	\N
-102	818189	2020-07-01 10:45:45.788979-04	t	151	4246336236
-103	217733	2020-07-02 09:33:55.873863-04	t	152	4246336236
-104	\N	2020-07-02 11:29:55.973332-04	t	153	\N
-105	787341	2020-07-03 10:35:49.656701-04	t	154	4126750593
-106	\N	2020-07-03 11:21:19.489328-04	t	146	\N
-107	853275	2020-07-09 08:12:02.173311-04	t	155	4147212342
+82	638501	2020-06-26 23:01:55.167478+00	t	120	4129661659
+83	062801	2020-06-26 23:04:24.049606+00	t	121	4129661659
+84	310569	2020-06-26 23:14:02.661491+00	t	122	4129661659
+85	505131	2020-06-27 16:30:31.169715+00	t	124	4129661659
+86	513908	2020-06-30 17:36:19.389316+00	t	127	4121100342
+87	955434	2020-06-30 17:49:53.472559+00	t	128	4121100342
+88	088925	2020-06-30 18:50:42.605834+00	t	129	4246336236
+89	247826	2020-06-30 18:58:29.260825+00	t	130	4121100342
+90	900190	2020-06-30 19:13:34.089421+00	t	132	4121100342
+91	313699	2020-06-30 19:29:55.67457+00	t	131	4246336236
+92	706679	2020-06-30 19:42:34.387211+00	t	135	4121100342
+93	734396	2020-06-30 20:10:04.534182+00	t	136	4121100342
+94	405656	2020-07-01 11:57:41.956301+00	t	137	4121100342
+95	961888	2020-07-01 12:20:56.945935+00	t	138	4121100342
+96	934563	2020-07-01 12:35:30.630005+00	t	139	4121100342
+97	256802	2020-07-01 13:11:33.516843+00	t	142	4246336236
+98	\N	2020-07-01 13:26:28.837352+00	t	143	\N
+99	\N	2020-07-01 13:27:18.764155+00	t	145	\N
+100	\N	2020-07-01 14:04:09.930643+00	t	149	\N
+101	\N	2020-07-01 14:04:22.233935+00	t	150	\N
+102	818189	2020-07-01 14:45:45.788979+00	t	151	4246336236
+103	217733	2020-07-02 13:33:55.873863+00	t	152	4246336236
+104	\N	2020-07-02 15:29:55.973332+00	t	153	\N
+105	787341	2020-07-03 14:35:49.656701+00	t	154	4126750593
+106	\N	2020-07-03 15:21:19.489328+00	t	146	\N
+107	853275	2020-07-09 12:12:02.173311+00	t	155	4147212342
+108	050385	2020-07-09 14:04:57.140286+00	t	156	4246336236
+110	534170	2020-07-10 15:49:58.606858+00	t	157	4246336236
+111	\N	2020-07-12 23:47:58.535926+00	t	161	\N
+112	\N	2020-07-13 01:09:31.49455+00	t	163	\N
+113	999333	2020-07-13 13:43:25.380049+00	t	164	4246336236
+114	956936	2020-07-13 16:40:33.570995+00	t	118	4126826450
+115	111086	2020-07-13 18:41:16.594018+00	t	119	4127645681
+116	\N	2020-07-13 19:31:42.422201+00	t	172	\N
+117	700532	2020-07-14 17:12:31.058349+00	t	173	4246336236
+118	308041	2020-07-14 19:47:26.655906+00	t	116	4127645681
+119	668477	2020-07-14 20:22:48.854932+00	t	117	4127645681
+120	577059	2020-07-14 23:30:57.871815+00	t	165	4246336236
+121	\N	2020-07-15 19:52:51.590005+00	t	181	\N
+122	\N	2020-07-16 12:32:53.4423+00	t	192	\N
+124	\N	2020-07-16 17:54:47.156705+00	t	203	\N
+109	590020	2020-07-10 12:03:13.709716+00	t	194	4127645681
+125	\N	2020-07-17 14:26:59.593549+00	t	204	\N
+126	\N	2020-07-19 22:15:59.001953+00	t	205	\N
+127	\N	2020-07-21 03:17:26.779761+00	t	207	\N
+128	\N	2020-07-21 17:58:32.167957+00	t	197	\N
+129	\N	2020-07-21 18:16:26.390296+00	t	208	\N
 \.
 
 
 --
--- TOC entry 4315 (class 0 OID 70211)
--- Dependencies: 290
--- Data for Name: banco; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: banco; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.banco (id_banco, nombre, validador) FROM stdin;
@@ -7393,7 +8833,6 @@ COPY public.banco (id_banco, nombre, validador) FROM stdin;
 17	Banco Industrial De Venezuela.	f
 18	Banco Internacional De Desarrollo, C.A.	f
 19	Banco Mercantil C.A.	f
-21	Banco Occidental De Descuento.	f
 22	Banco Plaza	f
 24	Banco Venezolano De Credito S.A.	f
 25	Bancrecer S.A. Banco De Desarrollo	f
@@ -7416,9 +8855,7 @@ COPY public.banco (id_banco, nombre, validador) FROM stdin;
 
 
 --
--- TOC entry 4317 (class 0 OID 70220)
--- Dependencies: 292
--- Data for Name: campo; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: campo; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.campo (id_campo, nombre, tipo, validacion, col) FROM stdin;
@@ -7513,13 +8950,14 @@ COPY public.campo (id_campo, nombre, tipo, validacion, col) FROM stdin;
 91	Tipo de Contribuyente	string	tipoContribuyente	6
 56	Nombre del Representante Legal	string	nombreRepresentante	8
 92	Actividades Económicas	object	actividadesEconomicas	24
+93	Capital Suscrito	number	capitalSuscrito	8
+94	Tipo de Sociedad	select	tipoSociedadContrib	8
+95	Tipo de Licencia	select0	estadoLicencia	8
 \.
 
 
 --
--- TOC entry 4318 (class 0 OID 70226)
--- Dependencies: 293
--- Data for Name: campo_tramite; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: campo_tramite; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.campo_tramite (id_campo, id_tipo_tramite, orden, estado, id_seccion) FROM stdin;
@@ -7850,14 +9288,17 @@ COPY public.campo_tramite (id_campo, id_tipo_tramite, orden, estado, id_seccion)
 56	28	2	enproceso	27
 10	28	1	enproceso	1
 11	28	2	enproceso	1
+93	28	3	iniciado	27
+93	28	3	enproceso	27
+94	28	4	iniciado	27
+94	28	4	enproceso	27
+95	28	1	enproceso	29
 92	28	1	enproceso	28
 \.
 
 
 --
--- TOC entry 4320 (class 0 OID 70235)
--- Dependencies: 295
--- Data for Name: cargo; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: cargo; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.cargo (id_cargo, id_tipo_usuario, id_institucion, descripcion) FROM stdin;
@@ -7885,24 +9326,22 @@ COPY public.cargo (id_cargo, id_tipo_usuario, id_institucion, descripcion) FROM 
 22	3	9	Cajero
 23	3	9	Analista
 24	2	9	Administrador
+25	3	9	Jefe de Caja
+26	5	9	Director Cobranzas
 \.
 
 
 --
--- TOC entry 4239 (class 0 OID 69833)
--- Dependencies: 208
--- Data for Name: caso_social; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: caso_social; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.caso_social (id_caso, id_tipo_tramite, costo, datos, fecha_creacion, codigo_tramite, consecutivo, id_usuario, url_planilla) FROM stdin;
-2	0	\N	{"nombreCompleto":"Funcionario SAGAS","cedula":"1231231231","fechaNacimiento":"2020-04-02T00:33:42.930Z","edad":"1","nacionalidad":"asdasd","sexo":"true","poblacionIndigena":true,"etnia":"wayuu","profesion":"asdasd","oficio":"asdasd","estadoCivil":"casado","nivelInstruccion":"analfabeto","discapacidad":false,"condicionLaboral":"publico","empleadoAlcaldia":false,"asignacionesEconomicas":"ivss","razonDeSolicitud":"asd","patologiaActual":"asd","areaDeSalud":"traumatologia","direccion":"asdasdasd","parroquia":"CACIQUE MARA","telefono":"1231231231","email":"gab_tata_tc@hotmail.com","tipoAyuda":"electrodomesticos","tipoAyudaDesc":"asdasd","referidoPor":"despacho","isMenor":false,"nacionalidadSolicitante":"V","nacionalidadMenor":"V","nacionalidadBeneficiario":"V","solicitante":{"nombreCompleto":"asdasd","cedula":"1241214215","direccion":"asdasda"},"liderDeCalle":{"nombreCompleto":"asd","telefono":"21412412414"}}	2020-04-02 20:34:14.992725-04	ABMM-09042020-0-0001	1	66	\N
+2	0	\N	{"nombreCompleto":"Funcionario SAGAS","cedula":"1231231231","fechaNacimiento":"2020-04-02T00:33:42.930Z","edad":"1","nacionalidad":"asdasd","sexo":"true","poblacionIndigena":true,"etnia":"wayuu","profesion":"asdasd","oficio":"asdasd","estadoCivil":"casado","nivelInstruccion":"analfabeto","discapacidad":false,"condicionLaboral":"publico","empleadoAlcaldia":false,"asignacionesEconomicas":"ivss","razonDeSolicitud":"asd","patologiaActual":"asd","areaDeSalud":"traumatologia","direccion":"asdasdasd","parroquia":"CACIQUE MARA","telefono":"1231231231","email":"gab_tata_tc@hotmail.com","tipoAyuda":"electrodomesticos","tipoAyudaDesc":"asdasd","referidoPor":"despacho","isMenor":false,"nacionalidadSolicitante":"V","nacionalidadMenor":"V","nacionalidadBeneficiario":"V","solicitante":{"nombreCompleto":"asdasd","cedula":"1241214215","direccion":"asdasda"},"liderDeCalle":{"nombreCompleto":"asd","telefono":"21412412414"}}	2020-04-03 00:34:14.992725+00	ABMM-09042020-0-0001	1	66	\N
 \.
 
 
 --
--- TOC entry 4323 (class 0 OID 70245)
--- Dependencies: 298
--- Data for Name: certificado; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: certificado; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.certificado (id_certificado, id_tramite, url_certificado) FROM stdin;
@@ -7910,9 +9349,7 @@ COPY public.certificado (id_certificado, id_tramite, url_certificado) FROM stdin
 
 
 --
--- TOC entry 4325 (class 0 OID 70253)
--- Dependencies: 300
--- Data for Name: cuenta_funcionario; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: cuenta_funcionario; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.cuenta_funcionario (id_usuario, id_cargo) FROM stdin;
@@ -7938,13 +9375,13 @@ COPY public.cuenta_funcionario (id_usuario, id_cargo) FROM stdin;
 83	24
 116	22
 117	23
+168	25
+209	26
 \.
 
 
 --
--- TOC entry 4326 (class 0 OID 70256)
--- Dependencies: 301
--- Data for Name: datos_facebook; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: datos_facebook; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.datos_facebook (id_usuario, id_facebook) FROM stdin;
@@ -7952,9 +9389,7 @@ COPY public.datos_facebook (id_usuario, id_facebook) FROM stdin;
 
 
 --
--- TOC entry 4327 (class 0 OID 70262)
--- Dependencies: 302
--- Data for Name: datos_google; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: datos_google; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.datos_google (id_usuario, id_google) FROM stdin;
@@ -7968,9 +9403,7 @@ COPY public.datos_google (id_usuario, id_google) FROM stdin;
 
 
 --
--- TOC entry 4328 (class 0 OID 70268)
--- Dependencies: 303
--- Data for Name: detalle_factura; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: detalle_factura; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.detalle_factura (id_detalle, id_factura, nombre, costo) FROM stdin;
@@ -7978,20 +9411,16 @@ COPY public.detalle_factura (id_detalle, id_factura, nombre, costo) FROM stdin;
 
 
 --
--- TOC entry 4240 (class 0 OID 69840)
--- Dependencies: 209
--- Data for Name: evento_caso_social; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: evento_caso_social; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.evento_caso_social (id_evento_caso, id_caso, event, "time") FROM stdin;
-2	2	iniciar	2020-04-02 20:34:14.992725-04
+2	2	iniciar	2020-04-03 00:34:14.992725+00
 \.
 
 
 --
--- TOC entry 4244 (class 0 OID 69876)
--- Dependencies: 214
--- Data for Name: evento_multa; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: evento_multa; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.evento_multa (id_evento_multa, id_multa, event, "time") FROM stdin;
@@ -7999,97 +9428,244 @@ COPY public.evento_multa (id_evento_multa, id_multa, event, "time") FROM stdin;
 
 
 --
--- TOC entry 4246 (class 0 OID 69901)
--- Dependencies: 217
--- Data for Name: evento_tramite; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: evento_tramite; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.evento_tramite (id_evento_tramite, id_tramite, event, "time") FROM stdin;
-668	298	iniciar	2020-06-26 18:49:43.696424-04
-669	298	procesar_rc	2020-06-26 18:49:43.696424-04
-670	298	aprobar_rc	2020-06-26 19:51:45.215522-04
-672	300	iniciar	2020-06-30 13:50:29.797212-04
-673	300	validar_pa	2020-06-30 13:50:29.797212-04
-674	301	iniciar	2020-06-30 14:21:38.604251-04
-675	301	validar_pa	2020-06-30 14:21:38.604251-04
-676	302	iniciar	2020-06-30 14:22:40.387563-04
-677	302	enproceso_pd	2020-06-30 14:22:40.387563-04
-678	303	iniciar	2020-06-30 14:23:44.183727-04
-679	303	validar_pa	2020-06-30 14:23:44.183727-04
-680	304	iniciar	2020-06-30 14:24:55.057176-04
-681	304	validar_pa	2020-06-30 14:24:55.057176-04
-682	305	iniciar	2020-06-30 14:25:26.785389-04
-683	305	enproceso_pd	2020-06-30 14:25:26.785389-04
-684	306	iniciar	2020-06-30 14:27:13.595827-04
-685	306	validar_cr	2020-06-30 14:27:13.595827-04
-686	307	iniciar	2020-06-30 14:29:35.964286-04
-687	307	enproceso_pd	2020-06-30 14:29:35.964286-04
-688	308	iniciar	2020-06-30 14:30:23.317754-04
-689	308	enproceso_pd	2020-06-30 14:30:23.317754-04
-690	309	iniciar	2020-06-30 14:32:25.471914-04
-691	309	enproceso_pd	2020-06-30 14:32:25.471914-04
-692	310	iniciar	2020-06-30 14:33:22.766851-04
-693	310	enproceso_pd	2020-06-30 14:33:22.766851-04
-694	311	iniciar	2020-06-30 14:36:51.647562-04
-695	311	validar_cr	2020-06-30 14:36:51.647562-04
-696	312	iniciar	2020-06-30 14:38:44.270165-04
-697	312	validar_cr	2020-06-30 14:38:44.270165-04
-698	313	iniciar	2020-06-30 14:40:41.149505-04
-699	313	validar_cr	2020-06-30 14:40:41.149505-04
-700	314	iniciar	2020-06-30 14:42:30.344355-04
-701	314	enproceso_ompu	2020-06-30 14:42:30.344355-04
-702	315	iniciar	2020-06-30 14:44:24.903989-04
-703	315	enproceso_ompu	2020-06-30 14:44:24.903989-04
-704	316	iniciar	2020-06-30 14:45:46.644432-04
-705	316	enproceso_ompu	2020-06-30 14:45:46.644432-04
-706	317	iniciar	2020-06-30 14:46:46.8143-04
-707	317	validar_pa	2020-06-30 14:46:46.8143-04
-708	318	iniciar	2020-06-30 14:48:03.746067-04
-709	318	enproceso_pd	2020-06-30 14:48:03.746067-04
-710	319	iniciar	2020-06-30 14:57:02.83084-04
-711	319	validar_lae	2020-06-30 14:57:02.83084-04
-712	320	iniciar	2020-07-01 09:17:17.671537-04
-713	320	procesar_rc	2020-07-01 09:17:17.671537-04
-714	321	iniciar	2020-07-01 09:24:36.899794-04
-715	321	procesar_rc	2020-07-01 09:24:36.899794-04
-716	320	aprobar_rc	2020-07-01 09:26:28.837352-04
-718	321	aprobar_rc	2020-07-01 09:27:18.764155-04
-719	322	iniciar	2020-07-01 09:32:13.02945-04
-720	322	procesar_rc	2020-07-01 09:32:13.02945-04
-721	323	iniciar	2020-07-01 09:44:35.240099-04
-722	323	procesar_rc	2020-07-01 09:44:35.240099-04
-723	324	iniciar	2020-07-01 09:47:40.4185-04
-724	324	procesar_rc	2020-07-01 09:47:40.4185-04
-725	323	aprobar_rc	2020-07-01 10:04:09.930643-04
-726	324	aprobar_rc	2020-07-01 10:04:22.233935-04
-727	325	iniciar	2020-07-01 10:09:05.754533-04
-728	325	validar_lae	2020-07-01 10:09:05.754533-04
-729	326	iniciar	2020-07-01 10:13:32.706273-04
-730	326	validar_lae	2020-07-01 10:13:32.706273-04
-731	326	enproceso_lae	2020-07-01 10:28:11.778756-04
-732	325	enproceso_lae	2020-07-01 10:28:11.778756-04
-733	326	aprobar_lae	2020-07-01 11:26:52.828017-04
-734	325	aprobar_lae	2020-07-01 11:42:57.618399-04
-735	327	iniciar	2020-07-02 11:13:50.325816-04
-736	327	procesar_rc	2020-07-02 11:13:50.325816-04
-737	327	aprobar_rc	2020-07-02 11:29:55.973332-04
-738	328	iniciar	2020-07-02 11:43:52.483359-04
-739	328	validar_lae	2020-07-02 11:43:52.483359-04
-740	328	enproceso_lae	2020-07-02 11:52:56.023119-04
-741	328	aprobar_lae	2020-07-02 11:55:41.42259-04
-742	322	aprobar_rc	2020-07-03 11:21:19.489328-04
-743	329	iniciar	2020-07-03 11:34:49.578088-04
-744	329	validar_lae	2020-07-03 11:34:49.578088-04
-745	330	iniciar	2020-07-09 08:13:24.897936-04
-746	330	revisar_bc	2020-07-09 08:13:24.897936-04
-747	330	aprobar_bc	2020-07-09 08:27:59.653175-04
+668	298	iniciar	2020-06-26 22:49:43.696424+00
+669	298	procesar_rc	2020-06-26 22:49:43.696424+00
+670	298	aprobar_rc	2020-06-26 23:51:45.215522+00
+672	300	iniciar	2020-06-30 17:50:29.797212+00
+673	300	validar_pa	2020-06-30 17:50:29.797212+00
+674	301	iniciar	2020-06-30 18:21:38.604251+00
+675	301	validar_pa	2020-06-30 18:21:38.604251+00
+676	302	iniciar	2020-06-30 18:22:40.387563+00
+677	302	enproceso_pd	2020-06-30 18:22:40.387563+00
+678	303	iniciar	2020-06-30 18:23:44.183727+00
+679	303	validar_pa	2020-06-30 18:23:44.183727+00
+680	304	iniciar	2020-06-30 18:24:55.057176+00
+681	304	validar_pa	2020-06-30 18:24:55.057176+00
+682	305	iniciar	2020-06-30 18:25:26.785389+00
+683	305	enproceso_pd	2020-06-30 18:25:26.785389+00
+684	306	iniciar	2020-06-30 18:27:13.595827+00
+685	306	validar_cr	2020-06-30 18:27:13.595827+00
+686	307	iniciar	2020-06-30 18:29:35.964286+00
+687	307	enproceso_pd	2020-06-30 18:29:35.964286+00
+688	308	iniciar	2020-06-30 18:30:23.317754+00
+689	308	enproceso_pd	2020-06-30 18:30:23.317754+00
+690	309	iniciar	2020-06-30 18:32:25.471914+00
+691	309	enproceso_pd	2020-06-30 18:32:25.471914+00
+692	310	iniciar	2020-06-30 18:33:22.766851+00
+693	310	enproceso_pd	2020-06-30 18:33:22.766851+00
+694	311	iniciar	2020-06-30 18:36:51.647562+00
+695	311	validar_cr	2020-06-30 18:36:51.647562+00
+696	312	iniciar	2020-06-30 18:38:44.270165+00
+697	312	validar_cr	2020-06-30 18:38:44.270165+00
+698	313	iniciar	2020-06-30 18:40:41.149505+00
+699	313	validar_cr	2020-06-30 18:40:41.149505+00
+700	314	iniciar	2020-06-30 18:42:30.344355+00
+701	314	enproceso_ompu	2020-06-30 18:42:30.344355+00
+702	315	iniciar	2020-06-30 18:44:24.903989+00
+703	315	enproceso_ompu	2020-06-30 18:44:24.903989+00
+704	316	iniciar	2020-06-30 18:45:46.644432+00
+705	316	enproceso_ompu	2020-06-30 18:45:46.644432+00
+706	317	iniciar	2020-06-30 18:46:46.8143+00
+707	317	validar_pa	2020-06-30 18:46:46.8143+00
+708	318	iniciar	2020-06-30 18:48:03.746067+00
+709	318	enproceso_pd	2020-06-30 18:48:03.746067+00
+710	319	iniciar	2020-06-30 18:57:02.83084+00
+711	319	validar_lae	2020-06-30 18:57:02.83084+00
+712	320	iniciar	2020-07-01 13:17:17.671537+00
+713	320	procesar_rc	2020-07-01 13:17:17.671537+00
+714	321	iniciar	2020-07-01 13:24:36.899794+00
+715	321	procesar_rc	2020-07-01 13:24:36.899794+00
+716	320	aprobar_rc	2020-07-01 13:26:28.837352+00
+718	321	aprobar_rc	2020-07-01 13:27:18.764155+00
+719	322	iniciar	2020-07-01 13:32:13.02945+00
+720	322	procesar_rc	2020-07-01 13:32:13.02945+00
+721	323	iniciar	2020-07-01 13:44:35.240099+00
+722	323	procesar_rc	2020-07-01 13:44:35.240099+00
+723	324	iniciar	2020-07-01 13:47:40.4185+00
+724	324	procesar_rc	2020-07-01 13:47:40.4185+00
+725	323	aprobar_rc	2020-07-01 14:04:09.930643+00
+726	324	aprobar_rc	2020-07-01 14:04:22.233935+00
+727	325	iniciar	2020-07-01 14:09:05.754533+00
+728	325	validar_lae	2020-07-01 14:09:05.754533+00
+729	326	iniciar	2020-07-01 14:13:32.706273+00
+730	326	validar_lae	2020-07-01 14:13:32.706273+00
+731	326	enproceso_lae	2020-07-01 14:28:11.778756+00
+732	325	enproceso_lae	2020-07-01 14:28:11.778756+00
+733	326	aprobar_lae	2020-07-01 15:26:52.828017+00
+734	325	aprobar_lae	2020-07-01 15:42:57.618399+00
+735	327	iniciar	2020-07-02 15:13:50.325816+00
+736	327	procesar_rc	2020-07-02 15:13:50.325816+00
+737	327	aprobar_rc	2020-07-02 15:29:55.973332+00
+738	328	iniciar	2020-07-02 15:43:52.483359+00
+739	328	validar_lae	2020-07-02 15:43:52.483359+00
+740	328	enproceso_lae	2020-07-02 15:52:56.023119+00
+741	328	aprobar_lae	2020-07-02 15:55:41.42259+00
+742	322	aprobar_rc	2020-07-03 15:21:19.489328+00
+743	329	iniciar	2020-07-03 15:34:49.578088+00
+744	329	validar_lae	2020-07-03 15:34:49.578088+00
+745	330	iniciar	2020-07-09 12:13:24.897936+00
+746	330	revisar_bc	2020-07-09 12:13:24.897936+00
+747	330	aprobar_bc	2020-07-09 12:27:59.653175+00
+748	331	iniciar	2020-07-10 15:03:38.148479+00
+749	331	procesar_rc	2020-07-10 15:03:38.148479+00
+750	332	iniciar	2020-07-10 16:49:30.462689+00
+751	332	revisar_bc	2020-07-10 16:49:30.462689+00
+752	333	iniciar	2020-07-10 17:39:53.585245+00
+753	333	revisar_bc	2020-07-10 17:39:53.585245+00
+754	333	aprobar_bc	2020-07-10 17:40:22.836976+00
+755	332	aprobar_bc	2020-07-10 19:44:47.523322+00
+756	334	iniciar	2020-07-13 01:02:23.945848+00
+757	334	procesar_rc	2020-07-13 01:02:23.945848+00
+758	334	aprobar_rc	2020-07-13 01:09:31.49455+00
+759	335	iniciar	2020-07-13 16:43:56.744309+00
+760	335	revisar_bc	2020-07-13 16:43:56.744309+00
+761	335	aprobar_bc	2020-07-13 16:44:08.749839+00
+762	336	iniciar	2020-07-13 19:30:55.647732+00
+763	336	procesar_rc	2020-07-13 19:30:55.647732+00
+764	336	aprobar_rc	2020-07-13 19:31:42.422201+00
+765	337	iniciar	2020-07-13 19:39:23.854275+00
+766	337	revisar_bc	2020-07-13 19:39:23.854275+00
+767	337	aprobar_bc	2020-07-13 19:40:08.930921+00
+768	338	iniciar	2020-07-14 13:05:23.977838+00
+769	338	revisar_bc	2020-07-14 13:05:23.977838+00
+770	338	aprobar_bc	2020-07-14 13:05:41.991268+00
+771	339	iniciar	2020-07-14 13:11:52.552643+00
+772	339	revisar_bc	2020-07-14 13:11:52.552643+00
+773	339	aprobar_bc	2020-07-14 13:36:04.589736+00
+774	340	iniciar	2020-07-14 15:21:39.288954+00
+775	340	validar_lae	2020-07-14 15:21:39.288954+00
+776	340	enproceso_lae	2020-07-14 15:24:11.709181+00
+777	340	revisar_lae	2020-07-14 15:24:51.133505+00
+778	341	iniciar	2020-07-14 15:28:46.972941+00
+779	341	validar_lae	2020-07-14 15:28:46.972941+00
+780	341	enproceso_lae	2020-07-14 16:57:11.481725+00
+781	341	revisar_lae	2020-07-14 16:59:49.29761+00
+782	342	iniciar	2020-07-14 19:55:12.542001+00
+783	342	revisar_bc	2020-07-14 19:55:12.542001+00
+784	343	iniciar	2020-07-14 23:45:18.998482+00
+785	343	revisar_bc	2020-07-14 23:45:18.998482+00
+786	344	iniciar	2020-07-15 12:37:13.350097+00
+787	344	revisar_bc	2020-07-15 12:37:13.350097+00
+788	344	aprobar_bc	2020-07-15 13:41:54.298424+00
+789	345	iniciar	2020-07-15 16:42:20.754409+00
+790	345	revisar_bc	2020-07-15 16:42:20.754409+00
+791	345	aprobar_bc	2020-07-15 16:42:59.372042+00
+792	346	iniciar	2020-07-15 16:55:29.27274+00
+793	346	revisar_bc	2020-07-15 16:55:29.27274+00
+794	346	aprobar_bc	2020-07-15 16:56:12.835542+00
+795	343	aprobar_bc	2020-07-15 16:57:09.206336+00
+796	347	iniciar	2020-07-15 19:05:54.379185+00
+797	347	validar_lae	2020-07-15 19:05:54.379185+00
+798	347	enproceso_lae	2020-07-15 19:05:54.379185+00
+800	349	iniciar	2020-07-15 19:37:41.710633+00
+801	349	validar_lae	2020-07-15 19:37:41.710633+00
+802	349	enproceso_lae	2020-07-15 19:37:41.710633+00
+803	349	revisar_lae	2020-07-15 19:37:43.242016+00
+804	350	iniciar	2020-07-15 19:43:36.436209+00
+805	350	procesar_rc	2020-07-15 19:43:36.436209+00
+806	351	iniciar	2020-07-15 19:47:44.589342+00
+807	351	validar_lae	2020-07-15 19:47:44.589342+00
+808	351	enproceso_lae	2020-07-15 19:47:44.589342+00
+809	351	revisar_lae	2020-07-15 19:47:45.582491+00
+810	350	aprobar_rc	2020-07-15 19:52:51.590005+00
+811	352	iniciar	2020-07-15 20:05:25.42043+00
+812	352	validar_lae	2020-07-15 20:05:25.42043+00
+813	352	enproceso_lae	2020-07-15 20:07:39.39593+00
+814	352	revisar_lae	2020-07-15 20:11:45.388665+00
+815	353	iniciar	2020-07-15 20:36:53.81152+00
+816	353	validar_lae	2020-07-15 20:36:53.81152+00
+817	351	rechazar_lae	2020-07-15 20:41:48.168302+00
+818	352	aprobar_lae	2020-07-15 20:42:13.077565+00
+831	358	iniciar	2020-07-16 13:22:35.157748+00
+832	358	validar_lae	2020-07-16 13:22:35.157748+00
+833	358	enproceso_lae	2020-07-16 13:22:35.157748+00
+834	358	revisar_lae	2020-07-16 13:22:35.157748+00
+840	364	iniciar	2020-07-16 13:24:35.920108+00
+841	364	validar_lae	2020-07-16 13:24:35.920108+00
+842	364	enproceso_lae	2020-07-16 13:24:35.920108+00
+843	364	revisar_lae	2020-07-16 13:24:35.920108+00
+844	365	iniciar	2020-07-16 13:24:51.069615+00
+845	365	validar_lae	2020-07-16 13:24:51.069615+00
+846	365	enproceso_lae	2020-07-16 13:24:51.069615+00
+847	365	revisar_lae	2020-07-16 13:24:51.069615+00
+848	366	iniciar	2020-07-16 13:25:10.145422+00
+849	366	validar_lae	2020-07-16 13:25:10.145422+00
+850	366	enproceso_lae	2020-07-16 13:25:10.145422+00
+851	366	revisar_lae	2020-07-16 13:25:10.145422+00
+853	368	iniciar	2020-07-16 13:25:40.404514+00
+854	368	validar_lae	2020-07-16 13:25:40.404514+00
+855	368	enproceso_lae	2020-07-16 13:25:40.404514+00
+856	368	revisar_lae	2020-07-16 13:25:40.404514+00
+858	370	iniciar	2020-07-16 13:31:37.731847+00
+859	370	validar_lae	2020-07-16 13:31:37.731847+00
+860	370	enproceso_lae	2020-07-16 13:31:37.731847+00
+861	370	revisar_lae	2020-07-16 13:31:37.731847+00
+862	371	iniciar	2020-07-16 13:38:37.382146+00
+863	371	validar_lae	2020-07-16 13:38:37.382146+00
+864	371	enproceso_lae	2020-07-16 13:38:37.382146+00
+865	371	revisar_lae	2020-07-16 13:38:37.382146+00
+866	371	aprobar_lae	2020-07-16 13:44:01.801809+00
+867	372	iniciar	2020-07-16 13:47:31.675709+00
+868	372	validar_lae	2020-07-16 13:47:31.675709+00
+869	372	enproceso_lae	2020-07-16 13:52:44.979626+00
+870	373	iniciar	2020-07-16 14:09:28.210906+00
+871	373	validar_lae	2020-07-16 14:09:28.210906+00
+872	373	enproceso_lae	2020-07-16 14:09:28.210906+00
+873	373	revisar_lae	2020-07-16 14:09:28.210906+00
+874	372	revisar_lae	2020-07-16 14:17:58.212613+00
+875	372	aprobar_lae	2020-07-16 14:20:45.577978+00
+876	374	iniciar	2020-07-16 14:23:35.766739+00
+877	374	validar_lae	2020-07-16 14:23:35.766739+00
+878	374	enproceso_lae	2020-07-16 14:23:35.766739+00
+879	374	revisar_lae	2020-07-16 14:23:35.766739+00
+880	374	aprobar_lae	2020-07-16 14:29:01.363637+00
+881	375	iniciar	2020-07-16 14:34:43.918672+00
+882	375	validar_lae	2020-07-16 14:34:43.918672+00
+883	375	enproceso_lae	2020-07-16 14:35:39.808672+00
+884	375	rechazar_lae	2020-07-16 14:37:40.914077+00
+885	376	iniciar	2020-07-19 22:19:16.91203+00
+886	376	validar_lae	2020-07-19 22:19:16.91203+00
+887	376	enproceso_lae	2020-07-19 22:19:16.91203+00
+888	376	revisar_lae	2020-07-19 22:19:16.91203+00
+889	376	aprobar_lae	2020-07-19 22:20:56.922172+00
+890	377	iniciar	2020-07-21 12:29:41.381254+00
+891	377	validar_lae	2020-07-21 12:29:41.381254+00
+892	377	enproceso_lae	2020-07-21 12:29:41.381254+00
+893	377	revisar_lae	2020-07-21 12:29:41.381254+00
+894	377	aprobar_lae	2020-07-21 12:59:28.626332+00
+895	378	iniciar	2020-07-21 14:10:11.544049+00
+896	378	validar_lae	2020-07-21 14:10:11.544049+00
+897	378	enproceso_lae	2020-07-21 14:10:11.544049+00
+898	378	revisar_lae	2020-07-21 14:10:11.544049+00
+899	379	iniciar	2020-07-21 14:31:05.501346+00
+900	379	validar_lae	2020-07-21 14:31:05.501346+00
+901	379	enproceso_lae	2020-07-21 14:31:05.501346+00
+902	379	revisar_lae	2020-07-21 14:31:05.501346+00
+903	380	iniciar	2020-07-21 17:50:27.086854+00
+904	380	validar_lae	2020-07-21 17:50:27.086854+00
+905	380	enproceso_lae	2020-07-21 17:50:27.086854+00
+906	380	revisar_lae	2020-07-21 17:50:27.086854+00
+907	379	aprobar_lae	2020-07-21 17:59:41.457994+00
+908	380	aprobar_lae	2020-07-21 18:00:34.301877+00
+909	381	iniciar	2020-07-21 19:06:17.864771+00
+910	381	validar_lae	2020-07-21 19:06:17.864771+00
+911	381	enproceso_lae	2020-07-21 19:06:17.864771+00
+912	381	revisar_lae	2020-07-21 19:06:17.864771+00
+913	381	aprobar_lae	2020-07-21 19:07:42.548864+00
+914	382	iniciar	2020-07-23 03:30:13.166609+00
+915	382	validar_lae	2020-07-23 03:30:13.166609+00
+916	382	enproceso_lae	2020-07-23 03:30:13.166609+00
+917	382	revisar_lae	2020-07-23 03:30:13.166609+00
+918	382	aprobar_lae	2020-07-23 03:34:54.624143+00
 \.
 
 
 --
--- TOC entry 4333 (class 0 OID 70282)
--- Dependencies: 308
--- Data for Name: factura_tramite; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: factura_tramite; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.factura_tramite (id_factura, id_tramite) FROM stdin;
@@ -8097,26 +9673,79 @@ COPY public.factura_tramite (id_factura, id_tramite) FROM stdin;
 
 
 --
--- TOC entry 4335 (class 0 OID 70287)
--- Dependencies: 310
--- Data for Name: inmueble_urbano; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: inmueble_urbano; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
-COPY public.inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, fecha_creacion, fecha_actualizacion, fecha_ultimo_avaluo, tipo_inmueble, id_registro_municipal) FROM stdin;
-21	231315U01004083001001P0500	Calle 73 entre Av. 3E y 3F	108	200	300	2020-03-20 16:46:01.230084-04	2020-03-20 16:46:01.230084-04	\N	\N	\N
-433	\N		\N	\N	\N	2020-07-09 08:12:02.010347-04	2020-07-09 08:12:02.010347-04	\N	COMERCIAL	76
-434	\N		\N	\N	\N	2020-07-09 08:12:02.010347-04	2020-07-09 08:12:02.010347-04	\N	COMERCIAL	77
-435	\N		\N	\N	\N	2020-07-09 08:12:02.010347-04	2020-07-09 08:12:02.010347-04	\N	COMERCIAL	78
-436	\N	Parroquia MANUEL DAGNINO Sector   Avenida   Calle  , Local Nro.  , Pto de Ref.	\N	\N	\N	2020-07-09 08:12:02.010347-04	2020-07-09 08:12:02.010347-04	\N	COMERCIAL	79
-437	\N	Parroquia CHIQUINQUIRA Sector 5 DE JULIO BFERCON Avenida   Calle  , Local Nro.  , Pto de Ref.	\N	\N	\N	2020-07-09 08:12:02.010347-04	2020-07-09 08:12:02.010347-04	\N	RESIDENCIAL	80
-438	\N	Parroquia CHIQUINQUIRA Sector 5 DE JULIO Avenida 16 Calle 77, Local Nro. bfercom, Pto de Ref. al lado de la torre bod	\N	\N	\N	2020-07-09 08:12:02.010347-04	2020-07-09 08:12:02.010347-04	\N	COMERCIAL	80
+COPY public.inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, fecha_creacion, fecha_actualizacion, fecha_ultimo_avaluo, tipo_inmueble, id_registro_municipal, posee_gas) FROM stdin;
+21	231315U01004083001001P0500	Calle 73 entre Av. 3E y 3F	108	200	300	2020-03-20 20:46:01.230084+00	2020-03-20 20:46:01.230084+00	\N	\N	\N	t
+433	\N		\N	\N	\N	2020-07-09 12:12:02.010347+00	2020-07-09 12:12:02.010347+00	\N	COMERCIAL	76	t
+434	\N		\N	\N	\N	2020-07-09 12:12:02.010347+00	2020-07-09 12:12:02.010347+00	\N	COMERCIAL	77	t
+435	\N		\N	\N	\N	2020-07-09 12:12:02.010347+00	2020-07-09 12:12:02.010347+00	\N	COMERCIAL	78	t
+436	\N	Parroquia MANUEL DAGNINO Sector   Avenida   Calle  , Local Nro.  , Pto de Ref.	\N	\N	\N	2020-07-09 12:12:02.010347+00	2020-07-09 12:12:02.010347+00	\N	COMERCIAL	79	t
+437	\N	Parroquia CHIQUINQUIRA Sector 5 DE JULIO BFERCON Avenida   Calle  , Local Nro.  , Pto de Ref.	\N	\N	\N	2020-07-09 12:12:02.010347+00	2020-07-09 12:12:02.010347+00	\N	RESIDENCIAL	80	t
+438	\N	Parroquia CHIQUINQUIRA Sector 5 DE JULIO Avenida 16 Calle 77, Local Nro. bfercom, Pto de Ref. al lado de la torre bod	\N	\N	\N	2020-07-09 12:12:02.010347+00	2020-07-09 12:12:02.010347+00	\N	COMERCIAL	80	t
+439	\N	Parroquia OLEGARIO VILLALOBOS Sector SCT   SANTA RITA CALLE 71  E.HOS 8-02 E.HOS POLICLIN.MCBO 8-02   Avenida 0 Calle 71, Local Nro. 8-02, Pto de Ref.  FTE. FARMACIA 2000 FTE EDF MAYA NIQUITAO MBO MARACAIBO ZUL	\N	\N	\N	2020-07-09 14:04:57.003454+00	2020-07-09 14:04:57.003454+00	\N	RESIDENCIAL	81	t
+440	\N	Parroquia OLEGARIO VILLALOBOS Sector SANTA RITA  Avenida 8 Calle 71, Local Nro. 1, Pto de Ref. SANTA RITA	\N	\N	\N	2020-07-09 14:04:57.003454+00	2020-07-09 14:04:57.003454+00	\N	COMERCIAL	81	t
+441	\N	Parroquia CHIQUINQUIRA Sector  INDIO MARA Avenida  65 Calle  22A, Local Nro.  MZN, Pto de Ref.   EDIF. IPSFA	\N	\N	\N	2020-07-10 12:03:13.465943+00	2020-07-10 12:03:13.465943+00	\N	COMERCIAL	82	t
+442	\N	Parroquia CHIQUINQUIRA Sector - Avenida - Calle -, Local Nro. -, Pto de Ref. -	\N	\N	\N	2020-07-10 12:03:13.465943+00	2020-07-10 12:03:13.465943+00	\N	COMERCIAL	84	t
+443	\N		\N	\N	\N	2020-07-10 12:03:13.465943+00	2020-07-10 12:03:13.465943+00	\N	COMERCIAL	85	t
+444	\N	Parroquia OLEGARIO VILLALOBOS Sector SCT   BELLA VISTA(OLEGARIO V) AVENIDA 4 BELLA VISTA 1684520 LOCAL 67-13 LOCAL EDF. BLITZ 67-13   FTE. CHURRASCO BAR-GRILL MBO Maracaibo ZUL Avenida 4 Calle 0, Apartamento Nro. 67-13, Pto de Ref. 0	\N	\N	\N	2020-07-10 12:03:13.465943+00	2020-07-10 12:03:13.465943+00	\N	RESIDENCIAL	83	t
+445	\N	Parroquia CHIQUINQUIRA Sector INDIO MARA Avenida 22A Calle 65, Local Nro. MZN., Pto de Ref. EDIF. IPSFA	\N	\N	\N	2020-07-10 12:03:13.465943+00	2020-07-10 12:03:13.465943+00	\N	COMERCIAL	83	t
+446	\N	Parroquia CHIQUINQUIRA Sector SCT   PARAISO AVENIDA 22 1674040   PB PB LDO. CUARTEL LIBERTADOR MBO Maracaibo ZUL Avenida 22A Calle 65, Local Nro. P A, Pto de Ref. IPFA	\N	\N	\N	2020-07-10 12:03:13.465943+00	2020-07-10 12:03:13.465943+00	\N	RESIDENCIAL	86	t
+447	\N	Parroquia OLEGARIO VILLALOBOS Sector INDIO MARA Avenida 22A Calle 65, Local Nro. 3, Pto de Ref. IPFA	\N	\N	\N	2020-07-10 12:03:13.465943+00	2020-07-10 12:03:13.465943+00	\N	COMERCIAL	86	t
+448	\N	Parroquia OLEGARIO VILLALOBOS Sector URB EL DORAL NORTE  Avenida   Calle 45, Local Nro. 14B-25 , Pto de Ref.	\N	\N	\N	2020-07-10 15:49:57.76097+00	2020-07-10 15:49:57.76097+00	\N	RESIDENCIAL	87	t
+449	\N	Parroquia COQUIVACOA Sector PARCELAMIENTO LA VILLA  Avenida 14B Calle 45, Local Nro. 789, Pto de Ref. frente a ferretotal	\N	\N	\N	2020-07-10 15:49:57.76097+00	2020-07-10 15:49:57.76097+00	\N	COMERCIAL	87	t
+450	\N	Parroquia OLEGARIO VILLALOBOS Sector SCT   BELLA VISTA(OLEGARIO V) CALLE 72 2973100  3Y-74    Avenida 0 Calle 72, Local Nro. 3Y-74, Pto de Ref.  FDO. EDF. VESUBIO. MBO Maracaibo ZUL	\N	\N	\N	2020-07-10 15:49:57.76097+00	2020-07-10 15:49:57.76097+00	\N	RESIDENCIAL	88	t
+451	\N	Parroquia OLEGARIO VILLALOBOS Sector BELLA VISTA  Avenida - Calle 72, Local Nro. 3, Pto de Ref. frente a banco provincial	\N	\N	\N	2020-07-10 15:49:57.76097+00	2020-07-10 15:49:57.76097+00	\N	COMERCIAL	88	t
+452	\N	Parroquia OLEGARIO VILLALOBOS Sector SCT   BELLA VISTA(OLEGARIO V) AVENIDA 4 BELLA VISTA 3765010  59-178   FARMATODO MBO Maracaibo ZUL Avenida 4 Calle  , Local Nro. 59-178, Pto de Ref. bella vista	\N	\N	\N	2020-07-10 15:49:57.76097+00	2020-07-10 15:49:57.76097+00	\N	RESIDENCIAL	89	t
+453	\N	Parroquia OLEGARIO VILLALOBOS Sector BELLA VISTA Avenida 4 Calle 66, Local Nro. -59-178, Pto de Ref. torre europa frente a enne	\N	\N	\N	2020-07-10 15:49:57.76097+00	2020-07-10 15:49:57.76097+00	\N	COMERCIAL	89	t
+454	\N	Parroquia IDELFONSO VASQUEZ Sector VIA EL MOJAN CC SAMBIL NIVEL FERIA  Avenida - Calle -, Local Nro. f-59-60, Pto de Ref. cc comercial sambil	\N	\N	\N	2020-07-10 15:49:57.76097+00	2020-07-10 15:49:57.76097+00	\N	COMERCIAL	90	t
+455	\N	Parroquia RAUL LEONI Sector SCT   LA MACANDONA CALLE 79 0000657000 CASA 48-66 48-66   CERCA ATLAS COCINA IMPORTADA MBO Maracaibo ZUL Avenida   Calle 79, Casa Nro. 48-66, Pto de Ref. sector la macandona	\N	\N	\N	2020-07-10 15:49:57.76097+00	2020-07-10 15:49:57.76097+00	\N	RESIDENCIAL	91	t
+456	\N	Parroquia RAUL LEONI Sector LA LIMPIA  Avenida 76 Calle 79, Local Nro. 79b, Pto de Ref. al lado de traki la limpia	\N	\N	\N	2020-07-10 15:49:57.76097+00	2020-07-10 15:49:57.76097+00	\N	COMERCIAL	91	t
+457	\N	Parroquia OLEGARIO VILLALOBOS Sector SCT   PARAISO AVENIDA 20 2106222     ESQUINA CALLE 66 CON AVENIDA 20 MBO Maracaibo ZUL Avenida 20 Calle 66, Local Nro. -, Pto de Ref. -	\N	\N	\N	2020-07-10 15:49:57.76097+00	2020-07-10 15:49:57.76097+00	\N	RESIDENCIAL	92	t
+458	\N	Parroquia CHIQUINQUIRA Sector INDIO MARA Avenida 20 Calle -66, Local Nro. -indiomara, Pto de Ref. diagonal al hospital universitario	\N	\N	\N	2020-07-10 15:49:57.76097+00	2020-07-10 15:49:57.76097+00	\N	COMERCIAL	92	t
+459	\N	Parroquia LUIS HURTADO HIGUERA Sector SCT   ZONA INDUSTRIAL AVENIDA 58 CIRC. 2 0003273000 LOCAL 3273000 LOCAL INMOBILIARIA    INMOBILIARIA IROKA. LADO DE CASA PARIS. MBO Maracaibo ZUL Avenida 58 Calle -, Local Nro. INMOBILIARIA, Pto de Ref. -	\N	\N	\N	2020-07-10 15:49:57.76097+00	2020-07-10 15:49:57.76097+00	\N	RESIDENCIAL	93	t
+460	\N	Parroquia LUIS HURTADO HIGUERA Sector AV CIRCUNVALACION 2 Avenida 60 Calle -, Local Nro. -, Pto de Ref. entrando a la zona industrial	\N	\N	\N	2020-07-10 15:49:57.76097+00	2020-07-10 15:49:57.76097+00	\N	COMERCIAL	93	t
+461	\N	Parroquia CHIQUINQUIRA Sector NUEVA VIA  Avenida 16 Y 16B Calle 93, Local Nro. 16-32, Pto de Ref. FDO CEMENTERIO CUADRADO	\N	\N	\N	2020-07-13 13:29:53.967998+00	2020-07-13 13:29:53.967998+00	\N	RESIDENCIAL	94	t
+462	\N	Parroquia CHIQUINQUIRA Sector NUEVA VIA Avenida 16 Y 16B Calle 93, Local Nro. 16-32, Pto de Ref. FDO CEMENTERIO CUADRADO	\N	\N	\N	2020-07-13 13:29:53.967998+00	2020-07-13 13:29:53.967998+00	\N	COMERCIAL	94	t
+463	\N	Parroquia OLEGARIO VILLALOBOS Sector BELLA VISTA Avenida 4 Calle 67, Local Nro. 71, Pto de Ref. -	\N	\N	\N	2020-07-13 13:32:04.212903+00	2020-07-13 13:32:04.212903+00	\N	RESIDENCIAL	95	t
+464	\N	Parroquia OLEGARIO VILLALOBOS Sector BELLA VISTA Avenida 4 Calle 67, Local Nro.  71, Pto de Ref. SUCURSAL	\N	\N	\N	2020-07-13 13:32:04.212903+00	2020-07-13 13:32:04.212903+00	\N	COMERCIAL	95	t
+465	\N	Parroquia OLEGARIO VILLALOBOS Sector DELICIAS Avenida 15 Y 14A-74 Calle 74, Local Nro. 7, Pto de Ref. 5 DE JULIO	\N	\N	\N	2020-07-13 13:39:59.276087+00	2020-07-13 13:39:59.276087+00	\N	RESIDENCIAL	97	t
+466	\N	Parroquia OLEGARIO VILLALOBOS Sector DELICIAS  Avenida 14A Y 15 DELICIAS Calle 74, Local Nro. 7, Pto de Ref. 5 DE JULIO CON DELICIAS	\N	\N	\N	2020-07-13 13:39:59.276087+00	2020-07-13 13:39:59.276087+00	\N	COMERCIAL	97	t
+467	\N	Parroquia OLEGARIO VILLALOBOS Sector DELICIAS Avenida 15 Y 14A-74 Calle 74, Local Nro. 7, Pto de Ref. 5 DE JULIO	\N	\N	\N	2020-07-13 13:39:59.276087+00	2020-07-13 13:39:59.276087+00	\N	RESIDENCIAL	96	t
+468	\N	Parroquia OLEGARIO VILLALOBOS Sector DELICIAS Avenida  15 Y 14A-74 Calle 74, Local Nro. 7, Pto de Ref. 5 DE JULIO	\N	\N	\N	2020-07-13 13:39:59.276087+00	2020-07-13 13:39:59.276087+00	\N	COMERCIAL	96	t
+469	\N	Parroquia OLEGARIO VILLALOBOS Sector 0 Avenida 0 Calle 0, Casa Nro. 0, Pto de Ref. 0	\N	\N	\N	2020-07-13 13:43:25.240907+00	2020-07-13 13:43:25.240907+00	\N	COMERCIAL	98	t
+470	\N	Parroquia OLEGARIO VILLALOBOS Sector SCT TIERRA NEGRA  Avenida - Calle 72, Local Nro. 9-53, Pto de Ref. FDO. ESP. MEDICAS CLARET MBO Maracaibo ZUL	\N	\N	\N	2020-07-13 13:43:25.240907+00	2020-07-13 13:43:25.240907+00	\N	RESIDENCIAL	99	t
+471	\N	Parroquia OLEGARIO VILLALOBOS Sector TIERRA NEGRA Avenida 9 Y 9B Calle 72, Local Nro.  9-53, Pto de Ref. FRENTE A CHOPS	\N	\N	\N	2020-07-13 13:43:25.240907+00	2020-07-13 13:43:25.240907+00	\N	COMERCIAL	99	t
+472	\N	Parroquia COQUIVACOA Sector SCT   MONTE CLARO CALLE IJ 0000219000 CASA 3-75 3-75   CERCA DE DISTRIBUIDORA JK MBO Maracaibo ZUL Avenida 2 Calle IJ, Local Nro. 3-75, Pto de Ref. PANADERIA	\N	\N	\N	2020-07-14 17:12:30.798115+00	2020-07-14 17:12:30.798115+00	\N	RESIDENCIAL	100	t
+473	\N	Parroquia COQUIVACOA Sector 18 DE OCTUBRE Avenida 2 Calle IJ, Casa Nro. 3--75, Pto de Ref. plaza de 18 de octubre	\N	\N	\N	2020-07-14 17:12:30.798115+00	2020-07-14 17:12:30.798115+00	\N	COMERCIAL	100	t
+474	\N	Parroquia RAUL LEONI Sector LA LIMPIA Avenida   Calle 79, Local Nro. 46-96, Pto de Ref.	\N	\N	\N	2020-07-14 23:30:57.546707+00	2020-07-14 23:30:57.546707+00	\N	RESIDENCIAL	101	t
+475	\N	Parroquia RAUL LEONI Sector   Avenida   Calle  , Casa Nro.  , Pto de Ref.	\N	\N	\N	2020-07-14 23:30:57.546707+00	2020-07-14 23:30:57.546707+00	\N	COMERCIAL	101	t
+476	\N	Parroquia COQUIVACOA Sector URB   EL ROSAL   Avenida 15 FUERZAS ARMADA Calle  , Local Nro. -, Pto de Ref. COND. FERRETOTAL    LADO CC DORAL MALL MBO Maracaibo ZUL	\N	\N	\N	2020-07-14 23:30:57.546707+00	2020-07-14 23:30:57.546707+00	\N	RESIDENCIAL	102	t
+477	\N	Parroquia COQUIVACOA Sector URB EL ROSAL Avenida FUERZAS ARMADA Calle  , Local Nro.  , Pto de Ref. COND. FERRETOTAL LADO CC DORAL MALL MBO Maracaibo ZUL	\N	\N	\N	2020-07-14 23:30:57.546707+00	2020-07-14 23:30:57.546707+00	\N	COMERCIAL	102	t
+478	\N	Parroquia OLEGARIO VILLALOBOS Sector EL MILAGRO Avenida 2 Calle 57, Local Nro. 12-46, Pto de Ref.	\N	\N	\N	2020-07-14 23:30:57.546707+00	2020-07-14 23:30:57.546707+00	\N	RESIDENCIAL	103	t
+479	\N	Parroquia OLEGARIO VILLALOBOS Sector - Avenida - Calle -, Local Nro. -, Pto de Ref. -	\N	\N	\N	2020-07-14 23:30:57.546707+00	2020-07-14 23:30:57.546707+00	\N	COMERCIAL	103	t
+480	aabbcc22	Por ahi	61	200	300	2020-07-15 14:34:28.01241+00	2020-07-15 14:34:28.01241+00	\N	COMERCIAL	103	t
+481	q3231223aa11	aqui	63	332	336	2020-07-16 12:54:41.945182+00	2020-07-16 12:54:41.945182+00	\N	COMERCIAL	\N	t
+483	1234555	13124aqwe	61	1322	1333	2020-07-16 14:37:42.41242+00	2020-07-16 14:37:42.41242+00	\N	RESIDENCIAL	\N	t
+484	98766728	aqui por mi casa	63	2822	3000	2020-07-16 14:39:06.567742+00	2020-07-16 14:39:06.567742+00	\N	COMERCIAL	\N	t
+485	12312312	13123	61	1112312	12312312311	2020-07-16 14:40:51.554595+00	2020-07-16 14:40:51.554595+00	\N	RESIDENCIAL	\N	t
+487	123123123	1231231	62	1234	1235	2020-07-16 14:56:25.332047+00	2020-07-16 14:56:25.332047+00	\N	RESIDENCIAL	\N	t
+488	4443553	1231123	62	1112	1122	2020-07-16 15:05:50.932307+00	2020-07-16 15:05:50.932307+00	\N	COMERCIAL	\N	t
+489	667567	123123	62	13123	123144	2020-07-16 15:07:29.106717+00	2020-07-16 15:07:29.106717+00	\N	RESIDENCIAL	\N	t
+490	guu	aesc	61	8	7	2020-07-16 17:44:20.60331+00	2020-07-16 17:44:20.60331+00	\N	RESIDENCIAL	\N	t
+482	98i7790-8	asdqwew	61	312	322	2020-07-16 14:33:52.574634+00	2020-07-16 14:33:52.574634+00	\N	RESIDENCIAL	102	f
+486	231312U01457854R7999	asdasdasdas;dkh jkahsdkjhas kjhasjkd hajkshd jh	62	1234123	1234123412	2020-07-16 14:53:16.065173+00	2020-07-16 14:53:16.065173+00	\N	COMERCIAL	102	t
+491	ZMCM05478995	Av 21 calle 86	63	245	240	2020-07-19 22:02:35.219527+00	2020-07-19 22:02:35.219527+00	\N	COMERCIAL	102	t
+492	1234	mcbo	61	15	15	2020-07-20 12:19:24.274789+00	2020-07-20 12:19:24.274789+00	\N	RESIDENCIAL	102	t
+494	123456	mcbo	66	300	300	2020-07-21 17:23:53.729422+00	2020-07-21 17:23:53.729422+00	\N	RESIDENCIAL	96	t
+493	12345	mcbo	61	15	15	2020-07-21 13:02:00.74786+00	2020-07-21 13:02:00.74786+00	\N	RESIDENCIAL	110	t
+495	1234567	mcbo	69	30	30	2020-07-21 18:04:02.91275+00	2020-07-21 18:04:02.91275+00	\N	RESIDENCIAL	114	t
 \.
 
 
 --
--- TOC entry 4241 (class 0 OID 69847)
--- Dependencies: 210
--- Data for Name: institucion; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: institucion; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.institucion (id_institucion, nombre_completo, nombre_corto) FROM stdin;
@@ -8134,9 +9763,7 @@ COPY public.institucion (id_institucion, nombre_completo, nombre_corto) FROM std
 
 
 --
--- TOC entry 4338 (class 0 OID 70307)
--- Dependencies: 314
--- Data for Name: institucion_banco; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: institucion_banco; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.institucion_banco (id_institucion, id_banco, numero_cuenta, nombre_titular, documento_de_identificacion, id_institucion_banco) FROM stdin;
@@ -8161,9 +9788,7 @@ COPY public.institucion_banco (id_institucion, id_banco, numero_cuenta, nombre_t
 
 
 --
--- TOC entry 4245 (class 0 OID 69883)
--- Dependencies: 215
--- Data for Name: multa; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: multa; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.multa (id_multa, id_tipo_tramite, datos, costo, fecha_creacion, codigo_multa, consecutivo, id_usuario, cedula, nacionalidad, url_certificado, aprobado, url_boleta) FROM stdin;
@@ -8171,437 +9796,717 @@ COPY public.multa (id_multa, id_tipo_tramite, datos, costo, fecha_creacion, codi
 
 
 --
--- TOC entry 4281 (class 0 OID 70056)
--- Dependencies: 253
--- Data for Name: notificacion; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: notificacion; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.notificacion (id_notificacion, id_procedimiento, emisor, receptor, descripcion, status, fecha, estado, concepto) FROM stdin;
-496	276	V-27139153	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-06-25 15:06:07.474372-04	enrevision	TRAMITE
-498	277	V-27139153	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-06-25 16:22:46.388248-04	enproceso	TRAMITE
-503	277	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-06-25 16:28:50.980214-04	finalizado	TRAMITE
-525	288	V-1923812093	V-1	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-06-25 21:11:08.029396-04	enproceso	TRAMITE
-505	278	V-27139153	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-06-25 17:18:19.430757-04	enproceso	TRAMITE
-527	289	V-27139153	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-06-25 21:19:50.96666-04	enproceso	TRAMITE
-509	279	V-27139153	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-06-25 18:07:15.597688-04	validando	TRAMITE
-532	289	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-06-25 21:22:23.405168-04	finalizado	TRAMITE
-512	278	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-06-25 18:38:38.23326-04	finalizado	TRAMITE
-515	279	V-1923812093	V-1	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-06-25 19:31:43.275252-04	enproceso	TRAMITE
-518	279	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-06-25 19:49:31.987536-04	finalizado	TRAMITE
-520	286	V-27139153	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-06-25 21:02:31.651442-04	validando	TRAMITE
-522	288	V-27139153	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-06-25 21:08:29.126954-04	validando	TRAMITE
-534	290	V-27139153	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-06-25 21:41:33.008194-04	enproceso	TRAMITE
-538	291	V-27139153	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-06-25 21:47:33.281706-04	enproceso	TRAMITE
-528	289	V-27139153	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:19:51.212905-04	enproceso	TRAMITE
-542	292	V-27139153	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-06-25 21:48:49.384157-04	enproceso	TRAMITE
-497	276	V-27139153	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 15:06:07.748238-04	enrevision	TRAMITE
-499	277	V-27139153	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 16:22:46.677223-04	enproceso	TRAMITE
-526	288	V-1923812093	V-1231931298	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-06-25 21:11:08.270204-04	enproceso	TRAMITE
-530	289	V-27139153	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:19:51.727124-04	enproceso	TRAMITE
-501	277	V-27139153	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 16:22:47.502217-04	enproceso	TRAMITE
-508	278	V-27139153	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 17:18:20.299545-04	enproceso	TRAMITE
-516	279	V-1923812093	V-1231931298	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-06-25 19:31:43.886633-04	enproceso	TRAMITE
-537	290	V-27139153	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:41:33.977149-04	enproceso	TRAMITE
-504	277	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-06-25 16:28:51.220302-04	finalizado	TRAMITE
-506	278	V-27139153	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 17:18:19.70664-04	enproceso	TRAMITE
-510	279	V-27139153	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	t	2020-06-25 18:07:15.850543-04	validando	TRAMITE
-513	278	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-06-25 18:38:38.475195-04	finalizado	TRAMITE
-535	290	V-27139153	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:41:33.273263-04	enproceso	TRAMITE
-500	277	V-27139153	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 16:22:46.927251-04	enproceso	TRAMITE
-507	278	V-27139153	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 17:18:20.035799-04	enproceso	TRAMITE
-529	289	V-27139153	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:19:51.471895-04	enproceso	TRAMITE
-536	290	V-27139153	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:41:33.713198-04	enproceso	TRAMITE
-540	291	V-27139153	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:47:33.802821-04	enproceso	TRAMITE
-544	292	V-27139153	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:48:50.298102-04	enproceso	TRAMITE
-546	293	V-27139153	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-06-25 21:51:23.483567-04	enproceso	TRAMITE
-845	250	V-1923812093	V-1	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	f	2020-07-01 13:43:41.536246-04	finalizado	IMPUESTO
-550	294	V-27139153	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-06-25 21:52:28.345188-04	enproceso	TRAMITE
-862	328	V-1231931298	V-12934856	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-02 11:55:42.688945-04	finalizado	TRAMITE
-554	295	V-27139153	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-06-25 21:58:00.633268-04	enproceso	TRAMITE
-863	328	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-02 11:55:42.688945-04	finalizado	TRAMITE
-559	295	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-06-25 22:01:05.832879-04	finalizado	TRAMITE
-561	163	null-null	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-06-26 00:27:20.873159-04	ingresardatos	IMPUESTO
-563	296	V-1231234444	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-06-26 02:44:52.231195-04	enrevision	TRAMITE
-565	297	V-1231234444	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-06-26 02:47:30.627123-04	enrevision	TRAMITE
-864	328	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-02 11:55:42.688945-04	finalizado	TRAMITE
-547	293	V-27139153	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:51:23.829598-04	enproceso	TRAMITE
-551	294	V-27139153	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:52:28.677247-04	enproceso	TRAMITE
-555	295	V-27139153	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:58:00.888885-04	enproceso	TRAMITE
-524	288	V-1923812093	V-27139153	Se ha validado el pago de su trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-06-25 21:11:07.448367-04	enproceso	TRAMITE
-567	165	V-27139153	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-06-26 13:03:36.969559-04	ingresardatos	IMPUESTO
-560	295	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-06-25 22:01:05.832879-04	finalizado	TRAMITE
-569	165	V-27139153	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-06-26 13:42:35.852862-04	{"state":"validando"}	IMPUESTO
-562	163	null-null	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	t	2020-06-26 00:27:20.873159-04	ingresardatos	IMPUESTO
-571	170	V-27139153	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-06-26 14:51:56.606695-04	ingresardatos	IMPUESTO
-564	296	V-1231234444	V-1923812093	Un trámite de tipo Beneficio de Contribuyente ha sido creado	t	2020-06-26 02:44:52.45134-04	enrevision	TRAMITE
-573	170	V-27139153	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 14:52:17.922487-04	{"state":"validando"}	IMPUESTO
-566	297	V-1231234444	V-1923812093	Un trámite de tipo Beneficio de Contribuyente ha sido creado	t	2020-06-26 02:47:30.877198-04	enrevision	TRAMITE
-575	171	V-27139153	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-06-26 14:58:24.718913-04	ingresardatos	IMPUESTO
-865	252	V-12934856	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-406576458	f	2020-07-02 12:19:57.555154-04	ingresardatos	IMPUESTO
-577	171	V-27139153	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 14:58:38.993864-04	{"state":"validando"}	IMPUESTO
-866	252	V-12934856	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-406576458	f	2020-07-02 12:19:57.555154-04	ingresardatos	IMPUESTO
-579	173	V-27139153	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-06-26 16:41:34.670731-04	ingresardatos	IMPUESTO
-548	293	V-27139153	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:51:24.089517-04	enproceso	TRAMITE
-581	173	V-27139153	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-06-26 18:42:37.350341-04	{"state":"validando"}	IMPUESTO
-552	294	V-27139153	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:52:28.945246-04	enproceso	TRAMITE
-583	174	V-27139153	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-06-26 18:45:58.363933-04	ingresardatos	IMPUESTO
-556	295	V-27139153	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:58:01.144142-04	enproceso	TRAMITE
-585	298	null-null	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-06-26 18:49:43.793752-04	enproceso	TRAMITE
-869	253	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-413060540	f	2020-07-02 15:44:33.057281-04	ingresardatos	IMPUESTO
-881	258	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 17:47:47.966438-04	ingresardatos	IMPUESTO
-882	258	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 17:47:47.966438-04	ingresardatos	IMPUESTO
-502	277	V-1231931298	V-27139153	Se ha procesado su trámite de tipo Registro de Contribuyente	t	2020-06-25 16:28:50.447402-04	finalizado	TRAMITE
-870	253	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-413060540	f	2020-07-02 15:44:33.057281-04	ingresardatos	IMPUESTO
-873	254	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 17:22:39.960649-04	ingresardatos	IMPUESTO
-874	254	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 17:22:39.960649-04	ingresardatos	IMPUESTO
-885	260	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 18:10:41.583764-04	ingresardatos	IMPUESTO
-877	256	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 17:41:52.330477-04	ingresardatos	IMPUESTO
-878	256	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 17:41:52.330477-04	ingresardatos	IMPUESTO
-886	260	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 18:10:41.583764-04	ingresardatos	IMPUESTO
-889	262	V-10888777	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-03 10:51:51.83581-04	ingresardatos	IMPUESTO
-833	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 13:43:41.465551-04	finalizado	IMPUESTO
-589	181	null-null	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-06-26 19:17:15.038059-04	ingresardatos	IMPUESTO
-591	181	null-null	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 19:46:26.508527-04	{"state":"validando"}	IMPUESTO
-594	298	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-06-26 19:51:45.261735-04	finalizado	TRAMITE
-587	298	null-null	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 18:49:43.799291-04	enproceso	TRAMITE
-593	298	V-1231931298	V-18496685	Se ha procesado su trámite de tipo Registro de Contribuyente	t	2020-06-26 19:51:45.261735-04	finalizado	TRAMITE
-596	193	V-1231931298	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-413060540	f	2020-06-26 21:36:27.634336-04	ingresardatos	IMPUESTO
-598	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 23:57:30.85305-04	finalizado	IMPUESTO
-599	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 23:57:30.85655-04	finalizado	IMPUESTO
-600	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 23:57:30.859712-04	finalizado	IMPUESTO
-601	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 23:57:30.862772-04	finalizado	IMPUESTO
-602	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 23:57:30.865981-04	finalizado	IMPUESTO
-603	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 23:57:30.868976-04	finalizado	IMPUESTO
-604	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 23:57:30.872054-04	finalizado	IMPUESTO
-605	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 23:57:30.875101-04	finalizado	IMPUESTO
-606	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 23:57:30.878243-04	finalizado	IMPUESTO
-607	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 23:57:30.881535-04	finalizado	IMPUESTO
-608	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 23:57:30.885247-04	finalizado	IMPUESTO
-609	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 23:57:30.888416-04	finalizado	IMPUESTO
-610	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 23:57:30.891417-04	finalizado	IMPUESTO
-611	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 23:57:30.89435-04	finalizado	IMPUESTO
-612	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 23:57:30.897347-04	finalizado	IMPUESTO
-613	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 23:57:30.900389-04	finalizado	IMPUESTO
-614	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 23:57:30.903499-04	finalizado	IMPUESTO
-615	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 23:57:30.906495-04	finalizado	IMPUESTO
-616	181	V-1923812093	V-1	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 23:57:30.959002-04	finalizado	IMPUESTO
-617	198	V-27139153	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-06-27 00:18:41.828186-04	ingresardatos	IMPUESTO
-834	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 13:43:41.469406-04	finalizado	IMPUESTO
-619	198	V-27139153	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-06-27 00:18:59.615839-04	{"state":"validando"}	IMPUESTO
-835	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 13:43:41.472603-04	finalizado	IMPUESTO
-621	174	V-1023910231	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-06-27 00:30:50.849376-04	{"state":"validando"}	IMPUESTO
-836	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 13:43:41.475725-04	finalizado	IMPUESTO
-837	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 13:43:41.478862-04	finalizado	IMPUESTO
-838	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 13:43:41.482375-04	finalizado	IMPUESTO
-839	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 13:43:41.485528-04	finalizado	IMPUESTO
-840	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 13:43:41.488475-04	finalizado	IMPUESTO
-541	291	V-27139153	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:47:34.061785-04	enproceso	TRAMITE
-545	292	V-27139153	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:48:50.587436-04	enproceso	TRAMITE
-549	293	V-27139153	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:51:24.344544-04	enproceso	TRAMITE
-553	294	V-27139153	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:52:29.211594-04	enproceso	TRAMITE
-557	295	V-27139153	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:58:01.390835-04	enproceso	TRAMITE
-841	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 13:43:41.491876-04	finalizado	IMPUESTO
-842	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 13:43:41.49484-04	finalizado	IMPUESTO
-843	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 13:43:41.497919-04	finalizado	IMPUESTO
-844	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 13:43:41.501276-04	finalizado	IMPUESTO
-590	181	null-null	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	t	2020-06-26 19:17:15.038059-04	ingresardatos	IMPUESTO
-592	181	null-null	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	t	2020-06-26 19:46:26.508527-04	{"state":"validando"}	IMPUESTO
-595	298	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-06-26 19:51:45.261735-04	finalizado	TRAMITE
-597	193	V-1231931298	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-413060540	t	2020-06-26 21:36:27.634336-04	ingresardatos	IMPUESTO
-543	292	V-27139153	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:48:49.670177-04	enproceso	TRAMITE
-568	165	V-27139153	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	t	2020-06-26 13:03:36.969559-04	ingresardatos	IMPUESTO
-570	165	V-27139153	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-26 13:42:35.852862-04	{"state":"validando"}	IMPUESTO
-650	198	V-1923812093	V-1	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-06-27 00:44:05.051233-04	finalizado	IMPUESTO
-572	170	V-27139153	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	t	2020-06-26 14:51:56.606695-04	ingresardatos	IMPUESTO
-574	170	V-27139153	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	t	2020-06-26 14:52:17.922487-04	{"state":"validando"}	IMPUESTO
-576	171	V-27139153	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	t	2020-06-26 14:58:24.718913-04	ingresardatos	IMPUESTO
-578	171	V-27139153	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	t	2020-06-26 14:58:38.993864-04	{"state":"validando"}	IMPUESTO
-580	173	V-27139153	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	t	2020-06-26 16:41:34.670731-04	ingresardatos	IMPUESTO
-582	173	V-27139153	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-26 18:42:37.350341-04	{"state":"validando"}	IMPUESTO
-584	174	V-27139153	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	t	2020-06-26 18:45:58.363933-04	ingresardatos	IMPUESTO
-586	298	null-null	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 18:49:43.796743-04	enproceso	TRAMITE
-618	198	V-27139153	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	t	2020-06-27 00:18:41.828186-04	ingresardatos	IMPUESTO
-620	198	V-27139153	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:18:59.615839-04	{"state":"validando"}	IMPUESTO
-871	253	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-413060540	f	2020-07-02 15:51:02.795929-04	{"state":"finalizado"}	IMPUESTO
-531	289	V-1231931298	V-27139153	Se ha procesado su trámite de tipo Registro de Contribuyente	t	2020-06-25 21:22:23.405168-04	finalizado	TRAMITE
-511	278	V-1231931298	V-27139153	Se ha procesado su trámite de tipo Registro de Contribuyente	t	2020-06-25 18:38:37.696548-04	finalizado	TRAMITE
-514	279	V-1923812093	V-27139153	Se ha validado el pago de su trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-06-25 19:31:41.883319-04	enproceso	TRAMITE
-517	279	V-1231931298	V-27139153	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-06-25 19:49:30.702372-04	finalizado	TRAMITE
-558	295	V-1231931298	V-27139153	Se ha procesado su trámite de tipo Registro de Contribuyente	t	2020-06-25 22:01:05.832879-04	finalizado	TRAMITE
-623	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.878816-04	finalizado	IMPUESTO
-624	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.882827-04	finalizado	IMPUESTO
-625	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.886166-04	finalizado	IMPUESTO
-626	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.889366-04	finalizado	IMPUESTO
-627	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.892688-04	finalizado	IMPUESTO
-628	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.899163-04	finalizado	IMPUESTO
-629	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.902389-04	finalizado	IMPUESTO
-630	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.905627-04	finalizado	IMPUESTO
-631	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.908885-04	finalizado	IMPUESTO
-632	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.912126-04	finalizado	IMPUESTO
-633	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.918123-04	finalizado	IMPUESTO
-634	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.921334-04	finalizado	IMPUESTO
-635	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.927119-04	finalizado	IMPUESTO
-636	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.93176-04	finalizado	IMPUESTO
-637	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.934951-04	finalizado	IMPUESTO
-638	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.938292-04	finalizado	IMPUESTO
-639	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.941518-04	finalizado	IMPUESTO
-640	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.944752-04	finalizado	IMPUESTO
-641	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.947877-04	finalizado	IMPUESTO
-642	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.950765-04	finalizado	IMPUESTO
-643	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.953861-04	finalizado	IMPUESTO
-644	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.957173-04	finalizado	IMPUESTO
-645	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.960366-04	finalizado	IMPUESTO
-646	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.963419-04	finalizado	IMPUESTO
-647	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.966536-04	finalizado	IMPUESTO
-648	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.970117-04	finalizado	IMPUESTO
-649	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:44:04.973424-04	finalizado	IMPUESTO
-651	199	V-10555777	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-06-27 12:36:18.328194-04	ingresardatos	IMPUESTO
-846	251	V-12981762	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-410984694	f	2020-07-02 09:55:56.080604-04	ingresardatos	IMPUESTO
-653	199	V-1023910231	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-27 12:50:27.693809-04	{"state":"validando"}	IMPUESTO
-655	200	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-06-27 13:01:41.466493-04	ingresardatos	IMPUESTO
-847	251	V-12981762	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-410984694	t	2020-07-02 09:55:56.080604-04	ingresardatos	IMPUESTO
-720	319	V-12345688	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	t	2020-06-30 14:57:03.69683-04	validando	TRAMITE
-657	200	V-1023910231	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-30 08:58:42.910166-04	{"state":"validando"}	IMPUESTO
-622	174	V-1023910231	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 00:30:50.849376-04	{"state":"validando"}	IMPUESTO
-659	300	V-12345688	V-1	Un trámite de tipo Cumplimiento de Normas Tecnicas ha sido creado	f	2020-06-30 13:50:31.57895-04	validando	TRAMITE
-660	300	V-12345688	V-1231231231	Un trámite de tipo Cumplimiento de Normas Tecnicas ha sido creado	f	2020-06-30 13:50:31.583639-04	validando	TRAMITE
-661	206	V-15999000	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-297143858	f	2020-06-30 13:57:40.436255-04	ingresardatos	IMPUESTO
-652	199	V-10555777	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	t	2020-06-27 12:36:18.328194-04	ingresardatos	IMPUESTO
-663	301	V-12345688	V-1	Un trámite de tipo Constancia de Habitabilidad ha sido creado	f	2020-06-30 14:21:39.907298-04	validando	TRAMITE
-664	301	V-12345688	V-1231231231	Un trámite de tipo Constancia de Habitabilidad ha sido creado	f	2020-06-30 14:21:39.913448-04	validando	TRAMITE
-665	302	V-12345688	V-1	Un trámite de tipo Instalacion de Plantas Electricas ha sido creado	f	2020-06-30 14:22:41.425243-04	enproceso	TRAMITE
-666	302	V-12345688	V-1231231231	Un trámite de tipo Instalacion de Plantas Electricas ha sido creado	f	2020-06-30 14:22:41.428826-04	enproceso	TRAMITE
-667	303	V-12345688	V-1	Un trámite de tipo Constancia de Servicio Residencial ha sido creado	f	2020-06-30 14:23:45.395902-04	validando	TRAMITE
-668	303	V-12345688	V-123123	Un trámite de tipo Constancia de Servicio Residencial ha sido creado	f	2020-06-30 14:23:45.400151-04	validando	TRAMITE
-669	304	V-12345688	V-1	Un trámite de tipo Constancia de Servicio Persona Juridica ha sido creado	f	2020-06-30 14:24:56.169488-04	validando	TRAMITE
-670	304	V-12345688	V-123123	Un trámite de tipo Constancia de Servicio Persona Juridica ha sido creado	f	2020-06-30 14:24:56.172843-04	validando	TRAMITE
-671	305	V-12345688	V-1	Un trámite de tipo Permiso de Construccion ha sido creado	f	2020-06-30 14:25:27.61567-04	enproceso	TRAMITE
-672	305	V-12345688	V-123123	Un trámite de tipo Permiso de Construccion ha sido creado	f	2020-06-30 14:25:27.619337-04	enproceso	TRAMITE
-673	305	V-12345688	V-123133333	Un trámite de tipo Permiso de Construccion ha sido creado	f	2020-06-30 14:25:27.622327-04	enproceso	TRAMITE
-674	306	V-12345688	V-1	Un trámite de tipo Solvencia de Inmuebles Urbanos ha sido creado	f	2020-06-30 14:27:14.693716-04	validando	TRAMITE
-675	306	V-12345688	V-1231234444	Un trámite de tipo Solvencia de Inmuebles Urbanos ha sido creado	f	2020-06-30 14:27:14.69742-04	validando	TRAMITE
-676	306	V-12345688	V-27139154	Un trámite de tipo Solvencia de Inmuebles Urbanos ha sido creado	f	2020-06-30 14:27:14.700557-04	validando	TRAMITE
-677	307	V-12345688	V-1	Un trámite de tipo Permiso de Habitabilidad con Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 14:29:36.973191-04	enproceso	TRAMITE
-678	307	V-12345688	V-123123	Un trámite de tipo Permiso de Habitabilidad con Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 14:29:36.976848-04	enproceso	TRAMITE
-679	307	V-12345688	V-123133333	Un trámite de tipo Permiso de Habitabilidad con Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 14:29:36.979904-04	enproceso	TRAMITE
-680	308	V-12345688	V-1	Un trámite de tipo Permiso de Habitabilidad sin Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 14:30:24.531369-04	enproceso	TRAMITE
-681	308	V-12345688	V-123123	Un trámite de tipo Permiso de Habitabilidad sin Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 14:30:24.534979-04	enproceso	TRAMITE
-682	308	V-12345688	V-123133333	Un trámite de tipo Permiso de Habitabilidad sin Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 14:30:24.538259-04	enproceso	TRAMITE
-683	309	V-12345688	V-1	Un trámite de tipo Permiso de Condiciones Habitables con Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 14:32:26.659151-04	enproceso	TRAMITE
-684	309	V-12345688	V-123123	Un trámite de tipo Permiso de Condiciones Habitables con Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 14:32:26.663656-04	enproceso	TRAMITE
-893	322	V-1231931298	V-9999999	Se ha procesado su trámite de tipo Registro de Contribuyente	f	2020-07-03 11:21:19.527365-04	finalizado	TRAMITE
-894	322	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-07-03 11:21:19.527365-04	finalizado	TRAMITE
-685	309	V-12345688	V-123133333	Un trámite de tipo Permiso de Condiciones Habitables con Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 14:32:26.667268-04	enproceso	TRAMITE
-686	310	V-12345688	V-1	Un trámite de tipo Permiso de Condiciones Habitables sin Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 14:33:23.952135-04	enproceso	TRAMITE
-687	310	V-12345688	V-123123	Un trámite de tipo Permiso de Condiciones Habitables sin Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 14:33:23.957662-04	enproceso	TRAMITE
-688	310	V-12345688	V-123133333	Un trámite de tipo Permiso de Condiciones Habitables sin Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 14:33:23.963883-04	enproceso	TRAMITE
-689	311	V-12345688	V-1	Un trámite de tipo Constancia de Nomenclatura ha sido creado	f	2020-06-30 14:36:52.578991-04	validando	TRAMITE
-690	311	V-12345688	V-1231234444	Un trámite de tipo Constancia de Nomenclatura ha sido creado	f	2020-06-30 14:36:52.583737-04	validando	TRAMITE
-691	311	V-12345688	V-27139154	Un trámite de tipo Constancia de Nomenclatura ha sido creado	f	2020-06-30 14:36:52.586934-04	validando	TRAMITE
-692	312	V-12345688	V-1	Un trámite de tipo Codigo Catastral para Casas ha sido creado	f	2020-06-30 14:38:45.15148-04	validando	TRAMITE
-693	312	V-12345688	V-1231234444	Un trámite de tipo Codigo Catastral para Casas ha sido creado	f	2020-06-30 14:38:45.155246-04	validando	TRAMITE
-694	312	V-12345688	V-27139154	Un trámite de tipo Codigo Catastral para Casas ha sido creado	f	2020-06-30 14:38:45.158613-04	validando	TRAMITE
-695	313	V-12345688	V-1	Un trámite de tipo Codigo Catastral para Apartamentos ha sido creado	f	2020-06-30 14:40:42.50787-04	validando	TRAMITE
-696	313	V-12345688	V-1231234444	Un trámite de tipo Codigo Catastral para Apartamentos ha sido creado	f	2020-06-30 14:40:42.511562-04	validando	TRAMITE
-697	313	V-12345688	V-27139154	Un trámite de tipo Codigo Catastral para Apartamentos ha sido creado	f	2020-06-30 14:40:42.514865-04	validando	TRAMITE
-698	314	V-12345688	V-1	Un trámite de tipo Conformidad de la Edificación y Uso Licencia a las Actividades Económicas Comerciales e Industriales ha sido creado	f	2020-06-30 14:42:31.341865-04	enproceso	TRAMITE
-699	314	V-12345688	V-1231234444	Un trámite de tipo Conformidad de la Edificación y Uso Licencia a las Actividades Económicas Comerciales e Industriales ha sido creado	f	2020-06-30 14:42:31.345382-04	enproceso	TRAMITE
-700	314	V-12345688	V-27139154	Un trámite de tipo Conformidad de la Edificación y Uso Licencia a las Actividades Económicas Comerciales e Industriales ha sido creado	f	2020-06-30 14:42:31.348139-04	enproceso	TRAMITE
-701	314	V-12345688	V-1283190247	Un trámite de tipo Conformidad de la Edificación y Uso Licencia a las Actividades Económicas Comerciales e Industriales ha sido creado	f	2020-06-30 14:42:31.350983-04	enproceso	TRAMITE
-702	315	V-12345688	V-1	Un trámite de tipo Conformidad de la Edificación y Uso Unidades Educativas ha sido creado	f	2020-06-30 14:44:25.877128-04	enproceso	TRAMITE
-703	315	V-12345688	V-1231234444	Un trámite de tipo Conformidad de la Edificación y Uso Unidades Educativas ha sido creado	f	2020-06-30 14:44:25.880874-04	enproceso	TRAMITE
-704	315	V-12345688	V-27139154	Un trámite de tipo Conformidad de la Edificación y Uso Unidades Educativas ha sido creado	f	2020-06-30 14:44:25.883984-04	enproceso	TRAMITE
-705	315	V-12345688	V-1283190247	Un trámite de tipo Conformidad de la Edificación y Uso Unidades Educativas ha sido creado	f	2020-06-30 14:44:25.888017-04	enproceso	TRAMITE
-706	316	V-12345688	V-1	Un trámite de tipo Conformidad de la Edificación y Uso Locales en Centros Comerciales ha sido creado	f	2020-06-30 14:45:47.572841-04	enproceso	TRAMITE
-707	316	V-12345688	V-1231234444	Un trámite de tipo Conformidad de la Edificación y Uso Locales en Centros Comerciales ha sido creado	f	2020-06-30 14:45:47.576073-04	enproceso	TRAMITE
-708	316	V-12345688	V-27139154	Un trámite de tipo Conformidad de la Edificación y Uso Locales en Centros Comerciales ha sido creado	f	2020-06-30 14:45:47.579362-04	enproceso	TRAMITE
-709	316	V-12345688	V-1283190247	Un trámite de tipo Conformidad de la Edificación y Uso Locales en Centros Comerciales ha sido creado	f	2020-06-30 14:45:47.582487-04	enproceso	TRAMITE
-710	317	V-12345688	V-1	Un trámite de tipo Apartado de Bohío ha sido creado	f	2020-06-30 14:46:47.771885-04	validando	TRAMITE
-711	317	V-12345688	V-1294712034	Un trámite de tipo Apartado de Bohío ha sido creado	f	2020-06-30 14:46:47.775074-04	validando	TRAMITE
-712	318	V-12345688	V-1	Un trámite de tipo Certificación para Prestar Servicio de Transporte Público Urbano ha sido creado	f	2020-06-30 14:48:03.795316-04	enproceso	TRAMITE
-713	318	V-12345688	V-1239812938	Un trámite de tipo Certificación para Prestar Servicio de Transporte Público Urbano ha sido creado	f	2020-06-30 14:48:03.799338-04	enproceso	TRAMITE
-714	318	V-12345688	V-1023102938	Un trámite de tipo Certificación para Prestar Servicio de Transporte Público Urbano ha sido creado	f	2020-06-30 14:48:03.802298-04	enproceso	TRAMITE
-715	209	V-12345688	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-410984694	f	2020-06-30 14:54:32.280094-04	ingresardatos	IMPUESTO
-848	251	V-12981762	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-410984694	f	2020-07-02 10:02:13.294929-04	{"state":"validando"}	IMPUESTO
-717	209	V-12345688	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-410984694	f	2020-06-30 14:55:16.030271-04	{"state":"validando"}	IMPUESTO
-719	319	V-12345688	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-06-30 14:57:03.683855-04	validando	TRAMITE
-849	251	V-12981762	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-410984694	t	2020-07-02 10:02:13.294929-04	{"state":"validando"}	IMPUESTO
-721	213	V-18455333	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-316120198	f	2020-06-30 15:00:25.439898-04	ingresardatos	IMPUESTO
-818	248	V-18455333	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-316120198	t	2020-07-01 11:17:49.730718-04	ingresardatos	IMPUESTO
-723	213	V-18455333	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-316120198	f	2020-06-30 15:01:06.107739-04	{"state":"validando"}	IMPUESTO
-654	199	V-1023910231	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	t	2020-06-27 12:50:27.693809-04	{"state":"validando"}	IMPUESTO
-725	214	V-19649021	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-411827428	f	2020-06-30 15:07:35.915302-04	ingresardatos	IMPUESTO
-656	200	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	t	2020-06-27 13:01:41.466493-04	ingresardatos	IMPUESTO
-727	214	V-19649021	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-411827428	f	2020-06-30 15:08:32.410389-04	{"state":"validando"}	IMPUESTO
-850	327	V-12934856	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-07-02 11:13:50.508903-04	enproceso	TRAMITE
-729	217	V-20000333	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-316703649	f	2020-06-30 15:16:22.626473-04	ingresardatos	IMPUESTO
-731	217	V-20000333	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-316703649	f	2020-06-30 15:17:28.28983-04	{"state":"validando"}	IMPUESTO
-733	226	V-12345690	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-302827515	f	2020-06-30 15:33:01.980484-04	ingresardatos	IMPUESTO
-735	226	V-12345690	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-302827515	f	2020-06-30 15:33:41.487777-04	{"state":"validando"}	IMPUESTO
-851	327	V-12934856	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-02 11:13:50.512562-04	enproceso	TRAMITE
-737	227	V-20000333	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-316703649	f	2020-06-30 15:37:20.963383-04	ingresardatos	IMPUESTO
-766	320	V-20002000	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 09:17:17.788108-04	enproceso	TRAMITE
-739	228	V-12345690	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-302827515	f	2020-06-30 15:37:46.983594-04	ingresardatos	IMPUESTO
-658	200	V-1023910231	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	t	2020-06-30 08:58:42.910166-04	{"state":"validando"}	IMPUESTO
-741	227	V-20000333	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-316703649	f	2020-06-30 15:38:28.497973-04	{"state":"validando"}	IMPUESTO
-662	206	V-15999000	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-297143858	t	2020-06-30 13:57:40.436255-04	ingresardatos	IMPUESTO
-743	228	V-12345690	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-302827515	f	2020-06-30 15:38:59.812026-04	{"state":"validando"}	IMPUESTO
-716	209	V-12345688	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-410984694	t	2020-06-30 14:54:32.280094-04	ingresardatos	IMPUESTO
-745	230	V-23555666	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070178787	f	2020-06-30 15:44:12.202112-04	ingresardatos	IMPUESTO
-718	209	V-12345688	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-410984694	t	2020-06-30 14:55:16.030271-04	{"state":"validando"}	IMPUESTO
-747	230	V-23555666	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-070178787	f	2020-06-30 15:44:37.971408-04	{"state":"validando"}	IMPUESTO
-749	233	V-7555189	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-306166220	f	2020-06-30 16:11:45.016567-04	ingresardatos	IMPUESTO
-722	213	V-18455333	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-316120198	t	2020-06-30 15:00:25.439898-04	ingresardatos	IMPUESTO
-751	233	V-7555189	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-306166220	f	2020-06-30 16:12:22.163939-04	{"state":"validando"}	IMPUESTO
-724	213	V-18455333	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-316120198	t	2020-06-30 15:01:06.107739-04	{"state":"validando"}	IMPUESTO
-753	235	V-18966554	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-400578116	f	2020-07-01 07:59:30.255968-04	ingresardatos	IMPUESTO
-726	214	V-19649021	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-411827428	t	2020-06-30 15:07:35.915302-04	ingresardatos	IMPUESTO
-755	235	V-18966554	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-400578116	f	2020-07-01 08:10:52.274811-04	{"state":"validando"}	IMPUESTO
-728	214	V-19649021	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-411827428	t	2020-06-30 15:08:32.410389-04	{"state":"validando"}	IMPUESTO
-757	241	V-36985214	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-313993557	f	2020-07-01 08:39:34.952136-04	ingresardatos	IMPUESTO
-730	217	V-20000333	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-316703649	t	2020-06-30 15:16:22.626473-04	ingresardatos	IMPUESTO
-759	241	V-36985214	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-313993557	f	2020-07-01 08:40:34.21095-04	{"state":"validando"}	IMPUESTO
-732	217	V-20000333	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-316703649	t	2020-06-30 15:17:28.28983-04	{"state":"validando"}	IMPUESTO
-761	242	V-36985214	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-313993557	f	2020-07-01 09:03:31.738601-04	ingresardatos	IMPUESTO
-734	226	V-12345690	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-302827515	t	2020-06-30 15:33:01.980484-04	ingresardatos	IMPUESTO
-763	245	V-123456741	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-01 09:13:31.00922-04	ingresardatos	IMPUESTO
-736	226	V-12345690	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-302827515	t	2020-06-30 15:33:41.487777-04	{"state":"validando"}	IMPUESTO
-765	320	V-20002000	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-07-01 09:17:17.784506-04	enproceso	TRAMITE
-738	227	V-20000333	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-316703649	t	2020-06-30 15:37:20.963383-04	ingresardatos	IMPUESTO
-769	321	V-12345696	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-07-01 09:24:37.004816-04	enproceso	TRAMITE
-853	327	V-12934856	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-02 11:13:50.518638-04	enproceso	TRAMITE
-740	228	V-12345690	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-302827515	t	2020-06-30 15:37:46.983594-04	ingresardatos	IMPUESTO
-852	327	V-12934856	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-02 11:13:50.515546-04	enproceso	TRAMITE
-767	320	V-20002000	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 09:17:17.791392-04	enproceso	TRAMITE
-768	320	V-20002000	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 09:17:17.794282-04	enproceso	TRAMITE
-771	321	V-12345696	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 09:24:37.013473-04	enproceso	TRAMITE
-774	320	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-07-01 09:26:28.8817-04	finalizado	TRAMITE
-776	321	V-1231931298	V-12345696	Se ha procesado su trámite de tipo Registro de Contribuyente	f	2020-07-01 09:27:18.801112-04	finalizado	TRAMITE
-777	321	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-07-01 09:27:18.801112-04	finalizado	TRAMITE
-773	320	V-1231931298	V-20002000	Se ha procesado su trámite de tipo Registro de Contribuyente	t	2020-07-01 09:26:28.8817-04	finalizado	TRAMITE
-779	322	V-9999999	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-07-01 09:32:13.084208-04	enproceso	TRAMITE
-781	322	V-9999999	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 09:32:13.097819-04	enproceso	TRAMITE
-783	323	V-78945612	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-07-01 09:44:35.288034-04	enproceso	TRAMITE
-791	323	V-1231931298	V-78945612	Se ha procesado su trámite de tipo Registro de Contribuyente	t	2020-07-01 10:04:09.979197-04	finalizado	TRAMITE
-787	324	V-30002000	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-07-01 09:47:40.454628-04	enproceso	TRAMITE
-804	325	V-1923812093	V-78945612	Se ha validado el pago de su trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-01 10:28:11.867213-04	enproceso	TRAMITE
-792	323	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-07-01 10:04:09.979197-04	finalizado	TRAMITE
-795	324	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-07-01 10:04:22.271112-04	finalizado	TRAMITE
-854	327	V-1231931298	V-12934856	Se ha procesado su trámite de tipo Registro de Contribuyente	f	2020-07-02 11:29:56.01619-04	finalizado	TRAMITE
-797	325	V-78945612	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-07-01 10:09:06.919816-04	validando	TRAMITE
-855	327	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-07-02 11:29:56.01619-04	finalizado	TRAMITE
-799	326	V-30002000	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-07-01 10:13:33.547026-04	validando	TRAMITE
-801	206	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-297143858	f	2020-07-01 10:26:35.508573-04	{"state":"finalizado"}	IMPUESTO
-856	327	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-07-02 11:29:56.01619-04	finalizado	TRAMITE
-805	326	V-1923812093	V-1	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-01 10:28:11.884679-04	enproceso	TRAMITE
-770	321	V-12345696	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 09:24:37.00989-04	enproceso	TRAMITE
-807	325	V-1923812093	V-1	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-01 10:28:11.891758-04	enproceso	TRAMITE
-775	320	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-07-01 09:26:28.8817-04	finalizado	TRAMITE
-809	242	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-313993557	f	2020-07-01 10:36:28.406431-04	{"state":"finalizado"}	IMPUESTO
-778	321	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-07-01 09:27:18.801112-04	finalizado	TRAMITE
-811	247	V-12345652	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-296585156	f	2020-07-01 10:51:15.021445-04	ingresardatos	IMPUESTO
-780	322	V-9999999	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 09:32:13.090825-04	enproceso	TRAMITE
-813	247	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-296585156	f	2020-07-01 10:55:16.036465-04	{"state":"finalizado"}	IMPUESTO
-784	323	V-78945612	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 09:44:35.29387-04	enproceso	TRAMITE
-815	245	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-070020091	f	2020-07-01 11:07:41.066851-04	{"state":"finalizado"}	IMPUESTO
-788	324	V-30002000	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 09:47:40.4631-04	enproceso	TRAMITE
-794	324	V-1231931298	V-30002000	Se ha procesado su trámite de tipo Registro de Contribuyente	t	2020-07-01 10:04:22.271112-04	finalizado	TRAMITE
-803	326	V-1923812093	V-30002000	Se ha validado el pago de su trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-01 10:28:11.863138-04	enproceso	TRAMITE
-785	323	V-78945612	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 09:44:35.296851-04	enproceso	TRAMITE
-789	324	V-30002000	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 09:47:40.466392-04	enproceso	TRAMITE
-793	323	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-07-01 10:04:09.979197-04	finalizado	TRAMITE
-742	227	V-20000333	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-316703649	t	2020-06-30 15:38:28.497973-04	{"state":"validando"}	IMPUESTO
-817	248	V-18455333	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-316120198	f	2020-07-01 11:17:49.730718-04	ingresardatos	IMPUESTO
-820	326	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-01 11:26:54.339341-04	finalizado	TRAMITE
-858	328	V-12934856	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	t	2020-07-02 11:43:54.278604-04	validando	TRAMITE
-819	326	V-1231931298	V-30002000	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-01 11:26:54.339341-04	finalizado	TRAMITE
-822	249	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-700020005	f	2020-07-01 11:38:01.424731-04	ingresardatos	IMPUESTO
-826	325	V-1231931298	V-78945612	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-01 11:42:58.602367-04	finalizado	TRAMITE
-824	249	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-700020005	f	2020-07-01 11:38:52.444418-04	{"state":"finalizado"}	IMPUESTO
-857	328	V-12934856	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-07-02 11:43:54.274813-04	validando	TRAMITE
-827	325	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-01 11:42:58.602367-04	finalizado	TRAMITE
-829	250	V-78945612	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-314151612	f	2020-07-01 11:49:26.161521-04	ingresardatos	IMPUESTO
-519	279	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-06-25 19:49:32.283486-04	finalizado	TRAMITE
-831	250	V-78945612	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-314151612	f	2020-07-01 11:50:33.202607-04	{"state":"validando"}	IMPUESTO
-521	286	V-27139153	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	t	2020-06-25 21:02:31.96821-04	validando	TRAMITE
-588	298	null-null	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 18:49:43.802474-04	enproceso	TRAMITE
-523	288	V-27139153	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	t	2020-06-25 21:08:29.355076-04	validando	TRAMITE
-533	289	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-06-25 21:22:23.405168-04	finalizado	TRAMITE
-539	291	V-27139153	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:47:33.541611-04	enproceso	TRAMITE
-772	321	V-12345696	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 09:24:37.020205-04	enproceso	TRAMITE
-782	322	V-9999999	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 09:32:13.103509-04	enproceso	TRAMITE
-786	323	V-78945612	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 09:44:35.30045-04	enproceso	TRAMITE
-790	324	V-30002000	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 09:47:40.47044-04	enproceso	TRAMITE
-806	326	V-1923812093	V-1231931298	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-01 10:28:11.88864-04	enproceso	TRAMITE
-808	325	V-1923812093	V-1231931298	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-01 10:28:11.894785-04	enproceso	TRAMITE
-859	328	V-1923812093	V-12934856	Se ha validado el pago de su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-02 11:52:56.085669-04	enproceso	TRAMITE
-860	328	V-1923812093	V-1	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-02 11:52:56.096907-04	enproceso	TRAMITE
-744	228	V-12345690	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-302827515	t	2020-06-30 15:38:59.812026-04	{"state":"validando"}	IMPUESTO
-746	230	V-23555666	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070178787	t	2020-06-30 15:44:12.202112-04	ingresardatos	IMPUESTO
-748	230	V-23555666	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-070178787	t	2020-06-30 15:44:37.971408-04	{"state":"validando"}	IMPUESTO
-750	233	V-7555189	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-306166220	t	2020-06-30 16:11:45.016567-04	ingresardatos	IMPUESTO
-752	233	V-7555189	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-306166220	t	2020-06-30 16:12:22.163939-04	{"state":"validando"}	IMPUESTO
-754	235	V-18966554	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-400578116	t	2020-07-01 07:59:30.255968-04	ingresardatos	IMPUESTO
-756	235	V-18966554	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-400578116	t	2020-07-01 08:10:52.274811-04	{"state":"validando"}	IMPUESTO
-758	241	V-36985214	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-313993557	t	2020-07-01 08:39:34.952136-04	ingresardatos	IMPUESTO
-760	241	V-36985214	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-313993557	t	2020-07-01 08:40:34.21095-04	{"state":"validando"}	IMPUESTO
-762	242	V-36985214	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-313993557	t	2020-07-01 09:03:31.738601-04	ingresardatos	IMPUESTO
-764	245	V-123456741	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	t	2020-07-01 09:13:31.00922-04	ingresardatos	IMPUESTO
-796	324	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-07-01 10:04:22.271112-04	finalizado	TRAMITE
-798	325	V-78945612	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	t	2020-07-01 10:09:06.923916-04	validando	TRAMITE
-800	326	V-30002000	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	t	2020-07-01 10:13:33.550759-04	validando	TRAMITE
-802	206	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-297143858	t	2020-07-01 10:26:35.508573-04	{"state":"finalizado"}	IMPUESTO
-810	242	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-313993557	t	2020-07-01 10:36:28.406431-04	{"state":"finalizado"}	IMPUESTO
-812	247	V-12345652	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-296585156	t	2020-07-01 10:51:15.021445-04	ingresardatos	IMPUESTO
-814	247	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-296585156	t	2020-07-01 10:55:16.036465-04	{"state":"finalizado"}	IMPUESTO
-816	245	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-070020091	t	2020-07-01 11:07:41.066851-04	{"state":"finalizado"}	IMPUESTO
-821	326	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-01 11:26:54.339341-04	finalizado	TRAMITE
-823	249	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-700020005	t	2020-07-01 11:38:01.424731-04	ingresardatos	IMPUESTO
-825	249	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-700020005	t	2020-07-01 11:38:52.444418-04	{"state":"finalizado"}	IMPUESTO
-828	325	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-01 11:42:58.602367-04	finalizado	TRAMITE
-830	250	V-78945612	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-314151612	t	2020-07-01 11:49:26.161521-04	ingresardatos	IMPUESTO
-832	250	V-78945612	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 11:50:33.202607-04	{"state":"validando"}	IMPUESTO
-867	252	V-12934856	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-406576458	f	2020-07-02 12:21:46.902567-04	{"state":"validando"}	IMPUESTO
-868	252	V-12934856	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-406576458	f	2020-07-02 12:21:46.902567-04	{"state":"validando"}	IMPUESTO
-872	253	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-413060540	f	2020-07-02 15:51:02.795929-04	{"state":"finalizado"}	IMPUESTO
-875	255	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 17:30:20.884036-04	ingresardatos	IMPUESTO
-876	255	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 17:30:20.884036-04	ingresardatos	IMPUESTO
-879	257	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 17:43:09.497351-04	ingresardatos	IMPUESTO
-880	257	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 17:43:09.497351-04	ingresardatos	IMPUESTO
-883	259	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 18:00:45.770935-04	ingresardatos	IMPUESTO
-884	259	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 18:00:45.770935-04	ingresardatos	IMPUESTO
-887	261	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 18:18:32.335293-04	ingresardatos	IMPUESTO
-888	261	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 18:18:32.335293-04	ingresardatos	IMPUESTO
-861	328	V-1923812093	V-1231931298	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-02 11:52:56.100547-04	enproceso	TRAMITE
-890	262	V-10888777	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-03 10:51:51.83581-04	ingresardatos	IMPUESTO
-891	262	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-07-03 11:04:09.856662-04	{"state":"finalizado"}	IMPUESTO
-895	322	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-07-03 11:21:19.527365-04	finalizado	TRAMITE
-892	262	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-07-03 11:04:09.856662-04	{"state":"finalizado"}	IMPUESTO
-896	329	V-9999999	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-07-03 11:34:50.544321-04	validando	TRAMITE
-897	329	V-9999999	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-07-03 11:34:50.548302-04	validando	TRAMITE
-898	263	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-06 13:59:54.246253-04	ingresardatos	IMPUESTO
-899	263	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-06 13:59:54.246253-04	ingresardatos	IMPUESTO
-900	264	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-06 14:17:28.291585-04	ingresardatos	IMPUESTO
-901	264	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-06 14:17:28.291585-04	ingresardatos	IMPUESTO
-902	265	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-06 14:22:52.758241-04	ingresardatos	IMPUESTO
-903	265	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-06 14:22:52.758241-04	ingresardatos	IMPUESTO
-904	266	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-06 14:29:23.952297-04	ingresardatos	IMPUESTO
-905	266	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-06 14:29:23.952297-04	ingresardatos	IMPUESTO
-906	267	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-06 14:33:31.425025-04	ingresardatos	IMPUESTO
-907	267	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-06 14:33:31.425025-04	ingresardatos	IMPUESTO
-908	268	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-06 14:40:42.222588-04	ingresardatos	IMPUESTO
-909	268	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-06 14:40:42.222588-04	ingresardatos	IMPUESTO
-910	270	V-1293812738	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-07-09 08:12:37.735892-04	ingresardatos	IMPUESTO
-911	270	V-1293812738	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-07-09 08:12:37.735892-04	ingresardatos	IMPUESTO
-912	330	V-1923812093	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-07-09 08:13:25.011938-04	enrevision	TRAMITE
-913	330	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Beneficio de Contribuyente	f	2020-07-09 08:27:59.778264-04	finalizado	TRAMITE
+496	276	V-27139153	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-06-25 19:06:07.474372+00	enrevision	TRAMITE
+498	277	V-27139153	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-06-25 20:22:46.388248+00	enproceso	TRAMITE
+503	277	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-06-25 20:28:50.980214+00	finalizado	TRAMITE
+525	288	V-1923812093	V-1	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-06-26 01:11:08.029396+00	enproceso	TRAMITE
+505	278	V-27139153	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-06-25 21:18:19.430757+00	enproceso	TRAMITE
+527	289	V-27139153	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-06-26 01:19:50.96666+00	enproceso	TRAMITE
+509	279	V-27139153	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-06-25 22:07:15.597688+00	validando	TRAMITE
+532	289	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-06-26 01:22:23.405168+00	finalizado	TRAMITE
+512	278	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-06-25 22:38:38.23326+00	finalizado	TRAMITE
+515	279	V-1923812093	V-1	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-06-25 23:31:43.275252+00	enproceso	TRAMITE
+518	279	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-06-25 23:49:31.987536+00	finalizado	TRAMITE
+520	286	V-27139153	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-06-26 01:02:31.651442+00	validando	TRAMITE
+522	288	V-27139153	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-06-26 01:08:29.126954+00	validando	TRAMITE
+534	290	V-27139153	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-06-26 01:41:33.008194+00	enproceso	TRAMITE
+538	291	V-27139153	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-06-26 01:47:33.281706+00	enproceso	TRAMITE
+964	323	V-10528417	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	f	2020-07-13 00:45:58.689675+00	ingresardatos	IMPUESTO
+542	292	V-27139153	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-06-26 01:48:49.384157+00	enproceso	TRAMITE
+997	341	V-1231931298	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	f	2020-07-13 16:22:13.970586+00	ingresardatos	IMPUESTO
+1188	380	V-1231931298	V-12543654	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-21 17:50:28.862769+00	enrevision	TRAMITE
+1184	379	V-1231931298	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-192837465	f	2020-07-21 17:30:12.836869+00	ingresardatos	IMPUESTO
+1202	382	V-1231931298	J-192837466	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-23 03:30:16.90819+00	enrevision	TRAMITE
+1203	382	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-23 03:30:16.947065+00	enrevision	TRAMITE
+1204	382	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-23 03:30:16.956942+00	enrevision	TRAMITE
+999	341	V-1231931298	V-1203912039	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	f	2020-07-13 16:22:13.970586+00	ingresardatos	IMPUESTO
+1189	380	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-21 17:50:28.877065+00	enrevision	TRAMITE
+1052	341	V-1923812093	V-1	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-14 16:57:11.781962+00	enproceso	TRAMITE
+1073	369	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-003257176	f	2020-07-15 16:52:02.368481+00	ingresardatos	IMPUESTO
+998	341	V-1231931298	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	t	2020-07-13 16:22:13.970586+00	ingresardatos	IMPUESTO
+1051	341	V-1923812093	V-27139153	Se ha validado el pago de su trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-14 16:57:11.765868+00	enproceso	TRAMITE
+1031	337	V-1923812093	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-07-13 19:39:23.898294+00	enrevision	TRAMITE
+546	293	V-27139153	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-06-26 01:51:23.483567+00	enproceso	TRAMITE
+845	250	V-1923812093	V-1	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	f	2020-07-01 17:43:41.536246+00	finalizado	IMPUESTO
+550	294	V-27139153	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-06-26 01:52:28.345188+00	enproceso	TRAMITE
+862	328	V-1231931298	V-12934856	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-02 15:55:42.688945+00	finalizado	TRAMITE
+554	295	V-27139153	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-06-26 01:58:00.633268+00	enproceso	TRAMITE
+863	328	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-02 15:55:42.688945+00	finalizado	TRAMITE
+559	295	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-06-26 02:01:05.832879+00	finalizado	TRAMITE
+561	163	null-null	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-06-26 04:27:20.873159+00	ingresardatos	IMPUESTO
+563	296	V-1231234444	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-06-26 06:44:52.231195+00	enrevision	TRAMITE
+565	297	V-1231234444	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-06-26 06:47:30.627123+00	enrevision	TRAMITE
+1112	358	V-1231931298	J-312645978	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 13:22:37.003652+00	enrevision	TRAMITE
+975	328	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	f	2020-07-13 13:05:24.399972+00	ingresardatos	IMPUESTO
+1113	358	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 13:22:37.017581+00	enrevision	TRAMITE
+979	335	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-413060540	f	2020-07-13 13:40:21.823894+00	ingresardatos	IMPUESTO
+985	339	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-413060540	f	2020-07-13 13:46:58.933594+00	ingresardatos	IMPUESTO
+991	340	V-1231931298	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	f	2020-07-13 15:46:11.242445+00	ingresardatos	IMPUESTO
+1186	380	V-1231931298	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-413060540	f	2020-07-21 17:30:47.836805+00	ingresardatos	IMPUESTO
+567	165	V-27139153	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-06-26 17:03:36.969559+00	ingresardatos	IMPUESTO
+966	334	V-12543654	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-07-13 01:02:24.114458+00	enproceso	TRAMITE
+569	165	V-27139153	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-06-26 17:42:35.852862+00	{"state":"validando"}	IMPUESTO
+1000	341	V-1231931298	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-000202001	f	2020-07-13 16:27:25.958401+00	{"state":"finalizado"}	IMPUESTO
+571	170	V-27139153	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-06-26 18:51:56.606695+00	ingresardatos	IMPUESTO
+573	170	V-27139153	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 18:52:17.922487+00	{"state":"validando"}	IMPUESTO
+575	171	V-27139153	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-06-26 18:58:24.718913+00	ingresardatos	IMPUESTO
+865	252	V-12934856	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-406576458	f	2020-07-02 16:19:57.555154+00	ingresardatos	IMPUESTO
+577	171	V-27139153	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 18:58:38.993864+00	{"state":"validando"}	IMPUESTO
+1032	337	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Beneficio de Contribuyente	f	2020-07-13 19:40:09.009702+00	finalizado	TRAMITE
+579	173	V-27139153	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-06-26 20:41:34.670731+00	ingresardatos	IMPUESTO
+1159	375	V-1231931298	J-312645978	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 14:37:40.9648+00	finalizado	TRAMITE
+581	173	V-27139153	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-06-26 22:42:37.350341+00	{"state":"validando"}	IMPUESTO
+1160	375	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 14:37:40.9648+00	finalizado	TRAMITE
+583	174	V-27139153	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-06-26 22:45:58.363933+00	ingresardatos	IMPUESTO
+1028	336	V-1231931298	V-5678987	Se ha procesado su trámite de tipo Registro de Contribuyente	f	2020-07-13 19:31:42.521455+00	finalizado	TRAMITE
+585	298	null-null	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-06-26 22:49:43.793752+00	enproceso	TRAMITE
+869	253	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-413060540	f	2020-07-02 19:44:33.057281+00	ingresardatos	IMPUESTO
+881	258	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 21:47:47.966438+00	ingresardatos	IMPUESTO
+970	334	V-1231931298	V-12543654	Se ha procesado su trámite de tipo Registro de Contribuyente	f	2020-07-13 01:09:31.533035+00	finalizado	TRAMITE
+971	334	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-07-13 01:09:31.533035+00	finalizado	TRAMITE
+873	254	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 21:22:39.960649+00	ingresardatos	IMPUESTO
+1029	336	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-07-13 19:31:42.521455+00	finalizado	TRAMITE
+885	260	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 22:10:41.583764+00	ingresardatos	IMPUESTO
+877	256	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 21:41:52.330477+00	ingresardatos	IMPUESTO
+977	328	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-000202001	f	2020-07-13 13:08:50.062602+00	{"state":"finalizado"}	IMPUESTO
+968	334	V-12543654	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-13 01:02:24.120644+00	enproceso	TRAMITE
+889	262	V-10888777	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-03 14:51:51.83581+00	ingresardatos	IMPUESTO
+833	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 17:43:41.465551+00	finalizado	IMPUESTO
+589	181	null-null	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-06-26 23:17:15.038059+00	ingresardatos	IMPUESTO
+591	181	null-null	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-26 23:46:26.508527+00	{"state":"validando"}	IMPUESTO
+594	298	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-06-26 23:51:45.261735+00	finalizado	TRAMITE
+1030	336	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-07-13 19:31:42.521455+00	finalizado	TRAMITE
+593	298	V-1231931298	V-18496685	Se ha procesado su trámite de tipo Registro de Contribuyente	t	2020-06-26 23:51:45.261735+00	finalizado	TRAMITE
+596	193	V-1231931298	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-413060540	f	2020-06-27 01:36:27.634336+00	ingresardatos	IMPUESTO
+598	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-27 03:57:30.85305+00	finalizado	IMPUESTO
+599	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-27 03:57:30.85655+00	finalizado	IMPUESTO
+600	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-27 03:57:30.859712+00	finalizado	IMPUESTO
+601	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-27 03:57:30.862772+00	finalizado	IMPUESTO
+602	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-27 03:57:30.865981+00	finalizado	IMPUESTO
+603	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-27 03:57:30.868976+00	finalizado	IMPUESTO
+981	335	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-413060540	f	2020-07-13 13:43:14.378583+00	{"state":"finalizado"}	IMPUESTO
+987	338	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-311456759	f	2020-07-13 13:48:16.402619+00	{"state":"finalizado"}	IMPUESTO
+1055	341	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-14 16:59:49.328302+00	enrevision	TRAMITE
+604	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-27 03:57:30.872054+00	finalizado	IMPUESTO
+605	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-27 03:57:30.875101+00	finalizado	IMPUESTO
+606	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-27 03:57:30.878243+00	finalizado	IMPUESTO
+607	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-27 03:57:30.881535+00	finalizado	IMPUESTO
+608	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-27 03:57:30.885247+00	finalizado	IMPUESTO
+609	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-27 03:57:30.888416+00	finalizado	IMPUESTO
+610	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-27 03:57:30.891417+00	finalizado	IMPUESTO
+611	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-27 03:57:30.89435+00	finalizado	IMPUESTO
+612	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-27 03:57:30.897347+00	finalizado	IMPUESTO
+613	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-27 03:57:30.900389+00	finalizado	IMPUESTO
+614	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-27 03:57:30.903499+00	finalizado	IMPUESTO
+615	181	V-1923812093	V-16079142	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-27 03:57:30.906495+00	finalizado	IMPUESTO
+616	181	V-1923812093	V-1	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-27 03:57:30.959002+00	finalizado	IMPUESTO
+617	198	V-27139153	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-06-27 04:18:41.828186+00	ingresardatos	IMPUESTO
+834	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 17:43:41.469406+00	finalizado	IMPUESTO
+619	198	V-27139153	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-06-27 04:18:59.615839+00	{"state":"validando"}	IMPUESTO
+835	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 17:43:41.472603+00	finalizado	IMPUESTO
+621	174	V-1023910231	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-06-27 04:30:50.849376+00	{"state":"validando"}	IMPUESTO
+836	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 17:43:41.475725+00	finalizado	IMPUESTO
+837	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 17:43:41.478862+00	finalizado	IMPUESTO
+838	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 17:43:41.482375+00	finalizado	IMPUESTO
+839	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 17:43:41.485528+00	finalizado	IMPUESTO
+840	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 17:43:41.488475+00	finalizado	IMPUESTO
+1115	364	V-1231931298	J-312645978	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 13:24:37.65035+00	enrevision	TRAMITE
+1205	382	V-1923812093	J-192837466	Se realizó la revisión de su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-23 03:34:56.529731+00	finalizado	TRAMITE
+841	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 17:43:41.491876+00	finalizado	IMPUESTO
+842	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 17:43:41.49484+00	finalizado	IMPUESTO
+843	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 17:43:41.497919+00	finalizado	IMPUESTO
+844	250	V-1923812093	V-78945612	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 17:43:41.501276+00	finalizado	IMPUESTO
+1002	342	V-25848973	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-07-13 16:41:24.88859+00	ingresardatos	IMPUESTO
+1191	379	V-1923812093	J-312645977	Se realizó la revisión de su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-21 17:59:43.14027+00	finalizado	TRAMITE
+1116	364	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 13:24:37.665074+00	enrevision	TRAMITE
+1192	379	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-21 17:59:43.164709+00	finalizado	TRAMITE
+1187	380	V-1231931298	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-413060540	t	2020-07-21 17:30:47.836805+00	ingresardatos	IMPUESTO
+595	298	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-06-26 23:51:45.261735+00	finalizado	TRAMITE
+1206	382	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-23 03:34:56.553441+00	finalizado	TRAMITE
+650	198	V-1923812093	V-1	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	f	2020-06-27 04:44:05.051233+00	finalizado	IMPUESTO
+1108	374	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: V-18921679	f	2020-07-15 20:59:51.738355+00	ingresardatos	IMPUESTO
+1075	346	V-1923812093	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-07-15 16:55:29.30988+00	enrevision	TRAMITE
+548	293	V-27139153	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 01:51:24.089517+00	enproceso	TRAMITE
+1109	374	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: V-18921679	t	2020-07-15 20:59:51.738355+00	ingresardatos	IMPUESTO
+508	278	V-27139153	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:18:20.299545+00	enproceso	TRAMITE
+516	279	V-1923812093	V-1231931298	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-06-25 23:31:43.886633+00	enproceso	TRAMITE
+1004	343	V-1231931298	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	f	2020-07-13 16:42:27.45734+00	ingresardatos	IMPUESTO
+531	289	V-1231931298	V-27139153	Se ha procesado su trámite de tipo Registro de Contribuyente	t	2020-06-26 01:22:23.405168+00	finalizado	TRAMITE
+871	253	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-413060540	f	2020-07-02 19:51:02.795929+00	{"state":"finalizado"}	IMPUESTO
+1162	376	V-1231931298	J-4005	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-19 22:19:18.855897+00	enrevision	TRAMITE
+1163	376	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-19 22:19:18.874451+00	enrevision	TRAMITE
+1167	376	V-1231931298	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-003257176	f	2020-07-20 15:31:30.98507+00	ingresardatos	IMPUESTO
+1110	375	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: V-18921679	f	2020-07-15 21:34:30.829195+00	ingresardatos	IMPUESTO
+1118	365	V-1231931298	J-312645978	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 13:24:52.478686+00	enrevision	TRAMITE
+1119	365	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 13:24:52.496532+00	enrevision	TRAMITE
+1053	341	V-1923812093	V-1231931298	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-14 16:57:11.789464+00	enproceso	TRAMITE
+526	288	V-1923812093	V-1231931298	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-06-26 01:11:08.270204+00	enproceso	TRAMITE
+501	277	V-27139153	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 20:22:47.502217+00	enproceso	TRAMITE
+541	291	V-27139153	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 01:47:34.061785+00	enproceso	TRAMITE
+545	292	V-27139153	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 01:48:50.587436+00	enproceso	TRAMITE
+549	293	V-27139153	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 01:51:24.344544+00	enproceso	TRAMITE
+553	294	V-27139153	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 01:52:29.211594+00	enproceso	TRAMITE
+530	289	V-27139153	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 01:19:51.727124+00	enproceso	TRAMITE
+537	290	V-27139153	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 01:41:33.977149+00	enproceso	TRAMITE
+1027	336	V-5678987	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-13 19:30:55.776425+00	enproceso	TRAMITE
+969	334	V-12543654	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-13 01:02:24.123515+00	enproceso	TRAMITE
+557	295	V-27139153	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 01:58:01.390835+00	enproceso	TRAMITE
+808	325	V-1923812093	V-1231931298	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-01 14:28:11.894785+00	enproceso	TRAMITE
+1045	340	V-1923812093	V-1231931298	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-14 15:24:11.767287+00	enproceso	TRAMITE
+651	199	V-10555777	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-06-27 16:36:18.328194+00	ingresardatos	IMPUESTO
+846	251	V-12981762	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-410984694	f	2020-07-02 13:55:56.080604+00	ingresardatos	IMPUESTO
+653	199	V-1023910231	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-27 16:50:27.693809+00	{"state":"validando"}	IMPUESTO
+655	200	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-06-27 17:01:41.466493+00	ingresardatos	IMPUESTO
+861	328	V-1923812093	V-1231931298	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-02 15:52:56.100547+00	enproceso	TRAMITE
+500	277	V-27139153	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 20:22:46.927251+00	enproceso	TRAMITE
+1033	338	V-1923812093	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-07-14 13:05:24.301111+00	enrevision	TRAMITE
+511	278	V-1231931298	V-27139153	Se ha procesado su trámite de tipo Registro de Contribuyente	t	2020-06-25 22:38:37.696548+00	finalizado	TRAMITE
+514	279	V-1923812093	V-27139153	Se ha validado el pago de su trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-06-25 23:31:41.883319+00	enproceso	TRAMITE
+517	279	V-1231931298	V-27139153	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-06-25 23:49:30.702372+00	finalizado	TRAMITE
+558	295	V-1231931298	V-27139153	Se ha procesado su trámite de tipo Registro de Contribuyente	t	2020-06-26 02:01:05.832879+00	finalizado	TRAMITE
+623	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.878816+00	finalizado	IMPUESTO
+929	331	V-18496685	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-10 15:03:38.330288+00	enproceso	TRAMITE
+853	327	V-12934856	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-02 15:13:50.518638+00	enproceso	TRAMITE
+768	320	V-20002000	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 13:17:17.794282+00	enproceso	TRAMITE
+1087	350	V-18921679	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-15 19:43:36.473396+00	enproceso	TRAMITE
+790	324	V-30002000	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 13:47:40.47044+00	enproceso	TRAMITE
+806	326	V-1923812093	V-1231931298	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-01 14:28:11.88864+00	enproceso	TRAMITE
+1169	377	V-1231931298	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-003257176	f	2020-07-20 17:14:30.697286+00	ingresardatos	IMPUESTO
+657	200	V-1023910231	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-06-30 12:58:42.910166+00	{"state":"validando"}	IMPUESTO
+1006	335	V-1923812093	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-07-13 16:43:56.842405+00	enrevision	TRAMITE
+659	300	V-12345688	V-1	Un trámite de tipo Cumplimiento de Normas Tecnicas ha sido creado	f	2020-06-30 17:50:31.57895+00	validando	TRAMITE
+660	300	V-12345688	V-1231231231	Un trámite de tipo Cumplimiento de Normas Tecnicas ha sido creado	f	2020-06-30 17:50:31.583639+00	validando	TRAMITE
+661	206	V-15999000	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-297143858	f	2020-06-30 17:57:40.436255+00	ingresardatos	IMPUESTO
+1081	349	V-1231931298	V-25848973	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-15 19:37:43.283951+00	enrevision	TRAMITE
+663	301	V-12345688	V-1	Un trámite de tipo Constancia de Habitabilidad ha sido creado	f	2020-06-30 18:21:39.907298+00	validando	TRAMITE
+664	301	V-12345688	V-1231231231	Un trámite de tipo Constancia de Habitabilidad ha sido creado	f	2020-06-30 18:21:39.913448+00	validando	TRAMITE
+665	302	V-12345688	V-1	Un trámite de tipo Instalacion de Plantas Electricas ha sido creado	f	2020-06-30 18:22:41.425243+00	enproceso	TRAMITE
+666	302	V-12345688	V-1231231231	Un trámite de tipo Instalacion de Plantas Electricas ha sido creado	f	2020-06-30 18:22:41.428826+00	enproceso	TRAMITE
+667	303	V-12345688	V-1	Un trámite de tipo Constancia de Servicio Residencial ha sido creado	f	2020-06-30 18:23:45.395902+00	validando	TRAMITE
+668	303	V-12345688	V-123123	Un trámite de tipo Constancia de Servicio Residencial ha sido creado	f	2020-06-30 18:23:45.400151+00	validando	TRAMITE
+669	304	V-12345688	V-1	Un trámite de tipo Constancia de Servicio Persona Juridica ha sido creado	f	2020-06-30 18:24:56.169488+00	validando	TRAMITE
+670	304	V-12345688	V-123123	Un trámite de tipo Constancia de Servicio Persona Juridica ha sido creado	f	2020-06-30 18:24:56.172843+00	validando	TRAMITE
+671	305	V-12345688	V-1	Un trámite de tipo Permiso de Construccion ha sido creado	f	2020-06-30 18:25:27.61567+00	enproceso	TRAMITE
+672	305	V-12345688	V-123123	Un trámite de tipo Permiso de Construccion ha sido creado	f	2020-06-30 18:25:27.619337+00	enproceso	TRAMITE
+673	305	V-12345688	V-123133333	Un trámite de tipo Permiso de Construccion ha sido creado	f	2020-06-30 18:25:27.622327+00	enproceso	TRAMITE
+674	306	V-12345688	V-1	Un trámite de tipo Solvencia de Inmuebles Urbanos ha sido creado	f	2020-06-30 18:27:14.693716+00	validando	TRAMITE
+675	306	V-12345688	V-1231234444	Un trámite de tipo Solvencia de Inmuebles Urbanos ha sido creado	f	2020-06-30 18:27:14.69742+00	validando	TRAMITE
+676	306	V-12345688	V-27139154	Un trámite de tipo Solvencia de Inmuebles Urbanos ha sido creado	f	2020-06-30 18:27:14.700557+00	validando	TRAMITE
+677	307	V-12345688	V-1	Un trámite de tipo Permiso de Habitabilidad con Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 18:29:36.973191+00	enproceso	TRAMITE
+678	307	V-12345688	V-123123	Un trámite de tipo Permiso de Habitabilidad con Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 18:29:36.976848+00	enproceso	TRAMITE
+679	307	V-12345688	V-123133333	Un trámite de tipo Permiso de Habitabilidad con Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 18:29:36.979904+00	enproceso	TRAMITE
+680	308	V-12345688	V-1	Un trámite de tipo Permiso de Habitabilidad sin Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 18:30:24.531369+00	enproceso	TRAMITE
+681	308	V-12345688	V-123123	Un trámite de tipo Permiso de Habitabilidad sin Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 18:30:24.534979+00	enproceso	TRAMITE
+682	308	V-12345688	V-123133333	Un trámite de tipo Permiso de Habitabilidad sin Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 18:30:24.538259+00	enproceso	TRAMITE
+683	309	V-12345688	V-1	Un trámite de tipo Permiso de Condiciones Habitables con Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 18:32:26.659151+00	enproceso	TRAMITE
+684	309	V-12345688	V-123123	Un trámite de tipo Permiso de Condiciones Habitables con Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 18:32:26.663656+00	enproceso	TRAMITE
+893	322	V-1231931298	V-9999999	Se ha procesado su trámite de tipo Registro de Contribuyente	f	2020-07-03 15:21:19.527365+00	finalizado	TRAMITE
+894	322	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-07-03 15:21:19.527365+00	finalizado	TRAMITE
+685	309	V-12345688	V-123133333	Un trámite de tipo Permiso de Condiciones Habitables con Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 18:32:26.667268+00	enproceso	TRAMITE
+686	310	V-12345688	V-1	Un trámite de tipo Permiso de Condiciones Habitables sin Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 18:33:23.952135+00	enproceso	TRAMITE
+687	310	V-12345688	V-123123	Un trámite de tipo Permiso de Condiciones Habitables sin Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 18:33:23.957662+00	enproceso	TRAMITE
+688	310	V-12345688	V-123133333	Un trámite de tipo Permiso de Condiciones Habitables sin Instalaciones de Servicio de Gas ha sido creado	f	2020-06-30 18:33:23.963883+00	enproceso	TRAMITE
+689	311	V-12345688	V-1	Un trámite de tipo Constancia de Nomenclatura ha sido creado	f	2020-06-30 18:36:52.578991+00	validando	TRAMITE
+690	311	V-12345688	V-1231234444	Un trámite de tipo Constancia de Nomenclatura ha sido creado	f	2020-06-30 18:36:52.583737+00	validando	TRAMITE
+691	311	V-12345688	V-27139154	Un trámite de tipo Constancia de Nomenclatura ha sido creado	f	2020-06-30 18:36:52.586934+00	validando	TRAMITE
+692	312	V-12345688	V-1	Un trámite de tipo Codigo Catastral para Casas ha sido creado	f	2020-06-30 18:38:45.15148+00	validando	TRAMITE
+693	312	V-12345688	V-1231234444	Un trámite de tipo Codigo Catastral para Casas ha sido creado	f	2020-06-30 18:38:45.155246+00	validando	TRAMITE
+694	312	V-12345688	V-27139154	Un trámite de tipo Codigo Catastral para Casas ha sido creado	f	2020-06-30 18:38:45.158613+00	validando	TRAMITE
+695	313	V-12345688	V-1	Un trámite de tipo Codigo Catastral para Apartamentos ha sido creado	f	2020-06-30 18:40:42.50787+00	validando	TRAMITE
+696	313	V-12345688	V-1231234444	Un trámite de tipo Codigo Catastral para Apartamentos ha sido creado	f	2020-06-30 18:40:42.511562+00	validando	TRAMITE
+697	313	V-12345688	V-27139154	Un trámite de tipo Codigo Catastral para Apartamentos ha sido creado	f	2020-06-30 18:40:42.514865+00	validando	TRAMITE
+698	314	V-12345688	V-1	Un trámite de tipo Conformidad de la Edificación y Uso Licencia a las Actividades Económicas Comerciales e Industriales ha sido creado	f	2020-06-30 18:42:31.341865+00	enproceso	TRAMITE
+699	314	V-12345688	V-1231234444	Un trámite de tipo Conformidad de la Edificación y Uso Licencia a las Actividades Económicas Comerciales e Industriales ha sido creado	f	2020-06-30 18:42:31.345382+00	enproceso	TRAMITE
+700	314	V-12345688	V-27139154	Un trámite de tipo Conformidad de la Edificación y Uso Licencia a las Actividades Económicas Comerciales e Industriales ha sido creado	f	2020-06-30 18:42:31.348139+00	enproceso	TRAMITE
+1082	349	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-15 19:37:43.283951+00	enrevision	TRAMITE
+701	314	V-12345688	V-1283190247	Un trámite de tipo Conformidad de la Edificación y Uso Licencia a las Actividades Económicas Comerciales e Industriales ha sido creado	f	2020-06-30 18:42:31.350983+00	enproceso	TRAMITE
+702	315	V-12345688	V-1	Un trámite de tipo Conformidad de la Edificación y Uso Unidades Educativas ha sido creado	f	2020-06-30 18:44:25.877128+00	enproceso	TRAMITE
+703	315	V-12345688	V-1231234444	Un trámite de tipo Conformidad de la Edificación y Uso Unidades Educativas ha sido creado	f	2020-06-30 18:44:25.880874+00	enproceso	TRAMITE
+704	315	V-12345688	V-27139154	Un trámite de tipo Conformidad de la Edificación y Uso Unidades Educativas ha sido creado	f	2020-06-30 18:44:25.883984+00	enproceso	TRAMITE
+705	315	V-12345688	V-1283190247	Un trámite de tipo Conformidad de la Edificación y Uso Unidades Educativas ha sido creado	f	2020-06-30 18:44:25.888017+00	enproceso	TRAMITE
+706	316	V-12345688	V-1	Un trámite de tipo Conformidad de la Edificación y Uso Locales en Centros Comerciales ha sido creado	f	2020-06-30 18:45:47.572841+00	enproceso	TRAMITE
+707	316	V-12345688	V-1231234444	Un trámite de tipo Conformidad de la Edificación y Uso Locales en Centros Comerciales ha sido creado	f	2020-06-30 18:45:47.576073+00	enproceso	TRAMITE
+708	316	V-12345688	V-27139154	Un trámite de tipo Conformidad de la Edificación y Uso Locales en Centros Comerciales ha sido creado	f	2020-06-30 18:45:47.579362+00	enproceso	TRAMITE
+709	316	V-12345688	V-1283190247	Un trámite de tipo Conformidad de la Edificación y Uso Locales en Centros Comerciales ha sido creado	f	2020-06-30 18:45:47.582487+00	enproceso	TRAMITE
+710	317	V-12345688	V-1	Un trámite de tipo Apartado de Bohío ha sido creado	f	2020-06-30 18:46:47.771885+00	validando	TRAMITE
+711	317	V-12345688	V-1294712034	Un trámite de tipo Apartado de Bohío ha sido creado	f	2020-06-30 18:46:47.775074+00	validando	TRAMITE
+712	318	V-12345688	V-1	Un trámite de tipo Certificación para Prestar Servicio de Transporte Público Urbano ha sido creado	f	2020-06-30 18:48:03.795316+00	enproceso	TRAMITE
+713	318	V-12345688	V-1239812938	Un trámite de tipo Certificación para Prestar Servicio de Transporte Público Urbano ha sido creado	f	2020-06-30 18:48:03.799338+00	enproceso	TRAMITE
+714	318	V-12345688	V-1023102938	Un trámite de tipo Certificación para Prestar Servicio de Transporte Público Urbano ha sido creado	f	2020-06-30 18:48:03.802298+00	enproceso	TRAMITE
+715	209	V-12345688	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-410984694	f	2020-06-30 18:54:32.280094+00	ingresardatos	IMPUESTO
+848	251	V-12981762	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-410984694	f	2020-07-02 14:02:13.294929+00	{"state":"validando"}	IMPUESTO
+717	209	V-12345688	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-410984694	f	2020-06-30 18:55:16.030271+00	{"state":"validando"}	IMPUESTO
+719	319	V-12345688	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-06-30 18:57:03.683855+00	validando	TRAMITE
+1007	335	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Beneficio de Contribuyente	f	2020-07-13 16:44:08.827329+00	finalizado	TRAMITE
+721	213	V-18455333	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-316120198	f	2020-06-30 19:00:25.439898+00	ingresardatos	IMPUESTO
+723	213	V-18455333	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-316120198	f	2020-06-30 19:01:06.107739+00	{"state":"validando"}	IMPUESTO
+725	214	V-19649021	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-411827428	f	2020-06-30 19:07:35.915302+00	ingresardatos	IMPUESTO
+727	214	V-19649021	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-411827428	f	2020-06-30 19:08:32.410389+00	{"state":"validando"}	IMPUESTO
+850	327	V-12934856	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-07-02 15:13:50.508903+00	enproceso	TRAMITE
+729	217	V-20000333	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-316703649	f	2020-06-30 19:16:22.626473+00	ingresardatos	IMPUESTO
+731	217	V-20000333	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-316703649	f	2020-06-30 19:17:28.28983+00	{"state":"validando"}	IMPUESTO
+733	226	V-12345690	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-302827515	f	2020-06-30 19:33:01.980484+00	ingresardatos	IMPUESTO
+735	226	V-12345690	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-302827515	f	2020-06-30 19:33:41.487777+00	{"state":"validando"}	IMPUESTO
+737	227	V-20000333	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-316703649	f	2020-06-30 19:37:20.963383+00	ingresardatos	IMPUESTO
+739	228	V-12345690	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-302827515	f	2020-06-30 19:37:46.983594+00	ingresardatos	IMPUESTO
+741	227	V-20000333	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-316703649	f	2020-06-30 19:38:28.497973+00	{"state":"validando"}	IMPUESTO
+743	228	V-12345690	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-302827515	f	2020-06-30 19:38:59.812026+00	{"state":"validando"}	IMPUESTO
+745	230	V-23555666	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070178787	f	2020-06-30 19:44:12.202112+00	ingresardatos	IMPUESTO
+747	230	V-23555666	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-070178787	f	2020-06-30 19:44:37.971408+00	{"state":"validando"}	IMPUESTO
+1121	366	V-1231931298	J-312645978	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 13:25:11.746834+00	enrevision	TRAMITE
+749	233	V-7555189	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-306166220	f	2020-06-30 20:11:45.016567+00	ingresardatos	IMPUESTO
+1193	380	V-1923812093	V-12543654	Se realizó la revisión de su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-21 18:00:35.894712+00	finalizado	TRAMITE
+751	233	V-7555189	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-306166220	f	2020-06-30 20:12:22.163939+00	{"state":"validando"}	IMPUESTO
+1194	380	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-21 18:00:35.919475+00	finalizado	TRAMITE
+753	235	V-18966554	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-400578116	f	2020-07-01 11:59:30.255968+00	ingresardatos	IMPUESTO
+755	235	V-18966554	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-400578116	f	2020-07-01 12:10:52.274811+00	{"state":"validando"}	IMPUESTO
+1008	343	V-1231931298	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-000202001	f	2020-07-13 16:44:24.20089+00	{"state":"finalizado"}	IMPUESTO
+757	241	V-36985214	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-313993557	f	2020-07-01 12:39:34.952136+00	ingresardatos	IMPUESTO
+759	241	V-36985214	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-313993557	f	2020-07-01 12:40:34.21095+00	{"state":"validando"}	IMPUESTO
+1122	366	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 13:25:11.77517+00	enrevision	TRAMITE
+761	242	V-36985214	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-313993557	f	2020-07-01 13:03:31.738601+00	ingresardatos	IMPUESTO
+1009	343	V-1231931298	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-000202001	t	2020-07-13 16:44:24.20089+00	{"state":"finalizado"}	IMPUESTO
+763	245	V-123456741	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-01 13:13:31.00922+00	ingresardatos	IMPUESTO
+1057	357	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-306020403	f	2020-07-14 18:06:20.8892+00	ingresardatos	IMPUESTO
+765	320	V-20002000	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-07-01 13:17:17.784506+00	enproceso	TRAMITE
+769	321	V-12345696	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-07-01 13:24:37.004816+00	enproceso	TRAMITE
+1063	362	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-07-15 12:34:40.765564+00	ingresardatos	IMPUESTO
+1084	350	V-18921679	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-07-15 19:43:36.466795+00	enproceso	TRAMITE
+774	320	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-07-01 13:26:28.8817+00	finalizado	TRAMITE
+776	321	V-1231931298	V-12345696	Se ha procesado su trámite de tipo Registro de Contribuyente	f	2020-07-01 13:27:18.801112+00	finalizado	TRAMITE
+777	321	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-07-01 13:27:18.801112+00	finalizado	TRAMITE
+773	320	V-1231931298	V-20002000	Se ha procesado su trámite de tipo Registro de Contribuyente	t	2020-07-01 13:26:28.8817+00	finalizado	TRAMITE
+779	322	V-9999999	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-07-01 13:32:13.084208+00	enproceso	TRAMITE
+783	323	V-78945612	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-07-01 13:44:35.288034+00	enproceso	TRAMITE
+791	323	V-1231931298	V-78945612	Se ha procesado su trámite de tipo Registro de Contribuyente	t	2020-07-01 14:04:09.979197+00	finalizado	TRAMITE
+787	324	V-30002000	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-07-01 13:47:40.454628+00	enproceso	TRAMITE
+804	325	V-1923812093	V-78945612	Se ha validado el pago de su trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-01 14:28:11.867213+00	enproceso	TRAMITE
+792	323	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-07-01 14:04:09.979197+00	finalizado	TRAMITE
+795	324	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-07-01 14:04:22.271112+00	finalizado	TRAMITE
+854	327	V-1231931298	V-12934856	Se ha procesado su trámite de tipo Registro de Contribuyente	f	2020-07-02 15:29:56.01619+00	finalizado	TRAMITE
+797	325	V-78945612	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-07-01 14:09:06.919816+00	validando	TRAMITE
+855	327	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-07-02 15:29:56.01619+00	finalizado	TRAMITE
+799	326	V-30002000	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-07-01 14:13:33.547026+00	validando	TRAMITE
+801	206	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-297143858	f	2020-07-01 14:26:35.508573+00	{"state":"finalizado"}	IMPUESTO
+1086	350	V-18921679	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-07-15 19:43:36.471373+00	enproceso	TRAMITE
+805	326	V-1923812093	V-1	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-01 14:28:11.884679+00	enproceso	TRAMITE
+507	278	V-27139153	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:18:20.035799+00	enproceso	TRAMITE
+807	325	V-1923812093	V-1	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-01 14:28:11.891758+00	enproceso	TRAMITE
+1034	338	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Beneficio de Contribuyente	f	2020-07-14 13:05:42.087678+00	finalizado	TRAMITE
+1041	340	V-27139153	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-07-14 15:21:42.803832+00	validando	TRAMITE
+1076	346	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Beneficio de Contribuyente	f	2020-07-15 16:56:12.9761+00	finalizado	TRAMITE
+809	242	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-313993557	f	2020-07-01 14:36:28.406431+00	{"state":"finalizado"}	IMPUESTO
+811	247	V-12345652	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-296585156	f	2020-07-01 14:51:15.021445+00	ingresardatos	IMPUESTO
+813	247	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-296585156	f	2020-07-01 14:55:16.036465+00	{"state":"finalizado"}	IMPUESTO
+1035	354	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	f	2020-07-14 13:10:38.063349+00	ingresardatos	IMPUESTO
+815	245	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-070020091	f	2020-07-01 15:07:41.066851+00	{"state":"finalizado"}	IMPUESTO
+794	324	V-1231931298	V-30002000	Se ha procesado su trámite de tipo Registro de Contribuyente	t	2020-07-01 14:04:22.271112+00	finalizado	TRAMITE
+803	326	V-1923812093	V-30002000	Se ha validado el pago de su trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-01 14:28:11.863138+00	enproceso	TRAMITE
+588	298	null-null	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 22:49:43.802474+00	enproceso	TRAMITE
+772	321	V-12345696	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 13:24:37.020205+00	enproceso	TRAMITE
+782	322	V-9999999	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 13:32:13.103509+00	enproceso	TRAMITE
+817	248	V-18455333	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-316120198	f	2020-07-01 15:17:49.730718+00	ingresardatos	IMPUESTO
+820	326	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-01 15:26:54.339341+00	finalizado	TRAMITE
+1165	376	V-1923812093	J-4005	Se realizó la revisión de su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-19 22:20:57.953471+00	finalizado	TRAMITE
+819	326	V-1231931298	V-30002000	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-01 15:26:54.339341+00	finalizado	TRAMITE
+822	249	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-700020005	f	2020-07-01 15:38:01.424731+00	ingresardatos	IMPUESTO
+826	325	V-1231931298	V-78945612	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-01 15:42:58.602367+00	finalizado	TRAMITE
+824	249	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-700020005	f	2020-07-01 15:38:52.444418+00	{"state":"finalizado"}	IMPUESTO
+857	328	V-12934856	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-07-02 15:43:54.274813+00	validando	TRAMITE
+827	325	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-01 15:42:58.602367+00	finalizado	TRAMITE
+829	250	V-78945612	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-314151612	f	2020-07-01 15:49:26.161521+00	ingresardatos	IMPUESTO
+1166	376	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-19 22:20:57.965432+00	finalizado	TRAMITE
+831	250	V-78945612	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-314151612	f	2020-07-01 15:50:33.202607+00	{"state":"validando"}	IMPUESTO
+1059	342	V-1923812093	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-07-14 19:55:12.801965+00	enrevision	TRAMITE
+1065	344	V-1923812093	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-07-15 12:37:13.397549+00	enrevision	TRAMITE
+859	328	V-1923812093	V-12934856	Se ha validado el pago de su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-02 15:52:56.085669+00	enproceso	TRAMITE
+860	328	V-1923812093	V-1	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-02 15:52:56.096907+00	enproceso	TRAMITE
+1195	381	V-1231931298	J-192837466	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-21 19:06:20.300828+00	enrevision	TRAMITE
+1196	381	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-21 19:06:20.317319+00	enrevision	TRAMITE
+1044	340	V-1923812093	V-1	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-14 15:24:11.764547+00	enproceso	TRAMITE
+1088	351	V-1231931298	V-25848973	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-15 19:47:45.615655+00	enrevision	TRAMITE
+1089	351	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-15 19:47:45.615655+00	enrevision	TRAMITE
+1077	343	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Beneficio de Contribuyente	f	2020-07-15 16:57:09.317804+00	finalizado	TRAMITE
+1043	340	V-1923812093	V-27139153	Se ha validado el pago de su trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-14 15:24:11.754081+00	enproceso	TRAMITE
+786	323	V-78945612	V-1231931298	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 13:44:35.30045+00	enproceso	TRAMITE
+1124	368	V-1231931298	J-312645978	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 13:25:41.635863+00	enrevision	TRAMITE
+1012	348	V-1231931298	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	f	2020-07-13 17:02:07.266864+00	ingresardatos	IMPUESTO
+1066	344	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Beneficio de Contribuyente	f	2020-07-15 13:41:54.589272+00	finalizado	TRAMITE
+1092	350	V-1231931298	V-1	Se ha procesado un trámite de tipo Registro de Contribuyente	f	2020-07-15 19:52:51.648619+00	finalizado	TRAMITE
+1091	350	V-1231931298	V-18921679	Se ha procesado su trámite de tipo Registro de Contribuyente	t	2020-07-15 19:52:51.648619+00	finalizado	TRAMITE
+867	252	V-12934856	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-406576458	f	2020-07-02 16:21:46.902567+00	{"state":"validando"}	IMPUESTO
+875	255	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 21:30:20.884036+00	ingresardatos	IMPUESTO
+879	257	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 21:43:09.497351+00	ingresardatos	IMPUESTO
+883	259	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 22:00:45.770935+00	ingresardatos	IMPUESTO
+887	261	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	f	2020-07-02 22:18:32.335293+00	ingresardatos	IMPUESTO
+891	262	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-07-03 15:04:09.856662+00	{"state":"finalizado"}	IMPUESTO
+896	329	V-9999999	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-07-03 15:34:50.544321+00	validando	TRAMITE
+898	263	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-06 17:59:54.246253+00	ingresardatos	IMPUESTO
+900	264	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-06 18:17:28.291585+00	ingresardatos	IMPUESTO
+902	265	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-06 18:22:52.758241+00	ingresardatos	IMPUESTO
+529	289	V-27139153	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 01:19:51.471895+00	enproceso	TRAMITE
+1037	339	V-1023910231	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-07-14 13:11:52.599676+00	enrevision	TRAMITE
+1125	368	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 13:25:41.652526+00	enrevision	TRAMITE
+1014	348	V-1231931298	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-000202001	f	2020-07-13 17:04:41.776225+00	{"state":"finalizado"}	IMPUESTO
+904	266	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-06 18:29:23.952297+00	ingresardatos	IMPUESTO
+906	267	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-06 18:33:31.425025+00	ingresardatos	IMPUESTO
+1060	361	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-003257176	f	2020-07-14 23:42:11.759732+00	ingresardatos	IMPUESTO
+908	268	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-06 18:40:42.222588+00	ingresardatos	IMPUESTO
+910	270	V-1293812738	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-07-09 12:12:37.735892+00	ingresardatos	IMPUESTO
+1067	364	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-003257176	f	2020-07-15 16:35:45.552823+00	ingresardatos	IMPUESTO
+912	330	V-1923812093	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-07-09 12:13:25.011938+00	enrevision	TRAMITE
+913	330	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Beneficio de Contribuyente	f	2020-07-09 12:27:59.778264+00	finalizado	TRAMITE
+914	277	V-12345679	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070015357	f	2020-07-09 14:06:40.382111+00	ingresardatos	IMPUESTO
+916	278	V-12345679	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070015357	f	2020-07-09 14:08:07.133829+00	ingresardatos	IMPUESTO
+1094	352	V-18921679	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-07-15 20:05:28.854083+00	validando	TRAMITE
+918	277	V-12345679	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-070015357	f	2020-07-09 14:15:27.18203+00	{"state":"validando"}	IMPUESTO
+1046	340	V-1231931298	V-27139153	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-14 15:24:51.15177+00	enrevision	TRAMITE
+920	278	V-12345679	V-1	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-070015357	f	2020-07-09 14:16:38.889143+00	{"state":"validando"}	IMPUESTO
+922	283	V-27139153	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-10 12:05:40.085842+00	ingresardatos	IMPUESTO
+924	283	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-07-10 13:20:45.06117+00	{"state":"finalizado"}	IMPUESTO
+1198	381	V-1923812093	J-192837466	Se realizó la revisión de su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-21 19:07:43.903517+00	finalizado	TRAMITE
+1199	381	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-21 19:07:43.917791+00	finalizado	TRAMITE
+1061	361	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-003257176	t	2020-07-14 23:42:11.759732+00	ingresardatos	IMPUESTO
+1068	364	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-003257176	t	2020-07-15 16:35:45.552823+00	ingresardatos	IMPUESTO
+1127	370	V-1231931298	J-312645978	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 13:31:39.604557+00	enrevision	TRAMITE
+1128	370	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 13:31:39.621337+00	enrevision	TRAMITE
+1095	352	V-18921679	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	t	2020-07-15 20:05:28.868057+00	validando	TRAMITE
+1171	378	V-1231931298	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-003257176	f	2020-07-20 17:18:51.132302+00	ingresardatos	IMPUESTO
+1015	348	V-1231931298	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-000202001	t	2020-07-13 17:04:41.776225+00	{"state":"finalizado"}	IMPUESTO
+1039	339	V-1923812093	V-1023910231	Se realizó la revisión de su trámite de tipo Beneficio de Contribuyente	f	2020-07-14 13:36:04.835584+00	finalizado	TRAMITE
+1040	339	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Beneficio de Contribuyente	f	2020-07-14 13:36:04.856733+00	finalizado	TRAMITE
+1047	340	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-14 15:24:51.15177+00	enrevision	TRAMITE
+528	289	V-27139153	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 01:19:51.212905+00	enproceso	TRAMITE
+1016	349	V-1231931298	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	f	2020-07-13 17:06:24.328606+00	ingresardatos	IMPUESTO
+1130	371	V-1231931298	J-312645978	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 13:38:39.695145+00	enrevision	TRAMITE
+1049	341	V-27139153	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-07-14 15:28:47.891986+00	validando	TRAMITE
+1018	350	V-18496685	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-13 18:46:18.734208+00	ingresardatos	IMPUESTO
+1062	343	V-1923812093	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-07-14 23:45:19.330694+00	enrevision	TRAMITE
+1131	371	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 13:38:39.719329+00	enrevision	TRAMITE
+1173	377	V-1231931298	V-23543878	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-21 12:29:43.39716+00	enrevision	TRAMITE
+1174	377	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-21 12:29:43.415038+00	enrevision	TRAMITE
+1200	381	V-12354965	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-003257176	f	2020-07-22 21:35:24.360555+00	ingresardatos	IMPUESTO
+1019	350	V-18496685	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	t	2020-07-13 18:46:18.734208+00	ingresardatos	IMPUESTO
+890	262	V-10888777	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	t	2020-07-03 14:51:51.83581+00	ingresardatos	IMPUESTO
+895	322	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-07-03 15:21:19.527365+00	finalizado	TRAMITE
+892	262	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	t	2020-07-03 15:04:09.856662+00	{"state":"finalizado"}	IMPUESTO
+897	329	V-9999999	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	t	2020-07-03 15:34:50.548302+00	validando	TRAMITE
+1069	365	V-12354965	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-003257176	f	2020-07-15 16:38:43.062497+00	ingresardatos	IMPUESTO
+899	263	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	t	2020-07-06 17:59:54.246253+00	ingresardatos	IMPUESTO
+901	264	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	t	2020-07-06 18:17:28.291585+00	ingresardatos	IMPUESTO
+1133	371	V-1923812093	J-312645978	Se realizó la revisión de su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 13:44:04.975364+00	finalizado	TRAMITE
+1020	350	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	f	2020-07-13 18:59:39.891426+00	{"state":"finalizado"}	IMPUESTO
+1071	345	V-1923812093	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-07-15 16:42:20.959344+00	enrevision	TRAMITE
+524	288	V-1923812093	V-27139153	Se ha validado el pago de su trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-06-26 01:11:07.448367+00	enproceso	TRAMITE
+502	277	V-1231931298	V-27139153	Se ha procesado su trámite de tipo Registro de Contribuyente	t	2020-06-25 20:28:50.447402+00	finalizado	TRAMITE
+1054	341	V-1231931298	V-27139153	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-14 16:59:49.328302+00	enrevision	TRAMITE
+624	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.882827+00	finalizado	IMPUESTO
+536	290	V-27139153	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 01:41:33.713198+00	enproceso	TRAMITE
+540	291	V-27139153	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 01:47:33.802821+00	enproceso	TRAMITE
+544	292	V-27139153	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 01:48:50.298102+00	enproceso	TRAMITE
+552	294	V-27139153	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 01:52:28.945246+00	enproceso	TRAMITE
+556	295	V-27139153	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 01:58:01.144142+00	enproceso	TRAMITE
+587	298	null-null	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 22:49:43.799291+00	enproceso	TRAMITE
+852	327	V-12934856	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-02 15:13:50.515546+00	enproceso	TRAMITE
+767	320	V-20002000	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 13:17:17.791392+00	enproceso	TRAMITE
+771	321	V-12345696	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 13:24:37.013473+00	enproceso	TRAMITE
+781	322	V-9999999	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 13:32:13.097819+00	enproceso	TRAMITE
+926	331	V-18496685	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-07-10 15:03:38.310285+00	enproceso	TRAMITE
+785	323	V-78945612	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 13:44:35.296851+00	enproceso	TRAMITE
+789	324	V-30002000	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 13:47:40.466392+00	enproceso	TRAMITE
+930	298	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	f	2020-07-10 15:53:54.141082+00	ingresardatos	IMPUESTO
+932	298	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-000202001	f	2020-07-10 15:55:28.11513+00	{"state":"finalizado"}	IMPUESTO
+934	299	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	f	2020-07-10 15:58:15.308731+00	ingresardatos	IMPUESTO
+936	299	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-000202001	f	2020-07-10 15:59:41.686705+00	{"state":"finalizado"}	IMPUESTO
+938	300	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	f	2020-07-10 16:00:26.977582+00	ingresardatos	IMPUESTO
+940	301	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	f	2020-07-10 16:26:17.050893+00	ingresardatos	IMPUESTO
+942	301	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-000202001	f	2020-07-10 16:27:29.73935+00	{"state":"finalizado"}	IMPUESTO
+1134	371	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 13:44:05.009701+00	finalizado	TRAMITE
+944	302	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	f	2020-07-10 16:30:10.956804+00	ingresardatos	IMPUESTO
+1176	377	V-1923812093	V-23543878	Se realizó la revisión de su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-21 12:59:30.510836+00	finalizado	TRAMITE
+946	302	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-000202001	f	2020-07-10 16:32:11.364479+00	{"state":"finalizado"}	IMPUESTO
+948	303	V-10528417	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	f	2020-07-10 16:46:15.987469+00	ingresardatos	IMPUESTO
+950	332	V-1923812093	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-07-10 16:49:31.022341+00	enrevision	TRAMITE
+973	303	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-000202001	f	2020-07-13 01:31:32.101582+00	{"state":"finalizado"}	IMPUESTO
+625	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.886166+00	finalizado	IMPUESTO
+983	338	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-311456759	f	2020-07-13 13:46:28.036453+00	ingresardatos	IMPUESTO
+989	339	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-413060540	f	2020-07-13 13:49:32.232317+00	{"state":"finalizado"}	IMPUESTO
+993	340	V-1231931298	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-000202001	f	2020-07-13 15:49:44.551202+00	{"state":"finalizado"}	IMPUESTO
+951	310	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	f	2020-07-10 17:33:05.022337+00	ingresardatos	IMPUESTO
+1022	351	V-18496685	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	f	2020-07-13 19:29:29.277204+00	ingresardatos	IMPUESTO
+953	310	V-1023910231	V-1	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-000202001	f	2020-07-10 17:33:58.361514+00	{"state":"finalizado"}	IMPUESTO
+955	311	V-1023910231	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	f	2020-07-10 17:36:13.46802+00	ingresardatos	IMPUESTO
+957	312	V-1293812738	V-1	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	f	2020-07-10 17:38:48.870822+00	ingresardatos	IMPUESTO
+959	333	V-1923812093	V-1	Un trámite de tipo Beneficio de Contribuyente ha sido creado	f	2020-07-10 17:39:53.674928+00	enrevision	TRAMITE
+960	333	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Beneficio de Contribuyente	f	2020-07-10 17:40:22.959409+00	finalizado	TRAMITE
+963	332	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Beneficio de Contribuyente	f	2020-07-10 19:44:47.582839+00	finalizado	TRAMITE
+1135	372	undefined-312645978	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-07-16 13:47:33.31935+00	validando	TRAMITE
+1177	377	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-21 12:59:30.524107+00	finalizado	TRAMITE
+1185	379	V-1231931298	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-192837465	t	2020-07-21 17:30:12.836869+00	ingresardatos	IMPUESTO
+928	331	V-18496685	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-10 15:03:38.324335+00	enproceso	TRAMITE
+1074	369	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-003257176	t	2020-07-15 16:52:02.368481+00	ingresardatos	IMPUESTO
+1190	380	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-21 17:50:28.883233+00	enrevision	TRAMITE
+1117	364	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-16 13:24:37.668846+00	enrevision	TRAMITE
+1161	375	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-16 14:37:40.9648+00	finalizado	TRAMITE
+555	295	V-27139153	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 01:58:00.888885+00	enproceso	TRAMITE
+778	321	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-07-01 13:27:18.801112+00	finalizado	TRAMITE
+780	322	V-9999999	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 13:32:13.090825+00	enproceso	TRAMITE
+784	323	V-78945612	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 13:44:35.29387+00	enproceso	TRAMITE
+788	324	V-30002000	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 13:47:40.4631+00	enproceso	TRAMITE
+1036	354	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	t	2020-07-14 13:10:38.063349+00	ingresardatos	IMPUESTO
+726	214	V-19649021	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-411827428	t	2020-06-30 19:07:35.915302+00	ingresardatos	IMPUESTO
+728	214	V-19649021	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-411827428	t	2020-06-30 19:08:32.410389+00	{"state":"validando"}	IMPUESTO
+568	165	V-27139153	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	t	2020-06-26 17:03:36.969559+00	ingresardatos	IMPUESTO
+793	323	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-07-01 14:04:09.979197+00	finalizado	TRAMITE
+1048	340	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-14 15:24:51.15177+00	enrevision	TRAMITE
+1137	372	V-1923812093	J-312645978	Se ha validado el pago de su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 13:52:45.316312+00	enproceso	TRAMITE
+1138	372	V-1923812093	V-1	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 13:52:45.343904+00	enproceso	TRAMITE
+1139	372	V-1923812093	V-1231931298	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-16 13:52:45.350756+00	enproceso	TRAMITE
+1178	378	V-1231931298	J-312645977	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-21 14:10:14.77124+00	enrevision	TRAMITE
+1179	378	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-21 14:10:14.812009+00	enrevision	TRAMITE
+1017	349	V-1231931298	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	t	2020-07-13 17:06:24.328606+00	ingresardatos	IMPUESTO
+560	295	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-06-26 02:01:05.832879+00	finalizado	TRAMITE
+775	320	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-07-01 13:26:28.8817+00	finalizado	TRAMITE
+742	227	V-20000333	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-316703649	t	2020-06-30 19:38:28.497973+00	{"state":"validando"}	IMPUESTO
+939	300	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	t	2020-07-10 16:00:26.977582+00	ingresardatos	IMPUESTO
+1025	336	V-5678987	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-13 19:30:55.771456+00	enproceso	TRAMITE
+1123	366	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-16 13:25:11.780526+00	enrevision	TRAMITE
+1170	377	V-1231931298	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-003257176	t	2020-07-20 17:14:30.697286+00	ingresardatos	IMPUESTO
+858	328	V-12934856	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	t	2020-07-02 15:43:54.278604+00	validando	TRAMITE
+519	279	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-06-25 23:49:32.283486+00	finalizado	TRAMITE
+521	286	V-27139153	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	t	2020-06-26 01:02:31.96821+00	validando	TRAMITE
+523	288	V-27139153	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	t	2020-06-26 01:08:29.355076+00	validando	TRAMITE
+533	289	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-06-26 01:22:23.405168+00	finalizado	TRAMITE
+539	291	V-27139153	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 01:47:33.541611+00	enproceso	TRAMITE
+744	228	V-12345690	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-302827515	t	2020-06-30 19:38:59.812026+00	{"state":"validando"}	IMPUESTO
+746	230	V-23555666	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070178787	t	2020-06-30 19:44:12.202112+00	ingresardatos	IMPUESTO
+748	230	V-23555666	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-070178787	t	2020-06-30 19:44:37.971408+00	{"state":"validando"}	IMPUESTO
+586	298	null-null	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 22:49:43.796743+00	enproceso	TRAMITE
+750	233	V-7555189	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-306166220	t	2020-06-30 20:11:45.016567+00	ingresardatos	IMPUESTO
+752	233	V-7555189	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-306166220	t	2020-06-30 20:12:22.163939+00	{"state":"validando"}	IMPUESTO
+754	235	V-18966554	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-400578116	t	2020-07-01 11:59:30.255968+00	ingresardatos	IMPUESTO
+756	235	V-18966554	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-400578116	t	2020-07-01 12:10:52.274811+00	{"state":"validando"}	IMPUESTO
+758	241	V-36985214	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-313993557	t	2020-07-01 12:39:34.952136+00	ingresardatos	IMPUESTO
+760	241	V-36985214	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-313993557	t	2020-07-01 12:40:34.21095+00	{"state":"validando"}	IMPUESTO
+762	242	V-36985214	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-313993557	t	2020-07-01 13:03:31.738601+00	ingresardatos	IMPUESTO
+1140	373	V-1231931298	J-312645978	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 14:09:30.848204+00	enrevision	TRAMITE
+1141	373	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 14:09:30.861318+00	enrevision	TRAMITE
+1181	379	V-1231931298	J-312645977	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-21 14:31:08.277381+00	enrevision	TRAMITE
+1182	379	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-21 14:31:08.309972+00	enrevision	TRAMITE
+764	245	V-123456741	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	t	2020-07-01 13:13:31.00922+00	ingresardatos	IMPUESTO
+796	324	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-07-01 14:04:22.271112+00	finalizado	TRAMITE
+798	325	V-78945612	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	t	2020-07-01 14:09:06.923916+00	validando	TRAMITE
+800	326	V-30002000	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	t	2020-07-01 14:13:33.550759+00	validando	TRAMITE
+802	206	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-297143858	t	2020-07-01 14:26:35.508573+00	{"state":"finalizado"}	IMPUESTO
+1126	368	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-16 13:25:41.658133+00	enrevision	TRAMITE
+810	242	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-313993557	t	2020-07-01 14:36:28.406431+00	{"state":"finalizado"}	IMPUESTO
+504	277	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-06-25 20:28:51.220302+00	finalizado	TRAMITE
+506	278	V-27139153	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 21:18:19.70664+00	enproceso	TRAMITE
+510	279	V-27139153	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	t	2020-06-25 22:07:15.850543+00	validando	TRAMITE
+513	278	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-06-25 22:38:38.475195+00	finalizado	TRAMITE
+535	290	V-27139153	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 01:41:33.273263+00	enproceso	TRAMITE
+812	247	V-12345652	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-296585156	t	2020-07-01 14:51:15.021445+00	ingresardatos	IMPUESTO
+1129	370	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-16 13:31:39.625236+00	enrevision	TRAMITE
+1172	378	V-1231931298	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-003257176	t	2020-07-20 17:18:51.132302+00	ingresardatos	IMPUESTO
+1085	350	V-18921679	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-15 19:43:36.469331+00	enproceso	TRAMITE
+814	247	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-296585156	t	2020-07-01 14:55:16.036465+00	{"state":"finalizado"}	IMPUESTO
+816	245	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-070020091	t	2020-07-01 15:07:41.066851+00	{"state":"finalizado"}	IMPUESTO
+1197	381	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-21 19:06:20.320091+00	enrevision	TRAMITE
+497	276	V-27139153	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 19:06:07.748238+00	enrevision	TRAMITE
+499	277	V-27139153	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-25 20:22:46.677223+00	enproceso	TRAMITE
+821	326	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-01 15:26:54.339341+00	finalizado	TRAMITE
+823	249	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-700020005	t	2020-07-01 15:38:01.424731+00	ingresardatos	IMPUESTO
+830	250	V-78945612	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-314151612	t	2020-07-01 15:49:26.161521+00	ingresardatos	IMPUESTO
+832	250	V-78945612	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-314151612	t	2020-07-01 15:50:33.202607+00	{"state":"validando"}	IMPUESTO
+868	252	V-12934856	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-406576458	t	2020-07-02 16:21:46.902567+00	{"state":"validando"}	IMPUESTO
+888	261	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	t	2020-07-02 22:18:32.335293+00	ingresardatos	IMPUESTO
+1001	341	V-1231931298	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-000202001	t	2020-07-13 16:27:25.958401+00	{"state":"finalizado"}	IMPUESTO
+1003	342	V-25848973	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	t	2020-07-13 16:41:24.88859+00	ingresardatos	IMPUESTO
+954	310	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-000202001	t	2020-07-10 17:33:58.361514+00	{"state":"finalizado"}	IMPUESTO
+1056	341	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-14 16:59:49.328302+00	enrevision	TRAMITE
+849	251	V-12981762	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-410984694	t	2020-07-02 14:02:13.294929+00	{"state":"validando"}	IMPUESTO
+1058	357	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-306020403	t	2020-07-14 18:06:20.8892+00	ingresardatos	IMPUESTO
+1064	362	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	t	2020-07-15 12:34:40.765564+00	ingresardatos	IMPUESTO
+1005	343	V-1231931298	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	t	2020-07-13 16:42:27.45734+00	ingresardatos	IMPUESTO
+967	334	V-12543654	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-13 01:02:24.117889+00	enproceso	TRAMITE
+972	334	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-07-13 01:09:31.533035+00	finalizado	TRAMITE
+978	328	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-000202001	t	2020-07-13 13:08:50.062602+00	{"state":"finalizado"}	IMPUESTO
+1026	336	V-5678987	V-1023910231	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-13 19:30:55.774064+00	enproceso	TRAMITE
+1143	372	V-1231931298	J-312645978	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 14:17:58.250815+00	enrevision	TRAMITE
+1144	372	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 14:17:58.250815+00	enrevision	TRAMITE
+982	335	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-413060540	t	2020-07-13 13:43:14.378583+00	{"state":"finalizado"}	IMPUESTO
+988	338	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-311456759	t	2020-07-13 13:48:16.402619+00	{"state":"finalizado"}	IMPUESTO
+562	163	null-null	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	t	2020-06-26 04:27:20.873159+00	ingresardatos	IMPUESTO
+564	296	V-1231234444	V-1923812093	Un trámite de tipo Beneficio de Contribuyente ha sido creado	t	2020-06-26 06:44:52.45134+00	enrevision	TRAMITE
+566	297	V-1231234444	V-1923812093	Un trámite de tipo Beneficio de Contribuyente ha sido creado	t	2020-06-26 06:47:30.877198+00	enrevision	TRAMITE
+866	252	V-12934856	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-406576458	t	2020-07-02 16:19:57.555154+00	ingresardatos	IMPUESTO
+882	258	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	t	2020-07-02 21:47:47.966438+00	ingresardatos	IMPUESTO
+870	253	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-413060540	t	2020-07-02 19:44:33.057281+00	ingresardatos	IMPUESTO
+874	254	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	t	2020-07-02 21:22:39.960649+00	ingresardatos	IMPUESTO
+878	256	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	t	2020-07-02 21:41:52.330477+00	ingresardatos	IMPUESTO
+1072	345	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Beneficio de Contribuyente	f	2020-07-15 16:42:59.518386+00	finalizado	TRAMITE
+626	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.889366+00	finalizado	IMPUESTO
+627	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.892688+00	finalizado	IMPUESTO
+628	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.899163+00	finalizado	IMPUESTO
+629	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.902389+00	finalizado	IMPUESTO
+630	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.905627+00	finalizado	IMPUESTO
+631	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.908885+00	finalizado	IMPUESTO
+632	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.912126+00	finalizado	IMPUESTO
+633	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.918123+00	finalizado	IMPUESTO
+634	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.921334+00	finalizado	IMPUESTO
+635	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.927119+00	finalizado	IMPUESTO
+636	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.93176+00	finalizado	IMPUESTO
+637	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.934951+00	finalizado	IMPUESTO
+638	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.938292+00	finalizado	IMPUESTO
+639	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.941518+00	finalizado	IMPUESTO
+640	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.944752+00	finalizado	IMPUESTO
+641	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.947877+00	finalizado	IMPUESTO
+642	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.950765+00	finalizado	IMPUESTO
+643	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.953861+00	finalizado	IMPUESTO
+644	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.957173+00	finalizado	IMPUESTO
+645	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.960366+00	finalizado	IMPUESTO
+646	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.963419+00	finalizado	IMPUESTO
+1024	336	V-5678987	V-1	Un trámite de tipo Registro de Contribuyente ha sido creado	f	2020-07-13 19:30:55.768169+00	enproceso	TRAMITE
+647	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.966536+00	finalizado	IMPUESTO
+648	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.970117+00	finalizado	IMPUESTO
+649	198	V-1923812093	V-27139153	Se ha finalizado una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:44:04.973424+00	finalizado	IMPUESTO
+886	260	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	t	2020-07-02 22:10:41.583764+00	ingresardatos	IMPUESTO
+654	199	V-1023910231	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	t	2020-06-27 16:50:27.693809+00	{"state":"validando"}	IMPUESTO
+907	267	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	t	2020-07-06 18:33:31.425025+00	ingresardatos	IMPUESTO
+1096	352	V-1923812093	V-18921679	Se ha validado el pago de su trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-15 20:07:39.477801+00	enproceso	TRAMITE
+1099	352	V-1231931298	V-18921679	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-15 20:11:45.449384+00	enrevision	TRAMITE
+909	268	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	t	2020-07-06 18:40:42.222588+00	ingresardatos	IMPUESTO
+1146	372	V-1923812093	J-312645978	Se realizó la revisión de su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 14:20:47.071221+00	finalizado	TRAMITE
+1147	372	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 14:20:47.088478+00	finalizado	TRAMITE
+1098	352	V-1923812093	V-1231931298	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-15 20:07:39.502872+00	enproceso	TRAMITE
+911	270	V-1293812738	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	t	2020-07-09 12:12:37.735892+00	ingresardatos	IMPUESTO
+1070	365	V-12354965	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-003257176	t	2020-07-15 16:38:43.062497+00	ingresardatos	IMPUESTO
+851	327	V-12934856	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-02 15:13:50.512562+00	enproceso	TRAMITE
+590	181	null-null	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	t	2020-06-26 23:17:15.038059+00	ingresardatos	IMPUESTO
+1023	351	V-18496685	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	t	2020-07-13 19:29:29.277204+00	ingresardatos	IMPUESTO
+592	181	null-null	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	t	2020-06-26 23:46:26.508527+00	{"state":"validando"}	IMPUESTO
+1175	377	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-21 12:29:43.419+00	enrevision	TRAMITE
+597	193	V-1231931298	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-413060540	t	2020-06-27 01:36:27.634336+00	ingresardatos	IMPUESTO
+543	292	V-27139153	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 01:48:49.670177+00	enproceso	TRAMITE
+1042	340	V-27139153	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	t	2020-07-14 15:21:42.813111+00	validando	TRAMITE
+576	171	V-27139153	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	t	2020-06-26 18:58:24.718913+00	ingresardatos	IMPUESTO
+1097	352	V-1923812093	V-1	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-15 20:07:39.498277+00	enproceso	TRAMITE
+1100	352	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-15 20:11:45.449384+00	enrevision	TRAMITE
+578	171	V-27139153	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	t	2020-06-26 18:58:38.993864+00	{"state":"validando"}	IMPUESTO
+1102	353	V-12543654	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-07-15 20:36:57.698841+00	validando	TRAMITE
+580	173	V-27139153	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	t	2020-06-26 20:41:34.670731+00	ingresardatos	IMPUESTO
+582	173	V-27139153	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-26 22:42:37.350341+00	{"state":"validando"}	IMPUESTO
+584	174	V-27139153	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	t	2020-06-26 22:45:58.363933+00	ingresardatos	IMPUESTO
+618	198	V-27139153	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	t	2020-06-27 04:18:41.828186+00	ingresardatos	IMPUESTO
+903	265	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	t	2020-07-06 18:22:52.758241+00	ingresardatos	IMPUESTO
+905	266	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	t	2020-07-06 18:29:23.952297+00	ingresardatos	IMPUESTO
+1021	350	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	t	2020-07-13 18:59:39.891426+00	{"state":"finalizado"}	IMPUESTO
+965	323	V-10528417	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	t	2020-07-13 00:45:58.689675+00	ingresardatos	IMPUESTO
+947	302	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-000202001	t	2020-07-10 16:32:11.364479+00	{"state":"finalizado"}	IMPUESTO
+620	198	V-27139153	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:18:59.615839+00	{"state":"validando"}	IMPUESTO
+847	251	V-12981762	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-410984694	t	2020-07-02 13:55:56.080604+00	ingresardatos	IMPUESTO
+720	319	V-12345688	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	t	2020-06-30 18:57:03.69683+00	validando	TRAMITE
+622	174	V-1023910231	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-27 04:30:50.849376+00	{"state":"validando"}	IMPUESTO
+976	328	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	t	2020-07-13 13:05:24.399972+00	ingresardatos	IMPUESTO
+980	335	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-413060540	t	2020-07-13 13:40:21.823894+00	ingresardatos	IMPUESTO
+1148	374	V-1231931298	J-312645978	Se ha procesado su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 14:23:36.99382+00	enrevision	TRAMITE
+1149	374	V-1231931298	V-1	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 14:23:37.010412+00	enrevision	TRAMITE
+986	339	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-413060540	t	2020-07-13 13:46:58.933594+00	ingresardatos	IMPUESTO
+652	199	V-10555777	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	t	2020-06-27 16:36:18.328194+00	ingresardatos	IMPUESTO
+1136	372	undefined-312645978	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	t	2020-07-16 13:47:33.323055+00	validando	TRAMITE
+656	200	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	t	2020-06-27 17:01:41.466493+00	ingresardatos	IMPUESTO
+1201	381	V-12354965	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-003257176	t	2020-07-22 21:35:24.360555+00	ingresardatos	IMPUESTO
+658	200	V-1023910231	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	t	2020-06-30 12:58:42.910166+00	{"state":"validando"}	IMPUESTO
+662	206	V-15999000	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-297143858	t	2020-06-30 17:57:40.436255+00	ingresardatos	IMPUESTO
+716	209	V-12345688	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-410984694	t	2020-06-30 18:54:32.280094+00	ingresardatos	IMPUESTO
+718	209	V-12345688	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-410984694	t	2020-06-30 18:55:16.030271+00	{"state":"validando"}	IMPUESTO
+974	303	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-000202001	t	2020-07-13 01:31:32.101582+00	{"state":"finalizado"}	IMPUESTO
+984	338	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-311456759	t	2020-07-13 13:46:28.036453+00	ingresardatos	IMPUESTO
+990	339	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-413060540	t	2020-07-13 13:49:32.232317+00	{"state":"finalizado"}	IMPUESTO
+992	340	V-1231931298	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	t	2020-07-13 15:46:11.242445+00	ingresardatos	IMPUESTO
+994	340	V-1231931298	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-000202001	t	2020-07-13 15:49:44.551202+00	{"state":"finalizado"}	IMPUESTO
+915	277	V-12345679	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070015357	t	2020-07-09 14:06:40.382111+00	ingresardatos	IMPUESTO
+917	278	V-12345679	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070015357	t	2020-07-09 14:08:07.133829+00	ingresardatos	IMPUESTO
+919	277	V-12345679	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-070015357	t	2020-07-09 14:15:27.18203+00	{"state":"validando"}	IMPUESTO
+956	311	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	t	2020-07-10 17:36:13.46802+00	ingresardatos	IMPUESTO
+958	312	V-1293812738	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-304689713	t	2020-07-10 17:38:48.870822+00	ingresardatos	IMPUESTO
+766	320	V-20002000	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 13:17:17.788108+00	enproceso	TRAMITE
+921	278	V-12345679	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-070015357	t	2020-07-09 14:16:38.889143+00	{"state":"validando"}	IMPUESTO
+872	253	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-413060540	t	2020-07-02 19:51:02.795929+00	{"state":"finalizado"}	IMPUESTO
+876	255	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	t	2020-07-02 21:30:20.884036+00	ingresardatos	IMPUESTO
+880	257	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	t	2020-07-02 21:43:09.497351+00	ingresardatos	IMPUESTO
+1180	378	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-21 14:10:14.820468+00	enrevision	TRAMITE
+1142	373	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-16 14:09:30.863931+00	enrevision	TRAMITE
+1183	379	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-21 14:31:08.316977+00	enrevision	TRAMITE
+722	213	V-18455333	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-316120198	t	2020-06-30 19:00:25.439898+00	ingresardatos	IMPUESTO
+1145	372	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-16 14:17:58.250815+00	enrevision	TRAMITE
+730	217	V-20000333	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-316703649	t	2020-06-30 19:16:22.626473+00	ingresardatos	IMPUESTO
+732	217	V-20000333	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-316703649	t	2020-06-30 19:17:28.28983+00	{"state":"validando"}	IMPUESTO
+734	226	V-12345690	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-302827515	t	2020-06-30 19:33:01.980484+00	ingresardatos	IMPUESTO
+736	226	V-12345690	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-302827515	t	2020-06-30 19:33:41.487777+00	{"state":"validando"}	IMPUESTO
+738	227	V-20000333	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-316703649	t	2020-06-30 19:37:20.963383+00	ingresardatos	IMPUESTO
+1150	374	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-16 14:23:37.016901+00	enrevision	TRAMITE
+1114	358	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-16 13:22:37.022692+00	enrevision	TRAMITE
+1164	376	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-19 22:19:18.876599+00	enrevision	TRAMITE
+1168	376	V-1231931298	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-003257176	t	2020-07-20 15:31:30.98507+00	ingresardatos	IMPUESTO
+1111	375	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: V-18921679	t	2020-07-15 21:34:30.829195+00	ingresardatos	IMPUESTO
+1151	374	V-1923812093	J-312645978	Se realizó la revisión de su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 14:29:02.703031+00	finalizado	TRAMITE
+1152	374	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 14:29:02.722306+00	finalizado	TRAMITE
+1120	365	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-16 13:24:52.500637+00	enrevision	TRAMITE
+1083	349	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-15 19:37:43.283951+00	enrevision	TRAMITE
+740	228	V-12345690	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-302827515	t	2020-06-30 19:37:46.983594+00	ingresardatos	IMPUESTO
+856	327	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-07-02 15:29:56.01619+00	finalizado	TRAMITE
+770	321	V-12345696	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-01 13:24:37.00989+00	enproceso	TRAMITE
+1038	339	V-1023910231	V-1923812093	Un trámite de tipo Beneficio de Contribuyente ha sido creado	t	2020-07-14 13:11:52.602415+00	enrevision	TRAMITE
+864	328	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-02 15:55:42.688945+00	finalizado	TRAMITE
+547	293	V-27139153	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 01:51:23.829598+00	enproceso	TRAMITE
+551	294	V-27139153	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-06-26 01:52:28.677247+00	enproceso	TRAMITE
+1013	348	V-1231931298	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	t	2020-07-13 17:02:07.266864+00	ingresardatos	IMPUESTO
+1093	350	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Registro de Contribuyente	t	2020-07-15 19:52:51.648619+00	finalizado	TRAMITE
+825	249	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-700020005	t	2020-07-01 15:38:52.444418+00	{"state":"finalizado"}	IMPUESTO
+828	325	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-01 15:42:58.602367+00	finalizado	TRAMITE
+724	213	V-18455333	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-316120198	t	2020-06-30 19:01:06.107739+00	{"state":"validando"}	IMPUESTO
+818	248	V-18455333	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-316120198	t	2020-07-01 15:17:49.730718+00	ingresardatos	IMPUESTO
+570	165	V-27139153	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-304689713	t	2020-06-26 17:42:35.852862+00	{"state":"validando"}	IMPUESTO
+572	170	V-27139153	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	t	2020-06-26 18:51:56.606695+00	ingresardatos	IMPUESTO
+574	170	V-27139153	V-1923812093	Se han ingresado los datos de pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	t	2020-06-26 18:52:17.922487+00	{"state":"validando"}	IMPUESTO
+1090	351	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-15 19:47:45.615655+00	enrevision	TRAMITE
+1132	371	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-16 13:38:39.72353+00	enrevision	TRAMITE
+923	283	V-27139153	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-308620483	t	2020-07-10 12:05:40.085842+00	ingresardatos	IMPUESTO
+925	283	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-308620483	t	2020-07-10 13:20:45.06117+00	{"state":"finalizado"}	IMPUESTO
+927	331	V-18496685	V-1923812093	Un trámite de tipo Registro de Contribuyente ha sido creado	t	2020-07-10 15:03:38.313648+00	enproceso	TRAMITE
+931	298	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	t	2020-07-10 15:53:54.141082+00	ingresardatos	IMPUESTO
+933	298	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-000202001	t	2020-07-10 15:55:28.11513+00	{"state":"finalizado"}	IMPUESTO
+935	299	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	t	2020-07-10 15:58:15.308731+00	ingresardatos	IMPUESTO
+937	299	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-000202001	t	2020-07-10 15:59:41.686705+00	{"state":"finalizado"}	IMPUESTO
+941	301	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	t	2020-07-10 16:26:17.050893+00	ingresardatos	IMPUESTO
+1153	375	undefined-312645978	V-1	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	f	2020-07-16 14:34:45.134499+00	validando	TRAMITE
+943	301	V-1023910231	V-1923812093	Se ha validado el pago de una solicitud de pago de impuestos para el contribuyente: J-000202001	t	2020-07-10 16:27:29.73935+00	{"state":"finalizado"}	IMPUESTO
+945	302	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	t	2020-07-10 16:30:10.956804+00	ingresardatos	IMPUESTO
+1050	341	V-27139153	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	t	2020-07-14 15:28:47.895204+00	validando	TRAMITE
+949	303	V-10528417	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	t	2020-07-10 16:46:15.987469+00	ingresardatos	IMPUESTO
+952	310	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-000202001	t	2020-07-10 17:33:05.022337+00	ingresardatos	IMPUESTO
+1154	375	undefined-312645978	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	t	2020-07-16 14:34:45.139045+00	validando	TRAMITE
+1104	351	V-1923812093	V-25848973	Se realizó la revisión de su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-15 20:41:48.252491+00	finalizado	TRAMITE
+1105	351	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-15 20:41:48.274093+00	finalizado	TRAMITE
+1107	352	V-1923812093	V-1	Se realizó la revisión de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-15 20:42:15.910404+00	finalizado	TRAMITE
+1106	352	V-1923812093	V-18921679	Se realizó la revisión de su trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-15 20:42:15.827588+00	finalizado	TRAMITE
+1155	375	undefined-312645978	J-312645978	Se ha validado el pago de su trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 14:35:39.880899+00	enproceso	TRAMITE
+1156	375	undefined-312645978	V-1	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	f	2020-07-16 14:35:39.897004+00	enproceso	TRAMITE
+1158	375	undefined-312645978	V-1231931298	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-16 14:35:39.904854+00	enproceso	TRAMITE
+884	259	V-1023910231	V-1923812093	Se ha iniciado una solicitud para el contribuyente con el documento de identidad: J-070020091	t	2020-07-02 22:00:45.770935+00	ingresardatos	IMPUESTO
+1101	352	V-1231931298	V-1923812093	Se ha procesado un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-15 20:11:45.449384+00	enrevision	TRAMITE
+1103	353	V-12543654	V-1923812093	Un trámite de tipo Solicitud de Licencia de Actividades Económicas ha sido creado	t	2020-07-15 20:36:57.715315+00	validando	TRAMITE
+1157	375	undefined-312645978	V-1923812093	Se ha validado el pago de un trámite de tipo Solicitud de Licencia de Actividades Económicas	t	2020-07-16 14:35:39.900748+00	enproceso	TRAMITE
 \.
 
 
 --
--- TOC entry 4343 (class 0 OID 70337)
--- Dependencies: 322
--- Data for Name: operacion; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: operacion; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.operacion (id_operacion, nombre_op) FROM stdin;
@@ -8609,9 +10514,7 @@ COPY public.operacion (id_operacion, nombre_op) FROM stdin;
 
 
 --
--- TOC entry 4344 (class 0 OID 70344)
--- Dependencies: 323
--- Data for Name: operatividad_terminal; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: operatividad_terminal; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.operatividad_terminal (id_operatividad_terminal, destino, tipo, monto, tasa, habilitado) FROM stdin;
@@ -8688,9 +10591,7 @@ COPY public.operatividad_terminal (id_operatividad_terminal, destino, tipo, mont
 
 
 --
--- TOC entry 4346 (class 0 OID 70355)
--- Dependencies: 325
--- Data for Name: ordenanza; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: ordenanza; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.ordenanza (id_ordenanza, descripcion, tarifa, id_valor, habilitado) FROM stdin;
@@ -8755,9 +10656,7 @@ COPY public.ordenanza (id_ordenanza, descripcion, tarifa, id_valor, habilitado) 
 
 
 --
--- TOC entry 4347 (class 0 OID 70362)
--- Dependencies: 326
--- Data for Name: ordenanza_tramite; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: ordenanza_tramite; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.ordenanza_tramite (id_ordenanza_tramite, id_tramite, id_tarifa, utmm, valor_calc, factor, factor_value, costo_ordenanza) FROM stdin;
@@ -8765,9 +10664,7 @@ COPY public.ordenanza_tramite (id_ordenanza_tramite, id_tramite, id_tarifa, utmm
 
 
 --
--- TOC entry 4351 (class 0 OID 70383)
--- Dependencies: 331
--- Data for Name: pago; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: pago; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.pago (id_pago, id_procedimiento, referencia, monto, fecha_de_pago, aprobado, id_banco, fecha_de_aprobacion, concepto, metodo_pago, id_usuario) FROM stdin;
@@ -8777,24 +10674,22 @@ COPY public.pago (id_pago, id_procedimiento, referencia, monto, fecha_de_pago, a
 238	171	123	123124123123123	2020-06-26	f	1	\N	IMPUESTO	TRANSFERENCIA	\N
 239	173	29877744	100000000	2020-06-26	f	1	\N	IMPUESTO	TRANSFERENCIA	\N
 240	173	47000000	64660000	2020-06-26	f	2	\N	IMPUESTO	TRANSFERENCIA	\N
-285	325	123412345	1000000.0	2020-06-30	t	1	2020-07-01 10:28:11.778756-04	TRAMITE	TRANSFERENCIA	\N
-289	242	8888899999	56145000	2020-07-01	t	21	2020-07-01 10:36:28.350918-04	IMPUESTO	PUNTO DE VENTA	\N
-290	247	890765444	25000000	2020-07-01	t	21	2020-07-01 10:55:15.967365-04	IMPUESTO	TRANSFERENCIA	\N
-291	247	7899	30000000	2020-07-01	t	14	2020-07-01 10:55:15.967365-04	IMPUESTO	PUNTO DE VENTA	\N
-292	247	9012121212	2265000	2020-07-01	t	8	2020-07-01 10:55:15.967365-04	IMPUESTO	CHEQUE	\N
-293	245	\N	63000000	2020-07-01	t	\N	2020-07-01 11:07:41.002446-04	IMPUESTO	EFECTIVO	\N
-294	249	456789999	124500000	2020-07-01	t	2	2020-07-01 11:38:52.404891-04	IMPUESTO	TRANSFERENCIA	\N
-295	250	123456789	17600000	2020-07-01	t	1	2020-07-01 13:15:06.309225-04	IMPUESTO	TRANSFERENCIA	\N
-296	250	1234567888	50000000	2020-07-01	t	1	2020-07-01 13:21:42.133087-04	IMPUESTO	TRANSFERENCIA	\N
-297	250	12345687	50000000	2020-07-01	t	1	2020-07-01 13:43:41.384891-04	IMPUESTO	TRANSFERENCIA	\N
+285	325	123412345	1000000.0	2020-06-30	t	1	2020-07-01 14:28:11.778756+00	TRAMITE	TRANSFERENCIA	\N
+291	247	7899	30000000	2020-07-01	t	14	2020-07-01 14:55:15.967365+00	IMPUESTO	PUNTO DE VENTA	\N
+292	247	9012121212	2265000	2020-07-01	t	8	2020-07-01 14:55:15.967365+00	IMPUESTO	CHEQUE	\N
+293	245	\N	63000000	2020-07-01	t	\N	2020-07-01 15:07:41.002446+00	IMPUESTO	EFECTIVO	\N
+294	249	456789999	124500000	2020-07-01	t	2	2020-07-01 15:38:52.404891+00	IMPUESTO	TRANSFERENCIA	\N
+295	250	123456789	17600000	2020-07-01	t	1	2020-07-01 17:15:06.309225+00	IMPUESTO	TRANSFERENCIA	\N
+296	250	1234567888	50000000	2020-07-01	t	1	2020-07-01 17:21:42.133087+00	IMPUESTO	TRANSFERENCIA	\N
+297	250	12345687	50000000	2020-07-01	t	1	2020-07-01 17:43:41.384891+00	IMPUESTO	TRANSFERENCIA	\N
 298	251	383456768	21558000	2020-07-23	f	1	\N	IMPUESTO	TRANSFERENCIA	\N
-299	328	383438345	1000000.0	2020-07-02	t	1	2020-07-02 11:52:56.023119-04	TRAMITE	TRANSFERENCIA	\N
-241	181	123456	131225000	2020-06-26	t	1	2020-06-26 23:57:30.760909-04	IMPUESTO	TRANSFERENCIA	\N
-243	174	\N	0	2020-06-29	t	\N	2020-06-27 00:30:50.793404-04	IMPUESTO	EFECTIVO	\N
-242	198	123123	60000000	2020-06-29	t	1	2020-06-27 00:44:04.819951-04	IMPUESTO	TRANSFERENCIA	\N
-244	199	\N	87995999.999999999984	2020-06-29	f	\N	2020-06-27 12:50:27.55877-04	IMPUESTO	EFECTIVO	\N
-245	200	\N	123000000	2020-07-01	t	\N	2020-06-30 08:58:42.828701-04	IMPUESTO	EFECTIVO	\N
-246	200	87999	200000000	2020-07-01	t	4	2020-06-30 08:58:42.828701-04	IMPUESTO	TRANSFERENCIA	\N
+299	328	383438345	1000000.0	2020-07-02	t	1	2020-07-02 15:52:56.023119+00	TRAMITE	TRANSFERENCIA	\N
+241	181	123456	131225000	2020-06-26	t	1	2020-06-27 03:57:30.760909+00	IMPUESTO	TRANSFERENCIA	\N
+243	174	\N	0	2020-06-29	t	\N	2020-06-27 04:30:50.793404+00	IMPUESTO	EFECTIVO	\N
+242	198	123123	60000000	2020-06-29	t	1	2020-06-27 04:44:04.819951+00	IMPUESTO	TRANSFERENCIA	\N
+244	199	\N	87995999.999999999984	2020-06-29	f	\N	2020-06-27 16:50:27.55877+00	IMPUESTO	EFECTIVO	\N
+245	200	\N	123000000	2020-07-01	t	\N	2020-06-30 12:58:42.828701+00	IMPUESTO	EFECTIVO	\N
+246	200	87999	200000000	2020-07-01	t	4	2020-06-30 12:58:42.828701+00	IMPUESTO	TRANSFERENCIA	\N
 248	300	2	20000000	2020-06-29	f	1	\N	TRAMITE	TRANSFERENCIA	\N
 249	301	12	20000000	2020-06-30	f	1	\N	TRAMITE	TRANSFERENCIA	\N
 250	303	3	600000000	2020-06-30	f	1	\N	TRAMITE	TRANSFERENCIA	\N
@@ -8816,22 +10711,80 @@ COPY public.pago (id_pago, id_procedimiento, referencia, monto, fecha_de_pago, a
 270	233	4521532	115145000	2020-07-01	f	2	\N	IMPUESTO	TRANSFERENCIA	\N
 271	235	252125216	56203000	2020-07-01	f	1	\N	IMPUESTO	TRANSFERENCIA	\N
 273	241	25212510	56150000	2020-07-01	f	2	\N	IMPUESTO	TRANSFERENCIA	\N
-288	206	\N	61674000	2020-07-01	t	\N	2020-07-01 10:26:35.441993-04	IMPUESTO	EFECTIVO	\N
-287	326	489000111	1000000.0	2020-07-01	t	1	2020-07-01 10:28:11.778756-04	TRAMITE	TRANSFERENCIA	\N
+288	206	\N	61674000	2020-07-01	t	\N	2020-07-01 14:26:35.441993+00	IMPUESTO	EFECTIVO	\N
+287	326	489000111	1000000.0	2020-07-01	t	1	2020-07-01 14:28:11.778756+00	TRAMITE	TRANSFERENCIA	\N
 302	252	123456789	100000000	2020-07-02	f	2	\N	IMPUESTO	TRANSFERENCIA	\N
 303	252	123456786	32280000	2020-07-02	f	1	\N	IMPUESTO	TRANSFERENCIA	\N
-304	253	1212	5000000	2020-07-02	t	14	2020-07-02 15:51:02.733564-04	IMPUESTO	PUNTO DE VENTA	\N
-305	253	\N	11000000	2020-07-02	t	\N	2020-07-02 15:51:02.733564-04	IMPUESTO	EFECTIVO	\N
-306	262	89895	50000000	2020-07-03	t	14	2020-07-03 11:04:09.710614-04	IMPUESTO	PUNTO DE VENTA	\N
-307	262	\N	69970000	2020-07-03	t	\N	2020-07-03 11:04:09.710614-04	IMPUESTO	EFECTIVO	\N
+304	253	1212	5000000	2020-07-02	t	14	2020-07-02 19:51:02.733564+00	IMPUESTO	PUNTO DE VENTA	\N
+305	253	\N	11000000	2020-07-02	t	\N	2020-07-02 19:51:02.733564+00	IMPUESTO	EFECTIVO	\N
+306	262	89895	50000000	2020-07-03	t	14	2020-07-03 15:04:09.710614+00	IMPUESTO	PUNTO DE VENTA	\N
+307	262	\N	69970000	2020-07-03	t	\N	2020-07-03 15:04:09.710614+00	IMPUESTO	EFECTIVO	\N
 308	329	67789099	1000000.0	2020-07-03	f	1	\N	TRAMITE	TRANSFERENCIA	\N
+309	277	123456756	11000000	2020-07-09	f	1	\N	IMPUESTO	TRANSFERENCIA	156
+310	278	123456756	5000000	2020-07-09	f	2	\N	IMPUESTO	TRANSFERENCIA	156
+311	278	123456756	5087000	2020-07-09	f	3	\N	IMPUESTO	TRANSFERENCIA	156
+314	283	\N	140000	2020-07-10	t	\N	2020-07-10 13:20:44.682294+00	IMPUESTO	EFECTIVO	116
+315	283	\N	5000	2020-07-10	t	\N	2020-07-10 13:20:44.682294+00	IMPUESTO	CREDITO_FISCAL	116
+316	298	\N	116000	2020-07-10	t	\N	2020-07-10 15:55:26.712598+00	IMPUESTO	CREDITO_FISCAL	116
+317	299	\N	27090000	2020-07-10	t	\N	2020-07-10 15:59:40.607466+00	IMPUESTO	CREDITO_FISCAL	116
+319	302	3634646463	3000000	2020-07-10	t	8	2020-07-10 16:32:10.368419+00	IMPUESTO	CHEQUE	116
+320	302	\N	500000	2020-07-10	t	\N	2020-07-10 16:32:10.368419+00	IMPUESTO	EFECTIVO	116
+321	302	3634646463	4000000	2020-07-10	t	14	2020-07-10 16:32:10.368419+00	IMPUESTO	PUNTO DE VENTA	116
+289	242	8888899999	56145000	2020-07-01	t	1	2020-07-01 14:36:28.350918+00	IMPUESTO	PUNTO DE VENTA	\N
+290	247	890765444	25000000	2020-07-01	t	1	2020-07-01 14:55:15.967365+00	IMPUESTO	TRANSFERENCIA	\N
+318	301	3634646463	116000	2020-07-10	t	1	2020-07-10 16:27:28.188027+00	IMPUESTO	TRANSFERENCIA	116
+322	310	3634646463	10000000	2020-07-10	t	8	2020-07-10 17:33:56.336678+00	IMPUESTO	TRANSFERENCIA	116
+323	6	\N	100000	2020-07-10	t	\N	2020-07-10 17:41:17.348487+00	CONVENIO	EFECTIVO	116
+324	303	3634646463	15000000	2020-07-13	t	4	2020-07-13 01:31:30.980018+00	IMPUESTO	TRANSFERENCIA	116
+325	328	12345678	100000000	2020-07-08	t	30	2020-07-13 13:08:48.211087+00	IMPUESTO	TRANSFERENCIA	116
+326	328	12345678	5000000	2020-07-10	t	7	2020-07-13 13:08:48.211087+00	IMPUESTO	TRANSFERENCIA	116
+327	328	456123789	4706000	2020-07-13	t	2	2020-07-13 13:08:48.211087+00	IMPUESTO	PUNTO DE VENTA	116
+328	335	000877	52000000	2020-07-13	t	8	2020-07-13 13:43:11.43049+00	IMPUESTO	PUNTO DE VENTA	116
+329	338	12345678	87000	2020-07-13	t	2	2020-07-13 13:48:15.334305+00	IMPUESTO	TRANSFERENCIA	116
+330	339	\N	87000	2020-07-13	t	\N	2020-07-13 13:49:31.196749+00	IMPUESTO	CREDITO_FISCAL	116
+331	340	\N	19000	2020-07-13	t	\N	2020-07-13 15:49:43.016642+00	IMPUESTO	CREDITO_FISCAL	117
+332	340	456554565	177101000	2020-07-13	t	1	2020-07-13 15:49:43.016642+00	IMPUESTO	TRANSFERENCIA	117
+333	7	\N	74000	2020-07-13	t	\N	2020-07-13 15:52:50.598093+00	CONVENIO	EFECTIVO	116
+334	341	46879455	27090000	2020-07-13	t	2	2020-07-13 16:27:24.960877+00	IMPUESTO	TRANSFERENCIA	117
+335	343	\N	15000000	2020-07-13	t	\N	2020-07-13 16:44:23.08662+00	IMPUESTO	CREDITO_FISCAL	117
+336	343	465123585	12090000	2020-07-13	t	2	2020-07-13 16:44:23.08662+00	IMPUESTO	TRANSFERENCIA	117
+337	12	\N	200000000	2020-07-13	t	\N	2020-07-13 16:51:06.153378+00	CONVENIO	EFECTIVO	116
+338	348	\N	15000000	2020-07-13	t	\N	2020-07-13 17:04:40.260167+00	IMPUESTO	CREDITO_FISCAL	117
+339	348	789546568	12206000	2020-07-13	t	3	2020-07-13 17:04:40.260167+00	IMPUESTO	PUNTO DE VENTA	117
+340	350	989890	50000000	2020-07-13	t	14	2020-07-13 18:59:38.037471+00	IMPUESTO	PUNTO DE VENTA	116
+341	350	898945456	20000000	2020-07-13	t	8	2020-07-13 18:59:38.037471+00	IMPUESTO	TRANSFERENCIA	116
+342	340	1234567868	1000000.00	2020-07-14	t	1	2020-07-14 15:24:11.709181+00	TRAMITE	TRANSFERENCIA	58
+343	341	123123123	1000000.00	2020-07-14	t	1	2020-07-14 16:57:11.481725+00	TRAMITE	TRANSFERENCIA	58
+344	23	123456455	3000000	2020-07-10	t	5	2020-07-15 17:22:58.322455+00	CONVENIO	TRANSFERENCIA	83
+346	24	3634646464	4020000	2020-07-30	f	1	\N	CONVENIO	TRANSFERENCIA	165
+347	347	1231412312	1000000.0	2020-07-15	t	11	2020-07-15 19:05:54.379185+00	TRAMITE	TRANSFERENCIA	118
+349	349	12314123125	1000000.0	2020-07-15	t	11	2020-07-15 19:37:41.710633+00	TRAMITE	TRANSFERENCIA	118
+350	351	123123123	1000000.0	2020-07-15	t	11	2020-07-15 19:47:44.589342+00	TRAMITE	TRANSFERENCIA	118
+351	352	391227475	1000000.00	2020-07-15	t	1	2020-07-15 20:07:39.39593+00	TRAMITE	TRANSFERENCIA	181
+352	353	476477577	1000000.0	2020-07-15	f	1	\N	TRAMITE	TRANSFERENCIA	163
+357	358	53353535353	1000000.0	2020-07-03	t	8	2020-07-16 13:22:35.157748+00	TRAMITE	TRANSFERENCIA	192
+363	364	53353535356	1000000.0	2020-07-03	t	8	2020-07-16 13:24:35.920108+00	TRAMITE	TRANSFERENCIA	192
+364	365	533535353	1000000.0	2020-07-03	t	8	2020-07-16 13:24:51.069615+00	TRAMITE	TRANSFERENCIA	192
+365	366	746574656	1000000.0	2020-07-03	t	8	2020-07-16 13:25:10.145422+00	TRAMITE	TRANSFERENCIA	192
+367	368	746574656	1000000.0	2020-07-03	t	15	2020-07-16 13:25:40.404514+00	TRAMITE	TRANSFERENCIA	192
+369	370	112986734	1000000.0	2020-07-03	t	15	2020-07-16 13:31:37.731847+00	TRAMITE	TRANSFERENCIA	192
+370	371	253453423	1000000.0	2020-07-16	t	8	2020-07-16 13:38:37.382146+00	TRAMITE	TRANSFERENCIA	192
+371	372	23522523552	1000000.00	2020-07-15	t	1	2020-07-16 13:52:44.979626+00	TRAMITE	TRANSFERENCIA	192
+372	373	243224332	1000000.0	2020-07-16	t	1	2020-07-16 14:09:28.210906+00	TRAMITE	TRANSFERENCIA	192
+373	374	453453545	1000000.0	2020-07-16	t	1	2020-07-16 14:23:35.766739+00	TRAMITE	TRANSFERENCIA	192
+374	375	243354645	1000000.00	2020-07-16	t	1	2020-07-16 14:35:39.808672+00	TRAMITE	TRANSFERENCIA	192
+375	376	588888441	1000000	2020-07-19	t	19	2020-07-19 22:19:16.91203+00	TRAMITE	PUNTO DE VENTA	205
+376	377	546372851	1000000	2020-07-21	t	8	2020-07-21 12:29:41.381254+00	TRAMITE	TRANSFERENCIA	207
+377	378	1581891651	1000000	2020-07-21	t	9	2020-07-21 14:10:11.544049+00	TRAMITE	TRANSFERENCIA	197
+378	379	123124123	1000000	2020-07-21	t	10	2020-07-21 14:31:05.501346+00	TRAMITE	TRANSFERENCIA	197
+379	380	222333444	1000000	2020-07-21	t	8	2020-07-21 17:50:27.086854+00	TRAMITE	TRANSFERENCIA	163
+380	381	666777888	1000000	2020-07-21	t	8	2020-07-21 19:06:17.864771+00	TRAMITE	TRANSFERENCIA	208
+381	382	777888999	1000000	2020-07-23	t	8	2020-07-23 03:30:13.166609+00	TRAMITE	TRANSFERENCIA	208
 \.
 
 
 --
--- TOC entry 4352 (class 0 OID 70394)
--- Dependencies: 332
--- Data for Name: pago_manual; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: pago_manual; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.pago_manual (id_pago, id_usuario_funcionario) FROM stdin;
@@ -8839,9 +10792,7 @@ COPY public.pago_manual (id_pago, id_usuario_funcionario) FROM stdin;
 
 
 --
--- TOC entry 4337 (class 0 OID 70297)
--- Dependencies: 312
--- Data for Name: parroquia; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: parroquia; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.parroquia (id, nombre) FROM stdin;
@@ -8867,9 +10818,7 @@ COPY public.parroquia (id, nombre) FROM stdin;
 
 
 --
--- TOC entry 4355 (class 0 OID 70401)
--- Dependencies: 335
--- Data for Name: permiso_de_acceso; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: permiso_de_acceso; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.permiso_de_acceso (id_permiso, id_usuario, id_tipo_tramite) FROM stdin;
@@ -8900,13 +10849,12 @@ COPY public.permiso_de_acceso (id_permiso, id_usuario, id_tipo_tramite) FROM std
 37	117	26
 38	117	5
 39	117	28
+40	168	5
 \.
 
 
 --
--- TOC entry 4357 (class 0 OID 70406)
--- Dependencies: 337
--- Data for Name: propietario; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: propietario; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.propietario (id_propietario, razon_social, cedula, rif, email) FROM stdin;
@@ -8932,9 +10880,7 @@ COPY public.propietario (id_propietario, razon_social, cedula, rif, email) FROM 
 
 
 --
--- TOC entry 4359 (class 0 OID 70414)
--- Dependencies: 339
--- Data for Name: propietario_inmueble; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: propietario_inmueble; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.propietario_inmueble (id_propietario_inmueble, id_propietario, id_inmueble) FROM stdin;
@@ -8943,9 +10889,7 @@ COPY public.propietario_inmueble (id_propietario_inmueble, id_propietario, id_in
 
 
 --
--- TOC entry 4361 (class 0 OID 70419)
--- Dependencies: 341
--- Data for Name: recaudo; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: recaudo; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.recaudo (id_recaudo, nombre_largo, nombre_corto, obligatorio, planilla, extension) FROM stdin;
@@ -9013,18 +10957,16 @@ COPY public.recaudo (id_recaudo, nombre_largo, nombre_corto, obligatorio, planil
 52	Constancia de Nomenclatura expedida por la Oficina Municipal de Catastro (en caso de que el documento de registro no lo especifique)	ConstanciaNomenclatura	f	\N	image/*
 39	Planilla de Junta Directiva, referida a los datos de los miembros de la organización (formato digital e impreso ver anexo)	PlanillaJuntaDirectiva	t	http://localhost:5000/recaudos/PLANILLA_DE_JUNTA_DIRECTIVA.xls	.xls
 67	Fotocopia legible del documento de identidad o RIF	DocIdentidad	t	\N	image/*
-68	Registro de Comercio	RegistroComercio	t	\N	.pdf
-69	Contrato de Arrendamiento o Titulo de Propiedad segun la condición del inmueble	Contrato	t	\N	.pdf
-71	Tres primeras facturas en blanco	Facturas	t	\N	.pdf
-70	Constancia de Cumplimiento de Normas Técnicas emitido por el Cuerpo de Bomberos de Maracaibo	CCNT	t	\N	image/*
 72	Fotocopia legible del RIF	RIF	t	\N	.pdf
+68	Registro de Comercio	RegistroComercio	f	\N	.pdf
+69	Contrato de Arrendamiento o Titulo de Propiedad segun la condición del inmueble	Contrato	f	\N	.pdf
+71	Tres primeras facturas en blanco	Facturas	f	\N	.pdf
+70	Constancia de Cumplimiento de Normas Técnicas emitido por el Cuerpo de Bomberos de Maracaibo	CCNT	f	\N	image/*
 \.
 
 
 --
--- TOC entry 4363 (class 0 OID 70429)
--- Dependencies: 343
--- Data for Name: recuperacion; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: recuperacion; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.recuperacion (id_recuperacion, id_usuario, token_recuperacion, usado, fecha_recuperacion) FROM stdin;
@@ -9032,9 +10974,7 @@ COPY public.recuperacion (id_recuperacion, id_usuario, token_recuperacion, usado
 
 
 --
--- TOC entry 4365 (class 0 OID 70438)
--- Dependencies: 345
--- Data for Name: seccion; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: seccion; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.seccion (id_seccion, nombre) FROM stdin;
@@ -9066,13 +11006,12 @@ COPY public.seccion (id_seccion, nombre) FROM stdin;
 26	Datos del Contribuyente
 27	Datos de la Sucursal
 28	Actividades Económicas
+29	Datos de la Licencia
 \.
 
 
 --
--- TOC entry 4349 (class 0 OID 70370)
--- Dependencies: 328
--- Data for Name: tarifa_inspeccion; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: tarifa_inspeccion; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.tarifa_inspeccion (id_tarifa, id_ordenanza, id_tipo_tramite, formula, utiliza_codcat, id_variable) FROM stdin;
@@ -9137,9 +11076,7 @@ COPY public.tarifa_inspeccion (id_tarifa, id_ordenanza, id_tipo_tramite, formula
 
 
 --
--- TOC entry 4367 (class 0 OID 70446)
--- Dependencies: 347
--- Data for Name: template_certificado; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: template_certificado; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.template_certificado (id_template_certificado, id_tipo_tramite, link) FROM stdin;
@@ -9147,9 +11084,7 @@ COPY public.template_certificado (id_template_certificado, id_tipo_tramite, link
 
 
 --
--- TOC entry 4242 (class 0 OID 69853)
--- Dependencies: 211
--- Data for Name: tipo_tramite; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: tipo_tramite; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.tipo_tramite (id_tipo_tramite, id_institucion, nombre_tramite, costo_base, sufijo, nombre_corto, formato, planilla, certificado, utiliza_informacion_catastral, pago_previo, costo_utmm, planilla_rechazo) FROM stdin;
@@ -9167,6 +11102,9 @@ COPY public.tipo_tramite (id_tipo_tramite, id_institucion, nombre_tramite, costo
 23	3	Conformidad de la Edificación y Uso Licencia a las Actividades Económicas Comerciales e Industriales	\N	ompu	Uso Conforme: Actividades Comerciales	CPU-OMPU-AU-001	cpu-solt-UC-AE	cpu-cert-UC-AE	t	f	\N	cpu-rechazo
 21	8	Certificación para Prestar Servicio de Transporte Público Urbano	\N	pd	Servicio Transporte Público	IMTCUMA-001	\N	imtcuma-cert-STP	f	f	\N	\N
 24	3	Conformidad de la Edificación y Uso Unidades Educativas	\N	ompu	Uso Conforme: Unidades Educativas	CPU-OMPU-AU-003	cpu-solt-UC-UE	cpu-cert-UC-UE	t	f	\N	cpu-rechazo
+5	9	Pago de Impuestos	\N	pi	Pago de Impuestos	\N	\N	\N	f	f	\N	\N
+26	9	Beneficio de Contribuyente	\N	bc	BC	\N	\N	\N	f	f	\N	\N
+27	9	Registro de Contribuyente	\N	rc	Registro de Contribuyente	\N	\N	\N	f	f	\N	\N
 7	2	Constancia de Servicio Persona Juridica	12000000	pa	Servicio Persona Juridica	SAGAS-003	sagas-solt-CS	sagas-cert-CS	t	t	24	\N
 6	2	Constancia de Servicio Residencial	3000000	pa	Servicio Residencial	SAGAS-002	sagas-solt-CS	sagas-cert-CS	t	t	6	\N
 14	3	Codigo Catastral para Casas	3000000	cr	CC	CPU-OMCAT-001	cpu-solt-CCC	cpu-cert-CC	f	t	6	\N
@@ -9176,17 +11114,12 @@ COPY public.tipo_tramite (id_tipo_tramite, id_institucion, nombre_tramite, costo
 16	3	Solvencia de Inmuebles Urbanos	3000000	cr	SIU	CPU-OMCAT-002	cpu-solt-SIU	cpu-cert-SIU	f	t	6	\N
 18	5	Apartado de Bohío	2500000	pa	Apartado de Bohío	SEDEPAR-001	sedepar-solt-AB	sedepar-cert-AB	f	t	5	\N
 22	3	Constancia de Nomenclatura	200000.0	cr	NM	CPU-OMCAT-003	cpu-solt-NM	cpu-cert-NM	f	t	0.4	\N
-5	9	Pago de Impuestos	\N	pi	Pago de Impuestos	\N	\N	\N	f	f	\N	\N
-26	9	Beneficio de Contribuyente	\N	bc	BC	\N	\N	\N	f	f	\N	\N
-27	9	Registro de Contribuyente	\N	rc	Registro de Contribuyente	\N	\N	\N	f	f	\N	\N
-28	9	Solicitud de Licencia de Actividades Económicas	1000000.0	lae	Licencia de Actividades Económicas	SEDEMAT-001	sedemat-solt-LAE	sedemat-cert-LAE	f	t	2	\N
+28	9	Solicitud de Licencia de Actividades Económicas	1000000	lae	Licencia de Actividades Económicas	SEDEMAT-001	sedemat-solt-LAE	sedemat-cert-LAE	f	t	2	\N
 \.
 
 
 --
--- TOC entry 4369 (class 0 OID 70454)
--- Dependencies: 349
--- Data for Name: tipo_tramite_recaudo; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: tipo_tramite_recaudo; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.tipo_tramite_recaudo (id_tipo_tramite, id_recaudo, fisico) FROM stdin;
@@ -9303,9 +11236,7 @@ COPY public.tipo_tramite_recaudo (id_tipo_tramite, id_recaudo, fisico) FROM stdi
 
 
 --
--- TOC entry 4370 (class 0 OID 70457)
--- Dependencies: 350
--- Data for Name: tipo_usuario; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: tipo_usuario; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.tipo_usuario (id_tipo_usuario, descripcion) FROM stdin;
@@ -9313,56 +11244,92 @@ COPY public.tipo_usuario (id_tipo_usuario, descripcion) FROM stdin;
 2	Administrador
 3	Funcionario
 4	Usuario externo
-5	Director
+5	Director/Gerente
 \.
 
 
 --
--- TOC entry 4247 (class 0 OID 69908)
--- Dependencies: 218
--- Data for Name: tramite; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: tramite; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.tramite (id_tramite, id_tipo_tramite, datos, costo, fecha_creacion, codigo_tramite, consecutivo, id_usuario, url_planilla, url_certificado, aprobado, fecha_culminacion) FROM stdin;
-298	27	{"usuario":{"documentoIdentidad":"400197520","razonSocial":"Wak Casa de Software CA","denominacionComercial":"Wak Casa de Software CA","siglas":"WAK","parroquia":"OLEGARIO VILLALOBOS","sector":"Tierra Negra","direccion":"Av 21 Calle 86","puntoReferencia":"Diagonal CDO","tipoContribuyente":"JURIDICO","tipoDocumento":"J","codCat":null},"funcionario":{"documentoIdentidad":"400197520","razonSocial":"Wak Casa de Software CA","denominacionComercial":"Wak Casa de Software CA","siglas":"WAK","parroquia":"OLEGARIO VILLALOBOS","sector":"Tierra Negra","direccion":"Av 21 Calle 86","puntoReferencia":"Diagonal CDO","tipoContribuyente":"JURIDICO","tipoDocumento":"V"}}	\N	2020-06-26 18:49:43.696424-04	SEDEMAT-26062020-27-0001	1	119	\N	\N	t	2020-06-26 19:51:45.215522-04
-302	3	{"usuario":{"cedulaORif":"12345688","nombreORazon":"jose","direccion":"mcbo","puntoReferencia":"mcbo","sector":"3123123","parroquia":"BOLIVAR","nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","contacto":"jose","horario":"8 a 12","prefix":"V","nacionalidad":"V","codCat":null,"contribuyente":null}}	\N	2020-06-30 14:22:40.387563-04	CBM-30062020-3-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/CBM/planillas/CBM-30062020-3-0001	\N	f	\N
-300	1	{"usuario":{"cedulaORif":"12345688","nombreORazon":"jose","direccion":"mcbo","puntoReferencia":"mcbo","sector":"3123123","parroquia":"BOLIVAR","nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","contacto":"jose","horario":"9 a 12","prefix":"V","nacionalidad":"V","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]}}}	20000000	2020-06-30 13:50:29.797212-04	CBM-30062020-1-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/CBM/planillas/CBM-30062020-1-0001	\N	f	\N
-301	2	{"usuario":{"cedulaORif":"12345688","nombreORazon":"jose","direccion":"mcbo","puntoReferencia":"mcbo","sector":"3123123","parroquia":"CACIQUE MARA","nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","contacto":"jose","horario":"8 a 12","prefix":"V","nacionalidad":"V","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]},"contribuyente":null}}	20000000	2020-06-30 14:21:38.604251-04	CBM-30062020-2-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/CBM/planillas/CBM-30062020-2-0001	\N	f	\N
-303	6	{"usuario":{"nombre":"jose","ubicadoEn":"mcbo","telefono":"4246336236","tipoOcupacion":"panadero","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]},"contribuyente":null}}	600000000	2020-06-30 14:23:44.183727-04	SAGAS-30062020-6-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SAGAS/planillas/SAGAS-30062020-6-0001	\N	f	\N
-305	8	{"usuario":{"nombre":"jose","ubicadoEn":"mcbo","telefono":"4246336236","tipoOcupacion":"panadero","codCat":null,"contribuyente":null}}	\N	2020-06-30 14:25:26.785389-04	SAGAS-30062020-8-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SAGAS/planillas/SAGAS-30062020-8-0001	\N	f	\N
-304	7	{"usuario":{"nombre":"jose","ubicadoEn":"mcbo","telefono":"4246336236","tipoOcupacion":"panadero","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]},"contribuyente":null}}	2400000000	2020-06-30 14:24:55.057176-04	SAGAS-30062020-7-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SAGAS/planillas/SAGAS-30062020-7-0001	\N	f	\N
-307	10	{"usuario":{"nombre":"jose","ubicadoEn":"mcbo","telefono":"4246336236","tipoOcupacion":"panadero","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]},"contribuyente":null}}	\N	2020-06-30 14:29:35.964286-04	SAGAS-30062020-10-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SAGAS/planillas/SAGAS-30062020-10-0001	\N	f	\N
-306	16	{"usuario":{"nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","parroquia":"CACIQUE MARA","direccion":"mcbo","propietarios":[{"razonSocial":"jose","nacionalidad":"V","cedulaORif":"12345688","telefono":"4246336236","direccion":"1620 Columbia arms circle unit 161","correo":"zapasolca1@gmail.com","parroquia":"BOLIVAR"}],"ubicadoEn":"mcbo","parroquiaEdificio":"BOLIVAR","tipoInmuebleSolvencia":"terreno","nacionalidad":"V","codCat":null,"contribuyente":null}}	3000000	2020-06-30 14:27:13.595827-04	CPU-30062020-16-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/CPU/planillas/CPU-30062020-16-0001	\N	f	\N
-308	11	{"usuario":{"nombre":"jose","ubicadoEn":"mcbo","telefono":"4246336236","tipoOcupacion":"panadero","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]},"contribuyente":null}}	\N	2020-06-30 14:30:23.317754-04	SAGAS-30062020-11-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SAGAS/planillas/SAGAS-30062020-11-0001	\N	f	\N
-309	12	{"usuario":{"nombre":"jose","ubicadoEn":"mcbo","telefono":"4246336236","tipoOcupacion":"panadero","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]},"contribuyente":null}}	\N	2020-06-30 14:32:25.471914-04	SAGAS-30062020-12-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SAGAS/planillas/SAGAS-30062020-12-0001	\N	f	\N
-310	13	{"usuario":{"nombre":"jose","ubicadoEn":"mcbo","telefono":"4246336236","tipoOcupacion":"panadero","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]},"contribuyente":null}}	\N	2020-06-30 14:33:22.766851-04	SAGAS-30062020-13-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SAGAS/planillas/SAGAS-30062020-13-0001	\N	f	\N
-313	15	{"usuario":{"nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","parroquia":"BOLIVAR","direccion":"mcbo","propietarios":[{"razonSocial":"jose","nacionalidad":"V","cedulaORif":"12354688","telefono":"4246336236","direccion":"1620 Columbia arms circle unit 161","correo":"zapasolca1@gmail.com","parroquia":"BOLIVAR"}],"nombreConjunto":"x","cantidadEdificios":"5","nombreEdificio":"5","cantidadPisos":"5","pisoApto":"5","cantidadAptosPiso":"5","numeroApto":"5","nomenclaturaEdificio":"5","ubicacionEdificio":"5","parroquiaEdificio":"JUANA DE AVILA","nacionalidad":"V","codCat":null,"contribuyente":null}}	3000000	2020-06-30 14:40:41.149505-04	CPU-30062020-15-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/CPU/planillas/CPU-30062020-15-0001	\N	f	\N
-311	22	{"usuario":{"nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","parroquia":"CACIQUE MARA","direccion":"mcbo","propietarios":[{"razonSocial":"jose","nacionalidad":"V","cedulaORif":"12345688","telefono":"4246336236","direccion":"1620 Columbia arms circle unit 161","correo":"zapasolca1@gmail.com","parroquia":"CACIQUE MARA"}],"ubicadoEn":"mcbo","puntoReferencia":"mcbo","finalidad":"Actualización","frente":"123","linderoFrente":"fretne","linderoFondo":"fondo","linderoDerecha":"derecha","linderoIzquierda":"izquierda","observaciones":"observaciones","nacionalidad":"V","codCat":null,"contribuyente":null}}	200000.0	2020-06-30 14:36:51.647562-04	CPU-30062020-22-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/CPU/planillas/CPU-30062020-22-0001	\N	f	\N
-312	14	{"usuario":{"nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","parroquia":"BOLIVAR","direccion":"mcbo","propietarios":[{"razonSocial":"jose","nacionalidad":"V","cedulaORif":"12345688","telefono":"4246336236","direccion":"1620 Columbia arms circle unit 161","correo":"zapasolca1@gmail.com","parroquia":"BOLIVAR"}],"ubicadoEn":"mcbo","parroquiaEdificio":"BOLIVAR","tipoInmueble":"casa","nacionalidad":"V","codCat":null,"contribuyente":null}}	3000000	2020-06-30 14:38:44.270165-04	CPU-30062020-14-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/CPU/planillas/CPU-30062020-14-0001	\N	f	\N
-314	23	{"usuario":{"nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","parroquia":"CACIQUE MARA","direccion":"mcbo","propietarios":[{"razonSocial":"jose","nacionalidad":"V","cedulaORif":"12345688","telefono":"4246336236","direccion":"1620 Columbia arms circle unit 161","correo":"zapasolca1@gmail.com","parroquia":"CHIQUINQUIRA"}],"denominacion":"j","actividadComercial":"j","direccionInmueble":"j","parroquiaInmueble":"CRISTO DE ARANZA","telefonoInmueble":"4246336236","correoInmueble":"zapasolca1@gmail.com","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]},"nacionalidad":"V","contribuyente":null}}	\N	2020-06-30 14:42:30.344355-04	CPU-30062020-23-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/CPU/planillas/CPU-30062020-23-0001	\N	f	\N
-315	24	{"usuario":{"nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","parroquia":"CACIQUE MARA","direccion":"mcbo","propietarios":[{"razonSocial":"jose","nacionalidad":"V","cedulaORif":"12345688","telefono":"4246336236","direccion":"1620 Columbia arms circle unit 161","correo":"zapasolca1@gmail.com","parroquia":"BOLIVAR"}],"nombreInstitucion":"j","representanteInstitucion":"j","turno":"M","nivelEducativo":"j","telefonoInmueble":"4246336236","correoInmueble":"zapasolca1@gmail.com","direccionPlantel":"j","parroquiaInmueble":"IDELFONSO VASQUEZ","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]},"nacionalidad":"V","contribuyente":null}}	\N	2020-06-30 14:44:24.903989-04	CPU-30062020-24-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/CPU/planillas/CPU-30062020-24-0001	\N	f	\N
-316	25	{"usuario":{"nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","parroquia":"BOLIVAR","direccion":"mcbo","direccionInmueble":"j","parroquiaInmueble":"BOLIVAR","tipoInmueble":"j","denominacion":"j","direccionEmpresa":"j","parroquiaEmpresa":"JUANA DE AVILA","telefonoEmpresa":"4246336236","correoEmpresa":"zapasolca1@gmail.com","nacionalidad":"V","codCat":null,"contribuyente":null}}	\N	2020-06-30 14:45:46.644432-04	CPU-30062020-25-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/CPU/planillas/CPU-30062020-25-0001	\N	f	\N
-318	21	{"usuario":{"nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","parroquia":"CACIQUE MARA","direccion":"mcbo","nombreOrganizacion":"j","tipoSociedad":"Civil","tipoTransporte":"CPP","nombreRepresentante":"j","cedulaRepresentante":"12345688","telefonoRepresentante":"4246336236","nacionalidad":"V","nacionalidadRepresentante":"V","codCat":null,"contribuyente":null}}	\N	2020-06-30 14:48:03.746067-04	IMTCUMA-30062020-21-0001	1	129	\N	\N	f	\N
-317	18	{"usuario":{"nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","fechaApartado":"2020-06-30T18:46:22.908Z","numeroBohio":"1","detallesBohio":"g","nacionalidad":"V","codCat":null,"contribuyente":null}}	2500000	2020-06-30 14:46:46.8143-04	SEDEPAR-30062020-18-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEPAR/planillas/SEDEPAR-30062020-18-0001	\N	f	\N
-319	28	{"usuario":{"telefono":"4246336236","correo":"zapasolca1@gmail.com","denominacionComercial":"j","nombreRepresentante":"j","codCat":null,"contribuyente":{"id":66,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"410984694","razonSocial":"ZAPASOL, C.A.","denomComercial":"ZAPASOL, C.A.","sector":"CIRCUNVALACION 2","direccion":"Avenida 58 Calle  , Local Nro. PB-28","puntoReferencia":"FRENTE A TRAKI CV2","verificado":true,"verificacionTelefono":true}}}	1000000.0	2020-06-30 14:57:02.83084-04	SEDEMAT-30062020-28-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-30062020-28-0001	\N	f	\N
-320	27	{"usuario":{"documentoIdentidad":"308333666","razonSocial":"Mi negocio C.A.","denominacionComercial":"Mi negocio","siglas":"MNCA","parroquia":"JUANA DE AVILA","sector":"Canchancha","direccion":"Av 21 Villa Punta Arenas","puntoReferencia":"CC Sambil","tipoContribuyente":"JURIDICO","tipoDocumento":"J","codCat":null},"funcionario":{"documentoIdentidad":"308333666","razonSocial":"Mi negocio C.A.","denominacionComercial":"Mi negocio","siglas":"MNCA","parroquia":"JUANA DE AVILA","sector":"Canchancha","direccion":"Av 21 Villa Punta Arenas","puntoReferencia":"CC Sambil","tipoContribuyente":"JURIDICO","tipoDocumento":"V"}}	\N	2020-07-01 09:17:17.671537-04	SEDEMAT-01072020-27-0001	1	143	\N	\N	t	2020-07-01 09:26:28.837352-04
-323	27	{"usuario":{"documentoIdentidad":"314151612","razonSocial":"tienda 2","denominacionComercial":"tienda 2","siglas":"tienda 2","parroquia":"JUANA DE AVILA","sector":"tienda 2","direccion":"mcbo","puntoReferencia":"mcbo","tipoContribuyente":"JURIDICO","tipoDocumento":"J","codCat":null},"funcionario":{"documentoIdentidad":"314151612","razonSocial":"tienda 2","denominacionComercial":"tienda 2","siglas":"tienda 2","parroquia":"JUANA DE AVILA","sector":"tienda 2","direccion":"mcbo","puntoReferencia":"mcbo","tipoContribuyente":"JURIDICO","tipoDocumento":"J"}}	\N	2020-07-01 09:44:35.240099-04	SEDEMAT-01072020-27-0004	4	149	\N	\N	t	2020-07-01 10:04:09.930643-04
-324	27	{"usuario":{"documentoIdentidad":"700020005","razonSocial":"Negocio CA","denominacionComercial":"Negocio CA","siglas":"NCA","parroquia":"RAUL LEONI","sector":"NNNN","direccion":"DDDD","puntoReferencia":"PPPP","tipoContribuyente":"JURIDICO","tipoDocumento":"J","codCat":null},"funcionario":{"documentoIdentidad":"700020005","razonSocial":"Negocio CA","denominacionComercial":"Negocio CA","siglas":"NCA","parroquia":"RAUL LEONI","sector":"NNNN","direccion":"DDDD","puntoReferencia":"PPPP","tipoContribuyente":"JURIDICO","tipoDocumento":"J"}}	\N	2020-07-01 09:47:40.4185-04	SEDEMAT-01072020-27-0005	5	150	\N	\N	t	2020-07-01 10:04:22.233935-04
-321	27	{"usuario":{"documentoIdentidad":"565789109","razonSocial":"Tienda","denominacionComercial":"Tienda","siglas":"TT","parroquia":"BOLIVAR","sector":"Los Mangos","direccion":"Av 34","puntoReferencia":"Los locos","tipoContribuyente":"JURIDICO","tipoDocumento":"J","codCat":null},"funcionario":{"documentoIdentidad":"565789109","razonSocial":"Tienda","denominacionComercial":"Tienda","siglas":"TT","parroquia":"BOLIVAR","sector":"Los Mangos","direccion":"Av 34","puntoReferencia":"Los locos","tipoContribuyente":"JURIDICO","tipoDocumento":"V"}}	\N	2020-07-01 09:24:36.899794-04	SEDEMAT-01072020-27-0002	2	145	\N	\N	t	2020-07-01 09:27:18.764155-04
-322	27	{"usuario":{"documentoIdentidad":"4002557713","razonSocial":"waku waku CA","denominacionComercial":"soy yo ","siglas":"WWW","parroquia":"OLEGARIO VILLALOBOS","sector":"Canchancha, villa Puerto Azul","direccion":"av 16","puntoReferencia":"frente fuji","tipoContribuyente":"JURIDICO","tipoDocumento":"J","codCat":null},"funcionario":{"documentoIdentidad":"4002557713","razonSocial":"waku waku CA","denominacionComercial":"soy yo ","siglas":"WWW","parroquia":"OLEGARIO VILLALOBOS","sector":"Canchancha, villa Puerto Azul","direccion":"av 16","puntoReferencia":"frente fuji","tipoContribuyente":"JURIDICO","tipoDocumento":"J"}}	\N	2020-07-01 09:32:13.02945-04	SEDEMAT-01072020-27-0003	3	146	\N	\N	t	2020-07-03 11:21:19.489328-04
-326	28	{"usuario":{"telefono":"4121100342","correo":"user2@gmail.com","denominacionComercial":"Negocio CA","nombreRepresentante":"Prueba ","codCat":null,"contribuyente":{"id":80,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"700020005","razonSocial":"Negocio CA","denomComercial":"Negocio CA","siglas":"NCA","sector":"NNNN","direccion":"DDDD","puntoReferencia":"PPPP","verificado":true,"verificacionTelefono":true}},"funcionario":{"telefono":"4121100342","correo":"user2@gmail.com","denominacionComercial":"Negocio CA","nombreRepresentante":"Prueba ","actividadesEconomicas":[{"id":5,"codigo":2033001,"descripcion":"Servicio de encomiendas.","key":4}],"referenciaMunicipal":"8000000004"}}	1000000.0	2020-07-01 10:13:32.706273-04	SEDEMAT-01072020-28-0002	2	150	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-01072020-28-0002	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/certificados/SEDEMAT-01072020-28-0002	t	2020-07-01 11:26:52.828017-04
-325	28	{"usuario":{"telefono":"4246336236","correo":"prueba123@gmail.com","denominacionComercial":"tienda","nombreRepresentante":"jose","codCat":null,"contribuyente":{"id":79,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"314151612","razonSocial":"tienda 2","denomComercial":"tienda 2","siglas":"tienda 2","sector":"tienda 2","direccion":"mcbo","puntoReferencia":"mcbo","verificado":true,"verificacionTelefono":true}},"funcionario":{"telefono":"4246336236","correo":"prueba123@gmail.com","denominacionComercial":"tienda  soft","nombreRepresentante":"jose","actividadesEconomicas":[{"id":19,"codigo":2047001,"descripcion":"Venta e Implementación de Software.","key":18},{"id":61,"codigo":1039001,"descripcion":"Empresas Desarrolladoras de Software.","key":60}],"referenciaMunicipal":"8000000005"}}	1000000.0	2020-07-01 10:09:05.754533-04	SEDEMAT-01072020-28-0001	1	149	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-01072020-28-0001	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/certificados/SEDEMAT-01072020-28-0001	t	2020-07-01 11:42:57.618399-04
-327	27	{"usuario":{"documentoIdentidad":"406576458","razonSocial":"Comercializadora 5 de Julio","denominacionComercial":"Comercializadora 5 de Julio","siglas":"C5J","parroquia":"OLEGARIO VILLALOBOS","sector":"Juana de Avila","direccion":"calle 77 con avenida 16","puntoReferencia":"Wendys Kids","tipoContribuyente":"JURIDICO","tipoDocumento":"J","codCat":null},"funcionario":{"documentoIdentidad":"406576458","razonSocial":"Comercializadora 5 de Julio","denominacionComercial":"Comercializadora 5 de Julio","siglas":"C5J","parroquia":"OLEGARIO VILLALOBOS","sector":"Juana de Avila","direccion":"calle 77 con avenida 16","puntoReferencia":"Wendys Kids","tipoContribuyente":"JURIDICO","tipoDocumento":"J"}}	\N	2020-07-02 11:13:50.325816-04	SEDEMAT-02072020-27-0001	1	153	\N	\N	t	2020-07-02 11:29:55.973332-04
-328	28	{"usuario":{"telefono":"4246336236","correo":"comercializadora5j@gmail.com","denominacionComercial":"Comercializadora","nombreRepresentante":"Jose Perez","codCat":null,"contribuyente":{"id":82,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"406576458","razonSocial":"Comercializadora 5 de Julio","denomComercial":"Comercializadora 5 de Julio","siglas":"C5J","sector":"Juana de Avila","direccion":"calle 77 con avenida 16","puntoReferencia":"Wendys Kids","verificado":true,"verificacionTelefono":true}},"funcionario":{"telefono":"4246336236","correo":"comercializadora5j@gmail.com","denominacionComercial":"Comercializadora","nombreRepresentante":"Jose Perez","actividadesEconomicas":[{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","key":0},{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","key":1}],"referenciaMunicipal":"8000000006"}}	1000000.0	2020-07-02 11:43:52.483359-04	SEDEMAT-02072020-28-0001	1	153	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-02072020-28-0001	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/certificados/SEDEMAT-02072020-28-0001	t	2020-07-02 11:55:41.42259-04
-329	28	{"usuario":{"telefono":"4146053291","correo":"fake2@gmail.com","denominacionComercial":"tienda  soft","nombreRepresentante":"Jhonnatan Romay","codCat":null,"contribuyente":{"id":83,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"4002557713","razonSocial":"waku waku CA","denomComercial":"soy yo ","siglas":"WWW","sector":"Canchancha, villa Puerto Azul","direccion":"av 16","puntoReferencia":"frente fuji","verificado":true,"verificacionTelefono":true}}}	1000000.0	2020-07-03 11:34:49.578088-04	SEDEMAT-03072020-28-0001	1	146	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-03072020-28-0001	\N	f	\N
-330	26	{"funcionario":{"beneficios":[{"idRamo":"64","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":100000,"fechaDePago":"09-07-2020"},{"porcion":"2","monto":74000,"fechaDePago":"09-07-2020"}]}],"contribuyente":{"id":84,"tipoDocumento":"J","documento":"304689713","registroMunicipal":"2900011265","razonSocial":"CORPORACION DIGITEL, C.A.","denomComercial":"CORPORACION GSM","sector":"","direccion":null,"puntoReferencia":"","verificado":true,"liquidaciones":[{"id":64,"ramo":"SERVICIOS MUNICIPALES","monto":"174000.00"}],"totalDeuda":"174000.00"}}}	\N	2020-07-09 08:13:24.897936-04	SEDEMAT-09072020-26-0001	1	83	\N	\N	t	2020-07-09 08:27:59.653175-04
+298	27	{"usuario":{"documentoIdentidad":"400197520","razonSocial":"Wak Casa de Software CA","denominacionComercial":"Wak Casa de Software CA","siglas":"WAK","parroquia":"OLEGARIO VILLALOBOS","sector":"Tierra Negra","direccion":"Av 21 Calle 86","puntoReferencia":"Diagonal CDO","tipoContribuyente":"JURIDICO","tipoDocumento":"J","codCat":null},"funcionario":{"documentoIdentidad":"400197520","razonSocial":"Wak Casa de Software CA","denominacionComercial":"Wak Casa de Software CA","siglas":"WAK","parroquia":"OLEGARIO VILLALOBOS","sector":"Tierra Negra","direccion":"Av 21 Calle 86","puntoReferencia":"Diagonal CDO","tipoContribuyente":"JURIDICO","tipoDocumento":"V"}}	\N	2020-06-26 22:49:43.696424+00	SEDEMAT-26062020-27-0001	1	119	\N	\N	t	2020-06-26 23:51:45.215522+00
+302	3	{"usuario":{"cedulaORif":"12345688","nombreORazon":"jose","direccion":"mcbo","puntoReferencia":"mcbo","sector":"3123123","parroquia":"BOLIVAR","nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","contacto":"jose","horario":"8 a 12","prefix":"V","nacionalidad":"V","codCat":null,"contribuyente":null}}	\N	2020-06-30 18:22:40.387563+00	CBM-30062020-3-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/CBM/planillas/CBM-30062020-3-0001	\N	f	\N
+300	1	{"usuario":{"cedulaORif":"12345688","nombreORazon":"jose","direccion":"mcbo","puntoReferencia":"mcbo","sector":"3123123","parroquia":"BOLIVAR","nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","contacto":"jose","horario":"9 a 12","prefix":"V","nacionalidad":"V","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]}}}	20000000	2020-06-30 17:50:29.797212+00	CBM-30062020-1-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/CBM/planillas/CBM-30062020-1-0001	\N	f	\N
+301	2	{"usuario":{"cedulaORif":"12345688","nombreORazon":"jose","direccion":"mcbo","puntoReferencia":"mcbo","sector":"3123123","parroquia":"CACIQUE MARA","nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","contacto":"jose","horario":"8 a 12","prefix":"V","nacionalidad":"V","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]},"contribuyente":null}}	20000000	2020-06-30 18:21:38.604251+00	CBM-30062020-2-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/CBM/planillas/CBM-30062020-2-0001	\N	f	\N
+303	6	{"usuario":{"nombre":"jose","ubicadoEn":"mcbo","telefono":"4246336236","tipoOcupacion":"panadero","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]},"contribuyente":null}}	600000000	2020-06-30 18:23:44.183727+00	SAGAS-30062020-6-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SAGAS/planillas/SAGAS-30062020-6-0001	\N	f	\N
+305	8	{"usuario":{"nombre":"jose","ubicadoEn":"mcbo","telefono":"4246336236","tipoOcupacion":"panadero","codCat":null,"contribuyente":null}}	\N	2020-06-30 18:25:26.785389+00	SAGAS-30062020-8-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SAGAS/planillas/SAGAS-30062020-8-0001	\N	f	\N
+304	7	{"usuario":{"nombre":"jose","ubicadoEn":"mcbo","telefono":"4246336236","tipoOcupacion":"panadero","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]},"contribuyente":null}}	2400000000	2020-06-30 18:24:55.057176+00	SAGAS-30062020-7-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SAGAS/planillas/SAGAS-30062020-7-0001	\N	f	\N
+307	10	{"usuario":{"nombre":"jose","ubicadoEn":"mcbo","telefono":"4246336236","tipoOcupacion":"panadero","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]},"contribuyente":null}}	\N	2020-06-30 18:29:35.964286+00	SAGAS-30062020-10-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SAGAS/planillas/SAGAS-30062020-10-0001	\N	f	\N
+306	16	{"usuario":{"nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","parroquia":"CACIQUE MARA","direccion":"mcbo","propietarios":[{"razonSocial":"jose","nacionalidad":"V","cedulaORif":"12345688","telefono":"4246336236","direccion":"1620 Columbia arms circle unit 161","correo":"zapasolca1@gmail.com","parroquia":"BOLIVAR"}],"ubicadoEn":"mcbo","parroquiaEdificio":"BOLIVAR","tipoInmuebleSolvencia":"terreno","nacionalidad":"V","codCat":null,"contribuyente":null}}	3000000	2020-06-30 18:27:13.595827+00	CPU-30062020-16-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/CPU/planillas/CPU-30062020-16-0001	\N	f	\N
+308	11	{"usuario":{"nombre":"jose","ubicadoEn":"mcbo","telefono":"4246336236","tipoOcupacion":"panadero","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]},"contribuyente":null}}	\N	2020-06-30 18:30:23.317754+00	SAGAS-30062020-11-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SAGAS/planillas/SAGAS-30062020-11-0001	\N	f	\N
+309	12	{"usuario":{"nombre":"jose","ubicadoEn":"mcbo","telefono":"4246336236","tipoOcupacion":"panadero","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]},"contribuyente":null}}	\N	2020-06-30 18:32:25.471914+00	SAGAS-30062020-12-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SAGAS/planillas/SAGAS-30062020-12-0001	\N	f	\N
+310	13	{"usuario":{"nombre":"jose","ubicadoEn":"mcbo","telefono":"4246336236","tipoOcupacion":"panadero","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]},"contribuyente":null}}	\N	2020-06-30 18:33:22.766851+00	SAGAS-30062020-13-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SAGAS/planillas/SAGAS-30062020-13-0001	\N	f	\N
+313	15	{"usuario":{"nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","parroquia":"BOLIVAR","direccion":"mcbo","propietarios":[{"razonSocial":"jose","nacionalidad":"V","cedulaORif":"12354688","telefono":"4246336236","direccion":"1620 Columbia arms circle unit 161","correo":"zapasolca1@gmail.com","parroquia":"BOLIVAR"}],"nombreConjunto":"x","cantidadEdificios":"5","nombreEdificio":"5","cantidadPisos":"5","pisoApto":"5","cantidadAptosPiso":"5","numeroApto":"5","nomenclaturaEdificio":"5","ubicacionEdificio":"5","parroquiaEdificio":"JUANA DE AVILA","nacionalidad":"V","codCat":null,"contribuyente":null}}	3000000	2020-06-30 18:40:41.149505+00	CPU-30062020-15-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/CPU/planillas/CPU-30062020-15-0001	\N	f	\N
+311	22	{"usuario":{"nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","parroquia":"CACIQUE MARA","direccion":"mcbo","propietarios":[{"razonSocial":"jose","nacionalidad":"V","cedulaORif":"12345688","telefono":"4246336236","direccion":"1620 Columbia arms circle unit 161","correo":"zapasolca1@gmail.com","parroquia":"CACIQUE MARA"}],"ubicadoEn":"mcbo","puntoReferencia":"mcbo","finalidad":"Actualización","frente":"123","linderoFrente":"fretne","linderoFondo":"fondo","linderoDerecha":"derecha","linderoIzquierda":"izquierda","observaciones":"observaciones","nacionalidad":"V","codCat":null,"contribuyente":null}}	200000.0	2020-06-30 18:36:51.647562+00	CPU-30062020-22-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/CPU/planillas/CPU-30062020-22-0001	\N	f	\N
+312	14	{"usuario":{"nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","parroquia":"BOLIVAR","direccion":"mcbo","propietarios":[{"razonSocial":"jose","nacionalidad":"V","cedulaORif":"12345688","telefono":"4246336236","direccion":"1620 Columbia arms circle unit 161","correo":"zapasolca1@gmail.com","parroquia":"BOLIVAR"}],"ubicadoEn":"mcbo","parroquiaEdificio":"BOLIVAR","tipoInmueble":"casa","nacionalidad":"V","codCat":null,"contribuyente":null}}	3000000	2020-06-30 18:38:44.270165+00	CPU-30062020-14-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/CPU/planillas/CPU-30062020-14-0001	\N	f	\N
+314	23	{"usuario":{"nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","parroquia":"CACIQUE MARA","direccion":"mcbo","propietarios":[{"razonSocial":"jose","nacionalidad":"V","cedulaORif":"12345688","telefono":"4246336236","direccion":"1620 Columbia arms circle unit 161","correo":"zapasolca1@gmail.com","parroquia":"CHIQUINQUIRA"}],"denominacion":"j","actividadComercial":"j","direccionInmueble":"j","parroquiaInmueble":"CRISTO DE ARANZA","telefonoInmueble":"4246336236","correoInmueble":"zapasolca1@gmail.com","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]},"nacionalidad":"V","contribuyente":null}}	\N	2020-06-30 18:42:30.344355+00	CPU-30062020-23-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/CPU/planillas/CPU-30062020-23-0001	\N	f	\N
+315	24	{"usuario":{"nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","parroquia":"CACIQUE MARA","direccion":"mcbo","propietarios":[{"razonSocial":"jose","nacionalidad":"V","cedulaORif":"12345688","telefono":"4246336236","direccion":"1620 Columbia arms circle unit 161","correo":"zapasolca1@gmail.com","parroquia":"BOLIVAR"}],"nombreInstitucion":"j","representanteInstitucion":"j","turno":"M","nivelEducativo":"j","telefonoInmueble":"4246336236","correoInmueble":"zapasolca1@gmail.com","direccionPlantel":"j","parroquiaInmueble":"IDELFONSO VASQUEZ","codCat":{"idInmueble":21,"codCatastral":"231315U01004083001001P0500","direccion":"Calle 73 entre Av. 3E y 3F","metrosConstruccion":"200","metrosTerreno":"300","fechaCreacion":"2020-03-20T20:46:01.230Z","fechaActualizacion":"2020-03-20T20:46:01.230Z","fechaUltimoAvaluo":null,"parroquia":"ANTONIO BORJAS ROMERO","propietarios":[{"idpropietario":17,"razonSocial":"asdasd","cedula":null,"rif":null,"email":null,"id_inmueble":21}]},"nacionalidad":"V","contribuyente":null}}	\N	2020-06-30 18:44:24.903989+00	CPU-30062020-24-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/CPU/planillas/CPU-30062020-24-0001	\N	f	\N
+316	25	{"usuario":{"nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","parroquia":"BOLIVAR","direccion":"mcbo","direccionInmueble":"j","parroquiaInmueble":"BOLIVAR","tipoInmueble":"j","denominacion":"j","direccionEmpresa":"j","parroquiaEmpresa":"JUANA DE AVILA","telefonoEmpresa":"4246336236","correoEmpresa":"zapasolca1@gmail.com","nacionalidad":"V","codCat":null,"contribuyente":null}}	\N	2020-06-30 18:45:46.644432+00	CPU-30062020-25-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/CPU/planillas/CPU-30062020-25-0001	\N	f	\N
+318	21	{"usuario":{"nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","parroquia":"CACIQUE MARA","direccion":"mcbo","nombreOrganizacion":"j","tipoSociedad":"Civil","tipoTransporte":"CPP","nombreRepresentante":"j","cedulaRepresentante":"12345688","telefonoRepresentante":"4246336236","nacionalidad":"V","nacionalidadRepresentante":"V","codCat":null,"contribuyente":null}}	\N	2020-06-30 18:48:03.746067+00	IMTCUMA-30062020-21-0001	1	129	\N	\N	f	\N
+317	18	{"usuario":{"nombre":"jose","cedula":"12345688","telefono":"4246336236","correo":"zapasolca1@gmail.com","fechaApartado":"2020-06-30T18:46:22.908Z","numeroBohio":"1","detallesBohio":"g","nacionalidad":"V","codCat":null,"contribuyente":null}}	2500000	2020-06-30 18:46:46.8143+00	SEDEPAR-30062020-18-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEPAR/planillas/SEDEPAR-30062020-18-0001	\N	f	\N
+319	28	{"usuario":{"telefono":"4246336236","correo":"zapasolca1@gmail.com","denominacionComercial":"j","nombreRepresentante":"j","codCat":null,"contribuyente":{"id":66,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"410984694","razonSocial":"ZAPASOL, C.A.","denomComercial":"ZAPASOL, C.A.","sector":"CIRCUNVALACION 2","direccion":"Avenida 58 Calle  , Local Nro. PB-28","puntoReferencia":"FRENTE A TRAKI CV2","verificado":true,"verificacionTelefono":true}}}	1000000.0	2020-06-30 18:57:02.83084+00	SEDEMAT-30062020-28-0001	1	129	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-30062020-28-0001	\N	f	\N
+320	27	{"usuario":{"documentoIdentidad":"308333666","razonSocial":"Mi negocio C.A.","denominacionComercial":"Mi negocio","siglas":"MNCA","parroquia":"JUANA DE AVILA","sector":"Canchancha","direccion":"Av 21 Villa Punta Arenas","puntoReferencia":"CC Sambil","tipoContribuyente":"JURIDICO","tipoDocumento":"J","codCat":null},"funcionario":{"documentoIdentidad":"308333666","razonSocial":"Mi negocio C.A.","denominacionComercial":"Mi negocio","siglas":"MNCA","parroquia":"JUANA DE AVILA","sector":"Canchancha","direccion":"Av 21 Villa Punta Arenas","puntoReferencia":"CC Sambil","tipoContribuyente":"JURIDICO","tipoDocumento":"V"}}	\N	2020-07-01 13:17:17.671537+00	SEDEMAT-01072020-27-0001	1	143	\N	\N	t	2020-07-01 13:26:28.837352+00
+323	27	{"usuario":{"documentoIdentidad":"314151612","razonSocial":"tienda 2","denominacionComercial":"tienda 2","siglas":"tienda 2","parroquia":"JUANA DE AVILA","sector":"tienda 2","direccion":"mcbo","puntoReferencia":"mcbo","tipoContribuyente":"JURIDICO","tipoDocumento":"J","codCat":null},"funcionario":{"documentoIdentidad":"314151612","razonSocial":"tienda 2","denominacionComercial":"tienda 2","siglas":"tienda 2","parroquia":"JUANA DE AVILA","sector":"tienda 2","direccion":"mcbo","puntoReferencia":"mcbo","tipoContribuyente":"JURIDICO","tipoDocumento":"J"}}	\N	2020-07-01 13:44:35.240099+00	SEDEMAT-01072020-27-0004	4	149	\N	\N	t	2020-07-01 14:04:09.930643+00
+324	27	{"usuario":{"documentoIdentidad":"700020005","razonSocial":"Negocio CA","denominacionComercial":"Negocio CA","siglas":"NCA","parroquia":"RAUL LEONI","sector":"NNNN","direccion":"DDDD","puntoReferencia":"PPPP","tipoContribuyente":"JURIDICO","tipoDocumento":"J","codCat":null},"funcionario":{"documentoIdentidad":"700020005","razonSocial":"Negocio CA","denominacionComercial":"Negocio CA","siglas":"NCA","parroquia":"RAUL LEONI","sector":"NNNN","direccion":"DDDD","puntoReferencia":"PPPP","tipoContribuyente":"JURIDICO","tipoDocumento":"J"}}	\N	2020-07-01 13:47:40.4185+00	SEDEMAT-01072020-27-0005	5	150	\N	\N	t	2020-07-01 14:04:22.233935+00
+321	27	{"usuario":{"documentoIdentidad":"565789109","razonSocial":"Tienda","denominacionComercial":"Tienda","siglas":"TT","parroquia":"BOLIVAR","sector":"Los Mangos","direccion":"Av 34","puntoReferencia":"Los locos","tipoContribuyente":"JURIDICO","tipoDocumento":"J","codCat":null},"funcionario":{"documentoIdentidad":"565789109","razonSocial":"Tienda","denominacionComercial":"Tienda","siglas":"TT","parroquia":"BOLIVAR","sector":"Los Mangos","direccion":"Av 34","puntoReferencia":"Los locos","tipoContribuyente":"JURIDICO","tipoDocumento":"V"}}	\N	2020-07-01 13:24:36.899794+00	SEDEMAT-01072020-27-0002	2	145	\N	\N	t	2020-07-01 13:27:18.764155+00
+322	27	{"usuario":{"documentoIdentidad":"4002557713","razonSocial":"waku waku CA","denominacionComercial":"soy yo ","siglas":"WWW","parroquia":"OLEGARIO VILLALOBOS","sector":"Canchancha, villa Puerto Azul","direccion":"av 16","puntoReferencia":"frente fuji","tipoContribuyente":"JURIDICO","tipoDocumento":"J","codCat":null},"funcionario":{"documentoIdentidad":"4002557713","razonSocial":"waku waku CA","denominacionComercial":"soy yo ","siglas":"WWW","parroquia":"OLEGARIO VILLALOBOS","sector":"Canchancha, villa Puerto Azul","direccion":"av 16","puntoReferencia":"frente fuji","tipoContribuyente":"JURIDICO","tipoDocumento":"J"}}	\N	2020-07-01 13:32:13.02945+00	SEDEMAT-01072020-27-0003	3	146	\N	\N	t	2020-07-03 15:21:19.489328+00
+326	28	{"usuario":{"telefono":"4121100342","correo":"user2@gmail.com","denominacionComercial":"Negocio CA","nombreRepresentante":"Prueba ","codCat":null,"contribuyente":{"id":80,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"700020005","razonSocial":"Negocio CA","denomComercial":"Negocio CA","siglas":"NCA","sector":"NNNN","direccion":"DDDD","puntoReferencia":"PPPP","verificado":true,"verificacionTelefono":true}},"funcionario":{"telefono":"4121100342","correo":"user2@gmail.com","denominacionComercial":"Negocio CA","nombreRepresentante":"Prueba ","actividadesEconomicas":[{"id":5,"codigo":2033001,"descripcion":"Servicio de encomiendas.","key":4}],"referenciaMunicipal":"8000000004"}}	1000000.0	2020-07-01 14:13:32.706273+00	SEDEMAT-01072020-28-0002	2	150	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-01072020-28-0002	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/certificados/SEDEMAT-01072020-28-0002	t	2020-07-01 15:26:52.828017+00
+325	28	{"usuario":{"telefono":"4246336236","correo":"prueba123@gmail.com","denominacionComercial":"tienda","nombreRepresentante":"jose","codCat":null,"contribuyente":{"id":79,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"314151612","razonSocial":"tienda 2","denomComercial":"tienda 2","siglas":"tienda 2","sector":"tienda 2","direccion":"mcbo","puntoReferencia":"mcbo","verificado":true,"verificacionTelefono":true}},"funcionario":{"telefono":"4246336236","correo":"prueba123@gmail.com","denominacionComercial":"tienda  soft","nombreRepresentante":"jose","actividadesEconomicas":[{"id":19,"codigo":2047001,"descripcion":"Venta e Implementación de Software.","key":18},{"id":61,"codigo":1039001,"descripcion":"Empresas Desarrolladoras de Software.","key":60}],"referenciaMunicipal":"8000000005"}}	1000000.0	2020-07-01 14:09:05.754533+00	SEDEMAT-01072020-28-0001	1	149	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-01072020-28-0001	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/certificados/SEDEMAT-01072020-28-0001	t	2020-07-01 15:42:57.618399+00
+327	27	{"usuario":{"documentoIdentidad":"406576458","razonSocial":"Comercializadora 5 de Julio","denominacionComercial":"Comercializadora 5 de Julio","siglas":"C5J","parroquia":"OLEGARIO VILLALOBOS","sector":"Juana de Avila","direccion":"calle 77 con avenida 16","puntoReferencia":"Wendys Kids","tipoContribuyente":"JURIDICO","tipoDocumento":"J","codCat":null},"funcionario":{"documentoIdentidad":"406576458","razonSocial":"Comercializadora 5 de Julio","denominacionComercial":"Comercializadora 5 de Julio","siglas":"C5J","parroquia":"OLEGARIO VILLALOBOS","sector":"Juana de Avila","direccion":"calle 77 con avenida 16","puntoReferencia":"Wendys Kids","tipoContribuyente":"JURIDICO","tipoDocumento":"J"}}	\N	2020-07-02 15:13:50.325816+00	SEDEMAT-02072020-27-0001	1	153	\N	\N	t	2020-07-02 15:29:55.973332+00
+328	28	{"usuario":{"telefono":"4246336236","correo":"comercializadora5j@gmail.com","denominacionComercial":"Comercializadora","nombreRepresentante":"Jose Perez","codCat":null,"contribuyente":{"id":82,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"406576458","razonSocial":"Comercializadora 5 de Julio","denomComercial":"Comercializadora 5 de Julio","siglas":"C5J","sector":"Juana de Avila","direccion":"calle 77 con avenida 16","puntoReferencia":"Wendys Kids","verificado":true,"verificacionTelefono":true}},"funcionario":{"telefono":"4246336236","correo":"comercializadora5j@gmail.com","denominacionComercial":"Comercializadora","nombreRepresentante":"Jose Perez","actividadesEconomicas":[{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","key":0},{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","key":1}],"referenciaMunicipal":"8000000006"}}	1000000.0	2020-07-02 15:43:52.483359+00	SEDEMAT-02072020-28-0001	1	153	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-02072020-28-0001	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/certificados/SEDEMAT-02072020-28-0001	t	2020-07-02 15:55:41.42259+00
+329	28	{"usuario":{"telefono":"4146053291","correo":"fake2@gmail.com","denominacionComercial":"tienda  soft","nombreRepresentante":"Jhonnatan Romay","codCat":null,"contribuyente":{"id":83,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"4002557713","razonSocial":"waku waku CA","denomComercial":"soy yo ","siglas":"WWW","sector":"Canchancha, villa Puerto Azul","direccion":"av 16","puntoReferencia":"frente fuji","verificado":true,"verificacionTelefono":true}}}	1000000.0	2020-07-03 15:34:49.578088+00	SEDEMAT-03072020-28-0001	1	146	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-03072020-28-0001	\N	f	\N
+330	26	{"funcionario":{"beneficios":[{"idRamo":"64","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":100000,"fechaDePago":"09-07-2020"},{"porcion":"2","monto":74000,"fechaDePago":"09-07-2020"}]}],"contribuyente":{"id":84,"tipoDocumento":"J","documento":"304689713","registroMunicipal":"2900011265","razonSocial":"CORPORACION DIGITEL, C.A.","denomComercial":"CORPORACION GSM","sector":"","direccion":null,"puntoReferencia":"","verificado":true,"liquidaciones":[{"id":64,"ramo":"SERVICIOS MUNICIPALES","monto":"174000.00"}],"totalDeuda":"174000.00"}}}	\N	2020-07-09 12:13:24.897936+00	SEDEMAT-09072020-26-0001	1	83	\N	\N	t	2020-07-09 12:27:59.653175+00
+331	27	{"usuario":{"documentoIdentidad":"123123123","razonSocial":"asdasdasd","denominacionComercial":"FARMACIA COVIDES 2","siglas":"COVIDES 2","parroquia":"CACIQUE MARA","sector":"123","direccion":"asdasdasd","puntoReferencia":"123","tipoContribuyente":"JURIDICO","tipoDocumento":"J","codCat":null,"contribuyente":null}}	\N	2020-07-10 15:03:38.148479+00	SEDEMAT-10072020-27-0001	1	119	\N	\N	f	\N
+334	27	{"usuario":{"documentoIdentidad":"12543654","razonSocial":"jose sanchez","denominacionComercial":"comercializadora","siglas":"CMCLZDR","parroquia":"JUANA DE AVILA","sector":"123","direccion":"mcbo","puntoReferencia":"mcbo","tipoContribuyente":"NATURAL","tipoDocumento":"V","codCat":null},"funcionario":{"documentoIdentidad":"12543654","razonSocial":"jose sanchez","denominacionComercial":"comercializadora","siglas":"CMCLZDR","parroquia":"JUANA DE AVILA","sector":"123","direccion":"mcbo","puntoReferencia":"mcbo","tipoContribuyente":"NATURAL","tipoDocumento":"V"}}	\N	2020-07-13 01:02:23.945848+00	SEDEMAT-13072020-27-0001	1	163	\N	\N	t	2020-07-13 01:09:31.49455+00
+332	26	{"funcionario":{"beneficios":[{"idRamo":"1","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":2000000,"fechaDePago":"07-18-2020"},{"porcion":"2","monto":1000000,"fechaDePago":"07-31-2020"}]},{"idRamo":"9","tipoBeneficio":"pagoCompleto"},{"idRamo":"29","tipoBeneficio":"remision"}],"contribuyente":{"id":87,"tipoDocumento":"J","documento":"000202001","registroMunicipal":"203C000845","razonSocial":"FARMATODO, C.A.","denomComercial":"FARMATODO, C.A. FARMACIA FUERZAS ARMADAS","sector":"PARCELAMIENTO LA VILLA","direccion":"Avenida 14B Calle 45, Local Nro. 789","puntoReferencia":"frente a ferretotal","verificado":true,"liquidaciones":[{"id":1,"ramo":"TASA ADMINISTRATIVA DE SOLVENCIA DE AE","monto":"3000000.00"},{"id":9,"ramo":"ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES","monto":"9090000.00"},{"id":29,"ramo":"MULTAS","monto":"15000000.00"}],"totalDeuda":27090000}}}	\N	2020-07-10 16:49:30.462689+00	SEDEMAT-10072020-26-0001	1	83	\N	\N	t	2020-07-10 19:44:47.523322+00
+333	26	{"funcionario":{"beneficios":[{"idRamo":"1","tipoBeneficio":"pagoCompleto"},{"idRamo":"9","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":2000000,"fechaDePago":"07-17-2020"},{"porcion":"2","monto":1060000,"fechaDePago":"07-31-2020"}]},{"idRamo":"29","tipoBeneficio":"pagoCompleto"},{"idRamo":"64","tipoBeneficio":"pagoCompleto"}],"contribuyente":{"id":84,"tipoDocumento":"J","documento":"304689713","registroMunicipal":"2900011265","razonSocial":"CORPORACION DIGITEL, C.A.","denomComercial":"CORPORACION GSM","sector":"","direccion":null,"puntoReferencia":"","verificado":true,"liquidaciones":[{"id":1,"ramo":"TASA ADMINISTRATIVA DE SOLVENCIA DE AE","monto":"2000000.00"},{"id":9,"ramo":"ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES","monto":"3060000.00"},{"id":29,"ramo":"MULTAS","monto":"5000000.00"},{"id":64,"ramo":"SERVICIOS MUNICIPALES","monto":"174000.00"}],"totalDeuda":10234000}}}	\N	2020-07-10 17:39:53.585245+00	SEDEMAT-10072020-26-0002	2	83	\N	\N	t	2020-07-10 17:40:22.836976+00
+335	26	{"funcionario":{"beneficios":[{"idRamo":"1","tipoBeneficio":"pagoCompleto"},{"idRamo":"9","tipoBeneficio":"pagoCompleto"},{"idRamo":"11","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":20000000,"fechaDePago":"07-13-2020"},{"porcion":"2","monto":4000000,"fechaDePago":"07-13-2020"}]},{"idRamo":"29","tipoBeneficio":"pagoCompleto"}],"contribuyente":{"id":84,"tipoDocumento":"J","documento":"304689713","registroMunicipal":"2900011265","razonSocial":"CORPORACION DIGITEL, C.A.","denomComercial":"CORPORACION GSM","sector":"","direccion":null,"puntoReferencia":"","verificado":true,"liquidaciones":[{"id":1,"ramo":"TASA ADMINISTRATIVA DE SOLVENCIA DE AE","monto":"2000000.00"},{"id":9,"ramo":"ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES","monto":"3060000.00"},{"id":11,"ramo":"PROPAGANDAS Y AVISOS COMERCIALES","monto":"24000000.00"},{"id":29,"ramo":"MULTAS","monto":"5000000.00"}],"totalDeuda":34060000}}}	\N	2020-07-13 16:43:56.744309+00	SEDEMAT-13072020-26-0001	1	83	\N	\N	t	2020-07-13 16:44:08.749839+00
+336	27	{"usuario":{"documentoIdentidad":"400000005","razonSocial":"Mi empresa CA","denominacionComercial":"Lo q se CA","siglas":"MECA","parroquia":"CECILIO ACOSTA","sector":"sabaneta","direccion":"av 21 calle 86","puntoReferencia":"lo que sea","tipoContribuyente":"JURIDICO","tipoDocumento":"J","codCat":null},"funcionario":{"documentoIdentidad":"400000005","razonSocial":"Mi empresa CA","denominacionComercial":"Lo q se CA","siglas":"MECA","parroquia":"CECILIO ACOSTA","sector":"sabaneta","direccion":"av 21 calle 86","puntoReferencia":"lo que sea","tipoContribuyente":"JURIDICO","tipoDocumento":"J"}}	\N	2020-07-13 19:30:55.647732+00	SEDEMAT-13072020-27-0002	2	172	\N	\N	t	2020-07-13 19:31:42.422201+00
+338	26	{"funcionario":{"beneficios":[{"idRamo":"9","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":4090000,"fechaDePago":"07-17-2020"},{"porcion":"2","monto":5000000,"fechaDePago":"07-24-2020"}]}],"contribuyente":{"id":87,"tipoDocumento":"J","documento":"000202001","registroMunicipal":"203C000845","razonSocial":"FARMATODO, C.A.","denomComercial":"FARMATODO, C.A. FARMACIA FUERZAS ARMADAS","sector":"PARCELAMIENTO LA VILLA","direccion":"Avenida 14B Calle 45, Local Nro. 789","puntoReferencia":"frente a ferretotal","verificado":true,"liquidaciones":[{"id":9,"ramo":"ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES","monto":"9090000.00"}],"totalDeuda":"9090000.00"}}}	\N	2020-07-14 13:05:23.977838+00	SEDEMAT-14072020-26-0001	1	83	\N	\N	t	2020-07-14 13:05:41.991268+00
+337	26	{"funcionario":{"beneficios":[{"idRamo":"64","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":75000,"fechaDePago":"07-20-2020"},{"porcion":"2","monto":70000,"fechaDePago":"08-03-2020"}]}],"contribuyente":{"id":86,"tipoDocumento":"J","documento":"308620483","registroMunicipal":"2900013829","razonSocial":"FARMACIA COVIDES C.A.","denomComercial":"FARMACIA COVIDES C.A.","sector":"INDIO MARA","direccion":"Avenida 65 Calle  22A, Local Nro.  MZN","puntoReferencia":"EDIF. IPSFA","verificado":true,"liquidaciones":[{"id":64,"ramo":"SERVICIOS MUNICIPALES","monto":"145000.00"}],"totalDeuda":"145000.00"}}}	\N	2020-07-13 19:39:23.854275+00	SEDEMAT-13072020-26-0002	2	83	\N	\N	t	2020-07-13 19:40:08.930921+00
+340	28	{"usuario":{"telefono":"4127645681","correo":"external@user.com","denominacionComercial":"farmacia prueba","nombreRepresentante":"Jose Jose","capitalSuscrito":"20000","tipoSociedadContrib":"Compañía Anónima","codCat":null,"contribuyente":{"id":86,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"308620483","razonSocial":"FARMACIA COVIDES C.A.","denomComercial":"FARMACIA COVIDES C.A.","sector":"INDIO MARA","direccion":"Avenida 65 Calle  22A, Local Nro.  MZN","puntoReferencia":"EDIF. IPSFA","verificado":true,"verificacionTelefono":true}},"funcionario":{"telefono":"4127645681","correo":"external@user.com","denominacionComercial":"farmacia prueba","nombreRepresentante":"Jose Jose","capitalSuscrito":"20000","tipoSociedadContrib":"Compañía Anónima","actividadesEconomicas":[{"id":140,"codigo":3010001,"descripcion":"Farmacias.","alicuota":"2.00","key":141},{"id":44,"codigo":1025001,"descripcion":"Fabricación de productos farmacéuticos,\\tlaboratorio farmacológico, medicamentos y cosméticos.","alicuota":"2.00","key":43}]}}	1000000.0	2020-07-14 15:21:39.288954+00	SEDEMAT-14072020-28-0001	1	58	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-14072020-28-0001	\N	f	\N
+339	26	{"funcionario":{"beneficios":[{"idRamo":"11","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":50000000,"fechaDePago":"07-17-2020"},{"porcion":"2","monto":50000000,"fechaDePago":"07-24-2020"},{"porcion":"3","monto":48500000,"fechaDePago":"07-31-2020"}]}],"contribuyente":{"id":87,"tipoDocumento":"J","documento":"000202001","registroMunicipal":"2900000031","razonSocial":"FARMATODO, C.A.","denomComercial":"FARMATODO, C.A. FARMACIA FUERZAS ARMADAS","sector":"PARCELAMIENTO LA VILLA","direccion":"Avenida 14B Calle 45, Local Nro. 789","puntoReferencia":"frente a ferretotal","verificado":true,"liquidaciones":[{"id":11,"ramo":"PROPAGANDAS Y AVISOS COMERCIALES","monto":"148500000.00"}],"totalDeuda":"148500000.00"}}}	\N	2020-07-14 13:11:52.552643+00	SEDEMAT-14072020-26-0002	2	116	\N	\N	t	2020-07-14 13:36:04.589736+00
+341	28	{\n    "usuario": {\n        "telefono": "4127645681",\n        "correo": "external@user.com",\n        "denominacionComercial": "123",\n        "nombreRepresentante": "123",\n        "capitalSuscrito": "123",\n        "tipoSociedadContrib": "Compañía Anónima",\n        "codCat": null,\n        "contribuyente": {\n            "id": 86,\n            "tipoDocumento": "J",\n            "tipoContribuyente": "JURIDICO",\n            "documento": "308620483",\n            "razonSocial": "FARMACIA COVIDES C.A.",\n            "denomComercial": "FARMACIA COVIDES C.A.",\n            "sector": "INDIO MARA",\n            "direccion": "Avenida 65 Calle  22A, Local Nro.  MZN",\n            "puntoReferencia": "EDIF. IPSFA",\n            "verificado": true,\n            "verificacionTelefono": true\n        }\n    },\n    "funcionario": {\n        "telefono": "4127645681",\n        "correo": "external@user.com",\n        "denominacionComercial": "123",\n        "nombreRepresentante": "123",\n        "capitalSuscrito": "123",\n        "tipoSociedadContrib": "Compañía Anónima",\n        "pago": [{\n                    "monto": "1000000.00",\n        "formaPago": "CULO",\n        "banco": "BOD",\n        "fecha": "07-14-2020",\n        "nro": "123123123"\n        }],\n        "actividadesEconomicas": [\n            {\n                "id": 1,\n                "codigo": 2029001,\n                "descripcion": "Transporte Terrestre de Carga refrigerada.",\n                "alicuota": "2.00",\n                "key": 0\n            }\n        ]\n    }\n}	1000000.0	2020-07-14 15:28:46.972941+00	SEDEMAT-14072020-28-0002	2	58	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-14072020-28-0002	\N	f	\N
+342	26	{"funcionario":{"beneficios":{"11":{"benefit":"convenio","pagos":3,"1_monto":50000000,"1_fechaDePago":"2020-08-01T19:54:50.067Z","2_monto":50000000,"2_fechaDePago":"2020-08-14T19:54:55.027Z","3_monto":32000000,"3_fechaDePago":"2020-07-30T19:55:01.404Z"}},"contribuyente":{"id":98,"tipoDocumento":"J","documento":"306020403","registroMunicipal":"204R000441","razonSocial":"DISTRIBUIDORA J.K. C.A.","denomComercial":"DISTRIBUIDORA J.K. C.A.","sector":"18 DE OCTUBRE","direccion":"Avenida 2 Calle IJ, Casa Nro. 3--75","puntoReferencia":"plaza de 18 de octubre","verificado":true,"liquidaciones":[{"id":11,"ramo":"PROPAGANDAS Y AVISOS COMERCIALES","monto":"132000000.00"}],"totalDeuda":"132000000.00"}}}	\N	2020-07-14 19:55:12.542001+00	SEDEMAT-14072020-26-0003	3	83	\N	\N	f	\N
+344	26	{"funcionario":{"beneficios":[{"idRamo":"1","tipoBeneficio":"remision"},{"idRamo":"9","tipoBeneficio":"remision"},{"idRamo":"11","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":10000000,"fechaDePago":"07-15-2020"},{"porcion":"2","monto":8000000,"fechaDePago":"07-15-2020"}]},{"idRamo":"29","tipoBeneficio":"remision"}],"contribuyente":{"id":84,"tipoDocumento":"J","documento":"304689713","registroMunicipal":"2900011265","razonSocial":"CORPORACION DIGITEL, C.A.","denomComercial":"CORPORACION GSM","sector":"","direccion":null,"puntoReferencia":"","verificado":true,"liquidaciones":[{"id":1,"ramo":"TASA ADMINISTRATIVA DE SOLVENCIA DE AE","monto":"2000000.00"},{"id":9,"ramo":"ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES","monto":"3060000.00"},{"id":11,"ramo":"PROPAGANDAS Y AVISOS COMERCIALES","monto":"18000000.00"},{"id":29,"ramo":"MULTAS","monto":"5000000.00"}],"totalDeuda":28060000}}}	\N	2020-07-15 12:37:13.350097+00	SEDEMAT-15072020-26-0001	1	83	\N	\N	t	2020-07-15 13:41:54.298424+00
+343	26	{"funcionario":{"beneficios":[{"idRamo":"11","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":50000000,"fechaDePago":"07-21-2020"},{"porcion":"2","monto":50000000,"fechaDePago":"07-28-2020"},{"porcion":"3","monto":34000000,"fechaDePago":"08-04-2020"}]}],"contribuyente":{"id":99,"tipoDocumento":"J","documento":"003257176","registroMunicipal":"2900049654","razonSocial":"FERRETOTAL CARACAS C.A.","denomComercial":"FERRETOTAL CARACAS C.A. (SUCURSAL)","sector":"","direccion":"Avenida Calle  , Casa Nro.  ","puntoReferencia":"","verificado":true,"liquidaciones":[{"id":11,"ramo":"PROPAGANDAS Y AVISOS COMERCIALES","monto":"134000000.00"}],"totalDeuda":"134000000.00"}}}	\N	2020-07-14 23:45:18.998482+00	SEDEMAT-14072020-26-0004	4	83	\N	\N	t	2020-07-15 16:57:09.206336+00
+345	26	{"funcionario":{"beneficios":[{"idRamo":"1","tipoBeneficio":"pagoCompleto"},{"idRamo":"9","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":3000000,"fechaDePago":"07-22-2020"},{"porcion":"2","monto":4020000,"fechaDePago":"07-29-2020"}]},{"idRamo":"11","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":100000000,"fechaDePago":"07-22-2020"},{"porcion":"2","monto":15500000,"fechaDePago":"07-29-2020"}]},{"idRamo":"29","tipoBeneficio":"remision"}],"contribuyente":{"id":99,"tipoDocumento":"J","documento":"003257176","registroMunicipal":"2000812803","razonSocial":"FERRETOTAL CARACAS C.A.","denomComercial":"FERRETOTAL CARACAS C.A. (SUCURSAL)","sector":"","direccion":"Avenida Calle  , Casa Nro.  ","puntoReferencia":"","verificado":true,"liquidaciones":[{"id":1,"ramo":"TASA ADMINISTRATIVA DE SOLVENCIA DE AE","monto":"2000000.00"},{"id":9,"ramo":"ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES","monto":"7020000.00"},{"id":11,"ramo":"PROPAGANDAS Y AVISOS COMERCIALES","monto":"115500000.00"},{"id":29,"ramo":"MULTAS","monto":"5000000.00"}],"totalDeuda":129520000}}}	\N	2020-07-15 16:42:20.754409+00	SEDEMAT-15072020-26-0002	2	83	\N	\N	t	2020-07-15 16:42:59.372042+00
+370	28	{"usuario":{"username":"rodrigolamus@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"50000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","alicuota":"2.00","key":1},{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2}],"pago":{"metodoPago":"TRANSFERENCIA","banco":15,"referencia":"112986734","fecha":"2020-07-03T13:22:30.622Z","costo":"1000000.0"},"correo":"rodrigolamus@gmail.com","contribuyente":{"id":101,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"312645978","razonSocial":"Comercializadora","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":68,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"key":101}},"funcionario":{"username":"rodrigolamus@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"50000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","alicuota":"2.00","key":1},{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2}],"pago":[],"correo":"rodrigolamus@gmail.com","contribuyente":{"id":101,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"312645978","razonSocial":"Comercializadora","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":68,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"key":101}}}	1000000.0	2020-07-16 13:31:37.731847+00	SEDEMAT-16072020-28-0006	6	192	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-16072020-28-0006	\N	f	\N
+346	26	{"funcionario":{"beneficios":[{"idRamo":"1","tipoBeneficio":"pagoCompleto"},{"idRamo":"9","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":4000000,"fechaDePago":"07-22-2020"},{"porcion":"2","monto":2420000,"fechaDePago":"07-29-2020"}]},{"idRamo":"11","tipoBeneficio":"convenio","porciones":[{"porcion":"1","monto":100000000,"fechaDePago":"07-22-2020"},{"porcion":"2","monto":34000000,"fechaDePago":"07-22-2020"}]},{"idRamo":"29","tipoBeneficio":"remision"}],"contribuyente":{"id":99,"tipoDocumento":"J","documento":"003257176","registroMunicipal":"2900049654","razonSocial":"FERRETOTAL CARACAS C.A.","denomComercial":"FERRETOTAL CARACAS C.A. (SUCURSAL)","sector":"","direccion":"Avenida Calle  , Casa Nro.  ","puntoReferencia":"","verificado":true,"liquidaciones":[{"id":1,"ramo":"TASA ADMINISTRATIVA DE SOLVENCIA DE AE","monto":"2000000.00"},{"id":9,"ramo":"ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES","monto":"6420000.00"},{"id":11,"ramo":"PROPAGANDAS Y AVISOS COMERCIALES","monto":"134000000.00"},{"id":29,"ramo":"MULTAS","monto":"5000000.00"}],"totalDeuda":147420000}}}	\N	2020-07-15 16:55:29.27274+00	SEDEMAT-15072020-26-0003	3	83	\N	\N	t	2020-07-15 16:56:12.835542+00
+347	28	{"usuario":{"username":"jsanchez.waku@gmail.com","denominacionComercial":"Si","nombreRepresentante":"Si","capitalSuscrito":"1000","tipoSociedadContrib":"Compañía Anónima","telefono":"13212312331","actividadesEconomicas":[{"id":6,"codigo":2034001,"descripcion":"Transporte terrestre de pasajeros.","alicuota":"1.00","key":5}],"pago":{"metodoPago":"TRANSFERENCIA","banco":11,"referencia":"1231412312","fecha":"2020-07-15T19:05:51.476Z","costo":"1000000.0"},"correo":"jsanchez.waku@gmail.com","contribuyente":{"id":84}}}	1000000.0	2020-07-15 19:05:54.379185+00	SEDEMAT-15072020-28-0001	1	118	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-15072020-28-0001	\N	f	\N
+350	27	{"usuario":{"documentoIdentidad":"18921679","razonSocial":"Triny Rosales","denominacionComercial":"Empanadas triny","siglas":"EMPTR","parroquia":"CACIQUE MARA","sector":"Cañada Honda","direccion":"av 21 calle 86","puntoReferencia":"en visoca","tipoContribuyente":"NATURAL","tipoDocumento":"V","codCat":null},"funcionario":{"documentoIdentidad":"18921679","razonSocial":"Triny Rosales","denominacionComercial":"Empanadas triny","siglas":"EMPTR","parroquia":"CACIQUE MARA","sector":"Cañada Honda","direccion":"av 21 calle 86","puntoReferencia":"en visoca","tipoContribuyente":"NATURAL","tipoDocumento":"V"}}	\N	2020-07-15 19:43:36.436209+00	SEDEMAT-15072020-27-0001	1	181	\N	\N	t	2020-07-15 19:52:51.590005+00
+349	28	{"usuario":{"username":"jsanchez.waku@gmail.com","denominacionComercial":"Si","nombreRepresentante":"Si","capitalSuscrito":"1000","tipoSociedadContrib":"Compañía Anónima","telefono":"13212312331","actividadesEconomicas":[{"id":6,"codigo":2034001,"descripcion":"Transporte terrestre de pasajeros.","alicuota":"1.00","key":5}],"pago":{"metodoPago":"TRANSFERENCIA","banco":11,"referencia":"12314123125","fecha":"2020-07-15T19:05:51.476Z","costo":"1000000.0"},"correo":"jsanchez.waku@gmail.com","contribuyente":{"id":84}},"funcionario":{"username":"jsanchez.waku@gmail.com","denominacionComercial":"Si","nombreRepresentante":"Si","capitalSuscrito":"1000","tipoSociedadContrib":"Compañía Anónima","telefono":"13212312331","actividadesEconomicas":[{"id":6,"codigo":2034001,"descripcion":"Transporte terrestre de pasajeros.","alicuota":"1.00","key":5}],"pago":[{"monto":"1000000.0","formaPago":"TRANSFERENCIA","banco":"Banco De Venezuela S.A.C.A. Banco Universal","fecha":"2020-07-15T00:00:00.000Z","nro":"12314123125"}],"correo":"jsanchez.waku@gmail.com","contribuyente":{"id":84}}}	1000000.0	2020-07-15 19:37:41.710633+00	SEDEMAT-15072020-28-0002	2	118	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-15072020-28-0002	\N	f	\N
+358	28	{"usuario":{"username":"rodrigolamus@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"50000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","alicuota":"2.00","key":1},{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2}],"pago":{"metodoPago":"TRANSFERENCIA","banco":8,"referencia":"53353535353","fecha":"2020-07-03T13:22:30.622Z","costo":"1000000.0"},"correo":"rodrigolamus@gmail.com","contribuyente":{"id":101,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"312645978","razonSocial":"Comercializadora","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":68,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"key":101}},"funcionario":{"username":"rodrigolamus@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"50000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","alicuota":"2.00","key":1},{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2}],"pago":[],"correo":"rodrigolamus@gmail.com","contribuyente":{"id":101,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"312645978","razonSocial":"Comercializadora","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":68,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"key":101}}}	1000000.0	2020-07-16 13:22:35.157748+00	SEDEMAT-16072020-28-0001	1	192	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-16072020-28-0001	\N	f	\N
+351	28	{"usuario":{"username":"jsanchez.waku@gmail.com","denominacionComercial":"asdasd","nombreRepresentante":"asdasd","capitalSuscrito":"1000","tipoSociedadContrib":"Sociedad Anónima","telefono":"12312412123","actividadesEconomicas":[{"id":5,"codigo":2033001,"descripcion":"Servicio de encomiendas.","alicuota":"3.00","key":4}],"pago":{"metodoPago":"TRANSFERENCIA","banco":11,"referencia":"123123123","fecha":"2020-07-15T19:46:04.391Z","costo":"1000000.0"},"correo":"jsanchez.waku@gmail.com","contribuyente":{"id":84,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"304689713","razonSocial":"CORPORACION DIGITEL, C.A.","denomComercial":"CORPORACION GSM","parroquia":null,"sector":"","direccion":null,"creditoFiscal":0,"puntoReferencia":"","verificado":true,"sucursales":[{"id":"76","referenciaMunicipal":"2900011266","fechaAprobacion":"2020-07-09T00:00:00.000Z","telefono":"4147212342","email":"snider8520@gmail.com","denomComercial":"CORPORACION GSM","nombreRepresentante":"OSWALDO CISNEROS","capitalSuscrito":null,"creditoFiscal":"0","tipoSociedad":null,"actualizado":true},{"id":"77","referenciaMunicipal":"2900014139","fechaAprobacion":"2020-07-09T00:00:00.000Z","telefono":"4147212342","email":"snider8520@gmail.com","denomComercial":"CORPORACION DIGITEL, C.A.","nombreRepresentante":"ROBERTO JOSE ORTA","capitalSuscrito":null,"creditoFiscal":"0","tipoSociedad":null,"actualizado":true},{"id":"78","referenciaMunicipal":"2900013536","fechaAprobacion":"2020-07-09T00:00:00.000Z","telefono":"4147212342","email":"snider8520@gmail.com","denomComercial":"CORPORACION DIGITEL, C.A.  PALACIO DE EVENTOS","nombreRepresentante":"FRANCISCO  HUNG","capitalSuscrito":null,"creditoFiscal":"0","tipoSociedad":null,"actualizado":true},{"id":"79","referenciaMunicipal":"2900026280","fechaAprobacion":"2020-07-09T00:00:00.000Z","telefono":"4147212342","email":"snider8520@gmail.com","denomComercial":"CORPORACION DIGITEL, C.A.","nombreRepresentante":"DEMERIS RUIZ","capitalSuscrito":null,"creditoFiscal":"0","tipoSociedad":null,"actualizado":true},{"id":"80","referenciaMunicipal":"2900011265","fechaAprobacion":"2020-07-09T00:00:00.000Z","telefono":"4147212342","email":"snider8520@gmail.com","denomComercial":"CORPORACION DIGITEL, C.A.","nombreRepresentante":"ALFRED TULIO HUNG RIVERO","capitalSuscrito":null,"creditoFiscal":"190980.48","tipoSociedad":null,"actualizado":true}],"key":84}},"funcionario":{"username":"jsanchez.waku@gmail.com","denominacionComercial":"asdasd","nombreRepresentante":"asdasd","capitalSuscrito":"1000","tipoSociedadContrib":"Sociedad Anónima","telefono":"12312412123","actividadesEconomicas":[{"id":5,"codigo":2033001,"descripcion":"Servicio de encomiendas.","alicuota":"3.00","key":4}],"pago":[{"monto":"1000000.0","formaPago":"TRANSFERENCIA","banco":"Banco De Venezuela S.A.C.A. Banco Universal","fecha":"2020-07-15T00:00:00.000Z","nro":"123123123"}],"correo":"jsanchez.waku@gmail.com","contribuyente":{"id":84,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"304689713","razonSocial":"CORPORACION DIGITEL, C.A.","denomComercial":"CORPORACION GSM","parroquia":null,"sector":"","direccion":null,"creditoFiscal":0,"puntoReferencia":"","verificado":true,"sucursales":[{"id":"76","referenciaMunicipal":"2900011266","fechaAprobacion":"2020-07-09T00:00:00.000Z","telefono":"4147212342","email":"snider8520@gmail.com","denomComercial":"CORPORACION GSM","nombreRepresentante":"OSWALDO CISNEROS","capitalSuscrito":null,"creditoFiscal":"0","tipoSociedad":null,"actualizado":true},{"id":"77","referenciaMunicipal":"2900014139","fechaAprobacion":"2020-07-09T00:00:00.000Z","telefono":"4147212342","email":"snider8520@gmail.com","denomComercial":"CORPORACION DIGITEL, C.A.","nombreRepresentante":"ROBERTO JOSE ORTA","capitalSuscrito":null,"creditoFiscal":"0","tipoSociedad":null,"actualizado":true},{"id":"78","referenciaMunicipal":"2900013536","fechaAprobacion":"2020-07-09T00:00:00.000Z","telefono":"4147212342","email":"snider8520@gmail.com","denomComercial":"CORPORACION DIGITEL, C.A.  PALACIO DE EVENTOS","nombreRepresentante":"FRANCISCO  HUNG","capitalSuscrito":null,"creditoFiscal":"0","tipoSociedad":null,"actualizado":true},{"id":"79","referenciaMunicipal":"2900026280","fechaAprobacion":"2020-07-09T00:00:00.000Z","telefono":"4147212342","email":"snider8520@gmail.com","denomComercial":"CORPORACION DIGITEL, C.A.","nombreRepresentante":"DEMERIS RUIZ","capitalSuscrito":null,"creditoFiscal":"0","tipoSociedad":null,"actualizado":true},{"id":"80","referenciaMunicipal":"2900011265","fechaAprobacion":"2020-07-09T00:00:00.000Z","telefono":"4147212342","email":"snider8520@gmail.com","denomComercial":"CORPORACION DIGITEL, C.A.","nombreRepresentante":"ALFRED TULIO HUNG RIVERO","capitalSuscrito":null,"creditoFiscal":"190980.48","tipoSociedad":null,"actualizado":true}],"key":84},"observaciones":"me lo mama"}}	1000000.0	2020-07-15 19:47:44.589342+00	SEDEMAT-15072020-28-0003	3	118	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-15072020-28-0003	\N	f	\N
+379	28	{"usuario":{"username":"prueba10@gmail.com","denominacionComercial":"FARMACIA COVIDES","nombreRepresentante":"JOSE CORO","capitalSuscrito":"12039109","tipoSociedadContrib":"Compañía Anónima","telefono":"1231241231","actividadesEconomicas":[{"id":4,"codigo":2032001,"descripcion":"Transporte Aéreo y Marítimo de Carga.","alicuota":"3.50","key":3,"desde":"2020-06-26T14:30:39.559Z"},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2,"desde":"2020-03-05T14:30:41.981Z"},{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0,"desde":"2019-07-12T14:30:45.034Z"},{"id":5,"codigo":2033001,"descripcion":"Servicio de encomiendas.","alicuota":"3.00","key":4,"desde":"2018-07-18T14:30:47.659Z"}],"estadoLicencia":"PERMANENTE","pago":{"metodoPago":"TRANSFERENCIA","banco":10,"referencia":"123124123","fecha":"2020-07-21T14:31:00.082Z","costo":"1000000"},"correo":"prueba10@gmail.com","contribuyente":{"id":86,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"308620483","razonSocial":"FARMACIA COVIDES C.A.","denomComercial":"FARMACIA COVIDES C.A.","parroquia":64,"sector":"INDIO MARA","direccion":"Avenida 65 Calle  22A, Local Nro.  MZN","creditoFiscal":0,"puntoReferencia":"EDIF. IPSFA","verificado":true,"sucursales":[{"id":"83","referenciaMunicipal":"207R002131","fechaAprobacion":"2020-07-10T00:00:00.000Z","telefono":"4127645681","email":"gab.tc@icloud.com","denomComercial":"FARMACIA COVIDES, C.A.  LOCATEL ( I.P.S.F.A. )","nombreRepresentante":"JOSE ABELD","capitalSuscrito":null,"creditoFiscal":"8414799.340000001","tipoSociedad":null,"actualizado":true},{"id":"84","referenciaMunicipal":"207R002132","fechaAprobacion":"2020-07-10T00:00:00.000Z","telefono":"4127645681","email":"gab.tc@icloud.com","denomComercial":"RARMACIA COVIDES, C.A. ( LOCATEL I.P.S.F.A. )","nombreRepresentante":"JOSE ABEID","capitalSuscrito":null,"creditoFiscal":"1730508.75","tipoSociedad":null,"actualizado":true},{"id":"86","referenciaMunicipal":"2900013829","fechaAprobacion":"2020-07-10T00:00:00.000Z","telefono":"4127645681","email":"covides@gmail.com","denomComercial":"FARMACIA COVIDES, C.A. ( LOCATEL BELLA VISTA )","nombreRepresentante":"LILIANA SANCHEZ","capitalSuscrito":null,"creditoFiscal":"0","tipoSociedad":null,"actualizado":true},{"id":"85","referenciaMunicipal":"207P000358","fechaAprobacion":"2020-07-10T00:00:00.000Z","telefono":"4127645681","email":"gab.tc@icloud.com","denomComercial":"FARMACIA COVIDES C.A.-","nombreRepresentante":"LILIANA SANCHEZ.-","capitalSuscrito":null,"creditoFiscal":"31434.00","tipoSociedad":null,"actualizado":true},{"id":"82","referenciaMunicipal":"AR20200024","fechaAprobacion":"2020-07-10T00:00:00.000Z","telefono":"4127645681","email":"gab.tc@icloud.com","denomComercial":"FARMACIA COVIDES C.A.","nombreRepresentante":"IVECO","capitalSuscrito":null,"creditoFiscal":"55.00","tipoSociedad":null,"actualizado":true}],"key":86}},"funcionario":{"username":"prueba10@gmail.com","denominacionComercial":"FARMACIA COVIDES","nombreRepresentante":"JOSE CORO","capitalSuscrito":"12039109","tipoSociedadContrib":"Compañía Anónima","telefono":"1231241231","actividadesEconomicas":[{"id":4,"codigo":2032001,"descripcion":"Transporte Aéreo y Marítimo de Carga.","alicuota":"3.50","key":3,"desde":"2020-06-26T14:30:39.559Z"},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2,"desde":"2020-03-05T14:30:41.981Z"},{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0,"desde":"2019-07-12T14:30:45.034Z"},{"id":5,"codigo":2033001,"descripcion":"Servicio de encomiendas.","alicuota":"3.00","key":4,"desde":"2018-07-18T14:30:47.659Z"}],"estadoLicencia":"PERMANENTE","pago":[],"correo":"prueba10@gmail.com","contribuyente":{"id":86,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"308620483","razonSocial":"FARMACIA COVIDES C.A.","denomComercial":"FARMACIA COVIDES C.A.","parroquia":64,"sector":"INDIO MARA","direccion":"Avenida 65 Calle  22A, Local Nro.  MZN","creditoFiscal":0,"puntoReferencia":"EDIF. IPSFA","verificado":true,"sucursales":[{"id":"83","referenciaMunicipal":"207R002131","fechaAprobacion":"2020-07-10T00:00:00.000Z","telefono":"4127645681","email":"gab.tc@icloud.com","denomComercial":"FARMACIA COVIDES, C.A.  LOCATEL ( I.P.S.F.A. )","nombreRepresentante":"JOSE ABELD","capitalSuscrito":null,"creditoFiscal":"8414799.340000001","tipoSociedad":null,"actualizado":true},{"id":"84","referenciaMunicipal":"207R002132","fechaAprobacion":"2020-07-10T00:00:00.000Z","telefono":"4127645681","email":"gab.tc@icloud.com","denomComercial":"RARMACIA COVIDES, C.A. ( LOCATEL I.P.S.F.A. )","nombreRepresentante":"JOSE ABEID","capitalSuscrito":null,"creditoFiscal":"1730508.75","tipoSociedad":null,"actualizado":true},{"id":"86","referenciaMunicipal":"2900013829","fechaAprobacion":"2020-07-10T00:00:00.000Z","telefono":"4127645681","email":"covides@gmail.com","denomComercial":"FARMACIA COVIDES, C.A. ( LOCATEL BELLA VISTA )","nombreRepresentante":"LILIANA SANCHEZ","capitalSuscrito":null,"creditoFiscal":"0","tipoSociedad":null,"actualizado":true},{"id":"85","referenciaMunicipal":"207P000358","fechaAprobacion":"2020-07-10T00:00:00.000Z","telefono":"4127645681","email":"gab.tc@icloud.com","denomComercial":"FARMACIA COVIDES C.A.-","nombreRepresentante":"LILIANA SANCHEZ.-","capitalSuscrito":null,"creditoFiscal":"31434.00","tipoSociedad":null,"actualizado":true},{"id":"82","referenciaMunicipal":"AR20200024","fechaAprobacion":"2020-07-10T00:00:00.000Z","telefono":"4127645681","email":"gab.tc@icloud.com","denomComercial":"FARMACIA COVIDES C.A.","nombreRepresentante":"IVECO","capitalSuscrito":null,"creditoFiscal":"55.00","tipoSociedad":null,"actualizado":true}],"key":86},"referenciaMunicipal":"8000000016"},"idTramite":379}	1000000	2020-07-21 14:31:05.501346+00	SEDEMAT-21072020-28-0003	3	197	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-21072020-28-0003	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/certificados/SEDEMAT-21072020-28-0003	t	2020-07-21 17:59:41.457994+00
+371	28	{"usuario":{"username":"rodrigolamus@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"50000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0},{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","alicuota":"2.00","key":1},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2}],"pago":{"metodoPago":"TRANSFERENCIA","banco":8,"referencia":"253453423","fecha":"2020-07-16T13:38:32.892Z","costo":"1000000.0"},"correo":"rodrigolamus@gmail.com","contribuyente":{"id":101,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"312645978","razonSocial":"Comercializadora","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":68,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"key":101}},"funcionario":{"username":"rodrigolamus@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"50000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0},{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","alicuota":"2.00","key":1},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2}],"pago":[],"correo":"rodrigolamus@gmail.com","contribuyente":{"id":101,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"312645978","razonSocial":"Comercializadora","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":68,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"key":101},"referenciaMunicipal":"8000000009"},"idTramite":371}	1000000.0	2020-07-16 13:38:37.382146+00	SEDEMAT-16072020-28-0007	7	192	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-16072020-28-0007	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/certificados/SEDEMAT-16072020-28-0007	t	2020-07-16 13:44:01.801809+00
+352	28	{"usuario":{"telefono":"4146053291","correo":"trosales@gmail.com","denominacionComercial":"Empanadas Triny","nombreRepresentante":"Triny Rosales","capitalSuscrito":"40000000","tipoSociedadContrib":"Sociedad de Responsabilidad Limitada","codCat":null,"contribuyente":{"id":100,"tipoDocumento":"V","tipoContribuyente":"NATURAL","documento":"18921679","razonSocial":"Triny Rosales","denomComercial":"Empanadas triny","siglas":"EMPTR","sector":"Cañada Honda","direccion":"av 21 calle 86","puntoReferencia":"en visoca","verificado":true,"verificacionTelefono":true}},"funcionario":{"telefono":"4146053291","correo":"trosales@gmail.com","denominacionComercial":"Empanadas Triny","nombreRepresentante":"Triny Rosales","capitalSuscrito":"40000000","tipoSociedadContrib":"Sociedad de Responsabilidad Limitada","actividadesEconomicas":[{"id":48,"codigo":20270012,"descripcion":"Puestos de Comida Callejera (Empanadas, Tequeños, Pastelitos, Mandocas y Similares, excluye Franquicias)","alicuota":"2.00","key":47}],"pago":[{"monto":"1000000.00","formaPago":"TRANSFERENCIA","banco":"Banco Occidental de Descuento","fecha":"2020-07-15T00:00:00.000Z","nro":"391227475"}],"referenciaMunicipal":"8000000008"},"idTramite":352}	1000000.0	2020-07-15 20:05:25.42043+00	SEDEMAT-15072020-28-0004	4	181	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-15072020-28-0004	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/certificados/SEDEMAT-15072020-28-0004	t	2020-07-15 20:42:13.077565+00
+353	28	{"usuario":{"telefono":"4246336236","correo":"prueba4@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"30000000","tipoSociedadContrib":"Compañía Anónima","codCat":null,"contribuyente":{"id":89,"tipoDocumento":"V","tipoContribuyente":"NATURAL","documento":"12543654","razonSocial":"jose sanchez","denomComercial":"comercializadora","siglas":"CMCLZDR","sector":"123","direccion":"mcbo","puntoReferencia":"mcbo","verificado":true,"verificacionTelefono":true}}}	1000000.0	2020-07-15 20:36:53.81152+00	SEDEMAT-15072020-28-0005	5	163	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-15072020-28-0005	\N	f	\N
+380	28	{"usuario":{"username":"prueba4@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"50000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":137,"codigo":3007001,"descripcion":"Abastos, bodegas y pequeños detales de víveres.","alicuota":"2.00","key":0,"desde":"2019-12-01T17:49:39.593Z"}],"estadoLicencia":"PERMANENTE","pago":{"metodoPago":"TRANSFERENCIA","banco":8,"referencia":"222333444","fecha":"2020-07-21T17:50:22.731Z","costo":"1000000"},"correo":"prueba4@gmail.com","contribuyente":{"id":89,"tipoDocumento":"V","tipoContribuyente":"NATURAL","documento":"12543654","razonSocial":"jose sanchez","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":69,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"key":89}},"funcionario":{"username":"prueba4@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"50000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":137,"codigo":3007001,"descripcion":"Abastos, bodegas y pequeños detales de víveres.","alicuota":"2.00","key":0,"desde":"2019-12-01T17:49:39.593Z"}],"estadoLicencia":"PERMANENTE","pago":[],"correo":"prueba4@gmail.com","contribuyente":{"id":89,"tipoDocumento":"V","tipoContribuyente":"NATURAL","documento":"12543654","razonSocial":"jose sanchez","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":69,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"key":89},"referenciaMunicipal":"8000000017"},"idTramite":380}	1000000	2020-07-21 17:50:27.086854+00	SEDEMAT-21072020-28-0004	4	163	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-21072020-28-0004	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/certificados/SEDEMAT-21072020-28-0004	t	2020-07-21 18:00:34.301877+00
+364	28	{"usuario":{"username":"rodrigolamus@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"50000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","alicuota":"2.00","key":1},{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2}],"pago":{"metodoPago":"TRANSFERENCIA","banco":8,"referencia":"53353535356","fecha":"2020-07-03T13:22:30.622Z","costo":"1000000.0"},"correo":"rodrigolamus@gmail.com","contribuyente":{"id":101,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"312645978","razonSocial":"Comercializadora","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":68,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"key":101}},"funcionario":{"username":"rodrigolamus@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"50000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","alicuota":"2.00","key":1},{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2}],"pago":[],"correo":"rodrigolamus@gmail.com","contribuyente":{"id":101,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"312645978","razonSocial":"Comercializadora","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":68,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"key":101}}}	1000000.0	2020-07-16 13:24:35.920108+00	SEDEMAT-16072020-28-0002	2	192	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-16072020-28-0002	\N	f	\N
+366	28	{"usuario":{"username":"rodrigolamus@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"50000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","alicuota":"2.00","key":1},{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2}],"pago":{"metodoPago":"TRANSFERENCIA","banco":8,"referencia":"746574656","fecha":"2020-07-03T13:22:30.622Z","costo":"1000000.0"},"correo":"rodrigolamus@gmail.com","contribuyente":{"id":101,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"312645978","razonSocial":"Comercializadora","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":68,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"key":101}},"funcionario":{"username":"rodrigolamus@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"50000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","alicuota":"2.00","key":1},{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2}],"pago":[],"correo":"rodrigolamus@gmail.com","contribuyente":{"id":101,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"312645978","razonSocial":"Comercializadora","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":68,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"key":101}}}	1000000.0	2020-07-16 13:25:10.145422+00	SEDEMAT-16072020-28-0004	4	192	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-16072020-28-0004	\N	f	\N
+381	28	{"usuario":{"username":"prueba14@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose coro segundo","capitalSuscrito":"50000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":137,"codigo":3007001,"descripcion":"Abastos, bodegas y pequeños detales de víveres.","alicuota":"2.00","key":0,"desde":"2020-01-10T19:05:34.325Z"},{"id":214,"codigo":3081001,"descripcion":"Acopio o recolección de envases plásticos, cartones, vidrio, materiales metálicos con fines de reciclaje","alicuota":"6.00","key":1,"desde":"2020-03-10T19:05:43.802Z"},{"id":11,"codigo":2039001,"descripcion":"Agencias Funerarias y Capillas Velatorias.","alicuota":"1.00","key":2,"desde":"2020-06-10T19:05:49.790Z"}],"estadoLicencia":"TEMPORAL","pago":{"metodoPago":"TRANSFERENCIA","banco":8,"referencia":"666777888","fecha":"2020-07-21T19:06:07.656Z","costo":"1000000"},"correo":"prueba14@gmail.com","contribuyente":{"id":107,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"192837466","razonSocial":"jose coro segundo","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":61,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"key":107}},"funcionario":{"username":"prueba14@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose coro segundo","capitalSuscrito":"50000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":137,"codigo":3007001,"descripcion":"Abastos, bodegas y pequeños detales de víveres.","alicuota":"2.00","key":0,"desde":"2020-01-10T19:05:34.325Z"},{"id":214,"codigo":3081001,"descripcion":"Acopio o recolección de envases plásticos, cartones, vidrio, materiales metálicos con fines de reciclaje","alicuota":"6.00","key":1,"desde":"2020-03-10T19:05:43.802Z"},{"id":11,"codigo":2039001,"descripcion":"Agencias Funerarias y Capillas Velatorias.","alicuota":"1.00","key":2,"desde":"2020-06-10T19:05:49.790Z"}],"estadoLicencia":"TEMPORAL","pago":[],"correo":"prueba14@gmail.com","contribuyente":{"id":107,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"192837466","razonSocial":"jose coro segundo","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":61,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"key":107},"referenciaMunicipal":"8000000018"},"idTramite":381}	1000000	2020-07-21 19:06:17.864771+00	SEDEMAT-21072020-28-0005	5	208	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-21072020-28-0005	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/certificados/SEDEMAT-21072020-28-0005	t	2020-07-21 19:07:42.548864+00
+368	28	{"usuario":{"username":"rodrigolamus@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"50000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","alicuota":"2.00","key":1},{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2}],"pago":{"metodoPago":"TRANSFERENCIA","banco":15,"referencia":"746574656","fecha":"2020-07-03T13:22:30.622Z","costo":"1000000.0"},"correo":"rodrigolamus@gmail.com","contribuyente":{"id":101,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"312645978","razonSocial":"Comercializadora","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":68,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"key":101}},"funcionario":{"username":"rodrigolamus@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"50000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","alicuota":"2.00","key":1},{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2}],"pago":[],"correo":"rodrigolamus@gmail.com","contribuyente":{"id":101,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"312645978","razonSocial":"Comercializadora","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":68,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"key":101}}}	1000000.0	2020-07-16 13:25:40.404514+00	SEDEMAT-16072020-28-0005	5	192	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-16072020-28-0005	\N	f	\N
+365	28	{"usuario":{"username":"rodrigolamus@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"50000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","alicuota":"2.00","key":1},{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2}],"pago":{"metodoPago":"TRANSFERENCIA","banco":8,"referencia":"533535353","fecha":"2020-07-03T13:22:30.622Z","costo":"1000000.0"},"correo":"rodrigolamus@gmail.com","contribuyente":{"id":101,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"312645978","razonSocial":"Comercializadora","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":68,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"key":101}},"funcionario":{"username":"rodrigolamus@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"50000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","alicuota":"2.00","key":1},{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2}],"pago":[],"correo":"rodrigolamus@gmail.com","contribuyente":{"id":101,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"312645978","razonSocial":"Comercializadora","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":68,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"key":101}}}	1000000.0	2020-07-16 13:24:51.069615+00	SEDEMAT-16072020-28-0003	3	192	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-16072020-28-0003	\N	f	\N
+382	28	{"usuario":{"username":"prueba14@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose coro","capitalSuscrito":"50000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":137,"codigo":3007001,"descripcion":"Abastos, bodegas y pequeños detales de víveres.","alicuota":"2.00","key":137,"desde":"2020-01-02T03:26:59.492Z"},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":3,"desde":"2020-03-02T03:27:08.758Z"},{"id":17,"codigo":2045001,"descripcion":"Alquiler de Vehículos.","alicuota":"3.00","key":17,"desde":"2020-06-02T03:27:15.996Z"}],"estadoLicencia":"PERMANENTE","pago":{"metodoPago":"TRANSFERENCIA","banco":8,"referencia":"777888999","fecha":"2020-07-23T03:30:09.433Z","costo":"1000000"},"correo":"prueba14@gmail.com","contribuyente":{"id":107,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"192837466","razonSocial":"jose coro segundo","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":61,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"sucursales":[{"id":"115","referenciaMunicipal":"8000000018","fechaAprobacion":"2020-07-21T00:00:00.000Z","telefono":"4246336236","email":null,"denomComercial":"comercializadora","nombreRepresentante":"jose coro segundo","capitalSuscrito":"50000000","creditoFiscal":0,"tipoSociedad":null,"actualizado":true,"estadoLicencia":"PERMANENTE","actividadesEconomicas":[{"id":137,"codigo":3007001,"descripcion":"Abastos, bodegas y pequeños detales de víveres.","alicuota":"2.00","minimoTributable":2,"desde":"2020-01-10T00:00:00.000Z"},{"id":17,"codigo":2045001,"descripcion":"Alquiler de Vehículos.","alicuota":"3.00","minimoTributable":5,"desde":"2020-02-01T00:00:00.000Z"}]}],"key":107}},"funcionario":{"username":"prueba14@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose coro","capitalSuscrito":"50000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":137,"codigo":3007001,"descripcion":"Abastos, bodegas y pequeños detales de víveres.","alicuota":"2.00","key":137,"desde":"2020-01-02T03:26:59.492Z"},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":3,"desde":"2020-03-02T03:27:08.758Z"},{"id":17,"codigo":2045001,"descripcion":"Alquiler de Vehículos.","alicuota":"3.00","key":17,"desde":"2020-06-02T03:27:15.996Z"}],"estadoLicencia":"PERMANENTE","pago":[],"correo":"prueba14@gmail.com","contribuyente":{"id":107,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"192837466","razonSocial":"jose coro segundo","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":61,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"sucursales":[{"id":"115","referenciaMunicipal":"8000000018","fechaAprobacion":"2020-07-21T00:00:00.000Z","telefono":"4246336236","email":null,"denomComercial":"comercializadora","nombreRepresentante":"jose coro segundo","capitalSuscrito":"50000000","creditoFiscal":0,"tipoSociedad":null,"actualizado":true,"estadoLicencia":"PERMANENTE","actividadesEconomicas":[{"id":137,"codigo":3007001,"descripcion":"Abastos, bodegas y pequeños detales de víveres.","alicuota":"2.00","minimoTributable":2,"desde":"2020-01-10T00:00:00.000Z"},{"id":17,"codigo":2045001,"descripcion":"Alquiler de Vehículos.","alicuota":"3.00","minimoTributable":5,"desde":"2020-02-01T00:00:00.000Z"}]}],"key":107},"referenciaMunicipal":"8000000019"},"idTramite":382}	1000000	2020-07-23 03:30:13.166609+00	SEDEMAT-23072020-28-0001	1	208	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-23072020-28-0001	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/certificados/SEDEMAT-23072020-28-0001	t	2020-07-23 03:34:54.624143+00
+373	28	{"usuario":{"username":"rodrigolamus@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"500000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0},{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","alicuota":"2.00","key":1},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2},{"id":4,"codigo":2032001,"descripcion":"Transporte Aéreo y Marítimo de Carga.","alicuota":"3.50","key":3}],"estadoLicencia":"TEMPORAL","pago":{"metodoPago":"TRANSFERENCIA","banco":1,"referencia":"243224332","fecha":"2020-07-16T14:09:23.875Z","costo":"1000000.0"},"correo":"rodrigolamus@gmail.com","contribuyente":{"id":101,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"312645978","razonSocial":"Comercializadora","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":68,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"sucursales":[{"id":"106","referenciaMunicipal":"8000000009","fechaAprobacion":"2020-07-16T00:00:00.000Z","telefono":"4246336236","email":"rodrigolamus@gmail.com","denomComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"50000000","creditoFiscal":0,"tipoSociedad":null,"actualizado":true}],"key":101}},"funcionario":{"username":"rodrigolamus@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"500000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0},{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","alicuota":"2.00","key":1},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2},{"id":4,"codigo":2032001,"descripcion":"Transporte Aéreo y Marítimo de Carga.","alicuota":"3.50","key":3}],"estadoLicencia":"TEMPORAL","pago":[],"correo":"rodrigolamus@gmail.com","contribuyente":{"id":101,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"312645978","razonSocial":"Comercializadora","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":68,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"sucursales":[{"id":"106","referenciaMunicipal":"8000000009","fechaAprobacion":"2020-07-16T00:00:00.000Z","telefono":"4246336236","email":"rodrigolamus@gmail.com","denomComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"50000000","creditoFiscal":0,"tipoSociedad":null,"actualizado":true}],"key":101}}}	1000000.0	2020-07-16 14:09:28.210906+00	SEDEMAT-16072020-28-0009	9	192	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-16072020-28-0009	\N	f	\N
+372	28	{"usuario":{"telefono":"4246336236","correo":"rodrigolamus@gmail.com","denominacionComercial":"e","nombreRepresentante":"wgweg","capitalSuscrito":"58","tipoSociedadContrib":"Compañía Anónima","codCat":null,"contribuyente":{"id":101,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"312645978","razonSocial":"Comercializadora","denomComercial":"comercializadora","siglas":"CMCLZDR","sector":"123","direccion":"mcbo","puntoReferencia":"mcbo","verificado":true,"verificacionTelefono":true}},"funcionario":{"telefono":"4246336236","correo":"rodrigolamus@gmail.com","denominacionComercial":"e","nombreRepresentante":"wgweg","capitalSuscrito":"58","tipoSociedadContrib":"Compañía Anónima","actividadesEconomicas":[{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0},{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","alicuota":"2.00","key":1},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2}],"estadoLicencia":"TEMPORAL","pago":[{"monto":"1000000.00","formaPago":"TRANSFERENCIA","banco":"Banco Occidental de Descuento","fecha":"2020-07-15T00:00:00.000Z","nro":"23522523552"}],"referenciaMunicipal":"8000000010"},"idTramite":372}	1000000.0	2020-07-16 13:47:31.675709+00	SEDEMAT-16072020-28-0008	8	192	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-16072020-28-0008	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/certificados/SEDEMAT-16072020-28-0008	t	2020-07-16 14:20:45.577978+00
+378	28	{"usuario":{"username":"prueba10@gmail.com","denominacionComercial":"FARMACIA COVIDES","nombreRepresentante":"JOSE CORO","capitalSuscrito":"1000000","tipoSociedadContrib":"Compañía Anónima","telefono":"04127645681","actividadesEconomicas":[{"id":5,"codigo":2033001,"descripcion":"Servicio de encomiendas.","alicuota":"3.00","key":4,"desde":"2020-06-04T14:09:10.631Z"},{"id":9,"codigo":2037001,"descripcion":"Transporte de personal.","alicuota":"1.00","key":8,"desde":"2020-04-11T14:09:31.160Z"},{"id":8,"codigo":2036001,"descripcion":"Transporte aéreo de pasajeros.","alicuota":"3.00","key":7,"desde":"2020-02-13T14:09:35.148Z"},{"id":7,"codigo":2035001,"descripcion":"Transporte Lacustre o Marítimo de pasajeros.","alicuota":"3.00","key":6,"desde":"2019-08-09T14:09:39.397Z"}],"estadoLicencia":"PERMANENTE","pago":{"metodoPago":"TRANSFERENCIA","banco":9,"referencia":"1581891651","fecha":"2020-07-21T14:10:04.988Z","costo":"1000000"},"correo":"prueba10@gmail.com","contribuyente":{"id":86,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"308620483","razonSocial":"FARMACIA COVIDES C.A.","denomComercial":"FARMACIA COVIDES C.A.","parroquia":64,"sector":"INDIO MARA","direccion":"Avenida 65 Calle  22A, Local Nro.  MZN","creditoFiscal":0,"puntoReferencia":"EDIF. IPSFA","verificado":true,"sucursales":[{"id":"83","referenciaMunicipal":"207R002131","fechaAprobacion":"2020-07-10T00:00:00.000Z","telefono":"4127645681","email":"gab.tc@icloud.com","denomComercial":"FARMACIA COVIDES, C.A.  LOCATEL ( I.P.S.F.A. )","nombreRepresentante":"JOSE ABELD","capitalSuscrito":null,"creditoFiscal":"8414799.340000001","tipoSociedad":null,"actualizado":true},{"id":"84","referenciaMunicipal":"207R002132","fechaAprobacion":"2020-07-10T00:00:00.000Z","telefono":"4127645681","email":"gab.tc@icloud.com","denomComercial":"RARMACIA COVIDES, C.A. ( LOCATEL I.P.S.F.A. )","nombreRepresentante":"JOSE ABEID","capitalSuscrito":null,"creditoFiscal":"1730508.75","tipoSociedad":null,"actualizado":true},{"id":"86","referenciaMunicipal":"2900013829","fechaAprobacion":"2020-07-10T00:00:00.000Z","telefono":"4127645681","email":"covides@gmail.com","denomComercial":"FARMACIA COVIDES, C.A. ( LOCATEL BELLA VISTA )","nombreRepresentante":"LILIANA SANCHEZ","capitalSuscrito":null,"creditoFiscal":"0","tipoSociedad":null,"actualizado":true},{"id":"85","referenciaMunicipal":"207P000358","fechaAprobacion":"2020-07-10T00:00:00.000Z","telefono":"4127645681","email":"gab.tc@icloud.com","denomComercial":"FARMACIA COVIDES C.A.-","nombreRepresentante":"LILIANA SANCHEZ.-","capitalSuscrito":null,"creditoFiscal":"31434.00","tipoSociedad":null,"actualizado":true},{"id":"82","referenciaMunicipal":"AR20200024","fechaAprobacion":"2020-07-10T00:00:00.000Z","telefono":"4127645681","email":"gab.tc@icloud.com","denomComercial":"FARMACIA COVIDES C.A.","nombreRepresentante":"IVECO","capitalSuscrito":null,"creditoFiscal":"55.00","tipoSociedad":null,"actualizado":true}],"key":86}},"funcionario":{"username":"prueba10@gmail.com","denominacionComercial":"FARMACIA COVIDES","nombreRepresentante":"JOSE CORO","capitalSuscrito":"1000000","tipoSociedadContrib":"Compañía Anónima","telefono":"04127645681","actividadesEconomicas":[{"id":5,"codigo":2033001,"descripcion":"Servicio de encomiendas.","alicuota":"3.00","key":4,"desde":"2020-06-04T14:09:10.631Z"},{"id":9,"codigo":2037001,"descripcion":"Transporte de personal.","alicuota":"1.00","key":8,"desde":"2020-04-11T14:09:31.160Z"},{"id":8,"codigo":2036001,"descripcion":"Transporte aéreo de pasajeros.","alicuota":"3.00","key":7,"desde":"2020-02-13T14:09:35.148Z"},{"id":7,"codigo":2035001,"descripcion":"Transporte Lacustre o Marítimo de pasajeros.","alicuota":"3.00","key":6,"desde":"2019-08-09T14:09:39.397Z"}],"estadoLicencia":"PERMANENTE","pago":[],"correo":"prueba10@gmail.com","contribuyente":{"id":86,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"308620483","razonSocial":"FARMACIA COVIDES C.A.","denomComercial":"FARMACIA COVIDES C.A.","parroquia":64,"sector":"INDIO MARA","direccion":"Avenida 65 Calle  22A, Local Nro.  MZN","creditoFiscal":0,"puntoReferencia":"EDIF. IPSFA","verificado":true,"sucursales":[{"id":"83","referenciaMunicipal":"207R002131","fechaAprobacion":"2020-07-10T00:00:00.000Z","telefono":"4127645681","email":"gab.tc@icloud.com","denomComercial":"FARMACIA COVIDES, C.A.  LOCATEL ( I.P.S.F.A. )","nombreRepresentante":"JOSE ABELD","capitalSuscrito":null,"creditoFiscal":"8414799.340000001","tipoSociedad":null,"actualizado":true},{"id":"84","referenciaMunicipal":"207R002132","fechaAprobacion":"2020-07-10T00:00:00.000Z","telefono":"4127645681","email":"gab.tc@icloud.com","denomComercial":"RARMACIA COVIDES, C.A. ( LOCATEL I.P.S.F.A. )","nombreRepresentante":"JOSE ABEID","capitalSuscrito":null,"creditoFiscal":"1730508.75","tipoSociedad":null,"actualizado":true},{"id":"86","referenciaMunicipal":"2900013829","fechaAprobacion":"2020-07-10T00:00:00.000Z","telefono":"4127645681","email":"covides@gmail.com","denomComercial":"FARMACIA COVIDES, C.A. ( LOCATEL BELLA VISTA )","nombreRepresentante":"LILIANA SANCHEZ","capitalSuscrito":null,"creditoFiscal":"0","tipoSociedad":null,"actualizado":true},{"id":"85","referenciaMunicipal":"207P000358","fechaAprobacion":"2020-07-10T00:00:00.000Z","telefono":"4127645681","email":"gab.tc@icloud.com","denomComercial":"FARMACIA COVIDES C.A.-","nombreRepresentante":"LILIANA SANCHEZ.-","capitalSuscrito":null,"creditoFiscal":"31434.00","tipoSociedad":null,"actualizado":true},{"id":"82","referenciaMunicipal":"AR20200024","fechaAprobacion":"2020-07-10T00:00:00.000Z","telefono":"4127645681","email":"gab.tc@icloud.com","denomComercial":"FARMACIA COVIDES C.A.","nombreRepresentante":"IVECO","capitalSuscrito":null,"creditoFiscal":"55.00","tipoSociedad":null,"actualizado":true}],"key":86}}}	1000000	2020-07-21 14:10:11.544049+00	SEDEMAT-21072020-28-0002	2	197	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-21072020-28-0002	\N	f	\N
+375	28	{"usuario":{"telefono":"4246336236","correo":"rodrigolamus@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"80","tipoSociedadContrib":"Compañía Anónima","codCat":null,"contribuyente":{"id":101,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"312645978","razonSocial":"Comercializadora","denomComercial":"comercializadora","siglas":"CMCLZDR","sector":"123","direccion":"mcbo","puntoReferencia":"mcbo","verificado":true,"verificacionTelefono":true}},"funcionario":{"usuario":{"telefono":"4246336236","correo":"rodrigolamus@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"80","tipoSociedadContrib":"Compañía Anónima","codCat":null,"contribuyente":{"id":101,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"312645978","razonSocial":"Comercializadora","denomComercial":"comercializadora","siglas":"CMCLZDR","sector":"123","direccion":"mcbo","puntoReferencia":"mcbo","verificado":true,"verificacionTelefono":true}},"informe":"<p>pq quiero</p>","pago":[{"monto":"1000000.00","formaPago":"TRANSFERENCIA","banco":"Banco Occidental de Descuento","fecha":"2020-07-16T00:00:00.000Z","nro":"243354645"}]}}	1000000.0	2020-07-16 14:34:43.918672+00	SEDEMAT-16072020-28-0011	11	192	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-16072020-28-0011	\N	f	\N
+374	28	{"usuario":{"username":"rodrigolamus@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"50000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0},{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","alicuota":"2.00","key":1},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2}],"estadoLicencia":"TEMPORAL","pago":{"metodoPago":"TRANSFERENCIA","banco":1,"referencia":"453453545","fecha":"2020-07-16T14:23:09.920Z","costo":"1000000.0"},"correo":"rodrigolamus@gmail.com","contribuyente":{"id":101,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"312645978","razonSocial":"Comercializadora","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":68,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"sucursales":[{"id":"106","referenciaMunicipal":"8000000009","fechaAprobacion":"2020-07-16T00:00:00.000Z","telefono":"4246336236","email":"rodrigolamus@gmail.com","denomComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"50000000","creditoFiscal":0,"tipoSociedad":null,"actualizado":true},{"id":"107","referenciaMunicipal":"8000000010","fechaAprobacion":"2020-07-16T00:00:00.000Z","telefono":"4246336236","email":"rodrigolamus@gmail.com","denomComercial":"e","nombreRepresentante":"wgweg","capitalSuscrito":"58","creditoFiscal":0,"tipoSociedad":null,"actualizado":true}],"key":101}},"funcionario":{"username":"rodrigolamus@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"50000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0},{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","alicuota":"2.00","key":1},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2}],"estadoLicencia":"TEMPORAL","pago":[],"correo":"rodrigolamus@gmail.com","contribuyente":{"id":101,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"312645978","razonSocial":"Comercializadora","denomComercial":"comercializadora","siglas":"CMCLZDR","parroquia":68,"sector":"123","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"sucursales":[{"id":"106","referenciaMunicipal":"8000000009","fechaAprobacion":"2020-07-16T00:00:00.000Z","telefono":"4246336236","email":"rodrigolamus@gmail.com","denomComercial":"comercializadora","nombreRepresentante":"jose sanchez","capitalSuscrito":"50000000","creditoFiscal":0,"tipoSociedad":null,"actualizado":true},{"id":"107","referenciaMunicipal":"8000000010","fechaAprobacion":"2020-07-16T00:00:00.000Z","telefono":"4246336236","email":"rodrigolamus@gmail.com","denomComercial":"e","nombreRepresentante":"wgweg","capitalSuscrito":"58","creditoFiscal":0,"tipoSociedad":null,"actualizado":true}],"key":101},"referenciaMunicipal":"8000000011"},"idTramite":374}	1000000.0	2020-07-16 14:23:35.766739+00	SEDEMAT-16072020-28-0010	10	192	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-16072020-28-0010	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/certificados/SEDEMAT-16072020-28-0010	t	2020-07-16 14:29:01.363637+00
+376	28	{"usuario":{"username":"orderleep@gmail.com","denominacionComercial":"Empanadas Triny","nombreRepresentante":"Triny Rosales","capitalSuscrito":"5000000","tipoSociedadContrib":"Compañía Anónima","telefono":"+584146053291","actividadesEconomicas":[{"id":4,"codigo":2032001,"descripcion":"Transporte Aéreo y Marítimo de Carga.","alicuota":"3.50","key":3}],"estadoLicencia":"PERMANENTE","pago":{"metodoPago":"PUNTO DE VENTA","banco":19,"referencia":"588888441","fecha":"2020-07-19T22:19:05.613Z","costo":"1000000"},"correo":"orderleep@gmail.com","contribuyente":{"id":105,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"4005","razonSocial":"mi casa es esta CA","denomComercial":"Empanadas Triny","siglas":"CCA","parroquia":62,"sector":"Cañada Honda","direccion":"Av 21 residencias visoca","creditoFiscal":0,"puntoReferencia":"diagolanl","verificado":true,"key":105}},"funcionario":{"username":"orderleep@gmail.com","denominacionComercial":"Empanadas Triny","nombreRepresentante":"Triny Rosales","capitalSuscrito":"5000000","tipoSociedadContrib":"Compañía Anónima","telefono":"+584146053291","actividadesEconomicas":[{"id":4,"codigo":2032001,"descripcion":"Transporte Aéreo y Marítimo de Carga.","alicuota":"3.50","key":3}],"estadoLicencia":"PERMANENTE","pago":[],"correo":"orderleep@gmail.com","contribuyente":{"id":105,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"4005","razonSocial":"mi casa es esta CA","denomComercial":"Empanadas Triny","siglas":"CCA","parroquia":62,"sector":"Cañada Honda","direccion":"Av 21 residencias visoca","creditoFiscal":0,"puntoReferencia":"diagolanl","verificado":true,"key":105},"referenciaMunicipal":"8000000012"},"idTramite":376}	1000000	2020-07-19 22:19:16.91203+00	SEDEMAT-19072020-28-0001	1	205	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-19072020-28-0001	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/certificados/SEDEMAT-19072020-28-0001	t	2020-07-19 22:20:56.922172+00
+377	28	{"usuario":{"username":"prueba13@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose coro","capitalSuscrito":"360000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0},{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","alicuota":"2.00","key":1},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2}],"estadoLicencia":"TEMPORAL","pago":{"metodoPago":"TRANSFERENCIA","banco":8,"referencia":"546372851","fecha":"2020-07-21T12:29:36.499Z","costo":"1000000"},"correo":"prueba13@gmail.com","contribuyente":{"id":106,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"192837465","razonSocial":"jose coro","denomComercial":"comercializadora","siglas":"corocorocoro","parroquia":65,"sector":"bolivar","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"key":106}},"funcionario":{"username":"prueba13@gmail.com","denominacionComercial":"comercializadora","nombreRepresentante":"jose coro","capitalSuscrito":"360000000","tipoSociedadContrib":"Compañía Anónima","telefono":"4246336236","actividadesEconomicas":[{"id":1,"codigo":2029001,"descripcion":"Transporte Terrestre de Carga refrigerada.","alicuota":"2.00","key":0},{"id":2,"codigo":2030001,"descripcion":"Almacenamiento de productos, materiales, insumos, equipos, maquinarias.","alicuota":"2.00","key":1},{"id":3,"codigo":2031001,"descripcion":"Almacenamiento Refrigerado.","alicuota":"3.50","key":2}],"estadoLicencia":"TEMPORAL","pago":[],"correo":"prueba13@gmail.com","contribuyente":{"id":106,"tipoDocumento":"J","tipoContribuyente":"JURIDICO","documento":"192837465","razonSocial":"jose coro","denomComercial":"comercializadora","siglas":"corocorocoro","parroquia":65,"sector":"bolivar","direccion":"mcbo","creditoFiscal":0,"puntoReferencia":"mcbo","verificado":true,"key":106},"referenciaMunicipal":"8000000013"},"idTramite":377}	1000000	2020-07-21 12:29:41.381254+00	SEDEMAT-21072020-28-0001	1	207	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/planillas/SEDEMAT-21072020-28-0001	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT/certificados/SEDEMAT-21072020-28-0001	t	2020-07-21 12:59:28.626332+00
 \.
 
 
 --
--- TOC entry 4373 (class 0 OID 70467)
--- Dependencies: 353
--- Data for Name: tramite_archivo_recaudo; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: tramite_archivo_recaudo; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.tramite_archivo_recaudo (id_tramite, url_archivo_recaudo) FROM stdin;
@@ -9430,13 +11397,25 @@ COPY public.tramite_archivo_recaudo (id_tramite, url_archivo_recaudo) FROM stdin
 328	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT-02072020-28-0001/Facturas.jpeg
 328	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT-02072020-28-0001/RIF.jpeg
 329	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT-03072020-28-0001/CCNT.png
+331	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT-10072020-27-0001/DocIdentidad.png
+334	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT-13072020-27-0001/DocIdentidad.png
+336	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT-13072020-27-0002/DocIdentidad.jpg
+340	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT-14072020-28-0001/CCNT.jpeg
+341	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT-14072020-28-0002/CCNT.png
+350	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT-15072020-27-0001/DocIdentidad.jpg
+352	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT-15072020-28-0004/CCNT.png
+353	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT-15072020-28-0005/RegistroComercio.png
+353	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT-15072020-28-0005/Contrato.png
+353	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT-15072020-28-0005/CCNT.png
+353	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT-15072020-28-0005/Facturas.png
+353	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT-15072020-28-0005/RIF.png
+372	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT-16072020-28-0008/RIF.png
+375	https://sut-maracaibo.s3.us-east-2.amazonaws.com/SEDEMAT-16072020-28-0011/RIF.pdf
 \.
 
 
 --
--- TOC entry 4375 (class 0 OID 70480)
--- Dependencies: 356
--- Data for Name: usuario; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: usuario; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.usuario (id_usuario, nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, id_tipo_usuario, password, telefono, id_contribuyente) FROM stdin;
@@ -9445,9 +11424,7 @@ COPY public.usuario (id_usuario, nombre_completo, nombre_de_usuario, direccion, 
 82	Funcionario INTCUMA	funcionario@intcuma.com	INTCUMA	1023102938	V	3	$2a$10$qVi/NuT7X1ELSfz5mpM8e.OrMKAuSqJLPQ4H45/SB/WiwUw2TkA2i	1829038123	\N
 68	Funcionario CPU	funcionario@cpu.com	CPU	1283190247	V	3	$2a$10$qLVJeDD5mKiXlhrNQEJDtOX9baIZcjY3zwMmepViWXp.VENHwaOda	9271092741	\N
 83	Admin SEDEMAT	admin@sedemat.com	SEDEMAT	1923812093	V	2	$2a$10$24HQ9feMqbPag1esm.IhIOkaAYcQlTKeKlTZlU8xg78bLqeQuCCMC	1902831092	\N
-117	Funcionario SEDEMAT	funcionario@sedemat.com	daidajiwjfiieajdk	1231931298	V	3	$2a$10$fbutta0xyv6uPZEaOP/D8uTRFNOl1/3eZ61SpOmqFyLSmJl31NzWy	4243828238	\N
 144	jose	pruebaprueba123@gmail.com	mcbo	12345695	V	4	$2a$10$jMGwmkO/XLxPwIwtGen4vOZRdOyFizMM1ewI3h/39gCt3wx16xWTS	4246336236	\N
-143	Fake User	fakeuser@gmail.com	Los Olivos	20002000	V	4	$2a$10$Ltgb.zGhrTjfu/qzgUPTIeU0UJpQVqxKi408esaneOec/p7hTmtMW	4121100342	\N
 145	Jose Fake	prueba@gmail.com	JKJAKA	12345696	V	4	$2a$10$7nTTW.PNOJKFGGZ1fC7nBeXD2pPe.fFva9KvkZxfhJYXrDzU9gqw6	4121100342	\N
 149	jose	prueba123@gmail.com	mcbo	78945612	V	4	$2a$10$rZVst/BmC4CAE4lK.DrkCewKxkYl/bog4hyerwRx0wf0ZboRK.JBm	4246336236	\N
 150	Prueba	user2@gmail.com	San Jacinto	30002000	V	4	$2a$10$0BtHlMFRPBB0vv7ldjv7c.GMEuWiBwF8RxpehAhHJnky5xEpNu.W6	4121100342	\N
@@ -9457,8 +11434,6 @@ COPY public.usuario (id_usuario, nombre_completo, nombre_de_usuario, direccion, 
 154	mahuampi alvarado	mahuampi@waku.com	av 21	10888777	V	4	$2a$10$FOiZ/HB5jxBjlYDZUFitEOIqCT3Apry3te4fNADLuSoqG3iQzklDm	4146053299	\N
 146	soy yo	fake2@gmail.com	av 21 	9999999	V	4	$2a$10$WyvOcRw0D0gJPyRxNP4cO.GJCk3l1PlAmwT2gpNRIo5KwYnkAReuG	4146053291	\N
 155	digitel	impuestos_digitel@digitel.com.ve	s8102389102839183lkajsd	1293812738	V	4	$2a$10$gMg.7ejD6lFb.slFmg4V8OuiJgY1Pwl9fTIxtTCWe.HDbBKb/dwqG	1902739127	84
-118	Jose Andres Sanchez	jsanchez.waku@gmail.com	asdasdasd	25848973	V	4	$2a$10$Rsw1oZfuB2.u3X410AGUYedDg9W3WW89DEvBMhLvd7HJfhNcIDcoa	1231241231	\N
-116	Cajero SEDEMAT	cajero@sedemat.com	SEDEMAT	1023910231	V	3	$2a$10$EUnmYqbqHl6Aw2FoUYofmOebPprOKWkHFJY3OE2GthBQhwi4pSGvO	1092831209	\N
 55	Super Usuario	super@user.com	Super Usuario	1	V	1	$2a$10$VVT8CHvO3jEEoj/djKK4Z.CGPO9JAHw1NMUIK6QwM3BEwElf68kUW	\N	\N
 56	Administrador Bomberos	admin@bomberos.com	Bomberos	1231231231	V	2	$2a$10$nqEy4iyMTQJLAN.BOQ2GuuWioAwRcnXY7ClFbJtmp4svHLg9os/8m	1231231231	\N
 59	Administrador SAGAS	admin@sagas.com	SAGAS	123123	V	2	$2a$10$.avdkJGtcLhgw/UydHdZf.QEeiSoAjUxRM/xLiTA1gQLUDkDy4lfm	1231231231	\N
@@ -9477,15 +11452,18 @@ COPY public.usuario (id_usuario, nombre_completo, nombre_de_usuario, direccion, 
 79	Administrador IMA	admin@ima.com	IMA	1028310919	V	2	$2a$10$I2NhOoazRC2gF0pIdzNXrumPh0soj/9/KDA5dx1RqDNrow1fNzsbG	1923109472	\N
 80	Funcionario IMA	funcionario@ima.com	IMA	1231740197	V	3	$2a$10$eAu/NEg9vEd5nKXbjSyemODqqLt2J1nO4joWhwbDpZopJAj7N0ZSW	1902741092	\N
 81	Administrador INTCUMA	admin@intcuma.com	INTCUMA	1239812938	V	2	$2a$10$mHlp3WfgE.99gg2i2wSI2OrL29UABov9Lo4iylvngFZTwAi2gmBOa	9132801238	\N
-58	External User	external@user.com	Aqui	27139153	V	4	$2a$10$1az9AKXYIZ48FrTXXnb24.QT89PZuCTh2n0zabqVW7G8YyKinYNXe	4127645681	\N
 120	Rafael Lares	cedgob2020@gmail.com	Av 21 Calle 86	15592914	V	4	$2a$10$z5gRrl3ezE0Ksj/Q4.A2gevmo/llADCLtfjKdDEfwL2Jv9gIMOYq6	4129661659	\N
 121	Brian Maldonado	bhmadolnado@gmail.com	av 16	9747320	V	4	$2a$10$lnO3K4QhVgPft.9pqZBlt.M6mfASHTHX.Fqs./8xKgC7EPd8LZIfe	4129661659	\N
 122	Jhon Jose Romay	jhonjromy@gmail.com	av 21	16079142	V	4	$2a$10$RcZ6dQf5Tdi0wgcq2lH8a.VG4ab4z8nx68V1ZdRwE58MHBVU3y4t.	4129661659	\N
-119	Jhonnatan Romay	romayjj@gmail.com	Av 21 calle 86	18496685	V	4	$2a$10$Mfw/1FYYPxQOiXzfEM19wen5RTTychOjBke778b/kYKJYv2iXhCX.	4146053291	\N
 124	Raul Fuentes	jj5star@hotmail.com	av 21 calle 86	10555777	V	4	$2a$10$qCFDSaIdAEZi3dH4RLXT/uQk2qQ0IQOkmES2ycbXXKH2bkJNNBUSW	4146053291	\N
 126	jose	zulianadepersianas1@gmail.com	mcbo	12345678	V	4	$2a$10$5is48UJlOyJ5jmHhMMRBaucBw/g9HTYFz/l5O/O/xOnRuoSd.04em	4246336236	\N
 125	Ranhdal Yon	yonset@gmail.com	Los Prados 	124435366	V	4	$2a$10$FH65lFZrmmpHk35xPTSfTeMwz0C4lVmqN309UJIl5EQuCZiMncHsC	4121100342	\N
 127	Alberto Santos	exval2008@hotmail.com	La Rosaleda	19649021	V	4	$2a$10$.t24sVvZUGAGnovMMBxUPOdBBo.PTCd4vXPfMKv1idpA.qKGE7ynW	4121100342	\N
+118	Jose Andres Sanchez	jsanchez.waku@gmail.com	asdasdasd	25848973	V	4	$2a$10$Rsw1oZfuB2.u3X410AGUYedDg9W3WW89DEvBMhLvd7HJfhNcIDcoa	1231241231	84
+119	Jhonnatan Romay	romayjj@gmail.com	Av 21 calle 86	18496685	V	4	$2a$10$Mfw/1FYYPxQOiXzfEM19wen5RTTychOjBke778b/kYKJYv2iXhCX.	4146053291	86
+117	Funcionario SEDEMAT	funcionario@sedemat.com	daidajiwjfiieajdk	1231931298	V	3	$2a$10$fbutta0xyv6uPZEaOP/D8uTRFNOl1/3eZ61SpOmqFyLSmJl31NzWy	4243828238	86
+116	Cajero SEDEMAT	cajero@sedemat.com	SEDEMAT	1023910231	V	3	$2a$10$EUnmYqbqHl6Aw2FoUYofmOebPprOKWkHFJY3OE2GthBQhwi4pSGvO	1092831209	86
+143	Fake User	fakeuser@gmail.com	Los Olivos	20002000	V	4	$2a$10$Ltgb.zGhrTjfu/qzgUPTIeU0UJpQVqxKi408esaneOec/p7hTmtMW	4121100342	111
 128	Roberto Blas	zupeca69@gmail.com	Los Naranjos	15999000	V	4	$2a$10$B3Y4WRvVIyZMVWNl3/wkDephZUPtu4zOjNG9wg0wcc3flhw1k6chq	4121100342	\N
 129	jose	zapasolca1@gmail.com	mcbo	12345688	V	4	$2a$10$MHLc0mb9itLXHI/oJmVUeu3uv5wSDVBO/N6vlZs919ZvCE1hsZCSO	4246336236	\N
 130	Willy Jhons	willyjhons.mcbo17@gmail.com	La Rotaria	18455333	V	4	$2a$10$EamfUaXVpfADhVn5VTd5sOYBeeAm7PNrB8.C6kiQOghgWT1Owb4Su	4121100342	\N
@@ -9497,25 +11475,44 @@ COPY public.usuario (id_usuario, nombre_completo, nombre_de_usuario, direccion, 
 139	Carmen Rivas	csuarez.factory123@gmail.com	San Jacinto	36985214	V	4	$2a$10$NfyNa.zGD.0.9L7nCYYRZ.gQtQzJ1G4JBK2GLEU4V8pkFuTmBe5RK	4121100342	\N
 141	Jhonatan romay	fulano2@gmail.com	av 21	18496688	V	4	$2a$10$X1IUKp0iGg.zQXooJLA8/eYXXfawj14J1oZdTYc2oXQ.AQs/jv26m	4146053291	\N
 142	jose	zuliaelectronicstvca@gmail.com	mcbo	123456741	V	4	$2a$10$4d9.oqnA.ZemF/Xlhv2gMejQpdHujWtEXlVoik6Hw25JgQQPv706m	4246336236	\N
+156	Jose sanchez	prueba2@gmail.com	mcbo	12345679	V	4	$2a$10$Bwx19dcofe0DnXQFqusq1uzRFK4w8Ph3tclCTWhWDtpJgtfmpi2aS	4246336236	85
+58	External User	external@user.com	Aqui	27139153	V	4	$2a$10$1az9AKXYIZ48FrTXXnb24.QT89PZuCTh2n0zabqVW7G8YyKinYNXe	4127645681	86
+157	Jose sanchez	prueba3@gmail.com	mcbo	10528417	V	4	$2a$10$k6aYLqQB7EPtbjsoWIhOPOcZTCDekgbYv1l2VfjdV1Tu2PCi/MWdS	4246336236	87
+161	Julio Sanchez	juliosanchez@hotmail.com	x ahi x alla	123456789	V	4	$2a$10$AeZN8KeOMY1ztxkYb8jRI.BOcbNE0llM2kQPJcHWMMHn.ITe65Iri	4121231234	88
+163	Jose sanchez	prueba4@gmail.com	mcbo	12543654	V	4	$2a$10$we.EpiOcpHibDjLTiaq1j.ZIRpL7WZPHs4ZrzXjNTPdMoTK7CKPBa	4246336236	89
+164	jose perez	prueba5@gmail.com	mareaciabo	4562574	V	4	$2a$10$JpbRJ5.eeYiv2YAK9Sr8heE/JyzC.aSM5oKQDDIaw7kokGMwTp4Ve	4246336236	96
+168	Jefe de Caja	jefe.caja@sedemat.com	SEDEMAT	1293123910	V	3	$2a$10$cxJY0yXUkwZSvcmQp4X1KOgJdzTi7Z1IObYl9XmWJw//1ixhhl6pa	1203912391	\N
+172	Daniel Boza	danielbm87@gmail.com	av 21 	5678987	V	4	$2a$10$/kJjG7Cu5CS.0zVcox2V2uPQRiA12y7cqQqjePVU21wfkwejNjx2.	4146053291	97
+165	ramon	prueba6@gmail.com	veritas	12354965	V	4	$2a$10$HLyRz/vnUeenpQJLOYpfyuRJkvDcyXGfQo77kVtz4KhW0zGBtHpji	4146359875	99
+175	Jose sanchez	prueba8@gmail.com	mcbo	10528418	V	4	$2a$10$jxtyTBP6gr6H/ag2XL33MO7bk/KSz39kf70Ma9p.cx8vXm1JhwyJm	4246336236	\N
+173	Jose sanchez	prueba7@gmail.com	mcbo	5235342	V	4	$2a$10$vgKxH1cDNAgVMEgGtKbvhew19X6VsFOsoPZZ9lH3dfwxziF18zgBC	4246336236	98
+181	Triny Rosales	trosales@gmail.com	av 21 calle 86	18921679	V	4	$2a$10$OZStF4H9Xly7rurqLh6nqO6shVopXsfqSPG8kX1RW0zkWt878jiUm	4146053291	100
+192	Comercializadora	rodrigolamus@gmail.com	mcbo	312645978	J	4	$2a$10$Y4oFwgBVYjunGKG0Cqofg.fUnvXg1qaJNWj/6SWdCpBDgZfftseI6	4246336236	101
+207	jose sanchez	prueba13@gmail.com	mcbo	23543878	V	4	$2a$10$camAZt0lhARwvjy1Ix.HcuI3tab.Viopv1smSqRzxcAzaS0w6JSXW	4246336236	106
+208	jose coro segundo	prueba14@gmail.com	mcbo	192837466	J	4	$2a$10$QniN2f/Vz/b4EMeXsyRO1uB7ygAZSDG0LBJ2CSxrX1s/rdz7/3toS	4246336236	107
+209	Director Cobranzas	director.cobranzas@sedemat.com	asdasd	1234123412	V	5	$2a$10$ewWQU2Bc/dB8tCvF/x0fouhpJ/GBA35gLrT6R7d0fYqfVAhYnPKA.	1231241231	\N
+178	asdasdas	externala@user.com	aqui	1231231232	V	4	$2a$10$Wc5ER1HbRegDfotBR0.xn.jJly3JIGf/q8i3feDKOqojzjGWdEnua	1231231232	\N
+197	jose coro	prueba10@gmail.com	mcbo	312645977	J	4	$2a$10$D5j4iina0Z/IKAbNtRjJYuepOXFGcZV9pOyHZFTUusX4ZUtSr94Hm	4246336236	86
+203	jose coro	prueba11@gmail.com	mcbo	312645976	J	4	$2a$10$IMVM8ZqElegM9saMJ/xBn.4WQsKSG6m65nk03gizrZRdBy82MrP8C	4246336237	86
+194	jose sanchez	prueba9@gmail.com	mcbo	23543876	V	4	$2a$10$2xxbrJ7ESyxNwSpw5d.zeumnKedbiW5DMaKx7tQ8EZ/oUyV2A5F7i	4246336236	86
+204	jose coro	prueba12@gmail.com	mcbo	356789134	J	4	$2a$10$W.LLdB0wHC5IAN2jshG.COoRGI11a.Fy1jdRK1ucGDKIhoHI7VCXW	4246336236	104
+205	mi casa es esta CA	orderleep@gmail.com	Av 21 residencias visoca	4005	J	4	$2a$10$JSJdhQb87Lv0wIjxKQSfFupB.9X5Zl//Nac9rge0gUNn9QBYbQCJe	4146053291	105
 \.
 
 
 --
--- TOC entry 4377 (class 0 OID 70489)
--- Dependencies: 358
--- Data for Name: valor; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: valor; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.valor (id_valor, descripcion, valor_en_bs) FROM stdin;
 1	Bolivares	1
 2	UTMM	500000
+3	Dolar	200000
 \.
 
 
 --
--- TOC entry 4380 (class 0 OID 70499)
--- Dependencies: 361
--- Data for Name: variable; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: variable; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.variable (id_var, nombre_variable) FROM stdin;
@@ -9523,9 +11520,7 @@ COPY public.variable (id_var, nombre_variable) FROM stdin;
 
 
 --
--- TOC entry 4382 (class 0 OID 70508)
--- Dependencies: 363
--- Data for Name: variable_de_costo; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: variable_de_costo; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.variable_de_costo (id_variable_de_costo, id_tipo_tramite, id_operacion, precedencia, aumento) FROM stdin;
@@ -9533,9 +11528,7 @@ COPY public.variable_de_costo (id_variable_de_costo, id_tipo_tramite, id_operaci
 
 
 --
--- TOC entry 4383 (class 0 OID 70515)
--- Dependencies: 364
--- Data for Name: variable_ordenanza; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: variable_ordenanza; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
 COPY public.variable_ordenanza (id_variable, nombre, nombre_plural) FROM stdin;
@@ -9548,9 +11541,7 @@ COPY public.variable_ordenanza (id_variable, nombre, nombre_plural) FROM stdin;
 
 
 --
--- TOC entry 4385 (class 0 OID 70523)
--- Dependencies: 366
--- Data for Name: base_task; Type: TABLE DATA; Schema: timetable; Owner: -
+-- Data for Name: base_task; Type: TABLE DATA; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 COPY timetable.base_task (task_id, name, kind, script) FROM stdin;
@@ -9559,9 +11550,7 @@ COPY timetable.base_task (task_id, name, kind, script) FROM stdin;
 
 
 --
--- TOC entry 4387 (class 0 OID 70533)
--- Dependencies: 368
--- Data for Name: chain_execution_config; Type: TABLE DATA; Schema: timetable; Owner: -
+-- Data for Name: chain_execution_config; Type: TABLE DATA; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 COPY timetable.chain_execution_config (chain_execution_config, chain_id, chain_name, run_at, max_instances, live, self_destruct, exclusive_execution, excluded_execution_configs, client_name) FROM stdin;
@@ -9570,9 +11559,7 @@ COPY timetable.chain_execution_config (chain_execution_config, chain_id, chain_n
 
 
 --
--- TOC entry 4389 (class 0 OID 70544)
--- Dependencies: 370
--- Data for Name: chain_execution_parameters; Type: TABLE DATA; Schema: timetable; Owner: -
+-- Data for Name: chain_execution_parameters; Type: TABLE DATA; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 COPY timetable.chain_execution_parameters (chain_execution_config, chain_id, order_id, value) FROM stdin;
@@ -9580,9 +11567,7 @@ COPY timetable.chain_execution_parameters (chain_execution_config, chain_id, ord
 
 
 --
--- TOC entry 4390 (class 0 OID 70551)
--- Dependencies: 371
--- Data for Name: database_connection; Type: TABLE DATA; Schema: timetable; Owner: -
+-- Data for Name: database_connection; Type: TABLE DATA; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 COPY timetable.database_connection (database_connection, connect_string, comment) FROM stdin;
@@ -9590,9 +11575,7 @@ COPY timetable.database_connection (database_connection, connect_string, comment
 
 
 --
--- TOC entry 4392 (class 0 OID 70559)
--- Dependencies: 373
--- Data for Name: execution_log; Type: TABLE DATA; Schema: timetable; Owner: -
+-- Data for Name: execution_log; Type: TABLE DATA; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 COPY timetable.execution_log (chain_execution_config, chain_id, task_id, name, script, kind, last_run, finished, returncode, pid) FROM stdin;
@@ -9600,9 +11583,7 @@ COPY timetable.execution_log (chain_execution_config, chain_id, task_id, name, s
 
 
 --
--- TOC entry 4393 (class 0 OID 70566)
--- Dependencies: 374
--- Data for Name: log; Type: TABLE DATA; Schema: timetable; Owner: -
+-- Data for Name: log; Type: TABLE DATA; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 COPY timetable.log (id, ts, client_name, pid, log_level, message) FROM stdin;
@@ -9610,9 +11591,7 @@ COPY timetable.log (id, ts, client_name, pid, log_level, message) FROM stdin;
 
 
 --
--- TOC entry 4395 (class 0 OID 70575)
--- Dependencies: 376
--- Data for Name: migrations; Type: TABLE DATA; Schema: timetable; Owner: -
+-- Data for Name: migrations; Type: TABLE DATA; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 COPY timetable.migrations (id, version) FROM stdin;
@@ -9620,9 +11599,7 @@ COPY timetable.migrations (id, version) FROM stdin;
 
 
 --
--- TOC entry 4396 (class 0 OID 70581)
--- Dependencies: 377
--- Data for Name: run_status; Type: TABLE DATA; Schema: timetable; Owner: -
+-- Data for Name: run_status; Type: TABLE DATA; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 COPY timetable.run_status (run_status, start_status, execution_status, chain_id, current_execution_element, started, last_status_update, chain_execution_config) FROM stdin;
@@ -9630,9 +11607,7 @@ COPY timetable.run_status (run_status, start_status, execution_status, chain_id,
 
 
 --
--- TOC entry 4398 (class 0 OID 70587)
--- Dependencies: 379
--- Data for Name: task_chain; Type: TABLE DATA; Schema: timetable; Owner: -
+-- Data for Name: task_chain; Type: TABLE DATA; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 COPY timetable.task_chain (chain_id, parent_id, task_id, run_uid, database_connection, ignore_error) FROM stdin;
@@ -9641,9 +11616,7 @@ COPY timetable.task_chain (chain_id, parent_id, task_id, run_uid, database_conne
 
 
 --
--- TOC entry 4400 (class 0 OID 70596)
--- Dependencies: 381
--- Data for Name: ano; Type: TABLE DATA; Schema: valores_fiscales; Owner: -
+-- Data for Name: ano; Type: TABLE DATA; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 COPY valores_fiscales.ano (id, descripcion) FROM stdin;
@@ -9657,9 +11630,7 @@ COPY valores_fiscales.ano (id, descripcion) FROM stdin;
 
 
 --
--- TOC entry 4402 (class 0 OID 70601)
--- Dependencies: 383
--- Data for Name: construccion; Type: TABLE DATA; Schema: valores_fiscales; Owner: -
+-- Data for Name: construccion; Type: TABLE DATA; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 COPY valores_fiscales.construccion (valor_fiscal, id, tipo_construccion_id, ano_id) FROM stdin;
@@ -9967,9 +11938,7 @@ COPY valores_fiscales.construccion (valor_fiscal, id, tipo_construccion_id, ano_
 
 
 --
--- TOC entry 4405 (class 0 OID 70616)
--- Dependencies: 387
--- Data for Name: sector; Type: TABLE DATA; Schema: valores_fiscales; Owner: -
+-- Data for Name: sector; Type: TABLE DATA; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 COPY valores_fiscales.sector (descripcion, parroquia_id, id) FROM stdin;
@@ -10197,9 +12166,7 @@ COPY valores_fiscales.sector (descripcion, parroquia_id, id) FROM stdin;
 
 
 --
--- TOC entry 4406 (class 0 OID 70622)
--- Dependencies: 388
--- Data for Name: terreno; Type: TABLE DATA; Schema: valores_fiscales; Owner: -
+-- Data for Name: terreno; Type: TABLE DATA; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 COPY valores_fiscales.terreno (valor_fiscal, sector_id, id, ano_id) FROM stdin;
@@ -11521,9 +13488,7 @@ COPY valores_fiscales.terreno (valor_fiscal, sector_id, id, ano_id) FROM stdin;
 
 
 --
--- TOC entry 4404 (class 0 OID 70606)
--- Dependencies: 385
--- Data for Name: tipo_construccion; Type: TABLE DATA; Schema: valores_fiscales; Owner: -
+-- Data for Name: tipo_construccion; Type: TABLE DATA; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 COPY valores_fiscales.tipo_construccion (descripcion, id) FROM stdin;
@@ -11581,737 +13546,609 @@ M50	50
 
 
 --
--- TOC entry 4492 (class 0 OID 0)
--- Dependencies: 222
--- Name: actividad_economica_contribuy_id_actividad_economica_contri_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: actividad_economica_contribuy_id_actividad_economica_contri_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq', 51, true);
+SELECT pg_catalog.setval('impuesto.actividad_economica_contribuy_id_actividad_economica_contri_seq', 141, true);
 
 
 --
--- TOC entry 4493 (class 0 OID 0)
--- Dependencies: 224
--- Name: actividad_economica_exoneraci_id_actividad_economica_exoner_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: actividad_economica_exoneraci_id_actividad_economica_exoner_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('impuesto.actividad_economica_exoneraci_id_actividad_economica_exoner_seq', 1, true);
+SELECT pg_catalog.setval('impuesto.actividad_economica_exoneraci_id_actividad_economica_exoner_seq', 6, true);
 
 
 --
--- TOC entry 4494 (class 0 OID 0)
--- Dependencies: 225
--- Name: actividad_economica_id_actividad_economica_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: actividad_economica_id_actividad_economica_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('impuesto.actividad_economica_id_actividad_economica_seq', 220, true);
 
 
 --
--- TOC entry 4495 (class 0 OID 0)
--- Dependencies: 227
--- Name: avaluo_inmueble_id_avaluo_inmueble_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: avaluo_inmueble_id_avaluo_inmueble_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('impuesto.avaluo_inmueble_id_avaluo_inmueble_seq', 189, true);
+SELECT pg_catalog.setval('impuesto.avaluo_inmueble_id_avaluo_inmueble_seq', 253, true);
 
 
 --
--- TOC entry 4496 (class 0 OID 0)
--- Dependencies: 229
--- Name: categoria_propaganda_id_categoria_propaganda_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: baremo_servicio_municipal_id_baremo_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+SELECT pg_catalog.setval('impuesto.baremo_servicio_municipal_id_baremo_seq', 2, true);
+
+
+--
+-- Name: categoria_propaganda_id_categoria_propaganda_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('impuesto.categoria_propaganda_id_categoria_propaganda_seq', 1, false);
 
 
 --
--- TOC entry 4497 (class 0 OID 0)
--- Dependencies: 232
--- Name: contribuyente_exoneracion_id_contribuyente_exoneracion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: contribuyente_exoneracion_id_contribuyente_exoneracion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('impuesto.contribuyente_exoneracion_id_contribuyente_exoneracion_seq', 11, true);
 
 
 --
--- TOC entry 4498 (class 0 OID 0)
--- Dependencies: 233
--- Name: contribuyente_id_contribuyente_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: contribuyente_id_contribuyente_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('impuesto.contribuyente_id_contribuyente_seq', 84, true);
+SELECT pg_catalog.setval('impuesto.contribuyente_id_contribuyente_seq', 112, true);
 
 
 --
--- TOC entry 4499 (class 0 OID 0)
--- Dependencies: 235
--- Name: convenio_id_convenio_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: convenio_id_convenio_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('impuesto.convenio_id_convenio_seq', 5, true);
+SELECT pg_catalog.setval('impuesto.convenio_id_convenio_seq', 22, true);
 
 
 --
--- TOC entry 4500 (class 0 OID 0)
--- Dependencies: 236
--- Name: credito_fiscal_id_credito_fiscal_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: credito_fiscal_id_credito_fiscal_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('impuesto.credito_fiscal_id_credito_fiscal_seq', 5, true);
+SELECT pg_catalog.setval('impuesto.credito_fiscal_id_credito_fiscal_seq', 39, true);
 
 
 --
--- TOC entry 4501 (class 0 OID 0)
--- Dependencies: 238
--- Name: dias_feriados_id_dia_feriado_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: detalle_retencion_id_detalle_retencion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+SELECT pg_catalog.setval('impuesto.detalle_retencion_id_detalle_retencion_seq', 36, true);
+
+
+--
+-- Name: dias_feriados_id_dia_feriado_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('impuesto.dias_feriados_id_dia_feriado_seq', 47, true);
 
 
 --
--- TOC entry 4502 (class 0 OID 0)
--- Dependencies: 240
--- Name: evento_fraccion_id_evento_fraccion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: evento_fraccion_id_evento_fraccion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('impuesto.evento_fraccion_id_evento_fraccion_seq', 15, true);
+SELECT pg_catalog.setval('impuesto.evento_fraccion_id_evento_fraccion_seq', 72, true);
 
 
 --
--- TOC entry 4503 (class 0 OID 0)
--- Dependencies: 242
--- Name: evento_solicitud_id_evento_solicitud_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: evento_solicitud_id_evento_solicitud_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('impuesto.evento_solicitud_id_evento_solicitud_seq', 468, true);
+SELECT pg_catalog.setval('impuesto.evento_solicitud_id_evento_solicitud_seq', 711, true);
 
 
 --
--- TOC entry 4504 (class 0 OID 0)
--- Dependencies: 244
--- Name: factor_id_factor_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: factor_id_factor_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('impuesto.factor_id_factor_seq', 1, false);
 
 
 --
--- TOC entry 4505 (class 0 OID 0)
--- Dependencies: 245
--- Name: fraccion_id_fraccion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: fraccion_id_fraccion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('impuesto.fraccion_id_fraccion_seq', 7, true);
+SELECT pg_catalog.setval('impuesto.fraccion_id_fraccion_seq', 33, true);
 
 
 --
--- TOC entry 4506 (class 0 OID 0)
--- Dependencies: 247
--- Name: inmueble_contribuyente_id_inmueble_contribuyente_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: inmueble_contribuyente_id_inmueble_contribuyente_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('impuesto.inmueble_contribuyente_id_inmueble_contribuyente_seq', 1, false);
 
 
 --
--- TOC entry 4507 (class 0 OID 0)
--- Dependencies: 249
--- Name: liquidacion_descuento_id_liquidacion_descuento_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: liquidacion_descuento_id_liquidacion_descuento_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('impuesto.liquidacion_descuento_id_liquidacion_descuento_seq', 1, false);
 
 
 --
--- TOC entry 4508 (class 0 OID 0)
--- Dependencies: 250
--- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: liquidacion_id_liquidacion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('impuesto.liquidacion_id_liquidacion_seq', 1351, true);
+SELECT pg_catalog.setval('impuesto.liquidacion_id_liquidacion_seq', 1904, true);
 
 
 --
--- TOC entry 4509 (class 0 OID 0)
--- Dependencies: 252
--- Name: multa_id_multa_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: multa_id_multa_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('impuesto.multa_id_multa_seq', 33, true);
 
 
 --
--- TOC entry 4510 (class 0 OID 0)
--- Dependencies: 256
--- Name: plazo_exoneracion_id_plazo_exoneracion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: plazo_exoneracion_id_plazo_exoneracion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('impuesto.plazo_exoneracion_id_plazo_exoneracion_seq', 23, true);
+SELECT pg_catalog.setval('impuesto.plazo_exoneracion_id_plazo_exoneracion_seq', 30, true);
 
 
 --
--- TOC entry 4511 (class 0 OID 0)
--- Dependencies: 258
--- Name: procedimiento_exoneracion_id_procedimiento_exoneracion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: procedimiento_exoneracion_id_procedimiento_exoneracion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq', 1, true);
+SELECT pg_catalog.setval('impuesto.procedimiento_exoneracion_id_procedimiento_exoneracion_seq', 2, true);
 
 
 --
--- TOC entry 4512 (class 0 OID 0)
--- Dependencies: 260
--- Name: ramo_id_ramo_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: ramo_id_ramo_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('impuesto.ramo_id_ramo_seq', 1, true);
 
 
 --
--- TOC entry 4513 (class 0 OID 0)
--- Dependencies: 263
--- Name: registro_municipal_id_registro_municipal_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: registro_municipal_id_registro_municipal_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('impuesto.registro_municipal_id_registro_municipal_seq', 80, true);
+SELECT pg_catalog.setval('impuesto.registro_municipal_id_registro_municipal_seq', 116, true);
 
 
 --
--- TOC entry 4514 (class 0 OID 0)
--- Dependencies: 261
--- Name: registro_municipal_referencia_municipal_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: registro_municipal_referencia_municipal_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('impuesto.registro_municipal_referencia_municipal_seq', 8000000006, true);
+SELECT pg_catalog.setval('impuesto.registro_municipal_referencia_municipal_seq', 8000000019, true);
 
 
 --
--- TOC entry 4515 (class 0 OID 0)
--- Dependencies: 265
--- Name: solicitud_id_solicitud_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: retencion_id_retencion_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('impuesto.solicitud_id_solicitud_seq', 275, true);
+SELECT pg_catalog.setval('impuesto.retencion_id_retencion_seq', 1, false);
 
 
 --
--- TOC entry 4516 (class 0 OID 0)
--- Dependencies: 269
--- Name: subramo_id_subramo_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: rim_retencion; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('impuesto.subramo_id_subramo_seq', 102, true);
+SELECT pg_catalog.setval('impuesto.rim_retencion', 2, true);
 
 
 --
--- TOC entry 4517 (class 0 OID 0)
--- Dependencies: 271
--- Name: tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: solicitud_id_solicitud_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+SELECT pg_catalog.setval('impuesto.solicitud_id_solicitud_seq', 401, true);
+
+
+--
+-- Name: subramo_id_subramo_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+SELECT pg_catalog.setval('impuesto.subramo_id_subramo_seq', 106, true);
+
+
+--
+-- Name: tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('impuesto.tabulador_aseo_actividad_econ_id_tabulador_aseo_actividad_e_seq', 212, true);
 
 
 --
--- TOC entry 4518 (class 0 OID 0)
--- Dependencies: 273
--- Name: tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('impuesto.tabulador_aseo_residencial_id_tabulador_aseo_residencial_seq', 1, true);
 
 
 --
--- TOC entry 4519 (class 0 OID 0)
--- Dependencies: 276
--- Name: tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('impuesto.tabulador_gas_actividad_econo_id_tabulador_gas_actividad_ec_seq', 212, true);
 
 
 --
--- TOC entry 4520 (class 0 OID 0)
--- Dependencies: 277
--- Name: tabulador_gas_id_tabulador_gas_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_id_tabulador_gas_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('impuesto.tabulador_gas_id_tabulador_gas_seq', 1, false);
 
 
 --
--- TOC entry 4521 (class 0 OID 0)
--- Dependencies: 279
--- Name: tabulador_gas_residencial_id_tabulador_gas_residencial_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_residencial_id_tabulador_gas_residencial_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('impuesto.tabulador_gas_residencial_id_tabulador_gas_residencial_seq', 1, true);
 
 
 --
--- TOC entry 4522 (class 0 OID 0)
--- Dependencies: 281
--- Name: tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('impuesto.tipo_aviso_propaganda_id_tipo_aviso_propaganda_seq', 1, false);
 
 
 --
--- TOC entry 4523 (class 0 OID 0)
--- Dependencies: 283
--- Name: tipo_multa_id_tipo_multa_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: tipo_multa_id_tipo_multa_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('impuesto.tipo_multa_id_tipo_multa_seq', 1, true);
 
 
 --
--- TOC entry 4524 (class 0 OID 0)
--- Dependencies: 285
--- Name: usuario_enlazado_id_usuario_enlazado_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: usuario_enlazado_id_usuario_enlazado_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('impuesto.usuario_enlazado_id_usuario_enlazado_seq', 1, false);
 
 
 --
--- TOC entry 4525 (class 0 OID 0)
--- Dependencies: 287
--- Name: verificacion_email_id_verificacion_email_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: usuario_inmueble_id_usuario_inmueble_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+SELECT pg_catalog.setval('impuesto.usuario_inmueble_id_usuario_inmueble_seq', 1, false);
+
+
+--
+-- Name: verificacion_email_id_verificacion_email_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('impuesto.verificacion_email_id_verificacion_email_seq', 5, true);
 
 
 --
--- TOC entry 4526 (class 0 OID 0)
--- Dependencies: 289
--- Name: verificacion_telefono_id_verificacion_telefono_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: -
+-- Name: verificacion_telefono_id_verificacion_telefono_seq; Type: SEQUENCE SET; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('impuesto.verificacion_telefono_id_verificacion_telefono_seq', 107, true);
+SELECT pg_catalog.setval('impuesto.verificacion_telefono_id_verificacion_telefono_seq', 129, true);
 
 
 --
--- TOC entry 4527 (class 0 OID 0)
--- Dependencies: 291
--- Name: bancos_id_banco_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: bancos_id_banco_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.bancos_id_banco_seq', 36, true);
 
 
 --
--- TOC entry 4528 (class 0 OID 0)
--- Dependencies: 294
--- Name: campos_id_campo_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: campos_id_campo_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.campos_id_campo_seq', 13, true);
 
 
 --
--- TOC entry 4529 (class 0 OID 0)
--- Dependencies: 296
--- Name: cargo_id_cargo_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: cargo_id_cargo_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('public.cargo_id_cargo_seq', 21, true);
+SELECT pg_catalog.setval('public.cargo_id_cargo_seq', 26, true);
 
 
 --
--- TOC entry 4530 (class 0 OID 0)
--- Dependencies: 297
--- Name: casos_sociales_id_caso_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: casos_sociales_id_caso_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.casos_sociales_id_caso_seq', 2, true);
 
 
 --
--- TOC entry 4531 (class 0 OID 0)
--- Dependencies: 299
--- Name: certificados_id_certificado_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: certificados_id_certificado_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.certificados_id_certificado_seq', 1, false);
 
 
 --
--- TOC entry 4532 (class 0 OID 0)
--- Dependencies: 304
--- Name: detalles_facturas_id_detalle_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: detalles_facturas_id_detalle_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.detalles_facturas_id_detalle_seq', 1, false);
 
 
 --
--- TOC entry 4533 (class 0 OID 0)
--- Dependencies: 305
--- Name: evento_multa_id_evento_multa_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: evento_multa_id_evento_multa_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.evento_multa_id_evento_multa_seq', 41, true);
 
 
 --
--- TOC entry 4534 (class 0 OID 0)
--- Dependencies: 306
--- Name: eventos_casos_sociales_id_evento_caso_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: eventos_casos_sociales_id_evento_caso_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.eventos_casos_sociales_id_evento_caso_seq', 2, true);
 
 
 --
--- TOC entry 4535 (class 0 OID 0)
--- Dependencies: 307
--- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: eventos_tramite_id_evento_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('public.eventos_tramite_id_evento_tramite_seq', 747, true);
+SELECT pg_catalog.setval('public.eventos_tramite_id_evento_tramite_seq', 918, true);
 
 
 --
--- TOC entry 4536 (class 0 OID 0)
--- Dependencies: 309
--- Name: facturas_tramites_id_factura_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: facturas_tramites_id_factura_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.facturas_tramites_id_factura_seq', 1, false);
 
 
 --
--- TOC entry 4537 (class 0 OID 0)
--- Dependencies: 311
--- Name: inmueble_urbano_id_inmueble_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: inmueble_urbano_id_inmueble_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('public.inmueble_urbano_id_inmueble_seq', 438, true);
+SELECT pg_catalog.setval('public.inmueble_urbano_id_inmueble_seq', 495, true);
 
 
 --
--- TOC entry 4538 (class 0 OID 0)
--- Dependencies: 315
--- Name: instituciones_id_institucion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: instituciones_id_institucion_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.instituciones_id_institucion_seq', 1, false);
 
 
 --
--- TOC entry 4539 (class 0 OID 0)
--- Dependencies: 316
--- Name: multa_id_multa_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: multa_id_multa_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.multa_id_multa_seq', 14, true);
 
 
 --
--- TOC entry 4540 (class 0 OID 0)
--- Dependencies: 320
--- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: notificaciones_id_notificacion_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('public.notificaciones_id_notificacion_seq', 913, true);
+SELECT pg_catalog.setval('public.notificaciones_id_notificacion_seq', 1206, true);
 
 
 --
--- TOC entry 4541 (class 0 OID 0)
--- Dependencies: 321
--- Name: operaciones_id_operacion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: operaciones_id_operacion_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.operaciones_id_operacion_seq', 1, true);
 
 
 --
--- TOC entry 4542 (class 0 OID 0)
--- Dependencies: 324
--- Name: operatividad_terminal_id_operatividad_terminal_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: operatividad_terminal_id_operatividad_terminal_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.operatividad_terminal_id_operatividad_terminal_seq', 77, true);
 
 
 --
--- TOC entry 4543 (class 0 OID 0)
--- Dependencies: 327
--- Name: ordenanzas_id_ordenanza_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: ordenanzas_id_ordenanza_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.ordenanzas_id_ordenanza_seq', 57, true);
 
 
 --
--- TOC entry 4544 (class 0 OID 0)
--- Dependencies: 330
--- Name: ordenanzas_tramites_id_ordenanza_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: ordenanzas_tramites_id_ordenanza_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.ordenanzas_tramites_id_ordenanza_tramite_seq', 15, true);
 
 
 --
--- TOC entry 4545 (class 0 OID 0)
--- Dependencies: 333
--- Name: pagos_id_pago_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: pagos_id_pago_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('public.pagos_id_pago_seq', 308, true);
+SELECT pg_catalog.setval('public.pagos_id_pago_seq', 381, true);
 
 
 --
--- TOC entry 4546 (class 0 OID 0)
--- Dependencies: 334
--- Name: parroquias_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: parroquias_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.parroquias_id_seq', 1, false);
 
 
 --
--- TOC entry 4547 (class 0 OID 0)
--- Dependencies: 336
--- Name: permiso_de_acceso_id_permiso_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: permiso_de_acceso_id_permiso_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('public.permiso_de_acceso_id_permiso_seq', 39, true);
+SELECT pg_catalog.setval('public.permiso_de_acceso_id_permiso_seq', 40, true);
 
 
 --
--- TOC entry 4548 (class 0 OID 0)
--- Dependencies: 338
--- Name: propietario_id_propietario_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: propietario_id_propietario_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.propietario_id_propietario_seq', 18, true);
 
 
 --
--- TOC entry 4549 (class 0 OID 0)
--- Dependencies: 340
--- Name: propietarios_inmuebles_id_propietario_inmueble_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: propietarios_inmuebles_id_propietario_inmueble_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.propietarios_inmuebles_id_propietario_inmueble_seq', 10, true);
 
 
 --
--- TOC entry 4550 (class 0 OID 0)
--- Dependencies: 342
--- Name: recaudos_id_recaudo_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: recaudos_id_recaudo_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.recaudos_id_recaudo_seq', 1, true);
 
 
 --
--- TOC entry 4551 (class 0 OID 0)
--- Dependencies: 344
--- Name: recuperacion_id_recuperacion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: recuperacion_id_recuperacion_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.recuperacion_id_recuperacion_seq', 1, false);
 
 
 --
--- TOC entry 4552 (class 0 OID 0)
--- Dependencies: 346
--- Name: tarifas_inspeccion_id_tarifa_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: tarifas_inspeccion_id_tarifa_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.tarifas_inspeccion_id_tarifa_seq', 57, true);
 
 
 --
--- TOC entry 4553 (class 0 OID 0)
--- Dependencies: 348
--- Name: templates_certificados_id_template_certificado_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: templates_certificados_id_template_certificado_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.templates_certificados_id_template_certificado_seq', 1, false);
 
 
 --
--- TOC entry 4554 (class 0 OID 0)
--- Dependencies: 351
--- Name: tipos_tramites_id_tipo_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: tipos_tramites_id_tipo_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.tipos_tramites_id_tipo_tramite_seq', 28, true);
 
 
 --
--- TOC entry 4555 (class 0 OID 0)
--- Dependencies: 352
--- Name: tipos_usuarios_id_tipo_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: tipos_usuarios_id_tipo_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.tipos_usuarios_id_tipo_usuario_seq', 1, false);
 
 
 --
--- TOC entry 4556 (class 0 OID 0)
--- Dependencies: 354
--- Name: tramites_id_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: tramites_id_tramite_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 330, true);
+SELECT pg_catalog.setval('public.tramites_id_tramite_seq', 382, true);
 
 
 --
--- TOC entry 4557 (class 0 OID 0)
--- Dependencies: 357
--- Name: usuarios_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: usuarios_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
-SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 155, true);
+SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 209, true);
 
 
 --
--- TOC entry 4558 (class 0 OID 0)
--- Dependencies: 359
--- Name: valores_id_valor_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: valores_id_valor_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.valores_id_valor_seq', 2, true);
 
 
 --
--- TOC entry 4559 (class 0 OID 0)
--- Dependencies: 362
--- Name: variables_de_costo_id_variable_de_costo_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: variables_de_costo_id_variable_de_costo_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.variables_de_costo_id_variable_de_costo_seq', 1, false);
 
 
 --
--- TOC entry 4560 (class 0 OID 0)
--- Dependencies: 360
--- Name: variables_id_var_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: variables_id_var_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.variables_id_var_seq', 1, false);
 
 
 --
--- TOC entry 4561 (class 0 OID 0)
--- Dependencies: 365
--- Name: variables_ordenanzas_id_variable_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: variables_ordenanzas_id_variable_seq; Type: SEQUENCE SET; Schema: public; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('public.variables_ordenanzas_id_variable_seq', 5, true);
 
 
 --
--- TOC entry 4562 (class 0 OID 0)
--- Dependencies: 367
--- Name: base_task_task_id_seq; Type: SEQUENCE SET; Schema: timetable; Owner: -
+-- Name: base_task_task_id_seq; Type: SEQUENCE SET; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('timetable.base_task_task_id_seq', 1, true);
 
 
 --
--- TOC entry 4563 (class 0 OID 0)
--- Dependencies: 369
--- Name: chain_execution_config_chain_execution_config_seq; Type: SEQUENCE SET; Schema: timetable; Owner: -
+-- Name: chain_execution_config_chain_execution_config_seq; Type: SEQUENCE SET; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('timetable.chain_execution_config_chain_execution_config_seq', 1, true);
 
 
 --
--- TOC entry 4564 (class 0 OID 0)
--- Dependencies: 372
--- Name: database_connection_database_connection_seq; Type: SEQUENCE SET; Schema: timetable; Owner: -
+-- Name: database_connection_database_connection_seq; Type: SEQUENCE SET; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('timetable.database_connection_database_connection_seq', 1, false);
 
 
 --
--- TOC entry 4565 (class 0 OID 0)
--- Dependencies: 375
--- Name: log_id_seq; Type: SEQUENCE SET; Schema: timetable; Owner: -
+-- Name: log_id_seq; Type: SEQUENCE SET; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('timetable.log_id_seq', 1, false);
 
 
 --
--- TOC entry 4566 (class 0 OID 0)
--- Dependencies: 378
--- Name: run_status_run_status_seq; Type: SEQUENCE SET; Schema: timetable; Owner: -
+-- Name: run_status_run_status_seq; Type: SEQUENCE SET; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('timetable.run_status_run_status_seq', 1, false);
 
 
 --
--- TOC entry 4567 (class 0 OID 0)
--- Dependencies: 380
--- Name: task_chain_chain_id_seq; Type: SEQUENCE SET; Schema: timetable; Owner: -
+-- Name: task_chain_chain_id_seq; Type: SEQUENCE SET; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('timetable.task_chain_chain_id_seq', 1, true);
 
 
 --
--- TOC entry 4568 (class 0 OID 0)
--- Dependencies: 382
--- Name: ano_fiscal_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: -
+-- Name: ano_fiscal_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('valores_fiscales.ano_fiscal_id_seq', 6, true);
 
 
 --
--- TOC entry 4569 (class 0 OID 0)
--- Dependencies: 384
--- Name: construccion_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: -
+-- Name: construccion_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('valores_fiscales.construccion_id_seq', 305, true);
 
 
 --
--- TOC entry 4570 (class 0 OID 0)
--- Dependencies: 390
--- Name: sector_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: -
+-- Name: sector_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('valores_fiscales.sector_id_seq', 220, true);
 
 
 --
--- TOC entry 4571 (class 0 OID 0)
--- Dependencies: 391
--- Name: terreno_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: -
+-- Name: terreno_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('valores_fiscales.terreno_id_seq', 1315, true);
 
 
 --
--- TOC entry 4572 (class 0 OID 0)
--- Dependencies: 392
--- Name: tipo_construccion_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: -
+-- Name: tipo_construccion_id_seq; Type: SEQUENCE SET; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 SELECT pg_catalog.setval('valores_fiscales.tipo_construccion_id_seq', 50, true);
 
 
 --
--- TOC entry 3824 (class 2606 OID 70714)
--- Name: actividad_economica_sucursal actividad_economica_contribuyente_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: actividad_economica_sucursal actividad_economica_contribuyente_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.actividad_economica_sucursal
@@ -12319,8 +14156,7 @@ ALTER TABLE ONLY impuesto.actividad_economica_sucursal
 
 
 --
--- TOC entry 3826 (class 2606 OID 70717)
--- Name: actividad_economica_exoneracion actividad_economica_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: actividad_economica_exoneracion actividad_economica_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.actividad_economica_exoneracion
@@ -12328,8 +14164,7 @@ ALTER TABLE ONLY impuesto.actividad_economica_exoneracion
 
 
 --
--- TOC entry 3820 (class 2606 OID 70719)
--- Name: actividad_economica actividad_economica_numero_referencia_key; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: actividad_economica actividad_economica_numero_referencia_key; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.actividad_economica
@@ -12337,8 +14172,7 @@ ALTER TABLE ONLY impuesto.actividad_economica
 
 
 --
--- TOC entry 3822 (class 2606 OID 70722)
--- Name: actividad_economica actividad_economica_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: actividad_economica actividad_economica_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.actividad_economica
@@ -12346,8 +14180,15 @@ ALTER TABLE ONLY impuesto.actividad_economica
 
 
 --
--- TOC entry 3828 (class 2606 OID 70724)
--- Name: avaluo_inmueble avaluo_inmueble_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: actividad_economica_sucursal actividad_economica_sucursal_id_registro_municipal_numero_r_key; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+ALTER TABLE ONLY impuesto.actividad_economica_sucursal
+    ADD CONSTRAINT actividad_economica_sucursal_id_registro_municipal_numero_r_key UNIQUE (id_registro_municipal, numero_referencia);
+
+
+--
+-- Name: avaluo_inmueble avaluo_inmueble_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.avaluo_inmueble
@@ -12355,8 +14196,15 @@ ALTER TABLE ONLY impuesto.avaluo_inmueble
 
 
 --
--- TOC entry 3830 (class 2606 OID 70726)
--- Name: categoria_propaganda categoria_propaganda_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: baremo_servicio_municipal baremo_servicio_municipal_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+ALTER TABLE ONLY impuesto.baremo_servicio_municipal
+    ADD CONSTRAINT baremo_servicio_municipal_pkey PRIMARY KEY (id_baremo);
+
+
+--
+-- Name: categoria_propaganda categoria_propaganda_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.categoria_propaganda
@@ -12364,8 +14212,7 @@ ALTER TABLE ONLY impuesto.categoria_propaganda
 
 
 --
--- TOC entry 3836 (class 2606 OID 70728)
--- Name: contribuyente_exoneracion contribuyente_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: contribuyente_exoneracion contribuyente_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.contribuyente_exoneracion
@@ -12373,8 +14220,7 @@ ALTER TABLE ONLY impuesto.contribuyente_exoneracion
 
 
 --
--- TOC entry 3832 (class 2606 OID 70730)
--- Name: contribuyente contribuyente_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: contribuyente contribuyente_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.contribuyente
@@ -12382,8 +14228,7 @@ ALTER TABLE ONLY impuesto.contribuyente
 
 
 --
--- TOC entry 3834 (class 2606 OID 70732)
--- Name: contribuyente contribuyente_tipo_documento_documento_key; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: contribuyente contribuyente_tipo_documento_documento_key; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.contribuyente
@@ -12391,8 +14236,7 @@ ALTER TABLE ONLY impuesto.contribuyente
 
 
 --
--- TOC entry 3838 (class 2606 OID 70735)
--- Name: convenio convenio_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: convenio convenio_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.convenio
@@ -12400,8 +14244,7 @@ ALTER TABLE ONLY impuesto.convenio
 
 
 --
--- TOC entry 3796 (class 2606 OID 70737)
--- Name: credito_fiscal credito_fiscal_id_persona_concepto_key; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: credito_fiscal credito_fiscal_id_persona_concepto_key; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.credito_fiscal
@@ -12409,8 +14252,7 @@ ALTER TABLE ONLY impuesto.credito_fiscal
 
 
 --
--- TOC entry 3798 (class 2606 OID 70739)
--- Name: credito_fiscal credito_fiscal_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: credito_fiscal credito_fiscal_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.credito_fiscal
@@ -12418,8 +14260,15 @@ ALTER TABLE ONLY impuesto.credito_fiscal
 
 
 --
--- TOC entry 3840 (class 2606 OID 70742)
--- Name: dias_feriados dias_feriados_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: detalle_retencion detalle_retencion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+ALTER TABLE ONLY impuesto.detalle_retencion
+    ADD CONSTRAINT detalle_retencion_pkey PRIMARY KEY (id_detalle_retencion);
+
+
+--
+-- Name: dias_feriados dias_feriados_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.dias_feriados
@@ -12427,8 +14276,7 @@ ALTER TABLE ONLY impuesto.dias_feriados
 
 
 --
--- TOC entry 3842 (class 2606 OID 70744)
--- Name: evento_fraccion evento_fraccion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: evento_fraccion evento_fraccion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.evento_fraccion
@@ -12436,8 +14284,7 @@ ALTER TABLE ONLY impuesto.evento_fraccion
 
 
 --
--- TOC entry 3844 (class 2606 OID 70747)
--- Name: evento_solicitud evento_solicitud_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: evento_solicitud evento_solicitud_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.evento_solicitud
@@ -12445,8 +14292,7 @@ ALTER TABLE ONLY impuesto.evento_solicitud
 
 
 --
--- TOC entry 3846 (class 2606 OID 70749)
--- Name: factor factor_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: factor factor_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.factor
@@ -12454,8 +14300,7 @@ ALTER TABLE ONLY impuesto.factor
 
 
 --
--- TOC entry 3800 (class 2606 OID 70751)
--- Name: fraccion fraccion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: fraccion fraccion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.fraccion
@@ -12463,8 +14308,7 @@ ALTER TABLE ONLY impuesto.fraccion
 
 
 --
--- TOC entry 3848 (class 2606 OID 70753)
--- Name: liquidacion_descuento liquidacion_descuento_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: liquidacion_descuento liquidacion_descuento_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.liquidacion_descuento
@@ -12472,8 +14316,7 @@ ALTER TABLE ONLY impuesto.liquidacion_descuento
 
 
 --
--- TOC entry 3810 (class 2606 OID 70755)
--- Name: liquidacion liquidacion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: liquidacion liquidacion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.liquidacion
@@ -12481,8 +14324,7 @@ ALTER TABLE ONLY impuesto.liquidacion
 
 
 --
--- TOC entry 3850 (class 2606 OID 70757)
--- Name: multa multa_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: multa multa_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.multa
@@ -12490,8 +14332,7 @@ ALTER TABLE ONLY impuesto.multa
 
 
 --
--- TOC entry 3854 (class 2606 OID 70759)
--- Name: plazo_exoneracion plazo_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: plazo_exoneracion plazo_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.plazo_exoneracion
@@ -12499,8 +14340,7 @@ ALTER TABLE ONLY impuesto.plazo_exoneracion
 
 
 --
--- TOC entry 3856 (class 2606 OID 70761)
--- Name: ramo_exoneracion procedimiento_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: ramo_exoneracion procedimiento_exoneracion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.ramo_exoneracion
@@ -12508,8 +14348,7 @@ ALTER TABLE ONLY impuesto.ramo_exoneracion
 
 
 --
--- TOC entry 3858 (class 2606 OID 70763)
--- Name: ramo ramo_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: ramo ramo_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.ramo
@@ -12517,8 +14356,7 @@ ALTER TABLE ONLY impuesto.ramo
 
 
 --
--- TOC entry 3860 (class 2606 OID 70765)
--- Name: registro_municipal registro_municipal_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: registro_municipal registro_municipal_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.registro_municipal
@@ -12526,8 +14364,15 @@ ALTER TABLE ONLY impuesto.registro_municipal
 
 
 --
--- TOC entry 3802 (class 2606 OID 70767)
--- Name: solicitud solicitud_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: retencion retencion_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+ALTER TABLE ONLY impuesto.retencion
+    ADD CONSTRAINT retencion_pkey PRIMARY KEY (id_retencion);
+
+
+--
+-- Name: solicitud solicitud_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.solicitud
@@ -12535,8 +14380,7 @@ ALTER TABLE ONLY impuesto.solicitud
 
 
 --
--- TOC entry 3862 (class 2606 OID 70769)
--- Name: subramo subramo_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: subramo subramo_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.subramo
@@ -12544,8 +14388,7 @@ ALTER TABLE ONLY impuesto.subramo
 
 
 --
--- TOC entry 3864 (class 2606 OID 70771)
--- Name: tabulador_aseo_actividad_economica tabulador_aseo_actividad_economica_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: tabulador_aseo_actividad_economica tabulador_aseo_actividad_economica_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tabulador_aseo_actividad_economica
@@ -12553,8 +14396,7 @@ ALTER TABLE ONLY impuesto.tabulador_aseo_actividad_economica
 
 
 --
--- TOC entry 3866 (class 2606 OID 70773)
--- Name: tabulador_aseo_residencial tabulador_aseo_residencial_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: tabulador_aseo_residencial tabulador_aseo_residencial_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tabulador_aseo_residencial
@@ -12562,8 +14404,7 @@ ALTER TABLE ONLY impuesto.tabulador_aseo_residencial
 
 
 --
--- TOC entry 3870 (class 2606 OID 70775)
--- Name: tabulador_gas_actividad_economica tabulador_gas_actividad_economica_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_actividad_economica tabulador_gas_actividad_economica_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tabulador_gas_actividad_economica
@@ -12571,8 +14412,7 @@ ALTER TABLE ONLY impuesto.tabulador_gas_actividad_economica
 
 
 --
--- TOC entry 3868 (class 2606 OID 70777)
--- Name: tabulador_gas tabulador_gas_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: tabulador_gas tabulador_gas_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tabulador_gas
@@ -12580,8 +14420,7 @@ ALTER TABLE ONLY impuesto.tabulador_gas
 
 
 --
--- TOC entry 3872 (class 2606 OID 70779)
--- Name: tabulador_gas_residencial tabulador_gas_residencial_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_residencial tabulador_gas_residencial_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tabulador_gas_residencial
@@ -12589,8 +14428,7 @@ ALTER TABLE ONLY impuesto.tabulador_gas_residencial
 
 
 --
--- TOC entry 3874 (class 2606 OID 70781)
--- Name: tipo_aviso_propaganda tipo_aviso_propaganda_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: tipo_aviso_propaganda tipo_aviso_propaganda_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tipo_aviso_propaganda
@@ -12598,8 +14436,7 @@ ALTER TABLE ONLY impuesto.tipo_aviso_propaganda
 
 
 --
--- TOC entry 3876 (class 2606 OID 70783)
--- Name: tipo_multa tipo_multa_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: tipo_multa tipo_multa_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tipo_multa
@@ -12607,8 +14444,7 @@ ALTER TABLE ONLY impuesto.tipo_multa
 
 
 --
--- TOC entry 3878 (class 2606 OID 70785)
--- Name: usuario_enlazado usuario_enlazado_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: usuario_enlazado usuario_enlazado_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.usuario_enlazado
@@ -12616,8 +14452,15 @@ ALTER TABLE ONLY impuesto.usuario_enlazado
 
 
 --
--- TOC entry 3880 (class 2606 OID 70787)
--- Name: verificacion_email verificacion_email_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: usuario_inmueble usuario_inmueble_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+ALTER TABLE ONLY impuesto.usuario_inmueble
+    ADD CONSTRAINT usuario_inmueble_pkey PRIMARY KEY (id_usuario_inmueble);
+
+
+--
+-- Name: verificacion_email verificacion_email_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.verificacion_email
@@ -12625,8 +14468,7 @@ ALTER TABLE ONLY impuesto.verificacion_email
 
 
 --
--- TOC entry 3882 (class 2606 OID 70789)
--- Name: verificacion_telefono verificacion_telefono_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: verificacion_telefono verificacion_telefono_pkey; Type: CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.verificacion_telefono
@@ -12634,8 +14476,7 @@ ALTER TABLE ONLY impuesto.verificacion_telefono
 
 
 --
--- TOC entry 3884 (class 2606 OID 70791)
--- Name: banco bancos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: banco bancos_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.banco
@@ -12643,8 +14484,7 @@ ALTER TABLE ONLY public.banco
 
 
 --
--- TOC entry 3886 (class 2606 OID 70793)
--- Name: campo campos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: campo campos_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.campo
@@ -12652,8 +14492,7 @@ ALTER TABLE ONLY public.campo
 
 
 --
--- TOC entry 3888 (class 2606 OID 70795)
--- Name: cargo cargo_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: cargo cargo_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.cargo
@@ -12661,8 +14500,7 @@ ALTER TABLE ONLY public.cargo
 
 
 --
--- TOC entry 3804 (class 2606 OID 70797)
--- Name: caso_social casos_sociales_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: caso_social casos_sociales_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.caso_social
@@ -12670,8 +14508,7 @@ ALTER TABLE ONLY public.caso_social
 
 
 --
--- TOC entry 3890 (class 2606 OID 70799)
--- Name: certificado certificados_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: certificado certificados_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.certificado
@@ -12679,8 +14516,7 @@ ALTER TABLE ONLY public.certificado
 
 
 --
--- TOC entry 3892 (class 2606 OID 70801)
--- Name: cuenta_funcionario cuentas_funcionarios_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: cuenta_funcionario cuentas_funcionarios_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.cuenta_funcionario
@@ -12688,8 +14524,7 @@ ALTER TABLE ONLY public.cuenta_funcionario
 
 
 --
--- TOC entry 3894 (class 2606 OID 70803)
--- Name: datos_google datos_google_id_google_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: datos_google datos_google_id_google_key; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.datos_google
@@ -12697,8 +14532,7 @@ ALTER TABLE ONLY public.datos_google
 
 
 --
--- TOC entry 3896 (class 2606 OID 70805)
--- Name: datos_google datos_google_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: datos_google datos_google_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.datos_google
@@ -12706,8 +14540,7 @@ ALTER TABLE ONLY public.datos_google
 
 
 --
--- TOC entry 3812 (class 2606 OID 70807)
--- Name: evento_multa evento_multa_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: evento_multa evento_multa_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.evento_multa
@@ -12715,8 +14548,7 @@ ALTER TABLE ONLY public.evento_multa
 
 
 --
--- TOC entry 3816 (class 2606 OID 70809)
--- Name: evento_tramite eventos_tramite_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: evento_tramite eventos_tramite_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.evento_tramite
@@ -12724,8 +14556,7 @@ ALTER TABLE ONLY public.evento_tramite
 
 
 --
--- TOC entry 3898 (class 2606 OID 70811)
--- Name: factura_tramite facturas_tramites_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: factura_tramite facturas_tramites_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.factura_tramite
@@ -12733,8 +14564,7 @@ ALTER TABLE ONLY public.factura_tramite
 
 
 --
--- TOC entry 3900 (class 2606 OID 70813)
--- Name: inmueble_urbano inmueble_urbano_cod_catastral_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: inmueble_urbano inmueble_urbano_cod_catastral_key; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.inmueble_urbano
@@ -12742,8 +14572,7 @@ ALTER TABLE ONLY public.inmueble_urbano
 
 
 --
--- TOC entry 3902 (class 2606 OID 70815)
--- Name: inmueble_urbano inmueble_urbano_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: inmueble_urbano inmueble_urbano_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.inmueble_urbano
@@ -12751,8 +14580,7 @@ ALTER TABLE ONLY public.inmueble_urbano
 
 
 --
--- TOC entry 3806 (class 2606 OID 70817)
--- Name: institucion instituciones_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: institucion instituciones_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.institucion
@@ -12760,8 +14588,7 @@ ALTER TABLE ONLY public.institucion
 
 
 --
--- TOC entry 3814 (class 2606 OID 70819)
--- Name: multa multa_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: multa multa_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.multa
@@ -12769,8 +14596,7 @@ ALTER TABLE ONLY public.multa
 
 
 --
--- TOC entry 3852 (class 2606 OID 70821)
--- Name: notificacion notificaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: notificacion notificaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.notificacion
@@ -12778,8 +14604,7 @@ ALTER TABLE ONLY public.notificacion
 
 
 --
--- TOC entry 3906 (class 2606 OID 70823)
--- Name: operacion operacion_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: operacion operacion_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.operacion
@@ -12787,8 +14612,7 @@ ALTER TABLE ONLY public.operacion
 
 
 --
--- TOC entry 3908 (class 2606 OID 70825)
--- Name: ordenanza ordenanzas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: ordenanza ordenanzas_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.ordenanza
@@ -12796,8 +14620,7 @@ ALTER TABLE ONLY public.ordenanza
 
 
 --
--- TOC entry 3910 (class 2606 OID 70827)
--- Name: ordenanza_tramite ordenanzas_tramites_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: ordenanza_tramite ordenanzas_tramites_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.ordenanza_tramite
@@ -12805,8 +14628,7 @@ ALTER TABLE ONLY public.ordenanza_tramite
 
 
 --
--- TOC entry 3914 (class 2606 OID 70829)
--- Name: pago pago_id_banco_referencia_metodo_pago_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: pago pago_id_banco_referencia_metodo_pago_key; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.pago
@@ -12814,8 +14636,7 @@ ALTER TABLE ONLY public.pago
 
 
 --
--- TOC entry 3918 (class 2606 OID 70831)
--- Name: pago_manual pagos_manuales_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: pago_manual pagos_manuales_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.pago_manual
@@ -12823,8 +14644,7 @@ ALTER TABLE ONLY public.pago_manual
 
 
 --
--- TOC entry 3916 (class 2606 OID 70833)
--- Name: pago pagos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: pago pagos_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.pago
@@ -12832,8 +14652,7 @@ ALTER TABLE ONLY public.pago
 
 
 --
--- TOC entry 3904 (class 2606 OID 70835)
--- Name: parroquia parroquia_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: parroquia parroquia_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.parroquia
@@ -12841,8 +14660,7 @@ ALTER TABLE ONLY public.parroquia
 
 
 --
--- TOC entry 3920 (class 2606 OID 70837)
--- Name: permiso_de_acceso permiso_de_acceso_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: permiso_de_acceso permiso_de_acceso_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.permiso_de_acceso
@@ -12850,8 +14668,7 @@ ALTER TABLE ONLY public.permiso_de_acceso
 
 
 --
--- TOC entry 3922 (class 2606 OID 70839)
--- Name: propietario propietario_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: propietario propietario_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.propietario
@@ -12859,8 +14676,7 @@ ALTER TABLE ONLY public.propietario
 
 
 --
--- TOC entry 3924 (class 2606 OID 70841)
--- Name: propietario_inmueble propietarios_inmuebles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: propietario_inmueble propietarios_inmuebles_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.propietario_inmueble
@@ -12868,8 +14684,7 @@ ALTER TABLE ONLY public.propietario_inmueble
 
 
 --
--- TOC entry 3926 (class 2606 OID 70843)
--- Name: recaudo recaudos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: recaudo recaudos_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.recaudo
@@ -12877,8 +14692,7 @@ ALTER TABLE ONLY public.recaudo
 
 
 --
--- TOC entry 3928 (class 2606 OID 70845)
--- Name: recuperacion recuperacion_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: recuperacion recuperacion_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.recuperacion
@@ -12886,8 +14700,7 @@ ALTER TABLE ONLY public.recuperacion
 
 
 --
--- TOC entry 3930 (class 2606 OID 70847)
--- Name: seccion secciones_pk; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: seccion secciones_pk; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.seccion
@@ -12895,8 +14708,7 @@ ALTER TABLE ONLY public.seccion
 
 
 --
--- TOC entry 3912 (class 2606 OID 70849)
--- Name: tarifa_inspeccion tarifas_inspeccion_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tarifa_inspeccion tarifas_inspeccion_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.tarifa_inspeccion
@@ -12904,8 +14716,7 @@ ALTER TABLE ONLY public.tarifa_inspeccion
 
 
 --
--- TOC entry 3932 (class 2606 OID 70851)
--- Name: template_certificado templates_certificados_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: template_certificado templates_certificados_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.template_certificado
@@ -12913,8 +14724,7 @@ ALTER TABLE ONLY public.template_certificado
 
 
 --
--- TOC entry 3808 (class 2606 OID 70853)
--- Name: tipo_tramite tipos_tramites_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tipo_tramite tipos_tramites_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.tipo_tramite
@@ -12922,8 +14732,7 @@ ALTER TABLE ONLY public.tipo_tramite
 
 
 --
--- TOC entry 3934 (class 2606 OID 70855)
--- Name: tipo_usuario tipos_usuarios_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tipo_usuario tipos_usuarios_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.tipo_usuario
@@ -12931,8 +14740,7 @@ ALTER TABLE ONLY public.tipo_usuario
 
 
 --
--- TOC entry 3818 (class 2606 OID 70857)
--- Name: tramite tramites_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tramite tramites_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.tramite
@@ -12940,8 +14748,7 @@ ALTER TABLE ONLY public.tramite
 
 
 --
--- TOC entry 3936 (class 2606 OID 70859)
--- Name: usuario usuarios_cedula_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: usuario usuarios_cedula_key; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.usuario
@@ -12949,8 +14756,7 @@ ALTER TABLE ONLY public.usuario
 
 
 --
--- TOC entry 3938 (class 2606 OID 70861)
--- Name: usuario usuarios_nombre_de_usuario_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: usuario usuarios_nombre_de_usuario_key; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.usuario
@@ -12958,8 +14764,7 @@ ALTER TABLE ONLY public.usuario
 
 
 --
--- TOC entry 3940 (class 2606 OID 70863)
--- Name: usuario usuarios_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: usuario usuarios_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.usuario
@@ -12967,8 +14772,7 @@ ALTER TABLE ONLY public.usuario
 
 
 --
--- TOC entry 3942 (class 2606 OID 70865)
--- Name: valor valores_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: valor valores_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.valor
@@ -12976,8 +14780,7 @@ ALTER TABLE ONLY public.valor
 
 
 --
--- TOC entry 3946 (class 2606 OID 70867)
--- Name: variable_de_costo variable_de_costo_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: variable_de_costo variable_de_costo_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.variable_de_costo
@@ -12985,8 +14788,7 @@ ALTER TABLE ONLY public.variable_de_costo
 
 
 --
--- TOC entry 3948 (class 2606 OID 70869)
--- Name: variable_ordenanza variables_ordenanzas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: variable_ordenanza variables_ordenanzas_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.variable_ordenanza
@@ -12994,8 +14796,7 @@ ALTER TABLE ONLY public.variable_ordenanza
 
 
 --
--- TOC entry 3944 (class 2606 OID 70871)
--- Name: variable variables_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: variable variables_pkey; Type: CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.variable
@@ -13003,8 +14804,7 @@ ALTER TABLE ONLY public.variable
 
 
 --
--- TOC entry 3950 (class 2606 OID 70873)
--- Name: base_task base_task_name_key; Type: CONSTRAINT; Schema: timetable; Owner: -
+-- Name: base_task base_task_name_key; Type: CONSTRAINT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.base_task
@@ -13012,8 +14812,7 @@ ALTER TABLE ONLY timetable.base_task
 
 
 --
--- TOC entry 3952 (class 2606 OID 70875)
--- Name: base_task base_task_pkey; Type: CONSTRAINT; Schema: timetable; Owner: -
+-- Name: base_task base_task_pkey; Type: CONSTRAINT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.base_task
@@ -13021,8 +14820,7 @@ ALTER TABLE ONLY timetable.base_task
 
 
 --
--- TOC entry 3954 (class 2606 OID 70877)
--- Name: chain_execution_config chain_execution_config_chain_name_key; Type: CONSTRAINT; Schema: timetable; Owner: -
+-- Name: chain_execution_config chain_execution_config_chain_name_key; Type: CONSTRAINT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.chain_execution_config
@@ -13030,8 +14828,7 @@ ALTER TABLE ONLY timetable.chain_execution_config
 
 
 --
--- TOC entry 3956 (class 2606 OID 70879)
--- Name: chain_execution_config chain_execution_config_pkey; Type: CONSTRAINT; Schema: timetable; Owner: -
+-- Name: chain_execution_config chain_execution_config_pkey; Type: CONSTRAINT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.chain_execution_config
@@ -13039,8 +14836,7 @@ ALTER TABLE ONLY timetable.chain_execution_config
 
 
 --
--- TOC entry 3958 (class 2606 OID 70881)
--- Name: chain_execution_parameters chain_execution_parameters_pkey; Type: CONSTRAINT; Schema: timetable; Owner: -
+-- Name: chain_execution_parameters chain_execution_parameters_pkey; Type: CONSTRAINT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.chain_execution_parameters
@@ -13048,8 +14844,7 @@ ALTER TABLE ONLY timetable.chain_execution_parameters
 
 
 --
--- TOC entry 3960 (class 2606 OID 70883)
--- Name: database_connection database_connection_pkey; Type: CONSTRAINT; Schema: timetable; Owner: -
+-- Name: database_connection database_connection_pkey; Type: CONSTRAINT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.database_connection
@@ -13057,8 +14852,7 @@ ALTER TABLE ONLY timetable.database_connection
 
 
 --
--- TOC entry 3962 (class 2606 OID 70885)
--- Name: log log_pkey; Type: CONSTRAINT; Schema: timetable; Owner: -
+-- Name: log log_pkey; Type: CONSTRAINT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.log
@@ -13066,8 +14860,7 @@ ALTER TABLE ONLY timetable.log
 
 
 --
--- TOC entry 3964 (class 2606 OID 70887)
--- Name: migrations migrations_pkey; Type: CONSTRAINT; Schema: timetable; Owner: -
+-- Name: migrations migrations_pkey; Type: CONSTRAINT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.migrations
@@ -13075,8 +14868,7 @@ ALTER TABLE ONLY timetable.migrations
 
 
 --
--- TOC entry 3966 (class 2606 OID 70889)
--- Name: run_status run_status_pkey; Type: CONSTRAINT; Schema: timetable; Owner: -
+-- Name: run_status run_status_pkey; Type: CONSTRAINT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.run_status
@@ -13084,8 +14876,7 @@ ALTER TABLE ONLY timetable.run_status
 
 
 --
--- TOC entry 3968 (class 2606 OID 70891)
--- Name: task_chain task_chain_parent_id_key; Type: CONSTRAINT; Schema: timetable; Owner: -
+-- Name: task_chain task_chain_parent_id_key; Type: CONSTRAINT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.task_chain
@@ -13093,8 +14884,7 @@ ALTER TABLE ONLY timetable.task_chain
 
 
 --
--- TOC entry 3970 (class 2606 OID 70893)
--- Name: task_chain task_chain_pkey; Type: CONSTRAINT; Schema: timetable; Owner: -
+-- Name: task_chain task_chain_pkey; Type: CONSTRAINT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.task_chain
@@ -13102,8 +14892,7 @@ ALTER TABLE ONLY timetable.task_chain
 
 
 --
--- TOC entry 3972 (class 2606 OID 70895)
--- Name: ano ano_fiscal_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: -
+-- Name: ano ano_fiscal_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY valores_fiscales.ano
@@ -13111,8 +14900,7 @@ ALTER TABLE ONLY valores_fiscales.ano
 
 
 --
--- TOC entry 3974 (class 2606 OID 70897)
--- Name: construccion construccion_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: -
+-- Name: construccion construccion_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY valores_fiscales.construccion
@@ -13120,8 +14908,7 @@ ALTER TABLE ONLY valores_fiscales.construccion
 
 
 --
--- TOC entry 3980 (class 2606 OID 70899)
--- Name: sector sector_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: -
+-- Name: sector sector_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY valores_fiscales.sector
@@ -13129,8 +14916,7 @@ ALTER TABLE ONLY valores_fiscales.sector
 
 
 --
--- TOC entry 3982 (class 2606 OID 70901)
--- Name: terreno terreno_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: -
+-- Name: terreno terreno_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY valores_fiscales.terreno
@@ -13138,8 +14924,7 @@ ALTER TABLE ONLY valores_fiscales.terreno
 
 
 --
--- TOC entry 3976 (class 2606 OID 70903)
--- Name: tipo_construccion tipo_construccion_descripcion_key; Type: CONSTRAINT; Schema: valores_fiscales; Owner: -
+-- Name: tipo_construccion tipo_construccion_descripcion_key; Type: CONSTRAINT; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY valores_fiscales.tipo_construccion
@@ -13147,8 +14932,7 @@ ALTER TABLE ONLY valores_fiscales.tipo_construccion
 
 
 --
--- TOC entry 3978 (class 2606 OID 70905)
--- Name: tipo_construccion tipo_construccion_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: -
+-- Name: tipo_construccion tipo_construccion_pkey; Type: CONSTRAINT; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY valores_fiscales.tipo_construccion
@@ -13156,96 +14940,84 @@ ALTER TABLE ONLY valores_fiscales.tipo_construccion
 
 
 --
--- TOC entry 4090 (class 2620 OID 70906)
--- Name: evento_fraccion eventos_fraccion_trigger; Type: TRIGGER; Schema: impuesto; Owner: -
+-- Name: evento_fraccion eventos_fraccion_trigger; Type: TRIGGER; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TRIGGER eventos_fraccion_trigger BEFORE INSERT ON impuesto.evento_fraccion FOR EACH ROW EXECUTE FUNCTION impuesto.eventos_fraccion_trigger_func();
 
 
 --
--- TOC entry 4091 (class 2620 OID 70907)
--- Name: evento_solicitud eventos_solicitud_trigger; Type: TRIGGER; Schema: impuesto; Owner: -
+-- Name: evento_solicitud eventos_solicitud_trigger; Type: TRIGGER; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 CREATE TRIGGER eventos_solicitud_trigger BEFORE INSERT ON impuesto.evento_solicitud FOR EACH ROW EXECUTE FUNCTION impuesto.eventos_solicitud_trigger_func();
 
 
 --
--- TOC entry 4089 (class 2620 OID 70908)
--- Name: tramite codigo_tramite_trg; Type: TRIGGER; Schema: public; Owner: -
+-- Name: tramite codigo_tramite_trg; Type: TRIGGER; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TRIGGER codigo_tramite_trg BEFORE INSERT ON public.tramite FOR EACH ROW EXECUTE FUNCTION public.codigo_tramite();
 
 
 --
--- TOC entry 4084 (class 2620 OID 70909)
--- Name: caso_social codigos_casos_sociales_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: caso_social codigos_casos_sociales_trigger; Type: TRIGGER; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TRIGGER codigos_casos_sociales_trigger BEFORE INSERT ON public.caso_social FOR EACH ROW EXECUTE FUNCTION public.codigo_caso();
 
 
 --
--- TOC entry 4087 (class 2620 OID 70910)
--- Name: multa codigos_multas_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: multa codigos_multas_trigger; Type: TRIGGER; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TRIGGER codigos_multas_trigger BEFORE INSERT ON public.multa FOR EACH ROW EXECUTE FUNCTION public.codigo_multa();
 
 
 --
--- TOC entry 4085 (class 2620 OID 70911)
--- Name: evento_caso_social eventos_casos_sociales_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: evento_caso_social eventos_casos_sociales_trigger; Type: TRIGGER; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TRIGGER eventos_casos_sociales_trigger BEFORE INSERT ON public.evento_caso_social FOR EACH ROW EXECUTE FUNCTION public.eventos_casos_sociales_trigger_func();
 
 
 --
--- TOC entry 4086 (class 2620 OID 70912)
--- Name: evento_multa eventos_multa_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: evento_multa eventos_multa_trigger; Type: TRIGGER; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TRIGGER eventos_multa_trigger BEFORE INSERT ON public.evento_multa FOR EACH ROW EXECUTE FUNCTION public.eventos_multa_trigger_func();
 
 
 --
--- TOC entry 4088 (class 2620 OID 70913)
--- Name: evento_tramite eventos_tramite_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: evento_tramite eventos_tramite_trigger; Type: TRIGGER; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TRIGGER eventos_tramite_trigger BEFORE INSERT ON public.evento_tramite FOR EACH ROW EXECUTE FUNCTION public.eventos_tramite_trigger_func();
 
 
 --
--- TOC entry 4092 (class 2620 OID 70914)
--- Name: notificacion insert_notificaciones_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: notificacion insert_notificaciones_trigger; Type: TRIGGER; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TRIGGER insert_notificaciones_trigger BEFORE INSERT ON public.notificacion FOR EACH ROW EXECUTE FUNCTION public.insert_notificacion_trigger_func();
 
 
 --
--- TOC entry 4093 (class 2620 OID 70915)
--- Name: valor tipos_tramites_costo_utmm_trig; Type: TRIGGER; Schema: public; Owner: -
+-- Name: valor tipos_tramites_costo_utmm_trig; Type: TRIGGER; Schema: public; Owner: pooijyzcnnfrso
 --
 
 CREATE TRIGGER tipos_tramites_costo_utmm_trig AFTER UPDATE ON public.valor FOR EACH ROW WHEN (((new.descripcion)::text = 'UTMM'::text)) EXECUTE FUNCTION public.tipos_tramites_costo_utmm_trigger_func();
 
 
 --
--- TOC entry 4094 (class 2620 OID 70916)
--- Name: base_task trig_task_chain_fixer; Type: TRIGGER; Schema: timetable; Owner: -
+-- Name: base_task trig_task_chain_fixer; Type: TRIGGER; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 CREATE TRIGGER trig_task_chain_fixer BEFORE DELETE ON timetable.base_task FOR EACH ROW EXECUTE FUNCTION timetable.trig_chain_fixer();
 
 
 --
--- TOC entry 3999 (class 2606 OID 70917)
--- Name: actividad_economica_sucursal actividad_economica_contribuyente_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: actividad_economica_sucursal actividad_economica_contribuyente_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.actividad_economica_sucursal
@@ -13253,8 +15025,7 @@ ALTER TABLE ONLY impuesto.actividad_economica_sucursal
 
 
 --
--- TOC entry 4000 (class 2606 OID 70922)
--- Name: actividad_economica_sucursal actividad_economica_contribuyente_numero_referencia_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: actividad_economica_sucursal actividad_economica_contribuyente_numero_referencia_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.actividad_economica_sucursal
@@ -13262,8 +15033,7 @@ ALTER TABLE ONLY impuesto.actividad_economica_sucursal
 
 
 --
--- TOC entry 4001 (class 2606 OID 70927)
--- Name: actividad_economica_exoneracion actividad_economica_exoneracion_id_actividad_economica_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: actividad_economica_exoneracion actividad_economica_exoneracion_id_actividad_economica_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.actividad_economica_exoneracion
@@ -13271,8 +15041,7 @@ ALTER TABLE ONLY impuesto.actividad_economica_exoneracion
 
 
 --
--- TOC entry 4002 (class 2606 OID 70932)
--- Name: actividad_economica_exoneracion actividad_economica_exoneracion_id_plazo_exoneracion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: actividad_economica_exoneracion actividad_economica_exoneracion_id_plazo_exoneracion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.actividad_economica_exoneracion
@@ -13280,8 +15049,7 @@ ALTER TABLE ONLY impuesto.actividad_economica_exoneracion
 
 
 --
--- TOC entry 4003 (class 2606 OID 70937)
--- Name: avaluo_inmueble avaluo_inmueble_id_inmueble_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: avaluo_inmueble avaluo_inmueble_id_inmueble_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.avaluo_inmueble
@@ -13289,8 +15057,7 @@ ALTER TABLE ONLY impuesto.avaluo_inmueble
 
 
 --
--- TOC entry 4005 (class 2606 OID 70942)
--- Name: contribuyente_exoneracion contribuyente_exoneracion_id_actividad_economica_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: contribuyente_exoneracion contribuyente_exoneracion_id_actividad_economica_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.contribuyente_exoneracion
@@ -13298,8 +15065,7 @@ ALTER TABLE ONLY impuesto.contribuyente_exoneracion
 
 
 --
--- TOC entry 4006 (class 2606 OID 70947)
--- Name: contribuyente_exoneracion contribuyente_exoneracion_id_plazo_exoneracion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: contribuyente_exoneracion contribuyente_exoneracion_id_plazo_exoneracion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.contribuyente_exoneracion
@@ -13307,8 +15073,7 @@ ALTER TABLE ONLY impuesto.contribuyente_exoneracion
 
 
 --
--- TOC entry 4007 (class 2606 OID 70952)
--- Name: contribuyente_exoneracion contribuyente_exoneracion_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: contribuyente_exoneracion contribuyente_exoneracion_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.contribuyente_exoneracion
@@ -13316,8 +15081,7 @@ ALTER TABLE ONLY impuesto.contribuyente_exoneracion
 
 
 --
--- TOC entry 4004 (class 2606 OID 70957)
--- Name: contribuyente contribuyente_id_parroquia_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: contribuyente contribuyente_id_parroquia_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.contribuyente
@@ -13325,8 +15089,7 @@ ALTER TABLE ONLY impuesto.contribuyente
 
 
 --
--- TOC entry 4008 (class 2606 OID 70962)
--- Name: convenio convenio_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: convenio convenio_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.convenio
@@ -13334,8 +15097,15 @@ ALTER TABLE ONLY impuesto.convenio
 
 
 --
--- TOC entry 4009 (class 2606 OID 70967)
--- Name: evento_fraccion evento_fraccion_id_fraccion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: detalle_retencion detalle_retencion_id_liquidacion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+ALTER TABLE ONLY impuesto.detalle_retencion
+    ADD CONSTRAINT detalle_retencion_id_liquidacion_fkey FOREIGN KEY (id_liquidacion) REFERENCES impuesto.liquidacion(id_liquidacion);
+
+
+--
+-- Name: evento_fraccion evento_fraccion_id_fraccion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.evento_fraccion
@@ -13343,8 +15113,7 @@ ALTER TABLE ONLY impuesto.evento_fraccion
 
 
 --
--- TOC entry 4010 (class 2606 OID 70972)
--- Name: evento_solicitud evento_solicitud_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: evento_solicitud evento_solicitud_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.evento_solicitud
@@ -13352,8 +15121,7 @@ ALTER TABLE ONLY impuesto.evento_solicitud
 
 
 --
--- TOC entry 3983 (class 2606 OID 70977)
--- Name: fraccion fraccion_id_convenio_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: fraccion fraccion_id_convenio_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.fraccion
@@ -13361,8 +15129,7 @@ ALTER TABLE ONLY impuesto.fraccion
 
 
 --
--- TOC entry 4011 (class 2606 OID 70982)
--- Name: inmueble_contribuyente_natural inmueble_contribuyente_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: inmueble_contribuyente_natural inmueble_contribuyente_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.inmueble_contribuyente_natural
@@ -13370,8 +15137,7 @@ ALTER TABLE ONLY impuesto.inmueble_contribuyente_natural
 
 
 --
--- TOC entry 4012 (class 2606 OID 70987)
--- Name: inmueble_contribuyente_natural inmueble_contribuyente_id_inmueble_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: inmueble_contribuyente_natural inmueble_contribuyente_id_inmueble_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.inmueble_contribuyente_natural
@@ -13379,8 +15145,7 @@ ALTER TABLE ONLY impuesto.inmueble_contribuyente_natural
 
 
 --
--- TOC entry 4013 (class 2606 OID 70992)
--- Name: liquidacion_descuento liquidacion_descuento_id_liquidacion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: liquidacion_descuento liquidacion_descuento_id_liquidacion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.liquidacion_descuento
@@ -13388,8 +15153,7 @@ ALTER TABLE ONLY impuesto.liquidacion_descuento
 
 
 --
--- TOC entry 3990 (class 2606 OID 70997)
--- Name: liquidacion liquidacion_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: liquidacion liquidacion_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.liquidacion
@@ -13397,8 +15161,7 @@ ALTER TABLE ONLY impuesto.liquidacion
 
 
 --
--- TOC entry 3991 (class 2606 OID 71002)
--- Name: liquidacion liquidacion_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: liquidacion liquidacion_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.liquidacion
@@ -13406,8 +15169,7 @@ ALTER TABLE ONLY impuesto.liquidacion
 
 
 --
--- TOC entry 3992 (class 2606 OID 71007)
--- Name: liquidacion liquidacion_id_subramo_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: liquidacion liquidacion_id_subramo_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.liquidacion
@@ -13415,8 +15177,7 @@ ALTER TABLE ONLY impuesto.liquidacion
 
 
 --
--- TOC entry 4014 (class 2606 OID 71012)
--- Name: multa multa_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: multa multa_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.multa
@@ -13424,8 +15185,7 @@ ALTER TABLE ONLY impuesto.multa
 
 
 --
--- TOC entry 4015 (class 2606 OID 71017)
--- Name: multa multa_id_tipo_multa_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: multa multa_id_tipo_multa_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.multa
@@ -13433,8 +15193,7 @@ ALTER TABLE ONLY impuesto.multa
 
 
 --
--- TOC entry 4016 (class 2606 OID 71022)
--- Name: ramo_exoneracion procedimiento_exoneracion_id_plazo_exoneracion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: ramo_exoneracion procedimiento_exoneracion_id_plazo_exoneracion_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.ramo_exoneracion
@@ -13442,8 +15201,7 @@ ALTER TABLE ONLY impuesto.ramo_exoneracion
 
 
 --
--- TOC entry 4017 (class 2606 OID 71027)
--- Name: ramo_exoneracion ramo_exoneracion_id_ramo_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: ramo_exoneracion ramo_exoneracion_id_ramo_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.ramo_exoneracion
@@ -13451,8 +15209,7 @@ ALTER TABLE ONLY impuesto.ramo_exoneracion
 
 
 --
--- TOC entry 4018 (class 2606 OID 71032)
--- Name: registro_municipal registro_municipal_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: registro_municipal registro_municipal_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.registro_municipal
@@ -13460,8 +15217,7 @@ ALTER TABLE ONLY impuesto.registro_municipal
 
 
 --
--- TOC entry 4019 (class 2606 OID 71037)
--- Name: registro_municipal_verificacion registro_municipal_verificacion_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: registro_municipal_verificacion registro_municipal_verificacion_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.registro_municipal_verificacion
@@ -13469,8 +15225,7 @@ ALTER TABLE ONLY impuesto.registro_municipal_verificacion
 
 
 --
--- TOC entry 4020 (class 2606 OID 71042)
--- Name: registro_municipal_verificacion registro_municipal_verificacion_id_verificacion_telefono_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: registro_municipal_verificacion registro_municipal_verificacion_id_verificacion_telefono_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.registro_municipal_verificacion
@@ -13478,8 +15233,7 @@ ALTER TABLE ONLY impuesto.registro_municipal_verificacion
 
 
 --
--- TOC entry 3984 (class 2606 OID 71047)
--- Name: solicitud solicitud_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: solicitud solicitud_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.solicitud
@@ -13487,8 +15241,7 @@ ALTER TABLE ONLY impuesto.solicitud
 
 
 --
--- TOC entry 3985 (class 2606 OID 71052)
--- Name: solicitud solicitud_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: solicitud solicitud_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.solicitud
@@ -13496,8 +15249,7 @@ ALTER TABLE ONLY impuesto.solicitud
 
 
 --
--- TOC entry 3986 (class 2606 OID 71057)
--- Name: solicitud solicitud_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: solicitud solicitud_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.solicitud
@@ -13505,8 +15257,7 @@ ALTER TABLE ONLY impuesto.solicitud
 
 
 --
--- TOC entry 4021 (class 2606 OID 71062)
--- Name: subramo subramo_id_ramo_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: subramo subramo_id_ramo_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.subramo
@@ -13514,8 +15265,7 @@ ALTER TABLE ONLY impuesto.subramo
 
 
 --
--- TOC entry 4022 (class 2606 OID 71067)
--- Name: tabulador_aseo_actividad_economica tabulador_aseo_actividad_economica_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: tabulador_aseo_actividad_economica tabulador_aseo_actividad_economica_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tabulador_aseo_actividad_economica
@@ -13523,8 +15273,7 @@ ALTER TABLE ONLY impuesto.tabulador_aseo_actividad_economica
 
 
 --
--- TOC entry 4023 (class 2606 OID 71072)
--- Name: tabulador_aseo_actividad_economica tabulador_aseo_actividad_economica_numero_referencia_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: tabulador_aseo_actividad_economica tabulador_aseo_actividad_economica_numero_referencia_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tabulador_aseo_actividad_economica
@@ -13532,8 +15281,7 @@ ALTER TABLE ONLY impuesto.tabulador_aseo_actividad_economica
 
 
 --
--- TOC entry 4024 (class 2606 OID 71077)
--- Name: tabulador_aseo_residencial tabulador_aseo_residencial_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: tabulador_aseo_residencial tabulador_aseo_residencial_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tabulador_aseo_residencial
@@ -13541,8 +15289,7 @@ ALTER TABLE ONLY impuesto.tabulador_aseo_residencial
 
 
 --
--- TOC entry 4026 (class 2606 OID 71082)
--- Name: tabulador_gas_actividad_economica tabulador_gas_actividad_economica_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_actividad_economica tabulador_gas_actividad_economica_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tabulador_gas_actividad_economica
@@ -13550,8 +15297,7 @@ ALTER TABLE ONLY impuesto.tabulador_gas_actividad_economica
 
 
 --
--- TOC entry 4027 (class 2606 OID 71087)
--- Name: tabulador_gas_actividad_economica tabulador_gas_actividad_economica_numero_referencia_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_actividad_economica tabulador_gas_actividad_economica_numero_referencia_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tabulador_gas_actividad_economica
@@ -13559,8 +15305,7 @@ ALTER TABLE ONLY impuesto.tabulador_gas_actividad_economica
 
 
 --
--- TOC entry 4025 (class 2606 OID 71092)
--- Name: tabulador_gas tabulador_gas_id_actividad_economica_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: tabulador_gas tabulador_gas_id_actividad_economica_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tabulador_gas
@@ -13568,8 +15313,7 @@ ALTER TABLE ONLY impuesto.tabulador_gas
 
 
 --
--- TOC entry 4028 (class 2606 OID 71097)
--- Name: tabulador_gas_residencial tabulador_gas_residencial_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: tabulador_gas_residencial tabulador_gas_residencial_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tabulador_gas_residencial
@@ -13577,8 +15321,7 @@ ALTER TABLE ONLY impuesto.tabulador_gas_residencial
 
 
 --
--- TOC entry 4029 (class 2606 OID 71102)
--- Name: tipo_aviso_propaganda tipo_aviso_propaganda_id_categoria_propaganda_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: tipo_aviso_propaganda tipo_aviso_propaganda_id_categoria_propaganda_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tipo_aviso_propaganda
@@ -13586,8 +15329,7 @@ ALTER TABLE ONLY impuesto.tipo_aviso_propaganda
 
 
 --
--- TOC entry 4030 (class 2606 OID 71107)
--- Name: tipo_aviso_propaganda tipo_aviso_propaganda_id_valor_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: tipo_aviso_propaganda tipo_aviso_propaganda_id_valor_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.tipo_aviso_propaganda
@@ -13595,8 +15337,7 @@ ALTER TABLE ONLY impuesto.tipo_aviso_propaganda
 
 
 --
--- TOC entry 4031 (class 2606 OID 71112)
--- Name: usuario_enlazado usuario_enlazado_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: usuario_enlazado usuario_enlazado_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.usuario_enlazado
@@ -13604,8 +15345,23 @@ ALTER TABLE ONLY impuesto.usuario_enlazado
 
 
 --
--- TOC entry 4032 (class 2606 OID 71117)
--- Name: verificacion_email verificacion_email_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: usuario_inmueble usuario_inmueble_id_inmueble_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+ALTER TABLE ONLY impuesto.usuario_inmueble
+    ADD CONSTRAINT usuario_inmueble_id_inmueble_fkey FOREIGN KEY (id_inmueble) REFERENCES public.inmueble_urbano(id_inmueble);
+
+
+--
+-- Name: usuario_inmueble usuario_inmueble_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
+--
+
+ALTER TABLE ONLY impuesto.usuario_inmueble
+    ADD CONSTRAINT usuario_inmueble_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuario(id_usuario);
+
+
+--
+-- Name: verificacion_email verificacion_email_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.verificacion_email
@@ -13613,8 +15369,7 @@ ALTER TABLE ONLY impuesto.verificacion_email
 
 
 --
--- TOC entry 4033 (class 2606 OID 71122)
--- Name: verificacion_telefono verificacion_telefono_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: -
+-- Name: verificacion_telefono verificacion_telefono_id_usuario_fkey; Type: FK CONSTRAINT; Schema: impuesto; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY impuesto.verificacion_telefono
@@ -13622,8 +15377,7 @@ ALTER TABLE ONLY impuesto.verificacion_telefono
 
 
 --
--- TOC entry 4034 (class 2606 OID 71127)
--- Name: campo_tramite campos_tramites_id_campo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: campo_tramite campos_tramites_id_campo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.campo_tramite
@@ -13631,8 +15385,7 @@ ALTER TABLE ONLY public.campo_tramite
 
 
 --
--- TOC entry 4035 (class 2606 OID 71132)
--- Name: campo_tramite campos_tramites_id_seccion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: campo_tramite campos_tramites_id_seccion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.campo_tramite
@@ -13640,8 +15393,7 @@ ALTER TABLE ONLY public.campo_tramite
 
 
 --
--- TOC entry 4036 (class 2606 OID 71137)
--- Name: campo_tramite campos_tramites_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: campo_tramite campos_tramites_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.campo_tramite
@@ -13649,8 +15401,7 @@ ALTER TABLE ONLY public.campo_tramite
 
 
 --
--- TOC entry 4037 (class 2606 OID 71142)
--- Name: cargo cargo_id_institucion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: cargo cargo_id_institucion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.cargo
@@ -13658,8 +15409,7 @@ ALTER TABLE ONLY public.cargo
 
 
 --
--- TOC entry 4038 (class 2606 OID 71147)
--- Name: cargo cargo_id_tipo_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: cargo cargo_id_tipo_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.cargo
@@ -13667,8 +15417,7 @@ ALTER TABLE ONLY public.cargo
 
 
 --
--- TOC entry 3987 (class 2606 OID 71152)
--- Name: caso_social casos_sociales_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: caso_social casos_sociales_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.caso_social
@@ -13676,8 +15425,7 @@ ALTER TABLE ONLY public.caso_social
 
 
 --
--- TOC entry 3988 (class 2606 OID 71157)
--- Name: caso_social casos_sociales_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: caso_social casos_sociales_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.caso_social
@@ -13685,8 +15433,7 @@ ALTER TABLE ONLY public.caso_social
 
 
 --
--- TOC entry 4039 (class 2606 OID 71162)
--- Name: certificado certificados_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: certificado certificados_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.certificado
@@ -13694,8 +15441,7 @@ ALTER TABLE ONLY public.certificado
 
 
 --
--- TOC entry 4040 (class 2606 OID 71167)
--- Name: cuenta_funcionario cuentas_funcionarios_id_cargo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: cuenta_funcionario cuentas_funcionarios_id_cargo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.cuenta_funcionario
@@ -13703,8 +15449,7 @@ ALTER TABLE ONLY public.cuenta_funcionario
 
 
 --
--- TOC entry 4041 (class 2606 OID 71172)
--- Name: cuenta_funcionario cuentas_funcionarios_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: cuenta_funcionario cuentas_funcionarios_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.cuenta_funcionario
@@ -13712,8 +15457,7 @@ ALTER TABLE ONLY public.cuenta_funcionario
 
 
 --
--- TOC entry 4042 (class 2606 OID 71177)
--- Name: datos_facebook datos_facebook_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: datos_facebook datos_facebook_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.datos_facebook
@@ -13721,8 +15465,7 @@ ALTER TABLE ONLY public.datos_facebook
 
 
 --
--- TOC entry 4043 (class 2606 OID 71182)
--- Name: datos_google datos_google_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: datos_google datos_google_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.datos_google
@@ -13730,8 +15473,7 @@ ALTER TABLE ONLY public.datos_google
 
 
 --
--- TOC entry 4044 (class 2606 OID 71187)
--- Name: detalle_factura detalles_facturas_id_factura_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: detalle_factura detalles_facturas_id_factura_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.detalle_factura
@@ -13739,8 +15481,7 @@ ALTER TABLE ONLY public.detalle_factura
 
 
 --
--- TOC entry 3993 (class 2606 OID 71192)
--- Name: evento_multa evento_multa_id_multa_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: evento_multa evento_multa_id_multa_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.evento_multa
@@ -13748,8 +15489,7 @@ ALTER TABLE ONLY public.evento_multa
 
 
 --
--- TOC entry 3996 (class 2606 OID 71197)
--- Name: evento_tramite eventos_tramite_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: evento_tramite eventos_tramite_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.evento_tramite
@@ -13757,8 +15497,7 @@ ALTER TABLE ONLY public.evento_tramite
 
 
 --
--- TOC entry 4045 (class 2606 OID 71202)
--- Name: factura_tramite facturas_tramites_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: factura_tramite facturas_tramites_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.factura_tramite
@@ -13766,8 +15505,7 @@ ALTER TABLE ONLY public.factura_tramite
 
 
 --
--- TOC entry 4046 (class 2606 OID 71207)
--- Name: inmueble_urbano inmueble_urbano_id_parroquia_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: inmueble_urbano inmueble_urbano_id_parroquia_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.inmueble_urbano
@@ -13775,8 +15513,7 @@ ALTER TABLE ONLY public.inmueble_urbano
 
 
 --
--- TOC entry 4047 (class 2606 OID 71212)
--- Name: inmueble_urbano inmueble_urbano_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: inmueble_urbano inmueble_urbano_id_registro_municipal_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.inmueble_urbano
@@ -13784,8 +15521,7 @@ ALTER TABLE ONLY public.inmueble_urbano
 
 
 --
--- TOC entry 4048 (class 2606 OID 71217)
--- Name: institucion_banco instituciones_bancos_id_banco_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: institucion_banco instituciones_bancos_id_banco_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.institucion_banco
@@ -13793,8 +15529,7 @@ ALTER TABLE ONLY public.institucion_banco
 
 
 --
--- TOC entry 4049 (class 2606 OID 71222)
--- Name: institucion_banco instituciones_bancos_id_institucion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: institucion_banco instituciones_bancos_id_institucion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.institucion_banco
@@ -13802,8 +15537,7 @@ ALTER TABLE ONLY public.institucion_banco
 
 
 --
--- TOC entry 3994 (class 2606 OID 71227)
--- Name: multa multa_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: multa multa_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.multa
@@ -13811,8 +15545,7 @@ ALTER TABLE ONLY public.multa
 
 
 --
--- TOC entry 3995 (class 2606 OID 71232)
--- Name: multa multa_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: multa multa_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.multa
@@ -13820,8 +15553,7 @@ ALTER TABLE ONLY public.multa
 
 
 --
--- TOC entry 4050 (class 2606 OID 71237)
--- Name: ordenanza ordenanzas_id_valor_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: ordenanza ordenanzas_id_valor_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.ordenanza
@@ -13829,8 +15561,7 @@ ALTER TABLE ONLY public.ordenanza
 
 
 --
--- TOC entry 4051 (class 2606 OID 71242)
--- Name: ordenanza_tramite ordenanzas_tramites_id_tarifa_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: ordenanza_tramite ordenanzas_tramites_id_tarifa_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.ordenanza_tramite
@@ -13838,8 +15569,7 @@ ALTER TABLE ONLY public.ordenanza_tramite
 
 
 --
--- TOC entry 4052 (class 2606 OID 71247)
--- Name: ordenanza_tramite ordenanzas_tramites_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: ordenanza_tramite ordenanzas_tramites_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.ordenanza_tramite
@@ -13847,8 +15577,7 @@ ALTER TABLE ONLY public.ordenanza_tramite
 
 
 --
--- TOC entry 4056 (class 2606 OID 71252)
--- Name: pago pago_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: pago pago_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.pago
@@ -13856,8 +15585,7 @@ ALTER TABLE ONLY public.pago
 
 
 --
--- TOC entry 4057 (class 2606 OID 71257)
--- Name: pago pagos_id_banco_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: pago pagos_id_banco_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.pago
@@ -13865,8 +15593,7 @@ ALTER TABLE ONLY public.pago
 
 
 --
--- TOC entry 4058 (class 2606 OID 71262)
--- Name: pago_manual pagos_manuales_id_pago_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: pago_manual pagos_manuales_id_pago_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.pago_manual
@@ -13874,8 +15601,7 @@ ALTER TABLE ONLY public.pago_manual
 
 
 --
--- TOC entry 4059 (class 2606 OID 71267)
--- Name: pago_manual pagos_manuales_id_usuario_funcionario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: pago_manual pagos_manuales_id_usuario_funcionario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.pago_manual
@@ -13883,8 +15609,7 @@ ALTER TABLE ONLY public.pago_manual
 
 
 --
--- TOC entry 4060 (class 2606 OID 71272)
--- Name: permiso_de_acceso permiso_de_acceso_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: permiso_de_acceso permiso_de_acceso_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.permiso_de_acceso
@@ -13892,8 +15617,7 @@ ALTER TABLE ONLY public.permiso_de_acceso
 
 
 --
--- TOC entry 4061 (class 2606 OID 71277)
--- Name: permiso_de_acceso permiso_de_acceso_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: permiso_de_acceso permiso_de_acceso_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.permiso_de_acceso
@@ -13901,8 +15625,7 @@ ALTER TABLE ONLY public.permiso_de_acceso
 
 
 --
--- TOC entry 4062 (class 2606 OID 71282)
--- Name: propietario_inmueble propietarios_inmuebles_id_inmueble_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: propietario_inmueble propietarios_inmuebles_id_inmueble_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.propietario_inmueble
@@ -13910,8 +15633,7 @@ ALTER TABLE ONLY public.propietario_inmueble
 
 
 --
--- TOC entry 4063 (class 2606 OID 71287)
--- Name: propietario_inmueble propietarios_inmuebles_id_propietario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: propietario_inmueble propietarios_inmuebles_id_propietario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.propietario_inmueble
@@ -13919,8 +15641,7 @@ ALTER TABLE ONLY public.propietario_inmueble
 
 
 --
--- TOC entry 4064 (class 2606 OID 71292)
--- Name: recuperacion recuperacion_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: recuperacion recuperacion_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.recuperacion
@@ -13928,8 +15649,7 @@ ALTER TABLE ONLY public.recuperacion
 
 
 --
--- TOC entry 4053 (class 2606 OID 71297)
--- Name: tarifa_inspeccion tarifas_inspeccion_id_ordenanza_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tarifa_inspeccion tarifas_inspeccion_id_ordenanza_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.tarifa_inspeccion
@@ -13937,8 +15657,7 @@ ALTER TABLE ONLY public.tarifa_inspeccion
 
 
 --
--- TOC entry 4054 (class 2606 OID 71302)
--- Name: tarifa_inspeccion tarifas_inspeccion_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tarifa_inspeccion tarifas_inspeccion_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.tarifa_inspeccion
@@ -13946,8 +15665,7 @@ ALTER TABLE ONLY public.tarifa_inspeccion
 
 
 --
--- TOC entry 4055 (class 2606 OID 71307)
--- Name: tarifa_inspeccion tarifas_inspeccion_id_variable_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tarifa_inspeccion tarifas_inspeccion_id_variable_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.tarifa_inspeccion
@@ -13955,8 +15673,7 @@ ALTER TABLE ONLY public.tarifa_inspeccion
 
 
 --
--- TOC entry 4065 (class 2606 OID 71312)
--- Name: template_certificado templates_certificados_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: template_certificado templates_certificados_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.template_certificado
@@ -13964,8 +15681,7 @@ ALTER TABLE ONLY public.template_certificado
 
 
 --
--- TOC entry 3989 (class 2606 OID 71317)
--- Name: tipo_tramite tipos_tramites_id_institucion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tipo_tramite tipos_tramites_id_institucion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.tipo_tramite
@@ -13973,8 +15689,7 @@ ALTER TABLE ONLY public.tipo_tramite
 
 
 --
--- TOC entry 4066 (class 2606 OID 71322)
--- Name: tipo_tramite_recaudo tipos_tramites_recaudos_id_recaudo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tipo_tramite_recaudo tipos_tramites_recaudos_id_recaudo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.tipo_tramite_recaudo
@@ -13982,8 +15697,7 @@ ALTER TABLE ONLY public.tipo_tramite_recaudo
 
 
 --
--- TOC entry 4067 (class 2606 OID 71327)
--- Name: tipo_tramite_recaudo tipos_tramites_recaudos_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tipo_tramite_recaudo tipos_tramites_recaudos_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.tipo_tramite_recaudo
@@ -13991,8 +15705,7 @@ ALTER TABLE ONLY public.tipo_tramite_recaudo
 
 
 --
--- TOC entry 4068 (class 2606 OID 71332)
--- Name: tramite_archivo_recaudo tramites_archivos_recaudos_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tramite_archivo_recaudo tramites_archivos_recaudos_id_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.tramite_archivo_recaudo
@@ -14000,8 +15713,7 @@ ALTER TABLE ONLY public.tramite_archivo_recaudo
 
 
 --
--- TOC entry 3997 (class 2606 OID 71337)
--- Name: tramite tramites_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tramite tramites_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.tramite
@@ -14009,8 +15721,7 @@ ALTER TABLE ONLY public.tramite
 
 
 --
--- TOC entry 3998 (class 2606 OID 71342)
--- Name: tramite tramites_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tramite tramites_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.tramite
@@ -14018,8 +15729,7 @@ ALTER TABLE ONLY public.tramite
 
 
 --
--- TOC entry 4069 (class 2606 OID 71347)
--- Name: usuario usuario_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: usuario usuario_id_contribuyente_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.usuario
@@ -14027,8 +15737,7 @@ ALTER TABLE ONLY public.usuario
 
 
 --
--- TOC entry 4070 (class 2606 OID 71352)
--- Name: usuario usuarios_id_tipo_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: usuario usuarios_id_tipo_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.usuario
@@ -14036,8 +15745,7 @@ ALTER TABLE ONLY public.usuario
 
 
 --
--- TOC entry 4071 (class 2606 OID 71357)
--- Name: variable_de_costo variable_de_costo_id_operacion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: variable_de_costo variable_de_costo_id_operacion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.variable_de_costo
@@ -14045,8 +15753,7 @@ ALTER TABLE ONLY public.variable_de_costo
 
 
 --
--- TOC entry 4072 (class 2606 OID 71362)
--- Name: variable_de_costo variable_de_costo_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: variable_de_costo variable_de_costo_id_tipo_tramite_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY public.variable_de_costo
@@ -14054,8 +15761,7 @@ ALTER TABLE ONLY public.variable_de_costo
 
 
 --
--- TOC entry 4073 (class 2606 OID 71367)
--- Name: chain_execution_config chain_execution_config_chain_id_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: -
+-- Name: chain_execution_config chain_execution_config_chain_id_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.chain_execution_config
@@ -14063,8 +15769,7 @@ ALTER TABLE ONLY timetable.chain_execution_config
 
 
 --
--- TOC entry 4074 (class 2606 OID 71372)
--- Name: chain_execution_parameters chain_execution_parameters_chain_execution_config_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: -
+-- Name: chain_execution_parameters chain_execution_parameters_chain_execution_config_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.chain_execution_parameters
@@ -14072,8 +15777,7 @@ ALTER TABLE ONLY timetable.chain_execution_parameters
 
 
 --
--- TOC entry 4075 (class 2606 OID 71377)
--- Name: chain_execution_parameters chain_execution_parameters_chain_id_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: -
+-- Name: chain_execution_parameters chain_execution_parameters_chain_id_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.chain_execution_parameters
@@ -14081,8 +15785,7 @@ ALTER TABLE ONLY timetable.chain_execution_parameters
 
 
 --
--- TOC entry 4076 (class 2606 OID 71382)
--- Name: task_chain task_chain_database_connection_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: -
+-- Name: task_chain task_chain_database_connection_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.task_chain
@@ -14090,8 +15793,7 @@ ALTER TABLE ONLY timetable.task_chain
 
 
 --
--- TOC entry 4077 (class 2606 OID 71387)
--- Name: task_chain task_chain_parent_id_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: -
+-- Name: task_chain task_chain_parent_id_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.task_chain
@@ -14099,8 +15801,7 @@ ALTER TABLE ONLY timetable.task_chain
 
 
 --
--- TOC entry 4078 (class 2606 OID 71392)
--- Name: task_chain task_chain_task_id_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: -
+-- Name: task_chain task_chain_task_id_fkey; Type: FK CONSTRAINT; Schema: timetable; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY timetable.task_chain
@@ -14108,8 +15809,7 @@ ALTER TABLE ONLY timetable.task_chain
 
 
 --
--- TOC entry 4079 (class 2606 OID 71397)
--- Name: construccion construccion_ano_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: -
+-- Name: construccion construccion_ano_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY valores_fiscales.construccion
@@ -14117,8 +15817,7 @@ ALTER TABLE ONLY valores_fiscales.construccion
 
 
 --
--- TOC entry 4080 (class 2606 OID 71402)
--- Name: construccion construccion_tipo_construccion_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: -
+-- Name: construccion construccion_tipo_construccion_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY valores_fiscales.construccion
@@ -14126,8 +15825,7 @@ ALTER TABLE ONLY valores_fiscales.construccion
 
 
 --
--- TOC entry 4081 (class 2606 OID 71407)
--- Name: sector sector_parroquia_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: -
+-- Name: sector sector_parroquia_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY valores_fiscales.sector
@@ -14135,8 +15833,7 @@ ALTER TABLE ONLY valores_fiscales.sector
 
 
 --
--- TOC entry 4082 (class 2606 OID 71412)
--- Name: terreno terreno_ano_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: -
+-- Name: terreno terreno_ano_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY valores_fiscales.terreno
@@ -14144,15 +15841,19 @@ ALTER TABLE ONLY valores_fiscales.terreno
 
 
 --
--- TOC entry 4083 (class 2606 OID 71417)
--- Name: terreno terreno_sector_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: -
+-- Name: terreno terreno_sector_id_fkey; Type: FK CONSTRAINT; Schema: valores_fiscales; Owner: pooijyzcnnfrso
 --
 
 ALTER TABLE ONLY valores_fiscales.terreno
     ADD CONSTRAINT terreno_sector_id_fkey FOREIGN KEY (sector_id) REFERENCES valores_fiscales.sector(id);
 
 
--- Completed on 2020-07-09 09:24:05 -04
+--
+-- Name: LANGUAGE plpgsql; Type: ACL; Schema: -; Owner: postgres
+--
+
+GRANT ALL ON LANGUAGE plpgsql TO pooijyzcnnfrso;
+
 
 --
 -- PostgreSQL database dump complete

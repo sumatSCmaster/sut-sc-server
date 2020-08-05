@@ -1,10 +1,18 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
-import { generateCashierReport, generateAllCashiersReport } from '@helpers/cashier';
+import { generateCashierReport, generateAllCashiersReport, getCashierReceipts } from '@helpers/cashier';
 import { authenticate } from 'passport';
 
 const router = Router();
 
+
+router.get('/:id/receipts', authenticate('jwt'), async (req, res) => {
+  const { id } = req.params
+  const [error, data] = await fulfill(getCashierReceipts({id}));
+  console.log(error, data)
+  if (error) res.status(500).json({ error, status: 500 });
+  if (data) res.status(200).json({ status: 200, data });
+})
 
 router.post('/', authenticate('jwt'), async (req, res) => {
   const { day } = req.body;

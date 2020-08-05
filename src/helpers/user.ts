@@ -20,10 +20,11 @@ export const getUserByUsername = async (username: string): Promise<Usuario | nul
     const resType = typeResult.rows[0];
     const resGoogle = googleData.rows[0];
     const resOfficial = officialData.rows[0];
-    const user: Usuario = {
+    const user: Usuario & { verificado: Boolean } = {
       id: resBase.id_usuario,
       nombreCompleto: resBase.nombre_completo,
       nombreUsuario: resBase.nombre_de_usuario,
+      verificado: resBase.verificado,
       password: resBase.password,
       direccion: resBase.direccion,
       cedula: resBase.cedula,
@@ -310,6 +311,7 @@ export const hasLinkedContributor = async (user) => {
     const contributor = (await client.query('SELECT c.* FROM impuesto.CONTRIBUYENTE c INNER JOIN USUARIO u ON c.id_contribuyente = u.id_contribuyente WHERE u.id_usuario = $1', [user])).rows[0];
     if (!contributor) return null;
     const verificacionTelefono = (await client.query('SELECT * FROM impuesto.verificacion_telefono v INNER JOIN usuario u ON v.id_usuario = u.id_usuario WHERE u.id_usuario = $1', [user])).rows[0];
+    // const isRetentionAgent = (await client.query("SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = $1 AND referencia_municipal ILIKE 'AR%'", [contributor.id_contribuyente])).rows.length > 0;
     const contribuyente = {
       id: contributor.id_contribuyente,
       tipoDocumento: contributor.tipo_documento,
@@ -324,6 +326,7 @@ export const hasLinkedContributor = async (user) => {
       puntoReferencia: contributor.punto_referencia,
       verificado: contributor.verificado,
       verificacionTelefono: (verificacionTelefono && verificacionTelefono.verificado) || false,
+      esAgenteRetencion: contributor.es_agente_retencion,
     };
     return contribuyente;
   } catch (e) {
@@ -333,6 +336,18 @@ export const hasLinkedContributor = async (user) => {
       e: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error al obtener estado de notificaciones del usuario',
     };
+  } finally {
+    client.release();
+  }
+};
+
+export const getUsersByContributor = async (contributor) => {
+  const client = await pool.connect();
+  try {
+    const users = await client.query('SELECT id_usuario as id, nombre_de_usuario as correo FROM usuario WHERE id_contribuyente = $1 ORDER BY id_usuario', [contributor]);
+    return users.rows;
+  } catch (e) {
+    throw e;
   } finally {
     client.release();
   }

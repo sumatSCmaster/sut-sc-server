@@ -14,9 +14,22 @@ const pool = Pool.getInstance();
 
 
 
+export const getCashierReceipts = async (payload: { id: string | number }) => {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(queries.GET_RECEIPT_RECORDS_BY_USER, [payload.id]); 
+    return res.rows;
+  } catch (e) {
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+
 export const generateCashierReport = async (user, payload: { day: Date }) => {
-    if(user.institucion.cargo.id !== 22){
-        throw new Error('El usuario en sesión no es un cajero');
+    if(user.institucion.id !== 9){
+        throw new Error('El usuario en sesión no tiene permisos.');
     }
     const client = await pool.connect();
     const userId = user.id;

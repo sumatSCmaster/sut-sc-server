@@ -7,7 +7,8 @@ import { resolve } from 'path';
 import * as pdf from 'html-pdf';
 import * as qr from 'qrcode';
 import { errorMessageGenerator, errorMessageExtractor } from '@helpers/errors';
-const  written = require('written-number');
+import { getAllBanks } from '@helpers/banks';
+const written = require('written-number');
 
 const pool = Pool.getInstance();
 
@@ -30,7 +31,7 @@ export const createRequestForm = async (procedure, client: PoolClient): Promise<
 
 export const createCertificate = async (procedure, client: PoolClient): Promise<string> => {
   const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION, [procedure.idTramite])).rows[0];
-  const UTMM = new Intl.NumberFormat('de-DE').format((await client.query(queries.GET_UTMM_VALUE_FORMAT)).rows[0].valor);
+  const UTMM = (await client.query(queries.GET_UTMM_VALUE_FORMAT)).rows[0].valor;
   const costoFormateado = tramite.datos?.funcionario?.costo ? new Intl.NumberFormat('de-DE').format(parseFloat(tramite.datos?.funcionario?.costo)) : '0';
   const procedureData = {
     id: procedure.idTramite,
@@ -44,6 +45,7 @@ export const createCertificate = async (procedure, client: PoolClient): Promise<
     tipoTramite: tramite.tipotramite,
     UTMM,
     costoFormateado,
+    bancos: (await getAllBanks()).banks
   };
   const form = (await createForm(procedureData, client)) as string;
   return form;
@@ -94,6 +96,7 @@ export const createMockCertificate = async (procedure) => {
   try {
     const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION_MOCK, [procedure])).rows[0];
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${tramite.id}`, { errorCorrectionLevel: 'H' });
+    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const datosCertificado = {
       id: tramite.id,
       fecha: tramite.fechacreacion,
@@ -105,13 +108,18 @@ export const createMockCertificate = async (procedure) => {
       estado: 'finalizado',
       tipoTramite: tramite.tipotramite,
       certificado: tramite.sufijo === 'ompu' ? (tramite.aprobado ? tramite.formatocertificado : tramite.formatorechazo) : tramite.formatocertificado,
+      bancos: (await getAllBanks()).banks
     };
+    console.log('datos:', datosCertificado.datos, 'datos.funcionario:', datosCertificado.datos.funcionario);
+
+    console.log('--------------->', datosCertificado.bancos)
     const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
       ...datosCertificado,
       cache: false,
       moment: require('moment'),
+      UTMM,
       QR: linkQr,
-      written
+      written,
     });
     return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
   } catch (error) {

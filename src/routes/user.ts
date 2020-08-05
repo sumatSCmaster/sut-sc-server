@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
 import { authenticate } from 'passport';
-import { updateUser } from '@helpers/user';
+import { updateUser, getUsersByContributor } from '@helpers/user';
 
 const router = Router();
 
@@ -17,6 +17,12 @@ router.patch('/', authenticate('jwt'), validateUser, async (req, res) => {
   const [err, data] = await fulfill(updateUser(req.body.user));
   if (err) res.status(500).json(err);
   if (data) res.status(200).json(data);
+});
+
+router.get('/:contributor', authenticate('jwt'), async (req, res) => {
+  const [err, data] = await fulfill(getUsersByContributor(req.params.contributor));
+  if (err) res.status(500).json(err);
+  if (data) res.status(200).json({ status: 200, message: 'Usuarios SUT obtenidos', usuarios: data });
 });
 
 export default router;

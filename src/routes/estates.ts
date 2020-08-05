@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
-import { getEstatesInfo, getEstateInfoByCod, createPersonalEstate, taxPayerEstatesByRIM, createBareEstate, linkCommercial } from '@helpers/estate';
+import { getEstatesInfo, getEstateInfoByCod, createPersonalEstate, taxPayerEstatesByRIM, createBareEstate, linkCommercial, updateEstate, getEstateByCod } from '@helpers/estate';
 import { authenticate } from 'passport';
 
 const router = Router();
@@ -27,11 +27,18 @@ router.post('/', authenticate('jwt'), async (req, res) => {
 //SEDEMAT
 
 router.get('/sedemat/contributor/rim/', async(req, res) => {
-  const [error, data] = await fulfill(taxPayerEstatesByRIM(req.body));
+  const [error, data] = await fulfill(taxPayerEstatesByRIM(req.query));
   console.log(error)
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
+
+router.get('/sedemat/', async (req, res) => {
+  const [error, data] = await fulfill(getEstateByCod(req.query));
+  console.log(error)
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+})
 
 router.post('/sedemat/', async (req, res) => {
   const [error, data] = await fulfill(createBareEstate(req.body));

@@ -110,10 +110,6 @@ img#divider {
   -webkit-flex-direction: column;
   flex: 1;
   -webkit-flex: 1;
-  background: url('../images/background.png');
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
   text-align: center;
   font-family: Arial, Helvetica, sans-serif;
 }

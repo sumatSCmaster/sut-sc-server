@@ -148,6 +148,32 @@ export const userEstates = async ({ typeDoc, doc }) => {
   }
 }
 
+export const getEstateByCod = async ({ codCat }) => {
+  const client = await pool.connect();
+  try{
+
+    const estate = (await client.query(queries.GET_ESTATE_BY_CODCAT, [codCat]));
+
+    if(estate.rowCount === 0){
+      throw new Error('Inmueble no encontrado.')
+    }
+
+    return {
+      status: 200,
+      message: 'Inmueble encontrado',
+      inmueble: {...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
+    };
+
+  } catch (e) {
+    throw {
+      error: e,
+      message: e.message
+    };
+  } finally {
+    client.release();
+  }
+}
+
 export const parishEstates = async ({ idParroquia }) => {
   const client = await pool.connect();
   try{
@@ -192,11 +218,11 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
   }
 }
 
-export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble }) => {
+export const updateEstate = async ({ id, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble }) => {
   const client = await pool.connect();
   try{
     await client.query('BEGIN');
-    const estate = (await client.query(queries.UPDATE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, id])).rows[0];
+    const estate = (await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, id])).rows[0];
 
     await client.query('COMMIT');
 
@@ -210,7 +236,7 @@ export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosC
 }
 
 
-export const linkCommercial = async ({ codCat, rim }) => {
+export const linkCommercial = async ({ codCat, rim, relacion }) => {
   const client = await pool.connect();
   try{
     const rimData = (await client.query(queries.GET_RIM_DATA, [rim]));
@@ -218,22 +244,31 @@ export const linkCommercial = async ({ codCat, rim }) => {
       throw new Error('RIM no encontrado');
     }
 
-    const estate = (await client.query(queries.GET_ESTATE_BY_CODCAT, [codCat]));
+    let estate = (await client.query(queries.GET_ESTATE_BY_CODCAT, [codCat]));
 
     if(estate.rowCount === 0){
       throw new Error('Inmueble no encontrado.')
     }
 
-    (await client.query(queries.LINK_ESTATE_WITH_RIM, [rimData.rows[0].id, codCat]))
+    if(estate.rows[0].enlazado){
+      throw new Error('El inmueble ya está enlazado')
+    }
+
+    (await client.query(queries.LINK_ESTATE_WITH_RIM, [rimData.rows[0].id, codCat, relacion]))
+
+    estate = (await client.query(queries.GET_ESTATE_BY_CODCAT, [codCat]));
 
     return {
       status: 200,
-      ...estate.rows[0],
-      avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows
+      message: 'Inmueble enlazado',
+      inmueble: {...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
     };
 
   } catch (e) {
-    throw e;
+    throw {
+      error: e,
+      message: e.message
+    };
   } finally {
     client.release();
   }

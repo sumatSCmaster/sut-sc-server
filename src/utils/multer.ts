@@ -39,7 +39,7 @@ export const diskStorage = (type: string): multer.StorageEngine =>
   })(null)(process.env.NODE_ENV);
 
 export const photoFilter = (req, file, cb) => {
-  if (!file.originalname.match(/\.(jpg|jpeg|png|gif|xls|xlsx)$/)) {
+  if (!file.originalname.match(/\.(jpg|jpeg|png|gif|xls|xlsx|pdf)$/)) {
     cb(null, false);
   }
   cb(null, true);

@@ -69,21 +69,18 @@ export const getAvailableProceduresOfInstitution = async (req: { params: { [id: 
 };
 
 const esDaniel = ({ tipoUsuario, institucion }) => {
-  return tipoUsuario === 2 && institucion.id_institucion === 9;
+  return tipoUsuario === 2 && institucion.id === 9;
 };
 
 const getProcedureInstances = async (user, client: PoolClient) => {
   try {
-    if (esDaniel(user)) {
-      return [];
-    }
     let response = (await procedureInstanceHandler(user, client)).rows; //TODO: corregir el handler para que no sea tan forzado
     const takings = (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [response.map((el) => +el.id)])).rows;
     if (user.tipoUsuario === 3) {
       const permissions = (await client.query(queries.GET_USER_PERMISSIONS, [user.id])).rows.map((row) => +row.id_tipo_tramite) || [];
       response = response.filter((tram) => permissions.includes(tram.tipotramite));
     }
-    return Promise.all(
+    const res: any[] = await Promise.all(
       response.map(async (el) => {
         let ordinances;
         if (!el.pagoPrevio) {
@@ -127,6 +124,7 @@ const getProcedureInstances = async (user, client: PoolClient) => {
         return tramite;
       })
     );
+    return esDaniel(user) ? res.filter((row) => row.tipoTramite !== 27) : res;
   } catch (error) {
     console.log(errorMessageExtractor(error));
     throw new Error('Error al obtener instancias de tramite');
@@ -594,6 +592,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
         fecha: row.fecha_de_pago,
         nro: row.referencia,
       }));
+      console.log(datos);
       console.log('creo y me parec q se rompio aki');
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
     } else {
@@ -795,9 +794,9 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
     console.log(error);
     client.query('ROLLBACK');
     throw {
-      status: 500,
+      status: error.status || 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al revisar el tramite',
+      message: errorMessageGenerator(error) || error.message || 'Error al revisar el tramite',
     };
   } finally {
     client.release();
@@ -827,12 +826,11 @@ const insertOrdinancesByProcedure = async (ordinances, id, type, client: PoolCli
   );
 };
 
-export const initProcedureAnalist = async (procedure, user: Usuario) => {
-  const client = await pool.connect();
+export const initProcedureAnalist = async (procedure, user: Usuario, client: PoolClient) => {
+  // const client = await pool.connect();
   const { tipoTramite, datos, pago } = procedure;
   let costo, respState, dir, cert, datosP;
   try {
-    client.query('BEGIN');
     datosP = { usuario: datos };
     const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify(datosP), user.id])).rows[0];
     response.idTramite = response.id;
@@ -891,8 +889,6 @@ export const initProcedureAnalist = async (procedure, user: Usuario) => {
       aprobado: response.aprobado,
     };
     // await sendNotification(user, `Un trámite de tipo ${tramite.nombreTramiteLargo} ha sido creado`, 'CREATE_PROCEDURE', 'TRAMITE', tramite, client);
-    client.query('COMMIT');
-
     // sendEmail({
     //   ...tramite,
     //   codigo: tramite.codigoTramite,
@@ -908,14 +904,112 @@ export const initProcedureAnalist = async (procedure, user: Usuario) => {
     };
   } catch (e) {
     console.log(e);
-    client.query('ROLLBACK');
     throw {
       status: 500,
       error: errorMessageExtractor(e),
       message: errorMessageGenerator(e) || 'Error al realizar el tramite por interno',
     };
-  } finally {
-    client.release();
+  }
+};
+
+export const processProcedureAnalist = async (procedure, user: Usuario, client: PoolClient) => {
+  let { datos, bill } = procedure;
+  let dir,
+    respState,
+    ordenanzas,
+    costo = null;
+  try {
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.idTramite])).rows[0];
+    procedure.tipoTramite = resources.tipoTramite;
+    if (!procedure.hasOwnProperty('sufijo')) {
+      procedure.sufijo = resources.sufijo;
+    }
+
+    if (procedure.sufijo === 'pd' || procedure.sufijo === 'ompu') {
+      if (!bill) return { status: 400, message: 'Es necesario asignar un precio a un tramite postpago' };
+      costo = bill.totalBs;
+      ordenanzas = {
+        items: await insertOrdinancesByProcedure(bill.items, procedure.idTramite, procedure.tipoTramite, client),
+        totalBs: bill.totalBs,
+        totalUtmm: bill.totalUtmm,
+      };
+    }
+    const nextEvent = await getNextEventForProcedure(procedure, client);
+
+    if (datos) {
+      const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
+      if (!prevData.datos.funcionario) datos = { usuario: prevData.datos.usuario, funcionario: datos };
+      else if (prevData.datos.funcionario) datos = { usuario: prevData.datos.usuario, funcionario: datos };
+      else datos = prevData.datos;
+    }
+
+    if (procedure.sufijo === 'ompu' || procedure.sufijo === 'rc') {
+      const { aprobado } = procedure;
+      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
+      await client.query(queries.UPDATE_APPROVED_STATE_FOR_PROCEDURE, [aprobado, procedure.idTramite]);
+
+      if (procedure.sufijo === 'rc' && aprobado) await approveContributorSignUp({ procedure: (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0], client });
+    } else if (resources.tipoTramite === 28) {
+      const { aprobado } = procedure;
+      console.log('pofavo', resources , procedure)
+      datos.funcionario.pago = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
+        monto: row.monto,
+        formaPago: row.metodo_pago,
+        banco: row.nombre,
+        fecha: row.fecha_de_pago,
+        nro: row.referencia,
+      }));
+      console.log('creo y me parec q se rompio aki');
+      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
+      console.log('que es');
+    } else {
+      if (nextEvent.startsWith('finalizar')) {
+        procedure.datos = datos;
+        dir = await createCertificate(procedure, client);
+        respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, datos || null, dir || null, true]);
+      } else {
+        respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, costo || null, null]);
+      }
+    }
+
+    const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
+    const tramite: Partial<Tramite> = {
+      id: response.id,
+      tipoTramite: response.tipotramite,
+      estado: response.state,
+      datos: response.datos,
+      planilla: response.planilla,
+      certificado: dir,
+      costo: response.costo,
+      fechaCreacion: response.fechacreacion,
+      fechaCulminacion: response.fechaculminacion,
+      codigoTramite: response.codigotramite,
+      usuario: response.usuario,
+      nombreLargo: response.nombrelargo,
+      nombreCorto: response.nombrecorto,
+      nombreTramiteLargo: response.nombretramitelargo,
+      nombreTramiteCorto: response.nombretramitecorto,
+      aprobado: response.aprobado,
+      bill: ordenanzas,
+    };
+
+    await sendNotification(user, `Se ha procesado un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
+    sendEmail({
+      ...tramite,
+      codigo: tramite.codigoTramite,
+      nombreUsuario: resources.nombreusuario,
+      nombreCompletoUsuario: resources.nombrecompleto,
+      estado: respState.rows[0].state,
+    });
+    return { status: 200, message: 'Tramite procesado', tramite };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al procesar el trámite',
+    };
   }
 };
 
@@ -939,7 +1033,7 @@ const procedureEvents = switchcase({
   },
   rc: { iniciado: 'procesar_rc', enproceso: { true: 'aprobar_rc', false: 'rechazar_rc' } },
   bc: { iniciado: 'revisar_bc', enrevision: { true: 'aprobar_bc', false: 'rechazar_bc' } },
-  lae: { iniciado: 'validar_lae', validando: 'enproceso_lae', enproceso: { true: 'revisar_lae', false: 'rechazar_lae', enrevision: { true: 'aprobar_lae', false: 'rechazar_lae' } } },
+  lae: { iniciado: 'validar_lae', validando: 'enproceso_lae', enproceso: { true: 'revisar_lae', false: 'rechazar_lae' }, enrevision: { true: 'aprobar_lae', false: 'rechazar_lae' } },
 })(null);
 
 const procedureEventHandler = (suffix, state) => {

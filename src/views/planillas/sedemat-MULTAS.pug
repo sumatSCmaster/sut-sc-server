@@ -47,4 +47,4 @@ block content
         div.row-constancy.break-page
           div(style={'text-align':'start' }) #{item.descripcion}
           div(style={'text-align':'center' }) #{item.fecha}
-          div(style={'text-align':'center' }) #{new Intl.NumberFormat('de-DE').format(item.monto)}
+          div(style={'text-align':'center' }) #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.monto ? (item.monto):0)}

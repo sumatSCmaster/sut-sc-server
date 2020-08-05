@@ -11,6 +11,8 @@ export default class Pool {
       const opt: PoolConfig = {
         connectionString: process.env.DATABASE_URL,
         ssl: true,
+        max: 500,
+        min: 100,
       };
       Pool.instance = new PgPool(opt);
     }
