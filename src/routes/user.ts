@@ -30,8 +30,8 @@ router.put('/:id', authenticate('jwt'), async (req, res) => {
   const { id } = req.params;
   const { user } = req.body;
   const [err, data] = await fulfill(updateUserInformation({ user, id }));
-  if (err) res.status(500).json(err);
-  if (data) res.status(200).json(data);
+  if (err) res.status(err.status).json(err);
+  if (data) res.status(data.status).json(data);
 });
 
 router.patch('/', authenticate('jwt'), validateUser, async (req, res) => {

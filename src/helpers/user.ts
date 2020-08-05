@@ -437,6 +437,7 @@ export const updateUserInformation = async ({ user, id }) => {
     };
     return { status: 200, message: 'Datos del usuario actualizados', usuario };
   } catch (error) {
+    console.log(error);
     client.query('ROLLBACK');
     throw {
       status: 500,
