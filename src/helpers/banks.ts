@@ -113,7 +113,7 @@ export const listTaxPayments = async () => {
           estado: next.state,
           pagos: [{
             id: next.id_pago,
-            referencia: next.id_referencia,
+            referencia: next.referencia,
             monto: next.monto,
             fechaDePago: next.fecha_de_pago,
             banco: next.nombre
@@ -122,7 +122,7 @@ export const listTaxPayments = async () => {
       }else{
         prev[index].pagos.push({
           id: next.id_pago,
-          referencia: next.id_referencia,
+          referencia: next.referencia,
           monto: next.monto,
           fechaDePago: next.fecha_de_pago,
           banco: next.nombre

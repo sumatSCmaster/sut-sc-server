@@ -26,7 +26,7 @@ router.get('/payment/', authenticate('jwt'), async (req, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-router.patch('/payment/:id', authenticate('jwt'), async (req, res) => {
+router.patch('/payment/:id/', authenticate('jwt'), async (req, res) => {
   const [err, data] = await fulfill(updatePayment({ id: req.params['id'], ...req.body}));
   if (err) res.status(500).json({ status: 500, message: errorMessageGenerator(err) });
   if (data) res.status(data.status).json(data);

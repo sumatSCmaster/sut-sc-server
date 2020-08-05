@@ -37,6 +37,7 @@ export const getUserByUsername = async (username: string): Promise<Usuario | nul
     };
     return user;
   } catch (e) {
+    console.log(e)
     return null;
   } finally {
     client.release();
