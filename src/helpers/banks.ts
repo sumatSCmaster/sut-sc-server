@@ -124,7 +124,7 @@ export const listTaxPayments = async () => {
             referencia: next.referencia,
             monto: next.monto,
             fechaDePago: next.fecha_de_pago,
-            banco: next.nombre,
+            banco: next.nombreBanco,
             aprobado: next.aprobado
           }]
         })
@@ -134,7 +134,7 @@ export const listTaxPayments = async () => {
           referencia: next.referencia,
           monto: next.monto,
           fechaDePago: next.fecha_de_pago,
-          banco: next.nombre,
+          banco: next.nombreBanco,
           aprobado: next.aprobado
         })
       }
