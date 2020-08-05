@@ -104,7 +104,7 @@ export const listTaxPayments = async () => {
   const client = await pool.connect();
   try {
     let data = (await client.query(`
-    SELECT s.*, p.*, b.nombre AS "nombreBanco", c.documento, c.tipo_documento AS "tipoDocumento" 
+    SELECT s.*, p.*, b.id_banco, c.documento, c.tipo_documento AS "tipoDocumento" 
     FROM impuesto.solicitud_state s 
     INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente 
     INNER JOIN pago p ON p.id_procedimiento = s.id 
@@ -124,7 +124,7 @@ export const listTaxPayments = async () => {
             referencia: next.referencia,
             monto: next.monto,
             fechaDePago: next.fecha_de_pago,
-            banco: next.nombreBanco,
+            banco: next.id_banco,
             aprobado: next.aprobado
           }]
         })
@@ -134,7 +134,7 @@ export const listTaxPayments = async () => {
           referencia: next.referencia,
           monto: next.monto,
           fechaDePago: next.fecha_de_pago,
-          banco: next.nombreBanco,
+          banco: next.id_banco,
           aprobado: next.aprobado
         })
       }
