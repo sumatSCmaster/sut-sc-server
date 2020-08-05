@@ -28,7 +28,7 @@ router.get('/:contributor', authenticate('jwt'), async (req, res) => {
 
 router.put('/:id', authenticate('jwt'), async (req, res) => {
   const { id } = req.params;
-  const { user } = req.body;
+  const { usuario: user } = req.body;
   const [err, data] = await fulfill(updateUserInformation({ user, id }));
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
