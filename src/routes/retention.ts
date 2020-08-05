@@ -1,7 +1,7 @@
 import { Router } from 'express';
 
 import { fulfill } from '@utils/resolver';
-import { processRetentionFile, getRetentionMonths, insertRetentions, getRetentionAgents, updateRetentionAgentStatus, createRetentionAgent } from '@helpers/retention';
+import { processRetentionFile, getRetentionMonths, insertRetentions, getRetentionAgents, updateRetentionAgentStatus, createRetentionAgent, updateRetentionAgentRIM } from '@helpers/retention';
 import { authenticate } from 'passport';
 import { Usuario } from '@root/interfaces/sigt';
 
@@ -43,6 +43,14 @@ router.put('/agent/:id', authenticate('jwt'), async (req, res) => {
   const { status } = req.body;
   const { id } = req.params;
   const [error, data] = await fulfill(updateRetentionAgentStatus({ id, status }));
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+});
+
+router.put('/rim/:id', authenticate('jwt'), async (req, res) => {
+  const { referencia } = req.body;
+  const { id } = req.params;
+  const [error, data] = await fulfill(updateRetentionAgentRIM({ id, reference: referencia }));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
