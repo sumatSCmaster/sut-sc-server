@@ -539,7 +539,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                                   idRamo: (await client.query('SELECT id_ramo AS id FROM impuesto.ramo WHERE codigo = $1', [j.nb_ramo])).rows[0].id,
                                   porciones: liquidaciones.map((i) => {
                                     i.codigoRamo = j.nb_ramo;
-                                    i.ramo = j.tx_ramo;
+                                    i.ramo = (j.tx_ramo as string).trim();
                                     return i;
                                   }),
                                 }) ||
@@ -611,7 +611,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                                     cantPorciones: liquidaciones.length,
                                     porciones: liquidaciones.map((i) => {
                                       i.codigoRamo = j.nb_ramo;
-                                      i.ramo = j.tx_ramo;
+                                      i.ramo = (j.tx_ramo as string).trim();
                                       return i;
                                     }),
                                   }) ||
@@ -939,7 +939,7 @@ export const logInExternalLinking = async ({ credentials }) => {
                                   cantPorciones: liquidaciones.length,
                                   porciones: liquidaciones.map((i) => {
                                     i.codigoRamo = j.nb_ramo;
-                                    i.ramo = j.tx_ramo;
+                                    i.ramo = (j.tx_ramo as string).trim();
                                     return i;
                                   }),
                                 }) ||
@@ -1010,7 +1010,7 @@ export const logInExternalLinking = async ({ credentials }) => {
                                     cantPorciones: liquidaciones.length,
                                     porciones: liquidaciones.map((i) => {
                                       i.codigoRamo = j.nb_ramo;
-                                      i.ramo = j.tx_ramo;
+                                      i.ramo = (j.tx_ramo as string).trim();
                                       return i;
                                     }),
                                   }) ||
