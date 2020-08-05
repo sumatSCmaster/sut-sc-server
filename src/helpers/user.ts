@@ -37,6 +37,7 @@ export const getUserByUsername = async (username: string): Promise<Usuario | nul
     };
     return user;
   } catch (e) {
+    console.log(e);
     return null;
   } finally {
     client.release();
@@ -348,6 +349,101 @@ export const getUsersByContributor = async (contributor) => {
     return users.rows;
   } catch (e) {
     throw e;
+  } finally {
+    client.release();
+  }
+};
+
+export const userSearch = async ({ document, docType, email }) => {
+  const client = await pool.connect();
+  let usuarios: any[] = [];
+  try {
+    if (!document && !email) throw { status: 406, message: 'Debe aportar algun parametro para la busqueda' };
+    if (document && document.length < 6 && email && email.length < 4) throw { status: 406, message: 'Debe aportar mas datos para la busqueda' };
+    usuarios =
+      email && email.length > 4 ? (await client.query('SELECT * FROM usuario WHERE nombre_de_usuario ILIKE $1', [`%${email}%`])).rows : (await client.query('SELECT * FROM usuario WHERE nacionalidad = $1 AND cedula = $2', [docType, document])).rows;
+    const contributorExists = usuarios.length > 0;
+    if (!contributorExists) return { status: 404, message: 'No existen coincidencias con el correo o documento proporcionado' };
+    usuarios = await Promise.all(
+      usuarios.map(async (el) => ({
+        id: el.id_usuario,
+        nombreCompleto: el.nombre_completo,
+        nombreUsuario: el.nombre_de_usuario,
+        direccion: el.direccion,
+        documento: el.cedula,
+        tipoDocumento: el.nacionalidad,
+        telefono: el.telefono,
+        contribuyente: await hasLinkedContributor(el.id_usuario),
+      }))
+    );
+    // contribuyentes = await Promise.all(contribuyentes.map(async (el) => await formatContributor(el, client)));
+    return { status: 200, message: 'Usuarios obtenidos', usuarios };
+  } catch (error) {
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al obtener contribuyentes en busqueda',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const unlinkContributorFromUser = async (id) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('UPDATE usuario SET id_contribuyente = null WHERE id_usuario = $1', [id]);
+    await client.query('COMMIT');
+    return { status: 200, message: 'Contribuyente desenlazado del usuario SUT' };
+  } catch (error) {
+    client.query('ROLLBACK');
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al obtener contribuyentes en busqueda',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const updateUserInformation = async ({ user, id }) => {
+  const client = await pool.connect();
+  const { nombreCompleto, nombreUsuario, direccion, documento, tipoDocumento, telefono } = user;
+  try {
+    await client.query('BEGIN');
+    const user = (
+      await client.query('UPDATE usuario SET nombre_completo = $1, nombre_de_usuario = $2, direccion = $3, cedula=$4, nacionalidad = $5, telefono = $6 WHERE id_usuario = $7 RETURNING *', [
+        nombreCompleto,
+        nombreUsuario,
+        direccion,
+        documento,
+        tipoDocumento,
+        telefono,
+        id,
+      ])
+    ).rows[0];
+    await client.query('COMMIT');
+    const usuario = {
+      id: user.id_usuario,
+      nombreCompleto: user.nombre_completo,
+      nombreUsuario: user.nombre_de_usuario,
+      direccion: user.direccion,
+      documento: user.cedula,
+      tipoDocumento: user.nacionalidad,
+      telefono: user.telefono,
+      contribuyente: await hasLinkedContributor(user.id_usuario),
+    };
+    return { status: 200, message: 'Datos del usuario actualizados', usuario };
+  } catch (error) {
+    console.log(error);
+    client.query('ROLLBACK');
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al obtener contribuyentes en busqueda',
+    };
   } finally {
     client.release();
   }

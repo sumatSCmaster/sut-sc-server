@@ -2775,12 +2775,16 @@ export const internalUserLinking = async (data) => {
       const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [referenciaMunicipal, contributor.id_contribuyente])).rows[0];
       if (!branch) throw { status: 404, message: 'La sucursal proporcionada no existe' };
       if (!branch.actualizado) throw { status: 403, message: 'Debe pasar por el proceso de actualización para la sucursal seleccionada' };
-      await client.query('UPDATE impuesto.verificacion_telefono SET id_usuario = $1 WHERE id_verificacion_telefono = (SELECT id_verificacion_telefono FROM impuesto.registro_municipal_verificacion WHERE id_registro_municipal = $2 LIMIT 1)', [
-        user.id,
-        branch.id_registro_municipal,
-      ]);
+      // await client.query('UPDATE impuesto.verificacion_telefono SET id_usuario = $1 WHERE id_verificacion_telefono = (SELECT id_verificacion_telefono FROM impuesto.registro_municipal_verificacion WHERE id_registro_municipal = $2 LIMIT 1)', [
+      //   user.id,
+      //   branch.id_registro_municipal,
+      // ]);
+      const verifiedId = (await client.query('SELECT * FROM impuesto.verificacion_telefono WHERE id_usuario = $1', [user.id])).rows[0]?.id_verificacion_telefono;
+      if (!verifiedId) (await client.query(queries.ADD_VERIFIED_CONTRIBUTOR, [user.id])).rows[0];
       await client.query('UPDATE impuesto.solicitud s SET id_usuario = $1 FROM impuesto.liquidacion l WHERE s.id_solicitud = l.id_solicitud AND l.id_registro_municipal = $2', [user.id, branch.id_registro_municipal]);
     } else {
+      const verifiedId = (await client.query('SELECT * FROM impuesto.verificacion_telefono WHERE id_usuario = $1', [user.id])).rows[0]?.id_verificacion_telefono;
+      if (!verifiedId) (await client.query(queries.ADD_VERIFIED_CONTRIBUTOR, [user.id])).rows[0];
       await client.query('UPDATE impuesto.solicitud s SET id_usuario = $1 WHERE id_contribuyente = $2', [user.id, contributor.id_contribuyente]);
     }
     await client.query('COMMIT');

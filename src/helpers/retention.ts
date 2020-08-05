@@ -344,6 +344,26 @@ export const updateRetentionAgentStatus = async ({ id, status }) => {
   }
 };
 
+export const updateRetentionAgentRIM = async ({ id, reference }) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('UPDATE impuesto.registro_municipal SET referencia_municipal = $1 WHERE id_registro_municipal = $2', [reference, id]);
+    await client.query('COMMIT');
+    return { status: 200, message: 'RIM de Agente de Retencion actualizado' };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al actualizar RIM de agente de retencion',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 export const getRetentionAgents = async () => {
   const client = await pool.connect();
   try {

@@ -91,6 +91,7 @@ export async function getUserData(id, tipoUsuario) {
     }
     return user;
   } catch (e) {
+    console.log(e)
     throw {
       error: e,
       status: 500,

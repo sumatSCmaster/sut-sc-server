@@ -103,7 +103,13 @@ const validationHandler = async ({ concept, body, user, client }) => {
 export const listTaxPayments = async () => {
   const client = await pool.connect();
   try {
-    let data = (await client.query(`SELECT s.*, p.*, b.nombre AS "nombreBanco" FROM impuesto.solicitud_state s INNER JOIN pago p ON p.id_procedimiento = s.id INNER JOIN banco b ON b.id_banco = p.id_banco AND b.id_banco = p.id_banco_destino WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND p.aprobado = false ORDER BY id_procedimiento, id_pago;`));
+    let data = (await client.query(`
+    SELECT s.*, p.*, b.id_banco, c.documento, c.tipo_documento AS "tipoDocumento" 
+    FROM impuesto.solicitud_state s 
+    INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente 
+    INNER JOIN pago p ON p.id_procedimiento = s.id 
+    INNER JOIN banco b ON b.id_banco = p.id_banco AND b.id_banco = p.id_banco_destino 
+    WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' ORDER BY id_procedimiento, id_pago;`));
     data = data.rowCount > 0 ? data.rows.reduce((prev, next) => {
       let index = prev.findIndex((row) => row.id === next.id)
       if(index === -1){
@@ -111,21 +117,25 @@ export const listTaxPayments = async () => {
           id: next.id,
           fechaSolicitud: next.fecha,
           estado: next.state,
+          tipoDocumento: next.tipoDocumento,
+          documento: next.documento,
           pagos: [{
             id: next.id_pago,
-            referencia: next.id_referencia,
+            referencia: next.referencia,
             monto: next.monto,
             fechaDePago: next.fecha_de_pago,
-            banco: next.nombre
+            banco: next.id_banco,
+            aprobado: next.aprobado
           }]
         })
       }else{
         prev[index].pagos.push({
           id: next.id_pago,
-          referencia: next.id_referencia,
+          referencia: next.referencia,
           monto: next.monto,
           fechaDePago: next.fecha_de_pago,
-          banco: next.nombre
+          banco: next.id_banco,
+          aprobado: next.aprobado
         })
       }
       return prev;
@@ -139,10 +149,10 @@ export const listTaxPayments = async () => {
   }
 };
 
-export const updatePayment = async ({ id, fecha, referencia, monto }) => {
+export const updatePayment = async ({ id, fechaDePago, referencia, monto, banco }) => {
   const client = await pool.connect();
   try {
-    let res = (await client.query('UPDATE pago SET fecha_de_pago = $1, referencia = $2, monto = $3 WHERE id_pago = $4 RETURNING *', [fecha, referencia, monto, id]))
+    let res = (await client.query('UPDATE pago SET fecha_de_pago = $1, referencia = $2, monto = $3, id_banco = $5, id_banco_destino = $5 WHERE id_pago = $4 AND aprobado = false RETURNING id_pago AS id, referencia, monto, fecha_de_pago AS "fechaDePago", id_banco as banco, aprobado;', [fechaDePago, referencia, monto, id, banco]))
     return { status: 200, data: res.rows }
   } catch (e) {
     console.log(e)
