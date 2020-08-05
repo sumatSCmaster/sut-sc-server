@@ -2779,8 +2779,11 @@ export const internalUserLinking = async (data) => {
         user.id,
         branch.id_registro_municipal,
       ]);
+      const verifiedId = (await client.query('SELECT * FROM impuesto.verificacion_telefono WHERE id_usuario = $1', [user.id])).rows[0]?.id_verificacion_telefono;
+      if (!verifiedId) (await client.query(queries.ADD_VERIFIED_CONTRIBUTOR, [user.id])).rows[0];
       await client.query('UPDATE impuesto.solicitud s SET id_usuario = $1 FROM impuesto.liquidacion l WHERE s.id_solicitud = l.id_solicitud AND l.id_registro_municipal = $2', [user.id, branch.id_registro_municipal]);
     } else {
+      (await client.query(queries.ADD_VERIFIED_CONTRIBUTOR, [user.id])).rows[0];
       await client.query('UPDATE impuesto.solicitud s SET id_usuario = $1 WHERE id_contribuyente = $2', [user.id, contributor.id_contribuyente]);
     }
     await client.query('COMMIT');

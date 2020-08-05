@@ -365,7 +365,7 @@ export const userSearch = async ({ document, docType, email }) => {
     const contributorExists = usuarios.length > 0;
     if (!contributorExists) return { status: 404, message: 'No existen coincidencias con el correo o documento proporcionado' };
     usuarios = await Promise.all(
-      usuarios.map((el) => ({
+      usuarios.map(async (el) => ({
         id: el.id_usuario,
         nombreCompleto: el.nombre_completo,
         nombreUsuario: el.nombre_de_usuario,
@@ -373,7 +373,7 @@ export const userSearch = async ({ document, docType, email }) => {
         documento: el.cedula,
         tipoDocumento: el.nacionalidad,
         telefono: el.telefono,
-        contribuyente: hasLinkedContributor(el.id_usuario),
+        contribuyente: await hasLinkedContributor(el.id_usuario),
       }))
     );
     // contribuyentes = await Promise.all(contribuyentes.map(async (el) => await formatContributor(el, client)));
@@ -433,7 +433,7 @@ export const updateUserInformation = async ({ user, id }) => {
       documento: user.cedula,
       tipoDocumento: user.nacionalidad,
       telefono: user.telefono,
-      contribuyente: hasLinkedContributor(user.id_usuario),
+      contribuyente: await hasLinkedContributor(user.id_usuario),
     };
     return { status: 200, message: 'Datos del usuario actualizados', usuario };
   } catch (error) {
