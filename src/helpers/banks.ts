@@ -149,10 +149,10 @@ export const listTaxPayments = async () => {
   }
 };
 
-export const updatePayment = async ({ id, fecha, referencia, monto }) => {
+export const updatePayment = async ({ id, fechaDePago, referencia, monto, banco }) => {
   const client = await pool.connect();
   try {
-    let res = (await client.query('UPDATE pago SET fecha_de_pago = $1, referencia = $2, monto = $3 WHERE id_pago = $4 RETURNING *', [fecha, referencia, monto, id]))
+    let res = (await client.query('UPDATE pago SET fecha_de_pago = $1, referencia = $2, monto = $3, id_banco = $5, id_banco_destino = $5 WHERE id_pago = $4 AND aprobado = false RETURNING *', [fechaDePago, referencia, monto, id, banco]))
     return { status: 200, data: res.rows }
   } catch (e) {
     console.log(e)
