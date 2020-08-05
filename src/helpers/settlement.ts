@@ -1219,7 +1219,7 @@ export const patchSettlement = async ({ id, settlement }) => {
         await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [fechaLiquidacion, newApplication.id_solicitud]);
       }
       liquidacion = (
-        await client.query('UPDATE impuesto.liquidacion SET fecha_liquidacion = $1, fecha_vencimiento = $2, datos = $3, subramo = $4, id_solicitud = $5 WHERE id_liquidacion = $6 RETURNING *', [
+        await client.query('UPDATE impuesto.liquidacion SET fecha_liquidacion = $1, fecha_vencimiento = $2, datos = $3, id_subramo = $4, id_solicitud = $5 WHERE id_liquidacion = $6 RETURNING *', [
           proposedDate,
           proposedDate.endOf('month'),
           newData,
@@ -1230,7 +1230,7 @@ export const patchSettlement = async ({ id, settlement }) => {
       ).rows.map((el) => ({ id: el.id_liquidacion, ramo: settlement.ramo.descripcion, fecha: proposedDate.format('MM-DD-YYYY'), monto: el.monto, certificado: el.certificado, recibo: el.recibo, estado }))[0];
     } else {
       liquidacion = (
-        await client.query('UPDATE impuesto.liquidacion SET fecha_liquidacion = $1, fecha_vencimiento = $2, datos = $3, subramo = $4, id_solicitud = $5 WHERE id_liquidacion = $6 RETURNING *', [
+        await client.query('UPDATE impuesto.liquidacion SET fecha_liquidacion = $1, fecha_vencimiento = $2, datos = $3, id_subramo = $4, id_solicitud = $5 WHERE id_liquidacion = $6 RETURNING *', [
           proposedDate,
           proposedDate.endOf('month'),
           newData,
