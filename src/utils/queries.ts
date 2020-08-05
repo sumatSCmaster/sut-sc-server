@@ -1061,6 +1061,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
       'SELECT l.*, r.* FROM tb004_contribuyente c  INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo INNER JOIN\
        tb079_liquidacion l ON l.co_contribuyente = c.co_contribuyente INNER JOIN tb046_ae_ramo r ON l.co_ramo = r.co_ramo WHERE nu_referencia = $1 AND nu_monto_bolivar_fuerte IS NULL AND \
        l.anio_liquidacion = EXTRACT(year FROM CURRENT_DATE) ORDER BY fe_liquidacion DESC;',
+    CHECK_OLDER_SETTLEMENT_EXISTS: `SELECT EXISTS(SELECT * FROM tb079_liquidacion l WHERE l.co_contribuyente = $1 AND l.fe_liquidacion < $2 AND l.co_ramo = $3 AND l.co_motivo != 150);`,
     GET_SETTLEMENTS_BY_CONTRIBUTOR:
       'SELECT l.*, r.* FROM tb004_contribuyente c  INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo INNER JOIN\
     tb079_liquidacion l ON l.co_contribuyente = c.co_contribuyente INNER JOIN tb046_ae_ramo r ON l.co_ramo = r.co_ramo WHERE c.co_contribuyente = $1 AND nu_monto_bolivar_fuerte IS NULL AND \
