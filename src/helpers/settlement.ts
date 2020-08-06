@@ -2054,8 +2054,8 @@ export const initialUserLinking = async (linkingData, user) => {
         })
       );
       await client.query('COMMIT');
-      (rims.filter((el) => el).length > 0 && (await sendRimVerification(VerificationValue.CellPhone, { content: datosContacto.telefono, user: user.id, idRim: rims.filter((el) => el) }))) ||
-        (user.tipoUsuario === 4 && (await client.query(queries.ADD_VERIFIED_CONTRIBUTOR, [user.id])).rows[0]);
+      // (rims.filter((el) => el).length > 0 && (await sendRimVerification(VerificationValue.CellPhone, { content: datosContacto.telefono, user: user.id, idRim: rims.filter((el) => el) }))) ||
+      user.tipoUsuario === 4 && (await client.query(queries.ADD_VERIFIED_CONTRIBUTOR, [user.id])).rows[0];
       payload = { rims: rims.filter((el) => el) };
     }
     client.query('COMMIT');
@@ -2808,10 +2808,16 @@ export const internalUserLinking = async (data) => {
 
 export const addRebateForDeclaration = async ({ process, user }) => {
   const client = await pool.connect();
+  const { id, montoRebajado, montoTotal } = process;
   try {
+    const { rebajado, id_solicitud: idSolicitud } = (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows[0];
+    if (rebajado) throw { status: 403, message: 'Esta solicitud ya ha sido rebajada anteriormente' };
+    const hasAE = (await client.query(`SELECT * FROM impuesto.liquidacion l INNER JOIN impuesto.subramo USING (id_subramo) INNER JOIN impuesto.ramo r USING (id_ramo) WHERE l.id_solicitud = $1 AND r.codigo = '112'`, [idSolicitud])).rows;
+    if (!hasAE.length) throw { status: 403, message: 'La solicitud no posee liquidaciones de Actividad Económica' };
+    const nroLiquidaciones = hasAE.length;
+    const montoActualizado = montoRebajado / nroLiquidaciones;
     await client.query('BEGIN');
-
-    await client.query('COMMIT');
+    const settlements = await client.query('COMMIT');
     return;
   } catch (error) {
     client.query('ROLLBACK');
