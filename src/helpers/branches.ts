@@ -71,16 +71,16 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
         return prev;
       }, []);
 
-      console.log('other', other.rows);
+      //console.log('other', other.rows);
 
-      console.log('result pre filter', result);
+      //console.log('result pre filter', result);
       let filtered = other.rows.filter((val) => !result.find((resultRow) => resultRow.ramo === val.ramo));
-      console.log('filtered', filtered);
+      //console.log('filtered', filtered);
 
       result.push(...filtered);
-      console.log('result', result);
+      //console.log('result', result);
       pivotColumns.push(...columns);
-      console.log(pivotColumns);
+      //console.log(pivotColumns);
       result = result.map((val) => {
         for (let col of pivotColumns) {
           val[col] = val[col] || 0;
@@ -88,14 +88,14 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
         return val;
       });
 
-      console.log('FINAL RES', result);
-      console.log(
-        'FILTERED THING',
-        groupBy(result, (res) => res.codigo)
-      );
+      //console.log('FINAL RES', result);
+      //console.log(
+      //  'FILTERED THING',
+      //  groupBy(result, (res) => res.codigo)
+      //);
       let final = groupBy(result, (res) => res.codigo);
       let branches = (await client.query(queries.GET_BRANCHES_FOR_REPORT)).rows.filter((row) => row.ramo in final);
-      console.log(branches);
+      //console.log(branches);
       branches = branches
         .map((branch) => {
           return {
@@ -113,8 +113,8 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
           };
         })
         .filter((branch) => branch.subRamo.reduce((prev, next) => prev + +next.ingresado + +next.liquidado, 0) > 0);
-      console.log('branches', branches);
-      console.log(branches[0].subRamo);
+      //console.log('branches', branches);
+      //console.log(branches[0].subRamo);
       let compens: any = {
         id: 53,
         ramo: '925',
@@ -143,8 +143,8 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
       compens.ingresadoTotal = compens.subRamo.reduce((prev, next) => prev + +next.ingresado, 0);
       compens.cantidadIngTotal = compens.subRamo.reduce((prev, next) => prev + +next.cantidadIng, 0);
       branches = branches.concat(compens);
-      console.log(compens);
-      console.log('branches 2', branches);
+      //console.log(compens);
+      //console.log('branches 2', branches);
       if (!alcaldia) {
         const transfersByBank = (await client.query(queries.GET_TRANSFERS_BY_BANK, [payload.from, payload.to])).rows;
         const totalTranfersByBank = +transfersByBank.reduce((prev, next) => prev + +next.monto, 0);
