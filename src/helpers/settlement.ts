@@ -2806,6 +2806,26 @@ export const internalUserLinking = async (data) => {
   }
 };
 
+export const addRebateForDeclaration = async ({ process, user }) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    await client.query('COMMIT');
+    return;
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al aplicar rebaja a la declaración',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 export const createSpecialSettlement = async ({ process, user }) => {
   const client = await pool.connect();
   const { impuestos } = process;
