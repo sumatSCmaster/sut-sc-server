@@ -170,7 +170,7 @@ export const updatePayment = async ({ id, solicitud, fechaDePago, referencia, mo
       WHERE s.state = 'validando' AND l.id_solicitud = $1
       GROUP BY l.id_solicitud;`, [solicitud])).rows[0].monto
 
-    if(sum > (paymentsWithOutUpdatee.reduce((prev, next) => prev + (+next.monto), 0) + monto )){
+    if(sum > ((paymentsWithOutUpdatee.reduce((prev, next) => prev + (+next.monto), 0) + (+monto)) )){
       throw {
         status: 400,
         message: 'El monto indicado no es suficiente para cubrir la solicitud'
