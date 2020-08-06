@@ -27,6 +27,7 @@ import {
   internalUserImport,
   createSpecialSettlement,
   patchSettlement,
+  addRebateForDeclaration,
 } from '@helpers/settlement';
 import { Usuario } from '@root/interfaces/sigt';
 
@@ -224,6 +225,13 @@ router.patch('/:id', authenticate('jwt'), async (req, res) => {
   const { liquidacion } = req.body;
   const { id } = req.params;
   const [error, data] = await fulfill(patchSettlement({ id, settlement: liquidacion }));
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+});
+
+router.patch('/rebate', authenticate('jwt'), async (req, res) => {
+  const { liquidacion: process } = req.body;
+  const [error, data] = await fulfill(addRebateForDeclaration({ process, user: req.user }));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });

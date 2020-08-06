@@ -110,6 +110,12 @@ export const listTaxPayments = async () => {
     INNER JOIN pago p ON p.id_procedimiento = s.id 
     INNER JOIN banco b ON b.id_banco = p.id_banco AND b.id_banco = p.id_banco_destino 
     WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' ORDER BY id_procedimiento, id_pago;`));
+    let montosSolicitud = (await client.query(`
+    SELECT l.id_solicitud, SUM(monto) as monto
+    FROM impuesto.solicitud_state s 
+    INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
+    WHERE s.state = 'validando' 
+    GROUP BY l.id_solicitud;`)).rows;
     data = data.rowCount > 0 ? data.rows.reduce((prev, next) => {
       let index = prev.findIndex((row) => row.id === next.id)
       if(index === -1){
@@ -119,6 +125,7 @@ export const listTaxPayments = async () => {
           estado: next.state,
           tipoDocumento: next.tipoDocumento,
           documento: next.documento,
+          monto: montosSolicitud.find((montoRow) => next.id === montoRow.id_solicitud).monto,
           pagos: [{
             id: next.id_pago,
             referencia: next.referencia,
@@ -149,13 +156,47 @@ export const listTaxPayments = async () => {
   }
 };
 
-export const updatePayment = async ({ id, fechaDePago, referencia, monto, banco }) => {
+export const updatePayment = async ({ id, solicitud, fechaDePago, referencia, monto, banco }) => {
   const client = await pool.connect();
   try {
+    let paymentsWithOutUpdatee = (await client.query(`
+      SELECT * FROM pago 
+      WHERE concepto =  'IMPUESTO' AND  id_procedimiento = $1 AND id_pago != $2`, [solicitud, id])).rows;
+
+    let sum = (await client.query(`
+      SELECT l.id_solicitud, SUM(monto) as monto
+      FROM impuesto.solicitud_state s 
+      INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
+      WHERE s.state = 'validando' AND l.id_solicitud = $1
+      GROUP BY l.id_solicitud;`, [solicitud])).rows[0].monto
+
+    if(sum > ((paymentsWithOutUpdatee.reduce((prev, next) => prev + (+next.monto), 0) + (+monto)) )){
+      throw {
+        status: 400,
+        message: 'El monto indicado no es suficiente para cubrir la solicitud'
+      }
+    }
     let res = (await client.query('UPDATE pago SET fecha_de_pago = $1, referencia = $2, monto = $3, id_banco = $5, id_banco_destino = $5 WHERE id_pago = $4 AND aprobado = false RETURNING id_pago AS id, referencia, monto, fecha_de_pago AS "fechaDePago", id_banco as banco, aprobado;', [fechaDePago, referencia, monto, id, banco]))
     return { status: 200, data: res.rows }
   } catch (e) {
     console.log(e)
+    throw e
+  } finally {
+    client.release();
+  }
+}
+
+export const addPayment = async ({id, fechaDePago, referencia, monto, banco}) => {
+  const client = await pool.connect();
+  try{
+    const id_usuario = (await client.query(`SELECT id_usuario FROM pago WHERE id_procedimiento = $1 AND concepto = 'IMPUESTO';`, [id])).rows[0].id_usuario
+    let res = (await client.query(
+      `INSERT INTO pago (id_procedimiento, referencia, monto, fecha_de_pago, id_banco, id_banco_destino, concepto, id_usuario)
+                  VALUES ($1, $2, $3, $4, $5, $5, $6, $7) RETURNING id_pago AS id, referencia, monto, fecha_de_pago AS "fechaDePago", id_banco as banco, aprobado;`, 
+                  [id, referencia, monto, fechaDePago, banco, 'IMPUESTO', id_usuario]));
+    return { status: 200, data: res.rows }
+  } catch (e){
+    console.log(e);
     throw e
   } finally {
     client.release();

@@ -447,7 +447,7 @@ const structureSettlements = (x: any) => {
   return {
     id: nullStringCheck(x.co_liquidacion),
     estado: +x.co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
-    ramo: x.nb_ramo === 236 ? 'TASA ADMINISTRATIVA DE SOLVENCIA DE AE' : nullStringCheck(x.tx_ramo),
+    ramo: x.nb_ramo == 236 ? 'TASA ADMINISTRATIVA DE SOLVENCIA DE AE' : nullStringCheck(x.tx_ramo),
     codigoRamo: nullStringCheck(x.nb_ramo),
     descripcion: 'Liquidacion por enlace de GTIC',
     monto: nullStringCheck(x.nu_monto),
@@ -697,6 +697,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                   }))
                 )
               : undefined,
+            sinSucursales: false,
           };
         })
         .filter((el) => el)
@@ -1093,10 +1094,12 @@ export const logInExternalLinking = async ({ credentials }) => {
                 minimoTributable: x.nu_ut,
               }))
             ),
+            sinSucursales: false,
           };
         })
         .filter((el) => el)
     );
+    if (contributors.every((el) => el.hasOwnProperty('sinSucursales') && el.sinSucursales)) return { status: 409, message: 'El usuario ya ha importado y actualizado todas sus sucursales' };
     return { status: 200, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: contributors };
   } catch (error) {
     console.log(error);
@@ -1155,7 +1158,7 @@ const getLinkedContributorData = async (contributor: any) => {
           return { ...payload };
         })
     );
-    return { datosContribuyente, sucursales };
+    return { datosContribuyente, sucursales, sinSucursales: !sucursales.length };
   } catch (error) {
     throw error;
   } finally {
@@ -1939,7 +1942,7 @@ export const initialUserLinking = async (linkingData, user) => {
                 representado || false,
               ])
             ).rows[0];
-            if (x.actividadesEconomicas!.length > 0) {
+            if (x.actividadesEconomicas?.length > 0) {
               await Promise.all(
                 x.actividadesEconomicas!.map(async (x) => {
                   return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.id, moment().startOf('year').format('YYYY-MM-DD')]);
@@ -2271,7 +2274,7 @@ export const insertSettlements = async ({ process, user }) => {
           descripcion: 'Pago del Servicio de Aseo',
         };
         j.push(liquidacionAseo);
-        !!liquidacionGas.monto && j.push(liquidacionGas);
+        j.push(liquidacionGas);
       }
       return x;
     });
@@ -2650,6 +2653,7 @@ export const internalUserImport = async ({ reference, docType, document, typeUse
     const branchIsUpdated = branch?.actualizado;
     if (!contributor || (!!contributor && !!reference && !branchIsUpdated)) {
       const x = await externalLinkingForCashier({ document, docType, reference, user, typeUser });
+      if (x.every((el) => el.hasOwnProperty('sinSucursales') && el.sinSucursales)) return { status: 200, message: 'El usuario ya esta registrado y actualizado, proceda a enlazarlo' };
       return { status: 202, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: x };
     } else {
       return { status: 200, message: 'El usuario ya esta registrado y actualizado, proceda a enlazarlo' };
@@ -2796,6 +2800,46 @@ export const internalUserLinking = async (data) => {
       status: error.status || 500,
       error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || error.message || 'Error al realizar enlace de usuario por interno',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const addRebateForDeclaration = async ({ process, user }) => {
+  const client = await pool.connect();
+  const { id, montoRebajado } = process;
+  try {
+    const { rebajado, id_solicitud: idSolicitud } = (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows[0];
+    if (rebajado) throw { status: 403, message: 'Esta solicitud ya ha sido rebajada anteriormente' };
+    const hasAE = (await client.query(`SELECT * FROM impuesto.liquidacion l INNER JOIN impuesto.subramo USING (id_subramo) INNER JOIN impuesto.ramo r USING (id_ramo) WHERE l.id_solicitud = $1 AND r.codigo = '112'`, [idSolicitud])).rows;
+    if (!hasAE.length) throw { status: 403, message: 'La solicitud no posee liquidaciones de Actividad Económica' };
+    const nroLiquidaciones = hasAE.length;
+    const montoPerLiq = montoRebajado / nroLiquidaciones;
+    await client.query('BEGIN');
+
+    const settlements = await Promise.all(
+      (
+        await client.query("UPDATE impuesto.liquidacion SET monto = monto - $1 WHERE id_solicitud = $2 AND id_subramo IN (SELECT id_subramo FROM impuesto.subramo s INNER JOIN impuesto.ramo r USING (id_ramo) WHERE codigo='112') RETURNING *;", [
+          montoPerLiq,
+          idSolicitud,
+        ])
+      ).rows.map(async (el) => {
+        const newDatos = { ...el.datos, montoRebajado: montoPerLiq };
+        const liquidacion = (await client.query('UPDATE impuesto.liquidacion SET datos = $1 WHERE id_liquidacion = $2 RETURNING *;', [newDatos, el.id_liquidacion])).rows[0];
+        return liquidacion;
+      })
+    );
+    await client.query('UPDATE impuesto.solicitud SET rebajado = true WHERE id_solicitud = $1', [idSolicitud]);
+    await client.query('COMMIT');
+    return { status: 200, message: 'Solicitud rebajada satisfactoriamente' };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al aplicar rebaja a la declaración',
     };
   } finally {
     client.release();
