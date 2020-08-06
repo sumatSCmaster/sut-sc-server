@@ -229,9 +229,8 @@ router.patch('/:id', authenticate('jwt'), async (req, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-router.patch('/rebate/:id', authenticate('jwt'), async (req, res) => {
+router.patch('/rebate', authenticate('jwt'), async (req, res) => {
   const { liquidacion: process } = req.body;
-  const { id } = req.params;
   const [error, data] = await fulfill(addRebateForDeclaration({ process, user: req.user }));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);

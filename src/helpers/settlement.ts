@@ -2808,17 +2808,31 @@ export const internalUserLinking = async (data) => {
 
 export const addRebateForDeclaration = async ({ process, user }) => {
   const client = await pool.connect();
-  const { id, montoRebajado, montoTotal } = process;
+  const { id, montoRebajado } = process;
   try {
     const { rebajado, id_solicitud: idSolicitud } = (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows[0];
     if (rebajado) throw { status: 403, message: 'Esta solicitud ya ha sido rebajada anteriormente' };
     const hasAE = (await client.query(`SELECT * FROM impuesto.liquidacion l INNER JOIN impuesto.subramo USING (id_subramo) INNER JOIN impuesto.ramo r USING (id_ramo) WHERE l.id_solicitud = $1 AND r.codigo = '112'`, [idSolicitud])).rows;
     if (!hasAE.length) throw { status: 403, message: 'La solicitud no posee liquidaciones de Actividad Económica' };
     const nroLiquidaciones = hasAE.length;
-    const montoActualizado = montoRebajado / nroLiquidaciones;
+    const montoPerLiq = montoRebajado / nroLiquidaciones;
     await client.query('BEGIN');
-    const settlements = await client.query('COMMIT');
-    return;
+
+    const settlements = await Promise.all(
+      (
+        await client.query("UPDATE impuesto.liquidacion SET monto = monto - $1 WHERE id_solicitud = $2 AND id_subramo IN (SELECT id_subramo FROM impuesto.subramo s INNER JOIN impuesto.ramo r USING (id_ramo) WHERE codigo='112') RETURNING *;", [
+          montoPerLiq,
+          idSolicitud,
+        ])
+      ).rows.map(async (el) => {
+        const newDatos = { ...el.datos, montoRebajado: montoPerLiq };
+        const liquidacion = (await client.query('UPDATE impuesto.liquidacion SET datos = $1 WHERE id_liquidacion = $2 RETURNING *;', [newDatos, el.id_liquidacion])).rows[0];
+        return liquidacion;
+      })
+    );
+    await client.query('UPDATE impuesto.solicitud SET rebajado = true WHERE id_solicitud = $1', [idSolicitud]);
+    await client.query('COMMIT');
+    return { status: 200, message: 'Solicitud rebajada satisfactoriamente' };
   } catch (error) {
     client.query('ROLLBACK');
     console.log(error);
