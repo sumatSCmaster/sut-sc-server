@@ -447,7 +447,7 @@ const structureSettlements = (x: any) => {
   return {
     id: nullStringCheck(x.co_liquidacion),
     estado: +x.co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
-    ramo: x.nb_ramo === 236 ? 'TASA ADMINISTRATIVA DE SOLVENCIA DE AE' : nullStringCheck(x.tx_ramo),
+    ramo: x.nb_ramo == 236 ? 'TASA ADMINISTRATIVA DE SOLVENCIA DE AE' : nullStringCheck(x.tx_ramo),
     codigoRamo: nullStringCheck(x.nb_ramo),
     descripcion: 'Liquidacion por enlace de GTIC',
     monto: nullStringCheck(x.nu_monto),
@@ -1942,7 +1942,7 @@ export const initialUserLinking = async (linkingData, user) => {
                 representado || false,
               ])
             ).rows[0];
-            if (x.actividadesEconomicas!.length > 0) {
+            if (x.actividadesEconomicas?.length > 0) {
               await Promise.all(
                 actividadesEconomicas!.map(async (x) => {
                   return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.id, moment().startOf('year').format('YYYY-MM-DD')]);
@@ -2053,9 +2053,9 @@ export const initialUserLinking = async (linkingData, user) => {
           return datosSucursal?.representado ? registry && registry.id_registro_municipal : undefined;
         })
       );
+      user.tipoUsuario === 4 && (await client.query(queries.ADD_VERIFIED_CONTRIBUTOR, [user.id])).rows[0];
       await client.query('COMMIT');
       // (rims.filter((el) => el).length > 0 && (await sendRimVerification(VerificationValue.CellPhone, { content: datosContacto.telefono, user: user.id, idRim: rims.filter((el) => el) }))) ||
-      user.tipoUsuario === 4 && (await client.query(queries.ADD_VERIFIED_CONTRIBUTOR, [user.id])).rows[0];
       payload = { rims: rims.filter((el) => el) };
     }
     client.query('COMMIT');
