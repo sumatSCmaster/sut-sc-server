@@ -181,6 +181,7 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
           creditoFiscal: cred,
         };
       }
+      console.log((await client.query('SELECT $1, $2', [payload.from, payload.to])).rows)
       const html = renderFile(resolve(__dirname, alcaldia ? `../views/planillas/sedemat-RPRA.pug` : `../views/planillas/sedemat-RPR.pug`), {
         moment: require('moment'),
         institucion: 'SEDEMAT',
