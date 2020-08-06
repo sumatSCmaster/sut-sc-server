@@ -113,7 +113,8 @@ export const listTaxPayments = async () => {
     let montosSolicitud = (await client.query(`
     SELECT l.id_solicitud, SUM(monto) as monto
     FROM impuesto.solicitud_state s 
-    INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id AND s.state = 'validando' 
+    INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
+    WHERE s.state = 'validando' 
     GROUP BY l.id_solicitud;`)).rows;
     data = data.rowCount > 0 ? data.rows.reduce((prev, next) => {
       let index = prev.findIndex((row) => row.id === next.id)
