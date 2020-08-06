@@ -110,6 +110,11 @@ export const listTaxPayments = async () => {
     INNER JOIN pago p ON p.id_procedimiento = s.id 
     INNER JOIN banco b ON b.id_banco = p.id_banco AND b.id_banco = p.id_banco_destino 
     WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' ORDER BY id_procedimiento, id_pago;`));
+    let montosSolicitud = (await client.query(`
+    SELECT l.id_solicitud, SUM(monto) 
+    FROM impuesto.solicitud_state s 
+    INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id AND s.state = 'validando' 
+    GROUP BY l.id_solicitud;`)).rows;
     data = data.rowCount > 0 ? data.rows.reduce((prev, next) => {
       let index = prev.findIndex((row) => row.id === next.id)
       if(index === -1){
@@ -119,6 +124,7 @@ export const listTaxPayments = async () => {
           estado: next.state,
           tipoDocumento: next.tipoDocumento,
           documento: next.documento,
+          monto: montosSolicitud.find((montoRow) => next.id === montoRow.id_solicitud),
           pagos: [{
             id: next.id_pago,
             referencia: next.referencia,
