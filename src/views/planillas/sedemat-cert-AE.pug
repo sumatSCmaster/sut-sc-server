@@ -2,6 +2,7 @@ extends default
 block css
   link(rel="stylesheet", href="css/sedemat.css")
 block title
+  -var montoRebajado = datos.items.reduce((prev, next)=> prev + next.montoRebajado, 0);
 block content
   div#fecha
     p 
@@ -41,7 +42,7 @@ block content
           div(style={'-webkit-flex': 2}).td.border-right.center
             p  USUARIO WEB
           div(style={'-webkit-flex': 2}).td.center
-            p  
+            p  #{montoRebajado}
     div.table(style={'font-size':'14px'})
       div.tr
         div.td(style={'-webkit-flex': 1}).border-right.border-bottom.center
@@ -120,7 +121,7 @@ block content
           div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
             p #{item.minTrib}
           div(style={'-webkit-flex': 1.5}).td.border-bottom.center
-            p #{item.impuesto}
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.impuesto ? item.impuesto : 0)}
       div.tr.break-page
         div(style={'-webkit-flex': 1}).td.border-bottom.center
           p
@@ -136,44 +137,33 @@ block content
         div(style={'-webkit-flex': 8}).td.border-right
           p SOLVENCIA DE ACTIVIDADES ECONÓMICAS
         div(style={'-webkit-flex': 2}).td.center
-          p #{datos.tramitesInternos}
+          p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.tramitesInternos ? datos.tramitesInternos : 0)}
     div(style={'margin-top':'20px'}).table.break-page
-      div.tr.break-page
-        div(style={'-webkit-flex': 6}).td.border-right.border-bottom.center
-          p
-            b Total Impuestos Determinado:
-        div(style={'-webkit-flex': 4}).td.border-bottom
-          p #{datos.totalImpuestoDet}
       div.tr.break-page
         div(style={'-webkit-flex': 6}).td.border-right.border-bottom.center
           p
             b Tramites Internos:
         div(style={'-webkit-flex': 4}).td.border-bottom
-          p #{datos.tramitesInternos}
-      div.tr.break-page
-        div(style={'-webkit-flex': 6}).td.border-right.border-bottom.center
-          p
-            b Total Tasa Renovacion Licencia:
-        div(style={'-webkit-flex': 4}).td.border-bottom
-          p #{datos.totalTasaRev}
-      div.tr.break-page
-        div(style={'-webkit-flex': 6}).td.border-right.border-bottom.center
-          p
-            b Menos Anticipos y Retenciones:
-        div(style={'-webkit-flex': 4}).td.border-bottom
-          p #{datos.anticipoYRetenciones}
-      div.tr.break-page
-        div(style={'-webkit-flex': 6}).td.border-right.border-bottom.center
-          p
-            b Intereses de Mora:
-        div(style={'-webkit-flex': 4}).td.border-bottom
-          p #{datos.interesMora}
+          p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.tramitesInternos ? datos.tramitesInternos : 0)}
+      if montoRebajado > 0
+        div.tr.break-page
+          div(style={'-webkit-flex': 6}).td.border-right.border-bottom.center
+            p
+              b Monto Rebajado:
+          div(style={'-webkit-flex': 4}).td.border-bottom
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.tramitesInternos ? datos.tramitesInternos : 0)montoRebajado}
+        div.tr.break-page
+          div(style={'-webkit-flex': 6}).td.border-right.border-bottom.center
+            p
+              b Sub Total:
+          div(style={'-webkit-flex': 4}).td.border-bottom
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(parseFloat(datos.montoTotal) + parseFloat(montoRebajado))}          
       div.tr
         div(style={'-webkit-flex': 6}).td.border-right.center
           p
             b Monto Total Planilla:
         div(style={'-webkit-flex': 4}).td
-          p #{datos.montoTotal}
+          p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(parseFloat(datos.montoTotal))}
 
     div(style={'margin-top':'20px'}).table.break-page
       div.tr.break-page
@@ -192,15 +182,11 @@ block content
         div(style={'-webkit-flex': 1}).td.border-right.center
           p
             b Total Liquidado:
-            span &nbsp; #{datos.totalLiq}
+            span &nbsp; #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(parseFloat(datos.totalLiq))}
         div(style={'-webkit-flex': 1}).td.border-right.center
           p
             b Total Recaudado:
-            span &nbsp; #{datos.totalRecaudado}
-        div(style={'-webkit-flex': 1}).td.center
-          p
-            b Total Credito Fiscal:
-            span &nbsp; #{datos.totalCred}
+            span &nbsp; #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(parseFloat(datos.totalRecaudado))}
     div(style={'text-align': 'justify', 'margin-top':'10px', 'font-size':'12px'})
       p.
        "JURO QUE SON VERDADEROS TODOS LOS DATOS SUMINISTRADOS EN ESTE FORMULARIO, QUE HAN SIDO ELABORADOS O EXAMINADOS
