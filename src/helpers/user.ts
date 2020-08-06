@@ -401,7 +401,7 @@ export const unlinkContributorFromUser = async (id) => {
     throw {
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al obtener contribuyentes en busqueda',
+      message: errorMessageGenerator(error) || 'Error al desenlazar contribuyente',
     };
   } finally {
     client.release();
@@ -442,7 +442,30 @@ export const updateUserInformation = async ({ user, id }) => {
     throw {
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al obtener contribuyentes en busqueda',
+      message: errorMessageGenerator(error) || 'Error al actualizar datos de usuario',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const addUserVerification = async ({ cellphone, id }) => {
+  const client = await pool.connect();
+  try {
+    const isVerified = (await client.query('SELECT * FROM impuesto.verificacion_telefono WHERE id_usuario = $1', [id])).rows[0]?.id_verificacion_telefono;
+    if (isVerified) throw { status: 403, message: 'El usuario ya se encuentra verificado' };
+    await client.query('BEGIN');
+    const verifiedId = (await client.query(queries.ADD_VERIFIED_CONTRIBUTOR, [id])).rows[0].id_verificacion_telefono;
+    await client.query('UPDATE impuesto.verificacion_telefono SET telefono = $1 WHERE id_verificacion_telefono = $2', [cellphone, verifiedId]);
+    await client.query('COMMIT');
+    return { status: 200, message: 'Usuario verificado' };
+  } catch (error) {
+    console.log(error);
+    client.query('ROLLBACK');
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al añadir verificación de usuario',
     };
   } finally {
     client.release();

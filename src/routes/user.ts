@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
 import { authenticate } from 'passport';
-import { updateUser, getUsersByContributor, userSearch, unlinkContributorFromUser, updateUserInformation } from '@helpers/user';
+import { updateUser, getUsersByContributor, userSearch, unlinkContributorFromUser, updateUserInformation, addUserVerification } from '@helpers/user';
 
 const router = Router();
 
@@ -43,6 +43,14 @@ router.patch('/', authenticate('jwt'), validateUser, async (req, res) => {
 router.patch('/contributor/:id', authenticate('jwt'), async (req, res) => {
   const { id } = req.params;
   const [err, data] = await fulfill(unlinkContributorFromUser(id));
+  if (err) res.status(500).json(err);
+  if (data) res.status(200).json(data);
+});
+
+router.post('/verify/:id', authenticate('jwt'), async (req, res) => {
+  const { id } = req.params;
+  const { telefono: cellphone } = req.body;
+  const [err, data] = await fulfill(addUserVerification({ id, cellphone }));
   if (err) res.status(500).json(err);
   if (data) res.status(200).json(data);
 });
