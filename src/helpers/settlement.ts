@@ -1944,7 +1944,7 @@ export const initialUserLinking = async (linkingData, user) => {
             ).rows[0];
             if (x.actividadesEconomicas?.length > 0) {
               await Promise.all(
-                actividadesEconomicas!.map(async (x) => {
+                x.actividadesEconomicas!.map(async (x) => {
                   return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.id, moment().startOf('year').format('YYYY-MM-DD')]);
                 })
               );
