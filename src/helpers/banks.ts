@@ -189,10 +189,10 @@ export const updatePayment = async ({ id, solicitud, fechaDePago, referencia, mo
 export const addPayment = async ({id, fechaDePago, referencia, monto, banco}) => {
   const client = await pool.connect();
   try{
-    const id_usuario = (await client.query(`SELECT id_usuario FROM pago WHERE id_procedimiento = $1 AND concepto = 'IMPUESTO';`)).rows[0].id_usuario
+    const id_usuario = (await client.query(`SELECT id_usuario FROM pago WHERE id_procedimiento = $1 AND concepto = 'IMPUESTO';`, [id])).rows[0].id_usuario
     let res = (await client.query(
       `INSERT INTO pago (id_procedimiento, referencia, monto, fecha_de_pago, id_banco, id_banco_destino, concepto, id_usuario)
-                  VALUES($1, $2, $3, $4, $5, $5, $6, $7) RETURNING id_pago AS id, referencia, monto, fecha_de_pago AS "fechaDePago", id_banco as banco, aprobado;`, 
+                  VALUES ($1, $2, $3, $4, $5, $5, $6, $7) RETURNING id_pago AS id, referencia, monto, fecha_de_pago AS "fechaDePago", id_banco as banco, aprobado;`, 
                   [id, referencia, monto, fechaDePago, banco, 'IMPUESTO', id_usuario]));
     return { status: 200, data: res.rows }
   } catch (e){
