@@ -697,6 +697,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                   }))
                 )
               : undefined,
+            sinSucursales: false,
           };
         })
         .filter((el) => el)
@@ -1093,10 +1094,12 @@ export const logInExternalLinking = async ({ credentials }) => {
                 minimoTributable: x.nu_ut,
               }))
             ),
+            sinSucursales: false,
           };
         })
         .filter((el) => el)
     );
+    if (contributors.every((el) => el.hasOwnProperty('sinSucursales') && el.sinSucursales)) return { status: 409, message: 'El usuario ya ha importado y actualizado todas sus sucursales' };
     return { status: 200, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: contributors };
   } catch (error) {
     console.log(error);
@@ -1155,7 +1158,7 @@ const getLinkedContributorData = async (contributor: any) => {
           return { ...payload };
         })
     );
-    return { datosContribuyente, sucursales };
+    return { datosContribuyente, sucursales, sinSucursales: !sucursales.length };
   } catch (error) {
     throw error;
   } finally {
@@ -2650,6 +2653,7 @@ export const internalUserImport = async ({ reference, docType, document, typeUse
     const branchIsUpdated = branch?.actualizado;
     if (!contributor || (!!contributor && !!reference && !branchIsUpdated)) {
       const x = await externalLinkingForCashier({ document, docType, reference, user, typeUser });
+      if (x.every((el) => el.hasOwnProperty('sinSucursales') && el.sinSucursales)) return { status: 200, message: 'El usuario ya esta registrado y actualizado, proceda a enlazarlo' };
       return { status: 202, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: x };
     } else {
       return { status: 200, message: 'El usuario ya esta registrado y actualizado, proceda a enlazarlo' };
