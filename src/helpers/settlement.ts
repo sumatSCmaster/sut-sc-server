@@ -2818,7 +2818,7 @@ export const internalUserLinking = async (data) => {
   }
 };
 
-const recursiveRebate = (array, number, abs) => {
+const recursiveRebate = (array, number, abs): any[] => {
   const minus = abs ? number / array.filter((a) => +a.monto > 0).length : number / array.length;
   let _array = array.map((e) => {
     e.monto = +e.monto > 0 ? +e.monto - minus : +e.monto;
