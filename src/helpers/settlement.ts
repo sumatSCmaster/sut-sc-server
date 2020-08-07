@@ -2818,6 +2818,22 @@ export const internalUserLinking = async (data) => {
   }
 };
 
+const recursiveRebate = (array, number, abs) => {
+  const minus = abs ? number / array.filter((a) => +a.monto > 0).length : number / array.length;
+  let _array = array.map((e) => {
+    e.monto = +e.monto > 0 ? +e.monto - minus : +e.monto;
+    return e;
+  });
+  const diff = Math.abs(_array.filter((e) => +e.monto < 0).reduce((prev, current) => prev + +current.monto, 0));
+  if (diff > 0) {
+    return recursiveRebate(
+      _array.map((e) => (+e.monto < 0 ? 0 : +e.monto)),
+      diff,
+      true
+    );
+  } else return _array;
+};
+
 export const addRebateForDeclaration = async ({ process, user }) => {
   const client = await pool.connect();
   const { id, montoRebajado } = process;
@@ -2830,20 +2846,31 @@ export const addRebateForDeclaration = async ({ process, user }) => {
     const nroLiquidaciones = hasAE.length;
     const montoPerLiq = montoRebajado / nroLiquidaciones;
     await client.query('BEGIN');
-    const settlements = await Promise.all(
-      (
-        await client.query(
-          "UPDATE impuesto.liquidacion SET monto = monto - $1 WHERE id_solicitud = $2 AND id_subramo IN (SELECT id_subramo FROM impuesto.subramo s INNER JOIN impuesto.ramo r USING (id_ramo) WHERE codigo='112') AND l.monto > 0 RETURNING *;",
-          [montoPerLiq, idSolicitud]
-        )
-      ).rows.map(async (el) => {
-        const newDatos = { ...el.datos, montoRebajado: montoPerLiq };
-        const liquidacion = (await client.query('UPDATE impuesto.liquidacion SET datos = $1 WHERE id_liquidacion = $2 RETURNING *;', [newDatos, el.id_liquidacion])).rows[0];
-        return liquidacion;
+    const test = await Promise.all(
+      recursiveRebate(hasAE, montoRebajado, false).map(async (el) => {
+        const oldValue = hasAE.find((x) => x.id_liquidacion === el.id_liquidacion).monto;
+        console.log('if -> oldValue', oldValue);
+        const newDatos = { ...el.datos, montoRebajado: oldValue - el.monto };
+        console.log('montoRebajado', oldValue - el.monto);
+
+        // const liquidacion = (await client.query('UPDATE impuesto.liquidacion SET datos = $1, monto = $2 WHERE id_liquidacion = $3 RETURNING *;', [newDatos, el.monto, el.id_liquidacion])).rows[0];
+        // return liquidacion;
       })
     );
+    // const settlements = await Promise.all(
+    //   (
+    //     await client.query(
+    //       "UPDATE impuesto.liquidacion SET monto = monto - $1 WHERE id_solicitud = $2 AND id_subramo IN (SELECT id_subramo FROM impuesto.subramo s INNER JOIN impuesto.ramo r USING (id_ramo) WHERE codigo='112') AND l.monto > 0 RETURNING *;",
+    //       [montoPerLiq, idSolicitud]
+    //     )
+    //   ).rows.map(async (el) => {
+    //     const newDatos = { ...el.datos, montoRebajado: montoPerLiq };
+    //     const liquidacion = (await client.query('UPDATE impuesto.liquidacion SET datos = $1 WHERE id_liquidacion = $2 RETURNING *;', [newDatos, el.id_liquidacion])).rows[0];
+    //     return liquidacion;
+    //   })
+    // );
     await client.query('UPDATE impuesto.solicitud SET rebajado = true WHERE id_solicitud = $1', [idSolicitud]);
-    await client.query('COMMIT');
+    await client.query('ROLLBACK');
     return { status: 200, message: 'Solicitud rebajada satisfactoriamente' };
   } catch (error) {
     client.query('ROLLBACK');
