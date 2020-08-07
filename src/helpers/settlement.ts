@@ -2820,7 +2820,11 @@ export const internalUserLinking = async (data) => {
 
 const recursiveRebate = (array, number, abs): any[] => {
   const minus = abs ? number / array.filter((a) => +a.monto > 0).length : number / array.length;
-  let _array = array.map((e) => +e.monto > 0 ? +e.monto - minus : +e.monto);
+  let _array = array.map((e) => {
+    const _e = Object.assign({}, e);
+    _e.monto = +_e.monto > 0 ? +_e.monto - minus : +_e.monto;
+    return _e;
+  });
   const diff = Math.abs(_array.filter((e) => +e.monto < 0).reduce((prev, current) => prev + +current.monto, 0));
   if (diff > 0) {
     return recursiveRebate(
