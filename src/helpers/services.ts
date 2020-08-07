@@ -179,7 +179,7 @@ export const getSettlementsByDepartment = async (type) => {
     };
     if (!departamento[type]) throw { status: 404, message: 'El departamento solicitado no está disponible' };
     const liquidaciones = (
-      await client.query('SELECT * FROM impuesto.solicitud s RIGHT JOIN impuesto.liquidacion USING (id_solicitud) INNER JOIN impuesto.subramo USING (id_subramo) WHERE id_subramo = $1 AND l.monto > 0 ORDER BY s.fecha DESC', [departamento[type]])
+      await client.query('SELECT * FROM impuesto.solicitud s RIGHT JOIN impuesto.liquidacion l USING (id_solicitud) INNER JOIN impuesto.subramo USING (id_subramo) WHERE id_subramo = $1 AND l.monto > 0 ORDER BY s.fecha DESC', [departamento[type]])
     ).rows.map((el) => ({
       id: el.id_liquidacion,
       ramo: 'SERVICIOS MUNICIPALES',
