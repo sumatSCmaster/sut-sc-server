@@ -6,7 +6,7 @@ block content
   div#fecha
     p 
       b FECHA:
-      span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+      span &nbsp; #{moment(fecha).subtract(4,'h').format('DD/MM/YYYY')}
     -var sub = [];
     -var aux = ['501','236'];
     -var auxLiq = 0;

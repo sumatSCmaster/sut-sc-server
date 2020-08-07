@@ -729,7 +729,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     FROM (SELECT * FROM pago p 
             INNER JOIN tramite t ON t.id_tramite = p.id_procedimiento 
             INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite 
-            WHERE p.concepto = 'TRAMITE' AND tt.id_institucion = 9 AND p.metodo_pago = 'EFECTIVO' AND p.fecha_de_pago BETWEEN $1 AND $2) p
+            WHERE p.concepto = 'TRAMITE' AND tt.id_institucion = 9 AND p.metodo_pago = 'EFECTIVO' AND p.fecha_de_aprobacion BETWEEN $1 AND $2) p
   ) x GROUP BY moneda;`,
   GET_CREDIT_REPORT: `SELECT sum(monto) as total FROM pago WHERE metodo_pago = 'CREDITO_FISCAL' AND fecha_de_pago BETWEEN $1 AND $2`,
   GET_CREDIT_INGRESS_BY_INTERVAL: `SELECT COALESCE(SUM(credito), 0) AS ingresado, COALESCE(COUNT(*), 0) AS "cantidadIng" FROM impuesto.credito_fiscal WHERE credito > 0 AND importado != true AND fecha_creacion BETWEEN $1 AND $2;`,
@@ -742,7 +742,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         FROM (SELECT * FROM pago p 
                 INNER JOIN tramite t ON t.id_tramite = p.id_procedimiento 
                 INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite 
-                WHERE p.concepto = 'TRAMITE' AND tt.id_institucion = 9 AND p.metodo_pago = 'PUNTO DE VENTA' AND p.fecha_de_pago BETWEEN $1 AND $2) p) x;`,
+                WHERE p.concepto = 'TRAMITE' AND tt.id_institucion = 9 AND p.metodo_pago = 'PUNTO DE VENTA' AND p.fecha_de_aprobacion BETWEEN $1 AND $2) p) x;`,
   GET_CHECKS: `SELECT SUM(monto) AS total FROM (SELECT SUM(p.monto) as monto
         FROM pago p
         WHERE p.concepto IN ('IMPUESTO', 'CONVENIO', 'RETENCION') AND p.metodo_pago = 'CHEQUE' AND p.fecha_de_pago BETWEEN $1 AND $2
@@ -791,7 +791,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_CASHIER_TRANSFERS: `SELECT b.id_banco as id, b.nombre as banco, SUM(p.monto) as monto, COUNT(*) as transacciones
         FROM pago p 
         INNER JOIN banco b ON b.id_banco = p.id_banco
-        WHERE p.fecha_de_pago = $1 AND p.metodo_pago = 'TRANSFERENCIA' AND id_usuario = $2
+        WHERE p.fecha_de_aprobacion::date = $1 AND p.metodo_pago = 'TRANSFERENCIA' AND id_usuario = $2
         GROUP BY b.id_banco, b.nombre;`,
   GET_ALL_CASHIERS_TOTAL: `SELECT u.nombre_completo, SUM(p.monto) AS monto
     FROM pago p INNER JOIN usuario u USING (id_usuario)
