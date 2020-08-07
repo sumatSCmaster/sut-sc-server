@@ -191,7 +191,7 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
         institucion: 'SEDEMAT',
         datos: {
           ingresos: chunk(branches, 10),
-          acumuladoIngresos: `CONTENIDO: TODOS LOS RAMOS, DESDE EL ${moment.utc(payload.from).format('DD/MM/YYYY')} AL ${moment.utc(payload.to).format('DD/MM/YYYY')}`,
+          acumuladoIngresos: `CONTENIDO: TODOS LOS RAMOS, DESDE EL ${moment(payload.from).subtract(4,'h').format('DD/MM/YYYY')} AL ${moment(payload.to).subtract(4,'h').format('DD/MM/YYYY')}`,
           cantidadLiqTotal: liquidated.rows.reduce((prev, next) => prev + +next.cantidadLiq, 0) + compens.cantidadLiqTotal,
           liquidadoTotal: liquidated.rows.reduce((prev, next) => prev + +next.liquidado, 0) + compens.liquidadoTotal,
           ingresadoTotal: ingress.rows.reduce((prev, next) => prev + +next.ingresado, 0) + compens.ingresadoTotal,
