@@ -2857,9 +2857,8 @@ export const addRebateForDeclaration = async ({ process, user }) => {
         console.log('if -> oldValue', oldValue);
         const newDatos = { ...el.datos, montoRebajado: oldValue - el.monto };
         console.log('montoRebajado', oldValue - el.monto);
-
-        // const liquidacion = (await client.query('UPDATE impuesto.liquidacion SET datos = $1, monto = $2 WHERE id_liquidacion = $3 RETURNING *;', [newDatos, el.monto, el.id_liquidacion])).rows[0];
-        // return liquidacion;
+        const liquidacion = (await client.query('UPDATE impuesto.liquidacion SET datos = $1, monto = $2 WHERE id_liquidacion = $3 RETURNING *;', [newDatos, el.monto, el.id_liquidacion])).rows[0];
+        return liquidacion;
       })
     );
     // const settlements = await Promise.all(
@@ -2875,7 +2874,7 @@ export const addRebateForDeclaration = async ({ process, user }) => {
     //   })
     // );
     await client.query('UPDATE impuesto.solicitud SET rebajado = true WHERE id_solicitud = $1', [idSolicitud]);
-    await client.query('ROLLBACK');
+    await client.query('COMMIT');
     return { status: 200, message: 'Solicitud rebajada satisfactoriamente' };
   } catch (error) {
     client.query('ROLLBACK');
