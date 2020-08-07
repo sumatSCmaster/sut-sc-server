@@ -3840,7 +3840,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
     let certInfoArray: any[] = [];
     let certAE;
     for (const el of breakdownData) {
-      console.log('el', el)
+      console.log('el', el, el.datos)
       certAE = {
         fecha: moment().format('YYYY-MM-DD'),
         tramite: 'PAGO DE IMPUESTOS',
@@ -3860,6 +3860,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
           fechaLiq: moment().format('YYYY-MM-DD'),
           fechaVenc: moment().date(31).format('YYYY-MM-DD'),
           items: economicActivities.map((row) => {
+            console.log('row', row)
             let desglose = el.datos.desglose ? el.datos.desglose.find((d) => d.aforo === row.id) : { montoDeclarado: 0 };
             return {
               codigo: row.numeroReferencia,
