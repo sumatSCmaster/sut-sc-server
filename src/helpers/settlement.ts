@@ -3862,6 +3862,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
           items: economicActivities.map((row) => {
             console.log('row', row)
             let desglose = el.datos.desglose ? el.datos.desglose.find((d) => d.aforo === row.id) : { montoDeclarado: 0 };
+            desglose = desglose ? desglose : { montoDeclarado: 0 }
             return {
               codigo: row.numeroReferencia,
               descripcion: row.descripcion,
