@@ -3899,7 +3899,8 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
         const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
         const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
         const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
-
+        console.log(pdfDir)
+        console.log(dir)
         let buffersArray: any[] = await Promise.all(
           htmlArray.map((html) => {
             return new Promise((res, rej) => {
