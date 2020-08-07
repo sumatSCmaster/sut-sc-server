@@ -236,7 +236,7 @@ export const createMunicipalServicesScale = async ({ description, tariff }) => {
     throw {
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || error.message || '',
+      message: errorMessageGenerator(error) || error.message || 'Error al crear nuevo valor en el baremo de servicios',
     };
   } finally {
     client.release();
