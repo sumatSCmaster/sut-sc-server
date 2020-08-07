@@ -157,7 +157,7 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
         SELECT *, (SELECT current_setting('TIMEZONE')) as timezss FROM pago p 
                 INNER JOIN tramite t ON t.id_tramite = p.id_procedimiento 
                 INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite 
-                WHERE p.concepto = 'TRAMITE' AND tt.id_institucion = 9 AND p.metodo_pago = 'PUNTO DE VENTA' AND p.fecha_de_aprobacion BETWEEN $1 AND $2`, [payload.from, payload.to])))
+                WHERE p.concepto = 'TRAMITE' AND tt.id_institucion = 9 AND p.metodo_pago = 'PUNTO DE VENTA' AND p.fecha_de_aprobacion BETWEEN $1 AND $2`, [payload.from, payload.to])).rows)
         const transfersByBank = (await client.query(queries.GET_TRANSFERS_BY_BANK, [payload.from, payload.to])).rows;
         const totalTranfersByBank = +transfersByBank.reduce((prev, next) => prev + +next.monto, 0);
 
