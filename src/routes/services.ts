@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
 import { authenticate } from 'passport';
-import { getMunicipalServicesByContributor, updateGasStateForEstate, updateGasTariffScales, getServicesTariffScales, createMunicipalServicesScale } from '@helpers/services';
+import { getMunicipalServicesByContributor, updateGasStateForEstate, updateGasTariffScales, getServicesTariffScales, createMunicipalServicesScale, getSettlementsByDepartment } from '@helpers/services';
 
 const router = Router();
 
@@ -21,6 +21,13 @@ router.put('/gas', authenticate('jwt'), async (req, res) => {
 
 router.get('/scales', authenticate('jwt'), async (req, res) => {
   const [error, data] = await fulfill(getServicesTariffScales());
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+});
+
+router.get('/settlements/:type', authenticate('jwt'), async (req, res) => {
+  const { type } = req.params;
+  const [error, data] = await fulfill(getSettlementsByDepartment(type));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });

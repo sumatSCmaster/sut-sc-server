@@ -213,7 +213,7 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
             } else {
               const bucketParams = {
                 Bucket: 'sut-maracaibo',
-                Key: alcaldia ? '/sedemat/reportes/RPRA.pdf' : '/sedemat/reportes/RPR.pdf',
+                Key: alcaldia ? 'sedemat/reportes/RPRA.pdf' : 'sedemat/reportes/RPR.pdf',
               };
               await S3Client.putObject({
                 ...bucketParams,

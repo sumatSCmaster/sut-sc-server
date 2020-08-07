@@ -170,6 +170,39 @@ export const getServicesTariffScales = async () => {
   }
 };
 
+export const getSettlementsByDepartment = async (type) => {
+  const client = await pool.connect();
+  try {
+    const departamento = {
+      gas: 107,
+      aseo: 108,
+    };
+    if (!departamento[type]) throw { status: 404, message: 'El departamento solicitado no está disponible' };
+    const liquidaciones = (
+      await client.query('SELECT * FROM impuesto.solicitud s RIGHT JOIN impuesto.liquidacion l USING (id_solicitud) INNER JOIN impuesto.subramo USING (id_subramo) WHERE id_subramo = $1 AND l.monto > 0 ORDER BY s.fecha DESC', [departamento[type]])
+    ).rows.map((el) => ({
+      id: el.id_liquidacion,
+      ramo: 'SERVICIOS MUNICIPALES',
+      descripcion: el.descripcion,
+      fechaLiquidacion: el.fecha_liquidacion,
+      fechaSolicitud: el.fecha || 'N/A',
+      monto: el.monto,
+      certificado: el.certificado,
+      recibo: el.recibo,
+    }));
+    return { status: 200, message: `Liquidaciones de ${type} obtenidas satisfactoriamente`, liquidaciones };
+  } catch (error) {
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener las liquidaciones de servicios por departamento',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 export const updateGasTariffScales = async (id, tariff) => {
   const client = await pool.connect();
   try {
@@ -203,7 +236,7 @@ export const createMunicipalServicesScale = async ({ description, tariff }) => {
     throw {
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || error.message || '',
+      message: errorMessageGenerator(error) || error.message || 'Error al crear nuevo valor en el baremo de servicios',
     };
   } finally {
     client.release();

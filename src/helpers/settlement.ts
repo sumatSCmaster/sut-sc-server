@@ -128,7 +128,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const lastSettlementPayload = contributor.tipo_contribuyente === 'JURIDICO' || (!!reference && branch) ? branch.referencia_municipal : contributor.id_contribuyente;
     const fiscalCredit =
       (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.tipo_contribuyente === 'JURIDICO' ? branch.id_registro_municipal : contributor.id_contribuyente, contributor.tipo_contribuyente])).rows[0]?.credito || 0;
-    const AEApplicationExists = contributor.tipo_contribuyente === 'JURIDICO' || reference ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.AE, reference])).rows[0] : false;
+    const AEApplicationExists =
+      contributor.tipo_contribuyente === 'JURIDICO' || reference ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.AE, reference])).rows.find((el) => !el.datos.hasOwnProperty('descripcion')) : false;
     const SMApplicationExists =
       contributor.tipo_contribuyente === 'JURIDICO'
         ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.SM, reference])).rows[0]
@@ -142,17 +143,23 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.PP, reference])).rows[0]
         : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.PP, contributor.id_contribuyente])).rows[0];
 
+    console.log(lastSettlementPayload);
+    console.log(lastSettlementQuery);
     if (AEApplicationExists && SMApplicationExists && IUApplicationExists && PPApplicationExists) return { status: 409, message: 'Ya existe una declaracion de impuestos para este mes' };
     const now = moment(new Date());
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     //AE
     if (branch && branch.referencia_municipal && !AEApplicationExists) {
+      console.log('vergacion por que no dai');
       const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
       if (economicActivities.length === 0) throw { status: 404, message: 'El contribuyente no posee aforos asociados' };
-      let lastEA = (await client.query(lastSettlementQuery, [codigosRamo.AE, lastSettlementPayload])).rows[0];
+      let lastEA = (await client.query(lastSettlementQuery, [codigosRamo.AE, lastSettlementPayload])).rows.find((el) => !el.datos.hasOwnProperty('descripcion'));
+      console.log('if -> lastEA', lastEA);
+
       const lastEAPayment = (lastEA && moment(lastEA.fecha_liquidacion)) || moment().month(0);
       const pastMonthEA = (lastEA && moment(lastEA.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
       const EADate = moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
+      // console.log(EADate);
       const dateInterpolation = Math.floor(now.diff(EADate, 'M'));
       montoAcarreado.AE = {
         monto: lastEA && lastEA.mo_pendiente ? parseFloat(lastEA.mo_pendiente) : 0,
@@ -164,7 +171,9 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
             economicActivities.map(async (el) => {
               const lastMonthPayment = (await client.query(queries.GET_LAST_AE_SETTLEMENT_BY_AE_ID, [el.id_actividad_economica, branch.id_registro_municipal])).rows[0];
               const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment).startOf('month').isSameOrAfter(EADate) ? moment(lastMonthPayment.fecha_liquidacion).startOf('month') : EADate) : EADate;
+              console.log('if -> paymentDate', paymentDate);
               const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M'))) || (!lastMonthPayment && dateInterpolation) || 0;
+              console.log('if -> interpolation', interpolation);
               // paymentDate = paymentDate.isSameOrBefore(lastEAPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
               if (interpolation === 0) return null;
               return {
@@ -1406,6 +1415,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
           tipo: el.tipo_solicitud,
           documento: docs.documento,
           tipoDocumento: docs.tipo_documento,
+          rebajado: el.rebajado,
           estado: state,
           referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
             ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
@@ -1472,6 +1482,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
             documento: docs.documento,
             tipoDocumento: docs.tipo_documento,
             tipo: el.tipo_solicitud,
+            rebajado: el.rebajado,
             estado: state,
             referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
               ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
@@ -1548,6 +1559,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
             fecha: el.fecha,
             documento: docs.documento,
             tipoDocumento: docs.tipo_documento,
+            rebajado: el.rebajado,
             tipo: el.tipo_solicitud,
             estado: state,
             referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
@@ -2806,30 +2818,61 @@ export const internalUserLinking = async (data) => {
   }
 };
 
+const recursiveRebate = (array, number, abs): any[] => {
+  const minus = abs ? number / array.filter((a) => +a.monto > 0).length : number / array.length;
+  let _array = array.map((e) => {
+    const _e = Object.assign({}, e);
+    _e.monto = +_e.monto > 0 ? +_e.monto - minus : +_e.monto;
+    return _e;
+  });
+  const diff = Math.abs(_array.filter((e) => +e.monto < 0).reduce((prev, current) => prev + +current.monto, 0));
+  if (diff > 0) {
+    return recursiveRebate(
+      _array.map((e) => {
+        const _e = Object.assign({}, e);
+        _e.monto = (+e.monto < 0 ? 0 : +e.monto);
+        return _e;
+      }),
+      diff,
+      true
+    );
+  } else return _array;
+};
+
 export const addRebateForDeclaration = async ({ process, user }) => {
   const client = await pool.connect();
   const { id, montoRebajado } = process;
   try {
     const { rebajado, id_solicitud: idSolicitud } = (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows[0];
     if (rebajado) throw { status: 403, message: 'Esta solicitud ya ha sido rebajada anteriormente' };
-    const hasAE = (await client.query(`SELECT * FROM impuesto.liquidacion l INNER JOIN impuesto.subramo USING (id_subramo) INNER JOIN impuesto.ramo r USING (id_ramo) WHERE l.id_solicitud = $1 AND r.codigo = '112'`, [idSolicitud])).rows;
+    const hasAE = (await client.query(`SELECT * FROM impuesto.liquidacion l INNER JOIN impuesto.subramo USING (id_subramo) INNER JOIN impuesto.ramo r USING (id_ramo) WHERE l.id_solicitud = $1 AND r.codigo = '112' AND l.monto > 0`, [idSolicitud]))
+      .rows;
     if (!hasAE.length) throw { status: 403, message: 'La solicitud no posee liquidaciones de Actividad Económica' };
     const nroLiquidaciones = hasAE.length;
     const montoPerLiq = montoRebajado / nroLiquidaciones;
     await client.query('BEGIN');
-
-    const settlements = await Promise.all(
-      (
-        await client.query("UPDATE impuesto.liquidacion SET monto = monto - $1 WHERE id_solicitud = $2 AND id_subramo IN (SELECT id_subramo FROM impuesto.subramo s INNER JOIN impuesto.ramo r USING (id_ramo) WHERE codigo='112') RETURNING *;", [
-          montoPerLiq,
-          idSolicitud,
-        ])
-      ).rows.map(async (el) => {
-        const newDatos = { ...el.datos, montoRebajado: montoPerLiq };
-        const liquidacion = (await client.query('UPDATE impuesto.liquidacion SET datos = $1 WHERE id_liquidacion = $2 RETURNING *;', [newDatos, el.id_liquidacion])).rows[0];
+    const test = await Promise.all(
+      recursiveRebate(hasAE, montoRebajado, false).map(async (el) => {
+        const oldValue = hasAE.find((x) => x.id_liquidacion === el.id_liquidacion).monto;
+        console.log('if -> oldValue', oldValue);
+        const newDatos = { ...el.datos, montoRebajado: oldValue - el.monto };
+        console.log('montoRebajado', oldValue - el.monto);
+        const liquidacion = (await client.query('UPDATE impuesto.liquidacion SET datos = $1, monto = $2 WHERE id_liquidacion = $3 RETURNING *;', [newDatos, el.monto, el.id_liquidacion])).rows[0];
         return liquidacion;
       })
     );
+    // const settlements = await Promise.all(
+    //   (
+    //     await client.query(
+    //       "UPDATE impuesto.liquidacion SET monto = monto - $1 WHERE id_solicitud = $2 AND id_subramo IN (SELECT id_subramo FROM impuesto.subramo s INNER JOIN impuesto.ramo r USING (id_ramo) WHERE codigo='112') AND l.monto > 0 RETURNING *;",
+    //       [montoPerLiq, idSolicitud]
+    //     )
+    //   ).rows.map(async (el) => {
+    //     const newDatos = { ...el.datos, montoRebajado: montoPerLiq };
+    //     const liquidacion = (await client.query('UPDATE impuesto.liquidacion SET datos = $1 WHERE id_liquidacion = $2 RETURNING *;', [newDatos, el.id_liquidacion])).rows[0];
+    //     return liquidacion;
+    //   })
+    // );
     await client.query('UPDATE impuesto.solicitud SET rebajado = true WHERE id_solicitud = $1', [idSolicitud]);
     await client.query('COMMIT');
     return { status: 200, message: 'Solicitud rebajada satisfactoriamente' };
@@ -3791,16 +3834,19 @@ const createReceiptForSpecialApplication = async ({ pool, user, application }) =
 
 const createReceiptForAEApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
-    const economicActivities = (await pool.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [application.contribuyente])).rows;
+    
     const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
+    
     const UTMM = (await pool.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const impuestoRecibo = UTMM * 2;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
+    const economicActivities = (await pool.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [referencia.id_registro_municipal])).rows;
     moment.locale('es');
     let certInfoArray: any[] = [];
     let certAE;
     for (const el of breakdownData) {
+      console.log('el', el, el.datos)
       certAE = {
         fecha: moment().format('YYYY-MM-DD'),
         tramite: 'PAGO DE IMPUESTOS',
@@ -3820,14 +3866,17 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
           fechaLiq: moment().format('YYYY-MM-DD'),
           fechaVenc: moment().date(31).format('YYYY-MM-DD'),
           items: economicActivities.map((row) => {
+            console.log('row', row)
             let desglose = el.datos.desglose ? el.datos.desglose.find((d) => d.aforo === row.id) : { montoDeclarado: 0 };
+            desglose = desglose ? desglose : { montoDeclarado: 0 }
             return {
               codigo: row.numeroReferencia,
               descripcion: row.descripcion,
               montoDeclarado: desglose.montoDeclarado,
+              montoRebajado: el.datos?.montoRebajado || 0,
               alicuota: row.alicuota / 100,
               minTrib: row.minimoTributable,
-              impuesto: el.datos.montoCobrado || 0,
+              impuesto: desglose.montoCobrado || 0,
             };
           }),
 
@@ -3856,7 +3905,8 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
         const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
         const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
         const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
-
+        console.log(pdfDir)
+        console.log(dir) 
         let buffersArray: any[] = await Promise.all(
           htmlArray.map((html) => {
             return new Promise((res, rej) => {
