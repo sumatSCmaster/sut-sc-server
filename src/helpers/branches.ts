@@ -36,7 +36,7 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
   try {
     return new Promise(async (res, rej) => {
       console.log(payload)
-      console.log((await client.query('SELECT $1 AS from, $2 AS to', [payload.from, payload.to])).rows)
+      console.log((await client.query('SELECT $1::timestamptz AS from, $2::timestamptz AS to', [payload.from, payload.to])).rows)
       const alcaldia = payload.alcaldia;
       let pagos = {};
       const ingress = await client.query(queries.GET_INGRESS, [payload.from, payload.to]);
@@ -185,7 +185,8 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
           creditoFiscal: cred,
         };
       }
-      
+      console.log(liquidated.rows.reduce((prev, next) => prev + +next.cantidadLiq, 0) + compens.cantidadLiqTotal)
+      console.log(liquidated.rows.reduce((prev, next) => prev + +next.liquidado, 0) + compens.liquidadoTotal)
       const html = renderFile(resolve(__dirname, alcaldia ? `../views/planillas/sedemat-RPRA.pug` : `../views/planillas/sedemat-RPR.pug`), {
         moment: require('moment'),
         institucion: 'SEDEMAT',
