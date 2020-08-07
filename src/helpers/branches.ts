@@ -35,6 +35,7 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
   const client = await pool.connect();
   try {
     return new Promise(async (res, rej) => {
+      console.log(payload)
       console.log((await client.query('SELECT $1 AS from, $2 AS to', [payload.from, payload.to])).rows)
       const alcaldia = payload.alcaldia;
       let pagos = {};
