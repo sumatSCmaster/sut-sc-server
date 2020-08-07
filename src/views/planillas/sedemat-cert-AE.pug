@@ -115,7 +115,7 @@ block content
           div(style={'-webkit-flex': 3.5}).td.border-right.border-bottom.center
             p #{item.descripcion}
           div(style={'-webkit-flex': 1.5}).td.border-right.border-bottom.center
-            p #{item.montoDeclarado}
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoDeclarado ? item.montoDeclarado : 0)}
           div(style={'-webkit-flex': 1.5}).td.border-right.border-bottom.center
             p #{item.alicuota}
           div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
