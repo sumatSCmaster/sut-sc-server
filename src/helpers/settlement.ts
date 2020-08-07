@@ -2828,7 +2828,11 @@ const recursiveRebate = (array, number, abs): any[] => {
   const diff = Math.abs(_array.filter((e) => +e.monto < 0).reduce((prev, current) => prev + +current.monto, 0));
   if (diff > 0) {
     return recursiveRebate(
-      _array.map((e) => (+e.monto < 0 ? 0 : +e.monto)),
+      _array.map((e) => {
+        const _e = Object.assign({}, e);
+        _e.monto = (+e.monto < 0 ? 0 : +e.monto);
+        return _e;
+      }),
       diff,
       true
     );
