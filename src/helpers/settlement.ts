@@ -153,13 +153,13 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       console.log('vergacion por que no dai');
       const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
       if (economicActivities.length === 0) throw { status: 404, message: 'El contribuyente no posee aforos asociados' };
-      let lastEA = (await client.query(lastSettlementQuery, [codigosRamo.AE, lastSettlementPayload])).rows[0];
+      let lastEA = (await client.query(lastSettlementQuery, [codigosRamo.AE, lastSettlementPayload])).rows.find((el) => !el.datos.hasOwnProperty('descripcion'));
       console.log('if -> lastEA', lastEA);
 
       const lastEAPayment = (lastEA && moment(lastEA.fecha_liquidacion)) || moment().month(0);
       const pastMonthEA = (lastEA && moment(lastEA.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
       const EADate = moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
-      console.log(EADate);
+      // console.log(EADate);
       const dateInterpolation = Math.floor(now.diff(EADate, 'M'));
       montoAcarreado.AE = {
         monto: lastEA && lastEA.mo_pendiente ? parseFloat(lastEA.mo_pendiente) : 0,
