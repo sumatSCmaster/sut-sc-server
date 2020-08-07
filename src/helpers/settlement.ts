@@ -1413,6 +1413,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
           tipo: el.tipo_solicitud,
           documento: docs.documento,
           tipoDocumento: docs.tipo_documento,
+          rebajado: el.rebajado,
           estado: state,
           referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
             ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
@@ -1479,6 +1480,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
             documento: docs.documento,
             tipoDocumento: docs.tipo_documento,
             tipo: el.tipo_solicitud,
+            rebajado: el.rebajado,
             estado: state,
             referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
               ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
@@ -1555,6 +1557,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
             fecha: el.fecha,
             documento: docs.documento,
             tipoDocumento: docs.tipo_documento,
+            rebajado: el.rebajado,
             tipo: el.tipo_solicitud,
             estado: state,
             referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
