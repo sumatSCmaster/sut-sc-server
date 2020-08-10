@@ -69,7 +69,7 @@ export const getRepairYears = async ({ document, reference, docType, user }: { d
     throw {
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || error.message || 'Error al obtener deuda de retención',
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener deuda de reparo',
     };
   } finally {
     client.release();
@@ -140,7 +140,7 @@ export const insertRepairs = async ({ process, user }) => {
     }
     await client.query('COMMIT');
     const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
-    solicitud.recibo = await generateRepairReceipt({application:application.id_solicitud, breakdownData: settlements.flat(), total: process.total})
+    solicitud.recibo = await generateRepairReceipt({ application: application.id_solicitud, breakdownData: settlements.flat(), total: process.total, cashier: user.nombreCompleto });
     // await sendNotification(
     //   user,
     //   `Se ha iniciado una solicitud para el contribuyente con el documento de identidad: ${solicitud.tipoDocumento}-${solicitud.documento}`,
