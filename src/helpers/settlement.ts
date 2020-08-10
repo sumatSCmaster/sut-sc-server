@@ -3604,7 +3604,7 @@ const createReceiptForSpecialApplication = async ({ pool, user, application }) =
     const impuestoRecibo = UTMM * 2;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
-    const payment = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [application.id, 'IMPUESTO'])).rows;
+    const payment = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID_DEST, [application.id, 'IMPUESTO'])).rows;
 
     moment.locale('es');
     let certInfoArray: any[] = [];
@@ -3651,8 +3651,8 @@ const createReceiptForSpecialApplication = async ({ pool, user, application }) =
           montoTotal: 0.0,
           observacion: 'Pago por Concepto(s) de ' + el.descripcion,
           estatus: 'PAGADO',
-          totalLiq: 0.0,
-          totalRecaudado: 0.0,
+          totalLiq: application.montoLiquidacion,
+          totalRecaudado: application.montoLiquidacion,
           totalCred: 0.0,
         },
       };
