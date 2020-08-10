@@ -4,6 +4,7 @@ import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { PoolClient } from 'pg';
 import moment, { Moment } from 'moment';
 import switchcase from '@utils/switch';
+import { formatContributor } from './settlement';
 
 const pool = Pool.getInstance();
 
@@ -178,18 +179,21 @@ export const getSettlementsByDepartment = async (type) => {
       aseo: 108,
     };
     if (!departamento[type]) throw { status: 404, message: 'El departamento solicitado no está disponible' };
-    const liquidaciones = (
-      await client.query('SELECT * FROM impuesto.solicitud s RIGHT JOIN impuesto.liquidacion l USING (id_solicitud) INNER JOIN impuesto.subramo USING (id_subramo) WHERE id_subramo = $1 AND l.monto > 0 ORDER BY s.fecha DESC', [departamento[type]])
-    ).rows.map((el) => ({
-      id: el.id_liquidacion,
-      ramo: 'SERVICIOS MUNICIPALES',
-      descripcion: el.descripcion,
-      fechaLiquidacion: el.fecha_liquidacion,
-      fechaSolicitud: el.fecha || 'N/A',
-      monto: el.monto,
-      certificado: el.certificado,
-      recibo: el.recibo,
-    }));
+    const liquidaciones = await Promise.all(
+      (
+        await client.query('SELECT * FROM impuesto.solicitud s RIGHT JOIN impuesto.liquidacion l USING (id_solicitud) INNER JOIN impuesto.subramo USING (id_subramo) WHERE id_subramo = $1 AND l.monto > 0 ORDER BY s.fecha DESC', [departamento[type]])
+      ).rows.map(async (el) => ({
+        id: el.id_liquidacion,
+        ramo: 'SERVICIOS MUNICIPALES',
+        descripcion: el.descripcion,
+        fechaLiquidacion: el.fecha_liquidacion,
+        fechaSolicitud: el.fecha || 'N/A',
+        monto: el.monto,
+        certificado: el.certificado,
+        recibo: el.recibo,
+        contribuyente: await formatContributor(el, client),
+      }))
+    );
     return { status: 200, message: `Liquidaciones de ${type} obtenidas satisfactoriamente`, liquidaciones };
   } catch (error) {
     console.log(error);

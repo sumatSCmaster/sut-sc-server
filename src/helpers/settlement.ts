@@ -1608,7 +1608,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
   }
 };
 
-const formatContributor = async (contributor, client: PoolClient) => {
+export const formatContributor = async (contributor, client: PoolClient) => {
   try {
     const branches = (await client.query(queries.GET_BRANCHES_BY_CONTRIBUTOR_ID, [contributor.id_contribuyente])).rows;
     return {
@@ -2830,7 +2830,7 @@ const recursiveRebate = (array, number, abs): any[] => {
     return recursiveRebate(
       _array.map((e) => {
         const _e = Object.assign({}, e);
-        _e.monto = (+e.monto < 0 ? 0 : +e.monto);
+        _e.monto = +e.monto < 0 ? 0 : +e.monto;
         return _e;
       }),
       diff,
@@ -2901,7 +2901,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
     if (!contributorReference) throw { status: 404, message: 'La sucursal solicitada no existe' };
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(user.tipoUsuario !== 4 && process.usuario) || user.id, userContributor[0].id_contribuyente])).rows[0];
-    
+
     const settlement: Liquidacion[] = await Promise.all(
       impuestos.map(async (el) => {
         const isSpecialSettlement = (await client.query(queries.IS_SPECIAL_SETTLEMENT, [el.ramo])).rows.length > 0;
@@ -3834,9 +3834,8 @@ const createReceiptForSpecialApplication = async ({ pool, user, application }) =
 
 const createReceiptForAEApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
-    
     const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
-    
+
     const UTMM = (await pool.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const impuestoRecibo = UTMM * 2;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
@@ -3846,7 +3845,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
     let certInfoArray: any[] = [];
     let certAE;
     for (const el of breakdownData) {
-      console.log('el', el, el.datos)
+      console.log('el', el, el.datos);
       certAE = {
         fecha: moment().format('YYYY-MM-DD'),
         tramite: 'PAGO DE IMPUESTOS',
@@ -3866,9 +3865,9 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
           fechaLiq: moment().format('YYYY-MM-DD'),
           fechaVenc: moment().date(31).format('YYYY-MM-DD'),
           items: economicActivities.map((row) => {
-            console.log('row', row)
+            console.log('row', row);
             let desglose = el.datos.desglose ? el.datos.desglose.find((d) => d.aforo === row.id) : { montoDeclarado: 0 };
-            desglose = desglose ? desglose : { montoDeclarado: 0 }
+            desglose = desglose ? desglose : { montoDeclarado: 0 };
             return {
               codigo: row.numeroReferencia,
               descripcion: row.descripcion,
@@ -3905,8 +3904,8 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
         const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
         const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
         const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
-        console.log(pdfDir)
-        console.log(dir) 
+        console.log(pdfDir);
+        console.log(dir);
         let buffersArray: any[] = await Promise.all(
           htmlArray.map((html) => {
             return new Promise((res, rej) => {
