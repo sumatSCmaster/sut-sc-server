@@ -191,7 +191,7 @@ export const getSettlementsByDepartment = async (type) => {
         monto: el.monto,
         certificado: el.certificado,
         recibo: el.recibo,
-        contribuyente: await formatContributor(el, client),
+        contribuyente: (await client.query('SELECT id_contribuyente AS id, razon_social AS "razonSocial", documento, tipo_documento AS "tipoDocumento" FROM impuesto.contribuyente WHERE id_contribuyente = $1', [el.id_contribuyente])).rows[0],
       }))
     );
     return { status: 200, message: `Liquidaciones de ${type} obtenidas satisfactoriamente`, liquidaciones };
