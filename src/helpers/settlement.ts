@@ -2901,7 +2901,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
     if (!contributorReference) throw { status: 404, message: 'La sucursal solicitada no existe' };
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(user.tipoUsuario !== 4 && process.usuario) || user.id, userContributor[0].id_contribuyente])).rows[0];
-
+    
     const settlement: Liquidacion[] = await Promise.all(
       impuestos.map(async (el) => {
         const isSpecialSettlement = (await client.query(queries.IS_SPECIAL_SETTLEMENT, [el.ramo])).rows.length > 0;
@@ -2977,7 +2977,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
     const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
     const recibo = await createReceiptForSpecialApplication({ pool: client, user, application: (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement[0].id])).rows[0] });
     await client.query('UPDATE impuesto.liquidacion SET recibo = $1 WHERE id_solicitud = $2', [recibo, application.id_solicitud]);
-    application.recibo = recibo;
+    solicitud.recibo = recibo;
     await sendNotification(
       user,
       `Se ha completado una solicitud de pago especial para el contribuyente con el documento de identidad: ${solicitud.tipoDocumento}-${solicitud.documento}`,
