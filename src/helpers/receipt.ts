@@ -126,7 +126,7 @@ export const generateRepairReceipt = async (payload: { application: number; brea
   try {
     return new Promise(async (res, rej) => {
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/recibo/${applicationView.id}/cierre.pdf`);
-      const dir = `${process.env.SERVER_URL}/sedemat/recibo/${applicationView.id}/recibo.pdf`;
+      const dir = `${process.env.SERVER_URL}/sedemat/recibo/${applicationView.id}/reparo.pdf`;
       // lest total = breakdownData.reduce((prev,next) => prev + (+next.monto), 0);
       // console.log('total',total)
       const linkQr = await qr.toDataURL(dev ? dir : `${process.env.AWS_ACCESS_URL}/sedemat/recibo/${applicationView.id}/reparo.pdf`, { errorCorrectionLevel: 'H' });
@@ -162,6 +162,8 @@ export const generateRepairReceipt = async (payload: { application: number; brea
       });
       if (dev) {
         pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
+          console.log(dir)
+          console.log(pdfDir)
           res(dir);
         });
       } else {
