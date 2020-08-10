@@ -161,9 +161,10 @@ export const generateRepairReceipt = async (payload: { application: number; brea
         },
       });
       if (dev) {
-        pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
+        pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async (err) => {
           console.log(dir)
           console.log(pdfDir)
+          console.log(err)
           res(dir);
         });
       } else {
@@ -177,7 +178,7 @@ export const generateRepairReceipt = async (payload: { application: number; brea
                 await regClient.query('BEGIN');
                 const bucketParams = {
                   Bucket: 'sut-maracaibo',
-                  Key: `/sedemat/recibo/${applicationView.id}/recibo.pdf`,
+                  Key: `/sedemat/recibo/${applicationView.id}/reparo.pdf`,
                 };
                 await S3Client.putObject({
                   ...bucketParams,
