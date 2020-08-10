@@ -150,11 +150,9 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     //AE
     if (branch && branch.referencia_municipal && !AEApplicationExists) {
-      console.log('vergacion por que no dai');
       const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
       if (economicActivities.length === 0) throw { status: 404, message: 'El contribuyente no posee aforos asociados' };
       let lastEA = (await client.query(lastSettlementQuery, [codigosRamo.AE, lastSettlementPayload])).rows.find((el) => !el.datos.hasOwnProperty('descripcion'));
-      console.log('if -> lastEA', lastEA);
 
       const lastEAPayment = (lastEA && moment(lastEA.fecha_liquidacion)) || moment().month(0);
       const pastMonthEA = (lastEA && moment(lastEA.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
@@ -171,9 +169,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
             economicActivities.map(async (el) => {
               const lastMonthPayment = (await client.query(queries.GET_LAST_AE_SETTLEMENT_BY_AE_ID, [el.id_actividad_economica, branch.id_registro_municipal])).rows[0];
               const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment).startOf('month').isSameOrAfter(EADate) ? moment(lastMonthPayment.fecha_liquidacion).startOf('month') : EADate) : EADate;
-              console.log('if -> paymentDate', paymentDate);
               const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M'))) || (!lastMonthPayment && dateInterpolation) || 0;
-              console.log('if -> interpolation', interpolation);
               // paymentDate = paymentDate.isSameOrBefore(lastEAPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
               if (interpolation === 0) return null;
               return {
@@ -2134,7 +2130,6 @@ export const insertSettlements = async ({ process, user }) => {
     const userHasContributor = userContributor.length > 0;
     if (!userHasContributor) throw { status: 404, message: 'El usuario no esta asociado con ningun contribuyente' };
     const contributorReference = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [process.rim, process.contribuyente])).rows[0];
-    console.log(contributorReference);
     const benefittedUser = (await client.query(queries.GET_USER_IN_CHARGE_OF_BRANCH_BY_ID, [contributorReference?.id_registro_municipal])).rows[0];
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.tipoUsuario !== 4 ? process.usuario || null : user.id, process.contribuyente])).rows[0];
@@ -2299,7 +2294,6 @@ export const insertSettlements = async ({ process, user }) => {
             desglose: el.desglose ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
             fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },
           };
-          console.log(el.ramo);
           const liquidacion = (
             await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
               application.id_solicitud,

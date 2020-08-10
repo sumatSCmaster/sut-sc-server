@@ -41,13 +41,13 @@ passport.deserializeUser((user: string, done) => {
   done(null, JSON.parse(user));
 });
 
-app.use((req, res, next) => {
-  const { totalCount, waitingCount, idleCount } = Pool.getInstance();
-  console.log('idleCount', idleCount);
-  console.log('waitingCount', waitingCount);
-  console.log('totalCount', totalCount);
-  return next();
-});
+// app.use((req, res, next) => {
+//   const { totalCount, waitingCount, idleCount } = Pool.getInstance();
+//   console.log('idleCount', idleCount);
+//   console.log('waitingCount', waitingCount);
+//   console.log('totalCount', totalCount);
+//   return next();
+// });
 
 app.use(passport.initialize());
 app.use(passport.session());
