@@ -238,15 +238,15 @@ export const insertRetentions = async ({ process, user }) => {
           ])
         ).rows[0];
 
-        try {
-          await Promise.all(
-            el.items.map(
-              async (x) => await client.query(queries.CREATE_RETENTION_DETAIL, [liquidacion.id_liquidacion, x.rif, x.rim, x.razonSocial, x.tipoServicio, x.fecha, x.baseImponible, x.montoRetenido, x.porcentaje, x.codActividad, x.numeroFactura])
-            )
-          );
-        } catch (e) {
-          throw { status: 403, message: 'Dentro de su declaracion existe algun RIF con RIM existente. Verifique su declaracion.' };
-        }
+        await Promise.all(
+          el.items.map(async (x) => {
+            try {
+              await client.query(queries.CREATE_RETENTION_DETAIL, [liquidacion.id_liquidacion, x.rif, x.rim, x.razonSocial, x.tipoServicio, x.fecha, x.baseImponible, x.montoRetenido, x.porcentaje, x.codActividad, x.numeroFactura]);
+            } catch (e) {
+              throw { status: 403, message: `Verifique el rif: ${x.rif} dentro de su declaracion, pues este posee un RIM asociado` };
+            }
+          })
+        );
 
         return {
           id: liquidacion.id_liquidacion,
