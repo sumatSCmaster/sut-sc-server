@@ -239,9 +239,13 @@ export const insertRetentions = async ({ process, user }) => {
         ).rows[0];
 
         await Promise.all(
-          el.items.map(
-            async (x) => await client.query(queries.CREATE_RETENTION_DETAIL, [liquidacion.id_liquidacion, x.rif, x.rim, x.razonSocial, x.tipoServicio, x.fecha, x.baseImponible, x.montoRetenido, x.porcentaje, x.codActividad, x.numeroFactura])
-          )
+          el.items.map(async (x) => {
+            try {
+              await client.query(queries.CREATE_RETENTION_DETAIL, [liquidacion.id_liquidacion, x.rif, x.rim, x.razonSocial, x.tipoServicio, x.fecha, x.baseImponible, x.montoRetenido, x.porcentaje, x.codActividad, x.numeroFactura]);
+            } catch (e) {
+              throw { status: 403, message: `Verifique el rif: ${x.rif} dentro de su declaracion de ${el.fechaCancelada.month} ${el.fechaCancelada.year}, pues este posee un RIM asociado.`, rif: x.rif, fechaCancelada: el.fechaCancelada };
+            }
+          })
         );
 
         return {
@@ -276,9 +280,10 @@ export const insertRetentions = async ({ process, user }) => {
     console.log(error);
     client.query('ROLLBACK');
     throw {
-      status: 500,
+      ...error,
+      status: error.status || 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al crear solicitud de retenciones',
+      message: errorMessageGenerator(error) || error.message || 'Error al crear solicitud de retenciones',
     };
   } finally {
     client.release();
