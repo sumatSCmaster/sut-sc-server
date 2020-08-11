@@ -755,8 +755,6 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
     } else {
       if (aprobado) {
         if (resources.tipoTramite === 28) {
-          const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
-          datos = prevData.datos;
           datos.idTramite = procedure.idTramite;
           procedure.datos = await approveContributorAELicense({ data: datos, client });
         }
