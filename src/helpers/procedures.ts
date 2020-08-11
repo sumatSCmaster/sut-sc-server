@@ -739,6 +739,12 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       await approveContributorBenefits({ data: datos, client });
     }
 
+    if (procedure.sufijo === 'lae') {
+      const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
+      prevData.datos.funcionario = { ...procedure.datos.funcionario };
+      datos = prevData.datos;
+    }
+
     if (procedure.sufijo === 'ompu') {
       if (aprobado) {
         dir = await createCertificate(procedure, client);
