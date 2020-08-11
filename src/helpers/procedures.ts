@@ -744,6 +744,13 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       prevData.datos.funcionario = { ...procedure.datos };
       datos = prevData.datos;
       datos.idTramite = procedure.idTramite;
+      datos.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
+        monto: row.monto,
+        formaPago: row.metodo_pago,
+        banco: row.nombre,
+        fecha: row.fecha_de_pago,
+        nro: row.referencia,
+      }));
     }
 
     if (procedure.sufijo === 'ompu') {
