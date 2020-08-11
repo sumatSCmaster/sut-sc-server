@@ -38,7 +38,7 @@ export const getRepairYears = async ({ document, reference, docType, user }: { d
     if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
     if (!branch) throw { status: 404, message: 'No existe el RIM de Agente de Retención proporcionado' };
-    const REPApplicationExists = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_IN_YEAR_FOR_CODE_AND_RIM, [codigosRamo.REP, reference])).rows[0];
+    const REPApplicationExists = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.REP, reference])).rows[0];
     if (!!REPApplicationExists) throw { status: 409, message: 'Ya existe una solicitud de reparos para este contribuyente en el presente año' };
     const now = moment(new Date());
 
