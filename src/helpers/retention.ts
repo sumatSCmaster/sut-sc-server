@@ -376,6 +376,7 @@ export const getRetentionAgents = async () => {
   try {
     const retentionAgents = (await client.query(queries.GET_RETENTION_AGENTS)).rows.map((contributor) => ({
       id: contributor.id_contribuyente,
+      idRim: contributor.id_registro_municipal,
       tipoDocumento: contributor.tipo_documento,
       tipoContribuyente: contributor.tipo_contribuyente,
       documento: contributor.documento,
