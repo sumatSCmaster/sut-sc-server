@@ -739,6 +739,20 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       await approveContributorBenefits({ data: datos, client });
     }
 
+    if (resources.tipoTramite === 28) {
+      const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
+      prevData.datos.funcionario = { ...procedure.datos };
+      datos = prevData.datos;
+      datos.idTramite = procedure.idTramite;
+      datos.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
+        monto: row.monto,
+        formaPago: row.metodo_pago,
+        banco: row.nombre,
+        fecha: row.fecha_de_pago,
+        nro: row.referencia,
+      }));
+    }
+
     if (procedure.sufijo === 'ompu') {
       if (aprobado) {
         dir = await createCertificate(procedure, client);
@@ -748,12 +762,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       }
     } else {
       if (aprobado) {
-        if (resources.tipoTramite === 28) {
-          const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
-          datos = prevData.datos;
-          datos.idTramite = procedure.idTramite;
-          procedure.datos = await approveContributorAELicense({ data: datos, client });
-        }
+        if (resources.tipoTramite === 28) procedure.datos = await approveContributorAELicense({ data: datos, client });
         if (procedure.sufijo !== 'bc') dir = await createCertificate(procedure, client);
         respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, aprobado]);
       } else {

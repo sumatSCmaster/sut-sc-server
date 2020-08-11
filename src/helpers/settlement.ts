@@ -2818,8 +2818,8 @@ export const internalUserLinking = async (data) => {
   }
 };
 
-const recursiveRebate = (array, number, abs): any[] => {
-  const minus = abs ? number / array.filter((a) => +a.monto > 0).length : number / array.length;
+const recursiveRebate = (array, number): any[] => {
+  const minus = number / array.filter((a) => +a.monto > 0).length;
   let _array = array.map((e) => {
     const _e = Object.assign({}, e);
     _e.monto = +_e.monto > 0 ? +_e.monto - minus : +_e.monto;
@@ -2833,8 +2833,7 @@ const recursiveRebate = (array, number, abs): any[] => {
         _e.monto = +e.monto < 0 ? 0 : +e.monto;
         return _e;
       }),
-      diff,
-      true
+      diff
     );
   } else return _array;
 };
@@ -2852,7 +2851,7 @@ export const addRebateForDeclaration = async ({ process, user }) => {
     const montoPerLiq = montoRebajado / nroLiquidaciones;
     await client.query('BEGIN');
     const test = await Promise.all(
-      recursiveRebate(hasAE, montoRebajado, false).map(async (el) => {
+      recursiveRebate(hasAE, montoRebajado).map(async (el) => {
         const oldValue = hasAE.find((x) => x.id_liquidacion === el.id_liquidacion).monto;
         console.log('if -> oldValue', oldValue);
         const newDatos = { ...el.datos, montoRebajado: oldValue - el.monto };
