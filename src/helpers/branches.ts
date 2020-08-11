@@ -36,7 +36,6 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
   try {
     return new Promise(async (res, rej) => {
       console.log(payload)
-      console.log((await client.query('SELECT $1::timestamptz AS from, $2::timestamptz AS to', [payload.from, payload.to])).rows)
       const alcaldia = payload.alcaldia;
       let pagos = {};
       const ingress = await client.query(queries.GET_INGRESS, [payload.from, payload.to]);
@@ -147,15 +146,14 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
       //console.log(compens);
       //console.log('branches 2', branches);
       if (!alcaldia) {
-        const transfersByBank = (await client.query(queries.GET_TRANSFERS_BY_BANK, [payload.from, payload.to])).rows;
-        const transfersByBank2 =(await client.query(queries.GET_TRANSFERS_BY_BANK, [payload.from, payload.to]));
-        console.log(transfersByBank2)
+        const transfersByBank = (await client.query(queries.GET_TRANSFERS_BY_BANK, [payload.from, payload.to, payload.from, payload.to, payload.from, payload.to, payload.from, payload.to, payload.from, payload.to])).rows;
+
         const totalTranfersByBank = +transfersByBank.reduce((prev, next) => prev + +next.monto, 0);
 
         const cash = (await client.query(queries.GET_CASH_REPORT, [payload.from, payload.to])).rows;
         const cashTotal = +cash[0].monto || 0;
 
-        const pos = +(await client.query(queries.GET_POS, [payload.from, payload.to])).rows[0].total || 0;
+        const pos = +(await client.query(queries.GET_POS, [payload.from, payload.to, payload.from, payload.to])).rows[0].total || 0;
 
         const check = +(await client.query(queries.GET_CHECKS, [payload.from, payload.to])).rows[0].total || 0;
 
