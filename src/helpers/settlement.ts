@@ -40,7 +40,7 @@ const idTiposSolicitud = {
   PP: 97,
 };
 
-const codigosRamo = {
+export const codigosRamo = {
   AE: 112,
   SM: 122,
   PP: 114,
