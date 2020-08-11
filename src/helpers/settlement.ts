@@ -2385,7 +2385,9 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
       ).rows[0];
     }
     const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0];
+    console.log('addTaxApplicationPayment -> solicitud', solicitud);
     const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
+    console.log('addTaxApplicationPayment -> pagoSum', pagoSum);
     if (pagoSum < solicitud.monto_total) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
     const creditoPositivo = pagoSum - solicitud.monto_total;
     await Promise.all(
