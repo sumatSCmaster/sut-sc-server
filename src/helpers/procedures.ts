@@ -743,6 +743,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
       prevData.datos.funcionario = { ...procedure.datos };
       datos = prevData.datos;
+      datos.idTramite = procedure.idTramite;
     }
 
     if (procedure.sufijo === 'ompu') {
@@ -754,10 +755,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       }
     } else {
       if (aprobado) {
-        if (resources.tipoTramite === 28) {
-          datos.idTramite = procedure.idTramite;
-          procedure.datos = await approveContributorAELicense({ data: datos, client });
-        }
+        if (resources.tipoTramite === 28) procedure.datos = await approveContributorAELicense({ data: datos, client });
         if (procedure.sufijo !== 'bc') dir = await createCertificate(procedure, client);
         respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, aprobado]);
       } else {
