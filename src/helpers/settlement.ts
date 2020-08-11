@@ -1214,6 +1214,7 @@ export const patchSettlement = async ({ id, settlement }) => {
       ...prevSettlement.datos,
       fecha: { month: proposedDate.locale('es').format('MMMM'), year: proposedDate.year() },
     };
+    //1000, validando
     const patchApplication = (await client.query(queries.GET_PATCH_APPLICATION_BY_ORIGINAL_ID_AND_STATE, [prevSettlement.id_solicitud, estado])).rows[0];
     if (!patchApplication) {
       const prevApplication = (await client.query(queries.GET_APPLICATION_BY_ID, [prevSettlement.id_solicitud])).rows[0];
@@ -1222,6 +1223,9 @@ export const patchSettlement = async ({ id, settlement }) => {
       // await client.query('UPDATE impuesto.solicitud SET tipo_solicitud = $1 WHERE id_solicitud = $2', ['CORRECCION', newApplication.id_solicitud]);
       await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [newApplication.id_solicitud, applicationStateEvents.INGRESARDATOS]);
       await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [fechaLiquidacion, newApplication.id_solicitud]);
+      // if (estado === 'validando') {
+      //   await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [newApplication.id_solicitud, applicationStateEvents.VALIDAR]);
+      // }
       if (estado === 'finalizado') {
         await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [newApplication.id_solicitud, applicationStateEvents.APROBARCAJERO]);
         await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [fechaLiquidacion, newApplication.id_solicitud]);
@@ -2134,130 +2138,132 @@ export const insertSettlements = async ({ process, user }) => {
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.tipoUsuario !== 4 ? process.usuario || null : user.id, process.contribuyente])).rows[0];
 
-    const hasAE = impuestos.find((el) => el.ramo === 'AE');
-    if (hasAE) {
-      const now = moment().locale('ES');
-      const pivot = moment().locale('ES');
-      const onlyAE = impuestos
-        .filter((el) => el.ramo === 'AE')
-        .sort((a, b) => (pivot.month(a.fechaCancelada.month).toDate() === pivot.month(b.fechaCancelada.month).toDate() ? 0 : pivot.month(a.fechaCancelada.month).toDate() > pivot.month(b.fechaCancelada.month).toDate() ? 1 : -1));
-      const lastSavedFine = (await client.query(queries.GET_LAST_FINE_FOR_LATE_APPLICATION, [contributorReference.id_registro_municipal])).rows[0];
-      if (lastSavedFine && moment(lastSavedFine.fecha_liquidacion).year() === now.year() && moment(lastSavedFine.fecha_liquidacion).month() < now.month()) {
-        finingAmount = lastSavedFine.datos.monto;
-        const proposedFiningDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month();
-        const finingDate = moment(lastSavedFine.fecha_liquidacion).month() < proposedFiningDate ? moment(lastSavedFine.fecha_liquidacion).month() : proposedFiningDate;
-        finingMonths = new Array(now.month() - 1 - finingDate).fill({});
-        if (finingMonths.length > 0) {
-          let counter = finingDate;
-          finingMonths = await Promise.all(
-            finingMonths.map((el, i) => {
-              const multa = Promise.resolve(
-                client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
-                  application.id_solicitud,
-                  fixatedAmount(finingAmount * UTMM),
-                  {
-                    fecha: {
-                      month: moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
-                      year: now.year(),
-                    },
-                    descripcion: 'Multa por Declaracion Fuera de Plazo',
-                    monto: finingAmount,
-                  },
-                  moment().month(counter).endOf('month').format('MM-DD-YYYY'),
-                  (contributorReference && contributorReference.id_registro_municipal) || null,
-                ])
-              )
-                .then((el) => el.rows[0])
-                .then((data) => {
-                  return { id: data.id_liquidacion, fecha: data.datos.fecha, monto: +data.monto, descripcion: data.datos.descripcion };
-                });
-              counter++;
-              finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
-              return multa;
-            })
-          );
-        }
-        if (now.date() > 10) {
-          const rightfulMonth = now.month() - 1;
-          const multa = (
-            await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
-              application.id_solicitud,
-              fixatedAmount(finingAmount * UTMM),
-              {
-                fecha: {
-                  month: moment().month(rightfulMonth).toDate().toLocaleDateString('ES', { month: 'long' }),
-                  year: now.year(),
-                },
-                descripcion: 'Multa por Declaracion Fuera de Plazo',
-                monto: finingAmount,
-              },
-              moment().endOf('month').format('MM-DD-YYYY'),
-              (contributorReference && contributorReference.id_registro_municipal) || null,
-            ])
-          ).rows[0];
-          const fine = { id: multa.id_liquidacion, fecha: multa.datos.fecha, monto: +multa.monto, descripcion: multa.datos.descripcion };
-          finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
-          finingMonths.push(fine);
-        }
-      } else {
-        finingAmount = 10;
-        const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month() + 1;
-        finingMonths = new Array(now.month() - finingDate).fill({});
-        if (finingMonths.length > 0) {
-          let counter = finingDate - 1;
-          finingMonths = await Promise.all(
-            finingMonths.map((el, i) => {
-              const multa = Promise.resolve(
-                client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
-                  application.id_solicitud,
-                  fixatedAmount(finingAmount * UTMM),
-                  {
-                    fecha: {
-                      month: moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
-                      year: now.year(),
-                    },
-                    descripcion: 'Multa por Declaracion Fuera de Plazo',
-                    monto: finingAmount,
-                  },
-                  moment().month(counter).endOf('month').format('MM-DD-YYYY'),
-                  (contributorReference && contributorReference.id_registro_municipal) || null,
-                ])
-              )
-                .then((el) => el.rows[0])
-                .then((data) => {
-                  return { id: data.id_liquidacion, fecha: data.datos.fecha, monto: +data.monto, descripcion: data.datos.descripcion };
-                });
-              counter++;
-              finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
-              return multa;
-            })
-          );
-        }
-        if (now.date() > 10) {
-          const rightfulMonth = moment().month(now.month()).month() - 1;
-          const multa = (
-            await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
-              application.id_solicitud,
-              fixatedAmount(finingAmount * UTMM),
-              {
-                fecha: {
-                  month: moment().month(rightfulMonth).toDate().toLocaleDateString('ES', { month: 'long' }),
-                  year: now.year(),
-                },
-                descripcion: 'Multa por Declaracion Fuera de Plazo',
-                monto: finingAmount,
-              },
-              moment().endOf('month').format('MM-DD-YYYY'),
-              (contributorReference && contributorReference.id_registro_municipal) || null,
-            ])
-          ).rows[0];
-          const fine = { id: multa.id_liquidacion, fecha: multa.datos.fecha, monto: +multa.monto, descripcion: multa.datos.descripcion };
+    // ! Esto hay que descomentarlo el proximo mes
+    // const hasAE = impuestos.find((el) => el.ramo === 'AE');
+    // if (hasAE) {
+    //   const now = moment().locale('ES');
+    //   const pivot = moment().locale('ES');
+    //   const onlyAE = impuestos
+    //     .filter((el) => el.ramo === 'AE')
+    //     .sort((a, b) => (pivot.month(a.fechaCancelada.month).toDate() === pivot.month(b.fechaCancelada.month).toDate() ? 0 : pivot.month(a.fechaCancelada.month).toDate() > pivot.month(b.fechaCancelada.month).toDate() ? 1 : -1));
+    //   const lastSavedFine = (await client.query(queries.GET_LAST_FINE_FOR_LATE_APPLICATION, [contributorReference.id_registro_municipal])).rows[0];
+    //   if (lastSavedFine && moment(lastSavedFine.fecha_liquidacion).year() === now.year() && moment(lastSavedFine.fecha_liquidacion).month() < now.month()) {
+    //     finingAmount = lastSavedFine.datos.monto;
+    //     const proposedFiningDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month();
+    //     const finingDate = moment(lastSavedFine.fecha_liquidacion).month() < proposedFiningDate ? moment(lastSavedFine.fecha_liquidacion).month() : proposedFiningDate;
+    //     finingMonths = new Array(now.month() - 1 - finingDate).fill({});
+    //     if (finingMonths.length > 0) {
+    //       let counter = finingDate;
+    //       finingMonths = await Promise.all(
+    //         finingMonths.map((el, i) => {
+    //           const multa = Promise.resolve(
+    //             client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
+    //               application.id_solicitud,
+    //               fixatedAmount(finingAmount * UTMM),
+    //               {
+    //                 fecha: {
+    //                   month: moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
+    //                   year: now.year(),
+    //                 },
+    //                 descripcion: 'Multa por Declaracion Fuera de Plazo',
+    //                 monto: finingAmount,
+    //               },
+    //               moment().month(counter).endOf('month').format('MM-DD-YYYY'),
+    //               (contributorReference && contributorReference.id_registro_municipal) || null,
+    //             ])
+    //           )
+    //             .then((el) => el.rows[0])
+    //             .then((data) => {
+    //               return { id: data.id_liquidacion, fecha: data.datos.fecha, monto: +data.monto, descripcion: data.datos.descripcion };
+    //             });
+    //           counter++;
+    //           finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
+    //           return multa;
+    //         })
+    //       );
+    //     }
+    //     if (now.date() > 10) {
+    //       const rightfulMonth = now.month() - 1;
+    //       const multa = (
+    //         await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
+    //           application.id_solicitud,
+    //           fixatedAmount(finingAmount * UTMM),
+    //           {
+    //             fecha: {
+    //               month: moment().month(rightfulMonth).toDate().toLocaleDateString('ES', { month: 'long' }),
+    //               year: now.year(),
+    //             },
+    //             descripcion: 'Multa por Declaracion Fuera de Plazo',
+    //             monto: finingAmount,
+    //           },
+    //           moment().endOf('month').format('MM-DD-YYYY'),
+    //           (contributorReference && contributorReference.id_registro_municipal) || null,
+    //         ])
+    //       ).rows[0];
+    //       const fine = { id: multa.id_liquidacion, fecha: multa.datos.fecha, monto: +multa.monto, descripcion: multa.datos.descripcion };
+    //       finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
+    //       finingMonths.push(fine);
+    //     }
+    //   } else {
+    //     finingAmount = 10;
+    //     const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month() + 1;
+    //     finingMonths = new Array(now.month() - finingDate).fill({});
+    //     if (finingMonths.length > 0) {
+    //       let counter = finingDate - 1;
+    //       finingMonths = await Promise.all(
+    //         finingMonths.map((el, i) => {
+    //           const multa = Promise.resolve(
+    //             client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
+    //               application.id_solicitud,
+    //               fixatedAmount(finingAmount * UTMM),
+    //               {
+    //                 fecha: {
+    //                   month: moment().month(counter).toDate().toLocaleDateString('ES', { month: 'long' }),
+    //                   year: now.year(),
+    //                 },
+    //                 descripcion: 'Multa por Declaracion Fuera de Plazo',
+    //                 monto: finingAmount,
+    //               },
+    //               moment().month(counter).endOf('month').format('MM-DD-YYYY'),
+    //               (contributorReference && contributorReference.id_registro_municipal) || null,
+    //             ])
+    //           )
+    //             .then((el) => el.rows[0])
+    //             .then((data) => {
+    //               return { id: data.id_liquidacion, fecha: data.datos.fecha, monto: +data.monto, descripcion: data.datos.descripcion };
+    //             });
+    //           counter++;
+    //           finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
+    //           return multa;
+    //         })
+    //       );
+    //     }
+    //     if (now.date() > 10) {
+    //       const rightfulMonth = moment().month(now.month()).month() - 1;
+    //       const multa = (
+    //         await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
+    //           application.id_solicitud,
+    //           fixatedAmount(finingAmount * UTMM),
+    //           {
+    //             fecha: {
+    //               month: moment().month(rightfulMonth).toDate().toLocaleDateString('ES', { month: 'long' }),
+    //               year: now.year(),
+    //             },
+    //             descripcion: 'Multa por Declaracion Fuera de Plazo',
+    //             monto: finingAmount,
+    //           },
+    //           moment().endOf('month').format('MM-DD-YYYY'),
+    //           (contributorReference && contributorReference.id_registro_municipal) || null,
+    //         ])
+    //       ).rows[0];
+    //       const fine = { id: multa.id_liquidacion, fecha: multa.datos.fecha, monto: +multa.monto, descripcion: multa.datos.descripcion };
 
-          finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
-          finingMonths.push(fine);
-        }
-      }
-    }
+    //       finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
+    //       finingMonths.push(fine);
+    //     }
+    //   }
+    // }
+    // ! Esto hay que descomentarlo el proximo mes
 
     const impuestosExt = impuestos.map((x, i, j) => {
       if (x.ramo === 'AE') {
