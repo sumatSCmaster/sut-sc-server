@@ -739,9 +739,9 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       await approveContributorBenefits({ data: datos, client });
     }
 
-    if (procedure.sufijo === 'lae') {
+    if (resources.tipoTramite === 28) {
       const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
-      prevData.datos.funcionario = { ...procedure.datos.funcionario };
+      prevData.datos.funcionario = { ...procedure.datos };
       datos = prevData.datos;
     }
 
