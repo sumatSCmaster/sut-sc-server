@@ -76,7 +76,6 @@ export const getRepairYears = async ({ document, reference, docType, user }: { d
   }
 };
 
-// ! TODO: hacer el desglose de retencion y apuntar al ramo de retencion
 export const insertRepairs = async ({ process, user }) => {
   const client = await pool.connect();
   const { reparo } = process;
