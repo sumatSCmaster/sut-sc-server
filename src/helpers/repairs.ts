@@ -108,7 +108,7 @@ export const insertRepairs = async ({ process, user }) => {
           const liquidacion = (
             await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
               application.id_solicitud,
-              fixatedAmount(+el.reduce((i, j) => i + j.monto, 0) * 1.3),
+              fixatedAmount(+el.reduce((i, j) => i + j.monto, 0)),
               'REP',
               'Pago ordinario',
               datos,
@@ -132,6 +132,17 @@ export const insertRepairs = async ({ process, user }) => {
       );
       settlements.push(settlement);
     }
+    const multa = (
+      await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+        application.id_solicitud,
+        fixatedAmount(process.total * .3),
+        'REP',
+        'Pago ordinario',
+        {month: moment().locale('es').format('MMMM'), year: moment().year()},
+        moment().endOf('month').format('MM-DD-YYYY'),
+        (contributorReference && contributorReference.id_registro_municipal) || null,
+      ])
+    ).rows[0];
     let state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
     if (settlements.flat().reduce((x, y) => x + +y.monto, 0) === 0) {
       (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.VALIDAR])).rows[0].state;

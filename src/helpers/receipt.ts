@@ -122,7 +122,7 @@ export const generateRepairReceipt = async (payload: { application: number; brea
   const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [applicationView.idLiquidacion])).rows[0];
   // console.log('breakdowndata', breakdownData)
   const aforos: any[] = [];
-  payload.breakdownData.map((el) => el.desglose.map((x) => aforos.push({ ...x, fecha: el.fecha })));
+  payload.breakdownData.map((el) => el.desglose.map((x) => aforos.push({ ...x, fecha: el.fecha})));
   try {
     return new Promise(async (res, rej) => {
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/recibo/${applicationView.id}/cierre.pdf`);
@@ -150,6 +150,7 @@ export const generateRepairReceipt = async (payload: { application: number; brea
                 mes: row.fecha.month,
                 anio: row.fecha.year,
                 fechaLiquidacion: moment().format('MM-DD-YYYY'),
+                monto: row.monto
               };
             }),
             14
