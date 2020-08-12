@@ -53,7 +53,7 @@ block content
           div.row-constancy.break-page
             div(style={'text-align':'start' }) #{row.descripcion}
             div.center #{row.mes, row.anio}
-            div.center #{new Intl.NumberFormat('de-DE').format(row.monto)}
+            div.center #{new Intl.NumberFormat('de-DE', {minimumFractionDigits:2}).format(row.monto ? row.monto : 0)}
       hr.divider
       div.row-constancy.break-page
         div(style={'-webkit-flex': '2'}).end SubTotal
