@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
 import { authenticate } from 'passport';
 import { updateUser, getUsersByContributor, userSearch, unlinkContributorFromUser, updateUserInformation, addUserVerification } from '@helpers/user';
+import { updateUserV } from '@validations/auth';
 
 const router = Router();
 
@@ -26,13 +27,17 @@ router.get('/:contributor', authenticate('jwt'), async (req, res) => {
   if (data) res.status(200).json({ status: 200, message: 'Usuarios SUT obtenidos', usuarios: data });
 });
 
-router.put('/:id', authenticate('jwt'), async (req, res) => {
-  const { id } = req.params;
-  const { usuario: user } = req.body;
-  const [err, data] = await fulfill(updateUserInformation({ user, id }));
-  if (err) res.status(err.status).json(err);
-  if (data) res.status(data.status).json(data);
-});
+router.put(
+  '/:id',
+  authenticate('jwt'),
+  /*updateUserV,*/ async (req, res) => {
+    const { id } = req.params;
+    const { usuario: user } = req.body;
+    const [err, data] = await fulfill(updateUserInformation({ user, id }));
+    if (err) res.status(err.status).json(err);
+    if (data) res.status(data.status).json(data);
+  }
+);
 
 router.patch('/', authenticate('jwt'), validateUser, async (req, res) => {
   const [err, data] = await fulfill(updateUser(req.body.user));

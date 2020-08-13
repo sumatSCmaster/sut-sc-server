@@ -209,6 +209,21 @@ export const createOfficial = [
   check('usuario.password').exists().withMessage('Debe incluir una contraseña para el usuario'),
 ];
 
+export const updateUserV = [
+  check('usuario.documento').exists().withMessage('Debe incluir la cedula del usuario').isInt().withMessage('Cedula invalida'),
+  check('usuario.nombreCompleto').exists().withMessage('Debe incluir el nombre del usuario').isString().isLength({ min: 1 }).withMessage('El nombre no puede ser vacio'),
+  check('usuario.nombreUsuario').exists().withMessage('Debe incluir el nombre de usuario').isString().withMessage('Nombre de usuario invalido'),
+  check('usuario.direccion').exists().withMessage('Debe incluir la direccion del usuario').isString().withMessage('Direccion invalida'),
+  check('usuario.tipoDocumento').exists().withMessage('Debe incluir la nacionalidad del usuario').isString().withMessage('Nacionalidad invalida'),
+  check('usuario.telefono').exists().withMessage('Debe incluir el telefono del usuario').isString().withMessage('Telefono invalido'),
+  // check('usuario.tipoUsuario')
+  //   .exists()
+  //   .withMessage('Debe incluir el tipo de usuario')
+  //   .isNumeric()
+  //   .withMessage('Tipo usuario debe ser un valor numerico'),
+  // check('usuario.password').exists().withMessage('Debe incluir una contraseña para el usuario'),
+];
+
 export const updateOfficial = createOfficial.slice(0, createOfficial.length - 1);
 
 export const login = [
