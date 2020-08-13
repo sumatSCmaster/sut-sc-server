@@ -2386,7 +2386,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
     }
     const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0];
     console.log('addTaxApplicationPayment -> solicitud', solicitud);
-    const pagoSum = +fixatedAmount(+payment.map((e) => e.costo).reduce((e, i) => e + i, 0));
+    const pagoSum = +payment.map((e) => +fixatedAmount(+e.costo)).reduce((e, i) => e + i, 0);
     console.log('addTaxApplicationPayment -> pagoSum', pagoSum);
     if (pagoSum < solicitud.monto_total) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
     const creditoPositivo = pagoSum - solicitud.monto_total;
@@ -4432,7 +4432,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
 };
 
 export const fixatedAmount = (num: number) => {
-  return parseFloat((+num.toFixed(1)).toPrecision(15)).toFixed(2);
+  return parseFloat(num.toPrecision(15)).toFixed(2);
 };
 
 export const getSettlementsReport = async (user, payload: { from: Date; to: Date; ramo: number }) => {
