@@ -4432,7 +4432,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
 };
 
 export const fixatedAmount = (num: number) => {
-  return parseFloat((+num.toFixed(1)).toPrecision(15)).toFixed(2);
+  return parseFloat(num.toPrecision(15)).toFixed(2);
 };
 
 export const getSettlementsReport = async (user, payload: { from: Date; to: Date; ramo: number }) => {
