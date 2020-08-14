@@ -218,11 +218,15 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
   }
 }
 
-export const updateEstate = async ({ id, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble }) => {
+export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos }) => {
   const client = await pool.connect();
   try{
     await client.query('BEGIN');
-    const estate = (await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, id])).rows[0];
+    await client.query(`DELETE FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1`, [id])
+    const appraisals = await Promise.all(avaluos.map((row) => {
+      return client.query(queries.INSERT_ESTATE_VALUE, [estate.id, row.avaluo, row.anio])
+    }))
+    const estate = (await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, codCat, id])).rows[0];
 
     await client.query('COMMIT');
 
