@@ -96,6 +96,7 @@ export const createPersonalEstate = async (procedure) => {
 export const taxPayerEstatesByRIM = async ({ typeDoc, rif, rim }) => {
   const client = await pool.connect();
   try{
+    console.log('taxPayerEStateBYRIM')
     const rimData = (await client.query(queries.GET_RIM_DATA, [rim]));
     if (rimData.rowCount === 0) {
       throw new Error('RIM no encontrado');
@@ -151,7 +152,7 @@ export const userEstates = async ({ typeDoc, doc }) => {
 export const getEstateByCod = async ({ codCat }) => {
   const client = await pool.connect();
   try{
-
+    console.log('getEstateByCod')
     const estate = (await client.query(queries.GET_ESTATE_BY_CODCAT, [codCat]));
 
     if(estate.rowCount === 0){
