@@ -135,10 +135,10 @@ export const insertRepairs = async ({ process, user }) => {
     const multa = (
       await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
         application.id_solicitud,
-        fixatedAmount(process.total * .3),
+        fixatedAmount(process.total * 0.3),
         'REP',
-        'Pago ordinario',
-        {month: moment().locale('es').format('MMMM'), year: moment().year()},
+        'Multa por reparo',
+        { month: moment().locale('es').format('MMMM'), year: moment().year() },
         moment().endOf('month').format('MM-DD-YYYY'),
         (contributorReference && contributorReference.id_registro_municipal) || null,
       ])
