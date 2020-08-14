@@ -63,7 +63,7 @@ export const updateContributorActivities = async ({ branchId, activities, branch
           const ae = (await client.query(queries.UPDATE_ECONOMIC_ACTIVITIES_FOR_BRANCH, [branchId, x.codigo, x.desde])).rows[0];
           const aeExists = (await client.query(queries.GET_LAST_AE_SETTLEMENT_BY_AE_ID, [x.id, branchId])).rows[0];
           const settlement =
-            !aeExists &&
+            // !aeExists &&
             (
               await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
                 null,
