@@ -24,6 +24,7 @@ export const getEstatesInfo = async () => {
 export const getEstateInfoByCod = async (cod: string) => {
   const client = await pool.connect();
   try {
+    console.log('GetEstateInfoByCod')
     const estate = (await client.query(queries.GET_ONE_PROPERTY_BY_COD, [cod])).rows;
     const res = await addOwners(estate, client);
     return { data: res[0] };
