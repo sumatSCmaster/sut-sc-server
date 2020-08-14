@@ -138,7 +138,7 @@ export const insertRepairs = async ({ process, user }) => {
         fixatedAmount(process.total * 0.3),
         'REP',
         'Multa por reparo',
-        { month: moment().locale('es').format('MMMM'), year: moment().year() },
+        { fecha: { month: moment().locale('es').format('MMMM'), year: moment().year() } },
         moment().endOf('month').format('MM-DD-YYYY'),
         (contributorReference && contributorReference.id_registro_municipal) || null,
       ])
