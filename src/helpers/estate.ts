@@ -226,7 +226,7 @@ export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosC
     await client.query('BEGIN');
     await client.query(`DELETE FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1`, [id])
     const appraisals = await Promise.all(avaluos.map((row) => {
-      return client.query(queries.INSERT_ESTATE_VALUE, [estate.id, row.avaluo, row.anio])
+      return client.query(queries.INSERT_ESTATE_VALUE, [id, row.avaluo, row.anio])
     }))
     const estate = (await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, codCat, id])).rows[0];
 
