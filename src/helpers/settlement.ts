@@ -54,17 +54,25 @@ export const checkContributorExists = () => async (req: any, res, next) => {
   const { user } = req;
   const { doc, ref, pref, contrib } = req.query;
   try {
+    console.log('1');
     if (user.tipoUsuario === 4) return next();
+    console.log('2');
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [pref, doc])).rows[0];
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [ref, contributor?.id_contribuyente])).rows[0];
     if (!!ref && !branch) res.status(404).send({ status: 404, message: 'No existe la sucursal solicitada' });
+    console.log('3');
     const branchIsUpdated = branch?.actualizado;
     if (!contributor || (!!contributor && !!ref && !branchIsUpdated)) {
+      console.log('4');
       const x = await externalLinkingForCashier({ document: doc, docType: pref, reference: ref, user, typeUser: contrib });
       res.status(202).json({ status: 202, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: x });
     } else {
+      console.log('5');
+
       return next();
     }
+    console.log('6');
+    return next();
   } catch (error) {
     console.log(error);
     res.send({
@@ -129,18 +137,18 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const fiscalCredit =
       (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.tipo_contribuyente === 'JURIDICO' ? branch.id_registro_municipal : contributor.id_contribuyente, contributor.tipo_contribuyente])).rows[0]?.credito || 0;
     const AEApplicationExists =
-      contributor.tipo_contribuyente === 'JURIDICO' || reference ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.AE, reference])).rows.find((el) => !el.datos.hasOwnProperty('descripcion')) : false;
+      contributor.tipo_contribuyente === 'JURIDICO' || reference ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, reference])).rows.find((el) => !el.datos.hasOwnProperty('descripcion')) : false;
     const SMApplicationExists =
       contributor.tipo_contribuyente === 'JURIDICO'
-        ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.SM, reference])).rows[0]
+        ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.SM, reference])).rows[0]
         : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.SM, contributor.id_contribuyente])).rows[0];
     const IUApplicationExists =
       contributor.tipo_contribuyente === 'JURIDICO'
-        ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.IU, reference])).rows[0]
+        ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.IU, reference])).rows[0]
         : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.IU, contributor.id_contribuyente])).rows[0];
     const PPApplicationExists =
       contributor.tipo_contribuyente === 'JURIDICO'
-        ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.PP, reference])).rows[0]
+        ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.PP, reference])).rows[0]
         : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.PP, contributor.id_contribuyente])).rows[0];
 
     console.log(lastSettlementPayload);

@@ -52,7 +52,7 @@ block content
         each row in item
           div.row-constancy.break-page
             div(style={'text-align':'start' }) #{row.descripcion}
-            div.center #{row.mes, row.anio}
+            div.center #{row.mes}, #{row.anio}
             div.center #{new Intl.NumberFormat('de-DE', {minimumFractionDigits:2}).format(row.monto ? row.monto : 0)}
       hr.divider
       div.row-constancy.break-page

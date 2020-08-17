@@ -122,7 +122,7 @@ export const generateRepairReceipt = async (payload: { application: number; brea
   const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [applicationView.idLiquidacion])).rows[0];
   // console.log('breakdowndata', breakdownData)
   const aforos: any[] = [];
-  payload.breakdownData.map((el) => el.desglose.map((x) => aforos.push({ ...x, fecha: el.fecha})));
+  payload.breakdownData.map((el) => el.desglose.map((x) => aforos.push({ ...x, fecha: el.fecha })));
   try {
     return new Promise(async (res, rej) => {
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/recibo/${applicationView.id}/cierre.pdf`);
@@ -144,13 +144,14 @@ export const generateRepairReceipt = async (payload: { application: number; brea
           telefono: referencia?.telefono_celular,
           items: chunk(
             aforos.map((row) => {
+              console.log('generateRepairReceipt -> row', row);
               return {
                 id: row.aforo,
                 descripcion: row.descripcion,
                 mes: row.fecha.month,
                 anio: row.fecha.year,
                 fechaLiquidacion: moment().format('MM-DD-YYYY'),
-                monto: row.monto
+                monto: row.monto,
               };
             }),
             14
@@ -163,9 +164,9 @@ export const generateRepairReceipt = async (payload: { application: number; brea
       });
       if (dev) {
         pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async (err) => {
-          console.log(dir)
-          console.log(pdfDir)
-          console.log(err)
+          console.log(dir);
+          console.log(pdfDir);
+          console.log(err);
           res(dir);
         });
       } else {
