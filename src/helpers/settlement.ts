@@ -54,17 +54,25 @@ export const checkContributorExists = () => async (req: any, res, next) => {
   const { user } = req;
   const { doc, ref, pref, contrib } = req.query;
   try {
+    console.log('1')
     if (user.tipoUsuario === 4) return next();
+    console.log('2')
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [pref, doc])).rows[0];
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [ref, contributor?.id_contribuyente])).rows[0];
     if (!!ref && !branch) res.status(404).send({ status: 404, message: 'No existe la sucursal solicitada' });
+    console.log('3')
     const branchIsUpdated = branch?.actualizado;
     if (!contributor || (!!contributor && !!ref && !branchIsUpdated)) {
+    console.log('4')
       const x = await externalLinkingForCashier({ document: doc, docType: pref, reference: ref, user, typeUser: contrib });
       res.status(202).json({ status: 202, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: x });
     } else {
+    console.log('5')
+
       return next();
     }
+    console.log('6')
+    return next()
   } catch (error) {
     console.log(error);
     res.send({
