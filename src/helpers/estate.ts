@@ -231,8 +231,8 @@ export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosC
     const estate = (await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, codCat, id]));
 
     await client.query('COMMIT');
-
-    return {inmueble: {...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows }};
+    return {status: 200, message:'Inmueble actualizado'}
+    // return {inmueble: {...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows }};
   } catch (e) {
     await client.query('ROLLBACK');
     throw e;
