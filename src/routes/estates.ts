@@ -11,6 +11,13 @@ router.get('/', async (req, res) => {
   if (data) res.status(200).json({ status: 200, ...data });
 });
 
+router.get('/sedemat/', async (req, res) => {
+  const [error, data] = await fulfill(getEstateByCod(req.query));
+  console.log(error)
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+})
+
 router.get('/:cod', async (req, res) => {
   const [error, data] = await fulfill(getEstateInfoByCod(req.params['cod']));
   if (error) res.status(500).json({ error, status: 500 });
@@ -24,7 +31,6 @@ router.post('/', authenticate('jwt'), async (req, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-//SEDEMAT
 
 router.get('/sedemat/contributor/rim/', async(req, res) => {
   const [error, data] = await fulfill(taxPayerEstatesByRIM(req.query));
@@ -33,12 +39,6 @@ router.get('/sedemat/contributor/rim/', async(req, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-router.get('/sedemat/', async (req, res) => {
-  const [error, data] = await fulfill(getEstateByCod(req.query));
-  console.log(error)
-  if (error) res.status(500).json(error);
-  if (data) res.status(data.status).json(data);
-})
 
 router.post('/sedemat/', async (req, res) => {
   const [error, data] = await fulfill(createBareEstate(req.body));
@@ -54,6 +54,7 @@ router.post('/sedemat/rim/link/', async (req, res) => {
 
 router.patch('/sedemat/estate', async (req, res) => {
   const [error, data] = await fulfill(updateEstate(req.body));
+  console.log(error)
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 })

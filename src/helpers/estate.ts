@@ -24,6 +24,7 @@ export const getEstatesInfo = async () => {
 export const getEstateInfoByCod = async (cod: string) => {
   const client = await pool.connect();
   try {
+    console.log('GetEstateInfoByCod')
     const estate = (await client.query(queries.GET_ONE_PROPERTY_BY_COD, [cod])).rows;
     const res = await addOwners(estate, client);
     return { data: res[0] };
@@ -96,6 +97,7 @@ export const createPersonalEstate = async (procedure) => {
 export const taxPayerEstatesByRIM = async ({ typeDoc, rif, rim }) => {
   const client = await pool.connect();
   try{
+    console.log('taxPayerEStateBYRIM')
     const rimData = (await client.query(queries.GET_RIM_DATA, [rim]));
     if (rimData.rowCount === 0) {
       throw new Error('RIM no encontrado');
@@ -151,7 +153,7 @@ export const userEstates = async ({ typeDoc, doc }) => {
 export const getEstateByCod = async ({ codCat }) => {
   const client = await pool.connect();
   try{
-
+    console.log('getEstateByCod')
     const estate = (await client.query(queries.GET_ESTATE_BY_CODCAT, [codCat]));
 
     if(estate.rowCount === 0){
@@ -224,13 +226,13 @@ export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosC
     await client.query('BEGIN');
     await client.query(`DELETE FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1`, [id])
     const appraisals = await Promise.all(avaluos.map((row) => {
-      return client.query(queries.INSERT_ESTATE_VALUE, [estate.id, row.avaluo, row.anio])
+      return client.query(queries.INSERT_ESTATE_VALUE, [id, row.avaluo, row.anio])
     }))
-    const estate = (await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, codCat, id])).rows[0];
+    const estate = (await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, codCat, id]));
 
     await client.query('COMMIT');
-
-    return estate;
+    return {status: 200, message:'Inmueble actualizado'}
+    // return {inmueble: {...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows }};
   } catch (e) {
     await client.query('ROLLBACK');
     throw e;

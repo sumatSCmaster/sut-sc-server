@@ -848,11 +848,14 @@ export const initProcedureAnalist = async (procedure, user: Usuario, client: Poo
     costo = isNotPrepaidProcedure({ suffix: resources.sufijo, user }) ? null : pago.costo || resources.costo_base;
     const nextEvent = await getNextEventForProcedure(response, client);
 
-    if (pago && resources.sufijo !== 'tl' && nextEvent.startsWith('validar')) {
-      pago.costo = costo;
-      pago.concepto = 'TRAMITE';
-      pago.user = user.id;
-      await insertPaymentCashier(pago, response.id, client);
+    if (pago.length > 0 && resources.sufijo !== 'tl' && nextEvent.startsWith('validar')) {
+      await Promise.all(
+        pago.map(async (p) => {
+          p.concepto = 'TRAMITE';
+          p.user = user.id;
+          await insertPaymentCashier(p, response.id, client);
+        })
+      );
     }
 
     if (resources.sufijo === 'tl') {
