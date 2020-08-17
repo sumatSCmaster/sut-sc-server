@@ -1,0 +1,108 @@
+extends default
+//- REQUISITOS PARA LA INSTALACION DE LA LICENCIA DE LICORES
+block content
+  div#fecha
+    p 
+      b FECHA:
+      //- span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+    p 
+      b Codigo de Tramite:
+      span &nbsp; #{codigo}
+  div#planilla      
+    div.table                                  
+      div.th
+        p IDENTIFICACION DEL SOLICITANTE
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b R.I.M:
+            span &nbsp; #{datos.usuario.referenciaMunicipal}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b R.I.F:
+            span &nbsp; #{datos.usuario.documento}
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b REPRESENTANTE LEGAL:
+            span &nbsp; #{datos.usuario.representateLegal}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b C.I:
+            span &nbsp; #{datos.usuario.cedula}
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b TELEFONO:
+            span &nbsp; #{datos.usuario.telefono}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b TELEFONO MOVIL:
+            span &nbsp; #{datos.usuario.telefonoMovil}
+      div.tr
+        div.td(style={ width: '100%' })
+          p
+            b DOMICILIO:
+            span &nbsp; #{datos.usuario.domicilio}            
+    div.table(style={"margin-top":'100px'})
+      div.th
+        p DATOS DEL ESTABLECIMIENTO
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b LEMA COMERCIAL:
+            span &nbsp; #{datos.usuario.denominacionComercial}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b RAZON SOCIAL:
+            span &nbsp; #{datos.usuario.razonSocial}
+      div.tr
+        div.td(style={ width: '100%' }).border-bottom
+          p
+            b PARROQUIA:
+            span &nbsp; #{datos.usuario.parroquia}
+      div.tr
+        div.td(style={ width: '100%' }).border-bottom
+          p
+            b DIRECCIÓN:
+            span &nbsp; #{datos.usuario.direccion} 
+      div.tr
+        div.td(style={ width: '100%' }).border-bottom
+          p
+            b A MENOS DE 100 METROS EXISTEN:
+            span &nbsp; #{datos.usuario.entorno}
+      div.tr
+        div.td(style={ width: '80%' }).border-bottom.border-right
+          p
+            b ¿EXISTIO CON ANTERIORIDAD ALGUNA LICENCIA DE LICORES EN ESE ESTABLECIMIENTO?
+        div.td(style={ width: '5%' }).border-bottom.border-right.center
+          p
+            b SI
+        div.td(style={ width: '5%' }).border-bottom.border-right.center
+          if datos.usuario.poseiaLicencia
+            img(src="images/comprobado.svg", style={ width: '70%'})
+        div.td(style={ width: '5%' }).border-bottom.border-right.center
+          p
+            b NO
+        div.td(style={ width: '5%' }).border-bottom.center
+          if !datos.usuario.poseiaLicencia
+            img(src="images/comprobado.svg", style={ width: '70%'})                                                        
+      div.tr
+        div.td(style={ width: '100%' })
+          p
+            b OBSERVACIONES:
+            span &nbsp; #{datos.usuario.observaciones}                        
+    div(style={'margin-top':'150px'})#recaudos
+      h3 REQUISITOS OBLIGATORIOS
+      hr.divider
+      ul
+        li Comunicación dirigida Solicitando la Instalación de la Licencia de Licores.
+        li Acta constitutiva Estatutaria de la Persona Natural o Jurídica debidamente Registrada con las últimas modificaciones, si las hubiere, o copia del Registro de la Firma Unipersonal de ser el caso.
+        li Documento de Propiedad Registrado, Contrato de Arrendamiento, Comodato, Usufructo, o similar del Inmueble.
+        li Copia de la Cédula de Identidad del solicitante y del autorizado de ser el caso.
+        li Copia del Registro Único de Información Fiscal (RIF).
+        li Conformidad de Uso otorgada por la Oficina Municipal de Planificación Urbana (OMPU), especificando la clasificación del expendio.        
+        li Fotos: 1 de la fachada y 1 del interior del establecimiento.
+        li Constancia de Inspección del Cuerpo de Bomberos de Maracaibo (Vigente).
+        li Estar solvente con el Municipio. (Solvencia de Actividades Económicas y Factura del pago de los Servicios Municipales)
+        li Permiso sanitario del establecimiento emitido por la autoridad competente, con indicación expresa del ramo a explotar. 

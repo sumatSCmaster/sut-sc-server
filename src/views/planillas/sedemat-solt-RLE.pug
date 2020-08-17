@@ -1,0 +1,83 @@
+extends default
+//- REQUISITOS PARA LA INSTALACION DE LA LICENCIA DE LICORES
+block content
+  div#fecha
+    p 
+      b FECHA:
+      //- span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+    p 
+      b Codigo de Tramite:
+      span &nbsp; #{codigo}
+  div#planilla      
+    div.table                                  
+      div.th
+        p IDENTIFICACION DEL SOLICITANTE
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b R.I.M:
+            span &nbsp; #{datos.usuario.referenciaMunicipal}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b R.I.F:
+            span &nbsp; #{datos.usuario.documento}
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b REPRESENTANTE LEGAL:
+            span &nbsp; #{datos.usuario.representateLegal}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b C.I:
+            span &nbsp; #{datos.usuario.cedula}
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b TELEFONO:
+            span &nbsp; #{datos.usuario.telefono}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b TELEFONO MOVIL:
+            span &nbsp; #{datos.usuario.telefonoMovil}
+      div.tr
+        div.td(style={ width: '100%' })
+          p
+            b DOMICILIO:
+            span &nbsp; #{datos.usuario.domicilio}            
+    div.table(style={"margin-top":'100px'})
+      div.th
+        p DATOS DEL ESTABLECIMIENTO
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b LEMA COMERCIAL:
+            span &nbsp; #{datos.usuario.denominacionComercial}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b RAZON SOCIAL:
+            span &nbsp; #{datos.usuario.razonSocial}
+      div.tr
+        div.td(style={ width: '100%' }).border-bottom
+          p
+            b PARROQUIA:
+            span &nbsp; #{datos.usuario.parroquia}
+      div.tr
+        div.td(style={ width: '100%' }).border-bottom
+          p
+            b DIRECCIÓN:
+            span &nbsp; #{datos.usuario.direccion}                                                    
+      div.tr
+        div.td(style={ width: '100%' })
+          p
+            b OBSERVACIONES:
+            span &nbsp; #{datos.usuario.observaciones}   
+    div(style={'margin-top':'150px'})#recaudos
+      h3 REQUISITOS OBLIGATORIOS
+      hr.divider
+      ul
+        li Comunicación dirigida al Sedemat solicitando la renovación de la licencia de licores (Deben contener: Nombres, Apellidos, Cédula, Domicilio y Teléfonos del Representante Legal.  Razón Social, R:I:F,., Domicilio, Teléfonos y R.I.M del Contribuyente).
+        li Constancia vigente de cumplimiento de normas técnicas expedida por el Instituto Autónomo Cuerpo de Bombero del Municipio Maracaibo.
+        li Copia de la última acta de asamblea de accionistas que haya aprobado cualquier modificación del acta constitutiva estatutaria, si la hubiere.
+        li Carta poder que autorice a un representante para la realización de los trámites pertinentes, en caso de tramitarlos un tercero, anexar copia de la cédula de identidad de ambos.
+        li Documento de propiedad o arrendamiento usufructo.
+        li Copia del R.I.F del representante legal y la empresa.
