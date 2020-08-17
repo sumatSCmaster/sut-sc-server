@@ -54,6 +54,7 @@ router.post('/sedemat/rim/link/', async (req, res) => {
 
 router.patch('/sedemat/estate', async (req, res) => {
   const [error, data] = await fulfill(updateEstate(req.body));
+  console.log(error)
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 })
