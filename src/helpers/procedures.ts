@@ -396,6 +396,8 @@ const isNotPrepaidProcedure = ({ suffix, user }: { suffix: string; user: Usuario
   if (suffix === 'tl' && user.tipoUsuario !== 4) return !condition;
   if (suffix === 'rc') return !condition;
   if (suffix === 'bc') return !condition;
+  if (suffix === 'lic') return !condition;
+  if (suffix === 'lict') return !condition;
   return condition;
 };
 

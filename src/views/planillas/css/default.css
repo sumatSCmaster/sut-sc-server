@@ -353,3 +353,11 @@ ul {
     page-break-inside: avoid !important;
   }
 }
+.center > p, .center{
+  text-align: center !important;
+  display: -webkit-flex;
+  align-items:center;
+  justify-content: center;
+  -webkit-align-items:center;
+  -webkit-justify-content: center;
+}
