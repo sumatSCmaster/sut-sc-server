@@ -2901,6 +2901,7 @@ export const addRebateForDeclaration = async ({ process, user }) => {
 export const createSpecialSettlement = async ({ process, user }) => {
   const client = await pool.connect();
   const { impuestos } = process;
+  let recibo: any = undefined;
   console.log(process);
   try {
     client.query('BEGIN');
@@ -2959,7 +2960,6 @@ export const createSpecialSettlement = async ({ process, user }) => {
     //   multas: finingMonths,
     //   registroMunicipal: process.rim,
     // };
-    const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
     if (!process.esVigente) {
       const costoSolicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application.id_solicitud])).rows[0].monto_total;
       const pagoSum = process.pagos.map((e) => e.costo).reduce((e, i) => e + i, 0);
@@ -2985,11 +2985,12 @@ export const createSpecialSettlement = async ({ process, user }) => {
       if (creditoPositivo > 0) await updateFiscalCredit({ id: application.id_solicitud, user, amount: creditoPositivo, client });
 
       state = await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
-      const recibo = await createReceiptForSpecialApplication({ pool: client, user, application: (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement[0].id])).rows[0] });
+      recibo = await createReceiptForSpecialApplication({ pool: client, user, application: (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement[0].id])).rows[0] });
       await client.query('UPDATE impuesto.liquidacion SET recibo = $1 WHERE id_solicitud = $2', [recibo, application.id_solicitud]);
-      solicitud.recibo = recibo;
     }
     await client.query('COMMIT');
+    const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
+    solicitud.recibo = recibo;
     await sendNotification(
       user,
       `Se ha completado una solicitud de pago especial para el contribuyente con el documento de identidad: ${solicitud.tipoDocumento}-${solicitud.documento}`,
