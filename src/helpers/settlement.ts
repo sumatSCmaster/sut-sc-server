@@ -2907,7 +2907,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
     const userHasContributor = userContributor.length > 0;
     if (!userHasContributor) throw { status: 404, message: 'El usuario no esta asociado con ningun contribuyente' };
     const contributorReference = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [process.rim, userContributor[0].id_contribuyente])).rows[0];
-    if (!contributorReference) throw { status: 404, message: 'La sucursal solicitada no existe' };
+    if (!contributorReference && !!process.rim) throw { status: 404, message: 'La sucursal solicitada no existe' };
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(user.tipoUsuario !== 4 && process.usuario) || user.id, userContributor[0].id_contribuyente])).rows[0];
 
@@ -2942,6 +2942,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
       })
     );
 
+    let state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
     // const solicitud: Solicitud & { registroMunicipal: string } = {
     //   id: application.id_solicitud,
     //   usuario: user,
@@ -2956,37 +2957,37 @@ export const createSpecialSettlement = async ({ process, user }) => {
     //   multas: finingMonths,
     //   registroMunicipal: process.rim,
     // };
-    const costoSolicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application.id_solicitud])).rows[0].monto_total;
-    const pagoSum = process.pagos.map((e) => e.costo).reduce((e, i) => e + i, 0);
-    if (pagoSum < costoSolicitud) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
-    const creditoPositivo = pagoSum - costoSolicitud;
-    await Promise.all(
-      process.pagos.map(async (el) => {
-        if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
-        const nearbyHolidays = (await client.query(queries.GET_HOLIDAYS_BASED_ON_PAYMENT_DATE, [el.fecha])).rows;
-        const paymentDate = checkIfWeekend(moment(el.fecha));
-        if (nearbyHolidays.length > 0) {
-          while (nearbyHolidays.find((el) => moment(el.dia).format('YYYY-MM-DD') === paymentDate.format('YYYY-MM-DD'))) paymentDate.add({ days: 1 });
-        }
-        el.fecha = paymentDate;
-        el.concepto = 'IMPUESTO';
-        el.user = user.id;
-        user.tipoUsuario === 4 ? await insertPaymentReference(el, application.id_solicitud, client) : await insertPaymentCashier(el, application.id_solicitud, client);
-        if (el.metodoPago === 'CREDITO_FISCAL') {
-          await updateFiscalCredit({ id: application.id_solicitud, user, amount: -el.costo, client });
-        }
-      })
-    );
-    if (creditoPositivo > 0) await updateFiscalCredit({ id: application.id_solicitud, user, amount: creditoPositivo, client });
-
-    (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
-    const state = await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
-
-    await client.query('COMMIT');
     const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
-    const recibo = await createReceiptForSpecialApplication({ pool: client, user, application: (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement[0].id])).rows[0] });
-    await client.query('UPDATE impuesto.liquidacion SET recibo = $1 WHERE id_solicitud = $2', [recibo, application.id_solicitud]);
-    solicitud.recibo = recibo;
+    if (!process.esVigente) {
+      const costoSolicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application.id_solicitud])).rows[0].monto_total;
+      const pagoSum = process.pagos.map((e) => e.costo).reduce((e, i) => e + i, 0);
+      if (pagoSum < costoSolicitud) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
+      const creditoPositivo = pagoSum - costoSolicitud;
+      await Promise.all(
+        process.pagos.map(async (el) => {
+          if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
+          const nearbyHolidays = (await client.query(queries.GET_HOLIDAYS_BASED_ON_PAYMENT_DATE, [el.fecha])).rows;
+          const paymentDate = checkIfWeekend(moment(el.fecha));
+          if (nearbyHolidays.length > 0) {
+            while (nearbyHolidays.find((el) => moment(el.dia).format('YYYY-MM-DD') === paymentDate.format('YYYY-MM-DD'))) paymentDate.add({ days: 1 });
+          }
+          el.fecha = paymentDate;
+          el.concepto = 'IMPUESTO';
+          el.user = user.id;
+          user.tipoUsuario === 4 ? await insertPaymentReference(el, application.id_solicitud, client) : await insertPaymentCashier(el, application.id_solicitud, client);
+          if (el.metodoPago === 'CREDITO_FISCAL') {
+            await updateFiscalCredit({ id: application.id_solicitud, user, amount: -el.costo, client });
+          }
+        })
+      );
+      if (creditoPositivo > 0) await updateFiscalCredit({ id: application.id_solicitud, user, amount: creditoPositivo, client });
+
+      state = await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
+      const recibo = await createReceiptForSpecialApplication({ pool: client, user, application: (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement[0].id])).rows[0] });
+      await client.query('UPDATE impuesto.liquidacion SET recibo = $1 WHERE id_solicitud = $2', [recibo, application.id_solicitud]);
+      solicitud.recibo = recibo;
+    }
+    await client.query('COMMIT');
     await sendNotification(
       user,
       `Se ha completado una solicitud de pago especial para el contribuyente con el documento de identidad: ${solicitud.tipoDocumento}-${solicitud.documento}`,
