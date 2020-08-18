@@ -26,6 +26,7 @@ import receipt from './receipt';
 import services from './services';
 import retention from './retention';
 import repairs from './repairs';
+import contributor from './contributor'
 
 const router = Router();
 
@@ -55,6 +56,7 @@ router.use('/receipt', receipt);
 router.use('/services', services);
 router.use('/retentions', retention);
 router.use('/repairs', repairs);
+router.use('/contributor', contributor);
 router.use(resources);
 
 router.get('/', (req, res) => {
