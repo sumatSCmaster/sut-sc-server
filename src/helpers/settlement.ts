@@ -2903,6 +2903,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
   const { impuestos } = process;
   try {
     client.query('BEGIN');
+    if (process.tipoContribuyente === 'JURIDICO' && !process.rim) throw { status: 403, message: 'Debe enviar un rim para un contribuyente juridico' };
     const userContributor = (await client.query(queries.TAX_PAYER_EXISTS, [process.tipoDocumento, process.documento])).rows;
     const userHasContributor = userContributor.length > 0;
     if (!userHasContributor) throw { status: 404, message: 'El usuario no esta asociado con ningun contribuyente' };
