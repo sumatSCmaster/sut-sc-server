@@ -2901,6 +2901,7 @@ export const addRebateForDeclaration = async ({ process, user }) => {
 export const createSpecialSettlement = async ({ process, user }) => {
   const client = await pool.connect();
   const { impuestos } = process;
+  console.log(process);
   try {
     client.query('BEGIN');
     if (process.tipoContribuyente === 'JURIDICO' && !process.rim) throw { status: 403, message: 'Debe enviar un rim para un contribuyente juridico' };
