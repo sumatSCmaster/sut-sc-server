@@ -24,7 +24,7 @@ export const updateContributor = async ({ id, tipoDocumento, documento, razonSoc
     }
 }
 
-export const updateRIM = async ({ id, telefono, email, denomComercial, nombreRepresentante, capitalSuscrito, tipoSociedad, }) => {
+export const updateRIM = async ({ id, telefono, email, denomComercial, nombreRepresentante, capitalSuscrito, tipoSociedad }) => {
     const client = await pool.connect();
     try{
         await client.query('BEGIN');
