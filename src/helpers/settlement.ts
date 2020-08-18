@@ -3635,7 +3635,7 @@ const createReceiptForSpecialApplication = async ({ pool, user, application }) =
           porcion: '1/1',
           categoria: application.descripcionRamo,
           rif: `${application.tipoDocumento}-${application.documento}`,
-          ref: referencia.referencia_municipal,
+          ref: referencia?.referencia_municipal || 'No posee RIM',
           razonSocial: application.razonSocial,
           direccion: application.direccion || 'Dirección Sin Asignar',
           fechaCre: moment(application.fechaCreacion).format('YYYY-MM-DD'),
