@@ -9,6 +9,7 @@ import { sendNotification } from './notification';
 import { sendEmail } from './events/procedureUpdateState';
 import { createRequestForm, createCertificate } from '@utils/forms';
 import { approveContributorBenefits, approveContributorSignUp, approveContributorAELicense } from './settlement';
+import { installLiquorLicense, renewLiquorLicense } from './liquors';
 
 const pool = Pool.getInstance();
 
@@ -391,13 +392,7 @@ export const getFieldsForValidations = async ({ id, type }) => {
 
 const isNotPrepaidProcedure = ({ suffix, user }: { suffix: string; user: Usuario }) => {
   const condition = false;
-  if (suffix === 'pd') return !condition;
-  if (suffix === 'ompu') return !condition;
-  if (suffix === 'tl' && user.tipoUsuario !== 4) return !condition;
-  if (suffix === 'rc') return !condition;
-  if (suffix === 'bc') return !condition;
-  if (suffix === 'lic') return !condition;
-  if (suffix === 'lict') return !condition;
+  if ((suffix === 'tl' && user.tipoUsuario !== 4) || !!['pd', 'ompu', 'rc', 'bc', 'lic', 'lict'].find((el) => el === suffix)) return !condition;
   return condition;
 };
 
@@ -561,7 +556,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
       procedure.sufijo = resources.sufijo;
     }
 
-    if (procedure.sufijo === 'pd' || procedure.sufijo === 'ompu') {
+    if (!!['pd', 'ompu', 'lic', 'lict'].find((el) => el === procedure.sufijo)) {
       if (!bill) return { status: 400, message: 'Es necesario asignar un precio a un tramite postpago' };
       costo = bill.totalBs;
       ordenanzas = {
@@ -755,12 +750,32 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       }));
     }
 
+    if (!![29, 30, 31, 32, 33, 34, 35].find((el) => el === resources.tipoTramite)) {
+      const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
+      prevData.datos.funcionario = { ...procedure.datos };
+      datos = prevData.datos;
+      datos.idTramite = procedure.idTramite;
+    }
+
     if (procedure.sufijo === 'ompu') {
       if (aprobado) {
         dir = await createCertificate(procedure, client);
         respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, dir, null]);
       } else {
         respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
+      }
+    } else if (!!['lic', 'lict'].find((el) => el === procedure.sufijo)) {
+      if (procedure.hasOwnProperty('rebotado')) {
+        respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent['rebotar'], datos || null, null, null]);
+      } else {
+        if (aprobado && nextEvent[aprobado].startsWith('aprobar')) {
+          datos = !![29, 30, 31, 32].find((el) => el === resources.tipoTramite) ? await installLiquorLicense(datos, client) : await renewLiquorLicense(datos, client);
+          procedure.datos = datos;
+          dir = await createCertificate(procedure, client);
+          respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, dir, null]);
+        } else {
+          respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
+        }
       }
     } else {
       if (aprobado) {
@@ -808,6 +823,92 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       status: error.status || 500,
       error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || error.message || 'Error al revisar el tramite',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const inspectProcedure = async (procedure, user: Usuario) => {
+  const client = await pool.connect();
+  const { aprobado, observaciones } = procedure.revision;
+  let dir, respState, datos;
+  try {
+    client.query('BEGIN');
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.idTramite])).rows[0];
+
+    if (!procedure.hasOwnProperty('sufijo')) {
+      procedure.sufijo = resources.sufijo;
+    }
+    const nextEvent = await getNextEventForProcedure(procedure, client);
+
+    if (!!observaciones) {
+      const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
+      prevData.datos.funcionario = { ...prevData.datos.funcionario, observaciones };
+      datos = prevData.datos;
+    }
+
+    if (resources.tipoTramite === 28) {
+      const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
+      prevData.datos.funcionario = { ...procedure.datos };
+      datos = prevData.datos;
+      datos.idTramite = procedure.idTramite;
+      datos.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
+        monto: row.monto,
+        formaPago: row.metodo_pago,
+        banco: row.nombre,
+        fecha: row.fecha_de_pago,
+        nro: row.referencia,
+      }));
+    }
+
+    // if (procedure.sufijo === 'ompu') {
+    //   if (aprobado) {
+    //     dir = await createCertificate(procedure, client);
+    //     respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, dir, null]);
+    //   } else {
+    //     respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
+    //   }
+    // } else {
+    respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
+    // }
+
+    const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
+    const tramite: Partial<Tramite> = {
+      id: response.id,
+      tipoTramite: response.tipotramite,
+      estado: response.state,
+      datos: response.datos,
+      planilla: response.planilla,
+      certificado: dir,
+      costo: response.costo,
+      fechaCreacion: response.fechacreacion,
+      fechaCulminacion: response.fechaculminacion,
+      codigoTramite: response.codigotramite,
+      usuario: response.usuario,
+      nombreLargo: response.nombrelargo,
+      nombreCorto: response.nombrecorto,
+      nombreTramiteLargo: response.nombretramitelargo,
+      nombreTramiteCorto: response.nombretramitecorto,
+      aprobado: response.aprobado,
+    };
+    await sendNotification(user, `Se realizó la inspección de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
+    client.query('COMMIT');
+    sendEmail({
+      ...tramite,
+      codigo: tramite.codigoTramite,
+      nombreUsuario: resources.nombreusuario,
+      nombreCompletoUsuario: resources.nombrecompleto,
+      estado: respState.rows[0].state,
+    });
+    return { status: 200, message: 'Inspección del trámite cargada', tramite };
+  } catch (error) {
+    console.log(error);
+    client.query('ROLLBACK');
+    throw {
+      status: error.status || 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al cargar la inspección correspondiente al tramite',
     };
   } finally {
     client.release();
@@ -1048,6 +1149,25 @@ const procedureEvents = switchcase({
   rc: { iniciado: 'procesar_rc', enproceso: { true: 'aprobar_rc', false: 'rechazar_rc' } },
   bc: { iniciado: 'revisar_bc', enrevision: { true: 'aprobar_bc', false: 'rechazar_bc' } },
   lae: { iniciado: 'validar_lae', validando: 'enproceso_lae', enproceso: { true: 'revisar_lae', false: 'rechazar_lae' }, enrevision: { true: 'aprobar_lae', false: 'rechazar_lae' } },
+  lic: {
+    iniciado: 'enproceso_lic',
+    enproceso: 'inspeccion_lic',
+    inspeccion: { true: 'ingresardatos_lic', false: 'rechazar_lic' },
+    ingresardatos: 'validar_lic',
+    validando: 'revisar1_lic',
+    enrevision_analista: { true: 'revisar2_lic', false: 'rechazar_lic' },
+    enrevision_gerente: { true: 'revisar3_lic', false: 'rechazar_lic', rebotar: 'rebotar_lic' },
+    enrevision: { true: 'aprobar_lic', false: 'rechazar_lic', rebotar: 'rebotar_lic' },
+  },
+  lict: {
+    iniciado: 'enproceso_lict',
+    enproceso: 'ingresardatos_lict',
+    ingresardatos: 'validar_lict',
+    validando: 'revisar1_lict',
+    enrevision_analista: { true: 'revisar2_lict', false: 'rechazar_lict' },
+    enrevision_gerente: { true: 'revisar3_lict', false: 'rechazar_lict', rebotar: 'rebotar_lict' },
+    enrevision: { true: 'aprobar_lict', false: 'rechazar_lict', rebotar: 'rebotar_lict' },
+  },
 })(null);
 
 const procedureEventHandler = (suffix, state) => {
@@ -1181,6 +1301,7 @@ const fieldsBySectionHandler = (typeUser, payload, client) => {
 const updateProcedure = switchcase({
   validando: null,
   enproceso: processProcedure,
+  inspeccion: inspectProcedure,
   enrevision_analista: reviseProcedure,
   enrevision_gerente: reviseProcedure,
   enrevision: reviseProcedure,

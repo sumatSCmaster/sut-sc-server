@@ -8,11 +8,11 @@ const dev = process.env.NODE_ENV !== 'production';
 const pool = Pool.getInstance();
 
 
-export const updateContributor = async ({ id, tipoDocumento, documento, razonSocial, denominacionComercial, siglas, idParroquia, sector, direccion, puntoReferencia }) => {
+export const updateContributor = async ({ id, tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia }) => {
     const client = await pool.connect();
     try{
         await client.query('BEGIN');
-        await client.query(queries.UPDATE_TAXPAYER, [id, tipoDocumento, documento, razonSocial, denominacionComercial, siglas, idParroquia, sector, direccion, puntoReferencia]);
+        await client.query(queries.UPDATE_TAXPAYER, [id, tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia]);
         await client.query('COMMIT');
         return { status: 200, message: 'Contribuyente actualizado' }
     } catch (e){
@@ -24,11 +24,11 @@ export const updateContributor = async ({ id, tipoDocumento, documento, razonSoc
     }
 }
 
-export const updateRIM = async ({ id, telefonoCelular, email, denominacionComercial, nombreRepresentante, capitalSuscrito, tipoSociedad, telefonoHabitacion}) => {
+export const updateRIM = async ({ id, telefono, email, denomComercial, nombreRepresentante, capitalSuscrito, tipoSociedad }) => {
     const client = await pool.connect();
     try{
         await client.query('BEGIN');
-        await client.query(queries.UPDATE_RIM, [id, telefonoCelular, email, denominacionComercial, nombreRepresentante, capitalSuscrito, tipoSociedad,  telefonoHabitacion]);
+        await client.query(queries.UPDATE_RIM, [id, telefono, email, denomComercial, nombreRepresentante, capitalSuscrito, tipoSociedad,  telefono]);
         await client.query('COMMIT');
         return { status: 200, message: 'RIM actualizado' }
     } catch (e){

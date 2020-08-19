@@ -3625,6 +3625,7 @@ const createReceiptForSpecialApplication = async ({ pool, user, application }) =
       certAE = {
         fecha: moment().format('YYYY-MM-DD'),
         tramite: 'LIQUIDACIONES ESPECIALES',
+        institucion: 'SEDEMAT',
         moment: require('moment'),
         QR: linkQr,
         datos: {
