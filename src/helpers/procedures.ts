@@ -392,13 +392,7 @@ export const getFieldsForValidations = async ({ id, type }) => {
 
 const isNotPrepaidProcedure = ({ suffix, user }: { suffix: string; user: Usuario }) => {
   const condition = false;
-  if (suffix === 'pd') return !condition;
-  if (suffix === 'ompu') return !condition;
-  if (suffix === 'tl' && user.tipoUsuario !== 4) return !condition;
-  if (suffix === 'rc') return !condition;
-  if (suffix === 'bc') return !condition;
-  if (suffix === 'lic') return !condition;
-  if (suffix === 'lict') return !condition;
+  if ((suffix === 'tl' && user.tipoUsuario !== 4) || !!['pd', 'ompu', 'rc', 'bc', 'lic', 'lict'].find((el) => el === suffix)) return !condition;
   return condition;
 };
 
@@ -562,7 +556,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
       procedure.sufijo = resources.sufijo;
     }
 
-    if (procedure.sufijo === 'pd' || procedure.sufijo === 'ompu') {
+    if (!!['pd', 'ompu', 'lic', 'lict'].find((el) => el === procedure.sufijo)) {
       if (!bill) return { status: 400, message: 'Es necesario asignar un precio a un tramite postpago' };
       costo = bill.totalBs;
       ordenanzas = {
