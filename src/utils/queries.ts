@@ -648,7 +648,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
        punto_referencia, verificado, tipo_contribuyente) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *;',
   CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR:
     'INSERT INTO impuesto.registro_municipal (id_contribuyente, referencia_municipal, nombre_representante, telefono_celular,\
-     email, denominacion_comercial, fecha_aprobacion, actualizado) VALUES ($1, $2, $3, $4, $5, $6, now(), $7) RETURNING *;',
+     email, denominacion_comercial, fecha_aprobacion, actualizado, direccion) VALUES ($1, $2, $3, $4, $5, $6, now(), $7, $8) RETURNING *;',
   CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR: 'INSERT INTO inmueble_urbano (id_registro_municipal, direccion, tipo_inmueble) VALUES ($1, $2, $3) RETURNING *;',
   GET_CONTRIBUTOR_BY_DOCUMENT_AND_DOC_TYPE: 'SELECT * FROM impuesto.contribuyente c WHERE c.documento = $1 AND c.tipo_documento = $2',
   CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR: 'INSERT INTO impuesto.actividad_economica_sucursal (id_registro_municipal, numero_referencia, aplicable_desde) VALUES ($1, $2, $3)',
@@ -961,8 +961,8 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         rm.id_registro_municipal = $1',
   CREATE_OR_UPDATE_FISCAL_CREDIT: 'SELECT * FROM impuesto.insert_credito($1, $2, $3, $4)',
   ADD_BRANCH_FOR_CONTRIBUTOR:
-    'INSERT INTO impuesto.registro_municipal (id_contribuyente, fecha_aprobacion, telefono_celular, email, denominacion_comercial, nombre_representante, actualizado, capital_suscrito, tipo_sociedad, estado_licencia) VALUES ($1, now(), $2, $3, $4, $5, true, $6, $7, $8) RETURNING *',
-  UPDATE_BRANCH_INFO: 'UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombre_representante = $2, telefono_celular = $3, email = $4, actualizado = $5 WHERE referencia_municipal = $6 RETURNING *',
+    'INSERT INTO impuesto.registro_municipal (id_contribuyente, fecha_aprobacion, telefono_celular, email, denominacion_comercial, nombre_representante, actualizado, capital_suscrito, tipo_sociedad, estado_licencia, direccion) VALUES ($1, now(), $2, $3, $4, $5, true, $6, $7, $8, $9) RETURNING *',
+  UPDATE_BRANCH_INFO: 'UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombre_representante = $2, telefono_celular = $3, email = $4, actualizado = $5, direccion = $6 WHERE referencia_municipal = $7 RETURNING *',
   UPDATE_LICENSE_STATUS: 'UPDATE impuesto.registro_municipal SET estado_licencia = $1 WHERE id_registro_municipal = $2',
   UPDATE_ECONOMIC_ACTIVITIES_FOR_BRANCH:
     'INSERT INTO impuesto.actividad_economica_sucursal AS aes (id_registro_municipal, numero_referencia, aplicable_desde) VALUES ($1, $2, $3) ON CONFLICT (id_registro_municipal, numero_referencia) DO UPDATE SET aplicable_desde = EXCLUDED.aplicable_desde returning *, xmax::text::int > 0 AS updated;',
