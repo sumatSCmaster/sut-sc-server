@@ -1456,6 +1456,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
               };
             }),
           interesMoratorio: await getDefaultInterestByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
+          rebajaInteresMoratorio: await getDefaultInterestRebateByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
         };
       })
     );
@@ -1523,6 +1524,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
                 };
               }),
             interesMoratorio: await getDefaultInterestByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
+            rebajaInteresMoratorio: await getDefaultInterestRebateByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
           };
         })
     );
@@ -1600,6 +1602,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
                 };
               }),
             interesMoratorio: await getDefaultInterestByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
+            rebajaInteresMoratorio: await getDefaultInterestRebateByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
           };
         })
     );
@@ -1762,11 +1765,33 @@ const getDefaultInterestByApplication = async ({ id, date, state, client }): Pro
             [id]
           )
         ).rows
-          .filter((el) => !!['AE', 'SM', 'IU', 'PP'].find((x) => x === el.tipoProcedimiento))
+          // .filter((el) => !!['AE', 'SM', 'IU', 'PP'].find((x) => x === el.tipoProcedimiento))
           .map((p) => ((+p.monto * 0.3324) / 365) * (moment().diff(moment(date).endOf('month'), 'days') - 1))
           .reduce((x, j) => x + j, 0)) ||
       undefined;
     console.log('getDefaultInterestByApplication -> value', id, value);
+    return +fixatedAmount(+value);
+  } catch (e) {
+    throw e;
+  }
+};
+
+const getDefaultInterestRebateByApplication = async ({ id, date, state, client }): Promise<number> => {
+  try {
+    const value =
+      (state === 'ingresardatos' &&
+        moment(date).month() < moment().month() &&
+        (
+          await client.query(
+            'SELECT l.*, s.*, r.descripcion_corta as "tipoProcedimiento" FROM impuesto.liquidacion l INNER JOIN  (SELECT id_subramo, MAX(fecha_vencimiento) AS max_fecha FROM impuesto.liquidacion WHERE id_solicitud = $1 GROUP BY id_subramo) s ON s.id_subramo = l.id_subramo AND s.max_fecha = l.fecha_vencimiento INNER JOIN impuesto.subramo sr ON l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo r USING (id_ramo) WHERE id_solicitud = $1;',
+            [id]
+          )
+        ).rows
+          // .filter((el) => !!['AE', 'SM', 'IU', 'PP'].find((x) => x === el.tipoProcedimiento))
+          .map((p) => (+p.monto * 0.3324) / 365)
+          .reduce((x, j) => x + j, 0)) ||
+      undefined;
+    // console.log('getDefaultInterestByApplication -> value', id, value);
     return +fixatedAmount(+value);
   } catch (e) {
     throw e;
