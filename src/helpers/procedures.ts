@@ -8,7 +8,7 @@ import switchcase from '@utils/switch';
 import { sendNotification } from './notification';
 import { sendEmail } from './events/procedureUpdateState';
 import { createRequestForm, createCertificate } from '@utils/forms';
-import { approveContributorBenefits, approveContributorSignUp, approveContributorAELicense } from './settlement';
+import { approveContributorBenefits, approveContributorSignUp, approveContributorAELicense, createSettlementForProcedure } from './settlement';
 import { installLiquorLicense, renewLiquorLicense } from './liquors';
 
 const pool = Pool.getInstance();
@@ -490,12 +490,20 @@ export const validateProcedure = async (procedure, user: Usuario, client) => {
   try {
     console.log('si');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.idTramite])).rows[0];
+
     if (!procedure.hasOwnProperty('aprobado')) {
       return { status: 403, message: 'No es posible actualizar este estado' };
     }
+
     if (!procedure.hasOwnProperty('sufijo')) {
       procedure.sufijo = resources.sufijo;
     }
+
+    if (!!resources.id_ramo) {
+      const ramo = (await client.query('SELECT * FROM impuesto.ramo WHERE id_ramo = $1', [resources.id_ramo])).rows[0].descripcion;
+      await createSettlementForProcedure({ monto: +procedure.monto, ramo, idTramite: procedure.idTramite }, client);
+    }
+
     const nextEvent = await getNextEventForProcedure(procedure, client);
     if (nextEvent.startsWith('finalizar')) {
       dir = await createCertificate(procedure, client);

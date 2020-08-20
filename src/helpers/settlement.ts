@@ -1197,11 +1197,12 @@ const externalUserForLinkingExists = async ({ user, password, gtic }: { user: st
 };
 
 export const createSettlementForProcedure = async (process, client) => {
-  const { referenciaMunicipal, monto, ramo } = process;
+  const { referenciaMunicipal, monto, ramo, idTramite } = process;
   try {
     const datos = {
       fecha: { month: moment().toDate().toLocaleDateString('ES', { month: 'long' }), year: moment().year() },
       descripcion: 'TRAMITE',
+      idTramite,
     };
     console.log('si');
     const liquidacion = (await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [null, fixatedAmount(monto), ramo, 'Pago ordinario', datos, moment().endOf('month').format('MM-DD-YYYY'), referenciaMunicipal])).rows[0];
@@ -3084,7 +3085,6 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
         return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.codigo, x.desde]);
       })
     );
-    await createSettlementForProcedure({ monto: +costo, referenciaMunicipal: registry.id_registro_municipal, ramo: 'AE' }, client);
     const verifiedId = (await client.query('SELECT * FROM impuesto.verificacion_telefono WHERE id_usuario = $1', [user])).rows[0]?.id_verificacion_telefono;
     await client.query('INSERT INTO impuesto.registro_municipal_verificacion VALUES ($1, $2) RETURNING *', [registry.id_registro_municipal, verifiedId]);
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [contribuyente.id]);
@@ -3655,7 +3655,6 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
   }
 };
 
-
 const createReceiptForIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
     console.log('culo');
@@ -3666,41 +3665,40 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
     motivo = application.descripcionSubramo;
     ramo = application.descripcionRamo;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
-    if(application.idSubramo === 9){
+    if (application.idSubramo === 9) {
       const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
       let breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 9])).rows;
       breakdownData = breakdownData.sort((a, b) => {
-        if(mesesNumerico[a.datos.fecha.mes] > mesesNumerico[b.datos.fecha.month]) return -1;
+        if (mesesNumerico[a.datos.fecha.mes] > mesesNumerico[b.datos.fecha.month]) return -1;
         else if (mesesNumerico[a.datos.fecha.mes] < mesesNumerico[b.datos.fecha.month]) return 1;
-        else return 0
+        else return 0;
       });
-      for(let inm of breakdownData[breakdownData.length - 1].datos.desglose){
-        const inmueble = await pool.query(queries.GET_ESTATE_BY_ID, [inm.inmueble])
-        const avaluo = await pool.query(queries.GET_CURRENT_APPRAISALS_BY_ID, [inm.inmueble])
+      for (let inm of breakdownData[breakdownData.length - 1].datos.desglose) {
+        const inmueble = await pool.query(queries.GET_ESTATE_BY_ID, [inm.inmueble]);
+        const avaluo = await pool.query(queries.GET_CURRENT_APPRAISALS_BY_ID, [inm.inmueble]);
         certInfo = {
           QR: linkQr,
           moment: require('moment'),
           fecha: moment().format('MM-DD-YYYY'),
           titulo: 'CERTIFICADO POR PROPIEDAD INMOBILIARIA',
-          institucion: 'SEDEMAT', 
+          institucion: 'SEDEMAT',
           datos: {
             mes: moment(breakdownData[0].fecha_liquidacion).get('month') + 1,
-            anio:moment(breakdownData[0].fecha_liquidacion).get('year'),
+            anio: moment(breakdownData[0].fecha_liquidacion).get('year'),
             contribuyente: application.razonSocial,
             cedulaORif: `${application.tipoDocumento}-${application.documento}`,
-            direccion:inmueble.rows[0]?.direccion,
+            direccion: inmueble.rows[0]?.direccion,
             parroquia: inmueble?.rows[0]?.nombre,
-            rim: referencia?.referencia_municipal || null,//Si no posee no me la envies o la envias null
+            rim: referencia?.referencia_municipal || null, //Si no posee no me la envies o la envias null
             valorFiscal: avaluo?.rows[0]?.avaluo || null,
-            periodo: mesesCardinal[breakdownData[breakdownData.length - 1].datos.fecha.month],//el mes
-            fechaLetra:`${moment(breakdownData[0].fecha_liquidacion).get('date')} de ${breakdownData[breakdownData.length - 1].datos.fecha.month} del ${breakdownData[breakdownData.length - 1].datos.fecha.year}.`
-          
-          }
-        }
-        certInfoArray.push({...certInfo})
+            periodo: mesesCardinal[breakdownData[breakdownData.length - 1].datos.fecha.month], //el mes
+            fechaLetra: `${moment(breakdownData[0].fecha_liquidacion).get('date')} de ${breakdownData[breakdownData.length - 1].datos.fecha.month} del ${breakdownData[breakdownData.length - 1].datos.fecha.year}.`,
+          },
+        };
+        certInfoArray.push({ ...certInfo });
       }
     }
-    
+
     return new Promise(async (res, rej) => {
       try {
         let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-IU.pug`), certInfo));
@@ -3830,7 +3828,6 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
     throw errorMessageExtractor(error);
   }
 };
-
 
 const createReceiptForSpecialApplication = async ({ pool, user, application }) => {
   try {
