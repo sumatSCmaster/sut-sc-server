@@ -3173,6 +3173,20 @@ const mesesCardinal = {
   noviembre: 'Undécimo',
   diciembre: 'Duodécimo',
 };
+const mesesNumerico = {
+  enero: 1,
+  febrero: 2,
+  marzo: 3,
+  abril: 4,
+  mayo: 5,
+  junio: 6,
+  julio: 7,
+  agosto: 8,
+  septiembre: 9,
+  octubre: 10,
+  noviembre: 11,
+  diciembre: 12,
+};
 const createSolvencyForApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
@@ -3628,6 +3642,183 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     throw errorMessageExtractor(error);
   }
 };
+
+
+const createReceiptForIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
+  try {
+    console.log('culo');
+    let certInfo;
+    let motivo;
+    let ramo;
+    let certInfoArray: any[] = [];
+    motivo = application.descripcionSubramo;
+    ramo = application.descripcionRamo;
+    const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+    if(application.idSubramo === 9){
+      const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
+      let breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 9])).rows;
+      breakdownData = breakdownData.sort((a, b) => {
+        if(mesesNumerico[a.datos.fecha.mes] > mesesNumerico[b.datos.fecha.month]) return -1;
+        else if (mesesNumerico[a.datos.fecha.mes] < mesesNumerico[b.datos.fecha.month]) return 1;
+        else return 0
+      });
+      for(let inm of breakdownData[breakdownData.length - 1].datos.desglose){
+        const inmueble = await pool.query(queries.GET_ESTATE_BY_ID, [inm.inmueble])
+        const avaluo = await pool.query(queries.GET_CURRENT_APPRAISALS_BY_ID, [inm.inmueble])
+        certInfo = {
+          QR: linkQr,
+          moment: require('moment'),
+          fecha: moment().format('MM-DD-YYYY'),
+          titulo: 'CERTIFICADO POR PROPIEDAD INMOBILIARIA',
+          institucion: 'SEDEMAT', 
+          datos: {
+            mes: moment(breakdownData[0].fecha_liquidacion).get('month') + 1,
+            anio:moment(breakdownData[0].fecha_liquidacion).get('year'),
+            contribuyente: application.razonSocial,
+            cedulaORif: `${application.tipoDocumento}-${application.documento}`,
+            direccion:inmueble.rows[0]?.direccion,
+            parroquia: inmueble?.rows[0]?.nombre,
+            rim: referencia?.referencia_municipal || null,//Si no posee no me la envies o la envias null
+            valorFiscal: avaluo?.rows[0]?.avaluo || null,
+            periodo: mesesCardinal[breakdownData[breakdownData.length - 1].datos.fecha.month],//el mes
+            fechaLetra:`${moment(breakdownData[0].fecha_liquidacion).get('date')} de ${breakdownData[breakdownData.length - 1].datos.fecha.month} del ${breakdownData[breakdownData.length - 1].datos.fecha.year}.`
+          
+          }
+        }
+        certInfoArray.push({...certInfo})
+      }
+    }
+    
+    return new Promise(async (res, rej) => {
+      try {
+        let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-IU.pug`), certInfo));
+        const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/IU/${application.idLiquidacion}/certificado.pdf`);
+        const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/IU/${application.idLiquidacion}/certificado.pdf`;
+        const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+
+        let buffersArray: any[] = await Promise.all(
+          htmlArray.map((html) => {
+            return new Promise((res, rej) => {
+              pdf
+                .create(html, {
+                  format: 'Letter',
+                  border: '5mm',
+                  header: { height: '0px' },
+                  base: 'file://' + resolve(__dirname, '../views/planillas/') + '/',
+                })
+                .toBuffer((err, buffer) => {
+                  if (err) {
+                    rej(err);
+                  } else {
+                    res(buffer);
+                  }
+                });
+            });
+          })
+        );
+
+        if (dev) {
+          mkdir(dirname(pdfDir), { recursive: true }, (e) => {
+            if (e) {
+              rej(e);
+            } else {
+              if (buffersArray.length === 1) {
+                writeFile(pdfDir, buffersArray[0], async (err) => {
+                  if (err) {
+                    rej(err);
+                  } else {
+                    res(dir);
+                  }
+                });
+              } else {
+                let letter = 'A';
+                let reduced: any = buffersArray.reduce((prev: any, next) => {
+                  prev[letter] = next;
+                  let codePoint = letter.codePointAt(0);
+                  if (codePoint !== undefined) {
+                    letter = String.fromCodePoint(++codePoint);
+                  }
+                  return prev;
+                }, {});
+
+                pdftk
+                  .input(reduced)
+                  .cat(`${Object.keys(reduced).join(' ')}`)
+                  .output(pdfDir)
+                  .then((buffer) => {
+                    res(pdfDir);
+                  })
+                  .catch((e) => {
+                    console.log(e);
+                    rej(e);
+                  });
+              }
+            }
+          });
+        } else {
+          try {
+            if (buffersArray.length === 1) {
+              const bucketParams = {
+                Bucket: 'sut-maracaibo',
+                Key: `/sedemat/${application.id}/IU/${application.idLiquidacion}/certificado.pdf`,
+              };
+              await S3Client.putObject({
+                ...bucketParams,
+                Body: buffersArray[0],
+                ACL: 'public-read',
+                ContentType: 'application/pdf',
+              }).promise();
+              res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+            } else {
+              let letter = 'A';
+              let reduced: any = buffersArray.reduce((prev: any, next) => {
+                prev[letter] = next;
+                let codePoint = letter.codePointAt(0);
+                if (codePoint !== undefined) {
+                  letter = String.fromCodePoint(++codePoint);
+                }
+                return prev;
+              }, {});
+
+              pdftk
+                .input(reduced)
+                .cat(`${Object.keys(reduced).join(' ')}`)
+                .output()
+                .then(async (buffer) => {
+                  const bucketParams = {
+                    Bucket: 'sut-maracaibo',
+                    Key: `/sedemat/${application.id}/IU/${application.idLiquidacion}/certificado.pdf`,
+                  };
+                  await S3Client.putObject({
+                    ...bucketParams,
+                    Body: buffer,
+                    ACL: 'public-read',
+                    ContentType: 'application/pdf',
+                  }).promise();
+                  res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+                })
+                .catch((e) => {
+                  console.log(e);
+                  rej(e);
+                });
+            }
+          } catch (e) {
+            throw e;
+          } finally {
+          }
+        }
+      } catch (e) {
+        throw {
+          message: 'Error en generacion de certificado de IU',
+          e: errorMessageExtractor(e),
+        };
+      }
+    });
+  } catch (error) {
+    throw errorMessageExtractor(error);
+  }
+};
+
 
 const createReceiptForSpecialApplication = async ({ pool, user, application }) => {
   try {
@@ -4608,7 +4799,7 @@ const addMissingCarriedAmounts = (amountObject) => {
 const certificateCases = switchcase({
   AE: { recibo: createReceiptForAEApplication, solvencia: createSolvencyForApplication },
   SM: { recibo: createReceiptForSMOrIUApplication },
-  IU: { recibo: createReceiptForSMOrIUApplication },
+  IU: { recibo: createReceiptForSMOrIUApplication, certificado: createReceiptForIUApplication },
   PP: { recibo: createReceiptForPPApplication },
   MUL: { multa: createFineDocument },
 })(null);
