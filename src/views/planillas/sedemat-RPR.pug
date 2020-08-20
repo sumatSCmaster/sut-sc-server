@@ -115,7 +115,7 @@ block content
             p(style={'padding-left':'10px'})
               b TRANSFERENCIA BOD
           div(style={'-webkit-flex':'4'}).td.center.border-bottom
-            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.items.find(el => el.id_banco === 1) ? (datos.metodoPago.transferencias.items.find(el => el.id_banco === 1).monto) : 0)}
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.items.find(el => el.id_banco === 1) ? (datos.metodoPago.transferencias.items.find(el => el.id_banco === 1).monto) : 0)}            
         .tr.break-page
           div(style={'-webkit-flex':'6', 'text-align':'start'}).th.border-bottom.border-right
             p(style={'padding-left':'10px'})
@@ -128,6 +128,18 @@ block content
               b TRANSFERENCIA BNC
           div(style={'-webkit-flex':'4'}).td.center.border-bottom
             p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.items.find(el => el.id_banco === 3) ? (datos.metodoPago.transferencias.items.find(el => el.id_banco === 3).monto) : 0)}
+        .tr.break-page
+          div(style={'-webkit-flex':'6', 'text-align':'start'}).th.border-bottom.border-right
+            p(style={'padding-left':'10px'})
+              b TRANSFERENCIA BANCO DEL TESORO
+          div(style={'-webkit-flex':'4'}).td.center.border-bottom
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.items.find(el => el.id_banco === 14) ? (datos.metodoPago.transferencias.items.find(el => el.id_banco === 14).monto) : 0)}
+        .tr.break-page
+          div(style={'-webkit-flex':'6', 'text-align':'start'}).th.border-bottom.border-right
+            p(style={'padding-left':'10px'})
+              b TRANSFERENCIA BANCO PLAZA
+          div(style={'-webkit-flex':'4'}).td.center.border-bottom
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.items.find(el => el.id_banco === 22) ? (datos.metodoPago.transferencias.items.find(el => el.id_banco === 22).monto) : 0)}            
         .tr.break-page
           div(style={'-webkit-flex':'6', 'text-align':'start'}).th.border-bottom.border-right
             p(style={'padding-left':'10px'})
