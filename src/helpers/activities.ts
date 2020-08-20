@@ -128,6 +128,7 @@ export const updateContributorActivities = async ({ branchId, activities, branch
           }
         })
     );
+    // await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente.id]);
     await client.query('COMMIT');
     return { status: 200, message: 'Actividades ecónomicas y/o estado de licencia actualizado' };
   } catch (error) {

@@ -994,6 +994,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     INNER JOIN impuesto.inmueble_contribuyente_natural icn ON iu.id_inmueble = icn.id_inmueble
     INNER JOIN impuesto.contribuyente c ON icn.id_contribuyente = c.id_contribuyente
     WHERE tipo_documento = $1 AND documento = $2;`,
+  UPDATE_LAST_UPDATE_DATE: 'UPDATE impuesto.contribuyente SET fecha_ultima_actualizacion = now() WHERE id_contribuyente = $1',
   GET_PARISH_ESTATES: `SELECT id_inmueble AS id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", id_registro_municipal AS "idRim"
     FROM inmueble_urbaano iu
