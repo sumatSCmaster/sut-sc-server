@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
-import { getEstatesInfo, getEstateInfoByCod, createPersonalEstate, taxPayerEstatesByRIM, createBareEstate, linkCommercial, updateEstate, getEstateByCod } from '@helpers/estate';
+import { getEstatesInfo, getEstateInfoByCod, createPersonalEstate, taxPayerEstatesByRIM, createBareEstate, linkCommercial, updateEstate, getEstateByCod, taxPayerEstatesByNaturalCont, linkNatural } from '@helpers/estate';
 import { authenticate } from 'passport';
 
 const router = Router();
@@ -31,6 +31,13 @@ router.post('/', authenticate('jwt'), async (req, res) => {
   if (data) res.status(data.status).json(data);
 });
 
+router.get('/sedemat/natural', async(req, res) => {
+  const [error, data] = await fulfill(taxPayerEstatesByNaturalCont(req.query));
+  console.log(error)
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+});
+
 
 router.get('/sedemat/contributor/rim/', async(req, res) => {
   const [error, data] = await fulfill(taxPayerEstatesByRIM(req.query));
@@ -45,6 +52,13 @@ router.post('/sedemat/', async (req, res) => {
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
+
+router.post('/sedemat/natural/link/', async (req, res) => {
+  const [error, data] = await fulfill(linkNatural(req.body));
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+})
+
 
 router.post('/sedemat/rim/link/', async (req, res) => {
   const [error, data] = await fulfill(linkCommercial(req.body));
