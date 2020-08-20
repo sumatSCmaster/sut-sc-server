@@ -1263,7 +1263,7 @@ export const patchSettlement = async ({ id, settlement }) => {
         subramo,
       }))[0];
     }
-    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [patchApplication.id_contribuyente]);
+    // await client.query(queries.UPDATE_LAST_UPDATE_DATE, [prevSettlement.id_solicitud]);
     await client.query('COMMIT');
     return { status: 200, message: 'Correccion administrativa realizada correctamente', liquidacion };
   } catch (error) {
