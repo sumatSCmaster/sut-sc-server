@@ -1,0 +1,126 @@
+extends default
+block css
+  link(rel="stylesheet", href="css/sedemat.css")
+block header
+  div(style={display:'-webkit-flex', 'align-items': 'center'})
+    div(style={'-webkit-flex': 3, 'text-align':'start'})
+      img(src="images/sedematLogo.png", alt="sedemat" style={width:'50%'})
+    div(style={'-webkit-flex': 1})
+      div(style={'margin':'15px 0'})
+        h3(style={'margin': '0 auto'}) SOLVENCIA MUNICIPAL 
+        h3(style={'margin': '0 auto'}) N° I.U.- #{datos.codigo}
+      div(style={'border':'1px solid grey'})
+        div.tr(style={'font-size': '12px'})
+          div(style={'-webkit-flex': 1})
+            div(style={'-webkit-flex': 1,'border-color':'grey'}).td.center.border-right.border-bottom
+              p(style={'margin': '0 auto','padding':'0'})
+                b Mes
+            div(style={'-webkit-flex': 1}).td.center
+              p(style={'margin': '0 auto','padding':'auto 15px', 'font-size':'20px','border-right':'1px solid grey', 'width':'100%'}) 
+                b #{datos.mes}                
+          div(style={'-webkit-flex': 1})
+            div(style={'-webkit-flex': 1}).td.center
+              p(style={'margin': '0 auto','padding':'0','border-bottom':'1px solid grey', 'width':'100%'})
+                b Año
+            div(style={'-webkit-flex': 1}).td.center
+              p(style={'margin': '0 auto', 'padding':'auto 0', 'font-size':'20px'}) 
+                b #{datos.anio}
+block title
+block content
+  div#planilla.solvencia
+    div(style={'margin-bottom':'5%','margin-toP':'10%'}).center
+        h3 El Intendente Municipal Tributario hace constar que
+    div
+      .tr
+        .td
+          p
+            b El Contribuyente:
+            span &nbsp;#{datos.contribuyente}&nbsp;
+      .tr
+        .td
+          p
+            b C.I./R.I.F:
+            span &nbsp;#{datos.cedulaORif}&nbsp;
+      .tr
+        .td
+          p
+            b Representante del Inmueble Ubicado en:
+            span &nbsp;#{datos.direccion ? (datos.direccion.trim() !== '' ? datos.direccion : 'Dirección Sin Asignar') : ''}.&nbsp;
+      .tr
+        .td
+          p
+            b Parroquia:
+            span &nbsp;#{datos.parroquia}&nbsp;
+        .td
+          p
+            b Identificado con el R.I.M:
+            span &nbsp;#{datos.rim ? datos.rim : 'N/A'}&nbsp; 
+      .tr
+        .td
+          p
+            b Valor Fiscal:
+            span &nbsp;#{datos.valorFiscal}&nbsp;                       
+      .tr
+        .td
+          p
+            b Se encuentra solvente con el impuesto sobre Inmuebles Urbanos hasta el:
+            span &nbsp;#{datos.periodo}&nbsp;
+        .td
+          p
+            b Mes del año
+            span &nbsp;#{datos.anio}&nbsp;
+      .tr
+        .td
+          p
+            b Maracaibo,
+            span &nbsp; #{datos.fechaLetra}
+    div(style={'margin-top':"5%"})
+      div(style={border:'1px solid #000', width:'40%', padding:'1%', 'font-size':'16px'})
+        .tr
+          div(style={'width':"100%"}).td.center
+            p
+              b(style={'text-decoration': 'underline', 'font-size':'20px'}) Para uso del Registro Inmobiliario
+        .tr
+          .td
+            p
+              b Documento Registrado bajo el N°
+          .td
+              p
+                hr(style={'background-color':'#000', width:'120px', height:"2px", border:'none'})         
+        .tr
+          .td
+            p
+              b Asiento registral
+          .td
+              p
+                hr(style={'background-color':'#000', width:'50px', height:"2px", border:'none'})         
+          .td
+            p
+              b del folio del año
+              span(style={'text-decoration': 'underline'}) 
+          .td
+              p
+                hr(style={'background-color':'#000', width:'70px', height:"2px", border:'none'})         
+        .tr
+          .td
+            p
+              b del inmueble matriculado N°
+          .td
+              p
+                hr(style={'background-color':'#000', width:'170px', height:"2px", border:'none'})
+        .tr
+          div(style={'width':"100%"}).td.center
+              p
+                hr(style={'background-color':'#000', width:'250px', height:"2px", border:'none'})
+        .tr                                  
+          div(style={'width':"100%"}).td.center
+            p
+              b(style={'font-size':'22px'}) El Registrador
+    div(style={'margin-top':"10%"}).flex.center
+      div(style={height:"180px"})
+        img(src=QR, alt='QR', style={height:"100%"})
+      div.item-firma
+        hr(style={'z-index':'2', 'background-color':'#000', width:'350px', height:"2px", border:'none'})
+        img(src="images/firma.png", style={'margin-top':'-90px', 'z-index':'1',width:'350px'}, alt="", srcset="")
+      div(style={height:"200px"})
+        img(src='images/IU.png', alt='logo', style={'margin-top':'-70px',width:'300px'})

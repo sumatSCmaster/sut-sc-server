@@ -128,6 +128,37 @@ export const taxPayerEstatesByRIM = async ({ typeDoc, rif, rim }) => {
   }
 }
 
+export const taxPayerEstatesByNaturalCont = async ({ typeDoc, doc }) => {
+  const client = await pool.connect();
+  try{
+    
+    const contributor = (await client.query(queries.GET_NATURAL_CONTRIBUTOR, [typeDoc, doc]));
+    if (contributor.rowCount === 0) {
+      throw new Error('Contribuyente no encontrado');
+    }
+    const estates = (await client.query(queries.GET_ESTATES_BY_NATURAL_CONTRIBUTOR, [contributor.rows[0].id])).rows;
+    const estatesWithAppraisals = await Promise.all(estates.map((row) => {
+      return new Promise(async (res, rej) => {
+        res({
+          ...row,
+          avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [row.id])).rows
+        })
+      })
+    }));
+
+    return {status: 200, contribuyente: contributor.rows[0], inmuebles: estatesWithAppraisals};
+
+  } catch (e) {
+    throw {
+      error: e,
+      message: errorMessageExtractor(e)
+    };
+  } finally {
+    client.release();
+  }
+}
+
+
 export const userEstates = async ({ typeDoc, doc }) => {
   const client = await pool.connect();
   try{
@@ -263,6 +294,42 @@ export const linkCommercial = async ({ codCat, rim, relacion }) => {
     (await client.query(queries.LINK_ESTATE_WITH_RIM, [rimData.rows[0].id, codCat, relacion]))
 
     estate = (await client.query(queries.GET_ESTATE_BY_CODCAT, [codCat]));
+
+    return {
+      status: 200,
+      message: 'Inmueble enlazado',
+      inmueble: {...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
+    };
+
+  } catch (e) {
+    throw {
+      error: e,
+      message: e.message
+    };
+  } finally {
+    client.release();
+  }
+}
+
+export const linkNatural = async ({ codCat, typeDoc, doc, relacion }) => {
+  const client = await pool.connect();
+  try{
+
+    const contributor = (await client.query(queries.GET_NATURAL_CONTRIBUTOR, [typeDoc, doc]));
+    if (contributor.rowCount === 0) {
+      throw new Error('Contribuyente no encontrado');
+    }
+
+    let estate = (await client.query(queries.GET_ESTATE_BY_CODCAT_NAT, [codCat]));
+
+    if(estate.rowCount === 0){
+      throw new Error('Inmueble no encontrado.')
+    }
+
+
+    (await client.query(queries.LINK_ESTATE_WITH_NATURAL_CONTRIBUTOR_EX, [estate.rows[0].id, contributor.rows[0].id, relacion]))
+
+    estate = (await client.query(queries.GET_ESTATE_BY_CODCAT_NAT, [codCat]));
 
     return {
       status: 200,

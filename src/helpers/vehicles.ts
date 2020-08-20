@@ -7,6 +7,23 @@ import switchcase from '@utils/switch';
 
 const pool = Pool.getInstance();
 
+export const getBrands = async () => {
+  const client = await pool.connect();
+  try {
+    const res = await client.query('SELECT id_marca_vehiculo AS id, nombre FROM impuesto.marca_vehiculo;');
+    return {data: res.rows, status: 200};
+  } catch (error) {
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || '',
+    };
+  } finally {
+    client.release();
+  }
+}
+
 export const getVehiclesByContributor = async (id) => {
   const client = await pool.connect();
   try {
