@@ -267,6 +267,7 @@ export const insertRetentions = async ({ process, user }) => {
       (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.VALIDAR])).rows[0].state;
       state = await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
     }
+    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [application.id_contribuyente]);
     await client.query('COMMIT');
     const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
     // await sendNotification(
@@ -316,6 +317,7 @@ export const createRetentionAgent = async ({ docType, document }) => {
       esAgenteRetencion: agent.es_agente_retencion,
       referenciaMunicipal: agent.referencia_municipal,
     };
+    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [agent.id_contribuyente]);
     await client.query('COMMIT');
     return { status: 201, message: 'Agente de retencion creado', agenteRetencion };
   } catch (error) {

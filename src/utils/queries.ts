@@ -164,11 +164,11 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = \
     tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 ORDER BY tramites_state.fechacreacion DESC;',
   GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION:
-    'SELECT tramites_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
+    "SELECT tramites_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
     nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, \
-    tipo_tramite.pago_previo AS "pagoPrevio"  FROM tramites_state INNER JOIN tipo_tramite ON tramites_state.tipotramite = \
+    tipo_tramite.pago_previo AS \"pagoPrevio\"  FROM tramites_state INNER JOIN tipo_tramite ON tramites_state.tipotramite = \
     tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = \
-    tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 AND tramites_state.state IN (\'enproceso\', \'inspeccion\') ORDER BY tramites_state.fechacreacion DESC;',
+    tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 AND tramites_state.state IN ('enproceso', 'inspeccion') ORDER BY tramites_state.fechacreacion DESC;",
   GET_ALL_PROCEDURES_EXCEPT_VALIDATING_ONES:
     'SELECT tramites_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
   nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, \
@@ -177,7 +177,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 AND tramites_state.state!=\'validando\' ORDER BY tramites_state.fechacreacion DESC;',
   GET_RESOURCES_FOR_PROCEDURE:
     'SELECT DISTINCT tt.sufijo, tt.costo_base, usr.nombre_completo as nombrecompleto, \
-    usr.nombre_de_usuario as nombreusuario, tr.costo, tt.planilla, tr.id_tipo_tramite AS "tipoTramite" FROM tipo_tramite tt INNER JOIN tramite tr ON\
+    usr.nombre_de_usuario as nombreusuario, tr.costo, tt.planilla, tr.id_tipo_tramite AS "tipoTramite", tt.id_ramo FROM tipo_tramite tt INNER JOIN tramite tr ON\
     tt.id_tipo_tramite=tr.id_tipo_tramite INNER JOIN usuario usr ON tr.id_usuario=usr.id_usuario\
     WHERE tr.id_tramite = $1',
   GET_PROCEDURE_STATES: 'SELECT id_tramite AS id, tramite_evento_fsm(event ORDER BY id_evento_tramite) AS state  \
@@ -981,19 +981,18 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_RIM_DATA: `SELECT id_registro_municipal AS id, referencia_municipal as "rim", telefono_celular AS "telefonoCelular", 
     telefono_habitacion AS "telefonoHabitacion", email, denominacion_comercial AS "denominacionComercial", nombre_representante AS "nombreRepresentante"
     FROM impuesto.registro_municipal WHERE referencia_municipal = $1`,
-  GET_ESTATES_BY_RIM:
-    `SELECT id_inmueble AS id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion_contribuyente AS relacion FROM inmueble_urbano WHERE id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $1 ORDER BY id_registro_municipal DESC LIMIT 1);`,
-  GET_ESTATES_BY_NATURAL_CONTRIBUTOR:
-  `SELECT id_inmueble AS id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
+  GET_ESTATES_BY_RIM: `SELECT id_inmueble AS id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion_contribuyente AS relacion FROM inmueble_urbano WHERE id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $1 ORDER BY id_registro_municipal DESC LIMIT 1);`,
+  GET_ESTATES_BY_NATURAL_CONTRIBUTOR: `SELECT id_inmueble AS id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", icn.relacion AS relacion 
     FROM inmueble_urbano iu INNER JOIN impuesto.inmueble_contribuyente_natural icn USING (id_inmueble)
-    WHERE id_contribuyente = $1`,  
+    WHERE id_contribuyente = $1`,
   GET_ESTATES_BY_USER_INFO: `SELECT id_inmueble AS id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble" 
     FROM inmueble_urbaano iu 
     INNER JOIN impuesto.inmueble_contribuyente_natural icn ON iu.id_inmueble = icn.id_inmueble
     INNER JOIN impuesto.contribuyente c ON icn.id_contribuyente = c.id_contribuyente
     WHERE tipo_documento = $1 AND documento = $2;`,
+  UPDATE_LAST_UPDATE_DATE: 'UPDATE impuesto.contribuyente SET fecha_ultima_actualizacion = now() WHERE id_contribuyente = $1',
   GET_PARISH_ESTATES: `SELECT id_inmueble AS id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", id_registro_municipal AS "idRim"
     FROM inmueble_urbaano iu
@@ -1017,8 +1016,8 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
    id_parroquia AS "idParroquia", metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion as relacion 
    FROM inmueble_urbano iu INNER JOIN impuesto.inmueble_contribuyente_natural icn USING (id_inmueble) 
    WHERE cod_catastral = $1;`,
-  
-   LINK_ESTATE_WITH_RIM: `UPDATE inmueble_urbano SET id_registro_municipal = $1, relacion_contribuyente = $3 WHERE cod_catastral = $2;`,  
+
+  LINK_ESTATE_WITH_RIM: `UPDATE inmueble_urbano SET id_registro_municipal = $1, relacion_contribuyente = $3 WHERE cod_catastral = $2;`,
   gtic: {
     GET_NATURAL_CONTRIBUTOR:
       'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 AND (trim(nb_representante_legal) NOT IN (SELECT trim(nb_marca) FROM tb014_marca_veh) AND trim(nb_representante_legal) NOT IN (SELECT trim(tx_marca) FROM t45_vehiculo_marca) OR trim(nb_representante_legal) IS NULL) ORDER BY co_contribuyente DESC',

@@ -1197,11 +1197,12 @@ const externalUserForLinkingExists = async ({ user, password, gtic }: { user: st
 };
 
 export const createSettlementForProcedure = async (process, client) => {
-  const { referenciaMunicipal, monto, ramo } = process;
+  const { referenciaMunicipal, monto, ramo, idTramite } = process;
   try {
     const datos = {
       fecha: { month: moment().toDate().toLocaleDateString('ES', { month: 'long' }), year: moment().year() },
       descripcion: 'TRAMITE',
+      idTramite,
     };
     console.log('si');
     const liquidacion = (await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [null, fixatedAmount(monto), ramo, 'Pago ordinario', datos, moment().endOf('month').format('MM-DD-YYYY'), referenciaMunicipal])).rows[0];
@@ -1262,7 +1263,7 @@ export const patchSettlement = async ({ id, settlement }) => {
         subramo,
       }))[0];
     }
-
+    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [patchApplication.id_contribuyente]);
     await client.query('COMMIT');
     return { status: 200, message: 'Correccion administrativa realizada correctamente', liquidacion };
   } catch (error) {
@@ -2103,7 +2104,8 @@ export const initialUserLinking = async (linkingData, user) => {
       // (rims.filter((el) => el).length > 0 && (await sendRimVerification(VerificationValue.CellPhone, { content: datosContacto.telefono, user: user.id, idRim: rims.filter((el) => el) }))) ||
       payload = { rims: rims.filter((el) => el) };
     }
-    client.query('COMMIT');
+    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [contributor.id_contribuyente]);
+    await client.query('COMMIT');
     return { status: 201, message: 'Enlace inicial completado', rims: payload.rims };
   } catch (error) {
     client.query('ROLLBACK');
@@ -2124,6 +2126,7 @@ export const verifyUserLinking = async ({ code, user }) => {
   try {
     await verifyCode(VerificationValue.CellPhone, { code, user: user.id });
     const contribuyente = await hasLinkedContributor(user.id);
+    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [contribuyente?.id]);
     return { status: 200, message: 'Usuario enlazado y verificado', contribuyente };
   } catch (error) {
     throw {
@@ -2376,6 +2379,7 @@ export const insertSettlements = async ({ process, user }) => {
       // (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.VALIDAR])).rows[0].state;
       await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
     }
+    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [application.id_contribuyente]);
     await client.query('COMMIT');
     const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
     await sendNotification(
@@ -2448,6 +2452,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
 
     await client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
+    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente.id]);
     if (user.tipoUsuario !== 4) {
       if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
       applicationInstance.recibo = await generateReceipt({ application });
@@ -2513,6 +2518,7 @@ export const addTaxApplicationPaymentRetention = async ({ payment, application, 
 
     await client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
+    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente.id]);
     if (user.tipoUsuario !== 4) {
       if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
       applicationInstance.recibo = await generateReceipt({ application });
@@ -2578,6 +2584,7 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
     }
     await client.query('COMMIT');
     const applicationInstance = await getAgreementFractionById({ id: fragment });
+    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente.id]);
     console.log(applicationInstance);
     await sendNotification(
       user,
@@ -2626,6 +2633,7 @@ export const validateApplication = async (body, user, client) => {
     }
 
     const applicationInstance = await getApplicationsAndSettlementsById({ id: body.idTramite, user: solicitud.id_usuario });
+    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente.id]);
     applicationInstance.aprobado = true;
     await sendNotification(
       user,
@@ -2669,6 +2677,7 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
       await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
     }
     const applicationInstance = await getAgreementFractionById({ id: body.idTramite });
+    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente.id]);
     applicationInstance.aprobado = true;
     // await sendNotification(
     //   user,
@@ -2877,7 +2886,7 @@ export const addRebateForDeclaration = async ({ process, user }) => {
   const client = await pool.connect();
   const { id, montoRebajado } = process;
   try {
-    const { rebajado, id_solicitud: idSolicitud } = (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows[0];
+    const { rebajado, id_solicitud: idSolicitud, id_contribuyente: contribuyente } = (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows[0];
     if (rebajado) throw { status: 403, message: 'Esta solicitud ya ha sido rebajada anteriormente' };
     const hasAE = (await client.query(`SELECT * FROM impuesto.liquidacion l INNER JOIN impuesto.subramo USING (id_subramo) INNER JOIN impuesto.ramo r USING (id_ramo) WHERE l.id_solicitud = $1 AND r.codigo = '112' AND l.monto > 0`, [idSolicitud]))
       .rows;
@@ -2908,6 +2917,7 @@ export const addRebateForDeclaration = async ({ process, user }) => {
     //   })
     // );
     await client.query('UPDATE impuesto.solicitud SET rebajado = true WHERE id_solicitud = $1', [idSolicitud]);
+    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [contribuyente]);
     await client.query('COMMIT');
     return { status: 200, message: 'Solicitud rebajada satisfactoriamente' };
   } catch (error) {
@@ -3012,6 +3022,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
       recibo = await createReceiptForSpecialApplication({ pool: client, user, application: (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement[0].id])).rows[0] });
       await client.query('UPDATE impuesto.liquidacion SET recibo = $1 WHERE id_solicitud = $2', [recibo, application.id_solicitud]);
     }
+    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [application.id_contribuyente]);
     await client.query('COMMIT');
     const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
     solicitud.recibo = recibo;
@@ -3074,9 +3085,9 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
         return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.codigo, x.desde]);
       })
     );
-    await createSettlementForProcedure({ monto: +costo, referenciaMunicipal: registry.id_registro_municipal, ramo: 'AE' }, client);
     const verifiedId = (await client.query('SELECT * FROM impuesto.verificacion_telefono WHERE id_usuario = $1', [user])).rows[0]?.id_verificacion_telefono;
     await client.query('INSERT INTO impuesto.registro_municipal_verificacion VALUES ($1, $2) RETURNING *', [registry.id_registro_municipal, verifiedId]);
+    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [contribuyente.id]);
     console.log(data);
     return data;
   } catch (error) {
@@ -3090,6 +3101,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
     const { contribuyente, beneficios, usuario } = data.funcionario;
     const contributorWithBranch = (await client.query(queries.GET_CONTRIBUTOR_WITH_BRANCH, [contribuyente.registroMunicipal])).rows[0];
     const benefittedUser = (await client.query(queries.GET_USER_IN_CHARGE_OF_BRANCH_BY_ID, [contributorWithBranch.id_registro_municipal])).rows[0];
+    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [contributorWithBranch.id_contribuyente]);
     // if (!benefittedUser) throw { status: 404, message: 'No existe un usuario encargado de esta sucursal' };
     await Promise.all(
       beneficios.map(async (x) => {
@@ -3643,7 +3655,6 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
   }
 };
 
-
 const createReceiptForIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
     console.log('culo');
@@ -3654,41 +3665,40 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
     motivo = application.descripcionSubramo;
     ramo = application.descripcionRamo;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
-    if(application.idSubramo === 9){
+    if (application.idSubramo === 9) {
       const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
       let breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 9])).rows;
       breakdownData = breakdownData.sort((a, b) => {
-        if(mesesNumerico[a.datos.fecha.mes] > mesesNumerico[b.datos.fecha.month]) return -1;
+        if (mesesNumerico[a.datos.fecha.mes] > mesesNumerico[b.datos.fecha.month]) return -1;
         else if (mesesNumerico[a.datos.fecha.mes] < mesesNumerico[b.datos.fecha.month]) return 1;
-        else return 0
+        else return 0;
       });
-      for(let inm of breakdownData[breakdownData.length - 1].datos.desglose){
-        const inmueble = await pool.query(queries.GET_ESTATE_BY_ID, [inm.inmueble])
-        const avaluo = await pool.query(queries.GET_CURRENT_APPRAISALS_BY_ID, [inm.inmueble])
+      for (let inm of breakdownData[breakdownData.length - 1].datos.desglose) {
+        const inmueble = await pool.query(queries.GET_ESTATE_BY_ID, [inm.inmueble]);
+        const avaluo = await pool.query(queries.GET_CURRENT_APPRAISALS_BY_ID, [inm.inmueble]);
         certInfo = {
           QR: linkQr,
           moment: require('moment'),
           fecha: moment().format('MM-DD-YYYY'),
           titulo: 'CERTIFICADO POR PROPIEDAD INMOBILIARIA',
-          institucion: 'SEDEMAT', 
+          institucion: 'SEDEMAT',
           datos: {
             mes: moment(breakdownData[0].fecha_liquidacion).get('month') + 1,
-            anio:moment(breakdownData[0].fecha_liquidacion).get('year'),
+            anio: moment(breakdownData[0].fecha_liquidacion).get('year'),
             contribuyente: application.razonSocial,
             cedulaORif: `${application.tipoDocumento}-${application.documento}`,
-            direccion:inmueble.rows[0]?.direccion,
+            direccion: inmueble.rows[0]?.direccion,
             parroquia: inmueble?.rows[0]?.nombre,
-            rim: referencia?.referencia_municipal || null,//Si no posee no me la envies o la envias null
+            rim: referencia?.referencia_municipal || null, //Si no posee no me la envies o la envias null
             valorFiscal: avaluo?.rows[0]?.avaluo || null,
-            periodo: mesesCardinal[breakdownData[breakdownData.length - 1].datos.fecha.month],//el mes
-            fechaLetra:`${moment(breakdownData[0].fecha_liquidacion).get('date')} de ${breakdownData[breakdownData.length - 1].datos.fecha.month} del ${breakdownData[breakdownData.length - 1].datos.fecha.year}.`
-          
-          }
-        }
-        certInfoArray.push({...certInfo})
+            periodo: mesesCardinal[breakdownData[breakdownData.length - 1].datos.fecha.month], //el mes
+            fechaLetra: `${moment(breakdownData[0].fecha_liquidacion).get('date')} de ${breakdownData[breakdownData.length - 1].datos.fecha.month} del ${breakdownData[breakdownData.length - 1].datos.fecha.year}.`,
+          },
+        };
+        certInfoArray.push({ ...certInfo });
       }
     }
-    
+
     return new Promise(async (res, rej) => {
       try {
         let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-IU.pug`), certInfo));
@@ -3818,7 +3828,6 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
     throw errorMessageExtractor(error);
   }
 };
-
 
 const createReceiptForSpecialApplication = async ({ pool, user, application }) => {
   try {

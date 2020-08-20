@@ -148,6 +148,7 @@ export const insertRepairs = async ({ process, user }) => {
       (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.VALIDAR])).rows[0].state;
       state = await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
     }
+    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [application.id_contribuyente]);
     await client.query('COMMIT');
     const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
     solicitud.recibo = await generateRepairReceipt({ application: application.id_solicitud, breakdownData: settlements.flat(), total: process.total, cashier: user.nombreCompleto });
