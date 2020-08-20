@@ -752,7 +752,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
 
     if (!![29, 30, 31, 32, 33, 34, 35].find((el) => el === resources.tipoTramite)) {
       const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
-      prevData.datos.funcionario = { ...procedure.datos };
+      prevData.datos.funcionario = { ...prevData.datos.funcionario, ...procedure.datos };
       datos = prevData.datos;
       datos.idTramite = procedure.idTramite;
     }
