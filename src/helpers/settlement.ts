@@ -157,7 +157,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const now = moment(new Date());
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     //AE
-    if (branch && branch.referencia_municipal && !AEApplicationExists) {
+    if (branch && branch?.referencia_municipal && !AEApplicationExists) {
       const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
       if (economicActivities.length === 0) throw { status: 404, message: 'El contribuyente no posee aforos asociados' };
       let lastEA = (await client.query(lastSettlementQuery, [codigosRamo.AE, lastSettlementPayload])).rows.find((el) => !el.datos.hasOwnProperty('descripcion'));
@@ -227,8 +227,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         estates.length > 0
           ? await Promise.all(
               estates.map(async (el) => {
-                const tarifaAseo = await getCleaningTariffForEstate({ estate: el, branchId: branch.id_registro_municipal, client });
-                const tarifaGas = await getGasTariffForEstate({ estate: el, branchId: branch.id_registro_municipal, client });
+                const tarifaAseo = await getCleaningTariffForEstate({ estate: el, branchId: branch?.id_registro_municipal, client });
+                const tarifaGas = await getGasTariffForEstate({ estate: el, branchId: branch?.id_registro_municipal, client });
                 return { id: el.id_inmueble, tipoInmueble: el.tipo_inmueble, codCat: el.cod_catastral, direccionInmueble: el.direccion, tarifaAseo, tarifaGas, deuda: debtSM };
               })
             )
@@ -267,9 +267,12 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
               .map(async (el) => {
                 // let paymentDate: Moment = lastIUPayment;
                 // let interpolation = dateInterpolationIU;
-                const lastMonthPayment = (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID, [el.id_inmueble, branch.id_registro_municipal])).rows[0];
+                const lastMonthPayment =
+                  contributor.tipo_contribuyente === 'JURIDICO'
+                    ? (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID, [el.id_inmueble, branch?.id_registro_municipal])).rows[0]
+                    : (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID_NATURAL, [el.id_inmueble, contributor.id_contribuyente])).rows[0];
                 const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment).startOf('month').isSameOrAfter(IUDate) ? moment(lastMonthPayment.fecha_liquidacion).startOf('month') : IUDate) : IUDate;
-                const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M'))) || (!lastMonthPayment && dateInterpolationIU) || 0;
+                const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M'))) || (!lastMonthPayment && dateInterpolationIU) || 1;
                 // paymentDate = paymentDate.isSameOrBefore(lastEAPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
                 if (interpolation === 0) return null;
                 // if (lastMonthPayment) {
@@ -284,7 +287,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                   ultimoAvaluo: el.avaluo,
                   impuestoInmueble: (el.avaluo * 0.01) / 12,
                   deuda: await Promise.all(
-                    new Array(interpolation + 1).fill({ month: null, year: null }).map(async (value, index) => {
+                    new Array(interpolation).fill({ month: null, year: null }).map(async (value, index) => {
                       const date = addMonths(new Date(paymentDate.toDate()), index);
                       const momentDate = moment(date);
                       const exonerado = await isExonerated({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') });
