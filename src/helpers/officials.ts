@@ -87,17 +87,7 @@ export const createOfficial = async (official: any) => {
   const salt = genSaltSync(10);
   try {
     client.query('BEGIN');
-    const insert = await client.query(queries.CREATE_OFFICIAL, [
-      nombreCompleto,
-      nombreUsuario,
-      direccion,
-      cedula,
-      nacionalidad,
-      hashSync(password, salt),
-      telefono,
-      cargo,
-      tipoUsuario,
-    ]);
+    const insert = await client.query(queries.CREATE_OFFICIAL, [nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, hashSync(password, salt), telefono, cargo, tipoUsuario]);
     const off = await client.query(queries.GET_OFFICIAL, [insert.rows[0].id_usuario, insert.rows[0].id_cargo]);
     const id = off.rows[0].id_usuario;
     await addPermissions(id, permisos || [], client);
@@ -132,14 +122,13 @@ export const updateOfficial = async (official: any, id: string) => {
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    const response = (await client.query(queries.UPDATE_OFFICIAL, [nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, telefono, id, tipoUsuario]))
-      .rows[0];
+    const response = (await client.query(queries.UPDATE_OFFICIAL, [nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, telefono, id, tipoUsuario])).rows[0];
     if (permisos) {
       await dropPermissions(id, client);
       await addPermissions(id, permisos, client);
     }
-    if(cargo){
-      await client.query('UPDATE cuenta_funcionario SET id_cargo = $1 WHERE id_usuario = $2', [cargo, id])
+    if (cargo) {
+      await client.query('UPDATE cuenta_funcionario SET id_cargo = $1 WHERE id_usuario = $2', [cargo, id]);
     }
     client.query('COMMIT');
     const usuario = {
@@ -151,6 +140,7 @@ export const updateOfficial = async (official: any, id: string) => {
       cedula: response.cedula,
       nacionalidad: response.nacionalidad,
       password: response.password,
+      cargo,
       telefono: response.telefono,
       permisos: (await client.query(queries.GET_USER_PERMISSIONS, [response.id_usuario])).rows.map((row) => +row.id_tipo_tramite) || [],
     };

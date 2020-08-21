@@ -1651,6 +1651,7 @@ export const formatBranch = async (branch, client) => {
     id: branch.id_registro_municipal,
     referenciaMunicipal: branch.referencia_municipal,
     fechaAprobacion: branch.fecha_aprobacion,
+    direccion: branch.direccion,
     telefono: branch.telefono_celular,
     email: branch.email,
     denomComercial: branch.denominacion_comercial,
@@ -1815,9 +1816,9 @@ export const initialUserLinking = async (linkingData, user) => {
         const rims: number[] = await Promise.all(
           await sucursales.map(async (el) => {
             const { datosSucursal } = el;
-            const { nombreRepresentante, telefonoMovil, email, denomComercial, representado, registroMunicipal } = datosSucursal;
+            const { nombreRepresentante, telefonoMovil, email, denomComercial, representado, registroMunicipal, direccion } = datosSucursal;
             const updatedRegistry = (
-              await client.query(queries.UPDATE_BRANCH_INFO, [denomComercial, nombreRepresentante, representado ? datosContacto.telefono : telefonoMovil, representado ? datosContacto.correo : email, representado, registroMunicipal])
+              await client.query(queries.UPDATE_BRANCH_INFO, [denomComercial, nombreRepresentante, representado ? datosContacto.telefono : telefonoMovil, representado ? datosContacto.correo : email, representado, direccion, registroMunicipal])
             ).rows[0];
             return representado ? updatedRegistry.id_registro_municipal : undefined;
           })
@@ -1851,7 +1852,7 @@ export const initialUserLinking = async (linkingData, user) => {
           const multasVigentes = multas.filter((el) => el.estado !== 'PAGADO');
           const pagados = liquidacionesPagas.concat(multasPagas);
           const vigentes = liquidacionesVigentes.concat(multasVigentes);
-          const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
+          const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado, direccion } = datosSucursal;
           const registry = (
             await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [
               contributor.id_contribuyente,
@@ -1861,6 +1862,7 @@ export const initialUserLinking = async (linkingData, user) => {
               representado ? datosContacto.correo : email,
               denomComercial,
               representado || false,
+              direccion,
             ])
           ).rows[0];
           if (actividadesEconomicas!.length > 0) {
@@ -1898,6 +1900,7 @@ export const initialUserLinking = async (linkingData, user) => {
                     await client.query(queries.UPDATE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.INGRESARDATOS]);
                     if (el.estado === 'PAGADO') {
                       await client.query(queries.COMPLETE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.APROBARCAJERO]);
+                      await client.query('UPDATE impuesto.fraccion SET fecha_aprobado = $1 WHERE id_fraccion = $2', [moment(el.fechaVencimiento).format('MM-DD-YYYY'), fraccion.id_fraccion]);
                     }
                   })
                 );
@@ -1978,7 +1981,7 @@ export const initialUserLinking = async (linkingData, user) => {
           let registry;
           const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [contributor.id_contribuyente, 'NATURAL', fixatedAmount(+datosSucursal?.creditoFiscal || 0), true])).rows[0];
           if (datosSucursal?.registroMunicipal) {
-            const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
+            const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado, direccion } = datosSucursal;
             registry = (
               await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [
                 contributor.id_contribuyente,
@@ -1988,6 +1991,7 @@ export const initialUserLinking = async (linkingData, user) => {
                 representado ? datosContacto.correo : email,
                 denomComercial,
                 representado || false,
+                direccion,
               ])
             ).rows[0];
             if (x.actividadesEconomicas?.length > 0) {
@@ -2025,6 +2029,7 @@ export const initialUserLinking = async (linkingData, user) => {
                       await client.query(queries.UPDATE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.INGRESARDATOS]);
                       if (el.estado === 'PAGADO') {
                         await client.query(queries.COMPLETE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.APROBARCAJERO]);
+                        await client.query('UPDATE impuesto.fraccion SET fecha_aprobado = $1 WHERE id_fraccion = $2', [moment(el.fechaVencimiento).format('MM-DD-YYYY'), fraccion.id_fraccion]);
                       }
                     })
                   );
@@ -3067,6 +3072,7 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
         funcionario.capitalSuscrito,
         funcionario.tipoSociedad,
         funcionario.estadoLicencia,
+        funcionario.direccion,
       ])
     ).rows[0];
     data.funcionario.referenciaMunicipal = registry.referencia_municipal;
