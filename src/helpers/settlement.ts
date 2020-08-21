@@ -1759,6 +1759,7 @@ const getDefaultInterestByApplication = async ({ id, date, state, client }): Pro
   try {
     const value =
       (state === 'ingresardatos' &&
+        moment().isAfter(moment(date)) &&
         moment(date).month() < moment().month() &&
         (
           await client.query(
