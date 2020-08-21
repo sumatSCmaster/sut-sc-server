@@ -1061,7 +1061,7 @@ export const processProcedureAnalist = async (procedure, user: Usuario, client: 
 
     if (!!resources.id_ramo) {
       const ramo = (await client.query('SELECT * FROM impuesto.ramo WHERE id_ramo = $1', [resources.id_ramo])).rows[0].descripcion;
-      await createSettlementForProcedure({ monto: +procedure.monto, ramo, idTramite: procedure.idTramite }, client);
+      await createSettlementForProcedure({ monto: +resources.costo, ramo, idTramite: procedure.idTramite }, client);
     }
 
     if (datos) {
