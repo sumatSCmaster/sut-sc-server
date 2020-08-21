@@ -1651,6 +1651,7 @@ export const formatBranch = async (branch, client) => {
     id: branch.id_registro_municipal,
     referenciaMunicipal: branch.referencia_municipal,
     fechaAprobacion: branch.fecha_aprobacion,
+    direccion: branch.direccion,
     telefono: branch.telefono_celular,
     email: branch.email,
     denomComercial: branch.denominacion_comercial,
