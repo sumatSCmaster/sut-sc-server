@@ -1897,6 +1897,7 @@ export const initialUserLinking = async (linkingData, user) => {
                     await client.query(queries.UPDATE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.INGRESARDATOS]);
                     if (el.estado === 'PAGADO') {
                       await client.query(queries.COMPLETE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.APROBARCAJERO]);
+                      await client.query('UPDATE impuesto.fraccion SET fecha_aprobado = $1 WHERE id_fraccion = $2', [moment(el.fechaVencimiento).format('MM-DD-YYYY'), fraccion.id_fraccion]);
                     }
                   })
                 );
@@ -2025,6 +2026,7 @@ export const initialUserLinking = async (linkingData, user) => {
                       await client.query(queries.UPDATE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.INGRESARDATOS]);
                       if (el.estado === 'PAGADO') {
                         await client.query(queries.COMPLETE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.APROBARCAJERO]);
+                        await client.query('UPDATE impuesto.fraccion SET fecha_aprobado = $1 WHERE id_fraccion = $2', [moment(el.fechaVencimiento).format('MM-DD-YYYY'), fraccion.id_fraccion]);
                       }
                     })
                   );
