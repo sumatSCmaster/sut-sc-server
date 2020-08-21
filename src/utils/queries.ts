@@ -616,6 +616,62 @@ AND EXTRACT('month' FROM l.fecha_liquidacion) = EXTRACT('month' FROM CURRENT_DAT
     "SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l on s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON\
   l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND s.id_contribuyente = $2 \
   AND EXTRACT('month' FROM l.fecha_liquidacion) = EXTRACT('month' FROM CURRENT_DATE) AND l.id_registro_municipal IS NULL ORDER BY fecha_liquidacion DESC",
+  GET_LAST_SETTLEMENTS_FOR_INSPECTION_BY_CONTRIBUTOR: `WITH solicitudcte AS (
+    SELECT id_solicitud
+    FROM impuesto.solicitud 
+    WHERE id_contribuyente = $1
+    )
+
+    SELECT sl.state AS estado, l.*, r.descripcion FROM (SELECT s.id_solicitud AS id,
+        s.id_tipo_tramite AS tipotramite,
+        s.aprobado,
+        s.fecha,
+        s.fecha_aprobado AS "fechaAprobacion",
+        ev.state,
+        s.tipo_solicitud AS "tipoSolicitud",
+        s.id_contribuyente
+      FROM impuesto.solicitud s
+        JOIN ( SELECT es.id_solicitud,
+                impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+              FROM impuesto.evento_solicitud es
+              WHERE id_solicitud IN (SELECT * FROM solicitudcte)
+              GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+    ) sl INNER JOIN impuesto.liquidacion l ON sl.id = l.id_solicitud INNER JOIN impuesto.subramo sr USING (id_subramo) INNER JOIN impuesto.ramo r USING (id_ramo) WHERE id_liquidacion IN (SELECT id_liquidacion FROM
+        (SELECT id_ramo, MAX(id_liquidacion) as id_liquidacion, MAX(fecha_liquidacion)
+    FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l USING (id_solicitud)
+    INNER JOIN impuesto.subramo sr USING (id_subramo)
+    INNER JOIN impuesto.ramo r USING (id_ramo)
+    WHERE id_contribuyente = $1 AND r.codigo IN ('112','111','114','122')
+    GROUP BY id_ramo) x
+    );`,
+  GET_LAST_SETTLEMENTS_FOR_INSPECTION_BY_RIM: `WITH solicitudcte AS (
+    SELECT id_solicitud
+    FROM impuesto.solicitud 
+    WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE id_registro_municipal = $1)
+    )
+
+    SELECT sl.state AS estado, l.*, r.descripcion FROM (SELECT s.id_solicitud AS id,
+        s.id_tipo_tramite AS tipotramite,
+        s.aprobado,
+        s.fecha,
+        s.fecha_aprobado AS "fechaAprobacion",
+        ev.state,
+        s.tipo_solicitud AS "tipoSolicitud",
+        s.id_contribuyente
+      FROM impuesto.solicitud s
+        JOIN ( SELECT es.id_solicitud,
+                impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+              FROM impuesto.evento_solicitud es
+              WHERE id_solicitud IN (SELECT * FROM solicitudcte)
+              GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+    ) sl INNER JOIN impuesto.liquidacion l ON sl.id = l.id_solicitud INNER JOIN impuesto.subramo sr USING (id_subramo) INNER JOIN impuesto.ramo r USING (id_ramo) WHERE id_liquidacion IN (SELECT id_liquidacion FROM
+        (SELECT id_ramo, MAX(id_liquidacion) as id_liquidacion, MAX(fecha_liquidacion)
+    FROM impuesto.liquidacion l
+    INNER JOIN impuesto.subramo sr USING (id_subramo)
+    INNER JOIN impuesto.ramo r USING (id_ramo)
+    WHERE id_registro_municipal = $1 AND r.codigo IN ('112','111','114','122')
+    GROUP BY id_ramo) x
+    );`,
   GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM:
     'SELECT * FROM impuesto.solicitud_state s RIGHT JOIN impuesto.liquidacion l on s.id = l.id_solicitud INNER JOIN impuesto.subramo sr ON\
   l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND l.id_registro_municipal =\

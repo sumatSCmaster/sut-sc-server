@@ -1699,7 +1699,7 @@ export const formatBranch = async (branch, client) => {
       LEFT JOIN impuesto.ramo r
       USING (id_ramo)
       WHERE l.id_registro_municipal= $1
-      ORDER BY  fecha_liquidacion DESC;
+      ORDER BY fecha_liquidacion DESC;
       `,
         [branch.id_registro_municipal]
       )
