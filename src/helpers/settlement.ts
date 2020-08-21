@@ -157,7 +157,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const now = moment(new Date());
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     //AE
-    if (branch && branch.referencia_municipal && !AEApplicationExists) {
+    if (branch && branch?.referencia_municipal && !AEApplicationExists) {
       const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
       if (economicActivities.length === 0) throw { status: 404, message: 'El contribuyente no posee aforos asociados' };
       let lastEA = (await client.query(lastSettlementQuery, [codigosRamo.AE, lastSettlementPayload])).rows.find((el) => !el.datos.hasOwnProperty('descripcion'));
@@ -267,7 +267,10 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
               .map(async (el) => {
                 // let paymentDate: Moment = lastIUPayment;
                 // let interpolation = dateInterpolationIU;
-                const lastMonthPayment = (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID, [el.id_inmueble, branch.id_registro_municipal])).rows[0];
+                const lastMonthPayment =
+                  contributor.tipo_contribuyente === 'JURIDICO'
+                    ? (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID, [el.id_inmueble, branch?.id_registro_municipal])).rows[0]
+                    : (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID_NATURAL, [el.id_inmueble, contributor.id_contribuyente])).rows[0];
                 const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment).startOf('month').isSameOrAfter(IUDate) ? moment(lastMonthPayment.fecha_liquidacion).startOf('month') : IUDate) : IUDate;
                 const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M'))) || (!lastMonthPayment && dateInterpolationIU) || 1;
                 // paymentDate = paymentDate.isSameOrBefore(lastEAPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
