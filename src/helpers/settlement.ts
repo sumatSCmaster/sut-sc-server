@@ -1850,7 +1850,7 @@ export const initialUserLinking = async (linkingData, user) => {
           const multasVigentes = multas.filter((el) => el.estado !== 'PAGADO');
           const pagados = liquidacionesPagas.concat(multasPagas);
           const vigentes = liquidacionesVigentes.concat(multasVigentes);
-          const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
+          const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado, direccion } = datosSucursal;
           const registry = (
             await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [
               contributor.id_contribuyente,

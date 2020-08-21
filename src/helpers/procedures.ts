@@ -763,6 +763,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       prevData.datos.funcionario = { ...prevData.datos.funcionario, ...procedure.datos };
       datos = prevData.datos;
       datos.idTramite = procedure.idTramite;
+      datos.tipoTramite = resources.tipoTramite;
     }
 
     if (procedure.sufijo === 'ompu') {
