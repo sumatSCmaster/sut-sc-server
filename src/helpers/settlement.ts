@@ -1760,7 +1760,7 @@ const getDefaultInterestByApplication = async ({ id, date, state, client }): Pro
     const value =
       (state === 'ingresardatos' &&
         moment().isAfter(moment(date)) &&
-        moment(date).month() < moment().month() &&
+        moment().diff(moment(date).startOf('month'), 'month') > 0 &&
         (
           await client.query(
             'SELECT l.*, s.*, r.descripcion_corta as "tipoProcedimiento" FROM impuesto.liquidacion l INNER JOIN  (SELECT id_subramo, MAX(fecha_vencimiento) AS max_fecha FROM impuesto.liquidacion WHERE id_solicitud = $1 GROUP BY id_subramo) s ON s.id_subramo = l.id_subramo AND s.max_fecha = l.fecha_vencimiento INNER JOIN impuesto.subramo sr ON l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo r USING (id_ramo) WHERE id_solicitud = $1;',
@@ -1782,7 +1782,8 @@ const getDefaultInterestRebateByApplication = async ({ id, date, state, client }
   try {
     const value =
       (state === 'ingresardatos' &&
-        moment(date).month() < moment().month() &&
+        moment().isAfter(moment(date)) &&
+        moment().diff(moment(date).startOf('month'), 'month') > 0 &&
         (
           await client.query(
             'SELECT l.*, s.*, r.descripcion_corta as "tipoProcedimiento" FROM impuesto.liquidacion l INNER JOIN  (SELECT id_subramo, MAX(fecha_vencimiento) AS max_fecha FROM impuesto.liquidacion WHERE id_solicitud = $1 GROUP BY id_subramo) s ON s.id_subramo = l.id_subramo AND s.max_fecha = l.fecha_vencimiento INNER JOIN impuesto.subramo sr ON l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo r USING (id_ramo) WHERE id_solicitud = $1;',
