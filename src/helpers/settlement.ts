@@ -132,7 +132,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     console.log('branch', branch);
     console.log('contributor', contributor);
     if ((!branch && reference) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEMAT' };
-    const lastSettlementQuery = contributor.tipo_contribuyente === 'JURIDICO' || (!!reference && branch) ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
+    const lastSettlementQuery = contributor.tipo_contribuyente === 'JURIDICO' || (!!reference && branch) ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
     const lastSettlementPayload = contributor.tipo_contribuyente === 'JURIDICO' || (!!reference && branch) ? branch.referencia_municipal : contributor.id_contribuyente;
     const fiscalCredit =
       (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.tipo_contribuyente === 'JURIDICO' ? branch.id_registro_municipal : contributor.id_contribuyente, contributor.tipo_contribuyente])).rows[0]?.credito || 0;
@@ -1667,7 +1667,40 @@ export const formatBranch = async (branch, client) => {
     actividadesEconomicas: (await client.query(queries.GET_ECONOMIC_ACTIVITY_BY_RIM, [branch.id_registro_municipal])).rows,
     liquidaciones: (
       await client.query(
-        'SELECT *,s.descripcion AS "descripcionSubramo", r.descripcion AS "descripcionRamo" FROM impuesto.solicitud_state sl INNER JOIN impuesto.liquidacion l ON sl.id = l.id_solicitud LEFT JOIN impuesto.subramo s USING (id_subramo) LEFT JOIN impuesto.ramo r USING (id_ramo) WHERE l.id_registro_municipal= $1 ORDER BY fecha_liquidacion DESC',
+        `WITH solicitudcte AS (
+          SELECT id_solicitud
+          FROM impuesto.solicitud 
+          WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE id_registro_municipal = $1)
+      
+      )
+      
+      SELECT *,
+              s.descripcion AS "descripcionSubramo",
+               r.descripcion AS "descripcionRamo"
+      FROM (SELECT s.id_solicitud AS id,
+          s.id_tipo_tramite AS tipotramite,
+          s.aprobado,
+          s.fecha,
+          s.fecha_aprobado AS "fechaAprobacion",
+          ev.state,
+          s.tipo_solicitud AS "tipoSolicitud",
+          s.id_contribuyente
+         FROM impuesto.solicitud s
+           JOIN ( SELECT es.id_solicitud,
+                  impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+                 FROM impuesto.evento_solicitud es
+                 WHERE id_solicitud IN (SELECT * FROM solicitudcte)
+                GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+      ) sl
+      INNER JOIN impuesto.liquidacion l
+          ON sl.id = l.id_solicitud
+      LEFT JOIN impuesto.subramo s
+      USING (id_subramo)
+      LEFT JOIN impuesto.ramo r
+      USING (id_ramo)
+      WHERE l.id_registro_municipal= $1
+      ORDER BY  fecha_liquidacion DESC;
+      `,
         [branch.id_registro_municipal]
       )
     ).rows.map((el) => ({
@@ -4572,7 +4605,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
     const paymentState = switchcase({ ingresardatos: 'VIGENTE', validando: 'VIGENTE', finalizado: 'PAGADO' })(null);
     const contribuyente = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [contributor])).rows[0];
     const branch = reference && (await client.query('SELECT r.* FROM impuesto.registro_municipal r WHERE referencia_municipal = $1', [reference])).rows[0];
-    const contributorQuery = typeUser === 'JURIDICO' ? queries.GET_SETTLEMENTS_FOR_CODE_AND_RIM : queries.GET_SETTLEMENTS_FOR_CODE_AND_CONTRIBUTOR;
+    const contributorQuery = typeUser === 'JURIDICO' ? queries.GET_SETTLEMENTS_FOR_CODE_AND_RIM_OPTIMIZED : queries.GET_SETTLEMENTS_FOR_CODE_AND_CONTRIBUTOR;
     const contributorPayload = typeUser === 'JURIDICO' ? branch.referencia_municipal : contribuyente.id_contribuyente;
     const economicActivities =
       (reference &&
