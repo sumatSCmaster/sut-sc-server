@@ -396,6 +396,23 @@ const isNotPrepaidProcedure = ({ suffix, user }: { suffix: string; user: Usuario
   return condition;
 };
 
+export const getProcedureCosts = async () => {
+  const client = await pool.connect();
+  try {
+    const tramites = await client.query('SELECT id_tipo_tramite AS id, costo_base AS costo FROM tipo_tramite WHERE id_institucion = 9');
+    return { status: 200, message: 'Costos de tramites obtenidos', tramites };
+  } catch (error) {
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al obtener los costos de los tramites',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 export const procedureInit = async (procedure, user: Usuario) => {
   const client = await pool.connect();
   const { tipoTramite, datos, pago } = procedure;
