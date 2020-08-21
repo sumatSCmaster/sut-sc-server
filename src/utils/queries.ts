@@ -830,7 +830,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_CONTRIBUTOR:
     'SELECT c.id_contribuyente as id, razon_social AS "razonSocial", rm.denominacion_comercial AS "denominacionComercial", c.tipo_documento AS "tipoDocumento", c.documento, rm.id_registro_municipal AS "idRegistroMunicipal", rm.referencia_municipal AS "referenciaMunicipal" FROM impuesto.contribuyente c INNER JOIN impuesto.registro_municipal rm ON rm.id_contribuyente = c.id_contribuyente WHERE c.tipo_documento = $1 AND c.documento = $2 AND rm.referencia_municipal = $3;',
   GET_NATURAL_CONTRIBUTOR:
-    'SELECT c.id_contribuyente as id, razon_social AS "razonSocial", rm.denominacion_comercial AS "denominacionComercial", c.tipo_documento AS "tipoDocumento", c.documento FROM impuesto.contribuyente c WHERE c.tipo_documento = $1 AND c.documento = $2 AND c.tipo_contribuyente = \'NATURAL\';',
+    'SELECT c.id_contribuyente as id, razon_social AS "razonSocial", c.tipo_documento AS "tipoDocumento", c.documento FROM impuesto.contribuyente c WHERE c.tipo_documento = $1 AND c.documento = $2 AND c.tipo_contribuyente = \'NATURAL\';',
   CREATE_EXONERATION: 'INSERT INTO impuesto.plazo_exoneracion (id_plazo_exoneracion, fecha_inicio) VALUES (default, $1) RETURNING *;',
   INSERT_CONTRIBUTOR_EXONERATED_ACTIVITY: `INSERT INTO impuesto.contribuyente_exoneracion (id_contribuyente_exoneracion, id_plazo_exoneracion, id_registro_municipal, id_actividad_economica)
                 VALUES (default, $1, $2, $3);`,
