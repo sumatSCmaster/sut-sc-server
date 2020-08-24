@@ -232,7 +232,7 @@ export const updateRIM = [
   check('denomComercial').exists().withMessage('Debe incluir la denominacion comercial de la sucursal').isString().withMessage('Denominacion comercial invalida'),
   check('email').exists().withMessage('Debe incluir el email de la sucursal').isString().isLength({ min: 1 }).withMessage('Email invalido'),
   check('telefono').exists().withMessage('Debe incluir el telefono del usuario').isString().withMessage('Telefono invalido'),
-  check('parroquia').exists().withMessage('Debe incluir una parroquia para la direccion del usuario').isLength({ min: 1 }).withMessage('Parroquia invalida'),
+  check('parroquia').exists().withMessage('Debe incluir una parroquia para la direccion del usuario').isString().isLength({ min: 1 }).withMessage('Parroquia invalida'),
 ];
 
 export const updateOfficial = createOfficial.slice(0, createOfficial.length - 1);
