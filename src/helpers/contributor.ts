@@ -28,7 +28,7 @@ export const updateRIM = async ({ id, telefono, email, denomComercial, nombreRep
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query(queries.UPDATE_RIM, [id, telefono, email, denomComercial, nombreRepresentante, capitalSuscrito, tipoSociedad, telefono, null, parroquia, direccion]);
+    await client.query(queries.UPDATE_RIM, [id, telefono, email, denomComercial, nombreRepresentante, capitalSuscrito, tipoSociedad, telefono, parroquia, direccion]);
     await client.query('COMMIT');
     return { status: 200, message: 'RIM actualizado' };
   } catch (e) {
