@@ -1658,6 +1658,7 @@ export const formatBranch = async (branch, client) => {
     telefono: branch.telefono_celular,
     email: branch.email,
     denomComercial: branch.denominacion_comercial,
+    parroquia: branch.id_parroquia,
     nombreRepresentante: branch.nombre_representante,
     capitalSuscrito: branch.capital_suscrito,
     creditoFiscal: (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [branch.id_registro_municipal, 'JURIDICO'])).rows[0]?.credito || 0,

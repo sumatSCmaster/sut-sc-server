@@ -224,6 +224,17 @@ export const updateUserV = [
   // check('usuario.password').exists().withMessage('Debe incluir una contraseña para el usuario'),
 ];
 
+export const updateRIM = [
+  check('capitalSuscrito').exists().withMessage('Debe incluir el capital suscrito').isInt().isLength({ min: 1 }).withMessage('El capital suscrito no puede ser vacio'),
+  check('tipoSociedad').exists().withMessage('Debe incluir el tipo de sociedad').isString().isLength({ min: 1 }).withMessage('Tipo de sociedad invalido'),
+  check('direccion').exists().withMessage('Debe incluir la direccion del contribuyente').isString().isLength({ min: 1 }).withMessage('Direccion invalida'),
+  check('nombreRepresentante').exists().withMessage('Debe incluir el nombre del representante').isString().isLength({ min: 1 }).withMessage('Nombre del representante invalido'),
+  check('denomComercial').exists().withMessage('Debe incluir la denominacion comercial de la sucursal').isString().withMessage('Denominacion comercial invalida'),
+  check('email').exists().withMessage('Debe incluir el email de la sucursal').isString().isLength({ min: 1 }).withMessage('Email invalido'),
+  check('telefono').exists().withMessage('Debe incluir el telefono del usuario').isString().withMessage('Telefono invalido'),
+  check('parroquia').exists().withMessage('Debe incluir una parroquia para la direccion del usuario').isLength({ min: 1 }).withMessage('Parroquia invalida'),
+];
+
 export const updateOfficial = createOfficial.slice(0, createOfficial.length - 1);
 
 export const login = [
