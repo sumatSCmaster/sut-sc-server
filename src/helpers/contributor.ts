@@ -24,11 +24,12 @@ export const updateContributor = async ({ id, tipoDocumento, documento, razonSoc
   }
 };
 
-export const updateRIM = async ({ id, telefono, email, denomComercial, nombreRepresentante, capitalSuscrito, tipoSociedad }) => {
+export const updateRIM = async ({ id, telefono, email, denomComercial, nombreRepresentante, capitalSuscrito, tipoSociedad, parroquia, direccion }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query(queries.UPDATE_RIM, [id, telefono, email, denomComercial, nombreRepresentante, capitalSuscrito, tipoSociedad, telefono]);
+    const parish = (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [parroquia])).rows[0]?.id;
+    await client.query(queries.UPDATE_RIM, [id, telefono, email, denomComercial, nombreRepresentante, capitalSuscrito, tipoSociedad, telefono, parish, direccion]);
     await client.query('COMMIT');
     return { status: 200, message: 'RIM actualizado' };
   } catch (e) {

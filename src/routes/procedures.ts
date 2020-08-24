@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAvailableProcedures, procedureInit, getAvailableProceduresOfInstitution, updateProcedureCost, updateProcedureHandler } from '@helpers/procedures';
+import { getAvailableProcedures, procedureInit, getAvailableProceduresOfInstitution, updateProcedureCost, updateProcedureHandler, getProcedureCosts } from '@helpers/procedures';
 import { validate, isOfficial, isExternalUser, isLogged, isAuth } from '@validations/auth';
 import { checkResult } from '@validations/index';
 import { authenticate } from 'passport';
@@ -15,6 +15,12 @@ router.get('/', authenticate('jwt'), async (req, res) => {
   const [error, data] = await fulfill(getAvailableProcedures(req.user));
   if (error) res.status(500).json(error);
   if (data) res.status(200).json({ status: 200, ...data });
+});
+
+router.get('/sedemat/costs', async (req, res) => {
+  const [error, data] = await fulfill(getProcedureCosts());
+  if (error) res.status(error.status).json(error);
+  if (data) res.status(data.status).json(data);
 });
 
 router.get('/:id', authenticate('jwt'), isOfficial, async (req: any, res) => {
