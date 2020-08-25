@@ -3310,6 +3310,7 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
 
 const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
+    throw { status: 503, message: 'Certificado no disponible' };
     console.log('culo');
     let certInfo;
     let motivo;
@@ -4355,6 +4356,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
 };
 const createReceiptForPPApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
+    throw { status: 503, message: 'Certificado no disponible' };
     const isJuridical = application.tipoContribuyente === 'JURIDICO';
     const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
     const payloadContribuyente = isJuridical ? [application.documento, application.rim, application.nacionalidad] : [application.nacionalidad, application.nacionalidad];
