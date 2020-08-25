@@ -3310,7 +3310,7 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
 
 const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
-    throw { status: 503, message: 'Certificado no disponible' };
+    // throw { status: 503, message: 'Certificado no disponible' };
     console.log('culo');
     let certInfo;
     let motivo;
