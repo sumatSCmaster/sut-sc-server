@@ -89,26 +89,32 @@ block content
             span &nbsp; #{datos.propietario.denomComercial}
     div
       div(style={'display':'-webkit-flex'})
-        div.table(style={'-webkit-flex': 5.5})
+        div.table.break-page(style={'-webkit-flex': 5.5})
           div.tr
-            div(style={'-webkit-flex': 5.5}).th.center.border-right
+            div(style={'-webkit-flex': 4.5}).th.center.border-right
               p
                 b ARTÍCULO
-            div(style={'-webkit-flex': 2.5}).th.center.border-right
+            div(style={'-webkit-flex': 2}).th.center.border-right
               p
                 b PERIODOS
+            div(style={'-webkit-flex': 1.5}).th.center.border-right
+              p
+                b CANT.                
             div(style={'-webkit-flex': 2}).th.center
               p
                 b IMPUESTO                 
           each item in datos.items
-            div.tr
+            div.tr.break-page
               div(style={'-webkit-flex': 5.5, 'text-align':'justify', 'border-top':'1px solid #000'}).td.border-right
                 p 
                   span &nbsp; #{item.articulo}
-              div(style={'-webkit-flex': 2.5, 'border-top':'1px solid #000'}).td.border-right.center.break-page
+              div(style={'-webkit-flex': 2.5, 'border-top':'1px solid #000'}).td.border-right.center
                 p 
-                  span &nbsp; #{item.periodos}                  
-              div(style={'-webkit-flex': 2,'border-top':'1px solid #000'}).td.center.break-page
+                  span &nbsp; #{item.periodos}
+              div(style={'-webkit-flex': 2.5, 'border-top':'1px solid #000'}).td.border-right.center
+                p 
+                  span &nbsp; #{item.cantidad}                                      
+              div(style={'-webkit-flex': 2,'border-top':'1px solid #000'}).td.center
                 p 
                   span &nbsp; #{item.impuesto}
       div(style={'margin-top':'20px'}).table.break-page
