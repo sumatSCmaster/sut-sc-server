@@ -2362,7 +2362,7 @@ export const insertSettlements = async ({ process, user }) => {
         const liquidacionAseo = {
           ramo: branchNames['SM'],
           fechaCancelada: x.fechaCancelada,
-          monto: impuestos.esAgenteRetencion ? +x.desglose[0].montoGas * 1.04 : +x.desglose[0].montoAseo * 1.16,
+          monto: impuestos.esAgenteRetencion ? +x.desglose[0].montoAseo * 1.04 : +x.desglose[0].montoAseo * 1.16,
           desglose: x.desglose,
           descripcion: 'Pago del Servicio de Aseo',
         };
@@ -3480,7 +3480,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
 
       certInfoArray.push({ ...certInfo });
     }
-    if(application.idSubramo === 9){
+    if (application.idSubramo === 9) {
       const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 9])).rows;
       const totalMonto = breakdownData.reduce((prev, next) => prev + +next.monto, 0);
       const totalIva = totalMonto * 0.16;
@@ -4413,9 +4413,9 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
 };
 const createReceiptForPPApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
-    if(application.idSubramo !== 12) throw new Error ('No se puede generar este recibo');
-   
-    console.log('e')
+    if (application.idSubramo !== 12) throw new Error('No se puede generar este recibo');
+
+    console.log('e');
     let certInfo;
     let certInfoArray: any[] = [];
     let motivo = application.descripcionSubramo;
@@ -4425,50 +4425,53 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
     const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 12])).rows;
     const totalMonto = breakdownData.reduce((prev, next) => prev + +next.monto, 0);
     const totalIva = totalMonto * 0.16;
-    for(let row of breakdownData){
+    for (let row of breakdownData) {
       certInfo = {
         QR: linkQr,
         moment: require('moment'),
         fecha: moment().format('MM-DD-YYYY'),
-        codigo:'1232131',
-        titulo:'PUBLICIDAD Y PROPAGANDA',
-        datos:{
-          nroSolicitud:123,
-          motivo:motivo ,
+        codigo: '1232131',
+        titulo: 'PUBLICIDAD Y PROPAGANDA',
+        datos: {
+          nroSolicitud: 123,
+          motivo: motivo,
           nroFactura: application.id,
           tipoTramite: ramo,
           fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
           fechaLiq: moment(application.fechaCreacion).format('DD/MM/YYYY'),
           fechaVenc: moment(application.fechaCreacion).endOf('month').format('DD/MM/YYYY'),
-          propietario:{
+          propietario: {
             rif: `${application.tipoDocumento}-${application.documento}`,
             denomComercial: application.denominacionComercial,
             direccion: application.direccion,
             razonSocial: application.razonSocial,
           },
-          items: chunk(row.datos.desglose.map((desgRow) => {
-            return {
-              articulo: prop.find((p) => p.id_tipo_aviso_propaganda === desgRow.subarticulo).descripcion,
-              periodos: `${row.datos.fecha.month} - ${row.datos.fecha.year}`,
-              impuesto: desgRow.monto,
-              cantidad: desgRow.cantidad
-            }
-          }), 2),
+          items: chunk(
+            row.datos.desglose.map((desgRow) => {
+              return {
+                articulo: prop.find((p) => p.id_tipo_aviso_propaganda === desgRow.subarticulo).descripcion,
+                periodos: `${row.datos.fecha.month} - ${row.datos.fecha.year}`,
+                impuesto: desgRow.monto,
+                cantidad: desgRow.cantidad,
+              };
+            }),
+            2
+          ),
           totalIva: `${formatCurrency(totalIva)} Bs.S`,
           totalRetencionIva: `0.00 Bs.S`,
           totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
           montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
-          interesMoratorio: 0,// pueden o no tener
-          estatus:'PAGADO',
-          observacion:'Pago por Publicidad y Propaganda',
-          totalLiq:`${formatCurrency(totalMonto + totalIva)} Bs.S`,
-          totalRecaudado:`${formatCurrency(totalMonto + totalIva)} Bs.S`
-        }
-      }
-      console.log(certInfo.datos.items)
-        certInfoArray.push({...certInfo})
+          interesMoratorio: 0, // pueden o no tener
+          estatus: 'PAGADO',
+          observacion: 'Pago por Publicidad y Propaganda',
+          totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+          totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+        },
+      };
+      console.log(certInfo.datos.items);
+      certInfoArray.push({ ...certInfo });
     }
-    
+
     return new Promise(async (res, rej) => {
       try {
         let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-PP.pug`), certInfo));
