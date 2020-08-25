@@ -3480,6 +3480,63 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
 
       certInfoArray.push({ ...certInfo });
     }
+    if(application.idSubramo === 9){
+      const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 9])).rows;
+      const totalMonto = breakdownData.reduce((prev, next) => prev + +next.monto, 0);
+      const totalIva = totalMonto * 0.16;
+
+      let inmueblesContribuyente: any[] = await Promise.all(
+        breakdownData[0].datos.desglose.map((row) => {
+          return pool.query(queries.GET_SUT_ESTATE_BY_ID, [row.inmueble]);
+        })
+      );
+      inmueblesContribuyente = inmueblesContribuyente.map((result) => result.rows[0]);
+      console.log(inmueblesContribuyente);
+      for (let el of inmueblesContribuyente) {
+        certInfo = {
+          QR: linkQr,
+          moment: require('moment'),
+          fecha: moment().format('MM-DD-YYYY'),
+          titulo: 'FACTURA INMUEBLE URBANO',
+          institucion: 'SEDEMAT',
+          datos: {
+            nroSolicitud: application.id,
+            nroPlanilla: 10010111,
+            motivo: motivo,
+            nroFactura: `${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
+            tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
+            tipoInmueble: el?.tipo_inmueble || 'NO DISPONIBLE',
+            fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
+            fechaLiq: moment(application.fechaCreacion).format('DD/MM/YYYY'),
+            fechaVenc: moment(application.fechaCreacion).endOf('month').format('DD/MM/YYYY'),
+            propietario: {
+              rif: `${application.tipoDocumento}-${application.documento}`,
+              denomComercial: application.denominacionComercial,
+              direccion: application.direccion,
+              razonSocial: application.razonSocial,
+            },
+            items: breakdownData.map((row) => {
+              return {
+                direccion: el?.direccion || 'No disponible',
+                periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
+                impuesto: formatCurrency(row.monto),
+              };
+            }),
+            totalIva: `${formatCurrency(totalIva)} Bs.S`,
+            totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
+            totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
+            montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+            interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
+            estatus: 'PAGADO',
+            observacion: 'Pago por Inmueble Urbano',
+            totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+            totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+            totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
+          },
+        };
+        certInfoArray.push({ ...certInfo });
+      }
+    }
     // const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
     // let inmueblesContribuyente: any[] = await Promise.all(
     //   breakdownData[0].datos.desglose.map((row) => {
@@ -3577,8 +3634,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     return new Promise(async (res, rej) => {
       try {
         let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-SM.pug`), certInfo));
-        const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/SM/${application.idLiquidacion}/recibo.pdf`);
-        const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/SM/${application.idLiquidacion}/recibo.pdf`;
+        const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/${application.idSubramo === 9 ? 'IU' : 'SM'}/${application.idLiquidacion}/recibo.pdf`);
+        const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/${application.idSubramo === 9 ? 'IU' : 'SM'}/${application.idLiquidacion}/recibo.pdf`;
         const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
 
         let buffersArray: any[] = await Promise.all(
@@ -3645,7 +3702,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             if (buffersArray.length === 1) {
               const bucketParams = {
                 Bucket: 'sut-maracaibo',
-                Key: `/sedemat/${application.id}/SM/${application.idLiquidacion}/recibo.pdf`,
+                Key: `/sedemat/${application.id}/${application.idSubramo === 9 ? 'IU' : 'SM'}/${application.idLiquidacion}/recibo.pdf`,
               };
               await S3Client.putObject({
                 ...bucketParams,
@@ -3672,7 +3729,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 .then(async (buffer) => {
                   const bucketParams = {
                     Bucket: 'sut-maracaibo',
-                    Key: `/sedemat/${application.id}/SM/${application.idLiquidacion}/recibo.pdf`,
+                    Key: `/sedemat/${application.id}/${application.idSubramo === 9 ? 'IU' : 'SM'}/${application.idLiquidacion}/recibo.pdf`,
                   };
                   await S3Client.putObject({
                     ...bucketParams,
@@ -4356,88 +4413,185 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
 };
 const createReceiptForPPApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
-    throw { status: 503, message: 'Certificado no disponible' };
-    const isJuridical = application.tipoContribuyente === 'JURIDICO';
-    const queryContribuyente = isJuridical ? queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS : queries.gtic.NATURAL_CONTRIBUTOR_EXISTS;
-    const payloadContribuyente = isJuridical ? [application.documento, application.rim, application.nacionalidad] : [application.nacionalidad, application.nacionalidad];
-    const datosContribuyente = (await gticPool.query(queryContribuyente, payloadContribuyente)).rows[0];
+    if(application.idSubramo !== 12) throw new Error ('No se puede generar este recibo');
+   
+    console.log('e')
+    let certInfo;
+    let certInfoArray: any[] = [];
+    let motivo = application.descripcionSubramo;
+    let ramo = application.descripcionRamo;
+    const prop = (await pool.query(queries.GET_PUBLICITY)).rows;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
-    let motivo = (await gticPool.query(queries.gtic.GET_MOTIVE_BY_TYPE_ID, [idTiposSolicitud.PP])).rows[0];
-    let ramo = (await gticPool.query(queries.gtic.GET_BRANCH_BY_TYPE_ID, [idTiposSolicitud.PP])).rows[0];
-    const subarticulos = (await gticPool.query(queries.gtic.GET_PUBLICITY_SUBARTICLES)).rows;
     const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 12])).rows;
-    const totalIva = +breakdownData.map((row) => row.monto).reduce((prev, next) => +prev + +next, 0) * 0.16;
-    const totalMonto = +breakdownData.map((row) => row.monto).reduce((prev, next) => prev + next, 0);
-    return new Promise(async (res, rej) => {
-      const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-PP.pug`), {
+    const totalMonto = breakdownData.reduce((prev, next) => prev + +next.monto, 0);
+    const totalIva = totalMonto * 0.16;
+    for(let row of breakdownData){
+      certInfo = {
         QR: linkQr,
         moment: require('moment'),
         fecha: moment().format('MM-DD-YYYY'),
-
-        datos: {
-          nroSolicitud: 856535, //TODO: Reemplazar con el valor de co_solicitud creado en GTIC
-          nroPlanilla: 10010111, //TODO: Ver donde se guarda esto
-          motivo: motivo.tx_motivo,
-          nroFactura: `${application.anio}-${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
-          tipoTramite: `${ramo.nb_ramo} - ${ramo.tx_ramo}`,
+        codigo:'1232131',
+        titulo:'PUBLICIDAD Y PROPAGANDA',
+        datos:{
+          nroSolicitud:123,
+          motivo:motivo ,
+          nroFactura: application.id,
+          tipoTramite: ramo,
           fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
           fechaLiq: moment(application.fechaCreacion).format('DD/MM/YYYY'),
           fechaVenc: moment(application.fechaCreacion).endOf('month').format('DD/MM/YYYY'),
-          propietario: {
-            rif: `${application.nacionalidad}-${application.documento}`,
-            denomComercial: datosContribuyente.tx_denom_comercial,
-            razonSocial: isJuridical ? datosContribuyente.tx_razon_social : datosContribuyente.nb_contribuyente.trim() + datosContribuyente.ap_contribuyente.trim(),
+          propietario:{
+            rif: `${application.tipoDocumento}-${application.documento}`,
+            denomComercial: application.denominacionComercial,
+            direccion: application.direccion,
+            razonSocial: application.razonSocial,
           },
-          items: breakdownData.map((row) => {
+          items: chunk(row.datos.desglose.map((desgRow) => {
             return {
-              articulo: subarticulos.find((el) => +el.co_medio === row.id_subarticulo).tx_medio,
-              periodos: `${row.mes} ${row.anio}`.toUpperCase(),
-              impuesto: formatCurrency(row.monto),
-            };
-          }),
+              articulo: prop.find((p) => p.id_tipo_aviso_propaganda === desgRow.subarticulo).descripcion,
+              periodos: `${row.datos.fecha.month} - ${row.datos.fecha.year}`,
+              impuesto: desgRow.monto,
+              cantidad: desgRow.cantidad
+            }
+          }), 2),
           totalIva: `${formatCurrency(totalIva)} Bs.S`,
-          totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
-          totalIvaPagar: `${formatCurrency(
-            totalIva //TODO: Retencion
-          )} Bs.S`,
-          montoTotalImpuesto: `${formatCurrency(+breakdownData.map((row) => row.monto).reduce((prev, next) => +prev + +next, 0) + +totalIva)} Bs.S`,
-          interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
-          estatus: 'PAGADO',
-          observacion: 'Pago por Publicidad y Propaganda',
-          totalLiq: `${formatCurrency(+totalMonto + +totalIva)} Bs.S`,
-          totalRecaudado: `${formatCurrency(+totalMonto + +totalIva)} Bs.S`,
-          totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
-        },
-      });
-      const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/PP/${application.idLiquidacion}/recibo.pdf`);
-      const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/PP/${application.idLiquidacion}/recibo.pdf`;
-      if (dev) {
-        pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
-          res(dir);
-        });
-      } else {
-        try {
-          pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toBuffer(async (err, buffer) => {
-            if (err) {
-              rej(err);
+          totalRetencionIva: `0.00 Bs.S`,
+          totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
+          montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+          interesMoratorio: 0,// pueden o no tener
+          estatus:'PAGADO',
+          observacion:'Pago por Publicidad y Propaganda',
+          totalLiq:`${formatCurrency(totalMonto + totalIva)} Bs.S`,
+          totalRecaudado:`${formatCurrency(totalMonto + totalIva)} Bs.S`
+        }
+      }
+      console.log(certInfo.datos.items)
+        certInfoArray.push({...certInfo})
+    }
+    
+    return new Promise(async (res, rej) => {
+      try {
+        let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-PP.pug`), certInfo));
+        const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/PP/${application.idLiquidacion}/recibo.pdf`);
+        const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/PP/${application.idLiquidacion}/recibo.pdf`;
+        const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+
+        let buffersArray: any[] = await Promise.all(
+          htmlArray.map((html) => {
+            return new Promise((res, rej) => {
+              pdf
+                .create(html, {
+                  format: 'Letter',
+                  border: '5mm',
+                  header: { height: '0px' },
+                  base: 'file://' + resolve(__dirname, '../views/planillas/') + '/',
+                })
+                .toBuffer((err, buffer) => {
+                  if (err) {
+                    rej(err);
+                  } else {
+                    res(buffer);
+                  }
+                });
+            });
+          })
+        );
+
+        if (dev) {
+          mkdir(dirname(pdfDir), { recursive: true }, (e) => {
+            if (e) {
+              rej(e);
             } else {
+              if (buffersArray.length === 1) {
+                writeFile(pdfDir, buffersArray[0], async (err) => {
+                  if (err) {
+                    rej(err);
+                  } else {
+                    res(dir);
+                  }
+                });
+              } else {
+                let letter = 'A';
+                let reduced: any = buffersArray.reduce((prev: any, next) => {
+                  prev[letter] = next;
+                  let codePoint = letter.codePointAt(0);
+                  if (codePoint !== undefined) {
+                    letter = String.fromCodePoint(++codePoint);
+                  }
+                  return prev;
+                }, {});
+
+                pdftk
+                  .input(reduced)
+                  .cat(`${Object.keys(reduced).join(' ')}`)
+                  .output(pdfDir)
+                  .then((buffer) => {
+                    res(pdfDir);
+                  })
+                  .catch((e) => {
+                    console.log(e);
+                    rej(e);
+                  });
+              }
+            }
+          });
+        } else {
+          try {
+            if (buffersArray.length === 1) {
               const bucketParams = {
                 Bucket: 'sut-maracaibo',
-                Key: `/sedemat/${application.id}/PP/${application.idLiquidacion}/recibo.pdf`,
+                Key: `/sedemat/${application.id}/PP/${application.idLiquidacion}/certificado.pdf`,
               };
               await S3Client.putObject({
                 ...bucketParams,
-                Body: buffer,
+                Body: buffersArray[0],
                 ACL: 'public-read',
                 ContentType: 'application/pdf',
               }).promise();
               res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+            } else {
+              let letter = 'A';
+              let reduced: any = buffersArray.reduce((prev: any, next) => {
+                prev[letter] = next;
+                let codePoint = letter.codePointAt(0);
+                if (codePoint !== undefined) {
+                  letter = String.fromCodePoint(++codePoint);
+                }
+                return prev;
+              }, {});
+
+              pdftk
+                .input(reduced)
+                .cat(`${Object.keys(reduced).join(' ')}`)
+                .output()
+                .then(async (buffer) => {
+                  const bucketParams = {
+                    Bucket: 'sut-maracaibo',
+                    Key: `/sedemat/${application.id}/PP/${application.idLiquidacion}/certificado.pdf`,
+                  };
+                  await S3Client.putObject({
+                    ...bucketParams,
+                    Body: buffer,
+                    ACL: 'public-read',
+                    ContentType: 'application/pdf',
+                  }).promise();
+                  res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+                })
+                .catch((e) => {
+                  console.log(e);
+                  rej(e);
+                });
             }
-          });
-        } catch (e) {
-          throw e;
-        } finally {
+          } catch (e) {
+            throw e;
+          } finally {
+          }
         }
+      } catch (e) {
+        throw {
+          message: 'Error en generacion de certificado de PP',
+          e: errorMessageExtractor(e),
+        };
       }
     });
   } catch (error) {
