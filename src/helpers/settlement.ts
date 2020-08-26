@@ -1809,7 +1809,6 @@ const getDefaultInterestByApplication = async ({ id, date, state, client }): Pro
           .map((p) => ((+p.monto * 0.3324) / 365) * (moment().diff(moment(date).endOf('month'), 'days') - 1))
           .reduce((x, j) => x + j, 0)) ||
       undefined;
-    console.log('getDefaultInterestByApplication -> value', id, value);
     return +fixatedAmount(+value);
   } catch (e) {
     throw e;
@@ -2665,7 +2664,6 @@ export const validateApplication = async (body, user, client) => {
       const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
         ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
         : undefined;
-      console.log('validateApplication -> idReferenciaMunicipal', fixatedApplication.contribuyente.tipoContribuyente, idReferenciaMunicipal, body.idTramite);
 
       const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', saldoPositivo, false] : [fixatedApplication.contribuyente.id, 'NATURAL', saldoPositivo, false];
       await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
