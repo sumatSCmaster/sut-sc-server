@@ -13,7 +13,7 @@ import { installLiquorLicense, renewLiquorLicense } from './liquors';
 
 const pool = Pool.getInstance();
 
-export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any; instanciasDeMulta: any; instanciasDeImpuestos: any }> => {
+export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any; instanciasDeMulta: any; instanciasDeImpuestos: any, instanciasDeSoporte: any }> => {
   const client: any = await pool.connect();
   client.tipoUsuario = user.tipoUsuario;
   try {
@@ -32,8 +32,10 @@ export const getAvailableProcedures = async (user): Promise<{ options: Instituci
     const instanciasDeTramite = await getProcedureInstances(user, client);
     const instanciasDeMulta = await getFineInstances(user, client);
     const instanciasDeImpuestos = await getSettlementInstances(user, client);
-    return { options, instanciasDeTramite, instanciasDeMulta, instanciasDeImpuestos };
+    const instanciasDeSoporte = await getProcedureInstances(user, client, true)
+    return { options, instanciasDeTramite, instanciasDeMulta, instanciasDeImpuestos, instanciasDeSoporte };
   } catch (error) {
+    console.log(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -73,9 +75,9 @@ const esDaniel = ({ tipoUsuario, institucion }) => {
   return tipoUsuario === 2 && institucion.id === 9;
 };
 
-const getProcedureInstances = async (user, client: PoolClient) => {
+const getProcedureInstances = async (user, client: PoolClient, support?) => {
   try {
-    let response = (await procedureInstanceHandler(user, client)).rows; //TODO: corregir el handler para que no sea tan forzado
+    let response = (await procedureInstanceHandler(user, client, support)).rows; //TODO: corregir el handler para que no sea tan forzado
     const takings = (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [response.map((el) => +el.id)])).rows;
     if (user.tipoUsuario === 3) {
       const permissions = (await client.query(queries.GET_USER_PERMISSIONS, [user.id])).rows.map((row) => +row.id_tipo_tramite) || [];
@@ -392,7 +394,7 @@ export const getFieldsForValidations = async ({ id, type }) => {
 
 const isNotPrepaidProcedure = ({ suffix, user }: { suffix: string; user: Usuario }) => {
   const condition = false;
-  if ((suffix === 'tl' && user.tipoUsuario !== 4) || !!['pd', 'ompu', 'rc', 'bc', 'lic', 'lict'].find((el) => el === suffix)) return !condition;
+  if ((suffix === 'tl' && user.tipoUsuario !== 4) || !!['pd', 'ompu', 'rc', 'bc', 'lic', 'lict', 'sup'].find((el) => el === suffix)) return !condition;
   return condition;
 };
 
@@ -605,7 +607,10 @@ export const processProcedure = async (procedure, user: Usuario) => {
       await client.query(queries.UPDATE_APPROVED_STATE_FOR_PROCEDURE, [aprobado, procedure.idTramite]);
 
       if (procedure.sufijo === 'rc' && aprobado) await approveContributorSignUp({ procedure: (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0], client });
-    } else if (resources.tipoTramite === 28) {
+    } else if (resources.tipoTramite === 37) {
+      const { aprobado } = procedure;
+      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
+    } else if (!![28, 36].find((type) => type === resources.tipoTramite)) {
       const { aprobado } = procedure;
       datos.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
         monto: row.monto,
@@ -761,11 +766,12 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       await approveContributorBenefits({ data: datos, client });
     }
 
-    if (resources.tipoTramite === 28) {
+    if (resources.tipoTramite === 28 || resources.tipoTramite === 36) {
       const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
       prevData.datos.funcionario = { ...procedure.datos };
       datos = prevData.datos;
       datos.idTramite = procedure.idTramite;
+      datos.funcionario.estadoLicencia = resources.tipoTramite === 28 ? 'PERMANENTE' : 'TEMPORAL';
       datos.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
         monto: row.monto,
         formaPago: row.metodo_pago,
@@ -775,7 +781,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       }));
     }
 
-    if (!![29, 30, 31, 32, 33, 34, 35].find((el) => el === resources.tipoTramite)) {
+    if (!![29, 30, 31, 32, 33, 34, 35, 37].find((el) => el === resources.tipoTramite)) {
       const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
       prevData.datos.funcionario = { ...prevData.datos.funcionario, ...procedure.datos };
       datos = prevData.datos;
@@ -805,8 +811,8 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       }
     } else {
       if (aprobado) {
-        if (resources.tipoTramite === 28) procedure.datos = await approveContributorAELicense({ data: datos, client });
-        if (procedure.sufijo !== 'bc') dir = await createCertificate(procedure, client);
+        if (resources.tipoTramite === 28 || resources.tipoTramite === 36) procedure.datos = await approveContributorAELicense({ data: datos, client });
+        if (procedure.sufijo !== 'bc' && procedure.sufijo !== 'sup') dir = await createCertificate(procedure, client);
         respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, aprobado]);
       } else {
         respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
@@ -1095,19 +1101,18 @@ export const processProcedureAnalist = async (procedure, user: Usuario, client: 
       await client.query(queries.UPDATE_APPROVED_STATE_FOR_PROCEDURE, [aprobado, procedure.idTramite]);
 
       if (procedure.sufijo === 'rc' && aprobado) await approveContributorSignUp({ procedure: (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0], client });
-    } else if (resources.tipoTramite === 28) {
+    } else if (!![28, 36].find((type) => type === resources.tipoTramite)) {
       const { aprobado } = procedure;
-      console.log('pofavo', resources, procedure);
-      datos.funcionario.pago = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
+      datos.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
         monto: row.monto,
         formaPago: row.metodo_pago,
         banco: row.nombre,
         fecha: row.fecha_de_pago,
         nro: row.referencia,
       }));
+      console.log(datos);
       console.log('creo y me parec q se rompio aki');
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
-      console.log('que es');
     } else {
       if (nextEvent.startsWith('finalizar')) {
         procedure.datos = datos;
@@ -1199,6 +1204,7 @@ const procedureEvents = switchcase({
     enrevision_gerente: { true: 'revisar3_lict', false: 'rechazar_lict', rebotar: 'rebotar_lict' },
     enrevision: { true: 'aprobar_lict', false: 'rechazar_lict', rebotar: 'rebotar_lict' },
   },
+  sup: { iniciado: 'enproceso_sup', enproceso: { true: 'revisar_sup', false: 'rechazar_sup' }, enrevision: { true: 'aprobar_sup', false: 'rechazar_sup' } },
 })(null);
 
 const procedureEventHandler = (suffix, state) => {
@@ -1245,16 +1251,26 @@ const procedureInstances = switchcase({
   4: queries.GET_PROCEDURE_INSTANCES_FOR_USER,
   5: queries.GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID,
   6: queries.GET_ALL_PROCEDURES_EXCEPT_VALIDATING_ONES,
+  7: "SELECT tramites_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
+      nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, \
+      tipo_tramite.pago_previo AS \"pagoPrevio\"  FROM tramites_state INNER JOIN tipo_tramite ON tramites_state.tipotramite = \
+      tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = \
+      tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 AND tipoTramite = 37 AND tramites_state.state IN ('enproceso', 'enrevision', 'finalizado') ORDER BY tramites_state.fechacreacion DESC;",
+  8: "SELECT * FROM tramites_state_with_resources WHERE usuario = $1 AND tipotramite = 37 ORDER BY fechacreacion DESC;"
 })(null);
 
-const procedureInstanceHandler = (user, client) => {
+const procedureInstanceHandler = (user, client, support) => {
   let query;
   let payload;
   if (isSuperuser(user)) {
     query = 1;
   } else {
     if (belongsToAnInstitution(user)) {
-      if (handlesSocialCases(user)) {
+      if (support){
+        console.log(user)
+        query = 7;
+        payload = user.institucion.id
+      } else if (handlesSocialCases(user)) {
         query = 0;
         payload = 0;
       } else if (belongsToSedetama(user)) {
@@ -1267,8 +1283,14 @@ const procedureInstanceHandler = (user, client) => {
     }
 
     if (isExternalUser(user)) {
-      query = 4;
-      payload = user.id;
+      if(support){
+        query = 8
+        payload = user.id
+      }else{
+        query = 4;
+        payload = user.id;
+      }
+      
     }
   }
 

@@ -1266,7 +1266,8 @@ export const patchSettlement = async ({ id, settlement }) => {
         subramo,
       }))[0];
     }
-    // await client.query(queries.UPDATE_LAST_UPDATE_DATE, [prevSettlement.id_solicitud]);
+    const applicationInstance = await getApplicationsAndSettlementsById({ id: prevSettlement.id_solicitud, user: null });
+    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente.id]);
     await client.query('COMMIT');
     return { status: 200, message: 'Correccion administrativa realizada correctamente', liquidacion };
   } catch (error) {
@@ -2602,8 +2603,8 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
   try {
     await client.query('BEGIN');
     const fraccion = (await client.query(queries.GET_FRACTION_BY_AGREEMENT_AND_FRACTION_ID, [agreement, fragment])).rows[0];
-    const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
-    if (pagoSum < fraccion.monto) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
+    const pagoSum = payment.map((e) => +e.costo).reduce((e, i) => e + +fixatedAmount(i), 0);
+    if (+fixatedAmount(pagoSum) < +fixatedAmount(fraccion.monto)) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
     await Promise.all(
       payment.map(async (el) => {
         if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
@@ -2627,7 +2628,8 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
     }
     await client.query('COMMIT');
     const applicationInstance = await getAgreementFractionById({ id: fragment });
-    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente.id]);
+    const contributorId = await getApplicationsAndSettlementsById({ id: (await client.query('SELECT id_solicitud FROM impuesto.convenio WHERE id_convenio = $1', [agreement])).rows[0].id_solicitud, user: null });
+    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [contributorId.contribuyente.id]);
     console.log(applicationInstance);
     await sendNotification(
       user,
@@ -3115,7 +3117,7 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
     ).rows[0];
     data.funcionario.referenciaMunicipal = registry.referencia_municipal;
     await Promise.all(
-      actividadesEconomicas!.map(async (x) => {
+      actividadesEconomicas!.map(async (x, i) => {
         const settlement = (
           await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
             null,
@@ -3128,7 +3130,26 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
           ])
         ).rows[0];
         await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [x.desde, settlement.id_liquidacion]);
-        return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.codigo, x.desde]);
+        await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.codigo, x.desde]);
+        if (i === 0) {
+          const fromDate = moment(x.desde).subtract(1, 'M');
+          await Promise.all(
+            ['SM', 'PP', 'IU'].map(async (ramo) => {
+              const ghostSettlement = (
+                await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+                  null,
+                  0.0,
+                  ramo,
+                  'Pago ordinario',
+                  { month: fromDate.toDate().toLocaleString('es-ES', { month: 'long' }), year: fromDate.year() },
+                  fromDate.endOf('month').format('MM-DD-YYYY'),
+                  registry.id_registro_municipal,
+                ])
+              ).rows[0];
+              await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [fromDate.format('MM-DD-YYYY'), ghostSettlement.id_liquidacion]);
+            })
+          );
+        }
       })
     );
     const verifiedId = (await client.query('SELECT * FROM impuesto.verificacion_telefono WHERE id_usuario = $1', [user])).rows[0]?.id_verificacion_telefono;
