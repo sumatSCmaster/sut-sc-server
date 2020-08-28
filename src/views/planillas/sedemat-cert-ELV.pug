@@ -1,121 +1,137 @@
-extends default
-block css
-  link(rel="stylesheet", href="css/sedemat.css")
-block title
-block content
-  div#fecha
-    p 
-      b FECHA:
-      span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
-  div.titleWithQR
-    p#title
-      b EXPENDIO DE BEBIDAS ALCOHÓLICAS
-      br
-      b LICENCIA N° #{licencia}
-    div
-      img#QR(src=QR, alt='QR')
-  div#planilla
-    div(style={'text-align':'justify'})
-      p La Alcaldía de Maracaibo, de conformidad con el Artículo 45 del Decreto con Rango, Valor y Fuerza de la Ley de Impuesto de Alcohol y especies Alcohólicas publicada en Gaceta Oficial No. 6.151 Extraordinario de fecha 18/11/2014, en concordancia con la Ordenanza sobre Expendio. Distribución y Consumo de Especies Alcohólicas del Municipio Maracaibo publicada en Gaceta Municipal No. 315-14, de fecha 16/12/2014, a través del Servicio Desconcentrado Municipal de Administración Tributaria (SEDEMAT), otorga la presente autorización a:
-    div(style={'text-align':'start', 'margin-top':'50px'})
-      p 
-        b CONTRIBUYENTE: 
-        span #{datos.funcionario.contribuyente}
-      p 
-        b CON EL LEMA COMERCIAL: 
-        span #{datos.funcionario.denominacionComercial}
-      p 
-        b DOMICILIO FISCAL: 
-        span #{datos.funcionario.domicilio}   
-      p 
-        b RIM: 
-        span #{datos.funcionario.referenciaMunicipal}   
-      p 
-        b RIF: 
-        span #{datos.funcionario.rif}
-      p 
-        b CLASIFICACIÓN DE EXPENDIOS: 
-        span #{datos.funcionario.clasficacion}
-      p 
-        b HORARIO: 
-        span #{datos.funcionario.horario}
-      p 
-        b REPRESENTANTE LEGAL: 
-        span #{datos.funcionario.representanteLegal}   
-    div(style={'text-align':'justify'})
-      p
-        span Por haber cumplido con los requisitos establecidos en la Ordenanza sobre Expendio Distribución y Consumo de Especies Alcohólicas del Municipio Maracaibo.
-        br
-        b Se expide en Maracaibo el dia #{moment().format('DD')} de #{moment().locale('es').format('MMMM')} del #{moment().format('YYYY')}.
-        br
-        b Esta Licencia es Válida hasta el: #{moment().add(2,'y').format('DD/MM/YYYY')}.
-    .table
-      .tr
-        div(style={'-webkit-flex':'2'}).th.center.border-right.border-bottom
-          p
-            b MARCA
-        div(style={'-webkit-flex':'2'}).th.center.border-right.border-bottom
-          p
-            b PLACA
-        div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
-          p
-            b MODELO
-        div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
-          p
-            b CLASE
-        div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
-          p
-            b COLOR
-        div(style={'-webkit-flex':'1.25'}).th.center.border-right.border-bottom
-          p
-            b USO
-        div(style={'-webkit-flex':'1.25'}).th.center.border-bottom
-          p
-            b AÑO
-      .tr
-        div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-          p #{datos.funcionario.vehiculo.marca}
-        div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-          p #{datos.funcionario.vehiculo.placa}
-        div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
-          p #{datos.funcionario.vehiculo.modelo}
-        div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
-          p #{datos.funcionario.vehiculo.clase}
-        div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
-          p #{datos.funcionario.vehiculo.color}
-        div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom
-          p #{datos.funcionario.vehiculo.uso}
-        div(style={'-webkit-flex':'1.25'}).td.center.border-bottom
-          p #{datos.funcionario.vehiculo.anio}
-      .tr
-        div(style={'-webkit-flex':'4'}).th.center.border-right.border-bottom
-          p
-            b TIPO
-        div(style={'-webkit-flex':'4.5', 'padding-left': '2px'}).th.center.border-right.border-bottom
-          p
-            b SERIAL DE CARROCERÍA
-        div(style={'-webkit-flex':'2.5'}).th.center.border-bottom
-          p
-            b SERIAL DE MOTOR
-      .tr
-        div(style={'-webkit-flex':'4'}).td.center.border-right
-          p #{datos.funcionario.vehiculo.tipo}
-        div(style={'-webkit-flex':'4.5', 'padding-left': '2px'}).td.center.border-right
-          p #{datos.funcionario.vehiculo.serialCarroceria}
-        div(style={'-webkit-flex':'2.5'}).td.center
-          p #{datos.funcionario.vehiculo.serialMotor}
-    div(style={'justify-content': 'center', 'margin-top':'250px', 'margin-bottom':'50px'})
-      div
-        hr(style={'width':'45%'})
-        b Lcdo. Daniel José Boza Muñoz
-        br
-        b INTENDENTE MUNICIPAL TRIBUTARIO
-        br
-        span Según Resolución No. 0083 de fecha 15/04/2020
-        br
-        span Publicada en Gaceta Municipal No. 069-2020 de fecha 15/04/2020
-        br
-        br
-        b ESTA AUTORIZACIÓN ES INTRANSFERIBLE
-        br
-        b DEBE COLOCARSE EN UN LUGAR VISIBLE
+html
+  head
+    title Template
+    link(href='css/default.css' rel='stylesheet' type='text/css')
+    link(rel="stylesheet", href="css/sedemat.css")
+  each item in datos.funcionario.vehiculo
+    body
+      div#wrapper
+        block header
+          header#header
+            div.header-child
+              img#alcaldia(src='images/LogoAlcaldia.png')
+            div.header-child
+              - var nombre = 'Servicio Desconcentrado Municipal de Administración Tributaria'
+              - var rif = 'G-20002908-0'
+              p Alcaldida Bolivariana de Maracaibo
+              p #{nombre}
+              p R.I.F.: #{rif}
+            div.header-child
+              - var src = 'images/sedemat.png'
+                img#logo(src=src)
+          img#divider(src='images/Divider.png')
+        div#content
+          div#fecha
+            p 
+              b FECHA:
+              span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+          div.titleWithQR
+            p#title
+              b EXPENDIO DE BEBIDAS ALCOHÓLICAS
+              br
+              b LICENCIA N° #{licencia}
+            div
+              img#QR(src=QR, alt='QR')
+          div#planilla
+            div(style={'text-align':'justify'})
+              p La Alcaldía de Maracaibo, de conformidad con el Artículo 45 del Decreto con Rango, Valor y Fuerza de la Ley de Impuesto de Alcohol y especies Alcohólicas publicada en Gaceta Oficial No. 6.151 Extraordinario de fecha 18/11/2014, en concordancia con la Ordenanza sobre Expendio. Distribución y Consumo de Especies Alcohólicas del Municipio Maracaibo publicada en Gaceta Municipal No. 315-14, de fecha 16/12/2014, a través del Servicio Desconcentrado Municipal de Administración Tributaria (SEDEMAT), otorga la presente autorización a:
+            div(style={'text-align':'start', 'margin-top':'50px'})
+              p 
+                b CONTRIBUYENTE: 
+                span #{datos.funcionario.razonSocial}
+              p 
+                b CON EL LEMA COMERCIAL: 
+                span #{datos.funcionario.denomComercial}
+              p 
+                b DOMICILIO FISCAL: 
+                span #{datos.funcionario.domicilio}   
+              p 
+                b RIM: 
+                span #{datos.funcionario.referenciaMunicipal}   
+              p 
+                b RIF: 
+                span #{datos.funcionario.tipoDocumento}-#{datos.funcionario.documento}
+              p 
+                b CLASIFICACIÓN DE EXPENDIOS: 
+                span #{datos.funcionario.licencia.categoriaLicencia}
+              p 
+                b HORARIO: 
+                span #{datos.funcionario.horaInicio} a #{datos.funcionario.horaFin}
+              p 
+                b REPRESENTANTE LEGAL: 
+                span #{datos.funcionario.representanteLegal}   
+            div(style={'text-align':'justify'})
+              p
+                span Por haber cumplido con los requisitos establecidos en la Ordenanza sobre Expendio Distribución y Consumo de Especies Alcohólicas del Municipio Maracaibo.
+                br
+                b Se expide en Maracaibo el dia #{moment().format('DD')} de #{moment().locale('es').format('MMMM')} del #{moment().format('YYYY')}.
+                br
+                b Esta Licencia es Válida hasta el: #{moment().add(2,'y').format('DD/MM/YYYY')}.
+            .table
+              .tr
+                div(style={'-webkit-flex':'2'}).th.center.border-right.border-bottom
+                  p
+                    b MARCA
+                div(style={'-webkit-flex':'2'}).th.center.border-right.border-bottom
+                  p
+                    b PLACA
+                div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
+                  p
+                    b MODELO
+                div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
+                  p
+                    b CLASE
+                div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
+                  p
+                    b COLOR
+                div(style={'-webkit-flex':'1.25'}).th.center.border-right.border-bottom
+                  p
+                    b USO
+                div(style={'-webkit-flex':'1.25'}).th.center.border-bottom
+                  p
+                    b AÑO
+              .tr
+                div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
+                  p #{item.marca}
+                div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
+                  p #{item.placa}
+                div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
+                  p #{item.modelo}
+                div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
+                  p #{item.clase}
+                div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
+                  p #{item.color}
+                div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom
+                  p #{item.uso}
+                div(style={'-webkit-flex':'1.25'}).td.center.border-bottom
+                  p #{item.anio}
+              .tr
+                div(style={'-webkit-flex':'4'}).th.center.border-right.border-bottom
+                  p
+                    b TIPO
+                div(style={'-webkit-flex':'4.5', 'padding-left': '2px'}).th.center.border-right.border-bottom
+                  p
+                    b SERIAL DE CARROCERÍA
+                div(style={'-webkit-flex':'2.5'}).th.center.border-bottom
+                  p
+                    b SERIAL DE MOTOR
+              .tr
+                div(style={'-webkit-flex':'4'}).td.center.border-right
+                  p #{item.tipo}
+                div(style={'-webkit-flex':'4.5', 'padding-left': '2px'}).td.center.border-right
+                  p #{item.serialCarroceria}
+                div(style={'-webkit-flex':'2.5'}).td.center
+                  p #{item.serialMotor}
+            div(style={'justify-content': 'center', 'text-align': '-webkit-center', 'margin-top':'250px', 'margin-bottom':'50px'})
+              div(style={width:'350px'})
+                hr(style={'z-index':'2', 'background-color':'#000', width:'350px', height:"2px", border:'none'})
+                img(src="images/firma.png", style={'margin-top':'-90px', 'z-index':'1',width:'350px'}, alt="", srcset="")
+                b ESTA AUTORIZACIÓN ES INTRANSFERIBLE
+                br
+                b DEBE COLOCARSE EN UN LUGAR VISIBLE       
+          footer#footer
+            - var direccion = 'Telfs. (0261) 793.55.08 (Master) Fax. (0261) 793.58.69 Av. 3F entre calles 81 y 81A, Edif. CPU Planta Baja'             
+            img#divider(src='images/Divider.png')
+            div(style={ display: '-webkit-flex', padding: '0px 50px', 'justify-content': 'center', '-webkit-justify-content': 'center' })
+              p(style={ display: '-webkit-flex', '-webkit-justify-content': 'center', '-webkit-align-items': 'center', 'margin': '0px 50px' }) #{direccion}
+              img(src='images/footer_logo.png')

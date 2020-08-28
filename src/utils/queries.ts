@@ -544,7 +544,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_APPLICATION_INSTANCES_FOR_NATURAL_CONTRIBUTOR:
     'SELECT DISTINCT ON (s.id_solicitud, s.fecha) * FROM impuesto.solicitud s INNER JOIN impuesto.contribuyente c ON s.id_contribuyente = c.id_contribuyente WHERE c.id_contribuyente = $1 ORDER BY s.fecha DESC',
   GET_SETTLEMENTS_BY_APPLICATION_INSTANCE:
-    'SELECT l.*, r.descripcion AS "tipoProcedimiento" FROM impuesto.liquidacion l INNER JOIN impuesto.subramo sr ON l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo r ON sr.id_ramo = r.id_ramo WHERE id_solicitud = $1 ORDER BY l.fecha_vencimiento DESC',
+    'SELECT l.*, r.descripcion AS "tipoProcedimiento" FROM impuesto.liquidacion l LEFT JOIN impuesto.subramo sr ON l.id_subramo = sr.id_subramo LEFT JOIN impuesto.ramo r ON sr.id_ramo = r.id_ramo WHERE id_solicitud = $1 ORDER BY l.fecha_vencimiento DESC',
   GET_SETTLEMENT_INSTANCES:
     'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo INNER JOIN impuesto.solicitud_state sst ON sst.id = s.id_solicitud',
   GET_SETTLEMENT_INSTANCES_BY_ID:
@@ -1044,6 +1044,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_RESIDENTIAL_GAS_TARIFF: 'SELECT * FROM impuesto.tabulador_gas_residencial WHERE fecha_hasta IS NULL;',
   GET_PUBLICITY_CATEGORIES: 'SELECT * FROM impuesto.categoria_propaganda',
   GET_PUBLICITY_SUBCATEGORIES: 'SELECT * FROM impuesto.tipo_aviso_propaganda',
+  GET_PUBLICITY: "SELECT id_tipo_aviso_propaganda, concat(cp.descripcion, ' - ', tap.descripcion) AS descripcion FROM impuesto.categoria_propaganda cp INNER JOIN impuesto.tipo_aviso_propaganda tap USING (id_categoria_propaganda);",
   INSERT_ESTATE_VALUE: 'INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)',
   SET_DATE_FOR_LINKED_APPROVED_APPLICATION: 'UPDATE impuesto.solicitud SET fecha = $1, fecha_aprobado = $1 WHERE id_solicitud = $2',
   SET_DATE_FOR_LINKED_ACTIVE_APPLICATION: 'UPDATE impuesto.solicitud SET fecha = $1 WHERE id_solicitud = $2',

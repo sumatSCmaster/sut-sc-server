@@ -16,6 +16,9 @@ export const getUserByUsername = async (username: string): Promise<Usuario | nul
     const typeResult = await client.query(queries.GET_USER_TYPE_FROM_USERNAME, [username]);
     const googleData = await client.query(queries.GET_GOOGLE_DATA_FROM_USERNAME, [username]);
     const officialData = await client.query(queries.GET_OFFICIAL_DATA_FROM_USERNAME, [username]);
+    if(result.rowCount === 0){
+      return null
+    }
     const resBase = result.rows[0];
     const resType = typeResult.rows[0];
     const resGoogle = googleData.rows[0];
@@ -38,7 +41,7 @@ export const getUserByUsername = async (username: string): Promise<Usuario | nul
     return user;
   } catch (e) {
     console.log(e);
-    return null;
+    return e;
   } finally {
     client.release();
   }

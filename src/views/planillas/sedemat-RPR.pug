@@ -107,12 +107,6 @@ block content
         .tr.break-page
           div(style={'-webkit-flex':'6', 'text-align':'start'}).th.border-bottom.border-right
             p(style={'padding-left':'10px'})
-              b CHEQUES
-          div(style={'-webkit-flex':'4'}).td.center.border-bottom
-            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.cheques.total ? (datos.metodoPago.cheques.total) : 0)}
-        .tr.break-page
-          div(style={'-webkit-flex':'6', 'text-align':'start'}).th.border-bottom.border-right
-            p(style={'padding-left':'10px'})
               b TRANSFERENCIA BOD
           div(style={'-webkit-flex':'4'}).td.center.border-bottom
             p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.items.find(el => el.id_banco === 1) ? (datos.metodoPago.transferencias.items.find(el => el.id_banco === 1).monto) : 0)}            
