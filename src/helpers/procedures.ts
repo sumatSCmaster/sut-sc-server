@@ -34,6 +34,7 @@ export const getAvailableProcedures = async (user): Promise<{ options: Instituci
     const instanciasDeImpuestos = await getSettlementInstances(user, client);
     return { options, instanciasDeTramite, instanciasDeMulta, instanciasDeImpuestos };
   } catch (error) {
+    console.log(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
