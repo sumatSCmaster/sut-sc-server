@@ -13,7 +13,7 @@ import { installLiquorLicense, renewLiquorLicense } from './liquors';
 
 const pool = Pool.getInstance();
 
-export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any; instanciasDeMulta: any; instanciasDeImpuestos: any }> => {
+export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any; instanciasDeMulta: any; instanciasDeImpuestos: any, instanciasDeSoporte: any }> => {
   const client: any = await pool.connect();
   client.tipoUsuario = user.tipoUsuario;
   try {
@@ -32,7 +32,8 @@ export const getAvailableProcedures = async (user): Promise<{ options: Instituci
     const instanciasDeTramite = await getProcedureInstances(user, client);
     const instanciasDeMulta = await getFineInstances(user, client);
     const instanciasDeImpuestos = await getSettlementInstances(user, client);
-    return { options, instanciasDeTramite, instanciasDeMulta, instanciasDeImpuestos };
+    const instanciasDeSoporte = await getProcedureInstances(user, client, true)
+    return { options, instanciasDeTramite, instanciasDeMulta, instanciasDeImpuestos, instanciasDeSoporte };
   } catch (error) {
     console.log(error);
     throw {
@@ -74,9 +75,9 @@ const esDaniel = ({ tipoUsuario, institucion }) => {
   return tipoUsuario === 2 && institucion.id === 9;
 };
 
-const getProcedureInstances = async (user, client: PoolClient) => {
+const getProcedureInstances = async (user, client: PoolClient, support?) => {
   try {
-    let response = (await procedureInstanceHandler(user, client)).rows; //TODO: corregir el handler para que no sea tan forzado
+    let response = (await procedureInstanceHandler(user, client, support)).rows; //TODO: corregir el handler para que no sea tan forzado
     const takings = (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [response.map((el) => +el.id)])).rows;
     if (user.tipoUsuario === 3) {
       const permissions = (await client.query(queries.GET_USER_PERMISSIONS, [user.id])).rows.map((row) => +row.id_tipo_tramite) || [];
@@ -1250,16 +1251,25 @@ const procedureInstances = switchcase({
   4: queries.GET_PROCEDURE_INSTANCES_FOR_USER,
   5: queries.GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID,
   6: queries.GET_ALL_PROCEDURES_EXCEPT_VALIDATING_ONES,
+  7: "SELECT tramites_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
+      nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, \
+      tipo_tramite.pago_previo AS \"pagoPrevio\"  FROM tramites_state INNER JOIN tipo_tramite ON tramites_state.tipotramite = \
+      tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = \
+      tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 AND tipoTramite = 37 AND tramites_state.state IN ('enproceso', 'enrevision', 'finalizado') ORDER BY tramites_state.fechacreacion DESC;",
+  8: "SELECT * FROM tramites_state_with_resources WHERE usuario = $1 AND tipotramite = 37 ORDER BY fechacreacion DESC;"
 })(null);
 
-const procedureInstanceHandler = (user, client) => {
+const procedureInstanceHandler = (user, client, support) => {
   let query;
   let payload;
   if (isSuperuser(user)) {
     query = 1;
   } else {
     if (belongsToAnInstitution(user)) {
-      if (handlesSocialCases(user)) {
+      if (support){
+        query = 7;
+        payload = user.institucion.id
+      } else if (handlesSocialCases(user)) {
         query = 0;
         payload = 0;
       } else if (belongsToSedetama(user)) {
@@ -1272,8 +1282,14 @@ const procedureInstanceHandler = (user, client) => {
     }
 
     if (isExternalUser(user)) {
-      query = 4;
-      payload = user.id;
+      if(support){
+        query = 8
+        payload = user.id
+      }else{
+        query = 4;
+        payload = user.id;
+      }
+      
     }
   }
 
