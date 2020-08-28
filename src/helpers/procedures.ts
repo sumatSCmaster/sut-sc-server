@@ -1203,6 +1203,7 @@ const procedureEvents = switchcase({
     enrevision_gerente: { true: 'revisar3_lict', false: 'rechazar_lict', rebotar: 'rebotar_lict' },
     enrevision: { true: 'aprobar_lict', false: 'rechazar_lict', rebotar: 'rebotar_lict' },
   },
+  sup: { iniciado: 'enproceso_sup', enproceso: { true: 'revisar_sup', false: 'rechazar_sup' }, enrevision: { true: 'aprobar_sup', false: 'rechazar_sup' } },
 })(null);
 
 const procedureEventHandler = (suffix, state) => {
