@@ -605,7 +605,10 @@ export const processProcedure = async (procedure, user: Usuario) => {
       await client.query(queries.UPDATE_APPROVED_STATE_FOR_PROCEDURE, [aprobado, procedure.idTramite]);
 
       if (procedure.sufijo === 'rc' && aprobado) await approveContributorSignUp({ procedure: (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0], client });
-    } else if (resources.tipoTramite === 28) {
+    } else if (resources.tipoTramite === 37) {
+      const { aprobado } = procedure;
+      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
+    } else if (!![28, 36].find((type) => type === resources.tipoTramite)) {
       const { aprobado } = procedure;
       datos.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
         monto: row.monto,
@@ -761,11 +764,12 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       await approveContributorBenefits({ data: datos, client });
     }
 
-    if (resources.tipoTramite === 28) {
+    if (resources.tipoTramite === 28 || resources.tipoTramite === 36) {
       const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
       prevData.datos.funcionario = { ...procedure.datos };
       datos = prevData.datos;
       datos.idTramite = procedure.idTramite;
+      datos.funcionario.estadoLicencia = resources.tipoTramite === 28 ? 'PERMANENTE' : 'TEMPORAL';
       datos.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
         monto: row.monto,
         formaPago: row.metodo_pago,
@@ -775,7 +779,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       }));
     }
 
-    if (!![29, 30, 31, 32, 33, 34, 35].find((el) => el === resources.tipoTramite)) {
+    if (!![29, 30, 31, 32, 33, 34, 35, 37].find((el) => el === resources.tipoTramite)) {
       const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
       prevData.datos.funcionario = { ...prevData.datos.funcionario, ...procedure.datos };
       datos = prevData.datos;
@@ -805,8 +809,8 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       }
     } else {
       if (aprobado) {
-        if (resources.tipoTramite === 28) procedure.datos = await approveContributorAELicense({ data: datos, client });
-        if (procedure.sufijo !== 'bc') dir = await createCertificate(procedure, client);
+        if (resources.tipoTramite === 28 || resources.tipoTramite === 36) procedure.datos = await approveContributorAELicense({ data: datos, client });
+        if (procedure.sufijo !== 'bc' && procedure.sufijo !== 'sup') dir = await createCertificate(procedure, client);
         respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, aprobado]);
       } else {
         respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
@@ -1095,19 +1099,18 @@ export const processProcedureAnalist = async (procedure, user: Usuario, client: 
       await client.query(queries.UPDATE_APPROVED_STATE_FOR_PROCEDURE, [aprobado, procedure.idTramite]);
 
       if (procedure.sufijo === 'rc' && aprobado) await approveContributorSignUp({ procedure: (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0], client });
-    } else if (resources.tipoTramite === 28) {
+    } else if (!![28, 36].find((type) => type === resources.tipoTramite)) {
       const { aprobado } = procedure;
-      console.log('pofavo', resources, procedure);
-      datos.funcionario.pago = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
+      datos.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
         monto: row.monto,
         formaPago: row.metodo_pago,
         banco: row.nombre,
         fecha: row.fecha_de_pago,
         nro: row.referencia,
       }));
+      console.log(datos);
       console.log('creo y me parec q se rompio aki');
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
-      console.log('que es');
     } else {
       if (nextEvent.startsWith('finalizar')) {
         procedure.datos = datos;

@@ -16,8 +16,8 @@ export const getUserByUsername = async (username: string): Promise<Usuario | nul
     const typeResult = await client.query(queries.GET_USER_TYPE_FROM_USERNAME, [username]);
     const googleData = await client.query(queries.GET_GOOGLE_DATA_FROM_USERNAME, [username]);
     const officialData = await client.query(queries.GET_OFFICIAL_DATA_FROM_USERNAME, [username]);
-    if(result.rowCount === 0){
-      return null
+    if (result.rowCount === 0) {
+      return null;
     }
     const resBase = result.rows[0];
     const resType = typeResult.rows[0];
@@ -104,6 +104,7 @@ export const addInstitute = async (user: Partial<Usuario>): Promise<Partial<Usua
   const client = await pool.connect();
   try {
     const res = (await client.query(queries.GET_ADMIN_INSTITUTE, [user.id])).rows;
+    if (!res.length) throw { status: 403, message: 'Un funcionario debe poseer una institucion' };
     return {
       ...user,
       institucion: {
