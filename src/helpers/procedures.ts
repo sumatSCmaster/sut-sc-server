@@ -83,7 +83,7 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
       const permissions = (await client.query(queries.GET_USER_PERMISSIONS, [user.id])).rows.map((row) => +row.id_tipo_tramite) || [];
       response = response.filter((tram) => permissions.includes(tram.tipotramite));
     }
-    const res: any[] = await Promise.all(
+    let res: any[] = await Promise.all(
       response.map(async (el) => {
         let ordinances;
         if (!el.pagoPrevio) {
@@ -127,6 +127,7 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
         return tramite;
       })
     );
+    res = res.filter((row) => row.tipoTramite !== 37)
     return esDaniel(user) ? res.filter((row) => row.tipoTramite !== 27) : res;
   } catch (error) {
     console.log(errorMessageExtractor(error));
