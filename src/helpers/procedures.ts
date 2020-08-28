@@ -1267,6 +1267,7 @@ const procedureInstanceHandler = (user, client, support) => {
   } else {
     if (belongsToAnInstitution(user)) {
       if (support){
+        console.log(user)
         query = 7;
         payload = user.institucion.id
       } else if (handlesSocialCases(user)) {
