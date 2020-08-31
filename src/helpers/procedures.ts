@@ -127,7 +127,9 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
         return tramite;
       })
     );
-    res = res.filter((row) => row.tipoTramite !== 37)
+    if(!support){
+      res = res.filter((row) => row.tipoTramite !== 37)
+    }
     return esDaniel(user) ? res.filter((row) => row.tipoTramite !== 27) : res;
   } catch (error) {
     console.log(errorMessageExtractor(error));
