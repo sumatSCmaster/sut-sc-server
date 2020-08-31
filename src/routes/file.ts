@@ -58,6 +58,7 @@ const uploadFile = (req, res, next) => {
 router.post('/:type/:id?', uploadFile, async (req: any, res) => {
   const { id, type } = req.params;
   const media = req.files.map((file) => typeMedia(`tramites/${id}`)(file)(process.env.NODE_ENV));
+  console.log('media', media);
   const client = await pool.connect();
   try {
     if (media.length > 0 && type === 'takings') {

@@ -81,19 +81,19 @@ block content
             b SI
         div.td(style={ width: '5%' }).border-bottom.border-right.center
           if datos.usuario.poseiaLicencia
-            img(src="images/comprobado.svg", style={ width: '70%'})
+            img(src="images/comprobado.png", style={ width: '70%'})
         div.td(style={ width: '5%' }).border-bottom.border-right.center
           p
             b NO
         div.td(style={ width: '5%' }).border-bottom.center
           if !datos.usuario.poseiaLicencia
-            img(src="images/comprobado.svg", style={ width: '70%'})                                                        
+            img(src="images/comprobado.png", style={ width: '70%'})                                                        
       div.tr
         div.td(style={ width: '100%' })
           p
             b OBSERVACIONES:
             span &nbsp; #{datos.usuario.observaciones}
-    each item in datos.usuario.vehiculo
+    each item in datos.usuario.vehiculos
       div(style={'margin-top':'20px'}).break-page
         div 
           b(style={'font-size':'20px'}) Vehiculo #{index}

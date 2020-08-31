@@ -1088,8 +1088,15 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
        INNER JOIN impuesto.registro_municipal rm USING (id_registro_municipal) INNER JOIN impuesto.contribuyente c USING (id_contribuyente) WHERE\
         rm.id_registro_municipal = $1',
   CREATE_OR_UPDATE_FISCAL_CREDIT: 'SELECT * FROM impuesto.insert_credito($1, $2, $3, $4)',
+  BRANCH_IS_ONE_BEST_PAYERS: `SELECT * FROM impuesto.liquidacion WHERE id_registro_municipal = $1 AND id_registro_municipal IN (
+    SELECT id_registro_municipal FROM (SELECT id_registro_municipal, SUM(monto) AS monto 
+    FROM Impuesto.liquidacion
+    WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $2 AND datos#>>'{fecha,year}' = $3
+    GROUP BY id_registro_municipal 
+    ORDER BY monto DESC
+    LIMIT 1000) s)`,
   ADD_BRANCH_FOR_CONTRIBUTOR:
-    'INSERT INTO impuesto.registro_municipal (id_contribuyente, fecha_aprobacion, telefono_celular, email, denominacion_comercial, nombre_representante, actualizado, capital_suscrito, tipo_sociedad, estado_licencia, direccion) VALUES ($1, now(), $2, $3, $4, $5, true, $6, $7, $8, $9) RETURNING *',
+    'INSERT INTO impuesto.registro_municipal (id_contribuyente, fecha_aprobacion, telefono_celular, email, denominacion_comercial, nombre_representante, actualizado, capital_suscrito, tipo_sociedad, estado_licencia, direccion, id_parroquia) VALUES ($1, now(), $2, $3, $4, $5, true, $6, $7, $8, $9, $10) RETURNING *',
   UPDATE_BRANCH_INFO: 'UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombre_representante = $2, telefono_celular = $3, email = $4, actualizado = $5, direccion = $6 WHERE referencia_municipal = $7 RETURNING *',
   UPDATE_LICENSE_STATUS: 'UPDATE impuesto.registro_municipal SET estado_licencia = $1 WHERE id_registro_municipal = $2',
   UPDATE_ECONOMIC_ACTIVITIES_FOR_BRANCH:

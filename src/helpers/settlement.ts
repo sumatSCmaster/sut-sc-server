@@ -156,6 +156,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     if (AEApplicationExists && SMApplicationExists && IUApplicationExists && PPApplicationExists) return { status: 409, message: 'Ya existe una declaracion de impuestos para este mes' };
     const now = moment(new Date());
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const monthDateForTop = moment().locale('ES').subtract(2, 'M');
+    const esContribuyenteTop = !!branch ? await client.query(queries.BRANCH_IS_ONE_BEST_PAYERS, [branch.id_registro_municipal, monthDateForTop.format('MMMM'), monthDateForTop.year()]) : false;
     //AE
     if (branch && branch?.referencia_municipal && !AEApplicationExists) {
       const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
@@ -368,6 +370,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         razonSocial: contributor.razon_social,
         siglas: contributor.siglas,
         rim: reference,
+        esContribuyenteTop,
         esAgenteRetencion: contributor.es_agente_retencion,
         documento: contributor.documento,
         tipoDocumento: contributor.tipo_documento,
@@ -2387,7 +2390,7 @@ export const insertSettlements = async ({ process, user }) => {
               el.ramo,
               el.descripcion || 'Pago ordinario',
               datos,
-              moment().locale('ES').month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
+              el.ramo === 'AE' ? moment().locale('ES').month(el.fechaCancelada.month).add(1, 'M').endOf('month').format('MM-DD-YYYY') : moment().locale('ES').month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
               (contributorReference && contributorReference.id_registro_municipal) || null,
             ])
           ).rows[0];
@@ -2782,7 +2785,7 @@ export const internalLicenseApproval = async (license, official: Usuario) => {
     if (!user) throw { status: 404, message: 'El usuario proporcionado no existe en SUT' };
     const userContributor = await hasLinkedContributor(user.id);
     if (license.datos.contribuyente.id !== userContributor?.id) throw { status: 401, message: 'El usuario de SUT proporcionado no tiene disponibilidad de crear licencias para el contribuyente seleccionado' };
-    const procedure = (await initProcedureAnalist({ tipoTramite: 28, datos: license.datos, pago: license.pagos }, user as Usuario, client)).tramite;
+    const procedure = (await initProcedureAnalist({ tipoTramite: license.tipoTramite, datos: license.datos, pago: license.pagos }, user as Usuario, client)).tramite;
     // license.datos.funcionario.pago = [license.pago]
     const res = await processProcedureAnalist({ idTramite: procedure.id, datos: license.datos, aprobado: true }, official, client);
     await client.query('COMMIT');
@@ -3102,6 +3105,7 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
     const { usuario, funcionario } = data;
     const { actividadesEconomicas } = funcionario;
     const { contribuyente } = usuario;
+    const parish = (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [funcionario.parroquia])).rows[0]?.id;
     const registry = (
       await client.query(queries.ADD_BRANCH_FOR_CONTRIBUTOR, [
         contribuyente.id,
@@ -3110,9 +3114,10 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
         funcionario.denominacionComercial,
         funcionario.nombreRepresentante,
         funcionario.capitalSuscrito,
-        funcionario.tipoSociedad,
+        funcionario.tipoSociedadContrib,
         funcionario.estadoLicencia,
         funcionario.direccion,
+        parish,
       ])
     ).rows[0];
     data.funcionario.referenciaMunicipal = registry.referencia_municipal;
