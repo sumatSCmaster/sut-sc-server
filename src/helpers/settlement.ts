@@ -2387,7 +2387,7 @@ export const insertSettlements = async ({ process, user }) => {
               el.ramo,
               el.descripcion || 'Pago ordinario',
               datos,
-              moment().locale('ES').month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
+              el.ramo === 'AE' ? moment().locale('ES').month(el.fechaCancelada.month).add(1, 'M').endOf('month').format('MM-DD-YYYY') : moment().locale('ES').month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
               (contributorReference && contributorReference.id_registro_municipal) || null,
             ])
           ).rows[0];
