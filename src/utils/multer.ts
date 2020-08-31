@@ -29,6 +29,7 @@ export const diskStorage = (type: string): multer.StorageEngine =>
       bucket: 'sut-maracaibo',
       acl: 'public-read',
       key: function (req, file, cb) {
+        console.log('file', file);
         if (type.startsWith('tramites')) {
           cb(null, `${req.params.id}/${file.originalname}`);
         } else {
