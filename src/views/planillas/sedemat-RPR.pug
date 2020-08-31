@@ -133,7 +133,13 @@ block content
             p(style={'padding-left':'10px'})
               b TRANSFERENCIA BANCO PLAZA
           div(style={'-webkit-flex':'4'}).td.center.border-bottom
-            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.items.find(el => el.id_banco === 22) ? (datos.metodoPago.transferencias.items.find(el => el.id_banco === 22).monto) : 0)}            
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.items.find(el => el.id_banco === 22) ? (datos.metodoPago.transferencias.items.find(el => el.id_banco === 22).monto) : 0)}
+        .tr.break-page
+          div(style={'-webkit-flex':'6', 'text-align':'start'}).th.border-bottom.border-right
+            p(style={'padding-left':'10px'})
+              b TRANSFERENCIA MERCANTIL
+          div(style={'-webkit-flex':'4'}).td.center.border-bottom
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.items.find(el => el.id_banco === 19) ? (datos.metodoPago.transferencias.items.find(el => el.id_banco === 19).monto) : 0)}            
         .tr.break-page
           div(style={'-webkit-flex':'6', 'text-align':'start'}).th.border-bottom.border-right
             p(style={'padding-left':'10px'})
