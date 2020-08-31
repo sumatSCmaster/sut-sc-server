@@ -93,6 +93,7 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
           id: el.id,
           tipoTramite: el.tipotramite,
           estado: el.state,
+          aprobado: el.aprobado,
           datos: el.datos,
           planilla: el.planilla,
           certificado: el.certificado,
