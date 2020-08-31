@@ -3102,6 +3102,7 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
     const { usuario, funcionario } = data;
     const { actividadesEconomicas } = funcionario;
     const { contribuyente } = usuario;
+    const parish = (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [funcionario.parroquia])).rows[0]?.id;
     const registry = (
       await client.query(queries.ADD_BRANCH_FOR_CONTRIBUTOR, [
         contribuyente.id,
@@ -3110,9 +3111,10 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
         funcionario.denominacionComercial,
         funcionario.nombreRepresentante,
         funcionario.capitalSuscrito,
-        funcionario.tipoSociedad,
+        funcionario.tipoSociedadContrib,
         funcionario.estadoLicencia,
         funcionario.direccion,
+        parish,
       ])
     ).rows[0];
     data.funcionario.referenciaMunicipal = registry.referencia_municipal;

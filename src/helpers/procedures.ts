@@ -13,7 +13,7 @@ import { installLiquorLicense, renewLiquorLicense } from './liquors';
 
 const pool = Pool.getInstance();
 
-export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any; instanciasDeMulta: any; instanciasDeImpuestos: any, instanciasDeSoporte: any }> => {
+export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any; instanciasDeMulta: any; instanciasDeImpuestos: any; instanciasDeSoporte: any }> => {
   const client: any = await pool.connect();
   client.tipoUsuario = user.tipoUsuario;
   try {
@@ -32,7 +32,7 @@ export const getAvailableProcedures = async (user): Promise<{ options: Instituci
     const instanciasDeTramite = await getProcedureInstances(user, client);
     const instanciasDeMulta = await getFineInstances(user, client);
     const instanciasDeImpuestos = await getSettlementInstances(user, client);
-    const instanciasDeSoporte = await getProcedureInstances(user, client, true)
+    const instanciasDeSoporte = await getProcedureInstances(user, client, true);
     return { options, instanciasDeTramite, instanciasDeMulta, instanciasDeImpuestos, instanciasDeSoporte };
   } catch (error) {
     console.log(error);
@@ -127,8 +127,8 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
         return tramite;
       })
     );
-    if(!support){
-      res = res.filter((row) => row.tipoTramite !== 37)
+    if (!support) {
+      res = res.filter((row) => row.tipoTramite !== 37);
     }
     return esDaniel(user) ? res.filter((row) => row.tipoTramite !== 27) : res;
   } catch (error) {
@@ -611,8 +611,11 @@ export const processProcedure = async (procedure, user: Usuario) => {
 
       if (procedure.sufijo === 'rc' && aprobado) await approveContributorSignUp({ procedure: (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0], client });
     } else if (resources.tipoTramite === 37) {
-      const { aprobado } = procedure;
-      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
+      const { aprobado, estado } = procedure;
+      respState =
+        estado === 'finalizado'
+          ? await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[estado], datos || null, dir || null, true])
+          : await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
     } else if (!![28, 36].find((type) => type === resources.tipoTramite)) {
       const { aprobado } = procedure;
       datos.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
@@ -1207,7 +1210,7 @@ const procedureEvents = switchcase({
     enrevision_gerente: { true: 'revisar3_lict', false: 'rechazar_lict', rebotar: 'rebotar_lict' },
     enrevision: { true: 'aprobar_lict', false: 'rechazar_lict', rebotar: 'rebotar_lict' },
   },
-  sup: { iniciado: 'enproceso_sup', enproceso: { true: 'revisar_sup', false: 'rechazar_sup' }, enrevision: { true: 'aprobar_sup', false: 'rechazar_sup' } },
+  sup: { iniciado: 'enproceso_sup', enproceso: { finalizado: 'finalizar_sup', true: 'revisar_sup', false: 'rechazar_sup' }, enrevision: { true: 'aprobar_sup', false: 'rechazar_sup' } },
 })(null);
 
 const procedureEventHandler = (suffix, state) => {
@@ -1259,7 +1262,7 @@ const procedureInstances = switchcase({
       tipo_tramite.pago_previo AS \"pagoPrevio\"  FROM tramites_state INNER JOIN tipo_tramite ON tramites_state.tipotramite = \
       tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = \
       tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 AND tipoTramite = 37 AND tramites_state.state IN ('enproceso', 'enrevision', 'finalizado') ORDER BY tramites_state.fechacreacion DESC;",
-  8: "SELECT * FROM tramites_state_with_resources WHERE usuario = $1 AND tipotramite = 37 ORDER BY fechacreacion DESC;"
+  8: 'SELECT * FROM tramites_state_with_resources WHERE usuario = $1 AND tipotramite = 37 ORDER BY fechacreacion DESC;',
 })(null);
 
 const procedureInstanceHandler = (user, client, support) => {
@@ -1269,10 +1272,10 @@ const procedureInstanceHandler = (user, client, support) => {
     query = 1;
   } else {
     if (belongsToAnInstitution(user)) {
-      if (support){
-        console.log(user)
+      if (support) {
+        console.log(user);
         query = 7;
-        payload = user.institucion.id
+        payload = user.institucion.id;
       } else if (handlesSocialCases(user)) {
         query = 0;
         payload = 0;
@@ -1286,14 +1289,13 @@ const procedureInstanceHandler = (user, client, support) => {
     }
 
     if (isExternalUser(user)) {
-      if(support){
-        query = 8
-        payload = user.id
-      }else{
+      if (support) {
+        query = 8;
+        payload = user.id;
+      } else {
         query = 4;
         payload = user.id;
       }
-      
     }
   }
 
