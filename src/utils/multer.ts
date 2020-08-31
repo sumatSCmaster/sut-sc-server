@@ -15,6 +15,7 @@ export const diskStorage = (type: string): multer.StorageEngine =>
         cb(null, saveTo);
       },
       filename: (req: any, file, cb) => {
+        console.log('file', file);
         if (type.startsWith('tramites')) {
           cb(null, `${file.originalname}`);
         } else {
