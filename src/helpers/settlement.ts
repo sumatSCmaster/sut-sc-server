@@ -90,8 +90,7 @@ const truthyCheck = (x) => {
   return false;
 };
 
-const isExonerated = async ({ branch, contributor, activity, startingDate }): Promise<boolean> => {
-  const client = await pool.connect();
+export const isExonerated = async ({ branch, contributor, activity, startingDate }, client): Promise<boolean> => {
   try {
     if (branch === codigosRamo.AE) {
       const branchIsExonerated = (await client.query(queries.BRANCH_IS_EXONERATED, [branch, startingDate])).rows[0];
@@ -113,8 +112,6 @@ const isExonerated = async ({ branch, contributor, activity, startingDate }): Pr
     return false;
   } catch (e) {
     throw e;
-  } finally {
-    client.release();
   }
 };
 
@@ -194,7 +191,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                     const date = addMonths(new Date(paymentDate.toDate()), index);
                     console.log('eri gei', interpolation, paymentDate.format('YYYY-MM-DD'));
                     const momentDate = moment(date);
-                    const exonerado = await isExonerated({ branch: codigosRamo.AE, contributor: branch?.id_registro_municipal, activity: el.id_actividad_economica, startingDate: momentDate.startOf('month') });
+                    const exonerado = await isExonerated({ branch: codigosRamo.AE, contributor: branch?.id_registro_municipal, activity: el.id_actividad_economica, startingDate: momentDate.startOf('month') }, client);
                     return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
                   })
                 ),
@@ -220,7 +217,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         new Array(dateInterpolationSM + 1).fill({ month: null, year: null }).map(async (value, index) => {
           const date = addMonths(new Date(lastSMPayment.toDate()), index);
           const momentDate = moment(date);
-          const exonerado = await isExonerated({ branch: codigosRamo.SM, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') });
+          const exonerado = await isExonerated({ branch: codigosRamo.SM, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
           return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
         })
       );
@@ -292,7 +289,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                     new Array(interpolation).fill({ month: null, year: null }).map(async (value, index) => {
                       const date = addMonths(new Date(paymentDate.toDate()), index);
                       const momentDate = moment(date);
-                      const exonerado = await isExonerated({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') });
+                      const exonerado = await isExonerated({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
                       return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
                     })
                   ),
@@ -322,7 +319,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
           new Array(dateInterpolationPP + 1).fill({ month: null, year: null }).map(async (value, index) => {
             const date = addMonths(new Date(lastPPPayment.toDate()), index);
             const momentDate = moment(date);
-            const exonerado = await isExonerated({ branch: codigosRamo.PP, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') });
+            const exonerado = await isExonerated({ branch: codigosRamo.PP, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
             return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
           })
         );
@@ -332,7 +329,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
           new Array(now.month() + 1).fill({ month: null, year: null }).map(async (value, index) => {
             const date = addMonths(moment(`${now.year()}-01-01`).toDate(), index);
             const momentDate = moment(date);
-            const exonerado = await isExonerated({ branch: codigosRamo.PP, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') });
+            const exonerado = await isExonerated({ branch: codigosRamo.PP, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
             return { month: date.toLocaleString('ES', { month: 'long' }), year: date.getFullYear(), exonerado };
           })
         );
@@ -1477,6 +1474,69 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
     };
   } finally {
     client.release();
+  }
+};
+
+export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client: PoolClient): Promise<Solicitud & any> => {
+  try {
+    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const application = await Promise.all(
+      (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows.map(async (el) => {
+        const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
+        const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
+        const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
+        return {
+          id: el.id_solicitud,
+          usuario: typeof user === 'object' ? user : { id: user },
+          contribuyente: structureContributor(docs),
+          aprobado: el.aprobado,
+          tipo: el.tipo_solicitud,
+          documento: docs.documento,
+          tipoDocumento: docs.tipo_documento,
+          rebajado: el.rebajado,
+          estado: state,
+          referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
+            ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
+            : undefined,
+          fecha: el.fecha,
+          monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
+          liquidaciones: liquidaciones
+            .filter((el) => el.tipoProcedimiento !== 'MULTAS')
+            .map((el) => {
+              return {
+                id: el.id_liquidacion,
+                ramo: el.tipoProcedimiento,
+                fecha: el.datos.fecha,
+                monto: el.monto,
+                certificado: el.certificado,
+                recibo: el.recibo,
+              };
+            }),
+          multas: liquidaciones
+            .filter((el) => el.tipoProcedimiento === 'MULTAS')
+            .map((el) => {
+              return {
+                id: el.id_liquidacion,
+                ramo: el.tipoProcedimiento,
+                fecha: el.datos.fecha,
+                monto: el.monto,
+                descripcion: el.datos.descripcion,
+                certificado: el.certificado,
+                recibo: el.recibo,
+              };
+            }),
+          interesMoratorio: await getDefaultInterestByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
+          rebajaInteresMoratorio: await getDefaultInterestRebateByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
+        };
+      })
+    );
+    return application[0];
+  } catch (error) {
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
+    };
   }
 };
 

@@ -6,7 +6,7 @@ import { Notificacion, Tramite, Multa, Usuario, Solicitud } from '@root/interfac
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { PoolClient } from 'pg';
 import switchcase from '@utils/switch';
-import { getApplicationsAndSettlementsById } from './settlement';
+import { getApplicationsAndSettlementsById, getApplicationsAndSettlementsByIdNots } from './settlement';
 
 const pool = Pool.getInstance();
 const users = getUsers();
@@ -77,7 +77,7 @@ export const getNotifications = async (user: Usuario): Promise<Notificacion[] | 
     );
     const impuestos = await Promise.all(
       respImpuesto.map(async (el) => {
-        const impuesto: Solicitud = await getApplicationsAndSettlementsById({ id: el.idSolicitud, user });
+        const impuesto: Solicitud = await getApplicationsAndSettlementsByIdNots({ id: el.idSolicitud, user }, client);
         const solicitud: Solicitud & { estado: string; nombreCorto: string } = {
           ...impuesto,
           estado: el.estadoNotificacion,
@@ -92,9 +92,7 @@ export const getNotifications = async (user: Usuario): Promise<Notificacion[] | 
         return formatNotification(el.emisor, el.receptor, el.descripcion, solicitud, notificacion);
       })
     );
-    const notificaciones = [...tramites, ...multas, ...impuestos].sort((a, b) =>
-      a.fechaCreacion === b.fechaCreacion ? 0 : a.fechaCreacion > b.fechaCreacion ? -1 : 1
-    );
+    const notificaciones = [...tramites, ...multas, ...impuestos].sort((a, b) => (a.fechaCreacion === b.fechaCreacion ? 0 : a.fechaCreacion > b.fechaCreacion ? -1 : 1));
     return { status: 200, message: 'Notificaciones retornadas de manera satisfactoria', notificaciones };
   } catch (error) {
     throw {
@@ -123,14 +121,7 @@ export const markAllAsRead = async (user: Usuario): Promise<object> => {
   }
 };
 
-export const sendNotification = async (
-  sender: Usuario,
-  description: string,
-  type: string,
-  concept: string,
-  payload: Partial<Tramite | Multa>,
-  client: PoolClient
-) => {
+export const sendNotification = async (sender: Usuario, description: string, type: string, concept: string, payload: Partial<Tramite | Multa>, client: PoolClient) => {
   try {
     notificationHandler(sender, description, type, payload, concept, client);
   } catch (e) {
@@ -147,17 +138,13 @@ const broadcastForProcedureInit = async (sender: Usuario, description: string, p
     const admins = (await client.query(queries.GET_NON_NORMAL_OFFICIALS, [payload.nombreCorto])).rows;
     const superuser = (await client.query(queries.GET_SUPER_USER)).rows;
     const permittedOfficials = (await client.query(queries.GET_OFFICIALS_FOR_PROCEDURE, [payload.nombreCorto, payload.tipoTramite])).rows;
-    const officials = (payload.estado === 'enproceso' ? superuser.concat(admins).concat(permittedOfficials) : superuser.concat(admins)).filter(
-      (el) => emisor !== `${el.nacionalidad}-${el.cedula}`
-    );
+    const officials = (payload.estado === 'enproceso' ? superuser.concat(admins).concat(permittedOfficials) : superuser.concat(admins)).filter((el) => emisor !== `${el.nacionalidad}-${el.cedula}`);
 
     const notification = await Promise.all(
       officials
         .map(async (el) => {
           if (!el) return null;
-          const result = (
-            await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
-          ).rows[0];
+          const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])).rows[0];
           const notification = (await client.query(queries.GET_PROCEDURE_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
           const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
           return formattedNotif;
@@ -200,9 +187,7 @@ const broadcastForProcedureUpdate = async (sender: Usuario, description: string,
           .map(async (el) => {
             if (!el) return null;
             const userDesc = description.replace('un', 'su');
-            const result = (
-              await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, userDesc, payload.estado, concept])
-            ).rows[0];
+            const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, userDesc, payload.estado, concept])).rows[0];
             const notification = (await client.query(queries.GET_PROCEDURE_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
             const formattedNotif = formatNotification(emisor, notification.receptor, userDesc, payload, notification);
             const userSocket = users.get(`${el.nacionalidad}-${el.cedula}`);
@@ -218,9 +203,7 @@ const broadcastForProcedureUpdate = async (sender: Usuario, description: string,
         .filter((el) => emisor !== `${el.nacionalidad}-${el.cedula}`)
         .map(async (el) => {
           if (!el) return null;
-          const result = (
-            await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
-          ).rows[0];
+          const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])).rows[0];
           const notification = (await client.query(queries.GET_PROCEDURE_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
           const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
           return formattedNotif;
@@ -259,9 +242,7 @@ const broadcastForAffairInit = async (sender: Usuario, description: string, payl
         .filter((el) => emisor !== `${el.nacionalidad}-${el.cedula}`)
         .map(async (el) => {
           if (!el) return null;
-          const result = (
-            await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
-          ).rows[0];
+          const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])).rows[0];
           const notification = (await client.query(queries.GET_PROCEDURE_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
           const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
           return formattedNotif;
@@ -299,9 +280,7 @@ const broadcastForAffairUpdate = async (sender: Usuario, description: string, pa
         .filter((el) => emisor !== `${el.nacionalidad}-${el.cedula}`)
         .map(async (el) => {
           if (!el) return null;
-          const result = (
-            await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
-          ).rows[0];
+          const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])).rows[0];
           const notification = (await client.query(queries.GET_PROCEDURE_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
           const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
           return formattedNotif;
@@ -337,9 +316,7 @@ const broadcastForFiningInit = async (sender: Usuario, description: string, payl
     await Promise.all(
       user.map(async (el) => {
         const userDesc = `Se le ha asignado una multa por parte de ${payload.nombreLargo}`;
-        const result = (
-          await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, userDesc, payload.estado, concept])
-        ).rows[0];
+        const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, userDesc, payload.estado, concept])).rows[0];
         const notification = (await client.query(queries.GET_FINING_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
         const formattedNotif = formatNotification(emisor, notification.receptor, userDesc, payload, notification);
         const userSocket = users.get(`${el.nacionalidad}-${el.cedula}`);
@@ -354,9 +331,7 @@ const broadcastForFiningInit = async (sender: Usuario, description: string, payl
         .filter((el) => emisor !== `${el.nacionalidad}-${el.cedula}`)
         .map(async (el) => {
           if (!el) return null;
-          const result = (
-            await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
-          ).rows[0];
+          const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])).rows[0];
           const notification = (await client.query(queries.GET_FINING_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
           const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
           return formattedNotif;
@@ -396,9 +371,7 @@ const broadcastForFiningUpdate = async (sender: Usuario, description: string, pa
       await Promise.all(
         user.map(async (el) => {
           const userDesc = `${description} por la institucion ${payload.nombreLargo}`;
-          const result = (
-            await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, userDesc, payload.estado, concept])
-          ).rows[0];
+          const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, userDesc, payload.estado, concept])).rows[0];
           const notification = (await client.query(queries.GET_FINING_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
           const formattedNotif = formatNotification(emisor, notification.receptor, userDesc, payload, notification);
           const userSocket = users.get(`${el.nacionalidad}-${el.cedula}`);
@@ -414,9 +387,7 @@ const broadcastForFiningUpdate = async (sender: Usuario, description: string, pa
         .filter((el) => emisor !== `${el.nacionalidad}-${el.cedula}`)
         .map(async (el) => {
           if (!el) return null;
-          const result = (
-            await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
-          ).rows[0];
+          const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])).rows[0];
           const notification = (await client.query(queries.GET_FINING_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
           const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
           return formattedNotif;
@@ -445,13 +416,7 @@ const broadcastForFiningUpdate = async (sender: Usuario, description: string, pa
 };
 
 //FIXME: esto se va a descontrolaaaaarrrrrrr, el que se quedo pegao se quedo pegao
-const broadcastForApplicationInit = async (
-  sender: Usuario,
-  description: string,
-  payload: Partial<Solicitud & { nombreCorto: string; estado: string }>,
-  concept: string,
-  client: PoolClient
-) => {
+const broadcastForApplicationInit = async (sender: Usuario, description: string, payload: Partial<Solicitud & { nombreCorto: string; estado: string }>, concept: string, client: PoolClient) => {
   const socket = users.get(`${sender.nacionalidad}-${sender.cedula}`);
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
 
@@ -470,9 +435,7 @@ const broadcastForApplicationInit = async (
       officials
         .map(async (el) => {
           if (!el) return null;
-          const result = (
-            await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
-          ).rows[0];
+          const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])).rows[0];
           const notification = (await client.query(queries.GET_SETTLEMENT_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
           const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
           return formattedNotif;
@@ -490,13 +453,7 @@ const broadcastForApplicationInit = async (
   }
 };
 
-const broadcastForApplicationUpdate = async (
-  sender: Usuario,
-  description: string,
-  payload: Partial<Solicitud & { nombreCorto: string; estado: string }>,
-  concept: string,
-  client: PoolClient
-) => {
+const broadcastForApplicationUpdate = async (sender: Usuario, description: string, payload: Partial<Solicitud & { nombreCorto: string; estado: string }>, concept: string, client: PoolClient) => {
   const socket = users.get(`${sender.nacionalidad}-${sender.cedula}`);
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
 
@@ -515,9 +472,7 @@ const broadcastForApplicationUpdate = async (
     if (payload.estado === 'finalizado' && emisor !== `${user[0].nacionalidad}-${user[0].cedula}`) {
       await Promise.all(
         user.map(async (el) => {
-          const result = (
-            await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
-          ).rows[0];
+          const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])).rows[0];
           const notification = (await client.query(queries.GET_SETTLEMENT_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
           const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
           const userSocket = users.get(`${el.nacionalidad}-${el.cedula}`);
@@ -533,9 +488,7 @@ const broadcastForApplicationUpdate = async (
         .filter((el) => emisor !== `${el.nacionalidad}-${el.cedula}`)
         .map(async (el) => {
           if (!el) return null;
-          const result = (
-            await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])
-          ).rows[0];
+          const result = (await client.query(queries.CREATE_NOTIFICATION, [payload.id, emisor, `${el.nacionalidad}-${el.cedula}`, description, payload.estado, concept])).rows[0];
           const notification = (await client.query(queries.GET_SETTLEMENT_NOTIFICATION_BY_ID, [result.id_notificacion])).rows[0];
           const formattedNotif = formatNotification(emisor, notification.receptor, description, payload, notification);
           return formattedNotif;
@@ -558,13 +511,7 @@ const broadcastForApplicationUpdate = async (
   }
 };
 
-const formatNotification = (
-  sender: string,
-  receiver: string | null,
-  description: string,
-  payload: Partial<Tramite | Multa | (Solicitud & { estado: string; nombreCorto: string })>,
-  notification: any
-): Notificacion => {
+const formatNotification = (sender: string, receiver: string | null, description: string, payload: Partial<Tramite | Multa | (Solicitud & { estado: string; nombreCorto: string })>, notification: any): Notificacion => {
   return {
     id: notification.id,
     emisor: sender,
@@ -588,14 +535,7 @@ const notificationTypes = switchcase({
   UPDATE_APPLICATION: broadcastForApplicationUpdate,
 })(null);
 
-const notificationHandler = async (
-  sender: Usuario,
-  description: string,
-  type: string,
-  payload: Partial<Tramite | Multa>,
-  concept: string,
-  client: PoolClient
-) => {
+const notificationHandler = async (sender: Usuario, description: string, type: string, payload: Partial<Tramite | Multa>, concept: string, client: PoolClient) => {
   const notificationSender = notificationTypes(type);
   try {
     if (notificationSender) return await notificationSender(sender, description, payload, concept, client);

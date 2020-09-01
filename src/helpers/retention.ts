@@ -8,7 +8,7 @@ import queries from '@utils/queries';
 import { renderFile } from 'pug';
 import { errorMessageExtractor, errorMessageGenerator } from './errors';
 import { Usuario, Liquidacion } from '@root/interfaces/sigt';
-import { fixatedAmount, getApplicationsAndSettlementsById } from './settlement';
+import { fixatedAmount, getApplicationsAndSettlementsById, isExonerated } from './settlement';
 import { getUsersByContributor } from './user';
 
 const dev = process.env.NODE_ENV !== 'production';
@@ -49,7 +49,7 @@ export const getRetentionMonths = async ({ document, reference, docType, user }:
         new Array(dateInterpolation).fill({ month: null, year: null }).map(async (value, index) => {
           const date = addMonths(new Date(lastRDPayment.toDate()), index);
           const momentDate = moment(date);
-          const exonerado = await isExonerated({ branch: codigosRamo.RD0, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') });
+          const exonerado = await isExonerated({ branch: codigosRamo.RD0, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
           return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
         })
       );
@@ -415,29 +415,26 @@ const addMonths = (date: Date, months): Date => {
   return date;
 };
 
-const isExonerated = async ({ branch, contributor, activity, startingDate }): Promise<boolean> => {
-  const client = await pool.connect();
-  try {
-    if (branch === codigosRamo.AE) {
-      const branchIsExonerated = (await client.query(queries.BRANCH_IS_EXONERATED, [branch, startingDate])).rows[0];
-      if (branchIsExonerated) return !!branchIsExonerated;
-      const activityIsExonerated = (await client.query(queries.ECONOMIC_ACTIVITY_IS_EXONERATED, [activity, startingDate])).rows[0];
-      if (activityIsExonerated) return !!activityIsExonerated;
-      const contributorIsExonerated = (await client.query(queries.CONTRIBUTOR_IS_EXONERATED, [contributor, startingDate])).rows[0];
-      if (contributorIsExonerated) return !!contributorIsExonerated;
-      return !!(await client.query(queries.CONTRIBUTOR_ECONOMIC_ACTIVIES_IS_EXONERATED, [contributor, activity, startingDate])).rows[0];
-    } else {
-      const branchIsExonerated = (await client.query(queries.BRANCH_IS_EXONERATED, [branch, startingDate])).rows[0];
-      if (branchIsExonerated) return !!branchIsExonerated;
-      return !!(await client.query(queries.CONTRIBUTOR_IS_EXONERATED, [contributor, startingDate])).rows[0];
-    }
-    return false;
-  } catch (e) {
-    throw e;
-  } finally {
-    client.release();
-  }
-};
+// const isExonerated = async ({ branch, contributor, activity, startingDate }, client): Promise<boolean> => {
+//   try {
+//     if (branch === codigosRamo.AE) {
+//       const branchIsExonerated = (await client.query(queries.BRANCH_IS_EXONERATED, [branch, startingDate])).rows[0];
+//       if (branchIsExonerated) return !!branchIsExonerated;
+//       const activityIsExonerated = (await client.query(queries.ECONOMIC_ACTIVITY_IS_EXONERATED, [activity, startingDate])).rows[0];
+//       if (activityIsExonerated) return !!activityIsExonerated;
+//       const contributorIsExonerated = (await client.query(queries.CONTRIBUTOR_IS_EXONERATED, [contributor, startingDate])).rows[0];
+//       if (contributorIsExonerated) return !!contributorIsExonerated;
+//       return !!(await client.query(queries.CONTRIBUTOR_ECONOMIC_ACTIVIES_IS_EXONERATED, [contributor, activity, startingDate])).rows[0];
+//     } else {
+//       const branchIsExonerated = (await client.query(queries.BRANCH_IS_EXONERATED, [branch, startingDate])).rows[0];
+//       if (branchIsExonerated) return !!branchIsExonerated;
+//       return !!(await client.query(queries.CONTRIBUTOR_IS_EXONERATED, [contributor, startingDate])).rows[0];
+//     }
+//     return false;
+//   } catch (e) {
+//     throw e;
+//   }
+// };
 
 const branchNames = {
   AE: 'ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES',

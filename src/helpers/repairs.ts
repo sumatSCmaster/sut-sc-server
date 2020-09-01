@@ -183,29 +183,28 @@ const addMonths = (date: Date, months): Date => {
   return date;
 };
 
-const isExonerated = async ({ branch, contributor, activity, startingDate }): Promise<boolean> => {
-  const client = await pool.connect();
-  try {
-    if (branch === codigosRamo.AE) {
-      const branchIsExonerated = (await client.query(queries.BRANCH_IS_EXONERATED, [branch, startingDate])).rows[0];
-      if (branchIsExonerated) return !!branchIsExonerated;
-      const activityIsExonerated = (await client.query(queries.ECONOMIC_ACTIVITY_IS_EXONERATED, [activity, startingDate])).rows[0];
-      if (activityIsExonerated) return !!activityIsExonerated;
-      const contributorIsExonerated = (await client.query(queries.CONTRIBUTOR_IS_EXONERATED, [contributor, startingDate])).rows[0];
-      if (contributorIsExonerated) return !!contributorIsExonerated;
-      return !!(await client.query(queries.CONTRIBUTOR_ECONOMIC_ACTIVIES_IS_EXONERATED, [contributor, activity, startingDate])).rows[0];
-    } else {
-      const branchIsExonerated = (await client.query(queries.BRANCH_IS_EXONERATED, [branch, startingDate])).rows[0];
-      if (branchIsExonerated) return !!branchIsExonerated;
-      return !!(await client.query(queries.CONTRIBUTOR_IS_EXONERATED, [contributor, startingDate])).rows[0];
-    }
-    return false;
-  } catch (e) {
-    throw e;
-  } finally {
-    client.release();
-  }
-};
+// const isExonerated = async ({ branch, contributor, activity, startingDate }, client): Promise<boolean> => {
+//   try {
+//     if (branch === codigosRamo.AE) {
+//       const branchIsExonerated = (await client.query(queries.BRANCH_IS_EXONERATED, [branch, startingDate])).rows[0];
+//       if (branchIsExonerated) return !!branchIsExonerated;
+//       const activityIsExonerated = (await client.query(queries.ECONOMIC_ACTIVITY_IS_EXONERATED, [activity, startingDate])).rows[0];
+//       if (activityIsExonerated) return !!activityIsExonerated;
+//       const contributorIsExonerated = (await client.query(queries.CONTRIBUTOR_IS_EXONERATED, [contributor, startingDate])).rows[0];
+//       if (contributorIsExonerated) return !!contributorIsExonerated;
+//       return !!(await client.query(queries.CONTRIBUTOR_ECONOMIC_ACTIVIES_IS_EXONERATED, [contributor, activity, startingDate])).rows[0];
+//     } else {
+//       const branchIsExonerated = (await client.query(queries.BRANCH_IS_EXONERATED, [branch, startingDate])).rows[0];
+//       if (branchIsExonerated) return !!branchIsExonerated;
+//       return !!(await client.query(queries.CONTRIBUTOR_IS_EXONERATED, [contributor, startingDate])).rows[0];
+//     }
+//     return false;
+//   } catch (e) {
+//     throw e;
+//   } finally {
+//     client.release();
+//   }
+// };
 
 const branchNames = {
   AE: 'ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES',
