@@ -785,8 +785,8 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
       FROM pago p
       WHERE p.concepto = 'IMPUESTO' AND p.id_procedimiento = $1
       GROUP BY p.metodo_pago;`,
-  GET_RECEIPT_RECORDS_BY_USER: "SELECT id_registro_recibo AS id, fecha, recibo, razon_social AS \"razonSocial\", rim FROM impuesto.registro_recibo WHERE id_usuario = $1 and recibo != '' ORDER BY fecha DESC;",
-  INSERT_RECEIPT_RECORD: `INSERT INTO impuesto.registro_recibo (id_usuario, recibo, razon_social, rim) VALUES ($1, $2, $3, $4) ON CONFLICT (id_usuario, recibo) DO NOTHING RETURNING *;`,
+  GET_RECEIPT_RECORDS_BY_USER: "SELECT id_registro_recibo AS id, fecha, recibo, razon_social AS \"razonSocial\", rim, concepto FROM impuesto.registro_recibo WHERE id_usuario = $1 and recibo != '' ORDER BY fecha DESC;",
+  INSERT_RECEIPT_RECORD: `INSERT INTO impuesto.registro_recibo (id_usuario, recibo, razon_social, rim, concepto) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id_usuario, recibo) DO NOTHING RETURNING *;`,
   UPDATE_RECEIPT_RECORD: 'UPDATE impuesto.registro_recibo SET recibo = $2 WHERE id_registro_recibo = $1;',
   //Dias feriados
   GET_HOLIDAYS_BASED_ON_PAYMENT_DATE: "SELECT * FROM impuesto.dias_feriados WHERE dia BETWEEN $1::date AND ($1::date + interval '7 days');",
