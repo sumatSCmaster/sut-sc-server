@@ -82,7 +82,7 @@ const queries = {
   //BANKS
   INSERT_PAYMENT: 'INSERT INTO pago (id_procedimiento, referencia, monto, id_banco, fecha_de_pago, concepto, id_banco_destino, id_usuario) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *;',
   INSERT_PAYMENT_CASHIER:
-    'INSERT INTO pago (id_procedimiento, referencia, monto, id_banco, fecha_de_pago, concepto, aprobado, fecha_de_aprobacion, metodo_pago, id_usuario, id_banco_destino) VALUES ($1, $2, $3, $4, $5, $6, true, now(), $7, $8, $9) RETURNING *;',
+    'INSERT INTO pago (id_procedimiento, referencia, monto, id_banco, fecha_de_pago, concepto, aprobado, fecha_de_aprobacion, metodo_pago, id_usuario, id_banco_destino) VALUES ($1, $2, $3, $4, $5, $6, true, (NOW() - interval \'4 hours\'), $7, $8, $9) RETURNING *;',
 
   GET_ALL_BANKS: 'SELECT id_banco as id, nombre, validador  FROM banco',
   VALIDATE_PAYMENTS: 'SELECT validate_payments($1);',
@@ -206,7 +206,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   COMPLETE_STATE: 'SELECT complete_tramite_state ($1,$2,$3,$4, $5) as state',
   UPDATE_STATE_SOCIAL_CASE: 'SELECT update_caso_state($1, $2, $3) as state', //idcaso, event, datos
   UPDATE_PROCEDURE_INSTANCE_COST: 'UPDATE tramite SET costo = $1 WHERE id_tramite = $2',
-  UPDATE_APPROVED_STATE_FOR_PROCEDURE: 'UPDATE TRAMITE SET aprobado=$1, fecha_culminacion = now() WHERE id_tramite=$2',
+  UPDATE_APPROVED_STATE_FOR_PROCEDURE: 'UPDATE TRAMITE SET aprobado=$1, fecha_culminacion = (NOW() - interval \'4 hours\') WHERE id_tramite=$2',
 
   //parroquias
   GET_PARISHES: 'SELECT * FROM parroquia;',
@@ -261,9 +261,9 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   CREATE_PROPERTY:
     'INSERT INTO inmueble_urbano (cod_catastral, direccion, id_parroquia, \
   metros_construccion, metros_terreno, fecha_creacion, fecha_actualizacion, tipo_inmueble) \
-  VALUES ($1, $2, (SELECT id FROM parroquia WHERE nombre = $3 LIMIT 1), $4, $5, now(), now(), $6)\
+  VALUES ($1, $2, (SELECT id FROM parroquia WHERE nombre = $3 LIMIT 1), $4, $5, (NOW() - interval \'4 hours\'), (NOW() - interval \'4 hours\'), $6)\
   ON CONFLICT (cod_catastral) DO UPDATE SET metros_construccion = $4, metros_terreno = $5, \
-  id_parroquia = (SELECT id FROM parroquia WHERE nombre = $3 LIMIT 1), fecha_actualizacion = now() \
+  id_parroquia = (SELECT id FROM parroquia WHERE nombre = $3 LIMIT 1), fecha_actualizacion = (NOW() - interval \'4 hours\') \
   RETURNING id_inmueble',
   CREATE_PROPERTY_WITH_SIGNED_OWNER: 'INSERT INTO propietario_inmueble (id_propietario, id_inmueble) VALUES ($1, $2)',
   CREATE_PROPERTY_OWNER: 'INSERT INTO propietario (razon_social, cedula, rif, email) VALUES ($1,$2,$3,$4) ON CONFLICT (cedula, rif) DO UPDATE SET razon_social = EXCLUDED.razon_social RETURNING *',
@@ -473,7 +473,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_FINING_TARGET: 'SELECT cedula, nacionalidad FROM multa_state WHERE id=$1',
   GET_APPLICATION_CREATOR: 'SELECT usr.cedula, usr.nacionalidad FROM USUARIO usr INNER JOIN impuesto.solicitud_view sv ON usr.id_usuario = sv.usuario WHERE usr.id_usuario = $1',
   CREATE_NOTIFICATION: 'INSERT INTO notificacion (id_procedimiento, emisor, receptor, descripcion, status, \
-    fecha, estado, concepto) VALUES ($1, $2, $3, $4, false, now(), $5, $6) RETURNING id_notificacion',
+    fecha, estado, concepto) VALUES ($1, $2, $3, $4, false, (NOW() - interval \'4 hours\'), $5, $6) RETURNING id_notificacion',
   GET_PROCEDURE_NOTIFICATION_BY_ID: 'SELECT * FROM notificacion_tramite_view WHERE id = $1',
   GET_FINING_NOTIFICATION_BY_ID: 'SELECT * FROM notificacion_multa_view WHERE id = $1',
   GET_SETTLEMENT_NOTIFICATION_BY_ID: 'SELECT * FROM notificacion_impuesto_view WHERE id = $1',
@@ -771,7 +771,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
        punto_referencia, verificado, tipo_contribuyente) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *;',
   CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR:
     'INSERT INTO impuesto.registro_municipal (id_contribuyente, referencia_municipal, nombre_representante, telefono_celular,\
-     email, denominacion_comercial, fecha_aprobacion, actualizado, direccion) VALUES ($1, $2, $3, $4, $5, $6, now(), $7, $8) RETURNING *;',
+     email, denominacion_comercial, fecha_aprobacion, actualizado, direccion) VALUES ($1, $2, $3, $4, $5, $6, (NOW() - interval \'4 hours\'), $7, $8) RETURNING *;',
   CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR: 'INSERT INTO inmueble_urbano (id_registro_municipal, direccion, tipo_inmueble) VALUES ($1, $2, $3) RETURNING *;',
   GET_CONTRIBUTOR_BY_DOCUMENT_AND_DOC_TYPE: 'SELECT * FROM impuesto.contribuyente c WHERE c.documento = $1 AND c.tipo_documento = $2',
   CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR: 'INSERT INTO impuesto.actividad_economica_sucursal (id_registro_municipal, numero_referencia, aplicable_desde) VALUES ($1, $2, $3)',
@@ -1079,7 +1079,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   SET_SETTLEMENTS_AS_FORWARDED_BY_RIM:
     "UPDATE impuesto.liquidacion SET remitido = true WHERE id_registro_municipal = $1 AND id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = '1' AND id_ramo = $2) AND id_liquidacion IN (SELECT id_liquidacion  FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud_state ss ON ss.id = l.id_solicitud  WHERE ss.state = 'ingresardatos');",
   GET_USER_BY_APPLICATION_AND_RIM: 'SELECT id_usuario FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud WHERE l.id_registro_municipal = $1',
-  ADD_VERIFIED_CONTRIBUTOR: 'INSERT INTO impuesto.verificacion_telefono (fecha_verificacion, verificado, id_usuario) VALUES (now(), true, $1) RETURNING *',
+  ADD_VERIFIED_CONTRIBUTOR: 'INSERT INTO impuesto.verificacion_telefono (fecha_verificacion, verificado, id_usuario) VALUES ((NOW() - interval \'4 hours\'), true, $1) RETURNING *',
   GET_USER_IN_CHARGE_OF_BRANCH:
     'SELECT vt.id_usuario as id FROM impuesto.verificacion_telefono vt INNER JOIN impuesto.registro_municipal_verificacion rmv USING (id_verificacion_telefono)\
      INNER JOIN impuesto.registro_municipal rm USING (id_registro_municipal) INNER JOIN impuesto.contribuyente c USING (id_contribuyente) WHERE\
@@ -1097,7 +1097,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     ORDER BY monto DESC
     LIMIT 1000) s)`,
   ADD_BRANCH_FOR_CONTRIBUTOR:
-    'INSERT INTO impuesto.registro_municipal (id_contribuyente, fecha_aprobacion, telefono_celular, email, denominacion_comercial, nombre_representante, actualizado, capital_suscrito, tipo_sociedad, estado_licencia, direccion, id_parroquia) VALUES ($1, now(), $2, $3, $4, $5, true, $6, $7, $8, $9, $10) RETURNING *',
+    'INSERT INTO impuesto.registro_municipal (id_contribuyente, fecha_aprobacion, telefono_celular, email, denominacion_comercial, nombre_representante, actualizado, capital_suscrito, tipo_sociedad, estado_licencia, direccion, id_parroquia) VALUES ($1, (NOW() - interval \'4 hours\'), $2, $3, $4, $5, true, $6, $7, $8, $9, $10) RETURNING *',
   UPDATE_BRANCH_INFO: 'UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombre_representante = $2, telefono_celular = $3, email = $4, actualizado = $5, direccion = $6 WHERE referencia_municipal = $7 RETURNING *',
   UPDATE_LICENSE_STATUS: 'UPDATE impuesto.registro_municipal SET estado_licencia = $1 WHERE id_registro_municipal = $2',
   UPDATE_ECONOMIC_ACTIVITIES_FOR_BRANCH:
@@ -1125,7 +1125,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     INNER JOIN impuesto.inmueble_contribuyente_natural icn ON iu.id_inmueble = icn.id_inmueble
     INNER JOIN impuesto.contribuyente c ON icn.id_contribuyente = c.id_contribuyente
     WHERE tipo_documento = $1 AND documento = $2;`,
-  UPDATE_LAST_UPDATE_DATE: 'UPDATE impuesto.contribuyente SET fecha_ultima_actualizacion = now() WHERE id_contribuyente = $1',
+  UPDATE_LAST_UPDATE_DATE: 'UPDATE impuesto.contribuyente SET fecha_ultima_actualizacion = (NOW() - interval \'4 hours\') WHERE id_contribuyente = $1',
   GET_PARISH_ESTATES: `SELECT id_inmueble AS id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", id_registro_municipal AS "idRim"
     FROM inmueble_urbaano iu
