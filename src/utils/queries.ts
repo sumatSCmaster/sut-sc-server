@@ -1023,7 +1023,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   INNER JOIN impuesto.actividad_economica ae ON ae.numero_referencia = aec.numero_referencia 
   LEFT JOIN impuesto.actividad_economica_exoneracion aee ON aee.id_actividad_economica = ae.id_actividad_economica 
   LEFT JOIN impuesto.plazo_exoneracion pe ON pe.id_plazo_exoneracion = aee.id_plazo_exoneracion 
-  WHERE rm.id_registro_municipal = $1 AND pe.fecha_inicio <= $2 AND (fecha_fin IS NULL OR fecha_fin >= now()::date)) t
+  WHERE rm.id_registro_municipal = $1 AND pe.fecha_inicio <= $2 AND (fecha_fin IS NULL OR fecha_fin >= now()::date OR fecha_fin >= $2)) t
   WHERE (t IS NOT NULL);`,
   UPDATE_SETTLEMENT_CORRECTION: 'UPDATE impuesto.liquidacion SET fecha_liquidacion = $1, fecha_vencimiento = $2, datos = $3, id_subramo = $4, id_solicitud = $5 WHERE id_liquidacion = $6 RETURNING *',
   ADD_ORIGINAL_APPLICATION_ID_IN_PATCH_APPLICATION: 'UPDATE impuesto.solicitud SET id_solicitud_original = $1 WHERE id_solicitud = $2',

@@ -103,7 +103,7 @@ const isExonerated = async ({ branch, contributor, activity, startingDate }): Pr
       return !!(await client.query(queries.CONTRIBUTOR_ECONOMIC_ACTIVIES_IS_EXONERATED, [contributor, activity, startingDate])).rows[0];
     } else {
       if (branch === codigosRamo.SM) {
-        const allActivitiesAreExonerated = (await client.query(queries.MUNICIPAL_SERVICE_BY_ACTIVITIES_IS_EXONERATED, [contributor, startingDate])).rows[0]?.exonerado;
+        const allActivitiesAreExonerated = (await client.query(queries.MUNICIPAL_SERVICE_BY_ACTIVITIES_IS_EXONERATED, [contributor, startingDate, startingDate.endOf('month')])).rows[0]?.exonerado;
         if (allActivitiesAreExonerated) return allActivitiesAreExonerated;
       }
       const branchIsExonerated = (await client.query(queries.BRANCH_IS_EXONERATED, [branch, startingDate])).rows[0];

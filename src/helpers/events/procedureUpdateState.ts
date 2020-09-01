@@ -29,7 +29,7 @@ emitter.on('procedureEventUpdated', ({ codigo, emailUsuario, nombreCompletoUsuar
   setImmediate(() => {
     status = statesMap[status] ? statesMap[status] : status;
     transporter.sendMail({
-      from: 'waku@wakusoftware.com',
+      from: process.env.MAIL_ADDRESS || 'info@sutmaracaibo.com',
       to: emailUsuario,
       subject: `ACTUALIZACION DE INFORMACION EXPEDIENTE N°${codigo} ${nombreCortoInstitucion}`,
       html: renderFile(resolve(viewsDir, nombreTipoTramite !== 'Multa' ? 'main.pug' : 'main_multa.pug'), {
