@@ -4035,7 +4035,8 @@ const createReceiptForSpecialApplication = async ({ pool, user, application }) =
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
     const payment = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID_DEST, [application.id, 'IMPUESTO'])).rows;
-
+    const recibo = await pool.query(queries.INSERT_RECEIPT_RECORD, [payment[0].id_usuario, ``, application.razonSocial, referencia?.referencia_municipal, 'ESPECIAL']);
+    const idRecibo = recibo.rows[0].id_registro_recibo;
     moment.locale('es');
     let certInfoArray: any[] = [];
     let certAE;
@@ -4165,17 +4166,28 @@ const createReceiptForSpecialApplication = async ({ pool, user, application }) =
         } else {
           try {
             if (buffersArray.length === 1) {
-              const bucketParams = {
-                Bucket: 'sut-maracaibo',
-                Key: `/sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
-              };
-              await S3Client.putObject({
-                ...bucketParams,
-                Body: buffersArray[0],
-                ACL: 'public-read',
-                ContentType: 'application/pdf',
-              }).promise();
-              res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+              const regClient = await pool.connect();
+              try {
+                await regClient.query('BEGIN');
+                const bucketParams = {
+                  Bucket: 'sut-maracaibo',
+                  Key: `/sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
+                };
+                await S3Client.putObject({
+                  ...bucketParams,
+                  Body: buffersArray[0],
+                  ACL: 'public-read',
+                  ContentType: 'application/pdf',
+                }).promise();
+                await regClient.query(queries.UPDATE_RECEIPT_RECORD, [idRecibo, `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`]);
+                await regClient.query('COMMIT');
+                res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+              } catch (e) {
+                await regClient.query('ROLLBACK');
+                rej(e);
+              } finally {
+                regClient.release();
+              }
             } else {
               let letter = 'A';
               let reduced: any = buffersArray.reduce((prev: any, next) => {
@@ -4192,17 +4204,28 @@ const createReceiptForSpecialApplication = async ({ pool, user, application }) =
                 .cat(`${Object.keys(reduced).join(' ')}`)
                 .output()
                 .then(async (buffer) => {
-                  const bucketParams = {
-                    Bucket: 'sut-maracaibo',
-                    Key: `/sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
-                  };
-                  await S3Client.putObject({
-                    ...bucketParams,
-                    Body: buffer,
-                    ACL: 'public-read',
-                    ContentType: 'application/pdf',
-                  }).promise();
-                  res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+                  const regClient = await pool.connect();
+                  try {
+                    await regClient.query('BEGIN');
+                    const bucketParams = {
+                      Bucket: 'sut-maracaibo',
+                      Key: `/sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
+                    };
+                    await S3Client.putObject({
+                      ...bucketParams,
+                      Body: buffer,
+                      ACL: 'public-read',
+                      ContentType: 'application/pdf',
+                    }).promise();
+                    await regClient.query(queries.UPDATE_RECEIPT_RECORD, [idRecibo, `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`]);
+                    await regClient.query('COMMIT');
+                    res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+                  } catch (e) {
+                    await regClient.query('ROLLBACK');
+                    rej(e);
+                  } finally {
+                    regClient.release();
+                  }
                 })
                 .catch((e) => {
                   console.log(e);
