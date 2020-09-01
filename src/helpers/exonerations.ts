@@ -14,7 +14,7 @@ export const getContributorExonerations = async({ typeDoc, doc, ref }) => {
         }
         const contributorEconomicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [contributor.idRegistroMunicipal]))
         const contributorExonerations = await client.query(queries.GET_CONTRIBUTOR_EXONERATIONS, [typeDoc, doc, ref]);
-        const activeExonerations = contributorExonerations.rows.filter((row) => row.active);
+        const activeExonerations = contributorExonerations.rows
         
         let generalExoneration = activeExonerations.find(row => !row.id_actividad_economica);
         let activityExonerations = activeExonerations.filter(row => row.id_actividad_economica);
@@ -54,7 +54,7 @@ export const getActivityExonerations = async() => {
     const client = await pool.connect()
     try{
         const activityExonerations = await client.query(queries.GET_ACTIVITY_EXONERATIONS);
-        const activeExonerations = activityExonerations.rows.filter((row) => row.active);
+        const activeExonerations = activityExonerations.rows
         
         
         return {
@@ -81,7 +81,7 @@ export const getBranchExonerations = async () => {
     const client = await pool.connect()
     try{
         const branchExonerations = await client.query(queries.GET_BRANCH_EXONERATIONS);
-        const activeExonerations = branchExonerations.rows.filter((row) => row.active);
+        const activeExonerations = branchExonerations.rows
         
         
         return {

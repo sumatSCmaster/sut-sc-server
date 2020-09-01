@@ -1810,7 +1810,7 @@ const getDefaultInterestByApplication = async ({ id, date, state, client }): Pro
           )
         ).rows
           // .filter((el) => !!['AE', 'SM', 'IU', 'PP'].find((x) => x === el.tipoProcedimiento))
-          .map((p) => ((+p.monto * 0.3324) / 365) * (moment().diff(moment(date).endOf('month'), 'days') - 1))
+          .map((p) => ((+p.monto * 0.3324) / 365) * (moment().diff(moment(date).endOf('month').startOf('day'), 'days') - 1))
           .reduce((x, j) => x + j, 0)) ||
       undefined;
     return +fixatedAmount(+value);
