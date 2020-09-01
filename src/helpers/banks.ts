@@ -36,16 +36,12 @@ export const paymentReferenceSearch = async ({ reference, bank }) => {
     if (!bank) throw { status: 400, message: 'Debe proporcionar el banco correspondiente a la referencia' };
     const pagos = (
       await client.query(
-        'SELECT id_pago AS id, referencia, monto, fecha_de_pago AS "fechaDePago", aprobado, id_banco AS banco, fecha_de_aprobacion AS "fechaAprobacion", concepto, metodo_pago AS "metodoPago", id_usuario AS usuario, id_banco_destino AS "bancoDestino" FROM pago WHERE referencia = $1 AND id_banco = $2',
+        'SELECT id_pago AS id, referencia, monto, fecha_de_pago AS "fechaDePago", aprobado, id_banco AS banco, fecha_de_aprobacion AS "fechaAprobacion", concepto, metodo_pago AS "metodoPago", id_usuario AS usuario, id_banco_destino AS "bancoDestino" FROM pago WHERE referencia = $1 AND id_banco_destino = $2',
         [reference, bank]
       )
     ).rows;
     if (!pagos.length) throw { status: 404, message: 'No existe la referencia suministrada en el banco suministrado' };
-    return {
-      status: 200,
-      pagos,
-      message: 'Datos de referencia obtenidos',
-    };
+    return { status: 200, pagos, message: 'Datos de referencia obtenidos' };
   } catch (e) {
     throw {
       status: e.status || 500,
