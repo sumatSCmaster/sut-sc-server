@@ -157,7 +157,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const now = moment(new Date());
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const monthDateForTop = moment().locale('ES').subtract(2, 'M');
-    const esContribuyenteTop = !!branch ? await client.query(queries.BRANCH_IS_ONE_BEST_PAYERS, [branch.id_registro_municipal, monthDateForTop.format('MMMM'), monthDateForTop.year()]) : false;
+    const esContribuyenteTop = !!branch ? (await client.query(queries.BRANCH_IS_ONE_BEST_PAYERS, [branch.id_registro_municipal, monthDateForTop.format('MMMM'), monthDateForTop.year()])).rowCount > 0 : false;
     //AE
     if (branch && branch?.referencia_municipal && !AEApplicationExists) {
       const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
