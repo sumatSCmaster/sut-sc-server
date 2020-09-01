@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAllBanks, validatePayments, listTaxPayments, updatePayment, addPayment } from '@helpers/banks';
+import { getAllBanks, validatePayments, listTaxPayments, updatePayment, addPayment, paymentReferenceSearch } from '@helpers/banks';
 import { fulfill } from '@utils/resolver';
 import { errorMessageGenerator } from '@helpers/errors';
 import { authenticate } from 'passport';
@@ -13,9 +13,16 @@ router.get('/', async (req, res) => {
   if (data) res.status(data.status).json(data);
 });
 
+router.get('/reference/search', async (req, res) => {
+  const { referencia: reference, banco: bank } = req.query;
+  const [err, data] = await fulfill(paymentReferenceSearch({ reference, bank }));
+  if (err) res.status(err.status).json(err);
+  if (data) res.status(data.status).json(data);
+});
+
 router.put('/validatePayments', authenticate('jwt'), async (req, res) => {
   const [err, data] = await fulfill(validatePayments(req.body, req.user));
-  console.log(err)
+  console.log(err);
   if (err) res.status(500).json({ status: 500, message: errorMessageGenerator(err) });
   if (data) res.status(data.status).json(data);
 });
@@ -32,10 +39,9 @@ router.post('/payment/', authenticate('jwt'), async (req, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-
 router.patch('/payment/:id/', authenticate('jwt'), async (req, res) => {
-  const [err, data] = await fulfill(updatePayment({ id: req.params['id'], ...req.body}));
+  const [err, data] = await fulfill(updatePayment({ id: req.params['id'], ...req.body }));
   if (err) res.status(500).json(err);
   if (data) res.status(data.status).json(data);
-})
+});
 export default router;
