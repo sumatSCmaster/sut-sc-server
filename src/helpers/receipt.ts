@@ -26,7 +26,7 @@ export const generateReceipt = async (payload: { application: number }) => {
   const breakdownData = (await client.query(queries.GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID, [applicationView.id])).rows;
   const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [applicationView.idLiquidacion])).rows[0];
   console.log('breakdowndata', breakdownData);
-  const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [paymentRows[0].id_usuario, ``, applicationView.razonSocial, referencia?.referencia_municipal]);   
+  const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [paymentRows[0].id_usuario, ``, applicationView.razonSocial, referencia?.referencia_municipal, 'IMPUESTO']);   
   const idRecibo = recibo.rows[0].id_registro_recibo;
   try {
     return new Promise(async (res, rej) => {
