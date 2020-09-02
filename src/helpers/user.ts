@@ -443,7 +443,7 @@ export const blockUser = async (id, blockStatus) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query('UPDATE usuario SET bloqueado = $1 WHERE id_usuario = $2', [blockStatus, id]);
+    await client.query('UPDATE usuario SET bloqueado = $1 WHERE id_usuario = $2', [!blockStatus, id]);
     await client.query('COMMIT');
     return { status: 200, message: 'Estatus bloqueado del usuario SUT modificado' };
   } catch (error) {
