@@ -15,8 +15,6 @@ export const blockUserEvent = async (id: number, blocked: boolean, client: PoolC
   try {
     const usuario = (await client.query('SELECT * FROM usuario WHERE id_usuario = $1', [id])).rows[0];
     const socket = `${usuario.nacionalidad}-${usuario.cedula}`;
-    console.log('blockUserEvent -> socket', socket);
-    console.log(!!users.get(socket));
     blocked && users.get(socket)?.emit('BLOCKED_USER', { id });
     return true;
   } catch (e) {
