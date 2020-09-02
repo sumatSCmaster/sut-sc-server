@@ -11,11 +11,11 @@ import { getApplicationsAndSettlementsById, getApplicationsAndSettlementsByIdNot
 const pool = Pool.getInstance();
 const users = getUsers();
 
-export const blockUserEvent = async (id: number, client: PoolClient) => {
+export const blockUserEvent = async (id: number, blocked: boolean, client: PoolClient) => {
   try {
     const usuario = (await client.query('SELECT * FROM usuario WHERE id_usuario = $1', [id])).rows[0];
     const socket = `${usuario.nacionalidad}-${usuario.cedula}`;
-    users.get(socket)?.emit('BLOCKED_USER', { id });
+    blocked && users.get(socket)?.emit('BLOCKED_USER', { id });
     return true;
   } catch (e) {
     throw {

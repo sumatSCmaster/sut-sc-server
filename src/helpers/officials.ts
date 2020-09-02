@@ -205,7 +205,7 @@ export const blockOfficial = async (officialID: string, blockStatus: boolean) =>
     const res = await client.query('UPDATE cuenta_funcionario SET bloqueado = $1 WHERE id_usuario = $2', [!blockStatus, officialID]);
     // const res = await client.query(queries.DELETE_OFFICIAL_AS_SUPERUSER, [officialID]);
     await client.query('COMMIT');
-    await blockUserEvent(+officialID, client);
+    await blockUserEvent(+officialID, !blockStatus, client);
     return { status: 200, message: res.rowCount > 0 ? 'Estatus del funcionario modificado' : 'No se encontro el funcionario' };
   } catch (e) {
     client.query('ROLLBACK');
