@@ -439,19 +439,19 @@ export const unlinkContributorFromUser = async (id) => {
   }
 };
 
-export const blockUser = async (id) => {
+export const blockUser = async (id, blockStatus) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query('UPDATE usuario SET bloqueado = true WHERE id_usuario = $1', [id]);
+    await client.query('UPDATE usuario SET bloqueado = $1 WHERE id_usuario = $2', [blockStatus, id]);
     await client.query('COMMIT');
-    return { status: 200, message: 'Contribuyente desenlazado del usuario SUT' };
+    return { status: 200, message: 'Estatus bloqueado del usuario SUT modificado' };
   } catch (error) {
     client.query('ROLLBACK');
     throw {
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al desenlazar contribuyente',
+      message: errorMessageGenerator(error) || 'Error al cambiar estatus de bloqueado del usuario',
     };
   } finally {
     client.release();
