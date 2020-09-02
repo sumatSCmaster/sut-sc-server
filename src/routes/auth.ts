@@ -6,7 +6,7 @@ import * as authValidations from '@validations/auth';
 import { checkIfAdmin, checkIfSuperuser, checkIfOfficial, checkIfDirector } from '@utils/user';
 import { hashSync, genSaltSync } from 'bcryptjs';
 import { checkResult } from '@validations/index';
-import { createSuperuser, createAdmin, completeExtUserSignUp, addInstitute, signUpUser, addPermissions } from '@helpers/user';
+import { createSuperuser, createAdmin, completeExtUserSignUp, addInstitute, signUpUser, addPermissions, isBlocked } from '@helpers/user';
 import { isSuperuser, isAdmin } from '@middlewares/auth';
 import { fulfill } from '@utils/resolver';
 import { errorMessageGenerator, errorMessageExtractor } from '@helpers/errors';
@@ -14,7 +14,7 @@ import { forgotPassword, recoverPassword, getUserData } from '@helpers/auth';
 
 const router = Router();
 
-router.post('/login', authValidations.isLogged, authValidations.login, checkResult, authenticate('local'), async (req: any, res) => {
+router.post('/login', authValidations.isLogged, authValidations.login, checkResult, isBlocked(), authenticate('local'), async (req: any, res) => {
   if (await checkIfSuperuser(req.user.cedula)) {
     res.status(200).json({
       status: 200,

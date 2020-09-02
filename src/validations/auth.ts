@@ -2,6 +2,7 @@ import { check, validationResult } from 'express-validator';
 import { fulfill } from '@utils/resolver';
 import { getFieldsForValidations } from '@helpers/procedures';
 import { IDsTipoUsuario as userTypes } from '@interfaces/sigt';
+import { Pool } from 'pg';
 
 const estimacionSimple = [
   check('tramite.datos.estimacionSimple').exists().withMessage('Debe incluir la estimacion simple'),

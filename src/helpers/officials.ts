@@ -161,7 +161,8 @@ export const deleteOfficial = async (officialID: string, institution: number) =>
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    const res = await client.query(queries.DELETE_OFFICIAL, [officialID, institution]);
+    const res = await client.query('UPDATE cuenta_funcionario SET bloqueado = true WHERE id_usuario = $1', [officialID]);
+    // const res = await client.query(queries.DELETE_OFFICIAL, [officialID, institution]);
     client.query('COMMIT');
     return { status: 200, message: res.rowCount > 0 ? 'Funcionario eliminado' : 'No se encontro el funcionario' };
   } catch (e) {
@@ -180,7 +181,8 @@ export const deleteOfficialSuperuser = async (officialID: string) => {
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    const res = await client.query(queries.DELETE_OFFICIAL_AS_SUPERUSER, [officialID]);
+    const res = await client.query('UPDATE cuenta_funcionario SET bloqueado = true WHERE id_usuario = $1', [officialID]);
+    // const res = await client.query(queries.DELETE_OFFICIAL_AS_SUPERUSER, [officialID]);
     client.query('COMMIT');
     return { status: 200, message: res.rowCount > 0 ? 'Funcionario eliminado' : 'No se encontro el funcionario' };
   } catch (e) {
