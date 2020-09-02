@@ -4,7 +4,7 @@ block css
   link(rel="stylesheet", href="css/cpu-cert-CC.css")
 
 block content
-  main.certificado
+  main.certificado(style='padding-top: 100px')
     header.pageHeader.row
     .header-table
       #fecha-exp(style='width: 30%;')
@@ -16,7 +16,7 @@ block content
           |  #{moment(fecha).format('DD/MM/YYYY')}
       #tramite(style='width: 50%;')
         h1 C&Oacute;DIGO CATASTRAL
-        h4 N&deg; #{datos.funcionario.codCat.toUpperCase()}
+        h4(style='font-size: 1.9em;') N&deg; #{datos.funcionario.codCat.toUpperCase()}
       div(style='width: 20%; padding: 2px 0;')
         img#QR(src=QR, alt='QR')
     .datos-certificado.row
@@ -31,7 +31,7 @@ block content
               th(scope='row') Raz&oacute;n Social: 
               td #{prop.razonSocial}
               th(scope='row') Cedula o RIF
-              td #{prop.cedulaORif}  
+              td #{prop.cedulaORif}
           tr
             th(scope='row') DATOS DE REGISTRO:
             td(colspan=3) #{datos.funcionario.datosRegistro}
@@ -48,19 +48,15 @@ block content
             td(colspan=3) #{datos.funcionario.direccion}
           tr
           tr
-          tr
-            th(scope='row') &Aacute;REA DE CONSTRUCCI&Oacute;N:
-            td  #{datos.funcionario.areaConstruccion} m²
-          tr
             th(scope='row') &Aacute;REA DE TERRENO:
             td  #{datos.funcionario.areaTerreno} m²
           tr
             th(scope='row') PLANO:
-            td(colspan=3) #{datos.funcionario.croquis || datos.funcionario.plano}
+            td(colspan=3) #{datos.funcionario.plano || ''}
           tr
           tr
             th(scope='row') OBSERVACIONES:
-            td(colspan=3) #{datos.funcionario.observaciones}
+            td(colspan=3) #{datos.funcionario.observaciones || ''}
     .funcionarios.row
       .grow1
         p.grow1 Aprobado:
@@ -69,6 +65,3 @@ block content
       .grow1
         p.grow1 Revisado:
         h4 Jefe de Departamento
-      .grow1
-        p.grow1 Realizado:
-        h4 Analista de C&oacute;digo
