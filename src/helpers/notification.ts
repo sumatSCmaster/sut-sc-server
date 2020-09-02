@@ -16,14 +16,13 @@ export const blockUserEvent = async (id: number, client: PoolClient) => {
     const usuario = (await client.query('SELECT * FROM usuario WHERE id_usuario = $1', [id])).rows[0];
     const socket = `${usuario.nacionalidad}-${usuario.cedula}`;
     users.get(socket)?.emit('BLOCKED_USER', { id });
+    return true;
   } catch (e) {
     throw {
       error: errorMessageExtractor(e),
       status: 500,
       message: errorMessageGenerator(e) || 'Error al emitir evento de bloqueo',
     };
-  } finally {
-    client.release();
   }
 };
 

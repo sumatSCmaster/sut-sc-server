@@ -450,6 +450,7 @@ export const blockUser = async (id, blockStatus) => {
     await blockUserEvent(id, client);
     return { status: 200, message: 'Estatus bloqueado del usuario SUT modificado' };
   } catch (error) {
+    console.log(error);
     client.query('ROLLBACK');
     throw {
       status: 500,
