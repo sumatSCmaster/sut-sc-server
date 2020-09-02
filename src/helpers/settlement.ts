@@ -1350,9 +1350,9 @@ export const getAgreements = async ({ user }: { user: Usuario }) => {
     return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', convenios: applications };
   } catch (error) {
     throw {
-      status: 500,
+      status: error.status || 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener solicitudes y liquidaciones',
     };
   } finally {
     client.release();
@@ -1402,9 +1402,9 @@ export const getAgreementsForContributor = async ({ reference, docType, document
   } catch (error) {
     console.log(error);
     throw {
-      status: 500,
+      status: error.status || 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al obtener convenios de contribuyente',
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener convenios de contribuyente',
     };
   } finally {
     client.release();

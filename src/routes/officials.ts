@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getOfficialsByInstitution, createOfficial, updateOfficial, deleteOfficial, getAllOfficials, deleteOfficialSuperuser } from '@helpers/officials';
+import { getOfficialsByInstitution, createOfficial, updateOfficial, deleteOfficial, getAllOfficials, deleteOfficialSuperuser, blockOfficial } from '@helpers/officials';
 import * as validators from '@validations/auth';
 import { checkResult } from '@validations/index';
 import { authenticate } from 'passport';
@@ -46,6 +46,14 @@ router.delete('/:id', authenticate('jwt'), validators.isOfficialAdmin, async (re
   } else {
     [err, data] = await fulfill(deleteOfficialSuperuser(id));
   }
+  if (err) res.status(500).json(err);
+  if (data) res.status(data.status).json(data);
+});
+
+router.patch('/:id', authenticate('jwt'), validators.isOfficialAdmin, async (req: any, res) => {
+  const { institucion } = req.user;
+  const { id } = req.params;
+  const [err, data] = await fulfill(blockOfficial(id, req.body.bloqueado));
   if (err) res.status(500).json(err);
   if (data) res.status(data.status).json(data);
 });

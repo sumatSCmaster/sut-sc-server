@@ -9,6 +9,32 @@ import { generateToken } from '@utils/Strategies';
 
 const pool = Pool.getInstance();
 
+//middleware
+export const isBlocked = () => async (req, res, next) => {
+  const client = await pool.connect();
+  const { nombreUsuario: usuario } = req.body;
+  try {
+    const user = (await client.query('SELECT bloqueado FROM usuario WHERE nombre_de_usuario = $1', [usuario])).rows[0];
+    if (user?.bloqueado) {
+      res.send({
+        status: 401,
+        message: 'El usuario de SUT suministrado se encuentra bloqueado',
+      });
+    } else {
+      next();
+    }
+  } catch (error) {
+    console.log(error);
+    res.send({
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || errorMessageExtractor(error) || 'Error al obtener la informacion del usuario',
+    });
+  } finally {
+    client.release();
+  }
+};
+
 export const getUserByUsername = async (username: string): Promise<Usuario | null> => {
   const client = await pool.connect();
   try {
@@ -100,7 +126,7 @@ export const createAdmin = async (user: Payloads.CrearAdmin): Promise<Partial<Us
   }
 };
 
-export const addInstitute = async (user: Partial<Usuario>): Promise<Partial<Usuario> & { institucion: Institucion & { cargo: object } }> => {
+export const addInstitute = async (user: Partial<Usuario>): Promise<Partial<Usuario> & { institucion: Institucion & { cargo: object; bloqueado: boolean } }> => {
   const client = await pool.connect();
   try {
     const res = (await client.query(queries.GET_ADMIN_INSTITUTE, [user.id])).rows;
@@ -108,6 +134,7 @@ export const addInstitute = async (user: Partial<Usuario>): Promise<Partial<Usua
     return {
       ...user,
       institucion: {
+        bloqueado: res[0].bloqueado,
         id: res[0].id_institucion,
         nombreCompleto: res[0].nombre_completo,
         nombreCorto: res[0].nombre_corto,
@@ -371,6 +398,7 @@ export const userSearch = async ({ document, docType, email }) => {
     usuarios = await Promise.all(
       usuarios.map(async (el) => ({
         id: el.id_usuario,
+        bloqueado: el.bloqueado,
         nombreCompleto: el.nombre_completo,
         nombreUsuario: el.nombre_de_usuario,
         direccion: el.direccion,
@@ -406,6 +434,25 @@ export const unlinkContributorFromUser = async (id) => {
       status: 500,
       error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al desenlazar contribuyente',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const blockUser = async (id, blockStatus) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('UPDATE usuario SET bloqueado = $1 WHERE id_usuario = $2', [!blockStatus, id]);
+    await client.query('COMMIT');
+    return { status: 200, message: 'Estatus bloqueado del usuario SUT modificado' };
+  } catch (error) {
+    client.query('ROLLBACK');
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al cambiar estatus de bloqueado del usuario',
     };
   } finally {
     client.release();

@@ -49,7 +49,7 @@ const queries = {
   WHERE dg.id_google = $1 OR df.id_facebook=$1',
   GET_EXTERNAL_USER: 'SELECT * FROM usuario WHERE id_usuario = $1',
   GET_ADMIN_INSTITUTE:
-    'SELECT i.*, c.descripcion AS cargo, c.id_cargo AS "idCargo" FROM institucion i INNER JOIN cargo c ON i.id_institucion = c.id_institucion INNER JOIN cuenta_funcionario cf ON c.id_cargo = cf.id_cargo \
+    'SELECT i.*, cf.bloqueado, c.descripcion AS cargo, c.id_cargo AS "idCargo" FROM institucion i INNER JOIN cargo c ON i.id_institucion = c.id_institucion INNER JOIN cuenta_funcionario cf ON c.id_cargo = cf.id_cargo \
     WHERE cf.id_usuario = $1;',
   CHECK_IF_OFFICIAL: "SELECT 1 FROM usuario u \
     INNER JOIN tipo_usuario tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
@@ -99,12 +99,12 @@ const queries = {
      usr.id_usuario=cf.id_usuario WHERE usr.id_usuario=$1 AND cf.id_cargo = $2',
   GET_OFFICIALS_BY_INSTITUTION:
     'SELECT usr.id_usuario AS id, usr.nombre_completo AS nombreCompleto, usr.nombre_de_usuario AS nombreUsuario,\
-    usr.direccion, usr.cedula, usr.nacionalidad, usr.id_tipo_usuario AS tipoUsuario, usr.telefono, c.id_cargo as cargo\
+    usr.direccion, usr.cedula, usr.nacionalidad, usr.id_tipo_usuario AS tipoUsuario, usr.telefono, c.id_cargo as cargo, cf.bloqueado\
     from usuario usr INNER JOIN cuenta_funcionario cf ON\
     usr.id_usuario=cf.id_usuario INNER JOIN cargo c ON cf.id_cargo = c.id_cargo WHERE c.id_institucion = $1 AND usr.id_usuario != $2 AND usr.id_tipo_usuario!=1',
   GET_ALL_OFFICIALS:
     'SELECT usr.id_usuario AS id, usr.nombre_completo AS nombreCompleto, usr.nombre_de_usuario AS nombreUsuario,\
-    usr.direccion, usr.cedula, usr.nacionalidad, usr.id_tipo_usuario AS tipoUsuario, usr.telefono, cf.id_cargo as cargo\
+    usr.direccion, usr.cedula, usr.nacionalidad, usr.id_tipo_usuario AS tipoUsuario, usr.telefono, cf.id_cargo as cargo, cf.bloqueado\
     from usuario usr INNER JOIN cuenta_funcionario cf ON\
     usr.id_usuario=cf.id_usuario WHERE usr.id_tipo_usuario!=1',
   GET_ALL_INSTITUTION: 'SELECT * FROM institucion',
@@ -525,13 +525,12 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     'UPDATE impuesto.registro_municipal SET telefono_celular = $2, email = $3, denominacion_comercial = $4, nombre_representante = $5, capital_suscrito = $6, tipo_sociedad = $7, telefono_habitacion = $8, id_parroquia = $9, direccion = $10 WHERE id_registro_municipal = $1',
   GET_APPLICATION_BY_ID: 'SELECT * FROM impuesto.solicitud WHERE id_solicitud = $1',
   GET_APPLICATION_INSTANCES_BY_USER: 'SELECT * FROM impuesto.solicitud WHERE id_usuario = $1 ORDER BY fecha DESC',
-  GET_APPLICATION_DEBTS_BY_MUNICIPAL_REGISTRY:
-    "SELECT rm.id_ramo, rm.descripcion, SUM(l.monto) AS monto FROM impuesto.ramo rm INNER JOIN impuesto.subramo sr ON rm.id_ramo = sr.id_ramo\
-    INNER JOIN impuesto.liquidacion l ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.registro_municipal r ON l.id_registro_municipal = r.id_registro_municipal\
-    INNER JOIN impuesto.contribuyente c ON r.id_contribuyente = c.id_contribuyente INNER JOIN impuesto.solicitud s ON c.id_contribuyente = s.id_contribuyente\
-    INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state FROM\
-    impuesto.evento_solicitud es GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud AND ev.id_solicitud = l.id_solicitud\
-    WHERE ev.state = 'ingresardatos' AND sr.subindice != '2' AND R.referencia_municipal= $1 AND r.id_contribuyente = $2 GROUP BY rm.id_ramo, rm.descripcion HAVING SUM (l.monto) > 0",
+  GET_APPLICATION_DEBTS_BY_MUNICIPAL_REGISTRY: `SELECT rm.id_ramo, rm.descripcion, SUM(l.monto) AS monto FROM impuesto.ramo rm INNER JOIN impuesto.subramo sr ON rm.id_ramo = sr.id_ramo
+    INNER JOIN impuesto.liquidacion l ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.registro_municipal r ON l.id_registro_municipal = r.id_registro_municipal
+   INNER JOIN impuesto.contribuyente c ON r.id_contribuyente = c.id_contribuyente INNER JOIN impuesto.solicitud s ON c.id_contribuyente = s.id_contribuyente
+    INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state FROM
+    impuesto.evento_solicitud es INNER JOIN impuesto.solicitud USING (id_solicitud) WHERE id_contribuyente = $2 GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud AND ev.id_solicitud = l.id_solicitud
+    WHERE ev.state = 'ingresardatos' AND sr.subindice != '2' AND R.referencia_municipal= $1 AND r.id_contribuyente = $2 GROUP BY rm.id_ramo, rm.descripcion HAVING SUM (l.monto) > 0`,
   GET_APPLICATION_DEBTS_FOR_NATURAL_CONTRIBUTOR:
     "SELECT DISTINCT m.id_ramo, rm.descripcion, SUM(l.monto) as monto FROM impuesto.ramo rm INNER JOIN impuesto.subramo sr ON rm.id_ramo = sr.id_ramo INNER JOIN\
     impuesto.liquidacion l ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.solicitud s ON l.id_solicitud = s.id_solicitud INNER JOIN\
@@ -785,7 +784,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
       FROM pago p
       WHERE p.concepto = 'IMPUESTO' AND p.id_procedimiento = $1
       GROUP BY p.metodo_pago;`,
-  GET_RECEIPT_RECORDS_BY_USER: "SELECT id_registro_recibo AS id, fecha, recibo, razon_social AS \"razonSocial\", rim, concepto FROM impuesto.registro_recibo WHERE id_usuario = $1 and recibo != '' ORDER BY fecha DESC;",
+  GET_RECEIPT_RECORDS_BY_USER: 'SELECT id_registro_recibo AS id, fecha, recibo, razon_social AS "razonSocial", rim, concepto FROM impuesto.registro_recibo WHERE id_usuario = $1 and recibo != \'\' ORDER BY fecha DESC;',
   INSERT_RECEIPT_RECORD: `INSERT INTO impuesto.registro_recibo (id_usuario, recibo, razon_social, rim, concepto) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id_usuario, recibo) DO NOTHING RETURNING *;`,
   UPDATE_RECEIPT_RECORD: 'UPDATE impuesto.registro_recibo SET recibo = $2 WHERE id_registro_recibo = $1;',
   //Dias feriados
