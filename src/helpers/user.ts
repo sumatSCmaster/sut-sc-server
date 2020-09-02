@@ -398,6 +398,7 @@ export const userSearch = async ({ document, docType, email }) => {
     usuarios = await Promise.all(
       usuarios.map(async (el) => ({
         id: el.id_usuario,
+        bloqueado: el.bloqueado,
         nombreCompleto: el.nombre_completo,
         nombreUsuario: el.nombre_de_usuario,
         direccion: el.direccion,
