@@ -11,6 +11,22 @@ import { getApplicationsAndSettlementsById, getApplicationsAndSettlementsByIdNot
 const pool = Pool.getInstance();
 const users = getUsers();
 
+export const blockUserEvent = async (id: number, client: PoolClient) => {
+  try {
+    const usuario = (await client.query('SELECT * FROM usuario WHERE id_usuario = $1', [id])).rows[0];
+    const socket = `${usuario.nacionalidad}-${usuario.cedula}`;
+    users.get(socket)?.emit('BLOCKED_USER', { id });
+  } catch (e) {
+    throw {
+      error: errorMessageExtractor(e),
+      status: 500,
+      message: errorMessageGenerator(e) || 'Error al emitir evento de bloqueo',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 export const getNotifications = async (user: Usuario): Promise<Notificacion[] | any> => {
   const client = await pool.connect();
   try {

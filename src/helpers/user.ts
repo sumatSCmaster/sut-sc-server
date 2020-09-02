@@ -6,6 +6,7 @@ import { fulfill } from '@utils/resolver';
 import { stringify } from 'flatted/cjs';
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { generateToken } from '@utils/Strategies';
+import { blockUserEvent } from './notification';
 
 const pool = Pool.getInstance();
 
@@ -14,8 +15,8 @@ export const isBlocked = () => async (req, res, next) => {
   const client = await pool.connect();
   const { nombreUsuario: usuario } = req.body;
   try {
-    const user = (await client.query('SELECT bloqueado FROM usuario WHERE nombre_de_usuario = $1', [usuario])).rows[0];
-    if (user?.bloqueado) {
+    const user = (await client.query('SELECT usr.bloqueado, cf.bloqueado AS bloqueadof FROM usuario usr LEFT JOIN cuenta_funcionario cf USING (id_usuario) WHERE usr.nombre_de_usuario = $1', [usuario])).rows[0];
+    if (user?.bloqueado || user?.bloqueadof) {
       res.send({
         status: 401,
         message: 'El usuario de SUT suministrado se encuentra bloqueado',
@@ -446,6 +447,7 @@ export const blockUser = async (id, blockStatus) => {
     await client.query('BEGIN');
     await client.query('UPDATE usuario SET bloqueado = $1 WHERE id_usuario = $2', [!blockStatus, id]);
     await client.query('COMMIT');
+    await blockUserEvent(id, client);
     return { status: 200, message: 'Estatus bloqueado del usuario SUT modificado' };
   } catch (error) {
     client.query('ROLLBACK');
