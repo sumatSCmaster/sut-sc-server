@@ -57,7 +57,7 @@ export const updateContributorActivities = async ({ branchId, activities, branch
     ).rows[0];
     await client.query('DELETE FROM impuesto.actividad_economica_sucursal WHERE id_registro_municipal = $1', [branchId]);
     await Promise.all(
-      [codigosRamo.AE, codigosRamo.IU, codigosRamo.PP, codigosRamo.SM].map(
+      [codigosRamo.AE, codigosRamo.PP, codigosRamo.SM].map(
         async (codigo) =>
           await client.query('DELETE FROM impuesto.liquidacion WHERE id_subramo IN (SELECT id_subramo FROM impuesto.subramo WHERE id_ramo = (SELECT id_ramo FROM impuesto.ramo WHERE codigo = $1)) AND id_registro_municipal = $2', [codigo, branchId])
       )

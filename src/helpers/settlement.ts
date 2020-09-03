@@ -101,7 +101,7 @@ export const isExonerated = async ({ branch, contributor, activity, startingDate
       if (contributorIsExonerated) return !!contributorIsExonerated;
       return !!(await client.query(queries.CONTRIBUTOR_ECONOMIC_ACTIVIES_IS_EXONERATED, [contributor, activity, startingDate])).rows[0];
     } else {
-      if (branch === codigosRamo.SM) {
+      if (branch === codigosRamo.SM && !!contributor) {
         const allActivitiesAreExonerated = (await client.query(queries.MUNICIPAL_SERVICE_BY_ACTIVITIES_IS_EXONERATED, [contributor, startingDate, startingDate.endOf('month')])).rows[0]?.exonerado;
         if (allActivitiesAreExonerated) return allActivitiesAreExonerated;
       }
@@ -284,7 +284,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                   codCat: el.cod_catastral,
                   direccionInmueble: el.direccion,
                   ultimoAvaluo: el.avaluo,
-                  impuestoInmueble: (el.avaluo * 0.01) / 12,
+                  impuestoInmueble: (el.avaluo * (el.tipo_inmueble === 'COMERCIAL' ? 0.01 : 0.005)) / 12,
                   deuda: await Promise.all(
                     new Array(interpolation).fill({ month: null, year: null }).map(async (value, index) => {
                       const date = addMonths(new Date(paymentDate.toDate()), index);

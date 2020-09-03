@@ -156,7 +156,7 @@ block content
         div(style={'-webkit-flex': 8}).td.border-right
           p Pago por Licencia de Actividad Económica
         div(style={'-webkit-flex': 2}).td.center
-          p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.funcionario.estadoLicencia === 'TEMPORAL' ? (4*(parseFloat(UTMM))) :(2*(parseFloat(UTMM))))}
+          p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(costoFormateado ? costoFormateado : 0)}
     div(style={'margin-top':'20px'}).table.break-page
       .tr.break-page
         .th.center.border-bottom

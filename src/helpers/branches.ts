@@ -189,7 +189,7 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
         moment: require('moment'),
         institucion: 'SEDEMAT',
         datos: {
-          ingresos: chunk(branches, 10),
+          ingresos: chunk(branches, 8),
           acumuladoIngresos: `CONTENIDO: TODOS LOS RAMOS, DESDE EL ${moment(payload.from).format('DD/MM/YYYY')} AL ${moment(payload.to).format('DD/MM/YYYY')}`,
           cantidadLiqTotal: liquidated.rows.reduce((prev, next) => prev + +next.cantidadLiq, 0) + compens.cantidadLiqTotal,
           liquidadoTotal: liquidated.rows.reduce((prev, next) => prev + +next.liquidado, 0) + compens.liquidadoTotal,

@@ -32,7 +32,7 @@ export const createRequestForm = async (procedure, client: PoolClient): Promise<
 export const createCertificate = async (procedure, client: PoolClient): Promise<string> => {
   const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION, [procedure.idTramite])).rows[0];
   const UTMM = (await client.query(queries.GET_UTMM_VALUE_FORMAT)).rows[0].valor;
-  const costoFormateado = tramite.datos?.funcionario?.costo ? new Intl.NumberFormat('de-DE').format(parseFloat(tramite.datos?.funcionario?.costo)) : '0';
+  const costoFormateado = tramite?.costo ? new Intl.NumberFormat('de-DE').format(parseFloat(tramite?.costo)) : '0';
   const procedureData = {
     id: procedure.idTramite,
     fecha: tramite.fechacreacion,
@@ -45,7 +45,7 @@ export const createCertificate = async (procedure, client: PoolClient): Promise<
     tipoTramite: tramite.tipotramite,
     UTMM,
     costoFormateado,
-    bancos: (await getAllBanks()).banks
+    bancos: (await getAllBanks()).banks,
   };
   const form = (await createForm(procedureData, client)) as string;
   return form;
@@ -108,11 +108,11 @@ export const createMockCertificate = async (procedure) => {
       estado: 'finalizado',
       tipoTramite: tramite.tipotramite,
       certificado: tramite.sufijo === 'ompu' ? (tramite.aprobado ? tramite.formatocertificado : tramite.formatorechazo) : tramite.formatocertificado,
-      bancos: (await getAllBanks()).banks
+      bancos: (await getAllBanks()).banks,
     };
     console.log('datos:', datosCertificado.datos, 'datos.funcionario:', datosCertificado.datos.funcionario);
 
-    console.log('--------------->', datosCertificado.bancos)
+    console.log('--------------->', datosCertificado.bancos);
     const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
       ...datosCertificado,
       cache: false,
