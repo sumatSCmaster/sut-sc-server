@@ -284,7 +284,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                   codCat: el.cod_catastral,
                   direccionInmueble: el.direccion,
                   ultimoAvaluo: el.avaluo,
-                  impuestoInmueble: (el.avaluo * 0.01) / 12,
+                  impuestoInmueble: (el.avaluo * (el.tipo_inmueble === 'COMERCIAL' ? 0.01 : 0.005)) / 12,
                   deuda: await Promise.all(
                     new Array(interpolation).fill({ month: null, year: null }).map(async (value, index) => {
                       const date = addMonths(new Date(paymentDate.toDate()), index);
