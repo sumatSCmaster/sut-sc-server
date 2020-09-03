@@ -101,7 +101,7 @@ export const isExonerated = async ({ branch, contributor, activity, startingDate
       if (contributorIsExonerated) return !!contributorIsExonerated;
       return !!(await client.query(queries.CONTRIBUTOR_ECONOMIC_ACTIVIES_IS_EXONERATED, [contributor, activity, startingDate])).rows[0];
     } else {
-      if (branch === codigosRamo.SM) {
+      if (branch === codigosRamo.SM && !!contributor) {
         const allActivitiesAreExonerated = (await client.query(queries.MUNICIPAL_SERVICE_BY_ACTIVITIES_IS_EXONERATED, [contributor, startingDate, startingDate.endOf('month')])).rows[0]?.exonerado;
         if (allActivitiesAreExonerated) return allActivitiesAreExonerated;
       }
