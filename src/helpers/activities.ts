@@ -46,7 +46,7 @@ export const getMunicipalReferenceActivities = async ({ docType, document }) => 
 
 export const updateContributorActivities = async ({ branchId, activities, branchInfo }) => {
   const client = await pool.connect();
-  const { denomComercial, nombreRepresentante, telefonoMovil, email, estadoLicencia, tipoSociedad, capitalSuscrito } = branchInfo;
+  const { denomComercial, nombreRepresentante, telefonoMovil, email, estadoLicencia, tipoSociedad, capitalSuscrito, actualizado } = branchInfo;
   try {
     await client.query('BEGIN');
     const updatedRegistry = (
@@ -55,85 +55,113 @@ export const updateContributorActivities = async ({ branchId, activities, branch
         [denomComercial, nombreRepresentante, telefonoMovil, email, estadoLicencia, tipoSociedad, capitalSuscrito, branchId]
       )
     ).rows[0];
-    await client.query('DELETE FROM impuesto.actividad_economica_sucursal WHERE id_registro_municipal = $1', [branchId]);
-    await Promise.all(
-      [codigosRamo.AE, codigosRamo.PP, codigosRamo.SM].map(
-        async (codigo) =>
-          await client.query('DELETE FROM impuesto.liquidacion WHERE id_subramo IN (SELECT id_subramo FROM impuesto.subramo WHERE id_ramo = (SELECT id_ramo FROM impuesto.ramo WHERE codigo = $1)) AND id_registro_municipal = $2', [codigo, branchId])
-      )
-    );
-    await Promise.all(
-      activities
-        .sort((a, b) => (moment(a.desde).isSameOrBefore(moment(b.desde)) ? 1 : -1))
-        .map(async (x, index) => {
-          const ae = (await client.query(queries.UPDATE_ECONOMIC_ACTIVITIES_FOR_BRANCH, [branchId, x.codigo, x.desde])).rows[0];
-          const aeExists = (await client.query(queries.GET_LAST_AE_SETTLEMENT_BY_AE_ID, [x.id, branchId])).rows[0];
-          const settlement =
-            // !aeExists &&
-            (
-              await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
-                null,
-                0.0,
-                'AE',
-                'Pago ordinario',
-                { month: moment(x.desde).toDate().toLocaleString('es-ES', { month: 'long' }), year: moment(x.desde).year(), desglose: [{ aforo: x.id }] },
-                moment(x.desde).endOf('month').format('MM-DD-YYYY'),
-                branchId,
-              ])
-            ).rows[0];
-          await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [x.desde, settlement.id_liquidacion]);
-          if (index === 0) {
-            const lastSMSettlement = (await client.query(queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM, [codigosRamo.SM, updatedRegistry.referencia_municipal])).rows[0];
-            const lastIUSettlement = (await client.query(queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM, [codigosRamo.IU, updatedRegistry.referencia_municipal])).rows[0];
-            const lastPPSettlement = (await client.query(queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM, [codigosRamo.PP, updatedRegistry.referencia_municipal])).rows[0];
-            const fromDate = moment(x.desde).subtract(1, 'M');
-            if (!lastSMSettlement || (!!lastSMSettlement && fromDate.isSameOrAfter(moment(lastSMSettlement.fecha_liquidacion)))) {
-              const ghostSettlement = (
+    if (!actualizado) {
+      await client.query('DELETE FROM impuesto.actividad_economica_sucursal WHERE id_registro_municipal = $1', [branchId]);
+      await Promise.all(
+        [codigosRamo.AE, codigosRamo.PP, codigosRamo.SM].map(
+          async (codigo) =>
+            await client.query('DELETE FROM impuesto.liquidacion WHERE id_subramo IN (SELECT id_subramo FROM impuesto.subramo WHERE id_ramo = (SELECT id_ramo FROM impuesto.ramo WHERE codigo = $1)) AND id_registro_municipal = $2', [codigo, branchId])
+        )
+      );
+      await Promise.all(
+        activities
+          .sort((a, b) => (moment(a.desde).isSameOrBefore(moment(b.desde)) ? 1 : -1))
+          .map(async (x, index) => {
+            const ae = (await client.query(queries.UPDATE_ECONOMIC_ACTIVITIES_FOR_BRANCH, [branchId, x.codigo, x.desde])).rows[0];
+            const aeExists = (await client.query(queries.GET_LAST_AE_SETTLEMENT_BY_AE_ID, [x.id, branchId])).rows[0];
+            const settlement =
+              // !aeExists &&
+              (
                 await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
                   null,
                   0.0,
-                  'SM',
+                  'AE',
                   'Pago ordinario',
-                  { month: fromDate.toDate().toLocaleString('es-ES', { month: 'long' }), year: fromDate.year() },
-                  fromDate.endOf('month').format('MM-DD-YYYY'),
+                  { month: moment(x.desde).toDate().toLocaleString('es-ES', { month: 'long' }), year: moment(x.desde).year(), desglose: [{ aforo: x.id }] },
+                  moment(x.desde).endOf('month').format('MM-DD-YYYY'),
                   branchId,
                 ])
               ).rows[0];
-              await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [fromDate.format('MM-DD-YYYY'), ghostSettlement.id_liquidacion]);
-            }
+            await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [x.desde, settlement.id_liquidacion]);
+            if (index === 0) {
+              const lastSMSettlement = (await client.query(queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM, [codigosRamo.SM, updatedRegistry.referencia_municipal])).rows[0];
+              const lastIUSettlement = (await client.query(queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM, [codigosRamo.IU, updatedRegistry.referencia_municipal])).rows[0];
+              const lastPPSettlement = (await client.query(queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM, [codigosRamo.PP, updatedRegistry.referencia_municipal])).rows[0];
+              const fromDate = moment(x.desde).subtract(1, 'M');
+              if (!lastSMSettlement || (!!lastSMSettlement && fromDate.isSameOrAfter(moment(lastSMSettlement.fecha_liquidacion)))) {
+                const ghostSettlement = (
+                  await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+                    null,
+                    0.0,
+                    'SM',
+                    'Pago ordinario',
+                    { month: fromDate.toDate().toLocaleString('es-ES', { month: 'long' }), year: fromDate.year() },
+                    fromDate.endOf('month').format('MM-DD-YYYY'),
+                    branchId,
+                  ])
+                ).rows[0];
+                await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [fromDate.format('MM-DD-YYYY'), ghostSettlement.id_liquidacion]);
+              }
 
-            if (!lastIUSettlement || (!!lastIUSettlement && fromDate.isSameOrAfter(moment(lastIUSettlement.fecha_liquidacion)))) {
-              const ghostSettlement = (
-                await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
-                  null,
-                  0.0,
-                  'IU',
-                  'Pago ordinario',
-                  { month: fromDate.toDate().toLocaleString('es-ES', { month: 'long' }), year: fromDate.year() },
-                  fromDate.endOf('month').format('MM-DD-YYYY'),
-                  branchId,
-                ])
-              ).rows[0];
-              await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [fromDate.format('MM-DD-YYYY'), ghostSettlement.id_liquidacion]);
-            }
+              if (!lastIUSettlement || (!!lastIUSettlement && fromDate.isSameOrAfter(moment(lastIUSettlement.fecha_liquidacion)))) {
+                const ghostSettlement = (
+                  await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+                    null,
+                    0.0,
+                    'IU',
+                    'Pago ordinario',
+                    { month: fromDate.toDate().toLocaleString('es-ES', { month: 'long' }), year: fromDate.year() },
+                    fromDate.endOf('month').format('MM-DD-YYYY'),
+                    branchId,
+                  ])
+                ).rows[0];
+                await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [fromDate.format('MM-DD-YYYY'), ghostSettlement.id_liquidacion]);
+              }
 
-            if (!lastPPSettlement || (!!lastPPSettlement && fromDate.isSameOrAfter(moment(lastPPSettlement.fecha_liquidacion)))) {
-              const ghostSettlement = (
-                await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
-                  null,
-                  0.0,
-                  'PP',
-                  'Pago ordinario',
-                  { month: fromDate.toDate().toLocaleString('es-ES', { month: 'long' }), year: fromDate.year() },
-                  fromDate.endOf('month').format('MM-DD-YYYY'),
-                  branchId,
-                ])
-              ).rows[0];
-              await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [fromDate.format('MM-DD-YYYY'), ghostSettlement.id_liquidacion]);
+              if (!lastPPSettlement || (!!lastPPSettlement && fromDate.isSameOrAfter(moment(lastPPSettlement.fecha_liquidacion)))) {
+                const ghostSettlement = (
+                  await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+                    null,
+                    0.0,
+                    'PP',
+                    'Pago ordinario',
+                    { month: fromDate.toDate().toLocaleString('es-ES', { month: 'long' }), year: fromDate.year() },
+                    fromDate.endOf('month').format('MM-DD-YYYY'),
+                    branchId,
+                  ])
+                ).rows[0];
+                await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [fromDate.format('MM-DD-YYYY'), ghostSettlement.id_liquidacion]);
+              }
             }
-          }
-        })
-    );
+          })
+      );
+    } else {
+      if (activities.length) {
+        await Promise.all(
+          activities
+            .sort((a, b) => (moment(a.desde).isSameOrBefore(moment(b.desde)) ? 1 : -1))
+            .map(async (x, index) => {
+              const ae = (await client.query(queries.UPDATE_ECONOMIC_ACTIVITIES_FOR_BRANCH, [branchId, x.codigo, x.desde])).rows[0];
+              const aeExists = (await client.query(queries.GET_LAST_AE_SETTLEMENT_BY_AE_ID, [x.id, branchId])).rows[0];
+              const settlement =
+                !aeExists &&
+                (
+                  await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+                    null,
+                    0.0,
+                    'AE',
+                    'Pago ordinario',
+                    { month: moment(x.desde).toDate().toLocaleString('es-ES', { month: 'long' }), year: moment(x.desde).year(), desglose: [{ aforo: x.id }] },
+                    moment(x.desde).endOf('month').format('MM-DD-YYYY'),
+                    branchId,
+                  ])
+                ).rows[0];
+              await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [x.desde, settlement.id_liquidacion]);
+            })
+        );
+      }
+    }
+
     // await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente.id]);
     await client.query('COMMIT');
     return { status: 200, message: 'Actividades ecónomicas y/o estado de licencia actualizado' };
