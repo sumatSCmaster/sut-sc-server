@@ -4,6 +4,7 @@ import { init } from './config/socket';
 import Pool from '@utils/Pool';
 import { sendRimVerification, verifyCode, resendCode } from '@helpers/verification';
 import { VerificationValue } from './interfaces/sigt';
+import { executeReport } from '@helpers/reportHelper';
 
 const server = app.listen(process.env.PORT || 5000, () => console.log(`Listening on port ${process.env.PORT || 5000}`));
 
@@ -28,3 +29,7 @@ init(socket);
 // }
 
 // xd();
+// const dev = process.env.NODE_ENV !== 'production';
+// if (dev) {
+//   executeReport();
+// }
