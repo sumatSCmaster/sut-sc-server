@@ -1704,9 +1704,11 @@ export const formatContributor = async (contributor, client: PoolClient) => {
       creditoFiscal: (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.id_contribuyente, 'NATURAL'])).rows[0]?.credito || 0,
       puntoReferencia: contributor.punto_referencia,
       verificado: contributor.verificado,
-      liquidaciones: (
-        await client.query(
-          `WITH solicitudcte AS (
+      liquidaciones:
+        contributor.tipo_contribuyente === 'NATURAL'
+          ? (
+              await client.query(
+                `WITH solicitudcte AS (
             SELECT id_solicitud
             FROM impuesto.solicitud 
             WHERE id_contribuyente = $1
@@ -1740,25 +1742,26 @@ export const formatContributor = async (contributor, client: PoolClient) => {
         WHERE sl.id_contribuyente= $1
         ORDER BY fecha_liquidacion DESC;
         `,
-          [contributor.id_contribuyente]
-        )
-      ).rows.map((el) => ({
-        id: el.id_liquidacion,
-        fechaLiquidacion: el.fecha_liquidacion,
-        fechaVencimiento: el.fecha_vencimiento,
-        monto: +el.monto,
-        estado: el.state || 'finalizado',
-        certificado: el.certificado,
-        recibo: el.recibo,
-        ramo: {
-          id: el.id_ramo,
-          descripcion: el.descripcionRamo,
-        },
-        subramo: {
-          id: el.id_subramo,
-          descripcion: el.descripcionSubramo,
-        },
-      })),
+                [contributor.id_contribuyente]
+              )
+            ).rows.map((el) => ({
+              id: el.id_liquidacion,
+              fechaLiquidacion: el.fecha_liquidacion,
+              fechaVencimiento: el.fecha_vencimiento,
+              monto: +el.monto,
+              estado: el.state || 'finalizado',
+              certificado: el.certificado,
+              recibo: el.recibo,
+              ramo: {
+                id: el.id_ramo,
+                descripcion: el.descripcionRamo,
+              },
+              subramo: {
+                id: el.id_subramo,
+                descripcion: el.descripcionSubramo,
+              },
+            }))
+          : undefined,
       esAgenteRetencion: contributor.es_agente_retencion,
       usuarios: await getUsersByContributor(contributor.id_contribuyente),
       sucursales: branches.length > 0 ? await Promise.all(branches.map((el) => formatBranch(el, client))) : undefined,
