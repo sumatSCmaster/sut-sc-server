@@ -1490,7 +1490,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
                 AND id_registro_municipal IN (SELECT id_registro_municipal FROM topContr)) l ) l USING (id_registro_municipal)
     )
 
-    SELECT (SELECT * FROM total), (SELECT * FROM liquidados), (SELECT * FROM pagados)`,
+    SELECT (SELECT * FROM total), (SELECT * FROM liquidados), (SELECT * FROM pagados), (SELECT count(*) AS "totalContribuyentes" FROM topContr)`,
 
   //  Con fecha
   TOTAL_TOP_CONTRIBUTOR_DECLARATIONS_AND_PAYMENTS_IN_MONTH_WITH_DATE: `WITH topContr AS (
@@ -1538,7 +1538,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
                 AND id_registro_municipal IN (SELECT id_registro_municipal FROM topContr)) l ) l USING (id_registro_municipal)
     )
 
-    SELECT (SELECT * FROM total), (SELECT * FROM liquidados), (SELECT * FROM pagados)`,
+    SELECT (SELECT * FROM total), (SELECT * FROM liquidados), (SELECT * FROM pagados), (SELECT count(*) AS "totalContribuyentes" FROM topContr)`,
 
   //  Coeficientes
   //  1. Tasa de Default Intermensual (TDI)
