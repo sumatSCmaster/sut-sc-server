@@ -23,6 +23,10 @@ export enum IDsTipoUsuario {
   Director = 5,
 }
 
+export enum Instituciones {
+  SEDEMAT = 9,
+}
+
 export interface Seccion {
   id: number;
   nombre: string;

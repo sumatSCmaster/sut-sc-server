@@ -2,7 +2,8 @@ import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import moment from 'moment';
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
-import { Usuario, IDsTipoUsuario } from '@root/interfaces/sigt';
+import { Usuario, IDsTipoUsuario, Instituciones } from '@root/interfaces/sigt';
+import { fixatedAmount } from './settlement';
 const pool = Pool.getInstance();
 
 const fixMonth = (m: string) => m.charAt(0).toUpperCase() + m.slice(1).toLowerCase();
@@ -56,8 +57,7 @@ const getSuperUserStats = async () => {
     // GRAFICO 1
     const totalCount = (await client.query(queries.GET_SUPER_PROC_TOTAL_COUNT)).rows[0].count;
     const monthCount = (await client.query(queries.GET_SUPER_PROC_TOTAL_IN_MONTH, [new Date().getMonth() + 1])).rows[0].count;
-    const lastMonthCount = (await client.query(queries.GET_SUPER_PROC_TOTAL_IN_MONTH, [parseInt(moment(Date.now()).subtract(1, 'months').format('MM'))]))
-      .rows[0].count;
+    const lastMonthCount = (await client.query(queries.GET_SUPER_PROC_TOTAL_IN_MONTH, [parseInt(moment(Date.now()).subtract(1, 'months').format('MM'))])).rows[0].count;
     const receivedMonthGains = isFiniteNumber((((monthCount - lastMonthCount) / monthCount) * 100).toFixed(2));
     // GRAFICO 2
     const totalToAttend = (await client.query(queries.GET_SUPER_PROC_TOTAL_BY_STATUS, ['enproceso'])).rows[0].count;
@@ -76,9 +76,7 @@ const getSuperUserStats = async () => {
     const totalCompleted = (await client.query(queries.GET_SUPER_PROC_TOTAL_BY_STATUS, ['finalizado'])).rows[0].count;
     const percentageCompleted = isFiniteNumber(((totalCompleted * 100) / totalCount).toFixed(2));
     const monthCompleted = (await client.query(queries.GET_SUPER_PROC_BY_STATUS_MONTHLY, [new Date().getMonth() + 1, 'finalizado'])).rows[0].count;
-    const lastMonthCompleted = (
-      await client.query(queries.GET_SUPER_PROC_BY_STATUS_MONTHLY, [parseInt(moment(Date.now()).subtract(1, 'months').format('MM')), 'finalizado'])
-    ).rows[0].count;
+    const lastMonthCompleted = (await client.query(queries.GET_SUPER_PROC_BY_STATUS_MONTHLY, [parseInt(moment(Date.now()).subtract(1, 'months').format('MM')), 'finalizado'])).rows[0].count;
     const completedMonthGains = isFiniteNumber((((monthCompleted - lastMonthCompleted) / monthCompleted) * 100).toFixed(2));
     // GRAFICO 4
     const countByStatus = (await client.query(queries.GET_SUPER_PROC_COUNT_BY_STATE)).rows.map((r) => ({
@@ -185,8 +183,7 @@ const getMayoraltyStats = async () => {
     // GRAFICO 1
     const totalCount = (await client.query(queries.GET_AFFAIR_TOTAL_COUNT)).rows[0].count;
     const monthCount = (await client.query(queries.GET_AFFAIR_TOTAL_IN_MONTH, [new Date().getMonth() + 1])).rows[0].count;
-    const lastMonthCount = (await client.query(queries.GET_AFFAIR_TOTAL_IN_MONTH, [parseInt(moment(Date.now()).subtract(1, 'months').format('MM'))])).rows[0]
-      .count;
+    const lastMonthCount = (await client.query(queries.GET_AFFAIR_TOTAL_IN_MONTH, [parseInt(moment(Date.now()).subtract(1, 'months').format('MM'))])).rows[0].count;
     const receivedMonthGains = isFiniteNumber((((monthCount - lastMonthCount) / monthCount) * 100).toFixed(2));
     // GRAFICO 2
     const totalToAttend = (await client.query(queries.GET_AFFAIR_TOTAL_BY_STATUS, ['enproceso'])).rows[0].count;
@@ -205,9 +202,7 @@ const getMayoraltyStats = async () => {
     const totalCompleted = (await client.query(queries.GET_AFFAIR_TOTAL_BY_STATUS, ['atendido'])).rows[0].count;
     const percentageCompleted = isFiniteNumber(((totalCompleted * 100) / totalCount).toFixed(2));
     const monthCompleted = (await client.query(queries.GET_AFFAIR_BY_STATUS_MONTHLY, [new Date().getMonth() + 1, 'atendido'])).rows[0].count;
-    const lastMonthCompleted = (
-      await client.query(queries.GET_AFFAIR_BY_STATUS_MONTHLY, [parseInt(moment(Date.now()).subtract(1, 'months').format('MM')), 'atendido'])
-    ).rows[0].count;
+    const lastMonthCompleted = (await client.query(queries.GET_AFFAIR_BY_STATUS_MONTHLY, [parseInt(moment(Date.now()).subtract(1, 'months').format('MM')), 'atendido'])).rows[0].count;
     const completedMonthGains = isFiniteNumber((((monthCompleted - lastMonthCompleted) / monthCompleted) * 100).toFixed(2));
     // GRAFICO 4
     const countByStatus = (await client.query(queries.GET_AFFAIR_COUNT_BY_STATE)).rows.map((r) => ({
@@ -288,8 +283,7 @@ const getOfficialStats = async (institution: number | undefined) => {
     // GRAFICO 1
     const totalCount = (await client.query(queries.GET_PROC_TOTAL_COUNT, [institution])).rows[0].count;
     const monthCount = (await client.query(queries.GET_PROC_TOTAL_IN_MONTH, [institution, new Date().getMonth() + 1])).rows[0].count;
-    const lastMonthCount = (await client.query(queries.GET_PROC_TOTAL_IN_MONTH, [institution, parseInt(moment(Date.now()).subtract(1, 'months').format('MM'))]))
-      .rows[0].count;
+    const lastMonthCount = (await client.query(queries.GET_PROC_TOTAL_IN_MONTH, [institution, parseInt(moment(Date.now()).subtract(1, 'months').format('MM'))])).rows[0].count;
     const receivedMonthGains = isFiniteNumber((((monthCount - lastMonthCount) / monthCount) * 100).toFixed(2));
     // GRAFICO 2
     const totalToAttend = (await client.query(queries.GET_PROC_TOTAL_BY_STATUS, [institution, 'enproceso'])).rows[0].count;
@@ -308,9 +302,7 @@ const getOfficialStats = async (institution: number | undefined) => {
     const totalCompleted = (await client.query(queries.GET_PROC_TOTAL_BY_STATUS, [institution, 'finalizado'])).rows[0].count;
     const percentageCompleted = isFiniteNumber(((totalCompleted * 100) / totalCount).toFixed(2));
     const monthCompleted = (await client.query(queries.GET_PROC_BY_STATUS_MONTHLY, [institution, new Date().getMonth() + 1, 'finalizado'])).rows[0].count;
-    const lastMonthCompleted = (
-      await client.query(queries.GET_PROC_BY_STATUS_MONTHLY, [institution, parseInt(moment(Date.now()).subtract(1, 'months').format('MM')), 'finalizado'])
-    ).rows[0].count;
+    const lastMonthCompleted = (await client.query(queries.GET_PROC_BY_STATUS_MONTHLY, [institution, parseInt(moment(Date.now()).subtract(1, 'months').format('MM')), 'finalizado'])).rows[0].count;
     const completedMonthGains = isFiniteNumber((((monthCompleted - lastMonthCompleted) / monthCompleted) * 100).toFixed(2));
     // GRAFICO 4
     const countByStatus = (await client.query(queries.GET_PROC_COUNT_BY_STATE, [institution])).rows.map((r) => ({
@@ -391,8 +383,7 @@ const getOfficialFiningStats = async (institution: number | undefined) => {
     // GRAFICO 1
     const totalCount = (await client.query(queries.GET_FINE_TOTAL_COUNT, [institution])).rows[0].count;
     const monthCount = (await client.query(queries.GET_FINE_TOTAL_IN_MONTH, [institution, new Date().getMonth() + 1])).rows[0].count;
-    const lastMonthCount = (await client.query(queries.GET_FINE_TOTAL_IN_MONTH, [institution, parseInt(moment(Date.now()).subtract(1, 'months').format('MM'))]))
-      .rows[0].count;
+    const lastMonthCount = (await client.query(queries.GET_FINE_TOTAL_IN_MONTH, [institution, parseInt(moment(Date.now()).subtract(1, 'months').format('MM'))])).rows[0].count;
     const receivedMonthGains = isFiniteNumber((((monthCount - lastMonthCount) / monthCount) * 100).toFixed(2));
     // GRAFICO 2
     const totalToAttend = (await client.query(queries.GET_FINE_TOTAL_BY_STATUS, [institution, 'enproceso'])).rows[0].count;
@@ -411,9 +402,7 @@ const getOfficialFiningStats = async (institution: number | undefined) => {
     const totalCompleted = (await client.query(queries.GET_FINE_TOTAL_BY_STATUS, [institution, 'finalizado'])).rows[0].count;
     const percentageCompleted = isFiniteNumber(((totalCompleted * 100) / totalCount).toFixed(2));
     const monthCompleted = (await client.query(queries.GET_FINE_BY_STATUS_MONTHLY, [institution, new Date().getMonth() + 1, 'finalizado'])).rows[0].count;
-    const lastMonthCompleted = (
-      await client.query(queries.GET_FINE_BY_STATUS_MONTHLY, [institution, parseInt(moment(Date.now()).subtract(1, 'months').format('MM')), 'finalizado'])
-    ).rows[0].count;
+    const lastMonthCompleted = (await client.query(queries.GET_FINE_BY_STATUS_MONTHLY, [institution, parseInt(moment(Date.now()).subtract(1, 'months').format('MM')), 'finalizado'])).rows[0].count;
     const completedMonthGains = isFiniteNumber((((monthCompleted - lastMonthCompleted) / monthCompleted) * 100).toFixed(2));
     // GRAFICO 4
     const countByStatus = (await client.query(queries.GET_FINE_COUNT_BY_STATE, [institution])).rows.map((r) => ({
@@ -494,8 +483,7 @@ const getOfficialApplicationStats = async () => {
     // GRAFICO 1 - LISTO
     const totalCount = (await client.query(queries.GET_APPLICATION_TOTAL_COUNT)).rows[0].count;
     const monthCount = (await client.query(queries.GET_APPLICATION_TOTAL_IN_MONTH, [new Date().getMonth() + 1])).rows[0].count;
-    const lastMonthCount = (await client.query(queries.GET_APPLICATION_TOTAL_IN_MONTH, [parseInt(moment(Date.now()).subtract(1, 'months').format('MM'))]))
-      .rows[0].count;
+    const lastMonthCount = (await client.query(queries.GET_APPLICATION_TOTAL_IN_MONTH, [parseInt(moment(Date.now()).subtract(1, 'months').format('MM'))])).rows[0].count;
     const receivedMonthGains = isFiniteNumber((((monthCount - lastMonthCount) / monthCount) * 100).toFixed(2));
 
     // GRAFICO 2 - LISTO
@@ -515,9 +503,7 @@ const getOfficialApplicationStats = async () => {
     const totalCompleted = (await client.query(queries.GET_COMPLETED_APPLICATION_TOTAL)).rows[0].count;
     const percentageCompleted = isFiniteNumber(((totalCompleted * 100) / totalCount).toFixed(2));
     const monthCompleted = (await client.query(queries.GET_MONTHLY_COMPLETED_APPLICATION_TOTAL, [new Date().getMonth() + 1])).rows[0].count;
-    const lastMonthCompleted = (
-      await client.query(queries.GET_MONTHLY_COMPLETED_APPLICATION_TOTAL, [parseInt(moment(Date.now()).subtract(1, 'months').format('MM'))])
-    ).rows[0].count;
+    const lastMonthCompleted = (await client.query(queries.GET_MONTHLY_COMPLETED_APPLICATION_TOTAL, [parseInt(moment(Date.now()).subtract(1, 'months').format('MM'))])).rows[0].count;
     const completedMonthGains = isFiniteNumber((((monthCompleted - lastMonthCompleted) / monthCompleted) * 100).toFixed(2));
     // GRAFICO 4 - LISTO
     const countByStatus = (await client.query(queries.GET_RAISED_MONEY_BY_BRANCH)).rows.map((r) => ({
@@ -620,4 +606,163 @@ const formatStats = (struct) => ({
 
 const isFiniteNumber = (expression) => {
   return isFinite(expression) ? expression : 0;
+};
+
+export const getStatsSedemat = async ({ institution }: { institution: number }) => {
+  const client = await pool.connect();
+  const totalSolvencyRate: any[] = [];
+  const totalSettlements: any[] = [];
+  try {
+    // if (institution !== Instituciones.SEDEMAT) throw { status: 403, message: 'Sólo un miembro de SEDEMAT puede acceder a esta información' };
+    const now = moment().locale('ES');
+    // Totales
+    // 1. Total de usuarios registrados en SUT
+    const totalRegisteredUsers = +(await client.query(queries.TOTAL_REGISTERED_USERS)).rows[0].total;
+    // 2. Total de contribuyentes
+    const totalRegisteredContributors = +(await client.query(queries.TOTAL_REGISTERED_CONTRIBUTORS)).rows[0].total;
+    // 3. Total de RIMs / Total de RIMs que declararon en el mes (AE) / Total de RIMs que pagaron en el mes (AE)
+    const totalRegisteredRims = +(await client.query(queries.TOTAL_REGISTERED_RIMS)).rows[0].total;
+    const totalAEDeclarations = +(await client.query(queries.TOTAL_AE_DECLARATIONS_IN_MONTH)).rows[0].count;
+    const totalAEPayments = +(await client.query(queries.TOTAL_AE_APPLICATION_PAYMENTS_IN_MONTH)).rows[0].count;
+
+    // Graficas mensuales
+    // 1. Tasas de AE liquidadas/pagadas (por día reflejado en gráfico de barras)
+    const solvencyArr = (await client.query(queries.TOTAL_SOLVENCY_RATES_IN_MONTH)).rows.map((el) => {
+      const liquidado = { name: 'Liquidado', fecha: el.fecha, valor: +el.liquidado };
+      const pagado = { name: 'Pagado', fecha: el.fecha, valor: +el.pagado };
+      totalSolvencyRate.push(liquidado);
+      totalSolvencyRate.push(pagado);
+    });
+    // 2. Bs por ramo por día liquidado/ingresado (4 ramos principales reflejado en gráfico de torta)
+    const totalBsByBranch = (await client.query(queries.TOTAL_BS_BY_BRANCH_IN_MONTH)).rows.map((el) => {
+      el.valor = +fixatedAmount(el.valor);
+      return el;
+    });
+    // 3. Total recaudado por mes (gráfico de linea con anotaciones)
+    const totalGainings = (await client.query(queries.TOTAL_GAININGS_IN_MONTH)).rows.map((el) => {
+      el.valor = +fixatedAmount(el.valor);
+      return el;
+    });
+    // ! Hay que hacer la query del count de las actividades economicas exoneradas en la misma fecha
+    // 4. Total de liquidaciones pagadas/vigentes (%)
+    const settlementArr = (await client.query(queries.TOTAL_SETTLEMENTS_IN_MONTH)).rows.map((el) => {
+      const liquidado = { name: 'Liquidado', fecha: el.fecha, valor: +el.liquidado };
+      const pagado = { name: 'Pagado', fecha: el.fecha, valor: +el.pagado };
+      totalSettlements.push(liquidado);
+      totalSettlements.push(pagado);
+    });
+    const extraInfo = (await client.query(queries.ECONOMIC_ACTIVITIES_EXONERATION_INTERVALS)).rows.map((el) => {
+      el.descripcion = `Exoneración de ${el.cantidad} Aforo${el.cantidad > 1 ? 's' : ''} por motivo de COVID-19`;
+      el.color = 'red';
+      delete el.cantidad;
+      return el;
+    });
+    extraInfo.push({ fechaInicio: moment('09-01-2020').toISOString(), fechaFin: moment('10-01-2020').toISOString(), descripcion: 'Remisión de Multas', color: 'purple' });
+
+    // Top contribuyentes
+    // 1. Agentes de retención que han declarado/pagado por mes
+    const totalARDeclarations = (await client.query(queries.TOTAL_AR_DECLARATIONS_AND_PAYMENTS_IN_MONTH)).rows.map((el) => ({ total: +el.total, liquidado: +el.liquidado, pagado: +el.pagado }))[0];
+    // 2. Top 1000 contribuyentes que han declarado/pagado por mes
+    const totalTopContrDeclarations = (await client.query(queries.TOTAL_TOP_CONTRIBUTOR_DECLARATIONS_AND_PAYMENTS_IN_MONTH, [moment().locale('ES').subtract(1, 'M').format('MMMM'), moment().locale('ES').subtract(1, 'M').year()])).rows.map((el) => ({
+      total: +el.total,
+      liquidado: +el.liquidados,
+      pagado: +el.pagado,
+    }))[0];
+
+    // Coeficientes
+    // 1. Tasa de Default Intermensual (TDI)
+    // TDI = Cantidad de Contribuyentes que pagaron mes anterior pero no mes actual (gráfico de barra o linea por mes, incluyendo coeficiente y cantidad de contribuyentes)
+    console.log(now.format('MM-DD-YYYY'));
+    // console.log(now.startOf('month').diff(moment('08-01-2020'), 'month'));
+
+    const TDI = await Promise.all(
+      new Array(now.startOf('month').diff(moment('08-01-2020'), 'month')).fill({}).map(async (el, i) => {
+        const pivotDate = moment('08-01-2020').locale('ES').add(i, 'M');
+        const secondPivot = moment('08-01-2020').locale('ES').add(i, 'M').subtract(1, 'M');
+        const defaultCount = (await client.query(queries.TOTAL_CONTRIBUTOR_DEFAULT_RATE, [pivotDate.format('MMMM'), pivotDate.year(), secondPivot.format('MMMM'), secondPivot.year()])).rows[0].valor;
+        return { mes: fixMonth(pivotDate.format('MMMM')), anio: pivotDate.year(), valor: +defaultCount, coeficiente: 0 };
+      })
+    );
+    console.log(TDI);
+    TDI.reduce((x, j) => {
+      j.coeficiente = +fixatedAmount(isFiniteNumber(j.valor / x));
+      return j.valor;
+    }, 0);
+    // 2. Promedio Días para Pago (PDP)
+    // PDP = Promedio de días que demoran los contribuyentes en realizar pagos vencidos medidos por mes (gráfico de linea o de barra)
+    const PDP = await Promise.all(
+      new Array(now.startOf('month').diff(moment('08-01-2020'), 'month') + 1).fill({}).map(async (el, i) => {
+        const pivotDate = moment('08-01-2020').locale('ES').add(i, 'M');
+        const { promedio, limiteSuperior } = (await client.query(queries.TOTAL_PAYMENT_DAYS_AVERAGE_IN_MONTH_WITH_DATE, [pivotDate.format('MM-DD-YYYY')])).rows[0];
+        return { mes: fixMonth(pivotDate.format('MMMM')), anio: pivotDate.year(), promedio: +fixatedAmount(promedio), limiteSuperior };
+      })
+    );
+    // 3. Tasa Nuevas Licencias (TNL)
+    // TNL = Cantidad de Licencias Nuevas mes actual/Cantidad de Licencias Nuevas mes anterior (por mes en grafico de barra o linea, incluyendo el coeficiente y la cantidad de nuevas licencias)
+    const TNL = await Promise.all(
+      new Array(now.startOf('month').diff(moment('08-01-2020'), 'month') + 1).fill({}).map(async (el, i) => {
+        const pivotDate = moment('08-01-2020').locale('ES').add(i, 'M');
+        const { coeficiente, valor } = (await client.query(queries.TOTAL_NEW_LICENSES_IN_MONTH_WITH_DATE, [pivotDate.format('MM-DD-YYYY')])).rows[0];
+        return { mes: fixMonth(pivotDate.format('MMMM')), anio: pivotDate.year(), coeficiente: +fixatedAmount(coeficiente), valor: +valor };
+      })
+    );
+
+    const estadisticas = {
+      total: {
+        cantidadUsuarios: totalRegisteredUsers,
+        cantidadContribuyentes: totalRegisteredContributors,
+        cantidadRIMs: {
+          registrados: totalRegisteredRims,
+          liquidados: totalAEDeclarations,
+          pagados: totalAEPayments,
+        },
+      },
+      mensual: {
+        totalTasasAE: totalSolvencyRate,
+        totalBsPorRamo: totalBsByBranch,
+        recaudado: { totalRecaudacion: totalGainings, extra: extraInfo },
+        totalLiquidaciones: totalSettlements,
+      },
+      contribuyentes: {
+        AR: totalARDeclarations,
+        top: totalTopContrDeclarations,
+      },
+      coeficientes: {
+        TDI,
+        PDP,
+        TNL,
+      },
+    };
+
+    return { status: 200, message: 'Estadisticas obtenidas!', estadisticas };
+  } catch (error) {
+    console.log(error);
+    throw {
+      status: error.status || 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener estadisticas de SEDEMAT',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const getStatsSedematWithDate = async ({ institution, date }: { institution: number; date: string }) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    await client.query('COMMIT');
+    return;
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || '',
+    };
+  } finally {
+    client.release();
+  }
 };
