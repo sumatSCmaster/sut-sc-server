@@ -137,7 +137,7 @@ export const updateContributorActivities = async ({ branchId, activities, branch
       );
     } else {
       if (activities.length) {
-        // await client.query('DELETE FROM impuesto.actividad_economica_sucursal WHERE id_registro_municipal = $1', [branchId]);
+        await client.query('DELETE FROM impuesto.actividad_economica_sucursal WHERE id_registro_municipal = $1', [branchId]);
         await Promise.all(
           activities
             .sort((a, b) => (moment(a.desde).isSameOrBefore(moment(b.desde)) ? 1 : -1))
