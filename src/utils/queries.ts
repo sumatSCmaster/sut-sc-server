@@ -1351,97 +1351,91 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   //  1. Agentes de retención que han declarado/pagado por mes
   //  Sin fecha
   TOTAL_AR_DECLARATIONS_AND_PAYMENTS_IN_MONTH: `WITH rimsAR AS (
-      SELECT id_registro_municipal FROM impuesto.contribuyente 
-      INNER JOIN impuesto.registro_municipal USING (id_contribuyente) 
-      WHERE es_agente_retencion = true AND NOT referencia_municipal ILIKE 'AR%'
-    ),
-    liquidados AS (
-      SELECT COUNT(id_registro_municipal) AS liquidado FROM impuesto.registro_municipal rm 
-      INNER JOIN impuesto.liquidacion l USING (id_registro_municipal)
-      INNER JOIN impuesto.solicitud s USING (id_solicitud)
-      WHERE l.id_registro_municipal IN 
-              (SELECT id_registro_municipal FROM 
-                (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal
-                FROM impuesto.liquidacion 
-                WHERE id_subramo = 10 AND 
-                EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM (NOW() - interval '4 hours')) 
-                AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM (NOW() - interval '4 hours')) 
-                AND id_registro_municipal IN (SELECT id_registro_municipal FROM rimsAR)) l ) AND s.aprobado = false
-    ),
-    pagados AS (
-      SELECT COUNT(id_registro_municipal) AS pagado FROM impuesto.registro_municipal rm 
-      INNER JOIN impuesto.liquidacion l USING (id_registro_municipal)
-      INNER JOIN impuesto.solicitud s USING (id_solicitud)
-      WHERE l.id_registro_municipal IN 
-              (SELECT id_registro_municipal FROM 
-                (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal
-                FROM impuesto.liquidacion 
-                WHERE id_subramo = 10 AND 
-                EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM (NOW() - interval '4 hours')) 
-                AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM (NOW() - interval '4 hours')) 
-                AND id_registro_municipal IN (SELECT id_registro_municipal FROM rimsAR)) l ) AND s.aprobado = true
-    ),
-    total AS (
-      SELECT COUNT(id_registro_municipal) AS total FROM impuesto.registro_municipal rm 
-      INNER JOIN impuesto.liquidacion l USING (id_registro_municipal)
-      WHERE l.id_registro_municipal IN 
-              (SELECT id_registro_municipal FROM 
-                (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal
-                FROM impuesto.liquidacion 
-                WHERE id_subramo = 10 AND 
-                EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM (NOW() - interval '4 hours')) 
-                AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM (NOW() - interval '4 hours')) 
-                AND id_registro_municipal IN (SELECT id_registro_municipal FROM rimsAR)) l )
-    )
+    SELECT id_registro_municipal FROM impuesto.contribuyente 
+    INNER JOIN impuesto.registro_municipal USING (id_contribuyente) 
+    WHERE es_agente_retencion = true AND NOT referencia_municipal ILIKE 'AR%'
+  ),
+  pagados AS (
+    SELECT COUNT(DISTINCT id_registro_municipal) AS pagado FROM impuesto.registro_municipal rm 
+    INNER JOIN (SELECT id_registro_municipal, id_solicitud
+              FROM impuesto.liquidacion 
+              WHERE id_subramo = 10 AND 
+              EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM (NOW() - interval '4 hours')) 
+              AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM (NOW() - interval '4 hours')) 
+              AND id_registro_municipal IN (SELECT id_registro_municipal FROM rimsAR)) l USING (id_registro_municipal)
+    INNER JOIN impuesto.solicitud s USING (id_solicitud)
+    WHERE l.id_registro_municipal IN 
+            (SELECT id_registro_municipal FROM 
+              (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal
+              FROM impuesto.liquidacion 
+              WHERE id_subramo = 10 AND 
+              EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM (NOW() - interval '4 hours')) 
+              AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM (NOW() - interval '4 hours')) 
+              AND id_registro_municipal IN (SELECT id_registro_municipal FROM rimsAR)) l ) AND s.aprobado = true
+  ),
+  liquidado AS (
+    SELECT COUNT(DISTINCT id_registro_municipal) AS liquidado FROM impuesto.registro_municipal rm 
+    INNER JOIN (SELECT id_registro_municipal
+              FROM impuesto.liquidacion 
+              WHERE id_subramo = 10 AND 
+              EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM (NOW() - interval '4 hours')) 
+              AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM (NOW() - interval '4 hours')) 
+              AND id_registro_municipal IN (SELECT id_registro_municipal FROM rimsAR)) l USING (id_registro_municipal)
+    WHERE l.id_registro_municipal IN 
+            (SELECT id_registro_municipal FROM 
+              (SELECT id_registro_municipal
+              FROM impuesto.liquidacion 
+              WHERE id_subramo = 10 AND 
+              EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM (NOW() - interval '4 hours')) 
+              AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM (NOW() - interval '4 hours')) 
+              AND id_registro_municipal IN (SELECT id_registro_municipal FROM rimsAR)) l )
+  )
 
-    SELECT (SELECT * FROM total), (SELECT * FROM liquidados), (SELECT * FROM pagados), (SELECT count(*) AS "totalContribuyentes" FROM rimsAR)`,
+  SELECT (SELECT * FROM liquidado), (SELECT * FROM pagados), (SELECT count(*) AS total FROM rimsAR)`,
 
   //  Con fecha
   TOTAL_AR_DECLARATIONS_AND_PAYMENTS_IN_MONTH_WITH_DATE: `WITH rimsAR AS (
-      SELECT id_registro_municipal FROM impuesto.contribuyente 
-      INNER JOIN impuesto.registro_municipal USING (id_contribuyente) 
-      WHERE es_agente_retencion = true AND NOT referencia_municipal ILIKE 'AR%'
-    ),
-    liquidados AS (
-      SELECT COUNT(id_registro_municipal) AS liquidado FROM impuesto.registro_municipal rm 
-      INNER JOIN impuesto.liquidacion l USING (id_registro_municipal)
-      INNER JOIN impuesto.solicitud s USING (id_solicitud)
-      WHERE l.id_registro_municipal IN 
-              (SELECT id_registro_municipal FROM 
-                (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal
-                FROM impuesto.liquidacion 
-                WHERE id_subramo = 10 AND 
-                EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1) 
-                AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1) 
-                AND id_registro_municipal IN (SELECT id_registro_municipal FROM rimsAR)) l ) AND s.aprobado = false
-    ),
-    pagados AS (
-      SELECT COUNT(id_registro_municipal) AS pagado FROM impuesto.registro_municipal rm 
-      INNER JOIN impuesto.liquidacion l USING (id_registro_municipal)
-      INNER JOIN impuesto.solicitud s USING (id_solicitud)
-      WHERE l.id_registro_municipal IN 
-              (SELECT id_registro_municipal FROM 
-                (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal
-                FROM impuesto.liquidacion 
-                WHERE id_subramo = 10 AND 
-                EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1) 
-                AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1) 
-                AND id_registro_municipal IN (SELECT id_registro_municipal FROM rimsAR)) l ) AND s.aprobado = true
-    ),
-    total AS (
-      SELECT COUNT(id_registro_municipal) AS total FROM impuesto.registro_municipal rm 
-      INNER JOIN impuesto.liquidacion l USING (id_registro_municipal)
-      WHERE l.id_registro_municipal IN 
-              (SELECT id_registro_municipal FROM 
-                (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal
-                FROM impuesto.liquidacion 
-                WHERE id_subramo = 10 AND 
-                EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1) 
-                AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1) 
-                AND id_registro_municipal IN (SELECT id_registro_municipal FROM rimsAR)) l )
-    )
+    SELECT id_registro_municipal FROM impuesto.contribuyente 
+    INNER JOIN impuesto.registro_municipal USING (id_contribuyente) 
+    WHERE es_agente_retencion = true AND NOT referencia_municipal ILIKE 'AR%'
+  ),
+  pagados AS (
+    SELECT COUNT(DISTINCT id_registro_municipal) AS pagado FROM impuesto.registro_municipal rm 
+    INNER JOIN (SELECT id_registro_municipal, id_solicitud
+              FROM impuesto.liquidacion 
+              WHERE id_subramo = 10 AND 
+              EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1) 
+              AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1) 
+              AND id_registro_municipal IN (SELECT id_registro_municipal FROM rimsAR)) l USING (id_registro_municipal)
+    INNER JOIN impuesto.solicitud s USING (id_solicitud)
+    WHERE l.id_registro_municipal IN 
+            (SELECT id_registro_municipal FROM 
+              (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal
+              FROM impuesto.liquidacion 
+              WHERE id_subramo = 10 AND 
+              EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1) 
+              AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1) 
+              AND id_registro_municipal IN (SELECT id_registro_municipal FROM rimsAR)) l ) AND s.aprobado = true
+  ),
+  liquidado AS (
+    SELECT COUNT(DISTINCT id_registro_municipal) AS liquidado FROM impuesto.registro_municipal rm 
+    INNER JOIN (SELECT id_registro_municipal
+              FROM impuesto.liquidacion 
+              WHERE id_subramo = 10 AND 
+              EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1) 
+              AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1) 
+              AND id_registro_municipal IN (SELECT id_registro_municipal FROM rimsAR)) l USING (id_registro_municipal)
+    WHERE l.id_registro_municipal IN 
+            (SELECT id_registro_municipal FROM 
+              (SELECT id_registro_municipal
+              FROM impuesto.liquidacion 
+              WHERE id_subramo = 10 AND 
+              EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1) 
+              AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1) 
+              AND id_registro_municipal IN (SELECT id_registro_municipal FROM rimsAR)) l )
+  )
 
-    SELECT (SELECT * FROM total), (SELECT * FROM liquidados), (SELECT * FROM pagados), (SELECT count(*) AS "totalContribuyentes" FROM rimsAR)`,
+  SELECT (SELECT * FROM liquidado), (SELECT * FROM pagados), (SELECT count(*) AS total FROM rimsAR)`,
 
   //  2. Top 1000 contribuyentes que han declarado/pagado por mes
   //  Sin fecha
@@ -1449,23 +1443,10 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal FROM impuesto.liquidacion WHERE id_registro_municipal IN (
         SELECT id_registro_municipal FROM (SELECT DISTINCT(id_registro_municipal) id_registro_municipal, SUM(monto) as monto 
         FROM Impuesto.liquidacion
-        WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2
+        WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = 'julio' AND datos#>>'{fecha,year}' = '2020'
         GROUP BY id_registro_municipal 
         ORDER BY monto DESC
         LIMIT 1000) s)
-    ),
-
-    liquidados AS (
-      SELECT COUNT(id_registro_municipal) AS liquidados FROM impuesto.registro_municipal rm 
-      INNER JOIN (SELECT id_registro_municipal, id_solicitud FROM 
-                (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, id_solicitud
-                FROM impuesto.liquidacion 
-                WHERE id_subramo = 10 AND 
-                EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM (NOW() - interval '4 hours')) 
-                AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM (NOW() - interval '4 hours')) 
-                AND id_registro_municipal IN (SELECT id_registro_municipal FROM topContr)) l ) l USING (id_registro_municipal)
-      INNER JOIN impuesto.solicitud s USING (id_solicitud)
-      WHERE s.aprobado = false
     ),
     pagados AS (
       SELECT COUNT(id_registro_municipal) AS pagado FROM impuesto.registro_municipal rm 
@@ -1479,41 +1460,28 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       INNER JOIN impuesto.solicitud s USING (id_solicitud)
       WHERE s.aprobado = true
     ),
-    total AS (
-      SELECT COUNT(id_registro_municipal) AS total FROM impuesto.registro_municipal rm 
-      INNER JOIN (SELECT id_registro_municipal, id_solicitud FROM 
-                (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, id_solicitud
-                FROM impuesto.liquidacion 
-                WHERE id_subramo = 10 AND 
-                EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM (NOW() - interval '4 hours')) 
-                AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM (NOW() - interval '4 hours')) 
-                AND id_registro_municipal IN (SELECT id_registro_municipal FROM topContr)) l ) l USING (id_registro_municipal)
-    )
-
-    SELECT (SELECT * FROM total), (SELECT * FROM liquidados), (SELECT * FROM pagados), (SELECT count(*) AS "totalContribuyentes" FROM topContr)`,
-
-  //  Con fecha
-  TOTAL_TOP_CONTRIBUTOR_DECLARATIONS_AND_PAYMENTS_IN_MONTH_WITH_DATE: `WITH topContr AS (
-    SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal FROM impuesto.liquidacion WHERE id_registro_municipal IN (
-        SELECT id_registro_municipal FROM (SELECT DISTINCT(id_registro_municipal) id_registro_municipal, SUM(monto) as monto 
-        FROM Impuesto.liquidacion
-        WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2
-        GROUP BY id_registro_municipal 
-        ORDER BY monto DESC
-        LIMIT 1000) s)
-    ),
-
     liquidados AS (
       SELECT COUNT(id_registro_municipal) AS liquidado FROM impuesto.registro_municipal rm 
       INNER JOIN (SELECT id_registro_municipal, id_solicitud FROM 
                 (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, id_solicitud
                 FROM impuesto.liquidacion 
                 WHERE id_subramo = 10 AND 
-                EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $3) 
-                AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $3) 
+                EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM (NOW() - interval '4 hours')) 
+                AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM (NOW() - interval '4 hours')) 
                 AND id_registro_municipal IN (SELECT id_registro_municipal FROM topContr)) l ) l USING (id_registro_municipal)
-      INNER JOIN impuesto.solicitud s USING (id_solicitud)
-      WHERE s.aprobado = false
+    )
+
+    SELECT (SELECT * FROM liquidados), (SELECT * FROM pagados), (SELECT COUNT(*) FROM topContr) AS total`,
+
+  //  Con fecha
+  TOTAL_TOP_CONTRIBUTOR_DECLARATIONS_AND_PAYMENTS_IN_MONTH_WITH_DATE: `WITH topContr AS (
+    SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal FROM impuesto.liquidacion WHERE id_registro_municipal IN (
+        SELECT id_registro_municipal FROM (SELECT DISTINCT(id_registro_municipal) id_registro_municipal, SUM(monto) as monto 
+        FROM Impuesto.liquidacion
+        WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = 'julio' AND datos#>>'{fecha,year}' = '2020'
+        GROUP BY id_registro_municipal 
+        ORDER BY monto DESC
+        LIMIT 1000) s)
     ),
     pagados AS (
       SELECT COUNT(id_registro_municipal) AS pagado FROM impuesto.registro_municipal rm 
@@ -1521,24 +1489,24 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
                 (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, id_solicitud
                 FROM impuesto.liquidacion 
                 WHERE id_subramo = 10 AND 
-                EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $3) 
-                AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $3) 
+                EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1) 
+                AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1) 
                 AND id_registro_municipal IN (SELECT id_registro_municipal FROM topContr)) l ) l USING (id_registro_municipal)
       INNER JOIN impuesto.solicitud s USING (id_solicitud)
       WHERE s.aprobado = true
     ),
-    total AS (
-      SELECT COUNT(id_registro_municipal) AS total FROM impuesto.registro_municipal rm 
+    liquidados AS (
+      SELECT COUNT(id_registro_municipal) AS liquidado FROM impuesto.registro_municipal rm 
       INNER JOIN (SELECT id_registro_municipal, id_solicitud FROM 
                 (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, id_solicitud
                 FROM impuesto.liquidacion 
                 WHERE id_subramo = 10 AND 
-                EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $3) 
-                AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $3) 
+                EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1) 
+                AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1) 
                 AND id_registro_municipal IN (SELECT id_registro_municipal FROM topContr)) l ) l USING (id_registro_municipal)
     )
 
-    SELECT (SELECT * FROM total), (SELECT * FROM liquidados), (SELECT * FROM pagados), (SELECT count(*) AS "totalContribuyentes" FROM topContr)`,
+    SELECT (SELECT * FROM liquidados), (SELECT * FROM pagados), (SELECT COUNT(*) FROM topContr) AS total`,
 
   //  Coeficientes
   //  1. Tasa de Default Intermensual (TDI)
