@@ -627,37 +627,49 @@ export const getStatsSedemat = async ({ institution }: { institution: number }) 
 
     // Graficas mensuales
     // 1. Tasas de AE liquidadas/pagadas (por día reflejado en gráfico de barras)
-    const solvencyArr = (await client.query(queries.TOTAL_SOLVENCY_RATES_IN_MONTH)).rows.map((el) => {
-      const liquidado = { name: 'Liquidado', fecha: el.fecha, valor: +el.liquidado };
-      const pagado = { name: 'Pagado', fecha: el.fecha, valor: +el.pagado };
-      totalSolvencyRate.push(liquidado);
-      totalSolvencyRate.push(pagado);
-    });
+    const solvencyArr = (await client.query(queries.TOTAL_SOLVENCY_RATES_IN_MONTH, [moment().startOf('month').format('MM-DD-YYYY'), moment().endOf('month').format('MM-DD-YYYY')])).rows
+      .filter((el) => moment().startOf('day').isSameOrAfter(moment(el.fecha)))
+      .map((el) => {
+        const liquidado = { name: 'Liquidado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.liquidado };
+        const pagado = { name: 'Pagado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.pagado };
+        totalSolvencyRate.push(liquidado);
+        totalSolvencyRate.push(pagado);
+      });
     // 2. Bs por ramo por día liquidado/ingresado (4 ramos principales reflejado en gráfico de torta)
-    const totalBsByBranch = (await client.query(queries.TOTAL_BS_BY_BRANCH_IN_MONTH)).rows.map((el) => {
-      el.valor = +fixatedAmount(el.valor);
-      return el;
-    });
+    const totalBsByBranch = (await client.query(queries.TOTAL_BS_BY_BRANCH_IN_MONTH, [moment().startOf('month').format('MM-DD-YYYY'), moment().endOf('month').format('MM-DD-YYYY')])).rows
+      .filter((el) => moment().startOf('day').isSameOrAfter(moment(el.fecha)))
+      .map((el) => {
+        el.valor = +fixatedAmount(el.valor);
+        el.fecha = moment(el.fecha).format('DD/MM');
+        return el;
+      });
     // 3. Total recaudado por mes (gráfico de linea con anotaciones)
-    const totalGainings = (await client.query(queries.TOTAL_GAININGS_IN_MONTH)).rows.map((el) => {
-      el.valor = +fixatedAmount(el.valor);
-      return el;
-    });
-    // ! Hay que hacer la query del count de las actividades economicas exoneradas en la misma fecha
-    // 4. Total de liquidaciones pagadas/vigentes (%)
-    const settlementArr = (await client.query(queries.TOTAL_SETTLEMENTS_IN_MONTH)).rows.map((el) => {
-      const liquidado = { name: 'Liquidado', fecha: el.fecha, valor: +el.liquidado };
-      const pagado = { name: 'Pagado', fecha: el.fecha, valor: +el.pagado };
-      totalSettlements.push(liquidado);
-      totalSettlements.push(pagado);
-    });
+    const totalGainings = (await client.query(queries.TOTAL_GAININGS_IN_MONTH, [moment().startOf('month').format('MM-DD-YYYY'), moment().endOf('month').format('MM-DD-YYYY')])).rows
+      .filter((el) => moment().startOf('day').isSameOrAfter(moment(el.fecha)))
+      .map((el) => {
+        el.valor = +fixatedAmount(el.valor);
+        el.fecha = moment(el.fecha).format('DD/MM');
+        return el;
+      });
     const extraInfo = (await client.query(queries.ECONOMIC_ACTIVITIES_EXONERATION_INTERVALS)).rows.map((el) => {
       el.descripcion = `Exoneración de ${el.cantidad} Aforo${el.cantidad > 1 ? 's' : ''} por motivo de COVID-19`;
       el.color = 'red';
+      el.fechaInicio = moment(el.fechaInicio).format('DD/MM');
+      el.fechaFin = moment(el.fechaFin).format('DD/MM');
       delete el.cantidad;
       return el;
     });
-    extraInfo.push({ fechaInicio: moment('09-01-2020').toISOString(), fechaFin: moment('10-01-2020').toISOString(), descripcion: 'Remisión de Multas', color: 'purple' });
+    extraInfo.push({ fechaInicio: moment('09-01-2020').format('DD/MM'), fechaFin: moment('10-01-2020').format('DD/MM'), descripcion: 'Remisión de Multas', color: 'purple' });
+
+    // 4. Total de liquidaciones pagadas/vigentes (%)
+    const settlementArr = (await client.query(queries.TOTAL_SETTLEMENTS_IN_MONTH, [moment().startOf('month').format('MM-DD-YYYY'), moment().endOf('month').format('MM-DD-YYYY')])).rows
+      .filter((el) => moment().startOf('day').isSameOrAfter(moment(el.fecha)))
+      .map((el) => {
+        const liquidado = { name: 'Liquidado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.liquidado };
+        const pagado = { name: 'Pagado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.pagado };
+        totalSettlements.push(liquidado);
+        totalSettlements.push(pagado);
+      });
 
     // Top contribuyentes
     // 1. Agentes de retención que han declarado/pagado por mes
