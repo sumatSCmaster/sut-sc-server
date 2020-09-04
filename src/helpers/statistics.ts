@@ -673,12 +673,13 @@ export const getStatsSedemat = async ({ institution }: { institution: number }) 
 
     // Top contribuyentes
     // 1. Agentes de retención que han declarado/pagado por mes
-    const totalARDeclarations = (await client.query(queries.TOTAL_AR_DECLARATIONS_AND_PAYMENTS_IN_MONTH)).rows.map((el) => ({ total: +el.total, liquidado: +el.liquidado, pagado: +el.pagado }))[0];
+    const totalARDeclarations = (await client.query(queries.TOTAL_AR_DECLARATIONS_AND_PAYMENTS_IN_MONTH)).rows.map((el) => ({ total: +el.total, liquidado: +el.liquidado, pagado: +el.pagado, totalContribuyentes: +el.totalContribuyentes }))[0];
     // 2. Top 1000 contribuyentes que han declarado/pagado por mes
     const totalTopContrDeclarations = (await client.query(queries.TOTAL_TOP_CONTRIBUTOR_DECLARATIONS_AND_PAYMENTS_IN_MONTH, [moment().locale('ES').subtract(1, 'M').format('MMMM'), moment().locale('ES').subtract(1, 'M').year()])).rows.map((el) => ({
       total: +el.total,
       liquidado: +el.liquidados,
       pagado: +el.pagado,
+      totalContribuyentes: +el.totalContribuyentes,
     }))[0];
 
     // Coeficientes
