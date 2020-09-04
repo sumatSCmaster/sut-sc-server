@@ -1154,11 +1154,11 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   //ESTADISTICAS DASHBOARD SEDEMAT
   // Totales
   // 1. Total de usuarios registrados en SUT
-  TOTAL_REGISTERED_USERS: `SELECT COUNT(*) FROM usuario;`,
+  TOTAL_REGISTERED_USERS: `SELECT COUNT(*) AS total FROM usuario;`,
   //  2. Total de contribuyentes
-  TOTAL_REGISTERED_CONTRIBUTORS: `SELECT COUNT(*) FROM impuesto.contribuyente;`,
+  TOTAL_REGISTERED_CONTRIBUTORS: `SELECT COUNT(*) AS total FROM impuesto.contribuyente;`,
   //  3. Total de RIMs /
-  TOTAL_REGISTERED_RIMS: `SELECT COUNT(*) FROM impuesto.registro_municipal;`,
+  TOTAL_REGISTERED_RIMS: `SELECT COUNT(*) AS total FROM impuesto.registro_municipal;`,
   //  Total de RIMs que declararon en el mes (AE) /
   //  Sin fecha proporcionada
   TOTAL_AE_DECLARATIONS_IN_MONTH: `SELECT COUNT(*) FROM impuesto.registro_municipal r 
@@ -1196,7 +1196,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   //  Graficas mensuales
   //  1. Tasas de AE liquidadas/pagadas (por día reflejado en gráfico de barras)
   //  Sin fecha proporcionada
-  TOTAL_SOLVENCY_RATES_IN_MONTH: `SELECT * FROM (SELECT COALESCE(l.fecha, p.fecha) as fechajoin, coalesce(liquidado, 0) as liquidado, coalesce(pagado, 0) as pagado
+  TOTAL_SOLVENCY_RATES_IN_MONTH: `SELECT * FROM (SELECT COALESCE(l.fecha, p.fecha) as fecha, coalesce(liquidado, 0) as liquidado, coalesce(pagado, 0) as pagado
     FROM (
       SELECT fecha_liquidacion AS fecha, COUNT(*) AS liquidado
       FROM impuesto.liquidacion l
@@ -1211,11 +1211,11 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
       
       GROUP BY fecha_aprobado) p ON p.fecha = l.fecha 
     ) x
-      WHERE EXTRACT('month' from fechajoin) = EXTRACT('month' from (NOW() - interval '4 hours'))
-      AND EXTRACT('year' from fechajoin) = EXTRACT('year' from (NOW() - interval '4 hours'))
-      ORDER BY fechajoin;`,
+      WHERE EXTRACT('month' from fecha) = EXTRACT('month' from (NOW() - interval '4 hours'))
+      AND EXTRACT('year' from fecha) = EXTRACT('year' from (NOW() - interval '4 hours'))
+      ORDER BY fecha;`,
   //  Con fecha proporcionada
-  TOTAL_SOLVENCY_RATES_IN_MONTH_WITH_DATE: `SELECT * FROM (SELECT COALESCE(l.fecha, p.fecha) as fechajoin, coalesce(liquidado, 0) as liquidado, coalesce(pagado, 0) as pagado
+  TOTAL_SOLVENCY_RATES_IN_MONTH_WITH_DATE: `SELECT * FROM (SELECT COALESCE(l.fecha, p.fecha) as fecha, coalesce(liquidado, 0) as liquidado, coalesce(pagado, 0) as pagado
     FROM (
       SELECT fecha_liquidacion AS fecha, COUNT(*) AS liquidado
       FROM impuesto.liquidacion l
@@ -1230,9 +1230,9 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
       
       GROUP BY fecha_aprobado) p ON p.fecha = l.fecha 
     ) x
-      WHERE EXTRACT('month' from fechajoin) = EXTRACT('month' from $1)
-      AND EXTRACT('year' from fechajoin) = EXTRACT('year' from $1)
-      ORDER BY fechajoin;`,
+      WHERE EXTRACT('month' from fecha) = EXTRACT('month' from $1)
+      AND EXTRACT('year' from fecha) = EXTRACT('year' from $1)
+      ORDER BY fecha;`,
 
   //  2. Bs por ramo por día liquidado/ingresado (4 ramos principales reflejado en gráfico de torta)
   //  Sin fecha proporcionada
@@ -1243,11 +1243,11 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
       INNER JOIN impuesto.ramo USING (id_ramo)
     )
 
-    SELECT fecha_aprobado AS fecha, SUM(monto), descripcion_corta AS descripcion FROM solicitud_view 
+    SELECT fecha_aprobado AS fecha, SUM(monto) AS valor, descripcion_corta AS ramo FROM solicitud_view 
     WHERE descripcion_corta IN ('AE','SM','IU','PP')
     AND EXTRACT('month' FROM fecha_aprobado) = EXTRACT('month' FROM (NOW() - interval '4 hours'))
     AND EXTRACT('year' FROM fecha_aprobado) = EXTRACT('year' FROM (NOW() - interval '4 hours'))
-    GROUP BY descripcion_corta,fecha_aprobado ORDER BY SUM DESC`,
+    GROUP BY descripcion_corta,fecha_aprobado ORDER BY fecha`,
 
   //  Con fecha proporcionada
   TOTAL_BS_BY_BRANCH_IN_MONTH_WITH_DATE: `WITH solicitud_view AS (
@@ -1257,15 +1257,15 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
       INNER JOIN impuesto.ramo USING (id_ramo)
     )
 
-    SELECT fecha_aprobado AS fecha, SUM(monto), descripcion_corta AS descripcion FROM solicitud_view 
+    SELECT fecha_aprobado AS fecha, SUM(monto) as valor, descripcion_corta AS ramo FROM solicitud_view 
     WHERE descripcion_corta IN ('AE','SM','IU','PP')
     AND EXTRACT('month' FROM fecha_aprobado) = EXTRACT('month' FROM $1)
     AND EXTRACT('year' FROM fecha_aprobado) = EXTRACT('year' FROM $1)
-    GROUP BY descripcion_corta,fecha_aprobado ORDER BY SUM DESC`,
+    GROUP BY descripcion_corta,fecha_aprobado ORDER BY fecha`,
 
   //  3. Total recaudado por mes (gráfico de linea con anotaciones)
   //  Sin fecha proporcionada
-  TOTAL_GAININGS_IN_MONTH: `SELECT fecha_de_pago, SUM(monto) AS monto
+  TOTAL_GAININGS_IN_MONTH: `SELECT fecha_de_pago AS fecha, SUM(monto) AS valor
     FROM (SELECT fecha_de_pago, SUM(monto) AS monto
     FROM pago p
     WHERE aprobado = true AND concepto IN ('IMPUESTO', 'CONVENIO')
@@ -1277,13 +1277,13 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     INNER JOIN tipo_tramite tt ON tt.id_tipo_tramite = t.id_tipo_tramite
     WHERE tt.id_institucion = 9
     GROUP BY fecha_de_pago) x
-    WHERE EXTRACT('month' from fechajoin) = EXTRACT('month' from (NOW() - interval '4 hours'))
-    AND EXTRACT('year' from fechajoin) = EXTRACT('year' from (NOW() - interval '4 hours'))
+    WHERE EXTRACT('month' from fecha_de_pago) = EXTRACT('month' from (NOW() - interval '4 hours'))
+    AND EXTRACT('year' from fecha_de_pago) = EXTRACT('year' from (NOW() - interval '4 hours'))
     GROUP BY fecha_de_pago
     ORDER BY fecha_de_pago;`,
 
   //  Con fecha proporcionada
-  TOTAL_GAININGS_IN_MONTH_WITH_DATE: `SELECT fecha_de_pago, SUM(monto) AS monto
+  TOTAL_GAININGS_IN_MONTH_WITH_DATE: `SELECT fecha_de_pago AS fecha, SUM(monto) AS valor
     FROM (SELECT fecha_de_pago, SUM(monto) AS monto
     FROM pago p
     WHERE aprobado = true AND concepto IN ('IMPUESTO', 'CONVENIO')
@@ -1295,8 +1295,8 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     INNER JOIN tipo_tramite tt ON tt.id_tipo_tramite = t.id_tipo_tramite
     WHERE tt.id_institucion = 9
     GROUP BY fecha_de_pago) x
-    WHERE EXTRACT('month' from fechajoin) = EXTRACT('month' from $1)
-    AND EXTRACT('year' from fechajoin) = EXTRACT('year' from $1)
+    WHERE EXTRACT('month' from fecha_de_pago) = EXTRACT('month' from $1)
+    AND EXTRACT('year' from fecha_de_pago) = EXTRACT('year' from $1)
     GROUP BY fecha_de_pago
     ORDER BY fecha_de_pago;`,
 
@@ -1333,6 +1333,11 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     ) p ON p.fecha = l.fecha
     WHERE EXTRACT('month' from l.fecha) = EXTRACT('month' from $1)
     AND EXTRACT('year' from l.fecha) = EXTRACT('year' from $1) ORDER BY l.fecha;`,
+  //Extras para el 4
+  ECONOMIC_ACTIVITIES_EXONERATION_INTERVALS: `SELECT fecha_inicio as "fechaInicio", fecha_fin AS "fechaFin", COUNT(*) as cantidad 
+      FROM impuesto.actividad_economica_exoneracion aee INNER JOIN
+       impuesto.plazo_exoneracion p ON p.id_plazo_exoneracion = aee.id_plazo_exoneracion 
+       GROUP BY fecha_inicio, fecha_fin;`,
 
   //  Top contribuyentes
   //  1. Agentes de retención que han declarado/pagado por mes
@@ -1542,7 +1547,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         WHERE Id_subramo = 10 
         AND datos#>>'{fecha, month}' = $3 AND datos#>>'{fecha, year}' = $4
     )
-    SELECT COUNT(*),
+    SELECT COUNT(*) AS valor
     FROM impuesto.contribuyente
     WHERE id_contribuyente IN (
         SELECT id_contribuyente 
@@ -1567,20 +1572,20 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
             WHERE concepto = 'IMPUESTO' 
             AND EXTRACT('month' FROM fecha_de_pago) = EXTRACT('month' from (NOW() - interval '4 hours')) 
             AND EXTRACT('year' FROM fecha_de_pago) = EXTRACT('year' from (NOW() - interval '4 hours')) ) 
-          p ON p.id_procedimiento = s.id_solicitud;
-    //  Con fecha proporcionada
-    SELECT AVG(fecha_de_pago - s.fecha), MAX(fecha_de_pago - s.fecha)
+          p ON p.id_procedimiento = s.id_solicitud;`,
+  //  Con fecha proporcionada
+  TOTAL_PAYMENT_DAYS_AVERAGE_IN_MONTH_WITH_DATE: `SELECT AVG(fecha_de_pago - s.fecha) AS promedio, MAX(fecha_de_pago - s.fecha) AS "limiteSuperior"
     FROM (SELECT * FROM impuesto.solicitud WHERE id_solicitud IN (SELECT id_solicitud 
                                   FROM impuesto.liquidacion
-                                  where EXTRACT('month' from fecha_liquidacion) = EXTRACT('month' from $1)
-                                  AND EXTRACT('year' from fecha_liquidacion) = EXTRACT('year' from $1))  
-                                  AND EXTRACT('month' from fecha) = EXTRACT('month' from $1)
-                                  AND EXTRACT('year' from fecha) = EXTRACT('year' from $1)) s
+                                  where EXTRACT('month' from fecha_liquidacion) = EXTRACT('month' from $1::date)
+                                  AND EXTRACT('year' from fecha_liquidacion) = EXTRACT('year' from $1::date))  
+                                  AND EXTRACT('month' from fecha) = EXTRACT('month' from $1::date)
+                                  AND EXTRACT('year' from fecha) = EXTRACT('year' from $1::date)) s
     INNER JOIN (SELECT * 
             FROM pago 
             WHERE concepto = 'IMPUESTO' 
-            AND EXTRACT('month' FROM fecha_de_pago) = EXTRACT('month' from $1) 
-            AND EXTRACT('year' FROM fecha_de_pago) = EXTRACT('year' from $1) ) 
+            AND EXTRACT('month' FROM fecha_de_pago) = EXTRACT('month' from $1::date) 
+            AND EXTRACT('year' FROM fecha_de_pago) = EXTRACT('year' from $1::date) ) 
           p ON p.id_procedimiento = s.id_solicitud;`,
 
   //  3. Tasa Nuevas Licencias (TNL)
@@ -1593,7 +1598,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     AND EXTRACT('month' from fecha_culminacion) = EXTRACT('month' from (NOW() - interval '1 month'))
     AND EXTRACT('year' from fecha_culminacion) = EXTRACT('year' from (NOW() - interval '1 month'))
     )
-    SELECT COUNT(*),  COUNT(*)::numeric / (SELECT * FROM anterior)
+    SELECT COUNT(*) AS valor,  COALESCE(COUNT(*)::numeric / NULLIF((SELECT * FROM anterior),0),0) AS coeficiente
     FROM tramite 
     WHERE id_tipo_tramite IN (28, 36)
     AND EXTRACT('month' from fecha_culminacion) = EXTRACT('month' from (NOW() - interval '4 hours'))
@@ -1603,14 +1608,14 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     SELECT COUNT(*)
     FROM tramite 
     WHERE id_tipo_tramite IN (28, 36)
-    AND EXTRACT('month' from fecha_culminacion) = EXTRACT('month' from ($1 - interval '1 month'))
-    AND EXTRACT('year' from fecha_culminacion) = EXTRACT('year' from ($1 - interval '1 month'))
+    AND EXTRACT('month' from fecha_culminacion) = EXTRACT('month' from ($1::date - interval '1 month'))
+    AND EXTRACT('year' from fecha_culminacion) = EXTRACT('year' from ($1::date - interval '1 month'))
     )
-    SELECT COUNT(*),  COUNT(*)::numeric / (SELECT * FROM anterior)
+    SELECT COUNT(*) AS valor, COALESCE(COUNT(*)::numeric / NULLIF((SELECT * FROM anterior),0),0) AS coeficiente
     FROM tramite 
     WHERE id_tipo_tramite IN (28, 36)
-    AND EXTRACT('month' from fecha_culminacion) = EXTRACT('month' from $1)
-    AND EXTRACT('year' from fecha_culminacion) = EXTRACT('year' from $1)`,
+    AND EXTRACT('month' from fecha_culminacion) = EXTRACT('month' from $1::date)
+    AND EXTRACT('year' from fecha_culminacion) = EXTRACT('year' from $1::date)`,
 
   gtic: {
     GET_NATURAL_CONTRIBUTOR:

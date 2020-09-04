@@ -3184,7 +3184,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
       if (creditoPositivo > 0) await updateFiscalCredit({ id: application.id_solicitud, user, amount: creditoPositivo, client });
 
       state = await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
-      recibo = await createReceiptForSpecialApplication({ pool: client, user, application: (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement[0].id])).rows[0] });
+      recibo = await createReceiptForSpecialApplication({ client, user, application: (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement[0].id])).rows[0] });
       await client.query('UPDATE impuesto.liquidacion SET recibo = $1 WHERE id_solicitud = $2', [recibo, application.id_solicitud]);
     }
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [application.id_contribuyente]);
@@ -4077,20 +4077,20 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
   }
 };
 
-const createReceiptForSpecialApplication = async ({ pool, user, application }) => {
+const createReceiptForSpecialApplication = async ({ client, user, application }) => {
   try {
     const breakdownData = (
-      await pool.query(
+      await client.query(
         `SELECT l.datos, l.monto, l.fecha_liquidacion, l.fecha_vencimiento, r.descripcion, r.codigo FROM impuesto.ramo r INNER JOIN impuesto.subramo USING (id_ramo) INNER JOIN impuesto.liquidacion l USING (id_subramo) INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud WHERE l.id_solicitud = $1 AND l.id_subramo = $2;`,
         [application.id, application.idSubramo]
       )
     ).rows;
-    const UTMM = (await pool.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const impuestoRecibo = UTMM * 2;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
-    const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
-    const payment = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID_DEST, [application.id, 'IMPUESTO'])).rows;
-    const recibo = await pool.query(queries.INSERT_RECEIPT_RECORD, [payment[0].id_usuario, ``, application.razonSocial, referencia?.referencia_municipal, 'ESPECIAL']);
+    const referencia = (await client.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
+    const payment = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_DEST, [application.id, 'IMPUESTO'])).rows;
+    const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [payment[0].id_usuario, ``, application.razonSocial, referencia?.referencia_municipal, 'ESPECIAL']);
     const idRecibo = recibo.rows[0].id_registro_recibo;
     moment.locale('es');
     let certInfoArray: any[] = [];
