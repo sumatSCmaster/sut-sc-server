@@ -1443,7 +1443,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal FROM impuesto.liquidacion WHERE id_registro_municipal IN (
         SELECT id_registro_municipal FROM (SELECT DISTINCT(id_registro_municipal) id_registro_municipal, SUM(monto) as monto 
         FROM Impuesto.liquidacion
-        WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = 'julio' AND datos#>>'{fecha,year}' = '2020'
+        WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2
         GROUP BY id_registro_municipal 
         ORDER BY monto DESC
         LIMIT 1000) s)
@@ -1478,7 +1478,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal FROM impuesto.liquidacion WHERE id_registro_municipal IN (
         SELECT id_registro_municipal FROM (SELECT DISTINCT(id_registro_municipal) id_registro_municipal, SUM(monto) as monto 
         FROM Impuesto.liquidacion
-        WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = 'julio' AND datos#>>'{fecha,year}' = '2020'
+        WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2
         GROUP BY id_registro_municipal 
         ORDER BY monto DESC
         LIMIT 1000) s)
