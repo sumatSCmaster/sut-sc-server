@@ -900,20 +900,25 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         INNER JOIN tramite t ON t.id_tramite = p.id_procedimiento 
         INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite 
         WHERE p.concepto = 'TRAMITE' AND tt.id_institucion = 9 AND p.metodo_pago = 'CHEQUE' AND p.fecha_de_pago BETWEEN $1 AND $2) p) x;`,
-  GET_SETTLEMENTS_REPORT: `SELECT (c.tipo_documento || '-' || c.documento) AS "Documento", rm.referencia_municipal AS "RIM", c.razon_social AS "Razon Social", 
+  GET_SETTLEMENTS_REPORT: `WITH liqs AS (
+          SELECT * FROM impuesto.liquidacion l WHERE l.fecha_liquidacion BETWEEN $1 AND $2
+        )
+        SELECT (c.tipo_documento || '-' || c.documento) AS "Documento", rm.referencia_municipal AS "RIM", c.razon_social AS "Razon Social", ae.descripcion AS "Actividad Economica",
         r.descripcion AS "Ramo", s.id AS "Planilla", l.fecha_liquidacion AS "Fecha Liquidacion", s.fecha AS "Fecha Recaudacion", 
-        (CASE WHEN s.state = 'finalizado' THEN 'PAGADO' ELSE 'VIGENTE' END) AS "Estatus", l.monto as "Monto" 
+        (CASE WHEN s.state = 'finalizado' THEN 'PAGADO' ELSE 'VIGENTE' END) AS "Estatus", l.monto as "Monto"
         FROM impuesto.contribuyente c 
-        INNER JOIN impuesto.registro_municipal rm ON rm.id_contribuyente = c.id_contribuyente 
-        INNER JOIN impuesto.liquidacion l ON l.id_registro_municipal = rm.id_registro_municipal 
+        INNER JOIN impuesto.registro_municipal rm ON rm.id_contribuyente = c.id_contribuyente
+        LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) * FROM impuesto.actividad_economica_sucursal aec INNER JOIN impuesto.actividad_economica ae ON ae.numero_referencia = aec.numero_referencia) ae ON ae.id_registro_municipal = rm.id_registro_municipal 
+        INNER JOIN (SELECT * FROM liqs) l ON l.id_registro_municipal = rm.id_registro_municipal 
         INNER JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sub.id_ramo 
-        INNER JOIN impuesto.solicitud_state s ON s.id = l.id_solicitud WHERE l.fecha_liquidacion BETWEEN $1 AND $2
-        ORDER BY l.fecha_liquidacion ASC;`,
-  GET_SETTLEMENT_REPORT_BY_BRANCH: `SELECT (c.tipo_documento || '-' || c.documento) AS "Documento", rm.referencia_municipal AS "RIM", c.razon_social AS "Razon Social", 
+        INNER JOIN impuesto.solicitud_state s ON s.id = l.id_solicitud 
+        ORDER BY l.fecha_liquidacion, c.razon_social ASC`,
+  GET_SETTLEMENT_REPORT_BY_BRANCH: `SELECT (c.tipo_documento || '-' || c.documento) AS "Documento", rm.referencia_municipal AS "RIM", c.razon_social AS "Razon Social", ae.descripcion AS "Actividad Economica",
         r.descripcion AS "Ramo", s.id AS "Planilla", l.fecha_liquidacion AS "Fecha Liquidacion", s.fecha AS "Fecha Recaudacion", 
         (CASE WHEN s.state = 'finalizado' THEN 'PAGADO' ELSE 'VIGENTE' END) AS "Estatus", l.monto as "Monto" 
         FROM impuesto.contribuyente c 
         INNER JOIN impuesto.registro_municipal rm ON rm.id_contribuyente = c.id_contribuyente 
+        LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) * FROM impuesto.actividad_economica_sucursal aec INNER JOIN impuesto.actividad_economica ae ON ae.numero_referencia = aec.numero_referencia) ae ON ae.id_registro_municipal = rm.id_registro_municipal 
         INNER JOIN impuesto.liquidacion l ON l.id_registro_municipal = rm.id_registro_municipal 
         INNER JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sub.id_ramo 
         INNER JOIN impuesto.solicitud_state s ON s.id = l.id_solicitud WHERE l.fecha_liquidacion BETWEEN $1 AND $2 AND r.id_ramo = $3
