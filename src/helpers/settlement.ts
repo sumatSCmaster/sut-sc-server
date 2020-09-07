@@ -1297,6 +1297,7 @@ export const getAgreementFractionById = async ({ id }): Promise<Solicitud & any>
       fechaAprobacion: application.fecha_aprobado,
       aprobado: application.aprobado,
       estado: (await client.query(queries.GET_AGREEMENT_FRACTION_STATE, [application.id_fraccion])).rows[0]?.state,
+      contribuyente: (await getApplicationsAndSettlementsByIdNots({ id: (await client.query('SELECT id_solicitud FROM impuesto.convenio WHERE id_convenio = $1', [application.id_convenio])).rows[0].id_solicitud, user: null }, client)).contribuyente,
     };
 
     console.log(fraction);
