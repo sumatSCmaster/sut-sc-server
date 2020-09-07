@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAllBanks, validatePayments, listTaxPayments, updatePayment, addPayment, paymentReferenceSearch } from '@helpers/banks';
+import { getAllBanks, validatePayments, listTaxPayments, updatePayment, addPayment, paymentReferenceSearch, reversePaymentForProcess } from '@helpers/banks';
 import { fulfill } from '@utils/resolver';
 import { errorMessageGenerator } from '@helpers/errors';
 import { authenticate } from 'passport';
@@ -44,4 +44,12 @@ router.patch('/payment/:id/', authenticate('jwt'), async (req, res) => {
   if (err) res.status(500).json(err);
   if (data) res.status(data.status).json(data);
 });
+
+router.delete('/payment/:id/:concept', authenticate('jwt'), async (req, res) => {
+  const { id, concept } = req.params;
+  const [err, data] = await fulfill(reversePaymentForProcess({ id: +id, concept }));
+  if (err) res.status(500).json(err);
+  if (data) res.status(data.status).json(data);
+});
+
 export default router;

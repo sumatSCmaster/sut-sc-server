@@ -91,6 +91,71 @@ export const paymentReferenceSearch = async ({ reference, bank }) => {
   }
 };
 
+const reversePaymentCase = switchcase({
+  TRAMITE: async ({ id, client }: { id: number; client: PoolClient }) => {
+    const REVERSARPAGO = 'reversarpago_tramite';
+    try {
+      await client.query(queries.DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT, [id, 'TRAMITE']);
+      await client.query(queries.UPDATE_STATE, [id, REVERSARPAGO, null, null, null]);
+      await client.query(queries.SET_NON_APPROVED_STATE_FOR_PROCEDURE, [id]);
+      return await getProcedureById({ id, client });
+    } catch (e) {
+      throw e;
+    }
+  },
+  IMPUESTO: async ({ id, client }: { id: number; client: PoolClient }) => {
+    const REVERSARPAGO = 'reversarpago_solicitud';
+    try {
+      await client.query(queries.DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT, [id, 'IMPUESTO']);
+      await client.query(queries.DELETE_FISCAL_CREDIT_BY_APPLICATION_ID, [id]);
+      await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [id, REVERSARPAGO]);
+      await client.query(queries.SET_NON_APPROVED_STATE_FOR_APPLICATION, [id]);
+      return await getApplicationsAndSettlementsByIdNots({ id, user: null }, client);
+    } catch (e) {
+      throw e;
+    }
+  },
+  CONVENIO: async ({ id, client }: { id: number; client: PoolClient }) => {
+    const REVERSARPAGO = 'reversarpago_fraccion';
+    try {
+      await client.query(queries.DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT, [id, 'CONVENIO']);
+      await client.query(queries.UPDATE_FRACTION_STATE, [id, REVERSARPAGO]);
+      await client.query(queries.SET_NON_APPROVED_STATE_FOR_AGREEMENT_FRACTION, [id]);
+
+      const application = await getApplicationsAndSettlementsByIdNots({ id: (await client.query('SELECT id_solicitud FROM impuesto.convenio WHERE id_convenio = $1', [id])).rows[0].id_solicitud, user: null }, client);
+      await client.query(queries.DELETE_FISCAL_CREDIT_BY_APPLICATION_ID, [id]);
+      if (application.state === 'finalizado') {
+        await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id, REVERSARPAGO]);
+        await client.query(queries.SET_NON_APPROVED_STATE_FOR_APPLICATION, [id]);
+      }
+      return await getAgreementFractionById({ id });
+    } catch (e) {
+      throw e;
+    }
+  },
+})(null);
+
+export const reversePaymentForProcess = async ({ id, concept }: { id: number; concept: string }) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const action = reversePaymentCase(concept);
+    const procedimiento = await action({ id, client });
+    await client.query('COMMIT');
+    return { status: 200, message: 'Pagos reversados correctamente', procedimiento };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: error.status || 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al reversar pago de procedimiento',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 const getPaymentsByProcessId = async ({ id, concept, client }: { id: number; concept: string; client: PoolClient }) => {
   try {
     const pagos = (

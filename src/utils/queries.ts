@@ -1598,6 +1598,12 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     AND EXTRACT('month' from fecha_culminacion) = EXTRACT('month' from $1::date)
     AND EXTRACT('year' from fecha_culminacion) = EXTRACT('year' from $1::date)`,
 
+  SET_NON_APPROVED_STATE_FOR_APPLICATION: 'UPDATE impuesto.solicitud SET aprobado = false, fecha_aprobado = null WHERE id_solicitud = $1;',
+  SET_NON_APPROVED_STATE_FOR_AGREEMENT_FRACTION: 'UPDATE impuesto.fraccion SET aprobado = false, fecha_aprobado = null WHERE id_fraccion = $1;',
+  SET_NON_APPROVED_STATE_FOR_PROCEDURE: 'UPDATE tramite SET aprobado = false, fecha_culminacion = null WHERE id_tramite = $1;',
+  DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT: 'DELETE FROM pago WHERE id_procedimiento = $1 AND concepto = $2;',
+  DELETE_FISCAL_CREDIT_BY_APPLICATION_ID: 'DELETE FROM impuesto.credito_fiscal WHERE id_solicitud = $1;',
+
   gtic: {
     GET_NATURAL_CONTRIBUTOR:
       'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 AND (trim(nb_representante_legal) NOT IN (SELECT trim(nb_marca) FROM tb014_marca_veh) AND trim(nb_representante_legal) NOT IN (SELECT trim(tx_marca) FROM t45_vehiculo_marca) OR trim(nb_representante_legal) IS NULL) ORDER BY co_contribuyente DESC',
