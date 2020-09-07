@@ -1092,7 +1092,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     'SELECT vt.id_usuario as id FROM impuesto.verificacion_telefono vt INNER JOIN impuesto.registro_municipal_verificacion rmv USING (id_verificacion_telefono)\
        INNER JOIN impuesto.registro_municipal rm USING (id_registro_municipal) INNER JOIN impuesto.contribuyente c USING (id_contribuyente) WHERE\
         rm.id_registro_municipal = $1',
-  CREATE_OR_UPDATE_FISCAL_CREDIT: 'SELECT * FROM impuesto.insert_credito($1, $2, $3, $4)',
+  CREATE_OR_UPDATE_FISCAL_CREDIT: 'SELECT * FROM impuesto.insert_credito($1, $2, $3, $4, $5)',
   BRANCH_IS_ONE_BEST_PAYERS: `SELECT * FROM impuesto.liquidacion WHERE id_registro_municipal = $1 AND id_registro_municipal IN (
     SELECT id_registro_municipal FROM (SELECT id_registro_municipal, SUM(monto) AS monto 
     FROM Impuesto.liquidacion

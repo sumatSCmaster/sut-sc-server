@@ -45,8 +45,7 @@ const typeProcess = switchcase({
   },
   CONVENIO: async ({ id, client }: { id: number; client: PoolClient }) => {
     try {
-      const fractionInstance = await getAgreementFractionById({ id });
-      return await getApplicationsAndSettlementsByIdNots({ id: (await client.query('SELECT id_solicitud FROM impuesto.convenio WHERE id_convenio = $1', [fractionInstance.idConvenio])).rows[0].id_solicitud, user: null }, client);
+      return await getAgreementFractionById({ id });
     } catch (e) {
       throw e;
     }
@@ -65,19 +64,23 @@ export const paymentReferenceSearch = async ({ reference, bank }) => {
         [reference, bank]
       )
     ).rows;
+    if (!pagos.length) throw { status: 404, message: 'No existe la referencia suministrada en el banco suministrado' };
     await Promise.all(
       pagos.map(async (pago) => {
         console.log(pago);
         const action = typeProcess(pago.concepto);
         // console.log('if -> action', action);
         pago.procedimiento = await action({ id: pago.idProcedimiento, client });
+        pago.procedimiento.pagos = await getPaymentsByProcessId({ id: pago.idProcedimiento, concept: pago.concepto, client });
+        if (pago.concepto !== 'TRAMITE') {
+          const targetId = pago.concepto === 'CONVENIO' ? (await client.query('SELECT id_solicitud FROM impuesto.convenio WHERE id_convenio = $1', [pago.procedimiento.idConvenio])).rows[0].id_solicitud : pago.procedimiento.id;
+          pago.procedimiento.creditoFiscalGenerado = await getProcessFiscalCredit({ id: targetId, client });
+        }
         delete pago.idProcedimiento;
       })
     );
-    if (!pagos.length) throw { status: 404, message: 'No existe la referencia suministrada en el banco suministrado' };
     return { status: 200, pagos, message: 'Datos de referencia obtenidos' };
   } catch (e) {
-    console.log('if -> e', e);
     throw {
       status: e.status || 500,
       error: errorMessageExtractor(e),
@@ -88,14 +91,34 @@ export const paymentReferenceSearch = async ({ reference, bank }) => {
   }
 };
 
+const getPaymentsByProcessId = async ({ id, concept, client }: { id: number; concept: string; client: PoolClient }) => {
+  try {
+    const pagos = (
+      await client.query(
+        'SELECT id_pago AS id, referencia, id_procedimiento AS "idProcedimiento", monto, fecha_de_pago AS "fechaDePago", aprobado, id_banco AS banco, fecha_de_aprobacion AS "fechaAprobacion", concepto, metodo_pago AS "metodoPago", id_usuario AS usuario, id_banco_destino AS "bancoDestino" FROM pago WHERE id_procedimiento = $1 AND concepto = $2',
+        [id, concept]
+      )
+    ).rows;
+    return pagos;
+  } catch (e) {
+    throw e;
+  }
+};
+
+const getProcessFiscalCredit = async ({ id, client }: { id: number; client: PoolClient }) => {
+  try {
+    const creditoGenerado = (await client.query('SELECT id_credito_fiscal AS id, credito, fecha_creacion AS "fechaCreacion" FROM impuesto.credito_fiscal WHERE id_solicitud = $1', [id])).rows;
+    return creditoGenerado;
+  } catch (e) {
+    throw e;
+  }
+};
+
 export const validatePayments = async (body, user) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    console.log('a');
     const res = await client.query(queries.VALIDATE_PAYMENTS, [body]);
-    console.log(res.rows);
-    console.log(res.rows[0]);
     const data = await Promise.all(
       res.rows[0].validate_payments.data.map(async (el) => {
         const pagoValidado = {

@@ -2715,7 +2715,7 @@ const updateFiscalCredit = async ({ id, user, amount, client }) => {
   const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
     ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
     : undefined;
-  const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', fixatedAmount(amount), false] : [fixatedApplication.contribuyente.id, 'NATURAL', fixatedAmount(amount), false];
+  const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', fixatedAmount(amount), false, id] : [fixatedApplication.contribuyente.id, 'NATURAL', fixatedAmount(amount), false, id];
   await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
 };
 
@@ -2726,6 +2726,7 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
     const fraccion = (await client.query(queries.GET_FRACTION_BY_AGREEMENT_AND_FRACTION_ID, [agreement, fragment])).rows[0];
     const pagoSum = payment.map((e) => +e.costo).reduce((e, i) => e + +fixatedAmount(i), 0);
     if (+fixatedAmount(pagoSum) < +fixatedAmount(fraccion.monto)) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
+    const creditoPositivo = +fixatedAmount(pagoSum) - +fixatedAmount(+fraccion.monto);
     await Promise.all(
       payment.map(async (el) => {
         if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
@@ -2746,6 +2747,11 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
     if (fractions.every((x) => x.aprobado)) {
       const convenio = (await client.query('SELECT c.* FROM impuesto.convenio c INNER JOIN impuesto.fraccion f ON c.id_convenio = f.id_convenio WHERE f.id_fraccion = $1', [fragment])).rows[0];
       const applicationState = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [convenio.id_solicitud, applicationStateEvents.APROBARCAJERO])).rows[0].state;
+    }
+    if (user.tipoUsuario !== 4) {
+      const convenio = (await client.query('SELECT c.* FROM impuesto.convenio c INNER JOIN impuesto.fraccion f ON c.id_convenio = f.id_convenio WHERE f.id_fraccion = $1', [fragment])).rows[0];
+      if (creditoPositivo > 0) await updateFiscalCredit({ id: convenio.id_solicitud, user, amount: creditoPositivo, client });
+      // applicationInstance.recibo = await generateReceipt({ application });
     }
     await client.query('COMMIT');
     const applicationInstance = await getAgreementFractionById({ id: fragment });
@@ -2788,7 +2794,8 @@ export const validateApplication = async (body, user, client) => {
         ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
         : undefined;
 
-      const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', saldoPositivo, false] : [fixatedApplication.contribuyente.id, 'NATURAL', saldoPositivo, false];
+      const payload =
+        fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', saldoPositivo, false, body.idTramite] : [fixatedApplication.contribuyente.id, 'NATURAL', saldoPositivo, false, body.idTramite];
       await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
     }
 
@@ -2841,7 +2848,10 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
         ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
         : undefined;
       console.log('validateAgreementFraction -> idReferenciaMunicipal', fixatedApplication.contribuyente.tipoContribuyente, idReferenciaMunicipal, body.idTramite);
-      const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', saldoPositivo, false] : [fixatedApplication.contribuyente.id, 'NATURAL', saldoPositivo, false];
+      const payload =
+        fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO'
+          ? [idReferenciaMunicipal, 'JURIDICO', saldoPositivo, false, agreement.id_solicitud]
+          : [fixatedApplication.contribuyente.id, 'NATURAL', saldoPositivo, false, agreement.id_solicitud];
       await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
     }
     const applicationInstance = await getAgreementFractionById({ id: body.idTramite });
