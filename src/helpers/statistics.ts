@@ -791,7 +791,7 @@ export const getStatsSedematWithDate = async ({ institution, date }: { instituti
       });
     // 2. Bs por ramo por día liquidado/ingresado (4 ramos principales reflejado en gráfico de torta)
     const totalBsByBranch = (await client.query(queries.TOTAL_BS_BY_BRANCH_IN_MONTH_WITH_DATE, [moment(date).startOf('month').format('MM-DD-YYYY'), moment(date).endOf('month').format('MM-DD-YYYY'), requestedDate.format('MM-DD-YYYY')])).rows
-      .filter((el) => moment(date).startOf('day').isSame(moment(el.fecha)))
+      .filter((el) => moment(date).endOf('month').startOf('day').isSameOrAfter(moment(el.fecha)))
       .map((el) => {
         el.valor = +fixatedAmount(el.valor);
         el.fecha = moment(el.fecha).format('DD/MM');

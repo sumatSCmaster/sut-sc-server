@@ -1,11 +1,11 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
-import { validateProcedure } from './procedures';
+import { validateProcedure, getProcedureById } from './procedures';
 import { validateFining } from './fines';
 import { PoolClient } from 'pg';
 import switchcase from '@utils/switch';
-import { validateApplication, validateAgreementFraction } from './settlement';
+import { validateApplication, validateAgreementFraction, getApplicationsAndSettlementsById, getAgreementFractionById, getApplicationsAndSettlementsByIdNots } from './settlement';
 const pool = Pool.getInstance();
 
 export const getAllBanks = async () => {
@@ -28,6 +28,31 @@ export const getAllBanks = async () => {
   }
 };
 
+const typeProcess = switchcase({
+  TRAMITE: async ({ id, client }: { id: number; client: PoolClient }) => {
+    try {
+      return await getProcedureById({ id, client });
+    } catch (e) {
+      throw e;
+    }
+  },
+  IMPUESTO: async ({ id, client }: { id: number; client: PoolClient }) => {
+    try {
+      return await getApplicationsAndSettlementsByIdNots({ id, user: null }, client);
+    } catch (e) {
+      throw e;
+    }
+  },
+  CONVENIO: async ({ id, client }: { id: number; client: PoolClient }) => {
+    try {
+      const fractionInstance = await getAgreementFractionById({ id });
+      return await getApplicationsAndSettlementsByIdNots({ id: (await client.query('SELECT id_solicitud FROM impuesto.convenio WHERE id_convenio = $1', [fractionInstance.idConvenio])).rows[0].id_solicitud, user: null }, client);
+    } catch (e) {
+      throw e;
+    }
+  },
+})(null);
+
 export const paymentReferenceSearch = async ({ reference, bank }) => {
   const client = await pool.connect();
   console.log(reference, bank);
@@ -36,13 +61,23 @@ export const paymentReferenceSearch = async ({ reference, bank }) => {
     if (!bank) throw { status: 400, message: 'Debe proporcionar el banco correspondiente a la referencia' };
     const pagos = (
       await client.query(
-        'SELECT id_pago AS id, referencia, monto, fecha_de_pago AS "fechaDePago", aprobado, id_banco AS banco, fecha_de_aprobacion AS "fechaAprobacion", concepto, metodo_pago AS "metodoPago", id_usuario AS usuario, id_banco_destino AS "bancoDestino" FROM pago WHERE referencia = $1 AND id_banco_destino = $2',
+        'SELECT id_pago AS id, referencia, id_procedimiento AS "idProcedimiento", monto, fecha_de_pago AS "fechaDePago", aprobado, id_banco AS banco, fecha_de_aprobacion AS "fechaAprobacion", concepto, metodo_pago AS "metodoPago", id_usuario AS usuario, id_banco_destino AS "bancoDestino" FROM pago WHERE referencia = $1 AND id_banco_destino = $2',
         [reference, bank]
       )
     ).rows;
+    await Promise.all(
+      pagos.map(async (pago) => {
+        console.log(pago);
+        const action = typeProcess(pago.concepto);
+        // console.log('if -> action', action);
+        pago.procedimiento = await action({ id: pago.idProcedimiento, client });
+        delete pago.idProcedimiento;
+      })
+    );
     if (!pagos.length) throw { status: 404, message: 'No existe la referencia suministrada en el banco suministrado' };
     return { status: 200, pagos, message: 'Datos de referencia obtenidos' };
   } catch (e) {
+    console.log('if -> e', e);
     throw {
       status: e.status || 500,
       error: errorMessageExtractor(e),
