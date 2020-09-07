@@ -1173,8 +1173,8 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   // Con fecha proporcionada
   TOTAL_AE_DECLARATIONS_IN_MONTH_WITH_DATE: `SELECT COUNT(*) FROM impuesto.registro_municipal r 
     INNER JOIN (SELECT DISTINCT ON (id_registro_municipal) * FROM 
-    (SELECT * FROM impuesto.liquidacion WHERE EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1)
-    AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1) AND id_subramo = 10) x) l USING (id_registro_municipal)`,
+    (SELECT * FROM impuesto.liquidacion WHERE EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1::date)
+    AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1::date) AND id_subramo = 10) x) l USING (id_registro_municipal)`,
   // Total de RIMs que pagaron en el mes (AE)
   //  Sin fecha proporcionada
   TOTAL_AE_APPLICATION_PAYMENTS_IN_MONTH: `SELECT COUNT(*) FROM impuesto.registro_municipal r 
@@ -1192,8 +1192,8 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     INNER JOIN 
             (SELECT DISTINCT ON (id_registro_municipal) * FROM 
                     (SELECT * FROM impuesto.liquidacion 
-                        WHERE EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1)
-                        AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1) AND id_subramo = 10) x
+                        WHERE EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1::Date)
+                        AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1::date) AND id_subramo = 10) x
             ) l USING (id_registro_municipal) 
     INNER JOIN impuesto.solicitud s USING (id_solicitud)
     WHERE s.aprobado = true;`,
@@ -1235,8 +1235,8 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     
     GROUP BY fecha_aprobado) p ON p.fecha = l.fecha 
   ) x RIGHT JOIN (SELECT generate_series::date AS fecha FROM generate_series($1, $2, interval '1 day'))
-    z ON x.fecha::date = z.fecha::date WHERE EXTRACT('month' from z.fecha) = EXTRACT('month' from $3)
-    AND EXTRACT('year' from z.fecha) = EXTRACT('year' from $3)
+    z ON x.fecha::date = z.fecha::date WHERE EXTRACT('month' from z.fecha) = EXTRACT('month' from $3::date)
+    AND EXTRACT('year' from z.fecha) = EXTRACT('year' from $3::date)
     ORDER BY z.fecha;`,
 
   //  2. Bs por ramo por día liquidado/ingresado (4 ramos principales reflejado en gráfico de torta)
@@ -1268,8 +1268,8 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
 RIGHT JOIN (SELECT generate_series::date AS fecha, c.column1 as ramo FROM generate_series($1, $2, interval '1 day') CROSS JOIN (SELECT * FROM (VALUES ('AE'), ('SM'), ('IU'), ('PP')) XX) c )
   z ON v.fecha_aprobado = z.fecha AND v.descripcion_corta = z.ramo
 WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
-   AND EXTRACT('month' FROM z.fecha) = EXTRACT('month' FROM $3)
-   AND EXTRACT('year' FROM z.fecha) = EXTRACT('year' FROM $3)
+   AND EXTRACT('month' FROM z.fecha) = EXTRACT('month' FROM $3::date)
+   AND EXTRACT('year' FROM z.fecha) = EXTRACT('year' FROM $3::date)
   GROUP BY z.fecha, z.ramo ORDER BY z.fecha`,
 
   //  3. Total recaudado por mes (gráfico de linea con anotaciones)
@@ -1306,8 +1306,8 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   WHERE tt.id_institucion = 9
   GROUP BY fecha_de_pago) x RIGHT JOIN (SELECT generate_series::date AS fecha FROM generate_series($1, $2, interval '1 day'))
   z ON x.fecha_de_pago::date = z.fecha::date
-  WHERE EXTRACT('month' from fecha) = EXTRACT('month' from $3)
-  AND EXTRACT('year' from fecha) = EXTRACT('year' from $3)
+  WHERE EXTRACT('month' from fecha) = EXTRACT('month' from $3::date)
+  AND EXTRACT('year' from fecha) = EXTRACT('year' from $3::date)
   GROUP BY fecha
   ORDER BY fecha;`,
 
@@ -1344,8 +1344,8 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     GROUP BY fecha_aprobado
     ) p ON p.fecha = l.fecha RIGHT JOIN (SELECT generate_series::date AS fecha FROM generate_series($1, $2, interval '1 day'))
   z ON p.fecha::date = z.fecha::date
-    WHERE EXTRACT('month' from z.fecha) = EXTRACT('month' from $3)
-    AND EXTRACT('year' from z.fecha) = EXTRACT('year' from $3) ORDER BY z.fecha;`,
+    WHERE EXTRACT('month' from z.fecha) = EXTRACT('month' from $3::date)
+    AND EXTRACT('year' from z.fecha) = EXTRACT('year' from $3::date) ORDER BY z.fecha;`,
   //Extras para el 4
   ECONOMIC_ACTIVITIES_EXONERATION_INTERVALS: `SELECT fecha_inicio as "fechaInicio", fecha_fin AS "fechaFin", COUNT(*) as cantidad 
       FROM impuesto.actividad_economica_exoneracion aee INNER JOIN
@@ -1409,8 +1409,8 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     INNER JOIN (SELECT id_registro_municipal, id_solicitud
               FROM impuesto.liquidacion 
               WHERE id_subramo = 10 AND 
-              EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1) 
-              AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1) 
+              EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1::date) 
+              AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1::date) 
               AND id_registro_municipal IN (SELECT id_registro_municipal FROM rimsAR)) l USING (id_registro_municipal)
     INNER JOIN impuesto.solicitud s USING (id_solicitud)
     WHERE l.id_registro_municipal IN 
@@ -1418,8 +1418,8 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
               (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal
               FROM impuesto.liquidacion 
               WHERE id_subramo = 10 AND 
-              EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1) 
-              AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1) 
+              EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1::date) 
+              AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1::date) 
               AND id_registro_municipal IN (SELECT id_registro_municipal FROM rimsAR)) l ) AND s.aprobado = true
   ),
   liquidado AS (
@@ -1427,16 +1427,16 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     INNER JOIN (SELECT id_registro_municipal
               FROM impuesto.liquidacion 
               WHERE id_subramo = 10 AND 
-              EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1) 
-              AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1) 
+              EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1::date) 
+              AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1::date) 
               AND id_registro_municipal IN (SELECT id_registro_municipal FROM rimsAR)) l USING (id_registro_municipal)
     WHERE l.id_registro_municipal IN 
             (SELECT id_registro_municipal FROM 
               (SELECT id_registro_municipal
               FROM impuesto.liquidacion 
               WHERE id_subramo = 10 AND 
-              EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1) 
-              AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1) 
+              EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1::date) 
+              AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1::date) 
               AND id_registro_municipal IN (SELECT id_registro_municipal FROM rimsAR)) l )
   )
 
@@ -1494,8 +1494,8 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
                 (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, id_solicitud
                 FROM impuesto.liquidacion 
                 WHERE id_subramo = 10 AND 
-                EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1) 
-                AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1) 
+                EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $3::date) 
+                AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $3::date) 
                 AND id_registro_municipal IN (SELECT id_registro_municipal FROM topContr)) l ) l USING (id_registro_municipal)
       INNER JOIN impuesto.solicitud s USING (id_solicitud)
       WHERE s.aprobado = true
@@ -1506,8 +1506,8 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
                 (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, id_solicitud
                 FROM impuesto.liquidacion 
                 WHERE id_subramo = 10 AND 
-                EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1) 
-                AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1) 
+                EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $3::date) 
+                AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $3::date) 
                 AND id_registro_municipal IN (SELECT id_registro_municipal FROM topContr)) l ) l USING (id_registro_municipal)
     )
 

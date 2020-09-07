@@ -17,7 +17,7 @@ router.get('/sedemat', async (req: any, res) => {
   if (data) res.status(200).json(data);
 });
 
-router.get('/sedemat/:date', authenticate('jwt'), async (req: any, res) => {
+router.get('/sedemat/:date', async (req: any, res) => {
   const { date } = req.params;
   const [err, data] = await fulfill(getStatsSedematWithDate({ institution: req.user?.institucion?.id, date }));
   if (err) res.status(500).json(err);
