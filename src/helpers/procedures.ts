@@ -396,6 +396,33 @@ export const getFieldsForValidations = async ({ id, type }) => {
   }
 };
 
+export const getProcedureById = async ({ id, client }: { id: number; client: PoolClient }) => {
+  try {
+    const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [id])).rows[0];
+    const tramite: Partial<Tramite> = {
+      id: response.id,
+      tipoTramite: response.tipotramite,
+      estado: response.state,
+      datos: response.datos,
+      planilla: response.planilla,
+      certificado: response.certificado,
+      costo: response.costo,
+      fechaCreacion: response.fechacreacion,
+      fechaCulminacion: response.fechaculminacion,
+      codigoTramite: response.codigotramite,
+      usuario: response.usuario,
+      nombreLargo: response.nombrelargo,
+      nombreCorto: response.nombrecorto,
+      nombreTramiteLargo: response.nombretramitelargo,
+      nombreTramiteCorto: response.nombretramitecorto,
+      aprobado: response.aprobado,
+    };
+    return tramite;
+  } catch (e) {
+    throw e;
+  }
+};
+
 const isNotPrepaidProcedure = ({ suffix, user }: { suffix: string; user: Usuario }) => {
   const condition = false;
   if ((suffix === 'tl' && user.tipoUsuario !== 4) || !!['pd', 'ompu', 'rc', 'bc', 'lic', 'lict', 'sup'].find((el) => el === suffix)) return !condition;

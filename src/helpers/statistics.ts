@@ -4,6 +4,7 @@ import moment from 'moment';
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { Usuario, IDsTipoUsuario, Instituciones } from '@root/interfaces/sigt';
 import { fixatedAmount } from './settlement';
+import { request } from 'express';
 const pool = Pool.getInstance();
 
 const fixMonth = (m: string) => m.charAt(0).toUpperCase() + m.slice(1).toLowerCase();
@@ -761,18 +762,153 @@ export const getStatsSedemat = async ({ institution }: { institution: number }) 
 
 export const getStatsSedematWithDate = async ({ institution, date }: { institution: number; date: string }) => {
   const client = await pool.connect();
+  const totalSolvencyRate: any[] = [];
+  const totalSettlements: any[] = [];
   try {
-    await client.query('BEGIN');
+    // if (institution !== Instituciones.SEDEMAT) throw { status: 403, message: 'Sólo un miembro de SEDEMAT puede acceder a esta información' };
+    const now = moment().locale('ES');
+    const requestedDate = moment(date).locale('ES');
+    console.log(requestedDate.format('MM-DD-YYYY'));
+    // Totales
+    // 1. Total de usuarios registrados en SUT
+    const totalRegisteredUsers = +(await client.query(queries.TOTAL_REGISTERED_USERS)).rows[0].total;
+    // 2. Total de contribuyentes
+    const totalRegisteredContributors = +(await client.query(queries.TOTAL_REGISTERED_CONTRIBUTORS)).rows[0].total;
+    // 3. Total de RIMs / Total de RIMs que declararon en el mes (AE) / Total de RIMs que pagaron en el mes (AE)
+    const totalRegisteredRims = +(await client.query(queries.TOTAL_REGISTERED_RIMS)).rows[0].total;
+    const totalAEDeclarations = +(await client.query(queries.TOTAL_AE_DECLARATIONS_IN_MONTH_WITH_DATE, [requestedDate.format('MM-DD-YYYY')])).rows[0].count;
+    const totalAEPayments = +(await client.query(queries.TOTAL_AE_APPLICATION_PAYMENTS_IN_MONTH_WITH_DATE, [requestedDate.format('MM-DD-YYYY')])).rows[0].count;
 
-    await client.query('COMMIT');
-    return;
+    // Graficas mensuales
+    // 1. Tasas de AE liquidadas/pagadas (por día reflejado en gráfico de barras)
+    const solvencyArr = (await client.query(queries.TOTAL_SOLVENCY_RATES_IN_MONTH_WITH_DATE, [moment(date).startOf('month').format('MM-DD-YYYY'), moment(date).endOf('month').format('MM-DD-YYYY'), requestedDate.format('MM-DD-YYYY')])).rows
+      .filter((el) => moment(date).endOf('month').startOf('day').isSameOrAfter(moment(el.fecha)))
+      .map((el) => {
+        const liquidado = { name: 'Liquidado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.liquidado };
+        const pagado = { name: 'Pagado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.pagado };
+        totalSolvencyRate.push(liquidado);
+        totalSolvencyRate.push(pagado);
+      });
+    // 2. Bs por ramo por día liquidado/ingresado (4 ramos principales reflejado en gráfico de torta)
+    const totalBsByBranch = (await client.query(queries.TOTAL_BS_BY_BRANCH_IN_MONTH_WITH_DATE, [moment(date).startOf('month').format('MM-DD-YYYY'), moment(date).endOf('month').format('MM-DD-YYYY'), requestedDate.format('MM-DD-YYYY')])).rows
+      .filter((el) => moment(date).endOf('month').startOf('day').isSameOrAfter(moment(el.fecha)))
+      .map((el) => {
+        el.valor = +fixatedAmount(el.valor);
+        el.fecha = moment(el.fecha).format('DD/MM');
+        return el;
+      });
+    // 3. Total recaudado por mes (gráfico de linea con anotaciones)
+    const totalGainings = (await client.query(queries.TOTAL_GAININGS_IN_MONTH_WITH_DATE, [moment(date).startOf('month').format('MM-DD-YYYY'), moment(date).endOf('month').format('MM-DD-YYYY'), requestedDate.format('MM-DD-YYYY')])).rows
+      .filter((el) => moment(date).endOf('month').startOf('day').isSameOrAfter(moment(el.fecha)))
+      .map((el) => {
+        el.valor = +fixatedAmount(el.valor);
+        el.fecha = moment(el.fecha).format('DD/MM');
+        return el;
+      });
+    const extraInfo = (await client.query(queries.ECONOMIC_ACTIVITIES_EXONERATION_INTERVALS)).rows.map((el) => {
+      el.descripcion = `Exoneración de ${el.cantidad} Aforo${el.cantidad > 1 ? 's' : ''} por motivo de COVID-19`;
+      el.color = 'red';
+      el.fechaInicio = moment(el.fechaInicio).format('DD/MM');
+      el.fechaFin = moment(el.fechaFin).format('DD/MM');
+      delete el.cantidad;
+      return el;
+    });
+    extraInfo.push({ fechaInicio: moment('09-01-2020').format('DD/MM'), fechaFin: moment('10-01-2020').format('DD/MM'), descripcion: 'Remisión de Multas', color: 'purple' });
+
+    // 4. Total de liquidaciones pagadas/vigentes (%)
+    const settlementArr = (await client.query(queries.TOTAL_SETTLEMENTS_IN_MONTH_WITH_DATE, [moment(date).startOf('month').format('MM-DD-YYYY'), moment(date).endOf('month').format('MM-DD-YYYY'), requestedDate.format('MM-DD-YYYY')])).rows
+      .filter((el) => moment(date).endOf('month').startOf('day').isSameOrAfter(moment(el.fecha)))
+      .map((el) => {
+        const liquidado = { name: 'Liquidado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.liquidado };
+        const pagado = { name: 'Pagado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.pagado };
+        totalSettlements.push(liquidado);
+        totalSettlements.push(pagado);
+      });
+
+    // Top contribuyentes
+    // 1. Agentes de retención que han declarado/pagado por mes
+    const totalARDeclarations = (await client.query(queries.TOTAL_AR_DECLARATIONS_AND_PAYMENTS_IN_MONTH_WITH_DATE, [requestedDate.format('MM-DD-YYYY')])).rows.map((el) => ({ total: +el.total, liquidado: +el.liquidado, pagado: +el.pagado }))[0];
+    // 2. Top 1000 contribuyentes que han declarado/pagado por mes
+    const totalTopContrDeclarations = (
+      await client.query(queries.TOTAL_TOP_CONTRIBUTOR_DECLARATIONS_AND_PAYMENTS_IN_MONTH_WITH_DATE, [moment(date).locale('ES').subtract(2, 'M').format('MMMM'), moment(date).locale('ES').subtract(2, 'M').year(), requestedDate.format('MM-DD-YYYY')])
+    ).rows.map((el) => ({
+      total: +el.total,
+      liquidado: +el.liquidado,
+      pagado: +el.pagado,
+    }))[0];
+
+    // Coeficientes
+    // 1. Tasa de Default Intermensual (TDI)
+    // TDI = Cantidad de Contribuyentes que pagaron mes anterior pero no mes actual (gráfico de barra o linea por mes, incluyendo coeficiente y cantidad de contribuyentes)
+    console.log(now.format('MM-DD-YYYY'));
+    // console.log(now.startOf('month').diff(moment('08-01-2020'), 'month'));
+
+    const TDI = await Promise.all(
+      new Array(now.startOf('month').diff(moment('08-01-2020'), 'month')).fill({}).map(async (el, i) => {
+        const pivotDate = moment('08-01-2020').locale('ES').add(i, 'M');
+        const secondPivot = moment('08-01-2020').locale('ES').add(i, 'M').subtract(1, 'M');
+        const defaultCount = (await client.query(queries.TOTAL_CONTRIBUTOR_DEFAULT_RATE, [pivotDate.format('MMMM'), pivotDate.year(), secondPivot.format('MMMM'), secondPivot.year()])).rows[0].valor;
+        return { mes: fixMonth(pivotDate.format('MMMM')), anio: pivotDate.year(), valor: +defaultCount, coeficiente: 0 };
+      })
+    );
+    console.log(TDI);
+    TDI.reduce((x, j) => {
+      j.coeficiente = +fixatedAmount(isFiniteNumber(j.valor / x));
+      return j.valor;
+    }, 0);
+    // 2. Promedio Días para Pago (PDP)
+    // PDP = Promedio de días que demoran los contribuyentes en realizar pagos vencidos medidos por mes (gráfico de linea o de barra)
+    const PDP = await Promise.all(
+      new Array(now.startOf('month').diff(moment('08-01-2020'), 'month') + 1).fill({}).map(async (el, i) => {
+        const pivotDate = moment('08-01-2020').locale('ES').add(i, 'M');
+        const { promedio, limiteSuperior } = (await client.query(queries.TOTAL_PAYMENT_DAYS_AVERAGE_IN_MONTH_WITH_DATE, [pivotDate.format('MM-DD-YYYY')])).rows[0];
+        return { mes: fixMonth(pivotDate.format('MMMM')), anio: pivotDate.year(), promedio: +fixatedAmount(promedio), limiteSuperior };
+      })
+    );
+    // 3. Tasa Nuevas Licencias (TNL)
+    // TNL = Cantidad de Licencias Nuevas mes actual/Cantidad de Licencias Nuevas mes anterior (por mes en grafico de barra o linea, incluyendo el coeficiente y la cantidad de nuevas licencias)
+    const TNL = await Promise.all(
+      new Array(now.startOf('month').diff(moment('08-01-2020'), 'month') + 1).fill({}).map(async (el, i) => {
+        const pivotDate = moment('08-01-2020').locale('ES').add(i, 'M');
+        const { coeficiente, valor } = (await client.query(queries.TOTAL_NEW_LICENSES_IN_MONTH_WITH_DATE, [pivotDate.format('MM-DD-YYYY')])).rows[0];
+        return { mes: fixMonth(pivotDate.format('MMMM')), anio: pivotDate.year(), coeficiente: +fixatedAmount(coeficiente), valor: +valor };
+      })
+    );
+
+    const estadisticas = {
+      total: {
+        cantidadUsuarios: totalRegisteredUsers,
+        cantidadContribuyentes: totalRegisteredContributors,
+        cantidadRIMs: {
+          registrados: totalRegisteredRims,
+          liquidados: totalAEDeclarations,
+          pagados: totalAEPayments,
+        },
+      },
+      mensual: {
+        totalTasasAE: totalSolvencyRate,
+        totalBsPorRamo: totalBsByBranch,
+        recaudado: { totalRecaudacion: totalGainings, extra: extraInfo },
+        totalLiquidaciones: totalSettlements,
+      },
+      contribuyentes: {
+        AR: totalARDeclarations,
+        top: totalTopContrDeclarations,
+      },
+      coeficientes: {
+        TDI,
+        PDP,
+        TNL,
+      },
+    };
+
+    return { status: 200, message: 'Estadisticas obtenidas!', estadisticas };
   } catch (error) {
-    client.query('ROLLBACK');
     console.log(error);
     throw {
-      status: 500,
+      status: error.status || 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || error.message || '',
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener estadisticas de SEDEMAT',
     };
   } finally {
     client.release();
