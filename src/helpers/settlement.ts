@@ -4628,12 +4628,12 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
           totalIva: `${formatCurrency(totalIva)} Bs.S`,
           totalRetencionIva: `0.00 Bs.S`,
           totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
-          montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+          montoTotalImpuesto: `${formatCurrency(totalMonto)} Bs.S`,
           interesMoratorio: 0, // pueden o no tener
           estatus: 'PAGADO',
           observacion: 'Pago por Publicidad y Propaganda',
-          totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
-          totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+          totalLiq: `${formatCurrency(totalMonto)} Bs.S`,
+          totalRecaudado: `${formatCurrency(totalMonto)} Bs.S`,
         },
       };
       console.log(certInfo.datos.items);
