@@ -59,13 +59,13 @@ export const checkContributorExists = () => async (req: any, res, next) => {
     console.log('2');
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [pref, doc])).rows[0];
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [ref, contributor?.id_contribuyente])).rows[0];
-    if (!!ref && !branch) res.status(404).send({ status: 404, message: 'No existe la sucursal solicitada' });
+    if (!!ref && !branch) return res.status(404).send({ status: 404, message: 'No existe la sucursal solicitada' });
     console.log('3');
     const branchIsUpdated = branch?.actualizado;
     if (!contributor || (!!contributor && !!ref && !branchIsUpdated)) {
       console.log('4');
       const x = await externalLinkingForCashier({ document: doc, docType: pref, reference: ref, user, typeUser: contrib });
-      res.status(202).json({ status: 202, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: x });
+      return res.status(202).json({ status: 202, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: x });
     } else {
       console.log('5');
 
@@ -75,7 +75,7 @@ export const checkContributorExists = () => async (req: any, res, next) => {
     return next();
   } catch (error) {
     console.log(error);
-    res.send({
+    return res.send({
       status: 500,
       error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || errorMessageExtractor(error) || 'Error al obtener la informacion del usuario',
@@ -2617,13 +2617,12 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
         ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0]
         : (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.APROBARCAJERO])).rows[0];
 
-    if (user.tipoUsuario !== 4) {
-      if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
-      recibo = await generateReceipt({ application });
-    }
     await client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
-    applicationInstance.recibo = recibo;
+    if (user.tipoUsuario !== 4) {
+      if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
+      applicationInstance.recibo = await generateReceipt({ application });
+    }
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente?.id]);
 
     await sendNotification(
@@ -4109,10 +4108,10 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
     const payment = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_DEST, [application.id, 'IMPUESTO'])).rows;
     const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [payment[0].id_usuario, ``, application.razonSocial, referencia?.referencia_municipal, 'ESPECIAL', application.id]);
     let idRecibo;
-    if(!recibo.rows[0]){
-      idRecibo = (await client.query('SELECT recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [application.id])).rows[0].id_registro_recibo
-    }else {
-      idRecibo = recibo.rows[0].id_registro_recibo; 
+    if (!recibo.rows[0]) {
+      idRecibo = (await client.query('SELECT recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [application.id])).rows[0].id_registro_recibo;
+    } else {
+      idRecibo = recibo.rows[0].id_registro_recibo;
     }
     moment.locale('es');
     let certInfoArray: any[] = [];
