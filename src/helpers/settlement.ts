@@ -1297,6 +1297,7 @@ export const getAgreementFractionById = async ({ id }): Promise<Solicitud & any>
       fechaAprobacion: application.fecha_aprobado,
       aprobado: application.aprobado,
       estado: (await client.query(queries.GET_AGREEMENT_FRACTION_STATE, [application.id_fraccion])).rows[0]?.state,
+      contribuyente: (await getApplicationsAndSettlementsByIdNots({ id: (await client.query('SELECT id_solicitud FROM impuesto.convenio WHERE id_convenio = $1', [application.id_convenio])).rows[0].id_solicitud, user: null }, client)).contribuyente,
     };
 
     console.log(fraction);
@@ -2571,6 +2572,7 @@ export const insertSettlements = async ({ process, user }) => {
 
 export const addTaxApplicationPayment = async ({ payment, interest, application, user }) => {
   const client = await pool.connect();
+  let recibo: any = undefined;
   try {
     await client.query('BEGIN');
     if (!!interest) {
@@ -2615,13 +2617,15 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
         ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0]
         : (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.APROBARCAJERO])).rows[0];
 
-    await client.query('COMMIT');
-    const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
-    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente.id]);
     if (user.tipoUsuario !== 4) {
       if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
-      applicationInstance.recibo = await generateReceipt({ application });
+      recibo = await generateReceipt({ application });
     }
+    await client.query('COMMIT');
+    const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
+    applicationInstance.recibo = recibo;
+    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente?.id]);
+
     await sendNotification(
       user,
       `Se ${user.tipoUsuario === 4 ? `han ingresado los datos de pago` : `ha validado el pago`} de una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
@@ -2632,7 +2636,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
     );
     return { status: 200, message: 'Pago añadido para la solicitud declarada', solicitud: applicationInstance };
   } catch (error) {
-    client.query('ROLLBACK');
+    await client.query('ROLLBACK');
     console.log(error);
     throw {
       status: 500,
@@ -2715,7 +2719,7 @@ const updateFiscalCredit = async ({ id, user, amount, client }) => {
   const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
     ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
     : undefined;
-  const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', fixatedAmount(amount), false] : [fixatedApplication.contribuyente.id, 'NATURAL', fixatedAmount(amount), false];
+  const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', fixatedAmount(amount), false, id] : [fixatedApplication.contribuyente.id, 'NATURAL', fixatedAmount(amount), false, id];
   await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
 };
 
@@ -2726,6 +2730,7 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
     const fraccion = (await client.query(queries.GET_FRACTION_BY_AGREEMENT_AND_FRACTION_ID, [agreement, fragment])).rows[0];
     const pagoSum = payment.map((e) => +e.costo).reduce((e, i) => e + +fixatedAmount(i), 0);
     if (+fixatedAmount(pagoSum) < +fixatedAmount(fraccion.monto)) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
+    const creditoPositivo = +fixatedAmount(pagoSum) - +fixatedAmount(+fraccion.monto);
     await Promise.all(
       payment.map(async (el) => {
         if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
@@ -2746,6 +2751,11 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
     if (fractions.every((x) => x.aprobado)) {
       const convenio = (await client.query('SELECT c.* FROM impuesto.convenio c INNER JOIN impuesto.fraccion f ON c.id_convenio = f.id_convenio WHERE f.id_fraccion = $1', [fragment])).rows[0];
       const applicationState = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [convenio.id_solicitud, applicationStateEvents.APROBARCAJERO])).rows[0].state;
+    }
+    if (user.tipoUsuario !== 4) {
+      const convenio = (await client.query('SELECT c.* FROM impuesto.convenio c INNER JOIN impuesto.fraccion f ON c.id_convenio = f.id_convenio WHERE f.id_fraccion = $1', [fragment])).rows[0];
+      if (creditoPositivo > 0) await updateFiscalCredit({ id: convenio.id_solicitud, user, amount: creditoPositivo, client });
+      // applicationInstance.recibo = await generateReceipt({ application });
     }
     await client.query('COMMIT');
     const applicationInstance = await getAgreementFractionById({ id: fragment });
@@ -2788,7 +2798,8 @@ export const validateApplication = async (body, user, client) => {
         ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
         : undefined;
 
-      const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', saldoPositivo, false] : [fixatedApplication.contribuyente.id, 'NATURAL', saldoPositivo, false];
+      const payload =
+        fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', saldoPositivo, false, body.idTramite] : [fixatedApplication.contribuyente.id, 'NATURAL', saldoPositivo, false, body.idTramite];
       await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
     }
 
@@ -2841,7 +2852,10 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
         ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
         : undefined;
       console.log('validateAgreementFraction -> idReferenciaMunicipal', fixatedApplication.contribuyente.tipoContribuyente, idReferenciaMunicipal, body.idTramite);
-      const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', saldoPositivo, false] : [fixatedApplication.contribuyente.id, 'NATURAL', saldoPositivo, false];
+      const payload =
+        fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO'
+          ? [idReferenciaMunicipal, 'JURIDICO', saldoPositivo, false, agreement.id_solicitud]
+          : [fixatedApplication.contribuyente.id, 'NATURAL', saldoPositivo, false, agreement.id_solicitud];
       await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
     }
     const applicationInstance = await getAgreementFractionById({ id: body.idTramite });

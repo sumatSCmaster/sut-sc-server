@@ -1092,7 +1092,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     'SELECT vt.id_usuario as id FROM impuesto.verificacion_telefono vt INNER JOIN impuesto.registro_municipal_verificacion rmv USING (id_verificacion_telefono)\
        INNER JOIN impuesto.registro_municipal rm USING (id_registro_municipal) INNER JOIN impuesto.contribuyente c USING (id_contribuyente) WHERE\
         rm.id_registro_municipal = $1',
-  CREATE_OR_UPDATE_FISCAL_CREDIT: 'SELECT * FROM impuesto.insert_credito($1, $2, $3, $4)',
+  CREATE_OR_UPDATE_FISCAL_CREDIT: 'SELECT * FROM impuesto.insert_credito($1, $2, $3, $4, $5)',
   BRANCH_IS_ONE_BEST_PAYERS: `SELECT * FROM impuesto.liquidacion WHERE id_registro_municipal = $1 AND id_registro_municipal IN (
     SELECT id_registro_municipal FROM (SELECT id_registro_municipal, SUM(monto) AS monto 
     FROM Impuesto.liquidacion
@@ -1597,6 +1597,12 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     WHERE id_tipo_tramite IN (28, 36)
     AND EXTRACT('month' from fecha_culminacion) = EXTRACT('month' from $1::date)
     AND EXTRACT('year' from fecha_culminacion) = EXTRACT('year' from $1::date)`,
+
+  SET_NON_APPROVED_STATE_FOR_APPLICATION: 'UPDATE impuesto.solicitud SET aprobado = false, fecha_aprobado = null WHERE id_solicitud = $1;',
+  SET_NON_APPROVED_STATE_FOR_AGREEMENT_FRACTION: 'UPDATE impuesto.fraccion SET aprobado = false, fecha_aprobado = null WHERE id_fraccion = $1;',
+  SET_NON_APPROVED_STATE_FOR_PROCEDURE: 'UPDATE tramite SET aprobado = false, fecha_culminacion = null WHERE id_tramite = $1;',
+  DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT: 'DELETE FROM pago WHERE id_procedimiento = $1 AND concepto = $2;',
+  DELETE_FISCAL_CREDIT_BY_APPLICATION_ID: 'DELETE FROM impuesto.credito_fiscal WHERE id_solicitud = $1;',
 
   gtic: {
     GET_NATURAL_CONTRIBUTOR:
