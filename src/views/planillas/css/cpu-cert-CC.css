@@ -1,6 +1,6 @@
 body {
   font-family: Calibri, Helvetica, sans-serif;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 h1 {
@@ -22,7 +22,6 @@ h3 {
 
 .certificado {
   border: double black 5px;
-  margin-top: 20px;
 }
 
 .datos-certificado table,
@@ -31,6 +30,7 @@ td {
   border-collapse: separate;
   border-spacing: 0 15px;
   text-transform: uppercase;
+  border: none;
 }
 .datos-certificado th {
   width: 25%;
