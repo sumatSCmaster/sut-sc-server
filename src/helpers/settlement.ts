@@ -2617,13 +2617,12 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
         ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0]
         : (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.APROBARCAJERO])).rows[0];
 
-    if (user.tipoUsuario !== 4) {
-      if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
-      recibo = await generateReceipt({ application });
-    }
     await client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
-    applicationInstance.recibo = recibo;
+    if (user.tipoUsuario !== 4) {
+      if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
+      applicationInstance.recibo = await generateReceipt({ application });
+    }
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente?.id]);
 
     await sendNotification(
@@ -4109,10 +4108,10 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
     const payment = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_DEST, [application.id, 'IMPUESTO'])).rows;
     const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [payment[0].id_usuario, ``, application.razonSocial, referencia?.referencia_municipal, 'ESPECIAL', application.id]);
     let idRecibo;
-    if(!recibo.rows[0]){
-      idRecibo = (await client.query('SELECT recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [application.id])).rows[0].id_registro_recibo
-    }else {
-      idRecibo = recibo.rows[0].id_registro_recibo; 
+    if (!recibo.rows[0]) {
+      idRecibo = (await client.query('SELECT recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [application.id])).rows[0].id_registro_recibo;
+    } else {
+      idRecibo = recibo.rows[0].id_registro_recibo;
     }
     moment.locale('es');
     let certInfoArray: any[] = [];
