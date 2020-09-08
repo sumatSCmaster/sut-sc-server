@@ -914,3 +914,37 @@ export const getStatsSedematWithDate = async ({ institution, date }: { instituti
     client.release();
   }
 };
+
+export const bsByBranchInterval = async ({ institution, startingDate, endingDate }) => {
+  console.log('bsByBranchInterval -> endingDate', endingDate);
+  console.log('bsByBranchInterval -> startingDate', startingDate);
+  const client = await pool.connect();
+  const totalSolvencyRate: any[] = [];
+  const totalSettlements: any[] = [];
+  try {
+    // if (institution !== Instituciones.SEDEMAT) throw { status: 403, message: 'Sólo un miembro de SEDEMAT puede acceder a esta información' };
+    const now = moment().locale('ES');
+    const requestedDateS = moment(startingDate).locale('ES');
+    console.log('//if -> requestedDateS', requestedDateS);
+    const requestedDateE = moment(endingDate).locale('ES');
+    console.log('//if -> requestedDateE', requestedDateE);
+    // 2. Bs por ramo por día liquidado/ingresado (4 ramos principales reflejado en gráfico de torta)
+    const totalBsPorRamo = (await client.query(queries.TOTAL_BS_BY_BRANCH_IN_MONTH_WITH_INTERVAL, [requestedDateS.format('MM-DD-YYYY'), requestedDateE.add(1, 'day').format('MM-DD-YYYY')])).rows
+      // .filter((el) => moment(date).endOf('month').startOf('day').isSameOrAfter(moment(el.fecha)))
+      .map((el) => {
+        el.valor = +fixatedAmount(el.valor);
+        return el;
+      });
+
+    return { status: 200, message: 'Estadisticas obtenidas!', estadisticas: { totalBsPorRamo } };
+  } catch (error) {
+    console.log(error);
+    throw {
+      status: error.status || 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener estadisticas de SEDEMAT',
+    };
+  } finally {
+    client.release();
+  }
+};
