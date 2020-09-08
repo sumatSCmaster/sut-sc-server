@@ -4093,8 +4093,13 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     const referencia = (await client.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
     const payment = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_DEST, [application.id, 'IMPUESTO'])).rows;
-    const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [payment[0].id_usuario, ``, application.razonSocial, referencia?.referencia_municipal, 'ESPECIAL']);
-    const idRecibo = recibo.rows[0].id_registro_recibo;
+    const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [payment[0].id_usuario, ``, application.razonSocial, referencia?.referencia_municipal, 'ESPECIAL', application.id]);
+    let idRecibo;
+    if(!recibo.rows[0]){
+      idRecibo = (await client.query('SELECT recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [application.id])).rows[0].id_registro_recibo
+    }else {
+      idRecibo = recibo.rows[0].id_registro_recibo; 
+    }
     moment.locale('es');
     let certInfoArray: any[] = [];
     let certAE;
