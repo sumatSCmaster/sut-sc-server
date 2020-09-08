@@ -73,4 +73,10 @@ router.patch('/sedemat/estate', async (req, res) => {
   if (data) res.status(data.status).json(data);
 })
 
+router.patch('/sedemat/estate/date', async (req, res) => {
+  const [error, data] = await fulfill(updateEstateDate(req.body));
+  console.log(error)
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+})
 export default router;

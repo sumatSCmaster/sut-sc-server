@@ -3,6 +3,7 @@ import queries from '@utils/queries';
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { PoolClient } from 'pg';
 import { Tramite, Inmueble } from '@root/interfaces/sigt';
+import moment from 'moment';
 
 const pool = Pool.getInstance();
 
@@ -107,11 +108,18 @@ export const taxPayerEstatesByRIM = async ({ typeDoc, rif, rim }) => {
       throw new Error('Contribuyente no encontrado');
     }
     const estates = (await client.query(queries.GET_ESTATES_BY_RIM, [rim])).rows;
+
     const estatesWithAppraisals = await Promise.all(estates.map((row) => {
       return new Promise(async (res, rej) => {
+        const liq = (await client.query('SELECT fecha_liquidacion WHERE id_liquidacion = $1', [row.id_liquidacion])).rows[0]
+        let fecha;
+        if(liq){
+          fecha = moment(liq.fecha_liquidacion).add(1, 'M');
+        }
         res({
           ...row,
-          avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [row.id])).rows
+          avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [row.id])).rows,
+          fechaInicio: fecha || null
         })
       })
     }));
@@ -139,9 +147,15 @@ export const taxPayerEstatesByNaturalCont = async ({ typeDoc, doc }) => {
     const estates = (await client.query(queries.GET_ESTATES_BY_NATURAL_CONTRIBUTOR, [contributor.rows[0].id])).rows;
     const estatesWithAppraisals = await Promise.all(estates.map((row) => {
       return new Promise(async (res, rej) => {
+        const liq = (await client.query('SELECT fecha_liquidacion WHERE id_liquidacion = $1', [row.id_liquidacion])).rows[0]
+        let fecha;
+        if(liq){
+          fecha = moment(liq.fecha_liquidacion).add(1, 'M');
+        }
         res({
           ...row,
-          avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [row.id])).rows
+          avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [row.id])).rows,
+          fechaInicio: fecha || null
         })
       })
     }));
@@ -272,6 +286,33 @@ export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosC
   }
 }
 
+export const updateEstateDate = async ({ id, date }) => {
+  const client = await pool.connect();
+  try{
+    await client.query('BEGIN');
+    const fromDate = moment(date).subtract(1, 'M');
+    const ghostSettlement = (
+      await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+        null,
+        0.0,
+        'IU',
+        'Pago ordinario',
+        { month: fromDate.toDate().toLocaleString('es-ES', { month: 'long' }), year: fromDate.year(), desglose:[{inmueble: id}] },
+        fromDate.endOf('month').format('MM-DD-YYYY'),
+        null
+      ])
+    ).rows[0];
+    await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [fromDate.format('MM-DD-YYYY'), ghostSettlement.id_liquidacion]);
+    let updt = await client.query('UPDATE inmueble_urbano SET id_liquidacion = $1 WHERE id_inmueble = $2', [ghostSettlement.id_liquidacion, id])
+    await client.query('COMMIT');
+    return { status: 200, message: updt.rowCount > 0 ? 'Fecha enlazada' : 'No se actualizo un inmueble' }
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+}
 
 export const linkCommercial = async ({ codCat, rim, relacion }) => {
   const client = await pool.connect();
