@@ -1280,7 +1280,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     LEFT JOIN impuesto.ramo USING (id_ramo)
   )
 
-    SELECT COALESCE(SUM(monto),0) AS valor,descripcion_corta FROM solicitud_view v 
+    SELECT COALESCE(SUM(monto),0) AS valor,descripcion_corta AS ramo FROM solicitud_view v 
   WHERE descripcion_corta IN ('AE','SM','IU','PP')
   AND fecha BETWEEN $1::date AND $2::date
   GROUP BY descripcion_corta ORDER BY valor`,

@@ -929,12 +929,20 @@ export const bsByBranchInterval = async ({ institution, startingDate, endingDate
     const requestedDateE = moment(endingDate).locale('ES');
     console.log('//if -> requestedDateE', requestedDateE);
     // 2. Bs por ramo por día liquidado/ingresado (4 ramos principales reflejado en gráfico de torta)
-    const totalBsPorRamo = (await client.query(queries.TOTAL_BS_BY_BRANCH_IN_MONTH_WITH_INTERVAL, [requestedDateS.format('MM-DD-YYYY'), requestedDateE.add(1, 'day').format('MM-DD-YYYY')])).rows
-      // .filter((el) => moment(date).endOf('month').startOf('day').isSameOrAfter(moment(el.fecha)))
-      .map((el) => {
-        el.valor = +fixatedAmount(el.valor);
-        return el;
-      });
+    const { rows: result, rowCount: totalCount } = await client.query(queries.TOTAL_BS_BY_BRANCH_IN_MONTH_WITH_INTERVAL, [requestedDateS.format('MM-DD-YYYY'), requestedDateE.add(1, 'day').format('MM-DD-YYYY')]);
+    // .filter((el) => moment(date).endOf('month').startOf('day').isSameOrAfter(moment(el.fecha)))
+    const totalBsPorRamo =
+      totalCount > 0
+        ? result.map((el) => {
+            el.valor = +fixatedAmount(el.valor);
+            return el;
+          })
+        : [
+            { ramo: 'AE', valor: 0 },
+            { ramo: 'SM', valor: 0 },
+            { ramo: 'IU', valor: 0 },
+            { ramo: 'PP', valor: 0 },
+          ];
 
     return { status: 200, message: 'Estadisticas obtenidas!', estadisticas: { totalBsPorRamo } };
   } catch (error) {
