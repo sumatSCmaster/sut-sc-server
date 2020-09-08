@@ -122,7 +122,10 @@ const reversePaymentCase = switchcase({
       await client.query(queries.UPDATE_FRACTION_STATE, [id, REVERSARPAGO]);
       await client.query(queries.SET_NON_APPROVED_STATE_FOR_AGREEMENT_FRACTION, [id]);
 
-      const application = await getApplicationsAndSettlementsByIdNots({ id: (await client.query('SELECT id_solicitud FROM impuesto.convenio WHERE id_convenio = $1', [id])).rows[0].id_solicitud, user: null }, client);
+      const application = await getApplicationsAndSettlementsByIdNots(
+        { id: (await client.query('SELECT id_solicitud FROM impuesto.fraccion INNER JOIN impuesto.convenio USING (id_convenio) WHERE id_fraccion = $1', [id])).rows[0].id_solicitud, user: null },
+        client
+      );
       await client.query(queries.DELETE_FISCAL_CREDIT_BY_APPLICATION_ID, [id]);
       if (application.state === 'finalizado') {
         await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id, REVERSARPAGO]);
