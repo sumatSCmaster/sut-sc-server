@@ -1282,7 +1282,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
 
     SELECT COALESCE(SUM(monto),0) AS valor,descripcion_corta AS ramo FROM solicitud_view v 
   WHERE descripcion_corta IN ('AE','SM','IU','PP')
-  AND fecha BETWEEN $1::date AND $2::date AND v.aprobado = true
+  AND fecha_aprobado BETWEEN $1::date AND $2::date
   GROUP BY descripcion_corta ORDER BY valor`,
 
   //  3. Total recaudado por mes (gráfico de linea con anotaciones)
