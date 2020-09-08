@@ -2572,6 +2572,7 @@ export const insertSettlements = async ({ process, user }) => {
 
 export const addTaxApplicationPayment = async ({ payment, interest, application, user }) => {
   const client = await pool.connect();
+  let recibo: any = undefined;
   try {
     await client.query('BEGIN');
     if (!!interest) {
@@ -2616,13 +2617,15 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
         ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0]
         : (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.APROBARCAJERO])).rows[0];
 
-    await client.query('COMMIT');
-    const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
-    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente.id]);
     if (user.tipoUsuario !== 4) {
       if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
-      applicationInstance.recibo = await generateReceipt({ application });
+      recibo = await generateReceipt({ application });
     }
+    await client.query('COMMIT');
+    const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
+    applicationInstance.recibo = recibo;
+    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente?.id]);
+
     await sendNotification(
       user,
       `Se ${user.tipoUsuario === 4 ? `han ingresado los datos de pago` : `ha validado el pago`} de una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
@@ -2633,7 +2636,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
     );
     return { status: 200, message: 'Pago añadido para la solicitud declarada', solicitud: applicationInstance };
   } catch (error) {
-    client.query('ROLLBACK');
+    await client.query('ROLLBACK');
     console.log(error);
     throw {
       status: 500,
