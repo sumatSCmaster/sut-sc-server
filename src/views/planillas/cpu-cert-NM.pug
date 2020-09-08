@@ -4,7 +4,7 @@ block css
   link(rel="stylesheet", href="css/cpu-cert-CC.css")
 
 block content
-  main.certificado(style='padding-top: 100px')
+  main.certificado
     header.pageHeader.row
     .header-table
       #fecha-exp(style='width: 30%;')
@@ -79,11 +79,3 @@ block content
       .grow1
         h6 Uni:
         p #{datos.funcionario.codigoNomenclatura.uni || 'N/A' }
-    .funcionarios.row
-      .grow1
-        p.grow1 Aprobado:
-        h4 Ing. Marta Castillo
-        h4 Directora de Catastro
-      .grow1
-        p.grow1 Revisado:
-        h4 Jefe de Departamento        
