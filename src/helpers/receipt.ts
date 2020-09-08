@@ -14,21 +14,29 @@ const dev = process.env.NODE_ENV !== 'production';
 const pool = Pool.getInstance();
 
 export const generateReceipt = async (payload: { application: number }) => {
+  
   const client = await pool.connect();
-  const applicationView = (await client.query(queries.GET_APPLICATION_VIEW_BY_ID, [payload.application])).rows[0];
-  const payment = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_GROUP_BY_PAYMENT_TYPE, [applicationView.id])).rows;
-  const paymentRows = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [applicationView.id, 'IMPUESTO'])).rows;
-  console.log('payment', payment);
-  console.log('paymentRows', paymentRows);
-  const paymentTotal = payment.reduce((prev, next) => prev + +next.monto, 0);
-  console.log('paymentTotal', paymentTotal);
-  const cashier = (await client.query(queries.GET_USER_INFO_BY_ID, [paymentRows[0].id_usuario])).rows;
-  const breakdownData = (await client.query(queries.GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID, [applicationView.id])).rows;
-  const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [applicationView.idLiquidacion])).rows[0];
-  console.log('breakdowndata', breakdownData);
-  const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [paymentRows[0].id_usuario, ``, applicationView.razonSocial, referencia?.referencia_municipal, 'IMPUESTO']);
-  const idRecibo = recibo.rows[0].id_registro_recibo;
   try {
+    await client.query('BEGIN');
+    const applicationView = (await client.query(queries.GET_APPLICATION_VIEW_BY_ID, [payload.application])).rows[0];
+    const payment = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_GROUP_BY_PAYMENT_TYPE, [applicationView.id])).rows;
+    const paymentRows = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [applicationView.id, 'IMPUESTO'])).rows;
+    console.log('payment', payment);
+    console.log('paymentRows', paymentRows);
+    const paymentTotal = payment.reduce((prev, next) => prev + +next.monto, 0);
+    console.log('paymentTotal', paymentTotal);
+    const cashier = (await client.query(queries.GET_USER_INFO_BY_ID, [paymentRows[0].id_usuario])).rows;
+    const breakdownData = (await client.query(queries.GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID, [applicationView.id])).rows;
+    const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [applicationView.idLiquidacion])).rows[0];
+    console.log('breakdowndata', breakdownData);
+    const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [paymentRows[0].id_usuario, ``, applicationView.razonSocial, referencia?.referencia_municipal, 'IMPUESTO', applicationView.id]);
+    if(!recibo.rows[0]){
+      await client.query('ROLLBACK');
+      return (await client.query('SELECT recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [applicationView.id])).rows[0].recibo
+    }
+    const idRecibo = recibo.rows[0].id_registro_recibo;  
+    await client.query('COMMIT')
+    
     return new Promise(async (res, rej) => {
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/recibo/${applicationView.id}/cierre.pdf`);
       const dir = `${process.env.SERVER_URL}/sedemat/recibo/${applicationView.id}/recibo.pdf`;
@@ -104,9 +112,10 @@ export const generateReceipt = async (payload: { application: number }) => {
       }
     });
   } catch (error) {
+    await client.query('ROLLBACK');
     throw errorMessageExtractor(error);
   } finally {
-    client.release();
+    client.release()
   }
 };
 
@@ -122,8 +131,11 @@ export const generateRepairReceipt = async (payload: { application: number; brea
   // const cashier = (await client.query(queries.GET_USER_INFO_BY_ID, [paymentRows[0]?.id_usuario])).rows;
   // const breakdownData = (await client.query(queries.GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID, [applicationView.id])).rows;
   const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [applicationView.idLiquidacion])).rows[0];
-  const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [paymentRows[0].id_usuario, ``, applicationView.razonSocial, referencia?.referencia_municipal, 'REPARO']);
-  const idRecibo = recibo.rows[0].id_registro_recibo;
+  const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [paymentRows[0].id_usuario, ``, applicationView.razonSocial, referencia?.referencia_municipal, 'REPARO', applicationView.id]);
+    if(!recibo.rows[0]){
+      return (await client.query('SELECT recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [applicationView.id])).rows[0].recibo
+    }
+  const idRecibo = recibo.rows[0].id_registro_recibo; 
   // console.log('breakdowndata', breakdownData)
   const aforos: any[] = [];
   payload.breakdownData.map((el) => el.desglose.map((x) => aforos.push({ ...x, fecha: el.fecha })));
