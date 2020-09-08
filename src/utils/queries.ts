@@ -1272,6 +1272,19 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
    AND EXTRACT('year' FROM z.fecha) = EXTRACT('year' FROM $3::date)
   GROUP BY z.fecha, z.ramo ORDER BY z.fecha`,
 
+  //  Con intervalo proporcionado
+  TOTAL_BS_BY_BRANCH_IN_MONTH_WITH_INTERVAL: `WITH solicitud_view AS (
+    SELECT * FROM impuesto.solicitud S
+    RIGHT JOIN impuesto.liquidacion l USING (id_solicitud)
+    LEFT JOIN impuesto.subramo USING (id_subramo)
+    LEFT JOIN impuesto.ramo USING (id_ramo)
+  )
+
+    SELECT COALESCE(SUM(monto),0) AS valor,descripcion_corta FROM solicitud_view v 
+  WHERE descripcion_corta IN ('AE','SM','IU','PP')
+  AND fecha BETWEEN $1::date AND $2::date
+  GROUP BY descripcion_corta ORDER BY valor`,
+
   //  3. Total recaudado por mes (gráfico de linea con anotaciones)
   //  Sin fecha proporcionada
   TOTAL_GAININGS_IN_MONTH: `SELECT z.fecha, COALESCE(SUM(monto),0) AS valor
