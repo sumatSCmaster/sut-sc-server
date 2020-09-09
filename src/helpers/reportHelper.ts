@@ -29,8 +29,9 @@ export const getSettlementsReport = async ({ query, reportName }) => {
       ];
 
       const sheet = workbook.addWorksheet(reportName);
-
+      console.log('sil');
       const result = await client.query(query);
+      console.log('si2');
 
       //   console.log(result);
 
@@ -39,9 +40,9 @@ export const getSettlementsReport = async ({ query, reportName }) => {
       });
       sheet.addRows(result.rows, 'i');
 
-      // sheet.eachRow((row, rownumber) => {
-      //   console.log(rownumber, 'row:', row);
-      // });
+      sheet.eachRow((row, rownumber) => {
+        console.log(rownumber, 'row:', row);
+      });
       if (dev) {
         const dir = `../../archivos/${reportName}.xlsx`;
         const stream = fs.createWriteStream(require('path').resolve(`./archivos/${reportName}.xlsx`));
@@ -67,7 +68,8 @@ export const getSettlementsReport = async ({ query, reportName }) => {
       }
     });
   } catch (error) {
-    throw errorMessageExtractor(error);
+    console.log(error);
+    return errorMessageExtractor(error);
   } finally {
     client.release();
   }
@@ -93,9 +95,8 @@ export const executeReport = async () => {
        FROM impuesto.contribuyente c
        INNER JOIN (SELECT * FROM solicitudes) s USING (id_contribuyente) FULL OUTER JOIN (SELECT * FROM liquidaciones) l USING (id_solicitud) 
        LEFT JOIN impuesto.registro_municipal rm USING (id_registro_municipal)
-       ORDER BY l.fecha_liquidacion, l.id_registro_municipal
-       `,
-        reportName: 'LIQUIDACIONES SEPTIEMBRE (SUT)',
+       ORDER BY l.fecha_liquidacion, l.id_registro_municipal`,
+        reportName: 'LIQUIDACIONES SEPTIEMBRE SIIIII (SUT)',
       },
     ].map(async (el, i) => {
       console.log(i + 1);

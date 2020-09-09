@@ -33,7 +33,7 @@ export const getAEDeclarationsForAlteration = async ({ document, reference, docT
               exonerado,
               montoDeclarado: fixatedAmount(d.montoDeclarado),
               montoCobrado: d.montoCobrado,
-              // costoSolvencia: UTMM * 2,
+              costoSolvencia: UTMM * 2,
             };
           })
         );
