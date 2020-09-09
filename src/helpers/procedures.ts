@@ -453,6 +453,11 @@ export const procedureInit = async (procedure, user: Usuario) => {
   try {
     client.query('BEGIN');
     datosP = { usuario: datos };
+    if (tipoTramite === 26) {
+      const { tipoDocumento, documento, registroMunicipal } = datos.contribuyente;
+      const hasActiveAgreement = (await client.query(queries.CONTRIBUTOR_HAS_ACTIVE_AGREEMENT_PROCEDURE, [tipoDocumento, documento, registroMunicipal])).rowCount > 0;
+      if (hasActiveAgreement) throw { status: 403, message: 'El contribuyente ya posee una solicitud de beneficio en revision' };
+    }
     const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify(datosP), user.id])).rows[0];
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.idTramite])).rows[0];
@@ -526,7 +531,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
     client.query('ROLLBACK');
     console.log(error);
     throw {
-      status: 500,
+      status: error.status || 500,
       error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || error.message || 'Error al iniciar el tramite',
     };

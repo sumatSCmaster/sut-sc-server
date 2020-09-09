@@ -1878,6 +1878,10 @@ export const getEntireDebtsForContributor = async ({ reference, docType, documen
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const contribuyente = (await client.query(queries.GET_CONTRIBUTOR_BY_DOCUMENT_AND_DOC_TYPE, [document, docType])).rows[0];
     if (!contribuyente) return { status: 404, message: 'El contribuyente no está registrado en SEDEMAT' };
+    const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contribuyente.id_contribuyente])).rows[0];
+    if (typeUser === 'JURIDICO' && !branch) throw { status: 404, message: 'La sucursal proporcionada no existe' };
+    const hasActiveAgreement = (await client.query(queries.CONTRIBUTOR_HAS_ACTIVE_AGREEMENT_PROCEDURE, [docType, document, reference])).rowCount > 0;
+    if (hasActiveAgreement) throw { status: 403, message: 'El contribuyente ya posee una solicitud de beneficio en revision' };
     const liquidaciones = (typeUser === 'NATURAL'
       ? await client.query(queries.GET_APPLICATION_DEBTS_FOR_NATURAL_CONTRIBUTOR, [contribuyente.id_contribuyente])
       : await client.query(queries.GET_APPLICATION_DEBTS_BY_MUNICIPAL_REGISTRY, [reference, contribuyente.id_contribuyente])
@@ -1907,9 +1911,9 @@ export const getEntireDebtsForContributor = async ({ reference, docType, documen
   } catch (error) {
     console.log(error);
     throw {
-      status: 500,
+      status: error.status || 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener solicitudes y liquidaciones',
     };
   } finally {
     client.release();
