@@ -1535,26 +1535,32 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   //  1. Tasa de Default Intermensual (TDI)
   //  TDI = Cantidad de Contribuyentes que pagaron mes anterior pero no mes actual (gráfico de barra o linea por mes, incluyendo coeficiente y cantidad de contribuyentes)
   TOTAL_CONTRIBUTOR_DEFAULT_RATE: `WITH solicitudesae AS (
-        SELECT id_solicitud 
-        FROM impuesto.liquidacion l
-        WHERE Id_subramo = 10 
-        AND datos#>>'{fecha, month}' = $1 AND datos#>>'{fecha, year}' = $2
+    SELECT id_registro_municipal 
+    FROM impuesto.liquidacion l
+    WHERE Id_subramo = 10 
+    AND datos#>>'{fecha, month}' = $1 AND datos#>>'{fecha, year}' = $2
+    AND id_registro_municipal IS NOT NULL
+    GROUP BY id_registro_municipal
     ),
     solicitudespasado AS (
-        SELECT id_solicitud 
+        SELECT id_registro_municipal
         FROM impuesto.liquidacion l
         WHERE Id_subramo = 10 
         AND datos#>>'{fecha, month}' = $3 AND datos#>>'{fecha, year}' = $4
-    )
+    AND id_registro_municipal IS NOT NULL
+    GROUP BY id_registro_municipal
+    )	
     SELECT COUNT(*) AS valor
-    FROM impuesto.contribuyente
-    WHERE id_contribuyente IN (
-        SELECT id_contribuyente 
-        FROM (SELECT * FROM impuesto.solicitud WHERE id_solicitud IN (SELECT * FROM solicitudesae)) s
-    ) AND id_contribuyente NOT IN (
-        SELECT id_contribuyente
-        FROM (SELECT * FROM impuesto.solicitud WHERE id_solicitud IN (SELECT * FROM solicitudespasado)) s
-    );`,
+    FROM impuesto.registro_municipal
+    WHERE id_registro_municipal 
+    NOT IN (
+          SELECT id_registro_municipal FROM solicitudesae
+      )
+    AND id_registro_municipal
+    IN (
+        SELECT id_registro_municipal FROM solicitudespasado
+    );
+`,
 
   //  2. Promedio Días para Pago (PDP)
   //  PDP = Promedio de días que demoran los contribuyentes en realizar pagos vencidos medidos por mes (gráfico de linea o de barra)
