@@ -57,3 +57,53 @@ export const getAEDeclarationsForAlteration = async ({ document, reference, docT
     client.release();
   }
 };
+
+export const alterateAESettlements = async ({ settlements, type }) => {
+  const client = await pool.connect();
+  try {
+    enum tiposCorreccion {
+      complementaria = 'complementaria',
+      sustitutiva = 'sustitutiva',
+    }
+    if (!tiposCorreccion[type]) throw { status: 404, message: 'Debe definir un tipo de declaracion correctiva valida' };
+    await client.query('BEGIN');
+    const liqs = await Promise.all(
+      settlements.map(async (s) => {
+        const liquidacion = (await client.query(queries.GET_SETTLEMENT_BY_ID, [s.id])).rows[0];
+        delete liquidacion.datos[tiposCorreccion.complementaria];
+        delete liquidacion.datos[tiposCorreccion.sustitutiva];
+        const newDatos = { ...liquidacion.datos, desglose: s.desglose, [tiposCorreccion[type]]: true };
+        const newSettlement = (await client.query('UPDATE impuesto.liquidacion SET datos = $1, monto = $2 WHERE id_liquidacion = $3 RETURNING *', [newDatos, fixatedAmount(s.monto), s.id])).rows[0];
+        return {
+          id: newSettlement.id_liquidacion,
+          ramo: branchNames.AE,
+          fecha: newSettlement.datos.fecha,
+          monto: fixatedAmount(newSettlement.monto),
+          certificado: newSettlement.certificado,
+          recibo: newSettlement.recibo,
+          desglose: newSettlement.datos.desglose,
+        };
+      })
+    );
+    await client.query('COMMIT');
+    return { status: 201, message: `Declaracion ${type} de Actividades Economicas realizada satisfactoriamente`, liqs };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: error.status || 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || `Error al realizar la declaracion correctiva`,
+    };
+  } finally {
+    client.release();
+  }
+};
+
+const branchNames = {
+  AE: 'ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES',
+  SM: 'SERVICIOS MUNICIPALES',
+  IU: 'PROPIEDAD INMOBILIARIA',
+  PP: 'PROPAGANDAS Y AVISOS COMERCIALES',
+  SAE: 'TASA ADMINISTRATIVA DE SOLVENCIA DE AE',
+};

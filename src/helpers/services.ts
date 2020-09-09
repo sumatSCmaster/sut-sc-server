@@ -19,7 +19,7 @@ const template = async (props) => {
     client.query('ROLLBACK');
     console.log(error);
     throw {
-      status: 500,
+      status: error.status || 500,
       error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || error.message || '',
     };

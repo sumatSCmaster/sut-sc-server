@@ -1218,7 +1218,7 @@ const procedureEvents = switchcase({
   },
   rc: { iniciado: 'procesar_rc', enproceso: { true: 'aprobar_rc', false: 'rechazar_rc' } },
   bc: { iniciado: 'revisar_bc', enrevision: { true: 'aprobar_bc', false: 'rechazar_bc' } },
-  lae: { iniciado: 'validar_lae', validando: 'enproceso_lae', enproceso: { true: 'revisar_lae', false: 'rechazar_lae' }, enrevision: { true: 'aprobar_lae', false: 'rechazar_lae' } },
+  lae: { iniciado: 'validar_lae', validando: 'enproceso_lae', ingresardatos: 'validar_lae', enproceso: { true: 'revisar_lae', false: 'rechazar_lae' }, enrevision: { true: 'aprobar_lae', false: 'rechazar_lae' } },
   lic: {
     iniciado: 'enproceso_lic',
     enproceso: 'inspeccion_lic',
