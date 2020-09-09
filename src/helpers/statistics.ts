@@ -640,7 +640,7 @@ export const getStatsSedemat = async ({ institution }: { institution: number }) 
     const totalBsByBranch = (await client.query(queries.TOTAL_BS_BY_BRANCH_IN_MONTH, [moment().startOf('month').format('MM-DD-YYYY'), moment().endOf('month').format('MM-DD-YYYY')])).rows
       .filter((el) => moment().startOf('day').isSame(moment(el.fecha)))
       .map((el) => {
-        el.valor = +fixatedAmount(el.valor);
+        el.valor = fixatedAmount(el.valor);
         el.fecha = moment(el.fecha).format('DD/MM');
         return el;
       });
@@ -648,7 +648,7 @@ export const getStatsSedemat = async ({ institution }: { institution: number }) 
     const totalGainings = (await client.query(queries.TOTAL_GAININGS_IN_MONTH, [moment().startOf('month').format('MM-DD-YYYY'), moment().endOf('month').format('MM-DD-YYYY')])).rows
       .filter((el) => moment().startOf('day').isSameOrAfter(moment(el.fecha)))
       .map((el) => {
-        el.valor = +fixatedAmount(el.valor);
+        el.valor = fixatedAmount(el.valor);
         el.fecha = moment(el.fecha).format('DD/MM');
         return el;
       });
@@ -698,7 +698,7 @@ export const getStatsSedemat = async ({ institution }: { institution: number }) 
     );
     console.log(TDI);
     TDI.reduce((x, j) => {
-      j.coeficiente = +fixatedAmount(isFiniteNumber(j.valor / x));
+      j.coeficiente = fixatedAmount(isFiniteNumber(j.valor / x));
       return j.valor;
     }, 0);
     // 2. Promedio Días para Pago (PDP)
@@ -707,7 +707,7 @@ export const getStatsSedemat = async ({ institution }: { institution: number }) 
       new Array(now.startOf('month').diff(moment('08-01-2020'), 'month') + 1).fill({}).map(async (el, i) => {
         const pivotDate = moment('08-01-2020').locale('ES').add(i, 'M');
         const { promedio, limiteSuperior } = (await client.query(queries.TOTAL_PAYMENT_DAYS_AVERAGE_IN_MONTH_WITH_DATE, [pivotDate.format('MM-DD-YYYY')])).rows[0];
-        return { mes: fixMonth(pivotDate.format('MMMM')), anio: pivotDate.year(), promedio: +fixatedAmount(promedio), limiteSuperior };
+        return { mes: fixMonth(pivotDate.format('MMMM')), anio: pivotDate.year(), promedio: fixatedAmount(promedio), limiteSuperior };
       })
     );
     // 3. Tasa Nuevas Licencias (TNL)
@@ -716,7 +716,7 @@ export const getStatsSedemat = async ({ institution }: { institution: number }) 
       new Array(now.startOf('month').diff(moment('08-01-2020'), 'month') + 1).fill({}).map(async (el, i) => {
         const pivotDate = moment('08-01-2020').locale('ES').add(i, 'M');
         const { coeficiente, valor } = (await client.query(queries.TOTAL_NEW_LICENSES_IN_MONTH_WITH_DATE, [pivotDate.format('MM-DD-YYYY')])).rows[0];
-        return { mes: fixMonth(pivotDate.format('MMMM')), anio: pivotDate.year(), coeficiente: +fixatedAmount(coeficiente), valor: +valor };
+        return { mes: fixMonth(pivotDate.format('MMMM')), anio: pivotDate.year(), coeficiente: fixatedAmount(coeficiente), valor: +valor };
       })
     );
 
@@ -793,7 +793,7 @@ export const getStatsSedematWithDate = async ({ institution, date }: { instituti
     const totalBsByBranch = (await client.query(queries.TOTAL_BS_BY_BRANCH_IN_MONTH_WITH_DATE, [moment(date).startOf('month').format('MM-DD-YYYY'), moment(date).endOf('month').format('MM-DD-YYYY'), requestedDate.format('MM-DD-YYYY')])).rows
       .filter((el) => moment(date).endOf('month').startOf('day').isSameOrAfter(moment(el.fecha)))
       .map((el) => {
-        el.valor = +fixatedAmount(el.valor);
+        el.valor = fixatedAmount(el.valor);
         el.fecha = moment(el.fecha).format('DD/MM');
         return el;
       });
@@ -801,7 +801,7 @@ export const getStatsSedematWithDate = async ({ institution, date }: { instituti
     const totalGainings = (await client.query(queries.TOTAL_GAININGS_IN_MONTH_WITH_DATE, [moment(date).startOf('month').format('MM-DD-YYYY'), moment(date).endOf('month').format('MM-DD-YYYY'), requestedDate.format('MM-DD-YYYY')])).rows
       .filter((el) => moment(date).endOf('month').startOf('day').isSameOrAfter(moment(el.fecha)))
       .map((el) => {
-        el.valor = +fixatedAmount(el.valor);
+        el.valor = fixatedAmount(el.valor);
         el.fecha = moment(el.fecha).format('DD/MM');
         return el;
       });
@@ -853,7 +853,7 @@ export const getStatsSedematWithDate = async ({ institution, date }: { instituti
     );
     console.log(TDI);
     TDI.reduce((x, j) => {
-      j.coeficiente = +fixatedAmount(isFiniteNumber(j.valor / x));
+      j.coeficiente = fixatedAmount(isFiniteNumber(j.valor / x));
       return j.valor;
     }, 0);
     // 2. Promedio Días para Pago (PDP)
@@ -862,7 +862,7 @@ export const getStatsSedematWithDate = async ({ institution, date }: { instituti
       new Array(now.startOf('month').diff(moment('08-01-2020'), 'month') + 1).fill({}).map(async (el, i) => {
         const pivotDate = moment('08-01-2020').locale('ES').add(i, 'M');
         const { promedio, limiteSuperior } = (await client.query(queries.TOTAL_PAYMENT_DAYS_AVERAGE_IN_MONTH_WITH_DATE, [pivotDate.format('MM-DD-YYYY')])).rows[0];
-        return { mes: fixMonth(pivotDate.format('MMMM')), anio: pivotDate.year(), promedio: +fixatedAmount(promedio), limiteSuperior };
+        return { mes: fixMonth(pivotDate.format('MMMM')), anio: pivotDate.year(), promedio: fixatedAmount(promedio), limiteSuperior };
       })
     );
     // 3. Tasa Nuevas Licencias (TNL)
@@ -871,7 +871,7 @@ export const getStatsSedematWithDate = async ({ institution, date }: { instituti
       new Array(now.startOf('month').diff(moment('08-01-2020'), 'month') + 1).fill({}).map(async (el, i) => {
         const pivotDate = moment('08-01-2020').locale('ES').add(i, 'M');
         const { coeficiente, valor } = (await client.query(queries.TOTAL_NEW_LICENSES_IN_MONTH_WITH_DATE, [pivotDate.format('MM-DD-YYYY')])).rows[0];
-        return { mes: fixMonth(pivotDate.format('MMMM')), anio: pivotDate.year(), coeficiente: +fixatedAmount(coeficiente), valor: +valor };
+        return { mes: fixMonth(pivotDate.format('MMMM')), anio: pivotDate.year(), coeficiente: fixatedAmount(coeficiente), valor: +valor };
       })
     );
 
@@ -929,12 +929,12 @@ export const bsByBranchInterval = async ({ institution, startingDate, endingDate
     const requestedDateE = moment(endingDate).locale('ES');
     console.log('//if -> requestedDateE', requestedDateE);
     // 2. Bs por ramo por día liquidado/ingresado (4 ramos principales reflejado en gráfico de torta)
-    const { rows: result, rowCount: totalCount } = await client.query(queries.TOTAL_BS_BY_BRANCH_IN_MONTH_WITH_INTERVAL, [requestedDateS.format('MM-DD-YYYY'), requestedDateE.add(1, 'day').format('MM-DD-YYYY')]);
+    const { rows: result, rowCount: totalCount } = await client.query(queries.TOTAL_BS_BY_BRANCH_IN_MONTH_WITH_INTERVAL, [requestedDateS.format('MM-DD-YYYY'), requestedDateE.format('MM-DD-YYYY')]);
     // .filter((el) => moment(date).endOf('month').startOf('day').isSameOrAfter(moment(el.fecha)))
     const totalBsPorRamo =
       totalCount > 0
         ? result.map((el) => {
-            el.valor = +fixatedAmount(el.valor);
+            el.valor = fixatedAmount(el.valor);
             return el;
           })
         : [

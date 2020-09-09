@@ -777,6 +777,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR: 'SELECT * FROM impuesto.registro_municipal WHERE referencia_municipal = $1 AND id_contribuyente = $2 LIMIT 1',
   GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR:
     'SELECT ae.* FROM impuesto.actividad_economica ae INNER JOIN impuesto.actividad_economica_sucursal aec ON ae.numero_referencia = aec.numero_referencia INNER JOIN impuesto.registro_municipal rm ON aec.id_registro_municipal = rm.id_registro_municipal WHERE rm.id_registro_municipal = $1',
+  GET_ECONOMIC_ACTIVITY_BY_ID: 'SELECT ae.* FROM impuesto.actividad_economica ae WHERE id_actividad_economica = $1',
   REGISTRY_BY_SETTLEMENT_ID: 'SELECT * FROM impuesto.registro_municipal rm INNER JOIN impuesto.liquidacion l ON l.id_registro_municipal = rm.id_registro_municipal WHERE l.id_liquidacion = $1;',
   GET_PAYMENT_FROM_REQ_ID: 'SELECT * FROM pago p LEFT JOIN banco b ON b.id_banco = p.id_banco WHERE id_procedimiento = $1 AND concepto = $2',
   GET_PAYMENT_FROM_REQ_ID_DEST: 'SELECT * FROM pago p LEFT JOIN banco b ON b.id_banco = p.id_banco_destino WHERE id_procedimiento = $1 AND concepto = $2',
@@ -1332,8 +1333,6 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   TOTAL_SETTLEMENTS_IN_MONTH: `SELECT z.fecha, COALESCE(l.liq,0) AS liquidado, COALESCE(p.pag,0) AS pagado FROM (
     SELECT fecha_liquidacion AS fecha, COUNT(*) as liq
     FROM impuesto.liquidacion l
-    LEFT JOIN impuesto.solicitud s USING (id_solicitud)
-    WHERE s.aprobado IS NOT NULL AND s.aprobado = false
     GROUP BY fecha_liquidacion) l
     FULL OUTER JOIN (
     SELECT fecha_aprobado AS fecha, COUNT(*) as pag
@@ -1342,15 +1341,13 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     WHERE s.aprobado IS NULL OR s.aprobado = true
     GROUP BY fecha_aprobado
     ) p ON p.fecha = l.fecha RIGHT JOIN (SELECT generate_series::date AS fecha FROM generate_series($1, $2, interval '1 day'))
-  z ON p.fecha::date = z.fecha::date
+  z ON p.fecha::date = z.fecha::date AND l.fecha::date = z.fecha::date
     WHERE EXTRACT('month' from z.fecha) = EXTRACT('month' from (NOW() - interval '4 hours'))
     AND EXTRACT('year' from z.fecha) = EXTRACT('year' from (NOW() - interval '4 hours')) ORDER BY z.fecha;`,
   //  Con fecha proporcionada
   TOTAL_SETTLEMENTS_IN_MONTH_WITH_DATE: `SELECT z.fecha, COALESCE(l.liq,0) AS liquidado, COALESCE(p.pag,0) AS pagado FROM (
     SELECT fecha_liquidacion AS fecha, COUNT(*) as liq
     FROM impuesto.liquidacion l
-    LEFT JOIN impuesto.solicitud s USING (id_solicitud)
-    WHERE s.aprobado IS NOT NULL AND s.aprobado = false
     GROUP BY fecha_liquidacion) l
     FULL OUTER JOIN (
     SELECT fecha_aprobado AS fecha, COUNT(*) as pag
@@ -1359,7 +1356,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     WHERE s.aprobado IS NULL OR s.aprobado = true
     GROUP BY fecha_aprobado
     ) p ON p.fecha = l.fecha RIGHT JOIN (SELECT generate_series::date AS fecha FROM generate_series($1, $2, interval '1 day'))
-  z ON p.fecha::date = z.fecha::date
+  z ON p.fecha::date = z.fecha::date AND l.fecha::date = z.fecha::date
     WHERE EXTRACT('month' from z.fecha) = EXTRACT('month' from $3::date)
     AND EXTRACT('year' from z.fecha) = EXTRACT('year' from $3::date) ORDER BY z.fecha;`,
   //Extras para el 4
