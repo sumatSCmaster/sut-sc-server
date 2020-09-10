@@ -140,11 +140,13 @@ block content
               b TRANSFERENCIA MERCANTIL
           div(style={'-webkit-flex':'4'}).td.center.border-bottom
             p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.items.find(el => el.id_banco === 19) ? (datos.metodoPago.transferencias.items.find(el => el.id_banco === 19).monto) : 0)}
+        .tr.break-page
           div(style={'-webkit-flex':'6', 'text-align':'start'}).th.border-bottom.border-right
             p(style={'padding-left':'10px'})
               b TRANSFERENCIA PROVINCIAL
           div(style={'-webkit-flex':'4'}).td.center.border-bottom
             p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.items.find(el => el.id_banco === 23) ? (datos.metodoPago.transferencias.items.find(el => el.id_banco === 23).monto) : 0)}
+        .tr.break-page
           div(style={'-webkit-flex':'6', 'text-align':'start'}).th.border-bottom.border-right
             p(style={'padding-left':'10px'})
               b TRANSFERENCIA BANCRECER
