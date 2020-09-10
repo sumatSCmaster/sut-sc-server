@@ -777,6 +777,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR: 'SELECT * FROM impuesto.registro_municipal WHERE referencia_municipal = $1 AND id_contribuyente = $2 LIMIT 1',
   GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR:
     'SELECT ae.* FROM impuesto.actividad_economica ae INNER JOIN impuesto.actividad_economica_sucursal aec ON ae.numero_referencia = aec.numero_referencia INNER JOIN impuesto.registro_municipal rm ON aec.id_registro_municipal = rm.id_registro_municipal WHERE rm.id_registro_municipal = $1',
+  GET_ECONOMIC_ACTIVITY_BY_ID: 'SELECT ae.* FROM impuesto.actividad_economica ae WHERE id_actividad_economica = $1',
   REGISTRY_BY_SETTLEMENT_ID: 'SELECT * FROM impuesto.registro_municipal rm INNER JOIN impuesto.liquidacion l ON l.id_registro_municipal = rm.id_registro_municipal WHERE l.id_liquidacion = $1;',
   GET_PAYMENT_FROM_REQ_ID: 'SELECT * FROM pago p LEFT JOIN banco b ON b.id_banco = p.id_banco WHERE id_procedimiento = $1 AND concepto = $2',
   GET_PAYMENT_FROM_REQ_ID_DEST: 'SELECT * FROM pago p LEFT JOIN banco b ON b.id_banco = p.id_banco_destino WHERE id_procedimiento = $1 AND concepto = $2',
@@ -1079,7 +1080,15 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   INSERT_DISCOUNT_FOR_SETTLEMENT: 'INSERT INTO impuesto.liquidacion_descuento (id_liquidacion, porcentaje_descuento) VALUES ($1, $2)',
   CREATE_AGREEMENT: 'INSERT INTO impuesto.convenio (id_solicitud, cantidad) VALUES ($1, $2) RETURNING *',
   CREATE_AGREEMENT_FRACTION: 'SELECT * FROM impuesto.insert_fraccion($1, $2, $3, $4)',
+  GET_ACTIVE_AE_SETTLEMENTS_FOR_ALTERATION: `SELECT l.* FROM impuesto.liquidacion l 
+    INNER JOIN impuesto.solicitud s USING (id_solicitud) 
+    WHERE l.id_registro_municipal = $1 AND id_subramo = 10 AND s.aprobado = false`,
   CHANGE_SETTLEMENT_BRANCH_TO_AGREEMENT: "UPDATE impuesto.liquidacion SET id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE id_ramo = $1 AND descripcion = 'Convenio de Pago') WHERE id_solicitud = $2 RETURNING *",
+  CONTRIBUTOR_HAS_ACTIVE_AGREEMENT_PROCEDURE: `SELECT * FROM tramites_state_with_resources WHERE tipotramite = 26 
+  AND datos #>> '{funcionario, contribuyente,tipoDocumento}' = $1 
+  AND datos #>> '{funcionario, contribuyente,documento}' = $2 
+  AND datos #>> '{funcionario, contribuyente,registroMunicipal}' = $3
+  AND state = 'enrevision';`,
   SET_SETTLEMENTS_AS_FORWARDED_BY_RIM:
     "UPDATE impuesto.liquidacion SET remitido = true WHERE id_registro_municipal = $1 AND id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = '1' AND id_ramo = $2) AND id_liquidacion IN (SELECT id_liquidacion  FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud_state ss ON ss.id = l.id_solicitud  WHERE ss.state = 'ingresardatos');",
   GET_USER_BY_APPLICATION_AND_RIM: 'SELECT id_usuario FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud WHERE l.id_registro_municipal = $1',
@@ -1118,8 +1127,8 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_RIM_DATA: `SELECT id_registro_municipal AS id, referencia_municipal as "rim", telefono_celular AS "telefonoCelular", 
     telefono_habitacion AS "telefonoHabitacion", email, denominacion_comercial AS "denominacionComercial", nombre_representante AS "nombreRepresentante"
     FROM impuesto.registro_municipal WHERE referencia_municipal = $1`,
-  GET_ESTATES_BY_RIM: `SELECT id_inmueble AS id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion_contribuyente AS relacion FROM inmueble_urbano WHERE id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $1 ORDER BY id_registro_municipal DESC LIMIT 1);`,
-  GET_ESTATES_BY_NATURAL_CONTRIBUTOR: `SELECT id_inmueble AS id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
+  GET_ESTATES_BY_RIM: `SELECT id_inmueble AS id, id_liquidacion, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion_contribuyente AS relacion FROM inmueble_urbano WHERE id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $1 ORDER BY id_registro_municipal DESC LIMIT 1);`,
+  GET_ESTATES_BY_NATURAL_CONTRIBUTOR: `SELECT id_inmueble AS id, id_liquidacion, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", icn.relacion AS relacion 
     FROM inmueble_urbano iu INNER JOIN impuesto.inmueble_contribuyente_natural icn USING (id_inmueble)
     WHERE id_contribuyente = $1`,
@@ -1329,8 +1338,6 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   TOTAL_SETTLEMENTS_IN_MONTH: `SELECT z.fecha, COALESCE(l.liq,0) AS liquidado, COALESCE(p.pag,0) AS pagado FROM (
     SELECT fecha_liquidacion AS fecha, COUNT(*) as liq
     FROM impuesto.liquidacion l
-    LEFT JOIN impuesto.solicitud s USING (id_solicitud)
-    WHERE s.aprobado IS NOT NULL AND s.aprobado = false
     GROUP BY fecha_liquidacion) l
     FULL OUTER JOIN (
     SELECT fecha_aprobado AS fecha, COUNT(*) as pag
@@ -1339,15 +1346,13 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     WHERE s.aprobado IS NULL OR s.aprobado = true
     GROUP BY fecha_aprobado
     ) p ON p.fecha = l.fecha RIGHT JOIN (SELECT generate_series::date AS fecha FROM generate_series($1, $2, interval '1 day'))
-  z ON p.fecha::date = z.fecha::date
+  z ON p.fecha::date = z.fecha::date AND l.fecha::date = z.fecha::date
     WHERE EXTRACT('month' from z.fecha) = EXTRACT('month' from (NOW() - interval '4 hours'))
     AND EXTRACT('year' from z.fecha) = EXTRACT('year' from (NOW() - interval '4 hours')) ORDER BY z.fecha;`,
   //  Con fecha proporcionada
   TOTAL_SETTLEMENTS_IN_MONTH_WITH_DATE: `SELECT z.fecha, COALESCE(l.liq,0) AS liquidado, COALESCE(p.pag,0) AS pagado FROM (
     SELECT fecha_liquidacion AS fecha, COUNT(*) as liq
     FROM impuesto.liquidacion l
-    LEFT JOIN impuesto.solicitud s USING (id_solicitud)
-    WHERE s.aprobado IS NOT NULL AND s.aprobado = false
     GROUP BY fecha_liquidacion) l
     FULL OUTER JOIN (
     SELECT fecha_aprobado AS fecha, COUNT(*) as pag
@@ -1356,7 +1361,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     WHERE s.aprobado IS NULL OR s.aprobado = true
     GROUP BY fecha_aprobado
     ) p ON p.fecha = l.fecha RIGHT JOIN (SELECT generate_series::date AS fecha FROM generate_series($1, $2, interval '1 day'))
-  z ON p.fecha::date = z.fecha::date
+  z ON p.fecha::date = z.fecha::date AND l.fecha::date = z.fecha::date
     WHERE EXTRACT('month' from z.fecha) = EXTRACT('month' from $3::date)
     AND EXTRACT('year' from z.fecha) = EXTRACT('year' from $3::date) ORDER BY z.fecha;`,
   //Extras para el 4
@@ -1530,26 +1535,32 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   //  1. Tasa de Default Intermensual (TDI)
   //  TDI = Cantidad de Contribuyentes que pagaron mes anterior pero no mes actual (gráfico de barra o linea por mes, incluyendo coeficiente y cantidad de contribuyentes)
   TOTAL_CONTRIBUTOR_DEFAULT_RATE: `WITH solicitudesae AS (
-        SELECT id_solicitud 
-        FROM impuesto.liquidacion l
-        WHERE Id_subramo = 10 
-        AND datos#>>'{fecha, month}' = $1 AND datos#>>'{fecha, year}' = $2
+    SELECT id_registro_municipal 
+    FROM impuesto.liquidacion l
+    WHERE Id_subramo = 10 
+    AND datos#>>'{fecha, month}' = $1 AND datos#>>'{fecha, year}' = $2
+    AND id_registro_municipal IS NOT NULL
+    GROUP BY id_registro_municipal
     ),
     solicitudespasado AS (
-        SELECT id_solicitud 
+        SELECT id_registro_municipal
         FROM impuesto.liquidacion l
         WHERE Id_subramo = 10 
         AND datos#>>'{fecha, month}' = $3 AND datos#>>'{fecha, year}' = $4
-    )
+    AND id_registro_municipal IS NOT NULL
+    GROUP BY id_registro_municipal
+    )	
     SELECT COUNT(*) AS valor
-    FROM impuesto.contribuyente
-    WHERE id_contribuyente IN (
-        SELECT id_contribuyente 
-        FROM (SELECT * FROM impuesto.solicitud WHERE id_solicitud IN (SELECT * FROM solicitudesae)) s
-    ) AND id_contribuyente NOT IN (
-        SELECT id_contribuyente
-        FROM (SELECT * FROM impuesto.solicitud WHERE id_solicitud IN (SELECT * FROM solicitudespasado)) s
-    );`,
+    FROM impuesto.registro_municipal
+    WHERE id_registro_municipal 
+    NOT IN (
+          SELECT id_registro_municipal FROM solicitudesae
+      )
+    AND id_registro_municipal
+    IN (
+        SELECT id_registro_municipal FROM solicitudespasado
+    );
+`,
 
   //  2. Promedio Días para Pago (PDP)
   //  PDP = Promedio de días que demoran los contribuyentes en realizar pagos vencidos medidos por mes (gráfico de linea o de barra)

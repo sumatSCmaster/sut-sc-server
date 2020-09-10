@@ -16,18 +16,18 @@ import * as qr from 'qrcode';
 import * as pdftk from 'node-pdftk';
 import bcrypt, { genSaltSync, hashSync } from 'bcryptjs';
 import md5 from 'md5';
-import { query } from 'express-validator';
 import { sendNotification } from './notification';
 import { sendRimVerification, verifyCode, resendCode } from './verification';
 import { hasLinkedContributor, signUpUser, getUserByUsername, getUsersByContributor } from './user';
 import S3Client from '@utils/s3';
 import ExcelJs from 'exceljs';
 import * as fs from 'fs';
-import { procedureInit, initProcedureAnalist, processProcedure, processProcedureAnalist } from './procedures';
+import { initProcedureAnalist, processProcedureAnalist } from './procedures';
 import { generateReceipt } from './receipt';
 import { getCleaningTariffForEstate, getGasTariffForEstate } from './services';
 import { uniqBy, chunk } from 'lodash';
 const written = require('written-number');
+
 const gticPool = GticPool.getInstance();
 const pool = Pool.getInstance();
 
@@ -1878,6 +1878,10 @@ export const getEntireDebtsForContributor = async ({ reference, docType, documen
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const contribuyente = (await client.query(queries.GET_CONTRIBUTOR_BY_DOCUMENT_AND_DOC_TYPE, [document, docType])).rows[0];
     if (!contribuyente) return { status: 404, message: 'El contribuyente no está registrado en SEDEMAT' };
+    const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contribuyente.id_contribuyente])).rows[0];
+    if (typeUser === 'JURIDICO' && !branch) throw { status: 404, message: 'La sucursal proporcionada no existe' };
+    const hasActiveAgreement = (await client.query(queries.CONTRIBUTOR_HAS_ACTIVE_AGREEMENT_PROCEDURE, [docType, document, reference])).rowCount > 0;
+    if (hasActiveAgreement) throw { status: 403, message: 'El contribuyente ya posee una solicitud de beneficio en revision' };
     const liquidaciones = (typeUser === 'NATURAL'
       ? await client.query(queries.GET_APPLICATION_DEBTS_FOR_NATURAL_CONTRIBUTOR, [contribuyente.id_contribuyente])
       : await client.query(queries.GET_APPLICATION_DEBTS_BY_MUNICIPAL_REGISTRY, [reference, contribuyente.id_contribuyente])
@@ -1907,9 +1911,9 @@ export const getEntireDebtsForContributor = async ({ reference, docType, documen
   } catch (error) {
     console.log(error);
     throw {
-      status: 500,
+      status: error.status || 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener solicitudes y liquidaciones',
     };
   } finally {
     client.release();
@@ -1932,7 +1936,7 @@ const getDefaultInterestByApplication = async ({ id, date, state, client }): Pro
           .map((p) => ((+p.monto * 0.3324) / 365) * (moment().diff(moment(date).endOf('month').startOf('day'), 'days') - 1))
           .reduce((x, j) => x + j, 0)) ||
       undefined;
-    return +fixatedAmount(+value);
+    return fixatedAmount(+value);
   } catch (e) {
     throw e;
   }
@@ -1955,7 +1959,7 @@ const getDefaultInterestRebateByApplication = async ({ id, date, state, client }
           .reduce((x, j) => x + j, 0)) ||
       undefined;
     // console.log('getDefaultInterestByApplication -> value', id, value);
-    return +fixatedAmount(+value);
+    return fixatedAmount(+value);
   } catch (e) {
     throw e;
   }
@@ -2336,6 +2340,7 @@ export const insertSettlements = async ({ process, user }) => {
     const userHasContributor = userContributor.length > 0;
     if (!userHasContributor) throw { status: 404, message: 'El usuario no esta asociado con ningun contribuyente' };
     const contributorReference = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [process.rim, process.contribuyente])).rows[0];
+    if (userContributor[0].tipo_contribuyente === 'JURIDICO' && !contributorReference) throw { status: 404, message: 'El RIM proporcionado no existe' };
     const benefittedUser = (await client.query(queries.GET_USER_IN_CHARGE_OF_BRANCH_BY_ID, [contributorReference?.id_registro_municipal])).rows[0];
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.tipoUsuario !== 4 ? process.usuario || null : user.id, process.contribuyente])).rows[0];
@@ -2477,14 +2482,14 @@ export const insertSettlements = async ({ process, user }) => {
         const liquidacionGas = {
           ramo: branchNames['SM'],
           fechaCancelada: x.fechaCancelada,
-          monto: impuestos.esAgenteRetencion ? +x.desglose[0].montoGas * 1.04 : +x.desglose[0].montoGas * 1.16,
+          monto: impuestos.esAgenteRetencion || impuestos.esAgenteSENIAT ? +x.desglose[0].montoGas * 1.04 : +x.desglose[0].montoGas * 1.16,
           desglose: x.desglose,
           descripcion: 'Pago del Servicio de Gas',
         };
         const liquidacionAseo = {
           ramo: branchNames['SM'],
           fechaCancelada: x.fechaCancelada,
-          monto: impuestos.esAgenteRetencion ? +x.desglose[0].montoAseo * 1.04 : +x.desglose[0].montoAseo * 1.16,
+          monto: impuestos.esAgenteRetencion || impuestos.esAgenteSENIAT ? +x.desglose[0].montoAseo * 1.04 : +x.desglose[0].montoAseo * 1.16,
           desglose: x.desglose,
           descripcion: 'Pago del Servicio de Aseo',
         };
@@ -2501,6 +2506,8 @@ export const insertSettlements = async ({ process, user }) => {
           const datos = {
             desglose: el.desglose ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
             fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },
+            IVA: el.ramo === branchNames['SM'] ? (impuestos.esAgenteRetencion || impuestos.esAgenteSENIAT ? 4 : 16) : undefined,
+            esAgenteSENIAT: impuestos.esAgenteSENIAT || undefined,
           };
           const liquidacion = (
             await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
@@ -2509,7 +2516,9 @@ export const insertSettlements = async ({ process, user }) => {
               el.ramo,
               el.descripcion || 'Pago ordinario',
               datos,
-              el.ramo === 'AE' ? moment().locale('ES').month(el.fechaCancelada.month).add(1, 'M').endOf('month').format('MM-DD-YYYY') : moment().locale('ES').month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
+              el.ramo === 'AE'
+                ? moment().locale('ES').month(el.fechaCancelada.month).year(el.fechaCancelada.year).add(1, 'M').endOf('month').format('MM-DD-YYYY')
+                : moment().locale('ES').month(el.fechaCancelada.month).year(el.fechaCancelada.year).endOf('month').format('MM-DD-YYYY'),
               (contributorReference && contributorReference.id_registro_municipal) || null,
             ])
           ).rows[0];
@@ -2590,10 +2599,10 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
     }
     const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0];
     console.log('addTaxApplicationPayment -> solicitud', solicitud);
-    const pagoSum = +payment.map((e) => +fixatedAmount(+e.costo)).reduce((e, i) => e + i, 0);
+    const pagoSum = +payment.map((e) => fixatedAmount(+e.costo)).reduce((e, i) => e + i, 0);
     console.log('addTaxApplicationPayment -> pagoSum', pagoSum);
-    if (pagoSum < +fixatedAmount(+solicitud.monto_total)) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
-    const creditoPositivo = pagoSum - +fixatedAmount(+solicitud.monto_total);
+    if (pagoSum < fixatedAmount(+solicitud.monto_total)) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
+    const creditoPositivo = pagoSum - fixatedAmount(+solicitud.monto_total);
     await Promise.all(
       payment.map(async (el) => {
         if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
@@ -2727,9 +2736,9 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
   try {
     await client.query('BEGIN');
     const fraccion = (await client.query(queries.GET_FRACTION_BY_AGREEMENT_AND_FRACTION_ID, [agreement, fragment])).rows[0];
-    const pagoSum = payment.map((e) => +e.costo).reduce((e, i) => e + +fixatedAmount(i), 0);
-    if (+fixatedAmount(pagoSum) < +fixatedAmount(fraccion.monto)) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
-    const creditoPositivo = +fixatedAmount(pagoSum) - +fixatedAmount(+fraccion.monto);
+    const pagoSum = payment.map((e) => +e.costo).reduce((e, i) => e + fixatedAmount(i), 0);
+    if (fixatedAmount(pagoSum) < fixatedAmount(fraccion.monto)) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
+    const creditoPositivo = fixatedAmount(pagoSum) - fixatedAmount(+fraccion.monto);
     await Promise.all(
       payment.map(async (el) => {
         if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
@@ -3327,9 +3336,9 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             await client.query('UPDATE impuesto.solicitud SET tipo_solicitud = $1 WHERE id_solicitud = $2', ['CONVENIO', applicationAG.id_solicitud]);
             const agreement = (await client.query(queries.CREATE_AGREEMENT, [applicationAG.id_solicitud, x.porciones.length])).rows[0];
             const settlementsAG = (await client.query(queries.CHANGE_SETTLEMENT_TO_NEW_APPLICATION, [applicationAG.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
-            const costo = (await client.query(queries.CHANGE_SETTLEMENT_BRANCH_TO_AGREEMENT, [x.idRamo, applicationAG.id_solicitud])).rows.reduce((x, j) => +fixatedAmount(x + j.monto), 0);
+            const costo = (await client.query(queries.CHANGE_SETTLEMENT_BRANCH_TO_AGREEMENT, [x.idRamo, applicationAG.id_solicitud])).rows.reduce((x, j) => fixatedAmount(x + j.monto), 0);
             console.log('//if -> costo', costo);
-            const totalSolicitud = x.porciones.reduce((x, j) => +fixatedAmount(x + j.monto), 0);
+            const totalSolicitud = x.porciones.reduce((x, j) => fixatedAmount(x + j.monto), 0);
             console.log('//if -> totalSolicitud', totalSolicitud);
             if (costo > totalSolicitud) throw { status: 403, message: 'La suma de las fracciones del convenio debe ser exactamente igual al total de la deuda' };
             const benefitAgreement = await Promise.all(
@@ -5061,8 +5070,8 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
   }
 };
 
-export const fixatedAmount = (num: number) => {
-  return parseFloat((+num).toPrecision(15)).toFixed(2);
+export const fixatedAmount = (num: number): number => {
+  return +parseFloat((+num).toPrecision(15)).toFixed(2);
 };
 
 export const getSettlementsReport = async (user, payload: { from: Date; to: Date; ramo: number }) => {

@@ -29,8 +29,9 @@ export const getSettlementsReport = async ({ query, reportName }) => {
       ];
 
       const sheet = workbook.addWorksheet(reportName);
-
+      console.log('sil');
       const result = await client.query(query);
+      console.log('si2');
 
       //   console.log(result);
 
@@ -67,57 +68,35 @@ export const getSettlementsReport = async ({ query, reportName }) => {
       }
     });
   } catch (error) {
-    throw errorMessageExtractor(error);
+    console.log(error);
+    return errorMessageExtractor(error);
   } finally {
     client.release();
   }
 };
 
 export const executeReport = async () => {
-  const Reporte0309 = await Promise.all(
+  const Reporte0909 = await Promise.all(
     [
       {
-        query: `SELECT DISTINCT ON (denominacion_comercial) rm.denominacion_comercial, rm.referencia_municipal, telefono_celular, email
-        FROM impuesto.registro_municipal rm 
-        INNER JOIN impuesto.liquidacion l ON l.id_registro_municipal = rm.id_registro_municipal
-        INNER JOIN impuesto.solicitud_state s ON s.id = l.id_liquidacion
-        WHERE s.state != 'finalizado' AND l.id_subramo IN (30, 101, 105, 277) ORDER BY denominacion_comercial;`,
-        reportName: `CONTRIBUYENTES CON MULTA VIGENTE`,
-      },
-      {
-        query: `SELECT DISTINCT ON (denominacion_comercial) rm.denominacion_comercial, rm.referencia_municipal, telefono_celular, email
-        FROM impuesto.registro_municipal rm
-        WHERE id_registro_municipal IN (SELECT id_registro_municipal 
-                                            FROM impuesto.liquidacion l
-                                            INNER JOIN impuesto.solicitud s USING (id_solicitud) 
-                                            WHERE id_subramo = 10 AND l.fecha_liquidacion BETWEEN '08-01-2020' AND '09-01-2020' and s.aprobado = true)
-        AND   id_registro_municipal NOT IN (SELECT id_registro_municipal 
-                                            FROM impuesto.liquidacion l
-                                            INNER JOIN impuesto.solicitud s USING (id_solicitud) 
-                                            WHERE id_subramo = 66 AND l.fecha_liquidacion BETWEEN '08-01-2020' AND '09-01-2020' and s.aprobado = false);
-        `,
-        reportName: `CONTRIBUYENTES QUE PAGARON AE Y NO SM`,
-      },
-      {
-        query: `WITH rimsAR AS (
-            SELECT id_registro_municipal
-            FROM impuesto.registro_municipal rm 
-            INNER JOIN impuesto.contribuyente c USING (id_contribuyente)
-            WHERE es_agente_retencion = true AND referencia_municipal NOT ILIKE 'AR%'
-        ), output AS (
-        SELECT denominacion_comercial, referencia_municipal, email, telefono_celular
-        FROM impuesto.registro_municipal rm
-         INNER JOIN impuesto.liquidacion l ON rm.id_registro_municipal = l.id_registro_municipal
-        WHERE l.id_registro_municipal IN (SELECT * FROM rimsAR)
-         AND   l.id_registro_municipal NOT IN (SELECT id_registro_municipal FROM (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal 
-                                             FROM impuesto.liquidacion l
-                                             INNER JOIN impuesto.solicitud s USING (id_solicitud) 
-                                             WHERE id_subramo = 9 AND l.fecha_liquidacion BETWEEN '08-01-2020' AND '09-01-2020') l WHERE id_registro_municipal IN (SELECT id_registro_municipal FROM rimsAR))
-        GROUP BY id_contribuyente, email, rm.id_registro_municipal
-        
-        )
-        SELECT * FROM output`,
-        reportName: `RIMS DE AGENTES DE RETENCION QUE NO PAGARON IU`,
+        query: `WITH liquidaciones AS (
+        SELECT l.*, r.* FROM impuesto.ramo r INNER JOIN impuesto.subramo sr USING (id_ramo) INNER JOIN impuesto.liquidacion l USING (id_subramo) WHERE fecha_liquidacion BETWEEN '09-01-2020' AND '09-08-2020'
+       ),
+       solicitudes AS (
+       SELECT * FROM impuesto.solicitud WHERE id_solicitud IN (SELECT id_solicitud FROM liquidaciones)
+       )
+       
+         SELECT l.monto, l.fecha_liquidacion AS "fechaLiquidacion", 
+         CASE 
+           WHEN s.aprobado = true OR s.aprobado IS NULL THEN 'PAGADO' 
+           ELSE 'VIGENTE' END
+          AS estado,
+         c.razon_social AS "razonSocial", c.documento, c.tipo_documento AS "tipoDocumento", rm.referencia_municipal AS "RIM", l.descripcion as ramo
+       FROM impuesto.contribuyente c
+       INNER JOIN (SELECT * FROM solicitudes) s USING (id_contribuyente) FULL OUTER JOIN (SELECT * FROM liquidaciones) l USING (id_solicitud) 
+       LEFT JOIN impuesto.registro_municipal rm USING (id_registro_municipal)
+       ORDER BY l.fecha_liquidacion, l.id_registro_municipal`,
+        reportName: 'LIQUIDACIONES SEPTIEMBRE SIIIII (SUT)',
       },
     ].map(async (el, i) => {
       console.log(i + 1);
