@@ -1243,7 +1243,7 @@ export const patchSettlement = async ({ id, settlement }) => {
         await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [newApplication.id_solicitud, applicationStateEvents.APROBARCAJERO]);
         await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [fechaLiquidacion, newApplication.id_solicitud]);
       }
-      liquidacion = (await client.query(queries.UPDATE_SETTLEMENT_CORRECTION, [proposedDate, proposedDate.endOf('month'), newData, subramo, newApplication.id_solicitud, id])).rows.map((el) => ({
+      liquidacion = (await client.query(queries.UPDATE_SETTLEMENT_CORRECTION, [proposedDate.format('MM-DD-YYYY'), proposedDate.endOf('month').format('MM-DD-YYYY'), newData, subramo, newApplication.id_solicitud, id])).rows.map((el) => ({
         id: el.id_liquidacion,
         fechaLiquidacion: el.fecha_liquidacion,
         fechaVencimiento: el.fecha_vencimiento,
@@ -1255,7 +1255,7 @@ export const patchSettlement = async ({ id, settlement }) => {
         subramo,
       }))[0];
     } else {
-      liquidacion = (await client.query(queries.UPDATE_SETTLEMENT_CORRECTION, [proposedDate, proposedDate.endOf('month'), newData, subramo, patchApplication.id_solicitud, id])).rows.map((el) => ({
+      liquidacion = (await client.query(queries.UPDATE_SETTLEMENT_CORRECTION, [proposedDate.format('MM-DD-YYYY'), proposedDate.endOf('month').format('MM-DD-YYYY'), newData, subramo, patchApplication.id_solicitud, id])).rows.map((el) => ({
         id: el.id_liquidacion,
         fechaLiquidacion: el.fecha_liquidacion,
         fechaVencimiento: el.fecha_vencimiento,
