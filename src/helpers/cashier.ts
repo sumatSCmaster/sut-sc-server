@@ -7,6 +7,7 @@ import queries from '@utils/queries';
 import { renderFile } from 'pug';
 import { errorMessageExtractor } from './errors';
 import * as pdf from 'html-pdf';
+import { groupBy } from 'lodash';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -141,8 +142,14 @@ export const generateAllCashiersReport = async (user, payload : { day: Date }) =
   const client = await pool.connect();
   const payment = (await client.query(queries.GET_ALL_CASHIERS_TOTAL, [payload.day])).rows
   const paymentTotal = payment.reduce((prev, next) => prev + (+next.monto), 0);
+  let paymentBreakdown: any = (await client.query(queries.GET_ALL_CASHIERS_METHODS_TOTAL_NEW, [payload.day])).rows;
+ 
+  paymentBreakdown = groupBy(paymentBreakdown, (el) => el.nombre_completo);
+  
+  for(let x in paymentBreakdown){
+    paymentBreakdown[x] = groupBy(paymentBreakdown[x], (val) => val.metodo_pago)
+  }
 
-  const paymentBreakdown = (await client.query(queries.GET_ALL_CASHIERS_METHODS_TOTAL, [payload.day])).rows;
   try {
       return new Promise(async (res, rej) => {
           
