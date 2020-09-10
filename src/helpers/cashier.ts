@@ -7,7 +7,8 @@ import queries from '@utils/queries';
 import { renderFile } from 'pug';
 import { errorMessageExtractor } from './errors';
 import * as pdf from 'html-pdf';
-import { groupBy } from 'lodash';
+import { groupBy, chunk } from 'lodash';
+
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -158,6 +159,7 @@ export const generateAllCashiersReport = async (user, payload : { from?: Date, t
         const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-cierreCajaJefe.pug`), {
           moment: require('moment'),
           institucion: 'SEDEMAT',
+          chunk,
           datos: paymentBreakdown
         });
         const pdfDir = resolve(__dirname, `../../archivos/sedemat/cajaAll/cierre.pdf`);
