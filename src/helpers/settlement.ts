@@ -2507,8 +2507,8 @@ export const insertSettlements = async ({ process, user }) => {
             desglose: el.desglose ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
             fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },
             IVA: el.ramo === branchNames['SM'] ? (impuestos.esAgenteRetencion || impuestos.esAgenteSENIAT ? 4 : 16) : undefined,
-            esAgenteSENIAT: impuestos.esAgenteSENIAT || undefined,
-            esAgenteRetencion: impuestos.esAgenteRetencion || undefined,
+            esAgenteSENIAT: el.ramo === branchNames['SM'] ? impuestos.esAgenteRetencion || undefined : undefined,
+            esAgenteRetencion: el.ramo === branchNames['SM'] ? impuestos.esAgenteRetencion || undefined : undefined,
           };
           const liquidacion = (
             await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
