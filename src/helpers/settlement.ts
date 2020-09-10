@@ -1221,7 +1221,7 @@ export const patchSettlement = async ({ id, settlement }) => {
   try {
     await client.query('BEGIN');
     const prevSettlement = (await client.query(queries.GET_SETTLEMENT_BY_ID, [id])).rows[0];
-    const proposedDate = moment(fechaLiquidacion);
+    const proposedDate = subramo === 10 ? moment(fechaLiquidacion).subtract(1, 'M') : moment(fechaLiquidacion);
     const newData = {
       ...prevSettlement.datos,
       fecha: { month: proposedDate.locale('es').format('MMMM'), year: proposedDate.year() },
