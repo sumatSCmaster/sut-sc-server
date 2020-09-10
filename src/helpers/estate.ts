@@ -303,7 +303,7 @@ export const updateEstateDate = async ({ id, date }) => {
       ])
     ).rows[0];
     await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [fromDate.format('MM-DD-YYYY'), ghostSettlement.id_liquidacion]);
-    let updt = await client.query('UPDATE inmueble_urbano SET id_liquidacion = $1 WHERE id_inmueble = $2', [ghostSettlement.id_liquidacion, id])
+    let updt = await client.query('UPDATE inmueble_urbano SET id_liquidacion_fecha_inicio = $1 WHERE id_inmueble = $2', [ghostSettlement.id_liquidacion, id])
     await client.query('COMMIT');
     return { status: 200, message: updt.rowCount > 0 ? 'Fecha enlazada' : 'No se actualizo un inmueble' }
   } catch (e) {
