@@ -612,7 +612,10 @@ const isFiniteNumber = (expression) => {
 export const getStatsSedemat = async ({ institution }: { institution: number }) => {
   const client = await pool.connect();
   const totalSolvencyRate: any[] = [];
-  const totalSettlements: any[] = [];
+  const AE: any[] = [],
+    SM: any[] = [],
+    IU: any[] = [],
+    PP: any[] = [];
   try {
     // if (institution !== Instituciones.SEDEMAT) throw { status: 403, message: 'Sólo un miembro de SEDEMAT puede acceder a esta información' };
     const now = moment().locale('ES');
@@ -662,16 +665,42 @@ export const getStatsSedemat = async ({ institution }: { institution: number }) 
     });
     extraInfo.push({ fechaInicio: moment('09-01-2020').format('DD/MM'), fechaFin: moment('10-01-2020').format('DD/MM'), descripcion: 'Remisión de Multas', color: 'purple' });
 
-    // 4. Total de liquidaciones pagadas/vigentes (%)
-    const settlementArr = (await client.query(queries.TOTAL_SETTLEMENTS_IN_MONTH, [moment().startOf('month').format('MM-DD-YYYY'), moment().endOf('month').format('MM-DD-YYYY')])).rows
+    // 4. Total de liquidaciones pagadas/vigentes (%) [1 por ramo]
+    const settlementArrAE = (await client.query(queries.TOTAL_SETTLEMENTS_IN_MONTH_AE, [moment().startOf('month').format('MM-DD-YYYY'), moment().endOf('month').format('MM-DD-YYYY')])).rows
       .filter((el) => moment().startOf('day').isSameOrAfter(moment(el.fecha)))
       .map((el) => {
         const liquidado = { name: 'Liquidado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.liquidado };
         const pagado = { name: 'Pagado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.pagado };
-        totalSettlements.push(liquidado);
-        totalSettlements.push(pagado);
+        AE.push(liquidado);
+        AE.push(pagado);
       });
 
+    const settlementArrSM = (await client.query(queries.TOTAL_SETTLEMENTS_IN_MONTH_SM, [moment().startOf('month').format('MM-DD-YYYY'), moment().endOf('month').format('MM-DD-YYYY')])).rows
+      .filter((el) => moment().startOf('day').isSameOrAfter(moment(el.fecha)))
+      .map((el) => {
+        const liquidado = { name: 'Liquidado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.liquidado };
+        const pagado = { name: 'Pagado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.pagado };
+        SM.push(liquidado);
+        SM.push(pagado);
+      });
+
+    const settlementArrIU = (await client.query(queries.TOTAL_SETTLEMENTS_IN_MONTH_IU, [moment().startOf('month').format('MM-DD-YYYY'), moment().endOf('month').format('MM-DD-YYYY')])).rows
+      .filter((el) => moment().startOf('day').isSameOrAfter(moment(el.fecha)))
+      .map((el) => {
+        const liquidado = { name: 'Liquidado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.liquidado };
+        const pagado = { name: 'Pagado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.pagado };
+        IU.push(liquidado);
+        IU.push(pagado);
+      });
+
+    const settlementArrPP = (await client.query(queries.TOTAL_SETTLEMENTS_IN_MONTH_PP, [moment().startOf('month').format('MM-DD-YYYY'), moment().endOf('month').format('MM-DD-YYYY')])).rows
+      .filter((el) => moment().startOf('day').isSameOrAfter(moment(el.fecha)))
+      .map((el) => {
+        const liquidado = { name: 'Liquidado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.liquidado };
+        const pagado = { name: 'Pagado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.pagado };
+        PP.push(liquidado);
+        PP.push(pagado);
+      });
     // Top contribuyentes
     // 1. Agentes de retención que han declarado/pagado por mes
     const totalARDeclarations = (await client.query(queries.TOTAL_AR_DECLARATIONS_AND_PAYMENTS_IN_MONTH)).rows.map((el) => ({ total: +el.total, liquidado: +el.liquidado, pagado: +el.pagado }))[0];
@@ -734,7 +763,7 @@ export const getStatsSedemat = async ({ institution }: { institution: number }) 
         totalTasasAE: totalSolvencyRate,
         totalBsPorRamo: totalBsByBranch,
         recaudado: { totalRecaudacion: totalGainings, extra: extraInfo },
-        totalLiquidaciones: totalSettlements,
+        totalLiquidaciones: { AE, SM, IU, PP },
       },
       contribuyentes: {
         AR: totalARDeclarations,
@@ -763,7 +792,10 @@ export const getStatsSedemat = async ({ institution }: { institution: number }) 
 export const getStatsSedematWithDate = async ({ institution, date }: { institution: number; date: string }) => {
   const client = await pool.connect();
   const totalSolvencyRate: any[] = [];
-  const totalSettlements: any[] = [];
+  const AE: any[] = [],
+    SM: any[] = [],
+    IU: any[] = [],
+    PP: any[] = [];
   try {
     // if (institution !== Instituciones.SEDEMAT) throw { status: 403, message: 'Sólo un miembro de SEDEMAT puede acceder a esta información' };
     const now = moment().locale('ES');
@@ -815,14 +847,41 @@ export const getStatsSedematWithDate = async ({ institution, date }: { instituti
     });
     extraInfo.push({ fechaInicio: moment('09-01-2020').format('DD/MM'), fechaFin: moment('10-01-2020').format('DD/MM'), descripcion: 'Remisión de Multas', color: 'purple' });
 
-    // 4. Total de liquidaciones pagadas/vigentes (%)
-    const settlementArr = (await client.query(queries.TOTAL_SETTLEMENTS_IN_MONTH_WITH_DATE, [moment(date).startOf('month').format('MM-DD-YYYY'), moment(date).endOf('month').format('MM-DD-YYYY'), requestedDate.format('MM-DD-YYYY')])).rows
+    // 4. Total de liquidaciones pagadas/vigentes (%) [1 por ramo]
+    const settlementArrAE = (await client.query(queries.TOTAL_SETTLEMENTS_IN_MONTH_AE_WITH_DATE, [moment(date).startOf('month').format('MM-DD-YYYY'), moment(date).endOf('month').format('MM-DD-YYYY'), requestedDate.format('MM-DD-YYYY')])).rows
       .filter((el) => moment(date).endOf('month').startOf('day').isSameOrAfter(moment(el.fecha)))
       .map((el) => {
         const liquidado = { name: 'Liquidado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.liquidado };
         const pagado = { name: 'Pagado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.pagado };
-        totalSettlements.push(liquidado);
-        totalSettlements.push(pagado);
+        AE.push(liquidado);
+        AE.push(pagado);
+      });
+
+    const settlementArrSM = (await client.query(queries.TOTAL_SETTLEMENTS_IN_MONTH_SM_WITH_DATE, [moment(date).startOf('month').format('MM-DD-YYYY'), moment(date).endOf('month').format('MM-DD-YYYY'), requestedDate.format('MM-DD-YYYY')])).rows
+      .filter((el) => moment(date).endOf('month').startOf('day').isSameOrAfter(moment(el.fecha)))
+      .map((el) => {
+        const liquidado = { name: 'Liquidado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.liquidado };
+        const pagado = { name: 'Pagado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.pagado };
+        SM.push(liquidado);
+        SM.push(pagado);
+      });
+
+    const settlementArrIU = (await client.query(queries.TOTAL_SETTLEMENTS_IN_MONTH_IU_WITH_DATE, [moment(date).startOf('month').format('MM-DD-YYYY'), moment(date).endOf('month').format('MM-DD-YYYY'), requestedDate.format('MM-DD-YYYY')])).rows
+      .filter((el) => moment(date).endOf('month').startOf('day').isSameOrAfter(moment(el.fecha)))
+      .map((el) => {
+        const liquidado = { name: 'Liquidado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.liquidado };
+        const pagado = { name: 'Pagado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.pagado };
+        IU.push(liquidado);
+        IU.push(pagado);
+      });
+
+    const settlementArrPP = (await client.query(queries.TOTAL_SETTLEMENTS_IN_MONTH_PP_WITH_DATE, [moment(date).startOf('month').format('MM-DD-YYYY'), moment(date).endOf('month').format('MM-DD-YYYY'), requestedDate.format('MM-DD-YYYY')])).rows
+      .filter((el) => moment(date).endOf('month').startOf('day').isSameOrAfter(moment(el.fecha)))
+      .map((el) => {
+        const liquidado = { name: 'Liquidado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.liquidado };
+        const pagado = { name: 'Pagado', fecha: moment(el.fecha).format('DD/MM'), valor: +el.pagado };
+        PP.push(liquidado);
+        PP.push(pagado);
       });
 
     // Top contribuyentes
@@ -889,7 +948,7 @@ export const getStatsSedematWithDate = async ({ institution, date }: { instituti
         totalTasasAE: totalSolvencyRate,
         totalBsPorRamo: totalBsByBranch,
         recaudado: { totalRecaudacion: totalGainings, extra: extraInfo },
-        totalLiquidaciones: totalSettlements,
+        totalLiquidaciones: { AE, SM, IU, PP },
       },
       contribuyentes: {
         AR: totalARDeclarations,
