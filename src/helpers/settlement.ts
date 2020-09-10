@@ -1221,10 +1221,11 @@ export const patchSettlement = async ({ id, settlement }) => {
   try {
     await client.query('BEGIN');
     const prevSettlement = (await client.query(queries.GET_SETTLEMENT_BY_ID, [id])).rows[0];
-    const proposedDate = subramo === 10 ? moment(fechaLiquidacion).subtract(1, 'M') : moment(fechaLiquidacion);
+    const proposedDate = moment(fechaLiquidacion);
+    const dateForData = subramo === 10 ? moment(fechaLiquidacion).subtract(1, 'M') : moment(fechaLiquidacion);
     const newData = {
       ...prevSettlement.datos,
-      fecha: { month: proposedDate.locale('es').format('MMMM'), year: proposedDate.year() },
+      fecha: { month: dateForData.locale('es').format('MMMM'), year: dateForData.year() },
     };
     //1000, validando
     const patchApplication = (await client.query(queries.GET_PATCH_APPLICATION_BY_ORIGINAL_ID_AND_STATE, [prevSettlement.id_solicitud, estado])).rows[0];
