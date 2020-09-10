@@ -1297,18 +1297,18 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   //  3. Total recaudado por mes (gráfico de linea con anotaciones)
   //  Sin fecha proporcionada
   TOTAL_GAININGS_IN_MONTH: `SELECT z.fecha, COALESCE(SUM(monto),0) AS valor
-  FROM (SELECT fecha_de_pago, SUM(monto) AS monto
+  FROM (SELECT fecha_de_aprobacion, SUM(monto) AS monto
   FROM pago p
   WHERE aprobado = true AND concepto IN ('IMPUESTO', 'CONVENIO')
-  GROUP BY fecha_de_pago
+  GROUP BY fecha_de_aprobacion
   UNION ALL
-  SELECT fecha_de_pago, SUM(monto) AS monto
+  SELECT fecha_de_aprobacion, SUM(monto) AS monto
   FROM (SELECT * FROM pago WHERE concepto = 'TRAMITE') p
   INNER JOIN tramite t ON t.id_tramite = p.id_procedimiento
   INNER JOIN tipo_tramite tt ON tt.id_tipo_tramite = t.id_tipo_tramite
   WHERE tt.id_institucion = 9
-  GROUP BY fecha_de_pago) x RIGHT JOIN (SELECT generate_series::date AS fecha FROM generate_series($1, $2, interval '1 day'))
-  z ON x.fecha_de_pago::date = z.fecha::date
+  GROUP BY fecha_de_aprobacion) x RIGHT JOIN (SELECT generate_series::date AS fecha FROM generate_series($1, $2, interval '1 day'))
+  z ON x.fecha_de_aprobacion::date = z.fecha::date
   WHERE EXTRACT('month' from fecha) = EXTRACT('month' from (NOW() - interval '4 hours'))
   AND EXTRACT('year' from fecha) = EXTRACT('year' from (NOW() - interval '4 hours'))
   GROUP BY fecha
@@ -1316,18 +1316,18 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
 
   //  Con fecha proporcionada
   TOTAL_GAININGS_IN_MONTH_WITH_DATE: `SELECT z.fecha, COALESCE(SUM(monto),0) AS valor
-  FROM (SELECT fecha_de_pago, SUM(monto) AS monto
+  FROM (SELECT fecha_de_aprobacion, SUM(monto) AS monto
   FROM pago p
   WHERE aprobado = true AND concepto IN ('IMPUESTO', 'CONVENIO')
-  GROUP BY fecha_de_pago
+  GROUP BY fecha_de_aprobacion
   UNION ALL
-  SELECT fecha_de_pago, SUM(monto) AS monto
+  SELECT fecha_de_aprobacion, SUM(monto) AS monto
   FROM (SELECT * FROM pago WHERE concepto = 'TRAMITE') p
   INNER JOIN tramite t ON t.id_tramite = p.id_procedimiento
   INNER JOIN tipo_tramite tt ON tt.id_tipo_tramite = t.id_tipo_tramite
   WHERE tt.id_institucion = 9
-  GROUP BY fecha_de_pago) x RIGHT JOIN (SELECT generate_series::date AS fecha FROM generate_series($1, $2, interval '1 day'))
-  z ON x.fecha_de_pago::date = z.fecha::date
+  GROUP BY fecha_de_aprobacion) x RIGHT JOIN (SELECT generate_series::date AS fecha FROM generate_series($1, $2, interval '1 day'))
+  z ON x.fecha_de_aprobacion::date = z.fecha::date
   WHERE EXTRACT('month' from fecha) = EXTRACT('month' from $3::date)
   AND EXTRACT('year' from fecha) = EXTRACT('year' from $3::date)
   GROUP BY fecha
