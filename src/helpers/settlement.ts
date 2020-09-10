@@ -2508,6 +2508,7 @@ export const insertSettlements = async ({ process, user }) => {
             fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },
             IVA: el.ramo === branchNames['SM'] ? (impuestos.esAgenteRetencion || impuestos.esAgenteSENIAT ? 4 : 16) : undefined,
             esAgenteSENIAT: impuestos.esAgenteSENIAT || undefined,
+            esAgenteRetencion: impuestos.esAgenteRetencion || undefined,
           };
           const liquidacion = (
             await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
