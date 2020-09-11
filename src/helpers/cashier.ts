@@ -7,6 +7,8 @@ import queries from '@utils/queries';
 import { renderFile } from 'pug';
 import { errorMessageExtractor } from './errors';
 import * as pdf from 'html-pdf';
+import { groupBy, chunk } from 'lodash';
+
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -137,28 +139,28 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
 
 
 
-export const generateAllCashiersReport = async (user, payload : { day: Date }) => {
+export const generateAllCashiersReport = async (user, payload : { from?: Date, to?: Date }) => {
   const client = await pool.connect();
-  const payment = (await client.query(queries.GET_ALL_CASHIERS_TOTAL, [payload.day])).rows
-  const paymentTotal = payment.reduce((prev, next) => prev + (+next.monto), 0);
+  let payment, paymentTotal, paymentBreakdown;
+  
+  payment = (await client.query(queries.GET_ALL_CASHIERS_TOTAL_INT, [payload.from, payload.to])).rows
+  paymentTotal = payment.reduce((prev, next) => prev + (+next.monto), 0);
+  paymentBreakdown = (await client.query(queries.GET_ALL_CASHIERS_METHODS_TOTAL_NEW_INT, [payload.from, payload.to])).rows;
 
-  const paymentBreakdown = (await client.query(queries.GET_ALL_CASHIERS_METHODS_TOTAL, [payload.day])).rows;
+  paymentBreakdown = groupBy(paymentBreakdown, (el) => el.nombre_completo);
+  
+  for(let x in paymentBreakdown){
+    paymentBreakdown[x] = groupBy(paymentBreakdown[x], (val) => val.metodo_pago)
+  }
+
   try {
       return new Promise(async (res, rej) => {
           
         const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-cierreCajaJefe.pug`), {
           moment: require('moment'),
           institucion: 'SEDEMAT',
-          datos: {
-              items: payment.map((row) => {
-                  return {
-                      cajero: row.nombre_completo,
-                      monto: row.monto
-                  }
-              }),
-              metodoPago: paymentBreakdown,
-              total: paymentTotal
-            }
+          chunk,
+          datos: paymentBreakdown
         });
         const pdfDir = resolve(__dirname, `../../archivos/sedemat/cajaAll/cierre.pdf`);
         const dir = `${process.env.SERVER_URL}/sedemat/cajaAll/cierre.pdf`;
