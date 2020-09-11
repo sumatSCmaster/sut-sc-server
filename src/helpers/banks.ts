@@ -5,7 +5,7 @@ import { validateProcedure, getProcedureById } from './procedures';
 import { validateFining } from './fines';
 import { PoolClient } from 'pg';
 import switchcase from '@utils/switch';
-import { validateApplication, validateAgreementFraction, getApplicationsAndSettlementsById, getAgreementFractionById, getApplicationsAndSettlementsByIdNots } from './settlement';
+import { validateApplication, validateAgreementFraction, getApplicationsAndSettlementsById, getAgreementFractionById, getApplicationsAndSettlementsByIdNots, fixatedAmount } from './settlement';
 const pool = Pool.getInstance();
 
 export const getAllBanks = async () => {
@@ -338,7 +338,7 @@ export const updatePayment = async ({ id, solicitud, fechaDePago, referencia, mo
       )
     ).rows[0].monto;
 
-    if (sum > paymentsWithOutUpdatee.reduce((prev, next) => prev + +next.monto, 0) + +monto) {
+    if (fixatedAmount(sum) > fixatedAmount(fixatedAmount(paymentsWithOutUpdatee.reduce((prev, next) => prev + +next.monto, 0)) + fixatedAmount(+monto))) {
       throw {
         status: 400,
         message: 'El monto indicado no es suficiente para cubrir la solicitud',
