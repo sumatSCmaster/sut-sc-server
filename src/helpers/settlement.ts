@@ -147,7 +147,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       contributor.tipo_contribuyente === 'JURIDICO'
         ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.PP, reference])).rows[0]
         : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.PP, contributor.id_contribuyente])).rows[0];
-
+    if (contributor.tipo_contribuyente === 'JURIDICO' && branch?.estado_licencia === 'CESANTE') throw { status: 401, message: 'La referencia proporcionada cesó sus actividades' };
     console.log(lastSettlementPayload);
     console.log(lastSettlementQuery);
     if (AEApplicationExists && SMApplicationExists && IUApplicationExists && PPApplicationExists) return { status: 409, message: 'Ya existe una declaracion de impuestos para este mes' };
@@ -1856,7 +1856,7 @@ export const contributorSearch = async ({ document, docType, name }) => {
     console.log(!document && !name);
     if (!document && !name) throw { status: 406, message: 'Debe aportar algun parametro para la busqueda' };
     if (document && document.length < 6 && name && name.length < 3) throw { status: 406, message: 'Debe aportar mas datos para la busqueda' };
-    contribuyentes = document && document.length > 6 ? (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows : (await client.query(queries.SEARCH_CONTRIBUTOR_BY_NAME, [`%${name}%`])).rows;
+    contribuyentes = document && document.length >= 6 ? (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows : (await client.query(queries.SEARCH_CONTRIBUTOR_BY_NAME, [`%${name}%`])).rows;
     const contributorExists = contribuyentes.length > 0;
     if (!contributorExists) return { status: 404, message: 'No existen coincidencias con la razon social o documento proporcionado' };
     contribuyentes = await Promise.all(contribuyentes.map(async (el) => await formatContributor(el, client)));
@@ -4378,10 +4378,12 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
     const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
 
     const UTMM = (await pool.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-    const impuestoRecibo = UTMM * 2;
+    
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
     const economicActivities = (await pool.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [referencia.id_registro_municipal])).rows;
+    const taxSettlement = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 100])).rows[0]
+    const impuestoRecibo = taxSettlement?.monto || UTMM * 2;
     moment.locale('es');
     let certInfoArray: any[] = [];
     let certAE;
