@@ -291,6 +291,7 @@ export const updateEstateDate = async ({ id, date }) => {
   try{
     await client.query('BEGIN');
     const fromDate = moment(date).subtract(1, 'M');
+    const fromEndDate = fromDate.clone().endOf('month').format('MM-DD-YYYY')
     const ghostSettlement = (
       await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
         null,
@@ -298,7 +299,7 @@ export const updateEstateDate = async ({ id, date }) => {
         'IU',
         'Pago ordinario',
         { month: fromDate.toDate().toLocaleString('es-ES', { month: 'long' }), year: fromDate.year(), desglose:[{inmueble: id}] },
-        fromDate.endOf('month').format('MM-DD-YYYY'),
+        fromEndDate,
         null
       ])
     ).rows[0];
