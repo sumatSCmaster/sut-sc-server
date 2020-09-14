@@ -1734,6 +1734,39 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT: 'DELETE FROM pago WHERE id_procedimiento = $1 AND concepto = $2;',
   DELETE_FISCAL_CREDIT_BY_APPLICATION_ID: 'DELETE FROM impuesto.credito_fiscal WHERE id_solicitud = $1;',
 
+
+  //Validacion de pagos individual
+  APPROVE_PAYMENT: `UPDATE pago SET aprobado = true, fecha_aprobacion = (NOW() - interval '4 hours') WHERE id_pago = $1 RETURNING *`,
+  PAYMENT_PROCEDURE_INFO: `select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, 
+    pago.id_procedimiento AS idProcedimiento, pago.referencia, pago.fecha_de_pago AS fechaDePago, 
+    pago.fecha_de_aprobacion AS fechaDeAprobacion, tramite.codigo_tramite AS "codigoTramite", 
+    tipo_tramite.sufijo AS sufijo, tipo_tramite.id_tipo_tramite AS tipotramite, pago.concepto  from pago
+    INNER JOIN tramite ON pago.id_procedimiento = tramite.id_tramite
+    INNER JOIN tipo_tramite ON tipo_tramite.id_tipo_tramite = tramite.id_tipo_tramite where pago.id_pago = $1`,
+  PAYMENT_FINE_INFO: `SELECT codigo_multa, id_tipo_tramite  FROM pago p 
+    INNER JOIN multa m ON m.id_multa = p.id_procedimiento 
+    INNER JOIN tipo_tramite tt ON tt.id_tipo_tramite = m.id_tipo_tramite WHERE p.id_pago = $1`,
+  PAYMENTS_ALL_APPROVED: `SELECT true = ALL(SELECT aprobado FROM pago WHERE id_procedimiento = (SELECT id_procedimiento FROM pago WHERE id_pago = $1)) as alltrue`,
+  UPDATE_PAYMENT_SETTLEMENT: `UPDATE impuesto.solicitud SET aprobado = true, fecha_aprobado = (NOW() - interval '4 hours') WHERE id_solicitud = (SELECT id_procedimiento FROM pago WHERE id_pago = $1);`,
+  PAYMENT_SETTLEMENT_INFO: `select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, pago.id_procedimiento AS idProcedimiento, 
+    pago.referencia, pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, 
+    solicitud.aprobado as "solicitudAprobada", pago.concepto, contribuyente.tipo_documento AS nacionalidad, 
+    contribuyente.documento from pago
+    INNER JOIN impuesto.solicitud ON pago.id_procedimiento = solicitud.id_solicitud
+    INNER JOIN impuesto.contribuyente ON solicitud.id_contribuyente = contribuyente.id_contribuyente
+    where pago.id_pago = $1`,
+  PAYMENT_CONV_UPDATE: `UPDATE impuesto.fraccion SET aprobado = true, fecha_aprobado = (NOW() - interval '4 hours') WHERE id_fraccion = (SELECT id_procedimiento FROM pago WHERE id_pago = $1);`,
+  PAYMENT_CONV_INFO: `select pago.id_pago AS id, pago.monto, pago.aprobado, 
+    pago.id_banco AS idBanco, (SELECT id_procedimiento FROM pago WHERE id_pago = $1) AS idProcedimiento, pago.referencia, 
+    pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, pago.concepto, 
+    contribuyente.tipo_documento AS nacionalidad, contribuyente.documento,
+    (SELECT true = ALL(SELECT aprobado FROM impuesto.fraccion WHERE id_convenio = (SELECT id_convenio FROM impuesto.fraccion WHERE id_fraccion = (SELECT id_procedimiento FROM pago WHERE id_pago = $1) ))) AS "solicitudAprobada"
+    from pago
+    INNER JOIN impuesto.fraccion ON fraccion.id_fraccion = pago.id_procedimiento
+    INNER JOIN impuesto.convenio ON fraccion.id_convenio = convenio.id_convenio
+    INNER JOIN impuesto.solicitud ON solicitud.id_solicitud = convenio.id_solicitud
+    INNER JOIN impuesto.contribuyente ON solicitud.id_contribuyente = contribuyente.id_contribuyente
+                where pago.id_pago = $1`,
   gtic: {
     GET_NATURAL_CONTRIBUTOR:
       'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 AND (trim(nb_representante_legal) NOT IN (SELECT trim(nb_marca) FROM tb014_marca_veh) AND trim(nb_representante_legal) NOT IN (SELECT trim(tx_marca) FROM t45_vehiculo_marca) OR trim(nb_representante_legal) IS NULL) ORDER BY co_contribuyente DESC',
