@@ -189,6 +189,7 @@ export const approveSinglePayment = async (id, user) => {
 		const res = await client.query(queries.APPROVE_PAYMENT, [id]);
 		if(res.rowCount > 0){
       const pago = res.rows[0];
+      console.log(pago)
       const tramiteInfo = pago.concepto === 'TRAMITE' ? (await client.query(queries.PAYMENT_PROCEDURE_INFO, [id])).rows[0] : null;
       const multaInfo = pago.concepto === 'MULTA' ? (await client.query(queries.PAYMENT_FINE_INFO, [id])).rows[0] : null;
 
