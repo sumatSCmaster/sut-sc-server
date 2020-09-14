@@ -221,7 +221,7 @@ export const approveSinglePayment = async (id, user) => {
 				monto: pago.monto,
 				idBanco: pago.id_banco,
 				aprobado: pago.aprobado,
-				idTramite: pago.idprocedimiento,
+				idTramite: pago.id_procedimiento,
         pagoPrevio: tramiteInfo?.pago_previo,
         referencia: pago.referencia,
         fechaDePago: pago.fecha_de_pago,
