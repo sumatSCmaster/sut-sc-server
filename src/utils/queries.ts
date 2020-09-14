@@ -978,17 +978,19 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   P.monto,
   p.referencia,
   p.metodo_pago,
-  b.nombre as banco,
+  b.nombre as banco_destino,
+  b2.nombre as banco_origen,
   CASE concepto WHEN 'TRAMITE' THEN CONCAT('Pago de tramite - ', tt.nombre_tramite) WHEN 'IMPUESTO' THEN 'Pago de impuestos'  WHEN 'CONVENIO' THEN 'Pago de convenio'  ELSE 'Otro' END as concepto, 
   SUM(p.monto) OVER (PARTITION BY u.nombre_completo) AS sumcajero,
   SUM(p.monto) OVER (PARTITION BY u.nombre_completo, p.metodo_pago) AS summetodopagocajero
       FROM pago p 
       INNER JOIN usuario u USING (id_usuario)
       LEFT JOIN banco b ON b.id_banco = p.id_banco_destino
+      LEFT JOIN banco b2 ON b2.id_banco = p.id_banco
       LEFT JOIN impuesto.solicitud s ON s.id_solicitud = p.id_procedimiento AND p.concepto = 'IMPUESTO'
       LEFT JOIN tramite t ON t.id_tramite = p.id_procedimiento AND p.concepto = 'TRAMITE'
       LEFT JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite
-      WHERE p.fecha_de_aprobacion BETWEEN $1 AND $2 AND u.id_tipo_usuario != 4;`,
+      WHERE p.fecha_de_aprobacion BETWEEN $1 AND $2 AND u.id_tipo_usuario != 4`,
   //EXONERACIONES
   GET_CONTRIBUTOR:
     'SELECT c.id_contribuyente as id, razon_social AS "razonSocial", rm.denominacion_comercial AS "denominacionComercial", c.tipo_documento AS "tipoDocumento", c.documento, rm.id_registro_municipal AS "idRegistroMunicipal", rm.referencia_municipal AS "referenciaMunicipal" FROM impuesto.contribuyente c INNER JOIN impuesto.registro_municipal rm ON rm.id_contribuyente = c.id_contribuyente WHERE c.tipo_documento = $1 AND c.documento = $2 AND rm.referencia_municipal = $3;',
