@@ -3448,7 +3448,7 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
         });
       } else {
         try {
-          await pool.query(queries.UPDATE_CERTIFICATE_SETTLEMENT, [dir, application.idLiquidacion]);
+          
           pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toBuffer(async (err, buffer) => {
             if (err) {
               rej(err);
