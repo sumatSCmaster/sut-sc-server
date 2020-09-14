@@ -235,12 +235,14 @@ export const approveSinglePayment = async (id, user) => {
         concepto: pago.concepto
       }
       await validationHandler({ concept: pago.concepto, body: body, user, client });
+      await client.query('COMMIT');
       return body;
 		}else {
+      await client.query('ROLLBACK');
       return { message: 'Pago no hallado' }
     }
 
-		await client.query('COMMIT');
+		
 	} catch (e) {
 		await client.query('ROLLBACK');
 		throw e;	
