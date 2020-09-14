@@ -182,6 +182,76 @@ const getProcessFiscalCredit = async ({ id, client }: { id: number; client: Pool
   }
 };
 
+export const approveSinglePayment = async (id, user) => {
+	const client = await pool.connect();
+	try{
+  	await client.query('BEGIN');
+		const res = await client.query(queries.APPROVE_PAYMENT, [id]);
+		if(res.rowCount > 0){
+      const pago = res.rows[0];
+      console.log(pago)
+      const tramiteInfo = pago.concepto === 'TRAMITE' ? (await client.query(queries.PAYMENT_PROCEDURE_INFO, [id])).rows[0] : null;
+      const multaInfo = pago.concepto === 'MULTA' ? (await client.query(queries.PAYMENT_FINE_INFO, [id])).rows[0] : null;
+
+      if(pago.concepto === 'IMPUESTO'){
+        if((await client.query(queries.PAYMENTS_ALL_APPROVED, [id])).rows[0].alltrue === true){
+          await client.query(queries.UPDATE_PAYMENT_SETTLEMENT, [id])          
+        }
+      }
+
+      const solicitudInfo = pago.concepto === 'IMPUESTO' ? (await client.query(queries.PAYMENT_SETTLEMENT_INFO, [id])).rows[0] : null
+      
+      if(pago.concepto === 'CONVENIO'){
+        await client.query(queries.PAYMENT_CONV_UPDATE, [id]);
+        
+      }
+      const convenioInfo = pago.concepto === 'CONVENIO' ? (await client.query(queries.PAYMENT_CONV_INFO, [id])).rows[0] : null;
+       if(pago.concepto === 'RETENCION'){
+        if((await client.query(queries.PAYMENTS_ALL_APPROVED, [id])).rows[0].alltrue === true){
+          await client.query(queries.UPDATE_PAYMENT_SETTLEMENT, [id])          
+        }
+      }
+
+      const retencionInfo = pago.concepto === 'RETENCION' ? (await client.query(`select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, pago.id_procedimiento AS idProcedimiento, p
+      ago.referencia, pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, solicitud.aprobado as "solicitudAprobada", pago.concepto, contribuyente.tipo_documento AS nacionalidad, contribuyente.documento from pago
+                      INNER JOIN impuesto.solicitud ON pago.id_procedimiento = solicitud.id_solicitud
+                      INNER JOIN impuesto.contribuyente ON solicitud.id_contribuyente = contribuyente.id_contribuyente
+                      where pago.id_pago = idPago`, [id])).rows[0] : null
+			const body = {
+				id: pago.id,
+				monto: pago.monto,
+				idBanco: pago.id_banco,
+				aprobado: pago.aprobado,
+				idTramite: pago.id_procedimiento,
+        pagoPrevio: tramiteInfo?.pago_previo,
+        referencia: pago.referencia,
+        fechaDePago: pago.fecha_de_pago,
+        codigoTramite: tramiteInfo?.codigoTramite,
+        codigoMulta: multaInfo?.codigo_multa,
+        fechaDeAprobacion: pago.fecha_de_aprobacion,
+        tipoTramite: tramiteInfo?.tipotramite || multaInfo?.id_tipo_tramite,
+        documento: solicitudInfo?.documento || convenioInfo?.documento || retencionInfo?.documento,
+        nacionalidad: solicitudInfo?.nacionalidad || convenioInfo?.nacionalidad || retencionInfo?.nacionalidad,
+        solicitudAprobada: solicitudInfo?.solicitudAprobada || convenioInfo?.solicitudAprobada || retencionInfo?.solicitudAprobada || undefined,
+        concepto: pago.concepto
+      }
+      await validationHandler({ concept: pago.concepto, body: body, user, client });
+      await client.query('COMMIT');
+      return { body, status: 200 };
+		}else {
+      await client.query('ROLLBACK');
+      return { message: 'Pago no hallado', status: 404 }
+    }
+
+		
+	} catch (e) {
+		await client.query('ROLLBACK');
+		throw {e, status: 500};	
+	} finally {
+		client.release();
+	}
+}
+
 export const validatePayments = async (body, user) => {
   const client = await pool.connect();
   try {
@@ -255,12 +325,31 @@ export const listTaxPayments = async () => {
   const client = await pool.connect();
   try {
     let data = await client.query(`
-    SELECT s.*, p.*, b.id_banco, c.documento, c.tipo_documento AS "tipoDocumento" 
-    FROM impuesto.solicitud_state s 
-    INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente 
-    INNER JOIN pago p ON p.id_procedimiento = s.id 
-    INNER JOIN banco b ON b.id_banco = p.id_banco AND b.id_banco = p.id_banco_destino 
-    WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' ORDER BY id_procedimiento, id_pago;`);
+    SELECT COUNT(*) FROM (
+      WITH solis AS (
+          SELECT s.id_solicitud, s.id_tipo_tramite, s.aprobado, s.fecha, s.fecha_aprobado, s.tipo_solicitud, s.id_contribuyente FROM impuesto.solicitud s WHERE aprobado = false AND tipo_solicitud IN ('IMPUESTO', 'RETENCION')
+      )
+      
+      SELECT s.*, p.*, b.id_banco, c.documento, c.tipo_documento AS "tipoDocumento" 
+          FROM (SELECT s.id_solicitud AS id,
+          s.id_tipo_tramite AS tipotramite,
+          s.aprobado,
+          s.fecha,
+          s.fecha_aprobado AS "fechaAprobacion",
+          ev.state,
+          s.tipo_solicitud AS "tipoSolicitud",
+          s.id_contribuyente
+         FROM (SELECT * FROM solis) s
+           JOIN ( SELECT es.id_solicitud,
+                  impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+                 FROM impuesto.evento_solicitud es
+                 WHERE id_solicitud IN (SELECT id_solicitud FROM solis)
+                GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud) s 
+          INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente 
+          INNER JOIN pago p ON p.id_procedimiento = s.id 
+          INNER JOIN banco b ON b.id_banco = p.id_banco AND b.id_banco = p.id_banco_destino 
+          WHERE s.state = 'validando' ORDER BY id_procedimiento, id_pago
+      ) x;`);
     let montosSolicitud = (
       await client.query(`
     SELECT l.id_solicitud, SUM(monto) as monto
