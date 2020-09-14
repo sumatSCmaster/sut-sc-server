@@ -1736,7 +1736,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
 
 
   //Validacion de pagos individual
-  APPROVE_PAYMENT: `UPDATE pago SET aprobado = true, fecha_aprobacion = (NOW() - interval '4 hours') WHERE id_pago = $1 RETURNING *`,
+  APPROVE_PAYMENT: `UPDATE pago SET aprobado = true, fecha_de_aprobacion = (NOW() - interval '4 hours') WHERE id_pago = $1 RETURNING *`,
   PAYMENT_PROCEDURE_INFO: `select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, 
     pago.id_procedimiento AS idProcedimiento, pago.referencia, pago.fecha_de_pago AS fechaDePago, 
     pago.fecha_de_aprobacion AS fechaDeAprobacion, tramite.codigo_tramite AS "codigoTramite", 
