@@ -325,12 +325,31 @@ export const listTaxPayments = async () => {
   const client = await pool.connect();
   try {
     let data = await client.query(`
-    SELECT s.*, p.*, b.id_banco, c.documento, c.tipo_documento AS "tipoDocumento" 
-    FROM impuesto.solicitud_state s 
-    INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente 
-    INNER JOIN pago p ON p.id_procedimiento = s.id 
-    INNER JOIN banco b ON b.id_banco = p.id_banco AND b.id_banco = p.id_banco_destino 
-    WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' ORDER BY id_procedimiento, id_pago;`);
+    SELECT COUNT(*) FROM (
+      WITH solis AS (
+          SELECT s.id_solicitud, s.id_tipo_tramite, s.aprobado, s.fecha, s.fecha_aprobado, s.tipo_solicitud, s.id_contribuyente FROM impuesto.solicitud s WHERE aprobado = false AND tipo_solicitud IN ('IMPUESTO', 'RETENCION')
+      )
+      
+      SELECT s.*, p.*, b.id_banco, c.documento, c.tipo_documento AS "tipoDocumento" 
+          FROM (SELECT s.id_solicitud AS id,
+          s.id_tipo_tramite AS tipotramite,
+          s.aprobado,
+          s.fecha,
+          s.fecha_aprobado AS "fechaAprobacion",
+          ev.state,
+          s.tipo_solicitud AS "tipoSolicitud",
+          s.id_contribuyente
+         FROM (SELECT * FROM solis) s
+           JOIN ( SELECT es.id_solicitud,
+                  impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+                 FROM impuesto.evento_solicitud es
+                 WHERE id_solicitud IN (SELECT id_solicitud FROM solis)
+                GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud) s 
+          INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente 
+          INNER JOIN pago p ON p.id_procedimiento = s.id 
+          INNER JOIN banco b ON b.id_banco = p.id_banco AND b.id_banco = p.id_banco_destino 
+          WHERE s.state = 'validando' ORDER BY id_procedimiento, id_pago
+      ) x;`);
     let montosSolicitud = (
       await client.query(`
     SELECT l.id_solicitud, SUM(monto) as monto
