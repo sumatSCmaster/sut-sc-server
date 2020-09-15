@@ -45,6 +45,8 @@ block content
                   div.row-constancy
                     div Concepto
                     div Fecha
+                    div Origen
+                    div Destino
                     div Refencia
                     div Monto
                   hr(style={'height':'2px', }).divider
@@ -52,6 +54,8 @@ block content
                     div.row-constancy
                       div #{ele.concepto}
                       div #{moment(ele.fecha_de_pago).format('DD/MM/YYYY')}
+                      div #{ele.banco_origen}
+                      div #{ele.banco_destino}                      
                       div #{ele.referencia ? ele.referencia : 'N/A'}
                       div #{new Intl.NumberFormat('de-DE').format(ele.monto)}          
                   div.row-constancy
@@ -64,6 +68,8 @@ block content
                   div.row-constancy
                     div Concepto
                     div Fecha
+                    div Origen
+                    div Destino                    
                     div Refencia
                     div Monto
                   hr(style={'height':'2px', }).divider
@@ -71,6 +77,8 @@ block content
                     div.row-constancy
                       div #{ele.concepto}
                       div #{moment(ele.fecha_de_pago).format('DD/MM/YYYY')}
+                      div #{ele.banco_origen}
+                      div #{ele.banco_destino}
                       div #{ele.referencia ? ele.referencia : 'N/A'}
                       div #{new Intl.NumberFormat('de-DE').format(ele.monto)}          
                   div.row-constancy
