@@ -928,7 +928,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_CASHIER_POS: `SELECT b.nombre as banco, SUM(p.monto) as monto, COUNT(*) as transacciones
         FROM pago p 
         INNER JOIN banco b ON b.id_banco = p.id_banco
-        WHERE p.fecha_de_pago = $1 AND p.metodo_pago = 'PUNTO DE VENTA' AND id_usuario = $2
+        WHERE p.fecha_de_aprobacion::date = $1 AND p.metodo_pago = 'PUNTO DE VENTA' AND id_usuario = $2
         GROUP BY b.nombre;`,
   GET_CASHIER_CASH: `SELECT SUM(p.monto) as total, COUNT(*) as transacciones
         FROM pago p 
