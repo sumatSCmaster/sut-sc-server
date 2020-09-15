@@ -862,11 +862,11 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
             INNER JOIN banco b ON b.id_banco = p.id_banco_destino
             GROUP BY p.id_banco_destino, b.nombre
             UNION
-            SELECT p.id_banco_destino AS "id_banco", b.nombre AS banco, SUM(ROUND(p.monto)) as monto
+            SELECT p.id_banco_destino AS "id_banco", b.nombre AS banco, SUM(p.monto) as monto
             FROM pago p 
             INNER JOIN banco b ON b.id_banco = p.id_banco_destino
             INNER JOIN impuesto.fraccion f ON f.id_fraccion = p.id_procedimiento
-            WHERE p.concepto = 'CONVENIO'  AND f.fecha_aprobado BETWEEN $9 AND $10
+            WHERE p.concepto = 'CONVENIO' AND P.metodo_pago = 'TRANSFERENCIA' AND p.fecha_de_aprobacion BETWEEN $9 AND $10
             GROUP BY p.id_banco_destino, b.nombre
             ) x GROUP BY id_banco, banco;`,
   GET_CASH_REPORT: `SELECT 'BS' as moneda, SUM(x.monto) AS monto FROM (
@@ -885,7 +885,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_RETENTION_CREDIT_INGRESS_BY_INTERVAL: `SELECT COALESCE(SUM(monto),0) AS ingresado, COALESCE(COUNT(*), 0) AS "cantidadIng" FROM impuesto.retencion WHERE monto > 0 AND fecha BETWEEN $1 AND $2;`,
   GET_POS: `SELECT SUM(monto) as total FROM (SELECT SUM(p.monto) as monto
         FROM pago p
-        WHERE p.concepto IN ('IMPUESTO', 'CONVENIO', 'RETENCION') AND p.metodo_pago = 'PUNTO DE VENTA' AND p.fecha_de_pago BETWEEN $1 AND $2
+        WHERE p.concepto IN ('IMPUESTO', 'CONVENIO', 'RETENCION') AND p.metodo_pago = 'PUNTO DE VENTA' AND p.fecha_de_aprobacion BETWEEN $1 AND $2
         UNION
         SELECT SUM(p.monto) as monto
         FROM (SELECT * FROM pago p 
