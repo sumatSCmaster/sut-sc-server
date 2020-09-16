@@ -3,45 +3,104 @@ block css
   link(rel="stylesheet", href="css/sedemat.css")
 block title
 block content
+  -var names = Object.keys(datos)
   div#fecha
     p
       b FECHA:
       span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
-  div#planilla
-    div
-      h2 CIERRE DE CAJEROS
-    div           
-      div(style={'font-size':'20px', 'font-weight':'bold'}).row-constancy
-        div(style={'text-align':'start', }) Cajero
-        div.center Monto (Bs)
-      hr.divider
-      each item in datos.items
-        div.row-constancy.break-page
-          div(style={'text-align':'start' }) #{item.cajero}
-          div.center #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.monto)}
-      hr.divider
-      div.row-constancy.break-page
-        div(style={'-webkit-flex': '2'}).end Total Bs.
-        div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.total? (datos.total): 0)}
-    div(style={'text-align':'-webkit-right', 'width':'100%'}).break-page
-      div.ticket.break-page(style={'margin':'2% 0', 'border':'2px solid #3387ca', 'width':'55%'})
-        div.ticket-data.break-page
-          div(style={'-webkit-flex': '4'})
-            p(style={'margin': '5px'})
-              b METODO DE PAGO   
-          div(style={'-webkit-flex': '3'}).center
-            p(style={'margin': '5px'})
-              b TRANSACIONES 
-          div(style={'-webkit-flex': '3'}).center
-            p(style={'margin': '5px'})
-              b MONTO Bs.
+    p
+      b CIERRE DE CAJEROS         
+  div#planilla        
+    each item in names
+      -var types = Object.keys(datos[item]).reverse()
+      div.break-page
+        div(style={'text-align':'start', 'font-size':'22px', 'font-weight':'bold', 'margin-top':'50px'}) Cajero: #{item}
         hr.divider
-        each item in datos.metodoPago
-          div.ticket-data.break-page
-            div(style={'-webkit-flex': '4'})
-              p(style={'margin': '5px'}) #{item.tipo}
-            div(style={'-webkit-flex': '3'}).center
-              p(style={'margin': '5px'}) #{item.transacciones}
-            div(style={'-webkit-flex': '3'}).center
-              p(style={'margin': '5px'}) #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.monto ? (item.monto) : 0)}                   
+        each tipo in types 
+          case `${tipo}`
+            when 'CREDITO_FISCAL'
+              each el in chunk(datos[item]['CREDITO_FISCAL'], 10)
+                div.break-page
+                  div(style={'font-size':'20px', 'font-weight':'bold', 'margin-top':'30px'})
+                    b CREDITO FISCAL
+                  div.row-constancy
+                    div Concepto
+                    div Fecha
+                    div Refencia
+                    div Monto
+                  hr(style={'height':'2px', }).divider
+                  each ele in el
+                    div.row-constancy
+                      div #{ele.concepto}
+                      div #{moment(ele.fecha_de_pago).format('DD/MM/YYYY')}
+                      div #{ele.referencia ? ele.referencia : 'N/A'}
+                      div #{new Intl.NumberFormat('de-DE').format(ele.monto)}          
+                  div.row-constancy
+                    div(style={'-webkit-flex': '3'}).end Total Bs.
+                    div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE').format(datos[item]['CREDITO_FISCAL'][0].summetodopagocajero)}
+            when 'PUNTO DE VENTA'
+              each el in chunk(datos[item]['PUNTO DE VENTA'], 10)
+                div.break-page
+                  div(style={'font-size':'20px', 'font-weight':'bold', 'margin-top':'30px'}) PUNTO DE VENTA
+                  div.row-constancy
+                    div Concepto
+                    div Fecha
+                    div Origen
+                    div Destino
+                    div Refencia
+                    div Monto
+                  hr(style={'height':'2px', }).divider
+                  each ele in el
+                    div.row-constancy
+                      div #{ele.concepto}
+                      div #{moment(ele.fecha_de_pago).format('DD/MM/YYYY')}
+                      div #{ele.banco_origen}
+                      div #{ele.banco_destino}                      
+                      div #{ele.referencia ? ele.referencia : 'N/A'}
+                      div #{new Intl.NumberFormat('de-DE').format(ele.monto)}          
+                  div.row-constancy
+                    div(style={'-webkit-flex': '3'}).end Total Bs.
+                    div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE').format(datos[item]['PUNTO DE VENTA'][0].summetodopagocajero)}                         
+            when 'TRANSFERENCIA'
+              each el in chunk(datos[item]['TRANSFERENCIA'], 10)
+                div.break-page
+                  div(style={'font-size':'20px', 'font-weight':'bold', 'margin-top':'30px'}) TRANSFERENCIA
+                  div.row-constancy
+                    div Concepto
+                    div Fecha
+                    div Origen
+                    div Destino                    
+                    div Refencia
+                    div Monto
+                  hr(style={'height':'2px', }).divider
+                  each ele in el
+                    div.row-constancy
+                      div #{ele.concepto}
+                      div #{moment(ele.fecha_de_pago).format('DD/MM/YYYY')}
+                      div #{ele.banco_origen}
+                      div #{ele.banco_destino}
+                      div #{ele.referencia ? ele.referencia : 'N/A'}
+                      div #{new Intl.NumberFormat('de-DE').format(ele.monto)}          
+                  div.row-constancy
+                    div(style={'-webkit-flex': '3'}).end Total Bs.
+                    div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE').format(datos[item]['TRANSFERENCIA'][0].summetodopagocajero)}                       
+            when 'EFECTIVO'
+              each el in chunk(datos[item]['EFECTIVO'], 10)
+                div.break-page
+                  div(style={'font-size':'20px', 'font-weight':'bold', 'margin-top':'30px'}) EFECTIVO
+                  div.row-constancy
+                    div Concepto
+                    div Fecha
+                    div Refencia
+                    div Monto
+                  hr(style={'height':'2px', }).divider
+                  each ele in el
+                    div.row-constancy
+                      div #{ele.concepto}
+                      div #{moment(ele.fecha_de_pago).format('DD/MM/YYYY')}
+                      div #{ele.referencia ? ele.referencia : 'N/A'}
+                      div #{new Intl.NumberFormat('de-DE').format(ele.monto)}          
+                  div.row-constancy
+                    div(style={'-webkit-flex': '3'}).end Total Bs.
+                    div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE').format(datos[item]['EFECTIVO'][0].summetodopagocajero)}                  
 block footer

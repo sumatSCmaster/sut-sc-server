@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAllBanks, validatePayments, listTaxPayments, updatePayment, addPayment, paymentReferenceSearch, reversePaymentForProcess } from '@helpers/banks';
+import { getAllBanks, validatePayments, listTaxPayments, updatePayment, addPayment, paymentReferenceSearch, reversePaymentForProcess, approveSinglePayment } from '@helpers/banks';
 import { fulfill } from '@utils/resolver';
 import { errorMessageGenerator } from '@helpers/errors';
 import { authenticate } from 'passport';
@@ -26,6 +26,14 @@ router.put('/validatePayments', authenticate('jwt'), async (req, res) => {
   if (err) res.status(500).json({ status: 500, message: errorMessageGenerator(err) });
   if (data) res.status(data.status).json(data);
 });
+
+router.put('/validateSinglePayment', authenticate('jwt'), async (req, res) => {
+  const [err, data] = await fulfill(approveSinglePayment(req.body.id, req.user));
+  console.log(err);
+  if (err) res.status(500).json({ status: 500, message: errorMessageGenerator(err) });
+  if (data) res.status(data.status).json(data);
+});
+
 
 router.get('/payment/', authenticate('jwt'), async (req, res) => {
   const [err, data] = await fulfill(listTaxPayments());

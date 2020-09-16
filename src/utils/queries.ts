@@ -862,11 +862,11 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
             INNER JOIN banco b ON b.id_banco = p.id_banco_destino
             GROUP BY p.id_banco_destino, b.nombre
             UNION
-            SELECT p.id_banco_destino AS "id_banco", b.nombre AS banco, SUM(ROUND(p.monto)) as monto
+            SELECT p.id_banco_destino AS "id_banco", b.nombre AS banco, SUM(p.monto) as monto
             FROM pago p 
             INNER JOIN banco b ON b.id_banco = p.id_banco_destino
             INNER JOIN impuesto.fraccion f ON f.id_fraccion = p.id_procedimiento
-            WHERE p.concepto = 'CONVENIO'  AND f.fecha_aprobado BETWEEN $9 AND $10
+            WHERE p.concepto = 'CONVENIO' AND P.metodo_pago = 'TRANSFERENCIA' AND p.fecha_de_aprobacion BETWEEN $9 AND $10
             GROUP BY p.id_banco_destino, b.nombre
             ) x GROUP BY id_banco, banco;`,
   GET_CASH_REPORT: `SELECT 'BS' as moneda, SUM(x.monto) AS monto FROM (
@@ -885,7 +885,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_RETENTION_CREDIT_INGRESS_BY_INTERVAL: `SELECT COALESCE(SUM(monto),0) AS ingresado, COALESCE(COUNT(*), 0) AS "cantidadIng" FROM impuesto.retencion WHERE monto > 0 AND fecha BETWEEN $1 AND $2;`,
   GET_POS: `SELECT SUM(monto) as total FROM (SELECT SUM(p.monto) as monto
         FROM pago p
-        WHERE p.concepto IN ('IMPUESTO', 'CONVENIO', 'RETENCION') AND p.metodo_pago = 'PUNTO DE VENTA' AND p.fecha_de_pago BETWEEN $1 AND $2
+        WHERE p.concepto IN ('IMPUESTO', 'CONVENIO', 'RETENCION') AND p.metodo_pago = 'PUNTO DE VENTA' AND p.fecha_de_aprobacion BETWEEN $1 AND $2
         UNION
         SELECT SUM(p.monto) as monto
         FROM (SELECT * FROM pago p 
@@ -928,7 +928,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_CASHIER_POS: `SELECT b.nombre as banco, SUM(p.monto) as monto, COUNT(*) as transacciones
         FROM pago p 
         INNER JOIN banco b ON b.id_banco = p.id_banco
-        WHERE p.fecha_de_pago = $1 AND p.metodo_pago = 'PUNTO DE VENTA' AND id_usuario = $2
+        WHERE p.fecha_de_aprobacion::date = $1 AND p.metodo_pago = 'PUNTO DE VENTA' AND id_usuario = $2
         GROUP BY b.nombre;`,
   GET_CASHIER_CASH: `SELECT SUM(p.monto) as total, COUNT(*) as transacciones
         FROM pago p 
@@ -951,10 +951,46 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     FROM pago p INNER JOIN usuario u USING (id_usuario)
     WHERE p.fecha_de_pago = $1 AND u.id_tipo_usuario != 4
     GROUP BY u.nombre_completo;`,
+  GET_ALL_CASHIERS_TOTAL_INT: `SELECT u.nombre_completo, SUM(p.monto) AS monto
+  FROM pago p INNER JOIN usuario u USING (id_usuario)
+  WHERE p.fecha_de_pago BETWEEN $1 AND $2 AND u.id_tipo_usuario != 4
+  GROUP BY u.nombre_completo;`,
   GET_ALL_CASHIERS_METHODS_TOTAL: `SELECT p.metodo_pago AS tipo, SUM(p.monto) AS monto, COUNT(*) AS transacciones
     FROM pago p 
     WHERE p.fecha_de_pago = $1 AND p.id_usuario IS (SELECT id_usuario FROM usuario WHERE tipo_usuario != 4)
     GROUP BY p.metodo_pago;`,
+  GET_ALL_CASHIERS_METHODS_TOTAL_NEW: `SELECT u.nombre_completo,
+  p.fecha_de_pago,
+  P.monto,
+  p.referencia,
+  p.metodo_pago,
+  CASE concepto WHEN 'TRAMITE' THEN CONCAT('Pago de tramite - ', tt.nombre_tramite) WHEN 'IMPUESTO' THEN 'Pago de impuestos'  WHEN 'CONVENIO' THEN 'Pago de convenio'  ELSE 'Otro' END as concepto, 
+  SUM(p.monto) OVER (PARTITION BY u.nombre_completo) AS sumcajero,
+  SUM(p.monto) OVER (PARTITION BY u.nombre_completo, p.metodo_pago) AS summetodopagocajero
+      FROM pago p 
+      INNER JOIN usuario u USING (id_usuario)
+      LEFT JOIN impuesto.solicitud s ON s.id_solicitud = p.id_procedimiento AND p.concepto = 'IMPUESTO'
+      LEFT JOIN tramite t ON t.id_tramite = p.id_procedimiento AND p.concepto = 'TRAMITE'
+      LEFT JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite
+      WHERE p.fecha_de_pago = $1 AND u.id_tipo_usuario != 4;`,
+  GET_ALL_CASHIERS_METHODS_TOTAL_NEW_INT: `SELECT u.nombre_completo,
+  p.fecha_de_pago,
+  P.monto,
+  p.referencia,
+  p.metodo_pago,
+  b.nombre as banco_destino,
+  b2.nombre as banco_origen,
+  CASE concepto WHEN 'TRAMITE' THEN CONCAT('Pago de tramite - ', tt.nombre_tramite) WHEN 'IMPUESTO' THEN 'Pago de impuestos'  WHEN 'CONVENIO' THEN 'Pago de convenio'  ELSE 'Otro' END as concepto, 
+  SUM(p.monto) OVER (PARTITION BY u.nombre_completo) AS sumcajero,
+  SUM(p.monto) OVER (PARTITION BY u.nombre_completo, p.metodo_pago) AS summetodopagocajero
+      FROM pago p 
+      INNER JOIN usuario u USING (id_usuario)
+      LEFT JOIN banco b ON b.id_banco = p.id_banco_destino
+      LEFT JOIN banco b2 ON b2.id_banco = p.id_banco
+      LEFT JOIN impuesto.solicitud s ON s.id_solicitud = p.id_procedimiento AND p.concepto = 'IMPUESTO'
+      LEFT JOIN tramite t ON t.id_tramite = p.id_procedimiento AND p.concepto = 'TRAMITE'
+      LEFT JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite
+      WHERE p.fecha_de_aprobacion::date BETWEEN $1::date AND $2::date AND u.id_tipo_usuario != 4`,
   //EXONERACIONES
   GET_CONTRIBUTOR:
     'SELECT c.id_contribuyente as id, razon_social AS "razonSocial", rm.denominacion_comercial AS "denominacionComercial", c.tipo_documento AS "tipoDocumento", c.documento, rm.id_registro_municipal AS "idRegistroMunicipal", rm.referencia_municipal AS "referenciaMunicipal" FROM impuesto.contribuyente c INNER JOIN impuesto.registro_municipal rm ON rm.id_contribuyente = c.id_contribuyente WHERE c.tipo_documento = $1 AND c.documento = $2 AND rm.referencia_municipal = $3;',
@@ -1734,6 +1770,39 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT: 'DELETE FROM pago WHERE id_procedimiento = $1 AND concepto = $2;',
   DELETE_FISCAL_CREDIT_BY_APPLICATION_ID: 'DELETE FROM impuesto.credito_fiscal WHERE id_solicitud = $1;',
 
+
+  //Validacion de pagos individual
+  APPROVE_PAYMENT: `UPDATE pago SET aprobado = true, fecha_de_aprobacion = (NOW() - interval '4 hours') WHERE id_pago = $1 RETURNING *`,
+  PAYMENT_PROCEDURE_INFO: `select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, 
+    pago.id_procedimiento AS idProcedimiento, pago.referencia, pago.fecha_de_pago AS fechaDePago, 
+    pago.fecha_de_aprobacion AS fechaDeAprobacion, tramite.codigo_tramite AS "codigoTramite", 
+    tipo_tramite.sufijo AS sufijo, tipo_tramite.id_tipo_tramite AS tipotramite, pago.concepto  from pago
+    INNER JOIN tramite ON pago.id_procedimiento = tramite.id_tramite
+    INNER JOIN tipo_tramite ON tipo_tramite.id_tipo_tramite = tramite.id_tipo_tramite where pago.id_pago = $1`,
+  PAYMENT_FINE_INFO: `SELECT codigo_multa, id_tipo_tramite  FROM pago p 
+    INNER JOIN multa m ON m.id_multa = p.id_procedimiento 
+    INNER JOIN tipo_tramite tt ON tt.id_tipo_tramite = m.id_tipo_tramite WHERE p.id_pago = $1`,
+  PAYMENTS_ALL_APPROVED: `SELECT true = ALL(SELECT aprobado FROM pago WHERE id_procedimiento = (SELECT id_procedimiento FROM pago WHERE id_pago = $1)) as alltrue`,
+  UPDATE_PAYMENT_SETTLEMENT: `UPDATE impuesto.solicitud SET aprobado = true, fecha_aprobado = (NOW() - interval '4 hours') WHERE id_solicitud = (SELECT id_procedimiento FROM pago WHERE id_pago = $1);`,
+  PAYMENT_SETTLEMENT_INFO: `select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, pago.id_procedimiento AS idProcedimiento, 
+    pago.referencia, pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, 
+    solicitud.aprobado as "solicitudAprobada", pago.concepto, contribuyente.tipo_documento AS nacionalidad, 
+    contribuyente.documento from pago
+    INNER JOIN impuesto.solicitud ON pago.id_procedimiento = solicitud.id_solicitud
+    INNER JOIN impuesto.contribuyente ON solicitud.id_contribuyente = contribuyente.id_contribuyente
+    where pago.id_pago = $1`,
+  PAYMENT_CONV_UPDATE: `UPDATE impuesto.fraccion SET aprobado = true, fecha_aprobado = (NOW() - interval '4 hours') WHERE id_fraccion = (SELECT id_procedimiento FROM pago WHERE id_pago = $1);`,
+  PAYMENT_CONV_INFO: `select pago.id_pago AS id, pago.monto, pago.aprobado, 
+    pago.id_banco AS idBanco, (SELECT id_procedimiento FROM pago WHERE id_pago = $1) AS idProcedimiento, pago.referencia, 
+    pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, pago.concepto, 
+    contribuyente.tipo_documento AS nacionalidad, contribuyente.documento,
+    (SELECT true = ALL(SELECT aprobado FROM impuesto.fraccion WHERE id_convenio = (SELECT id_convenio FROM impuesto.fraccion WHERE id_fraccion = (SELECT id_procedimiento FROM pago WHERE id_pago = $1) ))) AS "solicitudAprobada"
+    from pago
+    INNER JOIN impuesto.fraccion ON fraccion.id_fraccion = pago.id_procedimiento
+    INNER JOIN impuesto.convenio ON fraccion.id_convenio = convenio.id_convenio
+    INNER JOIN impuesto.solicitud ON solicitud.id_solicitud = convenio.id_solicitud
+    INNER JOIN impuesto.contribuyente ON solicitud.id_contribuyente = contribuyente.id_contribuyente
+                where pago.id_pago = $1`,
   gtic: {
     GET_NATURAL_CONTRIBUTOR:
       'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 AND (trim(nb_representante_legal) NOT IN (SELECT trim(nb_marca) FROM tb014_marca_veh) AND trim(nb_representante_legal) NOT IN (SELECT trim(tx_marca) FROM t45_vehiculo_marca) OR trim(nb_representante_legal) IS NULL) ORDER BY co_contribuyente DESC',

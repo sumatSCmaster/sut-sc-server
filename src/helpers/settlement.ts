@@ -1222,9 +1222,10 @@ export const patchSettlement = async ({ id, settlement }) => {
     await client.query('BEGIN');
     const prevSettlement = (await client.query(queries.GET_SETTLEMENT_BY_ID, [id])).rows[0];
     const proposedDate = moment(fechaLiquidacion);
+    const dateForData = !![10, 100].find((sr) => sr === subramo) ? moment(fechaLiquidacion).subtract(1, 'M') : moment(fechaLiquidacion);
     const newData = {
       ...prevSettlement.datos,
-      fecha: { month: proposedDate.locale('es').format('MMMM'), year: proposedDate.year() },
+      fecha: { month: dateForData.locale('es').format('MMMM'), year: dateForData.year() },
     };
     //1000, validando
     const patchApplication = (await client.query(queries.GET_PATCH_APPLICATION_BY_ORIGINAL_ID_AND_STATE, [prevSettlement.id_solicitud, estado])).rows[0];
@@ -1242,7 +1243,7 @@ export const patchSettlement = async ({ id, settlement }) => {
         await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [newApplication.id_solicitud, applicationStateEvents.APROBARCAJERO]);
         await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [fechaLiquidacion, newApplication.id_solicitud]);
       }
-      liquidacion = (await client.query(queries.UPDATE_SETTLEMENT_CORRECTION, [proposedDate, proposedDate.endOf('month'), newData, subramo, newApplication.id_solicitud, id])).rows.map((el) => ({
+      liquidacion = (await client.query(queries.UPDATE_SETTLEMENT_CORRECTION, [proposedDate.format('MM-DD-YYYY'), proposedDate.endOf('month').format('MM-DD-YYYY'), newData, subramo, newApplication.id_solicitud, id])).rows.map((el) => ({
         id: el.id_liquidacion,
         fechaLiquidacion: el.fecha_liquidacion,
         fechaVencimiento: el.fecha_vencimiento,
@@ -1254,7 +1255,7 @@ export const patchSettlement = async ({ id, settlement }) => {
         subramo,
       }))[0];
     } else {
-      liquidacion = (await client.query(queries.UPDATE_SETTLEMENT_CORRECTION, [proposedDate, proposedDate.endOf('month'), newData, subramo, patchApplication.id_solicitud, id])).rows.map((el) => ({
+      liquidacion = (await client.query(queries.UPDATE_SETTLEMENT_CORRECTION, [proposedDate.format('MM-DD-YYYY'), proposedDate.endOf('month').format('MM-DD-YYYY'), newData, subramo, patchApplication.id_solicitud, id])).rows.map((el) => ({
         id: el.id_liquidacion,
         fechaLiquidacion: el.fecha_liquidacion,
         fechaVencimiento: el.fecha_vencimiento,
@@ -3447,7 +3448,7 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
         });
       } else {
         try {
-          await pool.query(queries.UPDATE_CERTIFICATE_SETTLEMENT, [dir, application.idLiquidacion]);
+          
           pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toBuffer(async (err, buffer) => {
             if (err) {
               rej(err);
