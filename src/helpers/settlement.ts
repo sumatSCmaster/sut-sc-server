@@ -3513,8 +3513,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       const totalMonto = breakdownJoin.reduce((prev, next) => prev + +next.monto, 0);
       const iva = breakdownJoin[0].datos.IVA;
       const totalIva = totalMonto * (0.16);
-      const totalIvaPagar = totalMonto * (0.16 - (iva ? (iva / 100) : 0.16))
-      const totalRetencionIva = totalIva - totalIvaPagar;
+      const totalRetencionIva = totalMonto * (0.16 - fixatedAmount(iva ? (iva / 100) : 0.16))
+      const totalIvaPagar  = fixatedAmount(totalIva - totalRetencionIva);
 
       let fact = (await pool.query('SELECT id_registro_recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [application.id])).rows[0].id_registro_recibo
 
@@ -3551,13 +3551,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             totalIva: `${formatCurrency(totalIva)} Bs.S`,
             totalRetencionIva: `${formatCurrency(totalRetencionIva)} Bs.S`, // TODO: Retencion
             totalIvaPagar: `${formatCurrency(totalIvaPagar)} Bs.S`,
-            montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+            montoTotalImpuesto: `${formatCurrency(totalMonto + totalIvaPagar)} Bs.S`,
             interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
             estatus: 'PAGADO',
             esAgenteSENIAT: breakdownJoin[0].datos.esAgenteSENIAT || undefined,
             observacion: 'Pago por Servicios Municipales',
-            totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
-            totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+            totalLiq: `${formatCurrency(totalMonto + totalIvaPagar)} Bs.S`,
+            totalRecaudado: `${formatCurrency(totalMonto + totalIvaPagar)} Bs.S`,
             totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
           },
         };
@@ -3606,13 +3606,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               totalIva: `${formatCurrency(totalIva)} Bs.S`,
               totalRetencionIva: `${formatCurrency(totalRetencionIva)} Bs.S`, // TODO: Retencion
               totalIvaPagar: `${formatCurrency(totalIvaPagar)} Bs.S`,
-              montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+              montoTotalImpuesto: `${formatCurrency(totalMonto + totalIvaPagar)} Bs.S`,
               interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
               estatus: 'PAGADO',
               esAgenteSENIAT: breakdownJoin[0].datos.esAgenteSENIAT || undefined,
               observacion: 'Pago por Servicios Municipales',
-              totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
-              totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+              totalLiq: `${formatCurrency(totalMonto + totalIvaPagar)} Bs.S`,
+              totalRecaudado: `${formatCurrency(totalMonto + totalIvaPagar)} Bs.S`,
               totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
             },
           };
