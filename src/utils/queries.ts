@@ -1127,7 +1127,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
          JOIN ( SELECT es.id_solicitud,
                 impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
                FROM impuesto.evento_solicitud es
-               WHERE id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE referencia_municipal = $2 LIMIT 1))
+               WHERE id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE id_registro_municipal = $2 LIMIT 1))
               GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
     ) ss  
       ON ss.id = l.id_solicitud  
