@@ -3536,13 +3536,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               direccion: application.direccion,
               razonSocial: application.razonSocial,
             },
-            items: breakdownJoin.map((row) => {
+            items: chunk(breakdownJoin.map((row) => {
               return {
                 direccion: 'No disponible',
                 periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
                 impuesto: formatCurrency(row.monto),
               };
-            }),
+            }), 3),
             totalIva: `${formatCurrency(totalIva)} Bs.S`,
             totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
             totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
@@ -3591,13 +3591,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 direccion: application.direccion,
                 razonSocial: application.razonSocial,
               },
-              items: breakdownJoin.map((row) => {
+              items:chunk(breakdownJoin.map((row) => {
                 return {
                   direccion: el?.direccion || 'No disponible',
                   periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
                   impuesto: formatCurrency(row.monto),
                 };
-              }),
+              }), 3),
               totalIva: `${formatCurrency(totalIva)} Bs.S`,
               totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
               totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
