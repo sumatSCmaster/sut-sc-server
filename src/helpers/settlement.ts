@@ -1777,7 +1777,7 @@ export const formatBranch = async (branch, client) => {
   const inicioImpuestos: any[] = [];
   const SM = await (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, [66, branch.referencia_municipal])).rows[0];
   const PP = await (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, [12, branch.referencia_municipal])).rows[0];
-  inicioImpuestos.push(SM, PP);
+  inicioImpuestos.push(SM || undefined, PP || undefined);
 
   return {
     id: branch.id_registro_municipal,
@@ -1795,7 +1795,7 @@ export const formatBranch = async (branch, client) => {
     actualizado: branch.actualizado,
     estadoLicencia: branch.estado_licencia,
     actividadesEconomicas: (await client.query(queries.GET_ECONOMIC_ACTIVITY_BY_RIM, [branch.id_registro_municipal])).rows,
-    otrosImpuestos: inicioImpuestos,
+    otrosImpuestos: inicioImpuestos.filter((el) => el),
     liquidaciones: (
       await client.query(
         `WITH solicitudcte AS (
