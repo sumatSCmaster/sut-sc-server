@@ -1445,6 +1445,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
                 ramo: el.tipoProcedimiento,
                 fecha: el.datos.fecha,
                 monto: el.monto,
+                esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
                 certificado: el.certificado,
                 recibo: el.recibo,
               };
@@ -1510,6 +1511,7 @@ export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client
                 ramo: el.tipoProcedimiento,
                 fecha: el.datos.fecha,
                 monto: el.monto,
+                esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
                 certificado: el.certificado,
                 recibo: el.recibo,
               };
@@ -1576,6 +1578,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
                   ramo: el.tipoProcedimiento,
                   fecha: el.datos.fecha,
                   monto: +el.monto,
+                  esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
                   certificado: el.certificado,
                   recibo: el.recibo,
                 };
@@ -1654,6 +1657,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
                   ramo: el.tipoProcedimiento,
                   fecha: el.datos.fecha,
                   monto: +el.monto,
+                  esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
                   certificado: el.certificado,
                   recibo: el.recibo,
                 };
@@ -3545,6 +3549,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
             interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
             estatus: 'PAGADO',
+            esAgenteSENIAT: breakdownJoin[0].datos.esAgenteSENIAT || undefined,
             observacion: 'Pago por Servicios Municipales',
             totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
             totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
@@ -3599,6 +3604,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
               interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
               estatus: 'PAGADO',
+              esAgenteSENIAT: breakdownJoin[0].datos.esAgenteSENIAT || undefined,
               observacion: 'Pago por Servicios Municipales',
               totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
               totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
