@@ -1777,7 +1777,7 @@ export const formatBranch = async (branch, client) => {
   const inicioImpuestos: any[] = [];
   const SM = await (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, [66, branch.referencia_municipal])).rows[0];
   const PP = await (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, [12, branch.referencia_municipal])).rows[0];
-  inicioImpuestos.push({ ramo: SM?.descripcion_corta, desde: SM?.fecha_liquidacion }, { ramo: PP?.descripcion_corta, desde: PP?.fecha_liquidacion });
+  inicioImpuestos.push(SM, PP);
 
   return {
     id: branch.id_registro_municipal,

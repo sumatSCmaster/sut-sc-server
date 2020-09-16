@@ -715,7 +715,7 @@ AND EXTRACT('month' FROM l.fecha_liquidacion) = EXTRACT('month' FROM CURRENT_DAT
       WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE referencia_municipal = $2)
       )
   
-      SELECT *
+      SELECT rm.descripcion_corta AS ramo, l.fecha_liquidacion AS desde
       FROM (SELECT s.id_solicitud AS id,
           s.id_tipo_tramite AS tipotramite,
           s.aprobado,
