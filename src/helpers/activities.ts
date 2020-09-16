@@ -56,33 +56,33 @@ export const updateContributorActivities = async ({ branchId, activities, branch
       )
     ).rows[0];
 
+    if (otrosImpuestos?.length > 0) {
+      await Promise.all(
+        otrosImpuestos.map(async (impuesto) => {
+          const { desde, ramo } = impuesto;
+          const fechaInicio = !!desde ? desde : activities.sort((a, b) => (moment(a.desde).isSameOrBefore(moment(b.desde)) ? 1 : -1))[0]?.desde;
+          const fromDate = moment(fechaInicio).subtract(1, 'M');
+          const expireDate = moment(fechaInicio).subtract(1, 'M').endOf('month');
+          await client.query(queries.DELETE_SETTLEMENTS_BY_BRANCH_CODE_AND_RIM, [codigosRamo[ramo], branchId]);
+          const ghostSettlement = (
+            await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+              null,
+              0.0,
+              ramo,
+              'Pago ordinario',
+              { month: fromDate.toDate().toLocaleString('es-ES', { month: 'long' }), year: fromDate.year() },
+              expireDate.format('MM-DD-YYYY'),
+              branchId,
+            ])
+          ).rows[0];
+          await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [fromDate.format('MM-DD-YYYY'), ghostSettlement.id_liquidacion]);
+        })
+      );
+    }
+
     if (!actualizado) {
       await client.query('DELETE FROM impuesto.actividad_economica_sucursal WHERE id_registro_municipal = $1', [branchId]);
       await client.query(queries.DELETE_SETTLEMENTS_BY_BRANCH_CODE_AND_RIM, [codigosRamo.AE, branchId]);
-
-      if (otrosImpuestos?.length > 0) {
-        await Promise.all(
-          otrosImpuestos.map(async (impuesto) => {
-            const { desde, ramo } = impuesto;
-            const fechaInicio = !!desde ? desde : activities.sort((a, b) => (moment(a.desde).isSameOrBefore(moment(b.desde)) ? 1 : -1))[0]?.desde;
-            const fromDate = moment(fechaInicio).subtract(1, 'M');
-            const expireDate = moment(fechaInicio).subtract(1, 'M').endOf('month');
-            await client.query(queries.DELETE_SETTLEMENTS_BY_BRANCH_CODE_AND_RIM, [codigosRamo[ramo], branchId]);
-            const ghostSettlement = (
-              await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
-                null,
-                0.0,
-                ramo,
-                'Pago ordinario',
-                { month: fromDate.toDate().toLocaleString('es-ES', { month: 'long' }), year: fromDate.year() },
-                expireDate.format('MM-DD-YYYY'),
-                branchId,
-              ])
-            ).rows[0];
-            await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [fromDate.format('MM-DD-YYYY'), ghostSettlement.id_liquidacion]);
-          })
-        );
-      }
 
       await Promise.all(
         activities
