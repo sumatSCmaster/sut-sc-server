@@ -1081,6 +1081,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_ESTATES_FOR_NATURAL_CONTRIBUTOR:
     'SELECT DISTINCT ON (ai.id_inmueble) ai.*,iu.* FROM impuesto.avaluo_inmueble ai INNER JOIN inmueble_urbano iu ON ai.id_inmueble = iu.id_inmueble INNER JOIN impuesto.inmueble_contribuyente_natural icn ON iu.id_inmueble = icn.id_inmueble WHERE icn.id_contribuyente = $1 AND anio = EXTRACT("year" FROM CURRENT_DATE)',
   GET_AE_CLEANING_TARIFF: 'SELECT get_aseo AS monto FROM impuesto.get_aseo($1)',
+  DELETE_SETTLEMENTS_BY_BRANCH_CODE_AND_RIM: 'DELETE FROM impuesto.liquidacion WHERE id_subramo IN (SELECT id_subramo FROM impuesto.subramo WHERE id_ramo = (SELECT id_ramo FROM impuesto.ramo WHERE codigo = $1)) AND id_registro_municipal = $2',
   GET_RESIDENTIAL_CLEANING_TARIFF: 'SELECT * FROM impuesto.tabulador_aseo_residencial WHERE fecha_hasta IS NULL;',
   GET_AE_GAS_TARIFF: 'SELECT get_gas AS monto FROM impuesto.get_gas($1)',
   GET_RESIDENTIAL_GAS_TARIFF: 'SELECT * FROM impuesto.tabulador_gas_residencial WHERE fecha_hasta IS NULL;',
@@ -1769,7 +1770,6 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   SET_NON_APPROVED_STATE_FOR_PROCEDURE: 'UPDATE tramite SET aprobado = false, fecha_culminacion = null WHERE id_tramite = $1;',
   DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT: 'DELETE FROM pago WHERE id_procedimiento = $1 AND concepto = $2;',
   DELETE_FISCAL_CREDIT_BY_APPLICATION_ID: 'DELETE FROM impuesto.credito_fiscal WHERE id_solicitud = $1;',
-
 
   //Validacion de pagos individual
   APPROVE_PAYMENT: `UPDATE pago SET aprobado = true, fecha_de_aprobacion = (NOW() - interval '4 hours') WHERE id_pago = $1 RETURNING *`,
