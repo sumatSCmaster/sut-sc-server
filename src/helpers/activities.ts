@@ -64,8 +64,9 @@ export const updateContributorActivities = async ({ branchId, activities, branch
         await Promise.all(
           otrosImpuestos.map(async (impuesto) => {
             const { desde, ramo } = impuesto;
-            const fromDate = moment(desde).subtract(1, 'M');
-            const expireDate = moment(desde).subtract(1, 'M').endOf('month');
+            const fechaInicio = !!desde ? desde : activities.sort((a, b) => (moment(a.desde).isSameOrBefore(moment(b.desde)) ? 1 : -1))[0]?.desde;
+            const fromDate = moment(fechaInicio).subtract(1, 'M');
+            const expireDate = moment(fechaInicio).subtract(1, 'M').endOf('month');
             await client.query(queries.DELETE_SETTLEMENTS_BY_BRANCH_CODE_AND_RIM, [codigosRamo[ramo], branchId]);
             const ghostSettlement = (
               await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
