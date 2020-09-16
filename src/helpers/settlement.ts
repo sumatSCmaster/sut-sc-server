@@ -1774,6 +1774,11 @@ export const formatContributor = async (contributor, client: PoolClient) => {
 };
 
 export const formatBranch = async (branch, client) => {
+  const inicioImpuestos: any[] = [];
+  const SM = await (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, [66, branch.referencia_municipal])).rows[0];
+  const PP = await (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, [12, branch.referencia_municipal])).rows[0];
+  inicioImpuestos.push({ ramo: SM?.descripcion_corta, desde: SM?.fecha_liquidacion }, { ramo: PP?.descripcion_corta, desde: PP?.fecha_liquidacion });
+
   return {
     id: branch.id_registro_municipal,
     referenciaMunicipal: branch.referencia_municipal,
@@ -1790,6 +1795,7 @@ export const formatBranch = async (branch, client) => {
     actualizado: branch.actualizado,
     estadoLicencia: branch.estado_licencia,
     actividadesEconomicas: (await client.query(queries.GET_ECONOMIC_ACTIVITY_BY_RIM, [branch.id_registro_municipal])).rows,
+    otrosImpuestos: inicioImpuestos,
     liquidaciones: (
       await client.query(
         `WITH solicitudcte AS (
@@ -3338,9 +3344,9 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             await client.query('UPDATE impuesto.solicitud SET tipo_solicitud = $1 WHERE id_solicitud = $2', ['CONVENIO', applicationAG.id_solicitud]);
             const agreement = (await client.query(queries.CREATE_AGREEMENT, [applicationAG.id_solicitud, x.porciones.length])).rows[0];
             const settlementsAG = (await client.query(queries.CHANGE_SETTLEMENT_TO_NEW_APPLICATION, [applicationAG.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
-            const costo = (await client.query(queries.CHANGE_SETTLEMENT_BRANCH_TO_AGREEMENT, [x.idRamo, applicationAG.id_solicitud])).rows.reduce((x, j) => fixatedAmount(x + +j.monto), 0);
+            const costo = (await client.query(queries.CHANGE_SETTLEMENT_BRANCH_TO_AGREEMENT, [x.idRamo, applicationAG.id_solicitud])).rows.reduce((x, j) => fixatedAmount(x + j.monto), 0);
             console.log('//if -> costo', costo);
-            const totalSolicitud = x.porciones.reduce((x, j) => fixatedAmount(x + +j.monto), 0);
+            const totalSolicitud = x.porciones.reduce((x, j) => fixatedAmount(x + j.monto), 0);
             console.log('//if -> totalSolicitud', totalSolicitud);
             if (costo > totalSolicitud) throw { status: 403, message: 'La suma de las fracciones del convenio debe ser exactamente igual al total de la deuda' };
             const benefitAgreement = await Promise.all(
@@ -3448,7 +3454,6 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
         });
       } else {
         try {
-          
           pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toBuffer(async (err, buffer) => {
             if (err) {
               rej(err);
@@ -4378,11 +4383,11 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
     const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
 
     const UTMM = (await pool.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-    
+
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
     const economicActivities = (await pool.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [referencia.id_registro_municipal])).rows;
-    const taxSettlement = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 100])).rows[0]
+    const taxSettlement = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 100])).rows[0];
     const impuestoRecibo = taxSettlement?.monto || UTMM * 2;
     moment.locale('es');
     let certInfoArray: any[] = [];

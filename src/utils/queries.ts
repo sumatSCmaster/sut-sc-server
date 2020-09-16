@@ -709,6 +709,40 @@ AND EXTRACT('month' FROM l.fecha_liquidacion) = EXTRACT('month' FROM CURRENT_DAT
         FROM impuesto.registro_municipal
         WHERE referencia_municipal = $2 LIMIT 1)
     ORDER BY  fecha_liquidacion DESC LIMIT 1;`,
+  GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED: `WITH solicitudcte AS (
+      SELECT id_solicitud
+      FROM impuesto.solicitud 
+      WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE referencia_municipal = $2)
+      )
+  
+      SELECT *
+      FROM (SELECT s.id_solicitud AS id,
+          s.id_tipo_tramite AS tipotramite,
+          s.aprobado,
+          s.fecha,
+          s.fecha_aprobado AS "fechaAprobacion",
+          ev.state,
+          s.tipo_solicitud AS "tipoSolicitud",
+          s.id_contribuyente
+        FROM impuesto.solicitud s
+          JOIN ( SELECT es.id_solicitud,
+                  impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+                FROM impuesto.evento_solicitud es
+                WHERE id_solicitud IN (SELECT * FROM solicitudcte)
+                GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud) s
+      RIGHT JOIN impuesto.liquidacion l
+          ON s.id = l.id_solicitud
+      INNER JOIN impuesto.subramo sr
+          ON l.id_subramo = sr.id_subramo
+      INNER JOIN impuesto.ramo rm
+          ON sr.id_ramo = rm.id_ramo
+      WHERE sr.id_subramo = $1
+      AND l.monto = '0'
+              AND l.id_registro_municipal = 
+          (SELECT id_registro_municipal
+          FROM impuesto.registro_municipal
+          WHERE referencia_municipal = $2 LIMIT 1)
+      ORDER BY fecha_liquidacion LIMIT 1;`,
   GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR:
     'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l on s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON\
   l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND s.id_contribuyente = $2\
