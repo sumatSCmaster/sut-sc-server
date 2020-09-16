@@ -3501,8 +3501,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     ramo = application.descripcionRamo;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     if (application.idSubramo === 107 || application.idSubramo === 108) {
-      const breakdownGas = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 107])).rows.map((row) => ({ ...row, monto: row.monto / 1.16 }));
-      const breakdownAseo: any[] = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 108])).rows.map((row) => ({ ...row, monto: row.monto / 1.16 }));
+      const breakdownGas = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 107])).rows.map((row) => row.datos.IVA ? ({ ...row, monto: row.monto / (1 + (row.datos.IVA / 100)) }) : ({ ...row, monto: row.monto / 1.16 }));
+      const breakdownAseo: any[] = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 108])).rows.map((row) => row.datos.IVA ? ({ ...row, monto: row.monto / (1 + (row.datos.IVA / 100)) }) : ({ ...row, monto: row.monto / 1.16 })) ;
       const breakdownJoin = breakdownGas.reduce((prev: any[], next) => {
         let i = prev.findIndex((aseoRow) => aseoRow.datos.fecha.month === next.datos.fecha.month && aseoRow.datos.fecha.year === next.datos.fecha.year);
         if (i > -1) {
@@ -3511,7 +3511,12 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
         return prev;
       }, breakdownAseo);
       const totalMonto = breakdownJoin.reduce((prev, next) => prev + +next.monto, 0);
-      const totalIva = totalMonto * 0.16;
+      const iva = breakdownJoin[0].datos.IVA;
+      const totalIva = totalMonto * (0.16);
+      const totalIvaPagar = totalMonto * (0.16 - (iva ? (iva / 100) : 0.16))
+      const totalRetencionIva = totalIva - totalIvaPagar;
+
+      let fact = (await pool.query('SELECT id_registro_recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [application.id])).rows[0].id_registro_recibo
 
       if (breakdownAseo[0].datos.desglose[0].inmueble === 0) {
         certInfo = {
@@ -3524,7 +3529,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             nroSolicitud: application.id,
             nroPlanilla: 10010111,
             motivo: motivo,
-            nroFactura: `${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
+            nroFactura: fact,
             tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
             tipoInmueble: 'NO DISPONIBLE',
             fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
@@ -3544,8 +3549,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               };
             }), 3),
             totalIva: `${formatCurrency(totalIva)} Bs.S`,
-            totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
-            totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
+            totalRetencionIva: `${formatCurrency(totalRetencionIva)} Bs.S`, // TODO: Retencion
+            totalIvaPagar: `${formatCurrency(totalIvaPagar)} Bs.S`,
             montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
             interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
             estatus: 'PAGADO',
@@ -3579,7 +3584,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               nroSolicitud: application.id,
               nroPlanilla: 10010111,
               motivo: motivo,
-              nroFactura: `${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
+              nroFactura: fact,
               tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
               tipoInmueble: el?.tipo_inmueble || 'NO DISPONIBLE',
               fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
@@ -3599,8 +3604,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 };
               }), 3),
               totalIva: `${formatCurrency(totalIva)} Bs.S`,
-              totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
-              totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
+              totalRetencionIva: `${formatCurrency(totalRetencionIva)} Bs.S`, // TODO: Retencion
+              totalIvaPagar: `${formatCurrency(totalIvaPagar)} Bs.S`,
               montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
               interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
               estatus: 'PAGADO',
