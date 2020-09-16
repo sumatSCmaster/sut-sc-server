@@ -1110,8 +1110,28 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   COMPLETE_FRACTION_STATE: 'SELECT * FROM impuesto.complete_fraccion_state ($1, $2, true)',
   SEARCH_CONTRIBUTOR_BY_NAME: 'SELECT * FROM impuesto.contribuyente WHERE razon_social ILIKE $1',
   GET_CONTRIBUTOR_WITH_BRANCH: 'SELECT * FROM impuesto.registro_municipal r INNER JOIN impuesto.contribuyente c ON r.id_contribuyente = c.id_contribuyente WHERE r.referencia_municipal = $1',
-  CHANGE_SETTLEMENT_TO_NEW_APPLICATION:
-    "UPDATE impuesto.liquidacion SET id_solicitud = $1 WHERE id_registro_municipal = $2 AND id_subramo IN (SELECT id_subramo FROM impuesto.subramo WHERE subindice != '2' AND id_ramo = $3) AND id_liquidacion IN (SELECT id_liquidacion  FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud_state ss ON ss.id = l.id_solicitud  WHERE ss.state = 'ingresardatos');",
+  CHANGE_SETTLEMENT_TO_NEW_APPLICATION: `UPDATE impuesto.liquidacion SET id_solicitud = $1 
+    WHERE id_registro_municipal = $2 AND id_subramo 
+    IN (SELECT id_subramo FROM impuesto.subramo WHERE subindice != '2' AND id_ramo = $3) 
+    AND id_liquidacion 
+    IN (SELECT id_liquidacion FROM impuesto.liquidacion l 
+      INNER JOIN (SELECT s.id_solicitud AS id,
+        s.id_tipo_tramite AS tipotramite,
+        s.aprobado,
+        s.fecha,
+        s.fecha_aprobado AS "fechaAprobacion",
+        ev.state,
+        s.tipo_solicitud AS "tipoSolicitud",
+        s.id_contribuyente
+       FROM impuesto.solicitud s
+         JOIN ( SELECT es.id_solicitud,
+                impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+               FROM impuesto.evento_solicitud es
+               WHERE id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE referencia_municipal = $2 LIMIT 1))
+              GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+    ) ss  
+      ON ss.id = l.id_solicitud  
+      WHERE ss.state = 'ingresardatos');`,
   GET_SETTLEMENT_IDS_BY_RIM_AND_BRANCH:
     "SELECT id_liquidacion FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud_state ss ON ss.id = l.id_solicitud  WHERE ss.state = 'ingresardatos' AND id_registro_municipal = $1 AND id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = '1' AND id_ramo = $2);",
   INSERT_DISCOUNT_FOR_SETTLEMENT: 'INSERT INTO impuesto.liquidacion_descuento (id_liquidacion, porcentaje_descuento) VALUES ($1, $2)',
