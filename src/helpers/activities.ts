@@ -60,7 +60,7 @@ export const updateContributorActivities = async ({ branchId, activities, branch
       await client.query('DELETE FROM impuesto.actividad_economica_sucursal WHERE id_registro_municipal = $1', [branchId]);
       await client.query(queries.DELETE_SETTLEMENTS_BY_BRANCH_CODE_AND_RIM, [codigosRamo.AE, branchId]);
 
-      if (otrosImpuestos.length > 0) {
+      if (otrosImpuestos?.length > 0) {
         await Promise.all(
           otrosImpuestos.map(async (impuesto) => {
             const { desde, ramo } = impuesto;
