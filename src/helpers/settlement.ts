@@ -3161,12 +3161,14 @@ export const createSpecialSettlement = async ({ process, user }) => {
           desglose: el.desglose ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
           fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },
         };
+        const branch = (await client.query(`SELECT * FROM impuesto.ramo WHERE id_ramo = $1`, [el.ramo])).rows[0].descripcion
+        const subBranch = (await client.query(`SELECT * FROM impuesto.subramo WHERE id_subramo = $1`, [el.subramo])).rows[0].descripcion
         const liquidacion = (
           await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
             application.id_solicitud,
             fixatedAmount(+el.monto),
-            el.ramo,
-            el.descripcion || 'Pago ordinario',
+            branch,
+            subBranch || 'Pago ordinario',
             datos,
             moment().month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
             (contributorReference && contributorReference.id_registro_municipal) || null,
@@ -3174,7 +3176,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
         ).rows[0];
         return {
           id: liquidacion.id_liquidacion,
-          ramo: el.ramo,
+          ramo: branch,
           fecha: datos.fecha,
           monto: liquidacion.monto,
           certificado: liquidacion.certificado,
