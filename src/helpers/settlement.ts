@@ -2496,14 +2496,14 @@ export const insertSettlements = async ({ process, user }) => {
         const liquidacionGas = {
           ramo: branchNames['SM'],
           fechaCancelada: x.fechaCancelada,
-          monto: impuestos.esAgenteRetencion || impuestos.esAgenteSENIAT ? +x.desglose[0].montoGas * 1.04 : +x.desglose[0].montoGas * 1.16,
+          monto: process.esAgenteRetencion || process.esAgenteSENIAT ? +x.desglose[0].montoGas * 1.04 : +x.desglose[0].montoGas * 1.16,
           desglose: x.desglose,
           descripcion: 'Pago del Servicio de Gas',
         };
         const liquidacionAseo = {
           ramo: branchNames['SM'],
           fechaCancelada: x.fechaCancelada,
-          monto: impuestos.esAgenteRetencion || impuestos.esAgenteSENIAT ? +x.desglose[0].montoAseo * 1.04 : +x.desglose[0].montoAseo * 1.16,
+          monto: process.esAgenteRetencion || process.esAgenteSENIAT ? +x.desglose[0].montoAseo * 1.04 : +x.desglose[0].montoAseo * 1.16,
           desglose: x.desglose,
           descripcion: 'Pago del Servicio de Aseo',
         };
@@ -2520,9 +2520,9 @@ export const insertSettlements = async ({ process, user }) => {
           const datos = {
             desglose: el.desglose ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
             fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },
-            IVA: el.ramo === branchNames['SM'] ? (impuestos.esAgenteRetencion || impuestos.esAgenteSENIAT ? 4 : 16) : undefined,
-            esAgenteSENIAT: el.ramo === branchNames['SM'] ? impuestos.esAgenteSENIAT || undefined : undefined,
-            esAgenteRetencion: el.ramo === branchNames['SM'] ? impuestos.esAgenteRetencion || undefined : undefined,
+            IVA: el.ramo === branchNames['SM'] ? (process.esAgenteRetencion || process.esAgenteSENIAT ? 4 : 16) : undefined,
+            esAgenteSENIAT: el.ramo === branchNames['SM'] ? process.esAgenteSENIAT || undefined : undefined,
+            esAgenteRetencion: el.ramo === branchNames['SM'] ? process.esAgenteRetencion || undefined : undefined,
           };
           const liquidacion = (
             await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
