@@ -709,6 +709,40 @@ AND EXTRACT('month' FROM l.fecha_liquidacion) = EXTRACT('month' FROM CURRENT_DAT
         FROM impuesto.registro_municipal
         WHERE referencia_municipal = $2 LIMIT 1)
     ORDER BY  fecha_liquidacion DESC LIMIT 1;`,
+  GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED: `WITH solicitudcte AS (
+      SELECT id_solicitud
+      FROM impuesto.solicitud 
+      WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE referencia_municipal = $2)
+      )
+  
+      SELECT rm.descripcion_corta AS ramo, l.fecha_liquidacion AS desde
+      FROM (SELECT s.id_solicitud AS id,
+          s.id_tipo_tramite AS tipotramite,
+          s.aprobado,
+          s.fecha,
+          s.fecha_aprobado AS "fechaAprobacion",
+          ev.state,
+          s.tipo_solicitud AS "tipoSolicitud",
+          s.id_contribuyente
+        FROM impuesto.solicitud s
+          JOIN ( SELECT es.id_solicitud,
+                  impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+                FROM impuesto.evento_solicitud es
+                WHERE id_solicitud IN (SELECT * FROM solicitudcte)
+                GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud) s
+      RIGHT JOIN impuesto.liquidacion l
+          ON s.id = l.id_solicitud
+      INNER JOIN impuesto.subramo sr
+          ON l.id_subramo = sr.id_subramo
+      INNER JOIN impuesto.ramo rm
+          ON sr.id_ramo = rm.id_ramo
+      WHERE sr.id_subramo = $1
+      AND l.monto = '0'
+              AND l.id_registro_municipal = 
+          (SELECT id_registro_municipal
+          FROM impuesto.registro_municipal
+          WHERE referencia_municipal = $2 LIMIT 1)
+      ORDER BY fecha_liquidacion LIMIT 1;`,
   GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR:
     'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l on s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON\
   l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND s.id_contribuyente = $2\
@@ -1081,6 +1115,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_ESTATES_FOR_NATURAL_CONTRIBUTOR:
     'SELECT DISTINCT ON (ai.id_inmueble) ai.*,iu.* FROM impuesto.avaluo_inmueble ai INNER JOIN inmueble_urbano iu ON ai.id_inmueble = iu.id_inmueble INNER JOIN impuesto.inmueble_contribuyente_natural icn ON iu.id_inmueble = icn.id_inmueble WHERE icn.id_contribuyente = $1 AND anio = EXTRACT("year" FROM CURRENT_DATE)',
   GET_AE_CLEANING_TARIFF: 'SELECT get_aseo AS monto FROM impuesto.get_aseo($1)',
+  DELETE_SETTLEMENTS_BY_BRANCH_CODE_AND_RIM: 'DELETE FROM impuesto.liquidacion WHERE id_subramo IN (SELECT id_subramo FROM impuesto.subramo WHERE id_ramo = (SELECT id_ramo FROM impuesto.ramo WHERE codigo = $1)) AND id_registro_municipal = $2',
   GET_RESIDENTIAL_CLEANING_TARIFF: 'SELECT * FROM impuesto.tabulador_aseo_residencial WHERE fecha_hasta IS NULL;',
   GET_AE_GAS_TARIFF: 'SELECT get_gas AS monto FROM impuesto.get_gas($1)',
   GET_RESIDENTIAL_GAS_TARIFF: 'SELECT * FROM impuesto.tabulador_gas_residencial WHERE fecha_hasta IS NULL;',
@@ -1109,8 +1144,28 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   COMPLETE_FRACTION_STATE: 'SELECT * FROM impuesto.complete_fraccion_state ($1, $2, true)',
   SEARCH_CONTRIBUTOR_BY_NAME: 'SELECT * FROM impuesto.contribuyente WHERE razon_social ILIKE $1',
   GET_CONTRIBUTOR_WITH_BRANCH: 'SELECT * FROM impuesto.registro_municipal r INNER JOIN impuesto.contribuyente c ON r.id_contribuyente = c.id_contribuyente WHERE r.referencia_municipal = $1',
-  CHANGE_SETTLEMENT_TO_NEW_APPLICATION:
-    "UPDATE impuesto.liquidacion SET id_solicitud = $1 WHERE id_registro_municipal = $2 AND id_subramo IN (SELECT id_subramo FROM impuesto.subramo WHERE subindice != '2' AND id_ramo = $3) AND id_liquidacion IN (SELECT id_liquidacion  FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud_state ss ON ss.id = l.id_solicitud  WHERE ss.state = 'ingresardatos');",
+  CHANGE_SETTLEMENT_TO_NEW_APPLICATION: `UPDATE impuesto.liquidacion SET id_solicitud = $1 
+    WHERE id_registro_municipal = $2 AND id_subramo 
+    IN (SELECT id_subramo FROM impuesto.subramo WHERE subindice != '2' AND id_ramo = $3) 
+    AND id_liquidacion 
+    IN (SELECT id_liquidacion FROM impuesto.liquidacion l 
+      INNER JOIN (SELECT s.id_solicitud AS id,
+        s.id_tipo_tramite AS tipotramite,
+        s.aprobado,
+        s.fecha,
+        s.fecha_aprobado AS "fechaAprobacion",
+        ev.state,
+        s.tipo_solicitud AS "tipoSolicitud",
+        s.id_contribuyente
+       FROM impuesto.solicitud s
+         JOIN ( SELECT es.id_solicitud,
+                impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+               FROM impuesto.evento_solicitud es
+               WHERE id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE id_registro_municipal = $2 LIMIT 1))
+              GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+    ) ss  
+      ON ss.id = l.id_solicitud  
+      WHERE ss.state = 'ingresardatos');`,
   GET_SETTLEMENT_IDS_BY_RIM_AND_BRANCH:
     "SELECT id_liquidacion FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud_state ss ON ss.id = l.id_solicitud  WHERE ss.state = 'ingresardatos' AND id_registro_municipal = $1 AND id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = '1' AND id_ramo = $2);",
   INSERT_DISCOUNT_FOR_SETTLEMENT: 'INSERT INTO impuesto.liquidacion_descuento (id_liquidacion, porcentaje_descuento) VALUES ($1, $2)',
@@ -1769,7 +1824,6 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   SET_NON_APPROVED_STATE_FOR_PROCEDURE: 'UPDATE tramite SET aprobado = false, fecha_culminacion = null WHERE id_tramite = $1;',
   DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT: 'DELETE FROM pago WHERE id_procedimiento = $1 AND concepto = $2;',
   DELETE_FISCAL_CREDIT_BY_APPLICATION_ID: 'DELETE FROM impuesto.credito_fiscal WHERE id_solicitud = $1;',
-
 
   //Validacion de pagos individual
   APPROVE_PAYMENT: `UPDATE pago SET aprobado = true, fecha_de_aprobacion = (NOW() - interval '4 hours') WHERE id_pago = $1 RETURNING *`,
