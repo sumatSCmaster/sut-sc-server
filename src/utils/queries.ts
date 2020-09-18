@@ -455,9 +455,76 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
 
   // EXTERNAL USER STATS
   GET_EXTERNAL_TOTAL_COUNT: 'SELECT COUNT(*) FROM tramite WHERE id_usuario = $1;',
-  GET_EXTERNAL_APPROVED_COUNT: "SELECT COUNT(*) FROM tramites_state_with_resources WHERE usuario = $1 AND state = 'finalizado' AND aprobado = TRUE;",
-  GET_EXTERNAL_REJECTED_COUNT: "SELECT COUNT(*) FROM tramites_state_with_resources WHERE usuario = $1 AND state = 'finalizado' AND aprobado = FALSE;",
+  //GET_EXTERNAL_APPROVED_COUNT: "SELECT COUNT(*) FROM tramites_state_with_resources WHERE usuario = $1 AND state = 'finalizado' AND aprobado = TRUE;",
+  GET_EXTERNAL_APPROVED_COUNT: `SELECT COUNT(*)
+    FROM (
+        SELECT t.id_tramite AS id,
+        t.datos,
+        t.id_tipo_tramite AS tipotramite,
+        t.costo,
+        t.fecha_creacion AS fechacreacion,
+        t.codigo_tramite AS codigotramite,
+        t.id_usuario AS usuario,
+        t.url_planilla AS planilla,
+        t.url_certificado AS certificado,
+        i.nombre_completo AS nombrelargo,
+        i.nombre_corto AS nombrecorto,
+        tt.nombre_tramite AS nombretramitelargo,
+        tt.nombre_corto AS nombretramitecorto,
+        ev.state,
+        t.aprobado,
+        tt.pago_previo AS "pagoPrevio",
+        t.fecha_culminacion AS fechaculminacion
+      FROM tramite t
+        JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite
+        JOIN institucion i ON i.id_institucion = tt.id_institucion
+        JOIN ( SELECT evento_tramite.id_tramite,
+                tramite_evento_fsm(evento_tramite.event ORDER BY evento_tramite.id_evento_tramite) AS state
+              FROM evento_tramite
+              WHERE id_tramite IN (SELECT Id_tramite FROM tramite WHERE id_usuario = $1)
+              GROUP BY evento_tramite.id_tramite) ev ON t.id_tramite = ev.id_tramite
 
+    ) t
+    WHERE t.usuario = $1
+            AND t.state = 'finalizado'
+            AND t.aprobado = true;
+
+  `,
+  //GET_EXTERNAL_REJECTED_COUNT: "SELECT COUNT(*) FROM tramites_state_with_resources WHERE usuario = $1 AND state = 'finalizado' AND aprobado = FALSE;",
+  GET_EXTERNAL_REJECTED_COUNT: `SELECT COUNT(*)
+    FROM (
+        SELECT t.id_tramite AS id,
+        t.datos,
+        t.id_tipo_tramite AS tipotramite,
+        t.costo,
+        t.fecha_creacion AS fechacreacion,
+        t.codigo_tramite AS codigotramite,
+        t.id_usuario AS usuario,
+        t.url_planilla AS planilla,
+        t.url_certificado AS certificado,
+        i.nombre_completo AS nombrelargo,
+        i.nombre_corto AS nombrecorto,
+        tt.nombre_tramite AS nombretramitelargo,
+        tt.nombre_corto AS nombretramitecorto,
+        ev.state,
+        t.aprobado,
+        tt.pago_previo AS "pagoPrevio",
+        t.fecha_culminacion AS fechaculminacion
+      FROM tramite t
+        JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite
+        JOIN institucion i ON i.id_institucion = tt.id_institucion
+        JOIN ( SELECT evento_tramite.id_tramite,
+                tramite_evento_fsm(evento_tramite.event ORDER BY evento_tramite.id_evento_tramite) AS state
+              FROM evento_tramite
+              WHERE id_tramite IN (SELECT Id_tramite FROM tramite WHERE id_usuario = $1)
+              GROUP BY evento_tramite.id_tramite) ev ON t.id_tramite = ev.id_tramite
+
+    ) t
+    WHERE t.usuario = $1
+            AND t.state = 'finalizado'
+            AND t.aprobado = false;
+
+  `,
   //Notificaciones
 
   GET_NON_NORMAL_OFFICIALS:
@@ -547,7 +614,29 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_SETTLEMENT_INSTANCES:
     'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo INNER JOIN impuesto.solicitud_state sst ON sst.id = s.id_solicitud',
   GET_SETTLEMENT_INSTANCES_BY_ID:
-    'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo INNER JOIN impuesto.solicitud_state sst ON sst.id = s.id_solicitud WHERE s.id_usuario = $1 ORDER BY s.fecha DESC;',
+    `
+    SELECT * FROM impuesto.solicitud s 
+    INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud 
+    INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo 
+    INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo 
+    INNER JOIN (
+        SELECT s.id_solicitud AS id,
+        s.id_tipo_tramite AS tipotramite,
+        s.aprobado,
+        s.fecha,
+        s.fecha_aprobado AS "fechaAprobacion",
+        ev.state,
+        s.tipo_solicitud AS "tipoSolicitud",
+        s.id_contribuyente
+       FROM impuesto.solicitud s
+         JOIN ( SELECT es.id_solicitud,
+                impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+               FROM impuesto.evento_solicitud es
+               WHERE id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE id_usuario = $1)
+              GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+    )sst ON sst.id = s.id_solicitud 
+    WHERE s.id_usuario = $1 ORDER BY s.fecha DESC;
+    `,
   GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID: `SELECT r.descripcion AS "descripcionRamo", sr.descripcion AS "descripcionSubramo", l.monto, l.datos,l.fecha_liquidacion AS "fechaLiquidacion" FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo INNER JOIN impuesto.solicitud_state sst ON sst.id = s.id_solicitud WHERE s.id_solicitud = $1;`,
   GET_APPLICATION_VIEW_BY_SETTLEMENT: 'SELECT * FROM impuesto.solicitud_view WHERE "idLiquidacion" = $1',
   GET_APPLICATION_VIEW_BY_ID: 'SELECT * FROM impuesto.solicitud_view WHERE id = $1',
@@ -1214,7 +1303,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_SUBRANCHES_BY_ID: 'SELECT id_subramo AS id, descripcion, subindice FROM impuesto.subramo WHERE id_ramo = $1',
   GET_BRANCHES_FOR_REPORT: 'SELECT id_ramo AS id, codigo AS "ramo", descripcion, descripcion_corta FROM impuesto.ramo;',
   GET_SUT_ESTATE_BY_ID: 'SELECT * FROM inmueble_urbano WHERE id_inmueble = $1',
-  IS_SPECIAL_SETTLEMENT: 'SELECT * FROM impuesto.ramo WHERE codigo = (SELECT codigo FROM impuesto.ramo WHERE (descripcion = $1 OR descripcion_corta = $1)) AND codigo IN (SELECT codigo FROM impuesto.ramo WHERE liquidacion_especial = true);',
+  IS_SPECIAL_SETTLEMENT: 'SELECT * FROM impuesto.ramo WHERE codigo = (SELECT codigo FROM impuesto.ramo WHERE id_ramo=$1) AND codigo IN (SELECT codigo FROM impuesto.ramo WHERE liquidacion_especial = true);',
   GET_RIM_DATA: `SELECT id_registro_municipal AS id, referencia_municipal as "rim", telefono_celular AS "telefonoCelular", 
     telefono_habitacion AS "telefonoHabitacion", email, denominacion_comercial AS "denominacionComercial", nombre_representante AS "nombreRepresentante"
     FROM impuesto.registro_municipal WHERE referencia_municipal = $1`,

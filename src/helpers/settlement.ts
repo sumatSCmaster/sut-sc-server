@@ -3161,12 +3161,14 @@ export const createSpecialSettlement = async ({ process, user }) => {
           desglose: el.desglose ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
           fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },
         };
+        const branch = (await client.query(`SELECT * FROM impuesto.ramo WHERE id_ramo = $1`, [el.ramo])).rows[0]?.descripcion;
+        const subBranch = (await client.query(`SELECT * FROM impuesto.subramo WHERE id_subramo = $1`, [el.subramo])).rows[0]?.descripcion;
         const liquidacion = (
           await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
             application.id_solicitud,
             fixatedAmount(+el.monto),
-            el.ramo,
-            el.descripcion || 'Pago ordinario',
+            branch,
+            subBranch || 'Pago ordinario',
             datos,
             moment().month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
             (contributorReference && contributorReference.id_registro_municipal) || null,
@@ -3174,7 +3176,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
         ).rows[0];
         return {
           id: liquidacion.id_liquidacion,
-          ramo: el.ramo,
+          ramo: branch,
           fecha: datos.fecha,
           monto: liquidacion.monto,
           certificado: liquidacion.certificado,
@@ -3244,9 +3246,9 @@ export const createSpecialSettlement = async ({ process, user }) => {
     console.log(error);
     client.query('ROLLBACK');
     throw {
-      status: 500,
+      status: error.status || 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al crear liquidaciones especiales',
+      message: errorMessageGenerator(error) || error.message || 'Error al crear liquidaciones especiales',
     };
   } finally {
     client.release();
@@ -3501,8 +3503,10 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     ramo = application.descripcionRamo;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     if (application.idSubramo === 107 || application.idSubramo === 108) {
-      const breakdownGas = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 107])).rows.map((row) => row.datos.IVA ? ({ ...row, monto: row.monto / (1 + (row.datos.IVA / 100)) }) : ({ ...row, monto: row.monto / 1.16 }));
-      const breakdownAseo: any[] = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 108])).rows.map((row) => row.datos.IVA ? ({ ...row, monto: row.monto / (1 + (row.datos.IVA / 100)) }) : ({ ...row, monto: row.monto / 1.16 })) ;
+      const breakdownGas = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 107])).rows.map((row) => (row.datos.IVA ? { ...row, monto: row.monto / (1 + row.datos.IVA / 100) } : { ...row, monto: row.monto / 1.16 }));
+      const breakdownAseo: any[] = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 108])).rows.map((row) =>
+        row.datos.IVA ? { ...row, monto: row.monto / (1 + row.datos.IVA / 100) } : { ...row, monto: row.monto / 1.16 }
+      );
       const breakdownJoin = breakdownGas.reduce((prev: any[], next) => {
         let i = prev.findIndex((aseoRow) => aseoRow.datos.fecha.month === next.datos.fecha.month && aseoRow.datos.fecha.year === next.datos.fecha.year);
         if (i > -1) {
@@ -3512,11 +3516,11 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       }, breakdownAseo);
       const totalMonto = breakdownJoin.reduce((prev, next) => prev + +next.monto, 0);
       const iva = breakdownJoin[0].datos.IVA;
-      const totalIva = totalMonto * (0.16);
-      const totalRetencionIva = totalMonto * (0.16 - fixatedAmount(iva ? (iva / 100) : 0.16))
-      const totalIvaPagar  = fixatedAmount(totalIva - totalRetencionIva);
+      const totalIva = totalMonto * 0.16;
+      const totalRetencionIva = totalMonto * (0.16 - fixatedAmount(iva ? iva / 100 : 0.16));
+      const totalIvaPagar = fixatedAmount(totalIva - totalRetencionIva);
 
-      let fact = (await pool.query('SELECT id_registro_recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [application.id])).rows[0].id_registro_recibo
+      let fact = (await pool.query('SELECT id_registro_recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [application.id])).rows[0].id_registro_recibo;
 
       if (breakdownAseo[0].datos.desglose[0].inmueble === 0) {
         certInfo = {
@@ -3541,13 +3545,16 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               direccion: application.direccion,
               razonSocial: application.razonSocial,
             },
-            items: chunk(breakdownJoin.map((row) => {
-              return {
-                direccion: 'No disponible',
-                periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                impuesto: formatCurrency(row.monto),
-              };
-            }), 3),
+            items: chunk(
+              breakdownJoin.map((row) => {
+                return {
+                  direccion: 'No disponible',
+                  periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
+                  impuesto: formatCurrency(row.monto),
+                };
+              }),
+              3
+            ),
             totalIva: `${formatCurrency(totalIva)} Bs.S`,
             totalRetencionIva: `${formatCurrency(totalRetencionIva)} Bs.S`, // TODO: Retencion
             totalIvaPagar: `${formatCurrency(totalIvaPagar)} Bs.S`,
@@ -3596,13 +3603,16 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 direccion: application.direccion,
                 razonSocial: application.razonSocial,
               },
-              items:chunk(breakdownJoin.map((row) => {
-                return {
-                  direccion: el?.direccion || 'No disponible',
-                  periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                  impuesto: formatCurrency(row.monto),
-                };
-              }), 3),
+              items: chunk(
+                breakdownJoin.map((row) => {
+                  return {
+                    direccion: el?.direccion || 'No disponible',
+                    periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
+                    impuesto: formatCurrency(row.monto),
+                  };
+                }),
+                3
+              ),
               totalIva: `${formatCurrency(totalIva)} Bs.S`,
               totalRetencionIva: `${formatCurrency(totalRetencionIva)} Bs.S`, // TODO: Retencion
               totalIvaPagar: `${formatCurrency(totalIvaPagar)} Bs.S`,
@@ -5054,9 +5064,9 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
     const datosContribuyente = {
       nombreORazon: contribuyente.razon_social,
       cedulaORif: `${contribuyente.tipo_documento}-${contribuyente.documento}`,
-      rim: branch.referencia_municipal || null,
+      rim: branch?.referencia_municipal || null,
       direccion: contribuyente.direccion,
-      telefono: branch.telefono_celular || '',
+      telefono: branch?.telefono_celular || '',
     };
     const statement = ae
       .concat(sm)
