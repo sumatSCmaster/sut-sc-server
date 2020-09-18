@@ -7,6 +7,7 @@ import cors from 'cors';
 import router from './routes';
 import { resolve } from 'path';
 import { JwtStrategy, LocalStrategy, GoogleStrategy, FacebookStrategy } from './utils/Strategies';
+import MemoryStore from 'memorystore'
 import Pool from '@utils/Pool';
 
 require('dotenv').config();
@@ -16,11 +17,15 @@ app.use(compression());
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+const memStore = MemoryStore(session)
 app.use(
   session({
     resave: true,
     saveUninitialized: true,
     secret: process.env.SESSION_SECRET || 'keyboard cat',
+    store: new memStore({
+      checkPeriod: 86400000
+    })
   })
 );
 
