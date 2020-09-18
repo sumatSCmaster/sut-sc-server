@@ -3519,7 +3519,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       const totalIva = totalMonto * 0.16;
       const totalRetencionIva = totalMonto * (0.16 - fixatedAmount(iva ? iva / 100 : 0.16));
       const totalIvaPagar = fixatedAmount(totalIva - totalRetencionIva);
-
+      
       let fact = (await pool.query('SELECT id_registro_recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [application.id])).rows[0]?.id_registro_recibo || 'N/D';
 
       if (breakdownAseo[0].datos.desglose[0].inmueble === 0) {
@@ -4295,7 +4295,9 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
                   ACL: 'public-read',
                   ContentType: 'application/pdf',
                 }).promise();
-                await regClient.query(queries.UPDATE_RECEIPT_RECORD, [idRecibo, `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`]);
+                if(idRecibo !== 'N/D' ){
+                  await regClient.query(queries.UPDATE_RECEIPT_RECORD, [idRecibo, `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`])
+                }
                 await regClient.query('COMMIT');
                 res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
               } catch (e) {
@@ -4333,7 +4335,9 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
                       ACL: 'public-read',
                       ContentType: 'application/pdf',
                     }).promise();
-                    await regClient.query(queries.UPDATE_RECEIPT_RECORD, [idRecibo, `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`]);
+                    if(idRecibo !== 'N/D' ){
+                      await regClient.query(queries.UPDATE_RECEIPT_RECORD, [idRecibo, `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`])
+                    }
                     await regClient.query('COMMIT');
                     res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
                   } catch (e) {
