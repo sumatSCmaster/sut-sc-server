@@ -3161,8 +3161,8 @@ export const createSpecialSettlement = async ({ process, user }) => {
           desglose: el.desglose ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
           fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },
         };
-        const branch = (await client.query(`SELECT * FROM impuesto.ramo WHERE id_ramo = $1`, [el.ramo])).rows[0].descripcion;
-        const subBranch = (await client.query(`SELECT * FROM impuesto.subramo WHERE id_subramo = $1`, [el.subramo])).rows[0].descripcion;
+        const branch = (await client.query(`SELECT * FROM impuesto.ramo WHERE id_ramo = $1`, [el.ramo])).rows[0]?.descripcion;
+        const subBranch = (await client.query(`SELECT * FROM impuesto.subramo WHERE id_subramo = $1`, [el.subramo])).rows[0]?.descripcion;
         const liquidacion = (
           await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
             application.id_solicitud,
@@ -5064,9 +5064,9 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
     const datosContribuyente = {
       nombreORazon: contribuyente.razon_social,
       cedulaORif: `${contribuyente.tipo_documento}-${contribuyente.documento}`,
-      rim: branch.referencia_municipal || null,
+      rim: branch?.referencia_municipal || null,
       direccion: contribuyente.direccion,
-      telefono: branch.telefono_celular || '',
+      telefono: branch?.telefono_celular || '',
     };
     const statement = ae
       .concat(sm)
