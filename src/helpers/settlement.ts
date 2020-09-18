@@ -4408,6 +4408,7 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
 
 const createReceiptForAEApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
+    if (application.idSubramo === 23) throw new Error('No es una liquidacion admisible para generar recibo');
     const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
 
     const UTMM = (await pool.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
@@ -5291,8 +5292,12 @@ const breakdownCaseHandler = (settlementType, breakdown) => {
 const certificateCreationHandler = async (process, media, payload: CertificatePayload) => {
   try {
     const result = certificateCases(process)[media];
-    if (result) return await result(payload);
-    throw new Error('No se encontró el tipo de certificado seleccionado');
+    if (!!result) {
+      return await result(payload);
+    }else {
+      throw new Error('No se encontró el tipo de certificado seleccionado');
+    }
+    
   } catch (e) {
     console.log(e);
     throw errorMessageExtractor(e);
