@@ -11,13 +11,19 @@ const users = new Map<string, Socket>();
 
 const connection = (socket: Socket) => {
   try {
+    console.time('decode');
     const user = decode(socket.handshake.query.token, process.env.JWT_SECRET || 'not a secret').sub;
+    console.timeEnd('decode');
+    console.time('if')
     if (user.tipoUsuario === 3 && user.permisos && user.permisos.length > 0) {
       user.permisos.map((el) => socket.join(`tram:${el}`));
+      console.timeLog('if')
     } else if (user.institucion && user.tipoUsuario !== 3) {
+      console.timeLog('if')
+      console.log('else')
       socket.join(`inst:${user.institucion.nombreCorto}`);
     }
-
+    console.timeEnd('if')
     if (user.tipoUsuario === 1) {
       pool.connect().then((r) => {
         r.query(queries.GET_ALL_INSTITUTION).then((institucion) => {
