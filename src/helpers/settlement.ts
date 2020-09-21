@@ -2940,7 +2940,7 @@ export const internalLicenseApproval = async (license, official: Usuario) => {
     if (!user) throw { status: 404, message: 'El usuario proporcionado no existe en SUT' };
     const userContributor = await hasLinkedContributor(user.id);
     if (license.datos.contribuyente.id !== userContributor?.id) throw { status: 401, message: 'El usuario de SUT proporcionado no tiene disponibilidad de crear licencias para el contribuyente seleccionado' };
-    const procedure = (await initProcedureAnalist({ tipoTramite: license.tipoTramite, datos: license.datos, pago: license.pagos }, user as Usuario, client)).tramite;
+    const procedure = (await initProcedureAnalist({ tipoTramite: license.tipoTramite, datos: license.datos, pago: license.pagos }, user as Usuario, client, official.id)).tramite;
     // license.datos.funcionario.pago = [license.pago]
     const res = await processProcedureAnalist({ idTramite: procedure.id, datos: license.datos, aprobado: true }, official, client);
     await client.query('COMMIT');
@@ -3519,7 +3519,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       const totalIva = totalMonto * 0.16;
       const totalRetencionIva = totalMonto * (0.16 - fixatedAmount(iva ? iva / 100 : 0.16));
       const totalIvaPagar = fixatedAmount(totalIva - totalRetencionIva);
-      
+
       let fact = (await pool.query('SELECT id_registro_recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [application.id])).rows[0]?.id_registro_recibo || 'N/D';
 
       if (breakdownAseo[0].datos.desglose[0].inmueble === 0) {
@@ -4295,8 +4295,8 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
                   ACL: 'public-read',
                   ContentType: 'application/pdf',
                 }).promise();
-                if(idRecibo !== 'N/D' ){
-                  await regClient.query(queries.UPDATE_RECEIPT_RECORD, [idRecibo, `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`])
+                if (idRecibo !== 'N/D') {
+                  await regClient.query(queries.UPDATE_RECEIPT_RECORD, [idRecibo, `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`]);
                 }
                 await regClient.query('COMMIT');
                 res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
@@ -4335,8 +4335,8 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
                       ACL: 'public-read',
                       ContentType: 'application/pdf',
                     }).promise();
-                    if(idRecibo !== 'N/D' ){
-                      await regClient.query(queries.UPDATE_RECEIPT_RECORD, [idRecibo, `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`])
+                    if (idRecibo !== 'N/D') {
+                      await regClient.query(queries.UPDATE_RECEIPT_RECORD, [idRecibo, `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`]);
                     }
                     await regClient.query('COMMIT');
                     res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
@@ -5294,10 +5294,9 @@ const certificateCreationHandler = async (process, media, payload: CertificatePa
     const result = certificateCases(process)[media];
     if (!!result) {
       return await result(payload);
-    }else {
+    } else {
       throw new Error('No se encontró el tipo de certificado seleccionado');
     }
-    
   } catch (e) {
     console.log(e);
     throw errorMessageExtractor(e);
