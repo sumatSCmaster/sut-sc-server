@@ -128,7 +128,7 @@ router.post('/init', authenticate('jwt'), async (req: any, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-router.post('/:id/:certificate', authenticate('jwt'), async (req: any, res) => {
+router.post('/:id/:certificate', async (req: any, res) => {
   const { id, certificate } = req.params;
   const [error, data] = await fulfill(
     createCertificateForApplication({
