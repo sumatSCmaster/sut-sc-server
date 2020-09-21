@@ -3552,13 +3552,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               direccion: application.direccion,
               razonSocial: application.razonSocial,
             },
-            declarations: breakdownJoin.map((row) => {
+            declarations: chunk(breakdownJoin.map((row) => {
               return {
                 periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
                 declGas: `${formatCurrency((+row.datos.desglose[0].montoGas) * (1 + (iva / 100)))}`,
                 declAseo: `${formatCurrency((+row.datos.desglose[0].montoAseo) * (1 + (iva / 100)))}`
               }
-            }),
+            }), 2),
             items: chunk(
               breakdownJoin.map((row) => {
                 return {
@@ -3618,14 +3618,14 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 direccion: application.direccion,
                 razonSocial: application.razonSocial,
               },
-              declarations: breakdownJoin.map((row) => {
+              declarations: chunk(breakdownJoin.map((row) => {
                 let currDesg = row.datos.desglose.find((desg) => desg.inmueble === el.id_inmueble)
                 return {
                   periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
                   declGas: `${formatCurrency((+currDesg.montoGas) * (1 + (iva / 100)))}`,
                   declAseo: `${formatCurrency((+currDesg.montoAseo) * (1 + (iva / 100)))}`
                 }
-              }),
+              }), 2),
               items: chunk(
                 breakdownJoin.map((row) => {
                   return {
