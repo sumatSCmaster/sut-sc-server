@@ -3569,17 +3569,17 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               }),
               3
             ),
-            totalIva: `${formatCurrency(totalIva)} Bs.S`,
-            totalRetencionIva: `${formatCurrency(totalRetencionIva)} Bs.S`, // TODO: Retencion
-            totalIvaPagar: `${formatCurrency(totalIvaPagar)} Bs.S`,
-            montoTotalImpuesto: `${formatCurrency(totalMonto + totalIvaPagar)} Bs.S`,
-            interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
+            totalIva: `${formatCurrency(totalIva)} Bs`,
+            totalRetencionIva: `${formatCurrency(totalRetencionIva)} Bs`, // TODO: Retencion
+            totalIvaPagar: `${formatCurrency(totalIvaPagar)} Bs`,
+            montoTotalImpuesto: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+            interesesMoratorio: '0.00 Bs', // TODO: Intereses moratorios
             estatus: 'PAGADO',
             esAgenteSENIAT: breakdownJoin[0].datos.esAgenteSENIAT || undefined,
             observacion: 'Pago por Servicios Municipales',
-            totalLiq: `${formatCurrency(totalMonto + totalIvaPagar)} Bs.S`,
-            totalRecaudado: `${formatCurrency(totalMonto + totalIvaPagar)} Bs.S`,
-            totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
+            totalLiq: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+            totalRecaudado: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+            totalCred: `0.00 Bs`, // TODO: Credito fiscal
           },
         };
         console.log(certInfo.declarations)
@@ -3636,17 +3636,17 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 }),
                 3
               ),
-              totalIva: `${formatCurrency(totalIva)} Bs.S`,
-              totalRetencionIva: `${formatCurrency(totalRetencionIva)} Bs.S`, // TODO: Retencion
-              totalIvaPagar: `${formatCurrency(totalIvaPagar)} Bs.S`,
-              montoTotalImpuesto: `${formatCurrency(totalMonto + totalIvaPagar)} Bs.S`,
-              interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
+              totalIva: `${formatCurrency(totalIva)} Bs`,
+              totalRetencionIva: `${formatCurrency(totalRetencionIva)} Bs`, // TODO: Retencion
+              totalIvaPagar: `${formatCurrency(totalIvaPagar)} Bs`,
+              montoTotalImpuesto: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+              interesesMoratorio: '0.00 Bs', // TODO: Intereses moratorios
               estatus: 'PAGADO',
               esAgenteSENIAT: breakdownJoin[0].datos.esAgenteSENIAT || undefined,
               observacion: 'Pago por Servicios Municipales',
-              totalLiq: `${formatCurrency(totalMonto + totalIvaPagar)} Bs.S`,
-              totalRecaudado: `${formatCurrency(totalMonto + totalIvaPagar)} Bs.S`,
-              totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
+              totalLiq: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+              totalRecaudado: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+              totalCred: `0.00 Bs`, // TODO: Credito fiscal
             },
           };
           console.log('XDDD')
@@ -3688,16 +3688,16 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               impuesto: formatCurrency(row.monto),
             };
           }),
-          totalIva: `${formatCurrency(totalIva)} Bs.S`,
-          totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
-          totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
-          montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
-          interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
+          totalIva: `${formatCurrency(totalIva)} Bs`,
+          totalRetencionIva: '0,00 Bs ', // TODO: Retencion
+          totalIvaPagar: `${formatCurrency(totalIva)} Bs`,
+          montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs`,
+          interesesMoratorio: '0.00 Bs', // TODO: Intereses moratorios
           estatus: 'PAGADO',
           observacion: 'Pago por Servicios Municipales',
-          totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
-          totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
-          totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
+          totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs`,
+          totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs`,
+          totalCred: `0.00 Bs`, // TODO: Credito fiscal
         },
       };
 
@@ -3745,16 +3745,16 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 impuesto: formatCurrency(row.monto),
               };
             }),
-            totalIva: `${formatCurrency(totalIva)} Bs.S`,
-            totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
-            totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
-            montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
-            interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
+            totalIva: `${formatCurrency(totalIva)} Bs`,
+            totalRetencionIva: '0,00 Bs ', // TODO: Retencion
+            totalIvaPagar: `${formatCurrency(totalIva)} Bs`,
+            montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs`,
+            interesesMoratorio: '0.00 Bs', // TODO: Intereses moratorios
             estatus: 'PAGADO',
             observacion: 'Pago por Inmueble Urbano',
-            totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
-            totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
-            totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
+            totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs`,
+            totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs`,
+            totalCred: `0.00 Bs`, // TODO: Credito fiscal
           },
         };
         certInfoArray.push({ ...certInfo });
@@ -4622,15 +4622,15 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
             }),
             2
           ),
-          totalIva: `${formatCurrency(totalIva)} Bs.S`,
-          totalRetencionIva: `0.00 Bs.S`,
-          totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
-          montoTotalImpuesto: `${formatCurrency(totalMonto)} Bs.S`,
+          totalIva: `${formatCurrency(totalIva)} Bs`,
+          totalRetencionIva: `0.00 Bs`,
+          totalIvaPagar: `${formatCurrency(totalIva)} Bs`,
+          montoTotalImpuesto: `${formatCurrency(totalMonto)} Bs`,
           interesMoratorio: 0, // pueden o no tener
           estatus: 'PAGADO',
           observacion: 'Pago por Publicidad y Propaganda',
-          totalLiq: `${formatCurrency(totalMonto)} Bs.S`,
-          totalRecaudado: `${formatCurrency(totalMonto)} Bs.S`,
+          totalLiq: `${formatCurrency(totalMonto)} Bs`,
+          totalRecaudado: `${formatCurrency(totalMonto)} Bs`,
         },
       };
       console.log(certInfo.datos.items);
