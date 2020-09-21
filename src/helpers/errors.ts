@@ -5,7 +5,7 @@ export const errorMessageGenerator = (pgError) => {
   switch (pgError.code) {
     case '23505':
       let matches = pgError.detail.match(extractRe).groups;
-      msg = `La referencia bancaria ya existe con el valor ${matches.value[1]}`;
+      msg = `La llave ${matches.key} ya existe con el valor ${matches.value}`;
       break;
   }
   return msg;

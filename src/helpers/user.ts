@@ -393,7 +393,7 @@ export const userSearch = async ({ document, docType, email }) => {
     if (!document && !email) throw { status: 406, message: 'Debe aportar algun parametro para la busqueda' };
     if (document && document.length < 6 && email && email.length < 4) throw { status: 406, message: 'Debe aportar mas datos para la busqueda' };
     usuarios =
-      email && email.length > 4 ? (await client.query('SELECT * FROM usuario WHERE nombre_de_usuario ILIKE $1', [`%${email}%`])).rows : (await client.query('SELECT * FROM usuario WHERE nacionalidad = $1 AND cedula = $2', [docType, document])).rows;
+      email && email.length >= 4 ? (await client.query('SELECT * FROM usuario WHERE nombre_de_usuario ILIKE $1', [`%${email}%`])).rows : (await client.query('SELECT * FROM usuario WHERE nacionalidad = $1 AND cedula = $2', [docType, document])).rows;
     const contributorExists = usuarios.length > 0;
     if (!contributorExists) return { status: 404, message: 'No existen coincidencias con el correo o documento proporcionado' };
     usuarios = await Promise.all(

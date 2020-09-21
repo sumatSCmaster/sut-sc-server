@@ -353,6 +353,37 @@ export const linkCommercial = async ({ codCat, rim, relacion }) => {
   }
 }
 
+export const unlinkCommercial = async ({ codCat, rim }) => {
+  const client = await pool.connect();
+  try{
+    const rimData = (await client.query(queries.GET_RIM_DATA, [rim]));
+    if (rimData.rowCount === 0) {
+      throw new Error('RIM no encontrado');
+    }
+
+    let estate = (await client.query(queries.GET_ESTATE_BY_CODCAT, [codCat]));
+
+    if(estate.rowCount === 0){
+      throw new Error('Inmueble no encontrado.')
+    }
+
+    (await client.query(queries.UNLINK_ESTATE_WITH_RIM, [rimData.rows[0].id, codCat]))
+
+    return {
+      status: 200,
+      message: 'Inmueble enlazado',
+    };
+
+  } catch (e) {
+    throw {
+      error: e,
+      message: e.message
+    };
+  } finally {
+    client.release();
+  }
+}
+
 export const linkNatural = async ({ codCat, typeDoc, doc, relacion }) => {
   const client = await pool.connect();
   try{
@@ -377,6 +408,37 @@ export const linkNatural = async ({ codCat, typeDoc, doc, relacion }) => {
       status: 200,
       message: 'Inmueble enlazado',
       inmueble: {...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
+    };
+
+  } catch (e) {
+    throw {
+      error: e,
+      message: e.message
+    };
+  } finally {
+    client.release();
+  }
+}
+
+export const unlinkNatural = async ({ codCat, typeDoc, doc }) => {
+  const client = await pool.connect();
+  try{
+    const contributor = (await client.query(queries.GET_NATURAL_CONTRIBUTOR, [typeDoc, doc]));
+    if (contributor.rowCount === 0) {
+      throw new Error('Contribuyente no encontrado');
+    }
+
+    let estate = (await client.query(queries.GET_ESTATE_BY_CODCAT_NAT, [codCat]));
+
+    if(estate.rowCount === 0){
+      throw new Error('Inmueble no encontrado.')
+    }
+
+    (await client.query(queries.UNLINK_ESTATE_WITH_NATURAL_CONTRIBUTOR, [estate.rows[0].id, contributor.rows[0].id ]))
+
+    return {
+      status: 200,
+      message: 'Inmueble desenlazado',
     };
 
   } catch (e) {
