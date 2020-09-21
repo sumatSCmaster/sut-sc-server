@@ -2940,7 +2940,7 @@ export const internalLicenseApproval = async (license, official: Usuario) => {
     if (!user) throw { status: 404, message: 'El usuario proporcionado no existe en SUT' };
     const userContributor = await hasLinkedContributor(user.id);
     if (license.datos.contribuyente.id !== userContributor?.id) throw { status: 401, message: 'El usuario de SUT proporcionado no tiene disponibilidad de crear licencias para el contribuyente seleccionado' };
-    const procedure = (await initProcedureAnalist({ tipoTramite: license.tipoTramite, datos: license.datos, pago: license.pagos }, user as Usuario, client)).tramite;
+    const procedure = (await initProcedureAnalist({ tipoTramite: license.tipoTramite, datos: license.datos, pago: license.pagos }, user as Usuario, client, official.id)).tramite;
     // license.datos.funcionario.pago = [license.pago]
     const res = await processProcedureAnalist({ idTramite: procedure.id, datos: license.datos, aprobado: true }, official, client);
     await client.query('COMMIT');
@@ -3520,7 +3520,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       const totalRetencionIva = totalMonto * (0.16 - fixatedAmount(iva ? iva / 100 : 0.16));
       const totalIvaPagar = fixatedAmount(totalIva - totalRetencionIva);
 
-      let fact = (await pool.query('SELECT id_registro_recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [application.id])).rows[0].id_registro_recibo;
+      let fact = (await pool.query('SELECT id_registro_recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [application.id])).rows[0]?.id_registro_recibo || 'N/D';
 
       if (breakdownAseo[0].datos.desglose[0].inmueble === 0) {
         certInfo = {
@@ -4149,7 +4149,7 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
     const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [payment[0].id_usuario, ``, application.razonSocial, referencia?.referencia_municipal, 'ESPECIAL', application.id]);
     let idRecibo;
     if (!recibo.rows[0]) {
-      idRecibo = (await client.query('SELECT recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [application.id])).rows[0].id_registro_recibo;
+      idRecibo = (await client.query('SELECT recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [application.id])).rows[0]?.id_registro_recibo || 'N/D';
     } else {
       idRecibo = recibo.rows[0].id_registro_recibo;
     }
@@ -4295,7 +4295,9 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
                   ACL: 'public-read',
                   ContentType: 'application/pdf',
                 }).promise();
-                await regClient.query(queries.UPDATE_RECEIPT_RECORD, [idRecibo, `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`]);
+                if (idRecibo !== 'N/D') {
+                  await regClient.query(queries.UPDATE_RECEIPT_RECORD, [idRecibo, `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`]);
+                }
                 await regClient.query('COMMIT');
                 res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
               } catch (e) {
@@ -4333,7 +4335,9 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
                       ACL: 'public-read',
                       ContentType: 'application/pdf',
                     }).promise();
-                    await regClient.query(queries.UPDATE_RECEIPT_RECORD, [idRecibo, `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`]);
+                    if (idRecibo !== 'N/D') {
+                      await regClient.query(queries.UPDATE_RECEIPT_RECORD, [idRecibo, `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`]);
+                    }
                     await regClient.query('COMMIT');
                     res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
                   } catch (e) {
@@ -4404,6 +4408,7 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
 
 const createReceiptForAEApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
+    if (application.idSubramo === 23) throw new Error('No es una liquidacion admisible para generar recibo');
     const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
 
     const UTMM = (await pool.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
@@ -5287,8 +5292,11 @@ const breakdownCaseHandler = (settlementType, breakdown) => {
 const certificateCreationHandler = async (process, media, payload: CertificatePayload) => {
   try {
     const result = certificateCases(process)[media];
-    if (result) return await result(payload);
-    throw new Error('No se encontró el tipo de certificado seleccionado');
+    if (!!result) {
+      return await result(payload);
+    } else {
+      throw new Error('No se encontró el tipo de certificado seleccionado');
+    }
   } catch (e) {
     console.log(e);
     throw errorMessageExtractor(e);

@@ -1009,7 +1009,7 @@ const insertOrdinancesByProcedure = async (ordinances, id, type, client: PoolCli
   );
 };
 
-export const initProcedureAnalist = async (procedure, user: Usuario, client: PoolClient) => {
+export const initProcedureAnalist = async (procedure, user: Usuario, client: PoolClient, analyst) => {
   // const client = await pool.connect();
   const { tipoTramite, datos, pago } = procedure;
   let costo, respState, dir, cert, datosP;
@@ -1026,7 +1026,7 @@ export const initProcedureAnalist = async (procedure, user: Usuario, client: Poo
       await Promise.all(
         pago.map(async (p) => {
           p.concepto = 'TRAMITE';
-          p.user = user.id;
+          p.user = analyst;
           await insertPaymentCashier(p, response.id, client);
         })
       );
