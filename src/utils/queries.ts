@@ -1345,7 +1345,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
    WHERE cod_catastral = $1;`,
 
   LINK_ESTATE_WITH_RIM: `UPDATE inmueble_urbano SET id_registro_municipal = $1, relacion_contribuyente = $3 WHERE cod_catastral = $2;`,
-  UNLINK_ESTATE_WITH_RIM: 'UPDATE inmueble_urbano SET id_registro_municipal = null, relacion_contribuyente = null WHERE cod_catastral = $2 and id_registro_minicipal = $1;',
+  UNLINK_ESTATE_WITH_RIM: 'UPDATE inmueble_urbano SET id_registro_municipal = null, relacion_contribuyente = null WHERE cod_catastral = $2 AND id_registro_municipal = $1;',
 
   //ESTADISTICAS DASHBOARD SEDEMAT
   // Totales
