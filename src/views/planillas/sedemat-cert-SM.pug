@@ -4,6 +4,7 @@ html
     link(href='css/default.css' rel='stylesheet' type='text/css')
     link(rel="stylesheet", href="css/sedemat.css")
   each aux in datos.items
+    -var index = 0
     body
       div#wrapper
         block header
@@ -113,6 +114,25 @@ html
                 div(style={'-webkit-flex': 8}).td
                   p 
                     span &nbsp; #{datos.propietario.direccion ? datos.propietario.direccion : 'Dirección Sin Asingar'}
+            div(style={'margin-top':'20px'}).table.break-page
+              div.tr
+                div(style={'-webkit-flex': 5.5}).th.center.border-right
+                  p
+                    b PERIODOS
+                div(style={'-webkit-flex': 2.5}).th.center.border-right
+                  p
+                    b GAS
+                div(style={'-webkit-flex': 2}).th.center
+                  p
+                    b ASEO
+              each item in datos.declaration[index] 
+                div.tr
+                  div(style={'-webkit-flex': 5.5}).td.center.border-right
+                    p #{item.periodos}
+                  div(style={'-webkit-flex': 2.5}).td.center.border-right
+                    p #{item.declGas}
+                  div(style={'-webkit-flex': 2}).td.center
+                    p #{item.declAseo}                               
             div
               div(style={'display':'-webkit-flex'})
                 div.table(style={'-webkit-flex': 5.5})
@@ -192,7 +212,8 @@ html
                     b Total Recaudado:
                     span &nbsp; #{datos.totalRecaudado}
           footer#footer
-            - var direccion = 'Telfs. (0261) 793.55.08 (Master) Fax. (0261) 793.58.69 Av. 3F entre calles 81 y 81A, Edif. CPU Planta Baja'             
+            - var direccion = 'Telfs. (0261) 793.55.08 (Master) Fax. (0261) 793.58.69 Av. 3F entre calles 81 y 81A, Edif. CPU Planta Baja' 
+            - index++            
             img#divider(src='images/Divider.png')
             div(style={ display: '-webkit-flex', padding: '0px 50px', 'justify-content': 'center', '-webkit-justify-content': 'center' })
               p(style={ display: '-webkit-flex', '-webkit-justify-content': 'center', '-webkit-align-items': 'center', 'margin': '0px 50px' }) #{direccion}
