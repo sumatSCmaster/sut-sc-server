@@ -1216,6 +1216,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   SET_DATE_FOR_LINKED_ACTIVE_APPLICATION: 'UPDATE impuesto.solicitud SET fecha = $1 WHERE id_solicitud = $2',
   LINK_ESTATE_WITH_NATURAL_CONTRIBUTOR: 'INSERT INTO impuesto.inmueble_contribuyente_natural (id_inmueble, id_contribuyente) VALUES ($1, $2) RETURNING *',
   LINK_ESTATE_WITH_NATURAL_CONTRIBUTOR_EX: 'INSERT INTO impuesto.inmueble_contribuyente_natural (id_inmueble, id_contribuyente, relacion) VALUES ($1, $2, $3) RETURNING *',
+  UNLINK_ESTATE_WITH_NATURAL_CONTRIBUTOR: 'DELETE FROM impuesto.inmueble_contribuyente_natural WHERE id_inmueble = $1 AND id_contribuyente = $2',
   GET_AGREEMENT_FRACTION_BY_ID: 'SELECT * FROM impuesto.fraccion WHERE id_fraccion = $1',
   GET_AGREEMENT_FRACTION_STATE: 'SELECT state FROM impuesto.fraccion_state WHERE id = $1',
   GET_AGREEMENTS_BY_USER: 'SELECT * FROM impuesto.convenio c INNER JOIN impuesto.solicitud s ON c.id_solicitud = s.id_solicitud WHERE s.id_usuario = $1 ORDER BY s.fecha DESC',
@@ -1344,6 +1345,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
    WHERE cod_catastral = $1;`,
 
   LINK_ESTATE_WITH_RIM: `UPDATE inmueble_urbano SET id_registro_municipal = $1, relacion_contribuyente = $3 WHERE cod_catastral = $2;`,
+  UNLINK_ESTATE_WITH_RIM: 'UPDATE inmueble_urbano SET id_registro_municipal = null, relacion_contribuyente = null WHERE cod_catastral = $2 and id_registro_minicipal = $1;',
 
   //ESTADISTICAS DASHBOARD SEDEMAT
   // Totales
