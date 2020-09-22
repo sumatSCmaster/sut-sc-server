@@ -3386,7 +3386,10 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             const benefitFullPayment = (await client.query(queries.CHANGE_SETTLEMENT_TO_NEW_APPLICATION, [applicationFP.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
             return benefitFullPayment;
           case 'descuento':
+            console.log('descuento');
+            console.log('te odio coro');
             const settlements = (await client.query(queries.GET_SETTLEMENT_IDS_BY_RIM_AND_BRANCH, [contributorWithBranch.id_registro_municipal, x.idRamo])).rows;
+            console.log(settlements.length);
             const benefitDiscount = await Promise.all(
               settlements.map(async (el) => {
                 const branch = (await client.query('SELECT sr.*, rm.*, rm.descripcion AS "descripcionRamo" FROM impuesto.subramo sr INNER JOIN impuesto.ramo rm USING (id_subramo) WHERE id_subramo = $1', [el.id_subramo])).rows[0]?.descripcionRamo;
