@@ -3493,7 +3493,7 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
 
 const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
-    // throw { status: 503, message: 'Certificado no disponible' };
+    
     console.log('culo');
     let certInfo;
     let motivo;
@@ -3630,6 +3630,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
         }
       }
     } else if (application.idSubramo === 238) {
+      throw { status: 503, message: 'Certificado no disponible' };
       const breakdownData: any[] = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 238])).rows.map((row) => ({ ...row, monto: row.monto / 1.16 }));
 
       const totalMonto = breakdownData.reduce((prev, next) => prev + +next.monto, 0);
