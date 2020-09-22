@@ -3395,7 +3395,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             console.log(settlements.length);
             const benefitDiscount = await Promise.all(
               settlements.map(async (el) => {
-                const branch = (await client.query('SELECT sr.*, rm.*, rm.descripcion AS "descripcionRamo" FROM impuesto.subramo sr INNER JOIN impuesto.ramo rm USING (id_subramo) WHERE id_subramo = $1', [el.id_subramo])).rows[0]?.descripcionRamo;
+                const branch = (await client.query('SELECT sr.*, rm.*, rm.descripcion AS "descripcionRamo" FROM impuesto.subramo sr INNER JOIN impuesto.ramo rm USING (id_ramo) WHERE id_subramo = $1', [el.id_subramo])).rows[0]?.descripcionRamo;
                 const newDatos = { ...el.datos, descuento: x.porcDescuento };
                 const newMonto = fixatedAmount(el.monto * (1 - x.porcDescuento));
                 const newSettlement = (await client.query(queries.UPDATE_SETTLEMENT_AMOUNT_AND_DATA, [newDatos, newMonto, el.id_liquidacion])).rows[0];
