@@ -1978,8 +1978,9 @@ export const getEntireDebtsForContributor = async ({ reference, docType, documen
   }
 };
 
-const getDefaultInterestByApplication = async ({ id, date, state, client }): Promise<number> => {
+const getDefaultInterestByApplication = async ({ id, date, state, client }): Promise<number | undefined> => {
   try {
+    return undefined;
     const value =
       (state === 'ingresardatos' &&
         moment().isAfter(moment(date)) &&
@@ -3561,7 +3562,6 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
 
 const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
-    // throw { status: 503, message: 'Certificado no disponible' };
     console.log('culo');
     let certInfo;
     let motivo;
@@ -3698,6 +3698,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
         }
       }
     } else if (application.idSubramo === 238) {
+      throw { status: 503, message: 'Certificado no disponible' };
       const breakdownData: any[] = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 238])).rows.map((row) => ({ ...row, monto: row.monto / 1.16 }));
 
       const totalMonto = breakdownData.reduce((prev, next) => prev + +next.monto, 0);
@@ -3781,13 +3782,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               direccion: application.direccion,
               razonSocial: application.razonSocial,
             },
-            items: breakdownData.map((row) => {
+            items: chunk(breakdownData.map((row) => {
               return {
                 direccion: el?.direccion || 'No disponible',
                 periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
                 impuesto: formatCurrency(row.monto),
               };
-            }),
+            }), 2),
             totalIva: `${formatCurrency(totalIva)} Bs.S`,
             totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
             totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
