@@ -73,7 +73,7 @@ export const alterateAESettlements = async ({ settlements, type }) => {
         delete liquidacion.datos[tiposCorreccion.complementaria];
         delete liquidacion.datos[tiposCorreccion.sustitutiva];
         const newDatos = { ...liquidacion.datos, desglose: s.desglose, [tiposCorreccion[type]]: true };
-        const newSettlement = (await client.query('UPDATE impuesto.liquidacion SET datos = $1, monto = $2 WHERE id_liquidacion = $3 RETURNING *', [newDatos, fixatedAmount(s.monto), s.id])).rows[0];
+        const newSettlement = (await client.query(queries.UPDATE_SETTLEMENT_AMOUNT_AND_DATA, [newDatos, fixatedAmount(s.monto), s.id])).rows[0];
         return {
           id: newSettlement.id_liquidacion,
           ramo: branchNames.AE,

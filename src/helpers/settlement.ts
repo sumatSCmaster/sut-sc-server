@@ -3342,7 +3342,24 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             return benefitFullPayment;
           case 'descuento':
             const settlements = (await client.query(queries.GET_SETTLEMENT_IDS_BY_RIM_AND_BRANCH, [contributorWithBranch.id_registro_municipal, x.idRamo])).rows;
-            const benefitDiscount = await Promise.all(settlements.map(async (el) => await client.query(queries.INSERT_DISCOUNT_FOR_SETTLEMENT, [el.id_liquidacion, x.porcDescuento])));
+            const benefitDiscount = await Promise.all(
+              settlements.map(async (el) => {
+                const branch = (await client.query('SELECT sr.*, rm.*, rm.descripcion AS "descripcionRamo" FROM impuesto.subramo sr INNER JOIN impuesto.ramo rm USING (id_subramo) WHERE id_subramo = $1', [el.id_subramo])).rows[0]?.descripcionRamo;
+                const newDatos = { ...el.datos, descuento: x.porcDescuento };
+                const newMonto = fixatedAmount(el.monto * (1-x.porcDescuento));
+                const newSettlement = (await client.query(queries.UPDATE_SETTLEMENT_AMOUNT_AND_DATA, [newDatos, newMonto, el.id_liquidacion])).rows[0];
+                return {
+                  id: newSettlement.id_liquidacion,
+                  ramo: branch,
+                  fecha: newSettlement.datos.fecha,
+                  monto: fixatedAmount(newSettlement.monto),
+                  certificado: newSettlement.certificado,
+                  recibo: newSettlement.recibo,
+                  desglose: newSettlement.datos.desglose,
+                };
+              })
+            );
+            // const benefitDiscount = await Promise.all(settlements.map(async (el) => await client.query(queries.INSERT_DISCOUNT_FOR_SETTLEMENT, [el.id_liquidacion, x.porcDescuento])));
             return benefitDiscount;
           case 'remision':
             const benefitRemission = (await client.query(queries.SET_SETTLEMENTS_AS_FORWARDED_BY_RIM, [contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];

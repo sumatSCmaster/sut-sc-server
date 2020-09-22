@@ -1255,11 +1255,16 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     ) ss  
       ON ss.id = l.id_solicitud  
       WHERE ss.state = 'ingresardatos');`,
-  GET_SETTLEMENT_IDS_BY_RIM_AND_BRANCH:
-    "SELECT id_liquidacion FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud_state ss ON ss.id = l.id_solicitud  WHERE ss.state = 'ingresardatos' AND id_registro_municipal = $1 AND id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = '1' AND id_ramo = $2);",
+  GET_SETTLEMENT_IDS_BY_RIM_AND_BRANCH: `SELECT id_liquidacion FROM impuesto.liquidacion l INNER JOIN ( SELECT es.id_solicitud,
+    impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+    FROM impuesto.evento_solicitud es
+    WHERE id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE id_registro_municipal = $2 LIMIT 1))
+    GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+    ) ss   ON ss.id = l.id_solicitud  WHERE ss.state = 'ingresardatos' AND id_registro_municipal = $1 AND id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = '1' AND id_ramo = $2);`,
   INSERT_DISCOUNT_FOR_SETTLEMENT: 'INSERT INTO impuesto.liquidacion_descuento (id_liquidacion, porcentaje_descuento) VALUES ($1, $2)',
   CREATE_AGREEMENT: 'INSERT INTO impuesto.convenio (id_solicitud, cantidad) VALUES ($1, $2) RETURNING *',
   CREATE_AGREEMENT_FRACTION: 'SELECT * FROM impuesto.insert_fraccion($1, $2, $3, $4)',
+  UPDATE_SETTLEMENT_AMOUNT_AND_DATA: 'UPDATE impuesto.liquidacion SET datos = $1, monto = $2 WHERE id_liquidacion = $3 RETURNING *',
   GET_ACTIVE_AE_SETTLEMENTS_FOR_ALTERATION: `SELECT l.* FROM impuesto.liquidacion l 
     INNER JOIN impuesto.solicitud s USING (id_solicitud) 
     WHERE l.id_registro_municipal = $1 AND id_subramo = 10 AND s.aprobado = false`,
