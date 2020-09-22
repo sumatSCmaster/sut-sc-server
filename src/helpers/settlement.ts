@@ -1715,8 +1715,10 @@ const formatBreakdownForSettlement = switchcase({
   },
   IU: async ({ settlement, client }) => {
     try {
+      if (!settlement.datos.desglose) return null;
       const newDesglose = await Promise.all(
         settlement.datos.desglose.map(async (el) => {
+          if (el.inmueble === 0) return { id: 0, codCat: null, monto: el.monto };
           const estate = (await client.query(queries.GET_ESTATE_BY_ID, [el.inmueble])).rows[0];
           const inmueble = {
             id: estate.id_inmueble,
