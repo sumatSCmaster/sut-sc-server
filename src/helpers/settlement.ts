@@ -1956,8 +1956,9 @@ const getDefaultInterestByApplication = async ({ id, date, state, client }): Pro
   }
 };
 
-const getDefaultInterestRebateByApplication = async ({ id, date, state, client }): Promise<number> => {
+const getDefaultInterestRebateByApplication = async ({ id, date, state, client }): Promise<number | undefined> => {
   try {
+    return undefined;
     const value =
       (state === 'ingresardatos' &&
         moment().isAfter(moment(date)) &&
