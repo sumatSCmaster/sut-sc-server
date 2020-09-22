@@ -3388,7 +3388,10 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
           case 'descuento':
             console.log('descuento');
             console.log('te odio coro');
+
             const settlements = (await client.query(queries.GET_SETTLEMENT_IDS_BY_RIM_AND_BRANCH, [contributorWithBranch.id_registro_municipal, x.idRamo])).rows;
+            console.log('//if -> x.idRamo', x.idRamo);
+            console.log('//if -> contributorWithBranch.id_registro_municipal', contributorWithBranch.id_registro_municipal);
             console.log(settlements.length);
             const benefitDiscount = await Promise.all(
               settlements.map(async (el) => {
