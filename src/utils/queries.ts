@@ -1256,7 +1256,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
       ON ss.id = l.id_solicitud  
       WHERE ss.state = 'ingresardatos');`,
   GET_SETTLEMENT_IDS_BY_RIM_AND_BRANCH: `
-  SELECT id_liquidacion FROM impuesto.liquidacion l INNER JOIN 
+  SELECT l.* FROM impuesto.liquidacion l INNER JOIN 
   (SELECT s.id_solicitud AS id,
           s.id_tipo_tramite AS tipotramite,
           s.aprobado,
