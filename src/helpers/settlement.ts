@@ -1934,8 +1934,9 @@ export const getEntireDebtsForContributor = async ({ reference, docType, documen
   }
 };
 
-const getDefaultInterestByApplication = async ({ id, date, state, client }): Promise<number> => {
+const getDefaultInterestByApplication = async ({ id, date, state, client }): Promise<number | undefined> => {
   try {
+    return undefined;
     const value =
       (state === 'ingresardatos' &&
         moment().isAfter(moment(date)) &&
@@ -3493,7 +3494,6 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
 
 const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
-    
     console.log('culo');
     let certInfo;
     let motivo;
