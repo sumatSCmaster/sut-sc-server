@@ -1273,7 +1273,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
                 GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
       ) ss  ON ss.id = l.id_solicitud 
   WHERE ss.state = 'ingresardatos' AND id_registro_municipal = $1 AND
-   id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = '1' AND id_ramo = $2);`,
+   id_subramo IN (SELECT id_subramo FROM impuesto.subramo WHERE descripcion !='Convenio de Pago' AND id_ramo = $2);`,
   INSERT_DISCOUNT_FOR_SETTLEMENT: 'INSERT INTO impuesto.liquidacion_descuento (id_liquidacion, porcentaje_descuento) VALUES ($1, $2)',
   CREATE_AGREEMENT: 'INSERT INTO impuesto.convenio (id_solicitud, cantidad) VALUES ($1, $2) RETURNING *',
   CREATE_AGREEMENT_FRACTION: 'SELECT * FROM impuesto.insert_fraccion($1, $2, $3, $4)',
