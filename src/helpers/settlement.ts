@@ -3782,13 +3782,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               direccion: application.direccion,
               razonSocial: application.razonSocial,
             },
-            items: breakdownData.map((row) => {
+            items: chunk(breakdownData.map((row) => {
               return {
                 direccion: el?.direccion || 'No disponible',
                 periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
                 impuesto: formatCurrency(row.monto),
               };
-            }),
+            }), 2),
             totalIva: `${formatCurrency(totalIva)} Bs.S`,
             totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
             totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
