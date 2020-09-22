@@ -1731,7 +1731,9 @@ const formatBreakdownForSettlement = switchcase({
       throw e;
     }
   },
-})(null);
+})(async ({ settlement, client }) => {
+  return null;
+});
 
 export const formatContributor = async (contributor, client: PoolClient) => {
   try {
