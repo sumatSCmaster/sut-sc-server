@@ -1570,32 +1570,38 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
               : undefined,
             fecha: el.fecha,
             monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
-            liquidaciones: liquidaciones
-              .filter((el) => el.tipoProcedimiento !== 'MULTAS')
-              .map((el) => {
-                return {
-                  id: el.id_liquidacion,
-                  ramo: el.tipoProcedimiento,
-                  fecha: el.datos.fecha,
-                  monto: +el.monto,
-                  esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
-                  certificado: el.certificado,
-                  recibo: el.recibo,
-                };
-              }),
-            multas: liquidaciones
-              .filter((el) => el.tipoProcedimiento === 'MULTAS')
-              .map((el) => {
-                return {
-                  id: el.id_liquidacion,
-                  ramo: el.tipoProcedimiento,
-                  fecha: el.datos.fecha,
-                  monto: +el.monto,
-                  descripcion: el.datos.descripcion,
-                  certificado: el.certificado,
-                  recibo: el.recibo,
-                };
-              }),
+            liquidaciones: await Promise.all(
+              liquidaciones
+                .filter((el) => el.tipoProcedimiento !== 'MULTAS')
+                .map(async (el) => {
+                  return {
+                    id: el.id_liquidacion,
+                    ramo: el.tipoProcedimiento,
+                    fecha: el.datos.fecha,
+                    monto: +el.monto,
+                    esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
+                    certificado: el.certificado,
+                    recibo: el.recibo,
+                    desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
+                  };
+                })
+            ),
+            multas: await Promise.all(
+              liquidaciones
+                .filter((el) => el.tipoProcedimiento === 'MULTAS')
+                .map(async (el) => {
+                  return {
+                    id: el.id_liquidacion,
+                    ramo: el.tipoProcedimiento,
+                    fecha: el.datos.fecha,
+                    monto: +el.monto,
+                    descripcion: el.datos.descripcion,
+                    certificado: el.certificado,
+                    recibo: el.recibo,
+                    desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
+                  };
+                })
+            ),
             interesMoratorio: await getDefaultInterestByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
             rebajaInteresMoratorio: await getDefaultInterestRebateByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
           };
@@ -1649,32 +1655,38 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
               ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
               : undefined,
             monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
-            liquidaciones: liquidaciones
-              .filter((el) => el.tipoProcedimiento !== 'MULTAS')
-              .map((el) => {
-                return {
-                  id: el.id_liquidacion,
-                  ramo: el.tipoProcedimiento,
-                  fecha: el.datos.fecha,
-                  monto: +el.monto,
-                  esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
-                  certificado: el.certificado,
-                  recibo: el.recibo,
-                };
-              }),
-            multas: liquidaciones
-              .filter((el) => el.tipoProcedimiento === 'MULTAS')
-              .map((el) => {
-                return {
-                  id: el.id_liquidacion,
-                  ramo: el.tipoProcedimiento,
-                  fecha: el.datos.fecha,
-                  monto: +el.monto,
-                  descripcion: el.datos.descripcion,
-                  certificado: el.certificado,
-                  recibo: el.recibo,
-                };
-              }),
+            liquidaciones: await Promise.all(
+              liquidaciones
+                .filter((el) => el.tipoProcedimiento !== 'MULTAS')
+                .map(async (el) => {
+                  return {
+                    id: el.id_liquidacion,
+                    ramo: el.tipoProcedimiento,
+                    fecha: el.datos.fecha,
+                    monto: +el.monto,
+                    esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
+                    certificado: el.certificado,
+                    recibo: el.recibo,
+                    desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
+                  };
+                })
+            ),
+            multas: await Promise.all(
+              liquidaciones
+                .filter((el) => el.tipoProcedimiento === 'MULTAS')
+                .map(async (el) => {
+                  return {
+                    id: el.id_liquidacion,
+                    ramo: el.tipoProcedimiento,
+                    fecha: el.datos.fecha,
+                    monto: +el.monto,
+                    descripcion: el.datos.descripcion,
+                    certificado: el.certificado,
+                    recibo: el.recibo,
+                    desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
+                  };
+                })
+            ),
             interesMoratorio: await getDefaultInterestByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
             rebajaInteresMoratorio: await getDefaultInterestRebateByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
           };
@@ -1692,6 +1704,38 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
     client.release();
   }
 };
+
+const formatBreakdownForSettlement = switchcase({
+  AE: async ({ settlement, client }) => {
+    try {
+      return settlement.datos.desglose;
+    } catch (e) {
+      throw e;
+    }
+  },
+  IU: async ({ settlement, client }) => {
+    try {
+      if (!settlement.datos.desglose) return null;
+      const newDesglose = await Promise.all(
+        settlement.datos.desglose.map(async (el) => {
+          if (el.inmueble === 0) return { id: 0, codCat: null, monto: el.monto };
+          const estate = (await client.query(queries.GET_ESTATE_BY_ID, [el.inmueble])).rows[0];
+          const inmueble = {
+            id: estate.id_inmueble,
+            codCat: estate.cod_catastral,
+            monto: el.monto,
+          };
+          return inmueble;
+        })
+      );
+      return newDesglose;
+    } catch (e) {
+      throw e;
+    }
+  },
+})(async ({ settlement, client }) => {
+  return null;
+});
 
 export const formatContributor = async (contributor, client: PoolClient) => {
   try {
@@ -1957,8 +2001,9 @@ const getDefaultInterestByApplication = async ({ id, date, state, client }): Pro
   }
 };
 
-const getDefaultInterestRebateByApplication = async ({ id, date, state, client }): Promise<number> => {
+const getDefaultInterestRebateByApplication = async ({ id, date, state, client }): Promise<number | undefined> => {
   try {
+    return undefined;
     const value =
       (state === 'ingresardatos' &&
         moment().isAfter(moment(date)) &&
@@ -3342,8 +3387,31 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             const benefitFullPayment = (await client.query(queries.CHANGE_SETTLEMENT_TO_NEW_APPLICATION, [applicationFP.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
             return benefitFullPayment;
           case 'descuento':
+            console.log('descuento');
+            console.log('te odio coro');
+
             const settlements = (await client.query(queries.GET_SETTLEMENT_IDS_BY_RIM_AND_BRANCH, [contributorWithBranch.id_registro_municipal, x.idRamo])).rows;
-            const benefitDiscount = await Promise.all(settlements.map(async (el) => await client.query(queries.INSERT_DISCOUNT_FOR_SETTLEMENT, [el.id_liquidacion, x.porcDescuento])));
+            console.log('//if -> x.idRamo', x.idRamo);
+            console.log('//if -> contributorWithBranch.id_registro_municipal', contributorWithBranch.id_registro_municipal);
+            console.log(settlements.length);
+            const benefitDiscount = await Promise.all(
+              settlements.map(async (el) => {
+                const branch = (await client.query('SELECT sr.*, rm.*, rm.descripcion AS "descripcionRamo" FROM impuesto.subramo sr INNER JOIN impuesto.ramo rm USING (id_ramo) WHERE id_subramo = $1', [el.id_subramo])).rows[0]?.descripcionRamo;
+                const newDatos = { ...el.datos, descuento: x.porcDescuento };
+                const newMonto = fixatedAmount(el.monto * (1 - x.porcDescuento));
+                const newSettlement = (await client.query(queries.UPDATE_SETTLEMENT_AMOUNT_AND_DATA, [newDatos, newMonto, el.id_liquidacion])).rows[0];
+                return {
+                  id: newSettlement.id_liquidacion,
+                  ramo: branch,
+                  fecha: newSettlement.datos.fecha,
+                  monto: fixatedAmount(newSettlement.monto),
+                  certificado: newSettlement.certificado,
+                  recibo: newSettlement.recibo,
+                  desglose: newSettlement.datos.desglose,
+                };
+              })
+            );
+            // const benefitDiscount = await Promise.all(settlements.map(async (el) => await client.query(queries.INSERT_DISCOUNT_FOR_SETTLEMENT, [el.id_liquidacion, x.porcDescuento])));
             return benefitDiscount;
           case 'remision':
             const benefitRemission = (await client.query(queries.SET_SETTLEMENTS_AS_FORWARDED_BY_RIM, [contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
