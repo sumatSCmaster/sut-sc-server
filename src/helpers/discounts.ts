@@ -5,12 +5,13 @@ import { ActividadEconomica, Ramo } from '@root/interfaces/sigt';
 
 const pool = Pool.getInstance();
 
+// ? DE ULTIMO
 export const getContributorDiscounts = async ({ typeDoc, doc, ref }) => {
   const client = await pool.connect();
   try {
     const contributor = (await client.query(queries.GET_CONTRIBUTOR, [typeDoc, doc, ref])).rows[0];
     if (!contributor) {
-      throw new Error('No se ha hallado el contribuyente');
+      throw { status: 404, message: 'No se ha hallado el contribuyente' };
     }
     const contributorDiscounts = await client.query(queries.GET_CONTRIBUTOR_DISCOUNTS, [typeDoc, doc, ref]);
     const contribuyente = {
@@ -32,21 +33,25 @@ export const getContributorDiscounts = async ({ typeDoc, doc, ref }) => {
   }
 };
 
+// * DONE
 export const getActivityBranchDiscounts = async () => {
   const client = await pool.connect();
   try {
     const activityDiscounts = await client.query(queries.GET_ACTIVITY_DISCOUNTS);
     const activeDiscounts = activityDiscounts.rows;
 
-    const descuentosAforo = activeDiscounts.map((row) => {
-      return {
-        id: row.id_plazo_,
-        fechaInicio: row.fecha_inicio,
-        fechaFin: row.fecha_fin,
-        numeroReferencia: row.numero_referencia,
-        descripcion: row.descripcion,
-      };
-    });
+    const descuentosAforo = await Promise.all(
+      activeDiscounts.map(async (row) => {
+        return {
+          id: row.id_plazo_descuento,
+          fechaInicio: row.fecha_inicio,
+          fechaFin: row.fecha_fin,
+          numeroReferencia: row.numero_referencia,
+          descripcion: row.descripcion,
+          descuentosAforo: (await client.query(queries.GET_BRANCH_INFO_FOR_DISCOUNT_BY_ACTIVITY, [row.id_plazo_descuento, row.id_actividad_economica])).rows,
+        };
+      })
+    );
 
     return { status: 200, message: 'Descuentos de Ramo por Aforo obtenidos satisfactoriamente', descuentosAforo };
   } catch (error) {
@@ -61,7 +66,8 @@ export const getActivityBranchDiscounts = async () => {
   }
 };
 
-export const createActivityDiscount = async ({ from, activities }: { from: Date; activities: ActividadEconomica[] }) => {
+// * DONE
+export const createActivityDiscount = async ({ from, activities }: { from: Date; activities: Partial<ActividadEconomica & { ramos: any[] }>[] }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -69,17 +75,25 @@ export const createActivityDiscount = async ({ from, activities }: { from: Date;
 
     await Promise.all(
       activities.map(async (row) => {
-        if ((await client.query(queries.GET_ACTIVITY_IS_DISCOUNTED, [row.id])).rowCount > 0) {
-          throw new Error(`La actividad economica ${row.nombreActividad} ya está descontada`);
-        } else {
-          return client.query(queries.INSERT_DISCOUNT_ACTIVITY, [discount.id_plazo_exoneracion, row.id]);
-        }
+        const descuentos = row.ramos?.map(async (ramo) => {
+          if ((await client.query(queries.GET_ACTIVITY_IS_DISCOUNTED, [row.id, ramo.id])).rowCount > 0) {
+            throw { status: 409, message: `La actividad economica ${row.nombreActividad} ya posee un descuento para el ramo ${ramo.descripcion}` };
+          } else {
+            return client.query(queries.INSERT_DISCOUNT_ACTIVITY, [discount.id_plazo_exoneracion, row.id, ramo.id]);
+          }
+        });
+        return descuentos;
       })
     );
 
     const descuentos = await Promise.all(
       activities.map(async (row) => {
-        return (await client.query(queries.GET_ACTIVITY_IS_DISCOUNTED, [row.id])).rows[0];
+        return await Promise.all(
+          (await client.query(queries.GET_ACTIVITY_DISCOUNT_BY_ID, [row.id])).rows.map(async (el) => {
+            el.descuentosAforo = (await client.query(queries.GET_BRANCH_INFO_FOR_DISCOUNT_BY_ACTIVITY, [el.id, el.aforo])).rows;
+            return el;
+          })
+        );
       })
     );
 
@@ -102,16 +116,17 @@ export const createActivityDiscount = async ({ from, activities }: { from: Date;
   }
 };
 
-export const createContributorDiscount = async ({ typeDoc, doc, ref, from, activities }: { typeDoc: string; doc: string; ref: string; from: Date; activities: ActividadEconomica[] }) => {
+// ? DE ULTIMO
+export const createContributorDiscount = async ({ typeDoc, doc, ref, from, branches }: { typeDoc: string; doc: string; ref: string; from: Date; branches: any[] }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const exoneration = (await client.query(queries.CREATE_EXONERATION, [from])).rows[0];
+    const exoneration = (await client.query(queries.CREATE_DISCOUNT, [from])).rows[0];
     console.log(exoneration);
     const contributor = await client.query(queries.GET_CONTRIBUTOR, [typeDoc, doc, ref]);
     console.log(contributor.rows);
     if (!contributor.rows[0]) {
-      throw new Error('No se ha hallado el contribuyente');
+      throw { status: 404, message: 'El contribuyente no existe' };
     }
     const idContributor = +contributor.rows[0].idRegistroMunicipal;
     // if (activities) {
@@ -151,6 +166,7 @@ export const createContributorDiscount = async ({ typeDoc, doc, ref, from, activ
   }
 };
 
+// * DONE
 export const updateEndTimeDiscount = async (id, to) => {
   const client = await pool.connect();
   try {

@@ -1149,7 +1149,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         FROM impuesto.plazo_exoneracion pe
         INNER JOIN impuesto.actividad_economica_exoneracion aee ON aee.id_plazo_exoneracion = pe.id_plazo_exoneracion
         INNER JOIN impuesto.actividad_economica ae ON aee.id_actividad_economica = ae.id_actividad_economica
-        WHERE ae.id_actividad_economica = $1 AND (pe.fecha_fin IS NULL)
+        WHERE ae.id_actividad_economica = $1 AND (pe.fecha_fin IS NULL OR pe.fecha_fin > NOW()::DATE)
         ORDER BY pe.id_plazo_exoneracion DESC;`,
   GET_BRANCH_EXONERATIONS: `SELECT pe.*, r.*, ((pe.fecha_fin IS NULL) OR (NOW() BETWEEN pe.fecha_inicio AND (pe.fecha_fin))) AS active
         FROM impuesto.plazo_exoneracion pe
@@ -1968,12 +1968,30 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
 
   // ! DESCUENTOS
 
-  GET_ACTIVITY_DISCOUNTS: ``,
-  CREATE_DISCOUNT: ``,
-  GET_ACTIVITY_IS_DISCOUNTED: ``,
-  INSERT_DISCOUNT_ACTIVITY: ``,
-  UPDATE_DISCOUNT_END_TIME: ``,
+  GET_ACTIVITY_DISCOUNTS: `SELECT DISTINCT ON (aee.id_plazo_descuento, aee.id_actividad_economica) pe.*, ae.*, ((pe.fecha_fin IS NULL) OR (NOW() BETWEEN pe.fecha_inicio AND (pe.fecha_fin))) AS active
+  FROM impuesto.plazo_descuento pe
+  INNER JOIN impuesto.actividad_economica_descuento aee ON aee.id_plazo_descuento = pe.id_plazo_descuento
+  INNER JOIN impuesto.actividad_economica ae ON aee.id_actividad_economica = ae.id_actividad_economica
+  ORDER BY aee.id_plazo_descuento DESC;`,
+  GET_BRANCH_INFO_FOR_DISCOUNT_BY_ACTIVITY: `SELECT rm.id_ramo AS id, rm.descripcion AS ramo FROM impuesto.ramo rm 
+  INNER JOIN impuesto.actividad_economica_descuento aed USING (id_ramo) 
+  WHERE aed.id_plazo_descuento = $1 AND aed.id_actividad_economica = $2;`,
+  CREATE_DISCOUNT: `INSERT INTO impuesto.plazo_descuento (id_plazo_descuento, fecha_inicio) VALUES (default, $1) RETURNING *;`,
+  GET_ACTIVITY_IS_DISCOUNTED: `SELECT pe.id_plazo_descuento AS id, ae.id_actividad_economica AS aforo, ae.descripcion, ((pe.fecha_fin IS NULL) OR (NOW() BETWEEN pe.fecha_inicio AND (pe.fecha_fin))) AS active 
+  FROM impuesto.plazo_descuento pe
+  INNER JOIN impuesto.actividad_economica_descuento aee ON aee.id_plazo_descuento = pe.id_plazo_descuento
+  INNER JOIN impuesto.actividad_economica ae ON aee.id_actividad_economica = ae.id_actividad_economica
+  WHERE ae.id_actividad_economica = $1 AND aee.id_ramo = $2 AND (pe.fecha_fin IS NULL OR pe.fecha_fin > NOW()::DATE)
+  ORDER BY pe.id_plazo_descuento DESC;`,
+  INSERT_DISCOUNT_ACTIVITY: `INSERT INTO impuesto.actividad_economica_descuento (id_actividad_economica_descuento, id_plazo_descuento, id_actividad_economica, id_ramo) VALUES (default, $1, $2, $3);`,
+  UPDATE_DISCOUNT_END_TIME: `UPDATE impuesto.plazo_descuento SET fecha_fin = $1 WHERE id_plazo_descuento = $2`,
   GET_CONTRIBUTOR_DISCOUNTS: ``,
+  GET_ACTIVITY_DISCOUNT_BY_ID: `SELECT pe.id_plazo_descuento AS id, ae.id_actividad_economica AS aforo, ae.descripcion, ((pe.fecha_fin IS NULL) OR (NOW() BETWEEN pe.fecha_inicio AND (pe.fecha_fin))) AS active 
+  FROM impuesto.plazo_descuento pe
+  INNER JOIN impuesto.actividad_economica_descuento aee ON aee.id_plazo_descuento = pe.id_plazo_descuento
+  INNER JOIN impuesto.actividad_economica ae ON aee.id_actividad_economica = ae.id_actividad_economica
+  WHERE ae.id_actividad_economica = $1 AND (pe.fecha_fin IS NULL OR pe.fecha_fin > NOW()::DATE)
+  ORDER BY pe.id_plazo_descuento DESC;`,
 
   gtic: {
     GET_NATURAL_CONTRIBUTOR:

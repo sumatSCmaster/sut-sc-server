@@ -271,7 +271,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                     ? (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID, [el.id_inmueble, branch?.id_registro_municipal])).rows[0]
                     : (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID_NATURAL, [el.id_inmueble, contributor.id_contribuyente])).rows[0];
                 const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month').isSameOrAfter(IUDate) ? moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month') : IUDate) : IUDate;
-                const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M'))) || (!lastMonthPayment && dateInterpolationIU + 1) || 1;
+                const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M')) + 1) || (!lastMonthPayment && dateInterpolationIU + 1) || 1;
                 // paymentDate = paymentDate.isSameOrBefore(lastEAPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
                 if (interpolation === 0) return null;
                 // if (lastMonthPayment) {
@@ -3571,10 +3571,10 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     ramo = application.descripcionRamo;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
 
-      let fechaCreLiq = moment(application.fechaCreacion);
-      let fechaCreLiqStr = fechaCreLiq.format('DD/MM/YYYY');
-      let endOfMonthFechaVenc = fechaCreLiq.clone().endOf('month')
-      let currentDate = moment().format('MM-DD-YYYY');
+    let fechaCreLiq = moment(application.fechaCreacion);
+    let fechaCreLiqStr = fechaCreLiq.format('DD/MM/YYYY');
+    let endOfMonthFechaVenc = fechaCreLiq.clone().endOf('month');
+    let currentDate = moment().format('MM-DD-YYYY');
 
     if (application.idSubramo === 107 || application.idSubramo === 108) {
       const breakdownGas = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 107])).rows.map((row) => (row.datos.IVA ? { ...row, monto: row.monto / (1 + row.datos.IVA / 100) } : { ...row, monto: row.monto / 1.16 }));
@@ -3595,7 +3595,6 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       const totalIvaPagar = fixatedAmount(totalIva - totalRetencionIva);
 
       let fact = (await pool.query('SELECT id_registro_recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [application.id])).rows[0]?.id_registro_recibo || 'N/D';
-
 
       if (breakdownAseo[0].datos.desglose[0].inmueble === 0) {
         certInfo = {
@@ -3620,13 +3619,16 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               direccion: application.direccion,
               razonSocial: application.razonSocial,
             },
-            declarations: chunk(breakdownJoin.map((row) => {
-              return {
-                periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                declGas: `${formatCurrency((+row.datos.desglose[0].montoGas) * (1 + (iva / 100)))}`,
-                declAseo: `${formatCurrency((+row.datos.desglose[0].montoAseo) * (1 + (iva / 100)))}`
-              }
-            }), 2),
+            declarations: chunk(
+              breakdownJoin.map((row) => {
+                return {
+                  periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
+                  declGas: `${formatCurrency(+row.datos.desglose[0].montoGas * (1 + iva / 100))}`,
+                  declAseo: `${formatCurrency(+row.datos.desglose[0].montoAseo * (1 + iva / 100))}`,
+                };
+              }),
+              2
+            ),
             items: chunk(
               breakdownJoin.map((row) => {
                 return {
@@ -3650,7 +3652,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             totalCred: `0.00 Bs`, // TODO: Credito fiscal
           },
         };
-        console.log(certInfo.declarations)
+        console.log(certInfo.declarations);
         certInfoArray.push({ ...certInfo });
       } else {
         console.log(breakdownJoin[0].datos.desglose);
@@ -3663,7 +3665,6 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
         console.log('BREAKDOWN JOIN', breakdownJoin);
         console.log(inmueblesContribuyente);
         for (let el of inmueblesContribuyente) {
-          
           certInfo = {
             QR: linkQr,
             moment: require('moment'),
@@ -3686,14 +3687,17 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 direccion: application.direccion,
                 razonSocial: application.razonSocial,
               },
-              declarations: chunk(breakdownJoin.map((row) => {
-                let currDesg = row.datos.desglose.find((desg) => desg.inmueble === el.id_inmueble)
-                return {
-                  periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                  declGas: `${formatCurrency((+currDesg.montoGas) * (1 + (iva / 100)))}`,
-                  declAseo: `${formatCurrency((+currDesg.montoAseo) * (1 + (iva / 100)))}`
-                }
-              }), 2),
+              declarations: chunk(
+                breakdownJoin.map((row) => {
+                  let currDesg = row.datos.desglose.find((desg) => desg.inmueble === el.id_inmueble);
+                  return {
+                    periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
+                    declGas: `${formatCurrency(+currDesg.montoGas * (1 + iva / 100))}`,
+                    declAseo: `${formatCurrency(+currDesg.montoAseo * (1 + iva / 100))}`,
+                  };
+                }),
+                2
+              ),
               items: chunk(
                 breakdownJoin.map((row) => {
                   return {
@@ -3717,8 +3721,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               totalCred: `0.00 Bs`, // TODO: Credito fiscal
             },
           };
-          console.log('XDDD')
-          console.log(certInfo.datos.declarations)
+          console.log('XDDD');
+          console.log(certInfo.datos.declarations);
           certInfoArray.push({ ...certInfo });
         }
       }
@@ -3807,13 +3811,16 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               direccion: application.direccion,
               razonSocial: application.razonSocial,
             },
-            items: chunk(breakdownData.map((row) => {
-              return {
-                direccion: el?.direccion || 'No disponible',
-                periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                impuesto: formatCurrency(row.monto),
-              };
-            }), 2),
+            items: chunk(
+              breakdownData.map((row) => {
+                return {
+                  direccion: el?.direccion || 'No disponible',
+                  periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
+                  impuesto: formatCurrency(row.monto),
+                };
+              }),
+              2
+            ),
             totalIva: `${formatCurrency(totalIva)} Bs.S`,
             totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
             totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
@@ -3829,7 +3836,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
         certInfoArray.push({ ...certInfo });
       }
     }
-    
+
     return new Promise(async (res, rej) => {
       try {
         let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-SM.pug`), certInfo));
