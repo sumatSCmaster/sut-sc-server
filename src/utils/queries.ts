@@ -1965,6 +1965,16 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     INNER JOIN impuesto.solicitud ON solicitud.id_solicitud = convenio.id_solicitud
     INNER JOIN impuesto.contribuyente ON solicitud.id_contribuyente = contribuyente.id_contribuyente
                 where pago.id_pago = $1`,
+
+  // ! DESCUENTOS
+
+  GET_ACTIVITY_DISCOUNTS: ``,
+  CREATE_DISCOUNT: ``,
+  GET_ACTIVITY_IS_DISCOUNTED: ``,
+  INSERT_DISCOUNT_ACTIVITY: ``,
+  UPDATE_DISCOUNT_END_TIME: ``,
+  GET_CONTRIBUTOR_DISCOUNTS: ``,
+
   gtic: {
     GET_NATURAL_CONTRIBUTOR:
       'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 AND (trim(nb_representante_legal) NOT IN (SELECT trim(nb_marca) FROM tb014_marca_veh) AND trim(nb_representante_legal) NOT IN (SELECT trim(tx_marca) FROM t45_vehiculo_marca) OR trim(nb_representante_legal) IS NULL) ORDER BY co_contribuyente DESC',
