@@ -47,7 +47,7 @@ export const codigosRamo = {
   IU: 111,
   RD0: 915,
 };
-const formatCurrency = (number: number) => new Intl.NumberFormat('de-DE').format(number);
+const formatCurrency = (number: number) => new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(number);
 
 export const checkContributorExists = () => async (req: any, res, next) => {
   const client = await pool.connect();
@@ -270,7 +270,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                   contributor.tipo_contribuyente === 'JURIDICO'
                     ? (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID, [el.id_inmueble, branch?.id_registro_municipal])).rows[0]
                     : (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID_NATURAL, [el.id_inmueble, contributor.id_contribuyente])).rows[0];
-                const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment).add(1, 'M').startOf('month').isSameOrAfter(IUDate) ? moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month') : IUDate) : IUDate;
+                const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month').isSameOrAfter(IUDate) ? moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month') : IUDate) : IUDate;
                 const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M'))) || (!lastMonthPayment && dateInterpolationIU + 1) || 1;
                 // paymentDate = paymentDate.isSameOrBefore(lastEAPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
                 if (interpolation === 0) return null;
@@ -1978,8 +1978,9 @@ export const getEntireDebtsForContributor = async ({ reference, docType, documen
   }
 };
 
-const getDefaultInterestByApplication = async ({ id, date, state, client }): Promise<number> => {
+const getDefaultInterestByApplication = async ({ id, date, state, client }): Promise<number | undefined> => {
   try {
+    return undefined;
     const value =
       (state === 'ingresardatos' &&
         moment().isAfter(moment(date)) &&
@@ -2000,8 +2001,9 @@ const getDefaultInterestByApplication = async ({ id, date, state, client }): Pro
   }
 };
 
-const getDefaultInterestRebateByApplication = async ({ id, date, state, client }): Promise<number> => {
+const getDefaultInterestRebateByApplication = async ({ id, date, state, client }): Promise<number | undefined> => {
   try {
+    return undefined;
     const value =
       (state === 'ingresardatos' &&
         moment().isAfter(moment(date)) &&
@@ -3385,10 +3387,16 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             const benefitFullPayment = (await client.query(queries.CHANGE_SETTLEMENT_TO_NEW_APPLICATION, [applicationFP.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
             return benefitFullPayment;
           case 'descuento':
+            console.log('descuento');
+            console.log('te odio coro');
+
             const settlements = (await client.query(queries.GET_SETTLEMENT_IDS_BY_RIM_AND_BRANCH, [contributorWithBranch.id_registro_municipal, x.idRamo])).rows;
+            console.log('//if -> x.idRamo', x.idRamo);
+            console.log('//if -> contributorWithBranch.id_registro_municipal', contributorWithBranch.id_registro_municipal);
+            console.log(settlements.length);
             const benefitDiscount = await Promise.all(
               settlements.map(async (el) => {
-                const branch = (await client.query('SELECT sr.*, rm.*, rm.descripcion AS "descripcionRamo" FROM impuesto.subramo sr INNER JOIN impuesto.ramo rm USING (id_subramo) WHERE id_subramo = $1', [el.id_subramo])).rows[0]?.descripcionRamo;
+                const branch = (await client.query('SELECT sr.*, rm.*, rm.descripcion AS "descripcionRamo" FROM impuesto.subramo sr INNER JOIN impuesto.ramo rm USING (id_ramo) WHERE id_subramo = $1', [el.id_subramo])).rows[0]?.descripcionRamo;
                 const newDatos = { ...el.datos, descuento: x.porcDescuento };
                 const newMonto = fixatedAmount(el.monto * (1 - x.porcDescuento));
                 const newSettlement = (await client.query(queries.UPDATE_SETTLEMENT_AMOUNT_AND_DATA, [newDatos, newMonto, el.id_liquidacion])).rows[0];
@@ -3554,7 +3562,6 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
 
 const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
-    // throw { status: 503, message: 'Certificado no disponible' };
     console.log('culo');
     let certInfo;
     let motivo;
@@ -3563,6 +3570,12 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     motivo = application.descripcionSubramo;
     ramo = application.descripcionRamo;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+
+      let fechaCreLiq = moment(application.fechaCreacion);
+      let fechaCreLiqStr = fechaCreLiq.format('DD/MM/YYYY');
+      let endOfMonthFechaVenc = fechaCreLiq.clone().endOf('month')
+      let currentDate = moment().format('MM-DD-YYYY');
+
     if (application.idSubramo === 107 || application.idSubramo === 108) {
       const breakdownGas = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 107])).rows.map((row) => (row.datos.IVA ? { ...row, monto: row.monto / (1 + row.datos.IVA / 100) } : { ...row, monto: row.monto / 1.16 }));
       const breakdownAseo: any[] = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 108])).rows.map((row) =>
@@ -3583,11 +3596,12 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
 
       let fact = (await pool.query('SELECT id_registro_recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [application.id])).rows[0]?.id_registro_recibo || 'N/D';
 
+
       if (breakdownAseo[0].datos.desglose[0].inmueble === 0) {
         certInfo = {
           QR: linkQr,
           moment: require('moment'),
-          fecha: moment().format('MM-DD-YYYY'),
+          fecha: currentDate,
           titulo: 'FACTURA POR SERVICIOS MUNICIPALES',
           institucion: 'SEDEMAT',
           datos: {
@@ -3597,15 +3611,22 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             nroFactura: fact,
             tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
             tipoInmueble: 'NO DISPONIBLE',
-            fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
-            fechaLiq: moment(application.fechaCreacion).format('DD/MM/YYYY'),
-            fechaVenc: moment(application.fechaCreacion).endOf('month').format('DD/MM/YYYY'),
+            fechaCre: fechaCreLiqStr,
+            fechaLiq: fechaCreLiqStr,
+            fechaVenc: endOfMonthFechaVenc,
             propietario: {
               rif: `${application.tipoDocumento}-${application.documento}`,
               denomComercial: application.denominacionComercial,
               direccion: application.direccion,
               razonSocial: application.razonSocial,
             },
+            declarations: chunk(breakdownJoin.map((row) => {
+              return {
+                periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
+                declGas: `${formatCurrency((+row.datos.desglose[0].montoGas) * (1 + (iva / 100)))}`,
+                declAseo: `${formatCurrency((+row.datos.desglose[0].montoAseo) * (1 + (iva / 100)))}`
+              }
+            }), 2),
             items: chunk(
               breakdownJoin.map((row) => {
                 return {
@@ -3616,20 +3637,20 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               }),
               3
             ),
-            totalIva: `${formatCurrency(totalIva)} Bs.S`,
-            totalRetencionIva: `${formatCurrency(totalRetencionIva)} Bs.S`, // TODO: Retencion
-            totalIvaPagar: `${formatCurrency(totalIvaPagar)} Bs.S`,
-            montoTotalImpuesto: `${formatCurrency(totalMonto + totalIvaPagar)} Bs.S`,
-            interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
+            totalIva: `${formatCurrency(totalIva)} Bs`,
+            totalRetencionIva: `${formatCurrency(totalRetencionIva)} Bs`, // TODO: Retencion
+            totalIvaPagar: `${formatCurrency(totalIvaPagar)} Bs`,
+            montoTotalImpuesto: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+            interesesMoratorio: '0.00 Bs', // TODO: Intereses moratorios
             estatus: 'PAGADO',
             esAgenteSENIAT: breakdownJoin[0].datos.esAgenteSENIAT || undefined,
             observacion: 'Pago por Servicios Municipales',
-            totalLiq: `${formatCurrency(totalMonto + totalIvaPagar)} Bs.S`,
-            totalRecaudado: `${formatCurrency(totalMonto + totalIvaPagar)} Bs.S`,
-            totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
+            totalLiq: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+            totalRecaudado: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+            totalCred: `0.00 Bs`, // TODO: Credito fiscal
           },
         };
-
+        console.log(certInfo.declarations)
         certInfoArray.push({ ...certInfo });
       } else {
         console.log(breakdownJoin[0].datos.desglose);
@@ -3642,10 +3663,11 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
         console.log('BREAKDOWN JOIN', breakdownJoin);
         console.log(inmueblesContribuyente);
         for (let el of inmueblesContribuyente) {
+          
           certInfo = {
             QR: linkQr,
             moment: require('moment'),
-            fecha: moment().format('MM-DD-YYYY'),
+            fecha: currentDate,
             titulo: 'FACTURA POR SERVICIOS MUNICIPALES',
             institucion: 'SEDEMAT',
             datos: {
@@ -3655,15 +3677,23 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               nroFactura: fact,
               tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
               tipoInmueble: el?.tipo_inmueble || 'NO DISPONIBLE',
-              fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
-              fechaLiq: moment(application.fechaCreacion).format('DD/MM/YYYY'),
-              fechaVenc: moment(application.fechaCreacion).endOf('month').format('DD/MM/YYYY'),
+              fechaCre: fechaCreLiqStr,
+              fechaLiq: fechaCreLiqStr,
+              fechaVenc: endOfMonthFechaVenc,
               propietario: {
                 rif: `${application.tipoDocumento}-${application.documento}`,
                 denomComercial: application.denominacionComercial,
                 direccion: application.direccion,
                 razonSocial: application.razonSocial,
               },
+              declarations: chunk(breakdownJoin.map((row) => {
+                let currDesg = row.datos.desglose.find((desg) => desg.inmueble === el.id_inmueble)
+                return {
+                  periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
+                  declGas: `${formatCurrency((+currDesg.montoGas) * (1 + (iva / 100)))}`,
+                  declAseo: `${formatCurrency((+currDesg.montoAseo) * (1 + (iva / 100)))}`
+                }
+              }), 2),
               items: chunk(
                 breakdownJoin.map((row) => {
                   return {
@@ -3674,23 +3704,26 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 }),
                 3
               ),
-              totalIva: `${formatCurrency(totalIva)} Bs.S`,
-              totalRetencionIva: `${formatCurrency(totalRetencionIva)} Bs.S`, // TODO: Retencion
-              totalIvaPagar: `${formatCurrency(totalIvaPagar)} Bs.S`,
-              montoTotalImpuesto: `${formatCurrency(totalMonto + totalIvaPagar)} Bs.S`,
-              interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
+              totalIva: `${formatCurrency(totalIva)} Bs`,
+              totalRetencionIva: `${formatCurrency(totalRetencionIva)} Bs`, // TODO: Retencion
+              totalIvaPagar: `${formatCurrency(totalIvaPagar)} Bs`,
+              montoTotalImpuesto: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+              interesesMoratorio: '0.00 Bs', // TODO: Intereses moratorios
               estatus: 'PAGADO',
               esAgenteSENIAT: breakdownJoin[0].datos.esAgenteSENIAT || undefined,
               observacion: 'Pago por Servicios Municipales',
-              totalLiq: `${formatCurrency(totalMonto + totalIvaPagar)} Bs.S`,
-              totalRecaudado: `${formatCurrency(totalMonto + totalIvaPagar)} Bs.S`,
-              totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
+              totalLiq: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+              totalRecaudado: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+              totalCred: `0.00 Bs`, // TODO: Credito fiscal
             },
           };
+          console.log('XDDD')
+          console.log(certInfo.datos.declarations)
           certInfoArray.push({ ...certInfo });
         }
       }
     } else if (application.idSubramo === 238) {
+      throw { status: 503, message: 'Certificado no disponible' };
       const breakdownData: any[] = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 238])).rows.map((row) => ({ ...row, monto: row.monto / 1.16 }));
 
       const totalMonto = breakdownData.reduce((prev, next) => prev + +next.monto, 0);
@@ -3698,7 +3731,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       certInfo = {
         QR: linkQr,
         moment: require('moment'),
-        fecha: moment().format('MM-DD-YYYY'),
+        fecha: currentDate,
         titulo: 'FACTURA POR SERVICIOS MUNICIPALES',
         institucion: 'SEDEMAT',
         datos: {
@@ -3708,9 +3741,9 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
           nroFactura: `${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
           tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
           tipoInmueble: 'NO DISPONIBLE',
-          fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
-          fechaLiq: moment(application.fechaCreacion).format('DD/MM/YYYY'),
-          fechaVenc: moment(application.fechaCreacion).endOf('month').format('DD/MM/YYYY'),
+          fechaCre: fechaCreLiqStr,
+          fechaLiq: fechaCreLiqStr,
+          fechaVenc: endOfMonthFechaVenc,
           propietario: {
             rif: `${application.tipoDocumento}-${application.documento}`,
             denomComercial: application.denominacionComercial,
@@ -3724,16 +3757,16 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               impuesto: formatCurrency(row.monto),
             };
           }),
-          totalIva: `${formatCurrency(totalIva)} Bs.S`,
-          totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
-          totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
-          montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
-          interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
+          totalIva: `${formatCurrency(totalIva)} Bs`,
+          totalRetencionIva: '0,00 Bs ', // TODO: Retencion
+          totalIvaPagar: `${formatCurrency(totalIva)} Bs`,
+          montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs`,
+          interesesMoratorio: '0.00 Bs', // TODO: Intereses moratorios
           estatus: 'PAGADO',
           observacion: 'Pago por Servicios Municipales',
-          totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
-          totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
-          totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
+          totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs`,
+          totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs`,
+          totalCred: `0.00 Bs`, // TODO: Credito fiscal
         },
       };
 
@@ -3755,7 +3788,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
         certInfo = {
           QR: linkQr,
           moment: require('moment'),
-          fecha: moment().format('MM-DD-YYYY'),
+          fecha: currentDate,
           titulo: 'FACTURA INMUEBLE URBANO',
           institucion: 'SEDEMAT',
           datos: {
@@ -3765,22 +3798,22 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             nroFactura: `${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
             tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
             tipoInmueble: el?.tipo_inmueble || 'NO DISPONIBLE',
-            fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
-            fechaLiq: moment(application.fechaCreacion).format('DD/MM/YYYY'),
-            fechaVenc: moment(application.fechaCreacion).endOf('month').format('DD/MM/YYYY'),
+            fechaCre: fechaCreLiqStr,
+            fechaLiq: fechaCreLiqStr,
+            fechaVenc: endOfMonthFechaVenc,
             propietario: {
               rif: `${application.tipoDocumento}-${application.documento}`,
               denomComercial: application.denominacionComercial,
               direccion: application.direccion,
               razonSocial: application.razonSocial,
             },
-            items: breakdownData.map((row) => {
+            items: chunk(breakdownData.map((row) => {
               return {
                 direccion: el?.direccion || 'No disponible',
                 periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
                 impuesto: formatCurrency(row.monto),
               };
-            }),
+            }), 2),
             totalIva: `${formatCurrency(totalIva)} Bs.S`,
             totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
             totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
@@ -3788,108 +3821,15 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
             estatus: 'PAGADO',
             observacion: 'Pago por Inmueble Urbano',
-            totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
-            totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
-            totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
+            totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs`,
+            totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs`,
+            totalCred: `0.00 Bs`, // TODO: Credito fiscal
           },
         };
         certInfoArray.push({ ...certInfo });
       }
     }
-    // const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
-    // let inmueblesContribuyente: any[] = await Promise.all(
-    //   breakdownData[0].datos.desglose.map((row) => {
-    //     return pool.query(queries.GET_SUT_ESTATE_BY_ID, [row.inmueble]);
-    //   })
-    // );
-    // inmueblesContribuyente = inmueblesContribuyente.map((result) => result.rows[0]);
-
-    // console.log('appli', application);
-    // if (application.descripcionCortaRamo === 'SM') {
-    //   motivo = application.descripcionSubramo;
-    //   ramo = application.descripcionRamo;
-    //   const totalIva =
-    //     +breakdownData
-    //       .map((row) => {
-    //         return row.datos.desglose.reduce((prev, next) => {
-    //           return prev + (next.montoGas ? next.montoAseo + +next.montoGas : +next.montoAseo);
-    //         }, 0);
-    //       })
-    //       .reduce((prev, next) => prev + next, 0) * 0.16;
-
-    //   const totalMonto = +breakdownData
-    //     .map((row) => {
-    //       return row.datos.desglose.reduce((prev, next) => {
-    //         return prev + (next.montoGas ? next.montoAseo + +next.montoGas : +next.montoAseo);
-    //       }, 0);
-    //     })
-    //     .reduce((prev, next) => prev + next, 0);
-    //   for (const el of inmueblesContribuyente) {
-    //     console.log('AAAAAAAAAAAAAAAAAAA');
-    //     certInfo = {
-    //       QR: linkQr,
-    //       moment: require('moment'),
-    //       fecha: moment().format('MM-DD-YYYY'),
-    //       titulo: 'FACTURA POR SERVICIOS MUNICIPALES',
-    //       institucion: 'SEDEMAT',
-    //       datos: {
-    //         nroSolicitud: application.id,
-    //         nroPlanilla: 10010111,
-    //         motivo: motivo,
-    //         nroFactura: `${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
-    //         tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
-    //         tipoInmueble: el.tipo_inmueble,
-    //         fechaCre: moment(application.fechaCreacion).format('DD/MM/YYYY'),
-    //         fechaLiq: moment(application.fechaCreacion).format('DD/MM/YYYY'),
-    //         fechaVenc: moment(application.fechaCreacion).endOf('month').format('DD/MM/YYYY'),
-    //         propietario: {
-    //           rif: `${application.tipoDocumento}-${application.documento}`,
-    //           denomComercial: application.denominacionComercial,
-    //           direccion: application.direccion,
-    //           razonSocial: application.razonSocial,
-    //         },
-    //         items: breakdownData
-    //           .map((row) => {
-    //             console.log(el, row);
-    //             return {
-    //               desglose: row.datos.desglose.find((desglose) => desglose.inmueble === +el.id_inmueble),
-    //               fecha: row.datos.fecha,
-    //             };
-    //           })
-    //           .map((row) => {
-    //             return {
-    //               direccion: el.direccion,
-    //               periodos: `${row.fecha.month} ${row.fecha.year}`.toUpperCase(),
-    //               impuesto: row.desglose.montoGas ? formatCurrency(+row.desglose.montoGas + +row.desglose.montoAseo) : formatCurrency(row.desglose.montoAseo),
-    //             };
-    //           }),
-    //         totalIva: `${formatCurrency(totalIva)} Bs.S`,
-    //         totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
-    //         totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
-    //         montoTotalImpuesto: `${formatCurrency(
-    //           +breakdownData
-    //             .map((row) => {
-    //               return {
-    //                 desglose: row.datos.desglose.find((desglose) => desglose.inmueble === +el.id_inmueble),
-    //                 fecha: row.datos.fecha,
-    //               };
-    //             })
-    //             .map((row) => (row.desglose.montoGas ? +row.desglose.montoAseo + +row.desglose.montoGas : +row.desglose.montoAseo))
-    //             .reduce((prev, next) => prev + next, 0) + totalIva
-    //         )} Bs.S`,
-    //         interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
-    //         estatus: 'PAGADO',
-    //         observacion: 'Pago por Servicios Municipales',
-    //         totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
-    //         totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
-    //         totalCred: `0.00 Bs.S`, // TODO: Credito fiscal
-    //       },
-    //     };
-
-    //     certInfoArray.push({ ...certInfo });
-    //   }
-    // }
-
+    
     return new Promise(async (res, rej) => {
       try {
         let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-SM.pug`), certInfo));
@@ -4751,15 +4691,15 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
             }),
             2
           ),
-          totalIva: `${formatCurrency(totalIva)} Bs.S`,
-          totalRetencionIva: `0.00 Bs.S`,
-          totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
-          montoTotalImpuesto: `${formatCurrency(totalMonto)} Bs.S`,
+          totalIva: `${formatCurrency(totalIva)} Bs`,
+          totalRetencionIva: `0.00 Bs`,
+          totalIvaPagar: `${formatCurrency(totalIva)} Bs`,
+          montoTotalImpuesto: `${formatCurrency(totalMonto)} Bs`,
           interesMoratorio: 0, // pueden o no tener
           estatus: 'PAGADO',
           observacion: 'Pago por Publicidad y Propaganda',
-          totalLiq: `${formatCurrency(totalMonto)} Bs.S`,
-          totalRecaudado: `${formatCurrency(totalMonto)} Bs.S`,
+          totalLiq: `${formatCurrency(totalMonto)} Bs`,
+          totalRecaudado: `${formatCurrency(totalMonto)} Bs`,
         },
       };
       console.log(certInfo.datos.items);
