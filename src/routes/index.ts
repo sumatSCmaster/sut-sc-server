@@ -53,7 +53,7 @@ router.use('/settlements', settlement);
 router.use('/holiday', holiday);
 router.use('/alterations', alteration);
 router.use('/branches', branches);
-router.use('/discount', discount);
+router.use('/discounts', discount);
 router.use('/exonerations', exonerations);
 router.use('/activities', activities);
 router.use('/cashier', cashier);
