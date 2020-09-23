@@ -300,14 +300,15 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                   codCat: el.cod_catastral,
                   direccionInmueble: el.direccion,
                   ultimoAvaluo: el.avaluo,
-                  impuestoInmueble: (el.avaluo * (el.tipo_inmueble === 'COMERCIAL' ? 0.01 : 0.005)) / 12,
                   deuda: await Promise.all(
                     new Array(interpolation).fill({ month: null, year: null }).map(async (value, index) => {
                       const date = addMonths(new Date(paymentDate.toDate()), index);
                       const momentDate = moment(date);
+                      const avaluo = (await client.query(queries.GET_ESTATE_APPRAISAL_BY_ID_AND_YEAR, [el.id_inmueble, momentDate.year()])).rows[0]?.avaluo || el.avaluo;
+                      const impuestoInmueble = (avaluo * (el.tipo_inmueble === 'COMERCIAL' ? 0.01 : 0.005)) / 12;
                       const descuento = await hasDiscount({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
                       const exonerado = await isExonerated({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
-                      return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado, descuento };
+                      return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado, descuento, impuestoInmueble };
                     })
                   ),
                 };
@@ -1297,6 +1298,29 @@ export const patchSettlement = async ({ id, settlement }) => {
       status: 500,
       error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || error.message || 'Error al realizar la correcion de la liquidacion',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const deleteSettlement = async (id) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const application = (await client.query(queries.GET_APPLICATION_BY_SETTLEMENT_ID, [id])).rows[0];
+    const state = (await client.query(queries.GET_APPLICATION_STATE, [application.id_solicitud])).rows[0]?.state;
+    if (!state || state !== 'ingresardatos') throw { status: 403, message: 'La liquidacion que desea eliminar se encuentra validando pago o finalizada' };
+    await client.query(queries.DELETE_SETTLEMENT, [id]);
+    await client.query('COMMIT');
+    return { status: 200, message: 'Liquidacion eliminada satisfactoriamente' };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: error.status || 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al eliminar liquidacion vigente',
     };
   } finally {
     client.release();

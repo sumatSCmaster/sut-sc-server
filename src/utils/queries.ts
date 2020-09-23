@@ -591,6 +591,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   UPDATE_RIM:
     'UPDATE impuesto.registro_municipal SET telefono_celular = $2, email = $3, denominacion_comercial = $4, nombre_representante = $5, capital_suscrito = $6, tipo_sociedad = $7, telefono_habitacion = $8, id_parroquia = $9, direccion = $10 WHERE id_registro_municipal = $1',
   GET_APPLICATION_BY_ID: 'SELECT * FROM impuesto.solicitud WHERE id_solicitud = $1',
+  GET_APPLICATION_BY_SETTLEMENT_ID: 'SELECT * FROM impuesto.solicitud WHERE id_solicitud = (SELECT id_solicitud FROM impuesto.liquidacion WHERE id_liquidacion = $1)',
   GET_APPLICATION_INSTANCES_BY_USER: 'SELECT * FROM impuesto.solicitud WHERE id_usuario = $1 ORDER BY fecha DESC',
   GET_APPLICATION_DEBTS_BY_MUNICIPAL_REGISTRY: `SELECT rm.id_ramo, rm.descripcion, SUM(l.monto) AS monto FROM impuesto.ramo rm INNER JOIN impuesto.subramo sr ON rm.id_ramo = sr.id_ramo
     INNER JOIN impuesto.liquidacion l ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.registro_municipal r ON l.id_registro_municipal = r.id_registro_municipal
@@ -1167,6 +1168,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT: 'SELECT SUM(credito) as credito FROM impuesto.credito_fiscal WHERE id_persona = $1 AND concepto = $2',
   GET_ESTATES_FOR_JURIDICAL_CONTRIBUTOR:
     'SELECT DISTINCT ON(ai.id_inmueble) * FROM impuesto.avaluo_inmueble ai INNER JOIN inmueble_urbano iu ON ai.id_inmueble = iu.id_inmueble WHERE id_registro_municipal = $1 AND anio = EXTRACT("year" FROM CURRENT_DATE)',
+  GET_ESTATE_APPRAISAL_BY_ID_AND_YEAR: 'SELECT DISTINCT ON(ai.id_inmueble) * FROM impuesto.avaluo_inmueble ai WHERE id_inmueble = $1 AND anio = $2',
   GET_ESTATES_DATA_FOR_CONTRIBUTOR: 'SELECT * FROM inmueble_urbano WHERE id_registro_municipal = $1',
   ECONOMIC_ACTIVITY_IS_EXONERATED:
     'SELECT * FROM impuesto.actividad_economica_exoneracion INNER JOIN impuesto.plazo_exoneracion USING (id_plazo_exoneracion) WHERE id_actividad_economica = $1 AND fecha_inicio <= $2 AND (fecha_fin IS NULL OR fecha_fin >= now()::date)',
@@ -1190,6 +1192,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   WHERE rm.id_registro_municipal = $1 AND pe.fecha_inicio <= $2 AND (fecha_fin IS NULL OR fecha_fin >= now()::date OR fecha_fin >= $3)) t
   WHERE (t IS NOT NULL);`,
   UPDATE_SETTLEMENT_CORRECTION: 'UPDATE impuesto.liquidacion SET fecha_liquidacion = $1, fecha_vencimiento = $2, datos = $3, id_subramo = $4, id_solicitud = $5 WHERE id_liquidacion = $6 RETURNING *',
+  DELETE_SETTLEMENT: 'DELETE FROM impuesto.liquidacion WHERE id_liquidacion = $1',
   ADD_ORIGINAL_APPLICATION_ID_IN_PATCH_APPLICATION: 'UPDATE impuesto.solicitud SET id_solicitud_original = $1 WHERE id_solicitud = $2',
   GET_LAST_AE_SETTLEMENT_BY_AE_ID: 'SELECT * FROM impuesto.get_last_settlement_by_ae($1, $2)',
   GET_SETTLEMENT_BY_ID: 'SELECT * FROM impuesto.liquidacion WHERE id_liquidacion = $1',
@@ -1223,7 +1226,14 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     "SELECT DISTINCT ON (id_solicitud, s.fecha) * FROM impuesto.convenio INNER JOIN impuesto.solicitud s USING (id_solicitud) INNER JOIN impuesto.liquidacion USING (id_solicitud) WHERE id_registro_municipal = $1 AND tipo_solicitud = 'CONVENIO' ORDER BY s.fecha DESC",
   GET_FRACTIONS_BY_AGREEMENT_ID: 'SELECT * FROM impuesto.fraccion f WHERE f.id_convenio = $1',
   APPLICATION_TOTAL_AMOUNT_BY_ID: 'SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1',
-  GET_APPLICATION_STATE: 'SELECT state FROM impuesto.solicitud_state WHERE id = $1',
+  GET_APPLICATION_STATE: `SELECT s.id_solicitud AS id,
+  ev.state
+ FROM impuesto.solicitud s
+   JOIN ( SELECT es.id_solicitud,
+          impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+         FROM impuesto.evento_solicitud es
+         WHERE id_solicitud = $1
+        GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud;`,
   GET_CONTRIBUTOR_BY_ID: 'SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1',
   SET_DATE_FOR_LINKED_SETTLEMENT: 'UPDATE impuesto.liquidacion SET fecha_liquidacion = $1 WHERE id_liquidacion = $2',
   ASSIGN_CONTRIBUTOR_TO_USER: 'UPDATE USUARIO SET id_contribuyente = $1 WHERE id_usuario = $2',
