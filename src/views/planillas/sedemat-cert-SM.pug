@@ -114,7 +114,7 @@ html
                 div(style={'-webkit-flex': 8}).td
                   p 
                     span &nbsp; #{datos.propietario.direccion ? datos.propietario.direccion : 'Dirección Sin Asingar'}
-            if datos.declarations[index].length > 0 
+            if datos.declarations
               div(style={'margin-top':'20px'}).table.break-page
                 div.tr
                   div(style={'-webkit-flex': 5.5}).th.center.border-right
