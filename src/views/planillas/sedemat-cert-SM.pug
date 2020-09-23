@@ -114,25 +114,26 @@ html
                 div(style={'-webkit-flex': 8}).td
                   p 
                     span &nbsp; #{datos.propietario.direccion ? datos.propietario.direccion : 'Dirección Sin Asingar'}
-            div(style={'margin-top':'20px'}).table.break-page
-              div.tr
-                div(style={'-webkit-flex': 5.5}).th.center.border-right
-                  p
-                    b PERIODOS
-                div(style={'-webkit-flex': 2.5}).th.center.border-right
-                  p
-                    b GAS
-                div(style={'-webkit-flex': 2}).th.center
-                  p
-                    b ASEO
-              each item in datos.declarations[index] 
+            if datos.declarations
+              div(style={'margin-top':'20px'}).table.break-page
                 div.tr
-                  div(style={'-webkit-flex': 5.5}).td.center.border-right.border-top
-                    p #{item.periodos}
-                  div(style={'-webkit-flex': 2.5}).td.center.border-right.border-top
-                    p #{item.declGas}
-                  div(style={'-webkit-flex': 2}).td.center.border-top
-                    p #{item.declAseo}                               
+                  div(style={'-webkit-flex': 5.5}).th.center.border-right
+                    p
+                      b PERIODOS
+                  div(style={'-webkit-flex': 2.5}).th.center.border-right
+                    p
+                      b GAS
+                  div(style={'-webkit-flex': 2}).th.center
+                    p
+                      b ASEO
+                each item in datos.declarations[index] 
+                  div.tr
+                    div(style={'-webkit-flex': 5.5}).td.center.border-right.border-top
+                      p #{item.periodos}
+                    div(style={'-webkit-flex': 2.5}).td.center.border-right.border-top
+                      p #{item.declGas}
+                    div(style={'-webkit-flex': 2}).td.center.border-top
+                      p #{item.declAseo}                               
             div
               div(style={'display':'-webkit-flex'})
                 div.table(style={'-webkit-flex': 5.5})

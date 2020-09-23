@@ -1912,17 +1912,17 @@ export const contributorSearch = async ({ document, docType, name }) => {
     console.log(document, name);
     console.log(!document && !name);
     if (!document && !name) throw { status: 406, message: 'Debe aportar algun parametro para la busqueda' };
-    if (document && document.length < 6 && name && name.length < 3) throw { status: 406, message: 'Debe aportar mas datos para la busqueda' };
-    contribuyentes = document && document.length >= 6 ? (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows : (await client.query(queries.SEARCH_CONTRIBUTOR_BY_NAME, [`%${name}%`])).rows;
+    if ((!!document && document.length < 6) || (!!name && name.length < 3)) throw { status: 406, message: 'Debe aportar mas datos para la busqueda' };
+    contribuyentes = !!document && document.length >= 6 ? (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows : (await client.query(queries.SEARCH_CONTRIBUTOR_BY_NAME, [`%${name}%`])).rows;
     const contributorExists = contribuyentes.length > 0;
     if (!contributorExists) return { status: 404, message: 'No existen coincidencias con la razon social o documento proporcionado' };
     contribuyentes = await Promise.all(contribuyentes.map(async (el) => await formatContributor(el, client)));
     return { status: 200, message: 'Contribuyente obtenido', contribuyentes };
   } catch (error) {
     throw {
-      status: 500,
+      status: error.status || 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al obtener contribuyentes en busqueda',
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener contribuyentes en busqueda',
     };
   } finally {
     client.release();
@@ -3675,6 +3675,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               nroPlanilla: 10010111,
               motivo: motivo,
               nroFactura: fact,
+              codigo: application.id,
               tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
               tipoInmueble: el?.tipo_inmueble || 'NO DISPONIBLE',
               fechaCre: fechaCreLiqStr,
@@ -3944,11 +3945,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 });
             }
           } catch (e) {
+            console.log('e', e)
             throw e;
           } finally {
           }
         }
       } catch (e) {
+        console.log('e2', e)
         throw {
           message: 'Error en generacion de certificado de SM',
           e: errorMessageExtractor(e),
@@ -3956,6 +3959,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       }
     });
   } catch (error) {
+    console.log('error', error)
     throw errorMessageExtractor(error);
   }
 };
