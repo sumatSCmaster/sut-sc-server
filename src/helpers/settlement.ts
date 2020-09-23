@@ -3675,6 +3675,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               nroPlanilla: 10010111,
               motivo: motivo,
               nroFactura: fact,
+              codigo: application.id,
               tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
               tipoInmueble: el?.tipo_inmueble || 'NO DISPONIBLE',
               fechaCre: fechaCreLiqStr,
@@ -3944,11 +3945,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 });
             }
           } catch (e) {
+            console.log('e', e)
             throw e;
           } finally {
           }
         }
       } catch (e) {
+        console.log('e2', e)
         throw {
           message: 'Error en generacion de certificado de SM',
           e: errorMessageExtractor(e),
@@ -3956,6 +3959,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       }
     });
   } catch (error) {
+    console.log('error', error)
     throw errorMessageExtractor(error);
   }
 };
