@@ -1912,17 +1912,17 @@ export const contributorSearch = async ({ document, docType, name }) => {
     console.log(document, name);
     console.log(!document && !name);
     if (!document && !name) throw { status: 406, message: 'Debe aportar algun parametro para la busqueda' };
-    if (document && document.length < 6 && name && name.length < 3) throw { status: 406, message: 'Debe aportar mas datos para la busqueda' };
-    contribuyentes = document && document.length >= 6 ? (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows : (await client.query(queries.SEARCH_CONTRIBUTOR_BY_NAME, [`%${name}%`])).rows;
+    if ((!!document && document.length < 6) || (!!name && name.length < 3)) throw { status: 406, message: 'Debe aportar mas datos para la busqueda' };
+    contribuyentes = !!document && document.length >= 6 ? (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows : (await client.query(queries.SEARCH_CONTRIBUTOR_BY_NAME, [`%${name}%`])).rows;
     const contributorExists = contribuyentes.length > 0;
     if (!contributorExists) return { status: 404, message: 'No existen coincidencias con la razon social o documento proporcionado' };
     contribuyentes = await Promise.all(contribuyentes.map(async (el) => await formatContributor(el, client)));
     return { status: 200, message: 'Contribuyente obtenido', contribuyentes };
   } catch (error) {
     throw {
-      status: 500,
+      status: error.status || 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al obtener contribuyentes en busqueda',
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener contribuyentes en busqueda',
     };
   } finally {
     client.release();
