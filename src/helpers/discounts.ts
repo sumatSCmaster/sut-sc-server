@@ -91,7 +91,7 @@ export const createActivityDiscount = async ({ from, activities }: { from: Date;
         const response = {
           ...descuentoAforo,
           fechaInicio: discount.fecha_inicio,
-          descuentos: (await client.query(queries.GET_BRANCH_INFO_FOR_DISCOUNT_BY_ACTIVITY, [discount.id_plazo_descuento, row.id])).rows,
+          ramos: (await client.query(queries.GET_BRANCH_INFO_FOR_DISCOUNT_BY_ACTIVITY, [discount.id_plazo_descuento, row.id])).rows,
         };
         return response;
       })
