@@ -948,7 +948,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
       INNER JOIN impuesto.solicitud USING (id_solicitud)
       INNER JOIN (SELECT DISTINCT ON (id_solicitud) id_solicitud, id_subramo, id_liquidacion FROM impuesto.liquidacion ) l USING (id_solicitud)
       FULL OUTER JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo 
-      INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo 
+      LEFT JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo 
       GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion
       ORDER BY ramo)) x
         GROUP BY ramo, descripcion, codigo;`,
