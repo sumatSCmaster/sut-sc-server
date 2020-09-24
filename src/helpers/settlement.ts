@@ -1304,7 +1304,7 @@ export const patchSettlement = async ({ id, settlement }) => {
   }
 };
 
-export const deleteSettlement = async (id: number) => {
+export const deleteSettlement = async (id) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
