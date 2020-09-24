@@ -10,6 +10,7 @@ export const getContributorDiscounts = async ({ typeDoc, doc, ref }) => {
   const client = await pool.connect();
   try {
     const contributor = (await client.query(queries.GET_CONTRIBUTOR, [typeDoc, doc, ref])).rows[0];
+    console.log('getContributorDiscounts -> contributor', contributor);
     if (!contributor) {
       throw { status: 404, message: 'No se ha hallado el contribuyente' };
     }
