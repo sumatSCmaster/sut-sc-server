@@ -114,9 +114,9 @@ block content
             p #{item.codigo}
           div(style={'-webkit-flex': 3.5}).td.border-right.border-bottom.center
             p #{item.descripcion}
-          div(style={'-webkit-flex': 1.5}).td.border-right.border-bottom.center
+          div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
             p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoDeclarado ? item.montoDeclarado : 0)}
-          div(style={'-webkit-flex': 1.5}).td.border-right.border-bottom.center
+          div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
             p #{item.alicuota}
           div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
             p #{item.minTrib}
@@ -176,11 +176,11 @@ block content
         div(style={'-webkit-flex': 1}).td.border-right.center
           p
             b Total Liquidado:
-            span &nbsp; #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(parseFloat(datos.totalLiq))}
+            span &nbsp; #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.totalLiq)}
         div(style={'-webkit-flex': 1}).td.center
           p
             b Total Recaudado:
-            span &nbsp; #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(parseFloat(datos.totalRecaudado))}
+            span &nbsp; #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.totalRecaudado)}
     div(style={'text-align': 'justify', 'margin-top':'10px', 'font-size':'12px'})
       p.
        "JURO QUE SON VERDADEROS TODOS LOS DATOS SUMINISTRADOS EN ESTE FORMULARIO, QUE HAN SIDO ELABORADOS O EXAMINADOS
