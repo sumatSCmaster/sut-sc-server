@@ -15,7 +15,7 @@ export const getContributorDiscounts = async ({ typeDoc, doc, ref }) => {
       throw { status: 404, message: 'No se ha hallado el contribuyente' };
     }
 
-    const idContributor = +contributor.rows[0].idRegistroMunicipal;
+    const idContributor = +contributor.idRegistroMunicipal;
     const contributorDiscounts = (await client.query(queries.GET_CONTRIBUTOR_DISCOUNTS, [typeDoc, doc, ref])).rows.map(async (discount) => {
       ({ id: discount.id_plazo_descuento, fechaInicio: discount.fecha_inicio, fechaFin: discount.fecha_fin, ramos: (await client.query(queries.GET_BRANCH_INFO_FOR_DISCOUNT_BY_BRANCH, [discount.id_plazo_descuento, idContributor])).rows });
     });
