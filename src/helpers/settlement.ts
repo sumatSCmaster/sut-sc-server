@@ -1315,6 +1315,29 @@ export const getAgreementFractionById = async ({ id }): Promise<Solicitud & any>
   }
 };
 
+export const deleteSettlement = async (id: number) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const application = (await client.query(queries.GET_APPLICATION_BY_SETTLEMENT_ID, [id])).rows[0];
+    const state = (await client.query(queries.GET_APPLICATION_STATE, [application.id_solicitud])).rows[0]?.state;
+    if (!state || state !== 'ingresardatos') throw { status: 403, message: 'La liquidacion que desea eliminar se encuentra validando pago o finalizada' };
+    await client.query(queries.DELETE_SETTLEMENT, [id]);
+    await client.query('COMMIT');
+    return { status: 200, message: 'Liquidacion eliminada satisfactoriamente' };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: error.status || 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al eliminar liquidacion vigente',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 //TODO: get de convenios
 export const getAgreements = async ({ user }: { user: Usuario }) => {
   const client = await pool.connect();
@@ -3571,10 +3594,10 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     ramo = application.descripcionRamo;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
 
-      let fechaCreLiq = moment(application.fechaCreacion);
-      let fechaCreLiqStr = fechaCreLiq.format('DD/MM/YYYY');
-      let endOfMonthFechaVenc = fechaCreLiq.clone().endOf('month')
-      let currentDate = moment().format('MM-DD-YYYY');
+    let fechaCreLiq = moment(application.fechaCreacion);
+    let fechaCreLiqStr = fechaCreLiq.format('DD/MM/YYYY');
+    let endOfMonthFechaVenc = fechaCreLiq.clone().endOf('month');
+    let currentDate = moment().format('MM-DD-YYYY');
 
     if (application.idSubramo === 107 || application.idSubramo === 108) {
       const breakdownGas = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 107])).rows.map((row) => (row.datos.IVA ? { ...row, monto: row.monto / (1 + row.datos.IVA / 100) } : { ...row, monto: row.monto / 1.16 }));
@@ -3595,7 +3618,6 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       const totalIvaPagar = fixatedAmount(totalIva - totalRetencionIva);
 
       let fact = (await pool.query('SELECT id_registro_recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [application.id])).rows[0]?.id_registro_recibo || 'N/D';
-
 
       if (breakdownAseo[0].datos.desglose[0].inmueble === 0) {
         certInfo = {
@@ -3620,13 +3642,16 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               direccion: application.direccion,
               razonSocial: application.razonSocial,
             },
-            declarations: chunk(breakdownJoin.map((row) => {
-              return {
-                periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                declGas: `${formatCurrency((+row.datos.desglose[0].montoGas) * (1 + (iva / 100)))}`,
-                declAseo: `${formatCurrency((+row.datos.desglose[0].montoAseo) * (1 + (iva / 100)))}`
-              }
-            }), 2),
+            declarations: chunk(
+              breakdownJoin.map((row) => {
+                return {
+                  periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
+                  declGas: `${formatCurrency(+row.datos.desglose[0].montoGas * (1 + iva / 100))}`,
+                  declAseo: `${formatCurrency(+row.datos.desglose[0].montoAseo * (1 + iva / 100))}`,
+                };
+              }),
+              2
+            ),
             items: chunk(
               breakdownJoin.map((row) => {
                 return {
@@ -3650,7 +3675,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             totalCred: `0.00 Bs`, // TODO: Credito fiscal
           },
         };
-        console.log(certInfo.declarations)
+        console.log(certInfo.declarations);
         certInfoArray.push({ ...certInfo });
       } else {
         console.log(breakdownJoin[0].datos.desglose);
@@ -3663,7 +3688,6 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
         console.log('BREAKDOWN JOIN', breakdownJoin);
         console.log(inmueblesContribuyente);
         for (let el of inmueblesContribuyente) {
-          
           certInfo = {
             QR: linkQr,
             moment: require('moment'),
@@ -3687,14 +3711,17 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 direccion: application.direccion,
                 razonSocial: application.razonSocial,
               },
-              declarations: chunk(breakdownJoin.map((row) => {
-                let currDesg = row.datos.desglose.find((desg) => desg.inmueble === el.id_inmueble)
-                return {
-                  periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                  declGas: `${formatCurrency((+currDesg.montoGas) * (1 + (iva / 100)))}`,
-                  declAseo: `${formatCurrency((+currDesg.montoAseo) * (1 + (iva / 100)))}`
-                }
-              }), 2),
+              declarations: chunk(
+                breakdownJoin.map((row) => {
+                  let currDesg = row.datos.desglose.find((desg) => desg.inmueble === el.id_inmueble);
+                  return {
+                    periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
+                    declGas: `${formatCurrency(+currDesg.montoGas * (1 + iva / 100))}`,
+                    declAseo: `${formatCurrency(+currDesg.montoAseo * (1 + iva / 100))}`,
+                  };
+                }),
+                2
+              ),
               items: chunk(
                 breakdownJoin.map((row) => {
                   return {
@@ -3718,8 +3745,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               totalCred: `0.00 Bs`, // TODO: Credito fiscal
             },
           };
-          console.log('XDDD')
-          console.log(certInfo.datos.declarations)
+          console.log('XDDD');
+          console.log(certInfo.datos.declarations);
           certInfoArray.push({ ...certInfo });
         }
       }
@@ -3808,13 +3835,16 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               direccion: application.direccion,
               razonSocial: application.razonSocial,
             },
-            items: chunk(breakdownData.map((row) => {
-              return {
-                direccion: el?.direccion || 'No disponible',
-                periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                impuesto: formatCurrency(row.monto),
-              };
-            }), 2),
+            items: chunk(
+              breakdownData.map((row) => {
+                return {
+                  direccion: el?.direccion || 'No disponible',
+                  periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
+                  impuesto: formatCurrency(row.monto),
+                };
+              }),
+              2
+            ),
             totalIva: `${formatCurrency(totalIva)} Bs.S`,
             totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
             totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
@@ -3830,7 +3860,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
         certInfoArray.push({ ...certInfo });
       }
     }
-    
+
     return new Promise(async (res, rej) => {
       try {
         let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-SM.pug`), certInfo));
@@ -3945,13 +3975,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 });
             }
           } catch (e) {
-            console.log('e', e)
+            console.log('e', e);
             throw e;
           } finally {
           }
         }
       } catch (e) {
-        console.log('e2', e)
+        console.log('e2', e);
         throw {
           message: 'Error en generacion de certificado de SM',
           e: errorMessageExtractor(e),
@@ -3959,7 +3989,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       }
     });
   } catch (error) {
-    console.log('error', error)
+    console.log('error', error);
     throw errorMessageExtractor(error);
   }
 };
