@@ -238,7 +238,11 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
             (economicActivities.length > 0 &&
               (
                 await Promise.all(
-                  economicActivities.map(async (activity) => await hasDiscount({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client))
+                  economicActivities.map(async (activity) => {
+                    const d = await hasDiscount({ branch: codigosRamo.SM, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client);
+                    console.log(d);
+                    return d;
+                  })
                 )
               ).reduce((current, next) => (current < next ? next : current))) ||
             0;
@@ -321,9 +325,11 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                         (economicActivities.length > 0 &&
                           (
                             await Promise.all(
-                              economicActivities.map(
-                                async (activity) => await hasDiscount({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client)
-                              )
+                              economicActivities.map(async (activity) => {
+                                const d = await hasDiscount({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client);
+                                console.log(d);
+                                return d;
+                              })
                             )
                           ).reduce((current, next) => (current < next ? next : current))) ||
                         0;
@@ -363,7 +369,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
               (economicActivities.length > 0 &&
                 (
                   await Promise.all(
-                    economicActivities.map(async (activity) => await hasDiscount({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client))
+                    economicActivities.map(async (activity) => await hasDiscount({ branch: codigosRamo.PP, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client))
                   )
                 ).reduce((current, next) => (current < next ? next : current))) ||
               0;
@@ -383,7 +389,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
               (economicActivities.length > 0 &&
                 (
                   await Promise.all(
-                    economicActivities.map(async (activity) => await hasDiscount({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client))
+                    economicActivities.map(async (activity) => await hasDiscount({ branch: codigosRamo.PP, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client))
                   )
                 ).reduce((current, next) => (current < next ? next : current))) ||
               0;
