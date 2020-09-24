@@ -5,8 +5,11 @@ import Pool from '@utils/Pool';
 import { sendRimVerification, verifyCode, resendCode } from '@helpers/verification';
 import { VerificationValue } from './interfaces/sigt';
 import { executeReport } from '@helpers/reportHelper';
+import { createServer } from 'http';
 
-const server = app.listen(process.env.PORT || 5000, () => console.log(`Listening on port ${process.env.PORT || 5000}`));
+const trueServer = createServer(app);
+
+// const server = app.listen(process.env.PORT || 5000, () => console.log(`Listening on port ${process.env.PORT || 5000}`));
 
 // const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
@@ -16,7 +19,8 @@ const server = app.listen(process.env.PORT || 5000, () => console.log(`Listening
 //     to: '+584146053291'
 // }).then(message => console.log(message));
 
-const socket: Server = require('socket.io')(server);
+const socket: Server = require('socket.io')(trueServer);
+trueServer.listen(process.env.PORT || 5000, () => console.log(`Listening on port ${process.env.PORT || 5000}`));
 init(socket);
 
 // async function xd() {
