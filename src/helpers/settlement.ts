@@ -230,9 +230,18 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       };
       const debtSM = await Promise.all(
         new Array(dateInterpolationSM + 1).fill({ month: null, year: null }).map(async (value, index) => {
+          let descuento;
           const date = addMonths(new Date(lastSMPayment.toDate()), index);
           const momentDate = moment(date);
-          const descuento = await hasDiscount({ branch: codigosRamo.SM, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
+          const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
+          descuento =
+            (economicActivities.length > 0 &&
+              (
+                await Promise.all(
+                  economicActivities.map(async (activity) => await hasDiscount({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client))
+                )
+              ).reduce((current, next) => (current < next ? next : current))) ||
+            0;
           const exonerado = await isExonerated({ branch: codigosRamo.SM, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
           return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado, descuento };
         })
@@ -302,11 +311,22 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                   ultimoAvaluo: el.avaluo,
                   deuda: await Promise.all(
                     new Array(interpolation).fill({ month: null, year: null }).map(async (value, index) => {
+                      let descuento;
                       const date = addMonths(new Date(paymentDate.toDate()), index);
                       const momentDate = moment(date);
                       const avaluo = (await client.query(queries.GET_ESTATE_APPRAISAL_BY_ID_AND_YEAR, [el.id_inmueble, momentDate.year()])).rows[0]?.avaluo || el.avaluo;
                       const impuestoInmueble = (avaluo * (el.tipo_inmueble === 'COMERCIAL' ? 0.01 : 0.005)) / 12;
-                      const descuento = await hasDiscount({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
+                      const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
+                      descuento =
+                        (economicActivities.length > 0 &&
+                          (
+                            await Promise.all(
+                              economicActivities.map(
+                                async (activity) => await hasDiscount({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client)
+                              )
+                            )
+                          ).reduce((current, next) => (current < next ? next : current))) ||
+                        0;
                       const exonerado = await isExonerated({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
                       return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado, descuento, impuestoInmueble };
                     })
@@ -335,9 +355,18 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         // if (dateInterpolationPP > 0) {
         debtPP = await Promise.all(
           new Array(dateInterpolationPP + 1).fill({ month: null, year: null }).map(async (value, index) => {
+            let descuento;
             const date = addMonths(new Date(lastPPPayment.toDate()), index);
             const momentDate = moment(date);
-            const descuento = await hasDiscount({ branch: codigosRamo.PP, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
+            const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
+            descuento =
+              (economicActivities.length > 0 &&
+                (
+                  await Promise.all(
+                    economicActivities.map(async (activity) => await hasDiscount({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client))
+                  )
+                ).reduce((current, next) => (current < next ? next : current))) ||
+              0;
             const exonerado = await isExonerated({ branch: codigosRamo.PP, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
             return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado, descuento };
           })
@@ -346,9 +375,18 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       } else {
         debtPP = await Promise.all(
           new Array(now.month() + 1).fill({ month: null, year: null }).map(async (value, index) => {
+            let descuento;
             const date = addMonths(moment(`${now.year()}-01-01`).toDate(), index);
             const momentDate = moment(date);
-            const descuento = await hasDiscount({ branch: codigosRamo.PP, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
+            const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
+            descuento =
+              (economicActivities.length > 0 &&
+                (
+                  await Promise.all(
+                    economicActivities.map(async (activity) => await hasDiscount({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client))
+                  )
+                ).reduce((current, next) => (current < next ? next : current))) ||
+              0;
             const exonerado = await isExonerated({ branch: codigosRamo.PP, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
             return { month: date.toLocaleString('ES', { month: 'long' }), year: date.getFullYear(), exonerado, descuento };
           })
