@@ -346,7 +346,7 @@ export const listTaxPayments = async () => {
     FROM impuesto.solicitud_state s 
     INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente 
     INNER JOIN pago p ON p.id_procedimiento = s.id 
-    INNER JOIN banco b ON b.id_banco = p.id_banco AND b.id_banco = p.id_banco_destino 
+    INNER JOIN banco b ON b.id_banco = p.id_banco
     WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' ORDER BY id_procedimiento, id_pago;`);
     let montosSolicitud = (
       await client.query(`
