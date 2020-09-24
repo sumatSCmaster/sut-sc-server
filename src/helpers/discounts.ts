@@ -123,12 +123,12 @@ export const createContributorDiscount = async ({ typeDoc, doc, ref, from, branc
   try {
     await client.query('BEGIN');
     const discount = (await client.query(queries.CREATE_DISCOUNT, [from])).rows[0];
-    const contributor = await client.query(queries.GET_CONTRIBUTOR, [typeDoc, doc, ref]);
+    const contributor = (await client.query(queries.GET_CONTRIBUTOR, [typeDoc, doc, ref])).rows[0];
     console.log(contributor.rows);
-    if (!contributor.rows[0]) {
+    if (!contributor) {
       throw { status: 404, message: 'El contribuyente no existe' };
     }
-    const idContributor = +contributor.rows[0].idRegistroMunicipal;
+    const idContributor = +contributor.idRegistroMunicipal;
     await Promise.all(
       branches.map(async (branch) => {
         if ((await client.query(queries.GET_DISCOUNTED_BRANCH_BY_CONTRIBUTOR, [idContributor, branch.id])).rowCount > 0) {
