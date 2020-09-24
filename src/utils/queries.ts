@@ -1995,7 +1995,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   INNER JOIN impuesto.actividad_economica ae ON aee.id_actividad_economica = ae.id_actividad_economica
   WHERE ae.id_actividad_economica = $1 AND aee.id_ramo = $2 AND (pe.fecha_fin IS NULL OR pe.fecha_fin > NOW()::DATE)
   ORDER BY pe.id_plazo_descuento DESC;`,
-  INSERT_DISCOUNT_ACTIVITY: `INSERT INTO impuesto.actividad_economica_descuento (id_actividad_economica_descuento, id_plazo_descuento, id_actividad_economica, id_ramo, porcentaje_descuento) VALUES (default, $1, $2, $3, $4);`,
+  INSERT_DISCOUNT_ACTIVITY: `INSERT INTO impuesto.actividad_economica_descuento (id_actividad_economica_descuento, id_plazo_descuento, id_actividad_economica, id_ramo, porcentaje_descuento) VALUES (default, $1, $2, $3, $4) RETURNING *;`,
   UPDATE_DISCOUNT_END_TIME: `UPDATE impuesto.plazo_descuento SET fecha_fin = $1 WHERE id_plazo_descuento = $2`,
   GET_CONTRIBUTOR_DISCOUNTS: `SELECT DISTINCT ON (ce.id_plazo_exoneracion, ce.id_registro_municipal) pe.*, ce.*, ((pe.fecha_fin IS NULL) OR (NOW() BETWEEN pe.fecha_inicio AND pe.fecha_fin)) AS active 
   FROM impuesto.plazo_descuento pe 
@@ -2010,7 +2010,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   INSERT_CONTRIBUTOR_DISCOUNT_FOR_BRANCH: `
   INSERT INTO impuesto.contribuyente_descuento (id_contribuyente_descuento, id_plazo_descuento, id_registro_municipal, id_ramo, porcentaje_descuento)
                   VALUES (default, $1, $2, $3, $4) RETURNING *;`,
-  GET_ACTIVITY_DISCOUNT_BY_ID: `SELECT pe.id_plazo_descuento AS id, ae.id_actividad_economica AS aforo, ae.descripcion, ((pe.fecha_fin IS NULL) OR (NOW() BETWEEN pe.fecha_inicio AND (pe.fecha_fin))) AS active 
+  GET_ACTIVITY_DISCOUNT_BY_ID: `SELECT pe.id_plazo_descuento AS id, ae.id_actividad_economica AS aforo, ae.descripcion, ae.numero_referencia AS "numeroReferencia" ((pe.fecha_fin IS NULL) OR (NOW() BETWEEN pe.fecha_inicio AND (pe.fecha_fin))) AS active 
   FROM impuesto.plazo_descuento pe
   INNER JOIN impuesto.actividad_economica_descuento aee ON aee.id_plazo_descuento = pe.id_plazo_descuento
   INNER JOIN impuesto.actividad_economica ae ON aee.id_actividad_economica = ae.id_actividad_economica

@@ -77,37 +77,30 @@ export const createActivityDiscount = async ({ from, activities }: { from: Date;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const discount = (await client.query(queries.CREATE_DISCOUNT, [from])).rows[0];
 
-    await Promise.all(
+    const actividades = await Promise.all(
       activities.map(async (row) => {
-        const descuentos = row.ramos?.map(async (ramo) => {
-          if ((await client.query(queries.GET_ACTIVITY_IS_DISCOUNTED, [row.id, ramo.id])).rowCount > 0) {
-            throw { status: 409, message: `La actividad economica ${row.nombreActividad} ya posee un descuento para el ramo ${ramo.descripcion}` };
-          } else {
-            return client.query(queries.INSERT_DISCOUNT_ACTIVITY, [discount.id_plazo_descuento, row.id, ramo.id, ramo.porcDescuento]);
-          }
-        });
-        return descuentos;
-      })
-    );
-
-    const descuentos = await Promise.all(
-      activities.map(async (row) => {
-        return await Promise.all(
-          (await client.query(queries.GET_ACTIVITY_DISCOUNT_BY_ID, [discount.id_plazo_descuento, row.id])).rows.map(async (el) => {
-            el.fechaInicio = discount.fecha_inicio;
-            el.descuentosAforo = (await client.query(queries.GET_BRANCH_INFO_FOR_DISCOUNT_BY_ACTIVITY, [el.id, el.aforo])).rows;
-            return el;
+        const discount = (await client.query(queries.CREATE_DISCOUNT, [from])).rows[0];
+        await Promise.all(
+          row.ramos!.map(async (ramo) => {
+            if ((await client.query(queries.GET_ACTIVITY_IS_DISCOUNTED, [row.id, ramo.id])).rowCount > 0) throw { status: 409, message: `La actividad economica ${row.nombreActividad} ya posee un descuento para el ramo ${ramo.descripcion}` };
+            return (await client.query(queries.INSERT_DISCOUNT_ACTIVITY, [discount.id_plazo_descuento, row.id, ramo.id, ramo.porcDescuento])).rows[0];
           })
         );
+        const descuentoAforo = (await client.query(queries.GET_ACTIVITY_DISCOUNT_BY_ID, [discount.id_plazo_descuento, row.id])).rows[0];
+        const response = {
+          ...descuentoAforo,
+          fechaInicio: discount.fecha_inicio,
+          descuentos: (await client.query(queries.GET_BRANCH_INFO_FOR_DISCOUNT_BY_ACTIVITY, [discount.id_plazo_descuento, row.id])).rows,
+        };
+        return response;
       })
     );
 
     await client.query('COMMIT');
     return {
       message: 'Descuentos creados',
-      descuentos,
+      actividades,
       status: 201,
     };
   } catch (error) {
