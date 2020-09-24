@@ -129,15 +129,21 @@ export const createContributorDiscount = async ({ typeDoc, doc, ref, from, branc
       throw { status: 404, message: 'El contribuyente no existe' };
     }
     const idContributor = +contributor.idRegistroMunicipal;
+    console.log('aki');
     await Promise.all(
       branches.map(async (branch) => {
+        console.log('a');
         if ((await client.query(queries.GET_DISCOUNTED_BRANCH_BY_CONTRIBUTOR, [idContributor, branch.id])).rowCount > 0) {
+          console.log('b');
           throw { message: `El ramo ${branch.descripcion} posee un descuento vigente para este contribuyente` };
         } else {
+          console.log('c');
           return client.query(queries.INSERT_CONTRIBUTOR_DISCOUNT_FOR_BRANCH, [discount.id_plazo_descuento, idContributor, branch.id, branch.porcDescuento]);
         }
       })
     );
+    console.log('q');
+    await client.query('COMMIT');
     const contribuyente = {
       ...contributor,
       tipoDocumento: typeDoc,
@@ -145,6 +151,7 @@ export const createContributorDiscount = async ({ typeDoc, doc, ref, from, branc
       referenciaMunicipal: ref,
       descuentos: { id: discount.id_plazo_descuento, fechaInicio: discount.fecha_inicio, ramos: (await client.query(queries.GET_BRANCH_INFO_FOR_DISCOUNT_BY_BRANCH, [discount.id_plazo_descuento, idContributor])).rows },
     };
+    console.log('wtf');
     // if (activities) {
     //   await Promise.all(
     //     activities.map(async (row) => {
@@ -164,7 +171,6 @@ export const createContributorDiscount = async ({ typeDoc, doc, ref, from, branc
     //   }
     // }
 
-    await client.query('COMMIT');
     return {
       status: 200,
       message: 'Descuento de ramo por contribuyente creado',
