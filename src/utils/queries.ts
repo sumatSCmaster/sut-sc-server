@@ -930,8 +930,19 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
 
   //REPORTES
   GET_INGRESS: `SELECT ramo, descripcion, codigo, SUM("cantidadIng") as "cantidadIng", SUM(ingresado) as ingresado FROM ( 
-    (SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadIng", SUM(monto)as ingresado 
-        FROM ((SELECT DISTINCT l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto  FROM impuesto.liquidacion l WHERE id_solicitud IS NOT NULL AND id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE fecha_aprobado BETWEEN $1 AND $2 AND tipo_solicitud != 'CONVENIO') UNION SELECT l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto FROM impuesto.liquidacion l WHERE id_solicitud IS NULL AND fecha_liquidacion BETWEEN $1 AND $2 order by id_solicitud)) l 
+    (SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadIng", SUM(CASE WHEN l.id_subramo = 107 OR l.id_subramo = 108 THEN (CASE WHEN (l.datos->>'IVA')::numeric = 16 THEN (monto / 1.16 ) WHEN (l.datos->>'IVA')::numeric = 4 THEN (monto / 1.04 ) ELSE (monto / 1.16 ) END ) ELSE monto END ) as ingresado 
+        FROM ((SELECT DISTINCT ON (l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto) l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto, l.datos 
+                FROM impuesto.liquidacion l 
+                WHERE id_solicitud IS NOT NULL 
+                AND id_solicitud IN (SELECT id_solicitud 
+                                        FROM impuesto.solicitud 
+                                        WHERE fecha_aprobado BETWEEN $1 AND $2
+                                        AND tipo_solicitud != 'CONVENIO') 
+                UNION ALL
+                SELECT l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto, l.datos
+                FROM impuesto.liquidacion l 
+                WHERE id_solicitud IS NULL
+                 AND fecha_liquidacion BETWEEN $1 AND $2 order by id_solicitud)) l 
         LEFT JOIN (SELECT *, s.id_solicitud AS id_solicitud_q 
                         FROM impuesto.solicitud s 
                         INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) 
@@ -942,11 +953,11 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion
         ORDER BY ramo)
     UNION
-    (SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadIng", SUM(f.monto)as ingresado 
+    (SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadIng", SUM(CASE WHEN l.id_subramo = 102 THEN (CASE WHEN (l.datos->>'IVA')::numeric = 16 THEN (f.monto / 1.16 ) WHEN (l.datos->>'IVA')::numeric = 4 THEN (f.monto / 1.04 ) ELSE (f.monto / 1.16 ) END ) ELSE  f.monto END) as ingresado 
       FROM (SELECT * FROM impuesto.fraccion WHERE fecha_aprobado BETWEEN $1 AND $2) f
       INNER JOIN impuesto.convenio USING (id_convenio)
       INNER JOIN impuesto.solicitud USING (id_solicitud)
-      INNER JOIN (SELECT DISTINCT ON (id_solicitud) id_solicitud, id_subramo, id_liquidacion FROM impuesto.liquidacion ) l USING (id_solicitud)
+      INNER JOIN (SELECT DISTINCT ON (id_solicitud) id_solicitud, id_subramo, id_liquidacion, datos FROM impuesto.liquidacion ) l USING (id_solicitud)
       RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo 
       INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo 
       GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion
@@ -1006,6 +1017,42 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_CREDIT_REPORT: `SELECT sum(monto) as total FROM pago WHERE metodo_pago = 'CREDITO_FISCAL' AND fecha_de_pago BETWEEN $1 AND $2`,
   GET_CREDIT_INGRESS_BY_INTERVAL: `SELECT COALESCE(SUM(credito), 0) AS ingresado, COALESCE(COUNT(*), 0) AS "cantidadIng" FROM impuesto.credito_fiscal WHERE credito > 0 AND importado != true AND fecha_creacion BETWEEN $1 AND $2;`,
   GET_RETENTION_CREDIT_INGRESS_BY_INTERVAL: `SELECT COALESCE(SUM(monto),0) AS ingresado, COALESCE(COUNT(*), 0) AS "cantidadIng" FROM impuesto.retencion WHERE monto > 0 AND fecha BETWEEN $1 AND $2;`,
+  GET_SM_IVA_SAGAS: `SELECT SUM(ingresado) AS ingresado, SUM("cantidadIng") as "cantidadIng"
+  FROM (
+  SELECT COALESCE(SUM(CASE WHEN (l.datos->>'IVA')::numeric = 16 THEN ((monto * (0.16)) / 1.16 ) WHEN (l.datos->>'IVA')::numeric = 16 THEN ((monto * (0.04)) / 1.04 ) ELSE ((monto * (0.16)) / 1.16 ) END ),0) AS ingresado, COALESCE(COUNT(*), 0) AS "cantidadIng"
+  FROM (SELECT DISTINCT ON (l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto) l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto, l.datos 
+                  FROM impuesto.liquidacion l 
+                  WHERE id_solicitud IS NOT NULL 
+                  AND id_subramo = 107
+                  AND id_solicitud IN (SELECT id_solicitud 
+                                          FROM impuesto.solicitud 
+                                          WHERE fecha_aprobado BETWEEN $1 AND $2
+                                          AND tipo_solicitud != 'CONVENIO') ) l
+  UNION ALL
+  SELECT COALESCE(SUM(CASE WHEN (l.datos->>'IVA')::numeric = 16 THEN ((l.monto * (0.16)) / 1.16 ) * 0.3 WHEN (l.datos->>'IVA')::numeric = 4 THEN ((l.monto * (0.04)) / 1.04 ) * 0.3 ELSE ((l.monto * (0.16)) / 1.16 ) * 0.3 END ),0) AS ingresado, COALESCE(COUNT(*), 0) AS "cantidadIng"
+  FROM (SELECT * FROM impuesto.fraccion WHERE fecha_aprobado BETWEEN $1 AND $2) f
+        INNER JOIN impuesto.convenio USING (id_convenio)
+        INNER JOIN impuesto.solicitud USING (id_solicitud)
+        INNER JOIN (SELECT DISTINCT ON (id_solicitud) id_solicitud, id_subramo, id_liquidacion, monto, datos FROM impuesto.liquidacion WHERE id_subramo = 102 ) l USING (id_solicitud)
+  ) X;`,
+  GET_SM_IVA_IMAU: `SELECT SUM(ingresado) AS ingresado, SUM("cantidadIng") as "cantidadIng"
+      FROM (
+      SELECT COALESCE(SUM(CASE WHEN (l.datos->>'IVA')::numeric = 16 THEN ((monto * (0.16)) / 1.16 ) WHEN (l.datos->>'IVA')::numeric = 4 THEN ((monto * (0.04)) / 1.04 ) ELSE ((monto * (0.16)) / 1.16 ) END ),0) AS ingresado, COALESCE(COUNT(*), 0) AS "cantidadIng"
+        FROM (SELECT DISTINCT ON (l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto) l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto, l.datos 
+                        FROM impuesto.liquidacion l 
+                        WHERE id_solicitud IS NOT NULL 
+                        AND id_subramo = 108
+                        AND id_solicitud IN (SELECT id_solicitud 
+                                                FROM impuesto.solicitud 
+                                                WHERE fecha_aprobado BETWEEN $1 AND $2
+                                                AND tipo_solicitud != 'CONVENIO') ) l
+      UNION ALL
+      SELECT COALESCE(SUM(CASE WHEN (l.datos->>'IVA')::numeric = 16 THEN ((l.monto * (0.16)) / 1.16 ) * 0.7 WHEN (l.datos->>'IVA')::numeric = 4 THEN ((l.monto * (0.04)) / 1.04 ) * 0.7 ELSE ((l.monto * (0.16)) / 1.16 ) * 0.7 END ),0) AS ingresado, COALESCE(COUNT(*), 0) AS "cantidadIng"
+      FROM (SELECT * FROM impuesto.fraccion WHERE fecha_aprobado BETWEEN $1 AND $2 ) f
+            INNER JOIN impuesto.convenio USING (id_convenio)
+            INNER JOIN impuesto.solicitud USING (id_solicitud)
+            INNER JOIN (SELECT DISTINCT ON (id_solicitud) id_solicitud, id_subramo, id_liquidacion, monto, datos FROM impuesto.liquidacion  WHERE id_subramo = 102 ) l USING (id_solicitud)
+      ) X;`,
   GET_POS: `SELECT SUM(monto) as total FROM (SELECT SUM(p.monto) as monto
         FROM pago p
         WHERE p.concepto IN ('IMPUESTO', 'CONVENIO', 'RETENCION') AND p.metodo_pago = 'PUNTO DE VENTA' AND p.fecha_de_aprobacion BETWEEN $1 AND $2
