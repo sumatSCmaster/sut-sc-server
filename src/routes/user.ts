@@ -45,9 +45,9 @@ router.patch('/', authenticate('jwt'), validateUser, async (req, res) => {
   if (data) res.status(200).json(data);
 });
 
-router.patch('/block/:id', authenticate('jwt'), async (req, res) => {
+router.patch('/block/:id', authenticate('jwt'), async (req: any, res) => {
   const { id } = req.params;
-  const [err, data] = await fulfill(blockUser(id, req.body.bloqueado));
+  const [err, data] = await fulfill(blockUser(id, req.body.bloqueado, req.user));
   if (err) res.status(500).json(err);
   if (data) res.status(200).json(data);
 });
