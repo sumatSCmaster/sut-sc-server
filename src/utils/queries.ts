@@ -2040,7 +2040,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   INNER JOIN impuesto.contribuyente_descuento ce ON ce.id_plazo_descuento = pe.id_plazo_descuento 
   INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = ce.id_registro_municipal
   INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = rm.id_contribuyente
-  WHERE c.tipo_documento = $1 AND c.documento = $2 AND rm.referencia_municipal = $3 ORDER BY pe.id_plazo_descuento DESC;`,
+  WHERE c.tipo_documento = $1 AND c.documento = $2 AND rm.referencia_municipal = $3 ORDER BY ce.id_plazo_descuento DESC;`,
   GET_DISCOUNTED_BRANCH_BY_CONTRIBUTOR: `
   SELECT * FROM impuesto.plazo_descuento pe 
       INNER JOIN impuesto.contribuyente_descuento ce ON ce.id_plazo_descuento = pe.id_plazo_descuento 
