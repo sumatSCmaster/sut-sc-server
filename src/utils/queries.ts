@@ -957,7 +957,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
       FROM (SELECT * FROM impuesto.fraccion WHERE fecha_aprobado BETWEEN $1 AND $2) f
       INNER JOIN impuesto.convenio USING (id_convenio)
       INNER JOIN impuesto.solicitud USING (id_solicitud)
-      INNER JOIN (SELECT DISTINCT ON (id_solicitud) id_solicitud, id_subramo, id_liquidacion FROM impuesto.liquidacion ) l USING (id_solicitud)
+      INNER JOIN (SELECT DISTINCT ON (id_solicitud) id_solicitud, id_subramo, id_liquidacion, datos FROM impuesto.liquidacion ) l USING (id_solicitud)
       FULL OUTER JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo 
       LEFT JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo 
       GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion
@@ -1029,7 +1029,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
                                           WHERE fecha_aprobado BETWEEN $1 AND $2
                                           AND tipo_solicitud != 'CONVENIO') ) l
   UNION ALL
-  SELECT COALESCE(SUM(CASE WHEN (l.datos->>'IVA')::numeric = 16 THEN ((l.monto * (0.16)) / 1.16 ) * 0.3 WHEN (l.datos->>'IVA')::numeric = 4 THEN ((l.monto * (0.04)) / 1.04 ) * 0.3 ELSE ((l.monto * (0.16)) / 1.16 ) * 0.3 END ),0) AS ingresado, COALESCE(COUNT(*), 0) AS "cantidadIng"
+  SELECT COALESCE(SUM(CASE WHEN (l.datos->>'IVA')::numeric = 16 THEN ((f.monto * (0.16)) / 1.16 ) * 0.3 WHEN (l.datos->>'IVA')::numeric = 4 THEN ((f.monto * (0.04)) / 1.04 ) * 0.3 ELSE ((f.monto * (0.16)) / 1.16 ) * 0.3 END ),0) AS ingresado, COALESCE(COUNT(*), 0) AS "cantidadIng"
   FROM (SELECT * FROM impuesto.fraccion WHERE fecha_aprobado BETWEEN $1 AND $2) f
         INNER JOIN impuesto.convenio USING (id_convenio)
         INNER JOIN impuesto.solicitud USING (id_solicitud)
@@ -1047,7 +1047,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
                                                 WHERE fecha_aprobado BETWEEN $1 AND $2
                                                 AND tipo_solicitud != 'CONVENIO') ) l
       UNION ALL
-      SELECT COALESCE(SUM(CASE WHEN (l.datos->>'IVA')::numeric = 16 THEN ((l.monto * (0.16)) / 1.16 ) * 0.7 WHEN (l.datos->>'IVA')::numeric = 4 THEN ((l.monto * (0.04)) / 1.04 ) * 0.7 ELSE ((l.monto * (0.16)) / 1.16 ) * 0.7 END ),0) AS ingresado, COALESCE(COUNT(*), 0) AS "cantidadIng"
+      SELECT COALESCE(SUM(CASE WHEN (l.datos->>'IVA')::numeric = 16 THEN ((f.monto * (0.16)) / 1.16 ) * 0.7 WHEN (l.datos->>'IVA')::numeric = 4 THEN ((f.monto * (0.04)) / 1.04 ) * 0.7 ELSE ((f.monto * (0.16)) / 1.16 ) * 0.7 END ),0) AS ingresado, COALESCE(COUNT(*), 0) AS "cantidadIng"
       FROM (SELECT * FROM impuesto.fraccion WHERE fecha_aprobado BETWEEN $1 AND $2 ) f
             INNER JOIN impuesto.convenio USING (id_convenio)
             INNER JOIN impuesto.solicitud USING (id_solicitud)
