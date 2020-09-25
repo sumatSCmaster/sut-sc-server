@@ -22,7 +22,7 @@ export const getContributorDiscounts = async ({ typeDoc, doc, ref }) => {
         const branchDiscount = (await client.query(queries.GET_DISCOUNTED_BRANCH_BY_CONTRIBUTOR, [idContributor, discount.id_ramo])).rows;
         const response = {
           id: discount.id_ramo,
-          descripcion: branchDiscount[0].descripcion,
+          descripcion: branchDiscount[0]?.descripcion,
           descuentos: branchDiscount.map((row) => ({
             id: row.id_plazo_descuento,
             fechaInicio: moment(row.fecha_inicio).format('MM-DD-YYYY'),
