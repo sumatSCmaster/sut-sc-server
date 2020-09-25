@@ -95,6 +95,40 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
       //);
       let final = groupBy(result, (res) => res.codigo);
       let branches = (await client.query(queries.GET_BRANCHES_FOR_REPORT)).rows.filter((row) => row.ramo in final);
+
+            
+      let ivaSM: any = {
+        id: 53,
+        ramo: '122',
+        descripcion: 'IVA SM',
+        descripcion_corta: null,
+        subRamo: [
+          {
+            ramo: '122.SAGAS',
+            descripcion: 'IVA SM - IVA SAGAS',
+            codigo: '122',
+            ...(await client.query(queries.GET_SM_IVA_SAGAS, [payload.from, payload.to])).rows[0],
+            liquidado: 0,
+            cantidadLiq: 0,
+          },
+          {
+            ramo: '122.IMAU',
+            descripcion: 'IVA SM - IVA IMAU',
+            codigo: '122',
+            ...(await client.query(queries.GET_SM_IVA_IMAU, [payload.from, payload.to])).rows[0],
+            liquidado: 0,
+            cantidadLiq: 0,
+          },
+          
+        ],
+      };
+      ivaSM.liquidadoTotal = ivaSM.cantidadLiqTotal = 0;
+      ivaSM.ingresadoTotal = ivaSM.subRamo.reduce((prev, next) => prev + +next.ingresado, 0);
+      ivaSM.cantidadIngTotal = ivaSM.subRamo.reduce((prev, next) => prev + +next.cantidadIng, 0);
+
+      final['122'] = final['122'].concat(ivaSM.subRamo)
+
+      //console.log('final', final)
       //console.log(branches);
       branches = branches
         .map((branch) => {
@@ -143,6 +177,8 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
       compens.ingresadoTotal = compens.subRamo.reduce((prev, next) => prev + +next.ingresado, 0);
       compens.cantidadIngTotal = compens.subRamo.reduce((prev, next) => prev + +next.cantidadIng, 0);
       branches = branches.concat(compens);
+
+
       //console.log(compens);
       //console.log('branches 2', branches);
       if (!alcaldia) {
@@ -194,10 +230,10 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
         datos: {
           ingresos: chunk(branches, 8),
           acumuladoIngresos: `CONTENIDO: TODOS LOS RAMOS, DESDE EL ${moment(payload.from).subtract(4, 'h').format('DD/MM/YYYY')} AL ${moment(payload.to).subtract(4, 'h').format('DD/MM/YYYY')}`,
-          cantidadLiqTotal: liquidated.rows.reduce((prev, next) => prev + +next.cantidadLiq, 0) + compens.cantidadLiqTotal,
-          liquidadoTotal: liquidated.rows.reduce((prev, next) => prev + +next.liquidado, 0) + compens.liquidadoTotal,
-          ingresadoTotal: ingress.rows.reduce((prev, next) => prev + +next.ingresado, 0) + compens.ingresadoTotal,
-          cantidadIngTotal: ingress.rows.reduce((prev, next) => prev + +next.cantidadIng, 0) + compens.cantidadIngTotal,
+          cantidadLiqTotal: liquidated.rows.reduce((prev, next) => prev + +next.cantidadLiq, 0) + compens.cantidadLiqTotal + ivaSM.cantidadLiqTotal,
+          liquidadoTotal: liquidated.rows.reduce((prev, next) => prev + +next.liquidado, 0) + compens.liquidadoTotal + ivaSM.liquidadoTotal,
+          ingresadoTotal: ingress.rows.reduce((prev, next) => prev + +next.ingresado, 0) + compens.ingresadoTotal + ivaSM.ingresadoTotal,
+          cantidadIngTotal: ingress.rows.reduce((prev, next) => prev + +next.cantidadIng, 0) + compens.cantidadIngTotal + ivaSM.cantidadIngTotal,
           metodoPago: pagos,
         },
       });

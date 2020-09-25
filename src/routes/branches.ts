@@ -11,7 +11,7 @@ router.get('/', authenticate('jwt'), async (req, res) => {
   if (data) res.status(200).json({ status: 200, data });
 })
 
-router.post('/', authenticate('jwt'), async (req, res) => {
+router.post('/',  async (req, res) => {
   const { from, to, alcaldia } = req.body;
   const [error, data] = await fulfill(generateBranchesReport(req.user ,{from, to, alcaldia}));
   console.log(error, data)
