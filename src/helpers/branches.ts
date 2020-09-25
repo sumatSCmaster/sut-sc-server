@@ -188,7 +188,7 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
       console.log(payload.to);
       console.log(payload.from);
       console.log(moment(payload.to).format('DD/MM/YYYY hh:mm a'));
-      console.log(moment(payload.to).utcOffset('-4').format('DD/MM/YYYY hh:mm a'));
+      console.log(moment(payload.to).subtract(4, 'h').format('DD/MM/YYYY hh:mm a'));
       const html = renderFile(resolve(__dirname, alcaldia ? `../views/planillas/sedemat-RPRA.pug` : `../views/planillas/sedemat-RPR.pug`), {
         moment: require('moment'),
         institucion: 'SEDEMAT',
