@@ -5373,11 +5373,11 @@ const applicationStateEvents = {
 const breakdownCaseHandler = (settlementType, breakdown) => {
   // const query = breakdownCases(settlementType);
   const payload = switchcase({
-    'AE': { aforo: breakdown.aforo, montoDeclarado: breakdown.montoDeclarado, montoCobrado: breakdown.montoCobrado },
-    'SM': { inmueble: breakdown.inmueble, montoAseo: +breakdown.montoAseo, montoGas: breakdown.montoGas },
-    'SERVICIOS MUNICIPALES': { inmueble: breakdown.inmueble, montoAseo: +breakdown.montoAseo, montoGas: +breakdown.montoGas },
-    'IU': { inmueble: breakdown.inmueble, monto: breakdown.monto },
-    'PP': { subarticulo: breakdown.subarticulo, monto: breakdown.monto, cantidad: breakdown.cantidad },
+    'AE': { aforo: breakdown.aforo, montoDeclarado: breakdown.montoDeclarado, montoCobrado: breakdown.montoCobrado, descuento: +breakdown.descuento },
+    'SM': { inmueble: breakdown.inmueble, montoAseo: +breakdown.montoAseo, montoGas: breakdown.montoGas, descuento: +breakdown.descuento },
+    'SERVICIOS MUNICIPALES': { inmueble: breakdown.inmueble, montoAseo: +breakdown.montoAseo, montoGas: +breakdown.montoGas, descuento: +breakdown.descuento },
+    'IU': { inmueble: breakdown.inmueble, monto: breakdown.monto, descuento: +breakdown.descuento },
+    'PP': { subarticulo: breakdown.subarticulo, monto: breakdown.monto, cantidad: breakdown.cantidad, descuento: +breakdown.descuento },
     'SAE': { monto: breakdown.monto },
   })(null)(settlementType);
   return payload;
