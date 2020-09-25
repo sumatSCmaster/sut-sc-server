@@ -2050,7 +2050,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   SELECT * FROM impuesto.plazo_descuento pe 
       INNER JOIN impuesto.contribuyente_descuento ce ON ce.id_plazo_descuento = pe.id_plazo_descuento
       INNER JOIN impuesto.ramo rm USING (id_ramo)
-      WHERE ce.id_registro_municipal = $1 AND ce.id_ramo = $2 AND (pe.fecha_fin >= NOW()::date OR pe.fecha_fin IS NULL)`,
+      WHERE ce.id_registro_municipal = $1 AND ce.id_ramo = $2 AND (pe.fecha_fin >= $3::date OR pe.fecha_fin IS NULL)`,
   INSERT_CONTRIBUTOR_DISCOUNT_FOR_BRANCH: `
   INSERT INTO impuesto.contribuyente_descuento (id_contribuyente_descuento, id_plazo_descuento, id_registro_municipal, id_ramo, porcentaje_descuento)
                   VALUES (default, $1, $2, $3, $4) RETURNING *;`,

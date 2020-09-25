@@ -147,7 +147,7 @@ export const createContributorDiscount = async ({ typeDoc, doc, ref, from, branc
       branches.map(async (branch) => {
         console.log('a');
         const discount = (await client.query(queries.CREATE_DISCOUNT, [from])).rows[0];
-        if ((await client.query(queries.GET_BRANCH_IS_DISCOUNTED_FOR_CONTRIBUTOR, [idContributor, branch.id])).rowCount > 0) throw { message: `El ramo ${branch.descripcion} posee un descuento vigente para este contribuyente` };
+        if ((await client.query(queries.GET_BRANCH_IS_DISCOUNTED_FOR_CONTRIBUTOR, [idContributor, branch.id, from])).rowCount > 0) throw { message: `El ramo ${branch.descripcion} posee un descuento vigente para este contribuyente` };
         await client.query(queries.INSERT_CONTRIBUTOR_DISCOUNT_FOR_BRANCH, [discount.id_plazo_descuento, idContributor, branch.id, branch.porcDescuento]);
         const response = {
           id: branch.id,
