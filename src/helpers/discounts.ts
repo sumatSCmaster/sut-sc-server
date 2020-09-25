@@ -2,6 +2,7 @@ import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { errorMessageExtractor, errorMessageGenerator } from './errors';
 import { ActividadEconomica, Ramo } from '@root/interfaces/sigt';
+import moment from 'moment';
 
 const pool = Pool.getInstance();
 
@@ -24,9 +25,9 @@ export const getContributorDiscounts = async ({ typeDoc, doc, ref }) => {
           descripcion: branchDiscount[0].descripcion,
           descuentos: branchDiscount.map((row) => ({
             id: row.id_plazo_descuento,
-            fechaInicio: row.fecha_inicio,
-            fechaFin: row.fecha_fin,
-            porcentajeDescuento: row.porcentaje_descuento,
+            fechaInicio: moment(row.fecha_inicio).format('MM-DD-YYYY'),
+            fechaFin: (row.fecha_fin && moment(row.fecha_fin).format('MM-DD-YYYY')) || null,
+            porcentajeDescuento: +row.porcentaje_descuento,
           })),
         };
         return response;
@@ -153,9 +154,9 @@ export const createContributorDiscount = async ({ typeDoc, doc, ref, from, branc
           descripcion: branch.descripcion,
           descuentos: (await client.query(queries.GET_DISCOUNTED_BRANCH_BY_CONTRIBUTOR, [idContributor, branch.id])).rows.map((row) => ({
             id: row.id_plazo_descuento,
-            fechaInicio: row.fecha_inicio,
-            fechaFin: row.fecha_fin,
-            porcentajeDescuento: row.porcentaje_descuento,
+            fechaInicio: moment(row.fecha_inicio).format('MM-DD-YYYY'),
+            fechaFin: (row.fecha_fin && moment(row.fecha_fin).format('MM-DD-YYYY')) || null,
+            porcentajeDescuento: +row.porcentaje_descuento,
           })),
         };
         return response;
