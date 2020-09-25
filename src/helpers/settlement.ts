@@ -115,6 +115,20 @@ export const isExonerated = async ({ branch, contributor, activity, startingDate
   }
 };
 
+export const hasDiscount = async ({ branch, contributor, activity, startingDate }, client): Promise<number> => {
+  try {
+    // const branchIsExonerated = (await client.query(queries.BRANCH_IS_EXONERATED, [branch, startingDate])).rows[0];
+    // if (branchIsExonerated) return !!branchIsExonerated;
+    const contributorHasDiscount = (await client.query(queries.CONTRIBUTOR_HAS_DISCOUNT_IN_BRANCH, [contributor, branch, startingDate])).rows[0];
+    if (!!contributorHasDiscount) return +contributorHasDiscount.porcentaje_descuento;
+    const activityHasDiscount = (await client.query(queries.ECONOMIC_ACTIVITY_HAS_DISCOUNT_IN_BRANCH, [activity, branch, startingDate])).rows[0];
+    if (!!activityHasDiscount) return +activityHasDiscount.porcentaje_descuento;
+    return 0;
+  } catch (e) {
+    throw e;
+  }
+};
+
 export const getSettlements = async ({ document, reference, type, user }: { document: string; reference: string | null; type: string; user: Usuario }) => {
   const client = await pool.connect();
   const gtic = await gticPool.connect();
@@ -191,8 +205,9 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                     const date = addMonths(new Date(paymentDate.toDate()), index);
                     console.log('eri gei', interpolation, paymentDate.format('YYYY-MM-DD'));
                     const momentDate = moment(date);
+                    const descuento = await hasDiscount({ branch: codigosRamo.AE, contributor: branch?.id_registro_municipal, activity: el.id_actividad_economica, startingDate: momentDate.startOf('month') }, client);
                     const exonerado = await isExonerated({ branch: codigosRamo.AE, contributor: branch?.id_registro_municipal, activity: el.id_actividad_economica, startingDate: momentDate.startOf('month') }, client);
-                    return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
+                    return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado, descuento };
                   })
                 ),
               };
@@ -215,10 +230,20 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       };
       const debtSM = await Promise.all(
         new Array(dateInterpolationSM + 1).fill({ month: null, year: null }).map(async (value, index) => {
+          let descuento;
           const date = addMonths(new Date(lastSMPayment.toDate()), index);
           const momentDate = moment(date);
+          const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
+          descuento =
+            (economicActivities.length > 0 &&
+              (
+                await Promise.all(
+                  economicActivities.map(async (activity) => await hasDiscount({ branch: codigosRamo.SM, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client))
+                )
+              ).reduce((current, next) => (current < next ? next : current))) ||
+            0;
           const exonerado = await isExonerated({ branch: codigosRamo.SM, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
-          return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
+          return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado, descuento };
         })
       );
 
@@ -271,7 +296,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                     ? (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID, [el.id_inmueble, branch?.id_registro_municipal])).rows[0]
                     : (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID_NATURAL, [el.id_inmueble, contributor.id_contribuyente])).rows[0];
                 const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month').isSameOrAfter(IUDate) ? moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month') : IUDate) : IUDate;
-                const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M'))) || (!lastMonthPayment && dateInterpolationIU + 1) || 1;
+                const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M')) + 1) || (!lastMonthPayment && dateInterpolationIU + 1) || 1;
                 // paymentDate = paymentDate.isSameOrBefore(lastEAPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
                 if (interpolation === 0) return null;
                 // if (lastMonthPayment) {
@@ -284,13 +309,26 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                   codCat: el.cod_catastral,
                   direccionInmueble: el.direccion,
                   ultimoAvaluo: el.avaluo,
-                  impuestoInmueble: (el.avaluo * (el.tipo_inmueble === 'COMERCIAL' ? 0.01 : 0.005)) / 12,
                   deuda: await Promise.all(
                     new Array(interpolation).fill({ month: null, year: null }).map(async (value, index) => {
+                      let descuento;
                       const date = addMonths(new Date(paymentDate.toDate()), index);
                       const momentDate = moment(date);
+                      const avaluo = (await client.query(queries.GET_ESTATE_APPRAISAL_BY_ID_AND_YEAR, [el.id_inmueble, momentDate.year()])).rows[0]?.avaluo || el.avaluo;
+                      const impuestoInmueble = (avaluo * (el.tipo_inmueble === 'COMERCIAL' ? 0.01 : 0.005)) / 12;
+                      const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
+                      descuento =
+                        (economicActivities.length > 0 &&
+                          (
+                            await Promise.all(
+                              economicActivities.map(
+                                async (activity) => await hasDiscount({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client)
+                              )
+                            )
+                          ).reduce((current, next) => (current < next ? next : current))) ||
+                        0;
                       const exonerado = await isExonerated({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
-                      return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
+                      return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado, descuento, impuestoInmueble };
                     })
                   ),
                 };
@@ -317,20 +355,40 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         // if (dateInterpolationPP > 0) {
         debtPP = await Promise.all(
           new Array(dateInterpolationPP + 1).fill({ month: null, year: null }).map(async (value, index) => {
+            let descuento;
             const date = addMonths(new Date(lastPPPayment.toDate()), index);
             const momentDate = moment(date);
+            const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
+            descuento =
+              (economicActivities.length > 0 &&
+                (
+                  await Promise.all(
+                    economicActivities.map(async (activity) => await hasDiscount({ branch: codigosRamo.PP, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client))
+                  )
+                ).reduce((current, next) => (current < next ? next : current))) ||
+              0;
             const exonerado = await isExonerated({ branch: codigosRamo.PP, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
-            return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado };
+            return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado, descuento };
           })
         );
         // }
       } else {
         debtPP = await Promise.all(
           new Array(now.month() + 1).fill({ month: null, year: null }).map(async (value, index) => {
+            let descuento;
             const date = addMonths(moment(`${now.year()}-01-01`).toDate(), index);
             const momentDate = moment(date);
+            const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
+            descuento =
+              (economicActivities.length > 0 &&
+                (
+                  await Promise.all(
+                    economicActivities.map(async (activity) => await hasDiscount({ branch: codigosRamo.PP, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client))
+                  )
+                ).reduce((current, next) => (current < next ? next : current))) ||
+              0;
             const exonerado = await isExonerated({ branch: codigosRamo.PP, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
-            return { month: date.toLocaleString('ES', { month: 'long' }), year: date.getFullYear(), exonerado };
+            return { month: date.toLocaleString('ES', { month: 'long' }), year: date.getFullYear(), exonerado, descuento };
           })
         );
       }
@@ -1278,6 +1336,29 @@ export const patchSettlement = async ({ id, settlement }) => {
       status: 500,
       error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || error.message || 'Error al realizar la correcion de la liquidacion',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const deleteSettlement = async (id: number) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const application = (await client.query(queries.GET_APPLICATION_BY_SETTLEMENT_ID, [id])).rows[0];
+    const state = (await client.query(queries.GET_APPLICATION_STATE, [application.id_solicitud])).rows[0]?.state;
+    if (!state || state !== 'ingresardatos') throw { status: 403, message: 'La liquidacion que desea eliminar se encuentra validando pago o finalizada' };
+    await client.query(queries.DELETE_SETTLEMENT, [id]);
+    await client.query('COMMIT');
+    return { status: 200, message: 'Liquidacion eliminada satisfactoriamente' };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: error.status || 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al eliminar liquidacion vigente',
     };
   } finally {
     client.release();

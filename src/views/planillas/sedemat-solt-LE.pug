@@ -51,7 +51,7 @@ block content
         div.td(style={ width: '50%' }).border-bottom.border-right
           p
             b LEMA COMERCIAL:
-            span &nbsp; #{datos.usuario.denominacionComercial}
+            span &nbsp; #{datos.usuario.denomComercial}
         div.td(style={ width: '50%' }).border-bottom
           p
             b RAZON SOCIAL:
@@ -65,7 +65,7 @@ block content
         div.td(style={ width: '100%' }).border-bottom
           p
             b DIRECCIÓN:
-            span &nbsp; #{datos.usuario.direccion} 
+            span &nbsp; #{datos.usuario.direccionEstablecimiento} 
       div.tr
         div.td(style={ width: '100%' }).border-bottom
           p
@@ -80,13 +80,13 @@ block content
             b SI
         div.td(style={ width: '5%' }).border-bottom.border-right.center
           if datos.usuario.poseiaLicencia
-            img(src="images/comprobado.svg", style={ width: '70%'})
+            img(src="images/comprobado.png", style={ width: '70%'})
         div.td(style={ width: '5%' }).border-bottom.border-right.center
           p
             b NO
         div.td(style={ width: '5%' }).border-bottom.center
           if !datos.usuario.poseiaLicencia
-            img(src="images/comprobado.svg", style={ width: '70%'})                                                        
+            img(src="images/comprobado.png", style={ width: '70%'})                                                        
       div.tr
         div.td(style={ width: '100%' })
           p

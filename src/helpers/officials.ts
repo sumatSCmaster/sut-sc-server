@@ -198,14 +198,14 @@ export const deleteOfficialSuperuser = async (officialID: string) => {
   }
 };
 
-export const blockOfficial = async (officialID: string, blockStatus: boolean) => {
+export const blockOfficial = async (officialID: string, blockStatus: boolean, user: Usuario) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     const res = await client.query('UPDATE cuenta_funcionario SET bloqueado = $1 WHERE id_usuario = $2', [!blockStatus, officialID]);
     // const res = await client.query(queries.DELETE_OFFICIAL_AS_SUPERUSER, [officialID]);
     await client.query('COMMIT');
-    await blockUserEvent(+officialID, !blockStatus, client);
+    await blockUserEvent(+officialID, !blockStatus, user, client);
     return { status: 200, message: res.rowCount > 0 ? 'Estatus del funcionario modificado' : 'No se encontro el funcionario' };
   } catch (e) {
     client.query('ROLLBACK');

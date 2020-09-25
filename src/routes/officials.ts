@@ -53,7 +53,7 @@ router.delete('/:id', authenticate('jwt'), validators.isOfficialAdmin, async (re
 router.patch('/:id', authenticate('jwt'), validators.isOfficialAdmin, async (req: any, res) => {
   const { institucion } = req.user;
   const { id } = req.params;
-  const [err, data] = await fulfill(blockOfficial(id, req.body.bloqueado));
+  const [err, data] = await fulfill(blockOfficial(id, req.body.bloqueado, req.user));
   if (err) res.status(500).json(err);
   if (data) res.status(data.status).json(data);
 });
