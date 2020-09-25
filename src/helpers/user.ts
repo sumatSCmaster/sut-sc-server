@@ -441,13 +441,13 @@ export const unlinkContributorFromUser = async (id) => {
   }
 };
 
-export const blockUser = async (id, blockStatus) => {
+export const blockUser = async (id, blockStatus, user: Usuario) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     await client.query('UPDATE usuario SET bloqueado = $1 WHERE id_usuario = $2', [!blockStatus, id]);
     await client.query('COMMIT');
-    await blockUserEvent(id, !blockStatus, client);
+    await blockUserEvent(id, !blockStatus, user, client);
     return { status: 200, message: 'Estatus bloqueado del usuario SUT modificado' };
   } catch (error) {
     console.log(error);

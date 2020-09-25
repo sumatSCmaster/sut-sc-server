@@ -1197,7 +1197,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         FROM impuesto.plazo_exoneracion pe
         INNER JOIN impuesto.actividad_economica_exoneracion aee ON aee.id_plazo_exoneracion = pe.id_plazo_exoneracion
         INNER JOIN impuesto.actividad_economica ae ON aee.id_actividad_economica = ae.id_actividad_economica
-        WHERE ae.id_actividad_economica = $1 AND (pe.fecha_fin IS NULL)
+        WHERE ae.id_actividad_economica = $1 AND (pe.fecha_fin IS NULL OR pe.fecha_fin > NOW()::DATE)
         ORDER BY pe.id_plazo_exoneracion DESC;`,
   GET_BRANCH_EXONERATIONS: `SELECT pe.*, r.*, ((pe.fecha_fin IS NULL) OR (NOW() BETWEEN pe.fecha_inicio AND (pe.fecha_fin))) AS active
         FROM impuesto.plazo_exoneracion pe
@@ -1215,6 +1215,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT: 'SELECT SUM(credito) as credito FROM impuesto.credito_fiscal WHERE id_persona = $1 AND concepto = $2',
   GET_ESTATES_FOR_JURIDICAL_CONTRIBUTOR:
     'SELECT DISTINCT ON(ai.id_inmueble) * FROM impuesto.avaluo_inmueble ai INNER JOIN inmueble_urbano iu ON ai.id_inmueble = iu.id_inmueble WHERE id_registro_municipal = $1 AND anio = EXTRACT("year" FROM CURRENT_DATE)',
+  GET_ESTATE_APPRAISAL_BY_ID_AND_YEAR: 'SELECT DISTINCT ON(ai.id_inmueble) * FROM impuesto.avaluo_inmueble ai WHERE id_inmueble = $1 AND anio = $2',
   GET_ESTATES_DATA_FOR_CONTRIBUTOR: 'SELECT * FROM inmueble_urbano WHERE id_registro_municipal = $1',
   ECONOMIC_ACTIVITY_IS_EXONERATED:
     'SELECT * FROM impuesto.actividad_economica_exoneracion INNER JOIN impuesto.plazo_exoneracion USING (id_plazo_exoneracion) WHERE id_actividad_economica = $1 AND fecha_inicio <= $2 AND (fecha_fin IS NULL OR fecha_fin >= now()::date)',
@@ -1272,7 +1273,14 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     "SELECT DISTINCT ON (id_solicitud, s.fecha) * FROM impuesto.convenio INNER JOIN impuesto.solicitud s USING (id_solicitud) INNER JOIN impuesto.liquidacion USING (id_solicitud) WHERE id_registro_municipal = $1 AND tipo_solicitud = 'CONVENIO' ORDER BY s.fecha DESC",
   GET_FRACTIONS_BY_AGREEMENT_ID: 'SELECT * FROM impuesto.fraccion f WHERE f.id_convenio = $1',
   APPLICATION_TOTAL_AMOUNT_BY_ID: 'SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1',
-  GET_APPLICATION_STATE: 'SELECT state FROM impuesto.solicitud_state WHERE id = $1',
+  GET_APPLICATION_STATE: `SELECT s.id_solicitud AS id,
+  ev.state
+ FROM impuesto.solicitud s
+   JOIN ( SELECT es.id_solicitud,
+          impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+         FROM impuesto.evento_solicitud es
+         WHERE id_solicitud = $1
+        GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud;`,
   GET_CONTRIBUTOR_BY_ID: 'SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1',
   SET_DATE_FOR_LINKED_SETTLEMENT: 'UPDATE impuesto.liquidacion SET fecha_liquidacion = $1 WHERE id_liquidacion = $2',
   ASSIGN_CONTRIBUTOR_TO_USER: 'UPDATE USUARIO SET id_contribuyente = $1 WHERE id_usuario = $2',
@@ -1530,17 +1538,55 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   GROUP BY z.fecha, z.ramo ORDER BY z.fecha`,
 
   //  Con intervalo proporcionado
-  TOTAL_BS_BY_BRANCH_IN_MONTH_WITH_INTERVAL: `WITH solicitud_view AS (
-    SELECT * FROM impuesto.solicitud S
-    RIGHT JOIN impuesto.liquidacion l USING (id_solicitud)
-    LEFT JOIN impuesto.subramo USING (id_subramo)
-    LEFT JOIN impuesto.ramo USING (id_ramo)
-  )
-
-    SELECT COALESCE(SUM(monto),0) AS valor,descripcion_corta AS ramo FROM solicitud_view v 
-  WHERE descripcion_corta IN ('AE','SM','IU','PP')
-  AND fecha_aprobado BETWEEN $1::date AND $2::date
-  GROUP BY descripcion_corta ORDER BY valor`,
+  TOTAL_BS_BY_BRANCH_IN_MONTH_WITH_INTERVAL: `SELECT ramo, COALESCE(SUM(monto),0) AS valor FROM (
+    (SELECT r.descripcion_corta AS ramo, SUM(l.monto) AS monto
+        FROM ((SELECT DISTINCT l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto  FROM impuesto.liquidacion l WHERE id_solicitud IS NOT NULL AND id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE fecha_aprobado BETWEEN $1 AND $2 AND tipo_solicitud != 'CONVENIO') UNION SELECT l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto FROM impuesto.liquidacion l WHERE id_solicitud IS NULL AND fecha_liquidacion BETWEEN $1 AND $2 order by id_solicitud)) l
+        LEFT JOIN (SELECT *, s.id_solicitud AS id_solicitud_q
+                        FROM impuesto.solicitud s
+                        INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud)
+            AS state FROM impuesto.evento_solicitud es GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud WHERE fecha_aprobado BETWEEN $1 AND $2 )
+        se ON l.id_solicitud = se.id_solicitud_q
+        RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo
+        INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo
+        WHERE r.descripcion_corta IN ('AE','SM','IU','PP')
+        GROUP BY ramo
+        ORDER BY ramo)
+    UNION
+    (SELECT r.descripcion_corta AS ramo, SUM(f.monto) AS monto
+      FROM (SELECT * FROM impuesto.fraccion WHERE fecha_aprobado BETWEEN $1 AND $2) f
+      INNER JOIN impuesto.convenio USING (id_convenio)
+      INNER JOIN impuesto.solicitud USING (id_solicitud)
+      INNER JOIN (SELECT DISTINCT ON (id_solicitud) id_solicitud, id_subramo, id_liquidacion FROM impuesto.liquidacion ) l USING (id_solicitud)
+      RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo
+      INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo
+      WHERE r.descripcion_corta IN ('AE','SM','IU','PP')
+      GROUP BY ramo
+      ORDER BY ramo)
+      UNION
+       (SELECT 'OTROS' AS ramo, SUM(l.monto) AS monto
+        FROM ((SELECT DISTINCT l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto  FROM impuesto.liquidacion l WHERE id_solicitud IS NOT NULL AND id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE fecha_aprobado BETWEEN $1 AND $2 AND tipo_solicitud != 'CONVENIO') UNION SELECT l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto FROM impuesto.liquidacion l WHERE id_solicitud IS NULL AND fecha_liquidacion BETWEEN $1 AND $2 order by id_solicitud)) l
+        LEFT JOIN (SELECT *, s.id_solicitud AS id_solicitud_q
+                        FROM impuesto.solicitud s
+                        INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud)
+            AS state FROM impuesto.evento_solicitud es GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud WHERE fecha_aprobado BETWEEN $1 AND $2 )
+        se ON l.id_solicitud = se.id_solicitud_q
+        RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo
+        INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo
+        WHERE r.codigo NOT IN ('112','111','122','114')
+        GROUP BY ramo
+        ORDER BY ramo)
+    UNION
+    (SELECT 'OTROS' AS ramo, SUM(f.monto) AS monto
+      FROM (SELECT * FROM impuesto.fraccion WHERE fecha_aprobado BETWEEN $1 AND $2) f
+      INNER JOIN impuesto.convenio USING (id_convenio)
+      INNER JOIN impuesto.solicitud USING (id_solicitud)
+      INNER JOIN (SELECT DISTINCT ON (id_solicitud) id_solicitud, id_subramo, id_liquidacion FROM impuesto.liquidacion ) l USING (id_solicitud)
+      RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo
+      INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo
+      WHERE r.codigo NOT IN ('112','111','122','114')
+      GROUP BY ramo
+      ORDER BY ramo)) x 
+        GROUP BY ramo;`,
 
   //  3. Total recaudado por mes (gráfico de linea con anotaciones)
   //  Sin fecha proporcionada
@@ -2014,6 +2060,60 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     INNER JOIN impuesto.solicitud ON solicitud.id_solicitud = convenio.id_solicitud
     INNER JOIN impuesto.contribuyente ON solicitud.id_contribuyente = contribuyente.id_contribuyente
                 where pago.id_pago = $1`,
+
+  // ! DESCUENTOS
+  GET_ACTIVITY_DISCOUNTS: `SELECT DISTINCT ON (aee.id_plazo_descuento, aee.id_actividad_economica) pe.*, ae.*, ((pe.fecha_fin IS NULL) OR (NOW() BETWEEN pe.fecha_inicio AND (pe.fecha_fin))) AS active
+  FROM impuesto.plazo_descuento pe
+  INNER JOIN impuesto.actividad_economica_descuento aee ON aee.id_plazo_descuento = pe.id_plazo_descuento
+  INNER JOIN impuesto.actividad_economica ae ON aee.id_actividad_economica = ae.id_actividad_economica
+  ORDER BY aee.id_plazo_descuento DESC;`,
+  GET_BRANCH_INFO_FOR_DISCOUNT_BY_ACTIVITY: `SELECT rm.id_ramo AS id, rm.descripcion AS ramo, aed.porcentaje_descuento AS porcentaje FROM impuesto.ramo rm 
+  INNER JOIN impuesto.actividad_economica_descuento aed USING (id_ramo) 
+  WHERE aed.id_plazo_descuento = $1 AND aed.id_actividad_economica = $2;`,
+  GET_BRANCH_INFO_FOR_DISCOUNT_BY_BRANCH: `SELECT rm.id_ramo AS id, rm.descripcion AS ramo, aed.porcentaje_descuento AS porcentaje FROM impuesto.ramo rm 
+  INNER JOIN impuesto.contribuyente_descuento aed USING (id_ramo) 
+  WHERE aed.id_plazo_descuento = $1 AND aed.id_registro_municipal = $2;`,
+  CREATE_DISCOUNT: `INSERT INTO impuesto.plazo_descuento (id_plazo_descuento, fecha_inicio) VALUES (default, $1) RETURNING *;`,
+  GET_ACTIVITY_IS_DISCOUNTED: `SELECT pe.id_plazo_descuento AS id, ae.id_actividad_economica AS aforo, ae.descripcion, ((pe.fecha_fin IS NULL) OR (NOW() BETWEEN pe.fecha_inicio AND (pe.fecha_fin))) AS active 
+  FROM impuesto.plazo_descuento pe
+  INNER JOIN impuesto.actividad_economica_descuento aee ON aee.id_plazo_descuento = pe.id_plazo_descuento
+  INNER JOIN impuesto.actividad_economica ae ON aee.id_actividad_economica = ae.id_actividad_economica
+  WHERE ae.id_actividad_economica = $1 AND aee.id_ramo = $2 AND (pe.fecha_fin IS NULL OR pe.fecha_fin > NOW()::DATE)
+  ORDER BY pe.id_plazo_descuento DESC;`,
+  INSERT_DISCOUNT_ACTIVITY: `INSERT INTO impuesto.actividad_economica_descuento (id_actividad_economica_descuento, id_plazo_descuento, id_actividad_economica, id_ramo, porcentaje_descuento) VALUES (default, $1, $2, $3, $4) RETURNING *;`,
+  UPDATE_DISCOUNT_END_TIME: `UPDATE impuesto.plazo_descuento SET fecha_fin = $1 WHERE id_plazo_descuento = $2`,
+  GET_CONTRIBUTOR_DISCOUNTS: `SELECT DISTINCT ON (ce.id_ramo) pe.*, ce.*, ((pe.fecha_fin IS NULL) OR (NOW() BETWEEN pe.fecha_inicio AND pe.fecha_fin)) AS active 
+  FROM impuesto.plazo_descuento pe 
+  INNER JOIN impuesto.contribuyente_descuento ce ON ce.id_plazo_descuento = pe.id_plazo_descuento 
+  INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = ce.id_registro_municipal
+  INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = rm.id_contribuyente
+  WHERE c.tipo_documento = $1 AND c.documento = $2 AND rm.referencia_municipal = $3 ORDER BY ce.id_ramo DESC;`,
+  GET_DISCOUNTED_BRANCH_BY_CONTRIBUTOR: `
+  SELECT * FROM impuesto.plazo_descuento pe 
+      INNER JOIN impuesto.contribuyente_descuento ce ON ce.id_plazo_descuento = pe.id_plazo_descuento
+      INNER JOIN impuesto.ramo rm USING (id_ramo)
+      WHERE ce.id_registro_municipal = $1 AND ce.id_ramo = $2`,
+  GET_BRANCH_IS_DISCOUNTED_FOR_CONTRIBUTOR: `
+  SELECT * FROM impuesto.plazo_descuento pe 
+      INNER JOIN impuesto.contribuyente_descuento ce ON ce.id_plazo_descuento = pe.id_plazo_descuento
+      INNER JOIN impuesto.ramo rm USING (id_ramo)
+      WHERE ce.id_registro_municipal = $1 AND ce.id_ramo = $2 AND (pe.fecha_fin >= $3::date OR pe.fecha_fin IS NULL)`,
+  INSERT_CONTRIBUTOR_DISCOUNT_FOR_BRANCH: `
+  INSERT INTO impuesto.contribuyente_descuento (id_contribuyente_descuento, id_plazo_descuento, id_registro_municipal, id_ramo, porcentaje_descuento)
+                  VALUES (default, $1, $2, $3, $4) RETURNING *;`,
+  GET_ACTIVITY_DISCOUNT_BY_ID: `SELECT pe.id_plazo_descuento AS id, ae.id_actividad_economica AS aforo, ae.descripcion, ae.numero_referencia AS "numeroReferencia", ((pe.fecha_fin IS NULL) OR (NOW() BETWEEN pe.fecha_inicio AND (pe.fecha_fin))) AS active 
+  FROM impuesto.plazo_descuento pe
+  INNER JOIN impuesto.actividad_economica_descuento aee ON aee.id_plazo_descuento = pe.id_plazo_descuento
+  INNER JOIN impuesto.actividad_economica ae ON aee.id_actividad_economica = ae.id_actividad_economica
+  WHERE pe.id_plazo_descuento = $1 AND ae.id_actividad_economica = $2
+  ORDER BY pe.id_plazo_descuento DESC;`,
+  ECONOMIC_ACTIVITY_HAS_DISCOUNT_IN_BRANCH: `SELECT * FROM impuesto.actividad_economica_descuento INNER JOIN
+   impuesto.plazo_descuento USING (id_plazo_descuento) 
+   WHERE id_actividad_economica = $1 AND id_ramo = (SELECT id_ramo FROM impuesto.ramo WHERE codigo = $2 LIMIT 1) AND fecha_inicio <= $3 AND (fecha_fin IS NULL OR fecha_fin >= now()::date)`,
+  CONTRIBUTOR_HAS_DISCOUNT_IN_BRANCH: `SELECT * FROM impuesto.contribuyente_descuento INNER JOIN
+   impuesto.plazo_descuento USING (id_plazo_descuento) 
+   WHERE id_registro_municipal = $1 AND id_ramo=(SELECT id_ramo FROM impuesto.ramo WHERE codigo = $2 LIMIT 1) AND fecha_inicio <= $3 AND (fecha_fin IS NULL OR fecha_fin >= now()::date)`,
+
   gtic: {
     GET_NATURAL_CONTRIBUTOR:
       'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 AND (trim(nb_representante_legal) NOT IN (SELECT trim(nb_marca) FROM tb014_marca_veh) AND trim(nb_representante_legal) NOT IN (SELECT trim(tx_marca) FROM t45_vehiculo_marca) OR trim(nb_representante_legal) IS NULL) ORDER BY co_contribuyente DESC',

@@ -14,7 +14,7 @@ const template = async (props) => {
     await client.query('BEGIN');
 
     await client.query('COMMIT');
-    return;
+    return { status: 200, message: '' };
   } catch (error) {
     client.query('ROLLBACK');
     console.log(error);
