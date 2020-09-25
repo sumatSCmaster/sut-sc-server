@@ -4462,6 +4462,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
         fecha: moment().format('YYYY-MM-DD'),
         tramite: 'PAGO DE IMPUESTOS',
         moment: require('moment'),
+        institucion:'SEDEMAT',
         QR: linkQr,
         datos: {
           nroSolicitud: application.id,
