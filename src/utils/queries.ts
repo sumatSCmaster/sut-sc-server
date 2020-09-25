@@ -1539,8 +1539,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       WHERE r.codigo NOT IN ('112','111','122','114')
       GROUP BY ramo
       ORDER BY ramo)) x 
-        GROUP BY ramo;
-`,
+        GROUP BY ramo;`,
 
   //  3. Total recaudado por mes (gráfico de linea con anotaciones)
   //  Sin fecha proporcionada
@@ -2036,7 +2035,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   ORDER BY pe.id_plazo_descuento DESC;`,
   INSERT_DISCOUNT_ACTIVITY: `INSERT INTO impuesto.actividad_economica_descuento (id_actividad_economica_descuento, id_plazo_descuento, id_actividad_economica, id_ramo, porcentaje_descuento) VALUES (default, $1, $2, $3, $4) RETURNING *;`,
   UPDATE_DISCOUNT_END_TIME: `UPDATE impuesto.plazo_descuento SET fecha_fin = $1 WHERE id_plazo_descuento = $2`,
-  GET_CONTRIBUTOR_DISCOUNTS: `SELECT DISTINCT ON (ce.id_plazo_exoneracion, ce.id_registro_municipal) pe.*, ce.*, ((pe.fecha_fin IS NULL) OR (NOW() BETWEEN pe.fecha_inicio AND pe.fecha_fin)) AS active 
+  GET_CONTRIBUTOR_DISCOUNTS: `SELECT DISTINCT ON (ce.id_plazo_descuento, ce.id_registro_municipal) pe.*, ce.*, ((pe.fecha_fin IS NULL) OR (NOW() BETWEEN pe.fecha_inicio AND pe.fecha_fin)) AS active 
   FROM impuesto.plazo_descuento pe 
   INNER JOIN impuesto.contribuyente_descuento ce ON ce.id_plazo_descuento = pe.id_plazo_descuento 
   INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = ce.id_registro_municipal
