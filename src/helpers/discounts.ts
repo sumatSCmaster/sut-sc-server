@@ -17,7 +17,18 @@ export const getContributorDiscounts = async ({ typeDoc, doc, ref }) => {
 
     const idContributor = +contributor.idRegistroMunicipal;
     const contributorDiscounts = (await client.query(queries.GET_CONTRIBUTOR_DISCOUNTS, [typeDoc, doc, ref])).rows.map(async (discount) => {
-      ({ id: discount.id_plazo_descuento, fechaInicio: discount.fecha_inicio, fechaFin: discount.fecha_fin, ramos: (await client.query(queries.GET_BRANCH_INFO_FOR_DISCOUNT_BY_BRANCH, [discount.id_plazo_descuento, idContributor])).rows });
+      const branchDiscount = (await client.query(queries.GET_DISCOUNTED_BRANCH_BY_CONTRIBUTOR, [idContributor, discount.id_ramo])).rows;
+      const response = {
+        id: discount.id_ramo,
+        descripcion: branchDiscount[0].descripcion,
+        descuentos: branchDiscount.map((row) => ({
+          id: row.id_plazo_descuento,
+          fechaInicio: row.fecha_inicio,
+          fechaFin: row.fecha_fin,
+          porcentajeDescuento: row.porcentaje_descuento,
+        })),
+      };
+      return response;
     });
 
     const contribuyente = {
@@ -25,7 +36,7 @@ export const getContributorDiscounts = async ({ typeDoc, doc, ref }) => {
       tipoDocumento: typeDoc,
       documento: doc,
       referenciaMunicipal: ref,
-      descuentos: contributorDiscounts,
+      ramos: contributorDiscounts,
     };
     return { status: 200, message: 'Descuentos de ramo por contribuyente obtenidos', contribuyente };
   } catch (error) {
@@ -122,7 +133,6 @@ export const createContributorDiscount = async ({ typeDoc, doc, ref, from, branc
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const discount = (await client.query(queries.CREATE_DISCOUNT, [from])).rows[0];
     const contributor = (await client.query(queries.GET_CONTRIBUTOR, [typeDoc, doc, ref])).rows[0];
     console.log(contributor.rows);
     if (!contributor) {
@@ -130,16 +140,23 @@ export const createContributorDiscount = async ({ typeDoc, doc, ref, from, branc
     }
     const idContributor = +contributor.idRegistroMunicipal;
     console.log('aki');
-    await Promise.all(
+    const ramos = await Promise.all(
       branches.map(async (branch) => {
         console.log('a');
-        if ((await client.query(queries.GET_DISCOUNTED_BRANCH_BY_CONTRIBUTOR, [idContributor, branch.id])).rowCount > 0) {
-          console.log('b');
-          throw { message: `El ramo ${branch.descripcion} posee un descuento vigente para este contribuyente` };
-        } else {
-          console.log('c');
-          return client.query(queries.INSERT_CONTRIBUTOR_DISCOUNT_FOR_BRANCH, [discount.id_plazo_descuento, idContributor, branch.id, branch.porcDescuento]);
-        }
+        const discount = (await client.query(queries.CREATE_DISCOUNT, [from])).rows[0];
+        if ((await client.query(queries.GET_DISCOUNTED_BRANCH_BY_CONTRIBUTOR, [idContributor, branch.id])).rowCount > 0) throw { message: `El ramo ${branch.descripcion} posee un descuento vigente para este contribuyente` };
+        await client.query(queries.INSERT_CONTRIBUTOR_DISCOUNT_FOR_BRANCH, [discount.id_plazo_descuento, idContributor, branch.id, branch.porcDescuento]);
+        const response = {
+          id: branch.id,
+          descripcion: branch.descripcion,
+          descuentos: (await client.query(queries.GET_DISCOUNTED_BRANCH_BY_CONTRIBUTOR, [idContributor, branch.id])).rows.map((row) => ({
+            id: row.id_plazo_descuento,
+            fechaInicio: row.fecha_inicio,
+            fechaFin: row.fecha_fin,
+            porcentajeDescuento: row.porcentaje_descuento,
+          })),
+        };
+        return response;
       })
     );
     console.log('q');
@@ -149,7 +166,7 @@ export const createContributorDiscount = async ({ typeDoc, doc, ref, from, branc
       tipoDocumento: typeDoc,
       documento: doc,
       referenciaMunicipal: ref,
-      descuentos: { id: discount.id_plazo_descuento, fechaInicio: discount.fecha_inicio, ramos: (await client.query(queries.GET_BRANCH_INFO_FOR_DISCOUNT_BY_BRANCH, [discount.id_plazo_descuento, idContributor])).rows },
+      ramos,
     };
     console.log('wtf');
     // if (activities) {
