@@ -1396,29 +1396,6 @@ export const getAgreementFractionById = async ({ id }): Promise<Solicitud & any>
   }
 };
 
-export const deleteSettlement = async (id: number) => {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const application = (await client.query(queries.GET_APPLICATION_BY_SETTLEMENT_ID, [id])).rows[0];
-    const state = (await client.query(queries.GET_APPLICATION_STATE, [application.id_solicitud])).rows[0]?.state;
-    if (!state || state !== 'ingresardatos') throw { status: 403, message: 'La liquidacion que desea eliminar se encuentra validando pago o finalizada' };
-    await client.query(queries.DELETE_SETTLEMENT, [id]);
-    await client.query('COMMIT');
-    return { status: 200, message: 'Liquidacion eliminada satisfactoriamente' };
-  } catch (error) {
-    client.query('ROLLBACK');
-    console.log(error);
-    throw {
-      status: error.status || 500,
-      error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || error.message || 'Error al eliminar liquidacion vigente',
-    };
-  } finally {
-    client.release();
-  }
-};
-
 //TODO: get de convenios
 export const getAgreements = async ({ user }: { user: Usuario }) => {
   const client = await pool.connect();
@@ -4543,7 +4520,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
         fecha: moment().format('YYYY-MM-DD'),
         tramite: 'PAGO DE IMPUESTOS',
         moment: require('moment'),
-        institucion:'SEDEMAT',
+        institucion: 'SEDEMAT',
         QR: linkQr,
         datos: {
           nroSolicitud: application.id,
