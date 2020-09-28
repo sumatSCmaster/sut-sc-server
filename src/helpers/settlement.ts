@@ -233,7 +233,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
           let descuento;
           const date = addMonths(new Date(lastSMPayment.toDate()), index);
           const momentDate = moment(date);
-          const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
+          const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch?.id_registro_municipal])).rows;
           descuento =
             (economicActivities.length > 0 &&
               (
@@ -316,7 +316,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                       const momentDate = moment(date);
                       const avaluo = (await client.query(queries.GET_ESTATE_APPRAISAL_BY_ID_AND_YEAR, [el.id_inmueble, momentDate.year()])).rows[0]?.avaluo || el.avaluo;
                       const impuestoInmueble = (avaluo * (el.tipo_inmueble === 'COMERCIAL' ? 0.01 : 0.005)) / 12;
-                      const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
+                      const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch?.id_registro_municipal])).rows;
                       descuento =
                         (economicActivities.length > 0 &&
                           (
@@ -358,7 +358,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
             let descuento;
             const date = addMonths(new Date(lastPPPayment.toDate()), index);
             const momentDate = moment(date);
-            const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
+            const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch?.id_registro_municipal])).rows;
             descuento =
               (economicActivities.length > 0 &&
                 (
@@ -378,7 +378,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
             let descuento;
             const date = addMonths(moment(`${now.year()}-01-01`).toDate(), index);
             const momentDate = moment(date);
-            const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
+            const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch?.id_registro_municipal])).rows;
             descuento =
               (economicActivities.length > 0 &&
                 (
