@@ -5229,7 +5229,6 @@ export const getSettlementsReport = async (user, payload: { from: Date; to: Date
 
       const result = await client.query(payload.ramo ? queries.GET_SETTLEMENT_REPORT_BY_BRANCH : queries.GET_SETTLEMENTS_REPORT, payload.ramo ? [payload.from, payload.to, payload.ramo] : [payload.from, payload.to]);
 
-      console.log(result);
 
       sheet.columns = result.fields.map((row) => {
         return { header: row.name, key: row.name, width: 32 };
