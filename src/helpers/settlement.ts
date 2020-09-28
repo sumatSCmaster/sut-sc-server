@@ -5236,9 +5236,6 @@ export const getSettlementsReport = async (user, payload: { from: Date; to: Date
       });
       sheet.addRows(result.rows, 'i');
 
-      sheet.eachRow((row, rownumber) => {
-        console.log(rownumber, 'row:', row);
-      });
       if (dev) {
         const dir = '../../archivos/test.xlsx';
         const stream = fs.createWriteStream(require('path').resolve('./archivos/test.xlsx'));
