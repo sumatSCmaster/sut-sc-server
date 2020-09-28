@@ -2944,10 +2944,11 @@ export const validateApplication = async (body, user, client) => {
     const saldoPositivo = totalPago - totalLiquidacion;
     if (saldoPositivo > 0) {
       const fixatedApplication = await getApplicationsAndSettlementsById({ id: body.idTramite, user });
-      const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
+      let idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
         ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
         : undefined;
 
+      idReferenciaMunicipal = idReferenciaMunicipal ? idReferenciaMunicipal : (await client.query('SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE id_contribuyente = $1 LIMIT 1;', [fixatedApplication.contribuyente.id])).rows[0]?.id_registro_municipal;
       const payload =
         fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', saldoPositivo, false, body.idTramite] : [fixatedApplication.contribuyente.id, 'NATURAL', saldoPositivo, false, body.idTramite];
       await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
