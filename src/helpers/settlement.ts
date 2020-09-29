@@ -140,6 +140,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [type, document])).rows[0];
     if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
+    const contributorHasBranch = (await client.query('SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = $1', [contributor.id_contribuyente])).rowCount > 0;
+    if (!!reference && contributorHasBranch) throw { status: 403, message: 'El contribuyente posee una referencia municipal, debe ingresarla' };
     console.log('branch', branch);
     console.log('contributor', contributor);
     if ((!branch && reference) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEMAT' };
@@ -2948,6 +2950,9 @@ export const validateApplication = async (body, user, client) => {
         ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
         : undefined;
 
+      idReferenciaMunicipal = idReferenciaMunicipal
+        ? idReferenciaMunicipal
+        : (await client.query('SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE id_contribuyente = $1 LIMIT 1;', [fixatedApplication.contribuyente.id])).rows[0]?.id_registro_municipal;
       const payload =
         fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', saldoPositivo, false, body.idTramite] : [fixatedApplication.contribuyente.id, 'NATURAL', saldoPositivo, false, body.idTramite];
       await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
@@ -5228,8 +5233,6 @@ export const getSettlementsReport = async (user, payload: { from: Date; to: Date
       const sheet = workbook.addWorksheet('Reporte');
 
       const result = await client.query(payload.ramo ? queries.GET_SETTLEMENT_REPORT_BY_BRANCH : queries.GET_SETTLEMENTS_REPORT, payload.ramo ? [payload.from, payload.to, payload.ramo] : [payload.from, payload.to]);
-
-      console.log(result);
 
       sheet.columns = result.fields.map((row) => {
         return { header: row.name, key: row.name, width: 32 };
