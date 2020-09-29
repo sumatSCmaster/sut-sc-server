@@ -5,9 +5,10 @@ import { getAEDeclarationsForAlteration, alterateAESettlements } from '@helpers/
 
 const router = Router();
 
-router.get('/ae', authenticate('jwt'), async (req: any, res) => {
+router.get('/ae/:type', authenticate('jwt'), async (req: any, res) => {
+  const { type } = req.params;
   const { tipoDocumento: docType, documento: document, referencia: reference } = req.query;
-  const [error, data] = await fulfill(getAEDeclarationsForAlteration({ docType, document, reference, user: req?.user }));
+  const [error, data] = await fulfill(getAEDeclarationsForAlteration({ docType, document, reference, user: req?.user, type }));
   if (error) res.status(error.status).json(error);
   if (data) res.status(data.status).json(data);
 });
