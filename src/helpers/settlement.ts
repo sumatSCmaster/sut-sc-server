@@ -2946,7 +2946,7 @@ export const validateApplication = async (body, user, client) => {
     const saldoPositivo = totalPago - totalLiquidacion;
     if (saldoPositivo > 0) {
       const fixatedApplication = await getApplicationsAndSettlementsById({ id: body.idTramite, user });
-      const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
+      let idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
         ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
         : undefined;
 
