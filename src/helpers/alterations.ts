@@ -103,7 +103,7 @@ export const alterateAESettlements = async ({ settlements, type }) => {
               liquidacion.id_registro_municipal || null,
             ])
           ).rows[0];
-          await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [liquidacion.fecha_liquidacion.format('MM-DD-YYYY'), newSettlement.id_liquidacion]);
+          await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [moment(liquidacion.fecha_liquidacion).format('MM-DD-YYYY'), newSettlement.id_liquidacion]);
         } else {
           throw { status: 409, message: 'La solicitud no posee un estado valido para realizar una declaracion correctiva' };
         }
