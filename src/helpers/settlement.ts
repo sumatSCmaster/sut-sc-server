@@ -141,7 +141,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
     const contributorHasBranch = (await client.query('SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = $1', [contributor.id_contribuyente])).rowCount > 0;
-    if (!!reference && contributorHasBranch) throw { status: 403, message: 'El contribuyente posee una referencia municipal, debe ingresarla' };
+    if (!reference && contributorHasBranch) throw { status: 403, message: 'El contribuyente posee una referencia municipal, debe ingresarla' };
     console.log('branch', branch);
     console.log('contributor', contributor);
     if ((!branch && reference) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEMAT' };
