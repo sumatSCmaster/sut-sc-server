@@ -9,8 +9,10 @@ const pool = Pool.getInstance();
 let io: Server;
 const users = new Map<string, Socket>();
 
-const connection = (socket: Socket) => {
+const connection = async (socket: Socket) => {
+  const client = await pool.connect();
   try {
+    
     const user = decode(socket.handshake.query.token, process.env.JWT_SECRET || 'not a secret').sub;
     if (user.tipoUsuario === 3 && user.permisos && user.permisos.length > 0) {
       user.permisos.map((el) => socket.join(`tram:${el}`));
@@ -19,14 +21,10 @@ const connection = (socket: Socket) => {
     }
 
     if (user.tipoUsuario === 1) {
-      pool.connect().then((r) => {
-        r.query(queries.GET_ALL_INSTITUTION).then((institucion) => {
-          institucion.rows.map((el) => socket.join(`inst:${el.nombre_corto}`));
-        });
-        r.release();
-      });
+      const insts = (await client.query(queries.GET_ALL_INSTITUTION)).rows;
+      insts.map((el) => socket.join(`inst:${el.nombre_corto}`))
     }
-
+    
     users.set(`${user.nacionalidad}-${user.cedula}`, socket);
     socket.join(`${user.nacionalidad}-${user.cedula}`);
     console.log(`User connected: ${user.nacionalidad}-${user.cedula}`);
@@ -36,6 +34,8 @@ const connection = (socket: Socket) => {
     });
   } catch (e) {
     throw errorMessageExtractor(e);
+  } finally {
+    client.release();
   }
 };
 
