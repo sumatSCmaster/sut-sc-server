@@ -84,13 +84,13 @@ export const alterateAESettlements = async ({ settlements, type }) => {
         if (state === 'ingresardatos') {
           newSettlement = (await client.query(queries.UPDATE_SETTLEMENT_AMOUNT_AND_DATA, [newDatos, fixatedAmount(s.monto), s.id])).rows[0];
         } else if (state === 'finalizado' && tiposCorreccion[type] === 'complementaria') {
-          let application = (await client.query(queries.GET_PATCH_APPLICATION_BY_ORIGINAL_ID_AND_STATE, [liquidacion.id_solicitud, state])).rows[0];
+          let application = (await client.query(queries.GET_PATCH_APPLICATION_BY_ORIGINAL_ID_AND_STATE, [liquidacion.id_solicitud, 'ingresardatos'])).rows[0];
           if (!application) {
             const { id_usuario: usuario, id_contribuyente: contribuyente } = (await client.query(queries.GET_APPLICATION_BY_ID, [liquidacion.id_solicitud])).rows[0];
             application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [usuario, contribuyente])).rows[0];
             await client.query(queries.ADD_ORIGINAL_APPLICATION_ID_IN_PATCH_APPLICATION, [liquidacion.id_solicitud, application.id_solicitud]);
             await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, 'ingresardatos_pi']);
-            await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [liquidacion.fecha_liquidacion, application.id_solicitud]);
+            await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [moment(liquidacion.fecha_liquidacion).format('MM-DD-YYYY'), application.id_solicitud]);
           }
           newSettlement = (
             await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
