@@ -42,7 +42,7 @@ export const createChargings = async () => {
         const lastMonth = today.clone().subtract(2, 'month').locale('es')
         const firstOfLastMonth = lastMonth.clone().startOf('month').add(1, 'month');
         */
-        if((await client.query("SELECT EXTRACT('month' FROM creado) = EXTRACT('month' FROM (NOW() - interval '4 hours')) AS check FROM impuesto.cobranza LIMIT 1")).rows[0].check){
+        if((await client.query("SELECT EXTRACT('month' FROM created) = EXTRACT('month' FROM (NOW() - interval '4 hours')) AS check FROM impuesto.cobranza LIMIT 1")).rows[0].check){
             throw new Error('Cobranzas del mes ya creadas')
         }
         const today = moment();
