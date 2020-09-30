@@ -3655,7 +3655,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
 
     let fechaCreLiq = moment(application.fechaCreacion);
     let fechaCreLiqStr = fechaCreLiq.format('DD/MM/YYYY');
-    let endOfMonthFechaVenc = fechaCreLiq.clone().endOf('month');
+    let endOfMonthFechaVenc = fechaCreLiq.clone().endOf('month').format('DD/MM/YYYY');
     let currentDate = moment().format('MM-DD-YYYY');
 
     if (application.idSubramo === 107 || application.idSubramo === 108) {
@@ -3689,7 +3689,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             nroSolicitud: application.id,
             nroPlanilla: 10010111,
             motivo: motivo,
-            nroFactura: fact,
+            nroFactura: application.id,
             tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
             tipoInmueble: 'NO DISPONIBLE',
             fechaCre: fechaCreLiqStr,
@@ -3757,7 +3757,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               nroSolicitud: application.id,
               nroPlanilla: 10010111,
               motivo: motivo,
-              nroFactura: fact,
+              nroFactura: application.id,
               codigo: application.id,
               tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
               tipoInmueble: el?.tipo_inmueble || 'NO DISPONIBLE',
@@ -3882,7 +3882,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             nroSolicitud: application.id,
             nroPlanilla: 10010111,
             motivo: motivo,
-            nroFactura: `${new Date().getTime().toString().slice(5)}`, //TODO: Ver como es el mani con esto
+            nroFactura: application.id, //TODO: Ver como es el mani con esto
             tipoTramite: `${application.codigoRamo} - ${application.descripcionRamo}`,
             tipoInmueble: el?.tipo_inmueble || 'NO DISPONIBLE',
             fechaCre: fechaCreLiqStr,
