@@ -2113,7 +2113,47 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   CONTRIBUTOR_HAS_DISCOUNT_IN_BRANCH: `SELECT * FROM impuesto.contribuyente_descuento INNER JOIN
    impuesto.plazo_descuento USING (id_plazo_descuento) 
    WHERE id_registro_municipal = $1 AND id_ramo=(SELECT id_ramo FROM impuesto.ramo WHERE codigo = $2 LIMIT 1) AND fecha_inicio <= $3 AND (fecha_fin IS NULL OR fecha_fin >= now()::date)`,
-
+  GET_CHARGINGS: `SELECT cob.*, u.nombre_completo 
+    FROM impuesto.cobranza cob 
+    LEFT JOIN impuesto.cartera cart ON cart.id_cartera = cob.id_cartera 
+    LEFT JOIN usuario u ON u.id_usuario = cob.id_cartera;`,
+  GET_WALLETS: `SELECT cart.id_cartera, cart.id_usuario, u.nombre_de_usuario 
+    FROM impuesto.cartera cart 
+    LEFT JOIN usuario u ON u.id_usuario = cart.id_usuario;`,
+  LINK_WALLET_TO_USER: `UPDATE impuesto.cartera SET id_usuario = $2 WHERE id_cartera = $1 RETURNING *;`,
+  CREATE_CHARGINGS: `INSERT INTO impuesto.cobranza (id_registro_municipal, rating)
+  SELECT l.id_registro_municipal,
+  CASE 
+      WHEN (s.fecha_aprobado::timestamptz - cast(date_trunc('month', $3::date) as timestamptz) ) BETWEEN interval '0 days' AND interval '10 days' THEN '5'
+      WHEN (s.fecha_aprobado::timestamptz - cast(date_trunc('month', $3::date) as timestamptz) ) BETWEEN interval '11 days' AND interval '15 days' THEN '4'
+      WHEN (s.fecha_aprobado::timestamptz - cast(date_trunc('month', $3::date) as timestamptz) ) BETWEEN interval '16 days' AND interval '20 days' THEN '3'
+      WHEN (s.fecha_aprobado::timestamptz - cast(date_trunc('month', $3::date) as timestamptz) ) BETWEEN interval '21 days' AND interval '25 days' THEN '2'
+      ELSE '1'
+  END AS rating
+  FROM impuesto.liquidacion l
+  INNER JOIN impuesto.solicitud s USING (id_solicitud)
+  WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2 AND s.aprobado = true AND id_registro_municipal IN (
+      SELECT id_registro_municipal FROM (SELECT DISTINCT(l.id_registro_municipal) id_registro_municipal, SUM(monto) as montoTotal 
+      FROM Impuesto.liquidacion l
+      INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud
+      INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = l.id_registro_municipal
+      INNER JOIN impuesto.contribuyente cont ON s.id_contribuyente = cont.id_contribuyente AND rm.id_contribuyente = cont.id_contribuyente
+      WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2 AND s.aprobado = true AND cont.es_agente_retencion = false
+      GROUP BY l.id_registro_municipal 
+      ORDER BY montoTotal DESC
+      LIMIT 2000) s)
+      LIMIT 2000 RETURNING *;
+`,
+  UPDATE_CHARGING: `UPDATE impuesto.cobranza SET contactado = $1, 
+    estatus_telefonico = $2, 
+    observaciones = $3, 
+    posee_convenio = $4, 
+    fiscalizar = $5, 
+    estimacion_pago = $6 WHERE id_cobranza = $1;`,
+  CREATE_WALLET: `INSERT INTO impuesto.cartera VALUES (default, null) RETURNING *`,
+  SET_WALLET: `UPDATE impuesto.cobranza SET id_cartera = $1 WHERE id_cobranza = $2`,
+  
+  CHARGINGS_GROUPED: `SELECT rating, COUNT(*) FROM impuesto.cobranza GROUP BY rating;`,
   gtic: {
     GET_NATURAL_CONTRIBUTOR:
       'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 AND (trim(nb_representante_legal) NOT IN (SELECT trim(nb_marca) FROM tb014_marca_veh) AND trim(nb_representante_legal) NOT IN (SELECT trim(tx_marca) FROM t45_vehiculo_marca) OR trim(nb_representante_legal) IS NULL) ORDER BY co_contribuyente DESC',

@@ -25,6 +25,10 @@ const connection = async (socket: Socket) => {
       insts.map((el) => socket.join(`inst:${el.nombre_corto}`))
     }
     
+    if (user.cargo.id === 999){
+      socket.join('tabla-cobranza');
+    }
+
     users.set(`${user.nacionalidad}-${user.cedula}`, socket);
     socket.join(`${user.nacionalidad}-${user.cedula}`);
     console.log(`User connected: ${user.nacionalidad}-${user.cedula}`);
