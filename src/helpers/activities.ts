@@ -66,8 +66,8 @@ export const updateContributorActivities = async ({ branchId, activities, branch
               [branchId, ramo]
             ));
           const fechaInicio = !!desde ? desde : activities.sort((a, b) => (moment(a.desde).isSameOrBefore(moment(b.desde)) ? 1 : -1))[0]?.desde;
-          const fromDate = moment(fechaInicio).subtract(1, 'M');
-          const expireDate = moment(fechaInicio).subtract(1, 'M').endOf('month');
+          const fromDate = ramo !== 'RD0' ? moment(fechaInicio).subtract(1, 'M') : moment(fechaInicio);
+          const expireDate = ramo !== 'RD0' ? moment(fechaInicio).subtract(1, 'M').endOf('month') : moment(fechaInicio).endOf('month');
           await client.query(queries.DELETE_SETTLEMENTS_BY_BRANCH_CODE_AND_RIM, [codigosRamo[ramo], branchId]);
           const ghostSettlement = (
             await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [

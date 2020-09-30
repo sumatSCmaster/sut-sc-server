@@ -163,7 +163,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       contributor.tipo_contribuyente === 'JURIDICO'
         ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.PP, reference])).rows[0]
         : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.PP, contributor.id_contribuyente])).rows[0];
-    if (contributor.tipo_contribuyente === 'JURIDICO' && branch?.estado_licencia === 'CESANTE') throw { status: 401, message: 'La referencia proporcionada cesó sus actividades' };
+    if (contributor.tipo_contribuyente === 'JURIDICO' && !!['CESANTE', 'INHABILITADO', 'SANCIONADO'].find((state) => state === branch?.estado_licencia))
+      throw { status: 401, message: `La referencia municipal proporcionada se encuentra en estado ${branch?.estado_licencia}` };
     console.log(lastSettlementPayload);
     console.log(lastSettlementQuery);
     if (AEApplicationExists && SMApplicationExists && IUApplicationExists && PPApplicationExists) return { status: 409, message: 'Ya existe una declaracion de impuestos para este mes' };
@@ -1907,7 +1908,7 @@ export const formatBranch = async (branch, client) => {
   const inicioImpuestos: any[] = [];
   const SM = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, [66, branch.referencia_municipal])).rows[0];
   const PP = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, [12, branch.referencia_municipal])).rows[0];
-  const RD0 = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, [915, branch.referencia_municipal])).rows[0];
+  const RD0 = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, [52, branch.referencia_municipal])).rows[0];
   if (!!SM) SM.desde = moment(SM.desde).format('MM-DD-YYYY');
   if (!!PP) PP.desde = moment(PP.desde).format('MM-DD-YYYY');
   if (!!RD0) RD0.desde = moment(RD0.desde).format('MM-DD-YYYY');
