@@ -24,11 +24,11 @@ const socket: Server = require('socket.io')(trueServer);
 trueServer.listen(process.env.PORT || 5000, () => console.log(`Listening on port ${process.env.PORT || 5000}`));
 init(socket);
 
-async function xd() {
+/* async function xd() {
   await createChargings()
 }
 
-xd();
+xd(); */
 // const dev = process.env.NODE_ENV !== 'production';
 // if (dev) {
 //   executeReport();
