@@ -60,6 +60,11 @@ export const updateContributorActivities = async ({ branchId, activities, branch
       await Promise.all(
         otrosImpuestos.map(async (impuesto) => {
           const { desde, ramo } = impuesto;
+          ramo === 'RD0' &&
+            (await client.query(
+              'UPDATE impuesto.detalle_retencion SET id_liquidacion = null WHERE id_liquidacion IN (SELECT id_liquidacion FROM impuesto.liquidacion WHERE id_registro_municipal = $1 AND id_subramo IN (SELECT id_subramo FROM impuesto.subramo INNER JOIN impuesto.ramo r USING (id_ramo) WHERE r.descripcion_corta = $2))',
+              [branchId, ramo]
+            ));
           const fechaInicio = !!desde ? desde : activities.sort((a, b) => (moment(a.desde).isSameOrBefore(moment(b.desde)) ? 1 : -1))[0]?.desde;
           const fromDate = moment(fechaInicio).subtract(1, 'M');
           const expireDate = moment(fechaInicio).subtract(1, 'M').endOf('month');
