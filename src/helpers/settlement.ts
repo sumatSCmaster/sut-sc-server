@@ -2600,7 +2600,7 @@ export const insertSettlements = async ({ process, user }) => {
                 descripcion: 'Multa por Declaracion Fuera de Plazo',
                 monto: finingAmount,
               },
-              moment().endOf('month').format('MM-DD-YYYY'),
+              rightfulMonth.add(1, 'M').endOf('month').format('MM-DD-YYYY'),
               (contributorReference && contributorReference.id_registro_municipal) || null,
             ])
           ).rows[0];
