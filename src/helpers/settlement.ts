@@ -5103,7 +5103,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
     const paymentState = switchcase({ ingresardatos: 'VIGENTE', validando: 'VIGENTE', finalizado: 'PAGADO' })(null);
     const contribuyente = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [contributor])).rows[0];
     const branch = reference && (await client.query('SELECT r.* FROM impuesto.registro_municipal r WHERE referencia_municipal = $1', [reference])).rows[0];
-    const contributorQuery = typeUser === 'JURIDICO' ? queries.GET_SETTLEMENTS_FOR_CODE_AND_RIM_OPTIMIZED : queries.GET_SETTLEMENTS_FOR_CODE_AND_CONTRIBUTOR;
+    const contributorQuery = typeUser === 'JURIDICO' ? queries.GET_ALL_SETTLEMENTS_FOR_RIM : queries.GET_ALL_SETTLEMENTS_FOR_CONTRIBUTOR;
     const contributorPayload = typeUser === 'JURIDICO' ? branch.referencia_municipal : contribuyente.id_contribuyente;
     const economicActivities =
       (reference &&
@@ -5114,58 +5114,17 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
           )
         ).rows) ||
       [];
-    const ae =
-      (economicActivities.length > 0 &&
-        (await client.query(contributorQuery, [codigosRamo.AE, contributorPayload])).rows.map((el) => {
-          // const activity = economicActivities.find((x) => x.numeroReferencia.endsWith(el.id_aforo));
-          return {
-            planilla: new Date().getTime().toString().substr(6),
-            solicitud: el.id,
-            porcion: '1/1',
-            fechaLiquidacion: moment(el.fecha_liquidacion).format('DD/MM/YYYY'),
-            fechaVencimiento: moment(el.fecha_vencimiento).format('DD/MM/YYYY'),
-            motivo: el.descripcion_corta,
-            estado: paymentState(el.state),
-            montoPorcion: parseFloat(el.monto),
-            // montoPorcion: activity && parseInt(activity.nu_ut) * UTMM > parseFloat(el.monto_declarado) ? parseInt(activity.nu_ut) * UTMM : parseFloat(el.monto_declarado),
-          };
-        })) ||
-      [];
-    const sm = (await client.query(contributorQuery, [codigosRamo.SM, contributorPayload])).rows.map((el) => {
+    const statement = (await client.query(contributorQuery, [contributorPayload])).rows.map((el) => {
       return {
-        planilla: new Date().getTime().toString().substr(6),
+        planilla: el.id_liquidacion,
         solicitud: el.id,
         porcion: '1/1',
         fechaLiquidacion: moment(el.fecha_liquidacion).format('DD/MM/YYYY'),
         fechaVencimiento: moment(el.fecha_vencimiento).format('DD/MM/YYYY'),
         motivo: el.descripcion_corta,
         estado: paymentState(el.state),
-        montoPorcion: parseFloat(el.monto),
-        // montoPorcion: +el.monto_gas + +el.monto_aseo,
-      };
-    });
-    const iu = (await client.query(contributorQuery, [codigosRamo.IU, contributorPayload])).rows.map((el) => {
-      return {
-        planilla: new Date().getTime().toString().substr(6),
-        solicitud: el.id,
-        porcion: '1/1',
-        fechaLiquidacion: moment(el.fecha_liquidacion).format('DD/MM/YYYY'),
-        fechaVencimiento: moment(el.fecha_vencimiento).format('DD/MM/YYYY'),
-        motivo: el.descripcion_corta,
-        estado: paymentState(el.state),
-        montoPorcion: parseFloat(el.monto),
-      };
-    });
-    const pp = (await client.query(contributorQuery, [codigosRamo.PP, contributorPayload])).rows.map((el) => {
-      return {
-        planilla: new Date().getTime().toString().substr(6),
-        solicitud: el.id,
-        porcion: '1/1',
-        fechaLiquidacion: moment(el.fecha_liquidacion).format('DD/MM/YYYY'),
-        fechaVencimiento: moment(el.fecha_vencimiento).format('DD/MM/YYYY'),
-        motivo: el.descripcion_corta,
-        estado: paymentState(el.state),
-        montoPorcion: parseFloat(el.monto),
+        montoPorcion: fixatedAmount(el.monto),
+        // montoPorcion: activity && parseInt(activity.nu_ut) * UTMM > parseFloat(el.monto_declarado) ? parseInt(activity.nu_ut) * UTMM : parseFloat(el.monto_declarado),
       };
     });
     const datosContribuyente = {
@@ -5175,13 +5134,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
       direccion: contribuyente.direccion,
       telefono: branch?.telefono_celular || '',
     };
-    const statement = ae
-      .concat(sm)
-      .concat(iu)
-      .concat(pp)
-      .filter((el) => el)
-      .sort((a, b) => (a.fechaLiquidacion === b.fechaLiquidacion ? 0 : a.fechaLiquidacion > b.fechaLiquidacion ? 1 : -1));
-    const saldoFinal = statement.map((e) => switchcase({ PAGADO: e.montoPorcion, VIGENTE: -e.montoPorcion, VALIDANDO: 0 })(null)(e.estado)).reduce((e, x) => e + x, 0);
+    const saldoFinal = statement.map((e) => switchcase({ PAGADO: e.montoPorcion, VIGENTE: -e.montoPorcion, VALIDANDO: 0 })(null)(e.estado)).reduce((e, x) => fixatedAmount(e + x), 0);
     const datosCertificado: accountStatement = {
       actividadesContribuyente: economicActivities,
       datosContribuyente,
