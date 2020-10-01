@@ -297,6 +297,7 @@ export const updateEstateDate = async ({ id, date, rim, taxPayer }) => {
     const fromDate = moment(date).subtract(1, 'M');
     const fromEndDate = fromDate.clone().endOf('month').format('MM-DD-YYYY');
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [null, taxPayer])).rows[0];
+    const rimData = (await client.query(queries.GET_RIM_DATA, [rim])).rows[0];
     const ghostSettlement = (
       await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
         application.id_solicitud,
@@ -305,7 +306,7 @@ export const updateEstateDate = async ({ id, date, rim, taxPayer }) => {
         'Pago ordinario',
         { month: fromDate.toDate().toLocaleString('es-ES', { month: 'long' }), year: fromDate.year(), desglose: [{ inmueble: id }] },
         fromEndDate,
-        rim || null,
+        rimData.id || null,
       ])
     ).rows[0];
     (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, 'ingresardatos_pi'])).rows[0].state;

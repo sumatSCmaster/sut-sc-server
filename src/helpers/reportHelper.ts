@@ -40,9 +40,6 @@ export const getSettlementsReport = async ({ query, reportName }) => {
       });
       sheet.addRows(result.rows, 'i');
 
-      sheet.eachRow((row, rownumber) => {
-        console.log(rownumber, 'row:', row);
-      });
       if (dev) {
         const dir = `../../archivos/${reportName}.xlsx`;
         const stream = fs.createWriteStream(require('path').resolve(`./archivos/${reportName}.xlsx`));

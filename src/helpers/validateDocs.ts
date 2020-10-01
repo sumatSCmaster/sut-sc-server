@@ -47,7 +47,7 @@ export const validateSedematById = async (id: string) => {
   const client = await pool.connect();
   const response = { message: '', status: 0, data: {} };
   try {
-    const res = await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [id]);
+    const res = await client.query(queries.GET_APPLICATION_VIEW_BY_ID, [id]);
     if (res.rowCount !== 0) {
       
       response.message = 'Liquidacion encontrada';
