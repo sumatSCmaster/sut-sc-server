@@ -4554,15 +4554,15 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
             };
           }),
 
-          tramitesInternos: impuestoRecibo,
+          tramitesInternos: +impuestoRecibo,
           totalTasaRev: 0.0,
           anticipoYRetenciones: 0.0,
           interesMora: 0.0,
-          montoTotal: +application.montoLiquidacion + impuestoRecibo,
+          montoTotal: +application.montoLiquidacion + (+impuestoRecibo),
           observacion: 'Pago por Impuesto de Actividad Economica - VIA WEB',
           estatus: 'PAGADO',
-          totalLiq: +application.montoLiquidacion + impuestoRecibo,
-          totalRecaudado: +application.montoLiquidacion + impuestoRecibo,
+          totalLiq: +application.montoLiquidacion + (+impuestoRecibo),
+          totalRecaudado: +application.montoLiquidacion + (+impuestoRecibo),
           totalCred: 0.0,
         },
       };
