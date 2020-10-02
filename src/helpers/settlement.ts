@@ -2835,7 +2835,7 @@ export const addTaxApplicationPaymentRetention = async ({ payment, application, 
         ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0]
         : (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.APROBARCAJERO])).rows[0];
 
-    if (user.tipoUsuario === 4 && applicationType === 'RETENCION') {
+    if (user.tipoUsuario !== 4 && applicationType === 'RETENCION') {
       const retentionDetail = (await client.query(queries.GET_RETENTION_DETAIL_BY_APPLICATION_ID, [application])).rows;
       await Promise.all(retentionDetail.map(async (x) => await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [x.rif, x.numero_referencia, x.monto_retenido, true])));
     }
