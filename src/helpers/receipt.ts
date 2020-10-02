@@ -24,7 +24,7 @@ export const generateReceipt = async (payload: { application: number }) => {
     console.log('paymentRows', paymentRows);
     const paymentTotal = payment.reduce((prev, next) => prev + +next.monto, 0);
     console.log('paymentTotal', paymentTotal);
-    const cashier = (await client.query(queries.GET_USER_INFO_BY_ID, [paymentRows[0].id_usuario])).rows;
+    const cashier = (await client.query(queries.GET_USER_INFO_BY_ID, [paymentRows[0]?.id_usuario])).rows;
     const breakdownData = (await client.query(queries.GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID, [applicationView.id])).rows;
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [applicationView.idLiquidacion])).rows[0];
     console.log('breakdowndata', breakdownData);
