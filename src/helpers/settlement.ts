@@ -5117,12 +5117,12 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
     const statement = (await client.query(contributorQuery, [contributorPayload])).rows.map((el) => {
       return {
         planilla: el.id_liquidacion,
-        solicitud: el.id,
+        solicitud: el.id || new Date().getTime().toString().substr(6),
         porcion: '1/1',
         fechaLiquidacion: moment(el.fecha_liquidacion).format('DD/MM/YYYY'),
         fechaVencimiento: moment(el.fecha_vencimiento).format('DD/MM/YYYY'),
         motivo: el.descripcion_corta,
-        estado: paymentState(el.state),
+        estado: paymentState(el.state) || 'PAGADO',
         montoPorcion: fixatedAmount(el.monto),
         // montoPorcion: activity && parseInt(activity.nu_ut) * UTMM > parseFloat(el.monto_declarado) ? parseInt(activity.nu_ut) * UTMM : parseFloat(el.monto_declarado),
       };
