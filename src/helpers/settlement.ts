@@ -2746,6 +2746,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
     }
     const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0];
     console.log('addTaxApplicationPayment -> solicitud', solicitud);
+    const applicationType = (await client.query('SELECT tipo_solicitud FROM impuesto.solicitud WHERE id_solicitud = $1', [application])).rows[0]?.tipo_solicitud || 'IMPUESTO';
     const pagoSum = +payment.map((e) => fixatedAmount(+e.costo)).reduce((e, i) => e + i, 0);
     console.log('addTaxApplicationPayment -> pagoSum', pagoSum);
     if (pagoSum < fixatedAmount(+solicitud.monto_total)) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
@@ -2759,7 +2760,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
           while (nearbyHolidays.find((el) => moment(el.dia).format('YYYY-MM-DD') === paymentDate.format('YYYY-MM-DD'))) paymentDate.add({ days: 1 });
         }
         el.fecha = paymentDate;
-        el.concepto = 'IMPUESTO';
+        el.concepto = applicationType;
         el.user = user.id;
         user.tipoUsuario === 4 ? await insertPaymentReference(el, application, client) : await insertPaymentCashier(el, application, client);
         if (el.metodoPago === 'CREDITO_FISCAL') {
@@ -2772,6 +2773,11 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
       user.tipoUsuario === 4
         ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0]
         : (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.APROBARCAJERO])).rows[0];
+
+    if (user.tipoUsuario !== 4 && applicationType === 'RETENCION') {
+      const retentionDetail = (await client.query(queries.GET_RETENTION_DETAIL_BY_APPLICATION_ID, [application])).rows;
+      await Promise.all(retentionDetail.map(async (x) => await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [x.rif, x.numero_referencia, x.monto_retenido, true])));
+    }
 
     await client.query('COMMIT');
     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
@@ -2803,71 +2809,71 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
   }
 };
 
-export const addTaxApplicationPaymentRetention = async ({ payment, application, user }) => {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0];
-    const applicationType = (await client.query('SELECT tipo_solicitud FROM impuesto.solicitud WHERE id_solicitud = $1', [application])).rows[0].tipo_solicitud;
-    const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
-    if (pagoSum < solicitud.monto_total) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
-    const creditoPositivo = pagoSum - solicitud.monto_total;
-    await Promise.all(
-      payment.map(async (el) => {
-        if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
-        const nearbyHolidays = (await client.query(queries.GET_HOLIDAYS_BASED_ON_PAYMENT_DATE, [el.fecha])).rows;
-        const paymentDate = checkIfWeekend(moment(el.fecha));
-        if (nearbyHolidays.length > 0) {
-          while (nearbyHolidays.find((el) => moment(el.dia).format('YYYY-MM-DD') === paymentDate.format('YYYY-MM-DD'))) paymentDate.add({ days: 1 });
-        }
-        el.fecha = paymentDate;
-        el.concepto = applicationType;
-        el.user = user.id;
-        user.tipoUsuario === 4 ? await insertPaymentReference(el, application, client) : await insertPaymentCashier(el, application, client);
-        if (el.metodoPago === 'CREDITO_FISCAL') {
-          await updateFiscalCredit({ id: application, user, amount: -el.costo, client });
-        }
-      })
-    );
+// export const addTaxApplicationPaymentRetention = async ({ payment, application, user }) => {
+//   const client = await pool.connect();
+//   try {
+//     await client.query('BEGIN');
+//     const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0];
+//     const applicationType = (await client.query('SELECT tipo_solicitud FROM impuesto.solicitud WHERE id_solicitud = $1', [application])).rows[0].tipo_solicitud;
+//     const pagoSum = payment.map((e) => e.costo).reduce((e, i) => e + i, 0);
+//     if (pagoSum < solicitud.monto_total) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
+//     const creditoPositivo = pagoSum - solicitud.monto_total;
+//     await Promise.all(
+//       payment.map(async (el) => {
+//         if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
+//         const nearbyHolidays = (await client.query(queries.GET_HOLIDAYS_BASED_ON_PAYMENT_DATE, [el.fecha])).rows;
+//         const paymentDate = checkIfWeekend(moment(el.fecha));
+//         if (nearbyHolidays.length > 0) {
+//           while (nearbyHolidays.find((el) => moment(el.dia).format('YYYY-MM-DD') === paymentDate.format('YYYY-MM-DD'))) paymentDate.add({ days: 1 });
+//         }
+//         el.fecha = paymentDate;
+//         el.concepto = applicationType;
+//         el.user = user.id;
+//         user.tipoUsuario === 4 ? await insertPaymentReference(el, application, client) : await insertPaymentCashier(el, application, client);
+//         if (el.metodoPago === 'CREDITO_FISCAL') {
+//           await updateFiscalCredit({ id: application, user, amount: -el.costo, client });
+//         }
+//       })
+//     );
 
-    const state =
-      user.tipoUsuario === 4
-        ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0]
-        : (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.APROBARCAJERO])).rows[0];
+//     const state =
+//       user.tipoUsuario === 4
+//         ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0]
+//         : (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.APROBARCAJERO])).rows[0];
 
-    if (user.tipoUsuario !== 4 && applicationType === 'RETENCION') {
-      const retentionDetail = (await client.query(queries.GET_RETENTION_DETAIL_BY_APPLICATION_ID, [application])).rows;
-      await Promise.all(retentionDetail.map(async (x) => await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [x.rif, x.numero_referencia, x.monto_retenido, true])));
-    }
+//     if (user.tipoUsuario !== 4 && applicationType === 'RETENCION') {
+//       const retentionDetail = (await client.query(queries.GET_RETENTION_DETAIL_BY_APPLICATION_ID, [application])).rows;
+//       await Promise.all(retentionDetail.map(async (x) => await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [x.rif, x.numero_referencia, x.monto_retenido, true])));
+//     }
 
-    await client.query('COMMIT');
-    const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
-    await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente.id]);
-    if (user.tipoUsuario !== 4) {
-      if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
-      applicationInstance.recibo = await generateReceipt({ application });
-    }
-    await sendNotification(
-      user,
-      `Se ${user.tipoUsuario === 4 ? `han ingresado los datos de pago` : `ha validado el pago`} de una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
-      'UPDATE_APPLICATION',
-      'IMPUESTO',
-      { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
-      client
-    );
-    return { status: 200, message: 'Pago añadido para la solicitud declarada', solicitud: applicationInstance };
-  } catch (error) {
-    client.query('ROLLBACK');
-    console.log(error);
-    throw {
-      status: 500,
-      error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al insertar referencias de pago',
-    };
-  } finally {
-    client.release();
-  }
-};
+//     await client.query('COMMIT');
+//     const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
+//     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente.id]);
+//     if (user.tipoUsuario !== 4) {
+//       if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
+//       applicationInstance.recibo = await generateReceipt({ application });
+//     }
+//     await sendNotification(
+//       user,
+//       `Se ${user.tipoUsuario === 4 ? `han ingresado los datos de pago` : `ha validado el pago`} de una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
+//       'UPDATE_APPLICATION',
+//       'IMPUESTO',
+//       { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
+//       client
+//     );
+//     return { status: 200, message: 'Pago añadido para la solicitud declarada', solicitud: applicationInstance };
+//   } catch (error) {
+//     client.query('ROLLBACK');
+//     console.log(error);
+//     throw {
+//       status: 500,
+//       error: errorMessageExtractor(error),
+//       message: errorMessageGenerator(error) || 'Error al insertar referencias de pago',
+//     };
+//   } finally {
+//     client.release();
+//   }
+// };
 
 const updateFiscalCredit = async ({ id, user, amount, client }) => {
   const fixatedApplication = await getApplicationsAndSettlementsById({ id, user });
