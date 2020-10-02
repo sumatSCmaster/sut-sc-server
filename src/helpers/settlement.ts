@@ -1398,6 +1398,33 @@ export const getAgreementFractionById = async ({ id }): Promise<Solicitud & any>
   }
 };
 
+export const getAgreementFractionByIdNots = async ({ id }, client): Promise<Solicitud & any> => {
+  try {
+    const application = (await client.query(queries.GET_AGREEMENT_FRACTION_BY_ID, [id])).rows[0];
+
+    const fraction = {
+      id: application.id_fraccion,
+      idConvenio: application.id_convenio,
+      monto: application.monto,
+      fecha: application.fecha,
+      fechaAprobacion: application.fecha_aprobado,
+      aprobado: application.aprobado,
+      estado: (await client.query(queries.GET_AGREEMENT_FRACTION_STATE, [application.id_fraccion])).rows[0]?.state,
+      contribuyente: (await getApplicationsAndSettlementsByIdNots({ id: (await client.query('SELECT id_solicitud FROM impuesto.convenio WHERE id_convenio = $1', [application.id_convenio])).rows[0].id_solicitud, user: null }, client)).contribuyente,
+    };
+
+    console.log(fraction);
+    return fraction;
+  } catch (error) {
+    console.log(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al obtener solicitudes y liquidaciones',
+    };
+  }
+};
+
 //TODO: get de convenios
 export const getAgreements = async ({ user }: { user: Usuario }) => {
   const client = await pool.connect();
@@ -1428,7 +1455,7 @@ export const getAgreements = async ({ user }: { user: Usuario }) => {
             ])
           ).rows[0]?.descripcion,
           monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0]?.monto_total,
-          porciones: await Promise.all((await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [el.id_convenio])).rows.map(async (el) => await getAgreementFractionById({ id: el.id_fraccion }))),
+          porciones: await Promise.all((await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [el.id_convenio])).rows.map(async (el) => await getAgreementFractionByIdNots({ id: el.id_fraccion }, client))),
         };
       })
     );
@@ -2779,13 +2806,13 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
       await Promise.all(retentionDetail.map(async (x) => await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [x.rif, x.numero_referencia, x.monto_retenido, true])));
     }
 
-    await client.query('COMMIT');
-    const applicationInstance = await getApplicationsAndSettlementsById({ id: application, user });
+    const applicationInstance = await getApplicationsAndSettlementsByIdNots({ id: application, user }, client);
     if (user.tipoUsuario !== 4) {
       if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
       applicationInstance.recibo = await generateReceipt({ application });
     }
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente?.id]);
+    await client.query('COMMIT');
 
     await sendNotification(
       user,
@@ -2918,10 +2945,10 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
       if (creditoPositivo > 0) await updateFiscalCredit({ id: convenio.id_solicitud, user, amount: creditoPositivo, client });
       // applicationInstance.recibo = await generateReceipt({ application });
     }
-    await client.query('COMMIT');
-    const applicationInstance = await getAgreementFractionById({ id: fragment });
-    const contributorId = await getApplicationsAndSettlementsById({ id: (await client.query('SELECT id_solicitud FROM impuesto.convenio WHERE id_convenio = $1', [agreement])).rows[0].id_solicitud, user: null });
+    const applicationInstance = await getAgreementFractionByIdNots({ id: fragment }, client);
+    const contributorId = await getApplicationsAndSettlementsByIdNots({ id: (await client.query('SELECT id_solicitud FROM impuesto.convenio WHERE id_convenio = $1', [agreement])).rows[0].id_solicitud, user: null }, client);
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [contributorId.contribuyente.id]);
+    await client.query('COMMIT');
     console.log(applicationInstance);
     await sendNotification(
       user,
