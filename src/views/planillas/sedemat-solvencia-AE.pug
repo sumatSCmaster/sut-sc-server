@@ -8,7 +8,7 @@ block header
     div(style={'-webkit-flex': 1})
       div(style={'margin':'15px 0'})
         h3(style={'margin': '0 auto'}) SOLVENCIA MUNICIPAL 
-        h3(style={'margin': '0 auto'}) N A.E.- #{codigo}
+        h3(style={'margin': '0 auto'}) N A.E.- #{datos.codigo}
       div(style={'border':'1px solid grey'})
         div.tr(style={'font-size': '12px'})
           div(style={'-webkit-flex': 1})
@@ -17,7 +17,7 @@ block header
                 b Mes
             div(style={'-webkit-flex': 1}).td.center
               p(style={'margin': '0 auto','padding':'auto 15px', 'font-size':'20px','border-right':'1px solid grey', 'width':'100%'}) 
-                b #{moment().format('MM')}                
+                b #{datos.mes}                
           div(style={'-webkit-flex': 1})
             div(style={'-webkit-flex': 1}).td.center
               p(style={'margin': '0 auto','padding':'0','border-bottom':'1px solid grey', 'width':'100%'})
