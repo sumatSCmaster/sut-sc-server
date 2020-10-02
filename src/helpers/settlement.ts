@@ -149,6 +149,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const lastSettlementPayload = contributor.tipo_contribuyente === 'JURIDICO' || (!!reference && branch) ? branch?.referencia_municipal : contributor.id_contribuyente;
     const fiscalCredit =
       (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.tipo_contribuyente === 'JURIDICO' ? branch?.id_registro_municipal : contributor.id_contribuyente, contributor.tipo_contribuyente])).rows[0]?.credito || 0;
+    const retentionCredit = (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, branch?.referencia_municipal])).rows[0]?.credito || 0;
     const AEApplicationExists =
       contributor.tipo_contribuyente === 'JURIDICO' || reference ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, reference])).rows.find((el) => !el.datos.hasOwnProperty('descripcion')) : false;
     const SMApplicationExists =
@@ -432,6 +433,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         documento: contributor.documento,
         tipoDocumento: contributor.tipo_documento,
         creditoFiscal: fiscalCredit,
+        creditoFiscalRetencion: retentionCredit,
         AE: (AE.length > 0 && AE) || undefined,
         SM,
         IU: (IU.length > 0 && IU) || undefined,
@@ -1748,6 +1750,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
           const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
           const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
           const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
+          const rim = (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal;
 
           return {
             id: el.id_solicitud,
@@ -1755,15 +1758,14 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
             contribuyente: structureContributor(docs),
             aprobado: el.aprobado,
             creditoFiscal: (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [typeUser === 'JURIDICO' ? liquidaciones[0]?.id_registro_municipal : el.id_contribuyente, typeUser])).rows[0]?.credito || 0,
+            creditoFiscalRetencion: (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, rim])).rows[0]?.credito || 0,
             fecha: el.fecha,
             documento: docs.documento,
             tipoDocumento: docs.tipo_documento,
             rebajado: el.rebajado,
             tipo: el.tipo_solicitud,
             estado: state,
-            referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
-              ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
-              : undefined,
+            referenciaMunicipal: liquidaciones[0]?.id_registro_municipal ? rim : undefined,
             monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
             liquidaciones: await Promise.all(
               liquidaciones
@@ -2793,6 +2795,9 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
         if (el.metodoPago === 'CREDITO_FISCAL') {
           await updateFiscalCredit({ id: application, user, amount: -el.costo, client });
         }
+        if (el.metodoPago === 'CREDITO_FISCAL_RETENCION') {
+          await updateRetentionFiscalCredit({ id: application, user, amount: -el.costo, client });
+        }
       })
     );
 
@@ -2803,7 +2808,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
 
     if (user.tipoUsuario !== 4 && applicationType === 'RETENCION') {
       const retentionDetail = (await client.query(queries.GET_RETENTION_DETAIL_BY_APPLICATION_ID, [application])).rows;
-      await Promise.all(retentionDetail.map(async (x) => await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [x.rif, x.numero_referencia, x.monto_retenido, true])));
+      await Promise.all(retentionDetail.map(async (x) => await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [x.rif, x.numero_referencia, x.monto_retenido, true, application])));
     }
 
     const applicationInstance = await getApplicationsAndSettlementsByIdNots({ id: application, user }, client);
@@ -2903,12 +2908,18 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
 // };
 
 const updateFiscalCredit = async ({ id, user, amount, client }) => {
-  const fixatedApplication = await getApplicationsAndSettlementsById({ id, user });
+  const fixatedApplication = await getApplicationsAndSettlementsByIdNots({ id, user }, client);
   const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
     ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
     : undefined;
   const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', fixatedAmount(amount), false, id] : [fixatedApplication.contribuyente.id, 'NATURAL', fixatedAmount(amount), false, id];
   await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
+};
+
+const updateRetentionFiscalCredit = async ({ id, user, amount, client }) => {
+  const fixatedApplication = await getApplicationsAndSettlementsByIdNots({ id, user }, client);
+  const { contribuyente: contr, referenciaMunicipal: rim } = fixatedApplication;
+  await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [`${contr.tipoDocumento}${contr.documento}`, rim, amount, true, id]);
 };
 
 export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fragment, user }) => {
@@ -2998,7 +3009,7 @@ export const validateApplication = async (body, user, client) => {
       /*TODO: logica de añadir retenciones a la tabla correspondiente, esto tiene que buscar los datos de la tabla 
       detalle_retencion joineando con liquidacion y solicitud. Eso hay que meterlo en la tabla credito_fiscal_retencion (?) y ya, listo*/
       const retentionDetail = (await client.query(queries.GET_RETENTION_DETAIL_BY_APPLICATION_ID, [body.idTramite])).rows;
-      await Promise.all(retentionDetail.map(async (x) => await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [x.rif, x.numero_referencia, x.monto_retenido, true])));
+      await Promise.all(retentionDetail.map(async (x) => await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [x.rif, x.numero_referencia, x.monto_retenido, true, body.idTramite])));
     }
 
     const applicationInstance = await getApplicationsAndSettlementsById({ id: body.idTramite, user: solicitud.id_usuario });
