@@ -900,7 +900,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
       ON l.id_subramo = sr.id_subramo
     INNER JOIN impuesto.ramo rm
       ON sr.id_ramo = rm.id_ramo
-    l.id_registro_municipal = 
+    WHERE l.id_registro_municipal = 
       (SELECT id_registro_municipal
       FROM impuesto.registro_municipal
       WHERE referencia_municipal = $1 LIMIT 1)
