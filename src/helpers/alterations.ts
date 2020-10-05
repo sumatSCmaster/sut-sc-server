@@ -9,16 +9,21 @@ import { Usuario } from '@root/interfaces/sigt';
 
 const pool = Pool.getInstance();
 
-export const getAEDeclarationsForAlteration = async ({ document, reference, docType, user }: { document: string; reference: string | null; docType: string; user: Usuario }) => {
+export const getAEDeclarationsForAlteration = async ({ document, reference, docType, user, type }: { document: string; reference: string | null; docType: string; user: Usuario; type: string }) => {
   const client = await pool.connect();
   try {
+    enum tiposCorreccion {
+      complementaria = 'complementaria',
+      sustitutiva = 'sustitutiva',
+    }
+    if (!tiposCorreccion[type]) throw { status: 404, message: 'Debe definir un tipo de declaracion correctiva valida' };
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows[0];
     if (!contributor) throw { status: 404, message: 'El contribuyente proporcionado no existe' };
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
     if (!branch) throw { status: 404, message: 'La sucursal proporcionada no existe' };
     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
     const liquidaciones = await Promise.all(
-      (await client.query(queries.GET_ACTIVE_AE_SETTLEMENTS_FOR_ALTERATION, [branch.id_registro_municipal])).rows.map(async (el) => {
+      (await client.query(tiposCorreccion[type] === 'complementaria' ? queries.GET_ACTIVE_AE_SETTLEMENTS_FOR_COMPLEMENTATION : queries.GET_ACTIVE_AE_SETTLEMENTS_FOR_SUSTITUTION, [branch.id_registro_municipal])).rows.map(async (el) => {
         const startingDate = moment().locale('ES').month(el.datos.fecha.month).year(el.datos.fecha.year).startOf('month');
         el.datos.desglose = await Promise.all(
           el.datos.desglose.map(async (d) => {
@@ -41,6 +46,7 @@ export const getAEDeclarationsForAlteration = async ({ document, reference, docT
           id: el.id_liquidacion,
           monto: fixatedAmount(el.monto),
           datos: el.datos,
+          estado: el.estado,
           fecha: el.datos.fecha,
         };
       })
@@ -69,11 +75,38 @@ export const alterateAESettlements = async ({ settlements, type }) => {
     await client.query('BEGIN');
     const liqs = await Promise.all(
       settlements.map(async (s) => {
+        let newSettlement;
         const liquidacion = (await client.query(queries.GET_SETTLEMENT_BY_ID, [s.id])).rows[0];
+        const state = (await client.query(queries.GET_APPLICATION_STATE, [liquidacion.id_solicitud])).rows[0]?.state;
         delete liquidacion.datos[tiposCorreccion.complementaria];
         delete liquidacion.datos[tiposCorreccion.sustitutiva];
         const newDatos = { ...liquidacion.datos, desglose: s.desglose, [tiposCorreccion[type]]: true };
-        const newSettlement = (await client.query(queries.UPDATE_SETTLEMENT_AMOUNT_AND_DATA, [newDatos, fixatedAmount(s.monto), s.id])).rows[0];
+        if (state === 'ingresardatos') {
+          newSettlement = (await client.query(queries.UPDATE_SETTLEMENT_AMOUNT_AND_DATA, [newDatos, fixatedAmount(s.monto), s.id])).rows[0];
+        } else if (state === 'finalizado' && tiposCorreccion[type] === 'complementaria') {
+          let application = (await client.query(queries.GET_PATCH_APPLICATION_BY_ORIGINAL_ID_AND_STATE, [liquidacion.id_solicitud, 'ingresardatos'])).rows[0];
+          if (!application) {
+            const { id_usuario: usuario, id_contribuyente: contribuyente } = (await client.query(queries.GET_APPLICATION_BY_ID, [liquidacion.id_solicitud])).rows[0];
+            application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [usuario, contribuyente])).rows[0];
+            await client.query(queries.ADD_ORIGINAL_APPLICATION_ID_IN_PATCH_APPLICATION, [liquidacion.id_solicitud, application.id_solicitud]);
+            await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, 'ingresardatos_pi']);
+            await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [moment(liquidacion.fecha_liquidacion).format('MM-DD-YYYY'), application.id_solicitud]);
+          }
+          newSettlement = (
+            await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+              application.id_solicitud,
+              fixatedAmount(s.monto),
+              'AE',
+              s.descripcion || 'Pago ordinario',
+              newDatos,
+              liquidacion.fecha_vencimiento,
+              liquidacion.id_registro_municipal || null,
+            ])
+          ).rows[0];
+          await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [moment(liquidacion.fecha_liquidacion).format('MM-DD-YYYY'), newSettlement.id_liquidacion]);
+        } else {
+          throw { status: 409, message: 'La solicitud no posee un estado valido para realizar una declaracion correctiva' };
+        }
         return {
           id: newSettlement.id_liquidacion,
           ramo: branchNames.AE,

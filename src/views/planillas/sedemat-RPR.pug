@@ -57,7 +57,7 @@ block content
             each subRamo in sub
               if (!subRamo.liquidado) && (!subRamo.ingresado)
               else
-                .tr.break-page.sub-title
+                div(style={'font-size':'10px'}).tr.break-page.sub-title
                   div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
                     p #{subRamo.ramo}
                   div(style={'-webkit-flex':'3'}).td.center.border-right.border-bottom

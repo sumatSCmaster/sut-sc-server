@@ -665,8 +665,9 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   COMPLETE_TAX_APPLICATION_PAYMENT: 'SELECT * FROM impuesto.complete_solicitud_state($1, $2, null, true)',
   CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION: 'SELECT * FROM insert_liquidacion($1,$2,$3,$4,$5, $6, $7)',
   CREATE_RETENTION_DETAIL: 'SELECT * FROM impuesto.insert_retencion($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)',
+  GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR: 'SELECT sum(monto) AS credito FROM impuesto.retencion WHERE rif = $1 AND rim = $2',
   GET_RETENTION_DETAIL_BY_APPLICATION_ID: 'SELECT dr.* FROM impuesto.detalle_retencion dr INNER JOIN impuesto.liquidacion l USING (id_liquidacion) INNER JOIN impuesto.solicitud USING (id_solicitud) WHERE l.id_solicitud = $1',
-  CREATE_RETENTION_FISCAL_CREDIT: 'INSERT INTO impuesto.retencion (rif, rim, monto, activo) VALUES ($1,$2,$3,$4) RETURNING *;',
+  CREATE_RETENTION_FISCAL_CREDIT: 'INSERT INTO impuesto.retencion (rif, rim, monto, activo, id_solicitud) VALUES ($1,$2,$3,$4, $5) RETURNING *;',
   SET_RETENTION_AGENT_STATE: 'UPDATE impuesto.contribuyente SET es_agente_retencion = $1 WHERE id_contribuyente = $2',
   GET_RETENTION_AGENTS: "SELECT * FROM impuesto.contribuyente c INNER JOIN impuesto.registro_municipal r USING (id_contribuyente) WHERE c.es_agente_retencion = true AND r.referencia_municipal ILIKE 'AR%'",
   CREATE_NEW_RETENTION_AGENT_RIM: 'SELECT * FROM impuesto.insert_agente_retencion($1,$2)',
@@ -701,10 +702,10 @@ AND EXTRACT('month' FROM l.fecha_liquidacion) = EXTRACT('month' FROM CURRENT_DAT
           l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND l.id_registro_municipal =\
             (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $2 LIMIT 1) AND EXTRACT('year' FROM l.fecha_liquidacion)\
             = EXTRACT('year' FROM CURRENT_DATE) ORDER BY fecha_liquidacion DESC",
-  CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR:
-    "SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l on s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON\
-  l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND s.id_contribuyente = $2 \
-  AND EXTRACT('month' FROM l.fecha_liquidacion) = EXTRACT('month' FROM CURRENT_DATE) AND l.id_registro_municipal IS NULL ORDER BY fecha_liquidacion DESC",
+  CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR: `
+    SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l on s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON
+    l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND s.id_contribuyente = $2
+    AND EXTRACT('month' FROM l.fecha_liquidacion) = EXTRACT('month' FROM CURRENT_DATE) AND EXTRACT('year' FROM l.fecha_liquidacion) = EXTRACT('year' FROM CURRENT_DATE) ORDER BY fecha_liquidacion DESC`,
   GET_LAST_SETTLEMENTS_FOR_INSPECTION_BY_CONTRIBUTOR: `WITH solicitudcte AS (
     SELECT id_solicitud
     FROM impuesto.solicitud 
@@ -873,6 +874,41 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     FROM impuesto.registro_municipal
     WHERE referencia_municipal = $2 LIMIT 1)
   ORDER BY  fecha_liquidacion DESC;`,
+  GET_ALL_SETTLEMENTS_FOR_RIM: `WITH solicitudcte AS (
+    SELECT id_solicitud
+    FROM impuesto.solicitud 
+    WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE referencia_municipal = $1))
+  
+    SELECT *
+    FROM ( SELECT s.id_solicitud AS id,
+      s.id_tipo_tramite AS tipotramite,
+      s.aprobado,
+      s.fecha,
+      s.fecha_aprobado AS "fechaAprobacion",
+      ev.state,
+      s.tipo_solicitud AS "tipoSolicitud",
+      s.id_contribuyente
+    FROM impuesto.solicitud s
+      JOIN ( SELECT es.id_solicitud,
+              impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+            FROM impuesto.evento_solicitud es
+            WHERE id_solicitud IN (SELECT * FROM solicitudcte)
+            GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+    ) s
+    RIGHT JOIN impuesto.liquidacion l
+      ON s.id = l.id_solicitud
+    INNER JOIN impuesto.subramo sr
+      ON l.id_subramo = sr.id_subramo
+    INNER JOIN impuesto.ramo rm
+      ON sr.id_ramo = rm.id_ramo
+    WHERE l.id_registro_municipal = 
+      (SELECT id_registro_municipal
+      FROM impuesto.registro_municipal
+      WHERE referencia_municipal = $1 LIMIT 1)
+    ORDER BY  fecha_liquidacion;`,
+  GET_ALL_SETTLEMENTS_FOR_CONTRIBUTOR: `SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l on s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON \
+  l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE AND s.id_contribuyente = $1\
+  AND l.id_registro_municipal IS NULL ORDER BY fecha_liquidacion`,
   GET_SETTLEMENTS_FOR_CODE_AND_CONTRIBUTOR:
     'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l on s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON \
   l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND s.id_contribuyente = $2\
@@ -901,6 +937,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR:
     'SELECT ae.* FROM impuesto.actividad_economica ae INNER JOIN impuesto.actividad_economica_sucursal aec ON ae.numero_referencia = aec.numero_referencia INNER JOIN impuesto.registro_municipal rm ON aec.id_registro_municipal = rm.id_registro_municipal WHERE rm.id_registro_municipal = $1',
   GET_ECONOMIC_ACTIVITY_BY_ID: 'SELECT ae.* FROM impuesto.actividad_economica ae WHERE id_actividad_economica = $1',
+  GET_CONTRIBUTOR_HAS_BRANCH: 'SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = $1',
   REGISTRY_BY_SETTLEMENT_ID: 'SELECT * FROM impuesto.registro_municipal rm INNER JOIN impuesto.liquidacion l ON l.id_registro_municipal = rm.id_registro_municipal WHERE l.id_liquidacion = $1;',
   GET_PAYMENT_FROM_REQ_ID: 'SELECT * FROM pago p LEFT JOIN banco b ON b.id_banco = p.id_banco WHERE id_procedimiento = $1 AND concepto = $2',
   GET_PAYMENT_FROM_REQ_ID_DEST: 'SELECT * FROM pago p LEFT JOIN banco b ON b.id_banco = p.id_banco_destino WHERE id_procedimiento = $1 AND concepto = $2',
@@ -1178,8 +1215,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   //EXONERACIONES
   GET_CONTRIBUTOR:
     'SELECT c.id_contribuyente as id, razon_social AS "razonSocial", rm.denominacion_comercial AS "denominacionComercial", c.tipo_documento AS "tipoDocumento", c.documento, rm.id_registro_municipal AS "idRegistroMunicipal", rm.referencia_municipal AS "referenciaMunicipal" FROM impuesto.contribuyente c INNER JOIN impuesto.registro_municipal rm ON rm.id_contribuyente = c.id_contribuyente WHERE c.tipo_documento = $1 AND c.documento = $2 AND rm.referencia_municipal = $3;',
-  GET_NATURAL_CONTRIBUTOR:
-    'SELECT c.id_contribuyente as id, razon_social AS "razonSocial", c.tipo_documento AS "tipoDocumento", c.documento FROM impuesto.contribuyente c WHERE c.tipo_documento = $1 AND c.documento = $2 AND c.tipo_contribuyente = \'NATURAL\';',
+  GET_NATURAL_CONTRIBUTOR: 'SELECT c.id_contribuyente as id, razon_social AS "razonSocial", c.tipo_documento AS "tipoDocumento", c.documento FROM impuesto.contribuyente c WHERE c.tipo_documento = $1 AND c.documento = $2;',
   CREATE_EXONERATION: 'INSERT INTO impuesto.plazo_exoneracion (id_plazo_exoneracion, fecha_inicio) VALUES (default, $1) RETURNING *;',
   INSERT_CONTRIBUTOR_EXONERATED_ACTIVITY: `INSERT INTO impuesto.contribuyente_exoneracion (id_contribuyente_exoneracion, id_plazo_exoneracion, id_registro_municipal, id_actividad_economica)
                 VALUES (default, $1, $2, $3);`,
@@ -1265,7 +1301,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_ECONOMIC_ACTIVITY_BY_RIM:
     'SELECT ae.id_actividad_economica as id, ae.numero_referencia as codigo, ae.descripcion, ae.alicuota, ae.minimo_tributable as "minimoTributable", aes.aplicable_desde as desde FROM impuesto.actividad_economica_sucursal aes INNER JOIN impuesto.actividad_economica ae USING (numero_referencia) WHERE id_registro_municipal = $1',
   GET_ESTATES_FOR_NATURAL_CONTRIBUTOR:
-    'SELECT DISTINCT ON (ai.id_inmueble) ai.*,iu.* FROM impuesto.avaluo_inmueble ai INNER JOIN inmueble_urbano iu ON ai.id_inmueble = iu.id_inmueble INNER JOIN impuesto.inmueble_contribuyente_natural icn ON iu.id_inmueble = icn.id_inmueble WHERE icn.id_contribuyente = $1 AND anio = EXTRACT("year" FROM CURRENT_DATE)',
+    'SELECT DISTINCT ON (ai.id_inmueble) ai.*,iu.* FROM impuesto.avaluo_inmueble ai INNER JOIN inmueble_urbano iu ON ai.id_inmueble = iu.id_inmueble INNER JOIN impuesto.inmueble_contribuyente icn ON iu.id_inmueble = icn.id_inmueble WHERE icn.id_contribuyente = $1 AND anio = EXTRACT("year" FROM CURRENT_DATE)',
   GET_AE_CLEANING_TARIFF: 'SELECT get_aseo AS monto FROM impuesto.get_aseo($1)',
   DELETE_SETTLEMENTS_BY_BRANCH_CODE_AND_RIM: 'DELETE FROM impuesto.liquidacion WHERE id_subramo IN (SELECT id_subramo FROM impuesto.subramo WHERE id_ramo = (SELECT id_ramo FROM impuesto.ramo WHERE codigo = $1)) AND id_registro_municipal = $2',
   GET_RESIDENTIAL_CLEANING_TARIFF: 'SELECT * FROM impuesto.tabulador_aseo_residencial WHERE fecha_hasta IS NULL;',
@@ -1277,9 +1313,9 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   INSERT_ESTATE_VALUE: 'INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)',
   SET_DATE_FOR_LINKED_APPROVED_APPLICATION: 'UPDATE impuesto.solicitud SET fecha = $1, fecha_aprobado = $1 WHERE id_solicitud = $2',
   SET_DATE_FOR_LINKED_ACTIVE_APPLICATION: 'UPDATE impuesto.solicitud SET fecha = $1 WHERE id_solicitud = $2',
-  LINK_ESTATE_WITH_NATURAL_CONTRIBUTOR: 'INSERT INTO impuesto.inmueble_contribuyente_natural (id_inmueble, id_contribuyente) VALUES ($1, $2) RETURNING *',
-  LINK_ESTATE_WITH_NATURAL_CONTRIBUTOR_EX: 'INSERT INTO impuesto.inmueble_contribuyente_natural (id_inmueble, id_contribuyente, relacion) VALUES ($1, $2, $3) RETURNING *',
-  UNLINK_ESTATE_WITH_NATURAL_CONTRIBUTOR: 'DELETE FROM impuesto.inmueble_contribuyente_natural WHERE id_inmueble = $1 AND id_contribuyente = $2',
+  LINK_ESTATE_WITH_NATURAL_CONTRIBUTOR: 'INSERT INTO impuesto.inmueble_contribuyente (id_inmueble, id_contribuyente) VALUES ($1, $2) RETURNING *',
+  LINK_ESTATE_WITH_NATURAL_CONTRIBUTOR_EX: 'INSERT INTO impuesto.inmueble_contribuyente (id_inmueble, id_contribuyente, relacion) VALUES ($1, $2, $3) RETURNING *',
+  UNLINK_ESTATE_WITH_NATURAL_CONTRIBUTOR: 'DELETE FROM impuesto.inmueble_contribuyente WHERE id_inmueble = $1 AND id_contribuyente = $2',
   GET_AGREEMENT_FRACTION_BY_ID: 'SELECT * FROM impuesto.fraccion WHERE id_fraccion = $1',
   GET_AGREEMENT_FRACTION_STATE: 'SELECT state FROM impuesto.fraccion_state WHERE id = $1',
   GET_AGREEMENTS_BY_USER: 'SELECT * FROM impuesto.convenio c INNER JOIN impuesto.solicitud s ON c.id_solicitud = s.id_solicitud WHERE s.id_usuario = $1 ORDER BY s.fecha DESC',
@@ -1349,9 +1385,40 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   CREATE_AGREEMENT: 'INSERT INTO impuesto.convenio (id_solicitud, cantidad) VALUES ($1, $2) RETURNING *',
   CREATE_AGREEMENT_FRACTION: 'SELECT * FROM impuesto.insert_fraccion($1, $2, $3, $4)',
   UPDATE_SETTLEMENT_AMOUNT_AND_DATA: 'UPDATE impuesto.liquidacion SET datos = $1, monto = $2 WHERE id_liquidacion = $3 RETURNING *',
-  GET_ACTIVE_AE_SETTLEMENTS_FOR_ALTERATION: `SELECT l.* FROM impuesto.liquidacion l 
-    INNER JOIN impuesto.solicitud s USING (id_solicitud) 
-    WHERE l.id_registro_municipal = $1 AND id_subramo = 10 AND s.aprobado = false`,
+  GET_ACTIVE_AE_SETTLEMENTS_FOR_COMPLEMENTATION: `SELECT l.*, s.state as estado FROM impuesto.liquidacion l 
+  INNER JOIN (SELECT s.id_solicitud AS id,
+  s.id_tipo_tramite AS tipotramite,
+  s.aprobado,
+  s.fecha,
+  s.fecha_aprobado AS "fechaAprobacion",
+  ev.state,
+  s.tipo_solicitud AS "tipoSolicitud",
+  s.id_contribuyente
+ FROM impuesto.solicitud s
+   JOIN ( SELECT es.id_solicitud,
+          impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+         FROM impuesto.evento_solicitud es
+         WHERE id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE id_registro_municipal = $1 LIMIT 1))
+        GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+) s ON l.id_solicitud = s.id
+  WHERE l.id_registro_municipal = $1 AND id_subramo = 10 AND (state ='ingresardatos' OR state='finalizado')`,
+  GET_ACTIVE_AE_SETTLEMENTS_FOR_SUSTITUTION: `SELECT l.*, s.state as estado FROM impuesto.liquidacion l 
+  INNER JOIN (SELECT s.id_solicitud AS id,
+  s.id_tipo_tramite AS tipotramite,
+  s.aprobado,
+  s.fecha,
+  s.fecha_aprobado AS "fechaAprobacion",
+  ev.state,
+  s.tipo_solicitud AS "tipoSolicitud",
+  s.id_contribuyente
+ FROM impuesto.solicitud s
+   JOIN ( SELECT es.id_solicitud,
+          impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+         FROM impuesto.evento_solicitud es
+         WHERE id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE id_registro_municipal = $1 LIMIT 1))
+        GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+) s ON l.id_solicitud = s.id
+  WHERE l.id_registro_municipal = $1 AND id_subramo = 10 AND state ='ingresardatos'`,
   CHANGE_SETTLEMENT_BRANCH_TO_AGREEMENT: "UPDATE impuesto.liquidacion SET id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE id_ramo = $1 AND descripcion = 'Convenio de Pago') WHERE id_solicitud = $2 RETURNING *",
   CONTRIBUTOR_HAS_ACTIVE_AGREEMENT_PROCEDURE: `SELECT * FROM tramites_state_with_resources WHERE tipotramite = 26 
   AND datos #>> '{funcionario, contribuyente,tipoDocumento}' = $1 
@@ -1399,12 +1466,12 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_ESTATES_BY_RIM: `SELECT id_inmueble AS id, id_liquidacion_fecha_inicio, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion_contribuyente AS relacion FROM inmueble_urbano WHERE id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $1 ORDER BY id_registro_municipal DESC LIMIT 1);`,
   GET_ESTATES_BY_NATURAL_CONTRIBUTOR: `SELECT id_inmueble AS id, id_liquidacion_fecha_inicio as id_liquidacion, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", icn.relacion AS relacion 
-    FROM inmueble_urbano iu INNER JOIN impuesto.inmueble_contribuyente_natural icn USING (id_inmueble)
+    FROM inmueble_urbano iu INNER JOIN impuesto.inmueble_contribuyente icn USING (id_inmueble)
     WHERE id_contribuyente = $1`,
   GET_ESTATES_BY_USER_INFO: `SELECT id_inmueble AS id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble" 
     FROM inmueble_urbaano iu 
-    INNER JOIN impuesto.inmueble_contribuyente_natural icn ON iu.id_inmueble = icn.id_inmueble
+    INNER JOIN impuesto.inmueble_contribuyente icn ON iu.id_inmueble = icn.id_inmueble
     INNER JOIN impuesto.contribuyente c ON icn.id_contribuyente = c.id_contribuyente
     WHERE tipo_documento = $1 AND documento = $2;`,
   UPDATE_LAST_UPDATE_DATE: "UPDATE impuesto.contribuyente SET fecha_ultima_actualizacion = (NOW() - interval '4 hours') WHERE id_contribuyente = $1",
@@ -1429,7 +1496,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
    metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion_contribuyente as relacion , id_registro_municipal IS NOT NULL as enlazado  FROM inmueble_urbano WHERE cod_catastral = $1;`,
   GET_ESTATE_BY_CODCAT_NAT: `SELECT id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
    id_parroquia AS "idParroquia", metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion as relacion 
-   FROM inmueble_urbano iu LEFT JOIN impuesto.inmueble_contribuyente_natural icn USING (id_inmueble) 
+   FROM inmueble_urbano iu LEFT JOIN impuesto.inmueble_contribuyente icn USING (id_inmueble) 
    WHERE cod_catastral = $1;`,
 
   LINK_ESTATE_WITH_RIM: `UPDATE inmueble_urbano SET id_registro_municipal = $1, relacion_contribuyente = $3 WHERE cod_catastral = $2;`,
@@ -2127,7 +2194,274 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   CONTRIBUTOR_HAS_DISCOUNT_IN_BRANCH: `SELECT * FROM impuesto.contribuyente_descuento INNER JOIN
    impuesto.plazo_descuento USING (id_plazo_descuento) 
    WHERE id_registro_municipal = $1 AND id_ramo=(SELECT id_ramo FROM impuesto.ramo WHERE codigo = $2 LIMIT 1) AND fecha_inicio <= $3 AND (fecha_fin IS NULL OR fecha_fin >= now()::date)`,
-
+  GET_CHARGINGS: `WITH cobranz AS (
+    SELECT id_registro_municipal, id_cobranza AS "idCobranza", cob.id_cartera AS "idCartera", cob.contactado, estatus_telefonico as "estatusTelefonico",
+    observaciones ,
+    posee_convenio "poseeConvenio",
+    fiscalizar,
+    estimacion_pago "estimacionPago", u.nombre_completo AS "nombreCompleto"
+        FROM impuesto.cobranza cob 
+        LEFT JOIN impuesto.cartera cart ON cart.id_cartera = cob.id_cartera 
+        LEFT JOIN usuario u ON u.id_usuario = cart.id_usuario)
+    , pagosramos AS (
+    SELECT 
+    rm.id_registro_municipal,
+    CONCAT(cont.tipo_documento, '-', cont.documento) AS rif, 
+    rm.referencia_municipal AS rim,
+    cont.razon_social as "razonSocial",
+    contactado,
+    estatus_telefonico as "estatusTelefonico",
+    observaciones ,
+    posee_convenio "poseeConvenio",
+    fiscalizar,
+    estimacion_pago "estimacionPago",
+    COALESCE(lae.apr, 0) AS "pagoAE", 
+    COALESCE(lsm.apr, 0) AS "pagoSM",
+    COALESCE(liu.apr, 0) AS "pagoIU",
+    COALESCE(lpp.apr, 0) AS "pagoPP",
+    COALESCE(lmul.apr, 0) AS "pagoMUL",
+    (COALESCE(lae.apr, 0) + COALESCE(lsm.apr, 0) + COALESCE(liu.apr, 0) + COALESCE(lpp.apr, 0) + COALESCE(lmul.apr, 0)) / 10.0 AS PROGRESO
+    
+    
+    FROM impuesto.cobranza c
+    INNER JOIN Impuesto.registro_municipal rm ON rm.id_registro_municipal = c.id_registro_municipal
+    INNER JOIN Impuesto.contribuyente cont ON cont.id_contribuyente = rm.id_contribuyente
+    LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS apr 
+                FROM impuesto.liquidacion l
+                INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+                WHERE (datos#>>'{fecha, month}' = 'agosto' OR datos#>>'{fecha, month}' = 'septiembre') 
+                AND datos#>>'{fecha, year}' = '2020' 
+                AND id_subramo IN (10, 99)) lae ON lae.id_registro_municipal = rm.id_registro_municipal
+    LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS apr 
+                FROM impuesto.liquidacion l
+                INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+                WHERE (datos#>>'{fecha, month}' = 'agosto') 
+                AND datos#>>'{fecha, year}' = '2020' 
+                AND id_subramo IN (66, 102, 107, 108)) lsm ON lsm.id_registro_municipal = rm.id_registro_municipal
+    LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS  apr 
+                FROM impuesto.liquidacion l
+                INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+                WHERE (datos#>>'{fecha, month}' = 'agosto') 
+                AND datos#>>'{fecha, year}' = '2020' 
+                AND id_subramo IN (9, 103)) liu ON liu.id_registro_municipal = rm.id_registro_municipal
+    LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END as apr 
+                FROM impuesto.liquidacion l
+                INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+                WHERE (datos#>>'{fecha, month}' = 'agosto') 
+                AND datos#>>'{fecha, year}' = '2020' 
+                AND id_subramo IN (12, 104)) lpp ON lpp.id_registro_municipal = rm.id_registro_municipal
+    LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END as apr 
+                FROM impuesto.liquidacion l
+                INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+                WHERE (datos#>>'{fecha, month}' = 'agosto') 
+                AND datos#>>'{fecha, year}' = '2020' 
+                AND id_subramo IN (101, 105, 30)) lmul ON lmul.id_registro_municipal = rm.id_registro_municipal
+    )
+    SELECT pr.rif, pr.rim, pr."razonSocial", c.*, pr."pagoAE", pr."pagoSM", pr."pagoIU", pr."pagoPP", pr."pagoMUL", pr.progreso
+    FROM cobranz c INNER JOIN pagosramos pr ON c.id_registro_municipal = pr.id_registro_municipal
+    ORDER BY c."idCobranza";`,
+  GET_CHARGINGS_BY_WALLET: `WITH cobranz AS (
+    SELECT id_registro_municipal, id_cobranza AS "idCobranza", cob.id_cartera AS "idCartera", cob.contactado, estatus_telefonico as "estatusTelefonico",
+    observaciones ,
+    posee_convenio "poseeConvenio",
+    fiscalizar, rating,
+    estimacion_pago "estimacionPago", u.nombre_completo AS "nombreCompleto"
+        FROM impuesto.cobranza cob 
+        LEFT JOIN impuesto.cartera cart ON cart.id_cartera = cob.id_cartera 
+        LEFT JOIN usuario u ON u.id_usuario = cart.id_usuario
+        WHERE cob.id_cartera = $1)
+    , pagosramos AS (
+    SELECT 
+    rm.id_registro_municipal,
+    CONCAT(cont.tipo_documento, '-', cont.documento) AS rif, 
+    rm.referencia_municipal AS rim,
+    cont.razon_social as "razonSocial",
+    contactado,
+    estatus_telefonico as "estatusTelefonico",
+    observaciones ,
+    posee_convenio "poseeConvenio",
+    fiscalizar,
+    estimacion_pago "estimacionPago",
+    COALESCE(lae.apr, 0) AS "pagoAE", 
+    COALESCE(lsm.apr, 0) AS "pagoSM",
+    COALESCE(liu.apr, 0) AS "pagoIU",
+    COALESCE(lpp.apr, 0) AS "pagoPP",
+    COALESCE(lmul.apr, 0) AS "pagoMUL",
+    (COALESCE(lae.apr, 0) + COALESCE(lsm.apr, 0) + COALESCE(liu.apr, 0) + COALESCE(lpp.apr, 0) + COALESCE(lmul.apr, 0)) / 10.0 AS PROGRESO
+    
+    
+    FROM impuesto.cobranza c
+    INNER JOIN Impuesto.registro_municipal rm ON rm.id_registro_municipal = c.id_registro_municipal
+    INNER JOIN Impuesto.contribuyente cont ON cont.id_contribuyente = rm.id_contribuyente
+    LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS apr 
+                FROM impuesto.liquidacion l
+                INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+                WHERE (datos#>>'{fecha, month}' = 'agosto' OR datos#>>'{fecha, month}' = 'septiembre') 
+                AND datos#>>'{fecha, year}' = '2020' 
+                AND id_subramo IN (10, 99)) lae ON lae.id_registro_municipal = rm.id_registro_municipal
+    LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS apr 
+                FROM impuesto.liquidacion l
+                INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+                WHERE (datos#>>'{fecha, month}' = 'agosto') 
+                AND datos#>>'{fecha, year}' = '2020' 
+                AND id_subramo IN (66, 102, 107, 108)) lsm ON lsm.id_registro_municipal = rm.id_registro_municipal
+    LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS  apr 
+                FROM impuesto.liquidacion l
+                INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+                WHERE (datos#>>'{fecha, month}' = 'agosto') 
+                AND datos#>>'{fecha, year}' = '2020' 
+                AND id_subramo IN (9, 103)) liu ON liu.id_registro_municipal = rm.id_registro_municipal
+    LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END as apr 
+                FROM impuesto.liquidacion l
+                INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+                WHERE (datos#>>'{fecha, month}' = 'agosto') 
+                AND datos#>>'{fecha, year}' = '2020' 
+                AND id_subramo IN (12, 104)) lpp ON lpp.id_registro_municipal = rm.id_registro_municipal
+    LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END as apr 
+                FROM impuesto.liquidacion l
+                INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+                WHERE (datos#>>'{fecha, month}' = 'agosto') 
+                AND datos#>>'{fecha, year}' = '2020' 
+                AND id_subramo IN (101, 105, 30)) lmul ON lmul.id_registro_municipal = rm.id_registro_municipal
+    )
+    SELECT pr.rif, pr.rim, pr."razonSocial", c.*, pr."pagoAE", pr."pagoSM", pr."pagoIU", pr."pagoPP", pr."pagoMUL", pr.progreso
+    FROM cobranz c INNER JOIN pagosramos pr ON c.id_registro_municipal = pr.id_registro_municipal
+    ORDER BY c."idCobranza";`,
+  GET_CHARGINGS_BY_WALLET_AR: `WITH cobranz AS (
+    SELECT id_registro_municipal, id_cobranza AS "idCobranza", cob.id_cartera AS "idCartera", cob.contactado, estatus_telefonico as "estatusTelefonico",
+    observaciones ,
+    posee_convenio "poseeConvenio",
+    fiscalizar, rating,
+    estimacion_pago "estimacionPago", u.nombre_completo AS "nombreCompleto"
+        FROM impuesto.cobranza cob 
+        LEFT JOIN impuesto.cartera cart ON cart.id_cartera = cob.id_cartera 
+        LEFT JOIN usuario u ON u.id_usuario = cart.id_usuario
+        WHERE cob.id_cartera = $1)
+    , pagosramos AS (
+    SELECT 
+    rm.id_registro_municipal,
+    CONCAT(cont.tipo_documento, '-', cont.documento) AS rif, 
+    rm.referencia_municipal AS rim,
+    cont.razon_social as "razonSocial",
+    contactado,
+    estatus_telefonico as "estatusTelefonico",
+    observaciones ,
+    posee_convenio "poseeConvenio",
+    fiscalizar,
+    estimacion_pago "estimacionPago",
+    COALESCE(lae.apr, 0) AS "pagoAE", 
+    COALESCE(lsm.apr, 0) AS "pagoSM",
+    COALESCE(liu.apr, 0) AS "pagoIU",
+    COALESCE(lpp.apr, 0) AS "pagoPP",
+    COALESCE(lmul.apr, 0) AS "pagoMUL",
+    COALESCE(lret.apr, 0) AS pago_ret,
+    (COALESCE(lae.apr, 0) + COALESCE(lsm.apr, 0) + COALESCE(liu.apr, 0) + COALESCE(lpp.apr, 0) + COALESCE(lmul.apr, 0)) / 12.0 AS PROGRESO
+    
+    
+    FROM impuesto.cobranza c
+    INNER JOIN Impuesto.registro_municipal rm ON rm.id_registro_municipal = c.id_registro_municipal
+    INNER JOIN Impuesto.contribuyente cont ON cont.id_contribuyente = rm.id_contribuyente
+    LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS apr 
+                FROM impuesto.liquidacion l
+                INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+                WHERE (datos#>>'{fecha, month}' = 'agosto' OR datos#>>'{fecha, month}' = 'septiembre') 
+                AND datos#>>'{fecha, year}' = '2020' 
+                AND id_subramo IN (10, 99)) lae ON lae.id_registro_municipal = rm.id_registro_municipal
+    LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS apr 
+                FROM impuesto.liquidacion l
+                INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+                WHERE (datos#>>'{fecha, month}' = 'agosto') 
+                AND datos#>>'{fecha, year}' = '2020' 
+                AND id_subramo IN (66, 102, 107, 108)) lsm ON lsm.id_registro_municipal = rm.id_registro_municipal
+    LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS  apr 
+                FROM impuesto.liquidacion l
+                INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+                WHERE (datos#>>'{fecha, month}' = 'agosto') 
+                AND datos#>>'{fecha, year}' = '2020' 
+                AND id_subramo IN (9, 103)) liu ON liu.id_registro_municipal = rm.id_registro_municipal
+    LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END as apr 
+                FROM impuesto.liquidacion l
+                INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+                WHERE (datos#>>'{fecha, month}' = 'agosto') 
+                AND datos#>>'{fecha, year}' = '2020' 
+                AND id_subramo IN (12, 104)) lpp ON lpp.id_registro_municipal = rm.id_registro_municipal
+    LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END as apr 
+                FROM impuesto.liquidacion l
+                INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+                WHERE (datos#>>'{fecha, month}' = 'agosto') 
+                AND datos#>>'{fecha, year}' = '2020' 
+                AND id_subramo IN (101, 105, 30)) lmul ON lmul.id_registro_municipal = rm.id_registro_municipal
+    LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END as apr 
+    FROM impuesto.liquidacion l
+    INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+    WHERE (datos#>>'{fecha, month}' = 'agosto') 
+    AND datos#>>'{fecha, year}' = '2020' 
+    AND id_subramo IN (52)) lret ON lret.id_registro_municipal = rm.id_registro_municipal
+    )
+    SELECT pr.rif, pr.rim, pr."razonSocial", c.*, pr."pagoAE", pr."pagoSM", pr."pagoIU", pr."pagoPP", pr."pagoMUL", pr.progreso
+    FROM cobranz c INNER JOIN pagosramos pr ON c.id_registro_municipal = pr.id_registro_municipal
+    ORDER BY c."idCobranza";`,
+  GET_WALLETS: `SELECT cart.id_cartera AS "idCartera", cart.id_usuario as "idUsuario", u.nombre_completo AS "nombreCompleto"
+    FROM impuesto.cartera cart 
+    LEFT JOIN usuario u ON u.id_usuario = cart.id_usuario ORDER BY id_cartera;`,
+  LINK_WALLET_TO_USER: `UPDATE impuesto.cartera SET id_usuario = $2 WHERE id_cartera = $1 RETURNING id_cartera AS "idCartera", id_usuario AS "idUsuario";`,
+  CREATE_CHARGINGS: `INSERT INTO impuesto.cobranza (id_registro_municipal, rating)
+  SELECT l.id_registro_municipal,
+  CASE 
+      WHEN (s.fecha_aprobado::timestamptz - cast(date_trunc('month', $3::date) as timestamptz) ) BETWEEN interval '0 days' AND interval '10 days' THEN '5'
+      WHEN (s.fecha_aprobado::timestamptz - cast(date_trunc('month', $3::date) as timestamptz) ) BETWEEN interval '11 days' AND interval '15 days' THEN '4'
+      WHEN (s.fecha_aprobado::timestamptz - cast(date_trunc('month', $3::date) as timestamptz) ) BETWEEN interval '16 days' AND interval '20 days' THEN '3'
+      WHEN (s.fecha_aprobado::timestamptz - cast(date_trunc('month', $3::date) as timestamptz) ) BETWEEN interval '21 days' AND interval '25 days' THEN '2'
+      ELSE '1'
+  END AS rating
+  FROM impuesto.liquidacion l
+  INNER JOIN impuesto.solicitud s USING (id_solicitud)
+  WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2 AND s.aprobado = true AND id_registro_municipal IN (
+    SELECT * FROM (
+        SELECT id_registro_municipal FROM (SELECT DISTINCT ON (l.id_registro_municipal) l.id_registro_municipal, SUM(monto) as montoTotal 
+        FROM Impuesto.liquidacion l
+        INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud
+        INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = l.id_registro_municipal
+        INNER JOIN impuesto.contribuyente cont ON s.id_contribuyente = cont.id_contribuyente AND rm.id_contribuyente = cont.id_contribuyente
+        WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2 AND s.aprobado = true AND cont.es_agente_retencion = false
+        GROUP BY l.id_registro_municipal 
+        ) x  ORDER BY montoTotal DESC LIMIT 2000 ) X   ) 
+      LIMIT 2000 RETURNING *;
+`,
+  CREATE_CHARGINGS_AR: `INSERT INTO impuesto.cobranza (id_registro_municipal, rating)
+  SELECT l.id_registro_municipal,
+  CASE 
+      WHEN (s.fecha_aprobado::timestamptz - cast(date_trunc('month', $3::date) as timestamptz) ) BETWEEN interval '0 days' AND interval '10 days' THEN '5'
+      WHEN (s.fecha_aprobado::timestamptz - cast(date_trunc('month', $3::date) as timestamptz) ) BETWEEN interval '11 days' AND interval '15 days' THEN '4'
+      WHEN (s.fecha_aprobado::timestamptz - cast(date_trunc('month', $3::date) as timestamptz) ) BETWEEN interval '16 days' AND interval '20 days' THEN '3'
+      WHEN (s.fecha_aprobado::timestamptz - cast(date_trunc('month', $3::date) as timestamptz) ) BETWEEN interval '21 days' AND interval '25 days' THEN '2'
+      ELSE '1'
+  END AS rating
+  FROM impuesto.liquidacion l
+  INNER JOIN impuesto.solicitud s USING (id_solicitud)
+  WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2 AND s.aprobado = true AND id_registro_municipal IN (
+    SELECT * FROM (
+        SELECT id_registro_municipal FROM (SELECT DISTINCT ON (l.id_registro_municipal) l.id_registro_municipal, SUM(monto) as montoTotal 
+        FROM Impuesto.liquidacion l
+        INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud
+        INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = l.id_registro_municipal
+        INNER JOIN impuesto.contribuyente cont ON s.id_contribuyente = cont.id_contribuyente AND rm.id_contribuyente = cont.id_contribuyente
+        WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2 AND s.aprobado = true AND cont.es_agente_retencion = true
+        GROUP BY l.id_registro_municipal 
+        ) x  ORDER BY montoTotal DESC LIMIT 2000 ) X   ) 
+      LIMIT 2000 RETURNING *;
+`,
+  UPDATE_CHARGING: `UPDATE impuesto.cobranza SET contactado = $2, 
+    estatus_telefonico = $3, 
+    observaciones = $4, 
+    posee_convenio = $5, 
+    fiscalizar = $6, 
+    estimacion_pago = $7 WHERE id_cobranza = $1 RETURNING contactado, estatus_telefonico AS "estatusTelefonico", observaciones, posee_convenio AS "poseeConvenio",
+    fiscalizar, estimacion_pago AS "estimacionPago";`,
+  CREATE_WALLET: `INSERT INTO impuesto.cartera (id_cartera, id_usuario, es_ar) VALUES (default, null, $1) RETURNING *`,
+  SET_WALLET: `UPDATE impuesto.cobranza SET id_cartera = $1 WHERE id_cobranza = $2`,
+  
+  CHARGINGS_GROUPED: `SELECT rating, COUNT(*) FROM impuesto.cobranza GROUP BY rating;`,
   gtic: {
     GET_NATURAL_CONTRIBUTOR:
       'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 AND (trim(nb_representante_legal) NOT IN (SELECT trim(nb_marca) FROM tb014_marca_veh) AND trim(nb_representante_legal) NOT IN (SELECT trim(tx_marca) FROM t45_vehiculo_marca) OR trim(nb_representante_legal) IS NULL) ORDER BY co_contribuyente DESC',

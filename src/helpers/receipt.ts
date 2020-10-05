@@ -24,11 +24,11 @@ export const generateReceipt = async (payload: { application: number }) => {
     console.log('paymentRows', paymentRows);
     const paymentTotal = payment.reduce((prev, next) => prev + +next.monto, 0);
     console.log('paymentTotal', paymentTotal);
-    const cashier = (await client.query(queries.GET_USER_INFO_BY_ID, [paymentRows[0].id_usuario])).rows;
+    const cashier = (await client.query(queries.GET_USER_INFO_BY_ID, [paymentRows[0]?.id_usuario])).rows;
     const breakdownData = (await client.query(queries.GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID, [applicationView.id])).rows;
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [applicationView.idLiquidacion])).rows[0];
     console.log('breakdowndata', breakdownData);
-    const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [paymentRows[0].id_usuario, ``, applicationView.razonSocial, referencia?.referencia_municipal, 'IMPUESTO', applicationView.id]);
+    const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [paymentRows[0]?.id_usuario, ``, applicationView.razonSocial, referencia?.referencia_municipal, 'IMPUESTO', applicationView.id]);
     if (!recibo.rows[0]) {
       await client.query('ROLLBACK');
       return (await client.query('SELECT recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [applicationView.id])).rows[0].recibo;
