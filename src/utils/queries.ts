@@ -2327,6 +2327,80 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     SELECT pr.rif, pr.rim, pr."razonSocial", c.*, pr."pagoAE", pr."pagoSM", pr."pagoIU", pr."pagoPP", pr."pagoMUL", pr.progreso
     FROM cobranz c INNER JOIN pagosramos pr ON c.id_registro_municipal = pr.id_registro_municipal
     ORDER BY c."idCobranza";`,
+  GET_CHARGINGS_BY_WALLET_AR: `WITH cobranz AS (
+    SELECT id_registro_municipal, id_cobranza AS "idCobranza", cob.id_cartera AS "idCartera", cob.contactado, estatus_telefonico as "estatusTelefonico",
+    observaciones ,
+    posee_convenio "poseeConvenio",
+    fiscalizar,
+    estimacion_pago "estimacionPago", u.nombre_completo AS "nombreCompleto"
+        FROM impuesto.cobranza cob 
+        LEFT JOIN impuesto.cartera cart ON cart.id_cartera = cob.id_cartera 
+        LEFT JOIN usuario u ON u.id_usuario = cart.id_usuario
+        WHERE cob.id_cartera = $1)
+    , pagosramos AS (
+    SELECT 
+    rm.id_registro_municipal,
+    CONCAT(cont.tipo_documento, '-', cont.documento) AS rif, 
+    rm.referencia_municipal AS rim,
+    cont.razon_social as "razonSocial",
+    contactado,
+    estatus_telefonico as "estatusTelefonico",
+    observaciones ,
+    posee_convenio "poseeConvenio",
+    fiscalizar,
+    estimacion_pago "estimacionPago",
+    COALESCE(lae.apr, 0) AS "pagoAE", 
+    COALESCE(lsm.apr, 0) AS "pagoSM",
+    COALESCE(liu.apr, 0) AS "pagoIU",
+    COALESCE(lpp.apr, 0) AS "pagoPP",
+    COALESCE(lmul.apr, 0) AS "pagoMUL",
+    COALESCE(lret.apr, 0) AS pago_ret,
+    (COALESCE(lae.apr, 0) + COALESCE(lsm.apr, 0) + COALESCE(liu.apr, 0) + COALESCE(lpp.apr, 0) + COALESCE(lmul.apr, 0)) / 12.0 AS PROGRESO
+    
+    
+    FROM impuesto.cobranza c
+    INNER JOIN Impuesto.registro_municipal rm ON rm.id_registro_municipal = c.id_registro_municipal
+    INNER JOIN Impuesto.contribuyente cont ON cont.id_contribuyente = rm.id_contribuyente
+    LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS apr 
+                FROM impuesto.liquidacion l
+                INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+                WHERE (datos#>>'{fecha, month}' = 'agosto' OR datos#>>'{fecha, month}' = 'septiembre') 
+                AND datos#>>'{fecha, year}' = '2020' 
+                AND id_subramo IN (10, 99)) lae ON lae.id_registro_municipal = rm.id_registro_municipal
+    LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS apr 
+                FROM impuesto.liquidacion l
+                INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+                WHERE (datos#>>'{fecha, month}' = 'agosto') 
+                AND datos#>>'{fecha, year}' = '2020' 
+                AND id_subramo IN (66, 102, 107, 108)) lsm ON lsm.id_registro_municipal = rm.id_registro_municipal
+    LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS  apr 
+                FROM impuesto.liquidacion l
+                INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+                WHERE (datos#>>'{fecha, month}' = 'agosto') 
+                AND datos#>>'{fecha, year}' = '2020' 
+                AND id_subramo IN (9, 103)) liu ON liu.id_registro_municipal = rm.id_registro_municipal
+    LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END as apr 
+                FROM impuesto.liquidacion l
+                INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+                WHERE (datos#>>'{fecha, month}' = 'agosto') 
+                AND datos#>>'{fecha, year}' = '2020' 
+                AND id_subramo IN (12, 104)) lpp ON lpp.id_registro_municipal = rm.id_registro_municipal
+    LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END as apr 
+                FROM impuesto.liquidacion l
+                INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+                WHERE (datos#>>'{fecha, month}' = 'agosto') 
+                AND datos#>>'{fecha, year}' = '2020' 
+                AND id_subramo IN (101, 105, 30)) lmul ON lmul.id_registro_municipal = rm.id_registro_municipal
+    LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END as apr 
+    FROM impuesto.liquidacion l
+    INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+    WHERE (datos#>>'{fecha, month}' = 'agosto') 
+    AND datos#>>'{fecha, year}' = '2020' 
+    AND id_subramo IN (52)) lret ON lret.id_registro_municipal = rm.id_registro_municipal
+    )
+    SELECT pr.rif, pr.rim, pr."razonSocial", c.*, pr."pagoAE", pr."pagoSM", pr."pagoIU", pr."pagoPP", pr."pagoMUL", pr.progreso
+    FROM cobranz c INNER JOIN pagosramos pr ON c.id_registro_municipal = pr.id_registro_municipal
+    ORDER BY c."idCobranza";`,
   GET_WALLETS: `SELECT cart.id_cartera AS "idCartera", cart.id_usuario as "idUsuario", u.nombre_de_usuario AS "nombreDeUsuario"
     FROM impuesto.cartera cart 
     LEFT JOIN usuario u ON u.id_usuario = cart.id_usuario;`,

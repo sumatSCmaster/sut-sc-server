@@ -214,7 +214,8 @@ export const getAllChargings = async () => {
 export const getChargingsByWallet = async (id) => {
     const client = await pool.connect();
     try {
-        const chargings = await client.query(queries.GET_CHARGINGS_BY_WALLET, [id]);
+        const charging = await client.query('SELECT * FROM impuesto.cartera where id_cartera = $1', [id]);
+        const chargings = await client.query(charging.rows[0].es_ar ? queries.GET_CHARGINGS_BY_WALLET_AR :  queries.GET_CHARGINGS_BY_WALLET, [id]);
         return { status: 200, cobranzas: chargings.rows, message: 'Cobranzas obtenidas' };
     } catch (err) {
         throw err;
