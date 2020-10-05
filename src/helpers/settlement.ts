@@ -2532,10 +2532,10 @@ export const insertSettlements = async ({ process, user }) => {
       if (lastSavedFine && moment(lastSavedFine.fecha_liquidacion).year() === now.year() && moment(lastSavedFine.fecha_liquidacion).month() < now.month()) {
         finingAmount = lastSavedFine.datos.monto || lastSavedFine.monto;
         const proposedFiningDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month);
-        const finingDate = moment(lastSavedFine.fecha_liquidacion).isSameOrBefore(proposedFiningDate) && moment(lastSavedFine.fecha_liquidacion).month() < proposedFiningDate.month() ? moment(lastSavedFine.fecha_liquidacion) : proposedFiningDate;
-        console.log('1',finingDate.format('MM-DD-YYYY'));
-        console.log('2', proposedFiningDate.format('MM-DD-YYYY'))
-        console.log('3', moment(lastSavedFine.fecha_liquidacion).format('MM-DD-YYYY'))
+        const finingDate = moment(lastSavedFine.fecha_liquidacion).isSameOrBefore(proposedFiningDate) && moment(lastSavedFine.fecha_liquidacion).month() < proposedFiningDate.month() ? proposedFiningDate : moment(lastSavedFine.fecha_liquidacion);
+        console.log('1', finingDate.format('MM-DD-YYYY'));
+        console.log('2', proposedFiningDate.format('MM-DD-YYYY'));
+        console.log('3', moment(lastSavedFine.fecha_liquidacion).format('MM-DD-YYYY'));
         finingMonths = new Array(now.month() - 1 - finingDate.month()).fill({});
         if (finingMonths.length > 0) {
           let counter = finingDate.clone();
