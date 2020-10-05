@@ -2532,7 +2532,7 @@ export const insertSettlements = async ({ process, user }) => {
       if (lastSavedFine && moment(lastSavedFine.fecha_liquidacion).year() === now.year() && moment(lastSavedFine.fecha_liquidacion).month() < now.month()) {
         finingAmount = lastSavedFine.datos.monto || lastSavedFine.monto;
         const proposedFiningDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month);
-        const finingDate = moment(lastSavedFine.fecha_liquidacion).isSameOrBefore(proposedFiningDate) ? moment(lastSavedFine.fecha_liquidacion) : proposedFiningDate;
+        const finingDate = moment(lastSavedFine.fecha_liquidacion).isSameOrBefore(proposedFiningDate) && moment(lastSavedFine.fecha_liquidacion).month() < proposedFiningDate.month() ? moment(lastSavedFine.fecha_liquidacion) : proposedFiningDate;
         finingMonths = new Array(now.month() - 1 - finingDate.month()).fill({});
         if (finingMonths.length > 0) {
           let counter = finingDate.clone();
