@@ -2403,7 +2403,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     ORDER BY c."idCobranza";`,
   GET_WALLETS: `SELECT cart.id_cartera AS "idCartera", cart.id_usuario as "idUsuario", u.nombre_completo AS "nombreCompleto"
     FROM impuesto.cartera cart 
-    LEFT JOIN usuario u ON u.id_usuario = cart.id_usuario;`,
+    LEFT JOIN usuario u ON u.id_usuario = cart.id_usuario ORDER BY id_cartera;`,
   LINK_WALLET_TO_USER: `UPDATE impuesto.cartera SET id_usuario = $2 WHERE id_cartera = $1 RETURNING id_cartera AS "idCartera", id_usuario AS "idUsuario";`,
   CREATE_CHARGINGS: `INSERT INTO impuesto.cobranza (id_registro_municipal, rating)
   SELECT l.id_registro_municipal,
