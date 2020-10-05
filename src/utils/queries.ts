@@ -2343,15 +2343,15 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   FROM impuesto.liquidacion l
   INNER JOIN impuesto.solicitud s USING (id_solicitud)
   WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2 AND s.aprobado = true AND id_registro_municipal IN (
-      SELECT id_registro_municipal FROM (SELECT DISTINCT(l.id_registro_municipal) id_registro_municipal, SUM(monto) as montoTotal 
-      FROM Impuesto.liquidacion l
-      INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud
-      INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = l.id_registro_municipal
-      INNER JOIN impuesto.contribuyente cont ON s.id_contribuyente = cont.id_contribuyente AND rm.id_contribuyente = cont.id_contribuyente
-      WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2 AND s.aprobado = true AND cont.es_agente_retencion = false
-      GROUP BY l.id_registro_municipal 
-      ORDER BY montoTotal DESC
-      LIMIT 2000) s)
+    SELECT * FROM (
+        SELECT id_registro_municipal FROM (SELECT DISTINCT ON (l.id_registro_municipal) l.id_registro_municipal, SUM(monto) as montoTotal 
+        FROM Impuesto.liquidacion l
+        INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud
+        INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = l.id_registro_municipal
+        INNER JOIN impuesto.contribuyente cont ON s.id_contribuyente = cont.id_contribuyente AND rm.id_contribuyente = cont.id_contribuyente
+        WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2 AND s.aprobado = true AND cont.es_agente_retencion = false
+        GROUP BY l.id_registro_municipal 
+        ) x  ORDER BY montoTotal DESC LIMIT 2000 ) X   ) 
       LIMIT 2000 RETURNING *;
 `,
   CREATE_CHARGINGS_AR: `INSERT INTO impuesto.cobranza (id_registro_municipal, rating)
@@ -2366,16 +2366,16 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   FROM impuesto.liquidacion l
   INNER JOIN impuesto.solicitud s USING (id_solicitud)
   WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2 AND s.aprobado = true AND id_registro_municipal IN (
-      SELECT id_registro_municipal FROM (SELECT DISTINCT(l.id_registro_municipal) id_registro_municipal, SUM(monto) as montoTotal 
-      FROM Impuesto.liquidacion l
-      INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud
-      INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = l.id_registro_municipal
-      INNER JOIN impuesto.contribuyente cont ON s.id_contribuyente = cont.id_contribuyente AND rm.id_contribuyente = cont.id_contribuyente
-      WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2 AND s.aprobado = true AND cont.es_agente_retencion = true
-      GROUP BY l.id_registro_municipal 
-      ORDER BY montoTotal DESC
-      LIMIT 500) s)
-      LIMIT 500 RETURNING *;
+    SELECT * FROM (
+        SELECT id_registro_municipal FROM (SELECT DISTINCT ON (l.id_registro_municipal) l.id_registro_municipal, SUM(monto) as montoTotal 
+        FROM Impuesto.liquidacion l
+        INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud
+        INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = l.id_registro_municipal
+        INNER JOIN impuesto.contribuyente cont ON s.id_contribuyente = cont.id_contribuyente AND rm.id_contribuyente = cont.id_contribuyente
+        WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2 AND s.aprobado = true AND cont.es_agente_retencion = true
+        GROUP BY l.id_registro_municipal 
+        ) x  ORDER BY montoTotal DESC LIMIT 2000 ) X   ) 
+      LIMIT 2000 RETURNING *;
 `,
   UPDATE_CHARGING: `UPDATE impuesto.cobranza SET contactado = $2, 
     estatus_telefonico = $3, 
@@ -2384,7 +2384,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     fiscalizar = $6, 
     estimacion_pago = $7 WHERE id_cobranza = $1 RETURNING contactado, estatus_telefonico AS "estatusTelefonico", observaciones, posee_convenio AS "poseeConvenio",
     fiscalizar, estimacion_pago AS "estimacionPago";`,
-  CREATE_WALLET: `INSERT INTO impuesto.cartera VALUES (default, null) RETURNING *`,
+  CREATE_WALLET: `INSERT INTO impuesto.cartera (id_cartera, id_usuario, es_ar) VALUES (default, null, $1) RETURNING *`,
   SET_WALLET: `UPDATE impuesto.cobranza SET id_cartera = $1 WHERE id_cobranza = $2`,
   
   CHARGINGS_GROUPED: `SELECT rating, COUNT(*) FROM impuesto.cobranza GROUP BY rating;`,

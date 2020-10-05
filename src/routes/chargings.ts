@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
-import { getAllChargings, updateOneCharging, getAllWallets, linkWallet, getChargingsByWallet, createChargings } from '@helpers/chargings';
+import { getAllChargings, updateOneCharging, getAllWallets, linkWallet, getChargingsByWallet, createChargings, createAllChargings } from '@helpers/chargings';
 import { authenticate } from 'passport';
 
 const router = Router();
 
 router.post('/charging', async (req, res) => {
-  const [error, data] = await fulfill(createChargings());
+  const [error, data] = await fulfill(createAllChargings());
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
 });

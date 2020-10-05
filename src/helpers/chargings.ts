@@ -33,21 +33,22 @@ const getRatings: (stars: number) => (AR: boolean) =>  (chargings: any[]) => [(n
     } , () => chargingsClosure.length]
 }
 
+export const createAllChargings = async () => {
+    await createChargings();
+    return await createChargingsAR();
+}
+
 export const createChargings = async () => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-        /* descomentar mañana
         const today = moment();
-        const lastMonth = today.clone().subtract(2, 'month').locale('es')
-        const firstOfLastMonth = lastMonth.clone().startOf('month').add(1, 'month');
-        */
+        const declMonth = today.clone().subtract(2, 'month').locale('es')
+        const firstOfLastMonth = declMonth.clone().startOf('month').add(1, 'month');
+        
         if((await client.query("SELECT EXTRACT('month' FROM created) = EXTRACT('month' FROM (NOW() - interval '4 hours')) AS check FROM impuesto.cobranza LIMIT 1")).rows[0]?.check){
             throw new Error('Cobranzas del mes ya creadas')
         }
-        const today = moment();
-        const declMonth = today.clone().subtract(1, 'month').locale('es')
-        const firstOfLastMonth = declMonth.clone().startOf('month').add(1, 'month');
         console.log(declMonth.format('MMMM').toLowerCase())
         console.log(today.year())
         console.log(firstOfLastMonth.toISOString())
@@ -66,7 +67,7 @@ export const createChargings = async () => {
         console.log(rating5len())
         const wallets: any[] = [];
         for(let i = 0; i < WALLET_AMOUNT; i++){
-            let wallet = (await client.query(queries.CREATE_WALLET)).rows[0];
+            let wallet = (await client.query(queries.CREATE_WALLET, [false])).rows[0];
             let allWalletChargings = [...rating1Remover()[0], ...rating2Remover()[0], ...rating3Remover()[0], ...rating4Remover()[0], ...rating5Remover()[0]];
             console.log('allwalletchargings', allWalletChargings.length)
             await Promise.all(allWalletChargings.map(async (charging) => client.query(queries.SET_WALLET, [wallet.id_cartera, charging.id_cobranza]) ))
@@ -95,7 +96,7 @@ export const createChargings = async () => {
         console.log(rating3len())
         console.log(rating4len())
         console.log(rating5len())
-        await client.query('COMMIT');
+        await client.query('ROLLBACK');
         return { message: 'Carteras y cobranzas creadas', status: 200 }
     } catch (err) {
         console.log(err)
@@ -110,14 +111,10 @@ export const createChargingsAR = async () => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-        /* descomentar mañana
         const today = moment();
-        const lastMonth = today.clone().subtract(2, 'month').locale('es')
-        const firstOfLastMonth = lastMonth.clone().startOf('month').add(1, 'month');
-        */
-        const today = moment();
-        const declMonth = today.clone().subtract(1, 'month').locale('es')
+        const declMonth = today.clone().subtract(2, 'month').locale('es')
         const firstOfLastMonth = declMonth.clone().startOf('month').add(1, 'month');
+        
         console.log(declMonth.format('MMMM').toLowerCase())
         console.log(today.year())
         console.log(firstOfLastMonth.toISOString())
@@ -136,7 +133,7 @@ export const createChargingsAR = async () => {
         console.log(rating5len())
         const wallets: any[] = [];
         for(let i = 0; i < WALLET_AMOUNT_AR; i++){
-            let wallet = (await client.query(queries.CREATE_WALLET)).rows[0];
+            let wallet = (await client.query(queries.CREATE_WALLET, [true])).rows[0];
             let allWalletChargings = [...rating1Remover()[0], ...rating2Remover()[0], ...rating3Remover()[0], ...rating4Remover()[0], ...rating5Remover()[0]];
             console.log('allwalletchargings', allWalletChargings.length)
             await Promise.all(allWalletChargings.map(async (charging) => client.query(queries.SET_WALLET, [wallet.id_cartera, charging.id_cobranza]) ))
@@ -165,7 +162,7 @@ export const createChargingsAR = async () => {
         console.log(rating3len())
         console.log(rating4len())
         console.log(rating5len())
-        await client.query('COMMIT');
+        await client.query('ROLLBACK');
         return { message: 'Carteras y cobranzas creadas', status: 200 }
     } catch (err) {
         console.log(err)
