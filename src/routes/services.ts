@@ -27,7 +27,8 @@ router.get('/scales', authenticate('jwt'), async (req, res) => {
 
 router.get('/settlements/:type', authenticate('jwt'), async (req, res) => {
   const { type } = req.params;
-  const [error, data] = await fulfill(getSettlementsByDepartment(type));
+  const { date } = req.query;
+  const [error, data] = await fulfill(getSettlementsByDepartment(type, date));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
