@@ -1945,12 +1945,13 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   //  Sin fecha
   TOTAL_TOP_CONTRIBUTOR_DECLARATIONS_AND_PAYMENTS_IN_MONTH: `WITH topContr AS (
     SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal FROM impuesto.liquidacion WHERE id_registro_municipal IN (
-        SELECT id_registro_municipal FROM (SELECT DISTINCT(id_registro_municipal) id_registro_municipal, SUM(monto) as monto 
-        FROM Impuesto.liquidacion
-        WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2
-        GROUP BY id_registro_municipal 
-        ORDER BY monto DESC
-        LIMIT 1000) s)
+      SELECT id_registro_municipal FROM (SELECT DISTINCT ON(id_registro_municipal) id_registro_municipal, SUM(monto) as monto 
+      FROM Impuesto.liquidacion
+      WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2
+      AND id_registro_municipal IS NOT NULL
+      GROUP BY id_registro_municipal 
+      ORDER BY id_registro_municipal DESC
+      LIMIT 1000) s)
     ),
     pagados AS (
       SELECT COUNT(id_registro_municipal) AS pagado FROM impuesto.registro_municipal rm 
@@ -1980,11 +1981,12 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   //  Con fecha
   TOTAL_TOP_CONTRIBUTOR_DECLARATIONS_AND_PAYMENTS_IN_MONTH_WITH_DATE: `WITH topContr AS (
     SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal FROM impuesto.liquidacion WHERE id_registro_municipal IN (
-        SELECT id_registro_municipal FROM (SELECT DISTINCT(id_registro_municipal) id_registro_municipal, SUM(monto) as monto 
+        SELECT id_registro_municipal FROM (SELECT DISTINCT ON(id_registro_municipal) id_registro_municipal, SUM(monto) as monto 
         FROM Impuesto.liquidacion
         WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2
+        AND id_registro_municipal IS NOT NULL
         GROUP BY id_registro_municipal 
-        ORDER BY monto DESC
+        ORDER BY id_registro_municipal DESC
         LIMIT 1000) s)
     ),
     pagados AS (
@@ -2460,7 +2462,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     fiscalizar, estimacion_pago AS "estimacionPago";`,
   CREATE_WALLET: `INSERT INTO impuesto.cartera (id_cartera, id_usuario, es_ar) VALUES (default, null, $1) RETURNING *`,
   SET_WALLET: `UPDATE impuesto.cobranza SET id_cartera = $1 WHERE id_cobranza = $2`,
-  
+
   CHARGINGS_GROUPED: `SELECT rating, COUNT(*) FROM impuesto.cobranza GROUP BY rating;`,
   gtic: {
     GET_NATURAL_CONTRIBUTOR:
