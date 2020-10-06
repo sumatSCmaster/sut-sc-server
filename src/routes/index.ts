@@ -31,6 +31,7 @@ import repairs from './repairs';
 import contributor from './contributor';
 import vehicles from './vehicles';
 import chargings from './chargings';
+import fisc from './fiscalization'
 
 const router = Router();
 
@@ -65,6 +66,7 @@ router.use('/repairs', repairs);
 router.use('/contributor', contributor);
 router.use('/vehicles', vehicles);
 router.use('/wallet', chargings)
+router.use('/fiscalization', fisc)
 router.use(resources);
 
 router.get('/', (req, res) => {
