@@ -1336,6 +1336,7 @@ ORDER BY l.fecha_liquidacion DESC
 )
 
 SELECT * FROM liqsServ l INNER JOIN (SELECT s.id_solicitud AS id,
+  s.id_contribuyente,
   ev.state
  FROM impuesto.solicitud s
    JOIN ( SELECT es.id_solicitud,
