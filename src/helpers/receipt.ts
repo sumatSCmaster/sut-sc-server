@@ -13,10 +13,9 @@ const dev = process.env.NODE_ENV !== 'production';
 
 const pool = Pool.getInstance();
 
-export const generateReceipt = async (payload: { application: number }) => {
-  const client = await pool.connect();
+export const generateReceipt = async (payload: { application: number }, clientParam?) => {
+  const client = clientParam ? clientParam : await pool.connect();
   try {
-    await client.query('BEGIN');
     const applicationView = (await client.query(queries.GET_APPLICATION_VIEW_BY_ID, [payload.application])).rows[0];
     const payment = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_GROUP_BY_PAYMENT_TYPE, [applicationView.id])).rows;
     const paymentRows = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [applicationView.id, 'IMPUESTO'])).rows;
@@ -28,13 +27,14 @@ export const generateReceipt = async (payload: { application: number }) => {
     const breakdownData = (await client.query(queries.GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID, [applicationView.id])).rows;
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [applicationView.idLiquidacion])).rows[0];
     console.log('breakdowndata', breakdownData);
-    const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [paymentRows[0]?.id_usuario, ``, applicationView.razonSocial, referencia?.referencia_municipal, 'IMPUESTO', applicationView.id]);
+    const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [paymentRows[0]?.id_usuario, `${process.env.AWS_ACCESS_URL}/sedemat/recibo/${applicationView.id}/recibo.pdf`, applicationView.razonSocial, referencia?.referencia_municipal, 'IMPUESTO', applicationView.id]);
+    console.log('recibo', recibo.rows)
     if (!recibo.rows[0]) {
-      await client.query('ROLLBACK');
-      return (await client.query('SELECT recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [applicationView.id])).rows[0].recibo;
+      console.log('not recibo', recibo.rows[0])
+      return (await client.query(`SELECT recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1 AND recibo != ''`, [applicationView.id])).rows[0].recibo;
     }
     const idRecibo = recibo.rows[0].id_registro_recibo;
-    await client.query('COMMIT');
+    console.log('IDRECIBO', idRecibo)
 
     return new Promise(async (res, rej) => {
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/recibo/${applicationView.id}/cierre.pdf`);
@@ -93,7 +93,7 @@ export const generateReceipt = async (payload: { application: number }) => {
                   ACL: 'public-read',
                   ContentType: 'application/pdf',
                 }).promise();
-                await regClient.query(queries.UPDATE_RECEIPT_RECORD, [idRecibo, `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`]);
+                await regClient.query(queries.UPDATE_RECEIPT_RECORD, [idRecibo, `${process.env.AWS_ACCESS_URL}${bucketParams.Key}`]);
                 await regClient.query('COMMIT');
                 res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
               } catch (e) {
@@ -111,10 +111,10 @@ export const generateReceipt = async (payload: { application: number }) => {
       }
     });
   } catch (error) {
-    await client.query('ROLLBACK');
+    if(!clientParam) await client.query('ROLLBACK');
     throw errorMessageExtractor(error);
   } finally {
-    client.release();
+    if(!clientParam) client.release();
   }
 };
 
