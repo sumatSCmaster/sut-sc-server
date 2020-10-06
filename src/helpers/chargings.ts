@@ -49,6 +49,8 @@ export const createChargings = async () => {
         if((await client.query("SELECT (EXTRACT('month' FROM created) = EXTRACT('month' FROM (NOW() - interval '4 hours'))) AS chek FROM impuesto.cobranza LIMIT 1")).rows[0]?.chek){
             throw new Error('Cobranzas del mes ya creadas')
         }
+        await client.query('DELETE FROM impuesto.cobranza');
+        await client.query('DELETE FROM impuesto.cartera');
         console.log(declMonth.format('MMMM').toLowerCase())
         console.log(today.year())
         console.log(firstOfLastMonth.toISOString())
