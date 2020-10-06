@@ -1323,6 +1323,26 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     "SELECT DISTINCT ON (id_solicitud, s.fecha) * FROM impuesto.convenio INNER JOIN impuesto.solicitud s USING (id_solicitud) INNER JOIN impuesto.liquidacion USING (id_solicitud) WHERE id_registro_municipal = $1 AND tipo_solicitud = 'CONVENIO' ORDER BY s.fecha DESC",
   GET_FRACTIONS_BY_AGREEMENT_ID: 'SELECT * FROM impuesto.fraccion f WHERE f.id_convenio = $1',
   APPLICATION_TOTAL_AMOUNT_BY_ID: 'SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1',
+  GET_SETTLEMENTS_BY_MONTH_IN_GROUPED_BRANCH: `WITH liqsServ AS (
+    SELECT *, r.descripcion AS "descripcionRamo", sr.descripcion AS "descripcionSubramo" FROM impuesto.liquidacion l 
+INNER JOIN impuesto.subramo sr USING (id_subramo) 
+INNER JOIN impuesto.ramo r USING (id_ramo) 
+WHERE id_subramo IN 
+  (select unnest($1::int[])) 
+  AND l.monto > 0 
+  AND EXTRACT('month' FROM l.fecha_liquidacion) = EXTRACT('month' FROM $2::date) 
+  AND EXTRACT('year' FROM l.fecha_liquidacion) = EXTRACT('year' FROM $2::date) 
+ORDER BY l.fecha_liquidacion DESC
+)
+
+SELECT * FROM liqsServ l INNER JOIN (SELECT s.id_solicitud AS id,
+  ev.state
+ FROM impuesto.solicitud s
+   JOIN ( SELECT es.id_solicitud,
+          impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+         FROM impuesto.evento_solicitud es
+         WHERE id_solicitud IN ((SELECT id_solicitud FROM liqsServ))
+        GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud) s ON l.id_solicitud = s.id`,
   GET_APPLICATION_STATE: `SELECT s.id_solicitud AS id,
   ev.state
  FROM impuesto.solicitud s
