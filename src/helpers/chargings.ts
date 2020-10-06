@@ -237,7 +237,7 @@ export const updateOneCharging = async (user: any, { idCobranza, contactado, est
             throw new Error('No se hallo esa cobranza');
         }
         if(oldCharging.fiscalizar === false && newCharging.fiscalizar === true){
-            const fiscalization = (await client.query('SELECT * FROM impuesto.fiscalizacion WHERE id_registro_municipal = $1', newCharging.id_registro_municipal ));
+            const fiscalization = (await client.query('SELECT * FROM impuesto.fiscalizacion WHERE id_registro_municipal = $1', [newCharging.id_registro_municipal] ));
             if(fiscalization.rowCount === 0){
                const fisc = await client.query(queries.INSERT_FISCALIZATION, [newCharging.id_registro_municipal, 'COBRANZA']) 
                const newFisc = await client.query(queries.GET_FISCALIZATIONS_ID, [fisc.rows[0].idFiscalizacion])
