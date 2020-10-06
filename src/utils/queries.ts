@@ -2479,12 +2479,30 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     observaciones = $4, 
     posee_convenio = $5, 
     fiscalizar = $6, 
-    estimacion_pago = $7 WHERE id_cobranza = $1 RETURNING contactado, estatus_telefonico AS "estatusTelefonico", observaciones, posee_convenio AS "poseeConvenio",
+    estimacion_pago = $7 WHERE id_cobranza = $1 RETURNING id_registro_municipal, contactado, estatus_telefonico AS "estatusTelefonico", observaciones, posee_convenio AS "poseeConvenio",
     fiscalizar, estimacion_pago AS "estimacionPago";`,
   CREATE_WALLET: `INSERT INTO impuesto.cartera (id_cartera, id_usuario, es_ar) VALUES (default, null, $1) RETURNING *`,
   SET_WALLET: `UPDATE impuesto.cobranza SET id_cartera = $1 WHERE id_cobranza = $2`,
 
   CHARGINGS_GROUPED: `SELECT rating, COUNT(*) FROM impuesto.cobranza GROUP BY rating;`,
+
+  //FISCALIZACION
+  INSERT_FISCALIZATION: `INSERT INTO impuesto.fiscalizacion (id_registro_municipal, tipo) VALUES ($1, $2) RETURNING id_fiscalizacion AS "idFiscalizacion", id_registro_municipal AS "idRegistroMunicipal",
+              id_usuario AS "idUsuario", tipo, fecha, medida, estado, auditoria, comparecio`,
+  GET_FISCALIZATIONS: `SELECT id_fiscalizacion AS "idFiscalizacion", rm.id_registro_municipal AS "idRegistroMunicipal", id_usuario AS "idUsuario", tipo, 
+        fecha, medida, estado, auditoria, comparecio, CONCAT(cont.tipo_documento, '-', cont.documento) AS rif, rm.referencia_municipal as rim, cont.razon_social as "razonSocial",
+        rm.telefono_celular AS telefono, rm.direccion 
+    FROM impuesto.fiscalizacion f
+    INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = f.id_registro_municipal
+    INNER JOIN impuesto.contribuyente cont ON cont.id_contribuyente = rm.id_contribuyente`,
+  GET_FISCALIZATIONS_ID: `SELECT id_fiscalizacion AS "idFiscalizacion", rm.id_registro_municipal AS "idRegistroMunicipal", id_usuario AS "idUsuario", tipo, 
+    fecha, medida, estado, auditoria, comparecio, CONCAT(cont.tipo_documento, '-', cont.documento) AS rif, rm.referencia_municipal as rim, cont.razon_social as "razonSocial",
+    rm.telefono_celular AS telefono, rm.direccion 
+    FROM impuesto.fiscalizacion f
+    INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = f.id_registro_municipal
+    INNER JOIN impuesto.contribuyente cont ON cont.id_contribuyente = rm.id_contribuyente
+    WHERE id_fiscalizacion = $1`,
+  UPDATE_FISCALIZATION: `UPDATE impuesto.fiscalizacion SET id_usuario = $2, medida = $3, estado = $4, auditoria = $5, comparecio = $6 WHERE id_fiscalizacion = $1 RETURNING medida, estado, auditoria, comparecio, id_usuario AS "idUsuario"`,
   gtic: {
     GET_NATURAL_CONTRIBUTOR:
       'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 AND (trim(nb_representante_legal) NOT IN (SELECT trim(nb_marca) FROM tb014_marca_veh) AND trim(nb_representante_legal) NOT IN (SELECT trim(tx_marca) FROM t45_vehiculo_marca) OR trim(nb_representante_legal) IS NULL) ORDER BY co_contribuyente DESC',
