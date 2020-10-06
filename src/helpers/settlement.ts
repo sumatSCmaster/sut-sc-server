@@ -2603,8 +2603,8 @@ export const insertSettlements = async ({ process, user }) => {
                   fixatedAmount(finingAmount * UTMM),
                   {
                     fecha: {
-                      month: finingDate.locale('ES').format('MMMM'),
-                      year: finingDate.year(),
+                      month: counter.locale('ES').format('MMMM'),
+                      year: counter.year(),
                     },
                     descripcion: 'Multa por Declaracion Fuera de Plazo',
                     monto: finingAmount,

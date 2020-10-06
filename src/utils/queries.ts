@@ -1323,6 +1323,27 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     "SELECT DISTINCT ON (id_solicitud, s.fecha) * FROM impuesto.convenio INNER JOIN impuesto.solicitud s USING (id_solicitud) INNER JOIN impuesto.liquidacion USING (id_solicitud) WHERE id_registro_municipal = $1 AND tipo_solicitud = 'CONVENIO' ORDER BY s.fecha DESC",
   GET_FRACTIONS_BY_AGREEMENT_ID: 'SELECT * FROM impuesto.fraccion f WHERE f.id_convenio = $1',
   APPLICATION_TOTAL_AMOUNT_BY_ID: 'SELECT SUM(monto) AS monto_total FROM impuesto.liquidacion WHERE id_solicitud = $1',
+  GET_SETTLEMENTS_BY_MONTH_IN_GROUPED_BRANCH: `WITH liqsServ AS (
+    SELECT *, r.descripcion AS "descripcionRamo", sr.descripcion AS "descripcionSubramo" FROM impuesto.liquidacion l 
+INNER JOIN impuesto.subramo sr USING (id_subramo) 
+INNER JOIN impuesto.ramo r USING (id_ramo) 
+WHERE id_subramo IN 
+  (select unnest($1::int[])) 
+  AND l.monto > 0 
+  AND EXTRACT('month' FROM l.fecha_liquidacion) = EXTRACT('month' FROM $2::date) 
+  AND EXTRACT('year' FROM l.fecha_liquidacion) = EXTRACT('year' FROM $2::date) 
+ORDER BY l.fecha_liquidacion DESC
+)
+
+SELECT * FROM liqsServ l INNER JOIN (SELECT s.id_solicitud AS id,
+  s.id_contribuyente,
+  ev.state
+ FROM impuesto.solicitud s
+   JOIN ( SELECT es.id_solicitud,
+          impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+         FROM impuesto.evento_solicitud es
+         WHERE id_solicitud IN ((SELECT id_solicitud FROM liqsServ))
+        GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud) s ON l.id_solicitud = s.id`,
   GET_APPLICATION_STATE: `SELECT s.id_solicitud AS id,
   ev.state
  FROM impuesto.solicitud s
@@ -1945,12 +1966,13 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   //  Sin fecha
   TOTAL_TOP_CONTRIBUTOR_DECLARATIONS_AND_PAYMENTS_IN_MONTH: `WITH topContr AS (
     SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal FROM impuesto.liquidacion WHERE id_registro_municipal IN (
-        SELECT id_registro_municipal FROM (SELECT DISTINCT(id_registro_municipal) id_registro_municipal, SUM(monto) as monto 
-        FROM Impuesto.liquidacion
-        WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2
-        GROUP BY id_registro_municipal 
-        ORDER BY monto DESC
-        LIMIT 1000) s)
+      SELECT id_registro_municipal FROM (SELECT DISTINCT ON(id_registro_municipal) id_registro_municipal, SUM(monto) as monto 
+      FROM Impuesto.liquidacion
+      WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2
+      AND id_registro_municipal IS NOT NULL
+      GROUP BY id_registro_municipal 
+      ORDER BY id_registro_municipal DESC
+      LIMIT 1000) s)
     ),
     pagados AS (
       SELECT COUNT(id_registro_municipal) AS pagado FROM impuesto.registro_municipal rm 
@@ -1980,11 +2002,12 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   //  Con fecha
   TOTAL_TOP_CONTRIBUTOR_DECLARATIONS_AND_PAYMENTS_IN_MONTH_WITH_DATE: `WITH topContr AS (
     SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal FROM impuesto.liquidacion WHERE id_registro_municipal IN (
-        SELECT id_registro_municipal FROM (SELECT DISTINCT(id_registro_municipal) id_registro_municipal, SUM(monto) as monto 
+        SELECT id_registro_municipal FROM (SELECT DISTINCT ON(id_registro_municipal) id_registro_municipal, SUM(monto) as monto 
         FROM Impuesto.liquidacion
         WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2
+        AND id_registro_municipal IS NOT NULL
         GROUP BY id_registro_municipal 
-        ORDER BY monto DESC
+        ORDER BY id_registro_municipal DESC
         LIMIT 1000) s)
     ),
     pagados AS (
@@ -2401,7 +2424,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     SELECT pr.rif, pr.rim, pr."razonSocial", c.*, pr."pagoAE", pr."pagoSM", pr."pagoIU", pr."pagoPP", pr."pagoMUL", pr.progreso
     FROM cobranz c INNER JOIN pagosramos pr ON c.id_registro_municipal = pr.id_registro_municipal
     ORDER BY c."idCobranza";`,
-  GET_WALLETS: `SELECT cart.id_cartera AS "idCartera", cart.id_usuario as "idUsuario", u.nombre_completo AS "nombreCompleto"
+  GET_WALLETS: `SELECT cart.id_cartera AS "idCartera", cart.id_usuario as "idUsuario", u.nombre_completo AS "nombreCompleto", es_ar AS "esAr"
     FROM impuesto.cartera cart 
     LEFT JOIN usuario u ON u.id_usuario = cart.id_usuario ORDER BY id_cartera;`,
   LINK_WALLET_TO_USER: `UPDATE impuesto.cartera SET id_usuario = $2 WHERE id_cartera = $1 RETURNING id_cartera AS "idCartera", id_usuario AS "idUsuario";`,
@@ -2460,7 +2483,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     fiscalizar, estimacion_pago AS "estimacionPago";`,
   CREATE_WALLET: `INSERT INTO impuesto.cartera (id_cartera, id_usuario, es_ar) VALUES (default, null, $1) RETURNING *`,
   SET_WALLET: `UPDATE impuesto.cobranza SET id_cartera = $1 WHERE id_cobranza = $2`,
-  
+
   CHARGINGS_GROUPED: `SELECT rating, COUNT(*) FROM impuesto.cobranza GROUP BY rating;`,
   gtic: {
     GET_NATURAL_CONTRIBUTOR:
