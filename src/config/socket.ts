@@ -12,7 +12,6 @@ const users = new Map<string, Socket>();
 const connection = async (socket: Socket) => {
   const client = await pool.connect();
   try {
-    
     const user = decode(socket.handshake.query.token, process.env.JWT_SECRET || 'not a secret').sub;
     if (user.tipoUsuario === 3 && user.permisos && user.permisos.length > 0) {
       user.permisos.map((el) => socket.join(`tram:${el}`));
@@ -22,10 +21,10 @@ const connection = async (socket: Socket) => {
 
     if (user.tipoUsuario === 1) {
       const insts = (await client.query(queries.GET_ALL_INSTITUTION)).rows;
-      insts.map((el) => socket.join(`inst:${el.nombre_corto}`))
+      insts.map((el) => socket.join(`inst:${el.nombre_corto}`));
     }
-    
-    if (user.cargo.id === 999){
+
+    if (user.cargo?.id === 999) {
       socket.join('tabla-cobranza');
     }
 
