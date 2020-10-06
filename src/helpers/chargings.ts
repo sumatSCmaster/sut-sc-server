@@ -46,7 +46,7 @@ export const createChargings = async () => {
         const declMonth = today.clone().subtract(2, 'month').locale('es')
         const firstOfLastMonth = declMonth.clone().startOf('month').add(1, 'month');
         
-        if((await client.query("SELECT EXTRACT('month' FROM created) = EXTRACT('month' FROM (NOW() - interval '4 hours')) AS check FROM impuesto.cobranza LIMIT 1")).rows[0]?.check){
+        if((await client.query("SELECT (EXTRACT('month' FROM created) = EXTRACT('month' FROM (NOW() - interval '4 hours'))) AS chek FROM impuesto.cobranza LIMIT 1")).rows[0]?.chek){
             throw new Error('Cobranzas del mes ya creadas')
         }
         console.log(declMonth.format('MMMM').toLowerCase())
@@ -96,7 +96,7 @@ export const createChargings = async () => {
         console.log(rating3len())
         console.log(rating4len())
         console.log(rating5len())
-        await client.query('ROLLBACK');
+        await client.query('COMMIT');
         return { message: 'Carteras y cobranzas creadas', status: 200 }
     } catch (err) {
         console.log(err)
@@ -162,7 +162,7 @@ export const createChargingsAR = async () => {
         console.log(rating3len())
         console.log(rating4len())
         console.log(rating5len())
-        await client.query('ROLLBACK');
+        await client.query('COMMIT');
         return { message: 'Carteras y cobranzas creadas', status: 200 }
     } catch (err) {
         console.log(err)
