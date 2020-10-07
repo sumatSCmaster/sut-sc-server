@@ -228,13 +228,24 @@ export const getChargingsByWallet = async (id) => {
 
 export const updateOneCharging = async (user: any, { idCobranza, contactado, estatusTelefonico, observaciones, convenio, fiscalizar, estimacionPago }) => {
     const client = await pool.connect();
+    const socket = users.get(`${user?.nacionalidad}-${user?.cedula}`);
     try {
         await client.query('BEGIN');
+        const oldCharging = (await client.query('SELECT fiscalizar FROM impuesto.cobranza WHERE id_cobranza = $1', [idCobranza])).rows[0];
         const newCharging = (await client.query(queries.UPDATE_CHARGING, [idCobranza, contactado, estatusTelefonico, observaciones, convenio, fiscalizar, estimacionPago])).rows[0]
         if (!newCharging){
             throw new Error('No se hallo esa cobranza');
         }
-        const socket = users.get(`${user?.nacionalidad}-${user?.cedula}`);
+        if(oldCharging.fiscalizar === false && newCharging.fiscalizar === true){
+            const fiscalization = (await client.query('SELECT * FROM impuesto.fiscalizacion WHERE id_registro_municipal = $1', [newCharging.id_registro_municipal] ));
+            if(fiscalization.rowCount === 0){
+               const fisc = await client.query(queries.INSERT_FISCALIZATION, [newCharging.id_registro_municipal, 'COBRANZA']) 
+               const newFisc = await client.query(queries.GET_FISCALIZATIONS_ID, [fisc.rows[0].idFiscalizacion])
+               socket?.to('tabla-fiscalizacion').emit('NUEVA_FISCALIZACION', newFisc)
+            }
+        }
+
+        
         socket?.to('tabla-cobranza').emit('ACTUALIZAR_TABLA_COBRANZA', newCharging)        
         await client.query('COMMIT;')
         return { status: 200, cobranza: newCharging, message: 'Cobranza actualizada.' }
