@@ -1353,6 +1353,74 @@ SELECT * FROM liqsServ l INNER JOIN (SELECT s.id_solicitud AS id,
          WHERE id_solicitud = $1
         GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud;`,
   GET_CONTRIBUTOR_BY_ID: 'SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1',
+  GET_SETTLEMENTS_FOR_CONTRIBUTOR_SEARCH: `WITH solicitudcte AS (
+    SELECT id_solicitud
+    FROM impuesto.solicitud 
+    WHERE id_contribuyente = $1
+
+)
+
+SELECT *,
+        s.descripcion AS "descripcionSubramo",
+         r.descripcion AS "descripcionRamo"
+FROM (SELECT s.id_solicitud AS id,
+    s.id_tipo_tramite AS tipotramite,
+    s.aprobado,
+    s.fecha,
+    s.fecha_aprobado AS "fechaAprobacion",
+    ev.state,
+    s.tipo_solicitud AS "tipoSolicitud",
+    s.id_contribuyente
+   FROM impuesto.solicitud s
+     JOIN ( SELECT es.id_solicitud,
+            impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+           FROM impuesto.evento_solicitud es
+           WHERE id_solicitud IN (SELECT * FROM solicitudcte)
+          GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+) sl
+INNER JOIN impuesto.liquidacion l
+    ON sl.id = l.id_solicitud
+LEFT JOIN impuesto.subramo s
+USING (id_subramo)
+LEFT JOIN impuesto.ramo r
+USING (id_ramo)
+WHERE sl.id_contribuyente= $1
+ORDER BY fecha_liquidacion DESC;
+`,
+  GET_SETTLEMENTS_FOR_BRANCH_SEARCH: `WITH solicitudcte AS (
+  SELECT id_solicitud
+  FROM impuesto.solicitud 
+  WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE id_registro_municipal = $1)
+  
+  )
+  
+  SELECT *,
+  s.descripcion AS "descripcionSubramo",
+  r.descripcion AS "descripcionRamo"
+  FROM (SELECT s.id_solicitud AS id,
+    s.id_tipo_tramite AS tipotramite,
+    s.aprobado,
+    s.fecha,
+    s.fecha_aprobado AS "fechaAprobacion",
+    ev.state,
+    s.tipo_solicitud AS "tipoSolicitud",
+    s.id_contribuyente
+    FROM impuesto.solicitud s
+    JOIN ( SELECT es.id_solicitud,
+      impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+      FROM impuesto.evento_solicitud es
+      WHERE id_solicitud IN (SELECT * FROM solicitudcte)
+      GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+      ) sl
+      INNER JOIN impuesto.liquidacion l
+      ON sl.id = l.id_solicitud
+      LEFT JOIN impuesto.subramo s
+      USING (id_subramo)
+      LEFT JOIN impuesto.ramo r
+      USING (id_ramo)
+      WHERE l.id_registro_municipal= $1
+      ORDER BY fecha_liquidacion DESC;
+      `,
   SET_DATE_FOR_LINKED_SETTLEMENT: 'UPDATE impuesto.liquidacion SET fecha_liquidacion = $1 WHERE id_liquidacion = $2',
   ASSIGN_CONTRIBUTOR_TO_USER: 'UPDATE USUARIO SET id_contribuyente = $1 WHERE id_usuario = $2',
   GET_CONTRIBUTOR_BY_USER: 'SELECT c.* FROM USUARIO u INNER JOIN impuesto.contribuyente c ON u.id_contribuyente = c.id_contribuyente WHERE u.id_usuario = $1',

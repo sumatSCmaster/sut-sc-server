@@ -30,7 +30,7 @@ export const getMunicipalReferenceActivities = async ({ docType, document }) => 
     if (!contributor) throw { status: 404, message: 'El contribuyente proporcionado no existe' };
     const branches = (await client.query(queries.GET_BRANCHES_BY_CONTRIBUTOR_ID, [contributor.id_contribuyente])).rows;
     if (branches.length < 1) throw { status: 404, message: 'El contribuyente no posee sucursales' };
-    const sucursales = branches.length > 0 ? await Promise.all(branches.map((el) => formatBranch(el, client))) : undefined;
+    const sucursales = branches.length > 0 ? await Promise.all(branches.map((el) => formatBranch(el, contributor, client))) : undefined;
     return { status: 200, message: 'Sucursales obtenidas', sucursales };
   } catch (error) {
     console.log(error);

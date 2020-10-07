@@ -145,23 +145,22 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     console.log('branch', branch);
     console.log('contributor', contributor);
     if ((!branch && reference) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEMAT' };
-    const lastSettlementQuery = contributor.tipo_contribuyente === 'JURIDICO' || (!!reference && branch) ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
-    const lastSettlementPayload = contributor.tipo_contribuyente === 'JURIDICO' || (!!reference && branch) ? branch?.referencia_municipal : contributor.id_contribuyente;
+    const lastSettlementQuery = !!reference && branch ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
+    const lastSettlementPayload = !!reference && branch ? branch?.referencia_municipal : contributor.id_contribuyente;
     const fiscalCredit =
       (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.tipo_contribuyente === 'JURIDICO' ? branch?.id_registro_municipal : contributor.id_contribuyente, contributor.tipo_contribuyente])).rows[0]?.credito || 0;
     const retentionCredit = (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, branch?.referencia_municipal])).rows[0]?.credito || 0;
-    const AEApplicationExists =
-      contributor.tipo_contribuyente === 'JURIDICO' || reference ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, reference])).rows.find((el) => !el.datos.hasOwnProperty('descripcion')) : false;
+    const AEApplicationExists = !!reference && !!branch ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, reference])).rows.find((el) => !el.datos.hasOwnProperty('descripcion')) : false;
     const SMApplicationExists =
-      contributor.tipo_contribuyente === 'JURIDICO'
+      !!reference && !!branch
         ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.SM, reference])).rows[0]
         : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.SM, contributor.id_contribuyente])).rows[0];
     const IUApplicationExists =
-      contributor.tipo_contribuyente === 'JURIDICO'
+      !!reference && !!branch
         ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.IU, reference])).rows[0]
         : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.IU, contributor.id_contribuyente])).rows[0];
     const PPApplicationExists =
-      contributor.tipo_contribuyente === 'JURIDICO'
+      !!reference && !!branch
         ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.PP, reference])).rows[0]
         : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.PP, contributor.id_contribuyente])).rows[0];
     if (contributor.tipo_contribuyente === 'JURIDICO' && !!['CESANTE', 'INHABILITADO', 'SANCIONADO'].find((state) => state === branch?.estado_licencia))
@@ -1864,159 +1863,88 @@ export const formatContributor = async (contributor, client: PoolClient) => {
       sector: contributor.sector,
       direccion: contributor.direccion,
       creditoFiscal: (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.id_contribuyente, 'NATURAL'])).rows[0]?.credito || 0,
+      creditoFiscalRetencion: (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, 0])).rows[0]?.credito || 0,
       puntoReferencia: contributor.punto_referencia,
       verificado: contributor.verificado,
-      liquidaciones:
-        contributor.tipo_contribuyente === 'NATURAL'
-          ? (
-              await client.query(
-                `WITH solicitudcte AS (
-            SELECT id_solicitud
-            FROM impuesto.solicitud 
-            WHERE id_contribuyente = $1
-        
-        )
-        
-        SELECT *,
-                s.descripcion AS "descripcionSubramo",
-                 r.descripcion AS "descripcionRamo"
-        FROM (SELECT s.id_solicitud AS id,
-            s.id_tipo_tramite AS tipotramite,
-            s.aprobado,
-            s.fecha,
-            s.fecha_aprobado AS "fechaAprobacion",
-            ev.state,
-            s.tipo_solicitud AS "tipoSolicitud",
-            s.id_contribuyente
-           FROM impuesto.solicitud s
-             JOIN ( SELECT es.id_solicitud,
-                    impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
-                   FROM impuesto.evento_solicitud es
-                   WHERE id_solicitud IN (SELECT * FROM solicitudcte)
-                  GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
-        ) sl
-        INNER JOIN impuesto.liquidacion l
-            ON sl.id = l.id_solicitud
-        LEFT JOIN impuesto.subramo s
-        USING (id_subramo)
-        LEFT JOIN impuesto.ramo r
-        USING (id_ramo)
-        WHERE sl.id_contribuyente= $1
-        ORDER BY fecha_liquidacion DESC;
-        `,
-                [contributor.id_contribuyente]
-              )
-            ).rows.map((el) => ({
-              id: el.id_liquidacion,
-              fechaLiquidacion: el.fecha_liquidacion,
-              fechaVencimiento: el.fecha_vencimiento,
-              monto: +el.monto,
-              estado: el.state || 'finalizado',
-              certificado: el.certificado,
-              recibo: el.recibo,
-              ramo: {
-                id: el.id_ramo,
-                descripcion: el.descripcionRamo,
-              },
-              subramo: {
-                id: el.id_subramo,
-                descripcion: el.descripcionSubramo,
-              },
-            }))
-          : undefined,
+      liquidaciones: !branches.length
+        ? (await client.query(queries.GET_SETTLEMENTS_FOR_CONTRIBUTOR_SEARCH, [contributor.id_contribuyente])).rows.map((el) => ({
+            id: el.id_liquidacion,
+            fechaLiquidacion: el.fecha_liquidacion,
+            fechaVencimiento: el.fecha_vencimiento,
+            monto: +el.monto,
+            estado: el.state || 'finalizado',
+            certificado: el.certificado,
+            recibo: el.recibo,
+            ramo: {
+              id: el.id_ramo,
+              descripcion: el.descripcionRamo,
+            },
+            subramo: {
+              id: el.id_subramo,
+              descripcion: el.descripcionSubramo,
+            },
+          }))
+        : undefined,
       esAgenteRetencion: contributor.es_agente_retencion,
       usuarios: await getUsersByContributor(contributor.id_contribuyente),
-      sucursales: branches.length > 0 ? await Promise.all(branches.map((el) => formatBranch(el, client))) : undefined,
+      sucursales: branches.length > 0 ? await Promise.all(branches.map((el) => formatBranch(el, contributor, client))) : undefined,
     };
   } catch (e) {
     throw e;
   }
 };
 
-export const formatBranch = async (branch, client) => {
-  const inicioImpuestos: any[] = [];
-  const SM = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, [66, branch.referencia_municipal])).rows[0];
-  const PP = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, [12, branch.referencia_municipal])).rows[0];
-  const RD0 = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, [52, branch.referencia_municipal])).rows[0];
-  if (!!SM) SM.desde = moment(SM.desde).format('MM-DD-YYYY');
-  if (!!PP) PP.desde = moment(PP.desde).format('MM-DD-YYYY');
-  if (!!RD0) RD0.desde = moment(RD0.desde).format('MM-DD-YYYY');
+export const formatBranch = async (branch, contributor, client) => {
+  try {
+    const inicioImpuestos: any[] = [];
+    const SM = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, [66, branch.referencia_municipal])).rows[0];
+    const PP = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, [12, branch.referencia_municipal])).rows[0];
+    const RD0 = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, [52, branch.referencia_municipal])).rows[0];
+    if (!!SM) SM.desde = moment(SM.desde).format('MM-DD-YYYY');
+    if (!!PP) PP.desde = moment(PP.desde).format('MM-DD-YYYY');
+    if (!!RD0) RD0.desde = moment(RD0.desde).format('MM-DD-YYYY');
 
-  inicioImpuestos.push(SM || undefined, PP || undefined, RD0 || undefined);
+    inicioImpuestos.push(SM || undefined, PP || undefined, RD0 || undefined);
 
-  return {
-    id: branch.id_registro_municipal,
-    referenciaMunicipal: branch.referencia_municipal,
-    fechaAprobacion: branch.fecha_aprobacion,
-    direccion: branch.direccion,
-    telefono: branch.telefono_celular,
-    email: branch.email,
-    denomComercial: branch.denominacion_comercial,
-    parroquia: branch.id_parroquia,
-    nombreRepresentante: branch.nombre_representante,
-    capitalSuscrito: branch.capital_suscrito,
-    creditoFiscal: (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [branch.id_registro_municipal, 'JURIDICO'])).rows[0]?.credito || 0,
-    tipoSociedad: branch.tipo_sociedad,
-    actualizado: branch.actualizado,
-    estadoLicencia: branch.estado_licencia,
-    actividadesEconomicas: (await client.query(queries.GET_ECONOMIC_ACTIVITY_BY_RIM, [branch.id_registro_municipal])).rows,
-    otrosImpuestos: inicioImpuestos.filter((el) => el),
-    liquidaciones: (
-      await client.query(
-        `WITH solicitudcte AS (
-          SELECT id_solicitud
-          FROM impuesto.solicitud 
-          WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE id_registro_municipal = $1)
-      
-      )
-      
-      SELECT *,
-              s.descripcion AS "descripcionSubramo",
-               r.descripcion AS "descripcionRamo"
-      FROM (SELECT s.id_solicitud AS id,
-          s.id_tipo_tramite AS tipotramite,
-          s.aprobado,
-          s.fecha,
-          s.fecha_aprobado AS "fechaAprobacion",
-          ev.state,
-          s.tipo_solicitud AS "tipoSolicitud",
-          s.id_contribuyente
-         FROM impuesto.solicitud s
-           JOIN ( SELECT es.id_solicitud,
-                  impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
-                 FROM impuesto.evento_solicitud es
-                 WHERE id_solicitud IN (SELECT * FROM solicitudcte)
-                GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
-      ) sl
-      INNER JOIN impuesto.liquidacion l
-          ON sl.id = l.id_solicitud
-      LEFT JOIN impuesto.subramo s
-      USING (id_subramo)
-      LEFT JOIN impuesto.ramo r
-      USING (id_ramo)
-      WHERE l.id_registro_municipal= $1
-      ORDER BY fecha_liquidacion DESC;
-      `,
-        [branch.id_registro_municipal]
-      )
-    ).rows.map((el) => ({
-      id: el.id_liquidacion,
-      fechaLiquidacion: el.fecha_liquidacion,
-      fechaVencimiento: el.fecha_vencimiento,
-      monto: +el.monto,
-      estado: el.state || 'finalizado',
-      certificado: el.certificado,
-      recibo: el.recibo,
-      ramo: {
-        id: el.id_ramo,
-        descripcion: el.descripcionRamo,
-      },
-      subramo: {
-        id: el.id_subramo,
-        descripcion: el.descripcionSubramo,
-      },
-    })),
-  };
+    return {
+      id: branch.id_registro_municipal,
+      referenciaMunicipal: branch.referencia_municipal,
+      fechaAprobacion: branch.fecha_aprobacion,
+      direccion: branch.direccion,
+      telefono: branch.telefono_celular,
+      email: branch.email,
+      denomComercial: branch.denominacion_comercial,
+      parroquia: branch.id_parroquia,
+      nombreRepresentante: branch.nombre_representante,
+      capitalSuscrito: branch.capital_suscrito,
+      creditoFiscal: (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [branch.id_registro_municipal, 'JURIDICO'])).rows[0]?.credito || 0,
+      creditoFiscalRetencion: (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, branch.referenciaMunicipal])).rows[0]?.credito || 0,
+      tipoSociedad: branch.tipo_sociedad,
+      actualizado: branch.actualizado,
+      estadoLicencia: branch.estado_licencia,
+      actividadesEconomicas: (await client.query(queries.GET_ECONOMIC_ACTIVITY_BY_RIM, [branch.id_registro_municipal])).rows,
+      otrosImpuestos: inicioImpuestos.filter((el) => el),
+      liquidaciones: (await client.query(queries.GET_SETTLEMENTS_FOR_BRANCH_SEARCH, [branch.id_registro_municipal])).rows.map((el) => ({
+        id: el.id_liquidacion,
+        fechaLiquidacion: el.fecha_liquidacion,
+        fechaVencimiento: el.fecha_vencimiento,
+        monto: +el.monto,
+        estado: el.state || 'finalizado',
+        certificado: el.certificado,
+        recibo: el.recibo,
+        ramo: {
+          id: el.id_ramo,
+          descripcion: el.descripcionRamo,
+        },
+        subramo: {
+          id: el.id_subramo,
+          descripcion: el.descripcionSubramo,
+        },
+      })),
+    };
+  } catch (e) {
+    throw e;
+  }
 };
 
 export const contributorSearch = async ({ document, docType, name }) => {
