@@ -4223,7 +4223,7 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     const referencia = (await client.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
     const payment = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_DEST, [application.id, 'IMPUESTO'])).rows;
-    const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [payment[0].id_usuario, ``, application.razonSocial, referencia?.referencia_municipal, 'ESPECIAL', application.id]);
+    const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [payment[0].id_usuario, `${process.env.AWS_ACCESS_URL}/sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`, application.razonSocial, referencia?.referencia_municipal, 'ESPECIAL', application.id]);
     let idRecibo;
     if (!recibo.rows[0]) {
       idRecibo = (await client.query('SELECT recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [application.id])).rows[0]?.id_registro_recibo || 'N/D';
@@ -4364,7 +4364,7 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
                 await regClient.query('BEGIN');
                 const bucketParams = {
                   Bucket: 'sut-maracaibo',
-                  Key: `/sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
+                  Key: `sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
                 };
                 await S3Client.putObject({
                   ...bucketParams,
@@ -4404,7 +4404,7 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
                     await regClient.query('BEGIN');
                     const bucketParams = {
                       Bucket: 'sut-maracaibo',
-                      Key: `/sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
+                      Key: `sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
                     };
                     await S3Client.putObject({
                       ...bucketParams,
@@ -4416,7 +4416,7 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
                       await regClient.query(queries.UPDATE_RECEIPT_RECORD, [idRecibo, `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`]);
                     }
                     await regClient.query('COMMIT');
-                    res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+                    res(`${process.env.AWS_ACCESS_URL}${bucketParams.Key}`);
                   } catch (e) {
                     await regClient.query('ROLLBACK');
                     rej(e);
