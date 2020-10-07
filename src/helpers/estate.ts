@@ -310,8 +310,7 @@ export const updateEstateDate = async ({ id, date, rim, taxPayer }) => {
       ])
     ).rows[0];
     (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, 'ingresardatos_pi'])).rows[0].state;
-    const state = await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, 'aprobacioncajero_pi'])[0].state;
-
+    const state = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, 'aprobacioncajero_pi'])).rows[0].state;
     await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [fromDate.format('MM-DD-YYYY'), ghostSettlement.id_liquidacion]);
     let updt = await client.query('UPDATE inmueble_urbano SET id_liquidacion_fecha_inicio = $1 WHERE id_inmueble = $2', [ghostSettlement.id_liquidacion, id]);
     await client.query('COMMIT');
