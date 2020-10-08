@@ -2570,7 +2570,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = f.id_registro_municipal
     INNER JOIN impuesto.contribuyente cont ON cont.id_contribuyente = rm.id_contribuyente
     WHERE id_fiscalizacion = $1`,
-  UPDATE_FISCALIZATION: `UPDATE impuesto.fiscalizacion SET id_usuario = $2, medida = $3, estado = $4, auditoria = $5, comparecio = $6 WHERE id_fiscalizacion = $1 RETURNING medida, estado, auditoria, comparecio, id_usuario AS "idUsuario"`,
+  UPDATE_FISCALIZATION: `UPDATE impuesto.fiscalizacion SET id_usuario = $2, medida = $3, estado = $4, auditoria = $5, comparecio = $6 WHERE id_fiscalizacion = $1 RETURNING id_fiscalizacion AS "idFiscalizacion", medida, estado, auditoria, comparecio, id_usuario AS "idUsuario"`,
   gtic: {
     GET_NATURAL_CONTRIBUTOR:
       'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 AND (trim(nb_representante_legal) NOT IN (SELECT trim(nb_marca) FROM tb014_marca_veh) AND trim(nb_representante_legal) NOT IN (SELECT trim(tx_marca) FROM t45_vehiculo_marca) OR trim(nb_representante_legal) IS NULL) ORDER BY co_contribuyente DESC',
