@@ -21,7 +21,7 @@ export const getFiscalizations = async () => {
     }
 }
 
-export const createFiscalization = async ({typeDoc, doc, rim}) => {
+export const createFiscalization = async (user ,{typeDoc, doc, rim}) => {
     const client = await pool.connect();
     try {
         const taxPayer = (await client.query(queries.GET_CONTRIBUTOR, [typeDoc, doc, rim]));
@@ -33,7 +33,13 @@ export const createFiscalization = async ({typeDoc, doc, rim}) => {
             throw new Error('Ya se ha creado una fiscalizacion para este contribuyente');
         }
         const fiscalization = await client.query(queries.INSERT_FISCALIZATION, [taxPayer.rows[0].idRegistroMunicipal, 'FISCALIZACION'])
-        return { message: 'Fiscalizacion creada.', fiscalizacion: (await client.query(queries.GET_FISCALIZATIONS_ID, [fiscalization.rows[0].idFiscalizacion])).rows[0], status: 200 }
+
+        const newFisc = (await client.query(queries.GET_FISCALIZATIONS_ID, [fiscalization.rows[0].idFiscalizacion])).rows[0]
+
+        const socket = users.get(`${user?.nacionalidad}-${user?.cedula}`);
+        socket?.to('tabla-fiscalizacion').emit('NUEVA_FISCALIZACION', newFisc) 
+
+        return { message: 'Fiscalizacion creada.', fiscalizacion: newFisc, status: 200 }
     } catch (err) {
         throw err
     } finally {

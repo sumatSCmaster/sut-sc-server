@@ -24,8 +24,12 @@ const connection = async (socket: Socket) => {
       insts.map((el) => socket.join(`inst:${el.nombre_corto}`));
     }
 
-    if (user.cargo?.id === 999) {
+    if ([33, 26].includes(user.cargo?.id)) {
       socket.join('tabla-cobranza');
+    }
+
+    if([39].includes(user.cargo?.id)){
+      socket.join('tabla-fiscalizacion')
     }
 
     users.set(`${user.nacionalidad}-${user.cedula}`, socket);
