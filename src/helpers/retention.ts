@@ -241,11 +241,11 @@ export const insertRetentions = async ({ process, user }) => {
         ).rows[0];
 
         await Promise.all(
-          el.items.map(async (x) => {
+          el.items.map(async (x, i) => {
             try {
               await client.query(queries.CREATE_RETENTION_DETAIL, [liquidacion.id_liquidacion, x.rif, x.rim, x.razonSocial, x.tipoServicio, x.fecha, x.baseImponible, x.montoRetenido, x.porcentaje, x.codActividad, x.numeroFactura]);
             } catch (e) {
-              throw { status: 403, message: `Verifique el rif: ${x.rif} dentro de su declaracion de ${el.fechaCancelada.month} ${el.fechaCancelada.year}, pues este posee un RIM asociado.`, rif: x.rif, fechaCancelada: el.fechaCancelada };
+              throw { status: 403, message: `Verifique el rif: ${x.rif} dentro de su declaracion de ${el.fechaCancelada.month} ${el.fechaCancelada.year}, pues este posee un RIM asociado.`, rif: x.rif, fechaCancelada: el.fechaCancelada, index: i };
             }
           })
         );
