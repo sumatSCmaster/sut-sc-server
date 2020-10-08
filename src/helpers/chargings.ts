@@ -243,7 +243,7 @@ export const updateOneCharging = async (user: any, { idCobranza, contactado, est
             const fiscalization = (await client.query('SELECT * FROM impuesto.fiscalizacion WHERE id_registro_municipal = $1', [newCharging.id_registro_municipal] ));
             if(fiscalization.rowCount === 0){
                const fisc = await client.query(queries.INSERT_FISCALIZATION, [newCharging.id_registro_municipal, 'COBRANZA']) 
-               const newFisc = await client.query(queries.GET_FISCALIZATIONS_ID, [fisc.rows[0].idFiscalizacion])
+               const newFisc = (await client.query(queries.GET_FISCALIZATIONS_ID, [fisc.rows[0].idFiscalizacion])).rows[0];
                socket?.to('tabla-fiscalizacion').emit('NEW_FISCALIZATION', newFisc)
             }
         }
