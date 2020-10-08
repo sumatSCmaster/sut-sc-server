@@ -2547,7 +2547,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     observaciones = $4, 
     posee_convenio = $5, 
     fiscalizar = $6, 
-    estimacion_pago = $7 WHERE id_cobranza = $1 RETURNING id_registro_municipal, contactado, estatus_telefonico AS "estatusTelefonico", observaciones, posee_convenio AS "poseeConvenio",
+    estimacion_pago = $7 WHERE id_cobranza = $1 RETURNING id_cobranza AS "idCobranza", id_registro_municipal, contactado, estatus_telefonico AS "estatusTelefonico", observaciones, posee_convenio AS "poseeConvenio",
     fiscalizar, estimacion_pago AS "estimacionPago";`,
   CREATE_WALLET: `INSERT INTO impuesto.cartera (id_cartera, id_usuario, es_ar) VALUES (default, null, $1) RETURNING *`,
   SET_WALLET: `UPDATE impuesto.cobranza SET id_cartera = $1 WHERE id_cobranza = $2`,
