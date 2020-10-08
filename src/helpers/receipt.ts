@@ -27,7 +27,7 @@ export const generateReceipt = async (payload: { application: number }, clientPa
     const breakdownData = (await client.query(queries.GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID, [applicationView.id])).rows;
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [applicationView.idLiquidacion])).rows[0];
     console.log('breakdowndata', breakdownData);
-    const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [paymentRows[0]?.id_usuario, `${process.env.AWS_ACCESS_URL}/sedemat/recibo/${applicationView.id}/recibo.pdf`, applicationView.razonSocial, referencia?.referencia_municipal, 'IMPUESTO', applicationView.id]);
+    const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [paymentRows[0]?.id_usuario, `${process.env.AWS_ACCESS_URL}//sedemat/recibo/${applicationView.id}/recibo.pdf`, applicationView.razonSocial, referencia?.referencia_municipal, 'IMPUESTO', applicationView.id]);
     console.log('recibo', recibo.rows)
     if (!recibo.rows[0]) {
       console.log('not recibo', recibo.rows[0])
@@ -93,7 +93,7 @@ export const generateReceipt = async (payload: { application: number }, clientPa
                   ACL: 'public-read',
                   ContentType: 'application/pdf',
                 }).promise();
-                await regClient.query(queries.UPDATE_RECEIPT_RECORD, [idRecibo, `${process.env.AWS_ACCESS_URL}${bucketParams.Key}`]);
+                //await regClient.query(queries.UPDATE_RECEIPT_RECORD, [idRecibo, `${process.env.AWS_ACCESS_URL}${bucketParams.Key}`]);
                 await regClient.query('COMMIT');
                 res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
               } catch (e) {
