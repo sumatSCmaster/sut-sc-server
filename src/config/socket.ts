@@ -34,6 +34,7 @@ const connection = async (socket: Socket) => {
     }
 
     users.set(`${user.nacionalidad}-${user.cedula}`, socket);
+    console.log('map', users)
     socket.join(`${user.nacionalidad}-${user.cedula}`);
     console.log(`User connected: ${user.nacionalidad}-${user.cedula}`);
     socket.on('disconnect', () => {
