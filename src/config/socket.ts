@@ -23,8 +23,9 @@ const connection = async (socket: Socket) => {
       const insts = (await client.query(queries.GET_ALL_INSTITUTION)).rows;
       insts.map((el) => socket.join(`inst:${el.nombre_corto}`));
     }
-
+    console.log(user)
     if ([33, 26].includes(user.cargo?.id)) {
+      console.log('join tabla cobranza')
       socket.join('tabla-cobranza');
     }
 

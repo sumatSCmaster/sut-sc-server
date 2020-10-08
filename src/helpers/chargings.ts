@@ -228,7 +228,10 @@ export const getChargingsByWallet = async (id) => {
 
 export const updateOneCharging = async (user: any, { idCobranza, contactado, estatusTelefonico, observaciones, convenio, fiscalizar, estimacionPago }) => {
     const client = await pool.connect();
+    console.log(`${user?.nacionalidad}-${user?.cedula}`)
     const socket = users.get(`${user?.nacionalidad}-${user?.cedula}`);
+    console.log(users)
+    console.log(socket)
     try {
         await client.query('BEGIN');
         const oldCharging = (await client.query('SELECT fiscalizar FROM impuesto.cobranza WHERE id_cobranza = $1', [idCobranza])).rows[0];
@@ -246,7 +249,7 @@ export const updateOneCharging = async (user: any, { idCobranza, contactado, est
         }
 
         
-        socket?.to('tabla-cobranza').emit('UPDATE_CHARGING', newCharging)        
+        console.log(socket?.to('tabla-cobranza').emit('UPDATE_CHARGING', newCharging))   
         await client.query('COMMIT;')
         return { status: 200, cobranza: newCharging, message: 'Cobranza actualizada.' }
     } catch (err) {
