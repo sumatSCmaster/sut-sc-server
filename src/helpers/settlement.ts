@@ -3406,6 +3406,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
     //   registroMunicipal: process.rim,
     // };
     if (!process.esVigente) {
+      await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO_SETTLEMENT, [application.id_solicitud]);
       const costoSolicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application.id_solicitud])).rows[0].monto_total;
       const pagoSum = process.pagos.map((e) => e.costo).reduce((e, i) => e + i, 0);
       if (pagoSum < costoSolicitud) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
