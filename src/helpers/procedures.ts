@@ -186,6 +186,7 @@ const getSettlementInstances = async (user, client: PoolClient) => {
         nombreCorto: el.descripcion_corta,
         fecha: { month: el.datos.fecha.month, year: el.datos.fecha.year },
         monto: el.monto,
+        montoPetro: el.monto_petro,
         certificado: el.certificado,
         recibo: el.recibo,
         pagado: el.pagado,
