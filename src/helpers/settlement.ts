@@ -2731,6 +2731,7 @@ export const insertSettlements = async ({ process, user }) => {
             ramo: branchNames[el.ramo],
             fecha: datos.fecha,
             monto: liquidacion.monto,
+            montoPetro: liquidacion.monto_petro,
             certificado: liquidacion.certificado,
             recibo: liquidacion.recibo,
             desglose: datos.desglose,
@@ -2753,7 +2754,7 @@ export const insertSettlements = async ({ process, user }) => {
     //   registroMunicipal: process.rim,
     // };
     const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
-    if (settlement.reduce((x, y) => x + +y.monto, 0) === 0) {
+    if (settlement.reduce((x, y) => x + +y.montoPetro, 0) === 0) {
       // (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.VALIDAR])).rows[0].state;
       await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
     }
