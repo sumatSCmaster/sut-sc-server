@@ -2667,7 +2667,7 @@ export const insertSettlements = async ({ process, user }) => {
 
     const impuestosExt = impuestos.map((x, i, j) => {
       if (x.ramo === 'AE') {
-        const costoSolvencia = 2 * PETRO;
+        const costoSolvencia = 0.12;
         x.monto = +x.monto - costoSolvencia;
         j.push({ monto: costoSolvencia, ramo: 'SAE', fechaCancelada: x.fechaCancelada });
       }
@@ -2675,14 +2675,14 @@ export const insertSettlements = async ({ process, user }) => {
         const liquidacionGas = {
           ramo: branchNames['SM'],
           fechaCancelada: x.fechaCancelada,
-          monto: process.esAgenteRetencion || process.esAgenteSENIAT ? +x.desglose[0].montoGas * 1.04 : +x.desglose[0].montoGas * 1.16,
+          monto: process.esAgenteRetencion || process.esAgenteSENIAT ? ((+x.desglose.reduce((x, j) => x + j.montoGas, 0) / PETRO) * 1.04).toFixed(8) : ((+x.desglose.reduce((x, j) => x + j.montoGas, 0) / PETRO) * 1.16).toFixed(8),
           desglose: x.desglose,
           descripcion: 'Pago del Servicio de Gas',
         };
         const liquidacionAseo = {
           ramo: branchNames['SM'],
           fechaCancelada: x.fechaCancelada,
-          monto: process.esAgenteRetencion || process.esAgenteSENIAT ? +x.desglose[0].montoAseo * 1.04 : +x.desglose[0].montoAseo * 1.16,
+          monto: process.esAgenteRetencion || process.esAgenteSENIAT ? ((+x.desglose.reduce((x, j) => x + j.montoAseo, 0) / PETRO) * 1.04).toFixed(8) : ((+x.desglose.reduce((x, j) => x + j.montoAseo, 0) / PETRO) * 1.16).toFixed(8),
           desglose: x.desglose,
           descripcion: 'Pago del Servicio de Aseo',
         };
