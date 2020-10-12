@@ -133,7 +133,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
   const client = await pool.connect();
   const gtic = await gticPool.connect();
   const montoAcarreado: any = {};
-  let SM, PP;
+  let SM, PP, MONO;
   let AE: any[] = [];
   let IU: any[] = [];
   try {
