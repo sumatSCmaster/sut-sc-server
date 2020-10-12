@@ -82,7 +82,7 @@ export const alterateAESettlements = async ({ settlements, type }) => {
         delete liquidacion.datos[tiposCorreccion.sustitutiva];
         const newDatos = { ...liquidacion.datos, desglose: s.desglose, [tiposCorreccion[type]]: true };
         if (state === 'ingresardatos') {
-          newSettlement = (await client.query(queries.UPDATE_SETTLEMENT_AMOUNT_AND_DATA, [newDatos, fixatedAmount(s.monto), s.id])).rows[0];
+          newSettlement = (await client.query(queries.UPDATE_SETTLEMENT_AMOUNT_AND_DATA, [newDatos, s.monto, s.id])).rows[0];
         } else if (state === 'finalizado' && tiposCorreccion[type] === 'complementaria') {
           let application = (await client.query(queries.GET_PATCH_APPLICATION_BY_ORIGINAL_ID_AND_STATE, [liquidacion.id_solicitud, 'ingresardatos'])).rows[0];
           if (!application) {
@@ -93,15 +93,7 @@ export const alterateAESettlements = async ({ settlements, type }) => {
             await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [moment(liquidacion.fecha_liquidacion).format('MM-DD-YYYY'), application.id_solicitud]);
           }
           newSettlement = (
-            await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
-              application.id_solicitud,
-              fixatedAmount(s.monto),
-              'AE',
-              s.descripcion || 'Pago ordinario',
-              newDatos,
-              liquidacion.fecha_vencimiento,
-              liquidacion.id_registro_municipal || null,
-            ])
+            await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [application.id_solicitud, s.monto, 'AE', s.descripcion || 'Pago ordinario', newDatos, liquidacion.fecha_vencimiento, liquidacion.id_registro_municipal || null])
           ).rows[0];
           await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [moment(liquidacion.fecha_liquidacion).format('MM-DD-YYYY'), newSettlement.id_liquidacion]);
         } else {
