@@ -29,9 +29,10 @@ import services from './services';
 import retention from './retention';
 import repairs from './repairs';
 import contributor from './contributor';
+import scales from './scales';
 import vehicles from './vehicles';
 import chargings from './chargings';
-import fisc from './fiscalization'
+import fisc from './fiscalization';
 
 const router = Router();
 
@@ -58,6 +59,7 @@ router.use('/branches', branches);
 router.use('/discounts', discount);
 router.use('/exonerations', exonerations);
 router.use('/activities', activities);
+router.use('/scales', scales);
 router.use('/cashier', cashier);
 router.use('/receipt', receipt);
 router.use('/services', services);
@@ -65,8 +67,8 @@ router.use('/retentions', retention);
 router.use('/repairs', repairs);
 router.use('/contributor', contributor);
 router.use('/vehicles', vehicles);
-router.use('/wallet', chargings)
-router.use('/fiscalization', fisc)
+router.use('/wallet', chargings);
+router.use('/fiscalization', fisc);
 router.use(resources);
 
 router.get('/', (req, res) => {
