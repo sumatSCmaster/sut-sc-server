@@ -76,8 +76,8 @@ export const getCleaningTariffForEstate = async ({ estate, branchId, client }) =
     if (!estate && !!branchId) return (await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto;
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const USD = (await client.query(queries.GET_USD_VALUE)).rows[0].valor_en_bs;
-    const costoMts = +(await client.query('SELECT indicador FROM impuesto.baremo_servicio_municipal WHERE id_baremo = 1')).rows[0].indicador;
-    const limiteAseo = +(await client.query('SELECT indicador FROM impuesto.baremo_servicio_municipal WHERE id_baremo = 2')).rows[0].indicador;
+    const costoMts = +(await client.query('SELECT indicador FROM impuesto.baremo WHERE id_baremo = 1')).rows[0].indicador;
+    const limiteAseo = +(await client.query('SELECT indicador FROM impuesto.baremo WHERE id_baremo = 2')).rows[0].indicador;
     const calculoAseo =
       estate.tipo_inmueble === 'COMERCIAL'
         ? estate.metros_construccion && +estate.metros_construccion !== 0
@@ -155,7 +155,7 @@ export const getServicesTariffScales = async () => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const scales = (await client.query('SELECT id_baremo as id, descripcion, indicador FROM impuesto.baremo_servicio_municipal')).rows;
+    const scales = (await client.query('SELECT id_baremo as id, descripcion, indicador FROM impuesto.baremo')).rows;
     await client.query('COMMIT');
     return { status: 200, message: 'Baremo de tarifas de servicio municipal obtenido', scales };
   } catch (error) {
