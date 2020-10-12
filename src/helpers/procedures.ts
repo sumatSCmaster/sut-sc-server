@@ -651,7 +651,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
           : await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
     } else if (!![28, 36].find((type) => type === resources.tipoTramite)) {
       const { aprobado } = procedure;
-      datos.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
+      datos.funcionario.pago = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
         monto: row.monto,
         formaPago: row.metodo_pago,
         banco: row.nombre,
