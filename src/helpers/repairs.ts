@@ -108,7 +108,7 @@ export const insertRepairs = async ({ process, user }) => {
           const liquidacion = (
             await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
               application.id_solicitud,
-              fixatedAmount(+el.reduce((i, j) => i + j.monto, 0)),
+              (+el.reduce((i, j) => i + j.monto, 0)/PETRO).toFixed(8),
               'REP',
               'Pago ordinario',
               datos,

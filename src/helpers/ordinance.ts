@@ -2,6 +2,7 @@ import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { PoolClient } from 'pg';
+import { fixatedAmount } from './settlement';
 
 const pool = Pool.getInstance();
 
@@ -27,11 +28,12 @@ export const getOrdinancesByInstitution = async (idInstitucion) => {
 export const getOrdinancesByProcedure = async (id) => {
   const client = await pool.connect();
   try {
+    
     const ordenanzasByProcedure = await client.query(queries.ORDINANCES_WITHOUT_CODCAT_PROCEDURE, [id]);
     let total = 0;
     let costo;
     const calculated = ordenanzasByProcedure.rows.map((row) => {
-      costo = row.formula === null ? row.tarifaOrdenanza * row.valorEnBs : new Function(`use strict; return ${row.formula.replace(/\$\$TARIFA\$\$/g, row.tarifa)}`);
+      costo = row.formula === null ? fixatedAmount(row.tarifaOrdenanza * row.valorEnBs) : new Function(`use strict; return ${row.formula.replace(/\$\$TARIFA\$\$/g, row.tarifa)}`);
       total += costo;
       return {
         id: row.id,

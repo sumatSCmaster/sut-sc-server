@@ -3323,11 +3323,11 @@ export const addRebateForDeclaration = async ({ process, user }) => {
     await client.query('BEGIN');
     const test = await Promise.all(
       recursiveRebate(hasAE, montoRebajado).map(async (el) => {
-        const oldValue = hasAE.find((x) => x.id_liquidacion === el.id_liquidacion).monto;
+        const oldValue = hasAE.find((x) => x.id_liquidacion === el.id_liquidacion).monto_petro;
         console.log('if -> oldValue', oldValue);
         const newDatos = { ...el.datos, montoRebajado: oldValue - el.monto };
         console.log('montoRebajado', oldValue - el.monto);
-        const liquidacion = (await client.query('UPDATE impuesto.liquidacion SET datos = $1, monto = $2 WHERE id_liquidacion = $3 RETURNING *;', [newDatos, el.monto, el.id_liquidacion])).rows[0];
+        const liquidacion = (await client.query('UPDATE impuesto.liquidacion SET datos = $1, monto_petro = $2 WHERE id_liquidacion = $3 RETURNING *;', [newDatos, el.monto, el.id_liquidacion])).rows[0];
         return liquidacion;
       })
     );
