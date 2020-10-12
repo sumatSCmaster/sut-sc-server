@@ -1484,6 +1484,7 @@ export const getAgreements = async ({ user }: { user: Usuario }) => {
             ])
           ).rows[0]?.descripcion,
           monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0]?.monto_total,
+          montoPetro: (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total,
           porciones: await Promise.all((await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [el.id_convenio])).rows.map(async (el) => await getAgreementFractionByIdNots({ id: el.id_fraccion }, client))),
         };
       })
@@ -1535,6 +1536,7 @@ export const getAgreementsForContributor = async ({ reference, docType, document
             ])
           ).rows[0]?.descripcion,
           monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0]?.monto_total,
+          montoPetro: (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total,
           porciones: await Promise.all((await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [el.id_convenio])).rows.map(async (el) => await getAgreementFractionById({ id: el.id_fraccion }))),
         };
       })
@@ -1576,6 +1578,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
             : undefined,
           fecha: el.fecha,
           monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
+          montoPetro: (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total,
           liquidaciones: liquidaciones
             .filter((el) => el.tipoProcedimiento !== 'MULTAS')
             .map((el) => {
@@ -1642,6 +1645,7 @@ export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client
             : undefined,
           fecha: el.fecha,
           monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
+          montoPetro: (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total,
           liquidaciones: liquidaciones
             .filter((el) => el.tipoProcedimiento !== 'MULTAS')
             .map((el) => {
@@ -1709,6 +1713,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
               : undefined,
             fecha: el.fecha,
             monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
+            montoPetro: (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total,
             liquidaciones: await Promise.all(
               liquidaciones
                 .filter((el) => el.tipoProcedimiento !== 'MULTAS')
@@ -1794,6 +1799,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
             estado: state,
             referenciaMunicipal: liquidaciones[0]?.id_registro_municipal ? rim : undefined,
             monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
+            montoPetro: (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total,
             liquidaciones: await Promise.all(
               liquidaciones
                 .filter((el) => el.tipoProcedimiento !== 'MULTAS')
