@@ -12,7 +12,7 @@ router.patch('/petro', authenticate('jwt'), isSuperuserOrDaniel, async (req, res
   if (data) res.status(200).json({ ...data });
 });
 
-router.get('/petro', authenticate('jwt'), isSuperuserOrDaniel, async (req, res) => {
+router.get('/petro', authenticate('jwt'), async (req, res) => {
   const [error, data] = await fulfill(getPetroValue());
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ ...data });
