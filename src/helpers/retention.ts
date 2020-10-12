@@ -285,6 +285,8 @@ export const insertRetentions = async ({ process, user }) => {
         const datos = {
           //   desglose: el.desglose ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
           fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },
+          valorPetro: PETRO,
+          fechaLiquidacion: moment().format('MM-DD-YYYY'),
           // desglose: el.items,
         };
         // console.log(el.ramo);
@@ -324,7 +326,7 @@ export const insertRetentions = async ({ process, user }) => {
     );
 
     let state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
-    if (settlement.reduce((x, y) => x + +y.monto, 0) === 0) {
+    if (settlement.reduce((x, y) => x + +y.montoPetro, 0) === 0) {
       // (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.VALIDAR])).rows[0].state;
       state = await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
     }
