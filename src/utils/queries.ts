@@ -589,7 +589,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   UPDATE_TAXPAYER: `UPDATE impuesto.contribuyente SET tipo_documento = $2, documento = $3, razon_social = $4, 
       denominacion_comercial = $5, siglas = $6, id_parroquia = $7, sector = $8, direccion = $9, punto_referencia = $10 WHERE id_contribuyente = $1;`,
   UPDATE_RIM:
-    'UPDATE impuesto.registro_municipal SET telefono_celular = $2, email = $3, denominacion_comercial = $4, nombre_representante = $5, capital_suscrito = $6, tipo_sociedad = $7, telefono_habitacion = $8, id_parroquia = $9, direccion = $10 WHERE id_registro_municipal = $1',
+    'UPDATE impuesto.registro_municipal SET telefono_celular = $2, email = $3, denominacion_comercial = $4, nombre_representante = $5, capital_suscrito = $6, tipo_sociedad = $7, telefono_habitacion = $8, id_parroquia = $9, direccion = $10, es_monotributo = $11 WHERE id_registro_municipal = $1',
   GET_APPLICATION_BY_ID: 'SELECT * FROM impuesto.solicitud WHERE id_solicitud = $1',
   GET_APPLICATION_BY_SETTLEMENT_ID: 'SELECT * FROM impuesto.solicitud WHERE id_solicitud = (SELECT id_solicitud FROM impuesto.liquidacion WHERE id_liquidacion = $1)',
   GET_APPLICATION_INSTANCES_BY_USER: 'SELECT * FROM impuesto.solicitud WHERE id_usuario = $1 ORDER BY fecha DESC',
@@ -1439,7 +1439,7 @@ ORDER BY fecha_liquidacion DESC;
   GET_CONTRIBUTOR_WITH_BRANCH: 'SELECT * FROM impuesto.registro_municipal r INNER JOIN impuesto.contribuyente c ON r.id_contribuyente = c.id_contribuyente WHERE r.referencia_municipal = $1',
   CHANGE_SETTLEMENT_TO_NEW_APPLICATION: `UPDATE impuesto.liquidacion SET id_solicitud = $1 
     WHERE id_registro_municipal = $2 AND id_subramo 
-    IN (SELECT id_subramo FROM impuesto.subramo WHERE subindice != '2' AND id_ramo = $3) 
+    IN (SELECT id_subramo FROM impuesto.subramo WHERE descripcion != 'Convenio de Pago' AND id_ramo = $3) 
     AND id_liquidacion 
     IN (SELECT id_liquidacion FROM impuesto.liquidacion l 
       INNER JOIN (SELECT s.id_solicitud AS id,
@@ -1543,7 +1543,7 @@ ORDER BY fecha_liquidacion DESC;
     ORDER BY monto DESC
     LIMIT 1000) s)`,
   ADD_BRANCH_FOR_CONTRIBUTOR:
-    "INSERT INTO impuesto.registro_municipal (id_contribuyente, fecha_aprobacion, telefono_celular, email, denominacion_comercial, nombre_representante, actualizado, capital_suscrito, tipo_sociedad, estado_licencia, direccion, id_parroquia) VALUES ($1, (NOW() - interval '4 hours'), $2, $3, $4, $5, true, $6, $7, $8, $9, $10) RETURNING *",
+    "INSERT INTO impuesto.registro_municipal (id_contribuyente, fecha_aprobacion, telefono_celular, email, denominacion_comercial, nombre_representante, actualizado, capital_suscrito, tipo_sociedad, estado_licencia, direccion, id_parroquia, es_monotributo) VALUES ($1, (NOW() - interval '4 hours'), $2, $3, $4, $5, true, $6, $7, $8, $9, $10, $11) RETURNING *",
   UPDATE_BRANCH_INFO: 'UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombre_representante = $2, telefono_celular = $3, email = $4, actualizado = $5, direccion = $6 WHERE referencia_municipal = $7 RETURNING *',
   UPDATE_LICENSE_STATUS: 'UPDATE impuesto.registro_municipal SET estado_licencia = $1 WHERE id_registro_municipal = $2',
   UPDATE_ECONOMIC_ACTIVITIES_FOR_BRANCH:
