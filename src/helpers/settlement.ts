@@ -202,7 +202,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                 nombreActividad: el.descripcion,
                 idContribuyente: branch.id_registro_municipal,
                 alicuota: el.alicuota / 100,
-                costoSolvencia: UTMM * 2,
+                costoSolvencia: UTMM * 0.12,
                 deuda: await Promise.all(
                   new Array(interpolation).fill({ month: null, year: null }).map(async (value, index) => {
                     const date = addMonths(new Date(paymentDate.toDate()), index);
