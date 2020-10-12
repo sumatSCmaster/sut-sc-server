@@ -3525,7 +3525,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             if (costo > totalSolicitud) throw { status: 403, message: 'La suma de las fracciones del convenio debe ser exactamente igual al total de la deuda' };
             const benefitAgreement = await Promise.all(
               x.porciones.map(async (el) => {
-                const fraccion = (await client.query(queries.CREATE_AGREEMENT_FRACTION, [agreement.id_convenio, fixatedAmount(+el.monto), el.porcion, el.fechaDePago])).rows[0];
+                const fraccion = (await client.query(queries.CREATE_AGREEMENT_FRACTION, [agreement.id_convenio, +el.monto, el.porcion, el.fechaDePago])).rows[0];
                 await client.query(queries.UPDATE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.INGRESARDATOS]);
               })
             );
