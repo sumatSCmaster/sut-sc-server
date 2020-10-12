@@ -2704,6 +2704,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
         await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [application, fixatedAmount(+interest), 'INTERESES', 'Pago ordinario', datos, moment().endOf('month').format('MM-DD-YYYY'), idReferenciaMunicipal || null])
       ).rows[0];
     }
+    await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO, [application]);
     const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0];
     console.log('addTaxApplicationPayment -> solicitud', solicitud);
     const applicationType = (await client.query('SELECT tipo_solicitud FROM impuesto.solicitud WHERE id_solicitud = $1', [application])).rows[0]?.tipo_solicitud || 'IMPUESTO';
@@ -2732,6 +2733,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
       })
     );
 
+    await client.query(queries.FINISH_ROUNDING, [application]);
     const state =
       user.tipoUsuario === 4
         ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0]
