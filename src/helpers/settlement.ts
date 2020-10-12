@@ -419,6 +419,30 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         };
       }
     }
+    if (!AEApplicationExists && branch?.es_monotributo) {
+      const lastMono = (await client.query(lastSettlementQuery, [codigosRamo.AE, lastSettlementPayload])).rows[0];
+      const lastMonoPayment = moment(lastMono.fecha_liquidacion).add(1, 'M') || moment().month(0);
+      const MonoDate = moment([lastMonoPayment.year(), lastMonoPayment.month(), 1]);
+      const dateInterpolationMono = Math.floor(now.diff(MonoDate, 'M'));
+      const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows.map((x) => x.id_actividad_economica);
+
+      MONO = {
+        deuda: await Promise.all(
+          new Array(dateInterpolationMono + 1).fill({ month: null, year: null }).map(async (value, index) => {
+            const date = addMonths(new Date(lastMonoPayment.toDate()), index);
+            const momentDate = moment(date);
+            // const exonerado = await isExonerated({ branch: codigosRamo.SM, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
+            return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
+          })
+        ),
+        aforos: economicActivities,
+        montoAE: 0.15,
+        montoSAE: 0.12,
+        montoSM: 0.05,
+        montoIU: 0.05,
+        montoPP: 0.05,
+      };
+    }
     return {
       status: 200,
       message: 'Impuestos obtenidos satisfactoriamente',
