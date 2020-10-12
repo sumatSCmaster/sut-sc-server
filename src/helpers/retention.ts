@@ -231,7 +231,7 @@ export const insertRetentions = async ({ process, user }) => {
             );
             if (exonerado) return;
             const multa = Promise.resolve(
-              client.query(queries.CREATE_FINING_FOR_LATE_RETENTION, [
+              client.query(queries.CREATE_FINING_FOR_LATE_RETENTION_PETRO, [
                 application.id_solicitud,
                 fixatedAmount(el.monto * 0.1),
                 {
@@ -257,7 +257,7 @@ export const insertRetentions = async ({ process, user }) => {
       const exonerado = await isExonerated({ branch: codigosRamo.MUL, contributor: contributorReference?.id_registro_municipal, activity: null, startingDate: moment().startOf('month') }, client);
       if (now.date() > 10 && !exonerado) {
         const multa = (
-          await client.query(queries.CREATE_FINING_FOR_LATE_RETENTION, [
+          await client.query(queries.CREATE_FINING_FOR_LATE_RETENTION_PETRO, [
             application.id_solicitud,
             fixatedAmount(onlyRD[0].monto * 0.1),
             {

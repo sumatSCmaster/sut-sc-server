@@ -2633,7 +2633,7 @@ export const insertSettlements = async ({ process, user }) => {
             );
             if (exonerado) return;
             const multa = Promise.resolve(
-              client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
+              client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION_PETRO, [
                 application.id_solicitud,
                 ((el.monto - 0.12) * 0.1).toFixed(8),
                 {
@@ -2659,7 +2659,7 @@ export const insertSettlements = async ({ process, user }) => {
       const exonerado = await isExonerated({ branch: codigosRamo.MUL, contributor: contributorReference?.id_registro_municipal, activity: null, startingDate: moment().startOf('month') }, client);
       if (now.date() > 10 && !exonerado) {
         const multa = (
-          await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
+          await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION_PETRO, [
             application.id_solicitud,
             ((onlyAE[0].monto - 0.12) * 0.1).toFixed(8),
             {
