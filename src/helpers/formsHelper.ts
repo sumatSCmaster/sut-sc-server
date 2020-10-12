@@ -9,22 +9,11 @@ const written = require('written-number');
 
 const dev = process.env.NODE_ENV !== 'production';
 
-export const createForm = async (
-  { fecha, codigo, formato, tramite, institucion, id, datos, tipoTramite, estado, costoFormateado = '', UTMM = '', costo = 0 },
-  client
-) => {
+export const createForm = async ({ fecha, codigo, formato, tramite, institucion, id, datos, tipoTramite, estado, costoFormateado = '', PETRO = '', costo = 0 }, client) => {
   const response = (await client.query(queries.GET_PLANILLA_AND_CERTIFICATE_TYPE_PROCEDURE, [tipoTramite])).rows[0];
   const aprobado = (await client.query(queries.GET_APPROVED_STATE_FOR_PROCEDURE, [id])).rows[0].aprobado;
-  const planilla =
-    estado === 'iniciado'
-      ? response.planilla
-      : response.sufijo === 'ompu'
-      ? aprobado
-        ? response.certificado
-        : response.planilla_rechazo
-      : response.certificado;
-  const dir =
-    estado === 'iniciado' ? `${process.env.SERVER_URL}/tramites/${codigo}/planilla.pdf` : `${process.env.SERVER_URL}/tramites/${codigo}/certificado.pdf`;
+  const planilla = estado === 'iniciado' ? response.planilla : response.sufijo === 'ompu' ? (aprobado ? response.certificado : response.planilla_rechazo) : response.certificado;
+  const dir = estado === 'iniciado' ? `${process.env.SERVER_URL}/tramites/${codigo}/planilla.pdf` : `${process.env.SERVER_URL}/tramites/${codigo}/certificado.pdf`;
   const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${id}`, { errorCorrectionLevel: 'H' });
   return new Promise(async (res, rej) => {
     const html = renderFile(resolve(__dirname, `../views/planillas/${planilla}.pug`), {
@@ -39,39 +28,35 @@ export const createForm = async (
       moment: require('moment'),
       QR: linkQr,
       costoFormateado,
-      UTMM,
+      PETRO,
       costo,
       written,
     });
 
     const pdfDir = resolve(__dirname, `../../archivos/tramites/${codigo}/${dir.split('/').pop()}`);
     if (dev) {
-      pdf
-        .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
-        .toFile(pdfDir, () => {
-          res(dir);
-        });
+      pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, () => {
+        res(dir);
+      });
     } else {
       try {
-        pdf
-          .create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
-          .toBuffer(async (err, buffer) => {
-            if (err) {
-              rej(err);
-            } else {
-              const bucketParams = {
-                Bucket: 'sut-maracaibo',
-                Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}`,
-              };
-              await S3Client.putObject({
-                ...bucketParams,
-                Body: buffer,
-                ACL: 'public-read',
-                ContentType: 'application/pdf',
-              }).promise();
-              res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
-            }
-          });
+        pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toBuffer(async (err, buffer) => {
+          if (err) {
+            rej(err);
+          } else {
+            const bucketParams = {
+              Bucket: 'sut-maracaibo',
+              Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}`,
+            };
+            await S3Client.putObject({
+              ...bucketParams,
+              Body: buffer,
+              ACL: 'public-read',
+              ContentType: 'application/pdf',
+            }).promise();
+            res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+          }
+        });
       } catch (e) {
         throw errorMessageExtractor(e);
       } finally {

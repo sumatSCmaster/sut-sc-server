@@ -1,19 +1,19 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
-import { updateUtmmValue, getUtmmValue, getUsdValue, updateUsdValue } from '@helpers/values';
+import { updatePetroValue, getPetroValue, getUsdValue, updateUsdValue } from '@helpers/values';
 import { isSuperuser, isSuperuserOrDaniel } from '@validations/auth';
 import { authenticate } from 'passport';
 
 const router = Router();
 
-router.patch('/utmm', authenticate('jwt'), isSuperuserOrDaniel, async (req, res) => {
-  const [error, data] = await fulfill(updateUtmmValue(req.body.value));
+router.patch('/petro', authenticate('jwt'), isSuperuserOrDaniel, async (req, res) => {
+  const [error, data] = await fulfill(updatePetroValue(req.body.value));
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ ...data });
 });
 
-router.get('/utmm', authenticate('jwt'), isSuperuserOrDaniel, async (req, res) => {
-  const [error, data] = await fulfill(getUtmmValue());
+router.get('/petro', authenticate('jwt'), isSuperuserOrDaniel, async (req, res) => {
+  const [error, data] = await fulfill(getPetroValue());
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ ...data });
 });

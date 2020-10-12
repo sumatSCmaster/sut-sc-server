@@ -31,8 +31,7 @@ export const getOrdinancesByProcedure = async (id) => {
     let total = 0;
     let costo;
     const calculated = ordenanzasByProcedure.rows.map((row) => {
-      costo =
-        row.formula === null ? row.tarifaOrdenanza * row.valorEnBs : new Function(`use strict; return ${row.formula.replace(/\$\$TARIFA\$\$/g, row.tarifa)}`);
+      costo = row.formula === null ? row.tarifaOrdenanza * row.valorEnBs : new Function(`use strict; return ${row.formula.replace(/\$\$TARIFA\$\$/g, row.tarifa)}`);
       total += costo;
       return {
         id: row.id,
@@ -76,10 +75,7 @@ export const getOrdinancesByProcedureWithCodCat = async (id, cod) => {
     let costo;
     let { metrosConstruccion } = inmueble.rows[0];
     const calculated = ordenanzasByProcedure.rows.map((row) => {
-      costo =
-        row.formula === null
-          ? +row.tarifaOrdenanza * +row.valorEnBs * +metrosConstruccion
-          : new Function(`use strict; return ${row.formula.replace(/\$\$TARIFA\$\$/g, row.tarifa)}`);
+      costo = row.formula === null ? +row.tarifaOrdenanza * +row.valorEnBs * +metrosConstruccion : new Function(`use strict; return ${row.formula.replace(/\$\$TARIFA\$\$/g, row.tarifa)}`);
       total += costo;
       return {
         id: row.id,
@@ -135,10 +131,10 @@ export const disableOrdinance = async (idOrdenanza) => {
   }
 };
 
-export const updateOrdinance = async (idOrdenanza, newUtmm) => {
+export const updateOrdinance = async (idOrdenanza, newPetro) => {
   const client = await pool.connect();
   try {
-    const res = await client.query(queries.UPDATE_ORDINANCE, [idOrdenanza, newUtmm]);
+    const res = await client.query(queries.UPDATE_ORDINANCE, [idOrdenanza, newPetro]);
     return res.rowCount > 0
       ? {
           status: 200,
@@ -184,7 +180,7 @@ export const createOrdinance = async (ordinance) => {
   try {
     const res = await client.query(queries.CREATE_ORDINANCE, [
       ordinance.nombreOrdenanza,
-      ordinance.precioUtmm,
+      ordinance.precioPetro,
       ordinance.idTipoTramite,
       ordinance.utilizaCodcat ? ordinance.utilizaCodcat : false,
       ordinance.utilizaVariable ? ordinance.idVariable : null,

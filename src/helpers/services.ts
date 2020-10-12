@@ -74,7 +74,7 @@ export const getCleaningTariffForEstate = async ({ estate, branchId, client }) =
   try {
     // if (!estate && !branchId) return (await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto;
     if (!estate && !!branchId) return (await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto;
-    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const USD = (await client.query(queries.GET_USD_VALUE)).rows[0].valor_en_bs;
     const costoMts = +(await client.query('SELECT indicador FROM impuesto.baremo_servicio_municipal WHERE id_baremo = 1')).rows[0].indicador;
     const limiteAseo = +(await client.query('SELECT indicador FROM impuesto.baremo_servicio_municipal WHERE id_baremo = 2')).rows[0].indicador;
@@ -84,7 +84,7 @@ export const getCleaningTariffForEstate = async ({ estate, branchId, client }) =
           ? costoMts * USD * estate.metros_construccion
           : (await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto
         : (await client.query(queries.GET_RESIDENTIAL_CLEANING_TARIFF)).rows[0].monto;
-    const tarifaAseo = calculoAseo / UTMM > limiteAseo ? UTMM * limiteAseo : calculoAseo;
+    const tarifaAseo = calculoAseo / PETRO > limiteAseo ? PETRO * limiteAseo : calculoAseo;
     return +tarifaAseo;
   } catch (error) {
     throw {
@@ -99,7 +99,7 @@ export const getGasTariffForEstate = async ({ estate, branchId, client }) => {
   try {
     if (!estate && !!branchId) return (await client.query(queries.GET_AE_GAS_TARIFF, [branchId])).rows[0].monto;
     if (!estate.posee_gas) return 0;
-    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const tarifaGas = estate.tipo_inmueble === 'COMERCIAL' ? (await client.query(queries.GET_AE_GAS_TARIFF, [branchId])).rows[0].monto : (await client.query(queries.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].monto;
     return +tarifaGas;
   } catch (error) {

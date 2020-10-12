@@ -125,7 +125,7 @@ const queries = {
   INSERT_TAKINGS_IN_PROCEDURE: 'INSERT INTO tramite_archivo_recaudo VALUES ($1,$2)',
   GET_SECTIONS_BY_PROCEDURE: 'SELECT DISTINCT sect.id_seccion as id, sect.nombre FROM\
   campo_tramite ct RIGHT JOIN seccion sect ON ct.id_seccion=sect.id_seccion WHERE ct.id_tipo_tramite=$1 ORDER BY sect.id_seccion',
-  GET_PROCEDURE_BY_INSTITUTION: 'SELECT id_tipo_tramite, nombre_tramite, costo_base, sufijo, pago_previo, utiliza_informacion_catastral, costo_utmm \
+  GET_PROCEDURE_BY_INSTITUTION: 'SELECT id_tipo_tramite, nombre_tramite, costo_base, sufijo, pago_previo, utiliza_informacion_catastral, costo_petro \
     FROM tipo_tramite tt WHERE id_institucion = $1 ORDER BY id_tipo_tramite',
   GET_FIELDS_BY_SECTION:
     "SELECT ct.*, camp.nombre, camp.tipo, camp.validacion, camp.col FROM campo_tramite ct INNER JOIN\
@@ -201,7 +201,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     nombre_corto as "nombreCorto"  FROM tipo_tramite WHERE id_tipo_tramite = $1;',
   VALIDATE_FIELDS_FROM_PROCEDURE: 'SELECT DISTINCT camp.validacion, camp.tipo FROM campo_tramite ct INNER JOIN campo camp ON\
      ct.id_campo=camp.id_campo WHERE ct.id_tipo_tramite=$1 AND ct.estado=$2',
-  UPDATE_PROCEDURE_COST: 'UPDATE tipo_tramite SET costo_utmm = $2, costo_base = $3 WHERE id_tipo_tramite = $1 RETURNING *',
+  UPDATE_PROCEDURE_COST: 'UPDATE tipo_tramite SET costo_petro = $2, costo_base = $3 WHERE id_tipo_tramite = $1 RETURNING *',
   UPDATE_STATE: 'SELECT update_tramite_state($1, $2, $3, $4, $5) as state;', //tramite, evento
   COMPLETE_STATE: 'SELECT complete_tramite_state ($1,$2,$3,$4, $5) as state',
   UPDATE_STATE_SOCIAL_CASE: 'SELECT update_caso_state($1, $2, $3) as state', //idcaso, event, datos
@@ -285,20 +285,20 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   //ordenanza
   CREATE_ORDINANCE:
     'WITH ordenanzaTmp AS (INSERT INTO ordenanza (descripcion, tarifa, id_valor) \
-    VALUES ($1, $2, (SELECT id_valor FROM valor WHERE descripcion = \'UTMM\')) RETURNING *) \
+    VALUES ($1, $2, (SELECT id_valor FROM valor WHERE descripcion = \'PETRO\')) RETURNING *) \
     , tarifaTmp AS (INSERT INTO tarifa_inspeccion (id_ordenanza, id_tipo_tramite, utiliza_codcat, id_variable) VALUES ((SELECT id_ordenanza FROM ordenanzaTmp), \
     $3, $4, $5) RETURNING *) \
-    SELECT o.id_ordenanza AS "id", o.descripcion AS "nombreOrdenanza", o.tarifa AS "precioUtmm", t.id_tipo_tramite AS "idTipoTramite", \
+    SELECT o.id_ordenanza AS "id", o.descripcion AS "nombreOrdenanza", o.tarifa AS "precioPetro", t.id_tipo_tramite AS "idTipoTramite", \
     t.utiliza_codcat AS "utilizaCodcat", t.id_variable IS NOT NULL AS "utilizaVariable", t.id_variable AS "idVariable", v.nombre AS "nombreVariable" \
     FROM ordenanzaTmp o INNER JOIN tarifaTmp t ON o.id_ordenanza = t.id_ordenanza \
     LEFT JOIN variable_ordenanza v ON t.id_variable = v.id_variable',
   CREATE_ORDINANCE_FOR_PROCEDURE:
-    'INSERT INTO ordenanza_tramite (id_tramite, id_tarifa, utmm, valor_calc, factor, factor_value, costo_ordenanza) \
+    'INSERT INTO ordenanza_tramite (id_tramite, id_tarifa, petro, valor_calc, factor, factor_value, costo_ordenanza) \
     VALUES ($1, (SELECT id_tarifa FROM tarifa_inspeccion trf INNER JOIN ordenanza ord ON \
       trf.id_ordenanza=ord.id_ordenanza WHERE trf.id_tipo_tramite=$2 AND ord.descripcion = $3 LIMIT 1), \
       $4,$5,$6,$7, $8) RETURNING *;',
   ORDINANCES_BY_INSTITUTION:
-    'SELECT o.id_ordenanza AS id, o.descripcion AS "nombreOrdenanza", o.tarifa AS "precioUtmm", ti.id_tipo_tramite AS "idTipoTramite", \
+    'SELECT o.id_ordenanza AS id, o.descripcion AS "nombreOrdenanza", o.tarifa AS "precioPetro", ti.id_tipo_tramite AS "idTipoTramite", \
     ti.utiliza_codcat AS "utilizaCodcat", (ti.id_variable IS NOT NULL) AS "utilizaVariable", ti.id_variable AS "idVariable", vo.nombre AS "nombreVariable" \
     FROM ordenanza o \
     INNER JOIN tarifa_inspeccion ti ON o.id_ordenanza = ti.id_ordenanza \
@@ -332,18 +332,18 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_ORDINANCE_VARIABLES: 'SELECT id_variable as id, nombre, nombre_plural as "nombrePlural" FROM variable_ordenanza;',
   UPDATE_ORDINANCE:
     'WITH updateTmp AS (UPDATE ordenanza SET tarifa = $2 WHERE id_ordenanza = $1 RETURNING id_ordenanza as id, descripcion AS "nombreOrdenanza", \
-    tarifa AS "precioUtmm") \
-      SELECT o.id, "nombreOrdenanza", "precioUtmm", t.id_tipo_tramite AS "idTipoTramite", \
+    tarifa AS "precioPetro") \
+      SELECT o.id, "nombreOrdenanza", "precioPetro", t.id_tipo_tramite AS "idTipoTramite", \
       t.utiliza_codcat AS "utilizaCodcat", t.id_variable IS NOT NULL AS "utilizaVariable", t.id_variable AS "idVariable", v.nombre AS "nombreVariable" \
       FROM updateTmp o INNER JOIN tarifa_inspeccion t ON o.id = t.id_ordenanza \
       LEFT JOIN variable_ordenanza v ON t.id_variable = v.id_variable',
   DISABLE_ORDINANCE: 'UPDATE ordenanza SET habilitado = false WHERE id_ordenanza = $1 RETURNING *;',
 
   //valor
-  GET_UTMM_VALUE: "SELECT valor_en_bs FROM valor WHERE descripcion = 'UTMM'",
+  GET_PETRO_VALUE: "SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'",
   GET_USD_VALUE: "SELECT valor_en_bs FROM valor WHERE descripcion = 'Dolar'",
-  GET_UTMM_VALUE_FORMAT: "SELECT valor_en_bs AS valor FROM valor WHERE descripcion = 'UTMM'",
-  UPDATE_UTMM_VALUE: "UPDATE valor SET valor_en_bs = $1 WHERE descripcion = 'UTMM' RETURNING valor_en_bs;",
+  GET_PETRO_VALUE_FORMAT: "SELECT valor_en_bs AS valor FROM valor WHERE descripcion = 'PETRO'",
+  UPDATE_PETRO_VALUE: "UPDATE valor SET valor_en_bs = $1 WHERE descripcion = 'PETRO' RETURNING valor_en_bs;",
   UPDATE_USD_VALUE: "UPDATE valor SET valor_en_bs = $1 WHERE descripcion = 'Dolar' RETURNING valor_en_bs;",
 
   //Estadisticas
