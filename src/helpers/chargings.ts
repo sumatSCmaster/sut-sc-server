@@ -244,12 +244,12 @@ export const updateOneCharging = async (user: any, { idCobranza, contactado, est
             if(fiscalization.rowCount === 0){
                const fisc = await client.query(queries.INSERT_FISCALIZATION, [newCharging.id_registro_municipal, 'COBRANZA']) 
                const newFisc = (await client.query(queries.GET_FISCALIZATIONS_ID, [fisc.rows[0].idFiscalizacion])).rows[0];
-               socket?.to('tabla-fiscalizacion').emit('NEW_FISCALIZATION', newFisc)
+               socket?.to('tabla-fiscalizacion').broadcast.emit('NEW_FISCALIZATION', newFisc)
             }
         }
 
         
-        console.log(socket?.to('tabla-cobranza').emit('UPDATE_CHARGING', newCharging))   
+        console.log(socket?.to('tabla-cobranza').broadcast.emit('UPDATE_CHARGING', newCharging))   
         await client.query('COMMIT;')
         return { status: 200, cobranza: newCharging, message: 'Cobranza actualizada.' }
     } catch (err) {
