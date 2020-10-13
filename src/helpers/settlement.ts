@@ -4642,7 +4642,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
               montoDeclarado: desglose.montoDeclarado,
               montoRebajado: el.datos?.montoRebajado || 0,
               alicuota: row.alicuota / 100,
-              minTrib: row.minimoTributable,
+              minTrib: Math.round(row.minimo_tributable) * PETRO,
               impuesto: desglose.montoCobrado || 0,
             };
           }),
