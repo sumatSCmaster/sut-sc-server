@@ -2726,7 +2726,7 @@ export const insertSettlements = async ({ process, user }) => {
           const liquidacion = (
             await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
               application.id_solicitud,
-              fixatedAmount(+el.monto),
+              +el.monto,
               el.ramo,
               el.descripcion || 'Pago ordinario',
               datos,
