@@ -1339,6 +1339,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     SELECT *, r.descripcion AS "descripcionRamo", sr.descripcion AS "descripcionSubramo" FROM impuesto.liquidacion l 
 INNER JOIN impuesto.subramo sr USING (id_subramo) 
 INNER JOIN impuesto.ramo r USING (id_ramo) 
+
 WHERE id_subramo IN 
   (select unnest($1::int[])) 
   AND l.monto > 0 
@@ -1580,7 +1581,7 @@ ORDER BY fecha_liquidacion DESC;
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", id_registro_municipal AS "idRim"
     FROM inmueble_urbaano iu
     WHERE id_parroquia = $1`,
-  GET_APPRAISALS_BY_ID: "SELECT anio, ROUND(avaluo * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'), 8) AS avaluo FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1",
+  GET_APPRAISALS_BY_ID: "SELECT anio, ROUND(avaluo, 8) AS avaluo FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1",
   GET_CURRENT_APPRAISALS_BY_ID: "SELECT anio, avaluo FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 and anio = EXTRACT('year' FROM CURRENT_DATE);",
   CREATE_BARE_ESTATE: `INSERT INTO inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, tipo_inmueble)
     VALUES (default, $1, $2, $3, $4, $5, $6) RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
