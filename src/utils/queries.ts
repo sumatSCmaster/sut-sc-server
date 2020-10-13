@@ -884,7 +884,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_ALL_SETTLEMENTS_FOR_RIM: `WITH solicitudcte AS (
     SELECT id_solicitud
     FROM impuesto.solicitud 
-    WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE referencia_municipal = $1))
+    WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE referencia_municipal = $1 LIMIT 1))
   
     SELECT *
     FROM ( SELECT s.id_solicitud AS id,
