@@ -104,6 +104,7 @@ export const alterateAESettlements = async ({ settlements, type }) => {
           ramo: branchNames.AE,
           fecha: newSettlement.datos.fecha,
           monto: fixatedAmount(newSettlement.monto),
+          montoPetro: newSettlement.monto_petro,
           certificado: newSettlement.certificado,
           recibo: newSettlement.recibo,
           desglose: newSettlement.datos.desglose,
