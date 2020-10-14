@@ -3666,7 +3666,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
           QR: linkQr,
           moment: require('moment'),
           fecha: currentDate,
-          tipo: 'SM'.
+          tipo: 'SM',
           titulo: 'FACTURA POR SERVICIOS MUNICIPALES',
           institucion: 'SEDEMAT',
           datos: {
