@@ -356,7 +356,7 @@ export const linkCommercial = async ({ codCat, rim, relacion }) => {
 
     if(estate.rows[0].tipoInmueble === 'RESIDENCIAL'){
       const commercialEstates = await client.query(queries.CHECK_IF_HAS_COMMERCIAL_ESTATES, [rimData.rows[0].id]);
-      if(commercialEstates.rows[0].commercials === 0){
+      if(+commercialEstates.rows[0].commercials === 0){
         throw new Error('El contribuyente no tiene un inmueble comercial ya asociado.')
       }
     }
