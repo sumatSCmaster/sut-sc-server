@@ -3666,6 +3666,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
           QR: linkQr,
           moment: require('moment'),
           fecha: currentDate,
+          tipo: 'SM'.
           titulo: 'FACTURA POR SERVICIOS MUNICIPALES',
           institucion: 'SEDEMAT',
           datos: {
@@ -3734,6 +3735,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             QR: linkQr,
             moment: require('moment'),
             fecha: currentDate,
+            tipo: 'SM',
             titulo: 'FACTURA POR SERVICIOS MUNICIPALES',
             institucion: 'SEDEMAT',
             datos: {
@@ -3857,6 +3859,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       for (let el of inmueblesContribuyente) {
         certInfo = {
           QR: linkQr,
+          tipo: 'IU',
           moment: require('moment'),
           fecha: currentDate,
           titulo: 'FACTURA INMUEBLE URBANO',
@@ -3890,12 +3893,12 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             totalIva: `${formatCurrency(totalIva)} Bs.S`,
             totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
             totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
-            montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+            montoTotalImpuesto: `${formatCurrency(totalMonto)} Bs.S`,
             interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
             estatus: 'PAGADO',
             observacion: 'Pago por Inmueble Urbano',
-            totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs`,
-            totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs`,
+            totalLiq: `${formatCurrency(totalMonto)} Bs`,
+            totalRecaudado: `${formatCurrency(totalMonto)} Bs`,
             totalCred: `0.00 Bs`, // TODO: Credito fiscal
           },
         };
