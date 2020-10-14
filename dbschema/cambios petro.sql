@@ -40,6 +40,7 @@ CREATE OR REPLACE VIEW public.ordenanzas_instancias_tramites AS
 
 ALTER TABLE impuesto.liquidacion ADD COLUMN monto_petro NUMERIC;
 
+DROP FUNCTION insert_liquidacion(integer, numeric, varchar, varchar, json, date, integer);
 CREATE OR REPLACE FUNCTION public.insert_liquidacion(_id_solicitud integer DEFAULT NULL::integer, _monto_petro numeric DEFAULT NULL::numeric, _ramo character varying DEFAULT NULL::character varying, _descripcion_ramo character varying DEFAULT NULL::character varying, _datos json DEFAULT NULL::json, _fecha date DEFAULT NULL::date, _id_registro_municipal integer DEFAULT NULL::integer)
  RETURNS SETOF impuesto.liquidacion
  LANGUAGE plpgsql
@@ -66,14 +67,9 @@ ALTER TABLE impuesto.fraccion ADD COLUMN monto_petro NUMERIC;
 UPDATE impuesto.avaluo_inmueble SET avaluo = ROUND(avaluo / (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'), 8);
 
 
-INSERT INTO tipo_tramite (id_institucion, nombre_tramite, costo_base, sufijo, nombre_corto, pago_previo, utiliza_informacion_catastral, costo_petro) VALUES (9, 'Solicitud de Licencia Temporal de Actividades Económicas', 0, 'lae', 'Licencia de Actividades Económicas', true, false, 0.24)
-
 UPDATE tipo_tramite SET costo_petro = 0.12 WHERE id_tipo_tramite = 28;
 
 UPDATE tipo_tramite SET formato = 'SEDEMAT-001', planilla ='sedemat-solt-LAE', certificado ='sedemat-cert-LAE', id_ramo = 9 WHERE id_tipo_tramite = 36
-
-INSERT INTO tipo_tramite (id_institucion, nombre_tramite, costo_base, sufijo, nombre_corto, pago_previo, utiliza_informacion_catastral, costo_petro) VALUES (9, 'Solicitud de Soporte', 0, 'sup', 'Soporte', true, false, 0)
-
 
 ALTER TABLE impuesto.baremo_servicio_municipal RENAME TO baremo;
 
@@ -102,3 +98,5 @@ $function$;
 
 ALTER TABLE impuesto.fraccion ALTER COLUMN monto DROP NOT NULL;
 
+INSERT INTO impuesto.baremo (descripcion, indicador) VALUES ('Costo de Solvencia de Actividad Economica Permanente', 0.12);
+INSERT INTO impuesto.baremo (descripcion, indicador) VALUES ('Costo de Solvencia de Actividad Economica Temporal', 0.24);
