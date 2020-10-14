@@ -233,7 +233,7 @@ export const insertRetentions = async ({ process, user }) => {
             const multa = Promise.resolve(
               client.query(queries.CREATE_FINING_FOR_LATE_RETENTION_PETRO, [
                 application.id_solicitud,
-                fixatedAmount(el.monto * 0.1),
+                el.monto * 0.1,
                 {
                   fecha: {
                     month: moment().locale('ES').month(el.fechaCancelada.month).toDate().toLocaleDateString('ES', { month: 'long' }),
@@ -259,7 +259,7 @@ export const insertRetentions = async ({ process, user }) => {
         const multa = (
           await client.query(queries.CREATE_FINING_FOR_LATE_RETENTION_PETRO, [
             application.id_solicitud,
-            fixatedAmount(onlyRD[0].monto * 0.1),
+            onlyRD[0].monto * 0.1,
             {
               fecha: {
                 month: moment().subtract(1, 'M').toDate().toLocaleDateString('ES', { month: 'long' }),
@@ -293,7 +293,7 @@ export const insertRetentions = async ({ process, user }) => {
         const liquidacion = (
           await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
             application.id_solicitud,
-            fixatedAmount(+el.monto),
+            +el.monto,
             'RD0',
             el.descripcion || 'Pago ordinario',
             datos,

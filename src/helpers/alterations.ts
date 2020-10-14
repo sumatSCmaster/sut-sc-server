@@ -38,13 +38,14 @@ export const getAEDeclarationsForAlteration = async ({ document, reference, docT
               exonerado,
               montoDeclarado: fixatedAmount(d.montoDeclarado),
               montoCobrado: d.montoCobrado,
-              costoSolvencia: PETRO * 2,
+              costoSolvencia: PETRO * 0.12,
             };
           })
         );
         return {
           id: el.id_liquidacion,
           monto: fixatedAmount(el.monto),
+          montoPetro: el.monto_petro,
           datos: el.datos,
           estado: el.estado,
           fecha: el.datos.fecha,
