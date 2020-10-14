@@ -275,9 +275,9 @@ export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosC
     if(estate.enlazado && tipoInmueble === 'RESIDENCIAL'){
       const commercialEstates = await client.query(queries.CHECK_IF_HAS_COMMERCIAL_ESTATES, [estate.id_registro_municipal]);
       const allEstates = await client.query(queries.COUNT_ESTATES, [estate.id_registro_municipal]);
-      if(allEstates.rows[0].allestates === 1){
+      if(+allEstates.rows[0].allestates === 1){
         throw new Error('El contribuyente debe tener por lo menos un inmueble COMERCIAL ya asociado.')
-      }else if(allEstates.rows[0].allestates > 1 && (commercialEstates.rows[0].commercials === 1 && estate.tipoInmueble === 'COMERCIAL' )){
+      }else if(+allEstates.rows[0].allestates > 1 && (+commercialEstates.rows[0].commercials === 1 && estate.tipoInmueble === 'COMERCIAL' )){
         throw new Error('El contribuyente debe tener por lo menos un inmueble COMERCIAL ya asociado.')
       }
     }
