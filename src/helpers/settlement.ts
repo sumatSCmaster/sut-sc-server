@@ -3289,19 +3289,19 @@ export const internalUserLinking = async (data) => {
   }
 };
 
-const recursiveRebate = (array, number): any[] => {
-  const minus = number / array.filter((a) => +a.monto > 0).length;
+const recursiveRebate = (array, number, prop = 'monto'): any[] => {
+  const minus = number / array.filter((a) => +a[prop] > 0).length;
   let _array = array.map((e) => {
     const _e = Object.assign({}, e);
-    _e.monto = +_e.monto > 0 ? +_e.monto - minus : +_e.monto;
+    _e[prop] = +_e[prop] > 0 ? +_e[prop] - minus : +_e[prop];
     return _e;
   });
-  const diff = Math.abs(_array.filter((e) => +e.monto < 0).reduce((prev, current) => prev + +current.monto, 0));
+  const diff = Math.abs(_array.filter((e) => +e[prop] < 0).reduce((prev, current) => prev + +current[prop], 0));
   if (diff > 0) {
     return recursiveRebate(
       _array.map((e) => {
         const _e = Object.assign({}, e);
-        _e.monto = +e.monto < 0 ? 0 : +e.monto;
+        _e[prop] = +e[prop] < 0 ? 0 : +e[prop];
         return _e;
       }),
       diff
@@ -3322,12 +3322,12 @@ export const addRebateForDeclaration = async ({ process, user }) => {
     const montoPerLiq = montoRebajado / nroLiquidaciones;
     await client.query('BEGIN');
     const test = await Promise.all(
-      recursiveRebate(hasAE, montoRebajado).map(async (el) => {
+      recursiveRebate(hasAE, montoRebajado, 'monto_petro').map(async (el) => {
         const oldValue = hasAE.find((x) => x.id_liquidacion === el.id_liquidacion).monto_petro;
         console.log('if -> oldValue', oldValue);
-        const newDatos = { ...el.datos, montoRebajado: oldValue - el.monto };
-        console.log('montoRebajado', oldValue - el.monto);
-        const liquidacion = (await client.query('UPDATE impuesto.liquidacion SET datos = $1, monto_petro = $2 WHERE id_liquidacion = $3 RETURNING *;', [newDatos, el.monto, el.id_liquidacion])).rows[0];
+        const newDatos = { ...el.datos, montoRebajado: oldValue - el.monto_petro };
+        console.log('montoRebajado', oldValue - el.monto_petro);
+        const liquidacion = (await client.query('UPDATE impuesto.liquidacion SET datos = $1, monto_petro = $2 WHERE id_liquidacion = $3 RETURNING *;', [newDatos, el.monto_petro, el.id_liquidacion])).rows[0];
         return liquidacion;
       })
     );
