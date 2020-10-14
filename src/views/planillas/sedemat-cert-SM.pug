@@ -162,32 +162,34 @@ html
                           div(style={'border-top':'1px solid #000'}).td.center.break-page
                             p 
                               span &nbsp; #{item.impuesto}
-              div(style={'margin-top':'20px'}).table.break-page
-                div.tr
-                  div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
-                    p
-                      b TOTAL IVA (16%)
-                  div(style={'-webkit-flex': 4.5}).td.border-bottom.end
-                    p #{datos.totalIva}
-                div.tr              
-                  div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
-                    p
-                      b TOTAL RETENCION IVA (75%)
-                  div(style={'-webkit-flex': 4.5}).td.border-bottom.end
-                    p #{datos.totalRetencionIva}
-                div.tr            
-                  div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
-                    p
-                      b TOTAL IVA A PAGAR
-                  div(style={'-webkit-flex': 4.5}).td.border-bottom.end
-                    p #{datos.totalIvaPagar}
-                div.tr
-                  div(style={'-webkit-flex': 5.5}).td.border-right
-                    p
-                      b TOTAL IMPUESTO A PAGAR
-                  div(style={'-webkit-flex': 4.5}).td.end
-                    p #{datos.montoTotalImpuesto}
-            div.table.break-page
+              if tipo === 'SM'
+                div(style={'margin-top':'20px'}).table.break-page
+                  div.tr
+                    div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
+                      p
+                        b TOTAL IVA (16%)
+                    div(style={'-webkit-flex': 4.5}).td.border-bottom.end
+                      p #{datos.totalIva}
+                  div.tr              
+                    div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
+                      p
+                        b TOTAL RETENCION IVA (75%)
+                    div(style={'-webkit-flex': 4.5}).td.border-bottom.end
+                      p #{datos.totalRetencionIva}
+                  div.tr            
+                    div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
+                      p
+                        b TOTAL IVA A PAGAR
+                    div(style={'-webkit-flex': 4.5}).td.border-bottom.end
+                      p #{datos.totalIvaPagar}
+                  div.tr
+                    div(style={'-webkit-flex': 5.5}).td.border-right
+                      p
+                        b TOTAL IMPUESTO A PAGAR
+                    div(style={'-webkit-flex': 4.5}).td.end
+                      p #{datos.montoTotalImpuesto}
+            if tipo === 'SM'
+              div.table.break-page
               div.tr
                 div(style={'-webkit-flex': 2}).th.border-bottom.border-right
                   p
@@ -202,6 +204,22 @@ html
                 div(style={'-webkit-flex': 1}).td
                   p
                     span &nbsp; #{datos.observacion}
+            else
+              div(style={'margin-top':'50px'}).table.break-page
+                div.tr
+                  div(style={'-webkit-flex': 2}).th.border-bottom.border-right
+                    p
+                      b Estatus:
+                  div(style={'-webkit-flex': 8}).th.border-bottom
+                    p #{datos.estatus}
+                div.tr
+                  div(style={'-webkit-flex': 1}).th.border-bottom
+                    p
+                      b OBSERVACIONES
+                div.tr
+                  div(style={'-webkit-flex': 1}).td
+                    p
+                      span &nbsp; #{datos.observacion}
             div.table.break-page
               div(style={'background-color':'rgba(0,0,0,0.2)'}).tr
                 div(style={'-webkit-flex': 1}).td.border-right.center
