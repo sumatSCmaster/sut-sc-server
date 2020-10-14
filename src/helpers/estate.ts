@@ -294,7 +294,10 @@ export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosC
     // return {inmueble: {...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows }};
   } catch (e) {
     await client.query('ROLLBACK');
-    throw e;
+    throw {
+      error: e,
+      message: e.message
+    };
   } finally {
     client.release();
   }
