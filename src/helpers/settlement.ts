@@ -3347,7 +3347,7 @@ export const addRebateForDeclaration = async ({ process, user }) => {
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [contribuyente]);
     const application = await getApplicationsAndSettlementsByIdNots({id, user: null}, client);
     await client.query('COMMIT');
-    return { status: 200, message: 'Solicitud rebajada satisfactoriamente' };
+    return { status: 200, message: 'Solicitud rebajada satisfactoriamente', solicitud: application };
   } catch (error) {
     client.query('ROLLBACK');
     console.log(error);
