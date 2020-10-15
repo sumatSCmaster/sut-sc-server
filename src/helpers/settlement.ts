@@ -3345,6 +3345,7 @@ export const addRebateForDeclaration = async ({ process, user }) => {
     // );
     await client.query('UPDATE impuesto.solicitud SET rebajado = true WHERE id_solicitud = $1', [idSolicitud]);
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [contribuyente]);
+    const application = await getApplicationsAndSettlementsByIdNots({id, user: null}, client);
     await client.query('COMMIT');
     return { status: 200, message: 'Solicitud rebajada satisfactoriamente' };
   } catch (error) {
