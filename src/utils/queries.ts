@@ -999,6 +999,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
       LEFT JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo 
       GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion
       ORDER BY ramo)) x
+        WHERE codigo != '915'
         GROUP BY ramo, descripcion, codigo;`,
   GET_LIQUIDATED: `SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadLiq", SUM(monto) as liquidado 
         FROM (SELECT *  FROM impuesto.liquidacion WHERE fecha_liquidacion BETWEEN $1 AND $2 AND monto != 'NaN') l 
