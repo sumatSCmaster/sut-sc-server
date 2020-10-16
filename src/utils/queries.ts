@@ -1321,7 +1321,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_PUBLICITY_CATEGORIES: 'SELECT * FROM impuesto.categoria_propaganda',
   GET_PUBLICITY_SUBCATEGORIES: 'SELECT * FROM impuesto.tipo_aviso_propaganda',
   GET_PUBLICITY: "SELECT id_tipo_aviso_propaganda, concat(cp.descripcion, ' - ', tap.descripcion) AS descripcion FROM impuesto.categoria_propaganda cp INNER JOIN impuesto.tipo_aviso_propaganda tap USING (id_categoria_propaganda);",
-  INSERT_ESTATE_VALUE: "INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1, $2 / (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO', 8),$3)",
+  INSERT_ESTATE_VALUE: "INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1, $2 / (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'),$3)",
   SET_DATE_FOR_LINKED_APPROVED_APPLICATION: 'UPDATE impuesto.solicitud SET fecha = $1, fecha_aprobado = $1 WHERE id_solicitud = $2',
   SET_DATE_FOR_LINKED_ACTIVE_APPLICATION: 'UPDATE impuesto.solicitud SET fecha = $1 WHERE id_solicitud = $2',
   LINK_ESTATE_WITH_NATURAL_CONTRIBUTOR: 'INSERT INTO impuesto.inmueble_contribuyente (id_inmueble, id_contribuyente) VALUES ($1, $2) RETURNING *',
