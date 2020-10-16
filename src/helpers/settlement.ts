@@ -1582,9 +1582,9 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
           fecha: el.fecha,
           monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
           montoPetro: (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total,
-          liquidaciones: liquidaciones
+          liquidaciones: await Promise.all(liquidaciones
             .filter((el) => el.tipoProcedimiento !== 'MULTAS')
-            .map((el) => {
+            .map(async (el) => {
               return {
                 id: el.id_liquidacion,
                 ramo: el.tipoProcedimiento,
@@ -1594,11 +1594,12 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
                 esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
                 certificado: el.certificado,
                 recibo: el.recibo,
+                desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
               };
-            }),
-          multas: liquidaciones
+            })),
+          multas: await Promise.all(liquidaciones
             .filter((el) => el.tipoProcedimiento === 'MULTAS')
-            .map((el) => {
+            .map(async (el) => {
               return {
                 id: el.id_liquidacion,
                 ramo: el.tipoProcedimiento,
@@ -1608,8 +1609,9 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
                 descripcion: el.datos.descripcion,
                 certificado: el.certificado,
                 recibo: el.recibo,
+                desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
               };
-            }),
+            })),
           interesMoratorio: await getDefaultInterestByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
           rebajaInteresMoratorio: await getDefaultInterestRebateByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
         };
@@ -1651,9 +1653,9 @@ export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client
           fecha: el.fecha,
           monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
           montoPetro: (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total,
-          liquidaciones: liquidaciones
+          liquidaciones: await Promise.all(liquidaciones
             .filter((el) => el.tipoProcedimiento !== 'MULTAS')
-            .map((el) => {
+            .map(async (el) => {
               return {
                 id: el.id_liquidacion,
                 ramo: el.tipoProcedimiento,
@@ -1663,11 +1665,12 @@ export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client
                 esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
                 certificado: el.certificado,
                 recibo: el.recibo,
+                desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
               };
-            }),
-          multas: liquidaciones
+            })),
+          multas: await Promise.all(liquidaciones
             .filter((el) => el.tipoProcedimiento === 'MULTAS')
-            .map((el) => {
+            .map(async (el) => {
               return {
                 id: el.id_liquidacion,
                 ramo: el.tipoProcedimiento,
@@ -1677,8 +1680,9 @@ export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client
                 descripcion: el.datos.descripcion,
                 certificado: el.certificado,
                 recibo: el.recibo,
+                desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
               };
-            }),
+            })),
           interesMoratorio: await getDefaultInterestByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
           rebajaInteresMoratorio: await getDefaultInterestRebateByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
         };
