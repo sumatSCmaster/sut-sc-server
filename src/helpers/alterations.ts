@@ -52,6 +52,7 @@ export const getAEDeclarationsForAlteration = async ({ document, reference, docT
         };
       })
     );
+    if (!liquidaciones.length) throw {status: 404, message: 'No posee liquidaciones de Actividad Economica'}
     return { status: 200, message: 'Liquidaciones para declaracion correctiva/sustitutiva obtenida', liquidaciones };
   } catch (error) {
     console.log(error);
