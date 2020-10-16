@@ -46,13 +46,13 @@ export const getMunicipalReferenceActivities = async ({ docType, document }) => 
 
 export const updateContributorActivities = async ({ branchId, activities, branchInfo }) => {
   const client = await pool.connect();
-  const { denomComercial, nombreRepresentante, telefonoMovil, email, estadoLicencia, tipoSociedad, capitalSuscrito, actualizado, otrosImpuestos } = branchInfo;
+  const { denomComercial, nombreRepresentante, telefonoMovil, email, estadoLicencia, tipoSociedad, esMonotributo, capitalSuscrito, actualizado, otrosImpuestos } = branchInfo;
   try {
     await client.query('BEGIN');
     const updatedRegistry = (
       await client.query(
-        'UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombre_representante = $2, telefono_celular = $3, email = $4, estado_licencia = $5, tipo_sociedad = $6, capital_suscrito = $7 WHERE id_registro_municipal = $8 RETURNING *',
-        [denomComercial, nombreRepresentante, telefonoMovil, email, estadoLicencia, tipoSociedad, capitalSuscrito, branchId]
+        'UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombre_representante = $2, telefono_celular = $3, email = $4, estado_licencia = $5, tipo_sociedad = $6, capital_suscrito = $7, es_monotributo = $8 WHERE id_registro_municipal = $9 RETURNING *',
+        [denomComercial, nombreRepresentante, telefonoMovil, email, estadoLicencia, tipoSociedad, capitalSuscrito, esMonotributo, branchId]
       )
     ).rows[0];
 

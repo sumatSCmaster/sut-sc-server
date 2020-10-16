@@ -3402,6 +3402,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
           ramo: branch,
           fecha: datos.fecha,
           monto: liquidacion.monto,
+          montoPetro: liquidacion.monto_petro,
           certificado: liquidacion.certificado,
           recibo: liquidacion.recibo,
           desglose: datos.desglose,
