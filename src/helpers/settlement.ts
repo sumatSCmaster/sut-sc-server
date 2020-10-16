@@ -3584,7 +3584,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
               settlements.map(async (el) => {
                 const branch = (await client.query('SELECT sr.*, rm.*, rm.descripcion AS "descripcionRamo" FROM impuesto.subramo sr INNER JOIN impuesto.ramo rm USING (id_ramo) WHERE id_subramo = $1', [el.id_subramo])).rows[0]?.descripcionRamo;
                 const newDatos = { ...el.datos, descuento: x.porcDescuento };
-                const newMonto = fixatedAmount(el.monto * (1 - x.porcDescuento));
+                const newMonto = (el.monto_petro * (1 - x.porcDescuento)).toFixed(8);
                 const newSettlement = (await client.query(queries.UPDATE_SETTLEMENT_AMOUNT_AND_DATA, [newDatos, newMonto, el.id_liquidacion])).rows[0];
                 return {
                   id: newSettlement.id_liquidacion,
