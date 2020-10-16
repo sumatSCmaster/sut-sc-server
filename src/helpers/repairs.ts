@@ -38,11 +38,11 @@ export const getRepairYears = async ({ document, reference, docType, user }: { d
     if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
     if (!branch) throw { status: 404, message: 'No existe el RIM de Agente de Retención proporcionado' };
-    const REPApplicationExists = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.REP, reference])).rows[0];
+    const REPApplicationExists = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.REP, reference])).rows[0];
     if (!!REPApplicationExists) throw { status: 409, message: 'Ya existe una solicitud de reparos para este contribuyente en el presente año' };
     const now = moment(new Date());
 
-    let lastREP = (await client.query(queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM, [codigosRamo.RD0, branch.referencia_municipal])).rows[0];
+    let lastREP = (await client.query(queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.RD0, branch.referencia_municipal])).rows[0];
     const lastREPPayment = (lastREP && moment(lastREP.fecha_liquidacion)) || moment().month(0);
     const REPDate = moment([lastREPPayment.year(), lastREPPayment.month(), 1]);
     const dateInterpolation = Math.floor(now.diff(REPDate, 'year'));
