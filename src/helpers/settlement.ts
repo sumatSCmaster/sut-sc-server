@@ -2721,7 +2721,7 @@ export const insertSettlements = async ({ process, user }) => {
             esAgenteRetencion: el.ramo === branchNames['SM'] ? process.esAgenteRetencion || undefined : undefined,
             valorPetro: PETRO,
             fechaLiquidacion: moment().format('MM-DD-YYYY'),
-            esMonotributo: impuestos.esMonotributo ? true : undefined,
+            esMonotributo: process.esMonotributo ? true : undefined,
           };
           const liquidacion = (
             await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
