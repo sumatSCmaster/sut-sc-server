@@ -136,7 +136,7 @@ export const insertRepairs = async ({ process, user }) => {
     const multa = (
       await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
         application.id_solicitud,
-        fixatedAmount(process.total * 0.3),
+        ((process.total * 0.3)/ PETRO).toFixed(8),
         'REP',
         'Multa por reparo',
         { fecha: { month: moment().locale('es').format('MMMM'), year: moment().year() } },
