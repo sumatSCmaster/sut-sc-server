@@ -9,8 +9,6 @@ const users = getUsers();
 
 const pool = Pool.getInstance();
 
-const WALLET_AMOUNT = 20;
-const WALLET_AMOUNT_AR = 5;
 
 const extractGroupedCounts = (grouped) => {
     let res = {};
@@ -21,7 +19,7 @@ const extractGroupedCounts = (grouped) => {
     return res;
 }
 
-const getRatings: (stars: number) => (AR: boolean) =>  (chargings: any[]) => [(n?: number) => [any[], number], () => number]  = (stars) => (AR) => (chargings) => {
+const getRatings: (stars: number) => (AR: boolean) =>  (chargings: any[], WALLET_AMOUNT?: number, WALLET_AMOUNT_AR?: number) => [(n?: number) => [any[], number], () => number]  = (stars) => (AR) => (chargings, WALLET_AMOUNT = 20, WALLET_AMOUNT_AR = 5) => {
     let chargingsClosure = chargings.filter((el) => +el.rating === stars)
     let amount = Math.floor(chargingsClosure.length / (!AR ? WALLET_AMOUNT : WALLET_AMOUNT_AR));
     console.log(chargingsClosure.length)
@@ -33,12 +31,12 @@ const getRatings: (stars: number) => (AR: boolean) =>  (chargings: any[]) => [(n
     } , () => chargingsClosure.length]
 }
 
-export const createAllChargings = async () => {
-    await createChargings();
-    return await createChargingsAR();
+export const createAllChargings = async (WALLET_AMOUNT = 20, WALLET_AMOUNT_AR = 5) => {
+    await createChargings(WALLET_AMOUNT);
+    return await createChargingsAR(WALLET_AMOUNT_AR);
 }
 
-export const createChargings = async () => {
+export const createChargings = async (WALLET_AMOUNT) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
@@ -54,12 +52,12 @@ export const createChargings = async () => {
         console.log(declMonth.format('MMMM').toLowerCase())
         console.log(today.year())
         console.log(firstOfLastMonth.toISOString())
-        const chargings = (await client.query(queries.CREATE_CHARGINGS, [declMonth.format('MMMM').toLowerCase(), declMonth.year(), firstOfLastMonth.toISOString()])).rows;
-        const [rating1Remover, rating1len] = getRatings(1)(false)(chargings);
-        const [rating2Remover, rating2len] = getRatings(2)(false)(chargings);
-        const [rating3Remover, rating3len] = getRatings(3)(false)(chargings);
-        const [rating4Remover, rating4len] = getRatings(4)(false)(chargings);
-        const [rating5Remover, rating5len] = getRatings(5)(false)(chargings);
+        const chargings = (await client.query(queries.CREATE_CHARGINGS, [declMonth.format('MMMM').toLowerCase(), declMonth.year(), firstOfLastMonth.toISOString(), WALLET_AMOUNT * 100])).rows;
+        const [rating1Remover, rating1len] = getRatings(1)(false)(chargings, WALLET_AMOUNT);
+        const [rating2Remover, rating2len] = getRatings(2)(false)(chargings, WALLET_AMOUNT);
+        const [rating3Remover, rating3len] = getRatings(3)(false)(chargings, WALLET_AMOUNT);
+        const [rating4Remover, rating4len] = getRatings(4)(false)(chargings, WALLET_AMOUNT);
+        const [rating5Remover, rating5len] = getRatings(5)(false)(chargings, WALLET_AMOUNT);
         let chargingsGrouped: any = (await client.query(queries.CHARGINGS_GROUPED)).rows;
         chargingsGrouped = extractGroupedCounts(groupBy(chargingsGrouped, (el) => el.rating))
         console.log(rating1len())
@@ -109,7 +107,7 @@ export const createChargings = async () => {
 }
 
 
-export const createChargingsAR = async () => {
+export const createChargingsAR = async (WALLET_AMOUNT_AR) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
@@ -120,12 +118,12 @@ export const createChargingsAR = async () => {
         console.log(declMonth.format('MMMM').toLowerCase())
         console.log(today.year())
         console.log(firstOfLastMonth.toISOString())
-        const chargings = (await client.query(queries.CREATE_CHARGINGS_AR, [declMonth.format('MMMM').toLowerCase(), declMonth.year(), firstOfLastMonth.toISOString()])).rows;
-        const [rating1Remover, rating1len] = getRatings(1)(true)(chargings);
-        const [rating2Remover, rating2len] = getRatings(2)(true)(chargings);
-        const [rating3Remover, rating3len] = getRatings(3)(true)(chargings);
-        const [rating4Remover, rating4len] = getRatings(4)(true)(chargings);
-        const [rating5Remover, rating5len] = getRatings(5)(true)(chargings);
+        const chargings = (await client.query(queries.CREATE_CHARGINGS_AR, [declMonth.format('MMMM').toLowerCase(), declMonth.year(), firstOfLastMonth.toISOString(), WALLET_AMOUNT_AR * 100])).rows;
+        const [rating1Remover, rating1len] = getRatings(1)(true)(chargings, undefined, WALLET_AMOUNT_AR);
+        const [rating2Remover, rating2len] = getRatings(2)(true)(chargings, undefined, WALLET_AMOUNT_AR);
+        const [rating3Remover, rating3len] = getRatings(3)(true)(chargings, undefined, WALLET_AMOUNT_AR);
+        const [rating4Remover, rating4len] = getRatings(4)(true)(chargings, undefined, WALLET_AMOUNT_AR);
+        const [rating5Remover, rating5len] = getRatings(5)(true)(chargings, undefined, WALLET_AMOUNT_AR);
         let chargingsGrouped: any = (await client.query(queries.CHARGINGS_GROUPED)).rows;
         chargingsGrouped = extractGroupedCounts(groupBy(chargingsGrouped, (el) => el.rating))
         console.log(rating1len())
