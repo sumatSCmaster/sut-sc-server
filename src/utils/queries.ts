@@ -678,7 +678,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   INNER JOIN impuesto.registro_municipal rm USING (id_registro_municipal) 
   INNER JOIN impuesto.contribuyente c USING (id_contribuyente) 
   INNER JOIN impuesto.solicitud s USING (id_solicitud)
-  WHERE dr.rif = $1 AND dr.rim = $2
+  WHERE dr.rif = $1 AND dr.numero_referencia = $2
   ORDER BY dr.fecha_retencion DESC;`,
   GET_RETENTION_DETAIL_BY_APPLICATION_ID: 'SELECT dr.* FROM impuesto.detalle_retencion dr INNER JOIN impuesto.liquidacion l USING (id_liquidacion) INNER JOIN impuesto.solicitud USING (id_solicitud) WHERE l.id_solicitud = $1',
   CREATE_RETENTION_FISCAL_CREDIT: 'INSERT INTO impuesto.retencion (rif, rim, monto, activo, id_solicitud) VALUES ($1,$2,$3,$4, $5) RETURNING *;',
