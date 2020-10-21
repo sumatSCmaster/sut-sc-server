@@ -87,8 +87,8 @@ export const getRetentionChargingsForDocumentAndReference = async ({ document, r
   const client = await pool.connect();
   try {
     const retenciones = {
-      cobros: await client.query(queries.GET_RETENTION_CHARGINGS_FOR_CONTRIBUTOR, [document, reference]),
-      balanceTotal: await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [document, reference]),
+      cobros: (await client.query(queries.GET_RETENTION_CHARGINGS_FOR_CONTRIBUTOR, [document, reference])).rows,
+      balanceTotal: (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [document, reference])).rows[0].credito,
     };
     return { status: 200, message: 'Cobros de retenciones obtenidos', retenciones };
   } catch (error) {
