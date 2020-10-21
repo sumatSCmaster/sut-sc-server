@@ -83,6 +83,26 @@ export const getRetentionMonths = async ({ document, reference, docType, user }:
   }
 };
 
+export const getRetentionChargingsForDocumentAndReference = async ({ document, reference }) => {
+  const client = await pool.connect();
+  try {
+    const retenciones = {
+      cobros: await client.query(queries.GET_RETENTION_CHARGINGS_FOR_CONTRIBUTOR, [document, reference]),
+      balanceTotal: await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [document, reference]),
+    };
+    return { status: 200, message: 'Cobros de retenciones obtenidos', retenciones };
+  } catch (error) {
+    console.log(error);
+    throw {
+      status: error.status || 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener cobros de retenciones',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 //TODO: hacer el desglose de retencion y apuntar al ramo de retencion
 export const insertRetentions = async ({ process, user }) => {
   const client = await pool.connect();

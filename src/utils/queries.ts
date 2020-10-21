@@ -673,6 +673,13 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION: 'SELECT * FROM insert_liquidacion($1,$2,$3,$4,$5, $6, $7)',
   CREATE_RETENTION_DETAIL: 'SELECT * FROM impuesto.insert_retencion($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)',
   GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR: 'SELECT sum(monto) AS credito FROM impuesto.retencion WHERE rif = $1 AND rim = $2',
+  GET_RETENTION_CHARGINGS_FOR_CONTRIBUTOR: `SELECT dr.id_detalle_retencion AS id, dr.fecha_retencion AS fecha, dr.monto_retenido AS monto, dr.numero_factura AS "numeroFactura", dr.tipo_retencion AS "tipoRetencion", CONCAT(c.tipo_documento, '-', c.documento) AS rif, rm.referencia_municipal AS rim, c.razon_social AS "razonSocial", s.aprobado AS pagado FROM impuesto.detalle_retencion dr 
+  INNER JOIN impuesto.liquidacion l USING (id_liquidacion) 
+  INNER JOIN impuesto.registro_municipal rm USING (id_registro_municipal) 
+  INNER JOIN impuesto.contribuyente c USING (id_contribuyente) 
+  INNER JOIN impuesto.solicitud s USING (id_solicitud)
+  WHERE dr.rif = $1 AND dr.rim = $2
+  ORDER BY dr.fecha_retencion DESC;`,
   GET_RETENTION_DETAIL_BY_APPLICATION_ID: 'SELECT dr.* FROM impuesto.detalle_retencion dr INNER JOIN impuesto.liquidacion l USING (id_liquidacion) INNER JOIN impuesto.solicitud USING (id_solicitud) WHERE l.id_solicitud = $1',
   CREATE_RETENTION_FISCAL_CREDIT: 'INSERT INTO impuesto.retencion (rif, rim, monto, activo, id_solicitud) VALUES ($1,$2,$3,$4, $5) RETURNING *;',
   SET_RETENTION_AGENT_STATE: 'UPDATE impuesto.contribuyente SET es_agente_retencion = $1 WHERE id_contribuyente = $2',
@@ -1527,8 +1534,7 @@ ORDER BY fecha_liquidacion DESC;
   AND datos #>> '{funcionario, contribuyente,documento}' = $2 
   AND datos #>> '{funcionario, contribuyente,registroMunicipal}' = $3
   AND state = 'enrevision';`,
-  SET_SETTLEMENTS_AS_FORWARDED_BY_RIM:
-  `UPDATE impuesto.liquidacion SET remitido = true WHERE id_registro_municipal = $1 AND id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = '1' AND id_ramo = $2) AND id_liquidacion IN (SELECT id_liquidacion FROM impuesto.liquidacion l 
+  SET_SETTLEMENTS_AS_FORWARDED_BY_RIM: `UPDATE impuesto.liquidacion SET remitido = true WHERE id_registro_municipal = $1 AND id_subramo = (SELECT id_subramo FROM impuesto.subramo WHERE subindice = '1' AND id_ramo = $2) AND id_liquidacion IN (SELECT id_liquidacion FROM impuesto.liquidacion l 
       INNER JOIN (SELECT s.id_solicitud AS id,
         s.id_tipo_tramite AS tipotramite,
         s.aprobado,
@@ -1596,7 +1602,7 @@ ORDER BY fecha_liquidacion DESC;
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", id_registro_municipal AS "idRim"
     FROM inmueble_urbaano iu
     WHERE id_parroquia = $1`,
-  GET_APPRAISALS_BY_ID: "SELECT anio, avaluo AS avaluo FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1",
+  GET_APPRAISALS_BY_ID: 'SELECT anio, avaluo AS avaluo FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1',
   GET_CURRENT_APPRAISALS_BY_ID: "SELECT anio, avaluo FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 and anio = EXTRACT('year' FROM CURRENT_DATE);",
   CREATE_BARE_ESTATE: `INSERT INTO inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, tipo_inmueble)
     VALUES (default, $1, $2, $3, $4, $5, $6) RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
