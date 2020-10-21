@@ -245,11 +245,11 @@ export const parishEstates = async ({ idParroquia }) => {
   }
 };
 
-export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos }) => {
+export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const estate = (await client.query(queries.CREATE_BARE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble])).rows[0];
+    const estate = (await client.query(queries.CREATE_BARE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, dirDoc])).rows[0];
     console.log(estate);
     const appraisals = await Promise.all(
       avaluos.map((row) => {
@@ -267,7 +267,7 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
   }
 };
 
-export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos }) => {
+export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -287,7 +287,7 @@ export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosC
         return client.query(queries.INSERT_ESTATE_VALUE, [id, row.avaluo, row.anio]);
       })
     );
-    estate = await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, codCat, id]);
+    estate = await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, codCat, id, dirDoc]);
 
     await client.query('COMMIT');
     return { status: 200, message: 'Inmueble actualizado' };

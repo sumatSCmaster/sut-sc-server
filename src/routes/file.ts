@@ -40,6 +40,12 @@ const uploadFile = (req, res, next) => {
         fileFilter: photoFilter,
       }).array('boleta')(req, res, next);
       break;
+    case 'inmueble':
+      multer({
+        storage: diskStorage('inmueble/' + req.params.id),
+        fileFilter: photoFilter,
+      }).single('inmueble')(req, res, next);
+      break;
     default:
       res.status(500).json({
         status: 500,
