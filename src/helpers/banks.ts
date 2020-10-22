@@ -231,7 +231,7 @@ export const approveSinglePayment = async (id, user) => {
       ago.referencia, pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, solicitud.aprobado as "solicitudAprobada", pago.concepto, contribuyente.tipo_documento AS nacionalidad, contribuyente.documento from pago
                       INNER JOIN impuesto.solicitud ON pago.id_procedimiento = solicitud.id_solicitud
                       INNER JOIN impuesto.contribuyente ON solicitud.id_contribuyente = contribuyente.id_contribuyente
-                      where pago.id_pago = idPago`,
+                      where pago.id_pago = $1`,
                 [id]
               )
             ).rows[0]
