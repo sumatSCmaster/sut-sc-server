@@ -61,7 +61,7 @@ const uploadFile = async (req, res, next) => {
         multer({
           storage: diskStorage('inmueble/' + req.params.id),
           fileFilter: photoFilter,
-        }).single('inmueble')(req, res, next);
+        }).array('inmueble')(req, res, next);
       } catch (e) {
         res.status(400).json({
           status: 400,
