@@ -159,7 +159,7 @@ const validations = {
   metrosCuadradosConstruccion: check('tramite.datos.metrosCuadradosConstruccion')
     .exists()
     .withMessage('Debe incluir los metros cuadrados de la construccion')
-    .isInt()
+    .isNumeric()
     .isLength({ min: 1 })
     .withMessage('Debe incluir metros cuadrados validos para la construccion'),
   usoConforme: check('tramite.datos.usoConforme').exists().withMessage('Debe incluir el uso conforme').isString().isLength({ min: 1 }).withMessage('El uso conforme no puede ser vacio'),
