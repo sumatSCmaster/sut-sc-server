@@ -298,7 +298,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                 const lastMonthPayment = !!branch
                   ? (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID, [el.id_inmueble, branch?.id_registro_municipal])).rows[0]
                   : (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID_NATURAL, [el.id_inmueble, contributor.id_contribuyente])).rows[0];
-                const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month').isSameOrAfter(IUDate) ? moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month') : IUDate) : IUDate;
+                const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month').isSameOrBefore(IUDate) ? moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month') : IUDate) : IUDate;
                 const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M')) + 1) || (!lastMonthPayment && dateInterpolationIU + 1) || 1;
                 // paymentDate = paymentDate.isSameOrBefore(lastEAPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
                 if (interpolation === 0) return null;
@@ -2861,7 +2861,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
     const applicationInstance = await getApplicationsAndSettlementsByIdNots({ id: application, user }, client);
     if (user.tipoUsuario !== 4) {
       if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
-      applicationInstance.recibo = await generateReceipt({ application });
+      applicationInstance.recibo = await generateReceipt({ application }, client);
     }
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente?.id]);
     await client.query('COMMIT');
@@ -3704,6 +3704,7 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
           direccion: application.direccion,
           representanteLegal: referencia?.nombre_representante,
           periodo: mesesCardinal[application.datos.fecha.month],
+          mes: String(mesesNumerico[application.datos.fecha.month]).padStart(2, '0'),
           anio: application.datos.fecha.year,
           fecha: moment().format('MM-DD-YYYY'),
           fechaLetra: `${moment().date()} de ${application.datos.fecha.month} de ${application.datos.fecha.year}`,
@@ -3775,7 +3776,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
         return prev;
       }, breakdownAseo);
       const totalMonto = breakdownJoin.reduce((prev, next) => prev + +next.monto, 0);
-      const iva = breakdownJoin[0].datos.IVA;
+      const iva = breakdownJoin[0].datos.IVA || 16;
       const totalIva = totalMonto * 0.16;
       const totalRetencionIva = totalMonto * (0.16 - fixatedAmount(iva ? iva / 100 : 0.16));
       const totalIvaPagar = fixatedAmount(totalIva - totalRetencionIva);
@@ -3787,6 +3788,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
           QR: linkQr,
           moment: require('moment'),
           fecha: currentDate,
+          tipo: 'SM',
           titulo: 'FACTURA POR SERVICIOS MUNICIPALES',
           institucion: 'SEDEMAT',
           datos: {
@@ -3855,6 +3857,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             QR: linkQr,
             moment: require('moment'),
             fecha: currentDate,
+            tipo: 'SM',
             titulo: 'FACTURA POR SERVICIOS MUNICIPALES',
             institucion: 'SEDEMAT',
             datos: {
@@ -3978,6 +3981,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       for (let el of inmueblesContribuyente) {
         certInfo = {
           QR: linkQr,
+          tipo: 'IU',
           moment: require('moment'),
           fecha: currentDate,
           titulo: 'FACTURA INMUEBLE URBANO',
@@ -4011,12 +4015,12 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             totalIva: `${formatCurrency(totalIva)} Bs.S`,
             totalRetencionIva: '0,00 Bs.S ', // TODO: Retencion
             totalIvaPagar: `${formatCurrency(totalIva)} Bs.S`,
-            montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs.S`,
+            montoTotalImpuesto: `${formatCurrency(totalMonto)} Bs.S`,
             interesesMoratorio: '0.00 Bs.S', // TODO: Intereses moratorios
             estatus: 'PAGADO',
             observacion: 'Pago por Inmueble Urbano',
-            totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs`,
-            totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs`,
+            totalLiq: `${formatCurrency(totalMonto)} Bs`,
+            totalRecaudado: `${formatCurrency(totalMonto)} Bs`,
             totalCred: `0.00 Bs`, // TODO: Credito fiscal
           },
         };
@@ -4344,7 +4348,14 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     const referencia = (await client.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
     const payment = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_DEST, [application.id, 'IMPUESTO'])).rows;
-    const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [payment[0].id_usuario, ``, application.razonSocial, referencia?.referencia_municipal, 'ESPECIAL', application.id]);
+    const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [
+      payment[0].id_usuario,
+      `${process.env.AWS_ACCESS_URL}/sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
+      application.razonSocial,
+      referencia?.referencia_municipal,
+      'ESPECIAL',
+      application.id,
+    ]);
     let idRecibo;
     if (!recibo.rows[0]) {
       idRecibo = (await client.query('SELECT recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1', [application.id])).rows[0]?.id_registro_recibo || 'N/D';
@@ -4485,7 +4496,7 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
                 await regClient.query('BEGIN');
                 const bucketParams = {
                   Bucket: 'sut-maracaibo',
-                  Key: `/sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
+                  Key: `sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
                 };
                 await S3Client.putObject({
                   ...bucketParams,
@@ -4525,7 +4536,7 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
                     await regClient.query('BEGIN');
                     const bucketParams = {
                       Bucket: 'sut-maracaibo',
-                      Key: `/sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
+                      Key: `sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
                     };
                     await S3Client.putObject({
                       ...bucketParams,
@@ -4537,7 +4548,7 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
                       await regClient.query(queries.UPDATE_RECEIPT_RECORD, [idRecibo, `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`]);
                     }
                     await regClient.query('COMMIT');
-                    res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+                    res(`${process.env.AWS_ACCESS_URL}${bucketParams.Key}`);
                   } catch (e) {
                     await regClient.query('ROLLBACK');
                     rej(e);
@@ -4655,15 +4666,15 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
             };
           }),
 
-          tramitesInternos: impuestoRecibo,
+          tramitesInternos: +impuestoRecibo,
           totalTasaRev: 0.0,
           anticipoYRetenciones: 0.0,
           interesMora: 0.0,
-          montoTotal: +application.montoLiquidacion + impuestoRecibo,
+          montoTotal: +application.montoLiquidacion + +impuestoRecibo,
           observacion: 'Pago por Impuesto de Actividad Economica - VIA WEB',
           estatus: 'PAGADO',
-          totalLiq: +application.montoLiquidacion + impuestoRecibo,
-          totalRecaudado: +application.montoLiquidacion + impuestoRecibo,
+          totalLiq: +application.montoLiquidacion + +impuestoRecibo,
+          totalRecaudado: +application.montoLiquidacion + +impuestoRecibo,
           totalCred: 0.0,
         },
       };

@@ -245,11 +245,11 @@ export const parishEstates = async ({ idParroquia }) => {
   }
 };
 
-export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos }) => {
+export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const estate = (await client.query(queries.CREATE_BARE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble])).rows[0];
+    const estate = (await client.query(queries.CREATE_BARE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, dirDoc])).rows[0];
     console.log(estate);
     const appraisals = await Promise.all(
       avaluos.map((row) => {
@@ -267,24 +267,37 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
   }
 };
 
-export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos }) => {
+export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    let estate = (await client.query(queries.GET_ESTATE_BY_CODCAT, [codCat])).rows[0];
+    if(estate.enlazado && tipoInmueble === 'RESIDENCIAL'){
+      const commercialEstates = await client.query(queries.CHECK_IF_HAS_COMMERCIAL_ESTATES, [estate.id_registro_municipal]);
+      const allEstates = await client.query(queries.COUNT_ESTATES, [estate.id_registro_municipal]);
+      if(+allEstates.rows[0].allestates === 1){
+        throw new Error('El contribuyente debe tener por lo menos un inmueble COMERCIAL ya asociado.')
+      }else if(+allEstates.rows[0].allestates > 1 && (+commercialEstates.rows[0].commercials === 1 && estate.tipoInmueble === 'COMERCIAL' )){
+        throw new Error('El contribuyente debe tener por lo menos un inmueble COMERCIAL ya asociado.')
+      }
+    }
     await client.query(`DELETE FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1`, [id]);
     const appraisals = await Promise.all(
       avaluos.map((row) => {
         return client.query(queries.INSERT_ESTATE_VALUE, [id, row.avaluo, row.anio]);
       })
     );
-    const estate = await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, codCat, id]);
+    estate = await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, codCat, id, dirDoc]);
 
     await client.query('COMMIT');
     return { status: 200, message: 'Inmueble actualizado' };
     // return {inmueble: {...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows }};
   } catch (e) {
     await client.query('ROLLBACK');
-    throw e;
+    throw {
+      error: e,
+      message: e.message
+    };
   } finally {
     client.release();
   }
@@ -339,6 +352,13 @@ export const linkCommercial = async ({ codCat, rim, relacion }) => {
 
     if (estate.rows[0].enlazado) {
       throw new Error('El inmueble ya está enlazado');
+    }
+
+    if(estate.rows[0].tipoInmueble === 'RESIDENCIAL'){
+      const commercialEstates = await client.query(queries.CHECK_IF_HAS_COMMERCIAL_ESTATES, [rimData.rows[0].id]);
+      if(+commercialEstates.rows[0].commercials === 0){
+        throw new Error('El contribuyente no tiene un inmueble comercial ya asociado.')
+      }
     }
 
     await client.query(queries.LINK_ESTATE_WITH_RIM, [rimData.rows[0].id, codCat, relacion]);
