@@ -31,7 +31,7 @@ export const diskStorage = (type: string): multer.StorageEngine =>
       key: function (req, file, cb) {
         console.log('file', file);
         if (type.startsWith('tramites') || type.startsWith('inmueble')) {
-          cb(null, `${req.params.id}/${file.originalname}`);
+          cb(null, `${type}/${file.originalname}`);
         } else {
           const hex = crypto.randomBytes(16);
           cb(null, 1 + hex.toString('hex') + '.png');
