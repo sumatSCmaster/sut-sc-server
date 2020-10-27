@@ -59,7 +59,8 @@ app.use(passport.session());
 
 app.use(
   cors({
-    origin: process.env.NODE_ENV !== 'production' ? process.env.CLIENT_URL : true,
+    // origin: process.env.NODE_ENV !== 'production' ? process.env.CLIENT_URL : true,
+    origin: '*',
     methods: 'POST, PUT, GET, DELETE, OPTIONS, PATCH',
     allowedHeaders: 'Accept, Content-Type, Accept-Encoding, Content-Length, Authorization',
     credentials: true,
