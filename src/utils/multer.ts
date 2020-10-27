@@ -26,7 +26,7 @@ export const diskStorage = (type: string): multer.StorageEngine =>
     }),
     production: multerS3({
       s3: S3Client,
-      bucket: 'sut-maracaibo',
+      bucket:  process.env.BUCKET_NAME,
       acl: 'public-read',
       key: function (req, file, cb) {
         console.log('file', file);
