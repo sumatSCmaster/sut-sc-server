@@ -98,6 +98,9 @@ $function$;
 
 ALTER TABLE impuesto.fraccion ALTER COLUMN monto DROP NOT NULL;
 
+INSERT INTO impuesto.baremo (id_baremo, descripcion, indicador) VALUES (5, 'Costo por Metro Cuadrado para Servicio de Aseo (Industrial)', 300);
+INSERT INTO impuesto.baremo (id_baremo, descripcion, indicador) VALUES (6, 'Límite del Costo para Servicio de Aseo (Industrial)', 0.15);
+
 INSERT INTO impuesto.baremo (descripcion, indicador) VALUES ('Costo de Solvencia de Actividad Economica Permanente', 0.12);
 INSERT INTO impuesto.baremo (descripcion, indicador) VALUES ('Costo de Solvencia de Actividad Economica Temporal', 0.24);
 
