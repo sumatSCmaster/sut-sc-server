@@ -71,7 +71,7 @@ app.use('/', router);
 
 app.use(function (err, req, res, next) {
   console.log('a', res.headersSent)
-  next(err)
+  res.status(400).json({error: err})
 })
 
 export default app;
