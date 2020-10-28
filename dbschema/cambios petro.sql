@@ -100,3 +100,21 @@ ALTER TABLE impuesto.fraccion ALTER COLUMN monto DROP NOT NULL;
 
 INSERT INTO impuesto.baremo (descripcion, indicador) VALUES ('Costo de Solvencia de Actividad Economica Permanente', 0.12);
 INSERT INTO impuesto.baremo (descripcion, indicador) VALUES ('Costo de Solvencia de Actividad Economica Temporal', 0.24);
+
+insert into campo_tramite select id_campo, 36, orden, estado, id_seccion from campo_tramite where id_tipo_tramite = 28;
+delete from campo_tramite where id_campo = 95 and id_tipo_tramite = 28;
+delete from campo_tramite where id_campo = 95 and id_tipo_tramite = 36;
+-- insert into seccion values(30, 'Monotributo');
+-- insert into campo values(96, 'Monotributo', 'boolean', 'esMonotributo', 8);
+-- insert into campo_tramite values(96, 28, 1, 'enproceso', 30);
+-- insert into campo_tramite values(96, 36, 1, 'enproceso', 30);
+update campo set col = 12 where id_campo = 94;
+insert into campo_tramite values(3, 28, 5, 'iniciado', 27);
+insert into campo_tramite values(3, 28, 5, 'enproceso', 27);
+insert into campo_tramite values(6, 28, 6, 'iniciado', 27);
+insert into campo_tramite values(6, 28, 6, 'enproceso', 27);
+
+insert into campo_tramite values(3, 36, 5, 'iniciado', 27);
+insert into campo_tramite values(3, 36, 5, 'enproceso', 27);
+insert into campo_tramite values(6, 36, 6, 'iniciado', 27);
+insert into campo_tramite values(6, 36, 6, 'enproceso', 27);

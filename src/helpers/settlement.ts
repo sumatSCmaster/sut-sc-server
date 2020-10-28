@@ -3506,7 +3506,7 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
         funcionario.estadoLicencia,
         funcionario.direccion,
         parish,
-        JSON.parse(funcionario.esMonotributo),
+        JSON.parse(funcionario.esMonotributo) || false,
       ])
     ).rows[0];
     data.funcionario.referenciaMunicipal = registry.referencia_municipal;
