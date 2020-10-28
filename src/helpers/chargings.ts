@@ -1,7 +1,10 @@
+import * as fs from 'fs';
+
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import moment from 'moment';
-
+import ExcelJs from 'exceljs';
+import S3Client from '@utils/s3';
 import { getUsers, getIo } from '@config/socket';
 import { groupBy, take, slice } from 'lodash';
 
@@ -9,6 +12,9 @@ const users = getUsers();
 
 const pool = Pool.getInstance();
 
+const dev = process.env.NODE_ENV !== 'production';
+const WALLET_AMOUNT = 20;
+const WALLET_AMOUNT_AR = 5;
 
 const extractGroupedCounts = (grouped) => {
     let res = {};
@@ -212,16 +218,82 @@ export const getAllChargings = async () => {
 }
  
 export const getChargingsByWallet = async (id) => {
+    try {
+        const chargings = await getChargingsByWalletId(id)
+        return { status: 200, cobranzas: chargings.rows, message: 'Cobranzas obtenidas' };
+    } catch (err) {
+        throw err;
+    } finally {
+    }
+}
+
+const getChargingsByWalletId = async (id) => {
     const client = await pool.connect();
     try {
         const charging = await client.query('SELECT * FROM impuesto.cartera where id_cartera = $1', [id]);
         const chargings = await client.query(charging.rows[0].es_ar ? queries.GET_CHARGINGS_BY_WALLET_AR :  queries.GET_CHARGINGS_BY_WALLET, [id]);
-        return { status: 200, cobranzas: chargings.rows, message: 'Cobranzas obtenidas' };
+        return chargings
     } catch (err) {
         throw err;
     } finally {
         client.release();
     }
+}
+
+
+export const getChargingsByWalletExcel = async (id) => {
+    return new Promise(async (res, rej) => {
+        const workbook = new ExcelJs.Workbook();
+        workbook.creator = 'SUT';
+        workbook.created = new Date();
+        workbook.views = [
+          {
+            x: 0,
+            y: 0,
+            width: 10000,
+            height: 20000,
+            firstSheet: 0,
+            activeTab: 1,
+            visibility: 'visible',
+          },
+        ];
+  
+        const sheet = workbook.addWorksheet();
+        console.log('sil');
+        const result = await getChargingsByWalletId(id)
+        console.log('si2');
+  
+        //   console.log(result);
+  
+        sheet.columns = result.fields.map((row) => {
+          return { header: row.name, key: row.name, width: 32 };
+        });
+        sheet.addRows(result.rows, 'i');
+  
+        if (dev) {
+          const dir = `../../archivos/${id}.xlsx`;
+          const stream = fs.createWriteStream(require('path').resolve(`./archivos/${id}.xlsx`));
+          await workbook.xlsx.write(stream);
+          res(dir);
+        } else {
+          try {
+            const bucketParams = {
+              Bucket: 'sut-maracaibo',
+              Key: `/sedemat/reportes/carteras/${id}.xlsx`,
+            };
+            await S3Client.putObject({
+              ...bucketParams,
+              Body: await workbook.xlsx.writeBuffer(),
+              ACL: 'public-read',
+              ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            }).promise();
+            res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+          } catch (e) {
+            rej(e);
+          } finally {
+          }
+        }
+      });
 }
 
 export const updateOneCharging = async (user: any, { idCobranza, contactado, estatusTelefonico, observaciones, convenio, fiscalizar, estimacionPago }) => {
