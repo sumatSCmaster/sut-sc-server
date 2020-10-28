@@ -68,7 +68,9 @@ export const updateContributorActivities = async ({ branchId, activities, branch
           const fechaInicio = !!desde ? desde : activities.sort((a, b) => (moment(a.desde).isSameOrBefore(moment(b.desde)) ? 1 : -1))[0]?.desde;
           const fromDate = ramo !== 'RD0' ? moment(fechaInicio).subtract(1, 'M') : moment(fechaInicio);
           const expireDate = ramo !== 'RD0' ? moment(fechaInicio).subtract(1, 'M').endOf('month') : moment(fechaInicio).endOf('month');
-          await client.query(queries.DELETE_SETTLEMENTS_BY_BRANCH_CODE_AND_RIM, [codigosRamo[ramo], branchId]);
+          await client.query(queries.NULLIFY_APPLICATION_CONSTRAINT_BY_BRANCH_AND_RIM, [codigosRamo[ramo], branchId]);
+          await client.query(queries.NULLIFY_SETTLEMENT_CONSTRAINT_BY_BRANCH_AND_RIM, [codigosRamo[ramo], branchId]);
+          // await client.query(queries.DELETE_SETTLEMENTS_BY_BRANCH_CODE_AND_RIM, [codigosRamo[ramo], branchId]);
           const ghostSettlement = (
             await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
               null,
@@ -87,7 +89,9 @@ export const updateContributorActivities = async ({ branchId, activities, branch
 
     if (!actualizado) {
       await client.query('DELETE FROM impuesto.actividad_economica_sucursal WHERE id_registro_municipal = $1', [branchId]);
-      await client.query(queries.DELETE_SETTLEMENTS_BY_BRANCH_CODE_AND_RIM, [codigosRamo.AE, branchId]);
+      await client.query(queries.NULLIFY_APPLICATION_CONSTRAINT_BY_BRANCH_AND_RIM, [codigosRamo.AE, branchId]);
+      await client.query(queries.NULLIFY_SETTLEMENT_CONSTRAINT_BY_BRANCH_AND_RIM, [codigosRamo.AE, branchId]);
+      // await client.query(queries.DELETE_SETTLEMENTS_BY_BRANCH_CODE_AND_RIM, [codigosRamo.AE, branchId]);
 
       await Promise.all(
         activities
