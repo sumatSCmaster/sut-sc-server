@@ -71,7 +71,6 @@ app.use('/', router);
 
 app.use(function (err, req, res, next) {
   console.log('a', res.headersSent)
-  console.log(err)
   res.status(400).json({error: err})
 })
 
