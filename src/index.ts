@@ -69,4 +69,11 @@ app.use(
 
 app.use('/', router);
 
+app.use(function (err, req, res, next) {
+  res.status(500).json({
+    status: 500,
+    e: err.message
+  })
+})
+
 export default app;

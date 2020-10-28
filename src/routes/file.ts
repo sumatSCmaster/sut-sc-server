@@ -66,10 +66,7 @@ const uploadFile = async (req, res, next) => {
         }).array('inmueble')(req, res, next);
       } catch (e) {
         console.log('sera cors?')
-        res.status(400).json({
-          status: 400,
-          message: e.message
-        }).end()
+        next(e)
       }
       break;
     default:
