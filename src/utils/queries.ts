@@ -2431,7 +2431,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS apr, SUM(l.monto) AS monto
                 FROM impuesto.liquidacion l
                 INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
-                WHERE ({datos#>>'{fecha, month}' = $2) 
+                WHERE (datos#>>'{fecha, month}' = $2) 
                 AND datos#>>'{fecha, year}' = $3 
                 AND id_subramo IN (10, 99) GROUP BY id_registro_municipal, s.aprobado) lae ON lae.id_registro_municipal = rm.id_registro_municipal
     LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS apr, SUM(l.monto) AS monto
