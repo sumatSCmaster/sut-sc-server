@@ -45,7 +45,7 @@ export const createForm = async ({ fecha, codigo, formato, tramite, institucion,
             rej(err);
           } else {
             const bucketParams = {
-              Bucket: 'sut-maracaibo',
+              Bucket: process.env.BUCKET_NAME as string,
               Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}`,
             };
             await S3Client.putObject({

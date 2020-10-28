@@ -1582,36 +1582,40 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
           fecha: el.fecha,
           monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
           montoPetro: (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total,
-          liquidaciones: await Promise.all(liquidaciones
-            .filter((el) => el.tipoProcedimiento !== 'MULTAS')
-            .map(async (el) => {
-              return {
-                id: el.id_liquidacion,
-                ramo: el.tipoProcedimiento,
-                fecha: el.datos.fecha,
-                monto: el.monto,
-                montoPetro: +el.monto_petro,
-                esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
-                certificado: el.certificado,
-                recibo: el.recibo,
-                desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
-              };
-            })),
-          multas: await Promise.all(liquidaciones
-            .filter((el) => el.tipoProcedimiento === 'MULTAS')
-            .map(async (el) => {
-              return {
-                id: el.id_liquidacion,
-                ramo: el.tipoProcedimiento,
-                fecha: el.datos.fecha,
-                monto: el.monto,
-                montoPetro: +el.monto_petro,
-                descripcion: el.datos.descripcion,
-                certificado: el.certificado,
-                recibo: el.recibo,
-                desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
-              };
-            })),
+          liquidaciones: await Promise.all(
+            liquidaciones
+              .filter((el) => el.tipoProcedimiento !== 'MULTAS')
+              .map(async (el) => {
+                return {
+                  id: el.id_liquidacion,
+                  ramo: el.tipoProcedimiento,
+                  fecha: el.datos.fecha,
+                  monto: el.monto,
+                  montoPetro: +el.monto_petro,
+                  esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
+                  certificado: el.certificado,
+                  recibo: el.recibo,
+                  desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
+                };
+              })
+          ),
+          multas: await Promise.all(
+            liquidaciones
+              .filter((el) => el.tipoProcedimiento === 'MULTAS')
+              .map(async (el) => {
+                return {
+                  id: el.id_liquidacion,
+                  ramo: el.tipoProcedimiento,
+                  fecha: el.datos.fecha,
+                  monto: el.monto,
+                  montoPetro: +el.monto_petro,
+                  descripcion: el.datos.descripcion,
+                  certificado: el.certificado,
+                  recibo: el.recibo,
+                  desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
+                };
+              })
+          ),
           interesMoratorio: await getDefaultInterestByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
           rebajaInteresMoratorio: await getDefaultInterestRebateByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
         };
@@ -1653,36 +1657,40 @@ export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client
           fecha: el.fecha,
           monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
           montoPetro: (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total,
-          liquidaciones: await Promise.all(liquidaciones
-            .filter((el) => el.tipoProcedimiento !== 'MULTAS')
-            .map(async (el) => {
-              return {
-                id: el.id_liquidacion,
-                ramo: el.tipoProcedimiento,
-                fecha: el.datos.fecha,
-                monto: el.monto,
-                montoPetro: +el.monto_petro,
-                esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
-                certificado: el.certificado,
-                recibo: el.recibo,
-                desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
-              };
-            })),
-          multas: await Promise.all(liquidaciones
-            .filter((el) => el.tipoProcedimiento === 'MULTAS')
-            .map(async (el) => {
-              return {
-                id: el.id_liquidacion,
-                ramo: el.tipoProcedimiento,
-                fecha: el.datos.fecha,
-                monto: el.monto,
-                montoPetro: +el.monto_petro,
-                descripcion: el.datos.descripcion,
-                certificado: el.certificado,
-                recibo: el.recibo,
-                desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
-              };
-            })),
+          liquidaciones: await Promise.all(
+            liquidaciones
+              .filter((el) => el.tipoProcedimiento !== 'MULTAS')
+              .map(async (el) => {
+                return {
+                  id: el.id_liquidacion,
+                  ramo: el.tipoProcedimiento,
+                  fecha: el.datos.fecha,
+                  monto: el.monto,
+                  montoPetro: +el.monto_petro,
+                  esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
+                  certificado: el.certificado,
+                  recibo: el.recibo,
+                  desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
+                };
+              })
+          ),
+          multas: await Promise.all(
+            liquidaciones
+              .filter((el) => el.tipoProcedimiento === 'MULTAS')
+              .map(async (el) => {
+                return {
+                  id: el.id_liquidacion,
+                  ramo: el.tipoProcedimiento,
+                  fecha: el.datos.fecha,
+                  monto: el.monto,
+                  montoPetro: +el.monto_petro,
+                  descripcion: el.datos.descripcion,
+                  certificado: el.certificado,
+                  recibo: el.recibo,
+                  desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
+                };
+              })
+          ),
           interesMoratorio: await getDefaultInterestByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
           rebajaInteresMoratorio: await getDefaultInterestRebateByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
         };
@@ -3321,8 +3329,9 @@ export const addRebateForDeclaration = async ({ process, user }) => {
   try {
     const { rebajado, id_solicitud: idSolicitud, id_contribuyente: contribuyente } = (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows[0];
     if (rebajado) throw { status: 403, message: 'Esta solicitud ya ha sido rebajada anteriormente' };
-    const hasAE = (await client.query(`SELECT * FROM impuesto.liquidacion l INNER JOIN impuesto.subramo USING (id_subramo) INNER JOIN impuesto.ramo r USING (id_ramo) WHERE l.id_solicitud = $1 AND r.codigo = '112' AND l.monto_petro > 0`, [idSolicitud]))
-      .rows;
+    const hasAE = (
+      await client.query(`SELECT * FROM impuesto.liquidacion l INNER JOIN impuesto.subramo USING (id_subramo) INNER JOIN impuesto.ramo r USING (id_ramo) WHERE l.id_solicitud = $1 AND r.codigo = '112' AND l.monto_petro > 0`, [idSolicitud])
+    ).rows;
     if (!hasAE.length) throw { status: 403, message: 'La solicitud no posee liquidaciones de Actividad Económica' };
     const nroLiquidaciones = hasAE.length;
     const montoPerLiq = montoRebajado / nroLiquidaciones;
@@ -3351,7 +3360,7 @@ export const addRebateForDeclaration = async ({ process, user }) => {
     // );
     await client.query('UPDATE impuesto.solicitud SET rebajado = true WHERE id_solicitud = $1', [idSolicitud]);
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [contribuyente]);
-    const application = await getApplicationsAndSettlementsByIdNots({id, user: null}, client);
+    const application = await getApplicationsAndSettlementsByIdNots({ id, user: null }, client);
     await client.query('COMMIT');
     return { status: 200, message: 'Solicitud rebajada satisfactoriamente', solicitud: application };
   } catch (error) {
@@ -3559,7 +3568,7 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
 
 export const approveContributorBenefits = async ({ data, client }: { data: any; client: PoolClient }) => {
   try {
-    const { contribuyente, beneficios, usuario } = data.funcionario;
+    const { contribuyente, beneficios, usuarios } = data.funcionario;
     const contributorWithBranch = (await client.query(queries.GET_CONTRIBUTOR_WITH_BRANCH, [contribuyente.registroMunicipal])).rows[0];
     const benefittedUser = (await client.query(queries.GET_USER_IN_CHARGE_OF_BRANCH_BY_ID, [contributorWithBranch.id_registro_municipal])).rows[0];
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [contributorWithBranch.id_contribuyente]);
@@ -3568,7 +3577,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
       beneficios.map(async (x) => {
         switch (x.tipoBeneficio) {
           case 'pagoCompleto':
-            const applicationFP = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [usuario || benefittedUser?.id, contributorWithBranch.id_contribuyente])).rows[0];
+            const applicationFP = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [usuarios[0].id || benefittedUser?.id, contributorWithBranch.id_contribuyente])).rows[0];
             await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [applicationFP.id_solicitud, applicationStateEvents.INGRESARDATOS]);
             const benefitFullPayment = (await client.query(queries.CHANGE_SETTLEMENT_TO_NEW_APPLICATION, [applicationFP.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
             return benefitFullPayment;
@@ -3603,7 +3612,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             const benefitRemission = (await client.query(queries.SET_SETTLEMENTS_AS_FORWARDED_BY_RIM, [contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
             return benefitRemission;
           case 'convenio':
-            const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [usuario || benefittedUser?.id, contributorWithBranch.id_contribuyente])).rows[0];
+            const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [usuarios[0].id || benefittedUser?.id, contributorWithBranch.id_contribuyente])).rows[0];
             await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [applicationAG.id_solicitud, applicationStateEvents.INGRESARDATOS]);
             await client.query('UPDATE impuesto.solicitud SET tipo_solicitud = $1 WHERE id_solicitud = $2', ['CONVENIO', applicationAG.id_solicitud]);
             const agreement = (await client.query(queries.CREATE_AGREEMENT, [applicationAG.id_solicitud, x.porciones.length])).rows[0];
@@ -3724,7 +3733,8 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
               rej(err);
             } else {
               const bucketParams = {
-                Bucket: 'sut-maracaibo',
+                Bucket: process.env.BUCKET_NAME as string,
+
                 Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`,
               };
               await S3Client.putObject({
@@ -4098,7 +4108,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
           try {
             if (buffersArray.length === 1) {
               const bucketParams = {
-                Bucket: 'sut-maracaibo',
+                Bucket: process.env.BUCKET_NAME as string,
+
                 Key: `/sedemat/${application.id}/${application.idSubramo === 9 ? 'IU' : 'SM'}/${application.idLiquidacion}/recibo.pdf`,
               };
               await S3Client.putObject({
@@ -4125,7 +4136,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 .output()
                 .then(async (buffer) => {
                   const bucketParams = {
-                    Bucket: 'sut-maracaibo',
+                    Bucket: process.env.BUCKET_NAME as string,
+
                     Key: `/sedemat/${application.id}/${application.idSubramo === 9 ? 'IU' : 'SM'}/${application.idLiquidacion}/recibo.pdf`,
                   };
                   await S3Client.putObject({
@@ -4275,7 +4287,8 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
           try {
             if (buffersArray.length === 1) {
               const bucketParams = {
-                Bucket: 'sut-maracaibo',
+                Bucket: process.env.BUCKET_NAME as string,
+
                 Key: `/sedemat/${application.id}/IU/${application.idLiquidacion}/certificado.pdf`,
               };
               await S3Client.putObject({
@@ -4302,7 +4315,8 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
                 .output()
                 .then(async (buffer) => {
                   const bucketParams = {
-                    Bucket: 'sut-maracaibo',
+                    Bucket: process.env.BUCKET_NAME as string,
+
                     Key: `/sedemat/${application.id}/IU/${application.idLiquidacion}/certificado.pdf`,
                   };
                   await S3Client.putObject({
@@ -4495,7 +4509,8 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
               try {
                 await regClient.query('BEGIN');
                 const bucketParams = {
-                  Bucket: 'sut-maracaibo',
+                  Bucket: process.env.BUCKET_NAME as string,
+
                   Key: `sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
                 };
                 await S3Client.putObject({
@@ -4535,7 +4550,8 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
                   try {
                     await regClient.query('BEGIN');
                     const bucketParams = {
-                      Bucket: 'sut-maracaibo',
+                      Bucket: process.env.BUCKET_NAME as string,
+
                       Key: `sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
                     };
                     await S3Client.putObject({
@@ -4592,7 +4608,8 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
     //   //         rej(err);
     //   //       } else {
     //   //         const bucketParams = {
-    //   //           Bucket: 'sut-maracaibo',
+    //   //           Bucket: process.env.BUCKET_NAME as string,
+
     //   //           Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
     //   //         };
     //   //         await S3Client.putObject({
@@ -4758,7 +4775,8 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
           try {
             if (buffersArray.length === 1) {
               const bucketParams = {
-                Bucket: 'sut-maracaibo',
+                Bucket: process.env.BUCKET_NAME as string,
+
                 Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
               };
               await S3Client.putObject({
@@ -4785,7 +4803,8 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
                 .output()
                 .then(async (buffer) => {
                   const bucketParams = {
-                    Bucket: 'sut-maracaibo',
+                    Bucket: process.env.BUCKET_NAME as string,
+
                     Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
                   };
                   await S3Client.putObject({
@@ -4832,7 +4851,8 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
     //   //         rej(err);
     //   //       } else {
     //   //         const bucketParams = {
-    //   //           Bucket: 'sut-maracaibo',
+    //   //           Bucket: process.env.BUCKET_NAME as string,
+
     //   //           Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
     //   //         };
     //   //         await S3Client.putObject({
@@ -4985,7 +5005,7 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
           try {
             if (buffersArray.length === 1) {
               const bucketParams = {
-                Bucket: 'sut-maracaibo',
+                Bucket: process.env.BUCKET_NAME as string,
                 Key: `/sedemat/${application.id}/PP/${application.idLiquidacion}/certificado.pdf`,
               };
               await S3Client.putObject({
@@ -5012,7 +5032,8 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
                 .output()
                 .then(async (buffer) => {
                   const bucketParams = {
-                    Bucket: 'sut-maracaibo',
+                    Bucket: process.env.BUCKET_NAME as string,
+
                     Key: `/sedemat/${application.id}/PP/${application.idLiquidacion}/certificado.pdf`,
                   };
                   await S3Client.putObject({
@@ -5117,7 +5138,8 @@ const createPatentDocument = async ({ gticPool, pool, user, application }: Certi
               rej(err);
             } else {
               const bucketParams = {
-                Bucket: 'sut-maracaibo',
+                Bucket: process.env.BUCKET_NAME as string,
+
                 Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/patente.pdf`,
               };
               await S3Client.putObject({
@@ -5180,7 +5202,8 @@ const createFineDocument = async ({ gticPool, pool, user, application }: Certifi
               rej(err);
             } else {
               const bucketParams = {
-                Bucket: 'sut-maracaibo',
+                Bucket: process.env.BUCKET_NAME as string,
+
                 Key: `/sedemat/${application.id}/MUL/${application.idLiquidacion}/solvencia.pdf`,
               };
               await S3Client.putObject({
@@ -5311,7 +5334,8 @@ export const getSettlementsReport = async (user, payload: { from: Date; to: Date
       } else {
         try {
           const bucketParams = {
-            Bucket: 'sut-maracaibo',
+            Bucket: process.env.BUCKET_NAME as string,
+
             Key: '/sedemat/reportes/liquidaciones.xlsx',
           };
           await S3Client.putObject({
@@ -5369,7 +5393,7 @@ const certificateCreationSnippet = () => {
   //             rej(err);
   //           } else {
   //             const bucketParams = {
-  //               Bucket: 'sut-maracaibo',
+  //               Bucket: process.env.BUCKET_NAME as string,
   //               Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}`,
   //             };
   //             await S3Client.putObject({
