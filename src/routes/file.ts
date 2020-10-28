@@ -21,8 +21,6 @@ const checkInm = async (id) => {
     }else {
       return;
     }
-  } catch (e) {
-    throw e;
   } finally {
     client.release();
   }
