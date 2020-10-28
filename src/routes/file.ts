@@ -17,7 +17,7 @@ const checkInm = async (id) => {
   const client = await pool.connect();
   try {
     if((await client.query('SELECT 1 FROM inmueble_urbano WHERE cod_catastral = $1', [id])).rowCount > 0){
-      throw new Error('Ya existe un inmueble con ese codigo');
+      return new Error('Ya existe un inmueble con ese codigo');
     }else {
       return;
     }
@@ -58,7 +58,10 @@ const uploadFile = async (req, res, next) => {
     case 'inmueble':
       try {
         if(JSON.parse(req.query.nuevoInmueble)){
-          await checkInm(req.params.id)
+          const res = await checkInm(req.params.id)
+          if (res instanceof Error){
+            throw res
+          }
         }
         multer({
           storage: diskStorage('inmueble/' + req.params.id),

@@ -74,7 +74,7 @@ app.use(function (err, req, res, next) {
   res.status(500).json({
     status: 500,
     e: err.message
-  })
+  }).end()
 })
 
 export default app;
