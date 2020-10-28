@@ -57,7 +57,9 @@ const uploadFile = async (req, res, next) => {
       break;
     case 'inmueble':
       try {
-        await checkInm(req.params.id)
+        if(JSON.parse(req.query.nuevoInmueble)){
+          await checkInm(req.params.id)
+        }
         multer({
           storage: diskStorage('inmueble/' + req.params.id),
           fileFilter: photoFilter,
@@ -67,7 +69,7 @@ const uploadFile = async (req, res, next) => {
         res.status(400).json({
           status: 400,
           message: e.message
-        })
+        }).end()
       }
       break;
     default:
