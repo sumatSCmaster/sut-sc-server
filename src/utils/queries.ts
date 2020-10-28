@@ -2431,32 +2431,32 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS apr, SUM(l.monto) AS monto
                 FROM impuesto.liquidacion l
                 INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
-                WHERE (datos#>>'{fecha, month}' = 'agosto' OR datos#>>'{fecha, month}' = 'septiembre') 
-                AND datos#>>'{fecha, year}' = '2020' 
+                WHERE (datos#>>'{datos#>>'{fecha, month}' = $2) 
+                AND datos#>>'{fecha, year}' = $3 
                 AND id_subramo IN (10, 99) GROUP BY id_registro_municipal, s.aprobado) lae ON lae.id_registro_municipal = rm.id_registro_municipal
     LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS apr, SUM(l.monto) AS monto
                 FROM impuesto.liquidacion l
                 INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
-                WHERE (datos#>>'{fecha, month}' = 'agosto') 
-                AND datos#>>'{fecha, year}' = '2020' 
+                WHERE (datos#>>'{fecha, month}' = $4) 
+                AND datos#>>'{fecha, year}' = $5 
                 AND id_subramo IN (66, 102, 107, 108) GROUP BY id_registro_municipal, s.aprobado) lsm ON lsm.id_registro_municipal = rm.id_registro_municipal
     LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS  apr, SUM(l.monto) AS monto
                 FROM impuesto.liquidacion l
                 INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
-                WHERE (datos#>>'{fecha, month}' = 'agosto') 
-                AND datos#>>'{fecha, year}' = '2020' 
+                WHERE (datos#>>'{fecha, month}' = $4) 
+                AND datos#>>'{fecha, year}' = $5 
                 AND id_subramo IN (9, 103) GROUP BY id_registro_municipal, s.aprobado) liu ON liu.id_registro_municipal = rm.id_registro_municipal
     LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END as apr, SUM(l.monto) AS monto
                 FROM impuesto.liquidacion l
                 INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
-                WHERE (datos#>>'{fecha, month}' = 'agosto') 
-                AND datos#>>'{fecha, year}' = '2020' 
+                WHERE (datos#>>'{fecha, month}' = $4) 
+                AND datos#>>'{fecha, year}' = $5 
                 AND id_subramo IN (12, 104) GROUP BY id_registro_municipal, s.aprobado) lpp ON lpp.id_registro_municipal = rm.id_registro_municipal
     LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END as apr, SUM(l.monto) AS monto
                 FROM impuesto.liquidacion l
                 INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
-                WHERE (datos#>>'{fecha, month}' = 'agosto') 
-                AND datos#>>'{fecha, year}' = '2020' 
+                WHERE (datos#>>'{fecha, month}' = $4) 
+                AND datos#>>'{fecha, year}' = $5 
                 AND id_subramo IN (101, 105, 30) GROUP BY id_registro_municipal, s.aprobado) lmul ON lmul.id_registro_municipal = rm.id_registro_municipal
     )
     SELECT pr.rif, pr.rim, pr."razonSocial", c.*, pr."pagoAE", pr."montoAE", pr."pagoSM", pr."montoSM", pr."pagoIU", pr."montoIU", pr."pagoPP",pr."montoPP", pr."pagoMUL", pr."montoMUL", pr.progreso
@@ -2505,38 +2505,38 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS apr, SUM(l.monto) AS monto
                   FROM impuesto.liquidacion l
                   INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
-                  WHERE (datos#>>'{fecha, month}' = 'agosto' OR datos#>>'{fecha, month}' = 'septiembre') 
-                  AND datos#>>'{fecha, year}' = '2020' 
+                  WHERE (datos#>>'{fecha, month}' = $2) 
+                  AND datos#>>'{fecha, year}' = $3 
                   AND id_subramo IN (10, 99) GROUP BY id_registro_municipal, s.aprobado) lae ON lae.id_registro_municipal = rm.id_registro_municipal
       LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS apr, SUM(l.monto) AS monto
                   FROM impuesto.liquidacion l
                   INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
-                  WHERE (datos#>>'{fecha, month}' = 'agosto') 
-                  AND datos#>>'{fecha, year}' = '2020' 
+                  WHERE (datos#>>'{fecha, month}' = $4) 
+                  AND datos#>>'{fecha, year}' = $5 
                   AND id_subramo IN (66, 102, 107, 108)  GROUP BY id_registro_municipal, s.aprobado) lsm ON lsm.id_registro_municipal = rm.id_registro_municipal
       LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS  apr, SUM(l.monto) AS monto
                   FROM impuesto.liquidacion l
                   INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
-                  WHERE (datos#>>'{fecha, month}' = 'agosto') 
-                  AND datos#>>'{fecha, year}' = '2020' 
+                  WHERE (datos#>>'{fecha, month}' = $4) 
+                  AND datos#>>'{fecha, year}' = $5 
                   AND id_subramo IN (9, 103)  GROUP BY id_registro_municipal, s.aprobado) liu ON liu.id_registro_municipal = rm.id_registro_municipal
       LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END as apr, SUM(l.monto) AS monto
                   FROM impuesto.liquidacion l
                   INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
-                  WHERE (datos#>>'{fecha, month}' = 'agosto') 
-                  AND datos#>>'{fecha, year}' = '2020' 
+                  WHERE (datos#>>'{fecha, month}' = $4) 
+                  AND datos#>>'{fecha, year}' = $5 
                   AND id_subramo IN (12, 104)  GROUP BY id_registro_municipal, s.aprobado) lpp ON lpp.id_registro_municipal = rm.id_registro_municipal
       LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END as apr, SUM(l.monto) AS monto
                   FROM impuesto.liquidacion l
                   INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
-                  WHERE (datos#>>'{fecha, month}' = 'agosto') 
-                  AND datos#>>'{fecha, year}' = '2020' 
+                  WHERE (datos#>>'{fecha, month}' = $4) 
+                  AND datos#>>'{fecha, year}' = $5 
                   AND id_subramo IN (101, 105, 30)  GROUP BY id_registro_municipal, s.aprobado) lmul ON lmul.id_registro_municipal = rm.id_registro_municipal
       LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END as apr, SUM(l.monto) AS monto
       FROM impuesto.liquidacion l
       INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
-      WHERE (datos#>>'{fecha, month}' = 'agosto') 
-      AND datos#>>'{fecha, year}' = '2020' 
+      WHERE (datos#>>'{fecha, month}' = $4) 
+      AND datos#>>'{fecha, year}' = $5 
       AND id_subramo IN (52)  GROUP BY id_registro_municipal, s.aprobado) lret ON lret.id_registro_municipal = rm.id_registro_municipal
       )
       SELECT pr.rif, pr.rim, pr."razonSocial", c.*, pr."pagoAE", pr."montoAE", pr."pagoSM", pr."montoSM", pr."pagoIU", pr."montoIU", pr."pagoPP",pr."montoPP", pr."pagoMUL", pr."montoMUL", pr.progreso

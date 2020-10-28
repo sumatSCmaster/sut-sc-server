@@ -236,8 +236,15 @@ export const getChargingsByWallet = async (id) => {
 const getChargingsByWalletId = async (id) => {
   const client = await pool.connect();
   try {
+    const date = (await client.query("SELECT created FROM impuesto.cobranza LIMIT 1")).rows[0].created;
+    const creationDate = moment(date).locale('es')
+    const declMonth = creationDate.clone().subtract(1, 'month').locale('es');
     const charging = await client.query('SELECT * FROM impuesto.cartera where id_cartera = $1', [id]);
-    const chargings = await client.query(charging.rows[0].es_ar ? queries.GET_CHARGINGS_BY_WALLET_AR : queries.GET_CHARGINGS_BY_WALLET, [id]);
+    let aeMonth = declMonth.format('MMMM').toLowerCase();
+    let aeYear = declMonth.year();
+    let otherMonth = creationDate.format('MMMM').toLowerCase()
+    let otherYear = creationDate.year()
+    const chargings = await client.query(charging.rows[0].es_ar ? queries.GET_CHARGINGS_BY_WALLET_AR : queries.GET_CHARGINGS_BY_WALLET, [id, aeMonth, aeYear, otherMonth, otherYear]);
     return chargings;
   } catch (err) {
     throw err;
