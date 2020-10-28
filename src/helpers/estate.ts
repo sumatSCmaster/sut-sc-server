@@ -260,6 +260,7 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
 
     return {status: 200, inmueble: {...estate,  avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows}};
   } catch (e) {
+    console.log(e)
     await client.query('ROLLBACK');
     throw e;
   } finally {
