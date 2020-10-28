@@ -65,7 +65,7 @@ const uploadFile = async (req, res, next) => {
           fileFilter: photoFilter,
         }).array('inmueble')(req, res, next);
       } catch (e) {
-        console.log('sera cors?')
+        console.log('sera cors?', res.headersSent)
         next(e)
       }
       break;
