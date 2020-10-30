@@ -75,8 +75,7 @@ app.use(function (err, req, res, next) {
   res.append('Access-Control-Allow-Origin', '*')
   console.log('coro', req.headers)
   console.log('a', res.headersSent)
-  console.log('e', res.headers)
-  console.log('f', res.headers)
+  console.log('e', res.getHeaders)
   res.send(JSON.stringify({error: err}))
 })
 
