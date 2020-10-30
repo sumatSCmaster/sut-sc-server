@@ -76,6 +76,7 @@ app.use(function (err, req, res, next) {
   res.status(400)
   res.type('application/json')
   res.set('Access-Control-Allow-Origin', '*')
+  console.log('f', res.headers)
   res.end(JSON.stringify({error: err}))
 })
 
