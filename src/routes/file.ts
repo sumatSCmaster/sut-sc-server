@@ -16,9 +16,12 @@ const router = Router();
 export const checkInm = async (id) => {
   const client = await pool.connect();
   try {
+    console.log(id);
     if ((await client.query('SELECT 1 FROM inmueble_urbano WHERE cod_catastral = $1', [id])).rowCount > 0) {
+      console.log('supalo');
       return new Error('Ya existe un inmueble con ese codigo');
     } else {
+      console.log('supalo2');
       return;
     }
   } finally {
