@@ -2134,6 +2134,7 @@ export const initialUserLinking = async (linkingData, user) => {
   try {
     client.query('BEGIN');
     const contributorExists = (await client.query(queries.TAX_PAYER_EXISTS, [tipoDocumento, documento])).rows;
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     if (contributorExists.length > 0) {
       if (datosContribuyente.tipoContribuyente === 'JURIDICO') {
         let hasNewCode = false;
@@ -2211,7 +2212,7 @@ export const initialUserLinking = async (linkingData, user) => {
                     const liquidacion = (
                       await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
                         applicationAG.id_solicitud,
-                        fixatedAmount(+el.monto),
+                        (+el.monto / PETRO).toFixed(8),
                         el.ramo,
                         el.descripcion,
                         { fecha: el.fecha },
@@ -2220,7 +2221,7 @@ export const initialUserLinking = async (linkingData, user) => {
                       ])
                     ).rows[0];
                     await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, liquidacion.id_liquidacion]);
-                    const fraccion = (await client.query(queries.CREATE_AGREEMENT_FRACTION, [agreement.id_convenio, fixatedAmount(+el.monto), i + 1, el.fechaVencimiento])).rows[0];
+                    const fraccion = (await client.query(queries.CREATE_AGREEMENT_FRACTION, [agreement.id_convenio, (+el.monto / PETRO).toFixed(8), i + 1, el.fechaVencimiento])).rows[0];
                     await client.query(queries.UPDATE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.INGRESARDATOS]);
                     if (el.estado === 'PAGADO') {
                       await client.query(queries.COMPLETE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.APROBARCAJERO]);
@@ -2252,7 +2253,7 @@ export const initialUserLinking = async (linkingData, user) => {
                 const settlement = (
                   await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
                     application.id_solicitud,
-                    fixatedAmount(+el.monto),
+                    (+el.monto / PETRO).toFixed(8),
                     el.ramo,
                     el.descripcion,
                     { fecha: el.fecha },
@@ -2274,7 +2275,7 @@ export const initialUserLinking = async (linkingData, user) => {
                 const settlement = (
                   await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
                     application.id_solicitud,
-                    fixatedAmount(+el.monto),
+                    (+el.monto / PETRO).toFixed(8),
                     el.ramo,
                     el.descripcion,
                     { fecha: el.fecha },
@@ -2340,7 +2341,7 @@ export const initialUserLinking = async (linkingData, user) => {
                       const liquidacion = (
                         await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
                           applicationAG.id_solicitud,
-                          fixatedAmount(+el.monto),
+                          (+el.monto / PETRO).toFixed(8),
                           el.ramo,
                           el.descripcion,
                           { fecha: el.fecha },
@@ -2349,7 +2350,7 @@ export const initialUserLinking = async (linkingData, user) => {
                         ])
                       ).rows[0];
                       await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, liquidacion.id_liquidacion]);
-                      const fraccion = (await client.query(queries.CREATE_AGREEMENT_FRACTION, [agreement.id_convenio, fixatedAmount(+el.monto), i + 1, el.fechaVencimiento])).rows[0];
+                      const fraccion = (await client.query(queries.CREATE_AGREEMENT_FRACTION, [agreement.id_convenio, (+el.monto / PETRO).toFixed(8), i + 1, el.fechaVencimiento])).rows[0];
                       await client.query(queries.UPDATE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.INGRESARDATOS]);
                       if (el.estado === 'PAGADO') {
                         await client.query(queries.COMPLETE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.APROBARCAJERO]);
@@ -2393,7 +2394,7 @@ export const initialUserLinking = async (linkingData, user) => {
                 const settlement = (
                   await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
                     application.id_solicitud,
-                    fixatedAmount(+el.monto),
+                    (+el.monto / PETRO).toFixed(8),
                     el.ramo,
                     el.descripcion,
                     { fecha: el.fecha },
@@ -2415,7 +2416,7 @@ export const initialUserLinking = async (linkingData, user) => {
                 const settlement = (
                   await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
                     application.id_solicitud,
-                    fixatedAmount(+el.monto),
+                    (+el.monto / PETRO).toFixed(8),
                     el.ramo,
                     el.descripcion,
                     { fecha: el.fecha },
@@ -2764,7 +2765,7 @@ export const insertSettlements = async ({ process, user }) => {
           const liquidacion = (
             await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
               application.id_solicitud,
-              +el.monto,
+              (+el.monto).toFixed(8),
               el.ramo,
               el.descripcion || 'Pago ordinario',
               datos,
