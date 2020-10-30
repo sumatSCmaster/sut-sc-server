@@ -76,10 +76,10 @@ export const getCleaningTariffForEstate = async ({ estate, branchId, client }) =
     if (!estate && !!branchId) return (await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto;
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const USD = (await client.query(queries.GET_USD_VALUE)).rows[0].valor_en_bs;
-    const costoMtsCom = +(await client.query('SELECT indicador FROM impuesto.baremo WHERE id_baremo = 1')).rows[0].indicador;
-    const limiteAseoCom = +(await client.query('SELECT indicador FROM impuesto.baremo WHERE id_baremo = 2')).rows[0].indicador;
-    const costoMtsInd = +(await client.query('SELECT indicador FROM impuesto.baremo WHERE id_baremo = 5')).rows[0].indicador;
-    const limiteAseoInd = +(await client.query('SELECT indicador FROM impuesto.baremo WHERE id_baremo = 6')).rows[0].indicador;
+    const costoMtsCom = +(await client.query(queries.GET_SCALE_FOR_COMMERCIAL_ESTATE_MTS_COST)).rows[0].indicador;
+    const limiteAseoCom = +(await client.query(queries.GET_SCALE_FOR_COMMERCIAL_ESTATE_PETRO_LIMIT)).rows[0].indicador;
+    const costoMtsInd = +(await client.query(queries.GET_SCALE_FOR_INDUSTRIAL_ESTATE_MTS_COST)).rows[0].indicador;
+    const limiteAseoInd = +(await client.query(queries.GET_SCALE_FOR_INDUSTRIAL_ESTATE_PETRO_LIMIT)).rows[0].indicador;
     const costoMts = estate.tipo_inmueble === 'INDUSTRIAL' ? costoMtsInd : costoMtsCom;
     const limiteAseo = estate.tipo_inmueble === 'INDUSTRIAL' ? limiteAseoInd : limiteAseoCom;
     const calculoAseo =

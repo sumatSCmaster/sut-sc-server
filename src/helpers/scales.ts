@@ -32,7 +32,7 @@ export const getScales = async () => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const scales = (await client.query('SELECT id_baremo as id, descripcion, indicador FROM impuesto.baremo')).rows;
+    const scales = (await client.query('SELECT id_baremo as id, descripcion, indicador FROM impuesto.baremo ORDER BY id_baremo')).rows;
     await client.query('COMMIT');
     return { status: 200, message: 'Baremo de tarifas de servicio municipal obtenido', scales };
   } catch (error) {

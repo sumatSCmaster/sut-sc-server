@@ -8,8 +8,9 @@ import queries from '@utils/queries';
 import { renderFile } from 'pug';
 import { errorMessageExtractor, errorMessageGenerator } from './errors';
 import { Usuario, Liquidacion } from '@root/interfaces/sigt';
-import { fixatedAmount, getApplicationsAndSettlementsById, isExonerated } from './settlement';
+import { finingPercentage, fixatedAmount, getApplicationsAndSettlementsById, getApplicationsAndSettlementsByIdNots, isExonerated } from './settlement';
 import { getUsersByContributor } from './user';
+import { generateReceipt } from './receipt';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -250,17 +251,20 @@ export const insertRetentions = async ({ process, user }) => {
               client
             );
             if (exonerado) return;
+            const currentMonth = now.clone().subtract(1, 'M');
+            const comparedMonth = moment().locale('ES').month(el.fechaCancelada.month).year(el.fechaCancelada.year);
+            const percentage = await finingPercentage({ currentMonth, comparedMonth, branch: 'RD0', client });
             const multa = Promise.resolve(
               client.query(queries.CREATE_FINING_FOR_LATE_RETENTION_PETRO, [
                 application.id_solicitud,
-                el.monto * 0.1,
+                (+el.monto * percentage).toFixed(8),
                 {
                   fecha: {
                     month: moment().locale('ES').month(el.fechaCancelada.month).toDate().toLocaleDateString('ES', { month: 'long' }),
-                    year: now.year(),
+                    year: moment().locale('ES').year(el.fechaCancelada.year).format('YYYY'),
                   },
                   descripcion: 'Multa por Declaracion Fuera de Plazo',
-                  monto: finingAmount,
+                  monto: percentage,
                 },
                 moment().locale('ES').month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
                 (contributorReference && contributorReference.id_registro_municipal) || null,
@@ -276,17 +280,18 @@ export const insertRetentions = async ({ process, user }) => {
       }
       const exonerado = await isExonerated({ branch: codigosRamo.MUL, contributor: contributorReference?.id_registro_municipal, activity: null, startingDate: moment().startOf('month') }, client);
       if (now.date() > 10 && !exonerado) {
+        const basePercentage = +(await client.query(queries.GET_SCALE_FOR_RETENTION_FINING_STARTING_AMOUNT)).rows[0].indicador;
         const multa = (
           await client.query(queries.CREATE_FINING_FOR_LATE_RETENTION_PETRO, [
             application.id_solicitud,
-            onlyRD[0].monto * 0.1,
+            (+onlyRD[0].monto * basePercentage).toFixed(8),
             {
               fecha: {
                 month: moment().subtract(1, 'M').toDate().toLocaleDateString('ES', { month: 'long' }),
-                year: now.year(),
+                year: moment().subtract(1, 'M').format('YYYY'),
               },
               descripcion: 'Multa por Declaracion Fuera de Plazo',
-              monto: finingAmount,
+              monto: basePercentage,
             },
             moment().subtract(1, 'M').endOf('month').format('MM-DD-YYYY'),
             (contributorReference && contributorReference.id_registro_municipal) || null,
@@ -350,9 +355,10 @@ export const insertRetentions = async ({ process, user }) => {
       // (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.VALIDAR])).rows[0].state;
       state = await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
     }
+    const solicitud = await getApplicationsAndSettlementsByIdNots({ id: application.id_solicitud, user }, client);
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [application.id_contribuyente]);
+    // solicitud.recibo = await generateReceipt({ application: solicitud.id }, client);
     await client.query('COMMIT');
-    const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
     // await sendNotification(
     //   user,
     //   `Se ha iniciado una solicitud para el contribuyente con el documento de identidad: ${solicitud.tipoDocumento}-${solicitud.documento}`,

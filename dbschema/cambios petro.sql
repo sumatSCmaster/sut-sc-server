@@ -98,11 +98,12 @@ $function$;
 
 ALTER TABLE impuesto.fraccion ALTER COLUMN monto DROP NOT NULL;
 
+INSERT INTO impuesto.baremo (id_baremo,descripcion, indicador) VALUES (3,'Costo de Solvencia de Actividad Economica Permanente', 0.12);
+INSERT INTO impuesto.baremo (id_baremo,descripcion, indicador) VALUES (4,'Costo de Solvencia de Actividad Economica Temporal', 0.24);
+
 INSERT INTO impuesto.baremo (id_baremo, descripcion, indicador) VALUES (5, 'Costo por Metro Cuadrado para Servicio de Aseo (Industrial)', 300);
 INSERT INTO impuesto.baremo (id_baremo, descripcion, indicador) VALUES (6, 'Límite del Costo para Servicio de Aseo (Industrial)', 0.15);
 
-INSERT INTO impuesto.baremo (descripcion, indicador) VALUES ('Costo de Solvencia de Actividad Economica Permanente', 0.12);
-INSERT INTO impuesto.baremo (descripcion, indicador) VALUES ('Costo de Solvencia de Actividad Economica Temporal', 0.24);
 
 insert into campo_tramite select id_campo, 36, orden, estado, id_seccion from campo_tramite where id_tipo_tramite = 28;
 delete from campo_tramite where id_campo = 95 and id_tipo_tramite = 28;
@@ -121,3 +122,10 @@ insert into campo_tramite values(3, 36, 5, 'iniciado', 27);
 insert into campo_tramite values(3, 36, 5, 'enproceso', 27);
 insert into campo_tramite values(6, 36, 6, 'iniciado', 27);
 insert into campo_tramite values(6, 36, 6, 'enproceso', 27);
+
+INSERT INTO impuesto.baremo (id_baremo, descripcion, indicador) VALUES (7, 'Límite del Costo de Multa por Declaración Tardía de AE', 0.25);
+INSERT INTO impuesto.baremo (id_baremo, descripcion, indicador) VALUES (8, 'Costo Inicial de Multa por Declaración Tardía de de AE', 0.05);
+INSERT INTO impuesto.baremo (id_baremo, descripcion, indicador) VALUES (9, 'Aumento Acumulativo de Multa por Declaración Tardía de AE', 0.05);
+INSERT INTO impuesto.baremo (id_baremo, descripcion, indicador) VALUES (10, 'Límite del Costo de Multa por Declaración Tardía de Retenciones',0.25);
+INSERT INTO impuesto.baremo (id_baremo, descripcion, indicador) VALUES (11, 'Costo Inicial de Multa por Declaración Tardía de Retenciones', 0.1);
+INSERT INTO impuesto.baremo (id_baremo, descripcion, indicador) VALUES (12, 'Aumento Acumulativo de Multa por Declaración Tardía de Retenciones', 0.05);

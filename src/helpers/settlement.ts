@@ -2488,12 +2488,31 @@ export const resendUserCode = async ({ user }) => {
   }
 };
 
+export const finingPercentage = async ({ currentMonth, comparedMonth, branch, client }: { currentMonth: Moment; comparedMonth: Moment; branch: 'AE' | 'RD0'; client: PoolClient }): Promise<number> => {
+  let base, augment, limit;
+  try {
+    if (branch === 'AE') {
+      base = +(await client.query(queries.GET_SCALE_FOR_AE_FINING_STARTING_AMOUNT)).rows[0].indicador;
+      augment = +(await client.query(queries.GET_SCALE_FOR_AE_FINING_AUGMENT_AMOUNT)).rows[0].indicador;
+      limit = +(await client.query(queries.GET_SCALE_FOR_AE_FINING_LIMIT_AMOUNT)).rows[0].indicador;
+    }
+    if (branch === 'RD0') {
+      base = +(await client.query(queries.GET_SCALE_FOR_RETENTION_FINING_STARTING_AMOUNT)).rows[0].indicador;
+      augment = +(await client.query(queries.GET_SCALE_FOR_RETENTION_FINING_AUGMENT_AMOUNT)).rows[0].indicador;
+      limit = +(await client.query(queries.GET_SCALE_FOR_RETENTION_FINING_LIMIT_AMOUNT)).rows[0].indicador;
+    }
+    const diff = currentMonth.startOf('month').diff(comparedMonth.startOf('month'), 'M');
+    if (diff === 0) return 0;
+    if (diff * augment > limit) return limit;
+    else return fixatedAmount(base + diff * augment);
+  } catch (e) {
+    throw e;
+  }
+};
+
 export const insertSettlements = async ({ process, user }) => {
   const client = await pool.connect();
   const { impuestos } = process;
-  //Esto hay que sacarlo de db
-  const augment = 10;
-  const maxFining = 100;
   let finingMonths: MultaImpuesto[] | undefined, finingAmount;
   try {
     client.query('BEGIN');
@@ -2646,17 +2665,20 @@ export const insertSettlements = async ({ process, user }) => {
               client
             );
             if (exonerado) return;
+            const currentMonth = now.clone().subtract(1, 'M');
+            const comparedMonth = moment().locale('ES').month(el.fechaCancelada.month).year(el.fechaCancelada.year);
+            const percentage = await finingPercentage({ currentMonth, comparedMonth, branch: 'AE', client });
             const multa = Promise.resolve(
               client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION_PETRO, [
                 application.id_solicitud,
-                ((el.monto - 0.12) * 0.1).toFixed(8),
+                ((el.monto - 0.12) * percentage).toFixed(8),
                 {
                   fecha: {
                     month: moment().locale('ES').month(el.fechaCancelada.month).toDate().toLocaleDateString('ES', { month: 'long' }),
                     year: moment().locale('ES').year(el.fechaCancelada.year).format('YYYY'),
                   },
                   descripcion: 'Multa por Declaracion Fuera de Plazo',
-                  monto: finingAmount,
+                  monto: percentage,
                 },
                 moment().locale('ES').month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
                 (contributorReference && contributorReference.id_registro_municipal) || null,
@@ -2672,17 +2694,18 @@ export const insertSettlements = async ({ process, user }) => {
       }
       const exonerado = await isExonerated({ branch: codigosRamo.MUL, contributor: contributorReference?.id_registro_municipal, activity: null, startingDate: moment().startOf('month') }, client);
       if (now.date() > 10 && !exonerado) {
+        const basePercentage = +(await client.query(queries.GET_SCALE_FOR_AE_FINING_STARTING_AMOUNT)).rows[0].indicador;
         const multa = (
           await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION_PETRO, [
             application.id_solicitud,
-            ((onlyAE[0].monto - 0.12) * 0.1).toFixed(8),
+            ((onlyAE[0].monto - 0.12) * basePercentage).toFixed(8),
             {
               fecha: {
                 month: moment().subtract(1, 'M').toDate().toLocaleDateString('ES', { month: 'long' }),
-                year: now.year(),
+                year: moment().subtract(1, 'M').year(),
               },
               descripcion: 'Multa por Declaracion Fuera de Plazo',
-              monto: finingAmount,
+              monto: basePercentage,
             },
             moment().subtract(1, 'M').endOf('month').format('MM-DD-YYYY'),
             (contributorReference && contributorReference.id_registro_municipal) || null,
