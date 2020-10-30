@@ -840,7 +840,7 @@ AND EXTRACT('month' FROM l.fecha_liquidacion) = EXTRACT('month' FROM CURRENT_DAT
           ON l.id_subramo = sr.id_subramo
       INNER JOIN impuesto.ramo rm
           ON sr.id_ramo = rm.id_ramo
-      WHERE sr.id_subramo = $1
+      WHERE sr.id_subramo IN (SELECT id_subramo FROM impuesto.subramo WHERE id_ramo = (SELECT id_ramo FROM impuesto.ramo WHERE descripcion_corta = $1))
       AND l.monto = '0'
               AND l.id_registro_municipal = 
           (SELECT id_registro_municipal
