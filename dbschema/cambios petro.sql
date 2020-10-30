@@ -129,3 +129,9 @@ INSERT INTO impuesto.baremo (id_baremo, descripcion, indicador) VALUES (9, 'Aume
 INSERT INTO impuesto.baremo (id_baremo, descripcion, indicador) VALUES (10, 'Límite del Costo de Multa por Declaración Tardía de Retenciones',0.25);
 INSERT INTO impuesto.baremo (id_baremo, descripcion, indicador) VALUES (11, 'Costo Inicial de Multa por Declaración Tardía de Retenciones', 0.1);
 INSERT INTO impuesto.baremo (id_baremo, descripcion, indicador) VALUES (12, 'Aumento Acumulativo de Multa por Declaración Tardía de Retenciones', 0.05);
+
+UPDATE impuesto.liquidacion SET monto_petro = ROUND((monto / (SELECT valor_en_bs FROM valor WHERE descripcion='PETRO')),8), monto = null
+WHERE id_liquidacion IN (SELECT id_liquidacion FROM impuesto.liquidacion INNER JOIN impuesto.solicitud USING (id_solicitud) WHERE aprobado = false);
+
+UPDATE impuesto.liquidacion SET monto_petro = ROUND((monto / (SELECT valor_en_bs FROM valor WHERE descripcion='PETRO')),8)
+WHERE id_liquidacion IN (SELECT id_liquidacion FROM impuesto.liquidacion INNER JOIN impuesto.solicitud USING (id_solicitud) WHERE aprobado = true);

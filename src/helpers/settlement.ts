@@ -2503,7 +2503,7 @@ export const finingPercentage = async ({ currentMonth, comparedMonth, branch, cl
     }
     const diff = currentMonth.startOf('month').diff(comparedMonth.startOf('month'), 'M');
     if (diff === 0) return 0;
-    if (diff * augment > limit) return limit;
+    if (diff * augment >= limit) return limit;
     else return fixatedAmount(base + diff * augment);
   } catch (e) {
     throw e;
@@ -2668,6 +2668,7 @@ export const insertSettlements = async ({ process, user }) => {
             const currentMonth = now.clone().subtract(1, 'M');
             const comparedMonth = moment().locale('ES').month(el.fechaCancelada.month).year(el.fechaCancelada.year);
             const percentage = await finingPercentage({ currentMonth, comparedMonth, branch: 'AE', client });
+            if (percentage === 0) return;
             const multa = Promise.resolve(
               client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION_PETRO, [
                 application.id_solicitud,
