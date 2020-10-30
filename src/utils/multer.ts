@@ -5,6 +5,7 @@ import fs from 'fs';
 import S3Client from './s3';
 import multerS3 from 'multer-s3';
 import switchcase from './switch';
+import { checkInm } from '@root/routes/file';
 
 export const diskStorage = (type: string): multer.StorageEngine =>
   switchcase({
@@ -26,7 +27,7 @@ export const diskStorage = (type: string): multer.StorageEngine =>
     }),
     production: multerS3({
       s3: S3Client,
-      bucket:  process.env.BUCKET_NAME,
+      bucket: process.env.BUCKET_NAME,
       acl: 'public-read',
       key: function (req, file, cb) {
         console.log('file', file);
@@ -45,4 +46,21 @@ export const photoFilter = (req, file, cb) => {
     cb(null, false);
   }
   cb(null, true);
+};
+
+export const estateFilter = async (req, file, cb) => {
+  try {
+    if (!file.originalname.match(/\.(jpg|jpeg|png|gif|xls|xlsx|pdf)$/)) {
+      cb(null, false);
+    }
+    if (JSON.parse(req.query.nuevoInmueble)) {
+      const res = await checkInm(req.params.id);
+      cb(null, !res);
+      // if (res instanceof Error){
+      //   throw res
+      // }
+    }
+  } catch (e) {
+    return e;
+  }
 };
