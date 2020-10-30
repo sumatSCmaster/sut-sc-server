@@ -129,6 +129,7 @@ const reversePaymentCase = switchcase({
   },
   CONVENIO: async ({ id, client }: { id: number; client: PoolClient }) => {
     const REVERSARPAGO = 'reversarpago_fraccion';
+    const REVERSARPAGO_SOLICITUD = 'reversarpago_solicitud';
     try {
       await client.query(queries.DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT, [id, 'CONVENIO']);
       await client.query(queries.UPDATE_FRACTION_STATE, [id, REVERSARPAGO]);
@@ -139,8 +140,8 @@ const reversePaymentCase = switchcase({
         client
       );
       await client.query(queries.DELETE_FISCAL_CREDIT_BY_APPLICATION_ID, [id]);
-      if (application.state === 'finalizado') {
-        await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id, REVERSARPAGO]);
+      if (application.estado === 'finalizado') {
+        await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id, REVERSARPAGO_SOLICITUD]);
         await client.query(queries.SET_NON_APPROVED_STATE_FOR_APPLICATION, [id]);
       }
       return await getAgreementFractionById({ id });
