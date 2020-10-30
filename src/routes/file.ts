@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from 'passport';
 import multer = require('multer');
-import { diskStorage, estateFilter, photoFilter } from '@utils/multer';
+import { diskStorage, photoFilter } from '@utils/multer';
 import path from 'path';
 import switchcase from '@utils/switch';
 import fs from 'fs';
@@ -13,10 +13,9 @@ const pool = Pool.getInstance();
 
 const router = Router();
 
-export const checkInm = async (id) => {
+const checkInm = async (id) => {
   const client = await pool.connect();
   try {
-    console.log(id);
     if ((await client.query('SELECT 1 FROM inmueble_urbano WHERE cod_catastral = $1', [id])).rowCount > 0) {
       console.log('supalo');
       return new Error('Ya existe un inmueble con ese codigo');
@@ -57,10 +56,21 @@ const uploadFile = async (req, res, next) => {
       }).array('boleta')(req, res, next);
       break;
     case 'inmueble':
-      multer({
-        storage: diskStorage('inmueble/' + req.params.id),
-        fileFilter: estateFilter,
-      }).array('inmueble')(req, res, next);
+      try {
+        if (JSON.parse(req.query.nuevoInmueble)) {
+          const res = await checkInm(req.params.id);
+          if (res instanceof Error) {
+            throw res;
+          }
+        }
+        multer({
+          storage: diskStorage('inmueble/' + req.params.id),
+          fileFilter: photoFilter,
+        }).array('inmueble')(req, res, next);
+      } catch (e) {
+        console.log('sera cors?', res.headersSent);
+        next(e);
+      }
       break;
     default:
       res.status(500).json({
