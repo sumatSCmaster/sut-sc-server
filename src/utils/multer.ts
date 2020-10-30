@@ -55,11 +55,7 @@ export const estateFilter = async (req, file, cb) => {
     }
     if (JSON.parse(req.query.nuevoInmueble)) {
       const res = await checkInm(req.params.id);
-      console.log(res);
-      if (!res) {
-        cb(null, true);
-      }
-      cb(null, false);
+      cb(null, !res);
       // if (res instanceof Error){
       //   throw res
       // }

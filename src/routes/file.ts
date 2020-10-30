@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from 'passport';
 import multer = require('multer');
-import { diskStorage, photoFilter } from '@utils/multer';
+import { diskStorage, estateFilter, photoFilter } from '@utils/multer';
 import path from 'path';
 import switchcase from '@utils/switch';
 import fs from 'fs';
@@ -59,7 +59,7 @@ const uploadFile = async (req, res, next) => {
     case 'inmueble':
       multer({
         storage: diskStorage('inmueble/' + req.params.id),
-        fileFilter: photoFilter,
+        fileFilter: estateFilter,
       }).array('inmueble')(req, res, next);
       break;
     default:
