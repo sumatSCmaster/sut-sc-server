@@ -48,19 +48,16 @@ export const photoFilter = (req, file, cb) => {
   cb(null, true);
 };
 
-export const estateFilter = async (req, file, cb) => {
-  try {
-    if (!file.originalname.match(/\.(jpg|jpeg|png|gif|xls|xlsx|pdf)$/)) {
-      cb(null, false);
-    }
-    if (JSON.parse(req.query.nuevoInmueble)) {
-      const res = await checkInm(req.params.id);
-      cb(null, !res);
-      // if (res instanceof Error){
-      //   throw res
-      // }
-    }
-  } catch (e) {
-    return e;
+export const estateFilter = (req, file, cb) => {
+  if (!file.originalname.match(/\.(jpg|jpeg|png|gif|xls|xlsx|pdf)$/)) {
+    cb(null, false);
+  }
+  if (JSON.parse(req.query.nuevoInmueble)) {
+    checkInm(req.params.id)
+      .then((res) => cb(null, !res))
+      .catch((err) => cb(null, false));
+    // if (res instanceof Error){
+    //   throw res
+    // }
   }
 };
