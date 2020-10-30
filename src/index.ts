@@ -72,7 +72,7 @@ app.use('/', router);
 app.use(function (err, req, res, next) {
   res.type('application/json')
   res.status(400)
-  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.append('Access-Control-Allow-Origin', '*')
   console.log('coro', req.headers)
   console.log('a', res.headersSent)
   console.log('e', res.headers)
