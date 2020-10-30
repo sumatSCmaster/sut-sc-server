@@ -58,9 +58,9 @@ const uploadFile = async (req, res, next) => {
     case 'inmueble':
       try {
         if (JSON.parse(req.query.nuevoInmueble)) {
-          const res = await checkInm(req.params.id);
-          if (res instanceof Error) {
-            throw res;
+          const resp = await checkInm(req.params.id);
+          if (resp instanceof Error) {
+            res.status(500).send({ status: 500, message: resp.message });
           }
         }
         multer({
