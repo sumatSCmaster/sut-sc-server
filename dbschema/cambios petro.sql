@@ -1,5 +1,5 @@
 
-INSERT INTO valor VALUES (4, 'PETRO', 17937438.15);
+INSERT INTO valor VALUES (4, 'PETRO', 30392506.8);
 
 UPDATE ordenanza SET id_valor = 4;
 
@@ -69,7 +69,7 @@ UPDATE impuesto.avaluo_inmueble SET avaluo = ROUND(avaluo / (SELECT valor_en_bs 
 
 UPDATE tipo_tramite SET costo_petro = 0.12 WHERE id_tipo_tramite = 28;
 
-UPDATE tipo_tramite SET formato = 'SEDEMAT-001', planilla ='sedemat-solt-LAE', certificado ='sedemat-cert-LAE', id_ramo = 9 WHERE id_tipo_tramite = 36
+UPDATE tipo_tramite SET formato = 'SEDEMAT-001', planilla ='sedemat-solt-LAE', certificado ='sedemat-cert-LAE', id_ramo = 9 WHERE id_tipo_tramite = 36;
 
 ALTER TABLE impuesto.baremo_servicio_municipal RENAME TO baremo;
 
@@ -108,10 +108,6 @@ INSERT INTO impuesto.baremo (id_baremo, descripcion, indicador) VALUES (6, 'Lím
 insert into campo_tramite select id_campo, 36, orden, estado, id_seccion from campo_tramite where id_tipo_tramite = 28;
 delete from campo_tramite where id_campo = 95 and id_tipo_tramite = 28;
 delete from campo_tramite where id_campo = 95 and id_tipo_tramite = 36;
--- insert into seccion values(30, 'Monotributo');
--- insert into campo values(96, 'Monotributo', 'boolean', 'esMonotributo', 8);
--- insert into campo_tramite values(96, 28, 1, 'enproceso', 30);
--- insert into campo_tramite values(96, 36, 1, 'enproceso', 30);
 update campo set col = 12 where id_campo = 94;
 insert into campo_tramite values(3, 28, 5, 'iniciado', 27);
 insert into campo_tramite values(3, 28, 5, 'enproceso', 27);
