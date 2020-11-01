@@ -7,11 +7,12 @@ export const updatePetroValue = async (value) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    console.log(value);
     const result = (await client.query(queries.UPDATE_PETRO_VALUE, [value])).rows[0];
     await client.query('COMMIT');
     return {
       status: 200,
-      message: 'Se ha actualizado el valor de la PETRO',
+      message: 'Se ha actualizado el valor del PETRO',
       petro: result.valor_en_bs,
     };
   } catch (e) {
