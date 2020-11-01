@@ -129,3 +129,10 @@ INSERT INTO impuesto.baremo (id_baremo, descripcion, indicador) VALUES (12, 'Aum
 UPDATE impuesto.liquidacion SET monto_petro = ROUND((monto / (SELECT valor_en_bs FROM valor WHERE descripcion='PETRO')),8) WHERE monto_petro IS NULL AND monto IS NOT NULL;
 
 UPDATE impuesto.liquidacion SET monto = null WHERE id_liquidacion IN (SELECT id_liquidacion FROM impuesto.liquidacion INNER JOIN impuesto.solicitud USING (id_solicitud) WHERE aprobado = false);
+
+UPDATE impuesto.tabulador_aseo_actividad_economica SET monto = (monto / (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'));
+UPDATE impuesto.tabulador_gas_actividad_economica SET monto = (monto / (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'));
+UPDATE impuesto.tabulador_aseo_residencial SET monto = (monto / (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'));
+UPDATE impuesto.tabulador_gas_residencial SET monto = (monto / (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'));
+UPDATE impuesto.tipo_aviso_propaganda SET monto = (monto * (SELECT valor_en_bs FROM valor WHERE descripcion = 'UTMM')) / (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO');
+UPDATE tipo_tramite SET costo_petro = (costo_base / (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) WHERE id_tipo_tramite in (SELECT id_tipo_tramite FROM tipo_tramite WHERE pago_previo = true AND costo_base IS NOT NULL AND sufijo != 'lae');
