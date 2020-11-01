@@ -119,6 +119,8 @@ export const createOfficial = async (official: any) => {
     const id = off.rows[0].id_usuario;
     await addPermissions(id, permisos || [], client);
     client.query('COMMIT');
+    const inst = (await client.query(queries.GET_ADMIN_INSTITUTE, [id])).rows;
+    if (!inst.length) throw { status: 403, message: 'Un funcionario debe poseer una institucion' };
     const usuario = {
       id,
       nombreCompleto: off.rows[0].nombre_completo,
@@ -129,6 +131,16 @@ export const createOfficial = async (official: any) => {
       nacionalidad: off.rows[0].nacionalidad,
       password: off.rows[0].password,
       telefono: off.rows[0].telefono,
+      institucion: {
+          bloqueado: inst[0].bloqueado,
+          id: inst[0].id_institucion,
+          nombreCompleto: inst[0].nombre_completo,
+          nombreCorto: inst[0].nombre_corto,
+          cargo: {
+             id: inst[0].idCargo,
+             descripcion: inst[0].cargo,
+          },
+       },
     };
     return { status: 201, usuario, message: 'Funcionario creado' };
   } catch (e) {
@@ -158,6 +170,8 @@ export const updateOfficial = async (official: any, id: string) => {
       await client.query('UPDATE cuenta_funcionario SET id_cargo = $1 WHERE id_usuario = $2', [cargo, id]);
     }
     client.query('COMMIT');
+    const inst = (await client.query(queries.GET_ADMIN_INSTITUTE, [id])).rows;
+    if (!inst.length) throw { status: 403, message: 'Un funcionario debe poseer una institucion' };
     const usuario = {
       id: response.id_usuario,
       nombreCompleto: response.nombre_completo,
@@ -170,6 +184,16 @@ export const updateOfficial = async (official: any, id: string) => {
       cargo,
       telefono: response.telefono,
       permisos: (await client.query(queries.GET_USER_PERMISSIONS, [response.id_usuario])).rows.map((row) => +row.id_tipo_tramite) || [],
+      institucion: {
+          bloqueado: inst[0].bloqueado,
+          id: inst[0].id_institucion,
+          nombreCompleto: inst[0].nombre_completo,
+          nombreCorto: inst[0].nombre_corto,
+          cargo: {
+             id: inst[0].idCargo,
+            descripcion: inst[0].cargo,
+          },
+       },
     };
     return { status: 200, usuario, message: 'Funcionario actualizado' };
   } catch (e) {
