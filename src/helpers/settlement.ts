@@ -200,7 +200,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
               if (interpolation === 0) return null;
               return {
                 id: el.id_actividad_economica,
-                minimoTributable: Math.round(el.minimo_tributable) * PETRO,
+                minimoTributable: el.minimo_tributable * PETRO,
                 nombreActividad: el.descripcion,
                 idContribuyente: branch.id_registro_municipal,
                 alicuota: el.alicuota / 100,
