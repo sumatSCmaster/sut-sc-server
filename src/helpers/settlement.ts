@@ -175,6 +175,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const esContribuyenteTop = !!branch ? (await client.query(queries.BRANCH_IS_ONE_BEST_PAYERS, [branch?.id_registro_municipal, monthDateForTop.format('MMMM'), monthDateForTop.year()])).rowCount > 0 : false;
     //AE
     if (branch && branch?.referencia_municipal && !AEApplicationExists) {
+      const solvencyCost = branch?.estado_licencia === 'PERMANENTE' ? +(await client.query(queries.GET_SCALE_FOR_PERMANENT_AE_SOLVENCY)).rows[0].indicador : +(await client.query(queries.GET_SCALE_FOR_TEMPORAL_AE_SOLVENCY)).rows[0].indicador;
       const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
       if (economicActivities.length === 0) throw { status: 404, message: 'El contribuyente no posee aforos asociados' };
       let lastEA = (await client.query(lastSettlementQuery, [codigosRamo.AE, lastSettlementPayload])).rows.find((el) => !el.datos.hasOwnProperty('descripcion'));
@@ -203,11 +204,10 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                 nombreActividad: el.descripcion,
                 idContribuyente: branch.id_registro_municipal,
                 alicuota: el.alicuota / 100,
-                costoSolvencia: PETRO * 0.12,
+                costoSolvencia: PETRO * solvencyCost,
                 deuda: await Promise.all(
                   new Array(interpolation).fill({ month: null, year: null }).map(async (value, index) => {
                     const date = addMonths(new Date(paymentDate.toDate()), index);
-                    console.log('eri gei', interpolation, paymentDate.format('YYYY-MM-DD'));
                     const momentDate = moment(date);
                     const descuento = await hasDiscount({ branch: codigosRamo.AE, contributor: branch?.id_registro_municipal, activity: el.id_actividad_economica, startingDate: momentDate.startOf('month') }, client);
                     const exonerado = await isExonerated({ branch: codigosRamo.AE, contributor: branch?.id_registro_municipal, activity: el.id_actividad_economica, startingDate: momentDate.startOf('month') }, client);
@@ -2526,6 +2526,8 @@ export const insertSettlements = async ({ process, user }) => {
     const benefittedUser = (await client.query(queries.GET_USER_IN_CHARGE_OF_BRANCH_BY_ID, [contributorReference?.id_registro_municipal])).rows[0];
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.tipoUsuario !== 4 ? process.usuario || null : user.id, process.contribuyente])).rows[0];
+    const solvencyCost =
+      contributorReference?.estado_licencia === 'PERMANENTE' ? +(await client.query(queries.GET_SCALE_FOR_PERMANENT_AE_SOLVENCY)).rows[0].indicador : +(await client.query(queries.GET_SCALE_FOR_TEMPORAL_AE_SOLVENCY)).rows[0].indicador;
 
     // ! Esto hay que descomentarlo el proximo mes
     const hasAE = impuestos.find((el) => el.ramo === 'AE');
@@ -2673,7 +2675,7 @@ export const insertSettlements = async ({ process, user }) => {
             const multa = Promise.resolve(
               client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION_PETRO, [
                 application.id_solicitud,
-                ((el.monto - 0.12) * percentage).toFixed(8),
+                ((el.monto - solvencyCost) * percentage).toFixed(8),
                 {
                   fecha: {
                     month: moment().locale('ES').month(el.fechaCancelada.month).toDate().toLocaleDateString('ES', { month: 'long' }),
@@ -2700,7 +2702,7 @@ export const insertSettlements = async ({ process, user }) => {
         const multa = (
           await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION_PETRO, [
             application.id_solicitud,
-            ((onlyAE[0].monto - 0.12) * basePercentage).toFixed(8),
+            ((onlyAE[0].monto - solvencyCost) * basePercentage).toFixed(8),
             {
               fecha: {
                 month: moment().subtract(1, 'M').toDate().toLocaleDateString('ES', { month: 'long' }),
@@ -2723,7 +2725,7 @@ export const insertSettlements = async ({ process, user }) => {
 
     const impuestosExt = impuestos.map((x, i, j) => {
       if (x.ramo === 'AE') {
-        const costoSolvencia = 0.12;
+        const costoSolvencia = solvencyCost;
         x.monto = +x.monto - costoSolvencia;
         j.push({ monto: costoSolvencia, ramo: 'SAE', fechaCancelada: x.fechaCancelada });
       }

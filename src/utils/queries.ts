@@ -2626,6 +2626,9 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   GET_SCALE_FOR_COMMERCIAL_ESTATE_MTS_COST: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 1`,
   GET_SCALE_FOR_COMMERCIAL_ESTATE_PETRO_LIMIT: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 2`,
 
+  GET_SCALE_FOR_PERMANENT_AE_SOLVENCY: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 3`,
+  GET_SCALE_FOR_TEMPORAL_AE_SOLVENCY: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 4`,
+
   GET_SCALE_FOR_INDUSTRIAL_ESTATE_MTS_COST: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 5`,
   GET_SCALE_FOR_INDUSTRIAL_ESTATE_PETRO_LIMIT: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 6`,
 

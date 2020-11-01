@@ -86,8 +86,8 @@ export const getCleaningTariffForEstate = async ({ estate, branchId, client }) =
       estate.tipo_inmueble === 'COMERCIAL'
         ? estate.metros_construccion && +estate.metros_construccion !== 0
           ? costoMts * USD * estate.metros_construccion
-          : (await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto
-        : (await client.query(queries.GET_RESIDENTIAL_CLEANING_TARIFF)).rows[0].monto;
+          : +(await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto * PETRO
+        : +(await client.query(queries.GET_RESIDENTIAL_CLEANING_TARIFF)).rows[0].monto * PETRO;
     const tarifaAseo = calculoAseo / PETRO > limiteAseo ? PETRO * limiteAseo : calculoAseo;
     return +tarifaAseo;
   } catch (error) {
@@ -101,11 +101,11 @@ export const getCleaningTariffForEstate = async ({ estate, branchId, client }) =
 
 export const getGasTariffForEstate = async ({ estate, branchId, client }) => {
   try {
-    if (!estate && !!branchId) return (await client.query(queries.GET_AE_GAS_TARIFF, [branchId])).rows[0].monto;
+    const PETRO = +(await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
+    if (!estate && !!branchId) return +(await client.query(queries.GET_AE_GAS_TARIFF, [branchId])).rows[0].monto * PETRO;
     if (!estate.posee_gas) return 0;
-    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const tarifaGas = estate.tipo_inmueble === 'COMERCIAL' ? (await client.query(queries.GET_AE_GAS_TARIFF, [branchId])).rows[0].monto : (await client.query(queries.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].monto;
-    return +tarifaGas;
+    return +tarifaGas * PETRO;
   } catch (error) {
     throw {
       status: 500,
