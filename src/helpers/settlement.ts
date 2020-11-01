@@ -3595,7 +3595,7 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
 
 export const approveContributorBenefits = async ({ data, client }: { data: any; client: PoolClient }) => {
   try {
-    const { contribuyente, beneficios, usuarios } = data.funcionario;
+    const { contribuyente, beneficios } = data.funcionario;
     const contributorWithBranch = (await client.query(queries.GET_CONTRIBUTOR_WITH_BRANCH, [contribuyente.registroMunicipal])).rows[0];
     const benefittedUser = (await client.query(queries.GET_USER_IN_CHARGE_OF_BRANCH_BY_ID, [contributorWithBranch.id_registro_municipal])).rows[0];
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [contributorWithBranch.id_contribuyente]);
@@ -3604,7 +3604,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
       beneficios.map(async (x) => {
         switch (x.tipoBeneficio) {
           case 'pagoCompleto':
-            const applicationFP = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [usuarios[0].id || benefittedUser?.id, contributorWithBranch.id_contribuyente])).rows[0];
+            const applicationFP = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [contribuyente?.usuarios[0]?.id || benefittedUser?.id, contributorWithBranch.id_contribuyente])).rows[0];
             await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [applicationFP.id_solicitud, applicationStateEvents.INGRESARDATOS]);
             const benefitFullPayment = (await client.query(queries.CHANGE_SETTLEMENT_TO_NEW_APPLICATION, [applicationFP.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
             return benefitFullPayment;
@@ -3639,7 +3639,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             const benefitRemission = (await client.query(queries.SET_SETTLEMENTS_AS_FORWARDED_BY_RIM, [contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
             return benefitRemission;
           case 'convenio':
-            const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [usuarios[0].id || benefittedUser?.id, contributorWithBranch.id_contribuyente])).rows[0];
+            const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [contribuyente?.usuarios[0]?.id || benefittedUser?.id, contributorWithBranch.id_contribuyente])).rows[0];
             await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [applicationAG.id_solicitud, applicationStateEvents.INGRESARDATOS]);
             await client.query('UPDATE impuesto.solicitud SET tipo_solicitud = $1 WHERE id_solicitud = $2', ['CONVENIO', applicationAG.id_solicitud]);
             const agreement = (await client.query(queries.CREATE_AGREEMENT, [applicationAG.id_solicitud, x.porciones.length])).rows[0];
