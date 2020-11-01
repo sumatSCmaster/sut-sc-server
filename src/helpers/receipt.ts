@@ -27,14 +27,21 @@ export const generateReceipt = async (payload: { application: number }, clientPa
     const breakdownData = (await client.query(queries.GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID, [applicationView.id])).rows;
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [applicationView.idLiquidacion])).rows[0];
     console.log('breakdowndata', breakdownData);
-    const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [paymentRows[0]?.id_usuario, `${process.env.AWS_ACCESS_URL}//sedemat/recibo/${applicationView.id}/recibo.pdf`, applicationView.razonSocial, referencia?.referencia_municipal, 'IMPUESTO', applicationView.id]);
-    console.log('recibo', recibo.rows)
+    const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [
+      paymentRows[0]?.id_usuario,
+      `${process.env.AWS_ACCESS_URL}//sedemat/recibo/${applicationView.id}/recibo.pdf`,
+      applicationView.razonSocial,
+      referencia?.referencia_municipal,
+      'IMPUESTO',
+      applicationView.id,
+    ]);
+    console.log('recibo', recibo.rows);
     if (!recibo.rows[0]) {
-      console.log('not recibo', recibo.rows[0])
+      console.log('not recibo', recibo.rows[0]);
       return (await client.query(`SELECT recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1 AND recibo != ''`, [applicationView.id])).rows[0].recibo;
     }
     const idRecibo = recibo.rows[0].id_registro_recibo;
-    console.log('IDRECIBO', idRecibo)
+    console.log('IDRECIBO', idRecibo);
 
     return new Promise(async (res, rej) => {
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/recibo/${applicationView.id}/cierre.pdf`);
@@ -84,7 +91,7 @@ export const generateReceipt = async (payload: { application: number }, clientPa
               try {
                 await regClient.query('BEGIN');
                 const bucketParams = {
-                  Bucket: 'sut-maracaibo',
+                  Bucket: process.env.BUCKET_NAME as string,
                   Key: `/sedemat/recibo/${applicationView.id}/recibo.pdf`,
                 };
                 await S3Client.putObject({
@@ -111,10 +118,10 @@ export const generateReceipt = async (payload: { application: number }, clientPa
       }
     });
   } catch (error) {
-    if(!clientParam) await client.query('ROLLBACK');
+    if (!clientParam) await client.query('ROLLBACK');
     throw errorMessageExtractor(error);
   } finally {
-    if(!clientParam) client.release();
+    if (!clientParam) client.release();
   }
 };
 
@@ -194,7 +201,8 @@ export const generateRepairReceipt = async (payload: { application: number; brea
               try {
                 await regClient.query('BEGIN');
                 const bucketParams = {
-                  Bucket: 'sut-maracaibo',
+                  Bucket: process.env.BUCKET_NAME as string,
+
                   Key: `/sedemat/recibo/${applicationView.id}/reparo.pdf`,
                 };
                 await S3Client.putObject({

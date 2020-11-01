@@ -35,7 +35,7 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
   const client = await pool.connect();
   try {
     return new Promise(async (res, rej) => {
-      console.log(payload)
+      console.log(payload);
       const alcaldia = payload.alcaldia;
       let pagos = {};
       const ingress = await client.query(queries.GET_INGRESS, [payload.from, payload.to]);
@@ -96,7 +96,6 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
       let final = groupBy(result, (res) => res.codigo);
       let branches = (await client.query(queries.GET_BRANCHES_FOR_REPORT)).rows.filter((row) => row.ramo in final);
 
-            
       let ivaSM: any = {
         id: 53,
         ramo: '122',
@@ -119,14 +118,13 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
             liquidado: 0,
             cantidadLiq: 0,
           },
-          
         ],
       };
       ivaSM.liquidadoTotal = ivaSM.cantidadLiqTotal = 0;
       ivaSM.ingresadoTotal = ivaSM.subRamo.reduce((prev, next) => prev + +next.ingresado, 0);
       ivaSM.cantidadIngTotal = ivaSM.subRamo.reduce((prev, next) => prev + +next.cantidadIng, 0);
 
-      final['122'] = final['122'].concat(ivaSM.subRamo)
+      final['122'] = final['122'].concat(ivaSM.subRamo);
 
       //console.log('final', final)
       //console.log(branches);
@@ -178,7 +176,6 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
       compens.cantidadIngTotal = compens.subRamo.reduce((prev, next) => prev + +next.cantidadIng, 0);
       branches = branches.concat(compens);
 
-
       //console.log(compens);
       //console.log('branches 2', branches);
       if (!alcaldia) {
@@ -219,8 +216,8 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
           creditoFiscal: cred,
         };
       }
-      console.log(liquidated.rows.reduce((prev, next) => prev + +next.cantidadLiq, 0) + compens.cantidadLiqTotal)
-      console.log(liquidated.rows.reduce((prev, next) => prev + +next.liquidado, 0) + compens.liquidadoTotal)
+      console.log(liquidated.rows.reduce((prev, next) => prev + +next.cantidadLiq, 0) + compens.cantidadLiqTotal);
+      console.log(liquidated.rows.reduce((prev, next) => prev + +next.liquidado, 0) + compens.liquidadoTotal);
       // console.log(payload.to);
       // console.log(moment(payload.to).format('DD/MM/YYYY hh:mm a'));
       // console.log(moment(payload.to).subtract(4, 'h').format('DD/MM/YYYY hh:mm a'));
@@ -250,7 +247,7 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
               rej(err);
             } else {
               const bucketParams = {
-                Bucket: 'sut-maracaibo',
+                Bucket: process.env.BUCKET_NAME as string,
                 Key: alcaldia ? 'sedemat/reportes/RPRA.pdf' : 'sedemat/reportes/RPR.pdf',
               };
               await S3Client.putObject({

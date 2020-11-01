@@ -33,16 +33,16 @@ export const getRepairYears = async ({ document, reference, docType, user }: { d
   const client = await pool.connect();
   let debtREP;
   try {
-    if (!reference) throw { status: 403, message: 'Debe incluir un RIM de Agente de Retención' };
+    if (!reference) throw { status: 403, message: 'Debe incluir un RIM' };
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows[0];
     if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
-    if (!branch) throw { status: 404, message: 'No existe el RIM de Agente de Retención proporcionado' };
-    const REPApplicationExists = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM, [codigosRamo.REP, reference])).rows[0];
+    if (!branch) throw { status: 404, message: 'No existe el RIM proporcionado' };
+    const REPApplicationExists = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.REP, reference])).rows[0];
     if (!!REPApplicationExists) throw { status: 409, message: 'Ya existe una solicitud de reparos para este contribuyente en el presente año' };
     const now = moment(new Date());
 
-    let lastREP = (await client.query(queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM, [codigosRamo.RD0, branch.referencia_municipal])).rows[0];
+    let lastREP = (await client.query(queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.RD0, branch.referencia_municipal])).rows[0];
     const lastREPPayment = (lastREP && moment(lastREP.fecha_liquidacion)) || moment().month(0);
     const REPDate = moment([lastREPPayment.year(), lastREPPayment.month(), 1]);
     const dateInterpolation = Math.floor(now.diff(REPDate, 'year'));
@@ -90,7 +90,7 @@ export const insertRepairs = async ({ process, user }) => {
     const contributorReference = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [process.rim, userContributor[0].id_contribuyente])).rows[0];
     if (!!process.rim && !contributorReference) throw { status: 404, message: 'El rim proporcionado no existe' };
     const benefittedUser = (await client.query(queries.GET_USER_IN_CHARGE_OF_BRANCH_BY_ID, [contributorReference.id_registro_municipal])).rows[0];
-    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.tipoUsuario !== 4 ? process.usuario || null : user.id, userContributor[0].id_contribuyente])).rows[0];
 
     // const settlement: Liquidacion[] = await Promise.all(
@@ -108,7 +108,7 @@ export const insertRepairs = async ({ process, user }) => {
           const liquidacion = (
             await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
               application.id_solicitud,
-              fixatedAmount(+el.reduce((i, j) => i + j.monto, 0)),
+              (+el.reduce((i, j) => i + j.monto, 0)/PETRO).toFixed(8),
               'REP',
               'Pago ordinario',
               datos,
@@ -122,6 +122,7 @@ export const insertRepairs = async ({ process, user }) => {
             ramo: branchNames['REP'],
             fecha: datos.fecha,
             monto: liquidacion.monto,
+            montoPetro: liquidacion.monto_petro,
             certificado: liquidacion.certificado,
             recibo: liquidacion.recibo,
             desglose: datos.desglose,
@@ -135,7 +136,7 @@ export const insertRepairs = async ({ process, user }) => {
     const multa = (
       await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
         application.id_solicitud,
-        fixatedAmount(process.total * 0.3),
+        ((process.total * 0.3)/ PETRO).toFixed(8),
         'REP',
         'Multa por reparo',
         { fecha: { month: moment().locale('es').format('MMMM'), year: moment().year() } },
@@ -144,7 +145,7 @@ export const insertRepairs = async ({ process, user }) => {
       ])
     ).rows[0];
     let state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
-    if (settlements.flat().reduce((x, y) => x + +y.monto, 0) === 0) {
+    if (settlements.flat().reduce((x, y) => x + +y.monto_petro, 0) === 0) {
       (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.VALIDAR])).rows[0].state;
       state = await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
     }

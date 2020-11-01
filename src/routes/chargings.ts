@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
-import { getAllChargings, updateOneCharging, getAllWallets, linkWallet, getChargingsByWallet, createChargings, createAllChargings } from '@helpers/chargings';
+import { getAllChargings, updateOneCharging, getAllWallets, linkWallet, getChargingsByWallet, createChargings, createAllChargings, getChargingsByWalletExcel } from '@helpers/chargings';
 import { authenticate } from 'passport';
 
 const router = Router();
 
 router.post('/charging', authenticate('jwt'), async (req, res) => {
-  const [error, data] = await fulfill(createAllChargings());
+  const [error, data] = await fulfill(createAllChargings(req.body.cant_top, req.body.cant_ar));
   if (error) res.status(500).json({ message: error.message, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
 });
@@ -37,6 +37,13 @@ router.get('/:id',  authenticate('jwt'), async (req, res) => {
     if (error) res.status(500).json({ error, status: 500 });
     if (data) res.status(200).json({ status: 200, data });
 });
+
+router.get('/report/:id', authenticate('jwt'), async (req, res) => {
+  const [error, data] = await fulfill(getChargingsByWalletExcel(req.params['id']));
+  console.log(error, data)
+  if (error) res.status(500).json({ error, status: 500 });
+  if (data) res.status(200).json({ status: 200, data });
+})
 
 router.patch('/:id',  authenticate('jwt'), async (req, res) => {
     const [error, data] = await fulfill(linkWallet(req.params['id'], req.body.idUser));

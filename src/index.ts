@@ -59,7 +59,8 @@ app.use(passport.session());
 
 app.use(
   cors({
-    origin: process.env.NODE_ENV === 'production' ? process.env.CLIENT_URL : true,
+    // origin: process.env.NODE_ENV !== 'production' ? process.env.CLIENT_URL : true,
+    origin: '*',
     methods: 'POST, PUT, GET, DELETE, OPTIONS, PATCH',
     allowedHeaders: 'Accept, Content-Type, Accept-Encoding, Content-Length, Authorization',
     credentials: true,
@@ -67,5 +68,14 @@ app.use(
 );
 
 app.use('/', router);
+
+app.use(function (err, req, res, next) {
+  res.type('application/json')
+  res.status(400)
+  console.log('coro', req.headers)
+  console.log('a', res.headersSent)
+  console.log('e', res.getHeaders())
+  res.send(JSON.stringify({error: err}))
+})
 
 export default app;

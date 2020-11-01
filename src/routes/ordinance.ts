@@ -1,15 +1,7 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
 import { authenticate } from 'passport';
-import {
-  getOrdinancesByProcedure,
-  getOrdinancesByProcedureWithCodCat,
-  disableOrdinance,
-  updateOrdinance,
-  getVariables,
-  createOrdinance,
-  getOrdinancesByInstitution,
-} from '@helpers/ordinance';
+import { getOrdinancesByProcedure, getOrdinancesByProcedureWithCodCat, disableOrdinance, updateOrdinance, getVariables, createOrdinance, getOrdinancesByInstitution } from '@helpers/ordinance';
 
 const router = Router();
 
@@ -58,7 +50,7 @@ router.delete('/:idOrdenanza', async (req, res) => {
 });
 
 router.patch('/:idOrdenanza', async (req, res) => {
-  const [error, data] = await fulfill(updateOrdinance(req.params['idOrdenanza'], req.body.precioUtmm));
+  const [error, data] = await fulfill(updateOrdinance(req.params['idOrdenanza'], req.body.precioPetro));
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(data.status).json({ ...data });
 });

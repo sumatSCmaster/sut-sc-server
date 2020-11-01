@@ -13,11 +13,23 @@ export const getOfficialsByInstitution = async (institution: string, id: number)
     const response = await client.query(queries.GET_OFFICIALS_BY_INSTITUTION, [institution, id]);
     const funcionarios = await Promise.all(
       response.rows.map(async (el) => {
+        const inst = (await client.query(queries.GET_ADMIN_INSTITUTE, [el.id])).rows;
+        if (!inst.length) throw { status: 403, message: 'Un funcionario debe poseer una institucion' };
         const official = {
           ...el,
           nombreCompleto: el.nombrecompleto,
           nombreUsuario: el.nombreusuario,
           tipoUsuario: el.tipousuario,
+          institucion: {
+            bloqueado: inst[0].bloqueado,
+            id: inst[0].id_institucion,
+            nombreCompleto: inst[0].nombre_completo,
+            nombreCorto: inst[0].nombre_corto,
+            cargo: {
+              id: inst[0].idCargo,
+              descripcion: inst[0].cargo,
+            },
+          },
           permisos: (await client.query(queries.GET_USER_PERMISSIONS, [el.id])).rows.map((row) => +row.id_tipo_tramite) || [],
         };
         delete official.nombrecompleto;
@@ -46,18 +58,32 @@ export const getAllOfficials = async () => {
   const client = await pool.connect();
   try {
     const response = await client.query(queries.GET_ALL_OFFICIALS);
-    const funcionarios = response.rows.map((el) => {
-      const official = {
-        ...el,
-        nombreCompleto: el.nombrecompleto,
-        nombreUsuario: el.nombreusuario,
-        tipoUsuario: el.tipousuario,
-      };
-      delete official.nombrecompleto;
-      delete official.nombreusuario;
-      delete official.tipousuario;
-      return official;
-    });
+    const funcionarios = await Promise.all(
+      response.rows.map(async (el) => {
+        const inst = (await client.query(queries.GET_ADMIN_INSTITUTE, [el.id])).rows;
+        if (!inst.length) throw { status: 403, message: 'Un funcionario debe poseer una institucion' };
+        const official = {
+          ...el,
+          nombreCompleto: el.nombrecompleto,
+          nombreUsuario: el.nombreusuario,
+          tipoUsuario: el.tipousuario,
+          institucion: {
+            bloqueado: inst[0].bloqueado,
+            id: inst[0].id_institucion,
+            nombreCompleto: inst[0].nombre_completo,
+            nombreCorto: inst[0].nombre_corto,
+            cargo: {
+              id: inst[0].idCargo,
+              descripcion: inst[0].cargo,
+            },
+          },
+        };
+        delete official.nombrecompleto;
+        delete official.nombreusuario;
+        delete official.tipousuario;
+        return official;
+      })
+    );
     return {
       status: 200,
       funcionarios,

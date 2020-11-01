@@ -23,12 +23,18 @@ const connection = async (socket: Socket) => {
       const insts = (await client.query(queries.GET_ALL_INSTITUTION)).rows;
       insts.map((el) => socket.join(`inst:${el.nombre_corto}`));
     }
-
-    if (user.cargo?.id === 999) {
+    console.log('AAAAAAAAAAAA', user)
+    if ([33, 26].includes(user.institucion?.cargo?.id)) {
+      console.log('join tabla cobranza')
       socket.join('tabla-cobranza');
     }
 
+    if([39].includes(user.institucion?.cargo?.id)){
+      socket.join('tabla-fiscalizacion')
+    }
+
     users.set(`${user.nacionalidad}-${user.cedula}`, socket);
+    console.log('map', users)
     socket.join(`${user.nacionalidad}-${user.cedula}`);
     console.log(`User connected: ${user.nacionalidad}-${user.cedula}`);
     socket.on('disconnect', () => {

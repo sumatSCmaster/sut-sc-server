@@ -44,6 +44,7 @@ export const codigosRamo = {
   AE: 112,
   SM: 122,
   PP: 114,
+  MUL: 501,
   IU: 111,
   RD0: 915,
 };
@@ -133,7 +134,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
   const client = await pool.connect();
   const gtic = await gticPool.connect();
   const montoAcarreado: any = {};
-  let SM, PP;
+  let SM, PP, MONO;
   let AE: any[] = [];
   let IU: any[] = [];
   try {
@@ -169,7 +170,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     console.log(lastSettlementQuery);
     if (AEApplicationExists && SMApplicationExists && IUApplicationExists && PPApplicationExists) return { status: 409, message: 'Ya existe una declaracion de impuestos para este mes' };
     const now = moment(new Date());
-    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const monthDateForTop = moment().locale('ES').subtract(2, 'M');
     const esContribuyenteTop = !!branch ? (await client.query(queries.BRANCH_IS_ONE_BEST_PAYERS, [branch?.id_registro_municipal, monthDateForTop.format('MMMM'), monthDateForTop.year()])).rowCount > 0 : false;
     //AE
@@ -198,11 +199,11 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
               if (interpolation === 0) return null;
               return {
                 id: el.id_actividad_economica,
-                minimoTributable: Math.round(el.minimo_tributable) * UTMM,
+                minimoTributable: Math.round(el.minimo_tributable) * PETRO,
                 nombreActividad: el.descripcion,
                 idContribuyente: branch.id_registro_municipal,
                 alicuota: el.alicuota / 100,
-                costoSolvencia: UTMM * 2,
+                costoSolvencia: PETRO * 0.12,
                 deuda: await Promise.all(
                   new Array(interpolation).fill({ month: null, year: null }).map(async (value, index) => {
                     const date = addMonths(new Date(paymentDate.toDate()), index);
@@ -317,7 +318,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                       const date = addMonths(new Date(paymentDate.toDate()), index);
                       const momentDate = moment(date);
                       const avaluo = (await client.query(queries.GET_ESTATE_APPRAISAL_BY_ID_AND_YEAR, [el.id_inmueble, momentDate.year()])).rows[0]?.avaluo || el.avaluo;
-                      const impuestoInmueble = (avaluo * (el.tipo_inmueble === 'COMERCIAL' ? 0.01 : 0.005)) / 12;
+                      const impuestoInmueble = (avaluo * PETRO * (el.tipo_inmueble === 'COMERCIAL' ? 0.01 : 0.005)) / 12;
                       const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch?.id_registro_municipal])).rows;
                       descuento =
                         (economicActivities.length > 0 &&
@@ -410,14 +411,38 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                     id: +el.id_tipo_aviso_propaganda,
                     nombreSubarticulo: el.descripcion,
                     parametro: el.parametro,
-                    costo: +el.monto * UTMM,
-                    costoAlto: el.parametro === 'BANDA' ? (+el.monto + 2) * UTMM : undefined,
+                    costo: +el.monto * PETRO,
+                    costoAlto: el.parametro === 'BANDA' ? (+el.monto + 2) * PETRO : undefined,
                   };
                 }),
             };
           }),
         };
       }
+    }
+    if (!AEApplicationExists && branch?.es_monotributo) {
+      const lastMono = (await client.query(lastSettlementQuery, [codigosRamo.AE, lastSettlementPayload])).rows[0];
+      const lastMonoPayment = moment(lastMono.fecha_liquidacion).add(1, 'M') || moment().month(0);
+      const MonoDate = moment([lastMonoPayment.year(), lastMonoPayment.month(), 1]);
+      const dateInterpolationMono = Math.floor(now.diff(MonoDate, 'M'));
+      const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows.map((x) => x.id_actividad_economica);
+
+      MONO = {
+        deuda: await Promise.all(
+          new Array(dateInterpolationMono + 1).fill({ month: null, year: null }).map(async (value, index) => {
+            const date = addMonths(new Date(lastMonoPayment.toDate()), index);
+            const momentDate = moment(date);
+            // const exonerado = await isExonerated({ branch: codigosRamo.SM, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
+            return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
+          })
+        ),
+        aforos: economicActivities,
+        montoAE: 0.15,
+        montoSAE: 0.12,
+        montoSM: 0.05,
+        montoIU: 0.05,
+        montoPP: 0.05,
+      };
     }
     return {
       status: 200,
@@ -428,6 +453,9 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         siglas: contributor.siglas,
         rim: reference,
         esContribuyenteTop,
+        esMonotributo: branch?.es_monotributo,
+        petro: PETRO,
+        MONO: (!!MONO && MONO) || undefined,
         esAgenteRetencion: contributor.es_agente_retencion,
         documento: contributor.documento,
         tipoDocumento: contributor.tipo_documento,
@@ -1270,6 +1298,7 @@ export const createSettlementForProcedure = async (process, client) => {
     };
     console.log('si');
     const liquidacion = (await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [null, fixatedAmount(monto), ramo, 'Pago ordinario', datos, moment().endOf('month').format('MM-DD-YYYY'), referenciaMunicipal])).rows[0];
+    await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO_SETTLEMENT, [liquidacion.id_liquidacion]);
   } catch (e) {
     throw e;
   }
@@ -1378,6 +1407,7 @@ export const getAgreementFractionById = async ({ id }): Promise<Solicitud & any>
       id: application.id_fraccion,
       idConvenio: application.id_convenio,
       monto: application.monto,
+      montoPetro: application.monto_petro,
       fecha: application.fecha,
       fechaAprobacion: application.fecha_aprobado,
       aprobado: application.aprobado,
@@ -1407,6 +1437,7 @@ export const getAgreementFractionByIdNots = async ({ id }, client): Promise<Soli
       id: application.id_fraccion,
       idConvenio: application.id_convenio,
       monto: application.monto,
+      montoPetro: +application.monto_petro,
       fecha: application.fecha,
       fechaAprobacion: application.fecha_aprobado,
       aprobado: application.aprobado,
@@ -1456,6 +1487,7 @@ export const getAgreements = async ({ user }: { user: Usuario }) => {
             ])
           ).rows[0]?.descripcion,
           monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0]?.monto_total,
+          montoPetro: (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total,
           porciones: await Promise.all((await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [el.id_convenio])).rows.map(async (el) => await getAgreementFractionByIdNots({ id: el.id_fraccion }, client))),
         };
       })
@@ -1507,6 +1539,7 @@ export const getAgreementsForContributor = async ({ reference, docType, document
             ])
           ).rows[0]?.descripcion,
           monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0]?.monto_total,
+          montoPetro: (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total,
           porciones: await Promise.all((await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [el.id_convenio])).rows.map(async (el) => await getAgreementFractionById({ id: el.id_fraccion }))),
         };
       })
@@ -1527,7 +1560,7 @@ export const getAgreementsForContributor = async ({ reference, docType, document
 export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<Solicitud & any> => {
   const client = await pool.connect();
   try {
-    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const application = await Promise.all(
       (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows.map(async (el) => {
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
@@ -1548,32 +1581,41 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
             : undefined,
           fecha: el.fecha,
           monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
-          liquidaciones: liquidaciones
-            .filter((el) => el.tipoProcedimiento !== 'MULTAS')
-            .map((el) => {
-              return {
-                id: el.id_liquidacion,
-                ramo: el.tipoProcedimiento,
-                fecha: el.datos.fecha,
-                monto: el.monto,
-                esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
-                certificado: el.certificado,
-                recibo: el.recibo,
-              };
-            }),
-          multas: liquidaciones
-            .filter((el) => el.tipoProcedimiento === 'MULTAS')
-            .map((el) => {
-              return {
-                id: el.id_liquidacion,
-                ramo: el.tipoProcedimiento,
-                fecha: el.datos.fecha,
-                monto: el.monto,
-                descripcion: el.datos.descripcion,
-                certificado: el.certificado,
-                recibo: el.recibo,
-              };
-            }),
+          montoPetro: (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total,
+          liquidaciones: await Promise.all(
+            liquidaciones
+              .filter((el) => el.tipoProcedimiento !== 'MULTAS')
+              .map(async (el) => {
+                return {
+                  id: el.id_liquidacion,
+                  ramo: el.tipoProcedimiento,
+                  fecha: el.datos.fecha,
+                  monto: el.monto,
+                  montoPetro: +el.monto_petro,
+                  esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
+                  certificado: el.certificado,
+                  recibo: el.recibo,
+                  desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
+                };
+              })
+          ),
+          multas: await Promise.all(
+            liquidaciones
+              .filter((el) => el.tipoProcedimiento === 'MULTAS')
+              .map(async (el) => {
+                return {
+                  id: el.id_liquidacion,
+                  ramo: el.tipoProcedimiento,
+                  fecha: el.datos.fecha,
+                  monto: el.monto,
+                  montoPetro: +el.monto_petro,
+                  descripcion: el.datos.descripcion,
+                  certificado: el.certificado,
+                  recibo: el.recibo,
+                  desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
+                };
+              })
+          ),
           interesMoratorio: await getDefaultInterestByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
           rebajaInteresMoratorio: await getDefaultInterestRebateByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
         };
@@ -1593,7 +1635,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
 
 export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client: PoolClient): Promise<Solicitud & any> => {
   try {
-    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const application = await Promise.all(
       (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows.map(async (el) => {
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
@@ -1614,32 +1656,41 @@ export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client
             : undefined,
           fecha: el.fecha,
           monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
-          liquidaciones: liquidaciones
-            .filter((el) => el.tipoProcedimiento !== 'MULTAS')
-            .map((el) => {
-              return {
-                id: el.id_liquidacion,
-                ramo: el.tipoProcedimiento,
-                fecha: el.datos.fecha,
-                monto: el.monto,
-                esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
-                certificado: el.certificado,
-                recibo: el.recibo,
-              };
-            }),
-          multas: liquidaciones
-            .filter((el) => el.tipoProcedimiento === 'MULTAS')
-            .map((el) => {
-              return {
-                id: el.id_liquidacion,
-                ramo: el.tipoProcedimiento,
-                fecha: el.datos.fecha,
-                monto: el.monto,
-                descripcion: el.datos.descripcion,
-                certificado: el.certificado,
-                recibo: el.recibo,
-              };
-            }),
+          montoPetro: (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total,
+          liquidaciones: await Promise.all(
+            liquidaciones
+              .filter((el) => el.tipoProcedimiento !== 'MULTAS')
+              .map(async (el) => {
+                return {
+                  id: el.id_liquidacion,
+                  ramo: el.tipoProcedimiento,
+                  fecha: el.datos.fecha,
+                  monto: el.monto,
+                  montoPetro: +el.monto_petro,
+                  esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
+                  certificado: el.certificado,
+                  recibo: el.recibo,
+                  desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
+                };
+              })
+          ),
+          multas: await Promise.all(
+            liquidaciones
+              .filter((el) => el.tipoProcedimiento === 'MULTAS')
+              .map(async (el) => {
+                return {
+                  id: el.id_liquidacion,
+                  ramo: el.tipoProcedimiento,
+                  fecha: el.datos.fecha,
+                  monto: el.monto,
+                  montoPetro: +el.monto_petro,
+                  descripcion: el.datos.descripcion,
+                  certificado: el.certificado,
+                  recibo: el.recibo,
+                  desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
+                };
+              })
+          ),
           interesMoratorio: await getDefaultInterestByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
           rebajaInteresMoratorio: await getDefaultInterestRebateByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
         };
@@ -1658,7 +1709,7 @@ export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client
 export const getApplicationsAndSettlements = async ({ user }: { user: Usuario }) => {
   const client = await pool.connect();
   try {
-    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const applications: Solicitud[] = await Promise.all(
       (await client.query(queries.GET_APPLICATION_INSTANCES_BY_USER, [user.id])).rows
         .filter((el) => el.tipo_solicitud !== 'CONVENIO')
@@ -1681,6 +1732,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
               : undefined,
             fecha: el.fecha,
             monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
+            montoPetro: (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total,
             liquidaciones: await Promise.all(
               liquidaciones
                 .filter((el) => el.tipoProcedimiento !== 'MULTAS')
@@ -1690,6 +1742,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
                     ramo: el.tipoProcedimiento,
                     fecha: el.datos.fecha,
                     monto: +el.monto,
+                    montoPetro: +el.monto_petro,
                     esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
                     certificado: el.certificado,
                     recibo: el.recibo,
@@ -1706,6 +1759,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
                     ramo: el.tipoProcedimiento,
                     fecha: el.datos.fecha,
                     monto: +el.monto,
+                    montoPetro: +el.monto_petro,
                     descripcion: el.datos.descripcion,
                     certificado: el.certificado,
                     recibo: el.recibo,
@@ -1735,7 +1789,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
   try {
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows[0];
     if (!contributor) throw { status: 404, message: 'El contribuyente no existe' };
-    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const userApplications = (referencia
       ? await client.query(queries.GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR, [contributor.id_contribuyente, referencia])
       : await client.query(queries.GET_APPLICATION_INSTANCES_FOR_NATURAL_CONTRIBUTOR, [contributor.id_contribuyente])
@@ -1766,6 +1820,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
             estado: state,
             referenciaMunicipal: liquidaciones[0]?.id_registro_municipal ? rim : undefined,
             monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
+            montoPetro: (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total,
             liquidaciones: await Promise.all(
               liquidaciones
                 .filter((el) => el.tipoProcedimiento !== 'MULTAS')
@@ -1775,6 +1830,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
                     ramo: el.tipoProcedimiento,
                     fecha: el.datos.fecha,
                     monto: +el.monto,
+                    montoPetro: +el.monto_petro,
                     esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
                     certificado: el.certificado,
                     recibo: el.recibo,
@@ -1791,6 +1847,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
                     ramo: el.tipoProcedimiento,
                     fecha: el.datos.fecha,
                     monto: +el.monto,
+                    montoPetro: +el.monto_petro,
                     descripcion: el.datos.descripcion,
                     certificado: el.certificado,
                     recibo: el.recibo,
@@ -1872,6 +1929,7 @@ export const formatContributor = async (contributor, client: PoolClient) => {
             fechaLiquidacion: el.fecha_liquidacion,
             fechaVencimiento: el.fecha_vencimiento,
             monto: +el.monto,
+            montoPetro: +el.monto_petro,
             estado: el.state || 'finalizado',
             certificado: el.certificado,
             recibo: el.recibo,
@@ -1897,9 +1955,9 @@ export const formatContributor = async (contributor, client: PoolClient) => {
 export const formatBranch = async (branch, contributor, client) => {
   try {
     const inicioImpuestos: any[] = [];
-    const SM = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, [66, branch.referencia_municipal])).rows[0];
-    const PP = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, [12, branch.referencia_municipal])).rows[0];
-    const RD0 = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, [52, branch.referencia_municipal])).rows[0];
+    const SM = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, ['SM', branch.referencia_municipal])).rows[0];
+    const PP = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, ['PP', branch.referencia_municipal])).rows[0];
+    const RD0 = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, ['RD0', branch.referencia_municipal])).rows[0];
     if (!!SM) SM.desde = moment(SM.desde).format('MM-DD-YYYY');
     if (!!PP) PP.desde = moment(PP.desde).format('MM-DD-YYYY');
     if (!!RD0) RD0.desde = moment(RD0.desde).format('MM-DD-YYYY');
@@ -1929,6 +1987,7 @@ export const formatBranch = async (branch, contributor, client) => {
         fechaLiquidacion: el.fecha_liquidacion,
         fechaVencimiento: el.fecha_vencimiento,
         monto: +el.monto,
+        montoPetro: +el.monto_petro,
         estado: el.state || 'finalizado',
         certificado: el.certificado,
         recibo: el.recibo,
@@ -1975,7 +2034,7 @@ export const getEntireDebtsForContributor = async ({ reference, docType, documen
   const client = await pool.connect();
   try {
     console.log(document, typeUser, docType, reference);
-    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const contribuyente = (await client.query(queries.GET_CONTRIBUTOR_BY_DOCUMENT_AND_DOC_TYPE, [document, docType])).rows[0];
     if (!contribuyente) return { status: 404, message: 'El contribuyente no está registrado en SEDEMAT' };
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contribuyente.id_contribuyente])).rows[0];
@@ -2075,6 +2134,7 @@ export const initialUserLinking = async (linkingData, user) => {
   try {
     client.query('BEGIN');
     const contributorExists = (await client.query(queries.TAX_PAYER_EXISTS, [tipoDocumento, documento])).rows;
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     if (contributorExists.length > 0) {
       if (datosContribuyente.tipoContribuyente === 'JURIDICO') {
         let hasNewCode = false;
@@ -2152,7 +2212,7 @@ export const initialUserLinking = async (linkingData, user) => {
                     const liquidacion = (
                       await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
                         applicationAG.id_solicitud,
-                        fixatedAmount(+el.monto),
+                        (+el.monto / PETRO).toFixed(8),
                         el.ramo,
                         el.descripcion,
                         { fecha: el.fecha },
@@ -2161,7 +2221,7 @@ export const initialUserLinking = async (linkingData, user) => {
                       ])
                     ).rows[0];
                     await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, liquidacion.id_liquidacion]);
-                    const fraccion = (await client.query(queries.CREATE_AGREEMENT_FRACTION, [agreement.id_convenio, fixatedAmount(+el.monto), i + 1, el.fechaVencimiento])).rows[0];
+                    const fraccion = (await client.query(queries.CREATE_AGREEMENT_FRACTION, [agreement.id_convenio, (+el.monto / PETRO).toFixed(8), i + 1, el.fechaVencimiento])).rows[0];
                     await client.query(queries.UPDATE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.INGRESARDATOS]);
                     if (el.estado === 'PAGADO') {
                       await client.query(queries.COMPLETE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.APROBARCAJERO]);
@@ -2193,7 +2253,7 @@ export const initialUserLinking = async (linkingData, user) => {
                 const settlement = (
                   await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
                     application.id_solicitud,
-                    fixatedAmount(+el.monto),
+                    (+el.monto / PETRO).toFixed(8),
                     el.ramo,
                     el.descripcion,
                     { fecha: el.fecha },
@@ -2215,7 +2275,7 @@ export const initialUserLinking = async (linkingData, user) => {
                 const settlement = (
                   await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
                     application.id_solicitud,
-                    fixatedAmount(+el.monto),
+                    (+el.monto / PETRO).toFixed(8),
                     el.ramo,
                     el.descripcion,
                     { fecha: el.fecha },
@@ -2281,7 +2341,7 @@ export const initialUserLinking = async (linkingData, user) => {
                       const liquidacion = (
                         await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
                           applicationAG.id_solicitud,
-                          fixatedAmount(+el.monto),
+                          (+el.monto / PETRO).toFixed(8),
                           el.ramo,
                           el.descripcion,
                           { fecha: el.fecha },
@@ -2290,7 +2350,7 @@ export const initialUserLinking = async (linkingData, user) => {
                         ])
                       ).rows[0];
                       await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, liquidacion.id_liquidacion]);
-                      const fraccion = (await client.query(queries.CREATE_AGREEMENT_FRACTION, [agreement.id_convenio, fixatedAmount(+el.monto), i + 1, el.fechaVencimiento])).rows[0];
+                      const fraccion = (await client.query(queries.CREATE_AGREEMENT_FRACTION, [agreement.id_convenio, (+el.monto / PETRO).toFixed(8), i + 1, el.fechaVencimiento])).rows[0];
                       await client.query(queries.UPDATE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.INGRESARDATOS]);
                       if (el.estado === 'PAGADO') {
                         await client.query(queries.COMPLETE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.APROBARCAJERO]);
@@ -2334,7 +2394,7 @@ export const initialUserLinking = async (linkingData, user) => {
                 const settlement = (
                   await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
                     application.id_solicitud,
-                    fixatedAmount(+el.monto),
+                    (+el.monto / PETRO).toFixed(8),
                     el.ramo,
                     el.descripcion,
                     { fecha: el.fecha },
@@ -2356,7 +2416,7 @@ export const initialUserLinking = async (linkingData, user) => {
                 const settlement = (
                   await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
                     application.id_solicitud,
-                    fixatedAmount(+el.monto),
+                    (+el.monto / PETRO).toFixed(8),
                     el.ramo,
                     el.descripcion,
                     { fecha: el.fecha },
@@ -2429,12 +2489,31 @@ export const resendUserCode = async ({ user }) => {
   }
 };
 
+export const finingPercentage = async ({ currentMonth, comparedMonth, branch, client }: { currentMonth: Moment; comparedMonth: Moment; branch: 'AE' | 'RD0'; client: PoolClient }): Promise<number> => {
+  let base, augment, limit;
+  try {
+    if (branch === 'AE') {
+      base = +(await client.query(queries.GET_SCALE_FOR_AE_FINING_STARTING_AMOUNT)).rows[0].indicador;
+      augment = +(await client.query(queries.GET_SCALE_FOR_AE_FINING_AUGMENT_AMOUNT)).rows[0].indicador;
+      limit = +(await client.query(queries.GET_SCALE_FOR_AE_FINING_LIMIT_AMOUNT)).rows[0].indicador;
+    }
+    if (branch === 'RD0') {
+      base = +(await client.query(queries.GET_SCALE_FOR_RETENTION_FINING_STARTING_AMOUNT)).rows[0].indicador;
+      augment = +(await client.query(queries.GET_SCALE_FOR_RETENTION_FINING_AUGMENT_AMOUNT)).rows[0].indicador;
+      limit = +(await client.query(queries.GET_SCALE_FOR_RETENTION_FINING_LIMIT_AMOUNT)).rows[0].indicador;
+    }
+    const diff = currentMonth.startOf('month').diff(comparedMonth.startOf('month'), 'M');
+    if (diff === 0) return 0;
+    if (diff * augment >= limit) return limit;
+    else return fixatedAmount(base + diff * augment);
+  } catch (e) {
+    throw e;
+  }
+};
+
 export const insertSettlements = async ({ process, user }) => {
   const client = await pool.connect();
   const { impuestos } = process;
-  //Esto hay que sacarlo de db
-  const augment = 10;
-  const maxFining = 100;
   let finingMonths: MultaImpuesto[] | undefined, finingAmount;
   try {
     client.query('BEGIN');
@@ -2445,142 +2524,206 @@ export const insertSettlements = async ({ process, user }) => {
     const contributorHasBranch = (await client.query(queries.GET_CONTRIBUTOR_HAS_BRANCH, [process.contribuyente])).rowCount > 0;
     if (userContributor[0].tipo_contribuyente === 'JURIDICO' && contributorHasBranch && !contributorReference) throw { status: 404, message: 'El RIM proporcionado no existe' };
     const benefittedUser = (await client.query(queries.GET_USER_IN_CHARGE_OF_BRANCH_BY_ID, [contributorReference?.id_registro_municipal])).rows[0];
-    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.tipoUsuario !== 4 ? process.usuario || null : user.id, process.contribuyente])).rows[0];
 
     // ! Esto hay que descomentarlo el proximo mes
-    // const hasAE = impuestos.find((el) => el.ramo === 'AE');
-    // if (hasAE) {
-    //   const now = moment().locale('ES');
-    //   const pivot = moment().locale('ES');
-    //   const onlyAE = impuestos
-    //     .filter((el) => el.ramo === 'AE')
-    //     .sort((a, b) => (pivot.month(a.fechaCancelada.month).toDate() === pivot.month(b.fechaCancelada.month).toDate() ? 0 : pivot.month(a.fechaCancelada.month).toDate() > pivot.month(b.fechaCancelada.month).toDate() ? 1 : -1));
-    //   const lastSavedFine = (await client.query(queries.GET_LAST_FINE_FOR_LATE_APPLICATION, [contributorReference.id_registro_municipal])).rows[0];
-    //   if (lastSavedFine && moment(lastSavedFine.fecha_liquidacion).year() === now.year() && moment(lastSavedFine.fecha_liquidacion).month() < now.month()) {
-    //     finingAmount = lastSavedFine.datos.monto || lastSavedFine.monto;
-    //     const proposedFiningDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month);
-    //     const finingDate = moment(lastSavedFine.fecha_liquidacion).isSameOrBefore(proposedFiningDate) && moment(lastSavedFine.fecha_liquidacion).month() < proposedFiningDate.month() ? proposedFiningDate : moment(lastSavedFine.fecha_liquidacion);
-    //     console.log('1', finingDate.format('MM-DD-YYYY'));
-    //     console.log('2', proposedFiningDate.format('MM-DD-YYYY'));
-    //     console.log('3', moment(lastSavedFine.fecha_liquidacion).format('MM-DD-YYYY'));
-    //     finingMonths = new Array(now.month() - 1 - finingDate.month()).fill({});
-    //     if (finingMonths.length > 0) {
-    //       let counter = finingDate.clone();
-    //       finingMonths = await Promise.all(
-    //         finingMonths.map((el, i) => {
-    //           const multa = Promise.resolve(
-    //             client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
-    //               application.id_solicitud,
-    //               fixatedAmount(finingAmount * UTMM),
-    //               {
-    //                 fecha: {
-    //                   month: counter.locale('ES').format('MMMM'),
-    //                   year: counter.year(),
-    //                 },
-    //                 descripcion: 'Multa por Declaracion Fuera de Plazo',
-    //                 monto: finingAmount,
-    //               },
-    //               counter.endOf('month').format('MM-DD-YYYY'),
-    //               (contributorReference && contributorReference.id_registro_municipal) || null,
-    //             ])
-    //           )
-    //             .then((el) => el.rows[0])
-    //             .then((data) => {
-    //               return { id: data.id_liquidacion, fecha: data.datos.fecha, monto: +data.monto, descripcion: data.datos.descripcion };
-    //             });
-    //           counter.add(1, 'M');
-    //           finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
-    //           return multa;
-    //         })
-    //       );
-    //     }
-    //     if (now.date() > 10) {
-    //       const rightfulMonth = now.clone().subtract(1, 'M');
-    //       const multa = (
-    //         await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
-    //           application.id_solicitud,
-    //           fixatedAmount(finingAmount * UTMM),
-    //           {
-    //             fecha: {
-    //               month: rightfulMonth.locale('ES').format('MMMM'),
-    //               year: rightfulMonth.year(),
-    //             },
-    //             descripcion: 'Multa por Declaracion Fuera de Plazo',
-    //             monto: finingAmount,
-    //           },
-    //           rightfulMonth.endOf('month').format('MM-DD-YYYY'),
-    //           (contributorReference && contributorReference.id_registro_municipal) || null,
-    //         ])
-    //       ).rows[0];
-    //       const fine = { id: multa.id_liquidacion, fecha: multa.datos.fecha, monto: +multa.monto, descripcion: multa.datos.descripcion };
-    //       finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
-    //       finingMonths.push(fine);
-    //     }
-    //   } else {
-    //     finingAmount = 10;
-    //     const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).add(1, 'M');
-    //     finingMonths = new Array(now.month() - finingDate.month()).fill({});
-    //     if (finingMonths.length > 0) {
-    //       let counter = finingDate.clone().subtract(1, 'M');
-    //       finingMonths = await Promise.all(
-    //         finingMonths.map((el, i) => {
-    //           const multa = Promise.resolve(
-    //             client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
-    //               application.id_solicitud,
-    //               fixatedAmount(finingAmount * UTMM),
-    //               {
-    //                 fecha: {
-    //                   month: counter.locale('ES').format('MMMM'),
-    //                   year: counter.year(),
-    //                 },
-    //                 descripcion: 'Multa por Declaracion Fuera de Plazo',
-    //                 monto: finingAmount,
-    //               },
-    //               counter.endOf('month').format('MM-DD-YYYY'),
-    //               (contributorReference && contributorReference.id_registro_municipal) || null,
-    //             ])
-    //           )
-    //             .then((el) => el.rows[0])
-    //             .then((data) => {
-    //               return { id: data.id_liquidacion, fecha: data.datos.fecha, monto: +data.monto, descripcion: data.datos.descripcion };
-    //             });
-    //           counter.add(1, 'M');
-    //           finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
-    //           return multa;
-    //         })
-    //       );
-    //     }
-    //     if (now.date() > 10) {
-    //       const rightfulMonth = moment().locale('ES').subtract(1, 'M');
-    //       const multa = (
-    //         await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
-    //           application.id_solicitud,
-    //           fixatedAmount(finingAmount * UTMM),
-    //           {
-    //             fecha: {
-    //               month: rightfulMonth.locale('ES').format('MMMM'),
-    //               year: rightfulMonth.year(),
-    //             },
-    //             descripcion: 'Multa por Declaracion Fuera de Plazo',
-    //             monto: finingAmount,
-    //           },
-    //           rightfulMonth.add(1, 'M').endOf('month').format('MM-DD-YYYY'),
-    //           (contributorReference && contributorReference.id_registro_municipal) || null,
-    //         ])
-    //       ).rows[0];
-    //       const fine = { id: multa.id_liquidacion, fecha: multa.datos.fecha, monto: +multa.monto, descripcion: multa.datos.descripcion };
+    const hasAE = impuestos.find((el) => el.ramo === 'AE');
+    if (hasAE) {
+      const now = moment().locale('ES');
+      const pivot = moment().locale('ES');
+      const onlyAE = impuestos
+        .filter((el) => el.ramo === 'AE')
+        .sort((a, b) => (pivot.month(a.fechaCancelada.month).toDate() === pivot.month(b.fechaCancelada.month).toDate() ? 0 : pivot.month(a.fechaCancelada.month).toDate() > pivot.month(b.fechaCancelada.month).toDate() ? 1 : -1));
+      // const lastSavedFine = (await client.query(queries.GET_LAST_FINE_FOR_LATE_APPLICATION, [contributorReference.id_registro_municipal])).rows[0];
+      // if (lastSavedFine && moment(lastSavedFine.fecha_liquidacion).year() === now.year() && moment(lastSavedFine.fecha_liquidacion).month() < now.month()) {
+      //   finingAmount = lastSavedFine.datos.monto || lastSavedFine.monto;
+      //   const proposedFiningDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month);
+      //   const finingDate = moment(lastSavedFine.fecha_liquidacion).isSameOrBefore(proposedFiningDate) && moment(lastSavedFine.fecha_liquidacion).month() < proposedFiningDate.month() ? proposedFiningDate : moment(lastSavedFine.fecha_liquidacion);
+      //   console.log('1', finingDate.format('MM-DD-YYYY'));
+      //   console.log('2', proposedFiningDate.format('MM-DD-YYYY'));
+      //   console.log('3', moment(lastSavedFine.fecha_liquidacion).format('MM-DD-YYYY'));
+      //   finingMonths = new Array(now.month() - 1 - finingDate.month()).fill({});
+      //   if (finingMonths.length > 0) {
+      //     let counter = finingDate.clone();
+      //     finingMonths = await Promise.all(
+      //       finingMonths.map((el, i) => {
+      //         const multa = Promise.resolve(
+      //           client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
+      //             application.id_solicitud,
+      //             fixatedAmount(finingAmount * PETRO),
+      //             {
+      //               fecha: {
+      //                 month: counter.locale('ES').format('MMMM'),
+      //                 year: counter.year(),
+      //               },
+      //               descripcion: 'Multa por Declaracion Fuera de Plazo',
+      //               monto: finingAmount,
+      //             },
+      //             counter.endOf('month').format('MM-DD-YYYY'),
+      //             (contributorReference && contributorReference.id_registro_municipal) || null,
+      //           ])
+      //         )
+      //           .then((el) => el.rows[0])
+      //           .then((data) => {
+      //             return { id: data.id_liquidacion, fecha: data.datos.fecha, monto: +data.monto, descripcion: data.datos.descripcion };
+      //           });
+      //         counter.add(1, 'M');
+      //         finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
+      //         return multa;
+      //       })
+      //     );
+      //   }
+      //   if (now.date() > 10) {
+      //     const rightfulMonth = now.clone().subtract(1, 'M');
+      //     const multa = (
+      //       await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
+      //         application.id_solicitud,
+      //         fixatedAmount(finingAmount * PETRO),
+      //         {
+      //           fecha: {
+      //             month: rightfulMonth.locale('ES').format('MMMM'),
+      //             year: rightfulMonth.year(),
+      //           },
+      //           descripcion: 'Multa por Declaracion Fuera de Plazo',
+      //           monto: finingAmount,
+      //         },
+      //         rightfulMonth.endOf('month').format('MM-DD-YYYY'),
+      //         (contributorReference && contributorReference.id_registro_municipal) || null,
+      //       ])
+      //     ).rows[0];
+      //     const fine = { id: multa.id_liquidacion, fecha: multa.datos.fecha, monto: +multa.monto, descripcion: multa.datos.descripcion };
+      //     finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
+      //     finingMonths.push(fine);
+      //   }
+      // } else {
+      //   finingAmount = 10;
+      //   const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).add(1, 'M');
+      //   finingMonths = new Array(now.month() - finingDate.month()).fill({});
+      //   if (finingMonths.length > 0) {
+      //     let counter = finingDate.clone().subtract(1, 'M');
+      //     finingMonths = await Promise.all(
+      //       finingMonths.map((el, i) => {
+      //         const multa = Promise.resolve(
+      //           client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
+      //             application.id_solicitud,
+      //             fixatedAmount(finingAmount * PETRO),
+      //             {
+      //               fecha: {
+      //                 month: counter.locale('ES').format('MMMM'),
+      //                 year: counter.year(),
+      //               },
+      //               descripcion: 'Multa por Declaracion Fuera de Plazo',
+      //               monto: finingAmount,
+      //             },
+      //             counter.endOf('month').format('MM-DD-YYYY'),
+      //             (contributorReference && contributorReference.id_registro_municipal) || null,
+      //           ])
+      //         )
+      //           .then((el) => el.rows[0])
+      //           .then((data) => {
+      //             return { id: data.id_liquidacion, fecha: data.datos.fecha, monto: +data.monto, descripcion: data.datos.descripcion };
+      //           });
+      //         counter.add(1, 'M');
+      //         finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
+      //         return multa;
+      //       })
+      //     );
+      //   }
+      //   if (now.date() > 10) {
+      //     const rightfulMonth = moment().locale('ES').subtract(1, 'M');
+      //     const multa = (
+      //       await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION, [
+      //         application.id_solicitud,
+      //         fixatedAmount(finingAmount * PETRO),
+      //         {
+      //           fecha: {
+      //             month: rightfulMonth.locale('ES').format('MMMM'),
+      //             year: rightfulMonth.year(),
+      //           },
+      //           descripcion: 'Multa por Declaracion Fuera de Plazo',
+      //           monto: finingAmount,
+      //         },
+      //         rightfulMonth.add(1, 'M').endOf('month').format('MM-DD-YYYY'),
+      //         (contributorReference && contributorReference.id_registro_municipal) || null,
+      //       ])
+      //     ).rows[0];
+      //     const fine = { id: multa.id_liquidacion, fecha: multa.datos.fecha, monto: +multa.monto, descripcion: multa.datos.descripcion };
 
-    //       finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
-    //       finingMonths.push(fine);
-    //     }
-    //   }
-    // }
+      //     finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
+      //     finingMonths.push(fine);
+      //   }
+      // }
+      const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month() + 1;
+      finingMonths = new Array(now.month() - finingDate).fill({});
+      if (finingMonths.length > 0) {
+        // let counter = finingDate - 1;
+        finingMonths = await Promise.all(
+          onlyAE.map(async (el, i) => {
+            if (i === 0) return;
+            const exonerado = await isExonerated(
+              { branch: codigosRamo.MUL, contributor: contributorReference?.id_registro_municipal, activity: el.id_actividad_economica, startingDate: moment().locale('ES').month(el.fechaCancelada.month).startOf('month') },
+              client
+            );
+            if (exonerado) return;
+            const currentMonth = now.clone().subtract(1, 'M');
+            const comparedMonth = moment().locale('ES').month(el.fechaCancelada.month).year(el.fechaCancelada.year);
+            const percentage = await finingPercentage({ currentMonth, comparedMonth, branch: 'AE', client });
+            if (percentage === 0) return;
+            const multa = Promise.resolve(
+              client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION_PETRO, [
+                application.id_solicitud,
+                ((el.monto - 0.12) * percentage).toFixed(8),
+                {
+                  fecha: {
+                    month: moment().locale('ES').month(el.fechaCancelada.month).toDate().toLocaleDateString('ES', { month: 'long' }),
+                    year: moment().locale('ES').year(el.fechaCancelada.year).format('YYYY'),
+                  },
+                  descripcion: 'Multa por Declaracion Fuera de Plazo',
+                  monto: percentage,
+                },
+                moment().locale('ES').month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
+                (contributorReference && contributorReference.id_registro_municipal) || null,
+              ])
+            )
+              .then((el) => el.rows[0])
+              .then((data) => {
+                return { id: data.id_liquidacion, fecha: data.datos.fecha, monto: +data.monto_petro, descripcion: data.datos.descripcion };
+              });
+            return multa;
+          })
+        );
+      }
+      const exonerado = await isExonerated({ branch: codigosRamo.MUL, contributor: contributorReference?.id_registro_municipal, activity: null, startingDate: moment().startOf('month') }, client);
+      if (now.date() > 10 && !exonerado) {
+        const basePercentage = +(await client.query(queries.GET_SCALE_FOR_AE_FINING_STARTING_AMOUNT)).rows[0].indicador;
+        const multa = (
+          await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION_PETRO, [
+            application.id_solicitud,
+            ((onlyAE[0].monto - 0.12) * basePercentage).toFixed(8),
+            {
+              fecha: {
+                month: moment().subtract(1, 'M').toDate().toLocaleDateString('ES', { month: 'long' }),
+                year: moment().subtract(1, 'M').year(),
+              },
+              descripcion: 'Multa por Declaracion Fuera de Plazo',
+              monto: basePercentage,
+            },
+            moment().subtract(1, 'M').endOf('month').format('MM-DD-YYYY'),
+            (contributorReference && contributorReference.id_registro_municipal) || null,
+          ])
+        ).rows[0];
+        const fine = { id: multa.id_liquidacion, fecha: multa.datos.fecha, monto: +multa.monto, descripcion: multa.datos.descripcion };
+
+        // finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
+        finingMonths.push(fine);
+      }
+    }
     // ! Esto hay que descomentarlo el proximo mes
 
     const impuestosExt = impuestos.map((x, i, j) => {
       if (x.ramo === 'AE') {
-        const costoSolvencia = 2 * UTMM;
+        const costoSolvencia = 0.12;
         x.monto = +x.monto - costoSolvencia;
         j.push({ monto: costoSolvencia, ramo: 'SAE', fechaCancelada: x.fechaCancelada });
       }
@@ -2588,14 +2731,14 @@ export const insertSettlements = async ({ process, user }) => {
         const liquidacionGas = {
           ramo: branchNames['SM'],
           fechaCancelada: x.fechaCancelada,
-          monto: process.esAgenteRetencion || process.esAgenteSENIAT ? +x.desglose[0].montoGas * 1.04 : +x.desglose[0].montoGas * 1.16,
+          monto: process.esAgenteRetencion || process.esAgenteSENIAT ? ((+x.desglose.reduce((x, j) => x + j.montoGas, 0) / PETRO) * 1.04).toFixed(8) : ((+x.desglose.reduce((x, j) => x + j.montoGas, 0) / PETRO) * 1.16).toFixed(8),
           desglose: x.desglose,
           descripcion: 'Pago del Servicio de Gas',
         };
         const liquidacionAseo = {
           ramo: branchNames['SM'],
           fechaCancelada: x.fechaCancelada,
-          monto: process.esAgenteRetencion || process.esAgenteSENIAT ? +x.desglose[0].montoAseo * 1.04 : +x.desglose[0].montoAseo * 1.16,
+          monto: process.esAgenteRetencion || process.esAgenteSENIAT ? ((+x.desglose.reduce((x, j) => x + j.montoAseo, 0) / PETRO) * 1.04).toFixed(8) : ((+x.desglose.reduce((x, j) => x + j.montoAseo, 0) / PETRO) * 1.16).toFixed(8),
           desglose: x.desglose,
           descripcion: 'Pago del Servicio de Aseo',
         };
@@ -2615,11 +2758,14 @@ export const insertSettlements = async ({ process, user }) => {
             IVA: el.ramo === branchNames['SM'] ? (process.esAgenteRetencion || process.esAgenteSENIAT ? 4 : 16) : undefined,
             esAgenteSENIAT: el.ramo === branchNames['SM'] ? process.esAgenteSENIAT || undefined : undefined,
             esAgenteRetencion: el.ramo === branchNames['SM'] ? process.esAgenteRetencion || undefined : undefined,
+            valorPetro: PETRO,
+            fechaLiquidacion: moment().format('MM-DD-YYYY'),
+            esMonotributo: process.esMonotributo ? true : undefined,
           };
           const liquidacion = (
             await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
               application.id_solicitud,
-              fixatedAmount(+el.monto),
+              (+el.monto).toFixed(8),
               el.ramo,
               el.descripcion || 'Pago ordinario',
               datos,
@@ -2635,6 +2781,7 @@ export const insertSettlements = async ({ process, user }) => {
             ramo: branchNames[el.ramo],
             fecha: datos.fecha,
             monto: liquidacion.monto,
+            montoPetro: liquidacion.monto_petro,
             certificado: liquidacion.certificado,
             recibo: liquidacion.recibo,
             desglose: datos.desglose,
@@ -2657,7 +2804,7 @@ export const insertSettlements = async ({ process, user }) => {
     //   registroMunicipal: process.rim,
     // };
     const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
-    if (settlement.reduce((x, y) => x + +y.monto, 0) === 0) {
+    if (settlement.reduce((x, y) => x + +y.montoPetro, 0) === 0) {
       // (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.VALIDAR])).rows[0].state;
       await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
     }
@@ -2704,6 +2851,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
         await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [application, fixatedAmount(+interest), 'INTERESES', 'Pago ordinario', datos, moment().endOf('month').format('MM-DD-YYYY'), idReferenciaMunicipal || null])
       ).rows[0];
     }
+    await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO, [application]);
     const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0];
     console.log('addTaxApplicationPayment -> solicitud', solicitud);
     const applicationType = (await client.query('SELECT tipo_solicitud FROM impuesto.solicitud WHERE id_solicitud = $1', [application])).rows[0]?.tipo_solicitud || 'IMPUESTO';
@@ -2732,6 +2880,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
       })
     );
 
+    await client.query(queries.FINISH_ROUNDING, [application]);
     const state =
       user.tipoUsuario === 4
         ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0]
@@ -2857,6 +3006,7 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO_AGREEMENT, [fragment]);
     const fraccion = (await client.query(queries.GET_FRACTION_BY_AGREEMENT_AND_FRACTION_ID, [agreement, fragment])).rows[0];
     const pagoSum = payment.map((e) => +e.costo).reduce((e, i) => e + fixatedAmount(i), 0);
     if (fixatedAmount(pagoSum) < fixatedAmount(fraccion.monto)) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
@@ -2875,6 +3025,7 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
         user.tipoUsuario === 4 ? await insertPaymentReference(el, fragment, client) : await insertPaymentCashier(el, fragment, client);
       })
     );
+    await client.query(queries.FINISH_ROUNDING_AGREEMENT, [fragment]);
     const state =
       user.tipoUsuario === 4 ? (await client.query(queries.UPDATE_FRACTION_STATE, [fragment, applicationStateEvents.VALIDAR])).rows[0] : (await client.query(queries.COMPLETE_FRACTION_STATE, [fragment, applicationStateEvents.APROBARCAJERO])).rows[0];
     const fractions = (await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [agreement])).rows;
@@ -3177,19 +3328,19 @@ export const internalUserLinking = async (data) => {
   }
 };
 
-const recursiveRebate = (array, number): any[] => {
-  const minus = number / array.filter((a) => +a.monto > 0).length;
+const recursiveRebate = (array, number, prop = 'monto'): any[] => {
+  const minus = number / array.filter((a) => +a[prop] > 0).length;
   let _array = array.map((e) => {
     const _e = Object.assign({}, e);
-    _e.monto = +_e.monto > 0 ? +_e.monto - minus : +_e.monto;
+    _e[prop] = +_e[prop] > 0 ? +_e[prop] - minus : +_e[prop];
     return _e;
   });
-  const diff = Math.abs(_array.filter((e) => +e.monto < 0).reduce((prev, current) => prev + +current.monto, 0));
+  const diff = Math.abs(_array.filter((e) => +e[prop] < 0).reduce((prev, current) => prev + +current[prop], 0));
   if (diff > 0) {
     return recursiveRebate(
       _array.map((e) => {
         const _e = Object.assign({}, e);
-        _e.monto = +e.monto < 0 ? 0 : +e.monto;
+        _e[prop] = +e[prop] < 0 ? 0 : +e[prop];
         return _e;
       }),
       diff
@@ -3203,19 +3354,20 @@ export const addRebateForDeclaration = async ({ process, user }) => {
   try {
     const { rebajado, id_solicitud: idSolicitud, id_contribuyente: contribuyente } = (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows[0];
     if (rebajado) throw { status: 403, message: 'Esta solicitud ya ha sido rebajada anteriormente' };
-    const hasAE = (await client.query(`SELECT * FROM impuesto.liquidacion l INNER JOIN impuesto.subramo USING (id_subramo) INNER JOIN impuesto.ramo r USING (id_ramo) WHERE l.id_solicitud = $1 AND r.codigo = '112' AND l.monto > 0`, [idSolicitud]))
-      .rows;
+    const hasAE = (
+      await client.query(`SELECT * FROM impuesto.liquidacion l INNER JOIN impuesto.subramo USING (id_subramo) INNER JOIN impuesto.ramo r USING (id_ramo) WHERE l.id_solicitud = $1 AND r.codigo = '112' AND l.monto_petro > 0`, [idSolicitud])
+    ).rows;
     if (!hasAE.length) throw { status: 403, message: 'La solicitud no posee liquidaciones de Actividad Económica' };
     const nroLiquidaciones = hasAE.length;
     const montoPerLiq = montoRebajado / nroLiquidaciones;
     await client.query('BEGIN');
     const test = await Promise.all(
-      recursiveRebate(hasAE, montoRebajado).map(async (el) => {
-        const oldValue = hasAE.find((x) => x.id_liquidacion === el.id_liquidacion).monto;
+      recursiveRebate(hasAE, montoRebajado, 'monto_petro').map(async (el) => {
+        const oldValue = hasAE.find((x) => x.id_liquidacion === el.id_liquidacion).monto_petro;
         console.log('if -> oldValue', oldValue);
-        const newDatos = { ...el.datos, montoRebajado: oldValue - el.monto };
-        console.log('montoRebajado', oldValue - el.monto);
-        const liquidacion = (await client.query('UPDATE impuesto.liquidacion SET datos = $1, monto = $2 WHERE id_liquidacion = $3 RETURNING *;', [newDatos, el.monto, el.id_liquidacion])).rows[0];
+        const newDatos = { ...el.datos, montoRebajado: oldValue - el.monto_petro };
+        console.log('montoRebajado', oldValue - el.monto_petro);
+        const liquidacion = (await client.query('UPDATE impuesto.liquidacion SET datos = $1, monto_petro = $2 WHERE id_liquidacion = $3 RETURNING *;', [newDatos, el.monto_petro, el.id_liquidacion])).rows[0];
         return liquidacion;
       })
     );
@@ -3233,8 +3385,9 @@ export const addRebateForDeclaration = async ({ process, user }) => {
     // );
     await client.query('UPDATE impuesto.solicitud SET rebajado = true WHERE id_solicitud = $1', [idSolicitud]);
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [contribuyente]);
+    const application = await getApplicationsAndSettlementsByIdNots({ id, user: null }, client);
     await client.query('COMMIT');
-    return { status: 200, message: 'Solicitud rebajada satisfactoriamente' };
+    return { status: 200, message: 'Solicitud rebajada satisfactoriamente', solicitud: application };
   } catch (error) {
     client.query('ROLLBACK');
     console.log(error);
@@ -3260,7 +3413,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
     if (!userHasContributor) throw { status: 404, message: 'El usuario no esta asociado con ningun contribuyente' };
     const contributorReference = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [process.rim, userContributor[0].id_contribuyente])).rows[0];
     if (!contributorReference && !!process.rim) throw { status: 404, message: 'La sucursal solicitada no existe' };
-    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(user.tipoUsuario !== 4 && process.usuario) || user.id, userContributor[0].id_contribuyente])).rows[0];
 
     const settlement: Liquidacion[] = await Promise.all(
@@ -3289,6 +3442,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
           ramo: branch,
           fecha: datos.fecha,
           monto: liquidacion.monto,
+          montoPetro: liquidacion.monto_petro,
           certificado: liquidacion.certificado,
           recibo: liquidacion.recibo,
           desglose: datos.desglose,
@@ -3312,6 +3466,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
     //   registroMunicipal: process.rim,
     // };
     if (!process.esVigente) {
+      await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO_SETTLEMENT, [application.id_solicitud]);
       const costoSolicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application.id_solicitud])).rows[0].monto_total;
       const pagoSum = process.pagos.map((e) => e.costo).reduce((e, i) => e + i, 0);
       if (pagoSum < costoSolicitud) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
@@ -3385,6 +3540,7 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
         funcionario.estadoLicencia,
         funcionario.direccion,
         parish,
+        JSON.parse(funcionario.esMonotributo) || false,
       ])
     ).rows[0];
     data.funcionario.referenciaMunicipal = registry.referencia_municipal;
@@ -3437,7 +3593,7 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
 
 export const approveContributorBenefits = async ({ data, client }: { data: any; client: PoolClient }) => {
   try {
-    const { contribuyente, beneficios, usuario } = data.funcionario;
+    const { contribuyente, beneficios, usuarios } = data.funcionario;
     const contributorWithBranch = (await client.query(queries.GET_CONTRIBUTOR_WITH_BRANCH, [contribuyente.registroMunicipal])).rows[0];
     const benefittedUser = (await client.query(queries.GET_USER_IN_CHARGE_OF_BRANCH_BY_ID, [contributorWithBranch.id_registro_municipal])).rows[0];
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [contributorWithBranch.id_contribuyente]);
@@ -3446,7 +3602,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
       beneficios.map(async (x) => {
         switch (x.tipoBeneficio) {
           case 'pagoCompleto':
-            const applicationFP = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [usuario || benefittedUser?.id, contributorWithBranch.id_contribuyente])).rows[0];
+            const applicationFP = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [usuarios[0].id || benefittedUser?.id, contributorWithBranch.id_contribuyente])).rows[0];
             await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [applicationFP.id_solicitud, applicationStateEvents.INGRESARDATOS]);
             const benefitFullPayment = (await client.query(queries.CHANGE_SETTLEMENT_TO_NEW_APPLICATION, [applicationFP.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
             return benefitFullPayment;
@@ -3462,7 +3618,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
               settlements.map(async (el) => {
                 const branch = (await client.query('SELECT sr.*, rm.*, rm.descripcion AS "descripcionRamo" FROM impuesto.subramo sr INNER JOIN impuesto.ramo rm USING (id_ramo) WHERE id_subramo = $1', [el.id_subramo])).rows[0]?.descripcionRamo;
                 const newDatos = { ...el.datos, descuento: x.porcDescuento };
-                const newMonto = fixatedAmount(el.monto * (1 - x.porcDescuento));
+                const newMonto = (el.monto_petro * (1 - x.porcDescuento)).toFixed(8);
                 const newSettlement = (await client.query(queries.UPDATE_SETTLEMENT_AMOUNT_AND_DATA, [newDatos, newMonto, el.id_liquidacion])).rows[0];
                 return {
                   id: newSettlement.id_liquidacion,
@@ -3481,7 +3637,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             const benefitRemission = (await client.query(queries.SET_SETTLEMENTS_AS_FORWARDED_BY_RIM, [contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
             return benefitRemission;
           case 'convenio':
-            const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [usuario || benefittedUser?.id, contributorWithBranch.id_contribuyente])).rows[0];
+            const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [usuarios[0].id || benefittedUser?.id, contributorWithBranch.id_contribuyente])).rows[0];
             await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [applicationAG.id_solicitud, applicationStateEvents.INGRESARDATOS]);
             await client.query('UPDATE impuesto.solicitud SET tipo_solicitud = $1 WHERE id_solicitud = $2', ['CONVENIO', applicationAG.id_solicitud]);
             const agreement = (await client.query(queries.CREATE_AGREEMENT, [applicationAG.id_solicitud, x.porciones.length])).rows[0];
@@ -3493,7 +3649,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             if (costo > totalSolicitud) throw { status: 403, message: 'La suma de las fracciones del convenio debe ser exactamente igual al total de la deuda' };
             const benefitAgreement = await Promise.all(
               x.porciones.map(async (el) => {
-                const fraccion = (await client.query(queries.CREATE_AGREEMENT_FRACTION, [agreement.id_convenio, fixatedAmount(+el.monto), el.porcion, el.fechaDePago])).rows[0];
+                const fraccion = (await client.query(queries.CREATE_AGREEMENT_FRACTION, [agreement.id_convenio, +el.monto, el.porcion, el.fechaDePago])).rows[0];
                 await client.query(queries.UPDATE_FRACTION_STATE, [fraccion.id_fraccion, applicationStateEvents.INGRESARDATOS]);
               })
             );
@@ -3602,7 +3758,8 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
               rej(err);
             } else {
               const bucketParams = {
-                Bucket: 'sut-maracaibo',
+                Bucket: process.env.BUCKET_NAME as string,
+
                 Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`,
               };
               await S3Client.putObject({
@@ -3976,7 +4133,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
           try {
             if (buffersArray.length === 1) {
               const bucketParams = {
-                Bucket: 'sut-maracaibo',
+                Bucket: process.env.BUCKET_NAME as string,
+
                 Key: `/sedemat/${application.id}/${application.idSubramo === 9 ? 'IU' : 'SM'}/${application.idLiquidacion}/recibo.pdf`,
               };
               await S3Client.putObject({
@@ -4003,7 +4161,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 .output()
                 .then(async (buffer) => {
                   const bucketParams = {
-                    Bucket: 'sut-maracaibo',
+                    Bucket: process.env.BUCKET_NAME as string,
+
                     Key: `/sedemat/${application.id}/${application.idSubramo === 9 ? 'IU' : 'SM'}/${application.idLiquidacion}/recibo.pdf`,
                   };
                   await S3Client.putObject({
@@ -4153,7 +4312,8 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
           try {
             if (buffersArray.length === 1) {
               const bucketParams = {
-                Bucket: 'sut-maracaibo',
+                Bucket: process.env.BUCKET_NAME as string,
+
                 Key: `/sedemat/${application.id}/IU/${application.idLiquidacion}/certificado.pdf`,
               };
               await S3Client.putObject({
@@ -4180,7 +4340,8 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
                 .output()
                 .then(async (buffer) => {
                   const bucketParams = {
-                    Bucket: 'sut-maracaibo',
+                    Bucket: process.env.BUCKET_NAME as string,
+
                     Key: `/sedemat/${application.id}/IU/${application.idLiquidacion}/certificado.pdf`,
                   };
                   await S3Client.putObject({
@@ -4221,8 +4382,8 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
         [application.id, application.idSubramo]
       )
     ).rows;
-    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
-    const impuestoRecibo = UTMM * 2;
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
+    const impuestoRecibo = PETRO * 2;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     const referencia = (await client.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
     const payment = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_DEST, [application.id, 'IMPUESTO'])).rows;
@@ -4373,7 +4534,8 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
               try {
                 await regClient.query('BEGIN');
                 const bucketParams = {
-                  Bucket: 'sut-maracaibo',
+                  Bucket: process.env.BUCKET_NAME as string,
+
                   Key: `sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
                 };
                 await S3Client.putObject({
@@ -4413,7 +4575,8 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
                   try {
                     await regClient.query('BEGIN');
                     const bucketParams = {
-                      Bucket: 'sut-maracaibo',
+                      Bucket: process.env.BUCKET_NAME as string,
+
                       Key: `sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
                     };
                     await S3Client.putObject({
@@ -4470,7 +4633,8 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
     //   //         rej(err);
     //   //       } else {
     //   //         const bucketParams = {
-    //   //           Bucket: 'sut-maracaibo',
+    //   //           Bucket: process.env.BUCKET_NAME as string,
+
     //   //           Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
     //   //         };
     //   //         await S3Client.putObject({
@@ -4498,13 +4662,13 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
     if (application.idSubramo === 23) throw new Error('No es una liquidacion admisible para generar recibo');
     const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
 
-    const UTMM = (await pool.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const PETRO = (await pool.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
 
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
     const economicActivities = (await pool.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [referencia.id_registro_municipal])).rows;
     const taxSettlement = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 100])).rows[0];
-    const impuestoRecibo = taxSettlement?.monto || UTMM * 2;
+    const impuestoRecibo = taxSettlement?.monto || PETRO * 2;
     moment.locale('es');
     let certInfoArray: any[] = [];
     let certAE;
@@ -4539,7 +4703,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
               montoDeclarado: desglose.montoDeclarado,
               montoRebajado: el.datos?.montoRebajado || 0,
               alicuota: row.alicuota / 100,
-              minTrib: row.minimoTributable,
+              minTrib: Math.round(row.minimo_tributable) * PETRO,
               impuesto: desglose.montoCobrado || 0,
             };
           }),
@@ -4636,7 +4800,8 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
           try {
             if (buffersArray.length === 1) {
               const bucketParams = {
-                Bucket: 'sut-maracaibo',
+                Bucket: process.env.BUCKET_NAME as string,
+
                 Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
               };
               await S3Client.putObject({
@@ -4663,7 +4828,8 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
                 .output()
                 .then(async (buffer) => {
                   const bucketParams = {
-                    Bucket: 'sut-maracaibo',
+                    Bucket: process.env.BUCKET_NAME as string,
+
                     Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
                   };
                   await S3Client.putObject({
@@ -4710,7 +4876,8 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
     //   //         rej(err);
     //   //       } else {
     //   //         const bucketParams = {
-    //   //           Bucket: 'sut-maracaibo',
+    //   //           Bucket: process.env.BUCKET_NAME as string,
+
     //   //           Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
     //   //         };
     //   //         await S3Client.putObject({
@@ -4863,7 +5030,7 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
           try {
             if (buffersArray.length === 1) {
               const bucketParams = {
-                Bucket: 'sut-maracaibo',
+                Bucket: process.env.BUCKET_NAME as string,
                 Key: `/sedemat/${application.id}/PP/${application.idLiquidacion}/certificado.pdf`,
               };
               await S3Client.putObject({
@@ -4890,7 +5057,8 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
                 .output()
                 .then(async (buffer) => {
                   const bucketParams = {
-                    Bucket: 'sut-maracaibo',
+                    Bucket: process.env.BUCKET_NAME as string,
+
                     Key: `/sedemat/${application.id}/PP/${application.idLiquidacion}/certificado.pdf`,
                   };
                   await S3Client.putObject({
@@ -4995,7 +5163,8 @@ const createPatentDocument = async ({ gticPool, pool, user, application }: Certi
               rej(err);
             } else {
               const bucketParams = {
-                Bucket: 'sut-maracaibo',
+                Bucket: process.env.BUCKET_NAME as string,
+
                 Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/patente.pdf`,
               };
               await S3Client.putObject({
@@ -5058,7 +5227,8 @@ const createFineDocument = async ({ gticPool, pool, user, application }: Certifi
               rej(err);
             } else {
               const bucketParams = {
-                Bucket: 'sut-maracaibo',
+                Bucket: process.env.BUCKET_NAME as string,
+
                 Key: `/sedemat/${application.id}/MUL/${application.idLiquidacion}/solvencia.pdf`,
               };
               await S3Client.putObject({
@@ -5085,7 +5255,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
   const client = await pool.connect();
   const gtic = await gticPool.connect();
   try {
-    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const paymentState = switchcase({ ingresardatos: 'VIGENTE', validando: 'VIGENTE', finalizado: 'PAGADO' })(null);
     const contribuyente = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [contributor])).rows[0];
     const branch = reference && (await client.query('SELECT r.* FROM impuesto.registro_municipal r WHERE referencia_municipal = $1', [reference])).rows[0];
@@ -5110,7 +5280,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
         motivo: el.descripcion_corta,
         estado: paymentState(el.state) || 'PAGADO',
         montoPorcion: fixatedAmount(el.monto),
-        // montoPorcion: activity && parseInt(activity.nu_ut) * UTMM > parseFloat(el.monto_declarado) ? parseInt(activity.nu_ut) * UTMM : parseFloat(el.monto_declarado),
+        // montoPorcion: activity && parseInt(activity.nu_ut) * PETRO > parseFloat(el.monto_declarado) ? parseInt(activity.nu_ut) * PETRO : parseFloat(el.monto_declarado),
       };
     });
     const datosContribuyente = {
@@ -5189,7 +5359,8 @@ export const getSettlementsReport = async (user, payload: { from: Date; to: Date
       } else {
         try {
           const bucketParams = {
-            Bucket: 'sut-maracaibo',
+            Bucket: process.env.BUCKET_NAME as string,
+
             Key: '/sedemat/reportes/liquidaciones.xlsx',
           };
           await S3Client.putObject({
@@ -5227,7 +5398,7 @@ const certificateCreationSnippet = () => {
   //     moment: require('moment'),
   //     QR: linkQr,
   //     costoFormateado,
-  //     UTMM,
+  //     PETRO,
   //     costo,
   //     written,
   //   });
@@ -5247,7 +5418,7 @@ const certificateCreationSnippet = () => {
   //             rej(err);
   //           } else {
   //             const bucketParams = {
-  //               Bucket: 'sut-maracaibo',
+  //               Bucket: process.env.BUCKET_NAME as string,
   //               Key: estado === 'iniciado' ? `${institucion}/planillas/${codigo}` : `${institucion}/certificados/${codigo}`,
   //             };
   //             await S3Client.putObject({
@@ -5401,7 +5572,7 @@ interface datoLiquidacion {
 //     const contributor = (reference ? await gtic.query(queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS, [document, reference, type]) : await gtic.query(queries.gtic.NATURAL_CONTRIBUTOR_EXISTS, [document, type])).rows[0];
 //     if (!contributor) return { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
 //     const now = moment(new Date());
-//     const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+//     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
 //     //AE
 //     if (contributor.nu_referencia && !AEApplicationExists) {
 //       const economicActivities = (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [contributor.co_contribuyente])).rows;
@@ -5421,11 +5592,11 @@ interface datoLiquidacion {
 //         AE = economicActivities.map((el) => {
 //           return {
 //             id: el.nu_ref_actividad,
-//             minimoTributable: Math.round(el.nu_ut) * UTMM,
+//             minimoTributable: Math.round(el.nu_ut) * PETRO,
 //             nombreActividad: el.tx_actividad,
 //             idContribuyente: el.co_contribuyente,
 //             alicuota: el.nu_porc_alicuota / 100,
-//             costoSolvencia: UTMM * 2,
+//             costoSolvencia: PETRO * 2,
 //             deuda: new Array(dateInterpolation).fill({ month: null, year: null }).map((value, index) => {
 //               const date = addMonths(new Date(lastEAPayment.toDate()), index);
 //               return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
@@ -5461,10 +5632,10 @@ interface datoLiquidacion {
 //                   ? 0.15 * el.nu_metro_cuadrado
 //                   : (await gtic.query(queries.gtic.GET_MAX_CLEANING_TARIFF_BY_CONTRIBUTOR, [contributor.co_contribuyente])).rows[0].nu_tarifa
 //                 : (await gtic.query(queries.gtic.GET_RESIDENTIAL_CLEANING_TARIFF)).rows[0].nu_tarifa;
-//             const tarifaAseo = calculoAseo / UTMM > 300 ? UTMM * 300 : calculoAseo;
+//             const tarifaAseo = calculoAseo / PETRO > 300 ? PETRO * 300 : calculoAseo;
 //             const calculoGas =
 //               el.tx_tp_inmueble === 'COMERCIAL' ? (await gtic.query(queries.gtic.GET_MAX_GAS_TARIFF_BY_CONTRIBUTOR, [contributor.co_contribuyente])).rows[0].nu_tarifa : (await gtic.query(queries.gtic.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].nu_tarifa;
-//             const tarifaGas = calculoGas / UTMM > 300 ? UTMM * 300 : calculoGas;
+//             const tarifaGas = calculoGas / PETRO > 300 ? PETRO * 300 : calculoGas;
 //             return { id: el.co_inmueble, tipoInmueble: el.tx_tp_inmueble, direccionInmueble: el.tx_direccion, tarifaAseo, tarifaGas, deuda: debtSM };
 //           })
 //         );
@@ -5543,8 +5714,8 @@ interface datoLiquidacion {
 //                     id: +el.co_medio,
 //                     nombreSubarticulo: el.tx_medio,
 //                     parametro: el.parametro,
-//                     costo: +el.ut_medio * UTMM,
-//                     costoAlto: el.parametro === 'BANDA' ? (+el.ut_medio + 2) * UTMM : undefined,
+//                     costo: +el.ut_medio * PETRO,
+//                     costoAlto: el.parametro === 'BANDA' ? (+el.ut_medio + 2) * PETRO : undefined,
 //                   };
 //                 }),
 //             };
