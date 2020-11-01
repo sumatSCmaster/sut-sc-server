@@ -2237,6 +2237,8 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   SET_NON_APPROVED_STATE_FOR_PROCEDURE: 'UPDATE tramite SET aprobado = false, fecha_culminacion = null WHERE id_tramite = $1;',
   DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT: 'DELETE FROM pago WHERE id_procedimiento = $1 AND concepto = $2;',
   DELETE_FISCAL_CREDIT_BY_APPLICATION_ID: 'DELETE FROM impuesto.credito_fiscal WHERE id_solicitud = $1;',
+  NULLIFY_AMOUNT_IN_REVERSED_FRACTION: `UPDATE impuesto.fraccion SET monto = null WHERE id_fraccion = $1`,
+  NULLIFY_AMOUNT_IN_REVERSED_APPLICATION: `UPDATE impuesto.liquidacion SET monto = null WHERE id_solicitud = $1`,
 
   //Validacion de pagos individual
   APPROVE_PAYMENT: `UPDATE pago SET aprobado = true, fecha_de_aprobacion = (NOW() - interval '4 hours') WHERE id_pago = $1 RETURNING *`,

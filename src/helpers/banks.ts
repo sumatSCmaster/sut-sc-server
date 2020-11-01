@@ -122,6 +122,7 @@ const reversePaymentCase = switchcase({
       await client.query(queries.DELETE_FISCAL_CREDIT_BY_APPLICATION_ID, [id]);
       await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [id, REVERSARPAGO]);
       await client.query(queries.SET_NON_APPROVED_STATE_FOR_APPLICATION, [id]);
+      await client.query(queries.NULLIFY_AMOUNT_IN_REVERSED_APPLICATION, [id]);
       return await getApplicationsAndSettlementsByIdNots({ id, user: null }, client);
     } catch (e) {
       throw e;
@@ -134,6 +135,7 @@ const reversePaymentCase = switchcase({
       await client.query(queries.DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT, [id, 'CONVENIO']);
       await client.query(queries.UPDATE_FRACTION_STATE, [id, REVERSARPAGO]);
       await client.query(queries.SET_NON_APPROVED_STATE_FOR_AGREEMENT_FRACTION, [id]);
+      await client.query(queries.NULLIFY_AMOUNT_IN_REVERSED_FRACTION, [id]);
 
       const application = await getApplicationsAndSettlementsByIdNots(
         { id: (await client.query('SELECT id_solicitud FROM impuesto.fraccion INNER JOIN impuesto.convenio USING (id_convenio) WHERE id_fraccion = $1', [id])).rows[0].id_solicitud, user: null },
@@ -142,7 +144,8 @@ const reversePaymentCase = switchcase({
       await client.query(queries.DELETE_FISCAL_CREDIT_BY_APPLICATION_ID, [id]);
       if (application.estado === 'finalizado') {
         await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id, REVERSARPAGO_SOLICITUD]);
-        await client.query(queries.SET_NON_APPROVED_STATE_FOR_APPLICATION, [id]);
+        await client.query(queries.SET_NON_APPROVED_STATE_FOR_APPLICATION, [application.id]);
+        await client.query(queries.NULLIFY_AMOUNT_IN_REVERSED_APPLICATION, [application.id]);
       }
       return await getAgreementFractionById({ id });
     } catch (e) {

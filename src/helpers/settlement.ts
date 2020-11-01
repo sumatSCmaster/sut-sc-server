@@ -3034,6 +3034,8 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
     if (fractions.every((x) => x.aprobado)) {
       const convenio = (await client.query('SELECT c.* FROM impuesto.convenio c INNER JOIN impuesto.fraccion f ON c.id_convenio = f.id_convenio WHERE f.id_fraccion = $1', [fragment])).rows[0];
       const applicationState = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [convenio.id_solicitud, applicationStateEvents.APROBARCAJERO])).rows[0].state;
+      await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO, [convenio.id_solicitud]);
+      await client.query(queries.FINISH_ROUNDING, [convenio.id_solicitud]);
     }
     if (user.tipoUsuario !== 4) {
       const convenio = (await client.query('SELECT c.* FROM impuesto.convenio c INNER JOIN impuesto.fraccion f ON c.id_convenio = f.id_convenio WHERE f.id_fraccion = $1', [fragment])).rows[0];
@@ -3127,6 +3129,8 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
     const fractions = (await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [agreement.id_convenio])).rows;
     if (!body.solicitudAprobada) return;
     const applicationState = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [agreement.id_solicitud, applicationStateEvents.APROBARCAJERO])).rows[0].state;
+    await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO, [agreement.id_solicitud]);
+    await client.query(queries.FINISH_ROUNDING, [agreement.id_solicitud]);
     const totalLiquidacion = +(await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [agreement.id_solicitud])).rows[0].monto_total;
     const totalPago = (await Promise.all(fractions.map(async (e) => +(await client.query('SELECT sum(monto) as monto_total FROM pago WHERE id_procedimiento = $1 AND concepto = $2', [e.id_fraccion, 'CONVENIO'])).rows[0].monto_total))).reduce(
       (x, j) => x + j

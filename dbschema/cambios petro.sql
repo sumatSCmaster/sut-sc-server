@@ -136,3 +136,9 @@ UPDATE impuesto.tabulador_aseo_residencial SET monto = (monto / (SELECT valor_en
 UPDATE impuesto.tabulador_gas_residencial SET monto = (monto / (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'));
 UPDATE impuesto.tipo_aviso_propaganda SET monto = (monto * (SELECT valor_en_bs FROM valor WHERE descripcion = 'UTMM')) / (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO');
 UPDATE tipo_tramite SET costo_petro = (costo_base / (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) WHERE id_tipo_tramite in (SELECT id_tipo_tramite FROM tipo_tramite WHERE pago_previo = true AND costo_base IS NOT NULL AND sufijo != 'lae');
+
+UPDATE impuesto.fraccion SET monto_petro = ROUND((monto / (SELECT valor_en_bs FROM valor WHERE descripcion='PETRO')),8) WHERE monto_petro IS NULL AND monto IS NOT NULL;
+UPDATE impuesto.fraccion SET monto = null WHERE id_fraccion IN (SELECT id FROM impuesto.fraccion_state WHERE state = 'ingresardatos');
+
+UPDATE impuesto.liquidacion SET monto = ROUND((monto_petro * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')), 8) WHERE id_solicitud IN (SELECT id FROM impuesto.solicitud_state WHERE state = 'validando');
+UPDATE impuesto.liquidacion SET monto = ROUND(monto, 2) WHERE id_solicitud IN (SELECT id FROM impuesto.solicitud_state WHERE state = 'validando');
