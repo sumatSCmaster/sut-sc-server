@@ -2539,8 +2539,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       CASE pr."pagoPP" WHEN 0 THEN 'No declarado' WHEN 1 THEN 'Declarado' WHEN 2 THEN 'Pagado' END AS "pagoPP", pr."montoPP", 
       CASE pr."pagoAE" WHEN 0 THEN 'No declarado' WHEN 1 THEN 'Declarado' WHEN 2 THEN 'Pagado' END AS "pagoMUL", pr."montoMUL", 
       pr.progreso
-      FROM cobranz c INNER JOIN pagosramos pr ON c.id_registro_municipal = pr.id_registro_municipal
-      ORDER BY c."idCobranza";`,  
+      FROM cobranz c INNER JOIN pagosramos pr ON c.id_registro_municipal = pr.id_registro_municipal;`,  
   GET_CHARGINGS_BY_WALLET_AR: `WITH cobranz AS (
       SELECT id_registro_municipal, id_cobranza AS "idCobranza", cob.id_cartera AS "idCartera", cob.contactado, estatus_telefonico as "estatusTelefonico",
       observaciones ,
@@ -2706,8 +2705,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
         CASE pr."pagoAE" WHEN 0 THEN 'No declarado' WHEN 1 THEN 'Declarado' WHEN 2 THEN 'Pagado' END AS "pagoMUL", pr."montoMUL", 
         CASE pr."pago_ret" WHEN 0 THEN 'No declarado' WHEN 1 THEN 'Declarado' WHEN 2 THEN 'Pagado' END AS "pago_ret", pr."monto_ret", 
         pr.progreso
-        FROM cobranz c INNER JOIN pagosramos pr ON c.id_registro_municipal = pr.id_registro_municipal
-        ORDER BY c."idCobranza";`,
+        FROM cobranz c INNER JOIN pagosramos pr ON c.id_registro_municipal = pr.id_registro_municipal;`,
   GET_WALLETS: `SELECT cart.id_cartera AS "idCartera", cart.id_usuario as "idUsuario", u.nombre_completo AS "nombreCompleto", es_ar AS "esAr"
     FROM impuesto.cartera cart 
     LEFT JOIN usuario u ON u.id_usuario = cart.id_usuario ORDER BY id_cartera;`,
