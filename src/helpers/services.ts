@@ -73,8 +73,8 @@ export const getMunicipalServicesByContributor = async ({ reference, document, d
 export const getCleaningTariffForEstate = async ({ estate, branchId, client }) => {
   try {
     // if (!estate && !branchId) return (await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto;
-    if (!estate && !!branchId) return (await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto;
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
+    if (!estate && !!branchId) return (await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto * PETRO;
     const USD = (await client.query(queries.GET_USD_VALUE)).rows[0].valor_en_bs;
     const costoMtsCom = +(await client.query(queries.GET_SCALE_FOR_COMMERCIAL_ESTATE_MTS_COST)).rows[0].indicador;
     const limiteAseoCom = +(await client.query(queries.GET_SCALE_FOR_COMMERCIAL_ESTATE_PETRO_LIMIT)).rows[0].indicador;
