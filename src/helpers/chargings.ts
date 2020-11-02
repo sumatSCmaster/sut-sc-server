@@ -253,6 +253,26 @@ const getChargingsByWalletId = async (id) => {
   }
 };
 
+const getChargingsByWalletExcelId = async (id) => {
+  const client = await pool.connect();
+  try {
+    const date = (await client.query("SELECT created FROM impuesto.cobranza LIMIT 1")).rows[0].created;
+    const creationDate = moment(date).locale('es')
+    const declMonth = creationDate.clone().subtract(1, 'month').locale('es');
+    const charging = await client.query('SELECT * FROM impuesto.cartera where id_cartera = $1', [id]);
+    let aeMonth = declMonth.format('MMMM').toLowerCase();
+    let aeYear = declMonth.year();
+    let otherMonth = creationDate.format('MMMM').toLowerCase()
+    let otherYear = creationDate.year()
+    const chargings = await client.query(charging.rows[0].es_ar ? queries.GET_CHARGINGS_BY_WALLET_AR_EXCEL : queries.GET_CHARGINGS_BY_WALLET_EXCEL, [id, aeMonth, aeYear, otherMonth, otherYear]);
+    return chargings;
+  } catch (err) {
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
 export const getChargingsByWalletExcel = async (id) => {
   return new Promise(async (res, rej) => {
     const workbook = new ExcelJs.Workbook();
@@ -272,7 +292,7 @@ export const getChargingsByWalletExcel = async (id) => {
 
     const sheet = workbook.addWorksheet();
     console.log('sil');
-    const result = await getChargingsByWalletId(id);
+    const result = await getChargingsByWalletExcelId(id);
     console.log('si2');
 
     //   console.log(result);
