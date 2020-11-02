@@ -29,7 +29,7 @@ const connection = async (socket: Socket) => {
       socket.join('tabla-cobranza');
     }
 
-    if([39].includes(user.institucion?.cargo?.id)){
+    if([39, 24].includes(user.institucion?.cargo?.id)){
       socket.join('tabla-fiscalizacion')
     }
 
