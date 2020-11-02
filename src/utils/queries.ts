@@ -2536,7 +2536,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       CASE pr."pagoAE" WHEN 0 THEN 'No declarado' WHEN 1 THEN 'Declarado' WHEN 2 THEN 'Pagado' END AS "pagoAE", pr."montoAE", 
       CASE pr."pagoSM" WHEN 0 THEN 'No declarado' WHEN 1 THEN 'Declarado' WHEN 2 THEN 'Pagado' END AS "pagoSM", pr."montoSM", 
       CASE pr."pagoIU" WHEN 0 THEN 'No declarado' WHEN 1 THEN 'Declarado' WHEN 2 THEN 'Pagado' END AS "pagoIU", pr."montoIU", 
-      CASE pr."pagopp" WHEN 0 THEN 'No declarado' WHEN 1 THEN 'Declarado' WHEN 2 THEN 'Pagado' END AS "pagoPP", pr."montoPP", 
+      CASE pr."pagoPP" WHEN 0 THEN 'No declarado' WHEN 1 THEN 'Declarado' WHEN 2 THEN 'Pagado' END AS "pagoPP", pr."montoPP", 
       CASE pr."pagoAE" WHEN 0 THEN 'No declarado' WHEN 1 THEN 'Declarado' WHEN 2 THEN 'Pagado' END AS "pagoMUL", pr."montoMUL", 
       pr.progreso
       FROM cobranz c INNER JOIN pagosramos pr ON c.id_registro_municipal = pr.id_registro_municipal
@@ -2702,7 +2702,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
         CASE pr."pagoAE" WHEN 0 THEN 'No declarado' WHEN 1 THEN 'Declarado' WHEN 2 THEN 'Pagado' END AS "pagoAE", pr."montoAE", 
         CASE pr."pagoSM" WHEN 0 THEN 'No declarado' WHEN 1 THEN 'Declarado' WHEN 2 THEN 'Pagado' END AS "pagoSM", pr."montoSM", 
         CASE pr."pagoIU" WHEN 0 THEN 'No declarado' WHEN 1 THEN 'Declarado' WHEN 2 THEN 'Pagado' END AS "pagoIU", pr."montoIU", 
-        CASE pr."pagopp" WHEN 0 THEN 'No declarado' WHEN 1 THEN 'Declarado' WHEN 2 THEN 'Pagado' END AS "pagoPP", pr."montoPP", 
+        CASE pr."pagoPP" WHEN 0 THEN 'No declarado' WHEN 1 THEN 'Declarado' WHEN 2 THEN 'Pagado' END AS "pagoPP", pr."montoPP", 
         CASE pr."pagoAE" WHEN 0 THEN 'No declarado' WHEN 1 THEN 'Declarado' WHEN 2 THEN 'Pagado' END AS "pagoMUL", pr."montoMUL", 
         CASE pr."pago_ret" WHEN 0 THEN 'No declarado' WHEN 1 THEN 'Declarado' WHEN 2 THEN 'Pagado' END AS "pago_ret", pr."monto_ret", 
         pr.progreso
