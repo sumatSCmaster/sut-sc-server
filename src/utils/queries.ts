@@ -604,7 +604,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     impuesto.liquidacion l ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.solicitud s ON l.id_solicitud = s.id_solicitud INNER JOIN\
      (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state FROM impuesto.evento_solicitud es GROUP\
       BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud INNER JOIN impuesto.contribuyente c ON s.id_contribuyente = c.id_contribuyente WHERE\
-       ev.state = 'ingresardatos' AND c.id_contribuyente = $1 GROUP BY rm.descripcion, rm.id_ramo HAVING SUM(l.monto) > 0",
+       ev.state = 'ingresardatos' AND c.id_contribuyente = $1 GROUP BY rm.descripcion, rm.id_ramo HAVING SUM(l.monto_petro) > 0",
   GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR:
     'SELECT DISTINCT ON (s.id_solicitud, s.fecha) * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud WHERE s.id_contribuyente = $1\
      AND l.id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $2 AND id_contribuyente = $1 LIMIT 1) ORDER BY s.fecha DESC',
@@ -2463,7 +2463,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     SELECT pr.rif, pr.rim, pr."razonSocial", c.*, pr."pagoAE", pr."montoAE", pr."pagoSM", pr."montoSM", pr."pagoIU", pr."montoIU", pr."pagoPP",pr."montoPP", pr."pagoMUL", pr."montoMUL", pr.progreso
     FROM cobranz c INNER JOIN pagosramos pr ON c.id_registro_municipal = pr.id_registro_municipal
     ORDER BY c."idCobranza";`,
-    GET_CHARGINGS_BY_WALLET_EXCEL: `WITH cobranz AS (
+  GET_CHARGINGS_BY_WALLET_EXCEL: `WITH cobranz AS (
       SELECT id_registro_municipal, CASE cob.contactado WHEN true THEN 'Si' ELSE 'No' END AS contactado, estatus_telefonico as "estatusTelefonico",
         observaciones ,
         CASE posee_convenio WHEN true THEN 'Si' ELSE 'No' END AS "poseeConvenio",
@@ -2539,7 +2539,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       CASE pr."pagoPP" WHEN 0 THEN 'No declarado' WHEN 1 THEN 'Declarado' WHEN 2 THEN 'Pagado' END AS "pagoPP", pr."montoPP", 
       CASE pr."pagoAE" WHEN 0 THEN 'No declarado' WHEN 1 THEN 'Declarado' WHEN 2 THEN 'Pagado' END AS "pagoMUL", pr."montoMUL", 
       pr.progreso
-      FROM cobranz c INNER JOIN pagosramos pr ON c.id_registro_municipal = pr.id_registro_municipal;`,  
+      FROM cobranz c INNER JOIN pagosramos pr ON c.id_registro_municipal = pr.id_registro_municipal;`,
   GET_CHARGINGS_BY_WALLET_AR: `WITH cobranz AS (
       SELECT id_registro_municipal, id_cobranza AS "idCobranza", cob.id_cartera AS "idCartera", cob.contactado, estatus_telefonico as "estatusTelefonico",
       observaciones ,
