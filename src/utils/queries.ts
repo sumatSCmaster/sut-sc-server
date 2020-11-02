@@ -2467,7 +2467,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       SELECT id_registro_municipal, CASE cob.contactado WHEN true THEN 'Si' ELSE 'No' END AS contactado, estatus_telefonico as "estatusTelefonico",
         observaciones ,
         CASE posee_convenio WHEN true THEN 'Si' ELSE 'No' END AS "poseeConvenio",
-        CASE fiscalizar WHEN true THEN 'Si', ELSE 'No' END as fiscalizar, rating,
+        CASE fiscalizar WHEN true THEN 'Si' ELSE 'No' END as fiscalizar, rating,
         estimacion_pago "estimacionPago", u.nombre_completo AS "nombreCompleto"
           FROM impuesto.cobranza cob 
           LEFT JOIN impuesto.cartera cart ON cart.id_cartera = cob.id_cartera 
@@ -2625,7 +2625,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
         SELECT id_registro_municipal, CASE cob.contactado WHEN true THEN 'Si' ELSE 'No' END AS contactado, estatus_telefonico as "estatusTelefonico",
         observaciones ,
         CASE posee_convenio WHEN true THEN 'Si' ELSE 'No' END AS "poseeConvenio",
-        CASE fiscalizar WHEN true THEN 'Si', ELSE 'No' END as fiscalizar, rating,
+        CASE fiscalizar WHEN true THEN 'Si' ELSE 'No' END as fiscalizar, rating,
         estimacion_pago "estimacionPago", u.nombre_completo AS "nombreCompleto"
             FROM impuesto.cobranza cob 
             LEFT JOIN impuesto.cartera cart ON cart.id_cartera = cob.id_cartera 
