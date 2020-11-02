@@ -31,7 +31,7 @@ export const createRequestForm = async (procedure, client: PoolClient): Promise<
 
 export const createCertificate = async (procedure, client: PoolClient): Promise<string> => {
   const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION, [procedure.idTramite])).rows[0];
-  const UTMM = (await client.query(queries.GET_UTMM_VALUE_FORMAT)).rows[0].valor;
+  const PETRO = (await client.query(queries.GET_PETRO_VALUE_FORMAT)).rows[0].valor;
   const costoFormateado = tramite?.costo ? new Intl.NumberFormat('de-DE').format(parseFloat(tramite?.costo)) : '0';
   const procedureData = {
     id: procedure.idTramite,
@@ -43,7 +43,7 @@ export const createCertificate = async (procedure, client: PoolClient): Promise<
     datos: procedure.datos || tramite.datos,
     estado: 'finalizado',
     tipoTramite: tramite.tipotramite,
-    UTMM,
+    PETRO,
     costoFormateado,
     bancos: (await getAllBanks()).banks,
   };
@@ -72,7 +72,7 @@ export const createFiningForm = async (procedure, client: PoolClient): Promise<s
 export const createFiningCertificate = async (procedure, client: PoolClient): Promise<string> => {
   const multa = (await client.query(queries.GET_FINING_STATE_AND_TYPE_INFORMATION, [procedure.idTramite])).rows[0];
   const costoFormateado = new Intl.NumberFormat('de-DE').format(parseFloat(multa.costo));
-  const UTMM = new Intl.NumberFormat('de-DE').format(parseFloat(multa.costo) / multa.datos.funcionario.utmm);
+  const PETRO = new Intl.NumberFormat('de-DE').format(parseFloat(multa.costo) / multa.datos.funcionario.petro);
   const finingData = {
     id: procedure.idTramite,
     fecha: multa.fechacreacion,
@@ -85,7 +85,7 @@ export const createFiningCertificate = async (procedure, client: PoolClient): Pr
     datos: procedure.datos || multa.datos,
     estado: 'finalizado',
     tipoTramite: multa.tipotramite,
-    UTMM,
+    PETRO,
   };
   const form = (await createForm(finingData, client)) as string;
   return form;
@@ -96,7 +96,7 @@ export const createMockCertificate = async (procedure) => {
   try {
     const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION_MOCK, [procedure])).rows[0];
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${tramite.id}`, { errorCorrectionLevel: 'H' });
-    const UTMM = (await client.query(queries.GET_UTMM_VALUE)).rows[0].valor_en_bs;
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const datosCertificado = {
       id: tramite.id,
       fecha: tramite.fechacreacion,
@@ -117,7 +117,7 @@ export const createMockCertificate = async (procedure) => {
       ...datosCertificado,
       cache: false,
       moment: require('moment'),
-      UTMM,
+      PETRO,
       QR: linkQr,
       written,
     });

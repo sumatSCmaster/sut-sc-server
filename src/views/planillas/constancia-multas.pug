@@ -34,15 +34,15 @@ block content
       div(style={'font-size':'20px', 'font-weight':'bold'}).row-constancy
         div(style={'text-align':'start', }) Descripción
         div(style={'text-align':'center'}) Fecha
-        div(style={'text-align':'center'}) Monto (UTMM)
+        div(style={'text-align':'center'}) Monto (PETRO)
         div(style={'text-align':'center'}) Monto (Bs)
       hr.divider
       div.row-constancy
         div(style={'text-align':'start' }) #{datos.funcionario.motivo}
         div(style={'text-align':'center' }) #{moment(fecha).format('DD/MM/YYYY')}
-        div(style={'text-align':'center' }) #{datos.funcionario.utmm}
+        div(style={'text-align':'center' }) #{datos.funcionario.petro}
         div(style={'text-align':'center' }) #{costoFormateado}    
   div(style={'text-align':'start', 'width': '90%'})
     p
       b Nota:
-      | El precio de la Unidad Tributaria Municipal de Maracaibo (UTMM) para la fecha es de Bs. #{UTMM}
+      | El precio de la Unidad Tributaria Municipal de Maracaibo (PETRO) para la fecha es de Bs. #{PETRO}

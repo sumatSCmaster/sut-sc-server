@@ -13,7 +13,22 @@ const pool = Pool.getInstance();
 
 const router = Router();
 
-const uploadFile = (req, res, next) => {
+const checkInm = async (id) => {
+  const client = await pool.connect();
+  try {
+    if ((await client.query('SELECT 1 FROM inmueble_urbano WHERE cod_catastral = $1', [id])).rowCount > 0) {
+      console.log('supalo');
+      return new Error('Ya existe un inmueble con ese codigo');
+    } else {
+      console.log('supalo2');
+      return;
+    }
+  } finally {
+    client.release();
+  }
+};
+
+const uploadFile = async (req, res, next) => {
   // if (process.env.NODE_ENV === 'development') {
   switch (req.params.type) {
     case 'avatar':
@@ -39,6 +54,23 @@ const uploadFile = (req, res, next) => {
         storage: diskStorage('tramites/' + req.params.id),
         fileFilter: photoFilter,
       }).array('boleta')(req, res, next);
+      break;
+    case 'inmueble':
+      try {
+        if (JSON.parse(req.query.nuevoInmueble)) {
+          const resp = await checkInm(req.params.id);
+          if (resp instanceof Error) {
+            res.status(500).send({ status: 500, message: resp.message });
+          }
+        }
+        multer({
+          storage: diskStorage('inmueble/' + req.params.id),
+          fileFilter: photoFilter,
+        }).array('inmueble')(req, res, next);
+      } catch (e) {
+        console.log('sera cors?', res.headersSent);
+        next(e);
+      }
       break;
     default:
       res.status(500).json({

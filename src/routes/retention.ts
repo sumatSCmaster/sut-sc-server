@@ -1,7 +1,7 @@
 import { Router } from 'express';
 
 import { fulfill } from '@utils/resolver';
-import { processRetentionFile, getRetentionMonths, insertRetentions, getRetentionAgents, updateRetentionAgentStatus, createRetentionAgent, updateRetentionAgentRIM } from '@helpers/retention';
+import { processRetentionFile, getRetentionMonths, insertRetentions, getRetentionAgents, updateRetentionAgentStatus, createRetentionAgent, updateRetentionAgentRIM, getRetentionChargingsForDocumentAndReference } from '@helpers/retention';
 import { authenticate } from 'passport';
 import { Usuario } from '@root/interfaces/sigt';
 
@@ -16,6 +16,13 @@ const isRetentionAgent = (req, res, next) => {
 router.get('/', isRetentionAgent, authenticate('jwt'), async (req, res) => {
   const { doc, ref, pref } = req.query;
   const [err, data] = await fulfill(getRetentionMonths({ document: doc, reference: ref ? ref : null, docType: pref, user: req.user as Usuario }));
+  if (err) res.status(err.status).json(err);
+  if (data) res.status(data.status).json(data);
+});
+
+router.get('/charges/:rif/:rim', authenticate('jwt'), async (req, res) => {
+  const { rif: document, rim: reference } = req.params;
+  const [err, data] = await fulfill(getRetentionChargingsForDocumentAndReference({ document, reference }));
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
 });

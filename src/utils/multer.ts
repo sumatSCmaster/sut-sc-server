@@ -5,6 +5,7 @@ import fs from 'fs';
 import S3Client from './s3';
 import multerS3 from 'multer-s3';
 import switchcase from './switch';
+// import { checkInm } from '@root/routes/file';
 
 export const diskStorage = (type: string): multer.StorageEngine =>
   switchcase({
@@ -26,12 +27,12 @@ export const diskStorage = (type: string): multer.StorageEngine =>
     }),
     production: multerS3({
       s3: S3Client,
-      bucket: 'sut-maracaibo',
+      bucket: process.env.BUCKET_NAME,
       acl: 'public-read',
       key: function (req, file, cb) {
         console.log('file', file);
-        if (type.startsWith('tramites')) {
-          cb(null, `${req.params.id}/${file.originalname}`);
+        if (type.startsWith('tramites') || type.startsWith('inmueble')) {
+          cb(null, `${type}/${file.originalname}`);
         } else {
           const hex = crypto.randomBytes(16);
           cb(null, 1 + hex.toString('hex') + '.png');
@@ -46,3 +47,17 @@ export const photoFilter = (req, file, cb) => {
   }
   cb(null, true);
 };
+
+// export const estateFilter = (req, file, cb) => {
+//   if (!file.originalname.match(/\.(jpg|jpeg|png|gif|xls|xlsx|pdf)$/)) {
+//     cb(null, false);
+//   }
+//   if (JSON.parse(req.query.nuevoInmueble)) {
+//     checkInm(req.params.id)
+//       .then((res) => cb(null, !res))
+//       .catch((err) => cb(null, false));
+//     // if (res instanceof Error){
+//     //   throw res
+//     // }
+//   }
+// };

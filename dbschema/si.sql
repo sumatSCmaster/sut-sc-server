@@ -1103,7 +1103,7 @@ CREATE TABLE public.tipo_tramite (
     certificado character varying,
     utiliza_informacion_catastral boolean,
     pago_previo boolean,
-    costo_utmm numeric,
+    costo_petro numeric,
     planilla_rechazo text
 );
 
@@ -1562,23 +1562,23 @@ $$;
 ALTER FUNCTION public.revisar_pagos_fin_de_dia() OWNER TO pooijyzcnnfrso;
 
 --
--- Name: tipos_tramites_costo_utmm_trigger_func(); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
+-- Name: tipos_tramites_costo_petro_trigger_func(); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
 --
 
-CREATE FUNCTION public.tipos_tramites_costo_utmm_trigger_func() RETURNS trigger
+CREATE FUNCTION public.tipos_tramites_costo_petro_trigger_func() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
     nuevoCosto numeric;
     BEGIN
         nuevoCosto = NEW.valor_en_bs;
-        UPDATE tipo_tramite SET costo_base = (nuevoCosto * costo_utmm) WHERE costo_utmm IS NOT NULL;
+        UPDATE tipo_tramite SET costo_base = (nuevoCosto * costo_petro) WHERE costo_petro IS NOT NULL;
         RETURN NEW;
     END
 $$;
 
 
-ALTER FUNCTION public.tipos_tramites_costo_utmm_trigger_func() OWNER TO pooijyzcnnfrso;
+ALTER FUNCTION public.tipos_tramites_costo_petro_trigger_func() OWNER TO pooijyzcnnfrso;
 
 --
 -- Name: tramite_eventos_trigger_func(); Type: FUNCTION; Schema: public; Owner: pooijyzcnnfrso
@@ -4613,7 +4613,7 @@ CREATE TABLE public.ordenanza_tramite (
     id_ordenanza_tramite integer NOT NULL,
     id_tramite integer NOT NULL,
     id_tarifa integer NOT NULL,
-    utmm numeric,
+    petro numeric,
     valor_calc numeric,
     factor character varying,
     factor_value numeric,
@@ -4671,7 +4671,7 @@ CREATE VIEW public.ordenanzas_instancias_tramites AS
     o.descripcion AS ordenanza,
     ot.factor,
     ot.factor_value AS "factorValue",
-    ot.utmm,
+    ot.petro,
     ot.valor_calc AS "valorCalc",
     ot.costo_ordenanza AS "costoOrdenanza"
    FROM ((public.ordenanza_tramite ot
@@ -10659,7 +10659,7 @@ COPY public.ordenanza (id_ordenanza, descripcion, tarifa, id_valor, habilitado) 
 -- Data for Name: ordenanza_tramite; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
-COPY public.ordenanza_tramite (id_ordenanza_tramite, id_tramite, id_tarifa, utmm, valor_calc, factor, factor_value, costo_ordenanza) FROM stdin;
+COPY public.ordenanza_tramite (id_ordenanza_tramite, id_tramite, id_tarifa, petro, valor_calc, factor, factor_value, costo_ordenanza) FROM stdin;
 \.
 
 
@@ -11087,7 +11087,7 @@ COPY public.template_certificado (id_template_certificado, id_tipo_tramite, link
 -- Data for Name: tipo_tramite; Type: TABLE DATA; Schema: public; Owner: pooijyzcnnfrso
 --
 
-COPY public.tipo_tramite (id_tipo_tramite, id_institucion, nombre_tramite, costo_base, sufijo, nombre_corto, formato, planilla, certificado, utiliza_informacion_catastral, pago_previo, costo_utmm, planilla_rechazo) FROM stdin;
+COPY public.tipo_tramite (id_tipo_tramite, id_institucion, nombre_tramite, costo_base, sufijo, nombre_corto, formato, planilla, certificado, utiliza_informacion_catastral, pago_previo, costo_petro, planilla_rechazo) FROM stdin;
 8	2	Permiso de Construccion	\N	pd	Permiso de Construccion	SAGAS-004	sagas-solt-PC	sagas-cert-PC	f	f	\N	\N
 10	2	Permiso de Habitabilidad con Instalaciones de Servicio de Gas	\N	pd	Habitabilidad con Instalacion de Servicio de Gas	SAGAS-005	sagas-solt-Hab	sagas-cert-PH	t	f	\N	\N
 11	2	Permiso de Habitabilidad sin Instalaciones de Servicio de Gas	\N	pd	Habitabilidad sin Instalacion de Servicio de Gas	SAGAS-005	sagas-solt-Hab	sagas-cert-PH	t	f	\N	\N
@@ -11506,7 +11506,7 @@ COPY public.usuario (id_usuario, nombre_completo, nombre_de_usuario, direccion, 
 
 COPY public.valor (id_valor, descripcion, valor_en_bs) FROM stdin;
 1	Bolivares	1
-2	UTMM	500000
+2	PETRO	500000
 3	Dolar	200000
 \.
 
@@ -15003,10 +15003,10 @@ CREATE TRIGGER insert_notificaciones_trigger BEFORE INSERT ON public.notificacio
 
 
 --
--- Name: valor tipos_tramites_costo_utmm_trig; Type: TRIGGER; Schema: public; Owner: pooijyzcnnfrso
+-- Name: valor tipos_tramites_costo_petro_trig; Type: TRIGGER; Schema: public; Owner: pooijyzcnnfrso
 --
 
-CREATE TRIGGER tipos_tramites_costo_utmm_trig AFTER UPDATE ON public.valor FOR EACH ROW WHEN (((new.descripcion)::text = 'UTMM'::text)) EXECUTE FUNCTION public.tipos_tramites_costo_utmm_trigger_func();
+CREATE TRIGGER tipos_tramites_costo_petro_trig AFTER UPDATE ON public.valor FOR EACH ROW WHEN (((new.descripcion)::text = 'PETRO'::text)) EXECUTE FUNCTION public.tipos_tramites_costo_petro_trigger_func();
 
 
 --

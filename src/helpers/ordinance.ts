@@ -2,6 +2,7 @@ import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { PoolClient } from 'pg';
+import { fixatedAmount } from './settlement';
 
 const pool = Pool.getInstance();
 
@@ -27,12 +28,12 @@ export const getOrdinancesByInstitution = async (idInstitucion) => {
 export const getOrdinancesByProcedure = async (id) => {
   const client = await pool.connect();
   try {
+    
     const ordenanzasByProcedure = await client.query(queries.ORDINANCES_WITHOUT_CODCAT_PROCEDURE, [id]);
     let total = 0;
     let costo;
     const calculated = ordenanzasByProcedure.rows.map((row) => {
-      costo =
-        row.formula === null ? row.tarifaOrdenanza * row.valorEnBs : new Function(`use strict; return ${row.formula.replace(/\$\$TARIFA\$\$/g, row.tarifa)}`);
+      costo = row.formula === null ? fixatedAmount(row.tarifaOrdenanza * row.valorEnBs) : new Function(`use strict; return ${row.formula.replace(/\$\$TARIFA\$\$/g, row.tarifa)}`);
       total += costo;
       return {
         id: row.id,
@@ -76,10 +77,7 @@ export const getOrdinancesByProcedureWithCodCat = async (id, cod) => {
     let costo;
     let { metrosConstruccion } = inmueble.rows[0];
     const calculated = ordenanzasByProcedure.rows.map((row) => {
-      costo =
-        row.formula === null
-          ? +row.tarifaOrdenanza * +row.valorEnBs * +metrosConstruccion
-          : new Function(`use strict; return ${row.formula.replace(/\$\$TARIFA\$\$/g, row.tarifa)}`);
+      costo = row.formula === null ? +row.tarifaOrdenanza * +row.valorEnBs * +metrosConstruccion : new Function(`use strict; return ${row.formula.replace(/\$\$TARIFA\$\$/g, row.tarifa)}`);
       total += costo;
       return {
         id: row.id,
@@ -135,10 +133,10 @@ export const disableOrdinance = async (idOrdenanza) => {
   }
 };
 
-export const updateOrdinance = async (idOrdenanza, newUtmm) => {
+export const updateOrdinance = async (idOrdenanza, newPetro) => {
   const client = await pool.connect();
   try {
-    const res = await client.query(queries.UPDATE_ORDINANCE, [idOrdenanza, newUtmm]);
+    const res = await client.query(queries.UPDATE_ORDINANCE, [idOrdenanza, newPetro]);
     return res.rowCount > 0
       ? {
           status: 200,
@@ -184,7 +182,7 @@ export const createOrdinance = async (ordinance) => {
   try {
     const res = await client.query(queries.CREATE_ORDINANCE, [
       ordinance.nombreOrdenanza,
-      ordinance.precioUtmm,
+      ordinance.precioPetro,
       ordinance.idTipoTramite,
       ordinance.utilizaCodcat ? ordinance.utilizaCodcat : false,
       ordinance.utilizaVariable ? ordinance.idVariable : null,

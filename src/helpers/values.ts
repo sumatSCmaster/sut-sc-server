@@ -3,41 +3,42 @@ import queries from '@utils/queries';
 import { errorMessageGenerator } from './errors';
 const pool = Pool.getInstance();
 
-export const updateUtmmValue = async (value) => {
+export const updatePetroValue = async (value) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const result = (await client.query(queries.UPDATE_UTMM_VALUE, [value])).rows[0];
+    console.log(value);
+    const result = (await client.query(queries.UPDATE_PETRO_VALUE, [value])).rows[0];
     await client.query('COMMIT');
     return {
       status: 200,
-      message: 'Se ha actualizado el valor de la UTMM',
-      utmm: result.valor_en_bs,
+      message: 'Se ha actualizado el valor del PETRO',
+      petro: result.valor_en_bs,
     };
   } catch (e) {
     client.query('ROLLBACK');
     throw {
       status: 500,
-      error: errorMessageGenerator(e) || 'Error en actualizacion del valor de la UTMM',
+      error: errorMessageGenerator(e) || 'Error en actualizacion del valor de la PETRO',
     };
   } finally {
     client.release();
   }
 };
 
-export const getUtmmValue = async () => {
+export const getPetroValue = async () => {
   const client = await pool.connect();
   try {
-    const result = (await client.query(queries.GET_UTMM_VALUE)).rows[0];
+    const result = (await client.query(queries.GET_PETRO_VALUE)).rows[0];
     return {
       status: 200,
-      message: 'Se ha obtenido el valor de la UTMM',
-      utmm: result.valor_en_bs,
+      message: 'Se ha obtenido el valor de la PETRO',
+      petro: result.valor_en_bs,
     };
   } catch (e) {
     throw {
       status: 500,
-      error: errorMessageGenerator(e) || 'Error en obtencion del valor de la UTMM',
+      error: errorMessageGenerator(e) || 'Error en obtencion del valor de la PETRO',
     };
   } finally {
     client.release();

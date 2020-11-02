@@ -122,6 +122,7 @@ const reversePaymentCase = switchcase({
       await client.query(queries.DELETE_FISCAL_CREDIT_BY_APPLICATION_ID, [id]);
       await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [id, REVERSARPAGO]);
       await client.query(queries.SET_NON_APPROVED_STATE_FOR_APPLICATION, [id]);
+      await client.query(queries.NULLIFY_AMOUNT_IN_REVERSED_APPLICATION, [id]);
       return await getApplicationsAndSettlementsByIdNots({ id, user: null }, client);
     } catch (e) {
       throw e;
@@ -129,19 +130,22 @@ const reversePaymentCase = switchcase({
   },
   CONVENIO: async ({ id, client }: { id: number; client: PoolClient }) => {
     const REVERSARPAGO = 'reversarpago_fraccion';
+    const REVERSARPAGO_SOLICITUD = 'reversarpago_solicitud';
     try {
       await client.query(queries.DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT, [id, 'CONVENIO']);
       await client.query(queries.UPDATE_FRACTION_STATE, [id, REVERSARPAGO]);
       await client.query(queries.SET_NON_APPROVED_STATE_FOR_AGREEMENT_FRACTION, [id]);
+      await client.query(queries.NULLIFY_AMOUNT_IN_REVERSED_FRACTION, [id]);
 
       const application = await getApplicationsAndSettlementsByIdNots(
         { id: (await client.query('SELECT id_solicitud FROM impuesto.fraccion INNER JOIN impuesto.convenio USING (id_convenio) WHERE id_fraccion = $1', [id])).rows[0].id_solicitud, user: null },
         client
       );
       await client.query(queries.DELETE_FISCAL_CREDIT_BY_APPLICATION_ID, [id]);
-      if (application.state === 'finalizado') {
-        await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id, REVERSARPAGO]);
-        await client.query(queries.SET_NON_APPROVED_STATE_FOR_APPLICATION, [id]);
+      if (application.estado === 'finalizado') {
+        await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id, REVERSARPAGO_SOLICITUD]);
+        await client.query(queries.SET_NON_APPROVED_STATE_FOR_APPLICATION, [application.id]);
+        await client.query(queries.NULLIFY_AMOUNT_IN_REVERSED_APPLICATION, [application.id]);
       }
       return await getAgreementFractionById({ id });
     } catch (e) {
@@ -227,11 +231,10 @@ export const approveSinglePayment = async (id, user) => {
         pago.concepto === 'RETENCION'
           ? (
               await client.query(
-                `select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, pago.id_procedimiento AS idProcedimiento, p
-      ago.referencia, pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, solicitud.aprobado as "solicitudAprobada", pago.concepto, contribuyente.tipo_documento AS nacionalidad, contribuyente.documento from pago
+                `select pago.id_pago AS id, pago.monto, pago.aprobado, pago.id_banco AS idBanco, pago.id_procedimiento AS idProcedimiento, pago.referencia, pago.fecha_de_pago AS fechaDePago, pago.fecha_de_aprobacion AS fechaDeAprobacion, solicitud.aprobado as "solicitudAprobada", pago.concepto, contribuyente.tipo_documento AS nacionalidad, contribuyente.documento from pago
                       INNER JOIN impuesto.solicitud ON pago.id_procedimiento = solicitud.id_solicitud
                       INNER JOIN impuesto.contribuyente ON solicitud.id_contribuyente = contribuyente.id_contribuyente
-                      where pago.id_pago = idPago`,
+                      where pago.id_pago = $1`,
                 [id]
               )
             ).rows[0]

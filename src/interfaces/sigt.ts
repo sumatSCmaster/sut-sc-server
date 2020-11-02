@@ -86,7 +86,7 @@ export interface TipoTramite {
   secciones?: Seccion[];
   sufijo?: string;
   necesitaCodCat: boolean;
-  utmm?: number;
+  petro?: number;
 }
 
 export interface Parroquia {
@@ -189,6 +189,7 @@ export interface Liquidacion {
   ramo: string;
   fecha: Fecha;
   monto: number;
+  montoPetro: number;
   certificado?: string;
   desglose?: object;
   recibo?: string;

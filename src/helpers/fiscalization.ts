@@ -37,7 +37,7 @@ export const createFiscalization = async (user ,{typeDoc, doc, rim}) => {
         const newFisc = (await client.query(queries.GET_FISCALIZATIONS_ID, [fiscalization.rows[0].idFiscalizacion])).rows[0]
 
         const socket = users.get(`${user?.nacionalidad}-${user?.cedula}`);
-        socket?.to('tabla-fiscalizacion').emit('NEW_FISCALIZATION', newFisc) 
+        socket?.broadcast.to('tabla-fiscalizacion').emit('NEW_FISCALIZATION', newFisc) 
 
         return { message: 'Fiscalizacion creada.', fiscalizacion: newFisc, status: 200 }
     } catch (err) {
@@ -56,7 +56,7 @@ export const updateOneFiscalization = async (user: any, { idFiscalizacion, idUsu
         
 
         const socket = users.get(`${user?.nacionalidad}-${user?.cedula}`);
-        socket?.to('tabla-fiscalizacion').emit('UPDATE_FISCALIZATION', newFisc)        
+        socket?.broadcast.to('tabla-fiscalizacion').broadcast.emit('UPDATE_FISCALIZATION', newFisc)        
         await client.query('COMMIT;')
         return { status: 200, fiscalizacion: newFisc, message: 'Cobranza actualizada.' }
     } catch (err) {

@@ -116,12 +116,12 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
                     ordenanza: ord.ordenanza,
                     factor: ord.factor,
                     factorValue: +ord.factorValue,
-                    utmm: +ord.utmm,
+                    petro: +ord.petro,
                     valorCalc: +ord.valorCalc,
                   };
                 }),
                 totalBs: ordinances.reduce((p, n) => p + +n.valorCalc, 0),
-                totalUtmm: ordinances.reduce((p, n) => p + +n.utmm, 0),
+                totalPetro: ordinances.reduce((p, n) => p + +n.petro, 0),
               }
             : undefined,
         };
@@ -186,6 +186,7 @@ const getSettlementInstances = async (user, client: PoolClient) => {
         nombreCorto: el.descripcion_corta,
         fecha: { month: el.datos.fecha.month, year: el.datos.fecha.year },
         monto: el.monto,
+        montoPetro: el.monto_petro,
         certificado: el.certificado,
         recibo: el.recibo,
         pagado: el.pagado,
@@ -235,12 +236,12 @@ const getProcedureInstancesByInstitution = async (institution, tipoUsuario, clie
                     ordenanza: ord.ordenanza,
                     factor: ord.factor,
                     factorValue: +ord.factorValue,
-                    utmm: +ord.utmm,
+                    petro: +ord.petro,
                     valorCalc: +ord.valorCalc,
                   };
                 }),
                 totalBs: ordinances.reduce((p, n) => p + +n.valorCalc, 0),
-                totalUtmm: ordinances.reduce((p, n) => p + +n.utmm, 0),
+                totalPetro: ordinances.reduce((p, n) => p + +n.petro, 0),
               }
             : undefined,
         };
@@ -293,7 +294,7 @@ const getSectionByProcedure = async (procedure, client: PoolClient): Promise<Tip
         id: al.id_tipo_tramite,
         titulo: al.nombre_tramite,
         costo: al.costo_base,
-        utmm: al.costo_utmm,
+        petro: al.costo_petro,
         pagoPrevio: al.pago_previo,
         sufijo: al.sufijo,
         necesitaCodCat: al.utiliza_informacion_catastral,
@@ -346,7 +347,7 @@ export const updateProcedureCost = async (id: string, newCost: string): Promise<
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    const res = (await client.query(queries.GET_UTMM_VALUE)).rows[0];
+    const res = (await client.query(queries.GET_PETRO_VALUE)).rows[0];
     const response = (await client.query(queries.UPDATE_PROCEDURE_COST, [id, newCost, parseFloat(newCost) * parseFloat(res.valor_en_bs)])).rows[0];
     const newProcedure = (await client.query(queries.GET_ONE_PROCEDURE, [id])).rows[0];
     const procedure: Partial<TipoTramite> = {
@@ -625,7 +626,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
       ordenanzas = {
         items: await insertOrdinancesByProcedure(bill.items, procedure.idTramite, procedure.tipoTramite, client),
         totalBs: bill.totalBs,
-        totalUtmm: bill.totalUtmm,
+        totalPetro: bill.totalPetro,
       };
     }
     const nextEvent = await getNextEventForProcedure(procedure, client);
@@ -651,7 +652,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
           : await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
     } else if (!![28, 36].find((type) => type === resources.tipoTramite)) {
       const { aprobado } = procedure;
-      datos.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
+      datos.funcionario.pago = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
         monto: row.monto,
         formaPago: row.metodo_pago,
         banco: row.nombre,
@@ -994,14 +995,14 @@ const insertOrdinancesByProcedure = async (ordinances, id, type, client: PoolCli
           throw new Error('Error en validación del valor calculado');
         }
       }
-      const response = (await client.query(queries.CREATE_ORDINANCE_FOR_PROCEDURE, [id, type, el.ordenanza, el.utmm, el.valorCalc, el.factor, el.factorValue, el.costoOrdenanza])).rows[0];
+      const response = (await client.query(queries.CREATE_ORDINANCE_FOR_PROCEDURE, [id, type, el.ordenanza, el.petro, el.valorCalc, el.factor, el.factorValue, el.costoOrdenanza])).rows[0];
       const ordinance = {
         id: key,
         idTramite: response.id_tramite,
         ordenanza: el.ordenanza,
         factor: response.factor,
         factorValue: +response.factor_value,
-        utmm: +response.utmm,
+        petro: +response.petro,
         valorCalc: +response.valor_calc,
       };
       return ordinance;
@@ -1117,7 +1118,7 @@ export const processProcedureAnalist = async (procedure, user: Usuario, client: 
       ordenanzas = {
         items: await insertOrdinancesByProcedure(bill.items, procedure.idTramite, procedure.tipoTramite, client),
         totalBs: bill.totalBs,
-        totalUtmm: bill.totalUtmm,
+        totalPetro: bill.totalPetro,
       };
     }
     const nextEvent = await getNextEventForProcedure(procedure, client);
