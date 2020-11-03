@@ -1109,12 +1109,13 @@ export const approveAllLicenses = async (idArray: number[], user: Usuario): Prom
     const tramites = await Promise.all(
       idArray.map(async (id) => {
         const procedure: Partial<Tramite | any> = await getProcedureById({ id, client });
-        console.log(procedure);
         procedure.idTramite = procedure.id;
+        procedure.datos = procedure.datos.funcionario;
         procedure.revision = {
           aprobado: true,
           observaciones: 'Aprobación masiva',
         };
+        console.log('Soy retrasao mental',procedure);
         const tramite = await reviseProcedureForMassiveApproval(procedure, client);
         return tramite;
       })
