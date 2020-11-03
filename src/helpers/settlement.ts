@@ -5286,7 +5286,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
         fechaVencimiento: moment(el.fecha_vencimiento).format('DD/MM/YYYY'),
         motivo: el.descripcion_corta,
         estado: paymentState(el.state) || 'PAGADO',
-        montoPorcion: fixatedAmount(el.monto),
+        montoPorcion: fixatedAmount(el.monto) || fixatedAmount(el.monto_petro * PETRO),
         // montoPorcion: activity && parseInt(activity.nu_ut) * PETRO > parseFloat(el.monto_declarado) ? parseInt(activity.nu_ut) * PETRO : parseFloat(el.monto_declarado),
       };
     });
