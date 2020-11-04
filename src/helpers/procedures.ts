@@ -397,7 +397,7 @@ export const getFieldsForValidations = async ({ id, type }) => {
   }
 };
 
-export const getProcedureById = async ({ id, client }: { id: number; client: PoolClient }) => {
+export const getProcedureById = async ({ id, client }: { id: number; client: PoolClient }): Promise<Partial<Tramite>> => {
   try {
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [id])).rows[0];
     const tramite: Partial<Tramite> = {
@@ -981,6 +981,154 @@ export const inspectProcedure = async (procedure, user: Usuario) => {
       status: error.status || 500,
       error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || error.message || 'Error al cargar la inspección correspondiente al tramite',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+const reviseProcedureForMassiveApproval = async (procedure: Partial<Tramite | any>, client: PoolClient): Promise<Partial<Tramite>> => {
+  const { aprobado, observaciones } = procedure.revision;
+  let dir, respState, datos;
+  try {
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.idTramite])).rows[0];
+
+    if (!procedure.hasOwnProperty('revision')) {
+      throw { status: 403, message: 'No es posible actualizar este estado' };
+    }
+
+    if (!procedure.hasOwnProperty('sufijo')) {
+      procedure.sufijo = resources.sufijo;
+    }
+    const nextEvent = await getNextEventForProcedure(procedure, client);
+
+    if (observaciones && !aprobado) {
+      const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
+      prevData.datos.funcionario = { ...prevData.datos.funcionario, observaciones };
+      datos = prevData.datos;
+    }
+
+    if (procedure.sufijo === 'bc' && aprobado) {
+      const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
+      prevData.datos.funcionario = { ...procedure.datos.funcionario, observaciones };
+      datos = prevData.datos;
+      await approveContributorBenefits({ data: datos, client });
+    }
+
+    if (resources.tipoTramite === 28 || resources.tipoTramite === 36) {
+      const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
+      prevData.datos.funcionario = { ...procedure.datos };
+      datos = prevData.datos;
+      datos.idTramite = procedure.idTramite;
+      datos.funcionario.estadoLicencia = resources.tipoTramite === 28 ? 'PERMANENTE' : 'TEMPORAL';
+      datos.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
+        monto: row.monto,
+        formaPago: row.metodo_pago,
+        banco: row.nombre,
+        fecha: row.fecha_de_pago,
+        nro: row.referencia,
+      }));
+    }
+
+    if (!![29, 30, 31, 32, 33, 34, 35, 37].find((el) => el === resources.tipoTramite)) {
+      const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
+      prevData.datos.funcionario = { ...prevData.datos.funcionario, ...procedure.datos };
+      datos = prevData.datos;
+      datos.idTramite = procedure.idTramite;
+      datos.tipoTramite = resources.tipoTramite;
+    }
+
+    if (procedure.sufijo === 'ompu') {
+      if (aprobado) {
+        dir = await createCertificate(procedure, client);
+        respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, dir, null]);
+      } else {
+        respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
+      }
+    } else if (!!['lic', 'lict'].find((el) => el === procedure.sufijo)) {
+      if (procedure.hasOwnProperty('rebotado')) {
+        respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent['rebotar'], datos || null, null, null]);
+      } else {
+        if (aprobado && nextEvent[aprobado].startsWith('aprobar')) {
+          datos = !![29, 30, 31, 32].find((el) => el === resources.tipoTramite) ? await installLiquorLicense(datos, client) : await renewLiquorLicense(datos, client);
+          procedure.datos = datos;
+          dir = await createCertificate(procedure, client);
+          respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, dir, null]);
+        } else {
+          respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
+        }
+      }
+    } else {
+      if (aprobado) {
+        if (resources.tipoTramite === 28 || resources.tipoTramite === 36) procedure.datos = await approveContributorAELicense({ data: datos, client });
+        if (procedure.sufijo !== 'bc' && procedure.sufijo !== 'sup') dir = await createCertificate(procedure, client);
+        respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, aprobado]);
+      } else {
+        respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
+      }
+    }
+
+    const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
+    const tramite: Partial<Tramite> = {
+      id: response.id,
+      tipoTramite: response.tipotramite,
+      estado: response.state,
+      datos: response.datos,
+      planilla: response.planilla,
+      certificado: dir,
+      costo: response.costo,
+      fechaCreacion: response.fechacreacion,
+      fechaCulminacion: response.fechaculminacion,
+      codigoTramite: response.codigotramite,
+      usuario: response.usuario,
+      nombreLargo: response.nombrelargo,
+      nombreCorto: response.nombrecorto,
+      nombreTramiteLargo: response.nombretramitelargo,
+      nombreTramiteCorto: response.nombretramitecorto,
+      aprobado: response.aprobado,
+    };
+    // await sendNotification(user, `Se realizó la revisión de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
+    // sendEmail({
+    //   ...tramite,
+    //   codigo: tramite.codigoTramite,
+    //   nombreUsuario: resources.nombreusuario,
+    //   nombreCompletoUsuario: resources.nombrecompleto,
+    //   estado: respState.rows[0].state,
+    // });
+    return tramite;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const approveAllLicenses = async (idArray: number[], user: Usuario): Promise<any> => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const tramites = await Promise.all(
+      idArray.map(async (id) => {
+        const procedure: Partial<Tramite | any> = await getProcedureById({ id, client });
+        procedure.idTramite = procedure.id;
+        procedure.datos = procedure.datos.funcionario;
+        procedure.revision = {
+          aprobado: true,
+          observaciones: 'Aprobación masiva',
+        };
+        console.log('Soy retrasao mental',procedure);
+        const tramite = await reviseProcedureForMassiveApproval(procedure, client);
+        return tramite;
+      })
+    );
+    await client.query('COMMIT');
+    return { status: 200, message: 'Licencias aprobadas satisfactoriamente', tramites };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: error.status || 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al realizar la aprobación masiva de licencias',
     };
   } finally {
     client.release();

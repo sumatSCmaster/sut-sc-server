@@ -6,7 +6,7 @@ import { authenticate } from 'passport';
 const router = Router();
 
 router.post('/charging', authenticate('jwt'), async (req, res) => {
-  const [error, data] = await fulfill(createAllChargings(req.body.cant_top, req.body.cant_ar));
+  const [error, data] = await fulfill(createAllChargings(req.body.cant_top, req.body.cant_ar, req.body.cant_per_wallet));
   if (error) res.status(500).json({ message: error.message, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
 });

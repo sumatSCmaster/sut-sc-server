@@ -44,12 +44,12 @@ const getRatings: (stars: number) => (AR: boolean) => (chargings: any[], WALLET_
   ];
 };
 
-export const createAllChargings = async (WALLET_AMOUNT = 20, WALLET_AMOUNT_AR = 5) => {
-  await createChargings(WALLET_AMOUNT);
-  return await createChargingsAR(WALLET_AMOUNT_AR);
+export const createAllChargings = async (WALLET_AMOUNT = 20, WALLET_AMOUNT_AR = 5, AMOUNT_PER_WALLET = 100) => {
+  await createChargings(WALLET_AMOUNT,  AMOUNT_PER_WALLET);
+  return await createChargingsAR(WALLET_AMOUNT_AR,  AMOUNT_PER_WALLET);
 };
 
-export const createChargings = async (WALLET_AMOUNT) => {
+export const createChargings = async (WALLET_AMOUNT, AMOUNT_PER_WALLET) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -65,7 +65,7 @@ export const createChargings = async (WALLET_AMOUNT) => {
     console.log(declMonth.format('MMMM').toLowerCase());
     console.log(today.year());
     console.log(firstOfLastMonth.toISOString());
-    const chargings = (await client.query(queries.CREATE_CHARGINGS, [declMonth.format('MMMM').toLowerCase(), declMonth.year(), firstOfLastMonth.toISOString(), WALLET_AMOUNT * 100])).rows;
+    const chargings = (await client.query(queries.CREATE_CHARGINGS, [declMonth.format('MMMM').toLowerCase(), declMonth.year(), firstOfLastMonth.toISOString(), WALLET_AMOUNT * AMOUNT_PER_WALLET])).rows;
     const [rating1Remover, rating1len] = getRatings(1)(false)(chargings, WALLET_AMOUNT);
     const [rating2Remover, rating2len] = getRatings(2)(false)(chargings, WALLET_AMOUNT);
     const [rating3Remover, rating3len] = getRatings(3)(false)(chargings, WALLET_AMOUNT);
@@ -119,7 +119,7 @@ export const createChargings = async (WALLET_AMOUNT) => {
   }
 };
 
-export const createChargingsAR = async (WALLET_AMOUNT_AR) => {
+export const createChargingsAR = async (WALLET_AMOUNT_AR, AMOUNT_PER_WALLET) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -130,7 +130,7 @@ export const createChargingsAR = async (WALLET_AMOUNT_AR) => {
     console.log(declMonth.format('MMMM').toLowerCase());
     console.log(today.year());
     console.log(firstOfLastMonth.toISOString());
-    const chargings = (await client.query(queries.CREATE_CHARGINGS_AR, [declMonth.format('MMMM').toLowerCase(), declMonth.year(), firstOfLastMonth.toISOString(), WALLET_AMOUNT_AR * 100])).rows;
+    const chargings = (await client.query(queries.CREATE_CHARGINGS_AR, [declMonth.format('MMMM').toLowerCase(), declMonth.year(), firstOfLastMonth.toISOString(), WALLET_AMOUNT_AR * AMOUNT_PER_WALLET])).rows;
     const [rating1Remover, rating1len] = getRatings(1)(true)(chargings, undefined, WALLET_AMOUNT_AR);
     const [rating2Remover, rating2len] = getRatings(2)(true)(chargings, undefined, WALLET_AMOUNT_AR);
     const [rating3Remover, rating3len] = getRatings(3)(true)(chargings, undefined, WALLET_AMOUNT_AR);

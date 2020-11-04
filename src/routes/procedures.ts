@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAvailableProcedures, procedureInit, getAvailableProceduresOfInstitution, updateProcedureCost, updateProcedureHandler, getProcedureCosts } from '@helpers/procedures';
+import { getAvailableProcedures, procedureInit, getAvailableProceduresOfInstitution, updateProcedureCost, updateProcedureHandler, getProcedureCosts, approveAllLicenses } from '@helpers/procedures';
 import { validate, isOfficial, isExternalUser, isLogged, isAuth } from '@validations/auth';
 import { checkResult } from '@validations/index';
 import { authenticate } from 'passport';
@@ -38,6 +38,13 @@ router.patch('/:id', authenticate('jwt'), isOfficial, async (req, res) => {
 router.post('/init', validate(), checkResult, authenticate('jwt'), async (req: any, res) => {
   const { tramite } = req.body;
   const [error, data] = await fulfill(procedureInit(tramite, req.user));
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+});
+
+router.post('/license/approve', authenticate('jwt'), async (req: any, res) => {
+  const { tramites } = req.body;
+  const [error, data] = await fulfill(approveAllLicenses(tramites, req.user));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
