@@ -816,7 +816,7 @@ AND EXTRACT('month' FROM l.fecha_liquidacion) = EXTRACT('month' FROM CURRENT_DAT
   GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED: `WITH solicitudcte AS (
       SELECT id_solicitud
       FROM impuesto.solicitud 
-      WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE referencia_municipal = $2)
+      WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE id_registro_municipal = $2)
       )
   
       SELECT rm.descripcion_corta AS ramo, l.fecha_liquidacion AS desde
@@ -844,7 +844,7 @@ AND EXTRACT('month' FROM l.fecha_liquidacion) = EXTRACT('month' FROM CURRENT_DAT
               AND l.id_registro_municipal = 
           (SELECT id_registro_municipal
           FROM impuesto.registro_municipal
-          WHERE referencia_municipal = $2 LIMIT 1)
+          WHERE id_registro_municipal = $2 LIMIT 1)
       ORDER BY fecha_liquidacion LIMIT 1;`,
   GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR:
     'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l on s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON\
