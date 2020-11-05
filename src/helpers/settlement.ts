@@ -3649,7 +3649,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             await client.query('UPDATE impuesto.solicitud SET tipo_solicitud = $1 WHERE id_solicitud = $2', ['CONVENIO', applicationAG.id_solicitud]);
             const agreement = (await client.query(queries.CREATE_AGREEMENT, [applicationAG.id_solicitud, x.porciones.length])).rows[0];
             const settlementsAG = (await client.query(queries.CHANGE_SETTLEMENT_TO_NEW_APPLICATION, [applicationAG.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
-            const costo = (+(await client.query(queries.CHANGE_SETTLEMENT_BRANCH_TO_AGREEMENT, [x.idRamo, applicationAG.id_solicitud])).rows.reduce((x, j) => x + j.monto_petro, 0)).toFixed(8);
+            const costo = +(await client.query(queries.CHANGE_SETTLEMENT_BRANCH_TO_AGREEMENT, [x.idRamo, applicationAG.id_solicitud])).rows.reduce((x, j) => x + j.monto_petro, 0);
             console.log('//if -> costo', costo);
             const totalSolicitud = (+x.porciones.reduce((x, j) => x + j.monto, 0)).toFixed(8);
             console.log('//if -> totalSolicitud', totalSolicitud);
