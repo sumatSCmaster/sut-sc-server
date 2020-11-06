@@ -2725,7 +2725,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       ELSE '1'
   END AS rating
   FROM (
-        SELECT monto, id_solicitud
+        SELECT l.monto, id_solicitud, l.id_registro_municipal
         FROM (SELECT *, datos#>>'{fecha,month}' AS mes, datos#>>'{fecha,year}' AS anyo FROM impuesto.liquidacion WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2) l
         INNER JOIN (
                       SELECT MAX(monto) as monto, id_registro_municipal,  datos#>>'{fecha,month}' as mes, datos#>>'{fecha, year}' as anyo 
