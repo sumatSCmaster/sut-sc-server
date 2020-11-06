@@ -816,7 +816,7 @@ AND EXTRACT('month' FROM l.fecha_liquidacion) = EXTRACT('month' FROM CURRENT_DAT
   GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED: `WITH solicitudcte AS (
       SELECT id_solicitud
       FROM impuesto.solicitud 
-      WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE referencia_municipal = $2)
+      WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE id_registro_municipal = $2)
       )
   
       SELECT rm.descripcion_corta AS ramo, l.fecha_liquidacion AS desde
@@ -844,7 +844,7 @@ AND EXTRACT('month' FROM l.fecha_liquidacion) = EXTRACT('month' FROM CURRENT_DAT
               AND l.id_registro_municipal = 
           (SELECT id_registro_municipal
           FROM impuesto.registro_municipal
-          WHERE referencia_municipal = $2 LIMIT 1)
+          WHERE id_registro_municipal = $2 LIMIT 1)
       ORDER BY fecha_liquidacion LIMIT 1;`,
   GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR:
     'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l on s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON\
@@ -1330,7 +1330,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_PUBLICITY_CATEGORIES: 'SELECT * FROM impuesto.categoria_propaganda',
   GET_PUBLICITY_SUBCATEGORIES: 'SELECT * FROM impuesto.tipo_aviso_propaganda',
   GET_PUBLICITY: "SELECT id_tipo_aviso_propaganda, concat(cp.descripcion, ' - ', tap.descripcion) AS descripcion FROM impuesto.categoria_propaganda cp INNER JOIN impuesto.tipo_aviso_propaganda tap USING (id_categoria_propaganda);",
-  INSERT_ESTATE_VALUE: 'INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)',
+  INSERT_ESTATE_VALUE: "INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,($2 / (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')),$3)",
   CHECK_IF_HAS_COMMERCIAL_ESTATES: `SELECT COUNT(*) as commercials FROM inmueble_urbano WHERE id_registro_municipal = $1 AND tipo_inmueble = 'COMERCIAL';`,
   COUNT_ESTATES: `SELECT COUNT(*) as allestates FROM inmueble_urbano WHERE id_registro_municipal = $1;`,
   SET_DATE_FOR_LINKED_APPROVED_APPLICATION: 'UPDATE impuesto.solicitud SET fecha = $1, fecha_aprobado = $1 WHERE id_solicitud = $2',
@@ -1622,7 +1622,7 @@ ORDER BY fecha_liquidacion DESC;
   GET_ESTATE_BY_CODCAT: `SELECT id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", id_parroquia AS "idParroquia",
    metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion_contribuyente as relacion ,id_registro_municipal, id_registro_municipal IS NOT NULL as enlazado, dir_doc AS "dirDoc"  FROM inmueble_urbano WHERE cod_catastral = $1;`,
   GET_ESTATE_BY_CODCAT_NAT: `SELECT id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
-   id_parroquia AS "idParroquia", metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion as relacion, , dir_doc AS "dirDoc" 
+   id_parroquia AS "idParroquia", metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion as relacion, dir_doc AS "dirDoc" 
    FROM inmueble_urbano iu LEFT JOIN impuesto.inmueble_contribuyente icn USING (id_inmueble) 
    WHERE cod_catastral = $1;`,
 
@@ -2716,7 +2716,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
     LEFT JOIN usuario u ON u.id_usuario = cart.id_usuario ORDER BY id_cartera;`,
   LINK_WALLET_TO_USER: `UPDATE impuesto.cartera SET id_usuario = $2 WHERE id_cartera = $1 RETURNING id_cartera AS "idCartera", id_usuario AS "idUsuario";`,
   CREATE_CHARGINGS: `INSERT INTO impuesto.cobranza (id_registro_municipal, rating)
-  SELECT l.id_registro_municipal,
+  SELECT DISTINCT l.id_registro_municipal,
   CASE 
       WHEN (s.fecha_aprobado::timestamptz - cast(date_trunc('month', $3::date) as timestamptz) ) BETWEEN interval '0 days' AND interval '10 days' THEN '5'
       WHEN (s.fecha_aprobado::timestamptz - cast(date_trunc('month', $3::date) as timestamptz) ) BETWEEN interval '11 days' AND interval '15 days' THEN '4'
@@ -2739,7 +2739,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       LIMIT $4 RETURNING *;
 `,
   CREATE_CHARGINGS_AR: `INSERT INTO impuesto.cobranza (id_registro_municipal, rating)
-  SELECT l.id_registro_municipal,
+  SELECT DISTINCT l.id_registro_municipal,
   CASE 
       WHEN (s.fecha_aprobado::timestamptz - cast(date_trunc('month', $3::date) as timestamptz) ) BETWEEN interval '0 days' AND interval '10 days' THEN '5'
       WHEN (s.fecha_aprobado::timestamptz - cast(date_trunc('month', $3::date) as timestamptz) ) BETWEEN interval '11 days' AND interval '15 days' THEN '4'

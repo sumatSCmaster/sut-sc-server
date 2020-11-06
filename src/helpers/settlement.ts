@@ -175,7 +175,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const esContribuyenteTop = !!branch ? (await client.query(queries.BRANCH_IS_ONE_BEST_PAYERS, [branch?.id_registro_municipal, monthDateForTop.format('MMMM'), monthDateForTop.year()])).rowCount > 0 : false;
     //AE
     if (branch && branch?.referencia_municipal && !AEApplicationExists) {
-      const solvencyCost = branch?.estado_licencia === 'PERMANENTE' ? +(await client.query(queries.GET_SCALE_FOR_PERMANENT_AE_SOLVENCY)).rows[0].indicador : +(await client.query(queries.GET_SCALE_FOR_TEMPORAL_AE_SOLVENCY)).rows[0].indicador;
+      const solvencyCost = branch?.estado_licencia === 'TEMPORAL' ? +(await client.query(queries.GET_SCALE_FOR_TEMPORAL_AE_SOLVENCY)).rows[0].indicador : +(await client.query(queries.GET_SCALE_FOR_PERMANENT_AE_SOLVENCY)).rows[0].indicador;
       const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
       if (economicActivities.length === 0) throw { status: 404, message: 'El contribuyente no posee aforos asociados' };
       let lastEA = (await client.query(lastSettlementQuery, [codigosRamo.AE, lastSettlementPayload])).rows.find((el) => !el.datos.hasOwnProperty('descripcion'));
@@ -1955,9 +1955,9 @@ export const formatContributor = async (contributor, client: PoolClient) => {
 export const formatBranch = async (branch, contributor, client) => {
   try {
     const inicioImpuestos: any[] = [];
-    const SM = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, ['SM', branch.referencia_municipal])).rows[0];
-    const PP = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, ['PP', branch.referencia_municipal])).rows[0];
-    const RD0 = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, ['RD0', branch.referencia_municipal])).rows[0];
+    const SM = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, ['SM', branch.id_registro_municipal])).rows[0];
+    const PP = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, ['PP', branch.id_registro_municipal])).rows[0];
+    const RD0 = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, ['RD0', branch.id_registro_municipal])).rows[0];
     if (!!SM) SM.desde = moment(SM.desde).format('MM-DD-YYYY');
     if (!!PP) PP.desde = moment(PP.desde).format('MM-DD-YYYY');
     if (!!RD0) RD0.desde = moment(RD0.desde).format('MM-DD-YYYY');
@@ -3649,9 +3649,9 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             await client.query('UPDATE impuesto.solicitud SET tipo_solicitud = $1 WHERE id_solicitud = $2', ['CONVENIO', applicationAG.id_solicitud]);
             const agreement = (await client.query(queries.CREATE_AGREEMENT, [applicationAG.id_solicitud, x.porciones.length])).rows[0];
             const settlementsAG = (await client.query(queries.CHANGE_SETTLEMENT_TO_NEW_APPLICATION, [applicationAG.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
-            const costo = (+(await client.query(queries.CHANGE_SETTLEMENT_BRANCH_TO_AGREEMENT, [x.idRamo, applicationAG.id_solicitud])).rows.reduce((x, j) => x + j.monto_petro, 0)).toFixed(8);
+            const costo = +(+(await client.query(queries.CHANGE_SETTLEMENT_BRANCH_TO_AGREEMENT, [x.idRamo, applicationAG.id_solicitud])).rows.reduce((x, j) => x + +j.monto_petro, 0)).toFixed(8);
             console.log('//if -> costo', costo);
-            const totalSolicitud = (+x.porciones.reduce((x, j) => x + j.monto, 0)).toFixed(8);
+            const totalSolicitud = +(+x.porciones.reduce((x, j) => x + j.monto, 0)).toFixed(8);
             console.log('//if -> totalSolicitud', totalSolicitud);
             if (costo > totalSolicitud) throw { status: 403, message: 'La suma de las fracciones del convenio debe ser exactamente igual al total de la deuda' };
             const benefitAgreement = await Promise.all(
@@ -5266,8 +5266,8 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
     const paymentState = switchcase({ ingresardatos: 'VIGENTE', validando: 'VIGENTE', finalizado: 'PAGADO' })(null);
     const contribuyente = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [contributor])).rows[0];
     const branch = reference && (await client.query('SELECT r.* FROM impuesto.registro_municipal r WHERE referencia_municipal = $1', [reference])).rows[0];
-    const contributorQuery = typeUser === 'JURIDICO' ? queries.GET_ALL_SETTLEMENTS_FOR_RIM : queries.GET_ALL_SETTLEMENTS_FOR_CONTRIBUTOR;
-    const contributorPayload = typeUser === 'JURIDICO' ? branch.referencia_municipal : contribuyente.id_contribuyente;
+    const contributorQuery = reference ? queries.GET_ALL_SETTLEMENTS_FOR_RIM : queries.GET_ALL_SETTLEMENTS_FOR_CONTRIBUTOR;
+    const contributorPayload = reference ? branch.referencia_municipal : contribuyente.id_contribuyente;
     const economicActivities =
       (reference &&
         (
@@ -5286,7 +5286,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
         fechaVencimiento: moment(el.fecha_vencimiento).format('DD/MM/YYYY'),
         motivo: el.descripcion_corta,
         estado: paymentState(el.state) || 'PAGADO',
-        montoPorcion: fixatedAmount(el.monto),
+        montoPorcion: fixatedAmount(el.monto) || fixatedAmount(el.monto_petro * PETRO),
         // montoPorcion: activity && parseInt(activity.nu_ut) * PETRO > parseFloat(el.monto_declarado) ? parseInt(activity.nu_ut) * PETRO : parseFloat(el.monto_declarado),
       };
     });

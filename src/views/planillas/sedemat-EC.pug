@@ -81,8 +81,12 @@ block content
               p #{item.motivo}
             div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom
               p #{item.estado}
-            div(style={'-webkit-flex':'2'}).td.center.border-bottom
-              p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)}
+            if item.estado === 'VIGENTE'
+              div(style={'-webkit-flex':'2'}).td.center.border-bottom
+                p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)} *
+            else
+              div(style={'-webkit-flex':'2'}).td.center.border-bottom
+                p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)}            
     .table.break-page
       .tr
         div(style={'-webkit-flex':'8'}).th.center.border-right
@@ -127,5 +131,9 @@ block content
             div(style={'-webkit-flex':'2'}).td.center.border-right
               p  #{item.id}   
             div(style={'-webkit-flex':'8'}).td.center
-              p #{item.nombreActividad}        
+              p #{item.nombreActividad} 
+    div(style={'text-align':'start', 'width': '90%'})
+      p
+        b Nota: &nbsp;
+        | el costo reflejado de las liquidaciones vigentes podrá fluctuar en el futuro con respecto a los cambios del valor del Petro
 block footer         
