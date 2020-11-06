@@ -2756,7 +2756,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       ELSE '1'
   END AS rating
   FROM (
-    SELECT monto, id_solicitud
+    SELECT l.monto, id_solicitud, l.id_registro_municipal
     FROM (SELECT *, datos#>>'{fecha,month}' AS mes, datos#>>'{fecha,year}' AS anyo FROM impuesto.liquidacion WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2) l
     INNER JOIN (
                   SELECT MAX(monto) as monto, id_registro_municipal,  datos#>>'{fecha,month}' as mes, datos#>>'{fecha, year}' as anyo 
@@ -2765,7 +2765,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
                   ) sub ON sub.monto = l.monto AND sub.mes = l.mes AND sub.anyo = l.anyo         
     ) l
   INNER JOIN impuesto.solicitud s USING (id_solicitud)
-  WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2 AND s.aprobado = true AND id_registro_municipal IN (
+  WHERE s.aprobado = true AND id_registro_municipal IN (
     SELECT * FROM (
         SELECT id_registro_municipal FROM (SELECT DISTINCT ON (l.id_registro_municipal) l.id_registro_municipal, SUM(monto) as montoTotal 
         FROM Impuesto.liquidacion l
