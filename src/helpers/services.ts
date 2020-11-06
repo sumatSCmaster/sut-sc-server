@@ -83,7 +83,7 @@ export const getCleaningTariffForEstate = async ({ estate, branchId, client }) =
     const costoMts = estate.tipo_inmueble === 'INDUSTRIAL' ? costoMtsInd : costoMtsCom;
     const limiteAseo = estate.tipo_inmueble === 'INDUSTRIAL' ? limiteAseoInd : limiteAseoCom;
     const calculoAseo =
-      estate.tipo_inmueble === 'COMERCIAL'
+      !!['COMERCIAL', 'INDUSTRIAL'].find(type => type === estate.tipo_inmueble)
         ? estate.metros_construccion && +estate.metros_construccion !== 0
           ? costoMts * PETRO * estate.metros_construccion
           : +(await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto * PETRO
