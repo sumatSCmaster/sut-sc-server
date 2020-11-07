@@ -320,7 +320,7 @@ export const updateEstateDate = async ({ id, date, rim, taxPayer }) => {
         'Pago ordinario',
         { month: fromDate.toDate().toLocaleString('es-ES', { month: 'long' }), year: fromDate.year(), desglose: [{ inmueble: id }] },
         fromEndDate,
-        rimData.id || null,
+        rimData?.id || null,
       ])
     ).rows[0];
     (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, 'ingresardatos_pi'])).rows[0].state;
