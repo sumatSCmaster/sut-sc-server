@@ -2589,7 +2589,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
                   INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
                   WHERE (datos#>>'{fecha, month}' = $2) 
                   AND datos#>>'{fecha, year}' = $3 
-                  AND id_subramo IN (10, 99) GROUP BY id_registro_municipal, s.aprobado) lae ON lae.id_registro_municipal = rm.id_registro_municipal AND lae.monto = (SELECT monto FROM (SELECT MAX(monto) as monto , id_registro_municipal FROM impuesto.liquidacion WHERE datos#>>'{fecha, month}' = $2) AND datos#>>'{fecha, year}' = $3 GROUP BY id_registro_municipal ) x )
+                  AND id_subramo IN (10, 99) GROUP BY id_registro_municipal, s.aprobado) lae ON lae.id_registro_municipal = rm.id_registro_municipal AND lae.monto = (SELECT monto FROM (SELECT MAX(monto) as monto , id_registro_municipal FROM impuesto.liquidacion WHERE datos#>>'{fecha, month}' = $2 AND datos#>>'{fecha, year}' = $3 GROUP BY id_registro_municipal ) x )
       LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS apr, CASE WHEN s.aprobado = true THEN SUM(l.monto) ELSE SUM(l.monto_petro * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) END AS monto
                   FROM impuesto.liquidacion l
                   INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
@@ -2670,7 +2670,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
                     INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
                     WHERE (datos#>>'{fecha, month}' = $2) 
                     AND datos#>>'{fecha, year}' = $3 
-                    AND id_subramo IN (10, 99) GROUP BY id_registro_municipal, s.aprobado) lae ON lae.id_registro_municipal = rm.id_registro_municipal AND lae.monto = (SELECT monto FROM (SELECT MAX(monto) as monto , id_registro_municipal FROM impuesto.liquidacion WHERE datos#>>'{fecha, month}' = $2) AND datos#>>'{fecha, year}' = $3 GROUP BY id_registro_municipal ) x )
+                    AND id_subramo IN (10, 99) GROUP BY id_registro_municipal, s.aprobado) lae ON lae.id_registro_municipal = rm.id_registro_municipal AND lae.monto = (SELECT monto FROM (SELECT MAX(monto) as monto , id_registro_municipal FROM impuesto.liquidacion WHERE datos#>>'{fecha, month}' = $2 AND datos#>>'{fecha, year}' = $3 GROUP BY id_registro_municipal ) x )
         LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS apr, CASE WHEN s.aprobado = true THEN SUM(l.monto) ELSE SUM(l.monto_petro * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) END AS monto
                     FROM impuesto.liquidacion l
                     INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
