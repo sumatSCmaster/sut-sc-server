@@ -308,6 +308,7 @@ export const updateEstateDate = async ({ id, date, rim, taxPayer }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    console.log('updateEstateDate', id, date, rim, taxPayer)
     const fromDate = moment(date).subtract(1, 'M');
     const fromEndDate = fromDate.clone().endOf('month').format('MM-DD-YYYY');
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [null, taxPayer])).rows[0];
