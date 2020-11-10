@@ -370,6 +370,7 @@ export const listTaxPayments = async () => {
                 estado: next.state,
                 tipoDocumento: next.tipoDocumento,
                 documento: next.documento,
+                tipoSolicitud: next.tipoSolicitud,
                 monto: montosSolicitud.find((montoRow) => next.id === montoRow.id_solicitud)?.monto,
                 pagos: [
                   {
