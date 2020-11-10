@@ -333,7 +333,6 @@ export const updateOneCharging = async (user: any, { idCobranza, contactado, est
   console.log(`${user?.nacionalidad}-${user?.cedula}`);
   const socket = users.get(`${user?.nacionalidad}-${user?.cedula}`);
   console.log(users);
-  console.log(socket);
   try {
     await client.query('BEGIN');
     const oldCharging = (await client.query('SELECT fiscalizar FROM impuesto.cobranza WHERE id_cobranza = $1', [idCobranza])).rows[0];

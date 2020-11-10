@@ -359,7 +359,7 @@ export const listTaxPayments = async () => {
     INNER JOIN banco b ON b.id_banco = p.id_banco
     WHERE s."tipoSolicitud" IN ('CONVENIO') AND s.state = 'ingresardatos' ORDER BY id_procedimiento, id_pago;
     `)
-    data.rows = data.rows.concat(convData)
+    data.rows = data.rows.concat(convData.rows)
     let montosSolicitud = (
       await client.query(`
     SELECT l.id_solicitud, SUM(monto) as monto
