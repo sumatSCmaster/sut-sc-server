@@ -352,8 +352,10 @@ export const listTaxPayments = async () => {
     INNER JOIN banco b ON b.id_banco = p.id_banco
     WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' ORDER BY id_procedimiento, id_pago;`);
     let convData = await client.query(`
-    SELECT s.id, s.fecha, s.state, c.documento, c.tipo_documento AS "tipoDocumento", s."tipoSolicitud", p.id_pago, p.referencia, p.monto, p.fecha_de_pago, b.id_banco, p.aprobado
+    SELECT s.id, s.fecha, fs.state, c.documento, c.tipo_documento AS "tipoDocumento", s."tipoSolicitud", p.id_pago, p.referencia, p.monto, p.fecha_de_pago, b.id_banco, p.aprobado
     FROM impuesto.solicitud_state s
+    INNER JOIN impuesto.convenio conv ON conv.id_solicitud = s.id
+    INNER JOIN impuesto.fraccion_state fs ON fs.idconvenio = conv.id_convenio
     INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente
     INNER JOIN pago p ON p.id_procedimiento = s.id
     INNER JOIN banco b ON b.id_banco = p.id_banco
@@ -372,6 +374,7 @@ export const listTaxPayments = async () => {
       data.rowCount > 0
         ? data.rows.reduce((prev, next) => {
             let index = prev.findIndex((row) => row.id === next.id);
+            let montoSolicitud = montosSolicitud.find((montoRow) => next.id === montoRow.id_solicitud)?.monto;
             if (index === -1) {
               prev.push({
                 id: next.id,
@@ -380,7 +383,7 @@ export const listTaxPayments = async () => {
                 tipoDocumento: next.tipoDocumento,
                 documento: next.documento,
                 tipoSolicitud: next.tipoSolicitud,
-                monto: montosSolicitud.find((montoRow) => next.id === montoRow.id_solicitud)?.monto,
+                monto: montoSolicitud ? montoSolicitud : next.monto ,
                 pagos: [
                   {
                     id: next.id_pago,
