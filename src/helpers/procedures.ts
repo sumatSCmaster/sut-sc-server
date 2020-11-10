@@ -13,7 +13,7 @@ import { installLiquorLicense, renewLiquorLicense } from './liquors';
 
 const pool = Pool.getInstance();
 
-export const getAvailableProcedures = async (user): Promise<{ options: Institucion[]; instanciasDeTramite: any; instanciasDeMulta: any; instanciasDeImpuestos: any; instanciasDeSoporte: any }> => {
+export const getAvailableProcedures = async (user): Promise<{ instanciasDeTramite: any; instanciasDeMulta: any; instanciasDeImpuestos: any; instanciasDeSoporte: any }> => {
   const client: any = await pool.connect();
   client.tipoUsuario = user.tipoUsuario;
   try {
@@ -28,12 +28,12 @@ export const getAvailableProcedures = async (user): Promise<{ options: Instituci
     if (user.tipoUsuario === 4) {
       institution = institution.filter((el) => el.id !== 0);
     }
-    const options: Institucion[] = await getProcedureByInstitution(institution, client);
+    // const options: Institucion[] = await getProcedureByInstitution(institution, client);
     const instanciasDeTramite = await getProcedureInstances(user, client);
     const instanciasDeMulta = await getFineInstances(user, client);
     const instanciasDeImpuestos = await getSettlementInstances(user, client);
     const instanciasDeSoporte = await getProcedureInstances(user, client, true);
-    return { options, instanciasDeTramite, instanciasDeMulta, instanciasDeImpuestos, instanciasDeSoporte };
+    return { instanciasDeTramite, instanciasDeMulta, instanciasDeImpuestos, instanciasDeSoporte };
   } catch (error) {
     console.log(error);
     throw {
@@ -1115,7 +1115,7 @@ export const approveAllLicenses = async (idArray: number[], user: Usuario): Prom
           aprobado: true,
           observaciones: 'Aprobación masiva',
         };
-        console.log('Soy retrasao mental',procedure);
+        console.log('Soy retrasao mental', procedure);
         const tramite = await reviseProcedureForMassiveApproval(procedure, client);
         return tramite;
       })
@@ -1444,7 +1444,7 @@ const procedureInstances = switchcase({
       tipo_tramite.pago_previo AS \"pagoPrevio\"  FROM tramites_state INNER JOIN tipo_tramite ON tramites_state.tipotramite = \
       tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = \
       tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 AND tipoTramite = 37 AND tramites_state.state IN ('enproceso', 'enrevision', 'finalizado') ORDER BY tramites_state.fechacreacion DESC;",
-  8: 'SELECT * FROM tramites_state_with_resources WHERE usuario = $1 AND tipotramite = 37 ORDER BY fechacreacion DESC;',
+  8: 'SELECT * FROM tramites_state_with_resources WHERE usuario = $1 AND tipotramite = 37 ORDER BY fechacreacion DESC LIMIT 500;',
 })(null);
 
 const procedureInstanceHandler = (user, client, support) => {
