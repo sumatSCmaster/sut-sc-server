@@ -352,7 +352,7 @@ export const listTaxPayments = async () => {
     INNER JOIN banco b ON b.id_banco = p.id_banco
     WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' AND p.concepto IN ('IMPUESTO', 'RETENCION') ORDER BY id_procedimiento, id_pago;`);
     let convData = await client.query(`
-    SELECT s.id, s.fecha, fs.state, c.documento, c.tipo_documento AS "tipoDocumento", s."tipoSolicitud", p.id_pago, p.referencia, p.monto, p.fecha_de_pago, b.id_banco, p.aprobado
+    SELECT s.id, s.fecha, fs.state, c.documento, c.tipo_documento AS "tipoDocumento", s."tipoSolicitud", fs.idconvenio, p.id_pago, p.referencia, p.monto, p.fecha_de_pago, b.id_banco, p.aprobado
     FROM impuesto.solicitud_state s
     INNER JOIN impuesto.convenio conv ON conv.id_solicitud = s.id
     INNER JOIN impuesto.fraccion_state fs ON fs.idconvenio = conv.id_convenio
@@ -370,6 +370,14 @@ export const listTaxPayments = async () => {
     WHERE s.state = 'validando' OR s.state = 'ingresardatos'
     GROUP BY l.id_solicitud;`)
     ).rows;
+    let montosConvenio = (
+      await client.query(`
+    SELECT c.id_convenio, SUM(monto) as monto
+    FROM impuesto.fraccion_state fs
+    INNER JOIN impuesto.convenio c ON c.id_convenio = fs.idconvenio
+    WHERE fs.state = 'validando' OR fs.state = 'ingresardatos'
+    GROUP BY c.id_convenio;`)
+    ).rows;
     data =
       data.rowCount > 0
         ? data.rows.reduce((prev, next) => {
@@ -383,7 +391,7 @@ export const listTaxPayments = async () => {
                 tipoDocumento: next.tipoDocumento,
                 documento: next.documento,
                 tipoSolicitud: next.tipoSolicitud,
-                monto: montoSolicitud ? montoSolicitud : next.monto ,
+                monto: montoSolicitud ? montoSolicitud : montosConvenio.find(montoRow => next.idconvenio === montoRow.idconvenio)?.monto ,
                 pagos: [
                   {
                     id: next.id_pago,
