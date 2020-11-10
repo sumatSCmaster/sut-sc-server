@@ -350,13 +350,22 @@ export const listTaxPayments = async () => {
     INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente 
     INNER JOIN pago p ON p.id_procedimiento = s.id 
     INNER JOIN banco b ON b.id_banco = p.id_banco
-    WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION', 'CONVENIO') AND s.state = 'validando' ORDER BY id_procedimiento, id_pago;`);
+    WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' ORDER BY id_procedimiento, id_pago;`);
+    let convData = await client.query(`
+    SELECT s.id, s.fecha, s.state, c.documento, c.tipo_documento AS "tipoDocumento", s."tipoSolicitud", p.id_pago, p.referencia, p.monto, p.fecha_de_pago, b.id_banco, p.aprobado
+    FROM impuesto.solicitud_state s
+    INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente
+    INNER JOIN pago p ON p.id_procedimiento = s.id
+    INNER JOIN banco b ON b.id_banco = p.id_banco
+    WHERE s."tipoSolicitud" IN ('CONVENIO') AND s.state = 'ingresardatos' ORDER BY id_procedimiento, id_pago;
+    `)
+    data.rows = data.rows.concat(convData)
     let montosSolicitud = (
       await client.query(`
     SELECT l.id_solicitud, SUM(monto) as monto
     FROM impuesto.solicitud_state s 
     INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
-    WHERE s.state = 'validando' 
+    WHERE s.state = 'validando' OR s.state = 'ingresardatos'
     GROUP BY l.id_solicitud;`)
     ).rows;
     data =
