@@ -77,7 +77,7 @@ export const updateContributorActivities = async ({ branchId, activities, branch
               0.0,
               ramo,
               'Pago ordinario',
-              { month: fromDate.toDate().toLocaleString('es-ES', { month: 'long' }), year: fromDate.year() },
+              { fecha: { month: fromDate.toDate().toLocaleString('es-ES', { month: 'long' }), year: fromDate.year() } },
               expireDate.format('MM-DD-YYYY'),
               branchId,
             ])
@@ -107,7 +107,7 @@ export const updateContributorActivities = async ({ branchId, activities, branch
                   0.0,
                   'AE',
                   'Pago ordinario',
-                  { month: moment(x.desde).toDate().toLocaleString('es-ES', { month: 'long' }), year: moment(x.desde).year(), desglose: [{ aforo: x.id }] },
+                  { fecha: { month: moment(x.desde).toDate().toLocaleString('es-ES', { month: 'long' }), year: moment(x.desde).year() }, desglose: [{ aforo: x.id }] },
                   moment(x.desde).endOf('month').format('MM-DD-YYYY'),
                   branchId,
                 ])
