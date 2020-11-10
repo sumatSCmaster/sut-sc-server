@@ -346,20 +346,20 @@ export const listTaxPayments = async () => {
   try {
     let data = await client.query(`
     SELECT s.*, p.*, b.id_banco, c.documento, c.tipo_documento AS "tipoDocumento" 
-    FROM impuesto.solicitud_state s 
+    FROM (impuesto.solicitud_state) s 
     INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente 
     INNER JOIN pago p ON p.id_procedimiento = s.id 
     INNER JOIN banco b ON b.id_banco = p.id_banco
-    WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' ORDER BY id_procedimiento, id_pago;`);
+    WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' AND p.concepto IN ('IMPUESTO', 'RETENCION') ORDER BY id_procedimiento, id_pago;`);
     let convData = await client.query(`
     SELECT s.id, s.fecha, fs.state, c.documento, c.tipo_documento AS "tipoDocumento", s."tipoSolicitud", p.id_pago, p.referencia, p.monto, p.fecha_de_pago, b.id_banco, p.aprobado
     FROM impuesto.solicitud_state s
     INNER JOIN impuesto.convenio conv ON conv.id_solicitud = s.id
     INNER JOIN impuesto.fraccion_state fs ON fs.idconvenio = conv.id_convenio
     INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente
-    INNER JOIN pago p ON p.id_procedimiento = s.id
+    INNER JOIN pago p ON p.id_procedimiento = fs.id
     INNER JOIN banco b ON b.id_banco = p.id_banco
-    WHERE s."tipoSolicitud" IN ('CONVENIO') AND fs.state = 'ingresardatos' ORDER BY id_procedimiento, id_pago;
+    WHERE s."tipoSolicitud" = 'CONVENIO' AND fs.state = 'ingresardatos' AND p.concepto = 'CONVENIO' ORDER BY id_procedimiento, id_pago;
     `)
     data.rows = data.rows.concat(convData.rows)
     let montosSolicitud = (
