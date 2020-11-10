@@ -643,7 +643,10 @@ export const processProcedure = async (procedure, user: Usuario) => {
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
       await client.query(queries.UPDATE_APPROVED_STATE_FOR_PROCEDURE, [aprobado, procedure.idTramite]);
 
-      if (procedure.sufijo === 'rc' && aprobado) await approveContributorSignUp({ procedure: (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0], client });
+      if (procedure.sufijo === 'rc' && aprobado) {
+        if (resources.tipoTramite === 27) await approveContributorSignUp({ procedure: (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0], client });
+        else if (resources.tipoTramite === 38) console.log('si');
+      }
     } else if (resources.tipoTramite === 37) {
       const { aprobado, estado } = procedure;
       respState =
