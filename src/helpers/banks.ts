@@ -346,7 +346,7 @@ export const listTaxPayments = async () => {
   try {
     let data = await client.query(`
     SELECT s.*, p.*, b.id_banco, c.documento, c.tipo_documento AS "tipoDocumento" 
-    FROM (impuesto.solicitud_state) s 
+    FROM impuesto.solicitud_state s 
     INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente 
     INNER JOIN pago p ON p.id_procedimiento = s.id 
     INNER JOIN banco b ON b.id_banco = p.id_banco
