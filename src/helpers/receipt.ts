@@ -181,7 +181,7 @@ export const generateReceiptAgreement = async (payload: { agreement: number }, c
               fechaAprobacion: applicationView.fechaAprobacionFraccion,
               monto: applicationView.montoFraccion,
               porcion: `${applicationView.porcion}/${applicationView.cantidad}`,
-              descripcion: `${applicationView.descripcionRamo} - ${applicationView.descripcionSubramo}} (${date.format('MMMM')} ${date.format('YYYY')})`,
+              descripcion: `${applicationView.descripcionRamo} - ${applicationView.descripcionSubramo} (${date.format('MMMM')} ${date.format('YYYY')})`,
             },
           ]],
           metodoPago: payment,
