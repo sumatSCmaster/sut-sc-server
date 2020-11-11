@@ -640,6 +640,9 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID: `SELECT r.descripcion AS "descripcionRamo", sr.descripcion AS "descripcionSubramo", l.monto, l.datos,l.fecha_liquidacion AS "fechaLiquidacion" FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo INNER JOIN impuesto.solicitud_state sst ON sst.id = s.id_solicitud WHERE s.id_solicitud = $1;`,
   GET_APPLICATION_VIEW_BY_SETTLEMENT: 'SELECT * FROM impuesto.solicitud_view WHERE "idLiquidacion" = $1',
   GET_APPLICATION_VIEW_BY_ID: 'SELECT * FROM impuesto.solicitud_view WHERE id = $1',
+  GET_AGREEMENT_VIEW_BY_FRACTION_ID: `SELECT *,f.monto AS "montoFraccion", f.fecha_aprobado AS "fechaAprobacionFraccion" 
+  FROM impuesto.solicitud_view sv INNER JOIN impuesto.convenio c ON sv.id=c.id_solicitud 
+  INNER JOIN impuesto.fraccion f USING (id_convenio) WHERE f.id_fraccion = $1;`,
   GET_LAST_FINE_FOR_LATE_APPLICATION:
     "SELECT * FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud s \
     ON l.id_solicitud = s.id_solicitud INNER JOIN impuesto.contribuyente c ON s.id_contribuyente = c.id_contribuyente WHERE \
@@ -967,6 +970,11 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
       FROM pago p
       WHERE p.concepto = 'IMPUESTO' AND p.id_procedimiento = $1
       GROUP BY p.metodo_pago;`,
+  GET_PAYMENT_FROM_REQ_ID_GROUP_BY_AGREEMENT: `SELECT p.metodo_pago AS tipo, SUM(p.monto) AS monto, COUNT(*) AS transacciones
+      FROM pago p
+      WHERE p.concepto = 'CONVENIO' AND p.id_procedimiento = $1
+      GROUP BY p.metodo_pago;`,
+
   GET_RECEIPT_RECORDS_BY_USER: 'SELECT id_registro_recibo AS id, fecha, recibo, razon_social AS "razonSocial", rim, concepto FROM impuesto.registro_recibo WHERE id_usuario = $1 and recibo != \'\' ORDER BY fecha DESC;',
   INSERT_RECEIPT_RECORD: `INSERT INTO impuesto.registro_recibo (id_usuario, recibo, razon_social, rim, concepto, id_solicitud) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (id_usuario, recibo, id_solicitud) DO NOTHING RETURNING *;`,
   UPDATE_RECEIPT_RECORD: 'UPDATE impuesto.registro_recibo SET recibo = $2 WHERE id_registro_recibo = $1;',

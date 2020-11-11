@@ -125,6 +125,118 @@ export const generateReceipt = async (payload: { application: number }, clientPa
   }
 };
 
+export const generateReceiptAgreement = async (payload: { agreement: number }, clientParam?) => {
+  const client = clientParam ? clientParam : await pool.connect();
+  try {
+    const applicationView = (await client.query(queries.GET_AGREEMENT_VIEW_BY_FRACTION_ID, [payload.agreement])).rows[0];
+    const payment = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_GROUP_BY_PAYMENT_TYPE, [applicationView.id])).rows;
+    const paymentRows = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [applicationView.id_fraccion, 'CONVENIO'])).rows;
+    console.log('payment', payment);
+    console.log('paymentRows', paymentRows);
+    const paymentTotal = payment.reduce((prev, next) => prev + +next.monto, 0);
+    console.log('paymentTotal', paymentTotal);
+    const cashier = (await client.query(queries.GET_USER_INFO_BY_ID, [paymentRows[0]?.id_usuario])).rows;
+    const breakdownData = (await client.query(queries.GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID, [applicationView.id])).rows;
+    const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [applicationView.idLiquidacion])).rows[0];
+    console.log('breakdowndata', breakdownData);
+    const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [
+      paymentRows[0]?.id_usuario,
+      `${process.env.AWS_ACCESS_URL}//sedemat/recibo/${applicationView.id_fraccion}/recibo.pdf`,
+      applicationView.razonSocial,
+      referencia?.referencia_municipal,
+      'CONVENIO',
+      applicationView.id_fraccion,
+    ]);
+    console.log('recibo', recibo.rows);
+    if (!recibo.rows[0]) {
+      console.log('not recibo', recibo.rows[0]);
+      return (await client.query(`SELECT recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1 AND recibo != ''`, [applicationView.id])).rows[0].recibo;
+    }
+    const idRecibo = recibo.rows[0].id_registro_recibo;
+    console.log('IDRECIBO', idRecibo);
+
+    return new Promise(async (res, rej) => {
+      const pdfDir = resolve(__dirname, `../../archivos/sedemat/recibo/${applicationView.id_fraccion}/cierre.pdf`);
+      const dir = `${process.env.SERVER_URL}/sedemat/recibo/${applicationView.id_fraccion}/recibo.pdf`;
+      const date = moment(applicationView.fechaCreacion).locale('ES');
+      let total = breakdownData.reduce((prev, next) => prev + +next.monto, 0);
+      console.log('total', total);
+      const linkQr = await qr.toDataURL(dev ? dir : `${process.env.AWS_ACCESS_URL}/sedemat/recibo/${applicationView.id_fraccion}/recibo.pdf`, { errorCorrectionLevel: 'H' });
+      const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-recibo.pug`), {
+        moment: require('moment'),
+        institucion: 'SEDEMAT',
+        QR: linkQr,
+        datos: {
+          razonSocial: applicationView.razonSocial,
+          tipoDocumento: applicationView.tipoDocumento,
+          documentoIden: applicationView.documento,
+          direccion: applicationView.direccion,
+          cajero: cashier?.[0]?.nombreCompleto,
+          codigoRecibo: String(idRecibo).padStart(16, '0'),
+          rim: referencia?.referencia_municipal,
+          telefono: referencia?.telefono_celular,
+          items: [
+            {
+              fecha: applicationView.fecha,
+              fechaAprobacion: applicationView.fechaAprobacionFraccion,
+              monto: applicationView.montoFraccion,
+              porcion: `${applicationView.porcion}/${applicationView.cantidad}`,
+              descripcion: `${applicationView.descripcionRamo} - ${applicationView.descripcionSubramo}} (${date.format('MMMM')} ${date.format('YYYY')})`,
+            },
+          ],
+          metodoPago: payment,
+          total: applicationView.montoFraccion,
+          credito: paymentTotal - applicationView.montoFraccion,
+        },
+      });
+      if (dev) {
+        pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
+          res(dir);
+        });
+      } else {
+        try {
+          pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toBuffer(async (err, buffer) => {
+            if (err) {
+              rej(err);
+            } else {
+              const regClient = await pool.connect();
+              try {
+                await regClient.query('BEGIN');
+                const bucketParams = {
+                  Bucket: process.env.BUCKET_NAME as string,
+                  Key: `/sedemat/recibo/${applicationView.id_fraccion}/recibo.pdf`,
+                };
+                await S3Client.putObject({
+                  ...bucketParams,
+                  Body: buffer,
+                  ACL: 'public-read',
+                  ContentType: 'application/pdf',
+                }).promise();
+                //await regClient.query(queries.UPDATE_RECEIPT_RECORD, [idRecibo, `${process.env.AWS_ACCESS_URL}${bucketParams.Key}`]);
+                await regClient.query('COMMIT');
+                res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+              } catch (e) {
+                await regClient.query('ROLLBACK');
+                rej(e);
+              } finally {
+                regClient.release();
+              }
+            }
+          });
+        } catch (e) {
+          throw e;
+        } finally {
+        }
+      }
+    });
+  } catch (error) {
+    if (!clientParam) await client.query('ROLLBACK');
+    throw errorMessageExtractor(error);
+  } finally {
+    if (!clientParam) client.release();
+  }
+};
+
 export const generateRepairReceipt = async (payload: { application: number; breakdownData; total; cashier }) => {
   const client = await pool.connect();
   const applicationView = (await client.query(queries.GET_APPLICATION_VIEW_BY_ID, [payload.application])).rows[0];
