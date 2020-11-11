@@ -201,11 +201,13 @@ export const generateReceiptAgreement = async (payload: { agreement: number }, c
             } else {
               const regClient = await pool.connect();
               try {
+                console.log('aydiosmio yaaaaaaaaaaaaa')
                 await regClient.query('BEGIN');
                 const bucketParams = {
                   Bucket: process.env.BUCKET_NAME as string,
                   Key: `/sedemat/recibo/agreement/${applicationView.id_fraccion}/recibo.pdf`,
                 };
+                  console.log("Key", bucketParams.Key);
                 await S3Client.putObject({
                   ...bucketParams,
                   Body: buffer,
