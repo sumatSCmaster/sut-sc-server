@@ -156,12 +156,12 @@ export const generateReceiptAgreement = async (payload: { agreement: number }, c
     console.log('IDRECIBO', idRecibo);
 
     return new Promise(async (res, rej) => {
-      const pdfDir = resolve(__dirname, `../../archivos/sedemat/recibo/${applicationView.id_fraccion}/cierre.pdf`);
+      const pdfDir = resolve(__dirname, `../../archivos/sedemat/recibo/agreement/${applicationView.id_fraccion}/cierre.pdf`);
       const dir = `${process.env.SERVER_URL}/sedemat/recibo/${applicationView.id_fraccion}/recibo.pdf`;
       const date = moment(applicationView.fechaCreacion).locale('ES');
       let total = breakdownData.reduce((prev, next) => prev + +next.monto, 0);
       console.log('total', total);
-      const linkQr = await qr.toDataURL(dev ? dir : `${process.env.AWS_ACCESS_URL}/sedemat/recibo/${applicationView.id_fraccion}/recibo.pdf`, { errorCorrectionLevel: 'H' });
+      const linkQr = await qr.toDataURL(dev ? dir : `${process.env.AWS_ACCESS_URL}/sedemat/recibo/agreement/${applicationView.id_fraccion}/recibo.pdf`, { errorCorrectionLevel: 'H' });
       const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-rc.pug`), {
         moment: require('moment'),
         institucion: 'SEDEMAT',
@@ -204,7 +204,7 @@ export const generateReceiptAgreement = async (payload: { agreement: number }, c
                 await regClient.query('BEGIN');
                 const bucketParams = {
                   Bucket: process.env.BUCKET_NAME as string,
-                  Key: `/sedemat/recibo/${applicationView.id_fraccion}/recibo.pdf`,
+                  Key: `/sedemat/recibo/agreement/${applicationView.id_fraccion}/recibo.pdf`,
                 };
                 await S3Client.putObject({
                   ...bucketParams,
