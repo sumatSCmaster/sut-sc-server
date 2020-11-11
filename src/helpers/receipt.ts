@@ -145,7 +145,7 @@ export const generateReceiptAgreement = async (payload: { agreement: number }, c
       applicationView.razonSocial,
       referencia?.referencia_municipal,
       'CONVENIO',
-      applicationView.id_fraccion,
+      applicationView.id,
     ]);
     console.log('recibo', recibo.rows);
     if (!recibo.rows[0]) {
