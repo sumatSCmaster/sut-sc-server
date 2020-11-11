@@ -350,19 +350,39 @@ export const listTaxPayments = async () => {
     INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente 
     INNER JOIN pago p ON p.id_procedimiento = s.id 
     INNER JOIN banco b ON b.id_banco = p.id_banco
-    WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' ORDER BY id_procedimiento, id_pago;`);
+    WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' AND p.concepto IN ('IMPUESTO', 'RETENCION') ORDER BY id_procedimiento, id_pago;`);
+    let convData = await client.query(`
+    SELECT s.id, s.fecha, fs.state, c.documento, c.tipo_documento AS "tipoDocumento", s."tipoSolicitud", fs.idconvenio, p.id_pago, p.referencia, p.monto, p.fecha_de_pago, b.id_banco, p.aprobado
+    FROM impuesto.solicitud_state s
+    INNER JOIN impuesto.convenio conv ON conv.id_solicitud = s.id
+    INNER JOIN impuesto.fraccion_state fs ON fs.idconvenio = conv.id_convenio
+    INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente
+    INNER JOIN pago p ON p.id_procedimiento = fs.id
+    INNER JOIN banco b ON b.id_banco = p.id_banco
+    WHERE s."tipoSolicitud" = 'CONVENIO' AND fs.state = 'validando' AND p.concepto = 'CONVENIO' ORDER BY id_procedimiento, id_pago;
+    `)
+    data.rows = data.rows.concat(convData.rows)
     let montosSolicitud = (
       await client.query(`
     SELECT l.id_solicitud, SUM(monto) as monto
     FROM impuesto.solicitud_state s 
     INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
-    WHERE s.state = 'validando' 
+    WHERE s.state = 'validando' OR s.state = 'ingresardatos'
     GROUP BY l.id_solicitud;`)
+    ).rows;
+    let montosConvenio = (
+      await client.query(`
+    SELECT c.id_convenio, SUM(monto) as monto
+    FROM impuesto.fraccion_state fs
+    INNER JOIN impuesto.convenio c ON c.id_convenio = fs.idconvenio
+    WHERE fs.state = 'validando' OR fs.state = 'ingresardatos'
+    GROUP BY c.id_convenio;`)
     ).rows;
     data =
       data.rowCount > 0
         ? data.rows.reduce((prev, next) => {
             let index = prev.findIndex((row) => row.id === next.id);
+            let montoSolicitud = montosSolicitud.find((montoRow) => next.id === montoRow.id_solicitud)?.monto;
             if (index === -1) {
               prev.push({
                 id: next.id,
@@ -370,7 +390,8 @@ export const listTaxPayments = async () => {
                 estado: next.state,
                 tipoDocumento: next.tipoDocumento,
                 documento: next.documento,
-                monto: montosSolicitud.find((montoRow) => next.id === montoRow.id_solicitud)?.monto,
+                tipoSolicitud: next.tipoSolicitud,
+                monto: montoSolicitud ? montoSolicitud : montosConvenio.find(montoRow => next.idconvenio === montoRow.id_convenio)?.monto ,
                 pagos: [
                   {
                     id: next.id_pago,

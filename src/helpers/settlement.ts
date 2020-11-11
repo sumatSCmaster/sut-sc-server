@@ -2534,6 +2534,7 @@ export const insertSettlements = async ({ process, user }) => {
     if (hasAE) {
       const now = moment().locale('ES');
       const pivot = moment().locale('ES');
+      const taxableMin = await (await client.query(queries.GET_LITTLEST_TAXABLE_MINIMUM_FOR_CONTRIBUTOR, [contributorReference?.id_registro_municipal])).rows[0].minimo_tributable;
       const onlyAE = impuestos
         .filter((el) => el.ramo === 'AE')
         .sort((a, b) => (pivot.month(a.fechaCancelada.month).toDate() === pivot.month(b.fechaCancelada.month).toDate() ? 0 : pivot.month(a.fechaCancelada.month).toDate() > pivot.month(b.fechaCancelada.month).toDate() ? 1 : -1));
@@ -2671,11 +2672,12 @@ export const insertSettlements = async ({ process, user }) => {
             const currentMonth = now.clone().subtract(1, 'M');
             const comparedMonth = moment().locale('ES').month(el.fechaCancelada.month).year(el.fechaCancelada.year);
             const percentage = await finingPercentage({ currentMonth, comparedMonth, branch: 'AE', client });
+            const amount = el.monto - solvencyCost > 0 ? el.monto - solvencyCost : +taxableMin;
             if (percentage === 0) return;
             const multa = Promise.resolve(
               client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION_PETRO, [
                 application.id_solicitud,
-                ((el.monto - solvencyCost) * percentage).toFixed(8),
+                (amount * percentage).toFixed(8),
                 {
                   fecha: {
                     month: moment().locale('ES').month(el.fechaCancelada.month).toDate().toLocaleDateString('ES', { month: 'long' }),
@@ -2699,10 +2701,11 @@ export const insertSettlements = async ({ process, user }) => {
       const exonerado = await isExonerated({ branch: codigosRamo.MUL, contributor: contributorReference?.id_registro_municipal, activity: null, startingDate: moment().startOf('month') }, client);
       if (now.date() > 10 && !exonerado) {
         const basePercentage = +(await client.query(queries.GET_SCALE_FOR_AE_FINING_STARTING_AMOUNT)).rows[0].indicador;
+        const amount = onlyAE[0].monto - solvencyCost > 0 ? onlyAE[0].monto - solvencyCost : taxableMin;
         const multa = (
           await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION_PETRO, [
             application.id_solicitud,
-            ((onlyAE[0].monto - solvencyCost) * basePercentage).toFixed(8),
+            (amount * basePercentage).toFixed(8),
             {
               fecha: {
                 month: moment().subtract(1, 'M').toDate().toLocaleDateString('ES', { month: 'long' }),
