@@ -29,7 +29,7 @@ export const generateReceipt = async (payload: { application: number }, clientPa
     console.log('breakdowndata', breakdownData);
     const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [
       paymentRows[0]?.id_usuario,
-      `${process.env.AWS_ACCESS_URL}//sedemat/recibo/${applicationView.id}/recibo.pdf`,
+      `${process.env.AWS_ACCESS_URL}//sedemat/recibo/agreement/${applicationView.id}/recibo.pdf`,
       applicationView.razonSocial,
       referencia?.referencia_municipal,
       'IMPUESTO',
@@ -44,7 +44,7 @@ export const generateReceipt = async (payload: { application: number }, clientPa
     console.log('IDRECIBO', idRecibo);
 
     return new Promise(async (res, rej) => {
-      const pdfDir = resolve(__dirname, `../../archivos/sedemat/recibo/${applicationView.id}/cierre.pdf`);
+      const pdfDir = resolve(__dirname, `../../archivos/sedemat/recibo/agreement/${applicationView.id}/cierre.pdf`);
       const dir = `${process.env.SERVER_URL}/sedemat/recibo/${applicationView.id}/recibo.pdf`;
       let total = breakdownData.reduce((prev, next) => prev + +next.monto, 0);
       console.log('total', total);
