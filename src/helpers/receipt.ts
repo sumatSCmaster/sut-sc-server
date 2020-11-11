@@ -175,7 +175,7 @@ export const generateReceiptAgreement = async (payload: { agreement: number }, c
           codigoRecibo: String(idRecibo).padStart(16, '0'),
           rim: referencia?.referencia_municipal,
           telefono: referencia?.telefono_celular,
-          items: [
+          items: [[
             {
               fecha: applicationView.fecha,
               fechaAprobacion: applicationView.fechaAprobacionFraccion,
@@ -183,7 +183,7 @@ export const generateReceiptAgreement = async (payload: { agreement: number }, c
               porcion: `${applicationView.porcion}/${applicationView.cantidad}`,
               descripcion: `${applicationView.descripcionRamo} - ${applicationView.descripcionSubramo}} (${date.format('MMMM')} ${date.format('YYYY')})`,
             },
-          ],
+          ]],
           metodoPago: payment,
           total: applicationView.montoFraccion,
           credito: paymentTotal - applicationView.montoFraccion,
