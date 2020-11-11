@@ -150,7 +150,7 @@ export const generateReceiptAgreement = async (payload: { agreement: number }, c
     console.log('recibo', recibo.rows);
     if (!recibo.rows[0]) {
       console.log('not recibo', recibo.rows[0]);
-      return (await client.query(`SELECT recibo FROM impuesto.registro_recibo_convenio WHERE id_solicitud = $1 AND recibo != ''`, [applicationView.id])).rows[0].recibo;
+      return (await client.query(`SELECT recibo FROM impuesto.registro_recibo_convenio WHERE id_fraccion = $1 AND recibo != ''`, [applicationView.id_fraccion])).rows[0].recibo;
     }
     const idRecibo = recibo.rows[0].id_registro_recibo_convenio;
     console.log('IDRECIBO', idRecibo);
@@ -162,7 +162,7 @@ export const generateReceiptAgreement = async (payload: { agreement: number }, c
       let total = breakdownData.reduce((prev, next) => prev + +next.monto, 0);
       console.log('total', total);
       const linkQr = await qr.toDataURL(dev ? dir : `${process.env.AWS_ACCESS_URL}/sedemat/recibo/agreement/${applicationView.id_fraccion}/recibo.pdf`, { errorCorrectionLevel: 'H' });
-      const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-rc.pug`), {
+      const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-RC.pug`), {
         moment: require('moment'),
         institucion: 'SEDEMAT',
         QR: linkQr,
