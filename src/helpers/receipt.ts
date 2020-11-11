@@ -162,7 +162,7 @@ export const generateReceiptAgreement = async (payload: { agreement: number }, c
       let total = breakdownData.reduce((prev, next) => prev + +next.monto, 0);
       console.log('total', total);
       const linkQr = await qr.toDataURL(dev ? dir : `${process.env.AWS_ACCESS_URL}/sedemat/recibo/${applicationView.id_fraccion}/recibo.pdf`, { errorCorrectionLevel: 'H' });
-      const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-recibo.pug`), {
+      const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-rc.pug`), {
         moment: require('moment'),
         institucion: 'SEDEMAT',
         QR: linkQr,
