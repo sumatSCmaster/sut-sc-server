@@ -31,7 +31,7 @@ import {
   deleteSettlement,
 } from '@helpers/settlement';
 import { Usuario } from '@root/interfaces/sigt';
-import { generateReceipt } from '@helpers/receipt';
+import { generateReceipt, generateReceiptAgreement } from '@helpers/receipt';
 
 const router = Router();
 
@@ -143,9 +143,16 @@ router.post('/:id/:certificate', authenticate('jwt'), async (req: any, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-router.post('/receipt/:id/generate', authenticate('jwt'), async (req: any, res) => {
+router.post('/receipt/:id/application', authenticate('jwt'), async (req: any, res) => {
   const { id } = req.params;
   const [error, data] = await fulfill(generateReceipt({ application: id }));
+  if (error) res.status(500).json(error);
+  if (data) res.status(200).json({ url: data, message: 'Recibo generado', status: 200 });
+});
+
+router.post('/receipt/:id/agreement', authenticate('jwt'), async (req: any, res) => {
+  const { id } = req.params;
+  const [error, data] = await fulfill(generateReceiptAgreement({ agreement: id }));
   if (error) res.status(500).json(error);
   if (data) res.status(200).json({ url: data, message: 'Recibo generado', status: 200 });
 });

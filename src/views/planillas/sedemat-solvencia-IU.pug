@@ -8,7 +8,6 @@ block header
     div(style={'-webkit-flex': 1})
       div(style={'margin':'15px 0'})
         h3(style={'margin': '0 auto'}) SOLVENCIA MUNICIPAL 
-        h3(style={'margin': '0 auto'}) N° I.U.- #{datos.codigo}
       div(style={'border':'1px solid grey'})
         div.tr(style={'font-size': '12px'})
           div(style={'-webkit-flex': 1})
@@ -59,7 +58,8 @@ block content
         .td
           p
             b Valor Fiscal:
-            span &nbsp;#{datos.valorFiscal}&nbsp;                       
+            span &nbsp;#{parseFloat(datos.valorFiscal).toFixed(6)}&nbsp;
+            img(src="images/petro.png", alt="alt", style={width:'22px', 'margin-bottom':'-2px', 'margin-left':'2px'})
       .tr
         .td
           p

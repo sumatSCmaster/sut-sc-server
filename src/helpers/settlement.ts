@@ -3374,7 +3374,7 @@ export const addRebateForDeclaration = async ({ process, user }) => {
       recursiveRebate(hasAE, montoRebajado, 'monto_petro').map(async (el) => {
         const oldValue = hasAE.find((x) => x.id_liquidacion === el.id_liquidacion).monto_petro;
         console.log('if -> oldValue', oldValue);
-        const newDatos = { ...el.datos, montoRebajado: oldValue - el.monto_petro };
+        const newDatos = { ...el.datos, montoRebajado: oldValue - el.monto_petro, usuarioRebaja: user.id };
         console.log('montoRebajado', oldValue - el.monto_petro);
         const liquidacion = (await client.query('UPDATE impuesto.liquidacion SET datos = $1, monto_petro = $2 WHERE id_liquidacion = $3 RETURNING *;', [newDatos, el.monto_petro, el.id_liquidacion])).rows[0];
         return liquidacion;
@@ -4220,7 +4220,7 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     if (application.idSubramo === 9) {
       const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
-      let breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 9])).rows;
+      let breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID + ' ORDER BY fecha_vencimiento DESC', [application.id, 9])).rows;
       breakdownData = breakdownData.sort((a, b) => {
         if (mesesNumerico[a.datos.fecha.mes] > mesesNumerico[b.datos.fecha.month]) return -1;
         else if (mesesNumerico[a.datos.fecha.mes] < mesesNumerico[b.datos.fecha.month]) return 1;
@@ -4236,8 +4236,8 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
           titulo: 'CERTIFICADO POR PROPIEDAD INMOBILIARIA',
           institucion: 'SEDEMAT',
           datos: {
-            mes: moment(breakdownData[0].fecha_liquidacion).get('month') + 1,
-            anio: moment(breakdownData[0].fecha_liquidacion).get('year'),
+            mes: moment(breakdownData[0].fecha_vencimiento).get('month') + 1,
+            anio: moment(breakdownData[0].fecha_vencimiento).get('year'),
             contribuyente: application.razonSocial,
             cedulaORif: `${application.tipoDocumento}-${application.documento}`,
             direccion: inmueble.rows[0]?.direccion,
@@ -4245,7 +4245,7 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
             rim: referencia?.referencia_municipal || null, //Si no posee no me la envies o la envias null
             valorFiscal: avaluo?.rows[0]?.avaluo || null,
             periodo: mesesCardinal[breakdownData[breakdownData.length - 1].datos.fecha.month], //el mes
-            fechaLetra: `${moment(breakdownData[0].fecha_liquidacion).get('date')} de ${breakdownData[breakdownData.length - 1].datos.fecha.month} del ${breakdownData[breakdownData.length - 1].datos.fecha.year}.`,
+            fechaLetra: `${moment(breakdownData[0].fecha_vencimiento).get('date')} de ${breakdownData[0].datos.fecha.month} del ${breakdownData[0].datos.fecha.year}.`,
           },
         };
         certInfoArray.push({ ...certInfo });
@@ -4368,11 +4368,13 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
                 });
             }
           } catch (e) {
+            console.log(e);
             throw e;
           } finally {
           }
         }
       } catch (e) {
+        console.log(e);
         throw {
           message: 'Error en generacion de certificado de IU',
           e: errorMessageExtractor(e),
@@ -4380,6 +4382,7 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
       }
     });
   } catch (error) {
+    console.log(error);
     throw errorMessageExtractor(error);
   }
 };
@@ -4711,9 +4714,9 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
               codigo: row.numeroReferencia,
               descripcion: row.descripcion,
               montoDeclarado: desglose.montoDeclarado,
-              montoRebajado: el.datos?.montoRebajado || 0,
+              montoRebajado: (+el.datos?.montoRebajado * PETRO) || 0,
               alicuota: row.alicuota / 100,
-              minTrib: Math.round(row.minimo_tributable) * PETRO,
+              minTrib: +row.minimoTributable * PETRO,
               impuesto: desglose.montoCobrado || 0,
             };
           }),
