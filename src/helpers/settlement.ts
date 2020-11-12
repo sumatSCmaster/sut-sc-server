@@ -4368,11 +4368,13 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
                 });
             }
           } catch (e) {
+            console.log(e)
             throw e;
           } finally {
           }
         }
       } catch (e) {
+        console.log(e)
         throw {
           message: 'Error en generacion de certificado de IU',
           e: errorMessageExtractor(e),
@@ -4380,6 +4382,7 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
       }
     });
   } catch (error) {
+    console.log(error)
     throw errorMessageExtractor(error);
   }
 };
