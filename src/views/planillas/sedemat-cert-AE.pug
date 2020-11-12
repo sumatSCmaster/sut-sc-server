@@ -2,7 +2,7 @@ extends default
 block css
   link(rel="stylesheet", href="css/sedemat.css")
 block title
-  -var montoRebajado = datos.items.reduce((prev, next)=> prev + next.montoRebajado, 0);
+  -var montoRebajado = datos.items[0].montoRebajado;
 block content
   div#fecha
     p 
