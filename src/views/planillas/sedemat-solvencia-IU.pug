@@ -59,7 +59,7 @@ block content
         .td
           p
             b Valor Fiscal:
-            span &nbsp;#{+datos.valorFiscal.toFixed(6)}&nbsp;
+            span &nbsp;#{parseFloat(datos.valorFiscal).toFixed(6)}&nbsp;
             img(src="images/petro.png", alt="alt", style={width:'15px', 'margin-bottom':'-2px', 'margin-left':'2px'})
       .tr
         .td
