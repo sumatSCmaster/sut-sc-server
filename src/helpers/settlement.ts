@@ -4220,7 +4220,7 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     if (application.idSubramo === 9) {
       const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
-      let breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 9])).rows;
+      let breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID + ' ORDER BY fecha_vencimiento DESC', [application.id, 9])).rows;
       breakdownData = breakdownData.sort((a, b) => {
         if (mesesNumerico[a.datos.fecha.mes] > mesesNumerico[b.datos.fecha.month]) return -1;
         else if (mesesNumerico[a.datos.fecha.mes] < mesesNumerico[b.datos.fecha.month]) return 1;
@@ -4236,8 +4236,8 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
           titulo: 'CERTIFICADO POR PROPIEDAD INMOBILIARIA',
           institucion: 'SEDEMAT',
           datos: {
-            mes: moment(breakdownData[0].fecha_liquidacion).get('month') + 1,
-            anio: moment(breakdownData[0].fecha_liquidacion).get('year'),
+            mes: moment(breakdownData[0].fecha_vencimiento).get('month') + 1,
+            anio: moment(breakdownData[0].fecha_vencimiento).get('year'),
             contribuyente: application.razonSocial,
             cedulaORif: `${application.tipoDocumento}-${application.documento}`,
             direccion: inmueble.rows[0]?.direccion,
@@ -4245,7 +4245,7 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
             rim: referencia?.referencia_municipal || null, //Si no posee no me la envies o la envias null
             valorFiscal: avaluo?.rows[0]?.avaluo || null,
             periodo: mesesCardinal[breakdownData[breakdownData.length - 1].datos.fecha.month], //el mes
-            fechaLetra: `${moment(breakdownData[0].fecha_liquidacion).get('date')} de ${breakdownData[breakdownData.length - 1].datos.fecha.month} del ${breakdownData[breakdownData.length - 1].datos.fecha.year}.`,
+            fechaLetra: `${moment(breakdownData[0].fecha_vencimiento).get('date')} de ${breakdownData[0].datos.fecha.month} del ${breakdownData[0].datos.fecha.year}.`,
           },
         };
         certInfoArray.push({ ...certInfo });
