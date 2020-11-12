@@ -3374,7 +3374,7 @@ export const addRebateForDeclaration = async ({ process, user }) => {
       recursiveRebate(hasAE, montoRebajado, 'monto_petro').map(async (el) => {
         const oldValue = hasAE.find((x) => x.id_liquidacion === el.id_liquidacion).monto_petro;
         console.log('if -> oldValue', oldValue);
-        const newDatos = { ...el.datos, montoRebajado: oldValue - el.monto_petro };
+        const newDatos = { ...el.datos, montoRebajado: oldValue - el.monto_petro, usuarioRebaja: user.id };
         console.log('montoRebajado', oldValue - el.monto_petro);
         const liquidacion = (await client.query('UPDATE impuesto.liquidacion SET datos = $1, monto_petro = $2 WHERE id_liquidacion = $3 RETURNING *;', [newDatos, el.monto_petro, el.id_liquidacion])).rows[0];
         return liquidacion;
@@ -4368,13 +4368,13 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
                 });
             }
           } catch (e) {
-            console.log(e)
+            console.log(e);
             throw e;
           } finally {
           }
         }
       } catch (e) {
-        console.log(e)
+        console.log(e);
         throw {
           message: 'Error en generacion de certificado de IU',
           e: errorMessageExtractor(e),
@@ -4382,7 +4382,7 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
       }
     });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     throw errorMessageExtractor(error);
   }
 };
