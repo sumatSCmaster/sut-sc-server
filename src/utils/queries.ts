@@ -968,8 +968,12 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_PAYMENT_FROM_REQ_ID_DEST: 'SELECT * FROM pago p LEFT JOIN banco b ON b.id_banco = p.id_banco_destino WHERE id_procedimiento = $1 AND concepto = $2',
   GET_PAYMENT_FROM_REQ_ID_GROUP_BY_PAYMENT_TYPE: `SELECT p.metodo_pago AS tipo, SUM(p.monto) AS monto, COUNT(*) AS transacciones
       FROM pago p
-      WHERE p.concepto IN ('IMPUESTO','CONVENIO', 'RETENCION') AND p.id_procedimiento = $1
+      WHERE p.concepto IN ('IMPUESTO', 'RETENCION') AND p.id_procedimiento = $1
       GROUP BY p.metodo_pago;`,
+  GET_PAYMENT_FROM_REQ_ID_GROUP_BY_PAYMENT_TYPE_AGREEMENT: `SELECT p.metodo_pago AS tipo, SUM(p.monto) AS monto, COUNT(*) AS transacciones
+  FROM pago p
+  WHERE p.concepto = 'CONVENIO' AND p.id_procedimiento = $1
+  GROUP BY p.metodo_pago;`,
   GET_PAYMENT_FROM_REQ_ID_GROUP_BY_AGREEMENT: `SELECT p.metodo_pago AS tipo, SUM(p.monto) AS monto, COUNT(*) AS transacciones
       FROM pago p
       WHERE p.concepto = 'CONVENIO' AND p.id_procedimiento = $1

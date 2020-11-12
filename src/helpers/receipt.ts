@@ -129,7 +129,7 @@ export const generateReceiptAgreement = async (payload: { agreement: number }, c
   const client = clientParam ? clientParam : await pool.connect();
   try {
     const applicationView = (await client.query(queries.GET_AGREEMENT_VIEW_BY_FRACTION_ID, [payload.agreement])).rows[0];
-    const payment = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_GROUP_BY_PAYMENT_TYPE, [applicationView.id])).rows;
+    const payment = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_GROUP_BY_PAYMENT_TYPE_AGREEMENT, [applicationView.id_fraccion])).rows;
     const paymentRows = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [applicationView.id_fraccion, 'CONVENIO'])).rows;
     console.log('payment', payment);
     console.log('paymentRows', paymentRows);
