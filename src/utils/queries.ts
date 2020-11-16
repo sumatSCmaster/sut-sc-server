@@ -710,15 +710,13 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
      JOIN ( SELECT es.id_solicitud,
             impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
            FROM impuesto.evento_solicitud es
-           WHERE id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE referencia_municipal = $2 LIMIT 1))
+           WHERE id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE id_registro_municipal = $2 LIMIT 1))
           GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
 ) s 
 RIGHT JOIN impuesto.liquidacion l on s.id = l.id_solicitud 
 INNER JOIN impuesto.subramo sr ON l.id_subramo = sr.id_subramo
 INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo 
-WHERE rm.codigo = $1 AND l.id_registro_municipal =
-(SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $2 LIMIT 1) 
-AND EXTRACT('month' FROM l.fecha_liquidacion) = EXTRACT('month' FROM CURRENT_DATE) AND EXTRACT('year' FROM l.fecha_liquidacion) = EXTRACT('year' FROM CURRENT_DATE) ORDER BY fecha_liquidacion DESC`,
+WHERE rm.codigo = $1 AND l.id_registro_municipal = $2 AND EXTRACT('month' FROM l.fecha_liquidacion) = EXTRACT('month' FROM CURRENT_DATE) AND EXTRACT('year' FROM l.fecha_liquidacion) = EXTRACT('year' FROM CURRENT_DATE) ORDER BY fecha_liquidacion DESC`,
   CURRENT_SETTLEMENT_EXISTS_IN_YEAR_FOR_CODE_AND_RIM:
     "SELECT * FROM impuesto.solicitud_state s INNER JOIN impuesto.liquidacion l on s.id = l.id_solicitud INNER JOIN impuesto.subramo sr ON\
           l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND l.id_registro_municipal =\
@@ -791,7 +789,7 @@ AND EXTRACT('month' FROM l.fecha_liquidacion) = EXTRACT('month' FROM CURRENT_DAT
   GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED: `WITH solicitudcte AS (
     SELECT id_solicitud
     FROM impuesto.solicitud 
-    WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE referencia_municipal = $2)
+    WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE id_registro_municipal = $2 LIMIT 1)
     )
 
     SELECT *
@@ -816,10 +814,7 @@ AND EXTRACT('month' FROM l.fecha_liquidacion) = EXTRACT('month' FROM CURRENT_DAT
     INNER JOIN impuesto.ramo rm
         ON sr.id_ramo = rm.id_ramo
     WHERE rm.codigo = $1
-            AND l.id_registro_municipal = 
-        (SELECT id_registro_municipal
-        FROM impuesto.registro_municipal
-        WHERE referencia_municipal = $2 LIMIT 1)
+            AND l.id_registro_municipal = $2
     ORDER BY  fecha_liquidacion DESC LIMIT 1;`,
   GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED: `WITH solicitudcte AS (
       SELECT id_solicitud
