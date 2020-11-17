@@ -1566,6 +1566,8 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
         const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
         const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
+                const type = el.tipo_solicitud;
+
         return {
           id: el.id_solicitud,
           usuario: typeof user === 'object' ? user : { id: user },
@@ -1581,7 +1583,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
             : undefined,
           fecha: el.fecha,
           monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
-          montoPetro: (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total,
+          montoPetro: type !== 'RETENCION' ? (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total : null,
           liquidaciones: await Promise.all(
             liquidaciones
               .filter((el) => el.tipoProcedimiento !== 'MULTAS')
@@ -1591,7 +1593,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
                   ramo: el.tipoProcedimiento,
                   fecha: el.datos.fecha,
                   monto: el.monto,
-                  montoPetro: +el.monto_petro,
+                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
                   esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
                   certificado: el.certificado,
                   recibo: el.recibo,
@@ -1608,7 +1610,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
                   ramo: el.tipoProcedimiento,
                   fecha: el.datos.fecha,
                   monto: el.monto,
-                  montoPetro: +el.monto_petro,
+                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
                   descripcion: el.datos.descripcion,
                   certificado: el.certificado,
                   recibo: el.recibo,
@@ -1641,12 +1643,13 @@ export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
         const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
         const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
+        const type = el.tipo_solicitud;
         return {
           id: el.id_solicitud,
           usuario: typeof user === 'object' ? user : { id: user },
           contribuyente: structureContributor(docs),
           aprobado: el.aprobado,
-          tipo: el.tipo_solicitud,
+          tipo: type,
           documento: docs.documento,
           tipoDocumento: docs.tipo_documento,
           rebajado: el.rebajado,
@@ -1656,7 +1659,7 @@ export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client
             : undefined,
           fecha: el.fecha,
           monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
-          montoPetro: (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total,
+          montoPetro: type !== 'RETENCION' ? (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total : null,
           liquidaciones: await Promise.all(
             liquidaciones
               .filter((el) => el.tipoProcedimiento !== 'MULTAS')
@@ -1666,7 +1669,7 @@ export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client
                   ramo: el.tipoProcedimiento,
                   fecha: el.datos.fecha,
                   monto: el.monto,
-                  montoPetro: +el.monto_petro,
+                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
                   esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
                   certificado: el.certificado,
                   recibo: el.recibo,
@@ -1683,7 +1686,7 @@ export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client
                   ramo: el.tipoProcedimiento,
                   fecha: el.datos.fecha,
                   monto: el.monto,
-                  montoPetro: +el.monto_petro,
+                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
                   descripcion: el.datos.descripcion,
                   certificado: el.certificado,
                   recibo: el.recibo,
@@ -1717,6 +1720,8 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
           const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
           const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
           const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
+                  const type = el.tipo_solicitud;
+
           return {
             id: el.id_solicitud,
             usuario: user,
@@ -1732,7 +1737,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
               : undefined,
             fecha: el.fecha,
             monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
-            montoPetro: (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total,
+            montoPetro: type !== 'RETENCION' ? (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total : null,
             liquidaciones: await Promise.all(
               liquidaciones
                 .filter((el) => el.tipoProcedimiento !== 'MULTAS')
@@ -1742,7 +1747,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
                     ramo: el.tipoProcedimiento,
                     fecha: el.datos.fecha,
                     monto: +el.monto,
-                    montoPetro: +el.monto_petro,
+                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
                     esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
                     certificado: el.certificado,
                     recibo: el.recibo,
@@ -1759,7 +1764,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
                     ramo: el.tipoProcedimiento,
                     fecha: el.datos.fecha,
                     monto: +el.monto,
-                    montoPetro: +el.monto_petro,
+                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
                     descripcion: el.datos.descripcion,
                     certificado: el.certificado,
                     recibo: el.recibo,
@@ -1804,6 +1809,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
           const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
           const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
           const rim = (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal;
+          const type = el.tipo_solicitud;
 
           return {
             id: el.id_solicitud,
@@ -1820,7 +1826,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
             estado: state,
             referenciaMunicipal: liquidaciones[0]?.id_registro_municipal ? rim : undefined,
             monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
-            montoPetro: (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total,
+            montoPetro: type !== 'RETENCION' ? (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total : null,
             liquidaciones: await Promise.all(
               liquidaciones
                 .filter((el) => el.tipoProcedimiento !== 'MULTAS')
@@ -1830,7 +1836,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
                     ramo: el.tipoProcedimiento,
                     fecha: el.datos.fecha,
                     monto: +el.monto,
-                    montoPetro: +el.monto_petro,
+                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
                     esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
                     certificado: el.certificado,
                     recibo: el.recibo,
@@ -1847,7 +1853,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
                     ramo: el.tipoProcedimiento,
                     fecha: el.datos.fecha,
                     monto: +el.monto,
-                    montoPetro: +el.monto_petro,
+                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
                     descripcion: el.datos.descripcion,
                     certificado: el.certificado,
                     recibo: el.recibo,
@@ -2809,7 +2815,7 @@ export const insertSettlements = async ({ process, user }) => {
     //   registroMunicipal: process.rim,
     // };
     const state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
-    if (settlement.reduce((x, y) => x + +y.montoPetro, 0) === 0) {
+    if (settlement.reduce((x, y) => x + +y.montoPetro!, 0) === 0) {
       // (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.VALIDAR])).rows[0].state;
       await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
     }

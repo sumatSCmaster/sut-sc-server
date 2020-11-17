@@ -352,7 +352,7 @@ export const insertRetentions = async ({ process, user }) => {
     await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO, [application.id_solicitud]);
     await client.query(queries.FINISH_ROUNDING, [application.id_solicitud]);
     let state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
-    if (settlement.reduce((x, y) => x + +y.montoPetro, 0) === 0) {
+    if (settlement.reduce((x, y) => x + +y.montoPetro!, 0) === 0) {
       // (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.VALIDAR])).rows[0].state;
       state = await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
     }

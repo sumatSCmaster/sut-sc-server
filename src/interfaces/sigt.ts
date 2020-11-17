@@ -189,7 +189,7 @@ export interface Liquidacion {
   ramo: string;
   fecha: Fecha;
   monto: number;
-  montoPetro: number;
+  montoPetro: number | null;
   certificado?: string;
   desglose?: object;
   recibo?: string;
