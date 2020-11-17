@@ -1020,7 +1020,7 @@ const reviseProcedureForMassiveApproval = async (procedure: Partial<Tramite | an
 
     if (resources.tipoTramite === 28 || resources.tipoTramite === 36) {
       const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
-      prevData.datos.funcionario = { ...procedure.datos };
+      prevData.datos.funcionario = { ...procedure.datos, observaciones };
       datos = prevData.datos;
       datos.idTramite = procedure.idTramite;
       datos.funcionario.estadoLicencia = resources.tipoTramite === 28 ? 'PERMANENTE' : 'TEMPORAL';
