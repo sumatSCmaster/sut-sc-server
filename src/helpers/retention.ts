@@ -38,11 +38,11 @@ export const getRetentionMonths = async ({ document, reference, docType, user }:
     if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
     if (!branch) throw { status: 404, message: 'No existe el RIM de Agente de Retención proporcionado' };
-    const RD0ApplicationExists = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.RD0, reference])).rows[0];
+    const RD0ApplicationExists = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.RD0, branch.id_registro_municipal])).rows[0];
     if (!!RD0ApplicationExists) throw { status: 409, message: 'Ya existe una declaración de retenciones para este mes' };
     const now = moment(new Date());
 
-    let lastRD = (await client.query(queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.RD0, branch.referencia_municipal])).rows[0];
+    let lastRD = (await client.query(queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.RD0, branch.id_registro_municipal])).rows[0];
     const lastRDPayment = (lastRD && moment(lastRD.fecha_liquidacion)) || moment().month(0);
     const RDDate = moment([lastRDPayment.year(), lastRDPayment.month(), 1]);
     const dateInterpolation = Math.floor(now.diff(RDDate, 'M'));
@@ -352,7 +352,7 @@ export const insertRetentions = async ({ process, user }) => {
     // await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO, [application.id_solicitud]);
     // await client.query(queries.FINISH_ROUNDING, [application.id_solicitud]);
     let state = (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS])).rows[0].state;
-    if (settlement.reduce((x, y) => x + +y.montoPetro, 0) === 0) {
+    if (settlement.reduce((x, y) => x + +y.montoPetro!, 0) === 0) {
       // (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.VALIDAR])).rows[0].state;
       state = await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
     }
