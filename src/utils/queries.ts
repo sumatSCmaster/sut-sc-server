@@ -1032,8 +1032,8 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
       ORDER BY ramo)) x
         WHERE codigo != '915'
         GROUP BY ramo, descripcion, codigo;`,
-  GET_LIQUIDATED: `SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadLiq", SUM(monto) as liquidado 
-        FROM (SELECT *  FROM impuesto.liquidacion WHERE fecha_liquidacion BETWEEN $1 AND $2 AND monto != 'NaN') l 
+  GET_LIQUIDATED: `SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadLiq", SUM(CASE WHEN monto IS NOT NULL THEN monto ELSE (monto_petro * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) END) as liquidado 
+        FROM (SELECT *  FROM impuesto.liquidacion WHERE fecha_liquidacion BETWEEN $1 AND $2) l 
         INNER JOIN (SELECT *, s.id_solicitud AS id_solicitud_q FROM impuesto.solicitud s 
                         INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) 
             AS state FROM impuesto.evento_solicitud es GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud) 
@@ -2603,7 +2603,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
                   INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
                   WHERE (datos#>>'{fecha, month}' = $2) 
                   AND datos#>>'{fecha, year}' = $3 
-                  AND id_subramo IN (10, 99) GROUP BY id_registro_municipal, s.aprobado) lae ON lae.id_registro_municipal = rm.id_registro_municipal
+                  AND id_subramo IN (10, 99) GROUP BY id_registro_municipal, s.aprobado) lae ON lae.id_registro_municipal = rm.id_registro_municipal 
       LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS apr, CASE WHEN s.aprobado = true THEN SUM(l.monto) ELSE SUM(l.monto_petro * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) END AS monto
                   FROM impuesto.liquidacion l
                   INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
@@ -2738,9 +2738,15 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       WHEN (s.fecha_aprobado::timestamptz - cast(date_trunc('month', $3::date) as timestamptz) ) BETWEEN interval '21 days' AND interval '25 days' THEN '2'
       ELSE '1'
   END AS rating
-  FROM (SELECT SUM(monto), id_subramo, id_registro_municipal, datos#>>'{fecha,month}' as mes, datos#>>'{fecha, year}' as anyo
-        FROM impuesto.liquidacion WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2
-        GROUP BY id_subramo, id_registro_municipal, mes, anyo) l
+  FROM (
+        SELECT l.monto, id_solicitud, l.id_registro_municipal
+        FROM (SELECT *, datos#>>'{fecha,month}' AS mes, datos#>>'{fecha,year}' AS anyo FROM impuesto.liquidacion WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2) l
+        INNER JOIN (
+                      SELECT MAX(monto) as monto, id_registro_municipal,  datos#>>'{fecha,month}' as mes, datos#>>'{fecha, year}' as anyo 
+                      FROM impuesto.liquidacion WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2
+                      GROUP BY id_registro_municipal, mes, anyo
+                      ) sub ON sub.monto = l.monto AND sub.mes = l.mes AND sub.anyo = l.anyo AND sub.id_registro_municipal = l.id_registro_municipal       
+        ) l
   INNER JOIN impuesto.solicitud s USING (id_solicitud)
   WHERE s.aprobado = true AND id_registro_municipal IN (
     SELECT * FROM (
@@ -2763,9 +2769,17 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       WHEN (s.fecha_aprobado::timestamptz - cast(date_trunc('month', $3::date) as timestamptz) ) BETWEEN interval '21 days' AND interval '25 days' THEN '2'
       ELSE '1'
   END AS rating
-  FROM impuesto.liquidacion l
+  FROM (
+    SELECT l.monto, id_solicitud, l.id_registro_municipal
+    FROM (SELECT *, datos#>>'{fecha,month}' AS mes, datos#>>'{fecha,year}' AS anyo FROM impuesto.liquidacion WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2) l
+    INNER JOIN (
+                  SELECT MAX(monto) as monto, id_registro_municipal,  datos#>>'{fecha,month}' as mes, datos#>>'{fecha, year}' as anyo 
+                  FROM impuesto.liquidacion WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2
+                  GROUP BY id_registro_municipal, mes, anyo
+                  ) sub ON sub.monto = l.monto AND sub.mes = l.mes AND sub.anyo = l.anyo AND sub.id_registro_municipal = l.id_registro_municipal        
+    ) l
   INNER JOIN impuesto.solicitud s USING (id_solicitud)
-  WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2 AND s.aprobado = true AND id_registro_municipal IN (
+  WHERE s.aprobado = true AND id_registro_municipal IN (
     SELECT * FROM (
         SELECT id_registro_municipal FROM (SELECT DISTINCT ON (l.id_registro_municipal) l.id_registro_municipal, SUM(monto) as montoTotal 
         FROM Impuesto.liquidacion l

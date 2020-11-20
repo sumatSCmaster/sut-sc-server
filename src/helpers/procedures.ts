@@ -184,7 +184,7 @@ const getSettlementInstances = async (user, client: PoolClient) => {
         id: el.id_liquidacion,
         ramo: el.descripcion,
         nombreCorto: el.descripcion_corta,
-        fecha: { month: el.datos.fecha.month, year: el.datos.fecha.year },
+        fecha: { month: el.datos.fecha?.month || el.datos.month, year: el.datos.fecha?.year || el.datos.year  },
         monto: el.monto,
         montoPetro: el.monto_petro,
         certificado: el.certificado,
