@@ -49,7 +49,7 @@ router.post('/license/approve', authenticate('jwt'), async (req: any, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-router.post('/receipt/:id', authenticate('jwt'), async (req: any, res) => {
+router.post('/certificate/:id', authenticate('jwt'), async (req: any, res) => {
   const { id } = req.params;
   const [error, data] = await fulfill(generateCertificate(id));
   if (error) res.status(500).json({ status: 500, error, message: 'Error al generar certificado' });
