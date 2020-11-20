@@ -3947,7 +3947,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                     impuesto: formatCurrency(row.monto),
                   };
                 }),
-                3
+                2
               ),
               totalIva: `${formatCurrency(totalIva)} Bs`,
               totalRetencionIva: `${formatCurrency(totalRetencionIva)} Bs`, // TODO: Retencion

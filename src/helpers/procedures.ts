@@ -184,7 +184,7 @@ const getSettlementInstances = async (user, client: PoolClient) => {
         id: el.id_liquidacion,
         ramo: el.descripcion,
         nombreCorto: el.descripcion_corta,
-        fecha: { month: el.datos.fecha?.month || el.datos.month, year: el.datos.fecha?.year || el.datos.year  },
+        fecha: { month: el.datos.fecha?.month || el.datos.month, year: el.datos.fecha?.year || el.datos.year },
         monto: el.monto,
         montoPetro: el.monto_petro,
         certificado: el.certificado,
@@ -1055,8 +1055,8 @@ const reviseProcedureForMassiveApproval = async (procedure: Partial<Tramite | an
         if (aprobado && nextEvent[aprobado].startsWith('aprobar')) {
           datos = !![29, 30, 31, 32].find((el) => el === resources.tipoTramite) ? await installLiquorLicense(datos, client) : await renewLiquorLicense(datos, client);
           procedure.datos = datos;
-          dir = await createCertificate(procedure, client);
-          respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, dir, null]);
+          // dir = await createCertificate(procedure, client);
+          respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, dir || null, null]);
         } else {
           respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
         }
@@ -1064,7 +1064,7 @@ const reviseProcedureForMassiveApproval = async (procedure: Partial<Tramite | an
     } else {
       if (aprobado) {
         if (resources.tipoTramite === 28 || resources.tipoTramite === 36) procedure.datos = await approveContributorAELicense({ data: datos, client });
-        if (procedure.sufijo !== 'bc' && procedure.sufijo !== 'sup') dir = await createCertificate(procedure, client);
+        // if (procedure.sufijo !== 'bc' && procedure.sufijo !== 'sup') dir = await createCertificate(procedure, client);
         respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, aprobado]);
       } else {
         respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
@@ -1133,6 +1133,22 @@ export const approveAllLicenses = async (idArray: number[], user: Usuario): Prom
       error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || error.message || 'Error al realizar la aprobación masiva de licencias',
     };
+  } finally {
+    client.release();
+  }
+};
+
+export const generateCertificate = async (id) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const url = await createCertificate({ idTramite: id }, client);
+    await client.query('UPDATE tramite SET url_certificado = $1 WHERE id_tramite = $2', [url, id]);
+    await client.query('COMMIT');
+    return { status: 200, message: 'Certificado de tramite generado', url };
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
   } finally {
     client.release();
   }
