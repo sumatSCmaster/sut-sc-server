@@ -1813,9 +1813,22 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   //  3. Total recaudado por mes (gráfico de linea con anotaciones)
   //  Sin fecha proporcionada
   TOTAL_GAININGS_IN_MONTH: `SELECT z.fecha, COALESCE(SUM(monto),0) AS valor
-  FROM (SELECT fecha_de_aprobacion, SUM(monto) AS monto
+  FROM (
+  SELECT fecha_de_aprobacion, SUM(p.monto) AS monto
   FROM pago p
-  WHERE aprobado = true AND concepto IN ('IMPUESTO', 'CONVENIO')
+  INNER JOIN (
+      SELECT id_solicitud, ARRAY_AGG(id_subramo)
+      FROM impuesto.liquidacion l 
+      GROUP BY id_solicitud
+      HAVING 85 != ANY(ARRAY_AGG(l.id_subramo) ) OR 236 != ANY(ARRAY_AGG(l.id_subramo))
+  ) sub ON sub.id_solicitud = p.id_procedimiento
+  WHERE p.aprobado = true AND concepto = 'IMPUESTO'
+  GROUP BY p.fecha_de_aprobacion
+  
+  UNION ALL
+  SELECT fecha_de_aprobacion, SUM(monto) AS monto
+  FROM pago p
+  WHERE aprobado = true AND concepto = 'CONVENIO'
   GROUP BY fecha_de_aprobacion
   UNION ALL
   SELECT fecha_de_aprobacion, SUM(monto) AS monto
@@ -1828,7 +1841,8 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   WHERE EXTRACT('month' from fecha) = EXTRACT('month' from (NOW() - interval '4 hours'))
   AND EXTRACT('year' from fecha) = EXTRACT('year' from (NOW() - interval '4 hours'))
   GROUP BY fecha
-  ORDER BY fecha;`,
+  ORDER BY fecha
+  `,
 
   //  Con fecha proporcionada
   TOTAL_GAININGS_IN_MONTH_WITH_DATE: `SELECT z.fecha, COALESCE(SUM(monto),0) AS valor
