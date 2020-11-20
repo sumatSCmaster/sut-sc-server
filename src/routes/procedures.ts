@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAvailableProcedures, procedureInit, getAvailableProceduresOfInstitution, updateProcedureCost, updateProcedureHandler, getProcedureCosts, approveAllLicenses } from '@helpers/procedures';
+import { getAvailableProcedures, procedureInit, getAvailableProceduresOfInstitution, updateProcedureCost, updateProcedureHandler, getProcedureCosts, approveAllLicenses, generateCertificate } from '@helpers/procedures';
 import { validate, isOfficial, isExternalUser, isLogged, isAuth } from '@validations/auth';
 import { checkResult } from '@validations/index';
 import { authenticate } from 'passport';
@@ -46,6 +46,13 @@ router.post('/license/approve', authenticate('jwt'), async (req: any, res) => {
   const { tramites } = req.body;
   const [error, data] = await fulfill(approveAllLicenses(tramites, req.user));
   if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+});
+
+router.post('/receipt/:id', authenticate('jwt'), async (req: any, res) => {
+  const { id } = req.params;
+  const [error, data] = await fulfill(generateCertificate(id));
+  if (error) res.status(500).json({ status: 500, error, message: 'Error al generar certificado' });
   if (data) res.status(data.status).json(data);
 });
 
