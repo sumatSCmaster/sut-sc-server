@@ -1143,6 +1143,7 @@ export const generateCertificate = async (id) => {
   try {
     await client.query('BEGIN');
     const url = await createCertificate({ idTramite: id }, client);
+    await client.query('UPDATE tramite SET url_certificado = $1 WHERE id_tramite = $2', [url, id]);
     await client.query('COMMIT');
     return { status: 200, message: 'Certificado de tramite generado', url };
   } catch (e) {
