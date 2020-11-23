@@ -151,7 +151,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const fiscalCredit =
       (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.tipo_contribuyente === 'JURIDICO' ? branch?.id_registro_municipal : contributor.id_contribuyente, contributor.tipo_contribuyente])).rows[0]?.credito || 0;
     const retentionCredit = (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, branch?.referencia_municipal])).rows[0]?.credito || 0;
-    const AEApplicationExists = !!reference && !!branch ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, branch?.id_registro_municipal])).rows.find((el) => !el.datos.hasOwnProperty('descripcion')) : false;
+    const AEApplicationExists =
+      !!reference && !!branch ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, branch?.id_registro_municipal])).rows.find((el) => !el.datos.hasOwnProperty('descripcion')) : false;
     const SMApplicationExists =
       !!reference && !!branch
         ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.SM, branch?.id_registro_municipal])).rows[0]
@@ -1566,7 +1567,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
         const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
         const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
-                const type = el.tipo_solicitud;
+        const type = el.tipo_solicitud;
 
         return {
           id: el.id_solicitud,
@@ -1593,7 +1594,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
                   ramo: el.tipoProcedimiento,
                   fecha: el.datos.fecha,
                   monto: el.monto,
-                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
+                  montoPetro: type !== 'RETENCION' ? +el.monto_petro : null,
                   esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
                   certificado: el.certificado,
                   recibo: el.recibo,
@@ -1610,7 +1611,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
                   ramo: el.tipoProcedimiento,
                   fecha: el.datos.fecha,
                   monto: el.monto,
-                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
+                  montoPetro: type !== 'RETENCION' ? +el.monto_petro : null,
                   descripcion: el.datos.descripcion,
                   certificado: el.certificado,
                   recibo: el.recibo,
@@ -1669,7 +1670,7 @@ export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client
                   ramo: el.tipoProcedimiento,
                   fecha: el.datos.fecha,
                   monto: el.monto,
-                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
+                  montoPetro: type !== 'RETENCION' ? +el.monto_petro : null,
                   esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
                   certificado: el.certificado,
                   recibo: el.recibo,
@@ -1686,7 +1687,7 @@ export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client
                   ramo: el.tipoProcedimiento,
                   fecha: el.datos.fecha,
                   monto: el.monto,
-                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
+                  montoPetro: type !== 'RETENCION' ? +el.monto_petro : null,
                   descripcion: el.datos.descripcion,
                   certificado: el.certificado,
                   recibo: el.recibo,
@@ -1720,7 +1721,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
           const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
           const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
           const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
-                  const type = el.tipo_solicitud;
+          const type = el.tipo_solicitud;
 
           return {
             id: el.id_solicitud,
@@ -1747,7 +1748,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
                     ramo: el.tipoProcedimiento,
                     fecha: el.datos.fecha,
                     monto: +el.monto,
-                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
+                    montoPetro: type !== 'RETENCION' ? +el.monto_petro : null,
                     esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
                     certificado: el.certificado,
                     recibo: el.recibo,
@@ -1764,7 +1765,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
                     ramo: el.tipoProcedimiento,
                     fecha: el.datos.fecha,
                     monto: +el.monto,
-                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
+                    montoPetro: type !== 'RETENCION' ? +el.monto_petro : null,
                     descripcion: el.datos.descripcion,
                     certificado: el.certificado,
                     recibo: el.recibo,
@@ -1836,7 +1837,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
                     ramo: el.tipoProcedimiento,
                     fecha: el.datos.fecha,
                     monto: +el.monto,
-                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
+                    montoPetro: type !== 'RETENCION' ? +el.monto_petro : null,
                     esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
                     certificado: el.certificado,
                     recibo: el.recibo,
@@ -1853,7 +1854,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
                     ramo: el.tipoProcedimiento,
                     fecha: el.datos.fecha,
                     monto: +el.monto,
-                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
+                    montoPetro: type !== 'RETENCION' ? +el.monto_petro : null,
                     descripcion: el.datos.descripcion,
                     certificado: el.certificado,
                     recibo: el.recibo,
@@ -2863,7 +2864,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
       ).rows[0];
     }
     const applicationType = (await client.query('SELECT tipo_solicitud FROM impuesto.solicitud WHERE id_solicitud = $1', [application])).rows[0]?.tipo_solicitud || 'IMPUESTO';
-    applicationType !== 'RETENCION' && await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO, [application]);
+    applicationType !== 'RETENCION' && (await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO, [application]));
     const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0];
     console.log('addTaxApplicationPayment -> solicitud', solicitud);
     const pagoSum = +payment.map((e) => fixatedAmount(+e.costo)).reduce((e, i) => e + i, 0);
@@ -2891,7 +2892,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
       })
     );
 
-    applicationType !== 'RETENCION' && await client.query(queries.FINISH_ROUNDING, [application]);
+    applicationType !== 'RETENCION' && (await client.query(queries.FINISH_ROUNDING, [application]));
     const state =
       user.tipoUsuario === 4
         ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0]
@@ -3653,7 +3654,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             return benefitRemission;
           case 'convenio':
             const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
-            const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [contribuyente?.usuarios[0].id || benefittedUser?.id, contributorWithBranch.id_contribuyente])).rows[0];
+            const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [contribuyente?.usuarios[0]?.id || benefittedUser?.id, contributorWithBranch.id_contribuyente])).rows[0];
             await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [applicationAG.id_solicitud, applicationStateEvents.INGRESARDATOS]);
             await client.query('UPDATE impuesto.solicitud SET tipo_solicitud = $1 WHERE id_solicitud = $2', ['CONVENIO', applicationAG.id_solicitud]);
             const agreement = (await client.query(queries.CREATE_AGREEMENT, [applicationAG.id_solicitud, x.porciones.length])).rows[0];
@@ -4720,7 +4721,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
               codigo: row.numeroReferencia,
               descripcion: row.descripcion,
               montoDeclarado: desglose.montoDeclarado,
-              montoRebajado: (+el.datos?.montoRebajado * PETRO) || 0,
+              montoRebajado: +el.datos?.montoRebajado * PETRO || 0,
               alicuota: row.alicuota / 100,
               minTrib: +row.minimoTributable * PETRO,
               impuesto: desglose.montoCobrado || 0,
