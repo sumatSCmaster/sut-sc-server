@@ -183,13 +183,13 @@ export const validateFining = async (procedure, user: Usuario, client) => {
     await sendNotification(user, `Se ha validado el pago de una multa asignada al titular de la cédula ${multa.nacionalidad}-${multa.cedula}`, 'UPDATE_FINING', 'MULTA', multa, client);
     const userExists = (await client.query(queries.CHECK_IF_USER_EXISTS, [multa.cedula, multa.nacionalidad])).rows;
     if (userExists.length > 0) {
-      // sendEmail({
-      //   ...multa,
-      //   codigo: multa.codigoMulta,
-      //   nombreUsuario: userExists[0].nombre_de_usuario,
-      //   nombreCompletoUsuario: userExists[0].nombre_completo,
-      //   estado: respState.rows[0].state,
-      // });
+      sendEmail({
+        ...multa,
+        codigo: multa.codigoMulta,
+        nombreUsuario: userExists[0].nombre_de_usuario,
+        nombreCompletoUsuario: userExists[0].nombre_completo,
+        estado: respState.rows[0].state,
+      });
     }
     return { status: 200, message: 'Pago de multa validado', multa };
   } catch (error) {
