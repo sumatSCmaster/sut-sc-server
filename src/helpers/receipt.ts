@@ -354,8 +354,26 @@ export const generateRepairReceipt = async (payload: { application: number; brea
   }
 };
 
-export const createCertificateBuffers = async (certInfoArray: any[], pugFileName: string): Promise<Buffer[]> => {
-  let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/${pugFileName}`), certInfo));
+export const createOnDemandCertificate = async (type: string, data: any[]): Promise<{ status: number; messsage: string; url: string }> => {
+  try {
+    const pugFile = {
+      IU: 'sedemat-solvencia-IU',
+      SM: 'sedemat-solvencia-SM',
+      LIC: 'sedemat-cert-EL',
+    };
+    const index = new Date().getTime().toString().substr(6);
+    const bucketKey = `/sedemat/${type}/${index}/certificado.pdf`;
+    const buffers = await createCertificateBuffers(data, pugFile[type], bucketKey);
+    const url = await createCertificate(buffers, bucketKey);
+    return { status: 200, messsage: 'Certificado generado', url };
+  } catch (e) {
+    throw { status: 500, message: 'Error al generar certificado', error: e };
+  }
+};
+
+export const createCertificateBuffers = async (certInfoArray: any[], pugFileName: string, bucketKey: string): Promise<Buffer[]> => {
+  const linkQr = await qr.toDataURL(`${process.env.AWS_ACCESS_URL}${bucketKey}`, { errorCorrectionLevel: 'H' });
+  let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/${pugFileName}.pug`), { moment: require('moment'), institucion: 'SEDEMAT', QR: linkQr, ...certInfo }));
 
   let buffersArray: any[] = await Promise.all(
     htmlArray.map((html) => {
@@ -381,7 +399,7 @@ export const createCertificateBuffers = async (certInfoArray: any[], pugFileName
   return buffersArray;
 };
 
-export const createCertificate = async (buffersArray: Buffer[], bucketKey: string, pdfDir?: string | undefined) => {
+export const createCertificate = async (buffersArray: Buffer[], bucketKey: string, pdfDir?: string | undefined): Promise<string> => {
   return new Promise(async (res, rej) => {
     if (dev && pdfDir) {
       mkdir(dirname(pdfDir), { recursive: true }, (e) => {
