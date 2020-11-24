@@ -151,7 +151,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const fiscalCredit =
       (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.tipo_contribuyente === 'JURIDICO' ? branch?.id_registro_municipal : contributor.id_contribuyente, contributor.tipo_contribuyente])).rows[0]?.credito || 0;
     const retentionCredit = (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, branch?.referencia_municipal])).rows[0]?.credito || 0;
-    const AEApplicationExists = !!reference && !!branch ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, branch?.id_registro_municipal])).rows.find((el) => !el.datos.hasOwnProperty('descripcion')) : false;
+    const AEApplicationExists =
+      !!reference && !!branch ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, branch?.id_registro_municipal])).rows.find((el) => !el.datos.hasOwnProperty('descripcion')) : false;
     const SMApplicationExists =
       !!reference && !!branch
         ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.SM, branch?.id_registro_municipal])).rows[0]
@@ -1566,7 +1567,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
         const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
         const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
-                const type = el.tipo_solicitud;
+        const type = el.tipo_solicitud;
 
         return {
           id: el.id_solicitud,
@@ -1593,7 +1594,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
                   ramo: el.tipoProcedimiento,
                   fecha: el.datos.fecha,
                   monto: el.monto,
-                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
+                  montoPetro: type !== 'RETENCION' ? +el.monto_petro : null,
                   esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
                   certificado: el.certificado,
                   recibo: el.recibo,
@@ -1610,7 +1611,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
                   ramo: el.tipoProcedimiento,
                   fecha: el.datos.fecha,
                   monto: el.monto,
-                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
+                  montoPetro: type !== 'RETENCION' ? +el.monto_petro : null,
                   descripcion: el.datos.descripcion,
                   certificado: el.certificado,
                   recibo: el.recibo,
@@ -1669,7 +1670,7 @@ export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client
                   ramo: el.tipoProcedimiento,
                   fecha: el.datos.fecha,
                   monto: el.monto,
-                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
+                  montoPetro: type !== 'RETENCION' ? +el.monto_petro : null,
                   esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
                   certificado: el.certificado,
                   recibo: el.recibo,
@@ -1686,7 +1687,7 @@ export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client
                   ramo: el.tipoProcedimiento,
                   fecha: el.datos.fecha,
                   monto: el.monto,
-                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
+                  montoPetro: type !== 'RETENCION' ? +el.monto_petro : null,
                   descripcion: el.datos.descripcion,
                   certificado: el.certificado,
                   recibo: el.recibo,
@@ -1720,7 +1721,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
           const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
           const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
           const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
-                  const type = el.tipo_solicitud;
+          const type = el.tipo_solicitud;
 
           return {
             id: el.id_solicitud,
@@ -1747,7 +1748,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
                     ramo: el.tipoProcedimiento,
                     fecha: el.datos.fecha,
                     monto: +el.monto,
-                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
+                    montoPetro: type !== 'RETENCION' ? +el.monto_petro : null,
                     esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
                     certificado: el.certificado,
                     recibo: el.recibo,
@@ -1764,7 +1765,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
                     ramo: el.tipoProcedimiento,
                     fecha: el.datos.fecha,
                     monto: +el.monto,
-                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
+                    montoPetro: type !== 'RETENCION' ? +el.monto_petro : null,
                     descripcion: el.datos.descripcion,
                     certificado: el.certificado,
                     recibo: el.recibo,
@@ -1836,7 +1837,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
                     ramo: el.tipoProcedimiento,
                     fecha: el.datos.fecha,
                     monto: +el.monto,
-                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
+                    montoPetro: type !== 'RETENCION' ? +el.monto_petro : null,
                     esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
                     certificado: el.certificado,
                     recibo: el.recibo,
@@ -1853,7 +1854,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
                     ramo: el.tipoProcedimiento,
                     fecha: el.datos.fecha,
                     monto: +el.monto,
-                  montoPetro: type !=='RETENCION' ? +el.monto_petro : null,
+                    montoPetro: type !== 'RETENCION' ? +el.monto_petro : null,
                     descripcion: el.datos.descripcion,
                     certificado: el.certificado,
                     recibo: el.recibo,
@@ -2863,35 +2864,41 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
       ).rows[0];
     }
     const applicationType = (await client.query('SELECT tipo_solicitud FROM impuesto.solicitud WHERE id_solicitud = $1', [application])).rows[0]?.tipo_solicitud || 'IMPUESTO';
-    applicationType !== 'RETENCION' && await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO, [application]);
+    applicationType !== 'RETENCION' && (await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO, [application]));
     const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0];
     console.log('addTaxApplicationPayment -> solicitud', solicitud);
     const pagoSum = +payment.map((e) => fixatedAmount(+e.costo)).reduce((e, i) => e + i, 0);
     console.log('addTaxApplicationPayment -> pagoSum', pagoSum);
-    if (pagoSum < fixatedAmount(+solicitud.monto_total)) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
+    if (pagoSum < fixatedAmount(+solicitud.monto_total)) throw { status: 401, message: `La suma de los montos es insuficiente para poder insertar el pago, con un déficit de Bs. ${pagoSum - fixatedAmount(+solicitud.monto_total)}` };
     const creditoPositivo = pagoSum - fixatedAmount(+solicitud.monto_total);
     await Promise.all(
-      payment.map(async (el) => {
-        if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
-        const nearbyHolidays = (await client.query(queries.GET_HOLIDAYS_BASED_ON_PAYMENT_DATE, [el.fecha])).rows;
-        const paymentDate = checkIfWeekend(moment(el.fecha));
-        if (nearbyHolidays.length > 0) {
-          while (nearbyHolidays.find((el) => moment(el.dia).format('YYYY-MM-DD') === paymentDate.format('YYYY-MM-DD'))) paymentDate.add({ days: 1 });
-        }
-        el.fecha = paymentDate;
-        el.concepto = applicationType;
-        el.user = user.id;
-        user.tipoUsuario === 4 ? await insertPaymentReference(el, application, client) : await insertPaymentCashier(el, application, client);
-        if (el.metodoPago === 'CREDITO_FISCAL') {
-          await updateFiscalCredit({ id: application, user, amount: -el.costo, client });
-        }
-        if (el.metodoPago === 'CREDITO_FISCAL_RETENCION') {
-          await updateRetentionFiscalCredit({ id: application, user, amount: -el.costo, client });
-        }
+      payment.map((el) => {
+        return (async () => {
+          try {
+            if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
+            const nearbyHolidays = (await client.query(queries.GET_HOLIDAYS_BASED_ON_PAYMENT_DATE, [el.fecha])).rows;
+            const paymentDate = checkIfWeekend(moment(el.fecha));
+            if (nearbyHolidays.length > 0) {
+              while (nearbyHolidays.find((el) => moment(el.dia).format('YYYY-MM-DD') === paymentDate.format('YYYY-MM-DD'))) paymentDate.add({ days: 1 });
+            }
+            el.fecha = paymentDate;
+            el.concepto = applicationType;
+            el.user = user.id;
+            user.tipoUsuario === 4 ? await insertPaymentReference(el, application, client) : await insertPaymentCashier(el, application, client);
+            if (el.metodoPago === 'CREDITO_FISCAL') {
+              await updateFiscalCredit({ id: application, user, amount: -el.costo, client });
+            }
+            if (el.metodoPago === 'CREDITO_FISCAL_RETENCION') {
+              await updateRetentionFiscalCredit({ id: application, user, amount: -el.costo, client });
+            }
+          } catch (e) {
+            throw e;
+          }
+        })();
       })
     );
 
-    applicationType !== 'RETENCION' && await client.query(queries.FINISH_ROUNDING, [application]);
+    applicationType !== 'RETENCION' && (await client.query(queries.FINISH_ROUNDING, [application]));
     const state =
       user.tipoUsuario === 4
         ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0]
@@ -2925,7 +2932,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
     throw {
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al insertar referencias de pago',
+      message: errorMessageGenerator(error) || error.message || 'Error al insertar referencias de pago',
     };
   } finally {
     client.release();
@@ -3023,17 +3030,23 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
     if (fixatedAmount(pagoSum) < fixatedAmount(fraccion.monto)) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
     const creditoPositivo = fixatedAmount(pagoSum) - fixatedAmount(+fraccion.monto);
     await Promise.all(
-      payment.map(async (el) => {
-        if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
-        const nearbyHolidays = (await client.query(queries.GET_HOLIDAYS_BASED_ON_PAYMENT_DATE, [el.fecha])).rows;
-        const paymentDate = checkIfWeekend(moment(el.fecha));
-        if (nearbyHolidays.length > 0) {
-          while (nearbyHolidays.find((el) => moment(el.dia).format('YYYY-MM-DD') === paymentDate.format('YYYY-MM-DD'))) paymentDate.add({ days: 1 });
-        }
-        el.fecha = paymentDate;
-        el.concepto = 'CONVENIO';
-        el.user = user.id;
-        user.tipoUsuario === 4 ? await insertPaymentReference(el, fragment, client) : await insertPaymentCashier(el, fragment, client);
+      payment.map((el) => {
+        return (async () => {
+          try {
+            if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
+            const nearbyHolidays = (await client.query(queries.GET_HOLIDAYS_BASED_ON_PAYMENT_DATE, [el.fecha])).rows;
+            const paymentDate = checkIfWeekend(moment(el.fecha));
+            if (nearbyHolidays.length > 0) {
+              while (nearbyHolidays.find((el) => moment(el.dia).format('YYYY-MM-DD') === paymentDate.format('YYYY-MM-DD'))) paymentDate.add({ days: 1 });
+            }
+            el.fecha = paymentDate;
+            el.concepto = 'CONVENIO';
+            el.user = user.id;
+            user.tipoUsuario === 4 ? await insertPaymentReference(el, fragment, client) : await insertPaymentCashier(el, fragment, client);
+          } catch (e) {
+            throw e;
+          }
+        })();
       })
     );
     await client.query(queries.FINISH_ROUNDING_AGREEMENT, [fragment]);
@@ -4720,7 +4733,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
               codigo: row.numeroReferencia,
               descripcion: row.descripcion,
               montoDeclarado: desglose.montoDeclarado,
-              montoRebajado: (+el.datos?.montoRebajado * PETRO) || 0,
+              montoRebajado: +el.datos?.montoRebajado * PETRO || 0,
               alicuota: row.alicuota / 100,
               minTrib: +row.minimoTributable * PETRO,
               impuesto: desglose.montoCobrado || 0,
