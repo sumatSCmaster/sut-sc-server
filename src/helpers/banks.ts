@@ -278,7 +278,7 @@ export const validatePayments = async (body, user) => {
     await client.query('BEGIN');
     const res = await client.query(queries.VALIDATE_PAYMENTS, [body]);
     const data = await Promise.all(
-      res.rows[0].validate_payments.data.map(async (el) => {
+      res.rows[0].validate_payments.data.map((el) => {
         const pagoValidado = {
           id: el.id,
           monto: el.monto,
@@ -297,8 +297,15 @@ export const validatePayments = async (body, user) => {
           solicitudAprobada: el.solicitudAprobada || undefined,
           concepto: el.concepto,
         };
-        await validationHandler({ concept: el.concepto, body: pagoValidado, user, client });
-        return pagoValidado;
+
+        return (async () => {
+          try {
+            await validationHandler({ concept: el.concepto, body: pagoValidado, user, client });
+            return pagoValidado;
+          } catch (e) {
+            throw e;
+          }
+        })();
       })
     );
     await client.query('COMMIT');
@@ -360,8 +367,8 @@ export const listTaxPayments = async () => {
     INNER JOIN pago p ON p.id_procedimiento = fs.id
     INNER JOIN banco b ON b.id_banco = p.id_banco
     WHERE s."tipoSolicitud" = 'CONVENIO' AND fs.state = 'validando' AND p.concepto = 'CONVENIO' ORDER BY id_procedimiento, id_pago;
-    `)
-    data.rows = data.rows.concat(convData.rows)
+    `);
+    data.rows = data.rows.concat(convData.rows);
     let montosSolicitud = (
       await client.query(`
     SELECT l.id_solicitud, SUM(monto) as monto
@@ -391,7 +398,7 @@ export const listTaxPayments = async () => {
                 tipoDocumento: next.tipoDocumento,
                 documento: next.documento,
                 tipoSolicitud: next.tipoSolicitud,
-                monto: montoSolicitud ? montoSolicitud : montosConvenio.find(montoRow => next.idconvenio === montoRow.id_convenio)?.monto ,
+                monto: montoSolicitud ? montoSolicitud : montosConvenio.find((montoRow) => next.idconvenio === montoRow.id_convenio)?.monto,
                 pagos: [
                   {
                     id: next.id_pago,

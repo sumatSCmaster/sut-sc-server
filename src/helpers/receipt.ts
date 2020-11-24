@@ -1,4 +1,6 @@
-import { resolve } from 'path';
+import { resolve, dirname } from 'path';
+import { mkdir, writeFile } from 'fs';
+import * as pdftk from 'node-pdftk';
 
 import moment, { Moment } from 'moment';
 import S3Client from '@utils/s3';
@@ -175,15 +177,17 @@ export const generateReceiptAgreement = async (payload: { agreement: number }, c
           codigoRecibo: String(idRecibo).padStart(16, '0'),
           rim: referencia?.referencia_municipal,
           telefono: referencia?.telefono_celular,
-          items: [[
-            {
-              fecha: applicationView.fecha,
-              fechaAprobacion: applicationView.fechaAprobacionFraccion,
-              monto: applicationView.montoFraccion,
-              porcion: `${applicationView.porcion}/${applicationView.cantidad}`,
-              descripcion: `${applicationView.descripcionRamo} - ${applicationView.descripcionSubramo} (${date.format('MMMM')} ${date.format('YYYY')})`,
-            },
-          ]],
+          items: [
+            [
+              {
+                fecha: applicationView.fecha,
+                fechaAprobacion: applicationView.fechaAprobacionFraccion,
+                monto: applicationView.montoFraccion,
+                porcion: `${applicationView.porcion}/${applicationView.cantidad}`,
+                descripcion: `${applicationView.descripcionRamo} - ${applicationView.descripcionSubramo} (${date.format('MMMM')} ${date.format('YYYY')})`,
+              },
+            ],
+          ],
           metodoPago: payment,
           total: applicationView.montoFraccion,
           credito: paymentTotal - applicationView.montoFraccion,
@@ -201,13 +205,13 @@ export const generateReceiptAgreement = async (payload: { agreement: number }, c
             } else {
               const regClient = await pool.connect();
               try {
-                console.log('aydiosmio yaaaaaaaaaaaaa')
+                console.log('aydiosmio yaaaaaaaaaaaaa');
                 await regClient.query('BEGIN');
                 const bucketParams = {
                   Bucket: process.env.BUCKET_NAME as string,
                   Key: `/sedemat/recibo/agreement/${applicationView.id_fraccion}/recibo.pdf`,
                 };
-                  console.log("Key", bucketParams.Key);
+                console.log('Key', bucketParams.Key);
                 await S3Client.putObject({
                   ...bucketParams,
                   Body: buffer,
@@ -348,4 +352,129 @@ export const generateRepairReceipt = async (payload: { application: number; brea
   } finally {
     client.release();
   }
+};
+
+export const createCertificateBuffers = async (certInfoArray: any[], pugFileName: string): Promise<Buffer[]> => {
+  let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/${pugFileName}`), certInfo));
+
+  let buffersArray: any[] = await Promise.all(
+    htmlArray.map((html) => {
+      return new Promise((res, rej) => {
+        pdf
+          .create(html, {
+            format: 'Letter',
+            border: '5mm',
+            header: { height: '0px' },
+            base: 'file://' + resolve(__dirname, '../views/planillas/') + '/',
+          })
+          .toBuffer((err, buffer) => {
+            if (err) {
+              rej(err);
+            } else {
+              res(buffer);
+            }
+          });
+      });
+    })
+  );
+
+  return buffersArray;
+};
+
+export const createCertificate = async (buffersArray: Buffer[], bucketKey: string, pdfDir?: string | undefined) => {
+  return new Promise(async (res, rej) => {
+    if (dev && pdfDir) {
+      mkdir(dirname(pdfDir), { recursive: true }, (e) => {
+        if (e) {
+          rej(e);
+        } else {
+          if (buffersArray.length === 1) {
+            writeFile(pdfDir, buffersArray[0], async (err) => {
+              if (err) {
+                rej(err);
+              } else {
+                res(`${process.env.SERVER_URL}${bucketKey}`);
+              }
+            });
+          } else {
+            let letter = 'A';
+            let reduced: any = buffersArray.reduce((prev: any, next) => {
+              prev[letter] = next;
+              let codePoint = letter.codePointAt(0);
+              if (codePoint !== undefined) {
+                letter = String.fromCodePoint(++codePoint);
+              }
+              return prev;
+            }, {});
+
+            pdftk
+              .input(reduced)
+              .cat(`${Object.keys(reduced).join(' ')}`)
+              .output(pdfDir)
+              .then((buffer) => {
+                res(pdfDir);
+              })
+              .catch((e) => {
+                console.log(e);
+                rej(e);
+              });
+          }
+        }
+      });
+    } else {
+      try {
+        if (buffersArray.length === 1) {
+          const bucketParams = {
+            Bucket: process.env.BUCKET_NAME as string,
+
+            Key: `${bucketKey}`,
+          };
+          await S3Client.putObject({
+            ...bucketParams,
+            Body: buffersArray[0],
+            ACL: 'public-read',
+            ContentType: 'application/pdf',
+          }).promise();
+          res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+        } else {
+          let letter = 'A';
+          let reduced: any = buffersArray.reduce((prev: any, next) => {
+            prev[letter] = next;
+            let codePoint = letter.codePointAt(0);
+            if (codePoint !== undefined) {
+              letter = String.fromCodePoint(++codePoint);
+            }
+            return prev;
+          }, {});
+
+          pdftk
+            .input(reduced)
+            .cat(`${Object.keys(reduced).join(' ')}`)
+            .output()
+            .then(async (buffer) => {
+              const bucketParams = {
+                Bucket: process.env.BUCKET_NAME as string,
+
+                Key: `${bucketKey}`,
+              };
+              await S3Client.putObject({
+                ...bucketParams,
+                Body: buffer,
+                ACL: 'public-read',
+                ContentType: 'application/pdf',
+              }).promise();
+              res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+            })
+            .catch((e) => {
+              console.log(e);
+              rej(e);
+            });
+        }
+      } catch (e) {
+        console.log('e', e);
+        throw e;
+      } finally {
+      }
+    }
+  });
 };
