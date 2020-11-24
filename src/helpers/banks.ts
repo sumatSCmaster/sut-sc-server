@@ -298,14 +298,14 @@ export const validatePayments = async (body, user) => {
           concepto: el.concepto,
         };
 
-        return new Promise(async (res, rej) => {
+        return (async () => {
           try {
             await validationHandler({ concept: el.concepto, body: pagoValidado, user, client });
-            res(pagoValidado);
+            return pagoValidado;
           } catch (e) {
-            rej(e);
+            throw e;
           }
-        });
+        })();
       })
     );
     await client.query('COMMIT');
