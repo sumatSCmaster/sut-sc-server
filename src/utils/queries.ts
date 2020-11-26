@@ -1820,7 +1820,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       SELECT id_solicitud, ARRAY_AGG(id_subramo)
       FROM impuesto.liquidacion l 
       GROUP BY id_solicitud
-      HAVING 85 != ANY(ARRAY_AGG(l.id_subramo) ) OR 236 != ANY(ARRAY_AGG(l.id_subramo))
+      HAVING NOT (85 = ANY(ARRAY_AGG(l.id_subramo)) OR 236 = ANY(ARRAY_AGG(l.id_subramo)))
   ) sub ON sub.id_solicitud = p.id_procedimiento
   WHERE p.aprobado = true AND concepto = 'IMPUESTO'
   GROUP BY p.fecha_de_aprobacion
