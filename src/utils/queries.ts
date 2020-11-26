@@ -2649,7 +2649,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       AND datos#>>'{fecha, year}' = $5 
       AND id_subramo IN (52)  GROUP BY id_registro_municipal, s.aprobado) lret ON lret.id_registro_municipal = rm.id_registro_municipal
       )
-      SELECT pr.rif, pr.rim, pr."razonSocial", pr.telefono, c.*, pr."pagoAE", pr."montoAE", pr."pagoSM", pr."montoSM", pr."pagoIU", pr."montoIU", pr."pagoPP",pr."montoPP", pr."pagoMUL", pr."montoMUL", pr."monto_ret", pr."monto_ret", pr.progreso
+      SELECT pr.rif, pr.rim, pr."razonSocial", pr.telefono, c.*, pr."pagoAE", pr."montoAE", pr."pagoSM", pr."montoSM", pr."pagoIU", pr."montoIU", pr."pagoPP",pr."montoPP", pr."pagoMUL", pr."montoMUL", pr."pago_ret", pr."monto_ret", pr.progreso
       FROM cobranz c INNER JOIN pagosramos pr ON c.id_registro_municipal = pr.id_registro_municipal
       ORDER BY c."idCobranza";`,
   GET_CHARGINGS_BY_WALLET_AR_EXCEL: `WITH cobranz AS (
