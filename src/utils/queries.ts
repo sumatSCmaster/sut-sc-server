@@ -2526,7 +2526,12 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       COALESCE(liu.monto, 0) AS "montoIU",
       COALESCE(lpp.monto, 0) AS "montoPP",
       COALESCE(lmul.monto, 0) AS "montoMUL",
-      (COALESCE(lae.apr, 0) + COALESCE(lsm.apr, 0) + COALESCE(liu.apr, 0) + COALESCE(lpp.apr, 0) + COALESCE(lmul.apr, 0)) / 10.0 AS PROGRESO
+      CASE WHEN 
+      lmul.apr != 0 THEN
+        (COALESCE(lae.apr, 0) + COALESCE(lsm.apr, 0) + COALESCE(liu.apr, 0) + COALESCE(lpp.apr, 0) + COALESCE(lmul.apr, 0)) / 15.0 
+      ELSE
+      (COALESCE(lae.apr, 0) + COALESCE(lsm.apr, 0) + COALESCE(liu.apr, 0) + COALESCE(lpp.apr, 0)) / 12.0 
+      END AS PROGRESO
       
       
       FROM impuesto.cobranza c
@@ -2606,7 +2611,12 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       COALESCE(lpp.monto, 0) AS "montoPP",
       COALESCE(lmul.monto, 0) AS "montoMUL",
       COALESCE(lret.monto, 0) AS monto_ret,
-      (COALESCE(lae.apr, 0) + COALESCE(lsm.apr, 0) + COALESCE(liu.apr, 0) + COALESCE(lpp.apr, 0) + COALESCE(lmul.apr, 0)) / 12.0 AS PROGRESO
+      CASE WHEN 
+      lmul.apr != 0 THEN
+        (COALESCE(lae.apr, 0) + COALESCE(lsm.apr, 0) + COALESCE(liu.apr, 0) + COALESCE(lpp.apr, 0) + COALESCE(lret.apr, 0) + COALESCE(lmul.apr, 0)) / 15.0 
+      ELSE
+      (COALESCE(lae.apr, 0) + COALESCE(lsm.apr, 0) + COALESCE(liu.apr, 0) + COALESCE(lpp.apr, 0) + COALESCE(lret.apr, 0)) / 12.0 
+      END AS PROGRESO
       
       
       FROM impuesto.cobranza c
@@ -2687,7 +2697,12 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
         COALESCE(lpp.monto, 0) AS "montoPP",
         COALESCE(lmul.monto, 0) AS "montoMUL",
         COALESCE(lret.monto, 0) AS monto_ret,
-        (COALESCE(lae.apr, 0) + COALESCE(lsm.apr, 0) + COALESCE(liu.apr, 0) + COALESCE(lpp.apr, 0) + COALESCE(lmul.apr, 0)) / 12.0 AS PROGRESO
+        CASE WHEN 
+        lmul.apr != 0 THEN
+          (COALESCE(lae.apr, 0) + COALESCE(lsm.apr, 0) + COALESCE(liu.apr, 0) + COALESCE(lpp.apr, 0) + COALESCE(lret.apr, 0) + COALESCE(lmul.apr, 0)) / 15.0 
+        ELSE
+          (COALESCE(lae.apr, 0) + COALESCE(lsm.apr, 0) + COALESCE(liu.apr, 0) + COALESCE(lpp.apr, 0) + COALESCE(lret.apr, 0)) / 12.0 
+        END AS PROGRESO
         
         
         FROM impuesto.cobranza c
