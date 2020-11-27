@@ -367,6 +367,7 @@ export const createOnDemandCertificate = async (type: string, data: any[]): Prom
     const url = await createCertificate(buffers, bucketKey);
     return { status: 200, messsage: 'Certificado generado', url };
   } catch (e) {
+    console.log(e);
     throw { status: 500, message: 'Error al generar certificado', error: e };
   }
 };
