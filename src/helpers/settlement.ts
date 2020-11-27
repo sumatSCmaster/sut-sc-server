@@ -261,8 +261,10 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     if ((!branch && reference) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEMAT' };
     const lastSettlementQuery = !!reference && branch ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
     const lastSettlementPayload = !!reference && branch ? branch?.id_registro_municipal : contributor.id_contribuyente;
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const fiscalCredit =
-      (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.tipo_contribuyente === 'JURIDICO' ? branch?.id_registro_municipal : contributor.id_contribuyente, contributor.tipo_contribuyente])).rows[0]?.credito || 0;
+      ((await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.tipo_contribuyente === 'JURIDICO' ? branch?.id_registro_municipal : contributor.id_contribuyente, contributor.tipo_contribuyente])).rows[0]?.credito || 0) *
+      PETRO;
     const retentionCredit = (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, branch?.referencia_municipal])).rows[0]?.credito || 0;
     const AEApplicationExists =
       !!reference && !!branch ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, branch?.id_registro_municipal])).rows.find((el) => !el.datos.hasOwnProperty('descripcion')) : false;
@@ -284,7 +286,6 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     console.log(lastSettlementQuery);
     if (AEApplicationExists && SMApplicationExists && IUApplicationExists && PPApplicationExists) return { status: 409, message: 'Ya existe una declaracion de impuestos para este mes' };
     const now = moment(new Date());
-    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const monthDateForTop = moment().locale('ES').subtract(2, 'M');
     const esContribuyenteTop = !!branch ? (await client.query(queries.BRANCH_IS_ONE_BEST_PAYERS, [branch?.id_registro_municipal, monthDateForTop.format('MMMM'), monthDateForTop.year()])).rowCount > 0 : false;
     //AE
@@ -2355,7 +2356,7 @@ export const initialUserLinking = async (linkingData, user) => {
               })
             );
           }
-          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [registry.id_registro_municipal, 'JURIDICO', fixatedAmount(+datosSucursal?.creditoFiscal || 0), true, null])).rows[0];
+          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [registry.id_registro_municipal, 'JURIDICO', (fixatedAmount(+datosSucursal?.creditoFiscal || 0) / PETRO).toFixed(8), true, null])).rows[0];
           // const estates =
           //   inmuebles.length > 0
           //     ? await Promise.all(
@@ -2425,7 +2426,7 @@ export const initialUserLinking = async (linkingData, user) => {
           const pagados = liquidacionesPagas.concat(multasPagas);
           const vigentes = liquidacionesVigentes.concat(multasVigentes);
           let registry;
-          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [contributor.id_contribuyente, 'NATURAL', fixatedAmount(+datosSucursal?.creditoFiscal || 0), true, null])).rows[0];
+          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [contributor.id_contribuyente, 'NATURAL', (fixatedAmount(+datosSucursal?.creditoFiscal || 0) / PETRO).toFixed(8), true, null])).rows[0];
           if (datosSucursal?.registroMunicipal) {
             const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado, direccion } = datosSucursal;
             registry = (
@@ -3013,6 +3014,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
     );
 
     applicationType !== 'RETENCION' && (await client.query(queries.FINISH_ROUNDING, [application]));
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const state =
       user.tipoUsuario === 4
         ? (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application, applicationStateEvents.VALIDAR])).rows[0]
@@ -3020,7 +3022,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
 
     if (user.tipoUsuario !== 4 && applicationType === 'RETENCION') {
       const retentionDetail = (await client.query(queries.GET_RETENTION_DETAIL_BY_APPLICATION_ID, [application])).rows;
-      await Promise.all(retentionDetail.map(async (x) => await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [x.rif, x.numero_referencia, x.monto_retenido, true, application])));
+      await Promise.all(retentionDetail.map(async (x) => await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [x.rif, x.numero_referencia, (x.monto_retenido / PETRO).toFixed(8), true, application])));
     }
 
     const applicationInstance = await getApplicationsAndSettlementsByIdNots({ id: application, user }, client);
@@ -3121,17 +3123,23 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
 
 const updateFiscalCredit = async ({ id, user, amount, client }) => {
   const fixatedApplication = await getApplicationsAndSettlementsByIdNots({ id, user }, client);
+  const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
   const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
     ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
     : undefined;
-  const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', fixatedAmount(amount), false, id] : [fixatedApplication.contribuyente.id, 'NATURAL', fixatedAmount(amount), false, id];
+  if (fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' && !idReferenciaMunicipal) return;
+  const payload =
+    fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO'
+      ? [idReferenciaMunicipal, 'JURIDICO', (fixatedAmount(amount) / PETRO).toFixed(8), false, id]
+      : [fixatedApplication.contribuyente.id, 'NATURAL', (fixatedAmount(amount) / PETRO).toFixed(8), false, id];
   await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
 };
 
 const updateRetentionFiscalCredit = async ({ id, user, amount, client }) => {
   const fixatedApplication = await getApplicationsAndSettlementsByIdNots({ id, user }, client);
   const { contribuyente: contr, referenciaMunicipal: rim } = fixatedApplication;
-  await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [`${contr.tipoDocumento}${contr.documento}`, rim, amount, true, id]);
+  const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
+  await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [`${contr.tipoDocumento}${contr.documento}`, rim, (amount / PETRO).toFixed(8), true, id]);
 };
 
 export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fragment, user }) => {
@@ -3210,6 +3218,7 @@ export const validateApplication = async (body, user, client) => {
     if (!body.solicitudAprobada) return;
     const state = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
     const solicitud = (await client.query(queries.GET_APPLICATION_BY_ID, [body.idTramite])).rows[0];
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const totalLiquidacion = +(await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [body.idTramite])).rows[0].monto_total;
     const totalPago = +(await client.query('SELECT sum(monto) as monto_total FROM pago WHERE id_procedimiento = $1 AND concepto = $2', [body.idTramite, body.concepto])).rows[0].monto_total;
     const saldoPositivo = totalPago - totalLiquidacion;
@@ -3222,8 +3231,11 @@ export const validateApplication = async (body, user, client) => {
       idReferenciaMunicipal = idReferenciaMunicipal
         ? idReferenciaMunicipal
         : (await client.query('SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE id_contribuyente = $1 LIMIT 1;', [fixatedApplication.contribuyente.id])).rows[0]?.id_registro_municipal;
+      if (fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' && !idReferenciaMunicipal) return;
       const payload =
-        fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', saldoPositivo, false, body.idTramite] : [fixatedApplication.contribuyente.id, 'NATURAL', saldoPositivo, false, body.idTramite];
+        fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO'
+          ? [idReferenciaMunicipal, 'JURIDICO', (saldoPositivo / PETRO).toFixed(8), false, body.idTramite]
+          : [fixatedApplication.contribuyente.id, 'NATURAL', (saldoPositivo / PETRO).toFixed(8), false, body.idTramite];
       await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
     }
 
@@ -3231,7 +3243,7 @@ export const validateApplication = async (body, user, client) => {
       /*TODO: logica de añadir retenciones a la tabla correspondiente, esto tiene que buscar los datos de la tabla 
       detalle_retencion joineando con liquidacion y solicitud. Eso hay que meterlo en la tabla credito_fiscal_retencion (?) y ya, listo*/
       const retentionDetail = (await client.query(queries.GET_RETENTION_DETAIL_BY_APPLICATION_ID, [body.idTramite])).rows;
-      await Promise.all(retentionDetail.map(async (x) => await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [x.rif, x.numero_referencia, x.monto_retenido, true, body.idTramite])));
+      await Promise.all(retentionDetail.map(async (x) => await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [x.rif, x.numero_referencia, (x.monto_retenido / PETRO).toFixed(8), true, body.idTramite])));
     }
 
     const applicationInstance = await getApplicationsAndSettlementsById({ id: body.idTramite, user: solicitud.id_usuario });
@@ -3268,6 +3280,7 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
     await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO, [agreement.id_solicitud]);
     await client.query(queries.FINISH_ROUNDING, [agreement.id_solicitud]);
     const totalLiquidacion = +(await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [agreement.id_solicitud])).rows[0].monto_total;
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const totalPago = (await Promise.all(fractions.map(async (e) => +(await client.query('SELECT sum(monto) as monto_total FROM pago WHERE id_procedimiento = $1 AND concepto = $2', [e.id_fraccion, 'CONVENIO'])).rows[0].monto_total))).reduce(
       (x, j) => x + j
     );
@@ -3278,10 +3291,11 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
         ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
         : undefined;
       console.log('validateAgreementFraction -> idReferenciaMunicipal', fixatedApplication.contribuyente.tipoContribuyente, idReferenciaMunicipal, body.idTramite);
+      if (fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' && !idReferenciaMunicipal) return;
       const payload =
         fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO'
-          ? [idReferenciaMunicipal, 'JURIDICO', saldoPositivo, false, agreement.id_solicitud]
-          : [fixatedApplication.contribuyente.id, 'NATURAL', saldoPositivo, false, agreement.id_solicitud];
+          ? [idReferenciaMunicipal, 'JURIDICO', (saldoPositivo / PETRO).toFixed(8), false, agreement.id_solicitud]
+          : [fixatedApplication.contribuyente.id, 'NATURAL', (saldoPositivo / PETRO).toFixed(8), false, agreement.id_solicitud];
       await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
     }
     const applicationInstance = await getAgreementFractionById({ id: body.idTramite });

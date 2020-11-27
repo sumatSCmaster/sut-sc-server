@@ -45,7 +45,7 @@ router.get('/', authenticate('jwt'), checkContributorExists(), async (req, res) 
   if (data) res.status(data.status).json(data);
 });
 
-router.get('/iu/declaration', authenticate('jwt'), checkContributorExists(), async (req, res) => {
+router.get('/iu/declaration', authenticate('jwt'), async (req, res) => {
   const { doc, ref, pref, amount } = req.query;
   const [err, data] = await fulfill(getIUSettlementsForContributor({ document: doc, reference: ref ? ref : null, type: pref, declaration: amount }));
   if (err) res.status(err.status).json(err);
