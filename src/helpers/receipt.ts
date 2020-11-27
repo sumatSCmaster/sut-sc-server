@@ -355,20 +355,32 @@ export const generateRepairReceipt = async (payload: { application: number; brea
 };
 
 export const createOnDemandCertificate = async (type: string, data: any[]): Promise<{ status: number; messsage: string; url: string }> => {
+  const client = await pool.connect();
+  let certificateValues = [...data];
   try {
     const pugFile = {
       IU: 'sedemat-solvencia-IU',
       SM: 'sedemat-solvencia-SM',
       LIC: 'sedemat-cert-EL',
     };
+
+    if (type === 'LIC') {
+      const numeroLicencia = (await client.query(`SELECT concat(date_part('year'::text, CURRENT_DATE), '-', lpad(nextval('impuesto.licencia_seq'::regclass)::text, 7, '0'::text)) AS "numeroLicencia"`)).rows[0];
+      certificateValues = certificateValues.map((el) => {
+        el.licencia = `${el.licencia}-${numeroLicencia}`;
+        return el;
+      });
+    }
     const index = new Date().getTime().toString().substr(6);
     const bucketKey = `/sedemat/${type}/${index}/certificado.pdf`;
-    const buffers = await createCertificateBuffers(data, pugFile[type], bucketKey);
+    const buffers = await createCertificateBuffers(certificateValues, pugFile[type], bucketKey);
     const url = await createCertificate(buffers, bucketKey);
     return { status: 200, messsage: 'Certificado generado', url };
   } catch (e) {
     console.log(e);
     throw { status: 500, message: 'Error al generar certificado', error: e };
+  } finally {
+    client.release();
   }
 };
 
