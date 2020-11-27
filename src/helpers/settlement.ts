@@ -135,14 +135,18 @@ export const getIUTariffForContributor = async ({ estate, id, declaration, date 
     const avaluo = (await client.query(queries.GET_ESTATE_APPRAISAL_BY_ID_AND_YEAR, [estate.id_inmueble, date.year()])).rows[0]?.avaluo || estate.avaluo;
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const impuestoInmueble = fixatedAmount((avaluo * PETRO * (estate.tipo_inmueble === 'COMERCIAL' ? 0.01 : 0.005)) / 12);
+    console.log('🚀 ~ file: settlement.ts ~ line 138 ~ getIUTariffForContributor ~ impuestoInmueble', impuestoInmueble);
     if (!id) return impuestoInmueble;
     const now = moment().locale('ES').subtract(1, 'M');
     const AEDeclaration =
       declaration ||
       fixatedAmount((await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, id])).rows.find((el) => el.datos.month === now.format('MMMM') && el.datos.year === now.year())?.monto_petro * PETRO);
+    console.log('🚀 ~ file: settlement.ts ~ line 142 ~ getIUTariffForContributor ~ AEDeclaration', AEDeclaration);
     if (!AEDeclaration) throw { status: 422, message: 'Debe realizar una declaracion de AE de este mes para poder realizar el calculo de IU' };
     const taxableMin = fixatedAmount((await client.query(queries.GET_LITTLEST_TAXABLE_MINIMUM_FOR_CONTRIBUTOR, [id])).rows[0].minimo_tributable * PETRO);
+    console.log('🚀 ~ file: settlement.ts ~ line 147 ~ getIUTariffForContributor ~ taxableMin', taxableMin);
     const impuestoDefinitivo = taxableMin > impuestoInmueble ? taxableMin : impuestoInmueble;
+    console.log('🚀 ~ file: settlement.ts ~ line 149 ~ getIUTariffForContributor ~ impuestoDefinitivo', impuestoDefinitivo);
     if (AEDeclaration === 0) return impuestoInmueble > taxableMin ? taxableMin : impuestoInmueble;
     return impuestoDefinitivo > AEDeclaration ? AEDeclaration : impuestoDefinitivo;
   } catch (error) {
