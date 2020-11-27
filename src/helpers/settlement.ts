@@ -201,13 +201,13 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                   id: el.id_inmueble,
                   codCat: el.cod_catastral,
                   direccionInmueble: el.direccion,
-                  ultimoAvaluo: el.avaluo,
+                  ultimoAvaluo: +el.avaluo,
                   deuda: await Promise.all(
                     new Array(interpolation).fill({ month: null, year: null }).map(async (value, index) => {
                       let descuento;
                       const date = addMonths(new Date(paymentDate.toDate()), index);
                       const momentDate = moment(date);
-                      const impuestoInmueble = await getIUTariffForContributor({ estate: el, declaration, date: momentDate, id: branch?.id_registro_municipal }, client);
+                      const impuestoInmueble = +(await getIUTariffForContributor({ estate: el, declaration, date: momentDate, id: branch?.id_registro_municipal }, client));
                       const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch?.id_registro_municipal])).rows;
                       descuento =
                         (economicActivities.length > 0 &&
