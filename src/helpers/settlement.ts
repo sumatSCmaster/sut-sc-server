@@ -249,7 +249,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
   const montoAcarreado: any = {};
   let SM, PP, MONO;
   let AE: any[] = [];
-  let IU: any[] = [];
+  let IU: any = undefined;
   try {
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [type, document])).rows[0];
     if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
