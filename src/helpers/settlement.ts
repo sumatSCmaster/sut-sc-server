@@ -579,7 +579,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         creditoFiscalRetencion: retentionCredit,
         AE: (AE.length > 0 && AE) || undefined,
         SM,
-        IU: (IU.length > 0 && IU) || undefined,
+        IU,
         PP,
         usuarios: await getUsersByContributor(contributor.id_contribuyente),
         montoAcarreado: addMissingCarriedAmounts(montoAcarreado),
