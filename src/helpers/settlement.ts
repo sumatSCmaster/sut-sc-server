@@ -130,6 +130,119 @@ export const hasDiscount = async ({ branch, contributor, activity, startingDate 
   }
 };
 
+export const getIUTariffForContributor = async ({ estate, id, declaration, date }: { estate: any; id: number; declaration?: number; date: Moment }, client: PoolClient) => {
+  try {
+    const avaluo = (await client.query(queries.GET_ESTATE_APPRAISAL_BY_ID_AND_YEAR, [estate.id_inmueble, date.year()])).rows[0]?.avaluo || estate.avaluo;
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
+    const impuestoInmueble = fixatedAmount((avaluo * PETRO * (estate.tipo_inmueble === 'COMERCIAL' ? 0.01 : 0.005)) / 12);
+    if (!id) return impuestoInmueble;
+    const now = moment().locale('ES').subtract(1, 'M');
+    const AEDeclaration =
+      declaration ||
+      fixatedAmount((await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, id])).rows.find((el) => el.datos.month === now.format('MMMM') && el.datos.year === now.year())?.monto_petro * PETRO);
+    if (!AEDeclaration) throw { status: 422, message: 'Debe realizar una declaracion de AE de este mes para poder realizar el calculo de IU' };
+    const taxableMin = fixatedAmount((await client.query(queries.GET_LITTLEST_TAXABLE_MINIMUM_FOR_CONTRIBUTOR, [id])).rows[0].minimo_tributable * PETRO);
+    const impuestoDefinitivo = taxableMin > impuestoInmueble ? taxableMin : impuestoInmueble;
+    if (AEDeclaration === 0) return impuestoInmueble > taxableMin ? taxableMin : impuestoInmueble;
+    return impuestoDefinitivo > AEDeclaration ? AEDeclaration : impuestoDefinitivo;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const getIUSettlementsForContributor = async ({ document, reference, type, declaration }: { document: string; reference: string | null; type: string; declaration?: number }) => {
+  const client = await pool.connect();
+  let IU: any = undefined;
+  try {
+    const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [type, document])).rows[0];
+    if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
+    const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
+    const contributorHasBranch = (await client.query(queries.GET_CONTRIBUTOR_HAS_BRANCH, [contributor.id_contribuyente])).rowCount > 0;
+    if (!reference && contributorHasBranch) throw { status: 403, message: 'El contribuyente posee una referencia municipal, debe ingresarla' };
+    if ((!branch && reference) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEMAT' };
+    const lastSettlementQuery = !!reference && branch ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
+    const lastSettlementPayload = !!reference && branch ? branch?.id_registro_municipal : contributor.id_contribuyente;
+    const IUApplicationExists =
+      !!reference && !!branch
+        ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.IU, branch?.id_registro_municipal])).rows[0]
+        : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.IU, contributor.id_contribuyente])).rows[0];
+    const now = moment(new Date());
+    const estates = (await client.query(branch ? queries.GET_ESTATES_FOR_JURIDICAL_CONTRIBUTOR : queries.GET_ESTATES_FOR_NATURAL_CONTRIBUTOR, [branch ? branch.id_registro_municipal : contributor.id_contribuyente])).rows;
+    //IU
+    if (estates.length > 0) {
+      if (!IUApplicationExists) {
+        let lastIU = (await client.query(lastSettlementQuery, [codigosRamo.IU, lastSettlementPayload])).rows[0];
+        const lastIUPayment = (lastIU && moment(lastIU.fecha_liquidacion).add(1, 'M')) || moment().month(0);
+        const pastMonthIU = (lastIU && moment(lastIU.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
+        const IUDate = moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
+        const dateInterpolationIU = Math.floor(now.diff(IUDate, 'M'));
+        // if (dateInterpolationIU > 0) {
+        IU = (
+          await Promise.all(
+            estates
+              .filter((el) => +el.avaluo)
+              .map(async (el) => {
+                // let paymentDate: Moment = lastIUPayment;
+                // let interpolation = dateInterpolationIU;
+                const lastMonthPayment = !!branch
+                  ? (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID, [el.id_inmueble, branch?.id_registro_municipal])).rows[0]
+                  : (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID_NATURAL, [el.id_inmueble, contributor.id_contribuyente])).rows[0];
+                const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month').isSameOrBefore(IUDate) ? moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month') : IUDate) : IUDate;
+                const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M')) + 1) || (!lastMonthPayment && dateInterpolationIU + 1) || 1;
+                // paymentDate = paymentDate.isSameOrBefore(lastEAPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
+                if (interpolation === 0) return null;
+                // if (lastMonthPayment) {
+                //   paymentDate = moment(lastMonthPayment.fecha_liquidacion);
+                //   paymentDate = paymentDate.isSameOrBefore(lastIUPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
+                //   interpolation = Math.floor(now.diff(paymentDate, 'M'));
+                // }
+                return {
+                  id: el.id_inmueble,
+                  codCat: el.cod_catastral,
+                  direccionInmueble: el.direccion,
+                  ultimoAvaluo: el.avaluo,
+                  deuda: await Promise.all(
+                    new Array(interpolation).fill({ month: null, year: null }).map(async (value, index) => {
+                      let descuento;
+                      const date = addMonths(new Date(paymentDate.toDate()), index);
+                      const momentDate = moment(date);
+                      const impuestoInmueble = await getIUTariffForContributor({ estate: el, declaration, date: momentDate, id: branch?.id_registro_municipal }, client);
+                      const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch?.id_registro_municipal])).rows;
+                      descuento =
+                        (economicActivities.length > 0 &&
+                          (
+                            await Promise.all(
+                              economicActivities.map(
+                                async (activity) => await hasDiscount({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client)
+                              )
+                            )
+                          ).reduce((current, next) => (current < next ? next : current))) ||
+                        0;
+                      const exonerado = await isExonerated({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
+                      return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado, descuento, impuestoInmueble };
+                    })
+                  ),
+                };
+              })
+          )
+        ).filter((el) => el);
+        // }
+      }
+    }
+    return { status: 200, message: 'Liquidaciones de IU obtenidas', IU };
+  } catch (error) {
+    console.log(error);
+    throw {
+      status: error.status || 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener liquidaciones de IU',
+    };
+  } finally {
+    client.release();
+  }
+};
+
 export const getSettlements = async ({ document, reference, type, user }: { document: string; reference: string | null; type: string; user: Usuario }) => {
   const client = await pool.connect();
   const gtic = await gticPool.connect();
@@ -279,66 +392,67 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     //IU
     if (estates.length > 0) {
       if (!IUApplicationExists) {
-        let lastIU = (await client.query(lastSettlementQuery, [codigosRamo.IU, lastSettlementPayload])).rows[0];
-        const lastIUPayment = (lastIU && moment(lastIU.fecha_liquidacion).add(1, 'M')) || moment().month(0);
-        const pastMonthIU = (lastIU && moment(lastIU.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
-        const IUDate = moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
-        const dateInterpolationIU = Math.floor(now.diff(IUDate, 'M'));
-        montoAcarreado.IU = {
-          monto: lastIU && lastIU.mo_pendiente ? parseFloat(lastIU.mo_pendiente) : 0,
-          fecha: { month: pastMonthIU.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthIU.year() },
-        };
-        // if (dateInterpolationIU > 0) {
-        IU = (
-          await Promise.all(
-            estates
-              .filter((el) => +el.avaluo)
-              .map(async (el) => {
-                // let paymentDate: Moment = lastIUPayment;
-                // let interpolation = dateInterpolationIU;
-                const lastMonthPayment = !!branch
-                  ? (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID, [el.id_inmueble, branch?.id_registro_municipal])).rows[0]
-                  : (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID_NATURAL, [el.id_inmueble, contributor.id_contribuyente])).rows[0];
-                const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month').isSameOrBefore(IUDate) ? moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month') : IUDate) : IUDate;
-                const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M')) + 1) || (!lastMonthPayment && dateInterpolationIU + 1) || 1;
-                // paymentDate = paymentDate.isSameOrBefore(lastEAPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
-                if (interpolation === 0) return null;
-                // if (lastMonthPayment) {
-                //   paymentDate = moment(lastMonthPayment.fecha_liquidacion);
-                //   paymentDate = paymentDate.isSameOrBefore(lastIUPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
-                //   interpolation = Math.floor(now.diff(paymentDate, 'M'));
-                // }
-                return {
-                  id: el.id_inmueble,
-                  codCat: el.cod_catastral,
-                  direccionInmueble: el.direccion,
-                  ultimoAvaluo: el.avaluo,
-                  deuda: await Promise.all(
-                    new Array(interpolation).fill({ month: null, year: null }).map(async (value, index) => {
-                      let descuento;
-                      const date = addMonths(new Date(paymentDate.toDate()), index);
-                      const momentDate = moment(date);
-                      const avaluo = (await client.query(queries.GET_ESTATE_APPRAISAL_BY_ID_AND_YEAR, [el.id_inmueble, momentDate.year()])).rows[0]?.avaluo || el.avaluo;
-                      const impuestoInmueble = (avaluo * PETRO * (el.tipo_inmueble === 'COMERCIAL' ? 0.01 : 0.005)) / 12;
-                      const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch?.id_registro_municipal])).rows;
-                      descuento =
-                        (economicActivities.length > 0 &&
-                          (
-                            await Promise.all(
-                              economicActivities.map(
-                                async (activity) => await hasDiscount({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client)
-                              )
-                            )
-                          ).reduce((current, next) => (current < next ? next : current))) ||
-                        0;
-                      const exonerado = await isExonerated({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
-                      return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado, descuento, impuestoInmueble };
-                    })
-                  ),
-                };
-              })
-          )
-        ).filter((el) => el);
+        IU = [];
+        // let lastIU = (await client.query(lastSettlementQuery, [codigosRamo.IU, lastSettlementPayload])).rows[0];
+        // const lastIUPayment = (lastIU && moment(lastIU.fecha_liquidacion).add(1, 'M')) || moment().month(0);
+        // const pastMonthIU = (lastIU && moment(lastIU.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
+        // const IUDate = moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
+        // const dateInterpolationIU = Math.floor(now.diff(IUDate, 'M'));
+        // montoAcarreado.IU = {
+        //   monto: lastIU && lastIU.mo_pendiente ? parseFloat(lastIU.mo_pendiente) : 0,
+        //   fecha: { month: pastMonthIU.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthIU.year() },
+        // };
+        // // if (dateInterpolationIU > 0) {
+        // IU = (
+        //   await Promise.all(
+        //     estates
+        //       .filter((el) => +el.avaluo)
+        //       .map(async (el) => {
+        //         // let paymentDate: Moment = lastIUPayment;
+        //         // let interpolation = dateInterpolationIU;
+        //         const lastMonthPayment = !!branch
+        //           ? (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID, [el.id_inmueble, branch?.id_registro_municipal])).rows[0]
+        //           : (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID_NATURAL, [el.id_inmueble, contributor.id_contribuyente])).rows[0];
+        //         const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month').isSameOrBefore(IUDate) ? moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month') : IUDate) : IUDate;
+        //         const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M')) + 1) || (!lastMonthPayment && dateInterpolationIU + 1) || 1;
+        //         // paymentDate = paymentDate.isSameOrBefore(lastEAPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
+        //         if (interpolation === 0) return null;
+        //         // if (lastMonthPayment) {
+        //         //   paymentDate = moment(lastMonthPayment.fecha_liquidacion);
+        //         //   paymentDate = paymentDate.isSameOrBefore(lastIUPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
+        //         //   interpolation = Math.floor(now.diff(paymentDate, 'M'));
+        //         // }
+        //         return {
+        //           id: el.id_inmueble,
+        //           codCat: el.cod_catastral,
+        //           direccionInmueble: el.direccion,
+        //           ultimoAvaluo: el.avaluo,
+        //           deuda: await Promise.all(
+        //             new Array(interpolation).fill({ month: null, year: null }).map(async (value, index) => {
+        //               let descuento;
+        //               const date = addMonths(new Date(paymentDate.toDate()), index);
+        //               const momentDate = moment(date);
+        //               const avaluo = (await client.query(queries.GET_ESTATE_APPRAISAL_BY_ID_AND_YEAR, [el.id_inmueble, momentDate.year()])).rows[0]?.avaluo || el.avaluo;
+        //               const impuestoInmueble = (avaluo * PETRO * (el.tipo_inmueble === 'COMERCIAL' ? 0.01 : 0.005)) / 12;
+        //               const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch?.id_registro_municipal])).rows;
+        //               descuento =
+        //                 (economicActivities.length > 0 &&
+        //                   (
+        //                     await Promise.all(
+        //                       economicActivities.map(
+        //                         async (activity) => await hasDiscount({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client)
+        //                       )
+        //                     )
+        //                   ).reduce((current, next) => (current < next ? next : current))) ||
+        //                 0;
+        //               const exonerado = await isExonerated({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
+        //               return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado, descuento, impuestoInmueble };
+        //             })
+        //           ),
+        //         };
+        //       })
+        //   )
+        // ).filter((el) => el);
         // }
       }
     }
