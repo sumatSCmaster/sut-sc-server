@@ -138,7 +138,8 @@ export const getIUTariffForContributor = async ({ estate, id, declaration, date 
     console.log('getIUTariffForContributor ~ impuestoInmueble', impuestoInmueble);
     if (!id) return impuestoInmueble;
     const now = moment().locale('ES').subtract(1, 'M');
-    const si = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, id])).rows.find((el) => el.datos.month === now.format('MMMM') && el.datos.year === now.year());
+    const si = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, id])).rows[0];
+    // .find((el) => el.datos.month === now.format('MMMM') && el.datos.year === now.year());
     console.log('🚀 ~ file: settlement.ts ~ line 142 ~ getIUTariffForContributor ~ si', si);
     const AEDeclaration = Math.round(isNaN(+declaration!) ? fixatedAmount(si * PETRO) : +declaration!);
     console.log('getIUTariffForContributor ~ AEDeclaration', AEDeclaration);
