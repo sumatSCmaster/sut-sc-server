@@ -2034,6 +2034,7 @@ const formatBreakdownForSettlement = switchcase({
 export const formatContributor = async (contributor, client: PoolClient) => {
   try {
     const branches = (await client.query(queries.GET_BRANCHES_BY_CONTRIBUTOR_ID, [contributor.id_contribuyente])).rows;
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     return {
       id: contributor.id_contribuyente,
       tipoDocumento: contributor.tipo_documento,
@@ -2045,8 +2046,8 @@ export const formatContributor = async (contributor, client: PoolClient) => {
       parroquia: contributor.id_parroquia,
       sector: contributor.sector,
       direccion: contributor.direccion,
-      creditoFiscal: (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.id_contribuyente, 'NATURAL'])).rows[0]?.credito || 0,
-      creditoFiscalRetencion: (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, 0])).rows[0]?.credito || 0,
+      creditoFiscal: ((await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.id_contribuyente, 'NATURAL'])).rows[0]?.credito || 0) * PETRO,
+      creditoFiscalRetencion: ((await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, 0])).rows[0]?.credito || 0) * PETRO,
       puntoReferencia: contributor.punto_referencia,
       verificado: contributor.verificado,
       liquidaciones: !branches.length
@@ -2081,6 +2082,7 @@ export const formatContributor = async (contributor, client: PoolClient) => {
 export const formatBranch = async (branch, contributor, client) => {
   try {
     const inicioImpuestos: any[] = [];
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const SM = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, ['SM', branch.id_registro_municipal])).rows[0];
     const PP = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, ['PP', branch.id_registro_municipal])).rows[0];
     const RD0 = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, ['RD0', branch.id_registro_municipal])).rows[0];
@@ -2101,8 +2103,8 @@ export const formatBranch = async (branch, contributor, client) => {
       parroquia: branch.id_parroquia,
       nombreRepresentante: branch.nombre_representante,
       capitalSuscrito: branch.capital_suscrito,
-      creditoFiscal: (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [branch.id_registro_municipal, 'JURIDICO'])).rows[0]?.credito || 0,
-      creditoFiscalRetencion: (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, branch.referenciaMunicipal])).rows[0]?.credito || 0,
+      creditoFiscal: ((await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [branch.id_registro_municipal, 'JURIDICO'])).rows[0]?.credito || 0) * PETRO,
+      creditoFiscalRetencion: ((await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, branch.referenciaMunicipal])).rows[0]?.credito || 0) * PETRO,
       tipoSociedad: branch.tipo_sociedad,
       actualizado: branch.actualizado,
       estadoLicencia: branch.estado_licencia,
