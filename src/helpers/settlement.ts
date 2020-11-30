@@ -142,7 +142,7 @@ export const getIUTariffForContributor = async ({ estate, id, declaration, date 
       +declaration ||
       fixatedAmount((await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, id])).rows.find((el) => el.datos.month === now.format('MMMM') && el.datos.year === now.year())?.monto_petro * PETRO);
     console.log('getIUTariffForContributor ~ AEDeclaration', AEDeclaration);
-    if (!AEDeclaration) throw { status: 422, message: 'Debe realizar una declaracion de AE de este mes para poder realizar el calculo de IU' };
+    if (!AEDeclaration && typeof AEDeclaration !=='number') throw { status: 422, message: 'Debe realizar una declaracion de AE de este mes para poder realizar el calculo de IU' };
     const taxableMin = fixatedAmount((await client.query(queries.GET_LITTLEST_TAXABLE_MINIMUM_FOR_CONTRIBUTOR, [id])).rows[0].minimo_tributable * PETRO);
     console.log('getIUTariffForContributor ~ taxableMin', taxableMin);
     const impuestoDefinitivo = taxableMin > impuestoInmueble ? taxableMin : impuestoInmueble;
