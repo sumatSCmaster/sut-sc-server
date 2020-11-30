@@ -367,7 +367,7 @@ export const createOnDemandCertificate = async (type: string, data: any[]): Prom
     if (type === 'LIC') {
       const numeroLicencia = (await client.query(`SELECT concat(date_part('year'::text, CURRENT_DATE), '-', lpad(nextval('impuesto.licencia_seq'::regclass)::text, 7, '0'::text)) AS "numeroLicencia"`)).rows[0].numeroLicencia;
       certificateValues = certificateValues.map((el) => {
-        el.datos.funcionario.licencia = `${el.datos.funcionario.licencia}-${numeroLicencia}`;
+        el.licencia = `${el.datos.funcionario.licencia}-${numeroLicencia}`;
         return el;
       });
     }
