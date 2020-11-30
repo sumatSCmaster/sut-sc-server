@@ -139,7 +139,7 @@ export const getIUTariffForContributor = async ({ estate, id, declaration, date 
     if (!id) return impuestoInmueble;
     const now = moment().locale('ES').subtract(1, 'M');
     const AEDeclaration =
-      +declaration ||
+      +declaration ??
       fixatedAmount((await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, id])).rows.find((el) => el.datos.month === now.format('MMMM') && el.datos.year === now.year())?.monto_petro * PETRO);
     console.log('getIUTariffForContributor ~ AEDeclaration', AEDeclaration);
     if (!AEDeclaration && typeof AEDeclaration !=='number') throw { status: 422, message: 'Debe realizar una declaracion de AE de este mes para poder realizar el calculo de IU' };
