@@ -138,11 +138,12 @@ export const getIUTariffForContributor = async ({ estate, id, declaration, date 
     console.log('getIUTariffForContributor ~ impuestoInmueble', impuestoInmueble);
     if (!id) return impuestoInmueble;
     const now = moment().locale('ES').subtract(1, 'M');
-    const AEDeclaration =
-      Math.round(+declaration ??
-      fixatedAmount((await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, id])).rows.find((el) => el.datos.month === now.format('MMMM') && el.datos.year === now.year())?.monto_petro * PETRO));
+    const AEDeclaration = Math.round(
+      +declaration! ??
+        fixatedAmount((await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, id])).rows.find((el) => el.datos.month === now.format('MMMM') && el.datos.year === now.year())?.monto_petro * PETRO)
+    );
     console.log('getIUTariffForContributor ~ AEDeclaration', AEDeclaration);
-    if (!AEDeclaration && typeof AEDeclaration !=='number') throw { status: 422, message: 'Debe realizar una declaracion de AE de este mes para poder realizar el calculo de IU' };
+    if (!AEDeclaration && typeof AEDeclaration !== 'number') throw { status: 422, message: 'Debe realizar una declaracion de AE de este mes para poder realizar el calculo de IU' };
     const taxableMin = Math.round(fixatedAmount((await client.query(queries.GET_LITTLEST_TAXABLE_MINIMUM_FOR_CONTRIBUTOR, [id])).rows[0].minimo_tributable * PETRO));
     console.log('getIUTariffForContributor ~ taxableMin', taxableMin);
     const impuestoDefinitivo = taxableMin > impuestoInmueble ? taxableMin : impuestoInmueble;
@@ -267,9 +268,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const lastSettlementPayload = !!reference && branch ? branch?.id_registro_municipal : contributor.id_contribuyente;
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const fiscalCredit =
-      ((await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.tipo_contribuyente === 'JURIDICO' ? branch?.id_registro_municipal : contributor.id_contribuyente, contributor.tipo_contribuyente])).rows[0]?.credito || 0) *
-      PETRO;
-    const retentionCredit = ((await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, branch?.referencia_municipal])).rows[0]?.credito || 0) * PETRO;
+      (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.tipo_contribuyente === 'JURIDICO' ? branch?.id_registro_municipal : contributor.id_contribuyente, contributor.tipo_contribuyente])).rows[0]?.credito || 0;
+    const retentionCredit = (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, branch?.referencia_municipal])).rows[0]?.credito || 0;
     const AEApplicationExists =
       !!reference && !!branch ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, branch?.id_registro_municipal])).rows.find((el) => !el.datos.hasOwnProperty('descripcion')) : false;
     const SMApplicationExists =
@@ -1936,8 +1936,8 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
             usuario: el.usuario,
             contribuyente: structureContributor(docs),
             aprobado: el.aprobado,
-            creditoFiscal: ((await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [typeUser === 'JURIDICO' ? liquidaciones[0]?.id_registro_municipal : el.id_contribuyente, typeUser])).rows[0]?.credito || 0) * PETRO,
-            creditoFiscalRetencion: ((await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, rim])).rows[0]?.credito || 0) * PETRO,
+            creditoFiscal: (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [typeUser === 'JURIDICO' ? liquidaciones[0]?.id_registro_municipal : el.id_contribuyente, typeUser])).rows[0]?.credito || 0,
+            creditoFiscalRetencion: (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, rim])).rows[0]?.credito || 0,
             fecha: el.fecha,
             documento: docs.documento,
             tipoDocumento: docs.tipo_documento,
@@ -2046,8 +2046,8 @@ export const formatContributor = async (contributor, client: PoolClient) => {
       parroquia: contributor.id_parroquia,
       sector: contributor.sector,
       direccion: contributor.direccion,
-      creditoFiscal: ((await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.id_contribuyente, 'NATURAL'])).rows[0]?.credito || 0) * PETRO,
-      creditoFiscalRetencion: ((await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, 0])).rows[0]?.credito || 0) * PETRO,
+      creditoFiscal: (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.id_contribuyente, 'NATURAL'])).rows[0]?.credito || 0,
+      creditoFiscalRetencion: (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, 0])).rows[0]?.credito || 0,
       puntoReferencia: contributor.punto_referencia,
       verificado: contributor.verificado,
       liquidaciones: !branches.length
@@ -2082,7 +2082,6 @@ export const formatContributor = async (contributor, client: PoolClient) => {
 export const formatBranch = async (branch, contributor, client) => {
   try {
     const inicioImpuestos: any[] = [];
-    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const SM = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, ['SM', branch.id_registro_municipal])).rows[0];
     const PP = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, ['PP', branch.id_registro_municipal])).rows[0];
     const RD0 = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, ['RD0', branch.id_registro_municipal])).rows[0];
@@ -2103,8 +2102,8 @@ export const formatBranch = async (branch, contributor, client) => {
       parroquia: branch.id_parroquia,
       nombreRepresentante: branch.nombre_representante,
       capitalSuscrito: branch.capital_suscrito,
-      creditoFiscal: ((await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [branch.id_registro_municipal, 'JURIDICO'])).rows[0]?.credito || 0) * PETRO,
-      creditoFiscalRetencion: ((await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, branch.referenciaMunicipal])).rows[0]?.credito || 0) * PETRO,
+      creditoFiscal: (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [branch.id_registro_municipal, 'JURIDICO'])).rows[0]?.credito || 0,
+      creditoFiscalRetencion: (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, branch.referenciaMunicipal])).rows[0]?.credito || 0,
       tipoSociedad: branch.tipo_sociedad,
       actualizado: branch.actualizado,
       estadoLicencia: branch.estado_licencia,
@@ -2362,7 +2361,7 @@ export const initialUserLinking = async (linkingData, user) => {
               })
             );
           }
-          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [registry.id_registro_municipal, 'JURIDICO', (fixatedAmount(+datosSucursal?.creditoFiscal || 0) / PETRO).toFixed(8), true, null])).rows[0];
+          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [registry.id_registro_municipal, 'JURIDICO', fixatedAmount(+datosSucursal?.creditoFiscal || 0), true, null])).rows[0];
           // const estates =
           //   inmuebles.length > 0
           //     ? await Promise.all(
@@ -2432,7 +2431,7 @@ export const initialUserLinking = async (linkingData, user) => {
           const pagados = liquidacionesPagas.concat(multasPagas);
           const vigentes = liquidacionesVigentes.concat(multasVigentes);
           let registry;
-          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [contributor.id_contribuyente, 'NATURAL', (fixatedAmount(+datosSucursal?.creditoFiscal || 0) / PETRO).toFixed(8), true, null])).rows[0];
+          const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [contributor.id_contribuyente, 'NATURAL', fixatedAmount(+datosSucursal?.creditoFiscal || 0), true, null])).rows[0];
           if (datosSucursal?.registroMunicipal) {
             const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado, direccion } = datosSucursal;
             registry = (
@@ -3028,7 +3027,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
 
     if (user.tipoUsuario !== 4 && applicationType === 'RETENCION') {
       const retentionDetail = (await client.query(queries.GET_RETENTION_DETAIL_BY_APPLICATION_ID, [application])).rows;
-      await Promise.all(retentionDetail.map(async (x) => await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [x.rif, x.numero_referencia, (x.monto_retenido / PETRO).toFixed(8), true, application])));
+      await Promise.all(retentionDetail.map(async (x) => await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [x.rif, x.numero_referencia, x.monto_retenido, true, application])));
     }
 
     const applicationInstance = await getApplicationsAndSettlementsByIdNots({ id: application, user }, client);
@@ -3129,23 +3128,18 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
 
 const updateFiscalCredit = async ({ id, user, amount, client }) => {
   const fixatedApplication = await getApplicationsAndSettlementsByIdNots({ id, user }, client);
-  const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
   const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
     ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
     : undefined;
   if (fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' && !idReferenciaMunicipal) return;
-  const payload =
-    fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO'
-      ? [idReferenciaMunicipal, 'JURIDICO', (fixatedAmount(amount) / PETRO).toFixed(8), false, id]
-      : [fixatedApplication.contribuyente.id, 'NATURAL', (fixatedAmount(amount) / PETRO).toFixed(8), false, id];
+  const payload = fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', fixatedAmount(amount), false, id] : [fixatedApplication.contribuyente.id, 'NATURAL', fixatedAmount(amount), false, id];
   await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
 };
 
 const updateRetentionFiscalCredit = async ({ id, user, amount, client }) => {
   const fixatedApplication = await getApplicationsAndSettlementsByIdNots({ id, user }, client);
   const { contribuyente: contr, referenciaMunicipal: rim } = fixatedApplication;
-  const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
-  await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [`${contr.tipoDocumento}${contr.documento}`, rim, (amount / PETRO).toFixed(8), true, id]);
+  await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [`${contr.tipoDocumento}${contr.documento}`, rim, amount, true, id]);
 };
 
 export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fragment, user }) => {
@@ -3239,9 +3233,7 @@ export const validateApplication = async (body, user, client) => {
         : (await client.query('SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE id_contribuyente = $1 LIMIT 1;', [fixatedApplication.contribuyente.id])).rows[0]?.id_registro_municipal;
       if (fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' && !idReferenciaMunicipal) return;
       const payload =
-        fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO'
-          ? [idReferenciaMunicipal, 'JURIDICO', (saldoPositivo / PETRO).toFixed(8), false, body.idTramite]
-          : [fixatedApplication.contribuyente.id, 'NATURAL', (saldoPositivo / PETRO).toFixed(8), false, body.idTramite];
+        fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' ? [idReferenciaMunicipal, 'JURIDICO', saldoPositivo, false, body.idTramite] : [fixatedApplication.contribuyente.id, 'NATURAL', saldoPositivo, false, body.idTramite];
       await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
     }
 
@@ -3249,7 +3241,7 @@ export const validateApplication = async (body, user, client) => {
       /*TODO: logica de añadir retenciones a la tabla correspondiente, esto tiene que buscar los datos de la tabla 
       detalle_retencion joineando con liquidacion y solicitud. Eso hay que meterlo en la tabla credito_fiscal_retencion (?) y ya, listo*/
       const retentionDetail = (await client.query(queries.GET_RETENTION_DETAIL_BY_APPLICATION_ID, [body.idTramite])).rows;
-      await Promise.all(retentionDetail.map(async (x) => await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [x.rif, x.numero_referencia, (x.monto_retenido / PETRO).toFixed(8), true, body.idTramite])));
+      await Promise.all(retentionDetail.map(async (x) => await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [x.rif, x.numero_referencia, x.monto_retenido, true, body.idTramite])));
     }
 
     const applicationInstance = await getApplicationsAndSettlementsById({ id: body.idTramite, user: solicitud.id_usuario });
@@ -3300,8 +3292,8 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
       if (fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' && !idReferenciaMunicipal) return;
       const payload =
         fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO'
-          ? [idReferenciaMunicipal, 'JURIDICO', (saldoPositivo / PETRO).toFixed(8), false, agreement.id_solicitud]
-          : [fixatedApplication.contribuyente.id, 'NATURAL', (saldoPositivo / PETRO).toFixed(8), false, agreement.id_solicitud];
+          ? [idReferenciaMunicipal, 'JURIDICO', saldoPositivo, false, agreement.id_solicitud]
+          : [fixatedApplication.contribuyente.id, 'NATURAL', saldoPositivo, false, agreement.id_solicitud];
       await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
     }
     const applicationInstance = await getAgreementFractionById({ id: body.idTramite });
