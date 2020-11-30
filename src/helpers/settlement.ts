@@ -3955,8 +3955,10 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     let currentDate = moment().format('MM-DD-YYYY');
 
     if (application.idSubramo === 107 || application.idSubramo === 108) {
-      const breakdownGas = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 107])).rows.map((row) => (row.datos.IVA ? { ...row, monto: row.monto / (1 + row.datos.IVA / 100) } : { ...row, monto: row.monto / 1.16 }));
-      const breakdownAseo: any[] = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, 108])).rows.map((row) =>
+      const breakdownGas = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID + ' ORDER BY fecha_vencimiento DESC', [application.id, 107])).rows.map((row) =>
+        row.datos.IVA ? { ...row, monto: row.monto / (1 + row.datos.IVA / 100) } : { ...row, monto: row.monto / 1.16 }
+      );
+      const breakdownAseo: any[] = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID + ' ORDER BY fecha_vencimiento DESC', [application.id, 108])).rows.map((row) =>
         row.datos.IVA ? { ...row, monto: row.monto / (1 + row.datos.IVA / 100) } : { ...row, monto: row.monto / 1.16 }
       );
       const breakdownJoin = breakdownGas.reduce((prev: any[], next) => {

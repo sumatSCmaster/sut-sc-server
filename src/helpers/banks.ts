@@ -51,6 +51,17 @@ const typeProcess = switchcase({
       throw e;
     }
   },
+  RETENCION: async ({ id, client }: { id: number; client: PoolClient }) => {
+    try {
+      const process: any = await getApplicationsAndSettlementsByIdNots({ id, user: null }, client);
+      const fecha = (await client.query(`SELECT time AS "fechaInsercion" FROM impuesto.evento_solicitud WHERE id_solicitud = $1 AND (event ILIKE 'aprobacion%' OR event ILIKE 'validar%') ORDER BY id_evento_solicitud DESC LIMIT 1`, [id])).rows[0]
+        ?.fechaInsercion;
+      process.fechaInsercion = moment(fecha).format('MM-DD-YYYY');
+      return process;
+    } catch (e) {
+      throw e;
+    }
+  },
   CONVENIO: async ({ id, client }: { id: number; client: PoolClient }) => {
     try {
       const process: any = await getAgreementFractionById({ id });
@@ -119,6 +130,19 @@ const reversePaymentCase = switchcase({
     const REVERSARPAGO = 'reversarpago_solicitud';
     try {
       await client.query(queries.DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT, [id, 'IMPUESTO']);
+      await client.query(queries.DELETE_FISCAL_CREDIT_BY_APPLICATION_ID, [id]);
+      await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [id, REVERSARPAGO]);
+      await client.query(queries.SET_NON_APPROVED_STATE_FOR_APPLICATION, [id]);
+      await client.query(queries.NULLIFY_AMOUNT_IN_REVERSED_APPLICATION, [id]);
+      return await getApplicationsAndSettlementsByIdNots({ id, user: null }, client);
+    } catch (e) {
+      throw e;
+    }
+  },
+  RETENCION: async ({ id, client }: { id: number; client: PoolClient }) => {
+    const REVERSARPAGO = 'reversarpago_solicitud';
+    try {
+      await client.query(queries.DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT, [id, 'RETENCION']);
       await client.query(queries.DELETE_FISCAL_CREDIT_BY_APPLICATION_ID, [id]);
       await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [id, REVERSARPAGO]);
       await client.query(queries.SET_NON_APPROVED_STATE_FOR_APPLICATION, [id]);
