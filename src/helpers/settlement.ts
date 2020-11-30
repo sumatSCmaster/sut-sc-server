@@ -138,10 +138,11 @@ export const getIUTariffForContributor = async ({ estate, id, declaration, date 
     console.log('getIUTariffForContributor ~ impuestoInmueble', impuestoInmueble);
     if (!id) return impuestoInmueble;
     const now = moment().locale('ES').subtract(1, 'M');
-    const si = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, id])).rows[0];
-    // .find((el) => el.datos.month === now.format('MMMM') && el.datos.year === now.year());
-    console.log('🚀 ~ file: settlement.ts ~ line 142 ~ getIUTariffForContributor ~ si', si);
-    const AEDeclaration = Math.round(isNaN(+declaration!) ? fixatedAmount(si * PETRO) : +declaration!);
+    const lastAEApplication = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, id])).rows[0];
+    const filt = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, id])).rows[0].find((el) => el.datos.month === now.format('MMMM') && el.datos.year === now.year());
+    console.log('🚀 ~ file: settlement.ts ~ line 143 ~ getIUTariffForContributor ~ filt', filt);
+    // console.log('🚀 ~ file: settlement.ts ~ line 142 ~ getIUTariffForContributor ~ si', lastAEApplication);
+    const AEDeclaration = Math.round(isNaN(+declaration!) ? fixatedAmount(lastAEApplication * PETRO) : +declaration!);
     console.log('getIUTariffForContributor ~ AEDeclaration', AEDeclaration);
     if (!AEDeclaration && typeof AEDeclaration !== 'number') throw { status: 422, message: 'Debe realizar una declaracion de AE de este mes para poder realizar el calculo de IU' };
     const taxableMin = Math.round(fixatedAmount((await client.query(queries.GET_LITTLEST_TAXABLE_MINIMUM_FOR_CONTRIBUTOR, [id])).rows[0].minimo_tributable * PETRO));
