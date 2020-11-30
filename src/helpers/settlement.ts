@@ -140,7 +140,7 @@ export const getIUTariffForContributor = async ({ estate, id, declaration, date 
     const now = moment().locale('ES').subtract(1, 'M');
     const lastAEApplication = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, id])).rows[0];
     console.log('🚀 ~ file: settlement.ts ~ line 142 ~ getIUTariffForContributor ~ lastAEApplication', lastAEApplication);
-    const filt = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, id])).rows.find((el) => el.datos.month === now.format('MMMM') && el.datos.year === now.year());
+    const filt = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, id])).rows.find((el) => el.datos.fecha.month === now.format('MMMM') && el.datos.fecha.year === now.year());
     console.log('🚀 ~ file: settlement.ts ~ line 143 ~ getIUTariffForContributor ~ filt', filt);
     // console.log('🚀 ~ file: settlement.ts ~ line 142 ~ getIUTariffForContributor ~ si', lastAEApplication);
     const AEDeclaration = Math.round(isNaN(+declaration!) ? fixatedAmount(lastAEApplication * PETRO) : +declaration!);
