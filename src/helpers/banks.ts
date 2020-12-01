@@ -83,7 +83,7 @@ export const paymentReferenceSearch = async ({ reference, bank }) => {
     if (!bank) throw { status: 400, message: 'Debe proporcionar el banco correspondiente a la referencia' };
     const pagos = (
       await client.query(
-        'SELECT id_pago AS id, referencia, id_procedimiento AS "idProcedimiento", monto, fecha_de_pago AS "fechaDePago", aprobado, id_banco AS banco, fecha_de_aprobacion AS "fechaAprobacion", concepto, metodo_pago AS "metodoPago", id_usuario AS usuario, id_banco_destino AS "bancoDestino" FROM pago WHERE referencia = $1 AND id_banco_destino = $2',
+        'SELECT id_pago AS id, referencia, id_procedimiento AS "idProcedimiento", monto, fecha_de_pago AS "fecha", aprobado, id_banco AS banco, fecha_de_aprobacion AS "fechaAprobacion", concepto, metodo_pago AS "metodoPago", id_usuario AS usuario, id_banco_destino AS "bancoDestino" FROM pago WHERE referencia = $1 AND id_banco_destino = $2',
         [reference, bank]
       )
     ).rows;
@@ -203,7 +203,7 @@ const getPaymentsByProcessId = async ({ id, concept, client }: { id: number; con
   try {
     const pagos = (
       await client.query(
-        'SELECT id_pago AS id, referencia, id_procedimiento AS "idProcedimiento", monto, fecha_de_pago AS "fechaDePago", aprobado, id_banco AS banco, fecha_de_aprobacion AS "fechaAprobacion", concepto, metodo_pago AS "metodoPago", id_usuario AS usuario, id_banco_destino AS "bancoDestino" FROM pago WHERE id_procedimiento = $1 AND concepto = $2',
+        'SELECT id_pago AS id, referencia, id_procedimiento AS "idProcedimiento", monto, fecha_de_pago AS "fecha", aprobado, id_banco AS banco, fecha_de_aprobacion AS "fechaAprobacion", concepto, metodo_pago AS "metodoPago", id_usuario AS usuario, id_banco_destino AS "bancoDestino" FROM pago WHERE id_procedimiento = $1 AND concepto = $2',
         [id, concept]
       )
     ).rows;
