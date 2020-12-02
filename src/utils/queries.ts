@@ -2800,7 +2800,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   END AS rating
   FROM (
     SELECT l.monto, id_solicitud, rmar.id_registro_municipal
-    FROM (SELECT rm.* FROM impuesto.registro_municipal rm INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = rm.id_contribuyente WHERE c.es_agente_retencion = true ) rmar
+    FROM (SELECT rm.* FROM impuesto.registro_municipal rm INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = rm.id_contribuyente WHERE c.es_agente_retencion = true AND rm.referencia_municipal NOT LIKE 'AR%') rmar
     LEFT JOIN (SELECT *, datos#>>'{fecha,month}' AS mes, datos#>>'{fecha,year}' AS anyo FROM impuesto.liquidacion WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2) l ON l.id_registro_municipal = rmar.id_registro_municipal
     LEFT JOIN (
                   SELECT MAX(monto) as monto, id_registro_municipal,  datos#>>'{fecha,month}' as mes, datos#>>'{fecha, year}' as anyo 
