@@ -2790,35 +2790,26 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       LIMIT $4 RETURNING *;
 `,
   CREATE_CHARGINGS_AR: `INSERT INTO impuesto.cobranza (id_registro_municipal, rating)
-  SELECT DISTINCT ON (l.id_registro_municipal) l.id_registro_municipal,
+  SELECT DISTINCT ON (l.id_registro_municipal) l.id_registro_municipal, 
   CASE 
       WHEN (s.fecha_aprobado::timestamptz - cast(date_trunc('month', $3::date) as timestamptz) ) BETWEEN interval '0 days' AND interval '10 days' THEN '5'
       WHEN (s.fecha_aprobado::timestamptz - cast(date_trunc('month', $3::date) as timestamptz) ) BETWEEN interval '11 days' AND interval '15 days' THEN '4'
       WHEN (s.fecha_aprobado::timestamptz - cast(date_trunc('month', $3::date) as timestamptz) ) BETWEEN interval '16 days' AND interval '20 days' THEN '3'
       WHEN (s.fecha_aprobado::timestamptz - cast(date_trunc('month', $3::date) as timestamptz) ) BETWEEN interval '21 days' AND interval '25 days' THEN '2'
-      ELSE '1'
+      ELSE '1'  
   END AS rating
   FROM (
-    SELECT l.monto, id_solicitud, l.id_registro_municipal
-    FROM (SELECT *, datos#>>'{fecha,month}' AS mes, datos#>>'{fecha,year}' AS anyo FROM impuesto.liquidacion WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2) l
-    INNER JOIN (
+    SELECT l.monto, id_solicitud, rmar.id_registro_municipal
+    FROM (SELECT rm.* FROM impuesto.registro_municipal rm INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = rm.id_contribuyente WHERE c.es_agente_retencion = true ) rmar
+    LEFT JOIN (SELECT *, datos#>>'{fecha,month}' AS mes, datos#>>'{fecha,year}' AS anyo FROM impuesto.liquidacion WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2) l ON l.id_registro_municipal = rmar.id_registro_municipal
+    LEFT JOIN (
                   SELECT MAX(monto) as monto, id_registro_municipal,  datos#>>'{fecha,month}' as mes, datos#>>'{fecha, year}' as anyo 
                   FROM impuesto.liquidacion WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2
                   GROUP BY id_registro_municipal, mes, anyo
                   ) sub ON sub.monto = l.monto AND sub.mes = l.mes AND sub.anyo = l.anyo AND sub.id_registro_municipal = l.id_registro_municipal        
     ) l
-  INNER JOIN impuesto.solicitud s USING (id_solicitud)
-  WHERE s.aprobado = true AND id_registro_municipal IN (
-    SELECT * FROM (
-        SELECT id_registro_municipal FROM (SELECT DISTINCT ON (l.id_registro_municipal) l.id_registro_municipal, SUM(monto) as montoTotal 
-        FROM Impuesto.liquidacion l
-        INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud
-        INNER JOIN impuesto.registro_municipal rm ON rm.id_registro_municipal = l.id_registro_municipal
-        INNER JOIN impuesto.contribuyente cont ON s.id_contribuyente = cont.id_contribuyente AND rm.id_contribuyente = cont.id_contribuyente
-        WHERE id_subramo = 10 AND datos#>>'{fecha,month}' = $1 AND datos#>>'{fecha,year}' = $2 AND s.aprobado = true AND cont.es_agente_retencion = true
-        GROUP BY l.id_registro_municipal 
-        ) x  ORDER BY montoTotal DESC LIMIT $4 ) X   ) 
-      LIMIT $4 RETURNING *;
+  LEFT JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud
+  RETURNING *;
 `,
   UPDATE_CHARGING: `UPDATE impuesto.cobranza SET contactado = $2, 
     estatus_telefonico = $3, 
