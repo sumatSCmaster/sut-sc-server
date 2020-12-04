@@ -45,8 +45,8 @@ const getRatings: (stars: number) => (AR: boolean) => (chargings: any[], WALLET_
 };
 
 export const createAllChargings = async (WALLET_AMOUNT = 20, WALLET_AMOUNT_AR = 5, AMOUNT_PER_WALLET = 100) => {
-  await createChargings(WALLET_AMOUNT,  AMOUNT_PER_WALLET);
-  return await createChargingsAR(WALLET_AMOUNT_AR,  AMOUNT_PER_WALLET);
+  await createChargings(WALLET_AMOUNT, AMOUNT_PER_WALLET);
+  return await createChargingsAR(WALLET_AMOUNT_AR, AMOUNT_PER_WALLET);
 };
 
 export const createChargings = async (WALLET_AMOUNT, AMOUNT_PER_WALLET) => {
@@ -130,7 +130,7 @@ export const createChargingsAR = async (WALLET_AMOUNT_AR, AMOUNT_PER_WALLET) => 
     console.log(declMonth.format('MMMM').toLowerCase());
     console.log(today.year());
     console.log(firstOfLastMonth.toISOString());
-    const chargings = (await client.query(queries.CREATE_CHARGINGS_AR, [declMonth.format('MMMM').toLowerCase(), declMonth.year(), firstOfLastMonth.toISOString(), WALLET_AMOUNT_AR * AMOUNT_PER_WALLET])).rows;
+    const chargings = (await client.query(queries.CREATE_CHARGINGS_AR, [declMonth.format('MMMM').toLowerCase(), declMonth.year(), firstOfLastMonth.toISOString()])).rows;
     const [rating1Remover, rating1len] = getRatings(1)(true)(chargings, undefined, WALLET_AMOUNT_AR);
     const [rating2Remover, rating2len] = getRatings(2)(true)(chargings, undefined, WALLET_AMOUNT_AR);
     const [rating3Remover, rating3len] = getRatings(3)(true)(chargings, undefined, WALLET_AMOUNT_AR);
@@ -236,14 +236,14 @@ export const getChargingsByWallet = async (id) => {
 const getChargingsByWalletId = async (id) => {
   const client = await pool.connect();
   try {
-    const date = (await client.query("SELECT created FROM impuesto.cobranza LIMIT 1")).rows[0].created;
-    const creationDate = moment(date).locale('es')
+    const date = (await client.query('SELECT created FROM impuesto.cobranza LIMIT 1')).rows[0].created;
+    const creationDate = moment(date).locale('es');
     const declMonth = creationDate.clone().subtract(1, 'month').locale('es');
     const charging = await client.query('SELECT * FROM impuesto.cartera where id_cartera = $1', [id]);
     let aeMonth = declMonth.format('MMMM').toLowerCase();
     let aeYear = declMonth.year();
-    let otherMonth = creationDate.format('MMMM').toLowerCase()
-    let otherYear = creationDate.year()
+    let otherMonth = creationDate.format('MMMM').toLowerCase();
+    let otherYear = creationDate.year();
     const chargings = await client.query(charging.rows[0].es_ar ? queries.GET_CHARGINGS_BY_WALLET_AR : queries.GET_CHARGINGS_BY_WALLET, [id, aeMonth, aeYear, otherMonth, otherYear]);
     return chargings;
   } catch (err) {
@@ -256,14 +256,14 @@ const getChargingsByWalletId = async (id) => {
 const getChargingsByWalletExcelId = async (id) => {
   const client = await pool.connect();
   try {
-    const date = (await client.query("SELECT created FROM impuesto.cobranza LIMIT 1")).rows[0].created;
-    const creationDate = moment(date).locale('es')
+    const date = (await client.query('SELECT created FROM impuesto.cobranza LIMIT 1')).rows[0].created;
+    const creationDate = moment(date).locale('es');
     const declMonth = creationDate.clone().subtract(1, 'month').locale('es');
     const charging = await client.query('SELECT * FROM impuesto.cartera where id_cartera = $1', [id]);
     let aeMonth = declMonth.format('MMMM').toLowerCase();
     let aeYear = declMonth.year();
-    let otherMonth = creationDate.format('MMMM').toLowerCase()
-    let otherYear = creationDate.year()
+    let otherMonth = creationDate.format('MMMM').toLowerCase();
+    let otherYear = creationDate.year();
     const chargings = await client.query(charging.rows[0].es_ar ? queries.GET_CHARGINGS_BY_WALLET_AR_EXCEL : queries.GET_CHARGINGS_BY_WALLET_EXCEL, [id, aeMonth, aeYear, otherMonth, otherYear]);
     return chargings;
   } catch (err) {
