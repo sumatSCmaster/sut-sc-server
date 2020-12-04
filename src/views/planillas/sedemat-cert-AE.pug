@@ -119,7 +119,7 @@ block content
           div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
             p #{item.alicuota}
           div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
-            p #{item.minTrib}
+            p  #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.minTrib ? item.minTrib : 0)}
           div(style={'-webkit-flex': 1.5}).td.border-bottom.center
             p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.impuesto ? item.impuesto : 0)}
       div.tr.break-page
