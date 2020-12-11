@@ -365,11 +365,19 @@ export const createOnDemandCertificate = async (type: string, data: any[]): Prom
     };
 
     if (type === 'LIC') {
-      const numeroLicencia = (await client.query(`SELECT concat(date_part('year'::text, CURRENT_DATE), '-', lpad(nextval('impuesto.licencia_seq'::regclass)::text, 7, '0'::text)) AS "numeroLicencia"`)).rows[0].numeroLicencia;
-      certificateValues = certificateValues.map((el) => {
-        el.licencia = `${el.datos.funcionario.licencia}-${numeroLicencia}`;
-        return el;
-      });
+      const { renovacion } = certificateValues[0].datos;
+      if (!renovacion) {
+        const numeroLicencia = (await client.query(`SELECT concat(date_part('year'::text, CURRENT_DATE), '-', lpad(nextval('impuesto.licencia_seq'::regclass)::text, 7, '0'::text)) AS "numeroLicencia"`)).rows[0].numeroLicencia;
+        certificateValues = certificateValues.map((el) => {
+          el.licencia = `${el.datos.funcionario.licencia}-${numeroLicencia}`;
+          return el;
+        });
+      } else {
+        certificateValues = certificateValues.map((el) => {
+          el.licencia = el.datos.funcionario.licencia;
+          return el;
+        });
+      }
     }
     const index = new Date().getTime().toString().substr(6);
     const bucketKey = `/sedemat/${type}/${index}/certificado.pdf`;
