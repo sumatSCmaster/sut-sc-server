@@ -1145,7 +1145,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         )
         SELECT (c.tipo_documento || '-' || c.documento) AS "Documento", rm.referencia_municipal AS "RIM", c.razon_social AS "Razon Social", ae.descripcion AS "Actividad Economica",
         r.descripcion AS "Ramo", s.id AS "Planilla", l.fecha_liquidacion AS "Fecha Liquidacion", s.fecha AS "Fecha Recaudacion", 
-        (CASE WHEN s.state = 'finalizado' THEN 'PAGADO' ELSE 'VIGENTE' END) AS "Estatus", l.monto as "Monto"
+        (CASE WHEN s.state = 'finalizado' THEN 'PAGADO' ELSE 'VIGENTE' END) AS "Estatus", COALESCE(l.monto, (l.monto_petro * (Select valor_en_bs from valor where descripcion = 'PETRO')), 0) as "Monto"
         FROM impuesto.contribuyente c 
         INNER JOIN impuesto.registro_municipal rm ON rm.id_contribuyente = c.id_contribuyente
         LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) * FROM impuesto.actividad_economica_sucursal aec INNER JOIN impuesto.actividad_economica ae ON ae.numero_referencia = aec.numero_referencia) ae ON ae.id_registro_municipal = rm.id_registro_municipal 
@@ -1155,7 +1155,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         ORDER BY l.fecha_liquidacion, c.razon_social ASC`,
   GET_SETTLEMENT_REPORT_BY_BRANCH: `SELECT (c.tipo_documento || '-' || c.documento) AS "Documento", rm.referencia_municipal AS "RIM", c.razon_social AS "Razon Social", ae.descripcion AS "Actividad Economica",
   r.descripcion AS "Ramo", s.id AS "Planilla", l.fecha_liquidacion AS "Fecha Liquidacion", s.fecha AS "Fecha Recaudacion", 
-  (CASE WHEN s.state = 'finalizado' THEN 'PAGADO' ELSE 'VIGENTE' END) AS "Estatus", l.monto as "Monto" 
+  (CASE WHEN s.state = 'finalizado' THEN 'PAGADO' ELSE 'VIGENTE' END) AS "Estatus", COALESCE(l.monto, (l.monto_petro * (Select valor_en_bs from valor where descripcion = 'PETRO')), 0) as "Monto" 
   FROM impuesto.contribuyente c 
   INNER JOIN impuesto.registro_municipal rm ON rm.id_contribuyente = c.id_contribuyente 
   LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) * FROM impuesto.actividad_economica_sucursal aec INNER JOIN impuesto.actividad_economica ae ON ae.numero_referencia = aec.numero_referencia) ae ON ae.id_registro_municipal = rm.id_registro_municipal 
