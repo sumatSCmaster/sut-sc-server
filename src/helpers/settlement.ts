@@ -2782,7 +2782,7 @@ export const insertSettlements = async ({ process, user }) => {
       //     finingMonths.push(fine);
       //   }
       // }
-      const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).startOf('month');
+      const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).year(onlyAE[0].fechaCancelada.year).startOf('month');
       const comparingDate = now.clone().startOf('month');
       finingMonths = new Array(comparingDate.diff(finingDate, 'M')).fill({});
       if (finingMonths.length > 0) {
