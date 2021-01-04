@@ -2782,8 +2782,9 @@ export const insertSettlements = async ({ process, user }) => {
       //     finingMonths.push(fine);
       //   }
       // }
-      const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).month() + 1;
-      finingMonths = new Array(now.month() - finingDate).fill({});
+      const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).year(onlyAE[0].fechaCancelada.year).startOf('month');
+      const comparingDate = now.clone().startOf('month');
+      finingMonths = new Array(comparingDate.diff(finingDate, 'M')).fill({});
       if (finingMonths.length > 0) {
         // let counter = finingDate - 1;
         finingMonths = await Promise.all(
@@ -3790,7 +3791,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             return benefitRemission;
           case 'convenio':
             const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
-            const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [contribuyente?.usuarios[0].id || benefittedUser?.id, contributorWithBranch.id_contribuyente])).rows[0];
+            const applicationAG = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [contribuyente?.usuarios[0]?.id || benefittedUser?.id, contributorWithBranch.id_contribuyente])).rows[0];
             await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [applicationAG.id_solicitud, applicationStateEvents.INGRESARDATOS]);
             await client.query('UPDATE impuesto.solicitud SET tipo_solicitud = $1 WHERE id_solicitud = $2', ['CONVENIO', applicationAG.id_solicitud]);
             const agreement = (await client.query(queries.CREATE_AGREEMENT, [applicationAG.id_solicitud, x.porciones.length])).rows[0];
