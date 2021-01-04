@@ -1177,6 +1177,47 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
           GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
   ) s ON s.id = l.id_solicitud WHERE l.fecha_liquidacion BETWEEN $1 AND $2 AND r.id_ramo = $3
   ORDER BY l.fecha_liquidacion ASC`,
+  GET_IVA_REPORT: `WITH base AS (
+    SELECT DISTINCT ON (l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto) l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto, l.datos, l.fecha_liquidacion, 
+                  (((l.datos#>'{desglose}')->0)->>'montoGas')::numeric AS base_impobible_gas, 
+                  (((l.datos#>'{desglose}')->0)->>'montoGas')::numeric * (0.16) AS iva_gas,
+                  CASE 
+                    WHEN l.datos->>'esAgenteRetencion' = 'true' OR l.datos->>'esAgenteSENIAT' = 'true' THEN
+                     (((l.datos#>'{desglose}')->0)->>'montoGas')::numeric * (0.12)
+                    ELSE 0
+                  END AS retencion_gas,
+                  
+                  
+                   
+                  (((l.datos#>'{desglose}')->0)->>'montoAseo')::numeric AS base_impobible_aseo,
+                  (((l.datos#>'{desglose}')->0)->>'montoAseo')::numeric * (0.16) AS iva_aseo,
+                  CASE 
+                    WHEN l.datos->>'esAgenteRetencion' = 'true' OR l.datos->>'esAgenteSENIAT' = 'true' THEN
+                     (((l.datos#>'{desglose}')->0)->>'montoAseo')::numeric * (0.12)
+                    ELSE 0
+                  END AS retencion_ASEO
+                  
+                  
+                
+                  FROM impuesto.liquidacion l 
+                  WHERE id_solicitud IS NOT NULL 
+                  AND id_subramo = 107
+                  AND id_solicitud IN (SELECT id_solicitud 
+                                          FROM impuesto.solicitud 
+                                          WHERE fecha_aprobado BETWEEN $1::date AND $2::date
+                                          AND tipo_solicitud != 'CONVENIO')
+), x AS (
+    SELECT id_liquidacion, id_solicitud, id_subramo, monto, datos, fecha_liquidacion,
+        base_impobible_gas, iva_gas, retencion_gas, iva_gas - retencion_gas AS iva_gas_liquidado, base_impobible_gas + (iva_gas - retencion_gas) AS total_gas_liquidado,
+        base_impobible_aseo, iva_aseo, retencion_aseo, iva_aseo - retencion_aseo AS iva_aseo_liquidado, base_impobible_aseo + (iva_aseo - retencion_aseo) AS total_aseo_liquidado
+    FROM base
+)
+SELECT x.id_solicitud "Nro. Solicitud", x.fecha_liquidacion AS "Fecha", s.fecha_aprobado AS "Fecha Aprobación", cont.razon_social AS "Razón social", base_impobible_gas "Base imponible gas", iva_gas "IVA gas", retencion_gas "Retencion gas", iva_gas_liquidado "IVA gas liquidado", total_gas_liquidado "Total gas liquidado",
+        base_impobible_aseo "Base imponible aseo", iva_aseo "IVA Aseo", retencion_aseo "Retencion aseo", iva_aseo_liquidado "IVA Aseo liquidado", total_aseo_liquidado "Total aseo liquidado"
+FROM x
+INNER JOIN impuesto.solicitud s ON s.id_solicitud = x.id_solicitud
+INNER JOIN impuesto.contribuyente cont ON cont.id_contribuyente = s.id_contribuyente
+ORDER BY razon_social;`,
   //CIERRE DE CAJA
   GET_CASHIER_POS: `SELECT b.nombre as banco, SUM(p.monto) as monto, COUNT(*) as transacciones
         FROM pago p 
