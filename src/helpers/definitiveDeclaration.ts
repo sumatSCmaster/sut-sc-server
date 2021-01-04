@@ -39,7 +39,7 @@ export const getDataForDefinitiveDeclaration = async ({ document, reference, doc
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
     if (!branch) throw { status: 404, message: 'No existe el RIM proporcionado' };
     const lastYearDeclaration = (await client.query(queries.ALL_YEAR_SETTLEMENTS_EXISTS_FOR_LAST_YEAR_AE_DECLARATION, [codigosRamo.AE, branch.id_registro_municipal, proposedYear.year()])).rows;
-    const definitiveDeclaration = uniqBy(lastYearDeclaration, (settlement) => settlement.datos.fecha.month);
+    const definitiveDeclaration = uniqBy(lastYearDeclaration, (settlement) => settlement.datos.fecha.month).filter((el) => !!el.datos.desglose);
     if (definitiveDeclaration.length < 12) throw { status: 409, message: 'Debe realizar todas las declaraciones correspondientes al año previo' };
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const solvencyCost = branch?.estado_licencia === 'PERMANENTE' ? +(await client.query(queries.GET_SCALE_FOR_PERMANENT_AE_SOLVENCY)).rows[0].indicador : +(await client.query(queries.GET_SCALE_FOR_TEMPORAL_AE_SOLVENCY)).rows[0].indicador;
