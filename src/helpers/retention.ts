@@ -239,8 +239,9 @@ export const insertRetentions = async ({ process, user }) => {
       //       finingMonths.push(fine);
       //     }
       //   }
-      const finingDate = moment().locale('ES').month(onlyRD[0].fechaCancelada.month).month() + 1;
-      finingMonths = new Array(now.month() - finingDate).fill({});
+      const finingDate = moment().locale('ES').month(onlyRD[0].fechaCancelada.month).year(onlyRD[0].fechaCancelada.year).startOf('month');
+      const comparingDate = now.clone().startOf('month');
+      finingMonths = new Array(comparingDate.diff(finingDate, 'M')).fill({});
       if (finingMonths.length > 0) {
         // let counter = finingDate - 1;
         finingMonths = await Promise.all(
