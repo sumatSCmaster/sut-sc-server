@@ -11,13 +11,45 @@ const dev = process.env.NODE_ENV !== 'production';
 
 const pool = Pool.getInstance();
 
-export const getActivities = async () => {
+export const getActivities = async (): Promise<Aliquot[]> => {
   const client = await pool.connect();
   try {
-    const activities = (await client.query(queries.GET_ALL_ACTIVITIES)).rows;
+    const activities: Aliquot[] = (await client.query(queries.GET_ALL_ACTIVITIES)).rows;
     return activities;
   } catch (e) {
     throw e;
+  } finally {
+    client.release();
+  }
+};
+
+export const updateActivitiesAliquots = async ({ aliquots }: { aliquots: Aliquot[] }) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const newAliquots = aliquots.map(async (el) => {
+      const { codigo, descripcion, alicuota, minimoTributable, id } = el;
+      const actividad = (await client.query(queries.UPDATE_ALIQUOT_FOR_ACTIVITY, [codigo, descripcion, alicuota, minimoTributable, id])).rows[0];
+      const response: Aliquot = {
+        id: actividad.id_actividad_economica,
+        codigo: actividad.numero_referencia,
+        descripcion: actividad.descripcion,
+        alicuota: actividad.alicuota,
+        minimoTributable: actividad.minimo_tributable,
+      };
+      return response;
+    });
+    const response = await Promise.all(newAliquots);
+    await client.query('COMMIT');
+    return { status: 200, message: 'Alicuotas actualizadas', alicuotas: response };
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error);
+    throw {
+      status: error.status || 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al actualizar alicuotas',
+    };
   } finally {
     client.release();
   }
@@ -208,3 +240,11 @@ export const updateContributorActivities = async ({ branchId, activities, branch
     client.release();
   }
 };
+
+interface Aliquot {
+  id: number;
+  codigo: string;
+  descripcion: string;
+  alicuota: number;
+  minimoTributable: number;
+}
