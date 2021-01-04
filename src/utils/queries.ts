@@ -754,6 +754,27 @@ WHERE rm.codigo = $1 AND l.id_registro_municipal = $2 AND EXTRACT('month' FROM l
     WHERE id_contribuyente = $1 AND r.codigo IN ('112','111','114','122')
     GROUP BY id_ramo) x
     );`,
+  ALL_YEAR_SETTLEMENTS_EXISTS_FOR_LAST_YEAR_AE_DECLARATION: `SELECT * FROM (SELECT s.id_solicitud AS id,
+      s.id_tipo_tramite AS tipotramite,
+      s.aprobado,
+      s.fecha,
+      s.fecha_aprobado AS "fechaAprobacion",
+      ev.state,
+      s.tipo_solicitud AS "tipoSolicitud",
+      s.id_contribuyente
+     FROM impuesto.solicitud s
+       JOIN ( SELECT es.id_solicitud,
+              impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+             FROM impuesto.evento_solicitud es
+             WHERE id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE id_registro_municipal = $2 LIMIT 1))
+            GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+  ) s 
+  RIGHT JOIN impuesto.liquidacion l on s.id = l.id_solicitud 
+  INNER JOIN impuesto.subramo sr ON l.id_subramo = sr.id_subramo
+  INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo 
+  WHERE rm.codigo = $1 AND l.id_registro_municipal = $2 AND
+  datos#>>'{fecha,year}' = $3
+  ORDER BY fecha_liquidacion DESC`,
   GET_LAST_SETTLEMENTS_FOR_INSPECTION_BY_RIM: `WITH solicitudcte AS (
     SELECT id_solicitud
     FROM impuesto.solicitud 
@@ -1334,7 +1355,7 @@ ORDER BY razon_social;`,
         WHERE re.id_ramo = $1 AND ((pe.fecha_fin IS NULL) OR (NOW() BETWEEN pe.fecha_inicio AND (pe.fecha_fin)))
         ORDER BY pe.id_plazo_exoneracion DESC;`,
   UPDATE_EXONERATION_END_TIME: `UPDATE impuesto.plazo_exoneracion SET fecha_fin = $1 WHERE id_plazo_exoneracion = $2`,
-  GET_ALL_ACTIVITIES: 'SELECT id_actividad_economica AS id, numero_referencia AS codigo, descripcion, alicuota, minimo_tributable AS "minimoTributable" FROM impuesto.actividad_economica;',
+  GET_ALL_ACTIVITIES: 'SELECT id_actividad_economica AS id, numero_referencia AS codigo, descripcion, alicuota, minimo_tributable AS "minimoTributable" FROM impuesto.actividad_economica ORDER BY id_actividad_economica;',
   UPDATE_ALIQUOT_FOR_ACTIVITY: 'UPDATE impuesto.actividad_economica SET numero_referencia = $1, descripcion = $2, alicuota = $3, minimo_tributable = $4 WHERE id_actividad_economica = $5 RETURNING *',
   GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT: 'SELECT SUM(credito) as credito FROM impuesto.credito_fiscal WHERE id_persona = $1 AND concepto = $2',
   GET_ESTATES_FOR_JURIDICAL_CONTRIBUTOR:
