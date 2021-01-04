@@ -393,8 +393,8 @@ export const listTaxPayments = async () => {
     WHERE s."tipoSolicitud" = 'CONVENIO' AND fs.state = 'validando' AND p.concepto = 'CONVENIO' ORDER BY id_procedimiento, id_pago;
     `);
     let tramData = await client.query(`
-    SELECT s.*, p.*, b.id_banco, c.documento, u.nacionalidad AS "tipoDocumento", u.cedula AS "documento", 'TRAMITE' as "tipoSolicitud" 
-    FROM impuesto.tramites_state s 
+    SELECT s.*, p.*, b.id_banco, u.nacionalidad AS "tipoDocumento", u.cedula AS "documento", 'TRAMITE' as "tipoSolicitud", s.cost as montotram
+    FROM tramites_state s 
     INNER JOIN usuario u ON u.id_usuario = s.usuario
     INNER JOIN pago p ON p.id_procedimiento = s.id 
     INNER JOIN banco b ON b.id_banco = p.id_banco
@@ -431,7 +431,7 @@ export const listTaxPayments = async () => {
                 tipoDocumento: next.tipoDocumento,
                 documento: next.documento,
                 tipoSolicitud: next.tipoSolicitud,
-                monto: montoSolicitud || montoConvenio || next.monto || 0,
+                monto: montoSolicitud || montoConvenio || next.montotram || 0,
                 pagos: [
                   {
                     id: next.id_pago,
