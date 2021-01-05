@@ -35,6 +35,7 @@ import scales from './scales';
 import vehicles from './vehicles';
 import chargings from './chargings';
 import fisc from './fiscalization';
+import condominium from './condominium';
 
 const router = Router();
 
@@ -73,6 +74,7 @@ router.use('/contributor', contributor);
 router.use('/vehicles', vehicles);
 router.use('/wallet', chargings);
 router.use('/fiscalization', fisc);
+router.use('/condominium', condominium);
 router.use(resources);
 
 router.get('/', (req, res) => {

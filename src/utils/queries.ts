@@ -2934,6 +2934,52 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   UPDATE_VEHICLE_SUBCATEGORY: `UPDATE impuesto.subcategoria_vehiculo SET id_valor = $1, tarifa = $2, descripcion = $3, id_categoria_vehiculo = $4 WHERE id_subcategoria_vehiculo = $5 RETURNING *`,
   GET_VEHICLES_BY_CONTRIBUTOR: `SELECT id_vehiculo AS id, id_marca_vehiculo AS marca, modelo_vehiculo AS modelo, placa_vehiculo AS placa, anio_vehiculo AS anio, color_vehiculo AS color FROM impuesto.vehiculo WHERE id_usuario = $1`,
 
+  // CONDOMINIO
+
+  GET_CONDOMINIUMS: `
+      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
+      FROM impuesto.contribuyente cont
+      INNER JOIN impuesto.condominio cond ON cond.id_contribuyente = cont.id_contribuyente;
+  `,
+  GET_CONDOMINIUM: `
+      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
+      FROM impuesto.contribuyente cont
+      INNER JOIN impuesto.condominio cond ON cond.id_contribuyente = cont.id_contribuyente
+      WHERE id_condominio = $1
+  `,
+  GET_CONDOMINIUM_BY_DOC: `
+      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
+      FROM impuesto.contribuyente cont
+      INNER JOIN impuesto.condominio cond ON cond.id_contribuyente = cont.id_contribuyente
+      WHERE cont.tipo_documento = $1 AND cont.documento = $2;
+  `,
+  GET_CONDOMINIUM_OWNERS: `
+      SELECT id_condominio AS "idCondominio", cont.id_contribuyente as "idContribuyente", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
+      FROM impuesto.contribuyente cont
+      INNER JOIN impuesto.condominio_propietario cp ON cp.id_contribuyente = cont.id_contribuyente
+      WHERE cp.id_condominio = $1;
+  `,
+  GET_CONDOMINIUM_OWNER_BY_DOC: `
+      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
+      FROM impuesto.contribuyente cont
+      INNER JOIN impuesto.condominio_propietario cp ON cond.id_contribuyente = cp.id_contribuyente
+      WHERE cont.tipo_documento = $1 AND cont.documento = $2;
+  `,
+  CREATE_CONDOMINIUM: `
+      INSERT INTO impuesto.condominio (id_contribuyente) 
+      VALUES ((SELECT id_contribuyente FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2))
+      RETURNING id_condominio
+  `,
+  DELETE_CONDOMINIUM: `
+      DELETE FROM impuesto.condominio WHERE id_condominio = $1;
+  `,
+  ADD_CONDO_OWNER: `
+      INSERT INTO impuesto.condominio_propietario (id_contribuyente, id_condominio) 
+      VALUES ((SELECT id_contribuyente FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2), $3)
+  `,
+  DELETE_CONDO_OWNER: `
+      DELETE FROM impuesto.condominio_propietario WHERE id_condominio = $1 AND id_contribuyente = $2;
+  `,
   gtic: {
     GET_NATURAL_CONTRIBUTOR:
       'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 AND (trim(nb_representante_legal) NOT IN (SELECT trim(nb_marca) FROM tb014_marca_veh) AND trim(nb_representante_legal) NOT IN (SELECT trim(tx_marca) FROM t45_vehiculo_marca) OR trim(nb_representante_legal) IS NULL) ORDER BY co_contribuyente DESC',
