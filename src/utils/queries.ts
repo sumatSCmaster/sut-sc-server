@@ -2933,6 +2933,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   DELETE_VEHICLE: `DELETE FROM impuesto.vehiculo WHERE id_vehiculo = $1`,
   UPDATE_VEHICLE_SUBCATEGORY: `UPDATE impuesto.subcategoria_vehiculo SET id_valor = $1, tarifa = $2, descripcion = $3, id_categoria_vehiculo = $4 WHERE id_subcategoria_vehiculo = $5 RETURNING *`,
   GET_VEHICLES_BY_CONTRIBUTOR: `SELECT id_vehiculo AS id, id_marca_vehiculo AS marca, modelo_vehiculo AS modelo, placa_vehiculo AS placa, anio_vehiculo AS anio, color_vehiculo AS color FROM impuesto.vehiculo WHERE id_usuario = $1`,
+  CHECK_VEHICLE_EXISTS_FOR_USER: `SELECT 1 FROM impuesto.vehiculo WHERE id_usuario = $1 AND placa_vehiculo = $2`,
 
   // CONDOMINIO
 

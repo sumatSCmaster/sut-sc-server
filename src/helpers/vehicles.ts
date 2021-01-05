@@ -8,6 +8,26 @@ import { Usuario } from '@root/interfaces/sigt';
 
 const pool = Pool.getInstance();
 
+export const checkVehicleExists = () => async (req: any, res, next) => {
+  const client = await pool.connect();
+  const { id: usuario } = req.user;
+  const { placa } = req.body.vehiculo;
+  try {
+    const vehicleExists = (await client.query(queries.CHECK_VEHICLE_EXISTS_FOR_USER, [usuario, placa])).rowCount > 0;
+    if (!vehicleExists) return next();
+    return res.status(403).send({ status: 403, message: 'El vehiculo solicitado ya existe para el usuario que solicita' });
+  } catch (error) {
+    console.log(error);
+    return res.send({
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || errorMessageExtractor(error) || 'Error al verificar existencia del vehiculo',
+    });
+  } finally {
+    client.release();
+  }
+};
+
 export const getBrands = async () => {
   const client = await pool.connect();
   try {
@@ -73,7 +93,7 @@ const getVehicleSubcategoriesByCategory = async (id: number, client: PoolClient)
     throw {
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || error.message || 'Error al obtener subcategorias de vehiculos',
+      message: errorMessageGenerator(error) || 'Error al obtener subcategorias de vehiculos',
     };
   }
 };
@@ -97,11 +117,22 @@ export const getVehiclesByContributor = async (id: number) => {
 
 export const createVehicle = async (payload: Vehicle, user: Usuario) => {
   const client = await pool.connect();
+  const { marca, subcategoria, modelo, placa, anio, color } = payload;
   try {
     await client.query('BEGIN');
-
+    const response = (await client.query(queries.CREATE_VEHICLE, [marca, user.id, subcategoria, modelo, placa, anio, color])).rows[0];
     await client.query('COMMIT');
-    return;
+
+    const vehicle: Vehicle = {
+      id: response.id_vehiculo,
+      placa: response.placa_vehiculo,
+      marca: response.id_marca_vehiculo,
+      modelo: response.marca_vehiculo,
+      color: response.color_vehiculo,
+      anio: response.anio_vehiculo,
+      subcategoria: response.id_subcategoria_vehiculo,
+    };
+    return { status: 201, message: 'Vehiculo creado satisfactoriamente', vehiculo: vehicle };
   } catch (error) {
     client.query('ROLLBACK');
     console.log(error);
@@ -117,11 +148,22 @@ export const createVehicle = async (payload: Vehicle, user: Usuario) => {
 
 export const updateVehicle = async (payload: Vehicle, id: number) => {
   const client = await pool.connect();
+  const { marca, subcategoria, modelo, placa, anio, color } = payload;
   try {
     await client.query('BEGIN');
-
+    const response = (await client.query(queries.UPDATE_VEHICLE, [marca, subcategoria, modelo, placa, anio, color, id])).rows[0];
     await client.query('COMMIT');
-    return;
+
+    const vehicle: Vehicle = {
+      id: response.id_vehiculo,
+      placa: response.placa_vehiculo,
+      marca: response.id_marca_vehiculo,
+      modelo: response.marca_vehiculo,
+      color: response.color_vehiculo,
+      anio: response.anio_vehiculo,
+      subcategoria: response.id_subcategoria_vehiculo,
+    };
+    return { status: 200, message: 'Vehiculo actualizado', vehiculo: vehicle };
   } catch (error) {
     client.query('ROLLBACK');
     console.log(error);
@@ -139,9 +181,9 @@ export const deleteVehicle = async (id: number) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-
+    await client.query(queries.DELETE_VEHICLE, [id]);
     await client.query('COMMIT');
-    return;
+    return { status: 200, message: 'Vehiculo eliminado' };
   } catch (error) {
     client.query('ROLLBACK');
     console.log(error);
