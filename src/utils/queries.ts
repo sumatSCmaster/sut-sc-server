@@ -2927,7 +2927,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   GET_VEHICLE_BRANDS: `SELECT id_marca_vehiculo AS id, nombre FROM impuesto.marca_vehiculo;`,
   GET_VEHICLE_TYPES: `SELECT id_tipo_vehiculo AS id, descripcion FROM impuesto.tipo_vehiculo ORDER BY id_tipo_vehiculo`,
   GET_VEHICLE_CATEGORIES_BY_TYPE: `SELECT id_categoria_vehiculo AS id, descripcion FROM impuesto.categoria_vehiculo WHERE id_tipo_vehiculo = $1 ORDER BY id_categoria_vehiculo`,
-  GET_VEHICLE_SUBCATEGORIES_BY_CATEGORY: `SELECT sv.id_subcategoria_vehiculo AS id, sv.descripcion, (v.valor_en_bs * sv.tarifa) AS costo FROM impuesto.subcategoria_vehiculo sv INNER JOIN valor v USING (id_valor)`,
+  GET_VEHICLE_SUBCATEGORIES_BY_CATEGORY: `SELECT sv.id_subcategoria_vehiculo AS id, sv.descripcion, (v.valor_en_bs * sv.tarifa) AS costo FROM impuesto.subcategoria_vehiculo sv INNER JOIN valor v USING (id_valor) WHERE id_categoria_vehiculo = $1 ORDER BY id_subcategoria_vehiculo`,
   CREATE_VEHICLE: `INSERT INTO impuesto.vehiculo (id_marca_vehiculo, id_usuario, id_subcategoria_vehiculo, modelo_vehiculo, placa_vehiculo, anio_vehiculo, color_vehiculo) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
   UPDATE_VEHICLE: `UPDATE impuesto.vehiculo SET id_marca_vehiculo = $1, id_subcategoria_vehiculo = $2, modelo_vehiculo = $3, placa_vehiculo = $4, anio_vehiculo = $5, color_vehiculo = $6 WHERE id_vehiculo = $7 RETURNING *`,
   DELETE_VEHICLE: `DELETE FROM impuesto.vehiculo WHERE id_vehiculo = $1`,
