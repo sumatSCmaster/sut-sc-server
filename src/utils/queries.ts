@@ -754,6 +754,27 @@ WHERE rm.codigo = $1 AND l.id_registro_municipal = $2 AND EXTRACT('month' FROM l
     WHERE id_contribuyente = $1 AND r.codigo IN ('112','111','114','122')
     GROUP BY id_ramo) x
     );`,
+  ALL_YEAR_SETTLEMENTS_EXISTS_FOR_LAST_YEAR_AE_DECLARATION: `SELECT * FROM (SELECT s.id_solicitud AS id,
+      s.id_tipo_tramite AS tipotramite,
+      s.aprobado,
+      s.fecha,
+      s.fecha_aprobado AS "fechaAprobacion",
+      ev.state,
+      s.tipo_solicitud AS "tipoSolicitud",
+      s.id_contribuyente
+     FROM impuesto.solicitud s
+       JOIN ( SELECT es.id_solicitud,
+              impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+             FROM impuesto.evento_solicitud es
+             WHERE id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE id_registro_municipal = $2 LIMIT 1))
+            GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+  ) s 
+  RIGHT JOIN impuesto.liquidacion l on s.id = l.id_solicitud 
+  INNER JOIN impuesto.subramo sr ON l.id_subramo = sr.id_subramo
+  INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo 
+  WHERE rm.codigo = $1 AND l.id_registro_municipal = $2 AND
+  datos#>>'{fecha,year}' = $3
+  ORDER BY fecha_liquidacion DESC`,
   GET_LAST_SETTLEMENTS_FOR_INSPECTION_BY_RIM: `WITH solicitudcte AS (
     SELECT id_solicitud
     FROM impuesto.solicitud 
@@ -1177,6 +1198,47 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
           GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
   ) s ON s.id = l.id_solicitud WHERE l.fecha_liquidacion BETWEEN $1 AND $2 AND r.id_ramo = $3
   ORDER BY l.fecha_liquidacion ASC`,
+  GET_IVA_REPORT: `WITH base AS (
+    SELECT DISTINCT ON (l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto) l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto, l.datos, l.fecha_liquidacion, 
+                  (((l.datos#>'{desglose}')->0)->>'montoGas')::numeric AS base_impobible_gas, 
+                  (((l.datos#>'{desglose}')->0)->>'montoGas')::numeric * (0.16) AS iva_gas,
+                  CASE 
+                    WHEN l.datos->>'esAgenteRetencion' = 'true' OR l.datos->>'esAgenteSENIAT' = 'true' THEN
+                     (((l.datos#>'{desglose}')->0)->>'montoGas')::numeric * (0.12)
+                    ELSE 0
+                  END AS retencion_gas,
+                  
+                  
+                   
+                  (((l.datos#>'{desglose}')->0)->>'montoAseo')::numeric AS base_impobible_aseo,
+                  (((l.datos#>'{desglose}')->0)->>'montoAseo')::numeric * (0.16) AS iva_aseo,
+                  CASE 
+                    WHEN l.datos->>'esAgenteRetencion' = 'true' OR l.datos->>'esAgenteSENIAT' = 'true' THEN
+                     (((l.datos#>'{desglose}')->0)->>'montoAseo')::numeric * (0.12)
+                    ELSE 0
+                  END AS retencion_ASEO
+                  
+                  
+                
+                  FROM impuesto.liquidacion l 
+                  WHERE id_solicitud IS NOT NULL 
+                  AND id_subramo = 107
+                  AND id_solicitud IN (SELECT id_solicitud 
+                                          FROM impuesto.solicitud 
+                                          WHERE fecha_aprobado BETWEEN $1::date AND $2::date
+                                          AND tipo_solicitud != 'CONVENIO')
+), x AS (
+    SELECT id_liquidacion, id_solicitud, id_subramo, monto, datos, fecha_liquidacion,
+        base_impobible_gas, iva_gas, retencion_gas, iva_gas - retencion_gas AS iva_gas_liquidado, base_impobible_gas + (iva_gas - retencion_gas) AS total_gas_liquidado,
+        base_impobible_aseo, iva_aseo, retencion_aseo, iva_aseo - retencion_aseo AS iva_aseo_liquidado, base_impobible_aseo + (iva_aseo - retencion_aseo) AS total_aseo_liquidado
+    FROM base
+)
+SELECT x.id_solicitud "Nro. Solicitud", x.fecha_liquidacion AS "Fecha", s.fecha_aprobado AS "Fecha Aprobación", cont.razon_social AS "Razón social", base_impobible_gas "Base imponible gas", iva_gas "IVA gas", retencion_gas "Retencion gas", iva_gas_liquidado "IVA gas liquidado", total_gas_liquidado "Total gas liquidado",
+        base_impobible_aseo "Base imponible aseo", iva_aseo "IVA Aseo", retencion_aseo "Retencion aseo", iva_aseo_liquidado "IVA Aseo liquidado", total_aseo_liquidado "Total aseo liquidado"
+FROM x
+INNER JOIN impuesto.solicitud s ON s.id_solicitud = x.id_solicitud
+INNER JOIN impuesto.contribuyente cont ON cont.id_contribuyente = s.id_contribuyente
+ORDER BY razon_social;`,
   //CIERRE DE CAJA
   GET_CASHIER_POS: `SELECT b.nombre as banco, SUM(p.monto) as monto, COUNT(*) as transacciones
         FROM pago p 
@@ -1293,7 +1355,8 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         WHERE re.id_ramo = $1 AND ((pe.fecha_fin IS NULL) OR (NOW() BETWEEN pe.fecha_inicio AND (pe.fecha_fin)))
         ORDER BY pe.id_plazo_exoneracion DESC;`,
   UPDATE_EXONERATION_END_TIME: `UPDATE impuesto.plazo_exoneracion SET fecha_fin = $1 WHERE id_plazo_exoneracion = $2`,
-  GET_ALL_ACTIVITIES: 'SELECT id_actividad_economica AS id, numero_referencia AS codigo, descripcion, alicuota FROM impuesto.actividad_economica;',
+  GET_ALL_ACTIVITIES: 'SELECT id_actividad_economica AS id, numero_referencia AS codigo, descripcion, alicuota, minimo_tributable AS "minimoTributable" FROM impuesto.actividad_economica ORDER BY id_actividad_economica;',
+  UPDATE_ALIQUOT_FOR_ACTIVITY: 'UPDATE impuesto.actividad_economica SET numero_referencia = $1, descripcion = $2, alicuota = $3, minimo_tributable = $4 WHERE id_actividad_economica = $5 RETURNING *',
   GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT: 'SELECT SUM(credito) as credito FROM impuesto.credito_fiscal WHERE id_persona = $1 AND concepto = $2',
   GET_ESTATES_FOR_JURIDICAL_CONTRIBUTOR:
     'SELECT DISTINCT ON(ai.id_inmueble) * FROM impuesto.avaluo_inmueble ai INNER JOIN inmueble_urbano iu ON ai.id_inmueble = iu.id_inmueble WHERE id_registro_municipal = $1 AND anio = EXTRACT("year" FROM CURRENT_DATE)',

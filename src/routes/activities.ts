@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
-import { getActivities, getMunicipalReferenceActivities, updateContributorActivities } from '@helpers/activities';
+import { getActivities, getMunicipalReferenceActivities, updateActivitiesAliquots, updateContributorActivities } from '@helpers/activities';
 import { authenticate } from 'passport';
 
 const router = Router();
@@ -24,6 +24,13 @@ router.put('/rim/:id', authenticate('jwt'), async (req, res) => {
   const [error, data] = await fulfill(updateContributorActivities({ branchId: id, branchInfo: datosSucursal, activities: actividades }));
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
+});
+
+router.put('/', authenticate('jwt'), async (req, res) => {
+  const { alicuotas: aliquots } = req.body;
+  const [error, data] = await fulfill(updateActivitiesAliquots({ aliquots }));
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
 });
 
 export default router;

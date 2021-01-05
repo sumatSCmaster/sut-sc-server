@@ -30,6 +30,7 @@ import {
   addRebateForDeclaration,
   deleteSettlement,
   getIUSettlementsForContributor,
+  getIvaReport,
 } from '@helpers/settlement';
 import { Usuario } from '@root/interfaces/sigt';
 import { generateReceipt, generateReceiptAgreement } from '@helpers/receipt';
@@ -126,6 +127,14 @@ router.get('/debts/:tipoContribuyente', authenticate('jwt'), async (req, res) =>
 router.post('/report', authenticate('jwt'), async (req, res) => {
   const { from, to, ramo } = req.body;
   const [error, data] = await fulfill(getSettlementsReport(req.user, { from, to, ramo }));
+  console.log(error, data);
+  if (error) res.status(500).json({ error, status: 500 });
+  if (data) res.status(200).json({ status: 200, data });
+});
+
+router.post('/report/iva', authenticate('jwt'), async (req, res) => {
+  const { from, to } = req.body;
+  const [error, data] = await fulfill(getIvaReport(req.user, { from, to }));
   console.log(error, data);
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });

@@ -392,7 +392,15 @@ export const listTaxPayments = async () => {
     INNER JOIN banco b ON b.id_banco = p.id_banco
     WHERE s."tipoSolicitud" = 'CONVENIO' AND fs.state = 'validando' AND p.concepto = 'CONVENIO' ORDER BY id_procedimiento, id_pago;
     `);
+    let tramData = await client.query(`
+    SELECT s.*, p.*, b.id_banco, u.nacionalidad AS "tipoDocumento", u.cedula AS "documento", 'TRAMITE' as "tipoSolicitud", s.costo as montotram
+    FROM tramites_state s 
+    INNER JOIN usuario u ON u.id_usuario = s.usuario
+    INNER JOIN pago p ON p.id_procedimiento = s.id 
+    INNER JOIN banco b ON b.id_banco = p.id_banco
+    WHERE s.state = 'validando' AND p.concepto = 'TRAMITE' ORDER BY id_procedimiento, id_pago;`);
     data.rows = data.rows.concat(convData.rows);
+    data.rows = data.rows.concat(tramData.rows);
     let montosSolicitud = (
       await client.query(`
     SELECT l.id_solicitud, SUM(monto) as monto
@@ -414,15 +422,16 @@ export const listTaxPayments = async () => {
         ? data.rows.reduce((prev, next) => {
             let index = prev.findIndex((row) => row.id === next.id);
             let montoSolicitud = montosSolicitud.find((montoRow) => next.id === montoRow.id_solicitud)?.monto;
+            let montoConvenio = montosConvenio.find((montoRow) => next.idconvenio === montoRow.id_convenio)?.monto;
             if (index === -1) {
               prev.push({
                 id: next.id,
-                fechaSolicitud: next.fecha,
+                fechaSolicitud: next.fecha || next.fechacreacion,
                 estado: next.state,
                 tipoDocumento: next.tipoDocumento,
                 documento: next.documento,
                 tipoSolicitud: next.tipoSolicitud,
-                monto: montoSolicitud ? montoSolicitud : montosConvenio.find((montoRow) => next.idconvenio === montoRow.id_convenio)?.monto,
+                monto: montoSolicitud || montoConvenio || next.montotram || 0,
                 pagos: [
                   {
                     id: next.id_pago,
@@ -447,6 +456,7 @@ export const listTaxPayments = async () => {
             return prev;
           }, [])
         : [];
+
     return { status: 200, data };
   } catch (e) {
     console.log(e);
