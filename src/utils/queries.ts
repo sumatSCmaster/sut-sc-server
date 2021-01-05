@@ -2923,6 +2923,17 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   GET_SCALE_FOR_RETENTION_FINING_STARTING_AMOUNT: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 11`,
   GET_SCALE_FOR_RETENTION_FINING_AUGMENT_AMOUNT: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 12`,
 
+  // VEHICULOS
+  GET_VEHICLE_BRANDS: `SELECT id_marca_vehiculo AS id, nombre FROM impuesto.marca_vehiculo;`,
+  GET_VEHICLE_TYPES: `SELECT id_tipo_vehiculo AS id, descripcion FROM impuesto.tipo_vehiculo ORDER BY id_tipo_vehiculo`,
+  GET_VEHICLE_CATEGORIES_BY_TYPE: `SELECT id_categoria_vehiculo AS id, descripcion FROM impuesto.categoria_vehiculo WHERE id_tipo_vehiculo = $1 ORDER BY id_categoria_vehiculo`,
+  GET_VEHICLE_SUBCATEGORIES_BY_CATEGORY: `SELECT sv.id_subcategoria_vehiculo AS id, sv.descripcion, (v.valor_en_bs * sv.tarifa) AS costo FROM impuesto.subcategoria_vehiculo sv INNER JOIN valor v USING (id_valor)`,
+  CREATE_VEHICLE: `INSERT INTO impuesto.vehiculo (id_marca_vehiculo, id_usuario, id_subcategoria_vehiculo, modelo_vehiculo, placa_vehiculo, anio_vehiculo, color_vehiculo) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+  UPDATE_VEHICLE: `UPDATE impuesto.vehiculo SET id_marca_vehiculo = $1, id_subcategoria_vehiculo = $2, modelo_vehiculo = $3, placa_vehiculo = $4, anio_vehiculo = $5, color_vehiculo = $6 WHERE id_vehiculo = $7 RETURNING *`,
+  DELETE_VEHICLE: `DELETE FROM impuesto.vehiculo WHERE id_vehiculo = $1`,
+  UPDATE_VEHICLE_SUBCATEGORY: `UPDATE impuesto.subcategoria_vehiculo SET id_valor = $1, tarifa = $2, descripcion = $3, id_categoria_vehiculo = $4 WHERE id_subcategoria_vehiculo = $5 RETURNING *`,
+  GET_VEHICLES_BY_CONTRIBUTOR: `SELECT id_vehiculo AS id, id_marca_vehiculo AS marca, modelo_vehiculo AS modelo, placa_vehiculo AS placa, anio_vehiculo AS anio, color_vehiculo AS color FROM impuesto.vehiculo WHERE id_usuario = $1`,
+
   gtic: {
     GET_NATURAL_CONTRIBUTOR:
       'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 AND (trim(nb_representante_legal) NOT IN (SELECT trim(nb_marca) FROM tb014_marca_veh) AND trim(nb_representante_legal) NOT IN (SELECT trim(tx_marca) FROM t45_vehiculo_marca) OR trim(nb_representante_legal) IS NULL) ORDER BY co_contribuyente DESC',
