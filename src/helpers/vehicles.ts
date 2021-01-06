@@ -2,8 +2,6 @@ import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { PoolClient } from 'pg';
-import moment, { Moment } from 'moment';
-import switchcase from '@utils/switch';
 import { Usuario } from '@root/interfaces/sigt';
 
 const pool = Pool.getInstance();
@@ -15,7 +13,7 @@ export const checkVehicleExists = () => async (req: any, res, next) => {
   try {
     const vehicleExists = (await client.query(queries.CHECK_VEHICLE_EXISTS_FOR_USER, [usuario, placa])).rowCount > 0;
     if (!vehicleExists) return next();
-    return res.status(403).send({ status: 403, message: 'El vehiculo solicitado ya existe para el usuario que solicita' });
+    return res.status(403).send({ status: 403, message: 'El vehiculo ya existe para el usuario que solicita' });
   } catch (error) {
     console.log(error);
     return res.send({
@@ -28,11 +26,11 @@ export const checkVehicleExists = () => async (req: any, res, next) => {
   }
 };
 
-export const getBrands = async () => {
+export const getBrands = async (): Promise<Response & { marcas: { id: number; nombre: string }[] }> => {
   const client = await pool.connect();
   try {
     const res = await client.query(queries.GET_VEHICLE_BRANDS);
-    return { data: res.rows, status: 200, message: 'Marcas de vehiculos obtenidas' };
+    return { marcas: res.rows, status: 200, message: 'Marcas de vehiculos obtenidas' };
   } catch (error) {
     console.log(error);
     throw {
@@ -45,7 +43,7 @@ export const getBrands = async () => {
   }
 };
 
-export const getVehicleTypes = async () => {
+export const getVehicleTypes = async (): Promise<Response & { tipoVehiculo: VehicleType[] }> => {
   const client = await pool.connect();
   try {
     const response = (await client.query(queries.GET_VEHICLE_TYPES)).rows.map(async (type: VehicleType) => {
@@ -98,10 +96,10 @@ const getVehicleSubcategoriesByCategory = async (id: number, client: PoolClient)
   }
 };
 
-export const getVehiclesByContributor = async (id: number) => {
+export const getVehiclesByContributor = async (id: number): Promise<Response & { vehiculos: Vehicle[] }> => {
   const client = await pool.connect();
   try {
-    const vehicles = (await client.query(queries.GET_VEHICLES_BY_CONTRIBUTOR, [id])).rows;
+    const vehicles: Vehicle[] = (await client.query(queries.GET_VEHICLES_BY_CONTRIBUTOR, [id])).rows;
     return { status: 200, message: 'Vehiculos del contribuyente obtenidos', vehiculos: vehicles };
   } catch (error) {
     console.log(error);
@@ -115,12 +113,12 @@ export const getVehiclesByContributor = async (id: number) => {
   }
 };
 
-export const createVehicle = async (payload: Vehicle, user: Usuario) => {
+export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Response & { vehiculo: Vehicle }> => {
   const client = await pool.connect();
-  const { marca, subcategoria, modelo, placa, anio, color } = payload;
+  const { marca, subcategoria, modelo, placa, anio, color, serialCarroceria, serialMotor, tipoCarroceria, tipoCombustible } = payload;
   try {
     await client.query('BEGIN');
-    const response = (await client.query(queries.CREATE_VEHICLE, [marca, user.id, subcategoria, modelo, placa, anio, color])).rows[0];
+    const response = (await client.query(queries.CREATE_VEHICLE, [marca, user.id, subcategoria, modelo, placa, anio, color, serialCarroceria, serialMotor, tipoCarroceria, tipoCombustible])).rows[0];
     await client.query('COMMIT');
 
     const vehicle: Vehicle = {
@@ -130,7 +128,12 @@ export const createVehicle = async (payload: Vehicle, user: Usuario) => {
       modelo: response.marca_vehiculo,
       color: response.color_vehiculo,
       anio: response.anio_vehiculo,
+      serialCarroceria: response.serial_carroceria_vehiculo,
+      serialMotor: response.serial_motor_vehiculo,
+      tipoCarroceria: response.tipo_carroceria_vehiculo,
+      tipoCombustible: response.tipo_combustible_vehiculo,
       subcategoria: response.id_subcategoria_vehiculo,
+      fechaUltimaActualizacion: response.fecha_ultima_actualizacion,
     };
     return { status: 201, message: 'Vehiculo creado satisfactoriamente', vehiculo: vehicle };
   } catch (error) {
@@ -146,12 +149,12 @@ export const createVehicle = async (payload: Vehicle, user: Usuario) => {
   }
 };
 
-export const updateVehicle = async (payload: Vehicle, id: number) => {
+export const updateVehicle = async (payload: Vehicle, id: number): Promise<Response & { vehiculo: Vehicle }> => {
   const client = await pool.connect();
-  const { marca, subcategoria, modelo, placa, anio, color } = payload;
+  const { marca, subcategoria, modelo, placa, anio, color, serialCarroceria, serialMotor, tipoCarroceria, tipoCombustible } = payload;
   try {
     await client.query('BEGIN');
-    const response = (await client.query(queries.UPDATE_VEHICLE, [marca, subcategoria, modelo, placa, anio, color, id])).rows[0];
+    const response = (await client.query(queries.UPDATE_VEHICLE, [marca, subcategoria, modelo, placa, anio, color, serialCarroceria, serialMotor, tipoCarroceria, tipoCombustible, id])).rows[0];
     await client.query('COMMIT');
 
     const vehicle: Vehicle = {
@@ -162,7 +165,13 @@ export const updateVehicle = async (payload: Vehicle, id: number) => {
       color: response.color_vehiculo,
       anio: response.anio_vehiculo,
       subcategoria: response.id_subcategoria_vehiculo,
+      serialCarroceria: response.serial_carroceria_vehiculo,
+      serialMotor: response.serial_motor_vehiculo,
+      tipoCarroceria: response.tipo_carroceria_vehiculo,
+      tipoCombustible: response.tipo_combustible_vehiculo,
+      fechaUltimaActualizacion: response.fecha_ultima_actualizacion,
     };
+
     return { status: 200, message: 'Vehiculo actualizado', vehiculo: vehicle };
   } catch (error) {
     client.query('ROLLBACK');
@@ -177,7 +186,7 @@ export const updateVehicle = async (payload: Vehicle, id: number) => {
   }
 };
 
-export const deleteVehicle = async (id: number) => {
+export const deleteVehicle = async (id: number): Promise<Response> => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -223,8 +232,13 @@ interface Vehicle {
   subcategoria: number;
   modelo: string;
   placa: string;
+  serialCarroceria: string;
+  serialMotor: string;
+  tipoCombustible: string;
+  tipoCarroceria: string;
   anio: number;
   color: string;
+  fechaUltimaActualizacion: Date;
 }
 interface VehicleCategory {
   id: number;
@@ -240,4 +254,9 @@ interface VehicleType {
   id: number;
   descripcion: string;
   categorias: VehicleCategory[];
+}
+
+interface Response {
+  status: number;
+  message: string;
 }
