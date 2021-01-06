@@ -2923,6 +2923,65 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   GET_SCALE_FOR_RETENTION_FINING_STARTING_AMOUNT: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 11`,
   GET_SCALE_FOR_RETENTION_FINING_AUGMENT_AMOUNT: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 12`,
 
+  // VEHICULOS
+  GET_VEHICLE_BRANDS: `SELECT id_marca_vehiculo AS id, nombre FROM impuesto.marca_vehiculo;`,
+  GET_VEHICLE_TYPES: `SELECT id_tipo_vehiculo AS id, descripcion FROM impuesto.tipo_vehiculo ORDER BY id_tipo_vehiculo`,
+  GET_VEHICLE_CATEGORIES_BY_TYPE: `SELECT id_categoria_vehiculo AS id, descripcion FROM impuesto.categoria_vehiculo WHERE id_tipo_vehiculo = $1 ORDER BY id_categoria_vehiculo`,
+  GET_VEHICLE_SUBCATEGORIES_BY_CATEGORY: `SELECT sv.id_subcategoria_vehiculo AS id, sv.descripcion, (v.valor_en_bs * sv.tarifa) AS costo FROM impuesto.subcategoria_vehiculo sv INNER JOIN valor v USING (id_valor) WHERE id_categoria_vehiculo = $1 ORDER BY id_subcategoria_vehiculo`,
+  CREATE_VEHICLE: `INSERT INTO impuesto.vehiculo (id_marca_vehiculo, id_usuario, id_subcategoria_vehiculo, modelo_vehiculo, placa_vehiculo, anio_vehiculo, color_vehiculo, fecha_ultima_actualizacion, serial_carroceria_vehiculo, serial_motor_vehiculo, tipo_carroceria_vehiculo, tipo_combustible_vehiculo) VALUES ($1, $2, $3, $4, $5, $6, $7, null, $8, $9, $10, $11) RETURNING *`,
+  UPDATE_VEHICLE: `UPDATE impuesto.vehiculo SET id_marca_vehiculo = $1, id_subcategoria_vehiculo = $2, modelo_vehiculo = $3, placa_vehiculo = $4, anio_vehiculo = $5, color_vehiculo = $6, serial_carroceria_vehiculo = $7, serial_motor_vehiculo = $8, tipo_carroceria_vehiculo = $9, tipo_combustible_vehiculo = $10 WHERE id_vehiculo = $11 RETURNING *`,
+  DELETE_VEHICLE: `DELETE FROM impuesto.vehiculo WHERE id_vehiculo = $1`,
+  UPDATE_VEHICLE_SUBCATEGORY: `UPDATE impuesto.subcategoria_vehiculo SET id_valor = $1, tarifa = $2, descripcion = $3, id_categoria_vehiculo = $4 WHERE id_subcategoria_vehiculo = $5 RETURNING *`,
+  GET_VEHICLES_BY_CONTRIBUTOR: `SELECT id_vehiculo AS id, id_marca_vehiculo AS marca, id_subcategoria_vehiculo AS subcategoria, modelo_vehiculo AS modelo, placa_vehiculo AS placa, anio_vehiculo AS anio, color_vehiculo AS color, fecha_ultima_actualizacion AS "fechaUltimaActualizacion", serial_carroceria_vehiculo AS "serialCarroceria", serial_motor_vehiculo AS "serialMotor", tipo_carroceria_vehiculo AS "tipoCombustible", tipo_combustible_vehiculo AS "tipoCombustible" FROM impuesto.vehiculo WHERE id_usuario = $1`,
+  CHECK_VEHICLE_EXISTS_FOR_USER: `SELECT 1 FROM impuesto.vehiculo WHERE id_usuario = $1 AND placa_vehiculo = $2`,
+  UPDATE_VEHICLE_PAYMENT_DATE: `UPDATE impuesto.vehiculo SET fecha_ultima_actualizacion = DEFAULT WHERE id_vehiculo = $1`,
+
+  // CONDOMINIO
+
+  GET_CONDOMINIUMS: `
+      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
+      FROM impuesto.contribuyente cont
+      INNER JOIN impuesto.condominio cond ON cond.id_contribuyente = cont.id_contribuyente;
+  `,
+  GET_CONDOMINIUM: `
+      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
+      FROM impuesto.contribuyente cont
+      INNER JOIN impuesto.condominio cond ON cond.id_contribuyente = cont.id_contribuyente
+      WHERE id_condominio = $1
+  `,
+  GET_CONDOMINIUM_BY_DOC: `
+      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
+      FROM impuesto.contribuyente cont
+      INNER JOIN impuesto.condominio cond ON cond.id_contribuyente = cont.id_contribuyente
+      WHERE cont.tipo_documento = $1 AND cont.documento = $2;
+  `,
+  GET_CONDOMINIUM_OWNERS: `
+      SELECT id_condominio AS "idCondominio", cont.id_contribuyente as "idContribuyente", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
+      FROM impuesto.contribuyente cont
+      INNER JOIN impuesto.condominio_propietario cp ON cp.id_contribuyente = cont.id_contribuyente
+      WHERE cp.id_condominio = $1;
+  `,
+  GET_CONDOMINIUM_OWNER_BY_DOC: `
+      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
+      FROM impuesto.contribuyente cont
+      INNER JOIN impuesto.condominio_propietario cp ON cond.id_contribuyente = cp.id_contribuyente
+      WHERE cont.tipo_documento = $1 AND cont.documento = $2;
+  `,
+  CREATE_CONDOMINIUM: `
+      INSERT INTO impuesto.condominio (id_contribuyente) 
+      VALUES ((SELECT id_contribuyente FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2))
+      RETURNING id_condominio
+  `,
+  DELETE_CONDOMINIUM: `
+      DELETE FROM impuesto.condominio WHERE id_condominio = $1;
+  `,
+  ADD_CONDO_OWNER: `
+      INSERT INTO impuesto.condominio_propietario (id_contribuyente, id_condominio) 
+      VALUES ((SELECT id_contribuyente FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2), $3)
+  `,
+  DELETE_CONDO_OWNER: `
+      DELETE FROM impuesto.condominio_propietario WHERE id_condominio = $1 AND id_contribuyente = $2;
+  `,
   gtic: {
     GET_NATURAL_CONTRIBUTOR:
       'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 AND (trim(nb_representante_legal) NOT IN (SELECT trim(nb_marca) FROM tb014_marca_veh) AND trim(nb_representante_legal) NOT IN (SELECT trim(tx_marca) FROM t45_vehiculo_marca) OR trim(nb_representante_legal) IS NULL) ORDER BY co_contribuyente DESC',
