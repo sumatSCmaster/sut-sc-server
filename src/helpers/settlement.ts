@@ -2988,7 +2988,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
     console.log('addTaxApplicationPayment -> solicitud', solicitud);
     const pagoSum = +payment.map((e) => fixatedAmount(+e.costo)).reduce((e, i) => e + i, 0);
     console.log('addTaxApplicationPayment -> pagoSum', pagoSum);
-    if (pagoSum < fixatedAmount(+solicitud.monto_total)) throw { status: 401, message: `La suma de los montos es insuficiente para poder insertar el pago, con un déficit de Bs. ${pagoSum - fixatedAmount(+solicitud.monto_total)}` };
+    if (pagoSum < fixatedAmount(+solicitud.monto_total)) throw { status: 401, message: `La suma de los montos es insuficiente para poder insertar el pago, con un déficit de Bs. ${fixatedAmount(+solicitud.monto_total) - pagoSum}` };
     const creditoPositivo = pagoSum - fixatedAmount(+solicitud.monto_total);
     await Promise.all(
       payment.map((el) => {
@@ -3270,6 +3270,9 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
   try {
     //este metodo es para validar los convenios y llevarlos al estado de finalizado
     const agreement = (await client.query('SELECT c.* FROM impuesto.convenio c INNER JOIN impuesto.fraccion f ON c.id_convenio = f.id_convenio WHERE f.id_fraccion = $1', [body.idTramite])).rows[0];
+    const fractionPayments = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [body.idTramite, 'CONVENIO'])).rows;
+    const fractionIsPaid = fractionPayments.every((payment) => payment.aprobado);
+    if (!fractionIsPaid) return;
     const state = (await client.query(queries.COMPLETE_FRACTION_STATE, [body.idTramite, applicationStateEvents.FINALIZAR])).rows[0].state;
     const fractions = (await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [agreement.id_convenio])).rows;
     if (!body.solicitudAprobada) return;
