@@ -18,7 +18,6 @@ const WALLET_AMOUNT_AR = 5;
 
 const extractGroupedCounts = (grouped) => {
   let res = {};
-  console.log('grouped', grouped);
   for (let i in grouped) {
     res[i] = +grouped[i][0].count;
   }
@@ -32,8 +31,6 @@ const getRatings: (stars: number) => (AR: boolean) => (chargings: any[], WALLET_
 ) => {
   let chargingsClosure = chargings.filter((el) => +el.rating === stars);
   let amount = Math.floor(chargingsClosure.length / (!AR ? WALLET_AMOUNT : WALLET_AMOUNT_AR));
-  console.log(chargingsClosure.length);
-  console.log(`rating ${stars} amount`, amount);
   return [
     (n = amount) => {
       let res = take(chargingsClosure, n);
@@ -62,9 +59,6 @@ export const createChargings = async (WALLET_AMOUNT, AMOUNT_PER_WALLET) => {
     }
     await client.query('DELETE FROM impuesto.cobranza');
     await client.query('DELETE FROM impuesto.cartera');
-    console.log(declMonth.format('MMMM').toLowerCase());
-    console.log(today.year());
-    console.log(firstOfLastMonth.toISOString());
     const chargings = (await client.query(queries.CREATE_CHARGINGS, [declMonth.format('MMMM').toLowerCase(), declMonth.year(), firstOfLastMonth.toISOString(), WALLET_AMOUNT * AMOUNT_PER_WALLET])).rows;
     const [rating1Remover, rating1len] = getRatings(1)(false)(chargings, WALLET_AMOUNT);
     const [rating2Remover, rating2len] = getRatings(2)(false)(chargings, WALLET_AMOUNT);
@@ -73,42 +67,21 @@ export const createChargings = async (WALLET_AMOUNT, AMOUNT_PER_WALLET) => {
     const [rating5Remover, rating5len] = getRatings(5)(false)(chargings, WALLET_AMOUNT);
     let chargingsGrouped: any = (await client.query(queries.CHARGINGS_GROUPED)).rows;
     chargingsGrouped = extractGroupedCounts(groupBy(chargingsGrouped, (el) => el.rating));
-    console.log(rating1len());
-    console.log(rating2len());
-    console.log(rating3len());
-    console.log(rating4len());
-    console.log(rating5len());
     const wallets: any[] = [];
     for (let i = 0; i < WALLET_AMOUNT; i++) {
       let wallet = (await client.query(queries.CREATE_WALLET, [false])).rows[0];
       let allWalletChargings = [...rating1Remover()[0], ...rating2Remover()[0], ...rating3Remover()[0], ...rating4Remover()[0], ...rating5Remover()[0]];
-      console.log('allwalletchargings', allWalletChargings.length);
       await Promise.all(allWalletChargings.map(async (charging) => client.query(queries.SET_WALLET, [wallet.id_cartera, charging.id_cobranza])));
 
       wallets.push(wallet);
     }
-    console.log(rating1len());
-    console.log(rating2len());
-    console.log(rating3len());
-    console.log(rating4len());
-    console.log(rating5len());
-    console.log('b');
     let remainingChargings = [...rating1Remover(WALLET_AMOUNT)[0], ...rating2Remover(WALLET_AMOUNT)[0], ...rating3Remover(WALLET_AMOUNT)[0], ...rating4Remover(WALLET_AMOUNT)[0], ...rating5Remover(WALLET_AMOUNT)[0]];
-    console.log(remainingChargings.length);
     let amountPerWallet = remainingChargings.length / WALLET_AMOUNT;
-    console.log('amountPerWallet', amountPerWallet);
     for (let i = 0; i < WALLET_AMOUNT; i++) {
       let res = take(remainingChargings, amountPerWallet);
-      console.log('res', res.length);
       remainingChargings = slice(remainingChargings, amountPerWallet);
       await Promise.all(res.map(async (charging) => client.query(queries.SET_WALLET, [wallets[i].id_cartera, charging.id_cobranza])));
     }
-    console.log('a');
-    console.log(rating1len());
-    console.log(rating2len());
-    console.log(rating3len());
-    console.log(rating4len());
-    console.log(rating5len());
     await client.query('COMMIT');
     return { message: 'Carteras y cobranzas creadas', status: 200 };
   } catch (err) {
@@ -127,9 +100,6 @@ export const createChargingsAR = async (WALLET_AMOUNT_AR, AMOUNT_PER_WALLET) => 
     const declMonth = today.clone().subtract(2, 'month').locale('es');
     const firstOfLastMonth = declMonth.clone().startOf('month').add(1, 'month');
 
-    console.log(declMonth.format('MMMM').toLowerCase());
-    console.log(today.year());
-    console.log(firstOfLastMonth.toISOString());
     const chargings = (await client.query(queries.CREATE_CHARGINGS_AR, [declMonth.format('MMMM').toLowerCase(), declMonth.year(), firstOfLastMonth.toISOString()])).rows;
     const [rating1Remover, rating1len] = getRatings(1)(true)(chargings, undefined, WALLET_AMOUNT_AR);
     const [rating2Remover, rating2len] = getRatings(2)(true)(chargings, undefined, WALLET_AMOUNT_AR);
@@ -138,46 +108,24 @@ export const createChargingsAR = async (WALLET_AMOUNT_AR, AMOUNT_PER_WALLET) => 
     const [rating5Remover, rating5len] = getRatings(5)(true)(chargings, undefined, WALLET_AMOUNT_AR);
     let chargingsGrouped: any = (await client.query(queries.CHARGINGS_GROUPED)).rows;
     chargingsGrouped = extractGroupedCounts(groupBy(chargingsGrouped, (el) => el.rating));
-    console.log(rating1len());
-    console.log(rating2len());
-    console.log(rating3len());
-    console.log(rating4len());
-    console.log(rating5len());
     const wallets: any[] = [];
     for (let i = 0; i < WALLET_AMOUNT_AR; i++) {
       let wallet = (await client.query(queries.CREATE_WALLET, [true])).rows[0];
       let allWalletChargings = [...rating1Remover()[0], ...rating2Remover()[0], ...rating3Remover()[0], ...rating4Remover()[0], ...rating5Remover()[0]];
-      console.log('allwalletchargings', allWalletChargings.length);
       await Promise.all(allWalletChargings.map(async (charging) => client.query(queries.SET_WALLET, [wallet.id_cartera, charging.id_cobranza])));
 
       wallets.push(wallet);
     }
-    console.log(rating1len());
-    console.log(rating2len());
-    console.log(rating3len());
-    console.log(rating4len());
-    console.log(rating5len());
-    console.log('b');
     let remainingChargings = [...rating1Remover(WALLET_AMOUNT_AR)[0], ...rating2Remover(WALLET_AMOUNT_AR)[0], ...rating3Remover(WALLET_AMOUNT_AR)[0], ...rating4Remover(WALLET_AMOUNT_AR)[0], ...rating5Remover(WALLET_AMOUNT_AR)[0]];
-    console.log(remainingChargings.length);
     let amountPerWallet = remainingChargings.length / WALLET_AMOUNT_AR;
-    console.log('amountPerWallet', amountPerWallet);
     for (let i = 0; i < WALLET_AMOUNT_AR; i++) {
       let res = take(remainingChargings, amountPerWallet);
-      console.log('res', res.length);
       remainingChargings = slice(remainingChargings, amountPerWallet);
       await Promise.all(res.map(async (charging) => client.query(queries.SET_WALLET, [wallets[i].id_cartera, charging.id_cobranza])));
     }
-    console.log('a');
-    console.log(rating1len());
-    console.log(rating2len());
-    console.log(rating3len());
-    console.log(rating4len());
-    console.log(rating5len());
     await client.query('COMMIT');
     return { message: 'Carteras y cobranzas creadas', status: 200 };
   } catch (err) {
-    console.log(err);
     throw err;
   } finally {
     client.release();
@@ -296,9 +244,7 @@ export const getChargingsByWalletExcel = async (id) => {
     ];
 
     const sheet = workbook.addWorksheet();
-    console.log('sil');
     const result = await getChargingsByWalletExcelId(id);
-    console.log('si2');
 
     //   console.log(result);
 
@@ -335,7 +281,6 @@ export const getChargingsByWalletExcel = async (id) => {
 
 export const updateOneCharging = async (user: any, { idCobranza, contactado, estatusTelefonico, observaciones, convenio, fiscalizar, estimacionPago }) => {
   const client = await pool.connect();
-  console.log(`${user?.nacionalidad}-${user?.cedula}`);
   const socket = users.get(`${user?.nacionalidad}-${user?.cedula}`);
   try {
     await client.query('BEGIN');

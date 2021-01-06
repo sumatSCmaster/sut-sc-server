@@ -1407,16 +1407,19 @@ const externalUserForLinkingExists = async ({ user, password, gtic }: { user: st
 };
 
 export const createSettlementForProcedure = async (process, client) => {
-  const { referenciaMunicipal, monto, ramo, idTramite } = process;
+  const { referenciaMunicipal, monto, ramo, idTramite, payload } = process;
   try {
     const datos = {
       fecha: { month: moment().toDate().toLocaleDateString('ES', { month: 'long' }), year: moment().year() },
       descripcion: 'TRAMITE',
       idTramite,
+      ...payload,
     };
     console.log('si');
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const liquidacion = (await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [null, (monto / PETRO).toFixed(8), ramo, 'Pago ordinario', datos, moment().endOf('month').format('MM-DD-YYYY'), referenciaMunicipal])).rows[0];
+    await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO_SETTLEMENT, [liquidacion.id_liquidacion]);
+    await client.query(queries.FINISH_ROUNDING_SETTLEMENT, [liquidacion.id_liquidacion]);
   } catch (e) {
     throw e;
   }
@@ -3622,7 +3625,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
     //   registroMunicipal: process.rim,
     // };
     if (!process.esVigente) {
-      await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO_SETTLEMENT, [application.id_solicitud]);
+      await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO, [application.id_solicitud]);
       const costoSolicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application.id_solicitud])).rows[0].monto_total;
       const pagoSum = process.pagos.map((e) => e.costo).reduce((e, i) => e + i, 0);
       if (pagoSum < costoSolicitud) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
