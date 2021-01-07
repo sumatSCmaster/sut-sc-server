@@ -2817,9 +2817,20 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
         CASE pr."pago_ret" WHEN 0 THEN 'No declarado' WHEN 1 THEN 'Declarado' WHEN 2 THEN 'Pagado' END AS "pago_ret", pr."monto_ret", 
         pr.progreso
         FROM cobranz c INNER JOIN pagosramos pr ON c.id_registro_municipal = pr.id_registro_municipal;`,
-  GET_WALLETS: `SELECT cart.id_cartera AS "idCartera", cart.id_usuario as "idUsuario", u.nombre_completo AS "nombreCompleto", es_ar AS "esAr"
-    FROM impuesto.cartera cart 
-    LEFT JOIN usuario u ON u.id_usuario = cart.id_usuario ORDER BY id_cartera;`,
+  GET_WALLETS: `SELECT cart.id_cartera AS "idCartera", cart.id_usuario as "idUsuario", u.nombre_completo AS "nombreCompleto", 
+  es_ar AS "esAr", SUM(CASE WHEN contactado = true THEN 1 ELSE 0 END)::numeric / count(*) AS "porcentajeContactado", 
+  SUM(CASE WHEN lae.apr = 2 THEN 1 ELSE 0 END)::numeric / count(*) AS "porcentajePagado"
+      FROM impuesto.cartera cart 
+      INNER JOIN impuesto.cobranza cob ON cob.id_cartera = cart.id_cartera
+      LEFT JOIN usuario u ON u.id_usuario = cart.id_usuario 
+      LEFT JOIN (SELECT DISTINCT ON (id_registro_municipal) id_registro_municipal, CASE WHEN s.aprobado IS NULL THEN 0 WHEN s.aprobado = false THEN 1 WHEN s.aprobado = true THEN 2 END AS apr, CASE WHEN s.aprobado = true THEN SUM(l.monto) ELSE SUM(l.monto_petro * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) END AS monto
+                      FROM impuesto.liquidacion l
+                      INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud  
+                      WHERE (datos#>>'{fecha, month}' = $1) 
+                      AND datos#>>'{fecha, year}' = $2
+                      AND id_subramo IN (10, 99) GROUP BY id_registro_municipal, s.aprobado) lae ON lae.id_registro_municipal = cob.id_registro_municipal
+      GROUP BY cart.id_usuario, cart.id_cartera, u.nombre_completo, es_ar
+      ORDER BY cart.id_cartera;`,
   LINK_WALLET_TO_USER: `UPDATE impuesto.cartera SET id_usuario = $2 WHERE id_cartera = $1 RETURNING id_cartera AS "idCartera", id_usuario AS "idUsuario";`,
   CREATE_CHARGINGS: `INSERT INTO impuesto.cobranza (id_registro_municipal, rating)
   SELECT DISTINCT ON (l.id_registro_municipal) l.id_registro_municipal,

@@ -187,7 +187,12 @@ export const createChargingsAR = async (WALLET_AMOUNT_AR, AMOUNT_PER_WALLET) => 
 export const getAllWallets = async () => {
   const client = await pool.connect();
   try {
-    const chargings = await client.query(queries.GET_WALLETS);
+    const date = (await client.query('SELECT created FROM impuesto.cobranza LIMIT 1')).rows[0].created;
+    const creationDate = moment(date).locale('es');
+    const declMonth = creationDate.clone().subtract(1, 'month').locale('es');
+    let aeMonth = declMonth.format('MMMM').toLowerCase();
+    let aeYear = declMonth.year();
+    const chargings = await client.query(queries.GET_WALLETS, [aeMonth, aeYear]);
     return { status: 200, cobranzas: chargings.rows, message: 'Carteras obtenidas' };
   } catch (err) {
     throw err;
