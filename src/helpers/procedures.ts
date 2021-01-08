@@ -10,6 +10,7 @@ import { sendEmail } from './events/procedureUpdateState';
 import { createRequestForm, createCertificate } from '@utils/forms';
 import { approveContributorBenefits, approveContributorSignUp, approveContributorAELicense, createSettlementForProcedure } from './settlement';
 import { installLiquorLicense, renewLiquorLicense } from './liquors';
+import { createVehicleStructureForProcedure } from './vehicles';
 
 const pool = Pool.getInstance();
 
@@ -459,8 +460,11 @@ export const procedureInit = async (procedure, user: Usuario) => {
       const hasActiveAgreement = (await client.query(queries.CONTRIBUTOR_HAS_ACTIVE_AGREEMENT_PROCEDURE, [tipoDocumento, documento, registroMunicipal])).rowCount > 0;
       if (hasActiveAgreement) throw { status: 403, message: 'El contribuyente ya posee una solicitud de beneficio en revision' };
     }
+
     if (!![39, 40].find((el) => el === tipoTramite)) {
+      datos.vehiculo = await createVehicleStructureForProcedure(datos.vehiculo, client);
     }
+
     const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify(datosP), user.id])).rows[0];
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.idTramite])).rows[0];
@@ -559,7 +563,8 @@ export const validateProcedure = async (procedure, user: Usuario, client) => {
 
     if (!!resources.id_ramo) {
       const ramo = (await client.query('SELECT * FROM impuesto.ramo WHERE id_ramo = $1', [resources.id_ramo])).rows[0].descripcion;
-      await createSettlementForProcedure({ monto: +procedure.monto, ramo, idTramite: procedure.idTramite }, client);
+      const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
+      await createSettlementForProcedure({ monto: +procedure.monto, ramo, idTramite: procedure.idTramite, payload: prevData.funcionario }, client);
     }
 
     const nextEvent = await getNextEventForProcedure(procedure, client);

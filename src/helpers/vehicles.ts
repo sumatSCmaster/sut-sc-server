@@ -127,7 +127,7 @@ export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Re
       id: response.id_vehiculo,
       placa: response.placa_vehiculo,
       marca: brand,
-      modelo: response.marca_vehiculo,
+      modelo: response.modelo_vehiculo,
       color: response.color_vehiculo,
       anio: response.anio_vehiculo,
       serialCarroceria: response.serial_carroceria_vehiculo,
@@ -225,6 +225,22 @@ export const updateVehicleSubcategory = async (payload: VehicleSubcategory, id: 
     };
   } finally {
     client.release();
+  }
+};
+
+export const createVehicleStructureForProcedure = async (vehicle: Vehicle, client: PoolClient) => {
+  try {
+    const assets = (await client.query(queries.GET_ASSETS_FOR_VEHICLE_DATA, [vehicle.id])).rows[0];
+    const newVehicle = {
+      ...vehicle,
+      subcategoria: { id: assets.idSubcategoria, descripcion: assets.descripcionSubcategoria },
+      categoria: { id: assets.idCategoria, descripcion: assets.descripcionCategoria },
+      tipo: { id: assets.idTipo, descripcion: assets.descripcionTipo },
+      marca: { id: assets.idMarca, descripcion: assets.nombreMarca },
+    };
+    return newVehicle;
+  } catch (e) {
+    throw e;
   }
 };
 

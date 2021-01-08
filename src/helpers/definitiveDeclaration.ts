@@ -66,7 +66,7 @@ export const getDataForDefinitiveDeclaration = async ({ document, reference, doc
         return {
           id: el.id_liquidacion,
           monto: fixatedAmount(el.monto),
-          montoPetro: el.monto_petro,
+          montoPetro: +el.monto_petro,
           datos: el.datos,
           estado: el.estado,
           fecha: el.datos.fecha,

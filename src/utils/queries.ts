@@ -2955,6 +2955,15 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   UPDATE_VEHICLE_PAYMENT_DATE: `UPDATE impuesto.vehiculo SET fecha_ultima_actualizacion = DEFAULT WHERE id_vehiculo = $1`,
   GET_VEHICLE_SUBCATEGORY_BY_ID: `SELECT descripcion FROM impuesto.subcategoria_vehiculo WHERE id_subcategoria_vehiculo = $1`,
   GET_VEHICLE_BRAND_BY_ID: `SELECT nombre AS descripcion FROM impuesto.marca_vehiculo WHERE id_marca_vehiculo = $1`,
+  GET_ASSETS_FOR_VEHICLE_DATA: `SELECT mv.id_marca_vehiculo AS "idMarca", mv.nombre as "nombreMarca", sv.id_subcategoria_vehiculo AS "idSubcategoria", 
+  sv.descripcion AS "descripcionSubcategoria", cv.id_categoria_vehiculo AS "idCategoria", 
+  cv.descripcion AS "descripcionCategoria", tv.id_tipo_vehiculo AS "idTipo", tv.descripcion AS "descripcionTipo" 
+  FROM impuesto.marca_vehiculo mv 
+      INNER JOIN impuesto.vehiculo v USING (id_marca_vehiculo)
+      INNER JOIN impuesto.subcategoria_vehiculo sv USING (id_subcategoria_vehiculo)
+      INNER JOIN impuesto.categoria_vehiculo cv USING (id_categoria_vehiculo)
+      INNER JOIN impuesto.tipo_vehiculo tv USING (id_tipo_vehiculo)
+      WHERE v.id_vehiculo = $1`,
   // CONDOMINIO
 
   GET_CONDOMINIUMS: `
