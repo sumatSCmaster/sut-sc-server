@@ -120,11 +120,13 @@ export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Re
     await client.query('BEGIN');
     const response = (await client.query(queries.CREATE_VEHICLE, [marca, user.id, subcategoria, modelo, placa, anio, color, serialCarroceria, serialMotor, tipoCarroceria, tipoCombustible])).rows[0];
     await client.query('COMMIT');
+    const brand = (await client.query(queries.GET_VEHICLE_BRAND_BY_ID, [response.id_marca_vehiculo])).rows[0].descripcion;
+    const subcategory = (await client.query(queries.GET_VEHICLE_SUBCATEGORY_BY_ID, [response.id_subcategoria_vehiculo])).rows[0].descripcion;
 
     const vehicle: Vehicle = {
       id: response.id_vehiculo,
       placa: response.placa_vehiculo,
-      marca: response.id_marca_vehiculo,
+      marca: brand,
       modelo: response.marca_vehiculo,
       color: response.color_vehiculo,
       anio: response.anio_vehiculo,
@@ -132,7 +134,7 @@ export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Re
       serialMotor: response.serial_motor_vehiculo,
       tipoCarroceria: response.tipo_carroceria_vehiculo,
       tipoCombustible: response.tipo_combustible_vehiculo,
-      subcategoria: response.id_subcategoria_vehiculo,
+      subcategoria: subcategory,
       fechaUltimaActualizacion: response.fecha_ultima_actualizacion,
     };
     return { status: 201, message: 'Vehiculo creado satisfactoriamente', vehiculo: vehicle };
@@ -228,8 +230,8 @@ export const updateVehicleSubcategory = async (payload: VehicleSubcategory, id: 
 
 interface Vehicle {
   id: number;
-  marca: number;
-  subcategoria: number;
+  marca: number | string;
+  subcategoria: number | string;
   modelo: string;
   placa: string;
   serialCarroceria: string;

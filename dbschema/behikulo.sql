@@ -40,7 +40,7 @@ CREATE TABLE impuesto.vehiculo (
     fecha_ultima_actualizacion TIMESTAMPTZ DEFAULT now - interval - '4 hours'
     PRIMARY KEY (id_vehiculo),
     FOREIGN KEY (id_marca_vehiculo) REFERENCES impuesto.marca_vehiculo (id_marca_vehiculo),
-    FOREIGN KEY (id_usuario) REFERENCES impuesto.subcategoria_vehiculo (id_subcategoria_vehiculo),
+    FOREIGN KEY (id_subcategoria_vehiculo) REFERENCES impuesto.subcategoria_vehiculo (id_subcategoria_vehiculo),
     FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario)
 );
 
