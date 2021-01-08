@@ -564,6 +564,7 @@ export const validateProcedure = async (procedure, user: Usuario, client) => {
     if (!!resources.id_ramo) {
       const ramo = (await client.query('SELECT * FROM impuesto.ramo WHERE id_ramo = $1', [resources.id_ramo])).rows[0].descripcion;
       const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
+      procedure.sufijo === 'veh' && (await client.query(queries.UPDATE_VEHICLE_PAYMENT_DATE, [prevData.funcionario.vehiculo.id]));
       await createSettlementForProcedure({ monto: +procedure.monto, ramo, idTramite: procedure.idTramite, payload: prevData.funcionario }, client);
     }
 
