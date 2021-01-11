@@ -3,9 +3,9 @@ block css
   link(rel="stylesheet", href="css/sedemat.css")
 block header
   div(style={display:'-webkit-flex', 'align-items': 'center'})
-    div(style={'-webkit-flex': 3, 'text-align':'start'})
-      img(src="images/sedematLogo.png", alt="sedemat" style={width:'50%'})
-    div(style={'-webkit-flex': 1, 'border-color':'gray', 'height':'120px', 'text-align': 'center', 'font-size': '18px'}).all-border.column
+    div(style={'-webkit-flex': 1, 'text-align':'start'})
+      img(src="images/sedematLogo.png", alt="sedemat" style={width:'80%'})
+    div(style={'-webkit-flex': 1, 'border-color':'gray', 'height':'120px', 'text-align': 'center', 'font-size': '16px', '-webkit-align-items':'flex-end'}).all-border.column
       div(style={'-webkit-flex': 1, 'border-color':'gray'}).flex.border-bottom.border-right
         div(style={'border-color':'gray'}).border-right.flex
           h3(style={'-webkit-flex': 1,  'align-items': 'center' }) Codigo
@@ -17,9 +17,9 @@ block header
 block title
 block content
   div(style={ 'font-size': '22px' })#planilla.solvencia
-    div(style={'margin-bottom':'5%'}).center
-      h1 #{tramite.toUpperCase()}
-    div(style={'padding':'2% 5%', 'margin-top':'5%'}).all-border
+    div(style={'margin-bottom':'10px'}).center
+      h2 #{tramite.toUpperCase()}
+    div(style={'padding':'2% 5%', 'margin-top':'10px'}).all-border
       div
         h2 Datos del Contribuyente
       div
@@ -63,7 +63,7 @@ block content
             p
               b Año:
               br
-              span #{datos.funcionario.vehiculo.anioVH}&nbsp;                            
+              span #{datos.funcionario.vehiculo.anio}&nbsp;                            
           .td(style={ '-webkit-flex': '1' })
             p
               b Color:
@@ -91,7 +91,7 @@ block content
               b Serial de Motor:
               br
               span #{datos.funcionario.vehiculo.serialMotor}&nbsp;
-      div(style={'margin-top':"10%"}).flex.center
+      div(style={'margin-top':"5%"}).flex.center
         div(style={height:"280px", '-webkit-flex': '1', 'margin-top': '-10px'})
           img(src=QR, alt='QR', style={height:"100%"})
         div(style={height:"260px",'-webkit-flex': '1'})
