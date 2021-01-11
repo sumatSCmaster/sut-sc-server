@@ -2828,7 +2828,7 @@ export const insertSettlements = async ({ process, user }) => {
           })
         );
       }
-      const exonerado = await isExonerated({ branch: codigosRamo.MUL, contributor: contributorReference?.id_registro_municipal, activity: null, startingDate: moment().startOf('month') }, client);
+      const exonerado = await isExonerated({ branch: codigosRamo.MUL, contributor: contributorReference?.id_registro_municipal, activity: null, startingDate: moment().format('MM-DD-YYYY') }, client);
       if (now.date() > FINING_THRESHOLD_DATE && !exonerado) {
         const basePercentage = +(await client.query(queries.GET_SCALE_FOR_AE_FINING_STARTING_AMOUNT)).rows[0].indicador;
         const amount = onlyAE[0].monto - solvencyCost > 0 ? onlyAE[0].monto - solvencyCost : taxableMin;
