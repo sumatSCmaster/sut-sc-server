@@ -9,7 +9,7 @@ block header
       div(style={'-webkit-flex': 1, 'border-color':'gray'}).flex.border-bottom.border-right
         div(style={'border-color':'gray'}).border-right.flex
           h3(style={'-webkit-flex': 1,  'align-items': 'center' }) Codigo
-        h3(style={'-webkit-flex': 2, }) 111111111111
+        h3(style={'-webkit-flex': 2, }) #{codigo}
       div(style={'-webkit-flex': 1, }).flex
         div(style={'border-color':'gray'}).border-right.flex
           h3(style={'-webkit-flex': 1,  'align-items': 'center' }) Fecha
@@ -17,7 +17,7 @@ block header
 block title
 block content
   div(style={ 'font-size': '22px' })#planilla.solvencia
-    div(style={'margin-bottom':'10%','margin-toP':'10%'}).center
+    div(style={'margin-bottom':'5%'}).center
       h1 #{tramite.toUpperCase()}
     div(style={'padding':'2% 5%', 'margin-top':'5%'}).all-border
       div
@@ -28,17 +28,17 @@ block content
             p
               b Nombre Completo:
               br
-              span #{datos.nombre}&nbsp;
+              span #{datos.funcionario.solicitante.nombreCompleto}&nbsp;
           .td(style={ '-webkit-flex': '1' })
             p
               b Documento:
               br
-              span #{datos.documento}&nbsp;              
+              span #{datos.funcionario.solicitante.nacionalidad}-#{datos.funcionario.solicitante.cedula}&nbsp;              
           .td(style={ '-webkit-flex': '1' })
             p
               b Telefono:
               br
-              span #{datos.telefono}&nbsp;
+              span #{datos.funcionario.solicitante.telefono}&nbsp;
       div
         h2 Datos del Vehículo
       div
@@ -47,49 +47,59 @@ block content
             p
               b Placa:
               br
-              span #{datos.placa}&nbsp;
+              span #{datos.vehiculo.placa}&nbsp;
           .td(style={ '-webkit-flex': '1' })
             p
               b Marca:
               br
-              span #{datos.marca}&nbsp; 
+              span #{datos.vehiculo.marca.descripcion}&nbsp; 
           .td(style={ '-webkit-flex': '1' })
             p
               b Modelo:
               br
-              span #{datos.modelo}&nbsp; 
+              span #{datos.vehiculo.modelo}&nbsp; 
         .tr
           .td(style={ '-webkit-flex': '1' })
             p
               b Año:
               br
-              span #{datos.anioVH}&nbsp;                            
+              span #{datos.vehiculo.anioVH}&nbsp;                            
           .td(style={ '-webkit-flex': '1' })
             p
               b Color:
               br
-              span #{datos.color}&nbsp; 
+              span #{datos.vehiculo.color}&nbsp;
+        .tr
           .td(style={ '-webkit-flex': '1' })
+            p
+              b Categoria:
+              br
+              span #{datos.vehiculo.subcategoria.descripcion}&nbsp;         
+          .td(style={ '-webkit-flex': '2' })
             p
               b Categoria del Impuesto:
               br
-              span #{datos.categoria}&nbsp;         
+              span #{datos.vehiculo.categoria.descripcion}&nbsp;         
         .tr
           .td(style={ '-webkit-flex': '1' })
             p
               b Serial de Carroceria:
               br
-              span #{datos.serialCarroceria}&nbsp;                
+              span #{datos.vehiculo.serialCarroceria}&nbsp;                
           .td(style={ '-webkit-flex': '2' })
             p
               b Serial de Motor:
               br
-              span #{datos.serialMotor}&nbsp;
+              span #{datos.vehiculo.serialMotor}&nbsp;
       div(style={'margin-top':"10%"}).flex.center
         div(style={height:"280px", '-webkit-flex': '1', 'margin-top': '-10px'})
           img(src=QR, alt='QR', style={height:"100%"})
         div(style={height:"260px",'-webkit-flex': '1'})
           img(src='images/IV.png', alt='logo', style={height:"100%"})
     div(style={'margin': '0 20px', 'text-align':'justify'})
-      p
-        b El presente certificado avala ante todas las autoridades de tránsito en el territorio nacional que el contribuyente está solvente con este impuesto para el año fiscal #{moment().format('YYYY')}.
+      if datos.vehiculo.tipo.id === 1 
+        p
+          b El presente certificado avala ante todas las autoridades de tránsito en el territorio nacional que el contribuyente está solvente con este impuesto para el año fiscal #{moment().format('YYYY')}.
+      else
+        p
+          b El presente certificado avala ante todas las autoridades de tránsito en el territorio nacional que el contribuyente está solvente con este impuesto para el mes #{moment().format('MM')}.      
