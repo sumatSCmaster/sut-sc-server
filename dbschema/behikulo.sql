@@ -223,5 +223,5 @@ INSERT INTO impuesto.subcategoria_vehiculo (id_categoria_vehiculo, id_valor, des
 
 INSERT INTO impuesto.subcategoria_vehiculo (id_categoria_vehiculo, id_valor, descripcion, tarifa) VALUES (10, 4, 'Gandolas, chutos y remolques de 3 ejes en adelante', '0.4');
 
-INSERT INTO tipo_tramite (id_institucion, nombre_tramite, sufijo, nombre_corto, certificado, utiliza_informacion_catastral, pago_previo, id_ramo) VALUES (9, 'Impuesto sobre Vehículos', 'veh', 'Impuesto sobre Vehículos', 'sedemat-solvencia-VH', false, true, 10);
-INSERT INTO tipo_tramite (id_institucion, nombre_tramite, sufijo, nombre_corto, certificado, utiliza_informacion_catastral, pago_previo, id_ramo) VALUES (9, 'Impuesto sobre Vehículos Pesados para Vías Interurbanas', 'veh', 'Impuesto sobre Vehículos Pesados', 'sedemat-solvencia-VH', false, true, 10);
+INSERT INTO tipo_tramite (id_institucion, nombre_tramite, sufijo, nombre_corto, certificado, utiliza_informacion_catastral, pago_previo, id_ramo, formato) VALUES (9, 'Impuesto sobre Vehículos', 'veh', 'Impuesto sobre Vehículos', 'sedemat-solvencia-VH', false, true, 10, 'VEH-001');
+INSERT INTO tipo_tramite (id_institucion, nombre_tramite, sufijo, nombre_corto, certificado, utiliza_informacion_catastral, pago_previo, id_ramo, formato) VALUES (9, 'Impuesto sobre Vehículos Pesados para Vías Interurbanas', 'veh', 'Impuesto sobre Vehículos Pesados', 'sedemat-solvencia-VH', false, true, 10, 'VEH-002');
