@@ -47,57 +47,57 @@ block content
             p
               b Placa:
               br
-              span #{datos.vehiculo.placa}&nbsp;
+              span #{datos.funcionario.vehiculo.placa}&nbsp;
           .td(style={ '-webkit-flex': '1' })
             p
               b Marca:
               br
-              span #{datos.vehiculo.marca.descripcion}&nbsp; 
+              span #{datos.funcionario.vehiculo.marca.descripcion}&nbsp; 
           .td(style={ '-webkit-flex': '1' })
             p
               b Modelo:
               br
-              span #{datos.vehiculo.modelo}&nbsp; 
+              span #{datos.funcionario.vehiculo.modelo}&nbsp; 
         .tr
           .td(style={ '-webkit-flex': '1' })
             p
               b Año:
               br
-              span #{datos.vehiculo.anioVH}&nbsp;                            
+              span #{datos.funcionario.vehiculo.anioVH}&nbsp;                            
           .td(style={ '-webkit-flex': '1' })
             p
               b Color:
               br
-              span #{datos.vehiculo.color}&nbsp;
+              span #{datos.funcionario.vehiculo.color}&nbsp;
         .tr
           .td(style={ '-webkit-flex': '1' })
             p
               b Categoria:
               br
-              span #{datos.vehiculo.subcategoria.descripcion}&nbsp;         
+              span #{datos.funcionario.vehiculo.subcategoria.descripcion}&nbsp;         
           .td(style={ '-webkit-flex': '2' })
             p
               b Categoria del Impuesto:
               br
-              span #{datos.vehiculo.categoria.descripcion}&nbsp;         
+              span #{datos.funcionario.vehiculo.categoria.descripcion}&nbsp;         
         .tr
           .td(style={ '-webkit-flex': '1' })
             p
               b Serial de Carroceria:
               br
-              span #{datos.vehiculo.serialCarroceria}&nbsp;                
+              span #{datos.funcionario.vehiculo.serialCarroceria}&nbsp;                
           .td(style={ '-webkit-flex': '2' })
             p
               b Serial de Motor:
               br
-              span #{datos.vehiculo.serialMotor}&nbsp;
+              span #{datos.funcionario.vehiculo.serialMotor}&nbsp;
       div(style={'margin-top':"10%"}).flex.center
         div(style={height:"280px", '-webkit-flex': '1', 'margin-top': '-10px'})
           img(src=QR, alt='QR', style={height:"100%"})
         div(style={height:"260px",'-webkit-flex': '1'})
           img(src='images/IV.png', alt='logo', style={height:"100%"})
     div(style={'margin': '0 20px', 'text-align':'justify'})
-      if datos.vehiculo.tipo.id === 1 
+      if datos.funcionario.vehiculo.tipo.id === 1 
         p
           b El presente certificado avala ante todas las autoridades de tránsito en el territorio nacional que el contribuyente está solvente con este impuesto para el año fiscal #{moment().format('YYYY')}.
       else
