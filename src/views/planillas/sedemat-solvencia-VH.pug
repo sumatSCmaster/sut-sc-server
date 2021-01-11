@@ -5,15 +5,11 @@ block header
   div(style={display:'-webkit-flex', 'align-items': 'center'})
     div(style={'-webkit-flex': 1, 'text-align':'start'})
       img(src="images/sedematLogo.png", alt="sedemat" style={width:'80%'})
-    div(style={'-webkit-flex': 1, 'border-color':'gray', 'height':'120px', 'text-align': 'center', 'font-size': '16px', '-webkit-align-items':'flex-end'}).all-border.column
-      div(style={'-webkit-flex': 1, 'border-color':'gray'}).flex.border-bottom.border-right
-        div(style={'border-color':'gray'}).border-right.flex
-          h3(style={'-webkit-flex': 1,  'align-items': 'center' }) Codigo
-        h3(style={'-webkit-flex': 2, }) #{codigo}
-      div(style={'-webkit-flex': 1, }).flex
-        div(style={'border-color':'gray'}).border-right.flex
-          h3(style={'-webkit-flex': 1,  'align-items': 'center' }) Fecha
-        h3(style={ '-webkit-flex': 2,}) #{moment().format('DD/MM/YYYY')}        
+    div(style={'-webkit-flex': 1, 'height':'120px', 'text-align': 'end', 'font-size': '16px'})
+      p
+        b Codigo: #{codigo}
+        br
+        b Fecha #{moment().format('DD/MM/YYYY')}        
 block title
 block content
   div(style={ 'font-size': '22px' })#planilla.solvencia
