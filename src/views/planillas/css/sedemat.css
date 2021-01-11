@@ -100,3 +100,10 @@
   flex: 1;
   -webkit-flex: 1;
 }
+
+.column {
+  display: flex;
+  display: -webkit-flex;
+  flex-direction: column;
+  -webkit-flex-direction: column;
+}

@@ -10,6 +10,7 @@ import { sendEmail } from './events/procedureUpdateState';
 import { createRequestForm, createCertificate } from '@utils/forms';
 import { approveContributorBenefits, approveContributorSignUp, approveContributorAELicense, createSettlementForProcedure } from './settlement';
 import { installLiquorLicense, renewLiquorLicense } from './liquors';
+import { createVehicleStructureForProcedure } from './vehicles';
 
 const pool = Pool.getInstance();
 
@@ -459,6 +460,11 @@ export const procedureInit = async (procedure, user: Usuario) => {
       const hasActiveAgreement = (await client.query(queries.CONTRIBUTOR_HAS_ACTIVE_AGREEMENT_PROCEDURE, [tipoDocumento, documento, registroMunicipal])).rowCount > 0;
       if (hasActiveAgreement) throw { status: 403, message: 'El contribuyente ya posee una solicitud de beneficio en revision' };
     }
+
+    if (!![39, 40].find((el) => el === tipoTramite)) {
+      datos.vehiculo = await createVehicleStructureForProcedure(datos.vehiculo, client);
+    }
+
     const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify(datosP), user.id])).rows[0];
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.idTramite])).rows[0];
@@ -490,8 +496,8 @@ export const procedureInit = async (procedure, user: Usuario) => {
       }
     } else {
       if (resources.planilla) dir = await createRequestForm(response, client);
-      if (response.sufijo === 'bc') datosP = { funcionario: datos };
-      respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, response.sufijo === 'bc' ? JSON.stringify(datosP) : null, costo, dir]);
+      if (response.sufijo === 'bc' || response.sufijo === 'veh') datosP = { funcionario: datos };
+      respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, response.sufijo === 'bc' || response.sufijo === 'veh' ? JSON.stringify(datosP) : null, costo, dir]);
     }
 
     const tramite: Partial<Tramite> = {
@@ -557,7 +563,9 @@ export const validateProcedure = async (procedure, user: Usuario, client) => {
 
     if (!!resources.id_ramo) {
       const ramo = (await client.query('SELECT * FROM impuesto.ramo WHERE id_ramo = $1', [resources.id_ramo])).rows[0].descripcion;
-      await createSettlementForProcedure({ monto: +procedure.monto, ramo, idTramite: procedure.idTramite }, client);
+      const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
+      procedure.sufijo === 'veh' && (await client.query(queries.UPDATE_VEHICLE_PAYMENT_DATE, [prevData.funcionario.vehiculo.id]));
+      await createSettlementForProcedure({ monto: +procedure.monto, ramo, idTramite: procedure.idTramite, payload: prevData.funcionario }, client);
     }
 
     const nextEvent = await getNextEventForProcedure(procedure, client);
@@ -1298,7 +1306,8 @@ export const processProcedureAnalist = async (procedure, user: Usuario, client: 
 
     if (!!resources.id_ramo) {
       const ramo = (await client.query('SELECT * FROM impuesto.ramo WHERE id_ramo = $1', [resources.id_ramo])).rows[0].descripcion;
-      await createSettlementForProcedure({ monto: +resources.costo, ramo, idTramite: procedure.idTramite }, client);
+      const payload = !![39, 40].find((el) => el === resources.tipoTramite) ? datos.funcionario.vehiculo : undefined;
+      await createSettlementForProcedure({ monto: +resources.costo, ramo, idTramite: procedure.idTramite, payload }, client);
     }
 
     if (datos) {
@@ -1388,6 +1397,7 @@ const procedureEvents = switchcase({
   pd: { iniciado: 'enproceso_pd', enproceso: 'ingresardatos_pd', ingresardatos: 'validar_pd', validando: 'finalizar_pd' },
   cr: { iniciado: 'validar_cr', validando: 'enproceso_cr', enproceso: 'revisar_cr', enrevision: { true: 'finalizar_cr', false: 'rechazar_cr' } },
   tl: { iniciado: { true: 'validar_tl', false: 'finalizar_tl' }, validando: 'finalizar_tl' },
+  veh: { iniciado: 'validar_veh', validando: 'finalizar_veh' },
   ompu: {
     iniciado: 'enproceso_ompu',
     enproceso: { true: 'aprobar_ompu', false: 'rechazar_ompu' },

@@ -146,7 +146,6 @@ const reversePaymentCase = switchcase({
       await client.query(queries.DELETE_FISCAL_CREDIT_BY_APPLICATION_ID, [id]);
       await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [id, REVERSARPAGO]);
       await client.query(queries.SET_NON_APPROVED_STATE_FOR_APPLICATION, [id]);
-      await client.query(queries.NULLIFY_AMOUNT_IN_REVERSED_APPLICATION, [id]);
       return await getApplicationsAndSettlementsByIdNots({ id, user: null }, client);
     } catch (e) {
       throw e;

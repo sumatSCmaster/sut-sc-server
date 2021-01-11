@@ -120,19 +120,21 @@ export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Re
     await client.query('BEGIN');
     const response = (await client.query(queries.CREATE_VEHICLE, [marca, user.id, subcategoria, modelo, placa, anio, color, serialCarroceria, serialMotor, tipoCarroceria, tipoCombustible])).rows[0];
     await client.query('COMMIT');
+    const brand = (await client.query(queries.GET_VEHICLE_BRAND_BY_ID, [response.id_marca_vehiculo])).rows[0].descripcion;
+    const subcategory = (await client.query(queries.GET_VEHICLE_SUBCATEGORY_BY_ID, [response.id_subcategoria_vehiculo])).rows[0].descripcion;
 
     const vehicle: Vehicle = {
       id: response.id_vehiculo,
       placa: response.placa_vehiculo,
-      marca: response.id_marca_vehiculo,
-      modelo: response.marca_vehiculo,
+      marca: brand,
+      modelo: response.modelo_vehiculo,
       color: response.color_vehiculo,
       anio: response.anio_vehiculo,
       serialCarroceria: response.serial_carroceria_vehiculo,
       serialMotor: response.serial_motor_vehiculo,
       tipoCarroceria: response.tipo_carroceria_vehiculo,
       tipoCombustible: response.tipo_combustible_vehiculo,
-      subcategoria: response.id_subcategoria_vehiculo,
+      subcategoria: response.id_subcategoria_vehiculo || subcategory,
       fechaUltimaActualizacion: response.fecha_ultima_actualizacion,
     };
     return { status: 201, message: 'Vehiculo creado satisfactoriamente', vehiculo: vehicle };
@@ -226,10 +228,26 @@ export const updateVehicleSubcategory = async (payload: VehicleSubcategory, id: 
   }
 };
 
+export const createVehicleStructureForProcedure = async (vehicle: Vehicle, client: PoolClient) => {
+  try {
+    const assets = (await client.query(queries.GET_ASSETS_FOR_VEHICLE_DATA, [vehicle.id])).rows[0];
+    const newVehicle = {
+      ...vehicle,
+      subcategoria: { id: assets.idSubcategoria, descripcion: assets.descripcionSubcategoria },
+      categoria: { id: assets.idCategoria, descripcion: assets.descripcionCategoria },
+      tipo: { id: assets.idTipo, descripcion: assets.descripcionTipo },
+      marca: { id: assets.idMarca, descripcion: assets.nombreMarca },
+    };
+    return newVehicle;
+  } catch (e) {
+    throw e;
+  }
+};
+
 interface Vehicle {
   id: number;
-  marca: number;
-  subcategoria: number;
+  marca: number | string;
+  subcategoria: number | string;
   modelo: string;
   placa: string;
   serialCarroceria: string;
