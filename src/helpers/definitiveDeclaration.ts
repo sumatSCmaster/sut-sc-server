@@ -199,7 +199,7 @@ const createReceiptForAEApplication = async (payload: { liquidaciones; contribuy
     return new Promise(async (res, rej) => {
       try {
         console.log('AAAAAAAA');
-        let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-AE.pug`), certInfo));
+        let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-DAE.pug`), certInfo));
         console.log(htmlArray.length);
         const pdfDir = resolve(__dirname, `../../archivos/sedemat/definitive-declaration/AE/${contribuyente.anio}/${contribuyente.id}/recibo.pdf`);
         const dir = `${process.env.SERVER_URL}/sedemat/definitive-declaration/AE/${contribuyente.anio}/${contribuyente.id}/recibo.pdf`;
