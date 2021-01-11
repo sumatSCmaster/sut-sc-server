@@ -2943,7 +2943,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   UPDATE_VEHICLE: `UPDATE impuesto.vehiculo SET id_marca_vehiculo = $1, id_subcategoria_vehiculo = $2, modelo_vehiculo = $3, placa_vehiculo = $4, anio_vehiculo = $5, color_vehiculo = $6, serial_carroceria_vehiculo = $7, serial_motor_vehiculo = $8, tipo_carroceria_vehiculo = $9, tipo_combustible_vehiculo = $10 WHERE id_vehiculo = $11 RETURNING *`,
   DELETE_VEHICLE: `DELETE FROM impuesto.vehiculo WHERE id_vehiculo = $1`,
   UPDATE_VEHICLE_SUBCATEGORY: `UPDATE impuesto.subcategoria_vehiculo SET id_valor = $1, tarifa = $2, descripcion = $3, id_categoria_vehiculo = $4 WHERE id_subcategoria_vehiculo = $5 RETURNING *`,
-  GET_VEHICLES_BY_CONTRIBUTOR: `SELECT v.id_vehiculo AS id, mv.nombre AS marca, sv.descripcion AS subcategoria, v.modelo_vehiculo AS modelo,
+  GET_VEHICLES_BY_CONTRIBUTOR: `SELECT v.id_vehiculo AS id, mv.nombre AS marca, sv.id_subcategoria_vehiculo AS subcategoria, v.modelo_vehiculo AS modelo,
   v.placa_vehiculo AS placa, v.anio_vehiculo AS anio, v.color_vehiculo AS color, v.fecha_ultima_actualizacion AS "fechaUltimaActualizacion",
   v.serial_carroceria_vehiculo AS "serialCarroceria", v.serial_motor_vehiculo AS "serialMotor", v.tipo_carroceria_vehiculo AS "tipoCarroceria",
   v.tipo_combustible_vehiculo AS "tipoCombustible" 

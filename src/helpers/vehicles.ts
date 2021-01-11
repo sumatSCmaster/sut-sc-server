@@ -134,7 +134,7 @@ export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Re
       serialMotor: response.serial_motor_vehiculo,
       tipoCarroceria: response.tipo_carroceria_vehiculo,
       tipoCombustible: response.tipo_combustible_vehiculo,
-      subcategoria: subcategory,
+      subcategoria: response.id_subcategoria_vehiculo || subcategory,
       fechaUltimaActualizacion: response.fecha_ultima_actualizacion,
     };
     return { status: 201, message: 'Vehiculo creado satisfactoriamente', vehiculo: vehicle };
