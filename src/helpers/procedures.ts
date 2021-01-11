@@ -470,6 +470,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.idTramite])).rows[0];
     response.sufijo = resources.sufijo;
     costo = isNotPrepaidProcedure({ suffix: resources.sufijo, user }) ? null : pago.costo || resources.costo_base;
+    console.log('🚀 ~ file: procedures.ts ~ line 473 ~ procedureInit ~ costo', costo);
     const nextEvent = await getNextEventForProcedure(response, client);
 
     if (pago && resources.sufijo !== 'tl' && nextEvent.startsWith('validar')) {
