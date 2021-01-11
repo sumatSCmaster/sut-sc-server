@@ -2643,6 +2643,7 @@ export const insertSettlements = async ({ process, user }) => {
   const client = await pool.connect();
   const { impuestos } = process;
   let finingMonths: MultaImpuesto[] | undefined, finingAmount;
+  const FINING_THRESHOLD_DATE = 10;
   try {
     client.query('BEGIN');
     const userContributor = user.tipoUsuario === 4 ? (await client.query(queries.GET_CONTRIBUTOR_BY_USER, [user.id])).rows : (await client.query(queries.TAX_PAYER_EXISTS, [process.tipoDocumento, process.documento])).rows;
@@ -2660,8 +2661,8 @@ export const insertSettlements = async ({ process, user }) => {
     // ! Esto hay que descomentarlo el proximo mes
     const hasAE = impuestos.find((el) => el.ramo === 'AE');
     if (hasAE) {
-      const now = moment().locale('ES');
-      const pivot = moment().locale('ES');
+      const now = moment().utcOffset(-4).locale('ES');
+      const pivot = moment().utcOffset(-4).locale('ES');
       const taxableMin = await (await client.query(queries.GET_LITTLEST_TAXABLE_MINIMUM_FOR_CONTRIBUTOR, [contributorReference?.id_registro_municipal])).rows[0].minimo_tributable;
       const onlyAE = impuestos
         .filter((el) => el.ramo === 'AE')
@@ -2799,7 +2800,7 @@ export const insertSettlements = async ({ process, user }) => {
             );
             if (exonerado) return;
             const currentMonth = now.clone().subtract(1, 'M');
-            const comparedMonth = moment().locale('ES').month(el.fechaCancelada.month).year(el.fechaCancelada.year);
+            const comparedMonth = moment().utcOffset(-4).locale('ES').month(el.fechaCancelada.month).year(el.fechaCancelada.year);
             const percentage = await finingPercentage({ currentMonth, comparedMonth, branch: 'AE', client });
             const amount = el.monto - solvencyCost > 0 ? el.monto - solvencyCost : +taxableMin;
             if (percentage === 0) return;
@@ -2828,7 +2829,7 @@ export const insertSettlements = async ({ process, user }) => {
         );
       }
       const exonerado = await isExonerated({ branch: codigosRamo.MUL, contributor: contributorReference?.id_registro_municipal, activity: null, startingDate: moment().startOf('month') }, client);
-      if (now.date() > 10 && !exonerado) {
+      if (now.date() > FINING_THRESHOLD_DATE && !exonerado) {
         const basePercentage = +(await client.query(queries.GET_SCALE_FOR_AE_FINING_STARTING_AMOUNT)).rows[0].indicador;
         const amount = onlyAE[0].monto - solvencyCost > 0 ? onlyAE[0].monto - solvencyCost : taxableMin;
         const multa = (
@@ -2837,8 +2838,8 @@ export const insertSettlements = async ({ process, user }) => {
             (amount * basePercentage).toFixed(8),
             {
               fecha: {
-                month: moment().subtract(1, 'M').toDate().toLocaleDateString('ES', { month: 'long' }),
-                year: moment().subtract(1, 'M').year(),
+                month: moment().utcOffset(-4).subtract(1, 'M').toDate().toLocaleDateString('ES', { month: 'long' }),
+                year: moment().utcOffset(-4).subtract(1, 'M').year(),
               },
               descripcion: 'Multa por Declaracion Fuera de Plazo',
               monto: basePercentage,

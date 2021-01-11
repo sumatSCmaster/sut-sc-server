@@ -110,6 +110,7 @@ export const insertRetentions = async ({ process, user }) => {
   const { retenciones } = process;
   //Esto hay que sacarlo de db
   const finingAmount = 10;
+  const FINING_THRESHOLD_DATE = 10;
   let finingMonths: any;
   try {
     client.query('BEGIN');
@@ -125,8 +126,8 @@ export const insertRetentions = async ({ process, user }) => {
 
     // ! Esto hay que descomentarlo el otro mes
     if (retenciones.length > 0) {
-      const now = moment().locale('ES');
-      const pivot = moment().locale('ES');
+      const now = moment().utcOffset(-4).locale('ES');
+      const pivot = moment().utcOffset(-4).locale('ES');
       const onlyRD = retenciones.sort((a, b) =>
         pivot.month(a.fechaCancelada.month).toDate() === pivot.month(b.fechaCancelada.month).toDate() ? 0 : pivot.month(a.fechaCancelada.month).toDate() > pivot.month(b.fechaCancelada.month).toDate() ? 1 : -1
       );
@@ -280,7 +281,7 @@ export const insertRetentions = async ({ process, user }) => {
         );
       }
       const exonerado = await isExonerated({ branch: codigosRamo.MUL, contributor: contributorReference?.id_registro_municipal, activity: null, startingDate: moment().startOf('month') }, client);
-      if (now.date() > 10 && !exonerado) {
+      if (now.date() > FINING_THRESHOLD_DATE && !exonerado) {
         const basePercentage = +(await client.query(queries.GET_SCALE_FOR_RETENTION_FINING_STARTING_AMOUNT)).rows[0].indicador;
         const multa = (
           await client.query(queries.CREATE_FINING_FOR_LATE_RETENTION_PETRO, [
