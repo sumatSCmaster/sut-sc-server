@@ -43,7 +43,7 @@ export const getRetentionMonths = async ({ document, reference, docType, user }:
     const now = moment(new Date());
 
     let lastRD = (await client.query(queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.RD0, branch.id_registro_municipal])).rows[0];
-    const lastRDPayment = (lastRD && moment(lastRD.fecha_liquidacion)) || moment().month(0);
+    const lastRDPayment = (lastRD && moment(lastRD.fecha_liquidacion)) || moment().startOf('year');
     console.log('🚀 ~ file: retention.ts ~ line 47 ~ getRetentionMonths ~ lastRDPayment', lastRDPayment);
     const RDDate = moment([lastRDPayment.year(), lastRDPayment.month(), 1]);
     console.log('🚀 ~ file: retention.ts ~ line 49 ~ getRetentionMonths ~ RDDate', RDDate);
