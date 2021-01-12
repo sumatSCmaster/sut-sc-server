@@ -2,19 +2,21 @@ extends default
 block css
   link(rel="stylesheet", href="css/sedemat.css")
 block title
-  -var montoRebajado = datos.items[0].montoRebajado;
 block content
   div#fecha
     p 
       b FECHA:
       span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
-  div.titleWithQR
-    p#title
-      b DECLARACIÓN DEFINITIVA DE ACTIVIDADES ECONÓMICAS
+  if datos.items.lenght < 6
+    div(style={'margin-bottom':'200px'})
+      p#title
+        b DECLARACIÓN DEFINITIVA DE ACTIVIDADES ECONÓMICAS
+  else
     div
-      img#QR(src=QR, alt='QR')
+      p#title
+        b DECLARACIÓN DEFINITIVA DE ACTIVIDADES ECONÓMICAS
   div#planilla(style={'font-size':'13px'})
-    div(style={'margin-bottom':'50px', 'margin-top':'50px'})
+    div(style={'margin-bottom':'20px'})
       div.table(style={'width':'90%', 'font-size':'16px', 'font-weight': 'bold'})
         div.tr
           div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
@@ -43,7 +45,7 @@ block content
             p  USUARIO WEB
           div(style={'-webkit-flex': 2}).td.center
             p 
-    div.table(style={'font-size':'14px', 'margin-bottom':'50px'})
+    div.table(style={'font-size':'14px', 'margin-bottom':'20px'})
       div.tr
         div.td(style={'-webkit-flex': 1}).border-right.border-bottom.center
           p
@@ -61,10 +63,10 @@ block content
         div(style={'-webkit-flex': 1.5}).td.border-bottom.center
           p #{datos.ref}
       div.tr
-        div(style={'-webkit-flex': 2}).td.border-right.center
+        div(style={'-webkit-flex': 2}).td.border-right.center.border-bottom
           p
             b RAZÓN SOCIAL:
-        div(style={'-webkit-flex': 8}).td
+        div(style={'-webkit-flex': 8}).td.border-bottom
           p #{datos.razonSocial}
       div.tr
         div(style={'-webkit-flex': 2}).td.border-right.center
@@ -72,7 +74,7 @@ block content
             b DIRECCIÓN:
         div(style={'-webkit-flex': 8}).td
           p #{datos.direccion}
-    div(style={'margin-bottom':'50px'}).table
+    div(style={'margin-bottom':'20px'}).table
       div.tr
         div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
           p
@@ -113,25 +115,19 @@ block content
         div(style={'-webkit-flex': 3.5}).td
           p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(parseFloat(datos.montoTotal))}
 
-    div(style={'margin-top':'50px'}).table.break-page
+    div(style={'margin-top':'20px'}).table.break-page
       div.tr.break-page
         div(style={'-webkit-flex': 2}).td.border-bottom.border-right
           p
             b OBSERVACIÓN:
         div(style={'-webkit-flex': 8}).td.border-bottom
           p #{datos.observacion}
-      div.tr.break-page
-        div(style={'-webkit-flex': 2}).td.border-bottom.border-right
-          p
-            b ESTATUS:
-        div(style={'-webkit-flex': 8}).td.border-bottom
-          p #{datos.estatus}
       div(style={'background-color':'rgba(0,0,0,0.2)'}).tr
         div(style={'-webkit-flex': 1}).td.border-right.center
           p
-            b Total Liquidado:
+            b Total Liquidado en Año:
             span &nbsp; #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.totalLiq)}
         div(style={'-webkit-flex': 1}).td.center
           p
-            b Total Pagado:
+            b Total Pagado en Año:
             span &nbsp; #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.totalRecaudado)}
