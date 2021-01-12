@@ -88,9 +88,9 @@ block content
         div(style={height:"260px",'-webkit-flex': '1'})
           img(src='images/IV.png', alt='logo', style={height:"100%"})
     div(style={'margin': '0 20px', 'text-align':'justify'})
-      if datos.funcionario.vehiculo.tipo.id === 1 
+      if datos.funcionario.vehiculo.tipo.id !== 1 
         p
           b El presente certificado avala ante todas las autoridades de tránsito en el territorio nacional que el contribuyente está solvente con este impuesto para el año fiscal #{moment().format('YYYY')}.
       else
         p
-          b El presente certificado avala ante todas las autoridades de tránsito en el territorio nacional que el contribuyente está solvente con este impuesto para el mes #{moment().format('MM')}.      
+          b El presente certificado avala ante todas las autoridades de tránsito en el territorio nacional que el contribuyente está solvente con este impuesto para el mes de #{moment().locale('ES').format('MMMM')}.      
