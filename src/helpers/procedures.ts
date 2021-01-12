@@ -132,7 +132,7 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
     if (!support) {
       res = res.filter((row) => row.tipoTramite !== 37);
     }
-    return esDaniel(user) ? res.filter((row) => row.tipoTramite !== 27) : res;
+    return esDaniel(user) ? res.filter((row) => row.tipoTramite !== 27 && row.tipoTramite !== 39 && row.tipoTramite !== 40) : res;
   } catch (error) {
     console.log(errorMessageExtractor(error));
     throw new Error('Error al obtener instancias de tramite');
