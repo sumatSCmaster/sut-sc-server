@@ -14,7 +14,7 @@ block content
     div
       img#QR(src=QR, alt='QR')
   div#planilla(style={'font-size':'13px'})
-    div(style={'margin-bottom':'20px'})
+    div(style={'margin-bottom':'50px', 'margin-top':'50px'})
       div.table(style={'width':'90%', 'font-size':'16px', 'font-weight': 'bold'})
         div.tr
           div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
@@ -43,7 +43,7 @@ block content
             p  USUARIO WEB
           div(style={'-webkit-flex': 2}).td.center
             p 
-    div.table(style={'font-size':'14px'})
+    div.table(style={'font-size':'14px', 'margin-bottom':'50px'})
       div.tr
         div.td(style={'-webkit-flex': 1}).border-right.border-bottom.center
           p
@@ -61,18 +61,18 @@ block content
         div(style={'-webkit-flex': 1.5}).td.border-bottom.center
           p #{datos.ref}
       div.tr
-        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+        div(style={'-webkit-flex': 2}).td.border-right.center
           p
             b RAZÓN SOCIAL:
-        div(style={'-webkit-flex': 8}).td.border-bottom
+        div(style={'-webkit-flex': 8}).td
           p #{datos.razonSocial}
       div.tr
-        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+        div(style={'-webkit-flex': 2}).td.border-right.center
           p
             b DIRECCIÓN:
-        div(style={'-webkit-flex': 8}).td.border-bottom
+        div(style={'-webkit-flex': 8}).td
           p #{datos.direccion}
-    div.table
+    div(style={'margin-bottom':'50px'}).table
       div.tr
         div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
           p
@@ -107,13 +107,13 @@ block content
           div(style={'-webkit-flex': 2}).td.border-bottom.center
             p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.impuesto ? item.impuesto : 0)}
       div.tr
-        div(style={'-webkit-flex': 6}).td.border-right.center
+        div(style={'-webkit-flex': 6.5}).td.border-right.center
           p
             b Monto Total Planilla:
-        div(style={'-webkit-flex': 4}).td
+        div(style={'-webkit-flex': 3.5}).td
           p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(parseFloat(datos.montoTotal))}
 
-    div(style={'margin-top':'20px'}).table.break-page
+    div(style={'margin-top':'50px'}).table.break-page
       div.tr.break-page
         div(style={'-webkit-flex': 2}).td.border-bottom.border-right
           p
@@ -135,4 +135,3 @@ block content
           p
             b Total Pagado:
             span &nbsp; #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.totalRecaudado)}
-block footer
