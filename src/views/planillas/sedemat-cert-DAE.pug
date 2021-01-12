@@ -7,16 +7,11 @@ block content
     p 
       b FECHA:
       span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
-  if datos.items.lenght < 6
-    div(style={'margin-bottom':'200px'})
-      p#title
-        b DECLARACIÓN DEFINITIVA DE ACTIVIDADES ECONÓMICAS
-  else
-    div
-      p#title
-        b DECLARACIÓN DEFINITIVA DE ACTIVIDADES ECONÓMICAS
+  div
+    p#title
+      b DECLARACIÓN DEFINITIVA DE ACTIVIDADES ECONÓMICAS
   div#planilla(style={'font-size':'13px'})
-    div(style={'margin-bottom':'20px'})
+    div(style={'margin-bottom':'20px', 'margin-bottom': datos.items.lenght < 6 ? '200px': '0'})
       div.table(style={'width':'90%', 'font-size':'16px', 'font-weight': 'bold'})
         div.tr
           div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
