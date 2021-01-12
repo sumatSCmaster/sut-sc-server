@@ -81,21 +81,16 @@ block content
             p
               b Serial de Carroceria:
               br
-              span #{datos.funcionario.vehiculo.serialCarroceria}&nbsp;                
-          .td(style={ '-webkit-flex': '1' })
-            p
-              b Serial de Motor:
-              br
-              span #{datos.funcionario.vehiculo.serialMotor}&nbsp;
+              span #{datos.funcionario.vehiculo.serialCarroceria}&nbsp;
       div(style={'margin-top':"5%"}).flex.center
         div(style={height:"280px", '-webkit-flex': '1', 'margin-top': '-10px'})
           img(src=QR, alt='QR', style={height:"100%"})
         div(style={height:"260px",'-webkit-flex': '1'})
           img(src='images/IV.png', alt='logo', style={height:"100%"})
     div(style={'margin': '0 20px', 'text-align':'justify'})
-      if datos.funcionario.vehiculo.tipo.id === 1 
+      if datos.funcionario.vehiculo.tipo.id !== 1 
         p
           b El presente certificado avala ante todas las autoridades de tránsito en el territorio nacional que el contribuyente está solvente con este impuesto para el año fiscal #{moment().format('YYYY')}.
       else
         p
-          b El presente certificado avala ante todas las autoridades de tránsito en el territorio nacional que el contribuyente está solvente con este impuesto para el mes #{moment().format('MM')}.      
+          b El presente certificado avala ante todas las autoridades de tránsito en el territorio nacional que el contribuyente está solvente con este impuesto para el mes de #{moment().locale('ES').format('MMMM')}.      

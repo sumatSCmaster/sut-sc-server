@@ -12,9 +12,9 @@ export const errorMessageGenerator = (pgError) => {
 };
 
 export const errorMessageExtractor = (error) => {
-  if ('internalQuery' in error) {
+  if (error['internalQuery'] !== undefined) {
     return error;
   } else {
-    return error.message;
+    return error.message || 'Error';
   }
 };
