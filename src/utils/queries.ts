@@ -2950,7 +2950,8 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   FROM impuesto.marca_vehiculo mv 
   INNER JOIN impuesto.vehiculo v USING (id_marca_vehiculo) 
   INNER JOIN impuesto.subcategoria_vehiculo sv USING (id_subcategoria_vehiculo) 
-  WHERE id_usuario = $1`,
+  WHERE id_usuario = $1
+  ORDER BY v.id_vehiculo`,
   CHECK_VEHICLE_EXISTS_FOR_USER: `SELECT 1 FROM impuesto.vehiculo WHERE id_usuario = $1 AND placa_vehiculo = $2`,
   UPDATE_VEHICLE_PAYMENT_DATE: `UPDATE impuesto.vehiculo SET fecha_ultima_actualizacion = DEFAULT WHERE id_vehiculo = $1`,
   GET_VEHICLE_SUBCATEGORY_BY_ID: `SELECT descripcion FROM impuesto.subcategoria_vehiculo WHERE id_subcategoria_vehiculo = $1`,
