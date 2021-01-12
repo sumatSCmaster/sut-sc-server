@@ -35,7 +35,6 @@ CREATE TABLE impuesto.vehiculo (
     tipo_carroceria_vehiculo VARCHAR,
     tipo_combustible_vehiculo VARCHAR,
     serial_carroceria_vehiculo VARCHAR,
-    serial_motor_vehiculo VARCHAR,
     fecha_creacion TIMESTAMPTZ DEFAULT NOW() - interval '4 hours',
     fecha_ultima_actualizacion TIMESTAMPTZ DEFAULT now() - interval '4 hours',
     PRIMARY KEY (id_vehiculo),

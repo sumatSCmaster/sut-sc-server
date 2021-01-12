@@ -115,10 +115,10 @@ export const getVehiclesByContributor = async (id: number): Promise<Response & {
 
 export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Response & { vehiculo: Vehicle }> => {
   const client = await pool.connect();
-  const { marca, subcategoria, modelo, placa, anio, color, serialCarroceria, serialMotor, tipoCarroceria, tipoCombustible } = payload;
+  const { marca, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible } = payload;
   try {
     await client.query('BEGIN');
-    const response = (await client.query(queries.CREATE_VEHICLE, [marca, user.id, subcategoria, modelo, placa, anio, color, serialCarroceria, serialMotor, tipoCarroceria, tipoCombustible])).rows[0];
+    const response = (await client.query(queries.CREATE_VEHICLE, [marca, user.id, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible])).rows[0];
     await client.query('COMMIT');
     const brand = (await client.query(queries.GET_VEHICLE_BRAND_BY_ID, [response.id_marca_vehiculo])).rows[0].descripcion;
     const subcategory = (await client.query(queries.GET_VEHICLE_SUBCATEGORY_BY_ID, [response.id_subcategoria_vehiculo])).rows[0].descripcion;
@@ -131,7 +131,6 @@ export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Re
       color: response.color_vehiculo,
       anio: response.anio_vehiculo,
       serialCarroceria: response.serial_carroceria_vehiculo,
-      serialMotor: response.serial_motor_vehiculo,
       tipoCarroceria: response.tipo_carroceria_vehiculo,
       tipoCombustible: response.tipo_combustible_vehiculo,
       subcategoria: response.id_subcategoria_vehiculo || subcategory,
@@ -153,10 +152,10 @@ export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Re
 
 export const updateVehicle = async (payload: Vehicle, id: number): Promise<Response & { vehiculo: Vehicle }> => {
   const client = await pool.connect();
-  const { marca, subcategoria, modelo, placa, anio, color, serialCarroceria, serialMotor, tipoCarroceria, tipoCombustible } = payload;
+  const { marca, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible } = payload;
   try {
     await client.query('BEGIN');
-    const response = (await client.query(queries.UPDATE_VEHICLE, [marca, subcategoria, modelo, placa, anio, color, serialCarroceria, serialMotor, tipoCarroceria, tipoCombustible, id])).rows[0];
+    const response = (await client.query(queries.UPDATE_VEHICLE, [marca, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible, id])).rows[0];
     await client.query('COMMIT');
 
     const vehicle: Vehicle = {
@@ -168,7 +167,6 @@ export const updateVehicle = async (payload: Vehicle, id: number): Promise<Respo
       anio: response.anio_vehiculo,
       subcategoria: response.id_subcategoria_vehiculo,
       serialCarroceria: response.serial_carroceria_vehiculo,
-      serialMotor: response.serial_motor_vehiculo,
       tipoCarroceria: response.tipo_carroceria_vehiculo,
       tipoCombustible: response.tipo_combustible_vehiculo,
       fechaUltimaActualizacion: response.fecha_ultima_actualizacion,
@@ -251,7 +249,6 @@ interface Vehicle {
   modelo: string;
   placa: string;
   serialCarroceria: string;
-  serialMotor: string;
   tipoCombustible: string;
   tipoCarroceria: string;
   anio: number;
