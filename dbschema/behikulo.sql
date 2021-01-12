@@ -37,7 +37,7 @@ CREATE TABLE impuesto.vehiculo (
     serial_carroceria_vehiculo VARCHAR,
     serial_motor_vehiculo VARCHAR,
     fecha_creacion TIMESTAMPTZ DEFAULT NOW() - interval '4 hours',
-    fecha_ultima_actualizacion TIMESTAMPTZ DEFAULT now - interval - '4 hours'
+    fecha_ultima_actualizacion TIMESTAMPTZ DEFAULT now() - interval '4 hours',
     PRIMARY KEY (id_vehiculo),
     FOREIGN KEY (id_marca_vehiculo) REFERENCES impuesto.marca_vehiculo (id_marca_vehiculo),
     FOREIGN KEY (id_subcategoria_vehiculo) REFERENCES impuesto.subcategoria_vehiculo (id_subcategoria_vehiculo),
@@ -223,5 +223,5 @@ INSERT INTO impuesto.subcategoria_vehiculo (id_categoria_vehiculo, id_valor, des
 
 INSERT INTO impuesto.subcategoria_vehiculo (id_categoria_vehiculo, id_valor, descripcion, tarifa) VALUES (10, 4, 'Gandolas, chutos y remolques de 3 ejes en adelante', '0.4');
 
-INSERT INTO tipo_tramite (id_institucion, nombre_tramite, sufijo, nombre_corto, certificado, utiliza_informacion_catastral, pago_previo, id_ramo, formato) VALUES (9, 'Impuesto sobre Vehículos', 'veh', 'Impuesto sobre Vehículos', 'sedemat-solvencia-VH', false, true, 10, 'VEH-001');
-INSERT INTO tipo_tramite (id_institucion, nombre_tramite, sufijo, nombre_corto, certificado, utiliza_informacion_catastral, pago_previo, id_ramo, formato) VALUES (9, 'Impuesto sobre Vehículos Pesados para Vías Interurbanas', 'veh', 'Impuesto sobre Vehículos Pesados', 'sedemat-solvencia-VH', false, true, 10, 'VEH-002');
+INSERT INTO tipo_tramite (id_tipo_tramite, id_institucion, nombre_tramite, sufijo, nombre_corto, certificado, utiliza_informacion_catastral, pago_previo, id_ramo, formato) VALUES (39, 9, 'Impuesto sobre Vehículos', 'veh', 'Impuesto sobre Vehículos', 'sedemat-solvencia-VH', false, true, 10, 'VEH-001');
+INSERT INTO tipo_tramite (id_tipo_tramite, id_institucion, nombre_tramite, sufijo, nombre_corto, certificado, utiliza_informacion_catastral, pago_previo, id_ramo, formato) VALUES (40, 9, 'Impuesto sobre Vehículos Pesados para Vías Interurbanas', 'veh', 'Impuesto sobre Vehículos Pesados', 'sedemat-solvencia-VH', false, true, 10, 'VEH-002');
