@@ -427,7 +427,7 @@ export const getProcedureById = async ({ id, client }: { id: number; client: Poo
 
 const isNotPrepaidProcedure = ({ suffix, user }: { suffix: string; user: Usuario }) => {
   const condition = false;
-  if ((suffix === 'tl' && user.tipoUsuario !== 4) || !!['pd', 'ompu', 'rc', 'bc', 'lic', 'lict', 'sup', 'veh'].find((el) => el === suffix)) return !condition;
+  if ((suffix === 'tl' && user.tipoUsuario !== 4) || !!['pd', 'ompu', 'rc', 'bc', 'lic', 'lict', 'sup'].find((el) => el === suffix)) return !condition;
   return condition;
 };
 
@@ -470,6 +470,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.idTramite])).rows[0];
     response.sufijo = resources.sufijo;
     costo = isNotPrepaidProcedure({ suffix: resources.sufijo, user }) ? null : pago.costo || resources.costo_base;
+    console.log('🚀 ~ file: procedures.ts ~ line 473 ~ procedureInit ~ costo', costo);
     const nextEvent = await getNextEventForProcedure(response, client);
 
     if (pago && resources.sufijo !== 'tl' && nextEvent.startsWith('validar')) {
@@ -564,8 +565,8 @@ export const validateProcedure = async (procedure, user: Usuario, client) => {
     if (!!resources.id_ramo) {
       const ramo = (await client.query('SELECT * FROM impuesto.ramo WHERE id_ramo = $1', [resources.id_ramo])).rows[0].descripcion;
       const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
-      procedure.sufijo === 'veh' && (await client.query(queries.UPDATE_VEHICLE_PAYMENT_DATE, [prevData.funcionario.vehiculo.id]));
-      await createSettlementForProcedure({ monto: +procedure.monto, ramo, idTramite: procedure.idTramite, payload: prevData.funcionario }, client);
+      procedure.sufijo === 'veh' && (await client.query(queries.UPDATE_VEHICLE_PAYMENT_DATE, [prevData.datos.funcionario.vehiculo.id]));
+      await createSettlementForProcedure({ monto: +procedure.monto, ramo, idTramite: procedure.idTramite, payload: prevData.datos.funcionario }, client);
     }
 
     const nextEvent = await getNextEventForProcedure(procedure, client);

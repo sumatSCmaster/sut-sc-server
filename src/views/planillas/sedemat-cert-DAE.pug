@@ -1,0 +1,128 @@
+extends default
+block css
+  link(rel="stylesheet", href="css/sedemat.css")
+block title
+block content
+  div#fecha
+    p 
+      b FECHA:
+      span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+  div
+    p#title
+      b DECLARACIÓN DEFINITIVA DE ACTIVIDADES ECONÓMICAS
+  div#planilla(style={'font-size':'13px'})
+    div(style={'margin-bottom':'20px'})
+      div.table(style={'width':'90%', 'font-size':'16px', 'font-weight': 'bold', 'margin-top': datos.items.length < 6 ? '150px': '0'})
+        div.tr
+          div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+            p 
+              b Nro. Solicitud
+          div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+            p
+              b MOTIVO
+          div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+            p
+              b Porción
+          div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+            p
+              b Liquidador
+          div(style={'-webkit-flex': 2}).td.border-bottom.center
+            p
+              b Cajero
+        div.tr
+          div(style={'-webkit-flex': 1}).td.border-right.center
+            p  #{datos.nroSolicitud}
+          div(style={'-webkit-flex': 1}).td.border-right.center
+            p  #{datos.motivo}
+          div(style={'-webkit-flex': 1}).td.border-right.center
+            p  #{datos.porcion}
+          div(style={'-webkit-flex': 2}).td.border-right.center
+            p  USUARIO WEB
+          div(style={'-webkit-flex': 2}).td.center
+            p 
+    div.table(style={'font-size':'14px', 'margin-bottom':'20px'})
+      div.tr
+        div.td(style={'-webkit-flex': 1}).border-right.border-bottom.center
+          p
+            b RAMO:
+        div.td(style={'-webkit-flex': 5}).border-right.border-bottom
+          p #{datos.categoria}
+        div.td(style={'-webkit-flex': 0.5}).border-right.border-bottom.center
+          p
+            b RIF:
+        div(style={'-webkit-flex': 1.5}).td.border-right.border-bottom.center
+          p   #{datos.rif}
+        div.td(style={'-webkit-flex': 0.5}).border-right.border-bottom.center
+          p
+            b REF:
+        div(style={'-webkit-flex': 1.5}).td.border-bottom.center
+          p #{datos.ref}
+      div.tr
+        div(style={'-webkit-flex': 2}).td.border-right.center.border-bottom
+          p
+            b RAZÓN SOCIAL:
+        div(style={'-webkit-flex': 8}).td.border-bottom
+          p #{datos.razonSocial}
+      div.tr
+        div(style={'-webkit-flex': 2}).td.border-right.center
+          p
+            b DIRECCIÓN:
+        div(style={'-webkit-flex': 8}).td
+          p #{datos.direccion}
+    div(style={'margin-bottom':'20px'}).table
+      div.tr
+        div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
+          p
+            b CÓDIGO
+        div(style={'-webkit-flex': 2.5}).th.border-right.border-bottom.center
+          p
+            b DESCRIPCIÓN
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p
+            b MONTO DECLARADO
+        div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
+          p
+            b ALICUOTA
+        div(style={'-webkit-flex': 1.5}).th.border-right.border-bottom.center
+          p
+            b MIN. TRIB
+        div(style={'-webkit-flex': 2}).th.border-bottom.center
+          p
+            b IMPUESTO    
+      each item in datos.items
+        div.tr.break-page
+          div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+            p #{item.codigo}
+          div(style={'-webkit-flex': 2.5}).td.border-right.border-bottom.center
+            p #{item.descripcion}
+          div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoDeclarado ? item.montoDeclarado : 0)}
+          div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+            p #{item.alicuota}
+          div(style={'-webkit-flex': 1.5}).td.border-right.border-bottom.center
+            p  #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.minTrib ? item.minTrib : 0)}
+          div(style={'-webkit-flex': 2}).td.border-bottom.center
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.impuesto ? item.impuesto : 0)}
+      div.tr
+        div(style={'-webkit-flex': 6.5}).td.border-right.center
+          p
+            b Monto Total Planilla:
+        div(style={'-webkit-flex': 3.5}).td
+          p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(parseFloat(datos.montoTotal))}
+
+    div(style={'margin-top':'20px'}).table.break-page
+      div.tr.break-page
+        div(style={'-webkit-flex': 2}).td.border-bottom.border-right
+          p
+            b OBSERVACIÓN:
+        div(style={'-webkit-flex': 8}).td.border-bottom
+          p #{datos.observacion}
+      div(style={'background-color':'rgba(0,0,0,0.2)'}).tr
+        div(style={'-webkit-flex': 1}).td.border-right.center
+          p
+            b Total Liquidado en Año:
+            span &nbsp; #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.totalLiq)}
+        div(style={'-webkit-flex': 1}).td.center
+          p
+            b Total Pagado en Año:
+            span &nbsp; #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.totalRecaudado)}
