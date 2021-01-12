@@ -86,7 +86,9 @@ export const getDataForDefinitiveDeclaration = async ({ document, reference, doc
         };
       })
     );
-
+    
+    console.log(breakdownArray);
+    console.log(breakdownArray.flat());
     const totalLiquidado = fixatedAmount(breakdownArray.flat().reduce((x, j) => x + j.montoDeclarado));
     const totalPagado = fixatedAmount(breakdownArray.flat().reduce((x, j) => x + j.impuesto));
     const ramo = (await client.query(`SELECT descripcion FROM impuesto.ramo WHERE descripcion_corta = 'AE'`)).rows[0].descripcion;
