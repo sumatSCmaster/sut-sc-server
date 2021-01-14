@@ -510,6 +510,7 @@ export const updatePayment = async ({ id, solicitud, fechaDePago, referencia, mo
 
 export const addPayment = async ({ id, fechaDePago, referencia, monto, banco }) => {
   const client = await pool.connect();
+
   try {
     const id_usuario = (await client.query(`SELECT id_usuario FROM pago WHERE id_procedimiento = $1 AND concepto = 'IMPUESTO';`, [id])).rows[0].id_usuario;
     let res = await client.query(
