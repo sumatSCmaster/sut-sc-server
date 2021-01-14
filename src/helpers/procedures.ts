@@ -132,12 +132,6 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
     if (!support) {
       res = res.filter((row) => row.tipoTramite !== 37);
     }
-    console.log(
-      'PROCEDURES AAAAAAAAAAA',
-      res.length,
-      res.filter((row) => ![27, 39, 40].includes(row.tipoTramite)),
-      user.nombreCompleto
-    );
     return esDaniel(user) ? res.filter((row) => ![27, 39, 40].includes(row.tipoTramite)) : res;
   } catch (error) {
     console.log(errorMessageExtractor(error));
