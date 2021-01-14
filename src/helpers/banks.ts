@@ -371,6 +371,67 @@ const validationHandler = async ({ concept, body, user, client }) => {
   return executedMethod ? await executedMethod(body, user, client) : { status: 400, message: 'No existe un caso de validacion definido con este concepto' };
 };
 
+export const listProcedurePayments = async (type_doc, doc) => {
+  const client = await pool.connect();
+  try {
+    let data = await client.query(
+      `
+    SELECT s.*, p.*, b.id_banco, u.nacionalidad AS "tipoDocumento", u.cedula AS "documento", 'TRAMITE' as "tipoSolicitud", s.costo as montotram
+    FROM tramites_state s 
+    INNER JOIN usuario u ON u.id_usuario = s.usuario
+    INNER JOIN pago p ON p.id_procedimiento = s.id 
+    INNER JOIN banco b ON b.id_banco = p.id_banco
+    WHERE s.state = 'validando' AND p.concepto = 'TRAMITE' AND u.nacionalidad = $1 AND u.cedula = $2 ORDER BY id_procedimiento, id_pago;`,
+      [type_doc, doc]
+    );
+
+    data =
+      data.rowCount > 0
+        ? data.rows.reduce((prev, next) => {
+            let index = prev.findIndex((row) => row.id === next.id);
+            if (index === -1) {
+              prev.push({
+                id: next.id,
+                fechaSolicitud: next.fecha || next.fechacreacion,
+                estado: next.state,
+                tipoDocumento: next.tipoDocumento,
+                documento: next.documento,
+                tipoSolicitud: next.tipoSolicitud,
+                monto: next.montotram || 0,
+                pagos: [
+                  {
+                    id: next.id_pago,
+                    referencia: next.referencia,
+                    monto: next.monto,
+                    fechaDePago: next.fecha_de_pago,
+                    banco: next.id_banco,
+                    aprobado: next.aprobado,
+                  },
+                ],
+              });
+            } else {
+              prev[index].pagos.push({
+                id: next.id_pago,
+                referencia: next.referencia,
+                monto: next.monto,
+                fechaDePago: next.fecha_de_pago,
+                banco: next.id_banco,
+                aprobado: next.aprobado,
+              });
+            }
+            return prev;
+          }, [])
+        : [];
+
+    return { status: 200, data };
+  } catch (e) {
+    console.log(e);
+    throw e;
+  } finally {
+    client.release();
+  }
+};
+
 export const listTaxPayments = async () => {
   const client = await pool.connect();
   try {
@@ -391,15 +452,15 @@ export const listTaxPayments = async () => {
     INNER JOIN banco b ON b.id_banco = p.id_banco
     WHERE s."tipoSolicitud" = 'CONVENIO' AND fs.state = 'validando' AND p.concepto = 'CONVENIO' ORDER BY id_procedimiento, id_pago;
     `);
-    let tramData = await client.query(`
+    /*let tramData = await client.query(`
     SELECT s.*, p.*, b.id_banco, u.nacionalidad AS "tipoDocumento", u.cedula AS "documento", 'TRAMITE' as "tipoSolicitud", s.costo as montotram
     FROM tramites_state s 
     INNER JOIN usuario u ON u.id_usuario = s.usuario
     INNER JOIN pago p ON p.id_procedimiento = s.id 
     INNER JOIN banco b ON b.id_banco = p.id_banco
-    WHERE s.state = 'validando' AND p.concepto = 'TRAMITE' ORDER BY id_procedimiento, id_pago;`);
+    WHERE s.state = 'validando' AND p.concepto = 'TRAMITE' ORDER BY id_procedimiento, id_pago;`); */
     data.rows = data.rows.concat(convData.rows);
-    data.rows = data.rows.concat(tramData.rows);
+    /*data.rows = data.rows.concat(tramData.rows); */
     let montosSolicitud = (
       await client.query(`
     SELECT l.id_solicitud, SUM(monto) as monto
