@@ -376,19 +376,61 @@ export const listProcedurePayments = async (type_doc, doc) => {
   try {
     let data = await client.query(
       `
+    SELECT s.*, p.*, b.id_banco, c.documento, c.tipo_documento AS "tipoDocumento" 
+    FROM impuesto.solicitud_state s 
+    INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente 
+    INNER JOIN pago p ON p.id_procedimiento = s.id 
+    INNER JOIN banco b ON b.id_banco = p.id_banco
+    WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' AND p.concepto IN ('IMPUESTO', 'RETENCION') AND c.tipo_documento = $1 AND c.documento = $2 ORDER BY id_procedimiento, id_pago;`,
+      [type_doc, doc]
+    );
+    let convData = await client.query(
+      `
+    SELECT s.id, s.fecha, fs.state, c.documento, c.tipo_documento AS "tipoDocumento", s."tipoSolicitud", fs.idconvenio, p.id_pago, p.referencia, p.monto, p.fecha_de_pago, b.id_banco, p.aprobado
+    FROM impuesto.solicitud_state s
+    INNER JOIN impuesto.convenio conv ON conv.id_solicitud = s.id
+    INNER JOIN impuesto.fraccion_state fs ON fs.idconvenio = conv.id_convenio
+    INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente
+    INNER JOIN pago p ON p.id_procedimiento = fs.id
+    INNER JOIN banco b ON b.id_banco = p.id_banco
+    WHERE s."tipoSolicitud" = 'CONVENIO' AND fs.state = 'validando' AND p.concepto = 'CONVENIO' AND c.tipo_documento = $1 AND c.documento = $2 ORDER BY id_procedimiento, id_pago;
+    `,
+      [type_doc, doc]
+    );
+    let tramData = await client.query(
+      `
     SELECT s.*, p.*, b.id_banco, u.nacionalidad AS "tipoDocumento", u.cedula AS "documento", 'TRAMITE' as "tipoSolicitud", s.costo as montotram
     FROM tramites_state s 
     INNER JOIN usuario u ON u.id_usuario = s.usuario
     INNER JOIN pago p ON p.id_procedimiento = s.id 
     INNER JOIN banco b ON b.id_banco = p.id_banco
-    WHERE s.state = 'validando' AND p.concepto = 'TRAMITE' AND u.nacionalidad = $1 AND u.cedula = $2 ORDER BY id_procedimiento, id_pago;`,
+    WHERE s.state = 'validando' AND p.concepto = 'TRAMITE' AND c.tipo_documento = $1 AND c.documento = $2 ORDER BY id_procedimiento, id_pago;`,
       [type_doc, doc]
     );
-
+    data.rows = data.rows.concat(convData.rows);
+    data.rows = data.rows.concat(tramData.rows);
+    let montosSolicitud = (
+      await client.query(`
+    SELECT l.id_solicitud, SUM(monto) as monto
+    FROM impuesto.solicitud_state s 
+    INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
+    WHERE s.state = 'validando' OR s.state = 'ingresardatos'
+    GROUP BY l.id_solicitud;`)
+    ).rows;
+    let montosConvenio = (
+      await client.query(`
+    SELECT c.id_convenio, SUM(monto) as monto
+    FROM impuesto.fraccion_state fs
+    INNER JOIN impuesto.convenio c ON c.id_convenio = fs.idconvenio
+    WHERE fs.state = 'validando' OR fs.state = 'ingresardatos'
+    GROUP BY c.id_convenio;`)
+    ).rows;
     data =
       data.rowCount > 0
         ? data.rows.reduce((prev, next) => {
             let index = prev.findIndex((row) => row.id === next.id);
+            let montoSolicitud = montosSolicitud.find((montoRow) => next.id === montoRow.id_solicitud)?.monto;
+            let montoConvenio = montosConvenio.find((montoRow) => next.idconvenio === montoRow.id_convenio)?.monto;
             if (index === -1) {
               prev.push({
                 id: next.id,
@@ -397,7 +439,7 @@ export const listProcedurePayments = async (type_doc, doc) => {
                 tipoDocumento: next.tipoDocumento,
                 documento: next.documento,
                 tipoSolicitud: next.tipoSolicitud,
-                monto: next.montotram || 0,
+                monto: montoSolicitud || montoConvenio || next.montotram || 0,
                 pagos: [
                   {
                     id: next.id_pago,
