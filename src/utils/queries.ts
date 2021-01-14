@@ -2935,7 +2935,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   GET_SCALE_FOR_RETENTION_FINING_AUGMENT_AMOUNT: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 12`,
 
   // VEHICULOS
-  GET_VEHICLE_BRANDS: `SELECT id_marca_vehiculo AS id, nombre FROM impuesto.marca_vehiculo;`,
+  GET_VEHICLE_BRANDS: `SELECT id_marca_vehiculo AS id, nombre FROM impuesto.marca_vehiculo ORDER BY nombre;`,
   GET_VEHICLE_TYPES: `SELECT id_tipo_vehiculo AS id, descripcion FROM impuesto.tipo_vehiculo ORDER BY id_tipo_vehiculo`,
   GET_VEHICLE_CATEGORIES_BY_TYPE: `SELECT id_categoria_vehiculo AS id, descripcion FROM impuesto.categoria_vehiculo WHERE id_tipo_vehiculo = $1 ORDER BY id_categoria_vehiculo`,
   GET_VEHICLE_SUBCATEGORIES_BY_CATEGORY: `SELECT sv.id_subcategoria_vehiculo AS id, sv.descripcion, ROUND((v.valor_en_bs * sv.tarifa)) AS costo FROM impuesto.subcategoria_vehiculo sv INNER JOIN valor v USING (id_valor) WHERE id_categoria_vehiculo = $1 ORDER BY id_subcategoria_vehiculo`,
