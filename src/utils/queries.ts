@@ -2973,26 +2973,30 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       INNER JOIN impuesto.condominio cond ON cond.id_contribuyente = cont.id_contribuyente;
   `,
   GET_CONDOMINIUM: `
-      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
+      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial", p.nombre as "parroquia"
       FROM impuesto.contribuyente cont
+      INNER JOIN parroquia p ON p.id = cont.id_contribuyente
       INNER JOIN impuesto.condominio cond ON cond.id_contribuyente = cont.id_contribuyente
       WHERE id_condominio = $1
   `,
   GET_CONDOMINIUM_BY_DOC: `
-      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
+      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial", p.nombre as "parroquia"
       FROM impuesto.contribuyente cont
+      INNER JOIN parroquia p ON p.id = cont.id_contribuyente
       INNER JOIN impuesto.condominio cond ON cond.id_contribuyente = cont.id_contribuyente
       WHERE cont.tipo_documento = $1 AND cont.documento = $2;
   `,
   GET_CONDOMINIUM_OWNERS: `
-      SELECT id_condominio AS "idCondominio", cont.id_contribuyente as "idContribuyente", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
+      SELECT id_condominio AS "idCondominio", cont.id_contribuyente as "idContribuyente", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial", p.nombre as "parroquia"
       FROM impuesto.contribuyente cont
+      INNER JOIN parroquia p ON p.id = cont.id_contribuyente
       INNER JOIN impuesto.condominio_propietario cp ON cp.id_contribuyente = cont.id_contribuyente
       WHERE cp.id_condominio = $1;
   `,
   GET_CONDOMINIUM_OWNER_BY_DOC: `
-      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
+      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial", p.nombre as "parroquia"
       FROM impuesto.contribuyente cont
+      INNER JOIN parroquia p ON p.id = cont.id_contribuyente
       INNER JOIN impuesto.condominio_propietario cp ON cond.id_contribuyente = cp.id_contribuyente
       WHERE cont.tipo_documento = $1 AND cont.documento = $2;
   `,

@@ -419,7 +419,7 @@ export const listProcedurePayments = async (type_doc, doc) => {
     INNER JOIN usuario u ON u.id_usuario = s.usuario
     INNER JOIN pago p ON p.id_procedimiento = s.id 
     INNER JOIN banco b ON b.id_banco = p.id_banco
-    WHERE s.state = 'validando' AND p.concepto = 'TRAMITE' AND c.tipo_documento = $1 AND c.documento = $2 ORDER BY id_procedimiento, id_pago;`,
+    WHERE s.state = 'validando' AND p.concepto = 'TRAMITE' AND u.nacionalidad = $1 AND u.cedula = $2 ORDER BY id_procedimiento, id_pago;`,
       [type_doc, doc]
     );
     data.rows = data.rows.concat(convData.rows);
