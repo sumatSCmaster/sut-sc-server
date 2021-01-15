@@ -1,5 +1,6 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
+import { PoolClient } from 'pg';
 
 const pool = Pool.getInstance();
 
@@ -113,8 +114,8 @@ export const deleteOwner = async (condo_id, owner_id) => {
   }
 };
 
-export const isCondominium = async (type_doc, doc) => {
-  const client = await pool.connect();
+export const isCondominium = async (type_doc, doc, conn: PoolClient | null = null) => {
+  const client = conn ? conn : await pool.connect();
   try {
     const { rowCount } = await client.query(queries.GET_CONDOMINIUM_BY_DOC, [type_doc, doc]);
     return rowCount > 0;
@@ -124,12 +125,12 @@ export const isCondominium = async (type_doc, doc) => {
       message: error.message,
     };
   } finally {
-    client.release();
+    if (!conn) client.release();
   }
 };
 
-export const isCondoOwner = async (type_doc, doc) => {
-  const client = await pool.connect();
+export const isCondoOwner = async (type_doc, doc, conn: PoolClient | null = null) => {
+  const client = conn ? conn : await pool.connect();
   try {
     const { rowCount } = await client.query(queries.GET_CONDOMINIUM_OWNER_BY_DOC, [type_doc, doc]);
     return rowCount > 0;
@@ -139,6 +140,6 @@ export const isCondoOwner = async (type_doc, doc) => {
       message: error.message,
     };
   } finally {
-    client.release();
+    if (!conn) client.release();
   }
 };

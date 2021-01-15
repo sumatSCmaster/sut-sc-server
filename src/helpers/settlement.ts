@@ -26,6 +26,7 @@ import { initProcedureAnalist, processProcedureAnalist } from './procedures';
 import { generateReceipt } from './receipt';
 import { getCleaningTariffForEstate, getGasTariffForEstate } from './services';
 import { uniqBy, chunk } from 'lodash';
+import { isCondominium, isCondoOwner } from './condominium';
 const written = require('written-number');
 
 const gticPool = GticPool.getInstance();
@@ -265,6 +266,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const lastSettlementQuery = !!reference && branch ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
     const lastSettlementPayload = !!reference && branch ? branch?.id_registro_municipal : contributor.id_contribuyente;
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
+    const isPartOfCondominium = (await isCondominium(type, document, client)) || (await isCondoOwner(type, document, client));
     const fiscalCredit =
       (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.tipo_contribuyente === 'JURIDICO' ? branch?.id_registro_municipal : contributor.id_contribuyente, contributor.tipo_contribuyente])).rows[0]?.credito || 0;
     const retentionCredit = (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, branch?.referencia_municipal])).rows[0]?.credito || 0;
@@ -339,7 +341,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     }
     //SM
     const estates = (await client.query(branch ? queries.GET_ESTATES_FOR_JURIDICAL_CONTRIBUTOR : queries.GET_ESTATES_FOR_NATURAL_CONTRIBUTOR, [branch ? branch.id_registro_municipal : contributor.id_contribuyente])).rows;
-    if (!SMApplicationExists) {
+    if (!SMApplicationExists || !isPartOfCondominium) {
       let lastSM = (await client.query(lastSettlementQuery, [codigosRamo.SM, lastSettlementPayload])).rows[0];
       const lastSMPayment = (lastSM && moment(lastSM.fecha_liquidacion).add(1, 'M')) || moment().month(0);
       const pastMonthSM = (lastSM && moment(lastSM.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
@@ -394,7 +396,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
 
     //IU
     if (estates.length > 0) {
-      if (!IUApplicationExists) {
+      if (!IUApplicationExists && !isPartOfCondominium) {
         IU = [];
         // let lastIU = (await client.query(lastSettlementQuery, [codigosRamo.IU, lastSettlementPayload])).rows[0];
         // const lastIUPayment = (lastIU && moment(lastIU.fecha_liquidacion).add(1, 'M')) || moment().month(0);
