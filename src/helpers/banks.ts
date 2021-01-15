@@ -371,17 +371,36 @@ const validationHandler = async ({ concept, body, user, client }) => {
   return executedMethod ? await executedMethod(body, user, client) : { status: 400, message: 'No existe un caso de validacion definido con este concepto' };
 };
 
-export const listTaxPayments = async () => {
+export const listProcedurePayments = async (type_doc, doc) => {
   const client = await pool.connect();
   try {
-    let data = await client.query(`
-    SELECT s.*, p.*, b.id_banco, c.documento, c.tipo_documento AS "tipoDocumento" 
-    FROM impuesto.solicitud_state s 
-    INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente 
-    INNER JOIN pago p ON p.id_procedimiento = s.id 
-    INNER JOIN banco b ON b.id_banco = p.id_banco
-    WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' AND p.concepto IN ('IMPUESTO', 'RETENCION') ORDER BY id_procedimiento, id_pago;`);
-    let convData = await client.query(`
+    let data = await client.query(
+      `
+      SELECT s.*, p.*, b.id_banco, c.documento, c.tipo_documento AS "tipoDocumento" 
+      FROM (
+        SELECT s.id_solicitud AS id,
+      s.id_tipo_tramite AS tipotramite,
+      s.aprobado,
+      s.fecha,
+      s.fecha_aprobado AS "fechaAprobacion",
+      ev.state,
+      s.tipo_solicitud AS "tipoSolicitud",
+      s.id_contribuyente
+     FROM impuesto.solicitud s
+       JOIN ( SELECT es.id_solicitud,
+              impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+             FROM impuesto.evento_solicitud es
+             INNER JOIN (SELECT id_solicitud FROM impuesto.solicitud WHERE aprobado = false) s ON s.id_solicitud = es.id_solicitud
+            GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+      ) s 
+      INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente 
+      INNER JOIN pago p ON p.id_procedimiento = s.id 
+      INNER JOIN banco b ON b.id_banco = p.id_banco
+      WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' AND p.concepto IN ('IMPUESTO', 'RETENCION') AND c.tipo_documento = $1 AND c.documento = $2 ORDER BY id_procedimiento, id_pago;`,
+      [type_doc, doc]
+    );
+    let convData = await client.query(
+      `
     SELECT s.id, s.fecha, fs.state, c.documento, c.tipo_documento AS "tipoDocumento", s."tipoSolicitud", fs.idconvenio, p.id_pago, p.referencia, p.monto, p.fecha_de_pago, b.id_banco, p.aprobado
     FROM impuesto.solicitud_state s
     INNER JOIN impuesto.convenio conv ON conv.id_solicitud = s.id
@@ -389,24 +408,44 @@ export const listTaxPayments = async () => {
     INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente
     INNER JOIN pago p ON p.id_procedimiento = fs.id
     INNER JOIN banco b ON b.id_banco = p.id_banco
-    WHERE s."tipoSolicitud" = 'CONVENIO' AND fs.state = 'validando' AND p.concepto = 'CONVENIO' ORDER BY id_procedimiento, id_pago;
-    `);
-    let tramData = await client.query(`
+    WHERE s."tipoSolicitud" = 'CONVENIO' AND fs.state = 'validando' AND p.concepto = 'CONVENIO' AND c.tipo_documento = $1 AND c.documento = $2 ORDER BY id_procedimiento, id_pago;
+    `,
+      [type_doc, doc]
+    );
+    let tramData = await client.query(
+      `
     SELECT s.*, p.*, b.id_banco, u.nacionalidad AS "tipoDocumento", u.cedula AS "documento", 'TRAMITE' as "tipoSolicitud", s.costo as montotram
     FROM tramites_state s 
     INNER JOIN usuario u ON u.id_usuario = s.usuario
     INNER JOIN pago p ON p.id_procedimiento = s.id 
     INNER JOIN banco b ON b.id_banco = p.id_banco
-    WHERE s.state = 'validando' AND p.concepto = 'TRAMITE' ORDER BY id_procedimiento, id_pago;`);
+    WHERE s.state = 'validando' AND p.concepto = 'TRAMITE' AND c.tipo_documento = $1 AND c.documento = $2 ORDER BY id_procedimiento, id_pago;`,
+      [type_doc, doc]
+    );
     data.rows = data.rows.concat(convData.rows);
     data.rows = data.rows.concat(tramData.rows);
     let montosSolicitud = (
       await client.query(`
-    SELECT l.id_solicitud, SUM(monto) as monto
-    FROM impuesto.solicitud_state s 
-    INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
-    WHERE s.state = 'validando' OR s.state = 'ingresardatos'
-    GROUP BY l.id_solicitud;`)
+      SELECT l.id_solicitud, SUM(monto) as monto
+      FROM (
+        SELECT s.id_solicitud AS id,
+      s.id_tipo_tramite AS tipotramite,
+      s.aprobado,
+      s.fecha,
+      s.fecha_aprobado AS "fechaAprobacion",
+      ev.state,
+      s.tipo_solicitud AS "tipoSolicitud",
+      s.id_contribuyente
+     FROM impuesto.solicitud s
+       JOIN ( SELECT es.id_solicitud,
+              impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+             FROM impuesto.evento_solicitud es
+             INNER JOIN (SELECT id_solicitud FROM impuesto.solicitud WHERE aprobado = false) s ON s.id_solicitud = es.id_solicitud
+            GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+      ) s  
+      INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
+      WHERE s.state = 'validando' OR s.state = 'ingresardatos'
+      GROUP BY l.id_solicitud`)
     ).rows;
     let montosConvenio = (
       await client.query(`
@@ -456,6 +495,133 @@ export const listTaxPayments = async () => {
           }, [])
         : [];
 
+    return { status: 200, data };
+  } catch (e) {
+    console.log(e);
+    throw e;
+  } finally {
+    client.release();
+  }
+};
+
+export const listTaxPayments = async () => {
+  const client = await pool.connect();
+  try {
+    console.log('A');
+    let data = await client.query(`
+    SELECT s.*, p.*, b.id_banco, c.documento, c.tipo_documento AS "tipoDocumento" 
+    FROM (
+      SELECT s.id_solicitud AS id,
+    s.id_tipo_tramite AS tipotramite,
+    s.aprobado,
+    s.fecha,
+    s.fecha_aprobado AS "fechaAprobacion",
+    ev.state,
+    s.tipo_solicitud AS "tipoSolicitud",
+    s.id_contribuyente
+   FROM impuesto.solicitud s
+     JOIN ( SELECT es.id_solicitud,
+            impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+           FROM impuesto.evento_solicitud es
+           INNER JOIN (SELECT id_solicitud FROM impuesto.solicitud WHERE aprobado = false) s ON s.id_solicitud = es.id_solicitud
+          GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+    ) s 
+    INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente 
+    INNER JOIN pago p ON p.id_procedimiento = s.id 
+    INNER JOIN banco b ON b.id_banco = p.id_banco
+    WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' AND p.concepto IN ('IMPUESTO', 'RETENCION') ORDER BY id_procedimiento, id_pago;`);
+    console.log('B');
+    let convData = await client.query(`
+    SELECT s.id, s.fecha, fs.state, c.documento, c.tipo_documento AS "tipoDocumento", s."tipoSolicitud", fs.idconvenio, p.id_pago, p.referencia, p.monto, p.fecha_de_pago, b.id_banco, p.aprobado
+    FROM impuesto.solicitud_state s
+    INNER JOIN impuesto.convenio conv ON conv.id_solicitud = s.id
+    INNER JOIN impuesto.fraccion_state fs ON fs.idconvenio = conv.id_convenio
+    INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente
+    INNER JOIN pago p ON p.id_procedimiento = fs.id
+    INNER JOIN banco b ON b.id_banco = p.id_banco
+    WHERE s."tipoSolicitud" = 'CONVENIO' AND fs.state = 'validando' AND p.concepto = 'CONVENIO' ORDER BY id_procedimiento, id_pago;
+    `);
+    /*let tramData = await client.query(`
+    SELECT s.*, p.*, b.id_banco, u.nacionalidad AS "tipoDocumento", u.cedula AS "documento", 'TRAMITE' as "tipoSolicitud", s.costo as montotram
+    FROM tramites_state s 
+    INNER JOIN usuario u ON u.id_usuario = s.usuario
+    INNER JOIN pago p ON p.id_procedimiento = s.id 
+    INNER JOIN banco b ON b.id_banco = p.id_banco
+    WHERE s.state = 'validando' AND p.concepto = 'TRAMITE' ORDER BY id_procedimiento, id_pago;`); */
+    data.rows = data.rows.concat(convData.rows);
+    /*data.rows = data.rows.concat(tramData.rows); */
+    let montosSolicitud = (
+      await client.query(`
+    SELECT l.id_solicitud, SUM(monto) as monto
+    FROM (
+      SELECT s.id_solicitud AS id,
+    s.id_tipo_tramite AS tipotramite,
+    s.aprobado,
+    s.fecha,
+    s.fecha_aprobado AS "fechaAprobacion",
+    ev.state,
+    s.tipo_solicitud AS "tipoSolicitud",
+    s.id_contribuyente
+   FROM impuesto.solicitud s
+     JOIN ( SELECT es.id_solicitud,
+            impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+           FROM impuesto.evento_solicitud es
+           INNER JOIN (SELECT id_solicitud FROM impuesto.solicitud WHERE aprobado = false) s ON s.id_solicitud = es.id_solicitud
+          GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+    ) s  
+    INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
+    WHERE s.state = 'validando' OR s.state = 'ingresardatos'
+    GROUP BY l.id_solicitud;`)
+    ).rows;
+    let montosConvenio = (
+      await client.query(`
+    SELECT c.id_convenio, SUM(monto) as monto
+    FROM impuesto.fraccion_state fs
+    INNER JOIN impuesto.convenio c ON c.id_convenio = fs.idconvenio
+    WHERE fs.state = 'validando' OR fs.state = 'ingresardatos'
+    GROUP BY c.id_convenio;`)
+    ).rows;
+    console.log('C');
+    data =
+      data.rowCount > 0
+        ? data.rows.reduce((prev, next) => {
+            let index = prev.findIndex((row) => row.id === next.id);
+            let montoSolicitud = montosSolicitud.find((montoRow) => next.id === montoRow.id_solicitud)?.monto;
+            let montoConvenio = montosConvenio.find((montoRow) => next.idconvenio === montoRow.id_convenio)?.monto;
+            if (index === -1) {
+              prev.push({
+                id: next.id,
+                fechaSolicitud: next.fecha || next.fechacreacion,
+                estado: next.state,
+                tipoDocumento: next.tipoDocumento,
+                documento: next.documento,
+                tipoSolicitud: next.tipoSolicitud,
+                monto: montoSolicitud || montoConvenio || next.montotram || 0,
+                pagos: [
+                  {
+                    id: next.id_pago,
+                    referencia: next.referencia,
+                    monto: next.monto,
+                    fechaDePago: next.fecha_de_pago,
+                    banco: next.id_banco,
+                    aprobado: next.aprobado,
+                  },
+                ],
+              });
+            } else {
+              prev[index].pagos.push({
+                id: next.id_pago,
+                referencia: next.referencia,
+                monto: next.monto,
+                fechaDePago: next.fecha_de_pago,
+                banco: next.id_banco,
+                aprobado: next.aprobado,
+              });
+            }
+            return prev;
+          }, [])
+        : [];
+    console.log('F');
     return { status: 200, data };
   } catch (e) {
     console.log(e);
