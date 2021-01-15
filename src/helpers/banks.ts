@@ -376,12 +376,27 @@ export const listProcedurePayments = async (type_doc, doc) => {
   try {
     let data = await client.query(
       `
-    SELECT s.*, p.*, b.id_banco, c.documento, c.tipo_documento AS "tipoDocumento" 
-    FROM impuesto.solicitud_state s 
-    INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente 
-    INNER JOIN pago p ON p.id_procedimiento = s.id 
-    INNER JOIN banco b ON b.id_banco = p.id_banco
-    WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' AND p.concepto IN ('IMPUESTO', 'RETENCION') AND c.tipo_documento = $1 AND c.documento = $2 ORDER BY id_procedimiento, id_pago;`,
+      SELECT s.*, p.*, b.id_banco, c.documento, c.tipo_documento AS "tipoDocumento" 
+      FROM (
+        SELECT s.id_solicitud AS id,
+      s.id_tipo_tramite AS tipotramite,
+      s.aprobado,
+      s.fecha,
+      s.fecha_aprobado AS "fechaAprobacion",
+      ev.state,
+      s.tipo_solicitud AS "tipoSolicitud",
+      s.id_contribuyente
+     FROM impuesto.solicitud s
+       JOIN ( SELECT es.id_solicitud,
+              impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+             FROM impuesto.evento_solicitud es
+             INNER JOIN (SELECT id_solicitud FROM impuesto.solicitud WHERE aprobado = false) s ON s.id_solicitud = es.id_solicitud
+            GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+      ) s 
+      INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente 
+      INNER JOIN pago p ON p.id_procedimiento = s.id 
+      INNER JOIN banco b ON b.id_banco = p.id_banco
+      WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' AND p.concepto IN ('IMPUESTO', 'RETENCION') AND c.tipo_documento = $1 AND c.documento = $2 ORDER BY id_procedimiento, id_pago;`,
       [type_doc, doc]
     );
     let convData = await client.query(
@@ -479,7 +494,22 @@ export const listTaxPayments = async () => {
   try {
     let data = await client.query(`
     SELECT s.*, p.*, b.id_banco, c.documento, c.tipo_documento AS "tipoDocumento" 
-    FROM impuesto.solicitud_state s 
+    FROM (
+      SELECT s.id_solicitud AS id,
+    s.id_tipo_tramite AS tipotramite,
+    s.aprobado,
+    s.fecha,
+    s.fecha_aprobado AS "fechaAprobacion",
+    ev.state,
+    s.tipo_solicitud AS "tipoSolicitud",
+    s.id_contribuyente
+   FROM impuesto.solicitud s
+     JOIN ( SELECT es.id_solicitud,
+            impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+           FROM impuesto.evento_solicitud es
+           INNER JOIN (SELECT id_solicitud FROM impuesto.solicitud WHERE aprobado = false) s ON s.id_solicitud = es.id_solicitud
+          GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+    ) s 
     INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente 
     INNER JOIN pago p ON p.id_procedimiento = s.id 
     INNER JOIN banco b ON b.id_banco = p.id_banco
