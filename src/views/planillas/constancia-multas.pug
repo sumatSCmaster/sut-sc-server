@@ -8,6 +8,9 @@ block content
     p
       b Código de Multa:
       span &nbsp; #{codigo}
+      br
+      b Funcionario:
+      span &nbsp; #{datos.funcionario.nombreCompletoFuncionario}
   div#planilla
     div
       h2 CONSTANCIA DE PAGO DE MULTA
@@ -40,7 +43,7 @@ block content
       div.row-constancy
         div(style={'text-align':'start' }) #{datos.funcionario.motivo}
         div(style={'text-align':'center' }) #{moment(fecha).format('DD/MM/YYYY')}
-        div(style={'text-align':'center' }) #{datos.funcionario.petro}
+        div(style={'text-align':'center' }) #{datos.funcionario.utmm}
         div(style={'text-align':'center' }) #{costoFormateado}    
   div(style={'text-align':'start', 'width': '90%'})
     p

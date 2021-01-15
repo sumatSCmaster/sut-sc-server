@@ -114,7 +114,7 @@ export const insertRetentions = async ({ process, user }) => {
   const { retenciones } = process;
   //Esto hay que sacarlo de db
   const finingAmount = 10;
-  const FINING_THRESHOLD_DATE = 10;
+  const FINING_THRESHOLD_DATE = 15;
   let finingMonths: any;
   try {
     client.query('BEGIN');
