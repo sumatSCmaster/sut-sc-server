@@ -426,11 +426,26 @@ export const listProcedurePayments = async (type_doc, doc) => {
     data.rows = data.rows.concat(tramData.rows);
     let montosSolicitud = (
       await client.query(`
-    SELECT l.id_solicitud, SUM(monto) as monto
-    FROM impuesto.solicitud_state s 
-    INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
-    WHERE s.state = 'validando' OR s.state = 'ingresardatos'
-    GROUP BY l.id_solicitud;`)
+      SELECT l.id_solicitud, SUM(monto) as monto
+      FROM (
+        SELECT s.id_solicitud AS id,
+      s.id_tipo_tramite AS tipotramite,
+      s.aprobado,
+      s.fecha,
+      s.fecha_aprobado AS "fechaAprobacion",
+      ev.state,
+      s.tipo_solicitud AS "tipoSolicitud",
+      s.id_contribuyente
+     FROM impuesto.solicitud s
+       JOIN ( SELECT es.id_solicitud,
+              impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+             FROM impuesto.evento_solicitud es
+             INNER JOIN (SELECT id_solicitud FROM impuesto.solicitud WHERE aprobado = false) s ON s.id_solicitud = es.id_solicitud
+            GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+      ) s  
+      INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
+      WHERE s.state = 'validando' OR s.state = 'ingresardatos'
+      GROUP BY l.id_solicitud`)
     ).rows;
     let montosConvenio = (
       await client.query(`
@@ -538,7 +553,22 @@ export const listTaxPayments = async () => {
     let montosSolicitud = (
       await client.query(`
     SELECT l.id_solicitud, SUM(monto) as monto
-    FROM impuesto.solicitud_state s 
+    FROM (
+      SELECT s.id_solicitud AS id,
+    s.id_tipo_tramite AS tipotramite,
+    s.aprobado,
+    s.fecha,
+    s.fecha_aprobado AS "fechaAprobacion",
+    ev.state,
+    s.tipo_solicitud AS "tipoSolicitud",
+    s.id_contribuyente
+   FROM impuesto.solicitud s
+     JOIN ( SELECT es.id_solicitud,
+            impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+           FROM impuesto.evento_solicitud es
+           INNER JOIN (SELECT id_solicitud FROM impuesto.solicitud WHERE aprobado = false) s ON s.id_solicitud = es.id_solicitud
+          GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+    ) s  
     INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
     WHERE s.state = 'validando' OR s.state = 'ingresardatos'
     GROUP BY l.id_solicitud;`)
