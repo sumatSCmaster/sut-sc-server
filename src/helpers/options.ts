@@ -4,6 +4,7 @@ import queries from '@utils/queries';
 import switchcase from '@utils/switch';
 import { PoolClient } from 'pg';
 import { errorMessageExtractor, errorMessageGenerator } from './errors';
+import { mainLogger } from '@utils/logger';
 
 const pool = Pool.getInstance();
 
@@ -25,7 +26,7 @@ export const getMenu = async (user): Promise<Institucion[]> => {
     const options: Institucion[] = await getProcedureByInstitution(institution, client);
     return options;
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),

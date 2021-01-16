@@ -2,6 +2,7 @@ import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { renderFile } from 'pug';
 import { errorMessageExtractor } from './errors';
+import { mainLogger } from '@utils/logger';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -17,7 +18,7 @@ export const updateContributor = async ({ id, tipoDocumento, documento, razonSoc
     return { status: 200, message: 'Contribuyente actualizado' };
   } catch (e) {
     await client.query('ROLLBACK');
-    console.log(e);
+    mainLogger.error(e);
     throw e;
   } finally {
     client.release();
@@ -34,7 +35,7 @@ export const updateRIM = async ({ id, telefono, email, denomComercial, nombreRep
     return { status: 200, message: 'RIM actualizado' };
   } catch (e) {
     await client.query('ROLLBACK');
-    console.log(e);
+    mainLogger.error(e);
     throw e;
   } finally {
     client.release();

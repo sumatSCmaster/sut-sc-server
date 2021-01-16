@@ -6,6 +6,7 @@ import { Usuario, Liquidacion } from '@root/interfaces/sigt';
 import { uniqBy } from 'lodash';
 import { fixatedAmount, getApplicationsAndSettlementsById } from './settlement';
 import { PoolClient } from 'pg';
+import { mainLogger } from '@utils/logger';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -18,7 +19,7 @@ export const getInspectionSynchro = async (date) => {
     return { status: 200, message: 'Contribuyentes sincronizados satisfactoriamente', contribuyentes };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -84,7 +85,7 @@ const getLastSettlementsForInspection = async (type, payload, client: PoolClient
     });
     return liquidaciones;
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw error;
   }
 };

@@ -7,7 +7,6 @@ export const updatePetroValue = async (value) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    console.log(value);
     const result = (await client.query(queries.UPDATE_PETRO_VALUE, [value])).rows[0];
     await client.query('COMMIT');
     return {

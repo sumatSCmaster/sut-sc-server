@@ -4,6 +4,7 @@ import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { PoolClient } from 'pg';
 import { Tramite, Inmueble } from '@root/interfaces/sigt';
 import moment from 'moment';
+import { mainLogger } from '@utils/logger';
 
 const pool = Pool.getInstance();
 
@@ -25,7 +26,7 @@ export const getEstatesInfo = async () => {
 export const getEstateInfoByCod = async (cod: string) => {
   const client = await pool.connect();
   try {
-    console.log('GetEstateInfoByCod');
+    mainLogger.info('GetEstateInfoByCod');
     const estate = (await client.query(queries.GET_ONE_PROPERTY_BY_COD, [cod])).rows;
     const res = await addOwners(estate, client);
     return { data: res[0] };
@@ -98,7 +99,7 @@ export const createPersonalEstate = async (procedure) => {
 export const taxPayerEstatesByRIM = async ({ typeDoc, rif, rim }) => {
   const client = await pool.connect();
   try {
-    console.log('taxPayerEStateBYRIM');
+    mainLogger.info('taxPayerEStateBYRIM');
     const rimData = await client.query(queries.GET_RIM_DATA, [rim]);
     if (rimData.rowCount === 0) {
       throw new Error('RIM no encontrado');
@@ -199,7 +200,7 @@ export const userEstates = async ({ typeDoc, doc }) => {
 export const getEstateByCod = async ({ codCat }) => {
   const client = await pool.connect();
   try {
-    console.log('getEstateByCod');
+    mainLogger.info('getEstateByCod');
     const estate = await client.query(queries.GET_ESTATE_BY_CODCAT, [codCat]);
 
     if (estate.rowCount === 0) {
@@ -250,7 +251,7 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
   try {
     await client.query('BEGIN');
     const estate = (await client.query(queries.CREATE_BARE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, dirDoc])).rows[0];
-    console.log(estate);
+    mainLogger.info(estate);
     const appraisals = await Promise.all(
       avaluos.map((row) => {
         return client.query(queries.INSERT_ESTATE_VALUE, [estate.id, row.avaluo, row.anio]);
@@ -260,7 +261,7 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
 
     return {status: 200, inmueble: {...estate,  avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.id])).rows}};
   } catch (e) {
-    console.log(e)
+    mainLogger.error(e)
     await client.query('ROLLBACK');
     throw e;
   } finally {
@@ -308,7 +309,7 @@ export const updateEstateDate = async ({ id, date, rim, taxpayer }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    console.log('updateEstateDate', id, date, rim, taxpayer)
+    mainLogger.info('updateEstateDate', id, date, rim, taxpayer)
     const fromDate = moment(date).subtract(1, 'M');
     const fromEndDate = fromDate.clone().endOf('month').format('MM-DD-YYYY');
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [null, taxpayer])).rows[0];

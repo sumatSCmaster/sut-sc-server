@@ -34,14 +34,15 @@ import {
 } from '@helpers/settlement';
 import { Usuario } from '@root/interfaces/sigt';
 import { generateReceipt, generateReceiptAgreement } from '@helpers/receipt';
+import { mainLogger } from '@utils/logger';
 
 const router = Router();
 
 router.get('/', authenticate('jwt'), checkContributorExists(), async (req, res) => {
   const { doc, ref, pref } = req.query;
-  console.log(doc, ref);
+  mainLogger.info(doc, ref);
   const [err, data] = await fulfill(getSettlements({ document: doc, reference: ref ? ref : null, type: pref, user: req.user as Usuario }));
-  console.log(err);
+  mainLogger.error(err);
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
 });
@@ -127,7 +128,7 @@ router.get('/debts/:tipoContribuyente', authenticate('jwt'), async (req, res) =>
 router.post('/report', authenticate('jwt'), async (req, res) => {
   const { from, to, ramo } = req.body;
   const [error, data] = await fulfill(getSettlementsReport(req.user, { from, to, ramo }));
-  console.log(error, data);
+  mainLogger.info(error, data);
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
 });
@@ -135,7 +136,7 @@ router.post('/report', authenticate('jwt'), async (req, res) => {
 router.post('/report/iva', authenticate('jwt'), async (req, res) => {
   const { from, to } = req.body;
   const [error, data] = await fulfill(getIvaReport(req.user, { from, to }));
-  console.log(error, data);
+  mainLogger.info(error, data);
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
 });
@@ -194,7 +195,7 @@ router.post(
 router.post('/linking', authenticate('jwt'), async (req, res) => {
   const { datosEnlace } = req.body;
   const [error, data] = await fulfill(internalUserLinking(datosEnlace));
-  console.log(error);
+  mainLogger.info(error);
   if (error) res.status(error.status).json(error);
   if (data) res.status(data.status).json(data);
 });
@@ -213,7 +214,7 @@ router.post('/license', authenticate('jwt'), async (req: any, res) => {
 });
 
 router.post('/internal', authenticate('jwt'), async (req, res) => {
-  console.log('??????????????????????????');
+  mainLogger.info('??????????????????????????');
   const [error, data] = await fulfill(internalContributorSignUp(req.body));
   if (error) res.status(error.status).json(error);
   if (data) res.status(data.status).json(data);

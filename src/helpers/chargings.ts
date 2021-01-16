@@ -7,6 +7,7 @@ import ExcelJs from 'exceljs';
 import S3Client from '@utils/s3';
 import { getUsers, getIo } from '@config/socket';
 import { groupBy, take, slice } from 'lodash';
+import { mainLogger } from '@utils/logger';
 
 const users = getUsers();
 
@@ -85,7 +86,7 @@ export const createChargings = async (WALLET_AMOUNT, AMOUNT_PER_WALLET) => {
     await client.query('COMMIT');
     return { message: 'Carteras y cobranzas creadas', status: 200 };
   } catch (err) {
-    console.log(err);
+    mainLogger.info(err);
     throw err;
   } finally {
     client.release();
@@ -246,7 +247,7 @@ export const getChargingsByWalletExcel = async (id) => {
     const sheet = workbook.addWorksheet();
     const result = await getChargingsByWalletExcelId(id);
 
-    //   console.log(result);
+    //   mainLogger.info(result);
 
     sheet.columns = result.fields.map((row) => {
       return { header: row.name, key: row.name, width: 32 };

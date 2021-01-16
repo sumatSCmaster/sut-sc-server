@@ -7,7 +7,7 @@ import cors from 'cors';
 import router from './routes';
 import { resolve } from 'path';
 import { JwtStrategy, LocalStrategy, GoogleStrategy, FacebookStrategy } from './utils/Strategies';
-import MemoryStore from 'memorystore'
+import MemoryStore from 'memorystore';
 import Pool from '@utils/Pool';
 
 require('dotenv').config();
@@ -17,15 +17,15 @@ app.use(compression());
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-const memStore = MemoryStore(session)
+const memStore = MemoryStore(session);
 app.use(
   session({
     resave: true,
     saveUninitialized: true,
     secret: process.env.SESSION_SECRET || 'keyboard cat',
     store: new memStore({
-      checkPeriod: 86400000
-    })
+      checkPeriod: 86400000,
+    }),
   })
 );
 
@@ -70,12 +70,9 @@ app.use(
 app.use('/', router);
 
 app.use(function (err, req, res, next) {
-  res.type('application/json')
-  res.status(400)
-  console.log('coro', req.headers)
-  console.log('a', res.headersSent)
-  console.log('e', res.getHeaders())
-  res.send(JSON.stringify({error: err}))
-})
+  res.type('application/json');
+  res.status(400);
+  res.send(JSON.stringify({ error: err }));
+});
 
 export default app;

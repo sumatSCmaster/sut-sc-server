@@ -7,6 +7,7 @@ import { genSalt, hash } from 'bcryptjs';
 import transporter from '@utils/mail';
 import { addInstitute, addPermissions, hasLinkedContributor } from './user';
 import { Usuario } from '@root/interfaces/sigt';
+import { mainLogger } from '@utils/logger';
 const pool = Pool.getInstance();
 
 export const forgotPassword = async (email) => {
@@ -15,19 +16,21 @@ export const forgotPassword = async (email) => {
     const emailExists = (await client.query(queries.EMAIL_EXISTS, [email])).rowCount > 0;
     if (emailExists) {
       const recuperacion = (await client.query(queries.ADD_PASSWORD_RECOVERY, [email, uuidv4()])).rows[0];
-      console.log(await transporter.sendMail({
-        from: process.env.MAIL_ADDRESS || 'info@sutmaracaibo.com',
-        to: email,
-        subject: 'Recuperación de contraseña',
-        text: `Enlace de recuperacion: ${process.env.CLIENT_URL}/olvidoContraseña?recvId=${recuperacion.token_recuperacion}`,
-        html: generateHtmlMail(`${process.env.CLIENT_URL}/olvidoContraseña?recvId=${recuperacion.token_recuperacion}`, email),
-      }));
+      mainLogger.info(
+        await transporter.sendMail({
+          from: process.env.MAIL_ADDRESS || 'info@sutmaracaibo.com',
+          to: email,
+          subject: 'Recuperación de contraseña',
+          text: `Enlace de recuperacion: ${process.env.CLIENT_URL}/olvidoContraseña?recvId=${recuperacion.token_recuperacion}`,
+          html: generateHtmlMail(`${process.env.CLIENT_URL}/olvidoContraseña?recvId=${recuperacion.token_recuperacion}`, email),
+        })
+      );
       return { status: 200, message: 'Revise su bandeja de correo' };
     } else {
       return { status: 404, message: 'Información inválida' };
     }
   } catch (e) {
-    console.log(e)
+    mainLogger.error(e);
     throw {
       status: 500,
       error: errorMessageExtractor(e),
@@ -91,7 +94,7 @@ export async function getUserData(id, tipoUsuario) {
     }
     return user;
   } catch (e) {
-    console.log(e)
+    mainLogger.error(e);
     throw {
       error: e,
       status: 500,
@@ -101,19 +104,7 @@ export async function getUserData(id, tipoUsuario) {
   }
 }
 
-async function ola() {
-  console.log(await transporter.verify());
-  await transporter.sendMail({
-    from: 'waku@wakusoftware.com',
-    to: 'marcia22@ethereal.mail',
-    subject: 'contrasena',
-    text: 'hola',
-    html: '<h1>OLA</h1>',
-  });
-}
-
-
-const generateHtmlMail = (link, username) =>  (`<center>
+const generateHtmlMail = (link, username) => `<center>
   <style>
     .btn {
       color: #fff;
@@ -215,4 +206,4 @@ const generateHtmlMail = (link, username) =>  (`<center>
     &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
   </div>
 </center>
-`)
+`;

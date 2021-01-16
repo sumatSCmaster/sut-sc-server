@@ -3,6 +3,7 @@ import { decode } from 'jwt-simple';
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { errorMessageExtractor } from '@helpers/errors';
+import { mainLogger } from '@utils/logger';
 
 const pool = Pool.getInstance();
 
@@ -24,18 +25,17 @@ const connection = async (socket: Socket) => {
       insts.map((el) => socket.join(`inst:${el.nombre_corto}`));
     }
     if ([33, 26].includes(user.institucion?.cargo?.id)) {
-      console.log('join tabla cobranza')
       socket.join('tabla-cobranza');
     }
 
-    if([39, 24].includes(user.institucion?.cargo?.id)){
-      socket.join('tabla-fiscalizacion')
+    if ([39, 24].includes(user.institucion?.cargo?.id)) {
+      socket.join('tabla-fiscalizacion');
     }
 
     users.set(`${user.nacionalidad}-${user.cedula}`, socket);
-    
+
     socket.join(`${user.nacionalidad}-${user.cedula}`);
-    console.log(`User connected: ${user.nacionalidad}-${user.cedula}`);
+    mainLogger.info(`User connected: ${user.nacionalidad}-${user.cedula}`);
     socket.on('disconnect', () => {
       users.delete(`${user.nacionalidad}-${user.cedula}`);
       socket.leaveAll();

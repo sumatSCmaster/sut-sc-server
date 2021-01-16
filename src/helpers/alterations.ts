@@ -6,6 +6,7 @@ import moment, { Moment } from 'moment';
 import switchcase from '@utils/switch';
 import { formatContributor, fixatedAmount, isExonerated } from './settlement';
 import { Usuario } from '@root/interfaces/sigt';
+import { mainLogger } from '@utils/logger';
 
 const pool = Pool.getInstance();
 
@@ -56,7 +57,7 @@ export const getAEDeclarationsForAlteration = async ({ document, reference, docT
     if (!liquidaciones.length) throw { status: 404, message: 'No posee liquidaciones de Actividad Economica' };
     return { status: 200, message: 'Liquidaciones para declaracion correctiva/sustitutiva obtenida', liquidaciones };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
@@ -118,7 +119,7 @@ export const alterateAESettlements = async ({ settlements, type }) => {
     return { status: 201, message: `Declaracion ${type} de Actividades Economicas realizada satisfactoriamente`, liqs };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),

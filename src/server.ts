@@ -1,12 +1,9 @@
+import './tracer';
 import app from './index';
-import { Socket, Server } from 'socket.io';
+import { Server } from 'socket.io';
 import { init } from './config/socket';
-import Pool from '@utils/Pool';
-import { sendRimVerification, verifyCode, resendCode } from '@helpers/verification';
-import { VerificationValue } from './interfaces/sigt';
-import { executeReport } from '@helpers/reportHelper';
 import { createServer } from 'http';
-import { createChargings } from '@helpers/chargings';
+import { mainLogger } from '@utils/logger';
 
 const trueServer = createServer(app);
 
@@ -21,7 +18,7 @@ const trueServer = createServer(app);
 // }).then(message => console.log(message));
 
 const socket: Server = require('socket.io')(trueServer);
-trueServer.listen(process.env.PORT || 5000, () => console.log(`Listening on port ${process.env.PORT || 5000}`));
+trueServer.listen(process.env.PORT || 5000, () => mainLogger.info(`Listening on port ${process.env.PORT || 5000}`));
 init(socket);
 
 /* async function xd() {

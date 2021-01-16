@@ -11,6 +11,7 @@ import { createRequestForm, createCertificate } from '@utils/forms';
 import { approveContributorBenefits, approveContributorSignUp, approveContributorAELicense, createSettlementForProcedure } from './settlement';
 import { installLiquorLicense, renewLiquorLicense } from './liquors';
 import { createVehicleStructureForProcedure } from './vehicles';
+import { mainLogger } from '@utils/logger';
 
 const pool = Pool.getInstance();
 
@@ -36,7 +37,7 @@ export const getAvailableProcedures = async (user): Promise<{ instanciasDeTramit
     const instanciasDeSoporte = await getProcedureInstances(user, client, true);
     return { instanciasDeTramite, instanciasDeMulta, instanciasDeImpuestos, instanciasDeSoporte };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -134,7 +135,7 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
     }
     return esDaniel(user) ? res.filter((row) => ![27, 39, 40].includes(row.tipoTramite)) : res;
   } catch (error) {
-    console.log(errorMessageExtractor(error));
+    mainLogger.error(errorMessageExtractor(error));
     throw new Error('Error al obtener instancias de tramite');
   }
 };
@@ -166,7 +167,7 @@ const getFineInstances = async (user, client: PoolClient) => {
       return multa;
     });
   } catch (error) {
-    console.log(errorMessageExtractor(error));
+    mainLogger.error(errorMessageExtractor(error));
     throw new Error('Error al obtener instancias de multa');
   }
 };
@@ -198,7 +199,7 @@ const getSettlementInstances = async (user, client: PoolClient) => {
       return liquidacion;
     });
   } catch (error) {
-    console.log(errorMessageExtractor(error));
+    mainLogger.error(errorMessageExtractor(error));
     throw new Error('Error al obtener instancias de liquidacion');
   }
 };
@@ -387,7 +388,7 @@ export const getFieldsForValidations = async ({ id, type }) => {
     // }
     return { fields: response, takings };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 400,
       error: errorMessageExtractor(error),
@@ -437,7 +438,7 @@ export const getProcedureCosts = async () => {
     const tramites = await client.query('SELECT id_tipo_tramite AS id, costo_base AS costo FROM tipo_tramite WHERE id_institucion = 9');
     return { status: 200, message: 'Costos de tramites obtenidos', tramites };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -470,7 +471,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.idTramite])).rows[0];
     response.sufijo = resources.sufijo;
     costo = isNotPrepaidProcedure({ suffix: resources.sufijo, user }) ? null : pago.costo || resources.costo_base;
-    console.log('🚀 ~ file: procedures.ts ~ line 473 ~ procedureInit ~ costo', costo);
+    mainLogger.info('🚀 ~ file: procedures.ts ~ line 473 ~ procedureInit ~ costo', costo);
     const nextEvent = await getNextEventForProcedure(response, client);
 
     if (pago && resources.sufijo !== 'tl' && nextEvent.startsWith('validar')) {
@@ -537,7 +538,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
     };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
@@ -551,7 +552,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
 export const validateProcedure = async (procedure, user: Usuario, client) => {
   let dir, respState;
   try {
-    console.log('si');
+    mainLogger.info('si');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.idTramite])).rows[0];
 
     if (!procedure.hasOwnProperty('aprobado')) {
@@ -654,7 +655,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
 
       if (procedure.sufijo === 'rc' && aprobado) {
         if (resources.tipoTramite === 27) await approveContributorSignUp({ procedure: (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0], client });
-        else if (resources.tipoTramite === 38) console.log('si');
+        else if (resources.tipoTramite === 38) mainLogger.info('si');
       }
     } else if (resources.tipoTramite === 37) {
       const { aprobado, estado } = procedure;
@@ -671,8 +672,8 @@ export const processProcedure = async (procedure, user: Usuario) => {
         fecha: row.fecha_de_pago,
         nro: row.referencia,
       }));
-      console.log(datos);
-      console.log('creo y me parec q se rompio aki');
+      mainLogger.info(datos);
+      mainLogger.info('creo y me parec q se rompio aki');
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
     } else {
       if (nextEvent.startsWith('finalizar')) {
@@ -717,7 +718,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
     return { status: 200, message: 'Tramite procesado', tramite };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -901,7 +902,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
     });
     return { status: 200, message: 'Trámite revisado', tramite };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     client.query('ROLLBACK');
     throw {
       status: error.status || 500,
@@ -987,7 +988,7 @@ export const inspectProcedure = async (procedure, user: Usuario) => {
     });
     return { status: 200, message: 'Inspección del trámite cargada', tramite };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     client.query('ROLLBACK');
     throw {
       status: error.status || 500,
@@ -1109,7 +1110,7 @@ const reviseProcedureForMassiveApproval = async (procedure: Partial<Tramite | an
     // });
     return tramite;
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw error;
   }
 };
@@ -1129,7 +1130,7 @@ export const approveAllLicenses = async (idArray: number[], user: Usuario): Prom
               aprobado: true,
               observaciones: 'Aprobación masiva',
             };
-            console.log('Soy retrasao mental', procedure);
+            mainLogger.info('Soy retrasao mental', procedure);
             const tramite = await reviseProcedureForMassiveApproval(procedure, client);
             return tramite;
           } catch (e) {
@@ -1142,7 +1143,7 @@ export const approveAllLicenses = async (idArray: number[], user: Usuario): Prom
     return { status: 200, message: 'Licencias aprobadas satisfactoriamente', tramites };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
@@ -1272,7 +1273,7 @@ export const initProcedureAnalist = async (procedure, user: Usuario, client: Poo
       tramite,
     };
   } catch (e) {
-    console.log(e);
+    mainLogger.error(e);
     throw {
       status: 500,
       error: errorMessageExtractor(e),
@@ -1333,8 +1334,8 @@ export const processProcedureAnalist = async (procedure, user: Usuario, client: 
         fecha: row.fecha_de_pago,
         nro: row.referencia,
       }));
-      console.log(datos);
-      console.log('creo y me parec q se rompio aki');
+      mainLogger.info(datos);
+      mainLogger.info('creo y me parec q se rompio aki');
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
     } else {
       if (nextEvent.startsWith('finalizar')) {
@@ -1378,7 +1379,7 @@ export const processProcedureAnalist = async (procedure, user: Usuario, client: 
     return { status: 200, message: 'Tramite procesado', tramite };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -1491,7 +1492,7 @@ const procedureInstanceHandler = (user, client, support) => {
   } else {
     if (belongsToAnInstitution(user)) {
       if (support) {
-        console.log(user);
+        mainLogger.info(user);
         query = 7;
         payload = user.institucion.id;
       } else if (handlesSocialCases(user)) {

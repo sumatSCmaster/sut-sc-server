@@ -5,6 +5,7 @@ import { PoolClient } from 'pg';
 import moment, { Moment } from 'moment';
 import switchcase from '@utils/switch';
 import { formatContributor, createSettlementForProcedure } from './settlement';
+import { mainLogger } from '@utils/logger';
 
 const pool = Pool.getInstance();
 
@@ -29,7 +30,7 @@ const template = async (props) => {
     return;
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -45,7 +46,7 @@ export const installLiquorLicense = async (data, client: PoolClient) => {
     const { usuario: user, costo } = (await client.query(queries.GET_PROCEDURE_DATA, [data.idTramite])).rows[0];
     const { referenciaMunicipal, fechaFin } = data.funcionario;
     const { tipoTramite } = data;
-    console.log(data);
+    mainLogger.info(data);
     const license = (
       await client.query(
         'INSERT INTO impuesto.licencia_licores (id_registro_municipal, tipo_licencia, categoria_licencia, fecha_inicio, fecha_fin) VALUES ((SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $1 LIMIT 1), $2, $3, $4, $5) RETURNING *',
@@ -63,7 +64,7 @@ export const installLiquorLicense = async (data, client: PoolClient) => {
     // await createSettlementForProcedure({ monto: +costo, referenciaMunicipal: data.id_registro_municipal, ramo: 'LIC' }, client);
     return data;
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -95,7 +96,7 @@ export const renewLiquorLicense = async (data, client: PoolClient) => {
     // await createSettlementForProcedure({ monto: +costo, referenciaMunicipal: data.id_registro_municipal, ramo: 'LIC' }, client);
     return data;
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),

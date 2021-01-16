@@ -7,6 +7,7 @@ import { sendNotification } from './notification';
 import { sendEmail } from './events/procedureUpdateState';
 import { insertPaymentReference } from './banks';
 import { createFiningCertificate } from '@utils/forms';
+import { mainLogger } from '@utils/logger';
 const pool = Pool.getInstance();
 
 export const finingInit = async (procedure, user: Usuario) => {
@@ -193,7 +194,7 @@ export const validateFining = async (procedure, user: Usuario, client) => {
     }
     return { status: 200, message: 'Pago de multa validado', multa };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error,

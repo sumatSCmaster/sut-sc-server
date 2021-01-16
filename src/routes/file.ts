@@ -8,6 +8,7 @@ import fs from 'fs';
 import Pool from '@utils/Pool';
 import { errorMessageGenerator, errorMessageExtractor } from '@helpers/errors';
 import queries from '@utils/queries';
+import { mainLogger } from '@utils/logger';
 
 const pool = Pool.getInstance();
 
@@ -17,10 +18,10 @@ const checkInm = async (id) => {
   const client = await pool.connect();
   try {
     if ((await client.query('SELECT 1 FROM inmueble_urbano WHERE cod_catastral = $1', [id])).rowCount > 0) {
-      console.log('supalo');
+      mainLogger.info('supalo');
       return new Error('Ya existe un inmueble con ese codigo');
     } else {
-      console.log('supalo2');
+      mainLogger.info('supalo2');
       return;
     }
   } finally {
@@ -68,7 +69,7 @@ const uploadFile = async (req, res, next) => {
           fileFilter: photoFilter,
         }).array('inmueble')(req, res, next);
       } catch (e) {
-        console.log('sera cors?', res.headersSent);
+        mainLogger.error('sera cors?', res.headersSent);
         next(e);
       }
       break;
@@ -90,7 +91,7 @@ const uploadFile = async (req, res, next) => {
 router.post('/:type/:id?', uploadFile, async (req: any, res) => {
   const { id, type } = req.params;
   const media = req.files.map((file) => typeMedia(`tramites/${id}`)(file)(process.env.NODE_ENV));
-  console.log('media', media);
+  mainLogger.info('media', media);
   const client = await pool.connect();
   try {
     if (media.length > 0 && type === 'takings') {
