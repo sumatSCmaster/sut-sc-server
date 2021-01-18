@@ -20,28 +20,24 @@ router.get('/charging', authenticate('jwt'), async (req, res) => {
 
 router.patch('/charging/:id', authenticate('jwt'), async (req, res) => {
   const [error, data] = await fulfill(updateOneCharging(req.user, { idCobranza: req.params['id'], ...req.body }));
-  mainLogger.info(error, data);
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
 });
 
 router.get('/', authenticate('jwt'), async (req, res) => {
   const [error, data] = await fulfill(getAllWallets());
-  mainLogger.info(error, data);
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
 });
 
 router.get('/:id', authenticate('jwt'), async (req, res) => {
   const [error, data] = await fulfill(getChargingsByWallet(req.params['id']));
-  mainLogger.info(error, data);
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
 });
 
 router.get('/report/:id', authenticate('jwt'), async (req, res) => {
   const [error, data] = await fulfill(getChargingsByWalletExcel(req.params['id']));
-  mainLogger.info(error, data);
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
 });

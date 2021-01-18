@@ -56,24 +56,17 @@ export const checkContributorExists = () => async (req: any, res, next) => {
   const { user } = req;
   const { doc, ref, pref, contrib } = req.query;
   try {
-    mainLogger.info('1');
     if (user.tipoUsuario === 4) return next();
-    mainLogger.info('2');
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [pref, doc])).rows[0];
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [ref, contributor?.id_contribuyente])).rows[0];
     if (!!ref && !branch) return res.status(404).send({ status: 404, message: 'No existe la sucursal solicitada' });
-    mainLogger.info('3');
     const branchIsUpdated = branch?.actualizado;
     if (!contributor || (!!contributor && !!ref && !branchIsUpdated)) {
-      mainLogger.info('4');
       const x = await externalLinkingForCashier({ document: doc, docType: pref, reference: ref, user, typeUser: contrib });
       return res.status(202).json({ status: 202, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: x });
     } else {
-      mainLogger.info('5');
-
       return next();
     }
-    mainLogger.info('6');
     return next();
   } catch (error) {
     mainLogger.error(error);
@@ -3946,7 +3939,6 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
 
 const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
-    mainLogger.info('culo');
     let certInfo;
     let motivo;
     let ramo;
@@ -4039,18 +4031,14 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             totalCred: `0.00 Bs`, // TODO: Credito fiscal
           },
         };
-        mainLogger.info(certInfo.declarations);
         certInfoArray.push({ ...certInfo });
       } else {
-        mainLogger.info(breakdownJoin[0].datos.desglose);
         let inmueblesContribuyente: any[] = await Promise.all(
           breakdownJoin[0].datos.desglose.map((row) => {
             return pool.query(queries.GET_SUT_ESTATE_BY_ID, [row.inmueble]);
           })
         );
         inmueblesContribuyente = inmueblesContribuyente.map((result) => result.rows[0]);
-        mainLogger.info('BREAKDOWN JOIN', breakdownJoin);
-        mainLogger.info(inmueblesContribuyente);
         for (let el of inmueblesContribuyente) {
           certInfo = {
             QR: linkQr,
@@ -4110,8 +4098,6 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               totalCred: `0.00 Bs`, // TODO: Credito fiscal
             },
           };
-          mainLogger.info('XDDD');
-          mainLogger.info(certInfo.datos.declarations);
           certInfoArray.push({ ...certInfo });
         }
       }
@@ -4364,7 +4350,6 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
 
 const createReceiptForIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
-    mainLogger.info('culo');
     let certInfo;
     let motivo;
     let ramo;
@@ -4626,7 +4611,6 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
 
     return new Promise(async (res, rej) => {
       try {
-        mainLogger.info('AAAAAAAA');
         let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-LE.pug`), certInfo));
         mainLogger.info(htmlArray.length);
         const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`);
@@ -4653,7 +4637,6 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
             });
           })
         );
-        mainLogger.info(buffersArray);
 
         if (dev) {
           mkdir(dirname(pdfDir), { recursive: true }, (e) => {
@@ -4684,7 +4667,6 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
                   .cat(`${Object.keys(reduced).join(' ')}`)
                   .output(pdfDir)
                   .then((buffer) => {
-                    mainLogger.info('a', buffer);
                     res(dir);
                   })
                   .catch((e) => {
@@ -4841,7 +4823,6 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
     let certInfoArray: any[] = [];
     let certAE;
     for (const el of breakdownData) {
-      mainLogger.info('el', el, el.datos);
       certAE = {
         fecha: moment().format('YYYY-MM-DD'),
         tramite: 'PAGO DE IMPUESTOS',
@@ -4862,7 +4843,6 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
           fechaLiq: moment().format('YYYY-MM-DD'),
           fechaVenc: moment().date(31).format('YYYY-MM-DD'),
           items: economicActivities.map((row) => {
-            mainLogger.info('row', row);
             let desglose = el.datos.desglose ? el.datos.desglose.find((d) => d.aforo === row.id) : { montoDeclarado: 0 };
             desglose = desglose ? desglose : { montoDeclarado: 0 };
             return {
@@ -4895,14 +4875,10 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
 
     return new Promise(async (res, rej) => {
       try {
-        mainLogger.info('AAAAAAAA');
         let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-AE.pug`), certInfo));
-        mainLogger.info(htmlArray.length);
         const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
         const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
         const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
-        mainLogger.info(pdfDir);
-        mainLogger.info(dir);
         let buffersArray: any[] = await Promise.all(
           htmlArray.map((html) => {
             return new Promise((res, rej) => {
@@ -4923,7 +4899,6 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
             });
           })
         );
-        mainLogger.info(buffersArray);
 
         if (dev) {
           mkdir(dirname(pdfDir), { recursive: true }, (e) => {
@@ -4954,7 +4929,6 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
                   .cat(`${Object.keys(reduced).join(' ')}`)
                   .output(pdfDir)
                   .then((buffer) => {
-                    mainLogger.info('a', buffer);
                     res(dir);
                   })
                   .catch((e) => {
@@ -5124,7 +5098,6 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
           totalRecaudado: `${formatCurrency(totalMonto)} Bs`,
         },
       };
-      mainLogger.info(certInfo.datos.items);
       certInfoArray.push({ ...certInfo });
     }
 
@@ -5465,7 +5438,6 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
       datosLiquidacion: chunk(statement, 22),
       saldoFinal,
     };
-    mainLogger.info(datosCertificado);
     const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-EC.pug`), {
       ...datosCertificado,
       cache: false,

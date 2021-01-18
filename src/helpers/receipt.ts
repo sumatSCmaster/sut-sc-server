@@ -22,14 +22,10 @@ export const generateReceipt = async (payload: { application: number }, clientPa
     const applicationView = (await client.query(queries.GET_APPLICATION_VIEW_BY_ID, [payload.application])).rows[0];
     const payment = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_GROUP_BY_PAYMENT_TYPE, [applicationView.id])).rows;
     const paymentRows = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [applicationView.id, 'IMPUESTO'])).rows;
-    mainLogger.info('payment', payment);
-    mainLogger.info('paymentRows', paymentRows);
     const paymentTotal = payment.reduce((prev, next) => prev + +next.monto, 0);
-    mainLogger.info('paymentTotal', paymentTotal);
     const cashier = (await client.query(queries.GET_USER_INFO_BY_ID, [paymentRows[0]?.id_usuario])).rows;
     const breakdownData = (await client.query(queries.GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID, [applicationView.id])).rows;
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [applicationView.idLiquidacion])).rows[0];
-    mainLogger.info('breakdowndata', breakdownData);
     const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [
       paymentRows[0]?.id_usuario,
       `${process.env.AWS_ACCESS_URL}//sedemat/recibo/${applicationView.id}/recibo.pdf`,
@@ -38,19 +34,15 @@ export const generateReceipt = async (payload: { application: number }, clientPa
       'IMPUESTO',
       applicationView.id,
     ]);
-    mainLogger.info('recibo', recibo.rows);
     if (!recibo.rows[0]) {
-      mainLogger.info('not recibo', recibo.rows[0]);
       return (await client.query(`SELECT recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1 AND recibo != ''`, [applicationView.id])).rows[0].recibo;
     }
     const idRecibo = recibo.rows[0].id_registro_recibo;
-    mainLogger.info('IDRECIBO', idRecibo);
 
     return new Promise(async (res, rej) => {
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/recibo/${applicationView.id}/cierre.pdf`);
       const dir = `${process.env.SERVER_URL}/sedemat/recibo/${applicationView.id}/recibo.pdf`;
       let total = breakdownData.reduce((prev, next) => prev + +next.monto, 0);
-      mainLogger.info('total', total);
       const linkQr = await qr.toDataURL(dev ? dir : `${process.env.AWS_ACCESS_URL}/sedemat/recibo/${applicationView.id}/recibo.pdf`, { errorCorrectionLevel: 'H' });
       const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-recibo.pug`), {
         moment: require('moment'),
@@ -134,14 +126,10 @@ export const generateReceiptAgreement = async (payload: { agreement: number }, c
     const applicationView = (await client.query(queries.GET_AGREEMENT_VIEW_BY_FRACTION_ID, [payload.agreement])).rows[0];
     const payment = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_GROUP_BY_PAYMENT_TYPE_AGREEMENT, [applicationView.id_fraccion])).rows;
     const paymentRows = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [applicationView.id_fraccion, 'CONVENIO'])).rows;
-    mainLogger.info('payment', payment);
-    mainLogger.info('paymentRows', paymentRows);
     const paymentTotal = payment.reduce((prev, next) => prev + +next.monto, 0);
-    mainLogger.info('paymentTotal', paymentTotal);
     const cashier = (await client.query(queries.GET_USER_INFO_BY_ID, [paymentRows[0]?.id_usuario])).rows;
     const breakdownData = (await client.query(queries.GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID, [applicationView.id])).rows;
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [applicationView.idLiquidacion])).rows[0];
-    mainLogger.info('breakdowndata', breakdownData);
     const recibo = await client.query(queries.INSERT_AGREEMENT_RECEIPT_RECORD, [
       paymentRows[0]?.id_usuario,
       `${process.env.AWS_ACCESS_URL}//sedemat/recibo/agreement/${applicationView.id_fraccion}/recibo.pdf`,
@@ -150,20 +138,16 @@ export const generateReceiptAgreement = async (payload: { agreement: number }, c
       'CONVENIO',
       applicationView.id_fraccion,
     ]);
-    mainLogger.info('recibo', recibo.rows);
     if (!recibo.rows[0]) {
-      mainLogger.info('not recibo', recibo.rows[0]);
       return (await client.query(`SELECT recibo FROM impuesto.registro_recibo_convenio WHERE id_fraccion = $1 AND recibo != ''`, [applicationView.id_fraccion])).rows[0].recibo;
     }
     const idRecibo = recibo.rows[0].id_registro_recibo_convenio;
-    mainLogger.info('IDRECIBO', idRecibo);
 
     return new Promise(async (res, rej) => {
       const pdfDir = resolve(__dirname, `../../archivos/sedemat/recibo/agreement/${applicationView.id_fraccion}/cierre.pdf`);
       const dir = `${process.env.SERVER_URL}/sedemat/recibo/agreement/${applicationView.id_fraccion}/recibo.pdf`;
       const date = moment(applicationView.fechaCreacion).locale('ES');
       let total = breakdownData.reduce((prev, next) => prev + +next.monto, 0);
-      mainLogger.info('total', total);
       const linkQr = await qr.toDataURL(dev ? dir : `${process.env.AWS_ACCESS_URL}/sedemat/recibo/agreement/${applicationView.id_fraccion}/recibo.pdf`, { errorCorrectionLevel: 'H' });
       const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-RC.pug`), {
         moment: require('moment'),
@@ -206,20 +190,17 @@ export const generateReceiptAgreement = async (payload: { agreement: number }, c
             } else {
               const regClient = await pool.connect();
               try {
-                mainLogger.info('aydiosmio yaaaaaaaaaaaaa');
                 await regClient.query('BEGIN');
                 const bucketParams = {
                   Bucket: process.env.BUCKET_NAME as string,
                   Key: `/sedemat/recibo/agreement/${applicationView.id_fraccion}/recibo.pdf`,
                 };
-                mainLogger.info('Key', bucketParams.Key);
                 await S3Client.putObject({
                   ...bucketParams,
                   Body: buffer,
                   ACL: 'public-read',
                   ContentType: 'application/pdf',
                 }).promise();
-                //await regClient.query(queries.UPDATE_AGREEMENT_RECEIPT_RECORD, [idRecibo, `${process.env.AWS_ACCESS_URL}${bucketParams.Key}`]);
                 await regClient.query('COMMIT');
                 res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
               } catch (e) {
@@ -305,8 +286,6 @@ export const generateRepairReceipt = async (payload: { application: number; brea
       });
       if (dev) {
         pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async (err) => {
-          mainLogger.info(dir);
-          mainLogger.info(pdfDir);
           mainLogger.info(err);
           res(dir);
         });
