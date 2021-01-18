@@ -457,7 +457,7 @@ export const listProcedurePayments = async (type_doc, doc) => {
     GROUP BY c.id_convenio;`)
     ).rows;
     data =
-      data.rowCount > 0
+      data.rows.length > 0
         ? data.rows.reduce((prev, next) => {
             let index = prev.findIndex((row) => row.id === next.id);
             let montoSolicitud = montosSolicitud.find((montoRow) => next.id === montoRow.id_solicitud)?.monto;
