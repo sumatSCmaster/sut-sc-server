@@ -6,7 +6,7 @@ const mainLogger = createLogger({
   defaultMeta: { logger: 'Main logger' },
   transports: [
     new transports.Console({
-      format: combine(colorize(), timestamp(), json()),
+      format: combine(timestamp(), json()),
     }),
   ],
 });
