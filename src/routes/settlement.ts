@@ -214,7 +214,6 @@ router.post('/license', authenticate('jwt'), async (req: any, res) => {
 });
 
 router.post('/internal', authenticate('jwt'), async (req, res) => {
-  mainLogger.info('??????????????????????????');
   const [error, data] = await fulfill(internalContributorSignUp(req.body));
   if (error) res.status(error.status).json(error);
   if (data) res.status(data.status).json(data);

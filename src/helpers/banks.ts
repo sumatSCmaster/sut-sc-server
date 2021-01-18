@@ -508,7 +508,6 @@ export const listProcedurePayments = async (type_doc, doc) => {
 export const listTaxPayments = async () => {
   const client = await pool.connect();
   try {
-    mainLogger.info('A');
     let data = await client.query(`
     SELECT s.*, p.*, b.id_banco, c.documento, c.tipo_documento AS "tipoDocumento" 
     FROM (
@@ -531,7 +530,6 @@ export const listTaxPayments = async () => {
     INNER JOIN pago p ON p.id_procedimiento = s.id 
     INNER JOIN banco b ON b.id_banco = p.id_banco
     WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' AND p.concepto IN ('IMPUESTO', 'RETENCION') ORDER BY id_procedimiento, id_pago;`);
-    mainLogger.info('B');
     let convData = await client.query(`
     SELECT s.id, s.fecha, fs.state, c.documento, c.tipo_documento AS "tipoDocumento", s."tipoSolicitud", fs.idconvenio, p.id_pago, p.referencia, p.monto, p.fecha_de_pago, b.id_banco, p.aprobado
     FROM impuesto.solicitud_state s
@@ -582,7 +580,6 @@ export const listTaxPayments = async () => {
     WHERE fs.state = 'validando' OR fs.state = 'ingresardatos'
     GROUP BY c.id_convenio;`)
     ).rows;
-    mainLogger.info('C');
     data =
       data.rowCount > 0
         ? data.rows.reduce((prev, next) => {
@@ -622,7 +619,6 @@ export const listTaxPayments = async () => {
             return prev;
           }, [])
         : [];
-    mainLogger.info('F');
     return { status: 200, data };
   } catch (e) {
     mainLogger.error(e);

@@ -107,9 +107,7 @@ export const createContributorExoneration = async ({ typeDoc, doc, ref, from, ac
   try {
     await client.query('BEGIN');
     const exoneration = (await client.query(queries.CREATE_EXONERATION, [from])).rows[0];
-    mainLogger.info(exoneration);
     const contributor = await client.query(queries.GET_CONTRIBUTOR, [typeDoc, doc, ref]);
-    mainLogger.info(contributor.rows);
     if (!contributor.rows[0]) {
       throw new Error('No se ha hallado el contribuyente');
     }

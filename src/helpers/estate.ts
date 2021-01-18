@@ -259,9 +259,9 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
     );
     await client.query('COMMIT');
 
-    return {status: 200, inmueble: {...estate,  avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.id])).rows}};
+    return { status: 200, inmueble: { ...estate, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.id])).rows } };
   } catch (e) {
-    mainLogger.error(e)
+    mainLogger.error(e);
     await client.query('ROLLBACK');
     throw e;
   } finally {
@@ -274,13 +274,13 @@ export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosC
   try {
     await client.query('BEGIN');
     let estate = (await client.query(queries.GET_ESTATE_BY_CODCAT, [codCat])).rows[0];
-    if(estate.enlazado && tipoInmueble === 'RESIDENCIAL'){
+    if (estate.enlazado && tipoInmueble === 'RESIDENCIAL') {
       const commercialEstates = await client.query(queries.CHECK_IF_HAS_COMMERCIAL_ESTATES, [estate.id_registro_municipal]);
       const allEstates = await client.query(queries.COUNT_ESTATES, [estate.id_registro_municipal]);
-      if(+allEstates.rows[0].allestates === 1){
-        throw new Error('El contribuyente debe tener por lo menos un inmueble COMERCIAL ya asociado.')
-      }else if(+allEstates.rows[0].allestates > 1 && (+commercialEstates.rows[0].commercials === 1 && estate.tipoInmueble === 'COMERCIAL' )){
-        throw new Error('El contribuyente debe tener por lo menos un inmueble COMERCIAL ya asociado.')
+      if (+allEstates.rows[0].allestates === 1) {
+        throw new Error('El contribuyente debe tener por lo menos un inmueble COMERCIAL ya asociado.');
+      } else if (+allEstates.rows[0].allestates > 1 && +commercialEstates.rows[0].commercials === 1 && estate.tipoInmueble === 'COMERCIAL') {
+        throw new Error('El contribuyente debe tener por lo menos un inmueble COMERCIAL ya asociado.');
       }
     }
     await client.query(`DELETE FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1`, [id]);
@@ -298,7 +298,7 @@ export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosC
     await client.query('ROLLBACK');
     throw {
       error: e,
-      message: e.message
+      message: e.message,
     };
   } finally {
     client.release();
@@ -309,7 +309,6 @@ export const updateEstateDate = async ({ id, date, rim, taxpayer }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    mainLogger.info('updateEstateDate', id, date, rim, taxpayer)
     const fromDate = moment(date).subtract(1, 'M');
     const fromEndDate = fromDate.clone().endOf('month').format('MM-DD-YYYY');
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [null, taxpayer])).rows[0];
@@ -357,10 +356,10 @@ export const linkCommercial = async ({ codCat, rim, relacion }) => {
       throw new Error('El inmueble ya está enlazado');
     }
 
-    if(estate.rows[0].tipoInmueble === 'RESIDENCIAL'){
+    if (estate.rows[0].tipoInmueble === 'RESIDENCIAL') {
       const commercialEstates = await client.query(queries.CHECK_IF_HAS_COMMERCIAL_ESTATES, [rimData.rows[0].id]);
-      if(+commercialEstates.rows[0].commercials === 0){
-        throw new Error('El contribuyente no tiene un inmueble comercial ya asociado.')
+      if (+commercialEstates.rows[0].commercials === 0) {
+        throw new Error('El contribuyente no tiene un inmueble comercial ya asociado.');
       }
     }
 

@@ -18,10 +18,8 @@ const checkInm = async (id) => {
   const client = await pool.connect();
   try {
     if ((await client.query('SELECT 1 FROM inmueble_urbano WHERE cod_catastral = $1', [id])).rowCount > 0) {
-      mainLogger.info('supalo');
       return new Error('Ya existe un inmueble con ese codigo');
     } else {
-      mainLogger.info('supalo2');
       return;
     }
   } finally {
@@ -91,7 +89,6 @@ const uploadFile = async (req, res, next) => {
 router.post('/:type/:id?', uploadFile, async (req: any, res) => {
   const { id, type } = req.params;
   const media = req.files.map((file) => typeMedia(`tramites/${id}`)(file)(process.env.NODE_ENV));
-  mainLogger.info('media', media);
   const client = await pool.connect();
   try {
     if (media.length > 0 && type === 'takings') {
