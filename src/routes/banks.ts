@@ -41,7 +41,7 @@ router.get('/payment/', authenticate('jwt'), async (req, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-router.get('/procedurePayments/', authenticate('jwt'), async (req, res) => {
+router.get('/procedurePayments/', async (req, res) => {
   const [err, data] = await fulfill(listProcedurePayments(req.query.type_doc, req.query.doc));
   if (err) res.status(500).json({ status: 500, message: errorMessageGenerator(err) });
   if (data) res.status(data.status).json(data);

@@ -375,7 +375,7 @@ const validationHandler = async ({ concept, body, user, client }) => {
 export const listProcedurePayments = async (type_doc, doc) => {
   const client = await pool.connect();
   try {
-    let data = await client.query(
+    let dataPromise = client.query(
       `
       SELECT s.*, p.*, b.id_banco, c.documento, c.tipo_documento AS "tipoDocumento" 
       FROM (
@@ -400,7 +400,7 @@ export const listProcedurePayments = async (type_doc, doc) => {
       WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' AND p.concepto IN ('IMPUESTO', 'RETENCION') AND c.tipo_documento = $1 AND c.documento = $2 ORDER BY id_procedimiento, id_pago;`,
       [type_doc, doc]
     );
-    let convData = await client.query(
+    let convDataPromise = client.query(
       `
     SELECT s.id, s.fecha, fs.state, c.documento, c.tipo_documento AS "tipoDocumento", s."tipoSolicitud", fs.idconvenio, p.id_pago, p.referencia, p.monto, p.fecha_de_pago, b.id_banco, p.aprobado
     FROM impuesto.solicitud_state s
@@ -413,7 +413,7 @@ export const listProcedurePayments = async (type_doc, doc) => {
     `,
       [type_doc, doc]
     );
-    let tramData = await client.query(
+    let tramDataPromise = client.query(
       `
     SELECT s.*, p.*, b.id_banco, u.nacionalidad AS "tipoDocumento", u.cedula AS "documento", 'TRAMITE' as "tipoSolicitud", s.costo as montotram
     FROM tramites_state s 
@@ -423,6 +423,7 @@ export const listProcedurePayments = async (type_doc, doc) => {
     WHERE s.state = 'validando' AND p.concepto = 'TRAMITE' AND u.nacionalidad = $1 AND u.cedula = $2 ORDER BY id_procedimiento, id_pago;`,
       [type_doc, doc]
     );
+    let [data, convData, tramData] = await Promise.all([dataPromise, convDataPromise, tramDataPromise]);
     data.rows = data.rows.concat(convData.rows);
     data.rows = data.rows.concat(tramData.rows);
     let montosSolicitud = (
@@ -508,7 +509,7 @@ export const listProcedurePayments = async (type_doc, doc) => {
 export const listTaxPayments = async () => {
   const client = await pool.connect();
   try {
-    let data = await client.query(`
+    let dataPromise = client.query(`
     SELECT s.*, p.*, b.id_banco, c.documento, c.tipo_documento AS "tipoDocumento" 
     FROM (
       SELECT s.id_solicitud AS id,
@@ -530,7 +531,7 @@ export const listTaxPayments = async () => {
     INNER JOIN pago p ON p.id_procedimiento = s.id 
     INNER JOIN banco b ON b.id_banco = p.id_banco
     WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' AND p.concepto IN ('IMPUESTO', 'RETENCION') ORDER BY id_procedimiento, id_pago;`);
-    let convData = await client.query(`
+    let convDataPromise = client.query(`
     SELECT s.id, s.fecha, fs.state, c.documento, c.tipo_documento AS "tipoDocumento", s."tipoSolicitud", fs.idconvenio, p.id_pago, p.referencia, p.monto, p.fecha_de_pago, b.id_banco, p.aprobado
     FROM impuesto.solicitud_state s
     INNER JOIN impuesto.convenio conv ON conv.id_solicitud = s.id
@@ -547,6 +548,7 @@ export const listTaxPayments = async () => {
     INNER JOIN pago p ON p.id_procedimiento = s.id 
     INNER JOIN banco b ON b.id_banco = p.id_banco
     WHERE s.state = 'validando' AND p.concepto = 'TRAMITE' ORDER BY id_procedimiento, id_pago;`); */
+    let [data, convData] = await Promise.all([dataPromise, convDataPromise]);
     data.rows = data.rows.concat(convData.rows);
     /*data.rows = data.rows.concat(tramData.rows); */
     let montosSolicitud = (

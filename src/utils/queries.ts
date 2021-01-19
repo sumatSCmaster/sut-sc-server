@@ -541,7 +541,57 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_APPLICATION_CREATOR: 'SELECT usr.cedula, usr.nacionalidad FROM USUARIO usr INNER JOIN impuesto.solicitud_view sv ON usr.id_usuario = sv.usuario WHERE usr.id_usuario = $1',
   CREATE_NOTIFICATION: "INSERT INTO notificacion (id_procedimiento, emisor, receptor, descripcion, status, \
     fecha, estado, concepto) VALUES ($1, $2, $3, $4, false, (NOW() - interval '4 hours'), $5, $6) RETURNING id_notificacion",
-  GET_PROCEDURE_NOTIFICATION_BY_ID: 'SELECT * FROM notificacion_tramite_view WHERE id = $1',
+  GET_PROCEDURE_NOTIFICATION_BY_ID: `SELECT * FROM (SELECT n.id_notificacion AS id,
+    n.descripcion,
+    n.status,
+    n.fecha AS "fechaCreacion",
+    n.emisor,
+    n.receptor,
+    n.estado AS "estadoNotificacion",
+    n.concepto,
+    t.id AS "idTramite",
+    t.datos,
+    t.tipotramite AS "tipoTramite",
+    t.costo,
+    t.fechacreacion AS "fechaCreacionTramite",
+    t.codigotramite AS "codigoTramite",
+    t.usuario,
+    t.planilla,
+    t.certificado,
+    t.nombrecorto AS "nombreCorto",
+    t.nombrelargo AS "nombreLargo",
+    t.nombretramitecorto AS "nombreTramiteCorto",
+    t.nombretramitelargo AS "nombreTramiteLargo",
+    t.state AS estado,
+    t.aprobado,
+    t."pagoPrevio"
+   FROM notificacion n
+     JOIN (SELECT t.id_tramite AS id,
+    t.datos,
+    t.id_tipo_tramite AS tipotramite,
+    t.costo,
+    t.fecha_creacion AS fechacreacion,
+    t.codigo_tramite AS codigotramite,
+    t.id_usuario AS usuario,
+    t.url_planilla AS planilla,
+    t.url_certificado AS certificado,
+    i.nombre_completo AS nombrelargo,
+    i.nombre_corto AS nombrecorto,
+    tt.nombre_tramite AS nombretramitelargo,
+    tt.nombre_corto AS nombretramitecorto,
+    ev.state,
+    t.aprobado,
+    tt.pago_previo AS "pagoPrevio",
+    t.fecha_culminacion AS fechaculminacion
+   FROM (SELECT * FROM tramite t WHERE t.id_tramite = (SELECT id_tramite FROM tramite t INNER JOIN notificacion n ON n.id_procedimiento = t.id_tramite WHERE n.concepto = 'TRAMITE' AND  n.id_notificacion = $1  ) ) t
+     JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite
+     JOIN institucion i ON i.id_institucion = tt.id_institucion
+     JOIN ( SELECT evento_tramite.id_tramite,
+            tramite_evento_fsm(evento_tramite.event ORDER BY evento_tramite.id_evento_tramite) AS state
+           FROM evento_tramite
+          GROUP BY evento_tramite.id_tramite) ev ON t.id_tramite = ev.id_tramite
+) t ON n.id_procedimiento = t.id
+) nn WHERE id = $1;`,
   GET_FINING_NOTIFICATION_BY_ID: 'SELECT * FROM notificacion_multa_view WHERE id = $1',
   GET_SETTLEMENT_NOTIFICATION_BY_ID: 'SELECT * FROM notificacion_impuesto_view WHERE id = $1',
   GET_PROCEDURE_NOTIFICATIONS_FOR_USER: 'SELECT * FROM notificacion_tramite_view WHERE receptor = $1 ORDER BY "fechaCreacion" LIMIT 40',
