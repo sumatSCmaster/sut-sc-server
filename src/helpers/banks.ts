@@ -644,7 +644,7 @@ export const updatePayment = async ({ id, solicitud, fechaDePago, referencia, mo
         )
       ).rows;
 
-      let sum = (
+      sum = (
         await client.query(
           `
         SELECT l.id_solicitud, SUM(monto) as monto
@@ -665,7 +665,7 @@ export const updatePayment = async ({ id, solicitud, fechaDePago, referencia, mo
         )
       ).rows;
 
-      let sum = (
+      sum = (
         await client.query(
           `
         SELECT l.id_solicitud, SUM(monto) as monto
@@ -692,7 +692,7 @@ export const updatePayment = async ({ id, solicitud, fechaDePago, referencia, mo
     return { status: 200, data: res.rows };
   } catch (e) {
     console.log(e);
-    mainLogger.error(e);
+    mainLogger.error(e.message);
     throw e;
   } finally {
     client.release();
