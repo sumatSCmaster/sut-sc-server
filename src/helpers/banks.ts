@@ -633,6 +633,7 @@ export const listTaxPayments = async () => {
 export const updatePayment = async ({ id, solicitud, fechaDePago, referencia, monto, banco }) => {
   const client = await pool.connect();
   try {
+    mainLogger.info(`updatePayment: id ${id} solicitud ${solicitud}, fechaDePago ${fechaDePago}, referencia ${referencia}, monto ${monto}, banco ${banco}`);
     let paymentsWithOutUpdatee = (
       await client.query(
         `
@@ -655,6 +656,7 @@ export const updatePayment = async ({ id, solicitud, fechaDePago, referencia, mo
     ).rows[0].monto;
 
     if (fixatedAmount(sum) > fixatedAmount(fixatedAmount(paymentsWithOutUpdatee.reduce((prev, next) => prev + +next.monto, 0)) + fixatedAmount(+monto))) {
+      mainLogger.info('El monto indicado no es suficiente');
       throw {
         status: 400,
         message: 'El monto indicado no es suficiente para cubrir la solicitud',
@@ -666,7 +668,7 @@ export const updatePayment = async ({ id, solicitud, fechaDePago, referencia, mo
     );
     return { status: 200, data: res.rows };
   } catch (e) {
-    mainLogger.info(e);
+    mainLogger.error(e);
     throw e;
   } finally {
     client.release();
