@@ -647,11 +647,10 @@ export const updatePayment = async ({ id, solicitud, fechaDePago, referencia, mo
       sum = (
         await client.query(
           `
-        SELECT l.id_solicitud, SUM(monto) as monto
-        FROM impuesto.solicitud_state s 
-        INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
-        WHERE s.state = 'validando' AND l.id_solicitud = $1
-        GROUP BY l.id_solicitud;`,
+        SELECT s.id, costo
+        FROM impuesto.tramites_state s  
+        WHERE s.state = 'validando'
+        GROUP BY s.id;`,
           [solicitud]
         )
       ).rows[0].monto;

@@ -55,7 +55,6 @@ router.post('/payment/', authenticate('jwt'), async (req, res) => {
 
 router.patch('/payment/:id/', authenticate('jwt'), async (req, res) => {
   const [err, data] = await fulfill(updatePayment({ id: req.params['id'], ...req.body }));
-  console.log('route err', err);
   if (err) res.status(500).json(err);
   if (data) res.status(data.status).json(data);
 });
