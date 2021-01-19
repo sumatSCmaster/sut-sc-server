@@ -192,7 +192,7 @@ const broadcastForProcedureUpdate = async (sender: Usuario, description: string,
   const socket = users.get(emisor);
 
   try {
-    client.query('BEGIN');
+    payload.estado !== 'finalizado' && (await client.query('BEGIN'));
     const user = (await client.query(queries.GET_PROCEDURE_CREATOR, [payload.usuario])).rows;
     const admins = (await client.query(queries.GET_NON_NORMAL_OFFICIALS, [payload.nombreCorto])).rows;
     const superuser = (await client.query(queries.GET_SUPER_USER)).rows;
@@ -238,9 +238,9 @@ const broadcastForProcedureUpdate = async (sender: Usuario, description: string,
     socket?.to(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
     io?.in(`inst:${payload.nombreCorto}`).emit('UPDATE_PROCEDURE', payload);
 
-    client.query('COMMIT');
+    payload.estado !== 'finalizado' && (await client.query('COMMIT'));
   } catch (error) {
-    client.query('ROLLBACK');
+    payload.estado !== 'finalizado' && client.query('ROLLBACK');
     throw errorMessageExtractor(error);
   }
 };

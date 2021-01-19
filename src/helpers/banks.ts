@@ -649,8 +649,7 @@ export const updatePayment = async ({ id, solicitud, fechaDePago, referencia, mo
           `
         SELECT s.id, costo
         FROM tramites_state s  
-        WHERE s.state = 'validando'
-        GROUP BY s.id;`,
+        WHERE s.state = 'validando'`,
           [solicitud]
         )
       ).rows[0].monto;
