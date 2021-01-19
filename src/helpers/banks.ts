@@ -691,6 +691,7 @@ export const updatePayment = async ({ id, solicitud, fechaDePago, referencia, mo
     );
     return { status: 200, data: res.rows };
   } catch (e) {
+    console.log(e);
     mainLogger.error(e);
     throw e;
   } finally {
