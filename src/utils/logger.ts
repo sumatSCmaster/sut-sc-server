@@ -9,6 +9,11 @@ const mainLogger = createLogger({
       format: combine(timestamp(), json()),
     }),
   ],
+  exceptionHandlers: [
+    new transports.Console({
+      format: combine(timestamp(), json()),
+    }),
+  ],
 });
 
 export { mainLogger };
