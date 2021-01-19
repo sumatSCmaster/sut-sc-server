@@ -157,12 +157,31 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_PROCEDURE_STATE_AND_TYPE_INFORMATION_MOCK:
     'SELECT tsr.*, ttr.formato, ttr.planilla AS solicitud, ttr.certificado as formatoCertificado, ttr.planilla_rechazo as formatoRechazo, ttr.sufijo \
   FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
-  GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID:
-    'SELECT tramites_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
-    nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, \
-    tipo_tramite.pago_previo AS "pagoPrevio" FROM tramites_state INNER JOIN tipo_tramite ON tramites_state.tipotramite = \
-    tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = \
-    tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 AND tipotramite NOT IN (39, 40) ORDER BY tramites_state.fechacreacion DESC LIMIT 500;',
+  GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID: `SELECT ts.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS 
+    nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, 
+    tipo_tramite.pago_previo AS "pagoPrevio" FROM (SELECT t.id_tramite AS id,
+    t.datos,
+    t.id_tipo_tramite AS tipotramite,
+    t.costo,
+    t.fecha_creacion AS fechacreacion,
+    t.codigo_tramite AS codigotramite,
+    t.id_usuario AS usuario,
+    t.url_planilla AS planilla,
+    t.url_certificado AS certificado,
+    ev.state,
+    t.aprobado,
+    t.fecha_culminacion AS fechaculminacion
+   FROM (SELECT * FROM tramite WHERE  fecha_creacion > (NOW() - interval '15 days') AND id_tipo_tramite NOT IN (39, 40) ORDER BY fecha_creacion DESC FETCH FIRST 600 ROWS ONLY) t
+     JOIN ( SELECT evento_tramite.id_tramite,
+            tramite_evento_fsm(evento_tramite.event ORDER BY evento_tramite.id_evento_tramite) AS state
+           FROM evento_tramite
+          GROUP BY evento_tramite.id_tramite) ev ON t.id_tramite = ev.id_tramite)
+    ts 
+    
+    INNER JOIN tipo_tramite ON ts.tipotramite = 
+    tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = 
+    tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 ORDER BY ts.fechacreacion DESC FETCH FIRST 500 ROWS ONLY;
+`,
   GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION:
     "SELECT tramites_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
     nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, \
@@ -3023,27 +3042,31 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       INNER JOIN impuesto.condominio cond ON cond.id_contribuyente = cont.id_contribuyente;
   `,
   GET_CONDOMINIUM: `
-      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
+      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial", p.nombre as "parroquia"
       FROM impuesto.contribuyente cont
+      INNER JOIN parroquia p ON p.id = cont.id_parroquia
       INNER JOIN impuesto.condominio cond ON cond.id_contribuyente = cont.id_contribuyente
       WHERE id_condominio = $1
   `,
   GET_CONDOMINIUM_BY_DOC: `
-      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
+      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial", p.nombre as "parroquia"
       FROM impuesto.contribuyente cont
+      INNER JOIN parroquia p ON p.id = cont.id_parroquia
       INNER JOIN impuesto.condominio cond ON cond.id_contribuyente = cont.id_contribuyente
       WHERE cont.tipo_documento = $1 AND cont.documento = $2;
   `,
   GET_CONDOMINIUM_OWNERS: `
-      SELECT id_condominio AS "idCondominio", cont.id_contribuyente as "idContribuyente", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
+      SELECT id_condominio AS "idCondominio", cont.id_contribuyente as "idContribuyente", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial", p.nombre as "parroquia", cont.direccion 
       FROM impuesto.contribuyente cont
+      INNER JOIN parroquia p ON p.id = cont.id_parroquia
       INNER JOIN impuesto.condominio_propietario cp ON cp.id_contribuyente = cont.id_contribuyente
       WHERE cp.id_condominio = $1;
   `,
   GET_CONDOMINIUM_OWNER_BY_DOC: `
-      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
+      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial", p.nombre as "parroquia", cont.direccion
       FROM impuesto.contribuyente cont
-      INNER JOIN impuesto.condominio_propietario cp ON cond.id_contribuyente = cp.id_contribuyente
+      INNER JOIN parroquia p ON p.id = cont.id_parroquia
+      INNER JOIN impuesto.condominio_propietario cp ON cont.id_contribuyente = cp.id_contribuyente
       WHERE cont.tipo_documento = $1 AND cont.documento = $2;
   `,
   CREATE_CONDOMINIUM: `

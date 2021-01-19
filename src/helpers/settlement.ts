@@ -26,6 +26,7 @@ import { initProcedureAnalist, processProcedureAnalist } from './procedures';
 import { generateReceipt } from './receipt';
 import { getCleaningTariffForEstate, getGasTariffForEstate } from './services';
 import { uniqBy, chunk } from 'lodash';
+import { isCondominium, isCondoOwner } from './condominium';
 import { mainLogger } from '@utils/logger';
 const written = require('written-number');
 
@@ -259,6 +260,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const lastSettlementQuery = !!reference && branch ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
     const lastSettlementPayload = !!reference && branch ? branch?.id_registro_municipal : contributor.id_contribuyente;
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
+    const isPartOfCondominium = (await isCondominium(type, document, client)) || (await isCondoOwner(type, document, client));
     const fiscalCredit =
       (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.tipo_contribuyente === 'JURIDICO' ? branch?.id_registro_municipal : contributor.id_contribuyente, contributor.tipo_contribuyente])).rows[0]?.credito || 0;
     const retentionCredit = (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, branch?.referencia_municipal])).rows[0]?.credito || 0;
@@ -333,7 +335,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     }
     //SM
     const estates = (await client.query(branch ? queries.GET_ESTATES_FOR_JURIDICAL_CONTRIBUTOR : queries.GET_ESTATES_FOR_NATURAL_CONTRIBUTOR, [branch ? branch.id_registro_municipal : contributor.id_contribuyente])).rows;
-    if (!SMApplicationExists) {
+    if (!SMApplicationExists || !isPartOfCondominium) {
       let lastSM = (await client.query(lastSettlementQuery, [codigosRamo.SM, lastSettlementPayload])).rows[0];
       const lastSMPayment = (lastSM && moment(lastSM.fecha_liquidacion).add(1, 'M')) || moment().month(0);
       const pastMonthSM = (lastSM && moment(lastSM.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
@@ -388,7 +390,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
 
     //IU
     if (estates.length > 0) {
-      if (!IUApplicationExists) {
+      if (!IUApplicationExists && !isPartOfCondominium) {
         IU = [];
         // let lastIU = (await client.query(lastSettlementQuery, [codigosRamo.IU, lastSettlementPayload])).rows[0];
         // const lastIUPayment = (lastIU && moment(lastIU.fecha_liquidacion).add(1, 'M')) || moment().month(0);
@@ -2940,14 +2942,14 @@ export const insertSettlements = async ({ process, user }) => {
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [application.id_contribuyente]);
     await client.query('COMMIT');
     const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
-    await sendNotification(
-      user,
-      `Se ha iniciado una solicitud para el contribuyente con el documento de identidad: ${solicitud.tipoDocumento}-${solicitud.documento}`,
-      'CREATE_APPLICATION',
-      'IMPUESTO',
-      { ...solicitud, estado: state, nombreCorto: 'SEDEMAT' },
-      client
-    );
+    // await sendNotification(
+    //   user,
+    //   `Se ha iniciado una solicitud para el contribuyente con el documento de identidad: ${solicitud.tipoDocumento}-${solicitud.documento}`,
+    //   'CREATE_APPLICATION',
+    //   'IMPUESTO',
+    //   { ...solicitud, estado: state, nombreCorto: 'SEDEMAT' },
+    //   client
+    // );
     return { status: 201, message: 'Liquidaciones de impuestos creadas satisfactoriamente', solicitud };
   } catch (error) {
     mainLogger.error(error);
@@ -3035,14 +3037,14 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente?.id]);
     await client.query('COMMIT');
 
-    await sendNotification(
-      user,
-      `Se ${user.tipoUsuario === 4 ? `han ingresado los datos de pago` : `ha validado el pago`} de una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
-      'UPDATE_APPLICATION',
-      'IMPUESTO',
-      { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
-      client
-    );
+    // await sendNotification(
+    //   user,
+    //   `Se ${user.tipoUsuario === 4 ? `han ingresado los datos de pago` : `ha validado el pago`} de una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
+    //   'UPDATE_APPLICATION',
+    //   'IMPUESTO',
+    //   { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
+    //   client
+    // );
     return { status: 200, message: 'Pago añadido para la solicitud declarada', solicitud: applicationInstance };
   } catch (error) {
     await client.query('ROLLBACK');
@@ -3188,14 +3190,14 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [contributorId.contribuyente.id]);
     await client.query('COMMIT');
     mainLogger.info(applicationInstance);
-    await sendNotification(
-      user,
-      `Se ${user.tipoUsuario === 4 ? `han ingresado los datos de pago` : `ha validado el pago`} de un convenio para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
-      'UPDATE_APPLICATION',
-      'IMPUESTO',
-      { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
-      client
-    );
+    // await sendNotification(
+    //   user,
+    //   `Se ${user.tipoUsuario === 4 ? `han ingresado los datos de pago` : `ha validado el pago`} de un convenio para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
+    //   'UPDATE_APPLICATION',
+    //   'IMPUESTO',
+    //   { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
+    //   client
+    // );
     return { status: 200, message: 'Pago añadido para la solicitud declarada', solicitud: applicationInstance };
   } catch (error) {
     client.query('ROLLBACK');
@@ -3244,14 +3246,14 @@ export const validateApplication = async (body, user, client) => {
     const applicationInstance = await getApplicationsAndSettlementsById({ id: body.idTramite, user: solicitud.id_usuario });
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente.id]);
     applicationInstance.aprobado = true;
-    await sendNotification(
-      user,
-      `Se ha finalizado una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
-      'UPDATE_APPLICATION',
-      'IMPUESTO',
-      { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
-      client
-    );
+    // await sendNotification(
+    //   user,
+    //   `Se ha finalizado una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
+    //   'UPDATE_APPLICATION',
+    //   'IMPUESTO',
+    //   { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
+    //   client
+    // );
 
     return;
   } catch (error) {
@@ -3652,14 +3654,14 @@ export const createSpecialSettlement = async ({ process, user }) => {
     await client.query('COMMIT');
     const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
     solicitud.recibo = recibo;
-    await sendNotification(
-      user,
-      `Se ha completado una solicitud de pago especial para el contribuyente con el documento de identidad: ${solicitud.tipoDocumento}-${solicitud.documento}`,
-      'CREATE_APPLICATION',
-      'IMPUESTO',
-      { ...solicitud, estado: state, nombreCorto: 'SEDEMAT' },
-      client
-    );
+    // await sendNotification(
+    //   user,
+    //   `Se ha completado una solicitud de pago especial para el contribuyente con el documento de identidad: ${solicitud.tipoDocumento}-${solicitud.documento}`,
+    //   'CREATE_APPLICATION',
+    //   'IMPUESTO',
+    //   { ...solicitud, estado: state, nombreCorto: 'SEDEMAT' },
+    //   client
+    // );
     return { status: 201, message: 'Solicitud de liquidacion especial creada satisfactoriamente', solicitud };
   } catch (error) {
     mainLogger.error(error);

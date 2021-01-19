@@ -112,7 +112,7 @@ export const getDataForDefinitiveDeclaration = async ({ document, reference, doc
 
     const recibo = await createReceiptForAEApplication(payload);
 
-    return { status: 200, message: 'Declaraciones previas obtenidas', recibo };
+    return { status: 200, message: 'Declaraciones previas obtenidas', data: recibo };
   } catch (error) {
     mainLogger.error(error);
     throw {
