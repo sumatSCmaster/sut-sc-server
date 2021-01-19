@@ -26,11 +26,8 @@ import { initProcedureAnalist, processProcedureAnalist } from './procedures';
 import { generateReceipt } from './receipt';
 import { getCleaningTariffForEstate, getGasTariffForEstate } from './services';
 import { uniqBy, chunk } from 'lodash';
-<<<<<<< HEAD
 import { isCondominium, isCondoOwner } from './condominium';
-=======
 import { mainLogger } from '@utils/logger';
->>>>>>> 72a1333 (tracing)
 const written = require('written-number');
 
 const gticPool = GticPool.getInstance();
