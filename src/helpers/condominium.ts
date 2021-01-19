@@ -1,6 +1,7 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { mainLogger } from '@utils/logger';
+import { PoolClient } from 'pg';
 
 const pool = Pool.getInstance();
 

@@ -426,37 +426,36 @@ export const listProcedurePayments = async (type_doc, doc) => {
     let [data, convData, tramData] = await Promise.all([dataPromise, convDataPromise, tramDataPromise]);
     data.rows = data.rows.concat(convData.rows);
     data.rows = data.rows.concat(tramData.rows);
-    let montosSolicitud = (
-      await client.query(`
-      SELECT l.id_solicitud, SUM(monto) as monto
-      FROM (
-        SELECT s.id_solicitud AS id,
-      s.id_tipo_tramite AS tipotramite,
-      s.aprobado,
-      s.fecha,
-      s.fecha_aprobado AS "fechaAprobacion",
-      ev.state,
-      s.tipo_solicitud AS "tipoSolicitud",
-      s.id_contribuyente
-     FROM impuesto.solicitud s
-       JOIN ( SELECT es.id_solicitud,
-              impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
-             FROM impuesto.evento_solicitud es
-             INNER JOIN (SELECT id_solicitud FROM impuesto.solicitud WHERE aprobado = false) s ON s.id_solicitud = es.id_solicitud
-            GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
-      ) s  
-      INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
-      WHERE s.state = 'validando' OR s.state = 'ingresardatos'
-      GROUP BY l.id_solicitud`)
-    ).rows;
-    let montosConvenio = (
-      await client.query(`
+    let montosSolicitudPromise = client.query(`
+    SELECT l.id_solicitud, SUM(monto) as monto
+    FROM (
+      SELECT s.id_solicitud AS id,
+    s.id_tipo_tramite AS tipotramite,
+    s.aprobado,
+    s.fecha,
+    s.fecha_aprobado AS "fechaAprobacion",
+    ev.state,
+    s.tipo_solicitud AS "tipoSolicitud",
+    s.id_contribuyente
+   FROM impuesto.solicitud s
+     JOIN ( SELECT es.id_solicitud,
+            impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+           FROM impuesto.evento_solicitud es
+           INNER JOIN (SELECT id_solicitud FROM impuesto.solicitud WHERE aprobado = false) s ON s.id_solicitud = es.id_solicitud
+          GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+    ) s  
+    INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
+    WHERE s.state = 'validando' OR s.state = 'ingresardatos'
+    GROUP BY l.id_solicitud;`);
+    let montosConvenioPromise = client.query(`
     SELECT c.id_convenio, SUM(monto) as monto
     FROM impuesto.fraccion_state fs
     INNER JOIN impuesto.convenio c ON c.id_convenio = fs.idconvenio
     WHERE fs.state = 'validando' OR fs.state = 'ingresardatos'
-    GROUP BY c.id_convenio;`)
-    ).rows;
+    GROUP BY c.id_convenio;`);
+    let [montosSolicitud, montosConvenio]: any[] = await Promise.all([montosSolicitudPromise, montosConvenioPromise]);
+    montosSolicitud = montosSolicitud.rows;
+    montosConvenio = montosConvenio.rows;
     data =
       data.rows.length > 0
         ? data.rows.reduce((prev, next) => {
@@ -630,30 +629,54 @@ export const listTaxPayments = async () => {
   }
 };
 
-export const updatePayment = async ({ id, solicitud, fechaDePago, referencia, monto, banco }) => {
+export const updatePayment = async ({ id, solicitud, fechaDePago, referencia, monto, banco, concepto }) => {
   const client = await pool.connect();
   try {
-    mainLogger.info(`updatePayment: id ${id} solicitud ${solicitud}, fechaDePago ${fechaDePago}, referencia ${referencia}, monto ${monto}, banco ${banco}`);
-    let paymentsWithOutUpdatee = (
-      await client.query(
-        `
-      SELECT * FROM pago 
-      WHERE concepto =  'IMPUESTO' AND  id_procedimiento = $1 AND id_pago != $2`,
-        [solicitud, id]
-      )
-    ).rows;
+    mainLogger.info(`updatePayment: id ${id} concepto ${concepto} solicitud ${solicitud}, fechaDePago ${fechaDePago}, referencia ${referencia}, monto ${monto}, banco ${banco}`);
+    let paymentsWithOutUpdatee, sum;
+    if (concepto === 'TRAMITE') {
+      paymentsWithOutUpdatee = (
+        await client.query(
+          `
+        SELECT * FROM pago 
+        WHERE concepto =  'TRAMITE' AND  id_procedimiento = $1 AND id_pago != $2`,
+          [solicitud, id]
+        )
+      ).rows;
 
-    let sum = (
-      await client.query(
-        `
-      SELECT l.id_solicitud, SUM(monto) as monto
-      FROM impuesto.solicitud_state s 
-      INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
-      WHERE s.state = 'validando' AND l.id_solicitud = $1
-      GROUP BY l.id_solicitud;`,
-        [solicitud]
-      )
-    ).rows[0].monto;
+      let sum = (
+        await client.query(
+          `
+        SELECT l.id_solicitud, SUM(monto) as monto
+        FROM impuesto.solicitud_state s 
+        INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
+        WHERE s.state = 'validando' AND l.id_solicitud = $1
+        GROUP BY l.id_solicitud;`,
+          [solicitud]
+        )
+      ).rows[0].monto;
+    } else {
+      paymentsWithOutUpdatee = (
+        await client.query(
+          `
+        SELECT * FROM pago 
+        WHERE concepto =  'IMPUESTO' AND  id_procedimiento = $1 AND id_pago != $2`,
+          [solicitud, id]
+        )
+      ).rows;
+
+      let sum = (
+        await client.query(
+          `
+        SELECT l.id_solicitud, SUM(monto) as monto
+        FROM impuesto.solicitud_state s 
+        INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
+        WHERE s.state = 'validando' AND l.id_solicitud = $1
+        GROUP BY l.id_solicitud;`,
+          [solicitud]
+        )
+      ).rows[0].monto;
+    }
 
     if (fixatedAmount(sum) > fixatedAmount(fixatedAmount(paymentsWithOutUpdatee.reduce((prev, next) => prev + +next.monto, 0)) + fixatedAmount(+monto))) {
       mainLogger.info('El monto indicado no es suficiente');
