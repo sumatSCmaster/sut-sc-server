@@ -648,7 +648,7 @@ export const updatePayment = async ({ id, solicitud, fechaDePago, referencia, mo
         await client.query(
           `
         SELECT s.id, costo
-        FROM impuesto.tramites_state s  
+        FROM tramites_state s  
         WHERE s.state = 'validando'
         GROUP BY s.id;`,
           [solicitud]
