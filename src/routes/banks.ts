@@ -3,6 +3,7 @@ import { getAllBanks, validatePayments, listTaxPayments, updatePayment, addPayme
 import { fulfill } from '@utils/resolver';
 import { errorMessageGenerator } from '@helpers/errors';
 import { authenticate } from 'passport';
+import { mainLogger } from '@utils/logger';
 
 const router = Router();
 
@@ -22,14 +23,14 @@ router.get('/reference/search', async (req, res) => {
 
 router.put('/validatePayments', authenticate('jwt'), async (req, res) => {
   const [err, data] = await fulfill(validatePayments(req.body, req.user));
-  console.log(err);
+  mainLogger.error(err);
   if (err) res.status(500).json({ status: 500, message: errorMessageGenerator(err) });
   if (data) res.status(data.status).json(data);
 });
 
 router.put('/validateSinglePayment', authenticate('jwt'), async (req, res) => {
   const [err, data] = await fulfill(approveSinglePayment(req.body.id, req.user));
-  console.log(err);
+  mainLogger.error(err);
   if (err) res.status(500).json({ status: 500, message: errorMessageGenerator(err) });
   if (data) res.status(data.status).json(data);
 });

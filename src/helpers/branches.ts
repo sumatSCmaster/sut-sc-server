@@ -9,6 +9,7 @@ import { errorMessageExtractor } from './errors';
 import { QueryResult } from 'pg';
 import * as pdf from 'html-pdf';
 import { groupBy } from 'lodash';
+import { mainLogger } from '@utils/logger';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -35,7 +36,7 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
   const client = await pool.connect();
   try {
     return new Promise(async (res, rej) => {
-      console.log(payload);
+      mainLogger.info(payload);
       const alcaldia = payload.alcaldia;
       let pagos = {};
       const ingress = await client.query(queries.GET_INGRESS, [payload.from, payload.to]);
@@ -71,16 +72,16 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
         return prev;
       }, []);
 
-      //console.log('other', other.rows);
+      //mainLogger.info('other', other.rows);
 
-      //console.log('result pre filter', result);
+      //mainLogger.info('result pre filter', result);
       let filtered = other.rows.filter((val) => !result.find((resultRow) => resultRow.ramo === val.ramo));
-      //console.log('filtered', filtered);
+      //mainLogger.info('filtered', filtered);
 
       result.push(...filtered);
-      //console.log('result', result);
+      //mainLogger.info('result', result);
       pivotColumns.push(...columns);
-      //console.log(pivotColumns);
+      //mainLogger.info(pivotColumns);
       result = result.map((val) => {
         for (let col of pivotColumns) {
           val[col] = val[col] || 0;
@@ -88,8 +89,8 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
         return val;
       });
 
-      //console.log('FINAL RES', result);
-      //console.log(
+      //mainLogger.info('FINAL RES', result);
+      //mainLogger.info(
       //  'FILTERED THING',
       //  groupBy(result, (res) => res.codigo)
       //);
@@ -126,8 +127,8 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
 
       final['122'] = final['122'].concat(ivaSM.subRamo);
 
-      //console.log('final', final)
-      //console.log(branches);
+      //mainLogger.info('final', final)
+      //mainLogger.info(branches);
       branches = branches
         .map((branch) => {
           return {
@@ -145,8 +146,8 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
           };
         })
         .filter((branch) => branch.subRamo.reduce((prev, next) => prev + +next.ingresado + +next.liquidado, 0) > 0);
-      //console.log('branches', branches);
-      //console.log(branches[0].subRamo);
+      //mainLogger.info('branches', branches);
+      //mainLogger.info(branches[0].subRamo);
       let compens: any = {
         id: 53,
         ramo: '925',
@@ -176,8 +177,8 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
       compens.cantidadIngTotal = compens.subRamo.reduce((prev, next) => prev + +next.cantidadIng, 0);
       branches = branches.concat(compens);
 
-      //console.log(compens);
-      //console.log('branches 2', branches);
+      //mainLogger.info(compens);
+      //mainLogger.info('branches 2', branches);
       if (!alcaldia) {
         const transfersByBank = (await client.query(queries.GET_TRANSFERS_BY_BANK, [payload.from, payload.to, payload.from, payload.to, payload.from, payload.to, payload.from, payload.to, payload.from, payload.to])).rows;
 
@@ -192,11 +193,11 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
 
         const cred = +(await client.query(queries.GET_CREDIT_REPORT, [payload.from, payload.to])).rows[0].total || 0;
 
-        console.log('transfersBybank', transfersByBank);
-        console.log('totaltransfersbybank', totalTranfersByBank);
-        console.log('cash', cash);
-        console.log('pos', pos);
-        console.log('check', check);
+        mainLogger.info('transfersBybank', transfersByBank);
+        mainLogger.info('totaltransfersbybank', totalTranfersByBank);
+        mainLogger.info('cash', cash);
+        mainLogger.info('pos', pos);
+        mainLogger.info('check', check);
         pagos = {
           total: totalTranfersByBank + cashTotal + pos + check + cred,
           transferencias: {
@@ -216,11 +217,11 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
           creditoFiscal: cred,
         };
       }
-      console.log(liquidated.rows.reduce((prev, next) => prev + +next.cantidadLiq, 0) + compens.cantidadLiqTotal);
-      console.log(liquidated.rows.reduce((prev, next) => prev + +next.liquidado, 0) + compens.liquidadoTotal);
-      // console.log(payload.to);
-      // console.log(moment(payload.to).format('DD/MM/YYYY hh:mm a'));
-      // console.log(moment(payload.to).subtract(4, 'h').format('DD/MM/YYYY hh:mm a'));
+      mainLogger.info(liquidated.rows.reduce((prev, next) => prev + +next.cantidadLiq, 0) + compens.cantidadLiqTotal);
+      mainLogger.info(liquidated.rows.reduce((prev, next) => prev + +next.liquidado, 0) + compens.liquidadoTotal);
+      // mainLogger.info(payload.to);
+      // mainLogger.info(moment(payload.to).format('DD/MM/YYYY hh:mm a'));
+      // mainLogger.info(moment(payload.to).subtract(4, 'h').format('DD/MM/YYYY hh:mm a'));
       const html = renderFile(resolve(__dirname, alcaldia ? `../views/planillas/sedemat-RPRA.pug` : `../views/planillas/sedemat-RPR.pug`), {
         moment: require('moment'),
         institucion: 'SEDEMAT',

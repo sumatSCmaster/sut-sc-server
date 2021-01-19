@@ -1,6 +1,6 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
-import { PoolClient } from 'pg';
+import { mainLogger } from '@utils/logger';
 
 const pool = Pool.getInstance();
 
@@ -83,7 +83,7 @@ export const addOwner = async ({ condo_id, type_doc, doc }) => {
     return await getCondominium(condo_id);
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       error: error,
       message: error.message,

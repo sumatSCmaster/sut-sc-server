@@ -11,6 +11,7 @@ import { Usuario, Liquidacion } from '@root/interfaces/sigt';
 import { fixatedAmount, getApplicationsAndSettlementsById } from './settlement';
 import { getUsersByContributor } from './user';
 import { generateRepairReceipt } from './receipt';
+import { mainLogger } from '@utils/logger';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -65,7 +66,7 @@ export const getRepairYears = async ({ document, reference, docType, user }: { d
     };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -104,11 +105,10 @@ export const insertRepairs = async ({ process, user }) => {
             fecha: { month, year },
             desglose: el,
           };
-          // console.log(el.ramo);
           const liquidacion = (
             await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
               application.id_solicitud,
-              (+el.reduce((i, j) => i + j.monto, 0)/PETRO).toFixed(8),
+              (+el.reduce((i, j) => i + j.monto, 0) / PETRO).toFixed(8),
               'REP',
               'Pago ordinario',
               datos,
@@ -136,7 +136,7 @@ export const insertRepairs = async ({ process, user }) => {
     const multa = (
       await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
         application.id_solicitud,
-        ((process.total * 0.3)/ PETRO).toFixed(8),
+        ((process.total * 0.3) / PETRO).toFixed(8),
         'REP',
         'Multa por reparo',
         { fecha: { month: moment().locale('es').format('MMMM'), year: moment().year() } },
@@ -163,7 +163,7 @@ export const insertRepairs = async ({ process, user }) => {
     // );
     return { status: 201, message: 'Reparo fiscal iniciado', solicitud };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     client.query('ROLLBACK');
     throw {
       status: 500,

@@ -7,6 +7,7 @@ import { stringify } from 'flatted/cjs';
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { generateToken } from '@utils/Strategies';
 import { blockUserEvent } from './notification';
+import { mainLogger } from '@utils/logger';
 
 const pool = Pool.getInstance();
 
@@ -25,7 +26,7 @@ export const isBlocked = () => async (req, res, next) => {
       next();
     }
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     res.send({
       status: 500,
       error: errorMessageExtractor(error),
@@ -67,7 +68,7 @@ export const getUserByUsername = async (username: string): Promise<Usuario | nul
     };
     return user;
   } catch (e) {
-    console.log(e);
+    mainLogger.error(e);
     return e;
   } finally {
     client.release();
@@ -363,7 +364,7 @@ export const hasLinkedContributor = async (user) => {
     };
     return contribuyente;
   } catch (e) {
-    console.log(e);
+    mainLogger.error(e);
     throw {
       status: 500,
       e: errorMessageExtractor(e),
@@ -450,7 +451,7 @@ export const blockUser = async (id, blockStatus, user: Usuario) => {
     await blockUserEvent(id, !blockStatus, user, client);
     return { status: 200, message: 'Estatus bloqueado del usuario SUT modificado' };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     client.query('ROLLBACK');
     throw {
       status: 500,
@@ -491,7 +492,7 @@ export const updateUserInformation = async ({ user, id }) => {
     };
     return { status: 200, message: 'Datos del usuario actualizados', usuario };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     client.query('ROLLBACK');
     throw {
       status: 500,
@@ -514,7 +515,7 @@ export const addUserVerification = async ({ cellphone, id }) => {
     await client.query('COMMIT');
     return { status: 200, message: 'Usuario verificado' };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     client.query('ROLLBACK');
     throw {
       status: 500,

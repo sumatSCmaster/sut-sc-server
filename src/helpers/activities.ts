@@ -6,6 +6,7 @@ import * as pdf from 'html-pdf';
 import { errorMessageExtractor, errorMessageGenerator } from './errors';
 import { formatBranch, codigosRamo } from './settlement';
 import moment from 'moment';
+import { mainLogger } from '@utils/logger';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -44,7 +45,7 @@ export const updateActivitiesAliquots = async ({ aliquots }: { aliquots: Aliquot
     return { status: 200, message: 'Alicuotas actualizadas', alicuotas: response };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
@@ -65,7 +66,7 @@ export const getMunicipalReferenceActivities = async ({ docType, document }) => 
     const sucursales = branches.length > 0 ? await Promise.all(branches.map((el) => formatBranch(el, contributor, client))) : undefined;
     return { status: 200, message: 'Sucursales obtenidas', sucursales };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -229,7 +230,7 @@ export const updateContributorActivities = async ({ branchId, activities, branch
     await client.query('COMMIT');
     return { status: 200, message: 'Actividades ecónomicas y/o estado de licencia actualizado' };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     await client.query('ROLLBACK');
     throw {
       status: 500,

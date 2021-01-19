@@ -7,6 +7,7 @@ import { PoolClient } from 'pg';
 import switchcase from '@utils/switch';
 import { validateApplication, validateAgreementFraction, getApplicationsAndSettlementsById, getAgreementFractionById, getApplicationsAndSettlementsByIdNots, fixatedAmount } from './settlement';
 import moment from 'moment';
+import { mainLogger } from '@utils/logger';
 const pool = Pool.getInstance();
 
 export const getAllBanks = async () => {
@@ -77,7 +78,7 @@ const typeProcess = switchcase({
 
 export const paymentReferenceSearch = async ({ reference, bank }) => {
   const client = await pool.connect();
-  console.log(reference, bank);
+  mainLogger.info(reference, bank);
   try {
     if (!reference) throw { status: 400, message: 'Debe proporcionar la referencia a ser buscada' };
     if (!bank) throw { status: 400, message: 'Debe proporcionar el banco correspondiente a la referencia' };
@@ -90,9 +91,9 @@ export const paymentReferenceSearch = async ({ reference, bank }) => {
     if (!pagos.length) throw { status: 404, message: 'No existe la referencia suministrada en el banco suministrado' };
     await Promise.all(
       pagos.map(async (pago) => {
-        console.log(pago);
+        mainLogger.info(pago);
         const action = typeProcess(pago.concepto);
-        // console.log('if -> action', action);
+        // mainLogger.info('if -> action', action);
         pago.procedimiento = await action({ id: pago.idProcedimiento, client });
         pago.procedimiento.pagos = await getPaymentsByProcessId({ id: pago.idProcedimiento, concept: pago.concepto, client });
         if (pago.concepto !== 'TRAMITE') {
@@ -187,7 +188,7 @@ export const reversePaymentForProcess = async ({ id, concept }: { id: number; co
     return { status: 200, message: 'Pagos reversados correctamente', procedimiento };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
@@ -228,7 +229,7 @@ export const approveSinglePayment = async (id, user) => {
     const res = await client.query(queries.APPROVE_PAYMENT, [id]);
     if (res.rowCount > 0) {
       const pago = res.rows[0];
-      console.log(pago);
+      mainLogger.info(pago);
       const tramiteInfo = pago.concepto === 'TRAMITE' ? (await client.query(queries.PAYMENT_PROCEDURE_INFO, [id])).rows[0] : null;
       const multaInfo = pago.concepto === 'MULTA' ? (await client.query(queries.PAYMENT_FINE_INFO, [id])).rows[0] : null;
 
@@ -339,7 +340,7 @@ export const validatePayments = async (body, user) => {
     };
   } catch (e) {
     client.query('ROLLBACK');
-    console.log('error ep', e);
+    mainLogger.error('error ep', e);
     throw errorMessageExtractor(e);
   } finally {
     client.release();
@@ -497,7 +498,7 @@ export const listProcedurePayments = async (type_doc, doc) => {
 
     return { status: 200, data };
   } catch (e) {
-    console.log(e);
+    mainLogger.error(e);
     throw e;
   } finally {
     client.release();
@@ -507,7 +508,7 @@ export const listProcedurePayments = async (type_doc, doc) => {
 export const listTaxPayments = async () => {
   const client = await pool.connect();
   try {
-    console.log('A');
+    mainLogger.info('A');
     let data = await client.query(`
     SELECT s.*, p.*, b.id_banco, c.documento, c.tipo_documento AS "tipoDocumento" 
     FROM (
@@ -530,7 +531,7 @@ export const listTaxPayments = async () => {
     INNER JOIN pago p ON p.id_procedimiento = s.id 
     INNER JOIN banco b ON b.id_banco = p.id_banco
     WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' AND p.concepto IN ('IMPUESTO', 'RETENCION') ORDER BY id_procedimiento, id_pago;`);
-    console.log('B');
+    mainLogger.info('B');
     let convData = await client.query(`
     SELECT s.id, s.fecha, fs.state, c.documento, c.tipo_documento AS "tipoDocumento", s."tipoSolicitud", fs.idconvenio, p.id_pago, p.referencia, p.monto, p.fecha_de_pago, b.id_banco, p.aprobado
     FROM impuesto.solicitud_state s
@@ -581,7 +582,7 @@ export const listTaxPayments = async () => {
     WHERE fs.state = 'validando' OR fs.state = 'ingresardatos'
     GROUP BY c.id_convenio;`)
     ).rows;
-    console.log('C');
+    mainLogger.info('C');
     data =
       data.rowCount > 0
         ? data.rows.reduce((prev, next) => {
@@ -621,10 +622,10 @@ export const listTaxPayments = async () => {
             return prev;
           }, [])
         : [];
-    console.log('F');
+    mainLogger.info('F');
     return { status: 200, data };
   } catch (e) {
-    console.log(e);
+    mainLogger.error(e);
     throw e;
   } finally {
     client.release();
@@ -667,7 +668,7 @@ export const updatePayment = async ({ id, solicitud, fechaDePago, referencia, mo
     );
     return { status: 200, data: res.rows };
   } catch (e) {
-    console.log(e);
+    mainLogger.info(e);
     throw e;
   } finally {
     client.release();
@@ -686,7 +687,7 @@ export const addPayment = async ({ id, fechaDePago, referencia, monto, banco }) 
     );
     return { status: 200, data: res.rows };
   } catch (e) {
-    console.log(e);
+    mainLogger.info(e);
     throw e;
   } finally {
     client.release();

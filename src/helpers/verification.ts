@@ -6,6 +6,7 @@ import { VerificationValue } from '@interfaces/sigt';
 import queries from '@utils/queries';
 import { QueryResult, Client, PoolClient } from 'pg';
 import { errorMessageExtractor } from '@helpers/errors';
+import { mainLogger } from '@utils/logger';
 
 const pool = Pool.getInstance();
 
@@ -18,7 +19,6 @@ const generateCode = () => {
 export const sendRimVerification = async (value: VerificationValue, payload: { idRim: number[]; content: string; user: number }) => {
   const client = await pool.connect();
   let code = generateCode();
-  console.log('code', code);
   try {
     await client.query('BEGIN');
     switch (value) {
@@ -42,16 +42,16 @@ export const sendRimVerification = async (value: VerificationValue, payload: { i
             await client.query(queries.ADD_PHONE_TO_VERIFICATION, [id, verification.id_verificacion_telefono]);
           })
         );
-        try{
+        try {
           await twilioClient.messages.create({
             body: `Su codigo de verificación es: ${code}`,
             from: process.env.TWILIO_NUMBER,
             to: `+58${payload.content}`,
           });
-        } catch(e){
-          console.log(e)
+        } catch (e) {
+          mainLogger.error(e);
         }
-        
+
         break;
     }
     await client.query('COMMIT');
@@ -88,8 +88,6 @@ export const resendCode = async (value: VerificationValue, payload: { user: numb
           } else {
             let code = generateCode();
             const verificationRow = verification.rows[0];
-            console.log(code);
-            console.log(payload.user);
             await client.query(queries.UPDATE_CODE, [code, payload.user]);
             await twilioClient.messages.create({
               body: `Su codigo de verificación es: ${code}`,
@@ -106,7 +104,7 @@ export const resendCode = async (value: VerificationValue, payload: { user: numb
     }
     client.query('COMMIT');
   } catch (e) {
-    console.log(e);
+    mainLogger.error(e);
     client.query('ROLLBACK');
     throw e;
   } finally {
@@ -124,7 +122,6 @@ export const verifyCode = async (value: VerificationValue, payload: { code: stri
   try {
     client.query('BEGIN');
     const verification = await client.query(queries.GET_VERIFICATION, [payload.user]);
-    console.log(payload.code, verification.rows[0]);
     if (verification.rowCount === 0) {
       throw new Error('No se ha hallado un proceso de verificación en proceso');
     } else if (verification.rows[0].late) {
@@ -141,7 +138,7 @@ export const verifyCode = async (value: VerificationValue, payload: { code: stri
     return result;
   } catch (e) {
     client.query('ROLLBACK');
-    console.log(e);
+    mainLogger.error(e);
     throw {
       e,
       message: 'Hubo un error en la verificacion',

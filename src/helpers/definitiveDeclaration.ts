@@ -13,6 +13,7 @@ import { dirname } from 'path';
 import * as qr from 'qrcode';
 import * as pdftk from 'node-pdftk';
 import S3Client from '@utils/s3';
+import { mainLogger } from '@utils/logger';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -27,7 +28,7 @@ const template = async (props) => {
     return { status: 200, message: '' };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
@@ -113,7 +114,7 @@ export const getDataForDefinitiveDeclaration = async ({ document, reference, doc
 
     return { status: 200, message: 'Declaraciones previas obtenidas', data: recibo };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
@@ -133,7 +134,7 @@ export const insertDefinitiveYearlyDeclaration = async ({ process, user }) => {
     return { status: 200, message: 'Declaracion anual creada' };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
@@ -160,7 +161,7 @@ const createReceiptForAEApplication = async (payload: { liquidaciones; contribuy
     let certInfoArray: any[] = [];
     let certAE;
     for (const el of liquidaciones) {
-      console.log('el', el, el.datos);
+      mainLogger.info('el', el, el.datos);
       certAE = {
         fecha: moment().format('YYYY-MM-DD'),
         tramite: 'PAGO DE IMPUESTOS',
@@ -200,14 +201,10 @@ const createReceiptForAEApplication = async (payload: { liquidaciones; contribuy
 
     return new Promise(async (res, rej) => {
       try {
-        console.log('AAAAAAAA');
         let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-DAE.pug`), certInfo));
-        console.log(htmlArray.length);
         const pdfDir = resolve(__dirname, `../../archivos/sedemat/definitive-declaration/AE/${contribuyente.anio}/${contribuyente.id}/recibo.pdf`);
         const dir = `${process.env.SERVER_URL}/sedemat/definitive-declaration/AE/${contribuyente.anio}/${contribuyente.id}/recibo.pdf`;
         // const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
-        console.log(pdfDir);
-        console.log(dir);
         let buffersArray: any[] = await Promise.all(
           htmlArray.map((html) => {
             return new Promise((res, rej) => {
@@ -228,7 +225,6 @@ const createReceiptForAEApplication = async (payload: { liquidaciones; contribuy
             });
           })
         );
-        console.log(buffersArray);
 
         if (dev) {
           mkdir(dirname(pdfDir), { recursive: true }, (e) => {
@@ -259,11 +255,10 @@ const createReceiptForAEApplication = async (payload: { liquidaciones; contribuy
                   .cat(`${Object.keys(reduced).join(' ')}`)
                   .output(pdfDir)
                   .then((buffer) => {
-                    console.log('a', buffer);
                     res(dir);
                   })
                   .catch((e) => {
-                    console.log(e);
+                    mainLogger.error(e);
                     rej(e);
                   });
               }
@@ -312,7 +307,7 @@ const createReceiptForAEApplication = async (payload: { liquidaciones; contribuy
                   res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
                 })
                 .catch((e) => {
-                  console.log(e);
+                  mainLogger.error(e);
                   rej(e);
                 });
             }

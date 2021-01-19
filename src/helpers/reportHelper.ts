@@ -5,6 +5,7 @@ import { PoolClient } from 'pg';
 import S3Client from '@utils/s3';
 import ExcelJs from 'exceljs';
 import * as fs from 'fs';
+import { mainLogger } from '@utils/logger';
 
 const pool = Pool.getInstance();
 const dev = process.env.NODE_ENV !== 'production';
@@ -29,11 +30,7 @@ export const getSettlementsReport = async ({ query, reportName }) => {
       ];
 
       const sheet = workbook.addWorksheet(reportName);
-      console.log('sil');
       const result = await client.query(query);
-      console.log('si2');
-
-      //   console.log(result);
 
       sheet.columns = result.fields.map((row) => {
         return { header: row.name, key: row.name, width: 32 };
@@ -66,7 +63,7 @@ export const getSettlementsReport = async ({ query, reportName }) => {
       }
     });
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     return errorMessageExtractor(error);
   } finally {
     client.release();
@@ -97,7 +94,6 @@ export const executeReport = async () => {
         reportName: 'LIQUIDACIONES SEPTIEMBRE SIIIII (SUT)',
       },
     ].map(async (el, i) => {
-      console.log(i + 1);
       await getSettlementsReport(el);
     })
   );

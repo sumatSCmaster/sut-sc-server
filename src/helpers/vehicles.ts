@@ -3,6 +3,7 @@ import queries from '@utils/queries';
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { PoolClient } from 'pg';
 import { Usuario } from '@root/interfaces/sigt';
+import { mainLogger } from '@utils/logger';
 
 const pool = Pool.getInstance();
 
@@ -15,7 +16,7 @@ export const checkVehicleExists = () => async (req: any, res, next) => {
     if (!vehicleExists) return next();
     return res.status(403).send({ status: 403, message: 'El vehiculo ya existe para el usuario que solicita' });
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     return res.send({
       status: 500,
       error: errorMessageExtractor(error),
@@ -32,7 +33,7 @@ export const getBrands = async (): Promise<Response & { marcas: { id: number; no
     const res = await client.query(queries.GET_VEHICLE_BRANDS);
     return { marcas: res.rows, status: 200, message: 'Marcas de vehiculos obtenidas' };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -53,7 +54,7 @@ export const getVehicleTypes = async (): Promise<Response & { tipoVehiculo: Vehi
     const types: VehicleType[] = await Promise.all(response);
     return { status: 200, message: 'Tipos de vehiculos obtenidos', tipoVehiculo: types };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -73,7 +74,7 @@ const getVehicleCategoriesByType = async (id: number, client: PoolClient): Promi
     const categories: VehicleCategory[] = await Promise.all(response);
     return categories;
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -87,7 +88,7 @@ const getVehicleSubcategoriesByCategory = async (id: number, client: PoolClient)
     const subcategories: VehicleSubcategory[] = (await client.query(queries.GET_VEHICLE_SUBCATEGORIES_BY_CATEGORY, [id])).rows;
     return subcategories;
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -102,7 +103,7 @@ export const getVehiclesByContributor = async (id: number): Promise<Response & {
     const vehicles: Vehicle[] = (await client.query(queries.GET_VEHICLES_BY_CONTRIBUTOR, [id])).rows;
     return { status: 200, message: 'Vehiculos del contribuyente obtenidos', vehiculos: vehicles };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -139,7 +140,7 @@ export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Re
     return { status: 201, message: 'Vehiculo creado satisfactoriamente', vehiculo: vehicle };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -175,7 +176,7 @@ export const updateVehicle = async (payload: Vehicle, id: number): Promise<Respo
     return { status: 200, message: 'Vehiculo actualizado', vehiculo: vehicle };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -195,7 +196,7 @@ export const deleteVehicle = async (id: number): Promise<Response> => {
     return { status: 200, message: 'Vehiculo eliminado' };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -215,7 +216,7 @@ export const updateVehicleSubcategory = async (payload: VehicleSubcategory, id: 
     return;
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),

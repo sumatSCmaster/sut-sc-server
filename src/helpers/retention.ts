@@ -11,6 +11,7 @@ import { Usuario, Liquidacion } from '@root/interfaces/sigt';
 import { finingPercentage, fixatedAmount, getApplicationsAndSettlementsById, getApplicationsAndSettlementsByIdNots, isExonerated } from './settlement';
 import { getUsersByContributor } from './user';
 import { generateReceipt } from './receipt';
+import { mainLogger } from '@utils/logger';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -44,11 +45,11 @@ export const getRetentionMonths = async ({ document, reference, docType, user }:
 
     let lastRD = (await client.query(queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.RD0, branch.id_registro_municipal])).rows[0];
     const lastRDPayment = (lastRD && moment(lastRD.fecha_liquidacion)) || moment().startOf('year').subtract(1, 'M');
-    console.log('🚀 ~ file: retention.ts ~ line 47 ~ getRetentionMonths ~ lastRDPayment', lastRDPayment);
+    mainLogger.info('🚀 ~ file: retention.ts ~ line 47 ~ getRetentionMonths ~ lastRDPayment', lastRDPayment);
     const RDDate = moment([lastRDPayment.year(), lastRDPayment.month(), 1]);
-    console.log('🚀 ~ file: retention.ts ~ line 49 ~ getRetentionMonths ~ RDDate', RDDate);
+    mainLogger.info('🚀 ~ file: retention.ts ~ line 49 ~ getRetentionMonths ~ RDDate', RDDate);
     const dateInterpolation = Math.floor(now.diff(RDDate, 'M'));
-    console.log('🚀 ~ file: retention.ts ~ line 51 ~ getRetentionMonths ~ dateInterpolation', dateInterpolation);
+    mainLogger.info('🚀 ~ file: retention.ts ~ line 51 ~ getRetentionMonths ~ dateInterpolation', dateInterpolation);
 
     if (dateInterpolation > 0) {
       debtRD = await Promise.all(
@@ -77,7 +78,7 @@ export const getRetentionMonths = async ({ document, reference, docType, user }:
     };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -97,7 +98,7 @@ export const getRetentionChargingsForDocumentAndReference = async ({ document, r
     };
     return { status: 200, message: 'Cobros de retenciones obtenidos', retenciones };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
@@ -320,7 +321,7 @@ export const insertRetentions = async ({ process, user }) => {
           fechaLiquidacion: moment().format('MM-DD-YYYY'),
           // desglose: el.items,
         };
-        // console.log(el.ramo);
+        // mainLogger.error(el.ramo);
         const liquidacion = (
           await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
             application.id_solicitud,
@@ -376,7 +377,7 @@ export const insertRetentions = async ({ process, user }) => {
     // );
     return { status: 201, message: 'Declaracion de retencion creada satisfactoriamente', solicitud };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     client.query('ROLLBACK');
     throw {
       ...error,
@@ -418,7 +419,7 @@ export const createRetentionAgent = async ({ docType, document }) => {
     return { status: 201, message: 'Agente de retencion creado', agenteRetencion };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -438,7 +439,7 @@ export const updateRetentionAgentStatus = async ({ id, status }) => {
     return { status: 200, message: 'Estado de agente de retencion actualizado' };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -458,7 +459,7 @@ export const updateRetentionAgentRIM = async ({ id, reference }) => {
     return { status: 200, message: 'RIM de Agente de Retencion actualizado' };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -491,7 +492,7 @@ export const getRetentionAgents = async () => {
     }));
     return { status: 200, message: 'Agentes de retencion obtenidos', agentesRetencion: retentionAgents };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),

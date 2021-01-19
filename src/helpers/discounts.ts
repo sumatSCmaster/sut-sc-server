@@ -3,6 +3,7 @@ import queries from '@utils/queries';
 import { errorMessageExtractor, errorMessageGenerator } from './errors';
 import { ActividadEconomica, Ramo } from '@root/interfaces/sigt';
 import moment from 'moment';
+import { mainLogger } from '@utils/logger';
 
 const pool = Pool.getInstance();
 
@@ -11,7 +12,7 @@ export const getContributorDiscounts = async ({ typeDoc, doc, ref }) => {
   const client = await pool.connect();
   try {
     const contributor = (await client.query(queries.GET_CONTRIBUTOR, [typeDoc, doc, ref])).rows[0];
-    console.log('getContributorDiscounts -> contributor', contributor);
+    mainLogger.info('getContributorDiscounts -> contributor', contributor);
     if (!contributor) {
       throw { status: 404, message: 'No se ha hallado el contribuyente' };
     }
@@ -137,15 +138,15 @@ export const createContributorDiscount = async ({ typeDoc, doc, ref, from, branc
   try {
     await client.query('BEGIN');
     const contributor = (await client.query(queries.GET_CONTRIBUTOR, [typeDoc, doc, ref])).rows[0];
-    console.log(contributor.rows);
+    mainLogger.info(contributor.rows);
     if (!contributor) {
       throw { status: 404, message: 'El contribuyente no existe' };
     }
     const idContributor = +contributor.idRegistroMunicipal;
-    console.log('aki');
+    mainLogger.info('aki');
     const ramos = await Promise.all(
       branches.map(async (branch) => {
-        console.log('a');
+        mainLogger.info('a');
         const discount = (await client.query(queries.CREATE_DISCOUNT, [from])).rows[0];
         if ((await client.query(queries.GET_BRANCH_IS_DISCOUNTED_FOR_CONTRIBUTOR, [idContributor, branch.id, from])).rowCount > 0) throw { message: `El ramo ${branch.descripcion} posee un descuento vigente para este contribuyente` };
         await client.query(queries.INSERT_CONTRIBUTOR_DISCOUNT_FOR_BRANCH, [discount.id_plazo_descuento, idContributor, branch.id, branch.porcDescuento]);
@@ -162,7 +163,7 @@ export const createContributorDiscount = async ({ typeDoc, doc, ref, from, branc
         return response;
       })
     );
-    console.log('q');
+    mainLogger.info('q');
     await client.query('COMMIT');
     const contribuyente = {
       ...contributor,
@@ -171,14 +172,14 @@ export const createContributorDiscount = async ({ typeDoc, doc, ref, from, branc
       referenciaMunicipal: ref,
       ramos,
     };
-    console.log('wtf');
+    mainLogger.info('wtf');
     // if (activities) {
     //   await Promise.all(
     //     activities.map(async (row) => {
     //       if ((await client.query(queries.GET_DISCOUNTED_BRANCH_BY_CONTRIBUTOR, [idContributor, row.id])).rowCount > 0) {
     //         throw new Error(`La actividad ${row.nombreActividad} ya esta exonerada para este contribuyente`);
     //       } else {
-    //         console.log('bc');
+    //         mainLogger.info('bc');
     //         return client.query(queries.INSERT_CONTRIBUTOR_DISCOUNTED_BRANCH, [exoneration.id_plazo_exoneracion, idContributor, row.id]);
     //       }
     //     })

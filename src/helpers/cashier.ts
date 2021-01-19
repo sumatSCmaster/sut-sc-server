@@ -8,6 +8,7 @@ import { renderFile } from 'pug';
 import { errorMessageExtractor } from './errors';
 import * as pdf from 'html-pdf';
 import { groupBy, chunk } from 'lodash';
+import { mainLogger } from '@utils/logger';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -42,7 +43,7 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
   const cashierChecks = (await client.query(queries.GET_CASHIER_CHECKS, [payload.day, userId])).rows;
   const cashierCredit = (await client.query(queries.GET_CASHIER_CREDIT, [payload.day, userId])).rows;
   const cashierTransfers = (await client.query(queries.GET_CASHIER_TRANSFERS, [payload.day, userId])).rows;
-  console.log(cashierTransfers);
+  mainLogger.info(cashierTransfers);
   const cashierTransfersTotal = +cashierTransfers.reduce((prev, next) => prev + +next.monto, 0);
   const cashierTransfersTransactions = +cashierTransfers.reduce((prev, next) => prev + +next.transacciones, 0);
   const cashierTransfersByBank = cashierTransfers.reduce((prev, next) => {

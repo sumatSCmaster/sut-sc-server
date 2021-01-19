@@ -5,6 +5,7 @@ import { PoolClient } from 'pg';
 import moment, { Moment } from 'moment';
 import switchcase from '@utils/switch';
 import { formatContributor } from './settlement';
+import { mainLogger } from '@utils/logger';
 
 const pool = Pool.getInstance();
 
@@ -17,7 +18,7 @@ const template = async (props) => {
     return;
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -37,7 +38,7 @@ export const getScales = async () => {
     return { status: 200, message: 'Baremo de tarifas de servicio municipal obtenido', scales };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -57,7 +58,7 @@ export const updateScale = async (id, tariff) => {
     return { status: 200, message: 'Valor del baremo seleccionado actualizado satisfactoriamente' };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -77,7 +78,7 @@ export const createScale = async ({ description, tariff }) => {
     return { status: 200, message: 'Nuevo valor del baremo de servicios municipales agregado', baremo: { id: scale.id_baremo, descripcion: scale.descripcion, indicador: scale.indicador } };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),

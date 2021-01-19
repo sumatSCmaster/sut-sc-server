@@ -26,7 +26,11 @@ import { initProcedureAnalist, processProcedureAnalist } from './procedures';
 import { generateReceipt } from './receipt';
 import { getCleaningTariffForEstate, getGasTariffForEstate } from './services';
 import { uniqBy, chunk } from 'lodash';
+<<<<<<< HEAD
 import { isCondominium, isCondoOwner } from './condominium';
+=======
+import { mainLogger } from '@utils/logger';
+>>>>>>> 72a1333 (tracing)
 const written = require('written-number');
 
 const gticPool = GticPool.getInstance();
@@ -56,27 +60,27 @@ export const checkContributorExists = () => async (req: any, res, next) => {
   const { user } = req;
   const { doc, ref, pref, contrib } = req.query;
   try {
-    console.log('1');
+    mainLogger.info('1');
     if (user.tipoUsuario === 4) return next();
-    console.log('2');
+    mainLogger.info('2');
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [pref, doc])).rows[0];
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [ref, contributor?.id_contribuyente])).rows[0];
     if (!!ref && !branch) return res.status(404).send({ status: 404, message: 'No existe la sucursal solicitada' });
-    console.log('3');
+    mainLogger.info('3');
     const branchIsUpdated = branch?.actualizado;
     if (!contributor || (!!contributor && !!ref && !branchIsUpdated)) {
-      console.log('4');
+      mainLogger.info('4');
       const x = await externalLinkingForCashier({ document: doc, docType: pref, reference: ref, user, typeUser: contrib });
       return res.status(202).json({ status: 202, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: x });
     } else {
-      console.log('5');
+      mainLogger.info('5');
 
       return next();
     }
-    console.log('6');
+    mainLogger.info('6');
     return next();
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     return res.send({
       status: 500,
       error: errorMessageExtractor(error),
@@ -136,21 +140,21 @@ export const getIUTariffForContributor = async ({ estate, id, declaration, date 
     const avaluo = (await client.query(queries.GET_ESTATE_APPRAISAL_BY_ID_AND_YEAR, [estate.id_inmueble, date.year()])).rows[0]?.avaluo || estate.avaluo;
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const impuestoInmueble = Math.round(fixatedAmount((avaluo * PETRO * (estate.tipo_inmueble === 'COMERCIAL' ? 0.01 : 0.005)) / 12));
-    console.log('getIUTariffForContributor ~ impuestoInmueble', impuestoInmueble);
+    mainLogger.info('getIUTariffForContributor ~ impuestoInmueble', impuestoInmueble);
     if (!id) return impuestoInmueble;
     const now = moment().locale('ES').subtract(1, 'M');
     const lastAEApplication = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, id])).rows.find((el) => el.datos.fecha.month === now.format('MMMM') && el.datos.fecha.year === now.year())?.monto_petro;
     const AEDeclaration = Math.round(isNaN(+declaration!) ? fixatedAmount(lastAEApplication * PETRO) : +declaration!);
-    console.log('getIUTariffForContributor ~ AEDeclaration', AEDeclaration);
+    mainLogger.info('getIUTariffForContributor ~ AEDeclaration', AEDeclaration);
     if (!AEDeclaration && typeof AEDeclaration !== 'number') throw { status: 422, message: 'Debe realizar una declaracion de AE de este mes para poder realizar el calculo de IU' };
     const taxableMin = Math.round(fixatedAmount((await client.query(queries.GET_LITTLEST_TAXABLE_MINIMUM_FOR_CONTRIBUTOR, [id])).rows[0].minimo_tributable * PETRO));
-    console.log('getIUTariffForContributor ~ taxableMin', taxableMin);
+    mainLogger.info('getIUTariffForContributor ~ taxableMin', taxableMin);
     const impuestoDefinitivo = taxableMin > impuestoInmueble ? taxableMin : impuestoInmueble;
-    console.log('getIUTariffForContributor ~ impuestoDefinitivo', impuestoDefinitivo);
+    mainLogger.info('getIUTariffForContributor ~ impuestoDefinitivo', impuestoDefinitivo);
     if (AEDeclaration === 0) return impuestoInmueble > taxableMin ? taxableMin : impuestoInmueble;
     return impuestoDefinitivo > AEDeclaration ? AEDeclaration : impuestoDefinitivo;
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw error;
   }
 };
@@ -236,7 +240,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
     }
     return { status: 200, message: 'Liquidaciones de IU obtenidas', IU };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
@@ -260,8 +264,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
     const contributorHasBranch = (await client.query(queries.GET_CONTRIBUTOR_HAS_BRANCH, [contributor.id_contribuyente])).rowCount > 0;
     if (!reference && contributorHasBranch) throw { status: 403, message: 'El contribuyente posee una referencia municipal, debe ingresarla' };
-    console.log('branch', branch);
-    console.log('contributor', contributor);
+    mainLogger.info('branch', branch);
+    mainLogger.info('contributor', contributor);
     if ((!branch && reference) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEMAT' };
     const lastSettlementQuery = !!reference && branch ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
     const lastSettlementPayload = !!reference && branch ? branch?.id_registro_municipal : contributor.id_contribuyente;
@@ -286,8 +290,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.PP, contributor.id_contribuyente])).rows[0];
     if (contributor.tipo_contribuyente === 'JURIDICO' && !!['CESANTE', 'INHABILITADO', 'SANCIONADO'].find((state) => state === branch?.estado_licencia))
       throw { status: 401, message: `La referencia municipal proporcionada se encuentra en estado ${branch?.estado_licencia}` };
-    console.log(lastSettlementPayload);
-    console.log(lastSettlementQuery);
+    mainLogger.info(lastSettlementPayload);
+    mainLogger.info(lastSettlementQuery);
     if (AEApplicationExists && SMApplicationExists && IUApplicationExists && PPApplicationExists) return { status: 409, message: 'Ya existe una declaracion de impuestos para este mes' };
     const now = moment(new Date());
     const monthDateForTop = moment().locale('ES').subtract(2, 'M');
@@ -302,7 +306,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       const lastEAPayment = (lastEA && moment(lastEA.fecha_liquidacion)) || moment().month(0);
       const pastMonthEA = (lastEA && moment(lastEA.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
       const EADate = moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
-      // console.log(EADate);
+      // mainLogger.info(EADate);
       const dateInterpolation = Math.floor(now.diff(EADate, 'M'));
       montoAcarreado.AE = {
         monto: lastEA && lastEA.mo_pendiente ? parseFloat(lastEA.mo_pendiente) : 0,
@@ -590,7 +594,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       },
     };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -716,13 +720,13 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
   const gtic = await gticPool.connect();
   try {
     const contributorQuery = typeUser === 'JURIDICO' ? queries.gtic.GET_JURIDICAL_CONTRIBUTOR + ' LIMIT 1' : queries.gtic.GET_NATURAL_CONTRIBUTOR + ' LIMIT 1';
-    console.log(contributorQuery);
+    mainLogger.info(contributorQuery);
     const contributorExists = (await gtic.query(contributorQuery, [document, docType])).rowCount > 0;
     if (!contributorExists) throw { status: 404, message: 'Contribuyente no encontrado', linked: false };
     const linkingData = await Promise.all(
       (await gtic.query(contributorQuery, [document, docType])).rows
         .map(async (el) => {
-          console.log(el);
+          mainLogger.info(el);
           const contributorExists = (await client.query(queries.TAX_PAYER_EXISTS, [el.tx_tp_doc, el.tx_dist_contribuyente === 'J' ? el.tx_rif : el.nu_cedula])).rows;
           if (contributorExists.length > 0) return getLinkedContributorData(contributorExists[0]);
           return {
@@ -964,7 +968,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
     //           ? await Promise.all(
     //               inmuebles.map(async (el) => {
     //                 const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_registro_municipal, el.direccion, el.tipoInmueble])).rows[0];
-    //                 console.log(inmueble);
+    //                 mainLogger.info(inmueble);
     //                 await client.query(queries.INSERT_ESTATE_VALUE, [inmueble.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
     //               })
     //             )
@@ -1104,7 +1108,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
     // return { linked: true };
   } catch (error) {
     await client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       linked: false,
       status: 500,
@@ -1327,7 +1331,7 @@ export const logInExternalLinking = async ({ credentials }) => {
     if (contributors.every((el) => el.hasOwnProperty('sinSucursales') && el.sinSucursales)) return { status: 409, message: 'El usuario ya ha importado y actualizado todas sus sucursales' };
     return { status: 200, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: contributors };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -1401,7 +1405,7 @@ const externalUserForLinkingExists = async ({ user, password, gtic }: { user: st
         contribuyente: el,
       }))
       .find((x) => x.loggedIn);
-    console.log(isAttemptedUser);
+    mainLogger.info(isAttemptedUser);
     return { attemptedUser: isAttemptedUser?.contribuyente, canBeLinked: isAttemptedUser?.loggedIn };
   } catch (e) {
     throw errorMessageExtractor(e);
@@ -1417,7 +1421,7 @@ export const createSettlementForProcedure = async (process, client) => {
       idTramite,
       ...payload,
     };
-    console.log('si');
+    mainLogger.info('si');
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const liquidacion = (await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [null, (monto / PETRO).toFixed(8), ramo, 'Pago ordinario', datos, moment().endOf('month').format('MM-DD-YYYY'), referenciaMunicipal])).rows[0];
     await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO_SETTLEMENT, [liquidacion.id_liquidacion]);
@@ -1486,7 +1490,7 @@ export const patchSettlement = async ({ id, settlement }) => {
     return { status: 200, message: 'Correccion administrativa realizada correctamente', liquidacion };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -1509,7 +1513,7 @@ export const deleteSettlement = async (id: number) => {
     return { status: 200, message: 'Liquidacion eliminada satisfactoriamente' };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
@@ -1538,10 +1542,10 @@ export const getAgreementFractionById = async ({ id }): Promise<Solicitud & any>
       contribuyente: (await getApplicationsAndSettlementsByIdNots({ id: (await client.query('SELECT id_solicitud FROM impuesto.convenio WHERE id_convenio = $1', [application.id_convenio])).rows[0].id_solicitud, user: null }, client)).contribuyente,
     };
 
-    console.log(fraction);
+    mainLogger.info(fraction);
     return fraction;
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -1568,10 +1572,10 @@ export const getAgreementFractionByIdNots = async ({ id }, client): Promise<Soli
       contribuyente: (await getApplicationsAndSettlementsByIdNots({ id: (await client.query('SELECT id_solicitud FROM impuesto.convenio WHERE id_convenio = $1', [application.id_convenio])).rows[0].id_solicitud, user: null }, client)).contribuyente,
     };
 
-    console.log(fraction);
+    mainLogger.info(fraction);
     return fraction;
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -1669,7 +1673,7 @@ export const getAgreementsForContributor = async ({ reference, docType, document
     );
     return { status: 200, message: 'Convenios obtenidos satisfactoriamente', convenios: applications };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
@@ -1991,7 +1995,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
     );
     return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', solicitudes: applications.filter((el) => el.liquidaciones.length > 0 || el.multas!.length > 0) };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
@@ -2140,8 +2144,8 @@ export const contributorSearch = async ({ document, docType, name }) => {
   const client = await pool.connect();
   let contribuyentes: any[] = [];
   try {
-    console.log(document, name);
-    console.log(!document && !name);
+    mainLogger.info(document, name);
+    mainLogger.info(!document && !name);
     if (!document && !name) throw { status: 406, message: 'Debe aportar algun parametro para la busqueda' };
     if ((!!document && document.length < 6) || (!!name && name.length < 3)) throw { status: 406, message: 'Debe aportar mas datos para la busqueda' };
     contribuyentes = !!document && document.length >= 6 ? (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows : (await client.query(queries.SEARCH_CONTRIBUTOR_BY_NAME, [`%${name}%`])).rows;
@@ -2163,7 +2167,7 @@ export const contributorSearch = async ({ document, docType, name }) => {
 export const getEntireDebtsForContributor = async ({ reference, docType, document, typeUser }) => {
   const client = await pool.connect();
   try {
-    console.log(document, typeUser, docType, reference);
+    mainLogger.info(document, typeUser, docType, reference);
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const contribuyente = (await client.query(queries.GET_CONTRIBUTOR_BY_DOCUMENT_AND_DOC_TYPE, [document, docType])).rows[0];
     if (!contribuyente) return { status: 404, message: 'El contribuyente no está registrado en SEDEMAT' };
@@ -2198,7 +2202,7 @@ export const getEntireDebtsForContributor = async ({ reference, docType, documen
     };
     return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', ...payload };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
@@ -2249,7 +2253,7 @@ const getDefaultInterestRebateByApplication = async ({ id, date, state, client }
           .map((p) => (+p.monto * 0.3324) / 365)
           .reduce((x, j) => x + j, 0)) ||
       undefined;
-    // console.log('getDefaultInterestByApplication -> value', id, value);
+    // mainLogger.info('getDefaultInterestByApplication -> value', id, value);
     return fixatedAmount(+value);
   } catch (e) {
     throw e;
@@ -2571,7 +2575,7 @@ export const initialUserLinking = async (linkingData, user) => {
     return { status: 201, message: 'Enlace inicial completado', rims: payload.rims };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
 
     throw {
       status: error.tiempo ? 429 : 500,
@@ -2607,7 +2611,7 @@ export const resendUserCode = async ({ user }) => {
     await resendCode(VerificationValue.CellPhone, { user: user.id });
     return { status: 200, message: 'Codigo reenviado' };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     let status = error.tiempo ? 429 : 500;
     throw {
       status: status,
@@ -2674,9 +2678,9 @@ export const insertSettlements = async ({ process, user }) => {
       //   finingAmount = lastSavedFine.datos.monto || lastSavedFine.monto;
       //   const proposedFiningDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month);
       //   const finingDate = moment(lastSavedFine.fecha_liquidacion).isSameOrBefore(proposedFiningDate) && moment(lastSavedFine.fecha_liquidacion).month() < proposedFiningDate.month() ? proposedFiningDate : moment(lastSavedFine.fecha_liquidacion);
-      //   console.log('1', finingDate.format('MM-DD-YYYY'));
-      //   console.log('2', proposedFiningDate.format('MM-DD-YYYY'));
-      //   console.log('3', moment(lastSavedFine.fecha_liquidacion).format('MM-DD-YYYY'));
+      //   mainLogger.info('1', finingDate.format('MM-DD-YYYY'));
+      //   mainLogger.info('2', proposedFiningDate.format('MM-DD-YYYY'));
+      //   mainLogger.info('3', moment(lastSavedFine.fecha_liquidacion).format('MM-DD-YYYY'));
       //   finingMonths = new Array(now.month() - 1 - finingDate.month()).fill({});
       //   if (finingMonths.length > 0) {
       //     let counter = finingDate.clone();
@@ -2958,7 +2962,7 @@ export const insertSettlements = async ({ process, user }) => {
     );
     return { status: 201, message: 'Liquidaciones de impuestos creadas satisfactoriamente', solicitud };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     client.query('ROLLBACK');
     throw {
       status: 500,
@@ -2983,7 +2987,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
       const datos = {
         fecha: { month: moment().toDate().toLocaleDateString('ES', { month: 'long' }), year: moment().year() },
       };
-      console.log('si');
+      mainLogger.info('si');
       const liquidacion = (
         await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [application, fixatedAmount(+interest), 'INTERESES', 'Pago ordinario', datos, moment().endOf('month').format('MM-DD-YYYY'), idReferenciaMunicipal || null])
       ).rows[0];
@@ -2991,9 +2995,9 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
     const applicationType = (await client.query('SELECT tipo_solicitud FROM impuesto.solicitud WHERE id_solicitud = $1', [application])).rows[0]?.tipo_solicitud || 'IMPUESTO';
     applicationType !== 'RETENCION' && (await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO, [application]));
     const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0];
-    console.log('addTaxApplicationPayment -> solicitud', solicitud);
+    mainLogger.info('addTaxApplicationPayment -> solicitud', solicitud);
     const pagoSum = +payment.map((e) => fixatedAmount(+e.costo)).reduce((e, i) => e + i, 0);
-    console.log('addTaxApplicationPayment -> pagoSum', pagoSum);
+    mainLogger.info('addTaxApplicationPayment -> pagoSum', pagoSum);
     if (pagoSum < fixatedAmount(+solicitud.monto_total)) throw { status: 401, message: `La suma de los montos es insuficiente para poder insertar el pago, con un déficit de Bs. ${fixatedAmount(+solicitud.monto_total) - pagoSum}` };
     const creditoPositivo = pagoSum - fixatedAmount(+solicitud.monto_total);
     await Promise.all(
@@ -3054,7 +3058,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
     return { status: 200, message: 'Pago añadido para la solicitud declarada', solicitud: applicationInstance };
   } catch (error) {
     await client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -3120,7 +3124,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
 //     return { status: 200, message: 'Pago añadido para la solicitud declarada', solicitud: applicationInstance };
 //   } catch (error) {
 //     client.query('ROLLBACK');
-//     console.log(error);
+//     mainLogger.info(error);
 //     throw {
 //       status: 500,
 //       error: errorMessageExtractor(error),
@@ -3195,7 +3199,7 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
     const contributorId = await getApplicationsAndSettlementsByIdNots({ id: (await client.query('SELECT id_solicitud FROM impuesto.convenio WHERE id_convenio = $1', [agreement])).rows[0].id_solicitud, user: null }, client);
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [contributorId.contribuyente.id]);
     await client.query('COMMIT');
-    console.log(applicationInstance);
+    mainLogger.info(applicationInstance);
     await sendNotification(
       user,
       `Se ${user.tipoUsuario === 4 ? `han ingresado los datos de pago` : `ha validado el pago`} de un convenio para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
@@ -3207,7 +3211,7 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
     return { status: 200, message: 'Pago añadido para la solicitud declarada', solicitud: applicationInstance };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -3296,7 +3300,7 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
       const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
         ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
         : undefined;
-      console.log('validateAgreementFraction -> idReferenciaMunicipal', fixatedApplication.contribuyente.tipoContribuyente, idReferenciaMunicipal, body.idTramite);
+      mainLogger.info('validateAgreementFraction -> idReferenciaMunicipal', fixatedApplication.contribuyente.tipoContribuyente, idReferenciaMunicipal, body.idTramite);
       if (fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO' && !idReferenciaMunicipal) return;
       const payload =
         fixatedApplication.contribuyente.tipoContribuyente === 'JURIDICO'
@@ -3343,7 +3347,7 @@ export const internalUserImport = async ({ reference, docType, document, typeUse
       return { status: 200, message: 'El usuario ya esta registrado y actualizado, proceda a enlazarlo' };
     }
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -3358,7 +3362,7 @@ export const internalLicenseApproval = async (license, official: Usuario) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    console.log(license.datos.funcionario, license);
+    mainLogger.info(license.datos.funcionario, license);
     const user = await getUserByUsername(license.username);
     if (!user) throw { status: 404, message: 'El usuario proporcionado no existe en SUT' };
     const userContributor = await hasLinkedContributor(user.id);
@@ -3370,7 +3374,7 @@ export const internalLicenseApproval = async (license, official: Usuario) => {
     return res;
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -3420,7 +3424,7 @@ export const internalContributorSignUp = async (contributor) => {
     return { status: 201, message: 'Contribuyente registrado', contribuyente: data };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
@@ -3439,10 +3443,10 @@ export const approveContributorSignUp = async ({ procedure, client }: { procedur
     const contributor = (await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [tipoDocumento, documentoIdentidad, razonSocial, denominacionComercial, siglas, parish, sector, direccion, puntoReferencia, true, tipoContribuyente])).rows[0];
     await client.query(queries.ASSIGN_CONTRIBUTOR_TO_USER, [contributor.id_contribuyente, usuario]);
     const x = (await client.query(queries.ADD_VERIFIED_CONTRIBUTOR, [usuario])).rows[0];
-    console.log(procedure);
+    mainLogger.info(procedure);
     return structureContributor(contributor);
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw error;
   }
 };
@@ -3479,7 +3483,7 @@ export const internalUserLinking = async (data) => {
     return { status: 201, message: 'Usuario enlazado satisfactoriamente', usuario: user };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
@@ -3526,9 +3530,9 @@ export const addRebateForDeclaration = async ({ process, user }) => {
     const test = await Promise.all(
       recursiveRebate(hasAE, montoRebajado, 'monto_petro').map(async (el) => {
         const oldValue = hasAE.find((x) => x.id_liquidacion === el.id_liquidacion).monto_petro;
-        console.log('if -> oldValue', oldValue);
+        mainLogger.info('if -> oldValue', oldValue);
         const newDatos = { ...el.datos, montoRebajado: oldValue - el.monto_petro, usuarioRebaja: user.id };
-        console.log('montoRebajado', oldValue - el.monto_petro);
+        mainLogger.info('montoRebajado', oldValue - el.monto_petro);
         const liquidacion = (await client.query('UPDATE impuesto.liquidacion SET datos = $1, monto_petro = $2 WHERE id_liquidacion = $3 RETURNING *;', [newDatos, el.monto_petro, el.id_liquidacion])).rows[0];
         return liquidacion;
       })
@@ -3552,7 +3556,7 @@ export const addRebateForDeclaration = async ({ process, user }) => {
     return { status: 200, message: 'Solicitud rebajada satisfactoriamente', solicitud: application };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -3567,7 +3571,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
   const client = await pool.connect();
   const { impuestos } = process;
   let recibo: any = undefined;
-  console.log(process);
+  mainLogger.info(process);
   try {
     client.query('BEGIN');
     const userContributor = (await client.query(queries.TAX_PAYER_EXISTS, [process.tipoDocumento, process.documento])).rows;
@@ -3670,7 +3674,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
     );
     return { status: 201, message: 'Solicitud de liquidacion especial creada satisfactoriamente', solicitud };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     client.query('ROLLBACK');
     throw {
       status: error.status || 500,
@@ -3684,7 +3688,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
 
 export const approveContributorAELicense = async ({ data, client }: { data: any; client: PoolClient }) => {
   try {
-    console.log(data);
+    mainLogger.info(data);
     const { usuario: user, costo } = (await client.query(queries.GET_PROCEDURE_DATA, [data.idTramite])).rows[0];
     const { usuario, funcionario } = data;
     const { actividadesEconomicas } = funcionario;
@@ -3745,10 +3749,10 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
     const verifiedId = (await client.query('SELECT * FROM impuesto.verificacion_telefono WHERE id_usuario = $1', [user])).rows[0]?.id_verificacion_telefono;
     await client.query('INSERT INTO impuesto.registro_municipal_verificacion VALUES ($1, $2) RETURNING *', [registry.id_registro_municipal, verifiedId]);
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [contribuyente.id]);
-    console.log(data);
+    mainLogger.info(data);
     return data;
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw error;
   }
 };
@@ -3769,13 +3773,13 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             const benefitFullPayment = (await client.query(queries.CHANGE_SETTLEMENT_TO_NEW_APPLICATION, [applicationFP.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
             return benefitFullPayment;
           case 'descuento':
-            console.log('descuento');
-            console.log('te odio coro');
+            mainLogger.info('descuento');
+            mainLogger.info('te odio coro');
 
             const settlements = (await client.query(queries.GET_SETTLEMENT_IDS_BY_RIM_AND_BRANCH, [contributorWithBranch.id_registro_municipal, x.idRamo])).rows;
-            console.log('//if -> x.idRamo', x.idRamo);
-            console.log('//if -> contributorWithBranch.id_registro_municipal', contributorWithBranch.id_registro_municipal);
-            console.log(settlements.length);
+            mainLogger.info('//if -> x.idRamo', x.idRamo);
+            mainLogger.info('//if -> contributorWithBranch.id_registro_municipal', contributorWithBranch.id_registro_municipal);
+            mainLogger.info(settlements.length);
             const benefitDiscount = await Promise.all(
               settlements.map(async (el) => {
                 const branch = (await client.query('SELECT sr.*, rm.*, rm.descripcion AS "descripcionRamo" FROM impuesto.subramo sr INNER JOIN impuesto.ramo rm USING (id_ramo) WHERE id_subramo = $1', [el.id_subramo])).rows[0]?.descripcionRamo;
@@ -3806,9 +3810,9 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             const agreement = (await client.query(queries.CREATE_AGREEMENT, [applicationAG.id_solicitud, x.porciones.length])).rows[0];
             const settlementsAG = (await client.query(queries.CHANGE_SETTLEMENT_TO_NEW_APPLICATION, [applicationAG.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
             const costo = +(+(await client.query(queries.CHANGE_SETTLEMENT_BRANCH_TO_AGREEMENT, [x.idRamo, applicationAG.id_solicitud])).rows.reduce((x, j) => x + +j.monto_petro, 0)).toFixed(8);
-            console.log('//if -> costo', costo);
+            mainLogger.info('//if -> costo', costo);
             const totalSolicitud = +(+x.porciones.reduce((x, j) => x + j.monto, 0)).toFixed(8);
-            console.log('//if -> totalSolicitud', totalSolicitud);
+            mainLogger.info('//if -> totalSolicitud', totalSolicitud);
             if (costo > totalSolicitud) throw { status: 403, message: 'La suma de las fracciones del convenio debe ser exactamente igual al total de la deuda' };
             const benefitAgreement = await Promise.all(
               x.porciones.map(async (el) => {
@@ -3822,7 +3826,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
     );
     return true;
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw error;
   }
 };
@@ -3844,7 +3848,7 @@ export const createCertificateForApplication = async ({ settlement, media, user 
     return { status: 200, message: 'Certificado generado satisfactoriamente', media: dir };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -3947,7 +3951,7 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
 
 const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
-    console.log('culo');
+    mainLogger.info('culo');
     let certInfo;
     let motivo;
     let ramo;
@@ -4040,18 +4044,18 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             totalCred: `0.00 Bs`, // TODO: Credito fiscal
           },
         };
-        console.log(certInfo.declarations);
+        mainLogger.info(certInfo.declarations);
         certInfoArray.push({ ...certInfo });
       } else {
-        console.log(breakdownJoin[0].datos.desglose);
+        mainLogger.info(breakdownJoin[0].datos.desglose);
         let inmueblesContribuyente: any[] = await Promise.all(
           breakdownJoin[0].datos.desglose.map((row) => {
             return pool.query(queries.GET_SUT_ESTATE_BY_ID, [row.inmueble]);
           })
         );
         inmueblesContribuyente = inmueblesContribuyente.map((result) => result.rows[0]);
-        console.log('BREAKDOWN JOIN', breakdownJoin);
-        console.log(inmueblesContribuyente);
+        mainLogger.info('BREAKDOWN JOIN', breakdownJoin);
+        mainLogger.info(inmueblesContribuyente);
         for (let el of inmueblesContribuyente) {
           certInfo = {
             QR: linkQr,
@@ -4111,8 +4115,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               totalCred: `0.00 Bs`, // TODO: Credito fiscal
             },
           };
-          console.log('XDDD');
-          console.log(certInfo.datos.declarations);
+          mainLogger.info('XDDD');
+          mainLogger.info(certInfo.datos.declarations);
           certInfoArray.push({ ...certInfo });
         }
       }
@@ -4177,7 +4181,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
         })
       );
       inmueblesContribuyente = inmueblesContribuyente.map((result) => result.rows[0]);
-      console.log(inmueblesContribuyente);
+      mainLogger.info(inmueblesContribuyente);
       for (let el of inmueblesContribuyente) {
         certInfo = {
           QR: linkQr,
@@ -4288,7 +4292,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                     res(pdfDir);
                   })
                   .catch((e) => {
-                    console.log(e);
+                    mainLogger.error(e);
                     rej(e);
                   });
               }
@@ -4339,18 +4343,18 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                   res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
                 })
                 .catch((e) => {
-                  console.log(e);
+                  mainLogger.error(e);
                   rej(e);
                 });
             }
           } catch (e) {
-            console.log('e', e);
+            mainLogger.error('e', e);
             throw e;
           } finally {
           }
         }
       } catch (e) {
-        console.log('e2', e);
+        mainLogger.error('e2', e);
         throw {
           message: 'Error en generacion de certificado de SM',
           e: errorMessageExtractor(e),
@@ -4358,14 +4362,14 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       }
     });
   } catch (error) {
-    console.log('error', error);
+    mainLogger.error('error', error);
     throw errorMessageExtractor(error);
   }
 };
 
 const createReceiptForIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
-    console.log('culo');
+    mainLogger.info('culo');
     let certInfo;
     let motivo;
     let ramo;
@@ -4467,7 +4471,7 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
                     res(pdfDir);
                   })
                   .catch((e) => {
-                    console.log(e);
+                    mainLogger.error(e);
                     rej(e);
                   });
               }
@@ -4518,18 +4522,18 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
                   res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
                 })
                 .catch((e) => {
-                  console.log(e);
+                  mainLogger.error(e);
                   rej(e);
                 });
             }
           } catch (e) {
-            console.log(e);
+            mainLogger.error(e);
             throw e;
           } finally {
           }
         }
       } catch (e) {
-        console.log(e);
+        mainLogger.error(e);
         throw {
           message: 'Error en generacion de certificado de IU',
           e: errorMessageExtractor(e),
@@ -4537,7 +4541,7 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
       }
     });
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw errorMessageExtractor(error);
   }
 };
@@ -4627,9 +4631,9 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
 
     return new Promise(async (res, rej) => {
       try {
-        console.log('AAAAAAAA');
+        mainLogger.info('AAAAAAAA');
         let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-LE.pug`), certInfo));
-        console.log(htmlArray.length);
+        mainLogger.info(htmlArray.length);
         const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`);
         const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`;
         const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
@@ -4654,7 +4658,7 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
             });
           })
         );
-        console.log(buffersArray);
+        mainLogger.info(buffersArray);
 
         if (dev) {
           mkdir(dirname(pdfDir), { recursive: true }, (e) => {
@@ -4685,11 +4689,11 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
                   .cat(`${Object.keys(reduced).join(' ')}`)
                   .output(pdfDir)
                   .then((buffer) => {
-                    console.log('a', buffer);
+                    mainLogger.info('a', buffer);
                     res(dir);
                   })
                   .catch((e) => {
-                    console.log(e);
+                    mainLogger.error(e);
                     rej(e);
                   });
               }
@@ -4766,7 +4770,7 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
                   }
                 })
                 .catch((e) => {
-                  console.log(e);
+                  mainLogger.error(e);
                   rej(e);
                 });
             }
@@ -4842,7 +4846,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
     let certInfoArray: any[] = [];
     let certAE;
     for (const el of breakdownData) {
-      console.log('el', el, el.datos);
+      mainLogger.info('el', el, el.datos);
       certAE = {
         fecha: moment().format('YYYY-MM-DD'),
         tramite: 'PAGO DE IMPUESTOS',
@@ -4863,7 +4867,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
           fechaLiq: moment().format('YYYY-MM-DD'),
           fechaVenc: moment().date(31).format('YYYY-MM-DD'),
           items: economicActivities.map((row) => {
-            console.log('row', row);
+            mainLogger.info('row', row);
             let desglose = el.datos.desglose ? el.datos.desglose.find((d) => d.aforo === row.id) : { montoDeclarado: 0 };
             desglose = desglose ? desglose : { montoDeclarado: 0 };
             return {
@@ -4896,14 +4900,14 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
 
     return new Promise(async (res, rej) => {
       try {
-        console.log('AAAAAAAA');
+        mainLogger.info('AAAAAAAA');
         let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-AE.pug`), certInfo));
-        console.log(htmlArray.length);
+        mainLogger.info(htmlArray.length);
         const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
         const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
         const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
-        console.log(pdfDir);
-        console.log(dir);
+        mainLogger.info(pdfDir);
+        mainLogger.info(dir);
         let buffersArray: any[] = await Promise.all(
           htmlArray.map((html) => {
             return new Promise((res, rej) => {
@@ -4924,7 +4928,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
             });
           })
         );
-        console.log(buffersArray);
+        mainLogger.info(buffersArray);
 
         if (dev) {
           mkdir(dirname(pdfDir), { recursive: true }, (e) => {
@@ -4955,11 +4959,11 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
                   .cat(`${Object.keys(reduced).join(' ')}`)
                   .output(pdfDir)
                   .then((buffer) => {
-                    console.log('a', buffer);
+                    mainLogger.info('a', buffer);
                     res(dir);
                   })
                   .catch((e) => {
-                    console.log(e);
+                    mainLogger.error(e);
                     rej(e);
                   });
               }
@@ -5010,7 +5014,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
                   res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
                 })
                 .catch((e) => {
-                  console.log(e);
+                  mainLogger.error(e);
                   rej(e);
                 });
             }
@@ -5072,7 +5076,7 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
   try {
     if (application.idSubramo !== 12) throw new Error('No se puede generar este recibo');
 
-    console.log('e');
+    mainLogger.info('e');
     let certInfo;
     let certInfoArray: any[] = [];
     let motivo = application.descripcionSubramo;
@@ -5125,7 +5129,7 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
           totalRecaudado: `${formatCurrency(totalMonto)} Bs`,
         },
       };
-      console.log(certInfo.datos.items);
+      mainLogger.info(certInfo.datos.items);
       certInfoArray.push({ ...certInfo });
     }
 
@@ -5189,7 +5193,7 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
                     res(pdfDir);
                   })
                   .catch((e) => {
-                    console.log(e);
+                    mainLogger.info(e);
                     rej(e);
                   });
               }
@@ -5239,7 +5243,7 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
                   res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
                 })
                 .catch((e) => {
-                  console.log(e);
+                  mainLogger.info(e);
                   rej(e);
                 });
             }
@@ -5466,7 +5470,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
       datosLiquidacion: chunk(statement, 22),
       saldoFinal,
     };
-    console.log(datosCertificado);
+    mainLogger.info(datosCertificado);
     const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-EC.pug`), {
       ...datosCertificado,
       cache: false,
@@ -5476,7 +5480,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
     });
     return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -5734,7 +5738,7 @@ const certificateCreationHandler = async (process, media, payload: CertificatePa
       throw new Error('No se encontró el tipo de certificado seleccionado');
     }
   } catch (e) {
-    console.log(e);
+    mainLogger.error(e);
     throw errorMessageExtractor(e);
   }
 };
@@ -5969,7 +5973,7 @@ interface datoLiquidacion {
 //       },
 //     };
 //   } catch (error) {
-//     console.log(error);
+//     mainLogger.error(error);
 //     throw {
 //       status: 500,
 //       error: errorMessageExtractor(error),

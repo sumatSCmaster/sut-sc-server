@@ -5,6 +5,7 @@ import { PoolClient } from 'pg';
 import moment, { Moment } from 'moment';
 import switchcase from '@utils/switch';
 import { formatContributor } from './settlement';
+import { mainLogger } from '@utils/logger';
 
 const pool = Pool.getInstance();
 
@@ -17,7 +18,7 @@ const template = async (props) => {
     return { status: 200, message: '' };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
@@ -59,7 +60,7 @@ export const getMunicipalServicesByContributor = async ({ reference, document, d
     return { status: 200, message: 'Servicios municipales obtenidos por contribuyente', inmuebles: res };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -82,12 +83,11 @@ export const getCleaningTariffForEstate = async ({ estate, branchId, client }) =
     const limiteAseoInd = +(await client.query(queries.GET_SCALE_FOR_INDUSTRIAL_ESTATE_PETRO_LIMIT)).rows[0].indicador;
     const costoMts = estate.tipo_inmueble === 'INDUSTRIAL' ? costoMtsInd : costoMtsCom;
     const limiteAseo = estate.tipo_inmueble === 'INDUSTRIAL' ? limiteAseoInd : limiteAseoCom;
-    const calculoAseo =
-      !!['COMERCIAL', 'INDUSTRIAL'].find(type => type === estate.tipo_inmueble)
-        ? estate.metros_construccion && +estate.metros_construccion !== 0
-          ? costoMts * PETRO * estate.metros_construccion
-          : +(await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto * PETRO
-        : +(await client.query(queries.GET_RESIDENTIAL_CLEANING_TARIFF)).rows[0].monto * PETRO;
+    const calculoAseo = !!['COMERCIAL', 'INDUSTRIAL'].find((type) => type === estate.tipo_inmueble)
+      ? estate.metros_construccion && +estate.metros_construccion !== 0
+        ? costoMts * PETRO * estate.metros_construccion
+        : +(await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto * PETRO
+      : +(await client.query(queries.GET_RESIDENTIAL_CLEANING_TARIFF)).rows[0].monto * PETRO;
     const tarifaAseo = calculoAseo / PETRO > limiteAseo ? PETRO * limiteAseo : calculoAseo;
     return +tarifaAseo;
   } catch (error) {
@@ -104,7 +104,7 @@ export const getGasTariffForEstate = async ({ estate, branchId, client }) => {
     const PETRO = +(await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     if (!estate && !!branchId) return +(await client.query(queries.GET_AE_GAS_TARIFF, [branchId])).rows[0].monto * PETRO;
     if (!estate.posee_gas) return 0;
-    const tarifaGas = !!['COMERCIAL', 'INDUSTRIAL'].find(type => type === estate.tipo_inmueble) ? (await client.query(queries.GET_AE_GAS_TARIFF, [branchId])).rows[0].monto : (await client.query(queries.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].monto;
+    const tarifaGas = !!['COMERCIAL', 'INDUSTRIAL'].find((type) => type === estate.tipo_inmueble) ? (await client.query(queries.GET_AE_GAS_TARIFF, [branchId])).rows[0].monto : (await client.query(queries.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].monto;
     return +tarifaGas * PETRO;
   } catch (error) {
     throw {
@@ -144,7 +144,7 @@ export const updateGasStateForEstate = async ({ estates }) => {
     return { status: 200, message: 'Estado del gas actualizado', inmuebles };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -164,7 +164,7 @@ export const getServicesTariffScales = async () => {
     return { status: 200, message: 'Baremo de tarifas de servicio municipal obtenido', scales };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -201,7 +201,7 @@ export const getSettlementsByDepartment = async (type, date) => {
     );
     return { status: 200, message: `Liquidaciones de ${type} obtenidas satisfactoriamente`, liquidaciones };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -221,7 +221,7 @@ export const updateGasTariffScales = async (id, tariff) => {
     return { status: 200, message: 'Valor del baremo seleccionado actualizado satisfactoriamente' };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -241,7 +241,7 @@ export const createMunicipalServicesScale = async ({ description, tariff }) => {
     return { status: 200, message: 'Nuevo valor del baremo de servicios municipales agregado', baremo: { id: scale.id_baremo, descripcion: scale.descripcion, indicador: scale.indicador } };
   } catch (error) {
     client.query('ROLLBACK');
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),

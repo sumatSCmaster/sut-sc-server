@@ -8,6 +8,7 @@ import * as pdf from 'html-pdf';
 import * as qr from 'qrcode';
 import { errorMessageGenerator, errorMessageExtractor } from '@helpers/errors';
 import { getAllBanks } from '@helpers/banks';
+import { mainLogger } from './logger';
 const written = require('written-number');
 
 const pool = Pool.getInstance();
@@ -110,9 +111,9 @@ export const createMockCertificate = async (procedure) => {
       certificado: tramite.sufijo === 'ompu' ? (tramite.aprobado ? tramite.formatocertificado : tramite.formatorechazo) : tramite.formatocertificado,
       bancos: (await getAllBanks()).banks,
     };
-    console.log('datos:', datosCertificado.datos, 'datos.funcionario:', datosCertificado.datos.funcionario);
+    mainLogger.info('datos:', datosCertificado.datos, 'datos.funcionario:', datosCertificado.datos.funcionario);
 
-    console.log('--------------->', datosCertificado.bancos);
+    mainLogger.info('--------------->', datosCertificado.bancos);
     const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
       ...datosCertificado,
       cache: false,

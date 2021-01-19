@@ -1,7 +1,22 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
-import { getEstatesInfo, getEstateInfoByCod, createPersonalEstate, taxPayerEstatesByRIM, createBareEstate, linkCommercial, updateEstate, getEstateByCod, taxPayerEstatesByNaturalCont, linkNatural, updateEstateDate, unlinkCommercial, unlinkNatural } from '@helpers/estate';
+import {
+  getEstatesInfo,
+  getEstateInfoByCod,
+  createPersonalEstate,
+  taxPayerEstatesByRIM,
+  createBareEstate,
+  linkCommercial,
+  updateEstate,
+  getEstateByCod,
+  taxPayerEstatesByNaturalCont,
+  linkNatural,
+  updateEstateDate,
+  unlinkCommercial,
+  unlinkNatural,
+} from '@helpers/estate';
 import { authenticate } from 'passport';
+import { mainLogger } from '@utils/logger';
 
 const router = Router();
 
@@ -13,7 +28,7 @@ router.get('/', async (req, res) => {
 
 router.get('/sedemat/', async (req, res) => {
   const [error, data] = await fulfill(getEstateByCod(req.query));
-  console.log(error);
+  mainLogger.info(error);
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
@@ -33,14 +48,14 @@ router.post('/', authenticate('jwt'), async (req, res) => {
 
 router.get('/sedemat/natural', async (req, res) => {
   const [error, data] = await fulfill(taxPayerEstatesByNaturalCont(req.query));
-  console.log(error);
+  mainLogger.info(error);
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
 
 router.get('/sedemat/contributor/rim/', async (req, res) => {
   const [error, data] = await fulfill(taxPayerEstatesByRIM(req.query));
-  console.log(error);
+  mainLogger.info(error);
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
@@ -75,17 +90,16 @@ router.post('/sedemat/rim/unlink/', async (req, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-
 router.patch('/sedemat/estate', async (req, res) => {
   const [error, data] = await fulfill(updateEstate(req.body));
-  console.log(error);
+  mainLogger.info(error);
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
 
 router.patch('/sedemat/estate/date', async (req, res) => {
   const [error, data] = await fulfill(updateEstateDate(req.body));
-  console.log(error);
+  mainLogger.info(error);
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });

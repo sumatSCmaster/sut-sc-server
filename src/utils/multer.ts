@@ -5,6 +5,7 @@ import fs from 'fs';
 import S3Client from './s3';
 import multerS3 from 'multer-s3';
 import switchcase from './switch';
+import { mainLogger } from './logger';
 // import { checkInm } from '@root/routes/file';
 
 export const diskStorage = (type: string): multer.StorageEngine =>
@@ -16,7 +17,7 @@ export const diskStorage = (type: string): multer.StorageEngine =>
         cb(null, saveTo);
       },
       filename: (req: any, file, cb) => {
-        console.log('file', file);
+        mainLogger.info('file', file);
         if (type.startsWith('tramites')) {
           cb(null, `${file.originalname}`);
         } else {
@@ -30,7 +31,7 @@ export const diskStorage = (type: string): multer.StorageEngine =>
       bucket: process.env.BUCKET_NAME,
       acl: 'public-read',
       key: function (req, file, cb) {
-        console.log('file', file);
+        mainLogger.info('file', file);
         if (type.startsWith('tramites') || type.startsWith('inmueble')) {
           cb(null, `${type}/${file.originalname}`);
         } else {

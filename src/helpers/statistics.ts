@@ -5,6 +5,7 @@ import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { Usuario, IDsTipoUsuario, Instituciones } from '@root/interfaces/sigt';
 import { fixatedAmount } from './settlement';
 import { request } from 'express';
+import { mainLogger } from '@utils/logger';
 const pool = Pool.getInstance();
 
 const fixMonth = (m: string) => m.charAt(0).toUpperCase() + m.slice(1).toLowerCase();
@@ -569,7 +570,7 @@ const getOfficialApplicationStats = async () => {
       }),
     };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -714,8 +715,8 @@ export const getStatsSedemat = async ({ institution }: { institution: number }) 
     // Coeficientes
     // 1. Tasa de Default Intermensual (TDI)
     // TDI = Cantidad de Contribuyentes que pagaron mes anterior pero no mes actual (gráfico de barra o linea por mes, incluyendo coeficiente y cantidad de contribuyentes)
-    console.log(now.format('MM-DD-YYYY'));
-    // console.log(now.startOf('month').diff(moment('08-01-2020'), 'month'));
+    mainLogger.info(now.format('MM-DD-YYYY'));
+    // mainLogger.info(now.startOf('month').diff(moment('08-01-2020'), 'month'));
 
     const TDI = await Promise.all(
       new Array(now.startOf('month').diff(moment('08-01-2020'), 'month')).fill({}).map(async (el, i) => {
@@ -725,7 +726,7 @@ export const getStatsSedemat = async ({ institution }: { institution: number }) 
         return { mes: fixMonth(pivotDate.format('MMMM')), anio: pivotDate.year(), valor: +defaultCount, coeficiente: 0 };
       })
     );
-    console.log(TDI);
+    mainLogger.info(TDI);
     TDI.reduce((x, j) => {
       j.coeficiente = fixatedAmount(isFiniteNumber(j.valor / x));
       return j.valor;
@@ -778,7 +779,7 @@ export const getStatsSedemat = async ({ institution }: { institution: number }) 
 
     return { status: 200, message: 'Estadisticas obtenidas!', estadisticas };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
@@ -800,7 +801,7 @@ export const getStatsSedematWithDate = async ({ institution, date }: { instituti
     // if (institution !== Instituciones.SEDEMAT) throw { status: 403, message: 'Sólo un miembro de SEDEMAT puede acceder a esta información' };
     const now = moment().locale('ES');
     const requestedDate = moment(date).locale('ES');
-    console.log(requestedDate.format('MM-DD-YYYY'));
+    mainLogger.error(requestedDate.format('MM-DD-YYYY'));
     // Totales
     // 1. Total de usuarios registrados en SUT
     const totalRegisteredUsers = +(await client.query(queries.TOTAL_REGISTERED_USERS)).rows[0].total;
@@ -899,8 +900,8 @@ export const getStatsSedematWithDate = async ({ institution, date }: { instituti
     // Coeficientes
     // 1. Tasa de Default Intermensual (TDI)
     // TDI = Cantidad de Contribuyentes que pagaron mes anterior pero no mes actual (gráfico de barra o linea por mes, incluyendo coeficiente y cantidad de contribuyentes)
-    console.log(now.format('MM-DD-YYYY'));
-    // console.log(now.startOf('month').diff(moment('08-01-2020'), 'month'));
+    mainLogger.info(now.format('MM-DD-YYYY'));
+    // mainLogger.info(now.startOf('month').diff(moment('08-01-2020'), 'month'));
 
     const TDI = await Promise.all(
       new Array(now.startOf('month').diff(moment('08-01-2020'), 'month')).fill({}).map(async (el, i) => {
@@ -910,7 +911,7 @@ export const getStatsSedematWithDate = async ({ institution, date }: { instituti
         return { mes: fixMonth(pivotDate.format('MMMM')), anio: pivotDate.year(), valor: +defaultCount, coeficiente: 0 };
       })
     );
-    console.log(TDI);
+    mainLogger.info(TDI);
     TDI.reduce((x, j) => {
       j.coeficiente = fixatedAmount(isFiniteNumber(j.valor / x));
       return j.valor;
@@ -963,7 +964,7 @@ export const getStatsSedematWithDate = async ({ institution, date }: { instituti
 
     return { status: 200, message: 'Estadisticas obtenidas!', estadisticas };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
@@ -975,8 +976,8 @@ export const getStatsSedematWithDate = async ({ institution, date }: { instituti
 };
 
 export const bsByBranchInterval = async ({ institution, startingDate, endingDate }) => {
-  console.log('bsByBranchInterval -> endingDate', endingDate);
-  console.log('bsByBranchInterval -> startingDate', startingDate);
+  mainLogger.info('bsByBranchInterval -> endingDate', endingDate);
+  mainLogger.info('bsByBranchInterval -> startingDate', startingDate);
   const client = await pool.connect();
   const totalSolvencyRate: any[] = [];
   const totalSettlements: any[] = [];
@@ -984,9 +985,9 @@ export const bsByBranchInterval = async ({ institution, startingDate, endingDate
     // if (institution !== Instituciones.SEDEMAT) throw { status: 403, message: 'Sólo un miembro de SEDEMAT puede acceder a esta información' };
     const now = moment().locale('ES');
     const requestedDateS = moment(startingDate).locale('ES');
-    console.log('//if -> requestedDateS', requestedDateS);
+    mainLogger.info('//if -> requestedDateS', requestedDateS);
     const requestedDateE = moment(endingDate).locale('ES');
-    console.log('//if -> requestedDateE', requestedDateE);
+    mainLogger.info('//if -> requestedDateE', requestedDateE);
     // 2. Bs por ramo por día liquidado/ingresado (4 ramos principales reflejado en gráfico de torta)
     const { rows: result, rowCount: totalCount } = await client.query(queries.TOTAL_BS_BY_BRANCH_IN_MONTH_WITH_INTERVAL, [requestedDateS.format('MM-DD-YYYY'), requestedDateE.format('MM-DD-YYYY')]);
     // .filter((el) => moment(date).endOf('month').startOf('day').isSameOrAfter(moment(el.fecha)))
@@ -1005,7 +1006,7 @@ export const bsByBranchInterval = async ({ institution, startingDate, endingDate
 
     return { status: 200, message: 'Estadisticas obtenidas!', estadisticas: { totalBsPorRamo } };
   } catch (error) {
-    console.log(error);
+    mainLogger.error(error);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
