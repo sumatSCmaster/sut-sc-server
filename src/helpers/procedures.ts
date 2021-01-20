@@ -596,7 +596,7 @@ export const validateProcedure = async (procedure, user: Usuario, client) => {
       nombreTramiteCorto: response.nombretramitecorto,
       aprobado: response.aprobado,
     };
-    await sendNotification(user, `Se ha validado el pago de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
+    await sendNotification(user, `Se ha validado el pago de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client, true);
     sendEmail({
       ...tramite,
       codigo: tramite.codigoTramite,
