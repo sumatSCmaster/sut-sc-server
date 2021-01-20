@@ -506,6 +506,8 @@ export const listProcedurePayments = async (type_doc, doc) => {
 };
 
 export const listTaxPayments = async () => {
+  mainLogger.info('listTaxPayments');
+
   const client = await pool.connect();
   try {
     let dataPromise = client.query(`
@@ -547,11 +549,12 @@ export const listTaxPayments = async () => {
     INNER JOIN pago p ON p.id_procedimiento = s.id 
     INNER JOIN banco b ON b.id_banco = p.id_banco
     WHERE s.state = 'validando' AND p.concepto = 'TRAMITE' ORDER BY id_procedimiento, id_pago;`); */
+
     let [data, convData] = await Promise.all([dataPromise, convDataPromise]);
+    mainLogger.info(`listTaxPayments - data count: ${data.rowCount} convData count: ${data.rowCount}`);
     data.rows = data.rows.concat(convData.rows);
     /*data.rows = data.rows.concat(tramData.rows); */
-    let montosSolicitud = (
-      await client.query(`
+    let montosSolicitudPromise = client.query(`
     SELECT l.id_solicitud, SUM(monto) as monto
     FROM (
       SELECT s.id_solicitud AS id,
@@ -571,16 +574,18 @@ export const listTaxPayments = async () => {
     ) s  
     INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
     WHERE s.state = 'validando' OR s.state = 'ingresardatos'
-    GROUP BY l.id_solicitud;`)
-    ).rows;
-    let montosConvenio = (
-      await client.query(`
+    GROUP BY l.id_solicitud;`);
+    let montosConvenioPromise = client.query(`
     SELECT c.id_convenio, SUM(monto) as monto
     FROM impuesto.fraccion_state fs
     INNER JOIN impuesto.convenio c ON c.id_convenio = fs.idconvenio
     WHERE fs.state = 'validando' OR fs.state = 'ingresardatos'
-    GROUP BY c.id_convenio;`)
-    ).rows;
+    GROUP BY c.id_convenio;`);
+    let [montosSolicitud, montosConvenio]: any[] = await Promise.all([montosSolicitudPromise, montosConvenioPromise]);
+    mainLogger.info(`listTaxPayments - settlement sum count: ${montosSolicitud.rowCount} conv sum count: ${montosConvenio.rowCount}`);
+    montosSolicitud = montosSolicitud.rows;
+    montosConvenio = montosConvenio.rows;
+
     data =
       data.rowCount > 0
         ? data.rows.reduce((prev, next) => {

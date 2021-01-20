@@ -57,6 +57,7 @@ export const deleteCondominium = async (condo_id) => {
 
 export const createCondominium = async ({ type_doc, doc }) => {
   const client = await pool.connect();
+  mainLogger.info(`createCondominium - type_doc ${type_doc} doc ${doc}`);
   try {
     client.query('BEGIN');
     const result = await client.query(queries.CREATE_CONDOMINIUM, [type_doc, doc]);
@@ -66,8 +67,8 @@ export const createCondominium = async ({ type_doc, doc }) => {
   } catch (error) {
     client.query('ROLLBACK');
     throw {
-      error: error,
-      message: error.message,
+      error: error.message,
+      message: `Error al agregar el condominio`,
     };
   } finally {
     client.release();

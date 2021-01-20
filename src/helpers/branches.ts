@@ -1,3 +1,4 @@
+import { Transform, Readable } from 'stream';
 import { resolve } from 'path';
 import { chunk } from 'lodash';
 import moment, { Moment } from 'moment';
@@ -7,9 +8,12 @@ import queries from '@utils/queries';
 import { renderFile } from 'pug';
 import { errorMessageExtractor } from './errors';
 import { QueryResult } from 'pg';
+import * as fs from 'fs';
 import * as pdf from 'html-pdf';
 import { groupBy } from 'lodash';
 import { mainLogger } from '@utils/logger';
+
+import ExcelJs from 'exceljs';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -243,6 +247,79 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
       }
     });
   } catch (error) {
+    throw errorMessageExtractor(error);
+  } finally {
+    client.release();
+  }
+};
+
+export const getTransfersReport = async ({ reportName = 'RPRTransferencias', from, to }) => {
+  mainLogger.info(`getTransfersReport - Creating transfers by method of approval from ${from} to ${to}`);
+  const client = await pool.connect();
+  try {
+    const transformStream = new Transform({
+      transform(chunk, encoding, callback) {
+        this.push(chunk);
+        callback();
+      },
+    });
+
+    transformStream.on('finish', () => {
+      mainLogger.info('getTransfersReport - Stream finished writing');
+    });
+
+    const workbook = new ExcelJs.stream.xlsx.WorkbookWriter({
+      stream: transformStream,
+    });
+    workbook.creator = 'SUT';
+    workbook.created = new Date();
+    workbook.views = [
+      {
+        x: 0,
+        y: 0,
+        width: 10000,
+        height: 20000,
+        firstSheet: 0,
+        activeTab: 1,
+        visibility: 'visible',
+      },
+    ];
+
+    const sheet = workbook.addWorksheet(reportName);
+    const result = await client.query(queries.GET_TRANSFERS_BY_BANK_BY_APPROVAL, [from, to, from, to, from, to, from, to, from, to]);
+
+    mainLogger.info(`getTransfersReport - Got query, rowCount: ${result.rowCount}`);
+
+    sheet.columns = result.fields.map((row) => {
+      return { header: row.name, key: row.name, width: 32 };
+    });
+
+    for (let row of result.rows) {
+      sheet.addRow(row, 'i').commit();
+    }
+
+    sheet.commit();
+
+    await workbook.commit();
+
+    mainLogger.info(`getTransfersReport - Committed workbook`);
+    if (dev) {
+      const dir = `../../archivos/${reportName}.xlsx`;
+      const stream = fs.createWriteStream(require('path').resolve(`./archivos/${reportName}.xlsx`));
+      await workbook.xlsx.write(stream);
+      return dir;
+    } else {
+      const bucketParams = {
+        Bucket: process.env.BUCKET_NAME as string,
+
+        Key: `/sedemat/reportes/${reportName}.xlsx`,
+      };
+      S3Client.upload({ ...bucketParams, Body: transformStream, ACL: 'public-read', ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }).promise();
+
+      return `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`;
+    }
+  } catch (error) {
+    mainLogger.error(error);
     throw errorMessageExtractor(error);
   } finally {
     client.release();
