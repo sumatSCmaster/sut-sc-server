@@ -15,7 +15,7 @@ import { mainLogger } from '@utils/logger';
 
 import ExcelJs from 'exceljs';
 
-const dev = process.env.NODE_ENV === 'production';
+const dev = process.env.NODE_ENV !== 'production';
 
 const pool = Pool.getInstance();
 
