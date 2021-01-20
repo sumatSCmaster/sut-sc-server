@@ -140,15 +140,15 @@ export const markAllAsRead = async (user: Usuario): Promise<object> => {
   }
 };
 
-export const sendNotification = async (sender: Usuario, description: string, type: string, concept: string, payload: Partial<Tramite | Multa>, client: PoolClient) => {
+export const sendNotification = async (sender: Usuario, description: string, type: string, concept: string, payload: Partial<Tramite | Multa>, client: PoolClient, isValidating: boolean = false) => {
   try {
-    notificationHandler(sender, description, type, payload, concept, client);
+    notificationHandler(sender, description, type, payload, concept, client, isValidating);
   } catch (e) {
     throw errorMessageExtractor(e);
   }
 };
 
-const broadcastForProcedureInit = async (sender: Usuario, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient) => {
+const broadcastForProcedureInit = async (sender: Usuario, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient, isValidating: boolean) => {
   const socket = users.get(`${sender.nacionalidad}-${sender.cedula}`);
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
 
@@ -186,13 +186,13 @@ const broadcastForProcedureInit = async (sender: Usuario, description: string, p
   }
 };
 
-const broadcastForProcedureUpdate = async (sender: Usuario, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient) => {
+const broadcastForProcedureUpdate = async (sender: Usuario, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient, isValidating: boolean) => {
   const io = getIo();
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
   const socket = users.get(emisor);
 
   try {
-    payload.estado !== 'finalizado' && (await client.query('BEGIN'));
+    !isValidating && (await client.query('BEGIN'));
     const user = (await client.query(queries.GET_PROCEDURE_CREATOR, [payload.usuario])).rows;
     const admins = (await client.query(queries.GET_NON_NORMAL_OFFICIALS, [payload.nombreCorto])).rows;
     const superuser = (await client.query(queries.GET_SUPER_USER)).rows;
@@ -238,14 +238,14 @@ const broadcastForProcedureUpdate = async (sender: Usuario, description: string,
     socket?.to(`inst:${payload.nombreCorto}`).emit('SEND_NOTIFICATION', notification[0]);
     io?.in(`inst:${payload.nombreCorto}`).emit('UPDATE_PROCEDURE', payload);
 
-    payload.estado !== 'finalizado' && (await client.query('COMMIT'));
+    !isValidating && (await client.query('COMMIT'));
   } catch (error) {
-    payload.estado !== 'finalizado' && client.query('ROLLBACK');
+    !isValidating && client.query('ROLLBACK');
     throw errorMessageExtractor(error);
   }
 };
 
-const broadcastForAffairInit = async (sender: Usuario, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient) => {
+const broadcastForAffairInit = async (sender: Usuario, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient, isValidating: boolean) => {
   const io = getIo();
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
 
@@ -283,7 +283,7 @@ const broadcastForAffairInit = async (sender: Usuario, description: string, payl
 };
 
 //DONE
-const broadcastForAffairUpdate = async (sender: Usuario, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient) => {
+const broadcastForAffairUpdate = async (sender: Usuario, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient, isValidating: boolean) => {
   const io = getIo();
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
 
@@ -321,7 +321,7 @@ const broadcastForAffairUpdate = async (sender: Usuario, description: string, pa
 };
 
 //DONE
-const broadcastForFiningInit = async (sender: Usuario, description: string, payload: Partial<Multa>, concept: string, client: PoolClient) => {
+const broadcastForFiningInit = async (sender: Usuario, description: string, payload: Partial<Multa>, concept: string, client: PoolClient, isValidating: boolean) => {
   const socket = users.get(`${sender.nacionalidad}-${sender.cedula}`);
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
   try {
@@ -374,7 +374,7 @@ const broadcastForFiningInit = async (sender: Usuario, description: string, payl
 };
 
 //DONE
-const broadcastForFiningUpdate = async (sender: Usuario, description: string, payload: Partial<Multa>, concept: string, client: PoolClient) => {
+const broadcastForFiningUpdate = async (sender: Usuario, description: string, payload: Partial<Multa>, concept: string, client: PoolClient, isValidating: boolean) => {
   const socket = users.get(`${sender.nacionalidad}-${sender.cedula}`);
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
 
@@ -435,7 +435,7 @@ const broadcastForFiningUpdate = async (sender: Usuario, description: string, pa
 };
 
 //FIXME: esto se va a descontrolaaaaarrrrrrr, el que se quedo pegao se quedo pegao
-const broadcastForApplicationInit = async (sender: Usuario, description: string, payload: Partial<Solicitud & { nombreCorto: string; estado: string }>, concept: string, client: PoolClient) => {
+const broadcastForApplicationInit = async (sender: Usuario, description: string, payload: Partial<Solicitud & { nombreCorto: string; estado: string }>, concept: string, client: PoolClient, isValidating: boolean) => {
   const socket = users.get(`${sender.nacionalidad}-${sender.cedula}`);
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
 
@@ -472,7 +472,7 @@ const broadcastForApplicationInit = async (sender: Usuario, description: string,
   }
 };
 
-const broadcastForApplicationUpdate = async (sender: Usuario, description: string, payload: Partial<Solicitud & { nombreCorto: string; estado: string }>, concept: string, client: PoolClient) => {
+const broadcastForApplicationUpdate = async (sender: Usuario, description: string, payload: Partial<Solicitud & { nombreCorto: string; estado: string }>, concept: string, client: PoolClient, isValidating: boolean) => {
   const socket = users.get(`${sender.nacionalidad}-${sender.cedula}`);
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
 
@@ -554,10 +554,10 @@ const notificationTypes = switchcase({
   UPDATE_APPLICATION: broadcastForApplicationUpdate,
 })(null);
 
-const notificationHandler = async (sender: Usuario, description: string, type: string, payload: Partial<Tramite | Multa>, concept: string, client: PoolClient) => {
+const notificationHandler = async (sender: Usuario, description: string, type: string, payload: Partial<Tramite | Multa>, concept: string, client: PoolClient, isValidating: boolean) => {
   const notificationSender = notificationTypes(type);
   try {
-    if (notificationSender) return await notificationSender(sender, description, payload, concept, client);
+    if (notificationSender) return await notificationSender(sender, description, payload, concept, client, isValidating);
   } catch (error) {
     throw errorMessageExtractor(error);
   }
