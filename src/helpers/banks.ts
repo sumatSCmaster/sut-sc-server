@@ -340,7 +340,7 @@ export const validatePayments = async (body, user) => {
     };
   } catch (e) {
     client.query('ROLLBACK');
-    mainLogger.error('error ep', e);
+    mainLogger.error(`error ep message: ${e.message} ${e}`);
     throw errorMessageExtractor(e);
   } finally {
     client.release();
