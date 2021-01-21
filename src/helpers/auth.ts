@@ -1,7 +1,6 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
-import { createTransport, createTestAccount } from 'nodemailer';
 import { v4 as uuidv4 } from 'uuid';
 import { genSalt, hash } from 'bcryptjs';
 import transporter from '@utils/mail';
@@ -12,19 +11,20 @@ const pool = Pool.getInstance();
 
 export const forgotPassword = async (email) => {
   const client = await pool.connect();
+  mainLogger.info(`forgotPassword - email ${email}`);
   try {
     const emailExists = (await client.query(queries.EMAIL_EXISTS, [email])).rowCount > 0;
+    mainLogger.info(`forgotPassword - emailExists ${emailExists}`);
     if (emailExists) {
       const recuperacion = (await client.query(queries.ADD_PASSWORD_RECOVERY, [email, uuidv4()])).rows[0];
-      mainLogger.info(
-        await transporter.sendMail({
-          from: process.env.MAIL_ADDRESS || 'info@sutmaracaibo.com',
-          to: email,
-          subject: 'Recuperación de contraseña',
-          text: `Enlace de recuperacion: ${process.env.CLIENT_URL}/olvidoContraseña?recvId=${recuperacion.token_recuperacion}`,
-          html: generateHtmlMail(`${process.env.CLIENT_URL}/olvidoContraseña?recvId=${recuperacion.token_recuperacion}`, email),
-        })
-      );
+      transporter.sendMail({
+        from: process.env.MAIL_ADDRESS || 'info@sutmaracaibo.com',
+        to: email,
+        subject: 'Recuperación de contraseña',
+        text: `Enlace de recuperacion: ${process.env.CLIENT_URL}/olvidoContraseña?recvId=${recuperacion.token_recuperacion}`,
+        html: generateHtmlMail(`${process.env.CLIENT_URL}/olvidoContraseña?recvId=${recuperacion.token_recuperacion}`, email),
+      });
+
       return { status: 200, message: 'Revise su bandeja de correo' };
     } else {
       return { status: 404, message: 'Información inválida' };
