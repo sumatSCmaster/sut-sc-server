@@ -18,6 +18,8 @@ const pool = Pool.getInstance();
 export const getAvailableProcedures = async (user): Promise<{ instanciasDeTramite: any; instanciasDeMulta: any; instanciasDeImpuestos: any; instanciasDeSoporte: any }> => {
   const client: any = await pool.connect();
   client.tipoUsuario = user.tipoUsuario;
+  mainLogger.info(`getAvailableProcedures: user: ${user.id}`);
+
   try {
     const response = await client.query(queries.GET_ALL_INSTITUTION);
     let institution: Institucion[] = response.rows.map((el) => {
@@ -31,11 +33,13 @@ export const getAvailableProcedures = async (user): Promise<{ instanciasDeTramit
       institution = institution.filter((el) => el.id !== 0);
     }
     // const options: Institucion[] = await getProcedureByInstitution(institution, client);
+    mainLogger.info(`getAvailableProcedures: obtaining instances`);
     const instanciasDeTramiteP = getProcedureInstances(user, client);
     const instanciasDeMultaP = getFineInstances(user, client);
     const instanciasDeImpuestosP = getSettlementInstances(user, client);
     const instanciasDeSoporteP = getProcedureInstances(user, client, true);
     const [instanciasDeTramite, instanciasDeMulta, instanciasDeImpuestos, instanciasDeSoporte] = await Promise.all([instanciasDeTramiteP, instanciasDeMultaP, instanciasDeImpuestosP, instanciasDeSoporteP]);
+    mainLogger.info(`getAvailableProcedures: finished obtaining instances`);
     return { instanciasDeTramite, instanciasDeMulta, instanciasDeImpuestos, instanciasDeSoporte };
   } catch (error) {
     mainLogger.error(error);
