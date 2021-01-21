@@ -214,7 +214,43 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_PROCEDURE_BY_ID: 'SELECT * FROM tramites_state_with_resources WHERE id=$1',
   GET_SOCIAL_CASE_BY_ID: 'SELECT * FROM casos_sociales_state WHERE id=$1',
   GET_CERTIFICATE_BY_PROCEDURE_ID: 'SELECT certificado AS "urlCertificado" FROM tramites_state_with_resources WHERE id = $1',
-  GET_PROCEDURE_INSTANCES_FOR_USER: 'SELECT * FROM tramites_state_with_resources WHERE usuario = $1 ORDER BY fechacreacion DESC LIMIT 500;',
+  GET_PROCEDURE_INSTANCES_FOR_USER: `WITH tram AS (
+    SELECT * FROM tramite WHERE id_usuario = $1 ORDER BY fecha_creacion DESC limit 500
+  )
+  
+  SELECT * 
+  FROM (
+    SELECT t.id_tramite AS id,
+      t.datos,
+      t.id_tipo_tramite AS tipotramite,
+      t.costo,
+      t.fecha_creacion AS fechacreacion,
+      t.codigo_tramite AS codigotramite,
+      t.id_usuario AS usuario,
+      t.url_planilla AS planilla,
+      t.url_certificado AS certificado,
+      i.nombre_completo AS nombrelargo,
+      i.nombre_corto AS nombrecorto,
+      tt.nombre_tramite AS nombretramitelargo,
+      tt.nombre_corto AS nombretramitecorto,
+      ev.state,
+      t.aprobado,
+      tt.pago_previo AS "pagoPrevio",
+      t.fecha_culminacion AS fechaculminacion
+     FROM tram t
+       JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite
+       JOIN institucion i ON i.id_institucion = tt.id_institucion
+       JOIN ( SELECT et.id_tramite,
+              tramite_evento_fsm(et.event ORDER BY et.id_evento_tramite) AS state
+             FROM evento_tramite et
+             INNER JOIN tram t ON t.id_tramite = et.id_tramite
+            GROUP BY et.id_tramite) ev ON t.id_tramite = ev.id_tramite
+  ) t
+  
+  
+  WHERE usuario = $1
+  
+  ORDER BY fechacreacion DESC LIMIT 500;`,
   GET_ALL_PROCEDURE_INSTANCES: 'SELECT * FROM tramites_state_with_resources ORDER BY fechacreacion DESC LIMIT 500;',
   GET_ONE_PROCEDURE_INFO: 'SELECT id_tipo_tramite as id, id_institucion AS "idInstitucion", nombre_tramite AS "nombre", costo_base as costo, \
     nombre_corto as "nombreCorto"  FROM tipo_tramite WHERE id_tipo_tramite = $1;',
