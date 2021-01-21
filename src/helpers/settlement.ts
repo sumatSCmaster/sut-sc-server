@@ -335,7 +335,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     }
     //SM
     const estates = (await client.query(branch ? queries.GET_ESTATES_FOR_JURIDICAL_CONTRIBUTOR : queries.GET_ESTATES_FOR_NATURAL_CONTRIBUTOR, [branch ? branch.id_registro_municipal : contributor.id_contribuyente])).rows;
-    if (!SMApplicationExists || !isPartOfCondominium) {
+    if (!SMApplicationExists && !isPartOfCondominium) {
       let lastSM = (await client.query(lastSettlementQuery, [codigosRamo.SM, lastSettlementPayload])).rows[0];
       const lastSMPayment = (lastSM && moment(lastSM.fecha_liquidacion).add(1, 'M')) || moment().month(0);
       const pastMonthSM = (lastSM && moment(lastSM.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
