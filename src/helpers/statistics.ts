@@ -618,6 +618,7 @@ export const getStatsSedemat = async ({ institution }: { institution: number }) 
     IU: any[] = [],
     PP: any[] = [];
   try {
+    await client.query('BEGIN');
     // if (institution !== Instituciones.SEDEMAT) throw { status: 403, message: 'Sólo un miembro de SEDEMAT puede acceder a esta información' };
     const now = moment().locale('ES');
     // Totales
@@ -834,9 +835,10 @@ export const getStatsSedemat = async ({ institution }: { institution: number }) 
         TNL,
       },
     };
-
+    await client.query('COMMIT');
     return { status: 200, message: 'Estadisticas obtenidas!', estadisticas };
   } catch (error) {
+    await client.query('ROLLBACK');
     mainLogger.error(error);
     throw {
       status: error.status || 500,
