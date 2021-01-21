@@ -19,7 +19,7 @@ router.post('/', async (req, res) => {
 });
 
 router.post('/reportTransf', authenticate('jwt'), async (req, res) => {
-  const { from, to, ramo } = req.body;
+  const { from, to } = req.body;
   const [error, data] = await fulfill(getTransfersReport({ from, to }));
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
