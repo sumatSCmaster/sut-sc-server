@@ -4331,13 +4331,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                 });
             }
           } catch (e) {
-            mainLogger.error('e', e);
+            mainLogger.error(e);
             throw e;
           } finally {
           }
         }
       } catch (e) {
-        mainLogger.error('e2', e);
+        mainLogger.error(e);
         throw {
           message: 'Error en generacion de certificado de SM',
           e: errorMessageExtractor(e),
@@ -4345,7 +4345,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
       }
     });
   } catch (error) {
-    mainLogger.error('error', error);
+    mainLogger.error(error);
     throw errorMessageExtractor(error);
   }
 };

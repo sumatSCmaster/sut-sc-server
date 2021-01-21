@@ -897,6 +897,40 @@ export const getStatsSedematWithDate = async ({ institution, date }: { instituti
       requestedDate.format('MM-DD-YYYY'),
     ]);
 
+    const [
+      totalRegisteredUsersA,
+      totalRegisteredContributorsA,
+      totalRegisteredRimsA,
+      totalAEDeclarationsA,
+      totalAEPaymentsA,
+      solvencyArr,
+      totalBsByBranchA,
+      totalGainingsA,
+      extraInfoA,
+      settlementArrAE,
+      settlementArrSM,
+      settlementArrIU,
+      settlementArrPP,
+      totalARDeclarationsA,
+      totalTopContrDeclarationsA,
+    ] = await Promise.all([
+      totalRegisteredUsersP,
+      totalRegisteredContributorsP,
+      totalRegisteredRimsP,
+      totalAEDeclarationsP,
+      totalAEPaymentsP,
+      solvencyArrP,
+      totalBsByBranchP,
+      totalGainingsP,
+      extraInfoP,
+      settlementArrAEP,
+      settlementArrSMP,
+      settlementArrIUP,
+      settlementArrPPP,
+      totalARDeclarationsP,
+      totalTopContrDeclarationsP,
+    ]);
+
     // Coeficientes
     // 1. Tasa de Default Intermensual (TDI)
     // TDI = Cantidad de Contribuyentes que pagaron mes anterior pero no mes actual (gráfico de barra o linea por mes, incluyendo coeficiente y cantidad de contribuyentes)
@@ -934,40 +968,6 @@ export const getStatsSedematWithDate = async ({ institution, date }: { instituti
         return { mes: fixMonth(pivotDate.format('MMMM')), anio: pivotDate.year(), coeficiente: fixatedAmount(coeficiente), valor: +valor };
       })
     );
-
-    const [
-      totalRegisteredUsersA,
-      totalRegisteredContributorsA,
-      totalRegisteredRimsA,
-      totalAEDeclarationsA,
-      totalAEPaymentsA,
-      solvencyArr,
-      totalBsByBranchA,
-      totalGainingsA,
-      extraInfoA,
-      settlementArrAE,
-      settlementArrSM,
-      settlementArrIU,
-      settlementArrPP,
-      totalARDeclarationsA,
-      totalTopContrDeclarationsA,
-    ] = await Promise.all([
-      totalRegisteredUsersP,
-      totalRegisteredContributorsP,
-      totalRegisteredRimsP,
-      totalAEDeclarationsP,
-      totalAEPaymentsP,
-      solvencyArrP,
-      totalBsByBranchP,
-      totalGainingsP,
-      extraInfoP,
-      settlementArrAEP,
-      settlementArrSMP,
-      settlementArrIUP,
-      settlementArrPPP,
-      totalARDeclarationsP,
-      totalTopContrDeclarationsP,
-    ]);
 
     const totalRegisteredUsers = +totalRegisteredUsersA.rows[0].total;
     const totalRegisteredContributors = +totalRegisteredContributorsA.rows[0].total;
