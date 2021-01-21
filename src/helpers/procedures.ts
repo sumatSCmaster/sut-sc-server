@@ -614,7 +614,7 @@ export const validateProcedure = async (procedure, user: Usuario, client) => {
     throw {
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al validar el pago del trámite',
+      message: error.message || 'Error al validar el pago del trámite',
     };
   } finally {
   }
