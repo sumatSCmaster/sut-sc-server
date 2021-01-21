@@ -314,7 +314,7 @@ export const getTransfersReport = async ({ reportName = 'RPRTransferencias', fro
 
         Key: `/sedemat/reportes/${reportName}.xlsx`,
       };
-      S3Client.upload({ ...bucketParams, Body: transformStream, ACL: 'public-read', ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }).promise();
+      await S3Client.upload({ ...bucketParams, Body: transformStream, ACL: 'public-read', ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }).promise();
 
       return `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`;
     }
