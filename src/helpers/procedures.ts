@@ -31,10 +31,11 @@ export const getAvailableProcedures = async (user): Promise<{ instanciasDeTramit
       institution = institution.filter((el) => el.id !== 0);
     }
     // const options: Institucion[] = await getProcedureByInstitution(institution, client);
-    const instanciasDeTramite = await getProcedureInstances(user, client);
-    const instanciasDeMulta = await getFineInstances(user, client);
-    const instanciasDeImpuestos = await getSettlementInstances(user, client);
-    const instanciasDeSoporte = await getProcedureInstances(user, client, true);
+    const instanciasDeTramiteP =  getProcedureInstances(user, client);
+    const instanciasDeMultaP =  getFineInstances(user, client);
+    const instanciasDeImpuestosP =  getSettlementInstances(user, client);
+    const instanciasDeSoporteP =  getProcedureInstances(user, client, true);
+    const [instanciasDeTramite, instanciasDeMulta, instanciasDeImpuestos, instanciasDeSoporte] = await Promise.all([instanciasDeTramiteP, instanciasDeMultaP, instanciasDeImpuestosP, instanciasDeSoporteP]);
     return { instanciasDeTramite, instanciasDeMulta, instanciasDeImpuestos, instanciasDeSoporte };
   } catch (error) {
     mainLogger.error(error);
