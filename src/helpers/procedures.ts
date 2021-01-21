@@ -31,10 +31,10 @@ export const getAvailableProcedures = async (user): Promise<{ instanciasDeTramit
       institution = institution.filter((el) => el.id !== 0);
     }
     // const options: Institucion[] = await getProcedureByInstitution(institution, client);
-    const instanciasDeTramiteP =  getProcedureInstances(user, client);
-    const instanciasDeMultaP =  getFineInstances(user, client);
-    const instanciasDeImpuestosP =  getSettlementInstances(user, client);
-    const instanciasDeSoporteP =  getProcedureInstances(user, client, true);
+    const instanciasDeTramiteP = getProcedureInstances(user, client);
+    const instanciasDeMultaP = getFineInstances(user, client);
+    const instanciasDeImpuestosP = getSettlementInstances(user, client);
+    const instanciasDeSoporteP = getProcedureInstances(user, client, true);
     const [instanciasDeTramite, instanciasDeMulta, instanciasDeImpuestos, instanciasDeSoporte] = await Promise.all([instanciasDeTramiteP, instanciasDeMultaP, instanciasDeImpuestosP, instanciasDeSoporteP]);
     return { instanciasDeTramite, instanciasDeMulta, instanciasDeImpuestos, instanciasDeSoporte };
   } catch (error) {
@@ -573,7 +573,7 @@ export const validateProcedure = async (procedure, user: Usuario, client) => {
 
     const nextEvent = await getNextEventForProcedure(procedure, client);
     if (nextEvent.startsWith('finalizar')) {
-      dir = await createCertificate(procedure, client);
+      // dir = await createCertificate(procedure, client);
       respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, null, dir || null, true]);
     } else {
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, null, null, null]);
