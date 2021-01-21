@@ -542,18 +542,7 @@ export const listTaxPayments = async () => {
     INNER JOIN banco b ON b.id_banco = p.id_banco
     WHERE s."tipoSolicitud" = 'CONVENIO' AND fs.state = 'validando' AND p.concepto = 'CONVENIO' ORDER BY id_procedimiento, id_pago;
     `);
-    /*let tramData = await client.query(`
-    SELECT s.*, p.*, b.id_banco, u.nacionalidad AS "tipoDocumento", u.cedula AS "documento", 'TRAMITE' as "tipoSolicitud", s.costo as montotram
-    FROM tramites_state s 
-    INNER JOIN usuario u ON u.id_usuario = s.usuario
-    INNER JOIN pago p ON p.id_procedimiento = s.id 
-    INNER JOIN banco b ON b.id_banco = p.id_banco
-    WHERE s.state = 'validando' AND p.concepto = 'TRAMITE' ORDER BY id_procedimiento, id_pago;`); */
 
-    let [data, convData] = await Promise.all([dataPromise, convDataPromise]);
-    mainLogger.info(`listTaxPayments - data count: ${data.rowCount} convData count: ${data.rowCount}`);
-    data.rows = data.rows.concat(convData.rows);
-    /*data.rows = data.rows.concat(tramData.rows); */
     let montosSolicitudPromise = client.query(`
     SELECT l.id_solicitud, SUM(monto) as monto
     FROM (
@@ -581,7 +570,20 @@ export const listTaxPayments = async () => {
     INNER JOIN impuesto.convenio c ON c.id_convenio = fs.idconvenio
     WHERE fs.state = 'validando' OR fs.state = 'ingresardatos'
     GROUP BY c.id_convenio;`);
-    let [montosSolicitud, montosConvenio]: any[] = await Promise.all([montosSolicitudPromise, montosConvenioPromise]);
+
+    /*let tramData = await client.query(`
+    SELECT s.*, p.*, b.id_banco, u.nacionalidad AS "tipoDocumento", u.cedula AS "documento", 'TRAMITE' as "tipoSolicitud", s.costo as montotram
+    FROM tramites_state s 
+    INNER JOIN usuario u ON u.id_usuario = s.usuario
+    INNER JOIN pago p ON p.id_procedimiento = s.id 
+    INNER JOIN banco b ON b.id_banco = p.id_banco
+    WHERE s.state = 'validando' AND p.concepto = 'TRAMITE' ORDER BY id_procedimiento, id_pago;`); */
+
+    let [data, convData, montosSolicitud, montosConvenio]: any[] = await Promise.all([dataPromise, convDataPromise, montosSolicitudPromise, montosConvenioPromise]);
+    mainLogger.info(`listTaxPayments - data count: ${data.rowCount} convData count: ${data.rowCount}`);
+    data.rows = data.rows.concat(convData.rows);
+    /*data.rows = data.rows.concat(tramData.rows); */
+
     mainLogger.info(`listTaxPayments - settlement sum count: ${montosSolicitud.rowCount} conv sum count: ${montosConvenio.rowCount}`);
     montosSolicitud = montosSolicitud.rows;
     montosConvenio = montosConvenio.rows;

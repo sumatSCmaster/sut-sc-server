@@ -649,7 +649,52 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
 ) nn WHERE id = $1;`,
   GET_FINING_NOTIFICATION_BY_ID: 'SELECT * FROM notificacion_multa_view WHERE id = $1',
   GET_SETTLEMENT_NOTIFICATION_BY_ID: 'SELECT * FROM notificacion_impuesto_view WHERE id = $1',
-  GET_PROCEDURE_NOTIFICATIONS_FOR_USER: 'SELECT * FROM notificacion_tramite_view WHERE receptor = $1 ORDER BY "fechaCreacion" LIMIT 40',
+  GET_PROCEDURE_NOTIFICATIONS_FOR_USER: `
+  WITH notificacion_cte AS (
+    SELECT * FROM notificacion WHERE receptor = $1 AND fecha > (NOW() - interval '1 month') AND concepto = 'TRAMITE' ORDER BY fecha DESC LIMIT 50
+  ), tramite_cte AS (
+    SELECT * FROM tramite WHERE id_tramite IN (select id_procedimiento FROM notificacion_cte)
+  )
+  
+  SELECT 
+    n.id_notificacion AS id,
+    n.descripcion,
+    n.status,
+    n.fecha AS "fechaCreacion",
+    n.emisor,
+    n.receptor,
+    n.estado AS "estadoNotificacion",
+    n.concepto,
+    t.id_tramite AS id,
+    t.datos,
+    t.id_tipo_tramite AS tipotramite,
+    t.costo,
+    t.fecha_creacion AS fechacreacion,
+    t.codigo_tramite AS codigotramite,
+    t.id_usuario AS usuario,
+    t.url_planilla AS planilla,
+    t.url_certificado AS certificado,
+    i.nombre_completo AS nombrelargo,
+    i.nombre_corto AS nombrecorto,
+    tt.nombre_tramite AS nombretramitelargo,
+    tt.nombre_corto AS nombretramitecorto,
+    ev.state,
+    t.aprobado,
+    tt.pago_previo AS "pagoPrevio",
+    t.fecha_culminacion AS fechaculminacion
+    FROM (select * from notificacion_cte) n
+  
+    JOIN (SELECT * FROM tramite_cte) t ON n.id_procedimiento = t.id_tramite
+      JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite
+      JOIN institucion i ON i.id_institucion = tt.id_institucion
+      JOIN ( SELECT e.id_tramite,
+            tramite_evento_fsm(e.event ORDER BY e.id_evento_tramite) AS state
+            FROM evento_tramite e
+            WHERE id_tramite IN (select id_tramite from tramite_cte)
+          GROUP BY e.id_tramite) ev ON t.id_tramite = ev.id_tramite
+    WHERE receptor = $1 ORDER BY "fechaCreacion" LIMIT 40
+  
+  `,
   GET_FINING_NOTIFICATIONS_FOR_USER: 'SELECT * FROM notificacion_multa_view WHERE receptor = $1 ORDER BY "fechaCreacion" LIMIT 10',
   GET_SETTLEMENT_NOTIFICATIONS_FOR_USER: 'SELECT * FROM notificacion_impuesto_view WHERE receptor = $1 ORDER BY "fechaCreacion" LIMIT 50',
   GET_USER_HAS_NOTIFICATIONS: 'SELECT (COUNT(*) > 0) as "hasNotifications" FROM notificacion WHERE receptor = $1 ::varchar AND status = false',
