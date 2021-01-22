@@ -1,6 +1,7 @@
 import { Transform, Readable } from 'stream';
 import { resolve } from 'path';
 import { chunk } from 'lodash';
+import { promisify } from 'util';
 import moment, { Moment } from 'moment';
 import S3Client from '@utils/s3';
 import Pool from '@utils/Pool';
@@ -12,6 +13,7 @@ import * as fs from 'fs';
 import * as pdf from 'html-pdf';
 import { groupBy } from 'lodash';
 import { mainLogger } from '@utils/logger';
+import Redis from '@utils/redis';
 
 import ExcelJs from 'exceljs';
 
@@ -21,14 +23,28 @@ const pool = Pool.getInstance();
 
 export const getBranches = async () => {
   const client = await pool.connect();
+  const redisClient = await Redis.getInstance();
+  const getAsync = promisify(redisClient.get).bind(redisClient);
+  const setAsync = promisify(redisClient.set).bind(redisClient);
+  const expireAsync = promisify(redisClient.expire).bind(redisClient);
   try {
-    const branches = await client.query(queries.GET_BRANCHES);
-    return Promise.all(
-      branches.rows.map(async (el) => {
-        el.subramos = (await client.query(queries.GET_SUBRANCHES_BY_ID, [el.id])).rows;
-        return el;
-      })
-    );
+    let cachedBranches = await getAsync('branches');
+    if (cachedBranches !== null) {
+      mainLogger.info('getBranches - getting cached branches');
+      return JSON.parse(cachedBranches);
+    } else {
+      mainLogger.info('getBranches - getting branches from db');
+      const branches = await client.query(queries.GET_BRANCHES);
+      let allBranches = await Promise.all(
+        branches.rows.map(async (el) => {
+          el.subramos = (await client.query(queries.GET_SUBRANCHES_BY_ID, [el.id])).rows;
+          return el;
+        })
+      );
+      await setAsync('branches', JSON.stringify(allBranches));
+      await expireAsync('branches', 3000);
+      return allBranches;
+    }
   } catch (e) {
     throw e;
   } finally {
