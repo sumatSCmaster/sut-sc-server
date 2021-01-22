@@ -1411,7 +1411,6 @@ export const createSettlementForProcedure = async (process, client) => {
       idTramite,
       ...payload,
     };
-    mainLogger.info('si');
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const liquidacion = (await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [null, (monto / PETRO).toFixed(8), ramo, 'Pago ordinario', datos, moment().endOf('month').format('MM-DD-YYYY'), referenciaMunicipal])).rows[0];
     await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO_SETTLEMENT, [liquidacion.id_liquidacion]);

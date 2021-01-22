@@ -611,6 +611,7 @@ export const validateProcedure = async (procedure, user: Usuario, client) => {
     });
     return { status: 200, message: 'Pago del tramite validado', tramite };
   } catch (error) {
+    mainLogger.error(`validateProcedure - ERROR ${error.message} idTramite ${procedure.idTramite}`);
     throw {
       status: 500,
       error: errorMessageExtractor(error),

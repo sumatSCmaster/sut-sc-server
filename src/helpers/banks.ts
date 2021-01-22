@@ -339,7 +339,7 @@ export const validatePayments = async (body, user) => {
       status: 201,
     };
   } catch (e) {
-    client.query('ROLLBACK');
+    await client.query('ROLLBACK');
     mainLogger.error(`error ep message: ${e.message} ${e}`);
     throw errorMessageExtractor(e);
   } finally {
