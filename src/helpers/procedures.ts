@@ -1481,11 +1481,36 @@ const procedureInstances = switchcase({
   4: queries.GET_PROCEDURE_INSTANCES_FOR_USER,
   5: queries.GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID,
   6: queries.GET_ALL_PROCEDURES_EXCEPT_VALIDATING_ONES,
-  7: "SELECT tramites_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
-      nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, \
-      tipo_tramite.pago_previo AS \"pagoPrevio\"  FROM tramites_state INNER JOIN tipo_tramite ON tramites_state.tipotramite = \
-      tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = \
-      tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 AND tipoTramite = 37 AND tramites_state.state IN ('enproceso', 'enrevision', 'finalizado') ORDER BY tramites_state.fechacreacion DESC;",
+  7: `WITH tramite_cte AS (
+    SELECT t.* FROM tramite t INNER JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite WHERE  fecha_creacion > (NOW() - interval '2 months') AND t.id_tipo_tramite = 37 AND tt.id_institucion = 9 ORDER BY fecha_creacion DESC FETCH FIRST 600 ROWS ONLY
+  )
+  
+  SELECT ts.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS 
+        nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, 
+        tipo_tramite.pago_previo AS "pagoPrevio"  
+        FROM (SELECT t.id_tramite AS id,
+      t.datos,
+      t.id_tipo_tramite AS tipotramite,
+      t.costo,
+      t.fecha_creacion AS fechacreacion,
+      t.codigo_tramite AS codigotramite,
+      t.id_usuario AS usuario,
+      t.url_planilla AS planilla,
+      t.url_certificado AS certificado,
+      ev.state,
+      t.aprobado,
+      t.fecha_culminacion AS fechaculminacion
+     FROM (SELECT * FROM tramite_cte) t
+       JOIN ( SELECT evento_tramite.id_tramite,
+              tramite_evento_fsm(evento_tramite.event ORDER BY evento_tramite.id_evento_tramite) AS state
+             FROM evento_tramite
+             WHERE id_tramite IN (select id_tramite from tramite_cte)
+            GROUP BY evento_tramite.id_tramite) ev ON t.id_tramite = ev.id_tramite
+  ) ts
+        INNER JOIN tipo_tramite ON ts.tipotramite = tipo_tramite.id_tipo_tramite 
+        INNER JOIN institucion ON institucion.id_institucion = tipo_tramite.id_institucion 
+        WHERE tipo_tramite.id_institucion = $1 AND tipoTramite = 37 AND ts.state IN ('enproceso', 'enrevision', 'finalizado') 
+        ORDER BY ts.fechacreacion DESC`,
   8: 'SELECT * FROM tramites_state_with_resources WHERE usuario = $1 AND tipotramite = 37 ORDER BY fechacreacion DESC LIMIT 500;',
 })(null);
 
