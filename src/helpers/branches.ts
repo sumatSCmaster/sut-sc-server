@@ -22,13 +22,12 @@ const dev = process.env.NODE_ENV !== 'production';
 const pool = Pool.getInstance();
 
 export const getBranches = async () => {
+  mainLogger.info(`getBranches`);
   const client = await pool.connect();
-  const redisClient = await Redis.getInstance();
-  const getAsync = promisify(redisClient.get).bind(redisClient);
-  const setAsync = promisify(redisClient.set).bind(redisClient);
-  const expireAsync = promisify(redisClient.expire).bind(redisClient);
+  const redisClient = Redis.getInstance();
   try {
-    let cachedBranches = await getAsync('branches');
+    mainLogger.info(`getBranches - try`);
+    let cachedBranches = await redisClient.getAsync('branches');
     if (cachedBranches !== null) {
       mainLogger.info('getBranches - getting cached branches');
       return JSON.parse(cachedBranches);
@@ -41,11 +40,12 @@ export const getBranches = async () => {
           return el;
         })
       );
-      await setAsync('branches', JSON.stringify(allBranches));
-      await expireAsync('branches', 3000);
+      await redisClient.setAsync('branches', JSON.stringify(allBranches));
+      await redisClient.expireAsync('branches', 3000);
       return allBranches;
     }
   } catch (e) {
+    mainLogger.error(`getBranches - ERROR ${e.message}`);
     throw e;
   } finally {
     client.release();
