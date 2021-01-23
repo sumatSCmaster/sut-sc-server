@@ -4,7 +4,7 @@ import * as redis from 'redis';
 import { mainLogger } from './logger';
 
 function getRedis() {
-  const client: redis.RedisClient = redis.createClient(process.env.REDIS_URL as redis.ClientOpts);
+  const client: redis.RedisClient = redis.createClient({ url: process.env.REDIS_URL, tls: { rejectUnauthorized: false } });
   client.on('ready', () => {
     mainLogger.info(`Redis client ready`);
   });
