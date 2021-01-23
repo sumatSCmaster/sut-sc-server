@@ -1,6 +1,7 @@
 import { Transform, Readable } from 'stream';
 import { resolve } from 'path';
 import { chunk } from 'lodash';
+import { promisify } from 'util';
 import moment, { Moment } from 'moment';
 import S3Client from '@utils/s3';
 import Pool from '@utils/Pool';
@@ -12,6 +13,7 @@ import * as fs from 'fs';
 import * as pdf from 'html-pdf';
 import { groupBy } from 'lodash';
 import { mainLogger } from '@utils/logger';
+import Redis from '@utils/redis';
 
 import ExcelJs from 'exceljs';
 
@@ -20,16 +22,30 @@ const dev = process.env.NODE_ENV !== 'production';
 const pool = Pool.getInstance();
 
 export const getBranches = async () => {
+  mainLogger.info(`getBranches`);
   const client = await pool.connect();
+  const redisClient = Redis.getInstance();
   try {
-    const branches = await client.query(queries.GET_BRANCHES);
-    return Promise.all(
-      branches.rows.map(async (el) => {
-        el.subramos = (await client.query(queries.GET_SUBRANCHES_BY_ID, [el.id])).rows;
-        return el;
-      })
-    );
+    mainLogger.info(`getBranches - try`);
+    let cachedBranches = await redisClient.getAsync('branches');
+    if (cachedBranches !== null) {
+      mainLogger.info('getBranches - getting cached branches');
+      return JSON.parse(cachedBranches);
+    } else {
+      mainLogger.info('getBranches - getting branches from db');
+      const branches = await client.query(queries.GET_BRANCHES);
+      let allBranches = await Promise.all(
+        branches.rows.map(async (el) => {
+          el.subramos = (await client.query(queries.GET_SUBRANCHES_BY_ID, [el.id])).rows;
+          return el;
+        })
+      );
+      await redisClient.setAsync('branches', JSON.stringify(allBranches));
+      await redisClient.expireAsync('branches', 3000);
+      return allBranches;
+    }
   } catch (e) {
+    mainLogger.error(`getBranches - ERROR ${e.message}`);
     throw e;
   } finally {
     client.release();
