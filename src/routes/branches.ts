@@ -2,11 +2,13 @@ import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
 import { generateBranchesReport, getBranches, getTransfersReport } from '@helpers/branches';
 import { authenticate } from 'passport';
+import { mainLogger } from '@utils/logger';
 
 const router = Router();
 
 router.get('/', authenticate('jwt'), async (req, res) => {
   const [error, data] = await fulfill(getBranches());
+  mainLogger.info(`èrror ${error}`);
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
 });
