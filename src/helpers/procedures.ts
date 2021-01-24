@@ -12,14 +12,15 @@ import { approveContributorBenefits, approveContributorSignUp, approveContributo
 import { installLiquorLicense, renewLiquorLicense } from './liquors';
 import { createVehicleStructureForProcedure } from './vehicles';
 import { mainLogger } from '@utils/logger';
+import { setTracingTag } from '@utils/tracing';
 
 const pool = Pool.getInstance();
 
 export const getAvailableProcedures = async (user): Promise<{ instanciasDeTramite: any; instanciasDeMulta: any; instanciasDeImpuestos: any; instanciasDeSoporte: any }> => {
+  setTracingTag(`user.id`, user.id);
   const client: any = await pool.connect();
   client.tipoUsuario = user.tipoUsuario;
   mainLogger.info(`getAvailableProcedures: user: ${user.id}`);
-
   try {
     const response = await client.query(queries.GET_ALL_INSTITUTION);
     let institution: Institucion[] = response.rows.map((el) => {
