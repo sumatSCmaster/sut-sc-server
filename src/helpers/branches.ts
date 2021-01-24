@@ -23,7 +23,6 @@ const dev = process.env.NODE_ENV !== 'production';
 const pool = Pool.getInstance();
 
 export const getBranchesD = async () => {
-  tracer.scope().active()?.addTags({ ep: 'branches', time: 'begin' });
   mainLogger.info(`getBranches`);
   const client = await pool.connect();
   const redisClient = Redis.getInstance();
@@ -32,7 +31,6 @@ export const getBranchesD = async () => {
     let cachedBranches = await redisClient.getAsync('branches');
     if (cachedBranches !== null) {
       mainLogger.info('getBranches - getting cached branches');
-      tracer.scope().active()?.addTags({ ep: 'branches', time: 'begin' });
       return JSON.parse(cachedBranches);
     } else {
       mainLogger.info('getBranches - getting branches from db');
@@ -45,7 +43,6 @@ export const getBranchesD = async () => {
       );
       await redisClient.setAsync('branches', JSON.stringify(allBranches));
       await redisClient.expireAsync('branches', 36000);
-      tracer.scope().active()?.addTags({ ep: 'branches', time: 'end' });
       return allBranches;
     }
   } catch (e) {
