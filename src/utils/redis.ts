@@ -3,8 +3,11 @@ import { promisify } from 'util';
 import * as redis from 'redis';
 import { mainLogger } from './logger';
 
+const dev = process.env.NODE_ENV !== 'production';
+
 function getRedis() {
-  const client: redis.RedisClient = redis.createClient({ url: process.env.REDIS_URL, tls: { rejectUnauthorized: false } });
+  const clientConf = dev ? { url: process.env.REDIS_URL } : { url: process.env.REDIS_URL, tls: { rejectUnauthorized: false } };
+  const client: redis.RedisClient = redis.createClient(clientConf);
   client.on('ready', () => {
     mainLogger.info(`Redis client ready`);
   });

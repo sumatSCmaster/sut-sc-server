@@ -16,12 +16,13 @@ import { mainLogger } from '@utils/logger';
 import Redis from '@utils/redis';
 
 import ExcelJs from 'exceljs';
+import tracer from 'dd-trace';
 
 const dev = process.env.NODE_ENV !== 'production';
 
 const pool = Pool.getInstance();
 
-export const getBranches = async () => {
+export const getBranchesD = async () => {
   mainLogger.info(`getBranches`);
   const client = await pool.connect();
   const redisClient = Redis.getInstance();
@@ -41,7 +42,7 @@ export const getBranches = async () => {
         })
       );
       await redisClient.setAsync('branches', JSON.stringify(allBranches));
-      await redisClient.expireAsync('branches', 3000);
+      await redisClient.expireAsync('branches', 36000);
       return allBranches;
     }
   } catch (e) {
@@ -50,6 +51,10 @@ export const getBranches = async () => {
   } finally {
     client.release();
   }
+};
+
+export const getBranches = async () => {
+  return await tracer.trace('getBranches', getBranchesD);
 };
 
 export const generateBranchesReport = async (user, payload: { from: Date; to: Date; alcaldia: boolean }) => {
