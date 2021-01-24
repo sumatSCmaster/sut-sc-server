@@ -8,3 +8,7 @@ export const setTracingTag = (key: string, value: any) => {
     span.setTag(key, value);
   }
 };
+
+export const getUserIdFromReq = (req) => {
+  return req.user.id;
+};
