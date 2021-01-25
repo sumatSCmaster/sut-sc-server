@@ -10,6 +10,11 @@ import { createFiningCertificate } from '@utils/forms';
 import { mainLogger } from '@utils/logger';
 const pool = Pool.getInstance();
 
+/**
+ *
+ * @param procedure
+ * @param user
+ */
 export const finingInit = async (procedure, user: Usuario) => {
   const client = await pool.connect();
   const { tipoTramite, datos, monto } = procedure;
@@ -74,6 +79,11 @@ export const finingInit = async (procedure, user: Usuario) => {
   }
 };
 
+/**
+ *
+ * @param procedure
+ * @param user
+ */
 const addPaymentFining = async (procedure, user: Usuario) => {
   const client = await pool.connect();
   let { pago } = procedure;
@@ -140,6 +150,12 @@ const addPaymentFining = async (procedure, user: Usuario) => {
   }
 };
 
+/**
+ *
+ * @param procedure
+ * @param user
+ * @param client
+ */
 export const validateFining = async (procedure, user: Usuario, client) => {
   let dir, respState;
   try {
@@ -204,24 +220,45 @@ export const validateFining = async (procedure, user: Usuario, client) => {
   }
 };
 
+/**
+ *
+ * @param procedure
+ * @param client
+ */
 const getNextEventForFining = async (procedure, client): Promise<object | string> => {
   const response = (await client.query(queries.GET_FINING_STATE, [procedure.idTramite])).rows[0];
   const nextEvent = fineEventHandler(procedure.sufijo, response.state);
   return nextEvent;
 };
 
+/**
+ *
+ */
 const fineEvents = switchcase({ ml: { iniciado: 'ingresardatos_ml', ingresardatos: 'validar_ml', validando: 'finalizar_ml' } })(null);
 
+/**
+ *
+ * @param suffix
+ * @param state
+ */
 const fineEventHandler = (suffix, state) => {
   return fineEvents(suffix)[state];
 };
 
+/**
+ *
+ */
 const updateFining = switchcase({
   validando: null,
   ingresardatos: addPaymentFining,
   finalizado: null,
 })(null);
 
+/**
+ *
+ * @param procedure
+ * @param user
+ */
 export const updateFiningHandler = async (procedure, user) => {
   const client = await pool.connect();
   const response = (await client.query(queries.GET_FINING_STATE, [procedure.idTramite])).rows[0];

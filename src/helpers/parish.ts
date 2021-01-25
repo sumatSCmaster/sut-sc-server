@@ -4,6 +4,9 @@ import { Parroquia } from '@interfaces/sigt';
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
 const pool = Pool.getInstance();
 
+/**
+ *
+ */
 export const getAllParishes = async (): Promise<{
   parroquias: Parroquia[];
   status: number;
@@ -25,6 +28,10 @@ export const getAllParishes = async (): Promise<{
   }
 };
 
+/**
+ *
+ * @param parish
+ */
 export const getSectorByParish = async (parish) => {
   const client = await pool.connect();
   try {

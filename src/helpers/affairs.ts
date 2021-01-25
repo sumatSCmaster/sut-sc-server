@@ -6,6 +6,11 @@ import switchcase from '@utils/switch';
 import { sendNotification } from './notification';
 const pool = Pool.getInstance();
 
+/**
+ *
+ * @param affair
+ * @param user
+ */
 export const affairInit = async (affair, user) => {
   const client = await pool.connect();
   const { tipoTramite, datos } = affair;
@@ -25,14 +30,7 @@ export const affairInit = async (affair, user) => {
       nombreTramiteLargo: response.nombretramitelargo,
       nombreTramiteCorto: response.nombretramitecorto,
     };
-    await sendNotification(
-      user,
-      `Se ha iniciado un caso social para la persona ${response.datos.nombreCompleto}`,
-      'CREATE_SOCIAL_AFFAIR',
-      'TRAMITE',
-      caso,
-      client
-    );
+    await sendNotification(user, `Se ha iniciado un caso social para la persona ${response.datos.nombreCompleto}`, 'CREATE_SOCIAL_AFFAIR', 'TRAMITE', caso, client);
     client.query('COMMIT');
     return {
       status: 201,
@@ -51,6 +49,11 @@ export const affairInit = async (affair, user) => {
   }
 };
 
+/**
+ *
+ * @param affair
+ * @param user
+ */
 export const updateAffair = async (affair, user) => {
   const client = await pool.connect();
   let { estado, datos } = affair;
@@ -73,14 +76,7 @@ export const updateAffair = async (affair, user) => {
       nombreTramiteLargo: response.nombretramitelargo,
       nombreTramiteCorto: response.nombretramitecorto,
     };
-    await sendNotification(
-      user,
-      `Se ha actualizado el estado de un caso social para la persona ${response.datos.nombreCompleto}`,
-      'UPDATE_SOCIAL_AFFAIR',
-      'TRAMITE',
-      caso,
-      client
-    );
+    await sendNotification(user, `Se ha actualizado el estado de un caso social para la persona ${response.datos.nombreCompleto}`, 'UPDATE_SOCIAL_AFFAIR', 'TRAMITE', caso, client);
     client.query('COMMIT');
     return { status: 200, message: 'Caso social actualizado', caso };
   } catch (error) {
@@ -102,6 +98,9 @@ const getNextEventForSocialCase = async (affair, client) => {
   return nextEvent;
 };
 
+/**
+ *
+ */
 const socialCases = switchcase({
   iniciado: { porrevisar: 'porrevisar', visto: 'visto', aprobado: 'aprobado', negado: 'negado' },
   porrevisar: { visto: 'visto', aprobado: 'aprobado', negado: 'negado' },

@@ -9,6 +9,10 @@ import Redis from '@utils/redis';
 
 const pool = Pool.getInstance();
 
+/**
+ *
+ * @param user
+ */
 export const getMenu = async (user): Promise<Institucion[]> => {
   let REDIS_KEY = `options:${user.tipoUsuario === 4 ? 'external' : 'inst'}`;
   const client: any = await pool.connect();
@@ -51,6 +55,11 @@ export const getMenu = async (user): Promise<Institucion[]> => {
   }
 };
 
+/**
+ *
+ * @param institution
+ * @param client
+ */
 const getProcedureByInstitution = async (institution, client: PoolClient): Promise<Institucion[] | any> => {
   return Promise.all(
     institution.map(async (institucion) => {
@@ -81,6 +90,11 @@ const getProcedureByInstitution = async (institution, client: PoolClient): Promi
   });
 };
 
+/**
+ *
+ * @param procedure
+ * @param client
+ */
 const getSectionByProcedure = async (procedure, client: PoolClient): Promise<TipoTramite[] | any> => {
   return await Promise.all(
     procedure.map(async (al) => {
@@ -119,6 +133,12 @@ const getSectionByProcedure = async (procedure, client: PoolClient): Promise<Tip
   });
 };
 
+/**
+ *
+ * @param section
+ * @param tramiteId
+ * @param client
+ */
 const getFieldsBySection = async (section, tramiteId, client): Promise<Campo[] | any> => {
   return Promise.all(
     section.map(async (el) => {
@@ -137,11 +157,20 @@ const getFieldsBySection = async (section, tramiteId, client): Promise<Campo[] |
   });
 };
 
+/**
+ *
+ */
 const fieldsBySection = switchcase({
   0: queries.GET_FIELDS_FOR_SOCIAL_CASE,
   4: queries.GET_FIELDS_BY_SECTION,
 })(queries.GET_FIELDS_BY_SECTION_FOR_OFFICIALS);
 
+/**
+ *
+ * @param typeUser
+ * @param payload
+ * @param client
+ */
 const fieldsBySectionHandler = (typeUser, payload, client) => {
   return client.query(fieldsBySection(typeUser), [...payload]);
 };

@@ -11,6 +11,9 @@ import { mainLogger } from '@utils/logger';
 const pool = Pool.getInstance();
 
 // ! acurero
+/**
+ *
+ */
 export const getAllBanks = async () => {
   const client = await pool.connect();
   try {
@@ -32,6 +35,9 @@ export const getAllBanks = async () => {
 };
 
 // ! acurero
+/**
+ *
+ */
 const typeProcess = switchcase({
   TRAMITE: async ({ id, client }: { id: number; client: PoolClient }) => {
     try {
@@ -79,6 +85,10 @@ const typeProcess = switchcase({
 })(null);
 
 // ! acurero
+/**
+ *
+ * @param param0
+ */
 export const paymentReferenceSearch = async ({ reference, bank }) => {
   const client = await pool.connect();
   mainLogger.info(reference, bank);
@@ -119,6 +129,9 @@ export const paymentReferenceSearch = async ({ reference, bank }) => {
 };
 
 // ! acurero
+/**
+ *
+ */
 const reversePaymentCase = switchcase({
   TRAMITE: async ({ id, client }: { id: number; client: PoolClient }) => {
     const REVERSARPAGO = 'reversarpago_tramite';
@@ -183,6 +196,10 @@ const reversePaymentCase = switchcase({
 })(null);
 
 // ! acurero
+/**
+ *
+ * @param param0
+ */
 export const reversePaymentForProcess = async ({ id, concept }: { id: number; concept: string }) => {
   const client = await pool.connect();
   try {
@@ -205,6 +222,10 @@ export const reversePaymentForProcess = async ({ id, concept }: { id: number; co
 };
 
 // ! acurero
+/**
+ *
+ * @param param0
+ */
 const getPaymentsByProcessId = async ({ id, concept, client }: { id: number; concept: string; client: PoolClient }) => {
   try {
     const pagos = (
@@ -220,6 +241,10 @@ const getPaymentsByProcessId = async ({ id, concept, client }: { id: number; con
 };
 
 // ! acurero
+/**
+ *
+ * @param param0
+ */
 const getProcessFiscalCredit = async ({ id, client }: { id: number; client: PoolClient }) => {
   try {
     const creditoGenerado = (await client.query('SELECT id_credito_fiscal AS id, credito, fecha_creacion AS "fechaCreacion" FROM impuesto.credito_fiscal WHERE id_solicitud = $1', [id])).rows;
@@ -354,6 +379,12 @@ export const validatePayments = async (body, user) => {
   }
 };
 
+/**
+ *
+ * @param payment
+ * @param procedure
+ * @param client
+ */
 // ! acurero
 export const insertPaymentReference = async (payment: any, procedure: number, client: PoolClient) => {
   const { referencia, banco, costo, fecha, concepto, user, destino } = payment;
@@ -364,6 +395,12 @@ export const insertPaymentReference = async (payment: any, procedure: number, cl
   }
 };
 
+/**
+ *
+ * @param payment
+ * @param procedure
+ * @param client
+ */
 // ! acurero
 export const insertPaymentCashier = async (payment: any, procedure: number, client: PoolClient) => {
   const { referencia, banco, costo, fecha, concepto, metodoPago, user, destino } = payment;
@@ -376,6 +413,10 @@ export const insertPaymentCashier = async (payment: any, procedure: number, clie
 
 const validateCases = switchcase({ IMPUESTO: validateApplication, TRAMITE: validateProcedure, MULTA: validateFining })(null);
 
+/**
+ *
+ * @param param0
+ */
 const validationHandler = async ({ concept, body, user, client }) => {
   const executedMethod = switchcase({ IMPUESTO: validateApplication, RETENCION: validateApplication, CONVENIO: validateAgreementFraction, TRAMITE: validateProcedure, MULTA: validateFining })(null)(concept);
   return executedMethod ? await executedMethod(body, user, client) : { status: 400, message: 'No existe un caso de validacion definido con este concepto' };

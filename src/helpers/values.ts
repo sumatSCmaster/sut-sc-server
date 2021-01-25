@@ -3,6 +3,10 @@ import queries from '@utils/queries';
 import { errorMessageGenerator } from './errors';
 const pool = Pool.getInstance();
 
+/**
+ *
+ * @param value
+ */
 export const updatePetroValue = async (value) => {
   const client = await pool.connect();
   try {
@@ -25,6 +29,9 @@ export const updatePetroValue = async (value) => {
   }
 };
 
+/**
+ *
+ */
 export const getPetroValue = async () => {
   const client = await pool.connect();
   try {
@@ -44,6 +51,10 @@ export const getPetroValue = async () => {
   }
 };
 
+/**
+ *
+ * @param value
+ */
 export const updateUsdValue = async (value) => {
   const client = await pool.connect();
   try {
@@ -66,6 +77,9 @@ export const updateUsdValue = async (value) => {
   }
 };
 
+/**
+ *
+ */
 export const getUsdValue = async () => {
   const client = await pool.connect();
   try {

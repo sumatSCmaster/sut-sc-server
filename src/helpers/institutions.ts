@@ -4,6 +4,9 @@ import { Institucion } from '@interfaces/sigt';
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
 const pool = Pool.getInstance();
 
+/**
+ *
+ */
 export const getAllInstitutions = async (): Promise<{
   instituciones: Institucion[];
   status: number;

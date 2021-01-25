@@ -41,6 +41,11 @@ const template = async (props) => {
   }
 };
 
+/**
+ *
+ * @param data
+ * @param client
+ */
 export const installLiquorLicense = async (data, client: PoolClient) => {
   try {
     const { usuario: user, costo } = (await client.query(queries.GET_PROCEDURE_DATA, [data.idTramite])).rows[0];
@@ -73,6 +78,11 @@ export const installLiquorLicense = async (data, client: PoolClient) => {
   }
 };
 
+/**
+ *
+ * @param data
+ * @param client
+ */
 export const renewLiquorLicense = async (data, client: PoolClient) => {
   try {
     const { usuario: user, costo } = (await client.query(queries.GET_PROCEDURE_DATA, [data.idTramite])).rows[0];

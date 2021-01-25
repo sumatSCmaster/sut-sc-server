@@ -8,6 +8,9 @@ import Redis from '@utils/redis';
 
 const pool = Pool.getInstance();
 
+/**
+ *
+ */
 export const checkVehicleExists = () => async (req: any, res, next) => {
   const client = await pool.connect();
   const { id: usuario } = req.user;
@@ -28,6 +31,9 @@ export const checkVehicleExists = () => async (req: any, res, next) => {
   }
 };
 
+/**
+ *
+ */
 export const getBrands = async (): Promise<Response & { marcas: { id: number; nombre: string }[] }> => {
   const REDIS_KEY = 'vehicleBrands';
   const client = await pool.connect();
@@ -59,6 +65,9 @@ export const getBrands = async (): Promise<Response & { marcas: { id: number; no
   }
 };
 
+/**
+ *
+ */
 export const getVehicleTypes = async (): Promise<Response & { tipoVehiculo: VehicleType[] }> => {
   const REDIS_KEY = 'vehicleTypes';
   const client = await pool.connect();
@@ -94,6 +103,9 @@ export const getVehicleTypes = async (): Promise<Response & { tipoVehiculo: Vehi
   }
 };
 
+/**
+ *
+ */
 const getVehicleCategoriesByType = async (id: number, client: PoolClient): Promise<VehicleCategory[]> => {
   try {
     const response = (await client.query(queries.GET_VEHICLE_CATEGORIES_BY_TYPE, [id])).rows.map(async (category: VehicleCategory) => {
@@ -112,6 +124,11 @@ const getVehicleCategoriesByType = async (id: number, client: PoolClient): Promi
   }
 };
 
+/**
+ *
+ * @param id
+ * @param client
+ */
 const getVehicleSubcategoriesByCategory = async (id: number, client: PoolClient): Promise<VehicleSubcategory[]> => {
   try {
     const subcategories: VehicleSubcategory[] = (await client.query(queries.GET_VEHICLE_SUBCATEGORIES_BY_CATEGORY, [id])).rows;
@@ -126,6 +143,10 @@ const getVehicleSubcategoriesByCategory = async (id: number, client: PoolClient)
   }
 };
 
+/**
+ *
+ * @param id
+ */
 export const getVehiclesByContributor = async (id: number): Promise<Response & { vehiculos: Vehicle[] }> => {
   const client = await pool.connect();
   try {
@@ -143,6 +164,11 @@ export const getVehiclesByContributor = async (id: number): Promise<Response & {
   }
 };
 
+/**
+ *
+ * @param payload
+ * @param user
+ */
 export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Response & { vehiculo: Vehicle }> => {
   const client = await pool.connect();
   const { marca, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible } = payload;
@@ -180,6 +206,11 @@ export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Re
   }
 };
 
+/**
+ *
+ * @param payload
+ * @param id
+ */
 export const updateVehicle = async (payload: Vehicle, id: number): Promise<Response & { vehiculo: Vehicle }> => {
   const client = await pool.connect();
   const { marca, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible } = payload;
@@ -216,6 +247,10 @@ export const updateVehicle = async (payload: Vehicle, id: number): Promise<Respo
   }
 };
 
+/**
+ *
+ * @param id
+ */
 export const deleteVehicle = async (id: number): Promise<Response> => {
   const client = await pool.connect();
   try {
@@ -236,6 +271,11 @@ export const deleteVehicle = async (id: number): Promise<Response> => {
   }
 };
 
+/**
+ *
+ * @param payload
+ * @param id
+ */
 export const updateVehicleSubcategory = async (payload: VehicleSubcategory, id: number) => {
   const client = await pool.connect();
   try {
@@ -256,6 +296,11 @@ export const updateVehicleSubcategory = async (payload: VehicleSubcategory, id: 
   }
 };
 
+/**
+ *
+ * @param vehicle
+ * @param client
+ */
 export const createVehicleStructureForProcedure = async (vehicle: Vehicle, client: PoolClient) => {
   try {
     const assets = (await client.query(queries.GET_ASSETS_FOR_VEHICLE_DATA, [vehicle.id])).rows[0];

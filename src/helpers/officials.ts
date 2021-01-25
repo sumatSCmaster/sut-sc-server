@@ -7,6 +7,11 @@ import { genSaltSync, hashSync } from 'bcryptjs';
 import { blockUserEvent } from './notification';
 const pool = Pool.getInstance();
 
+/**
+ *
+ * @param institution
+ * @param id
+ */
 export const getOfficialsByInstitution = async (institution: string, id: number) => {
   const client = await pool.connect();
   try {
@@ -54,6 +59,9 @@ export const getOfficialsByInstitution = async (institution: string, id: number)
   }
 };
 
+/**
+ *
+ */
 export const getAllOfficials = async () => {
   const client = await pool.connect();
   try {
@@ -100,14 +108,29 @@ export const getAllOfficials = async () => {
   }
 };
 
+/**
+ *
+ * @param id
+ * @param client
+ */
 async function dropPermissions(id, client: PoolClient) {
   return client.query(queries.DROP_OFFICIAL_PERMISSIONS, [id]);
 }
 
+/**
+ *
+ * @param id
+ * @param permisos
+ * @param client
+ */
 async function addPermissions(id, permisos, client: PoolClient) {
   return Promise.all(permisos.map((perm) => client.query(queries.ADD_OFFICIAL_PERMISSIONS, [id, perm])));
 }
 
+/**
+ *
+ * @param official
+ */
 export const createOfficial = async (official: any) => {
   const { nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, telefono, password, permisos, tipoUsuario, cargo } = official;
   const client = await pool.connect();
@@ -132,15 +155,15 @@ export const createOfficial = async (official: any) => {
       password: off.rows[0].password,
       telefono: off.rows[0].telefono,
       institucion: {
-          bloqueado: inst[0].bloqueado,
-          id: inst[0].id_institucion,
-          nombreCompleto: inst[0].nombre_completo,
-          nombreCorto: inst[0].nombre_corto,
-          cargo: {
-             id: inst[0].idCargo,
-             descripcion: inst[0].cargo,
-          },
-       },
+        bloqueado: inst[0].bloqueado,
+        id: inst[0].id_institucion,
+        nombreCompleto: inst[0].nombre_completo,
+        nombreCorto: inst[0].nombre_corto,
+        cargo: {
+          id: inst[0].idCargo,
+          descripcion: inst[0].cargo,
+        },
+      },
     };
     return { status: 201, usuario, message: 'Funcionario creado' };
   } catch (e) {
@@ -155,6 +178,11 @@ export const createOfficial = async (official: any) => {
   }
 };
 
+/**
+ *
+ * @param official
+ * @param id
+ */
 //TODO: verificar que el usuario pertenece a mi institucion
 export const updateOfficial = async (official: any, id: string) => {
   const { nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, telefono, permisos, tipoUsuario, cargo } = official;
@@ -185,15 +213,15 @@ export const updateOfficial = async (official: any, id: string) => {
       telefono: response.telefono,
       permisos: (await client.query(queries.GET_USER_PERMISSIONS, [response.id_usuario])).rows.map((row) => +row.id_tipo_tramite) || [],
       institucion: {
-          bloqueado: inst[0].bloqueado,
-          id: inst[0].id_institucion,
-          nombreCompleto: inst[0].nombre_completo,
-          nombreCorto: inst[0].nombre_corto,
-          cargo: {
-             id: inst[0].idCargo,
-            descripcion: inst[0].cargo,
-          },
-       },
+        bloqueado: inst[0].bloqueado,
+        id: inst[0].id_institucion,
+        nombreCompleto: inst[0].nombre_completo,
+        nombreCorto: inst[0].nombre_corto,
+        cargo: {
+          id: inst[0].idCargo,
+          descripcion: inst[0].cargo,
+        },
+      },
     };
     return { status: 200, usuario, message: 'Funcionario actualizado' };
   } catch (e) {
@@ -208,6 +236,11 @@ export const updateOfficial = async (official: any, id: string) => {
   }
 };
 
+/**
+ *
+ * @param officialID
+ * @param institution
+ */
 export const deleteOfficial = async (officialID: string, institution: number) => {
   const client = await pool.connect();
   try {
@@ -228,6 +261,10 @@ export const deleteOfficial = async (officialID: string, institution: number) =>
   }
 };
 
+/**
+ *
+ * @param officialID
+ */
 export const deleteOfficialSuperuser = async (officialID: string) => {
   const client = await pool.connect();
   try {
@@ -248,6 +285,12 @@ export const deleteOfficialSuperuser = async (officialID: string) => {
   }
 };
 
+/**
+ *
+ * @param officialID
+ * @param blockStatus
+ * @param user
+ */
 export const blockOfficial = async (officialID: string, blockStatus: boolean, user: Usuario) => {
   const client = await pool.connect();
   try {

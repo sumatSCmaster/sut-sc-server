@@ -12,6 +12,9 @@ import { mainLogger } from '@utils/logger';
 const pool = Pool.getInstance();
 
 //middleware
+/**
+ *
+ */
 export const isBlocked = () => async (req, res, next) => {
   const client = await pool.connect();
   const { nombreUsuario: usuario } = req.body;
@@ -37,6 +40,10 @@ export const isBlocked = () => async (req, res, next) => {
   }
 };
 
+/**
+ *
+ * @param username
+ */
 export const getUserByUsername = async (username: string): Promise<Usuario | null> => {
   const client = await pool.connect();
   try {
@@ -75,6 +82,10 @@ export const getUserByUsername = async (username: string): Promise<Usuario | nul
   }
 };
 
+/**
+ *
+ * @param user
+ */
 export const createSuperuser = async (user: Payloads.CrearSuperuser): Promise<Partial<Usuario>> => {
   const client = await pool.connect();
   try {
@@ -99,6 +110,10 @@ export const createSuperuser = async (user: Payloads.CrearSuperuser): Promise<Pa
   }
 };
 
+/**
+ *
+ * @param user
+ */
 export const createAdmin = async (user: Payloads.CrearAdmin): Promise<Partial<Usuario>> => {
   const client = await pool.connect();
   try {
@@ -128,6 +143,10 @@ export const createAdmin = async (user: Payloads.CrearAdmin): Promise<Partial<Us
   }
 };
 
+/**
+ *
+ * @param user
+ */
 export const addInstitute = async (user: Partial<Usuario>): Promise<Partial<Usuario> & { institucion: Institucion & { cargo: object; bloqueado: boolean } }> => {
   const client = await pool.connect();
   try {
@@ -153,6 +172,10 @@ export const addInstitute = async (user: Partial<Usuario>): Promise<Partial<Usua
   }
 };
 
+/**
+ *
+ * @param user
+ */
 export const addPermissions = async (user: Partial<Usuario>): Promise<Partial<Usuario> & { permisos: number[] }> => {
   const client = await pool.connect();
   try {
@@ -168,6 +191,11 @@ export const addPermissions = async (user: Partial<Usuario>): Promise<Partial<Us
   }
 };
 
+/**
+ *
+ * @param candidate
+ * @param hash
+ */
 export const comparePassword = (candidate: string, hash: string): Promise<boolean> => {
   return new Promise((res, rej) => {
     compare(candidate, hash, (err, isMatch) => {
@@ -177,6 +205,10 @@ export const comparePassword = (candidate: string, hash: string): Promise<boolea
   });
 };
 
+/**
+ *
+ * @param id
+ */
 export const getByOAuthID = async (id) => {
   const client = await pool.connect();
   const [err, data] = await fulfill(client.query(queries.GET_OAUTH_USER, [id]));
@@ -185,6 +217,10 @@ export const getByOAuthID = async (id) => {
   if (data) return { data: data.rows };
 };
 
+/**
+ *
+ * @param id
+ */
 export const verifyExternalUser = async (id) => {
   const client = await pool.connect();
   const [err, data] = await fulfill(client.query(queries.GET_EXTERNAL_USER, [id]));
@@ -204,6 +240,10 @@ export const verifyExternalUser = async (id) => {
     };
 };
 
+/**
+ *
+ * @param user
+ */
 export const initialExtUserSignUp = async (user) => {
   const client = await pool.connect();
   try {
@@ -229,6 +269,11 @@ export const initialExtUserSignUp = async (user) => {
   }
 };
 
+/**
+ *
+ * @param user
+ * @param id
+ */
 export const completeExtUserSignUp = async (user, id) => {
   const { nombreCompleto, nombreUsuario, password, direccion, cedula, nacionalidad, telefono } = user;
   const client = await pool.connect();
@@ -260,6 +305,10 @@ export const completeExtUserSignUp = async (user, id) => {
   }
 };
 
+/**
+ *
+ * @param user
+ */
 export const signUpUser = async (user) => {
   const { nombreCompleto, nombreUsuario, direccion, cedula, nacionalidad, password, telefono } = user;
   const client = await pool.connect();
@@ -296,6 +345,10 @@ export const signUpUser = async (user) => {
   }
 };
 
+/**
+ *
+ * @param user
+ */
 export const updateUser = async (user) => {
   const { id, direccion, nombreCompleto, telefono } = user;
   const client = await pool.connect();
@@ -324,6 +377,10 @@ export const updateUser = async (user) => {
   }
 };
 
+/**
+ *
+ * @param cedula
+ */
 export const hasNotifications = async (cedula) => {
   const client = await pool.connect();
   try {
@@ -339,6 +396,10 @@ export const hasNotifications = async (cedula) => {
   }
 };
 
+/**
+ *
+ * @param user
+ */
 export const hasLinkedContributor = async (user) => {
   const client = await pool.connect();
   try {
@@ -375,6 +436,10 @@ export const hasLinkedContributor = async (user) => {
   }
 };
 
+/**
+ *
+ * @param contributor
+ */
 export const getUsersByContributor = async (contributor) => {
   const client = await pool.connect();
   try {
@@ -387,6 +452,10 @@ export const getUsersByContributor = async (contributor) => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const userSearch = async ({ document, docType, email }) => {
   const client = await pool.connect();
   let usuarios: any[] = [];
@@ -423,6 +492,10 @@ export const userSearch = async ({ document, docType, email }) => {
   }
 };
 
+/**
+ *
+ * @param id
+ */
 export const unlinkContributorFromUser = async (id) => {
   const client = await pool.connect();
   try {
@@ -442,6 +515,12 @@ export const unlinkContributorFromUser = async (id) => {
   }
 };
 
+/**
+ *
+ * @param id
+ * @param blockStatus
+ * @param user
+ */
 export const blockUser = async (id, blockStatus, user: Usuario) => {
   const client = await pool.connect();
   try {
@@ -463,6 +542,10 @@ export const blockUser = async (id, blockStatus, user: Usuario) => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const updateUserInformation = async ({ user, id }) => {
   const client = await pool.connect();
   const { nombreCompleto, nombreUsuario, direccion, documento, tipoDocumento, telefono } = user;
@@ -504,6 +587,10 @@ export const updateUserInformation = async ({ user, id }) => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const addUserVerification = async ({ cellphone, id }) => {
   const client = await pool.connect();
   try {

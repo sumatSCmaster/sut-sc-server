@@ -29,6 +29,10 @@ const template = async (props) => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const getMunicipalServicesByContributor = async ({ reference, document, docType }) => {
   const client = await pool.connect();
   try {
@@ -71,6 +75,10 @@ export const getMunicipalServicesByContributor = async ({ reference, document, d
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const getCleaningTariffForEstate = async ({ estate, branchId, client }) => {
   try {
     // if (!estate && !branchId) return (await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto;
@@ -99,6 +107,10 @@ export const getCleaningTariffForEstate = async ({ estate, branchId, client }) =
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const getGasTariffForEstate = async ({ estate, branchId, client }) => {
   try {
     const PETRO = +(await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
@@ -115,6 +127,10 @@ export const getGasTariffForEstate = async ({ estate, branchId, client }) => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const updateGasStateForEstate = async ({ estates }) => {
   const client = await pool.connect();
   try {
@@ -155,6 +171,9 @@ export const updateGasStateForEstate = async ({ estates }) => {
   }
 };
 
+/**
+ *
+ */
 export const getServicesTariffScales = async () => {
   const client = await pool.connect();
   try {
@@ -175,6 +194,11 @@ export const getServicesTariffScales = async () => {
   }
 };
 
+/**
+ *
+ * @param type
+ * @param date
+ */
 export const getSettlementsByDepartment = async (type, date) => {
   const client = await pool.connect();
   try {
@@ -212,6 +236,11 @@ export const getSettlementsByDepartment = async (type, date) => {
   }
 };
 
+/**
+ *
+ * @param id
+ * @param tariff
+ */
 export const updateGasTariffScales = async (id, tariff) => {
   const client = await pool.connect();
   try {
@@ -232,6 +261,10 @@ export const updateGasTariffScales = async (id, tariff) => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const createMunicipalServicesScale = async ({ description, tariff }) => {
   const client = await pool.connect();
   try {

@@ -52,6 +52,9 @@ export const codigosRamo = {
 };
 const formatCurrency = (number: number) => new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(number);
 
+/**
+ *
+ */
 export const checkContributorExists = () => async (req: any, res, next) => {
   const client = await pool.connect();
   const { user } = req;
@@ -81,11 +84,11 @@ export const checkContributorExists = () => async (req: any, res, next) => {
   }
 };
 
-const truthyCheck = (x) => {
-  if (x) return true;
-  return false;
-};
-
+/**
+ *
+ * @param param0
+ * @param client
+ */
 export const isExonerated = async ({ branch, contributor, activity, startingDate }, client): Promise<boolean> => {
   try {
     if (branch === codigosRamo.AE) {
@@ -111,6 +114,11 @@ export const isExonerated = async ({ branch, contributor, activity, startingDate
   }
 };
 
+/**
+ *
+ * @param param0
+ * @param client
+ */
 export const hasDiscount = async ({ branch, contributor, activity, startingDate }, client): Promise<number> => {
   try {
     // const branchIsExonerated = (await client.query(queries.BRANCH_IS_EXONERATED, [branch, startingDate])).rows[0];
@@ -125,6 +133,11 @@ export const hasDiscount = async ({ branch, contributor, activity, startingDate 
   }
 };
 
+/**
+ *
+ * @param param0
+ * @param client
+ */
 export const getIUTariffForContributor = async ({ estate, id, declaration, date }: { estate: any; id: number; declaration?: number; date: Moment }, client: PoolClient) => {
   try {
     const avaluo = (await client.query(queries.GET_ESTATE_APPRAISAL_BY_ID_AND_YEAR, [estate.id_inmueble, date.year()])).rows[0]?.avaluo || estate.avaluo;
@@ -149,6 +162,10 @@ export const getIUTariffForContributor = async ({ estate, id, declaration, date 
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const getIUSettlementsForContributor = async ({ document, reference, type, declaration }: { document: string; reference: string | null; type: string; declaration?: number }) => {
   const client = await pool.connect();
   let IU: any = undefined;
@@ -241,6 +258,10 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const getSettlements = async ({ document, reference, type, user }: { document: string; reference: string | null; type: string; user: Usuario }) => {
   const client = await pool.connect();
   const gtic = await gticPool.connect();
@@ -596,11 +617,19 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
   }
 };
 
+/**
+ *
+ * @param str
+ */
 const nullStringCheck = (str: string | null): string => {
   if (!str) return '';
   return str.trim();
 };
 
+/**
+ *
+ * @param param0
+ */
 export const getTaxPayerInfo = async ({ docType, document, type, gtic, client }) => {
   let taxPayer;
   try {
@@ -647,6 +676,10 @@ export const getTaxPayerInfo = async ({ docType, document, type, gtic, client })
   }
 };
 
+/**
+ *
+ * @param x
+ */
 const structureEstates = (x: any) => {
   return {
     id: nullStringCheck(x.co_inmueble),
@@ -662,6 +695,10 @@ const structureEstates = (x: any) => {
   };
 };
 
+/**
+ *
+ * @param x
+ */
 const structureSettlements = (x: any) => {
   return {
     id: nullStringCheck(x.co_liquidacion),
@@ -676,6 +713,10 @@ const structureSettlements = (x: any) => {
   };
 };
 
+/**
+ *
+ * @param x
+ */
 const structureFinings = (x: any) => {
   return {
     id: nullStringCheck(x.co_decl_multa),
@@ -688,6 +729,10 @@ const structureFinings = (x: any) => {
   };
 };
 
+/**
+ *
+ * @param x
+ */
 const structureContributor = (x: any) => {
   return {
     id: x.id_contribuyente,
@@ -705,6 +750,10 @@ const structureContributor = (x: any) => {
   };
 };
 
+/**
+ *
+ * @param param0
+ */
 export const externalLinkingForCashier = async ({ document, docType, reference, typeUser, user }) => {
   const client = await pool.connect();
   const gtic = await gticPool.connect();
@@ -1111,6 +1160,10 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const logInExternalLinking = async ({ credentials }) => {
   const client = await pool.connect();
   const gtic = await gticPool.connect();
@@ -1333,6 +1386,10 @@ export const logInExternalLinking = async ({ credentials }) => {
   }
 };
 
+/**
+ *
+ * @param contributor
+ */
 const getLinkedContributorData = async (contributor: any) => {
   const client = await pool.connect();
   try {
@@ -1385,6 +1442,10 @@ const getLinkedContributorData = async (contributor: any) => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 const externalUserForLinkingExists = async ({ user, password, gtic }: { user: string; password: string; gtic: PoolClient }) => {
   try {
     const gticUser = (await gtic.query(queries.gtic.GET_REPRESENTATIVE_BY_EMAIL, [user])).rows;
@@ -1402,6 +1463,11 @@ const externalUserForLinkingExists = async ({ user, password, gtic }: { user: st
   }
 };
 
+/**
+ *
+ * @param process
+ * @param client
+ */
 export const createSettlementForProcedure = async (process, client) => {
   const { referenciaMunicipal, monto, ramo, idTramite, payload } = process;
   try {
@@ -1420,6 +1486,10 @@ export const createSettlementForProcedure = async (process, client) => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const patchSettlement = async ({ id, settlement }) => {
   const client = await pool.connect();
   const { fechaLiquidacion, subramo, estado } = settlement;
@@ -1490,6 +1560,10 @@ export const patchSettlement = async ({ id, settlement }) => {
   }
 };
 
+/**
+ *
+ * @param id
+ */
 export const deleteSettlement = async (id: number) => {
   const client = await pool.connect();
   try {
@@ -1514,6 +1588,10 @@ export const deleteSettlement = async (id: number) => {
 };
 
 //TODO: get de fracciones
+/**
+ *
+ * @param param0
+ */
 export const getAgreementFractionById = async ({ id }): Promise<Solicitud & any> => {
   const client = await pool.connect();
   try {
@@ -1545,6 +1623,11 @@ export const getAgreementFractionById = async ({ id }): Promise<Solicitud & any>
   }
 };
 
+/**
+ *
+ * @param param0
+ * @param client
+ */
 export const getAgreementFractionByIdNots = async ({ id }, client): Promise<Solicitud & any> => {
   try {
     const application = (await client.query(queries.GET_AGREEMENT_FRACTION_BY_ID, [id])).rows[0];
@@ -1574,6 +1657,10 @@ export const getAgreementFractionByIdNots = async ({ id }, client): Promise<Soli
 };
 
 //TODO: get de convenios
+/**
+ *
+ * @param param0
+ */
 export const getAgreements = async ({ user }: { user: Usuario }) => {
   const client = await pool.connect();
   try {
@@ -1620,6 +1707,10 @@ export const getAgreements = async ({ user }: { user: Usuario }) => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const getAgreementsForContributor = async ({ reference, docType, document, typeUser }) => {
   const client = await pool.connect();
   try {
@@ -1673,6 +1764,9 @@ export const getAgreementsForContributor = async ({ reference, docType, document
   }
 };
 
+/**
+ *
+ */
 export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<Solicitud & any> => {
   const client = await pool.connect();
   try {
@@ -1751,6 +1845,11 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
   }
 };
 
+/**
+ *
+ * @param param0
+ * @param client
+ */
 export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client: PoolClient): Promise<Solicitud & any> => {
   try {
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
@@ -1825,6 +1924,10 @@ export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const getApplicationsAndSettlements = async ({ user }: { user: Usuario }) => {
   const client = await pool.connect();
   try {
@@ -1905,6 +2008,98 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
   }
 };
 
+const getApplicationInstancesPayload = async ({ application, contributor, typeUser }, client: PoolClient) => {
+  try {
+    const type = application.tipo_solicitud;
+    const liquidacionesP = client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [application.id_solicitud]);
+    const docsP = client.query(queries.GET_CONTRIBUTOR_BY_ID, [application.id_contribuyente]);
+    const stateP = client.query(queries.GET_APPLICATION_STATE, [application.id_solicitud]);
+    const montoP = client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application.id_solicitud]);
+    const montoPetroP = type !== 'RETENCION' ? client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [application.id_solicitud]) : null;
+    const [liquidacionesD, docsD, stateD, montoD, montoPetroD] = await Promise.all([liquidacionesP, docsP, stateP, montoP, montoPetroP]);
+    const docs = docsD.rows[0];
+    const state = stateD.rows[0].state;
+    const monto = montoD.rows[0].monto_total;
+    const montoPetro = montoPetroD?.rows[0].monto_total;
+
+    const rimP = client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidacionesD.rows[0]?.id_registro_municipal]);
+    const creditoFiscalP = client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [typeUser === 'JURIDICO' ? liquidacionesD.rows[0]?.id_registro_municipal : application.id_contribuyente, typeUser]);
+    const interesMoratorioP = getDefaultInterestByApplication({ id: application.id_solicitud, date: application.fecha, state, client });
+    const rebajaInteresMoratorioP = getDefaultInterestRebateByApplication({ id: application.id_solicitud, date: application.fecha, state, client });
+
+    const [interesMoratorio, rebajaInteresMoratorio, creditoFiscalD, rimD] = await Promise.all([interesMoratorioP, rebajaInteresMoratorioP, creditoFiscalP, rimP]);
+    const rim = rimD.rows[0]?.referencia_municipal;
+    const creditoFiscal = creditoFiscalD.rows[0]?.credito || 0;
+
+    const liquidaciones = await Promise.all(liquidacionesD.rows.filter((el) => el.tipoProcedimiento !== 'MULTAS').map((el) => getSettlementFormat(el, type, client)));
+    const multas = await Promise.all(liquidacionesD.rows.filter((el) => el.tipoProcedimiento === 'MULTAS').map((el) => getFiningFormat(el, type, client)));
+    const creditoFiscalRetencion = (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, rim])).rows[0]?.credito || 0;
+
+    return {
+      id: application.id_solicitud,
+      usuario: application.usuario,
+      contribuyente: structureContributor(docs),
+      aprobado: application.aprobado,
+      creditoFiscal,
+      creditoFiscalRetencion,
+      fecha: application.fecha,
+      documento: docs.documento,
+      tipoDocumento: docs.tipo_documento,
+      rebajado: application.rebajado,
+      tipo: application.tipo_solicitud,
+      estado: state,
+      referenciaMunicipal: liquidacionesP[0]?.id_registro_municipal ? rim : undefined,
+      monto,
+      montoPetro,
+      liquidaciones,
+      multas,
+      interesMoratorio,
+      rebajaInteresMoratorio,
+    };
+  } catch (e) {
+    throw e;
+  }
+};
+
+const getSettlementFormat = async (settlement, type, client: PoolClient) => {
+  try {
+    return {
+      id: settlement.id_liquidacion,
+      ramo: settlement.tipoProcedimiento,
+      fecha: settlement.datos.fecha,
+      monto: +settlement.monto,
+      montoPetro: type !== 'RETENCION' ? +settlement.monto_petro : null,
+      esAgenteSENIAT: !!settlement.datos.esAgenteSENIAT,
+      certificado: settlement.certificado,
+      recibo: settlement.recibo,
+      desglose: await formatBreakdownForSettlement(settlement.ramo)({ settlement, client }),
+    };
+  } catch (e) {
+    throw e;
+  }
+};
+
+const getFiningFormat = async (fining, type, client: PoolClient) => {
+  try {
+    return {
+      id: fining.id_liquidacion,
+      ramo: fining.tipoProcedimiento,
+      fecha: fining.datos.fecha,
+      monto: +fining.monto,
+      montoPetro: type !== 'RETENCION' ? +fining.monto_petro : null,
+      descripcion: fining.datos.descripcion,
+      certificado: fining.certificado,
+      recibo: fining.recibo,
+      desglose: await formatBreakdownForSettlement(fining.ramo)({ settlement: fining, client }),
+    };
+  } catch (e) {
+    throw e;
+  }
+};
+/**
+ *
+ * @param param0
+ */
 export const getApplicationsAndSettlementsForContributor = async ({ referencia, docType, document, typeUser }) => {
   const client = await pool.connect();
   try {
@@ -1917,71 +2112,7 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
     ).rows;
     const hasApplications = userApplications.length > 0;
     if (!hasApplications) return { status: 404, message: 'El usuario no tiene solicitudes' };
-    const applications: Solicitud[] = await Promise.all(
-      userApplications
-        .filter((el) => el.tipo_solicitud !== 'CONVENIO')
-        .map(async (el) => {
-          const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
-          const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
-          const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
-          const rim = (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal;
-          const type = el.tipo_solicitud;
-
-          return {
-            id: el.id_solicitud,
-            usuario: el.usuario,
-            contribuyente: structureContributor(docs),
-            aprobado: el.aprobado,
-            creditoFiscal: (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [typeUser === 'JURIDICO' ? liquidaciones[0]?.id_registro_municipal : el.id_contribuyente, typeUser])).rows[0]?.credito || 0,
-            creditoFiscalRetencion: (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, rim])).rows[0]?.credito || 0,
-            fecha: el.fecha,
-            documento: docs.documento,
-            tipoDocumento: docs.tipo_documento,
-            rebajado: el.rebajado,
-            tipo: el.tipo_solicitud,
-            estado: state,
-            referenciaMunicipal: liquidaciones[0]?.id_registro_municipal ? rim : undefined,
-            monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0].monto_total,
-            montoPetro: type !== 'RETENCION' ? (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total : null,
-            liquidaciones: await Promise.all(
-              liquidaciones
-                .filter((el) => el.tipoProcedimiento !== 'MULTAS')
-                .map(async (el) => {
-                  return {
-                    id: el.id_liquidacion,
-                    ramo: el.tipoProcedimiento,
-                    fecha: el.datos.fecha,
-                    monto: +el.monto,
-                    montoPetro: type !== 'RETENCION' ? +el.monto_petro : null,
-                    esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
-                    certificado: el.certificado,
-                    recibo: el.recibo,
-                    desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
-                  };
-                })
-            ),
-            multas: await Promise.all(
-              liquidaciones
-                .filter((el) => el.tipoProcedimiento === 'MULTAS')
-                .map(async (el) => {
-                  return {
-                    id: el.id_liquidacion,
-                    ramo: el.tipoProcedimiento,
-                    fecha: el.datos.fecha,
-                    monto: +el.monto,
-                    montoPetro: type !== 'RETENCION' ? +el.monto_petro : null,
-                    descripcion: el.datos.descripcion,
-                    certificado: el.certificado,
-                    recibo: el.recibo,
-                    desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
-                  };
-                })
-            ),
-            interesMoratorio: await getDefaultInterestByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
-            rebajaInteresMoratorio: await getDefaultInterestRebateByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
-          };
-        })
-    );
+    const applications: Solicitud[] = await Promise.all(userApplications.filter((el) => el.tipo_solicitud !== 'CONVENIO').map((el) => getApplicationInstancesPayload({ application: el, typeUser, contributor }, client)));
     return { status: 200, message: 'Instancias de solicitudes obtenidas satisfactoriamente', solicitudes: applications.filter((el) => el.liquidaciones.length > 0 || el.multas!.length > 0) };
   } catch (error) {
     mainLogger.error(error);
@@ -1995,6 +2126,9 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
   }
 };
 
+/**
+ *
+ */
 const formatBreakdownForSettlement = switchcase({
   AE: async ({ settlement, client }) => {
     try {
@@ -2027,6 +2161,11 @@ const formatBreakdownForSettlement = switchcase({
   return null;
 });
 
+/**
+ *
+ * @param contributor
+ * @param client
+ */
 export const formatContributor = async (contributor, client: PoolClient) => {
   try {
     const branches = (await client.query(queries.GET_BRANCHES_BY_CONTRIBUTOR_ID, [contributor.id_contribuyente])).rows;
@@ -2075,6 +2214,12 @@ export const formatContributor = async (contributor, client: PoolClient) => {
   }
 };
 
+/**
+ *
+ * @param branch
+ * @param contributor
+ * @param client
+ */
 export const formatBranch = async (branch, contributor, client) => {
   try {
     const inicioImpuestos: any[] = [];
@@ -2129,6 +2274,10 @@ export const formatBranch = async (branch, contributor, client) => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const contributorSearch = async ({ document, docType, name }) => {
   const client = await pool.connect();
   let contribuyentes: any[] = [];
@@ -2153,6 +2302,9 @@ export const contributorSearch = async ({ document, docType, name }) => {
   }
 };
 
+/**
+ *
+ */
 export const getEntireDebtsForContributor = async ({ reference, docType, document, typeUser }) => {
   const client = await pool.connect();
   try {
@@ -2202,6 +2354,10 @@ export const getEntireDebtsForContributor = async ({ reference, docType, documen
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 const getDefaultInterestByApplication = async ({ id, date, state, client }): Promise<number | undefined> => {
   try {
     return undefined;
@@ -2225,6 +2381,10 @@ const getDefaultInterestByApplication = async ({ id, date, state, client }): Pro
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 const getDefaultInterestRebateByApplication = async ({ id, date, state, client }): Promise<number | undefined> => {
   try {
     return undefined;
@@ -2249,6 +2409,11 @@ const getDefaultInterestRebateByApplication = async ({ id, date, state, client }
   }
 };
 
+/**
+ *
+ * @param linkingData
+ * @param user
+ */
 export const initialUserLinking = async (linkingData, user) => {
   const client = await pool.connect();
   const { datosContribuyente, sucursales, datosContacto, actividadesEconomicas } = linkingData;
@@ -2576,6 +2741,10 @@ export const initialUserLinking = async (linkingData, user) => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const verifyUserLinking = async ({ code, user }) => {
   const client = await pool.connect();
   try {
@@ -2594,6 +2763,10 @@ export const verifyUserLinking = async ({ code, user }) => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const resendUserCode = async ({ user }) => {
   const client = await pool.connect();
   try {
@@ -2612,6 +2785,10 @@ export const resendUserCode = async ({ user }) => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const finingPercentage = async ({ currentMonth, comparedMonth, branch, client }: { currentMonth: Moment; comparedMonth: Moment; branch: 'AE' | 'RD0'; client: PoolClient }): Promise<number> => {
   let base, augment, limit;
   try {
@@ -2634,6 +2811,10 @@ export const finingPercentage = async ({ currentMonth, comparedMonth, branch, cl
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const insertSettlements = async ({ process, user }) => {
   const client = await pool.connect();
   const { impuestos } = process;
@@ -2963,6 +3144,10 @@ export const insertSettlements = async ({ process, user }) => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const addTaxApplicationPayment = async ({ payment, interest, application, user }) => {
   const client = await pool.connect();
   let recibo: any = undefined;
@@ -3124,6 +3309,10 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
 //   }
 // };
 
+/**
+ *
+ * @param param0
+ */
 const updateFiscalCredit = async ({ id, user, amount, client }) => {
   const fixatedApplication = await getApplicationsAndSettlementsByIdNots({ id, user }, client);
   const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
@@ -3134,12 +3323,20 @@ const updateFiscalCredit = async ({ id, user, amount, client }) => {
   await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, payload);
 };
 
+/**
+ *
+ * @param param0
+ */
 const updateRetentionFiscalCredit = async ({ id, user, amount, client }) => {
   const fixatedApplication = await getApplicationsAndSettlementsByIdNots({ id, user }, client);
   const { contribuyente: contr, referenciaMunicipal: rim } = fixatedApplication;
   await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [`${contr.tipoDocumento}${contr.documento}`, rim, amount, true, id]);
 };
 
+/**
+ *
+ * @param param0
+ */
 export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fragment, user }) => {
   const client = await pool.connect();
   try {
@@ -3211,6 +3408,12 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
   }
 };
 
+/**
+ *
+ * @param body
+ * @param user
+ * @param client
+ */
 export const validateApplication = async (body, user, client) => {
   try {
     if (!body.solicitudAprobada) return;
@@ -3265,6 +3468,12 @@ export const validateApplication = async (body, user, client) => {
   }
 };
 
+/**
+ *
+ * @param body
+ * @param user
+ * @param client
+ */
 export const validateAgreementFraction = async (body, user, client: PoolClient) => {
   try {
     //este metodo es para validar los convenios y llevarlos al estado de finalizado
@@ -3320,6 +3529,10 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const internalUserImport = async ({ reference, docType, document, typeUser, user }) => {
   const client = await pool.connect();
   try {
@@ -3347,6 +3560,11 @@ export const internalUserImport = async ({ reference, docType, document, typeUse
   }
 };
 
+/**
+ *
+ * @param license
+ * @param official
+ */
 export const internalLicenseApproval = async (license, official: Usuario) => {
   const client = await pool.connect();
   try {
@@ -3374,6 +3592,10 @@ export const internalLicenseApproval = async (license, official: Usuario) => {
   }
 };
 
+/**
+ *
+ * @param contributor
+ */
 export const internalContributorSignUp = async (contributor) => {
   const client = await pool.connect();
   const { correo, denominacionComercial, direccion, doc, puntoReferencia, razonSocial, sector, parroquia, siglas, telefono, tipoContribuyente, tipoDocumento } = contributor;
@@ -3424,6 +3646,10 @@ export const internalContributorSignUp = async (contributor) => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const approveContributorSignUp = async ({ procedure, client }: { procedure: any; client: PoolClient }) => {
   try {
     const { datos, usuario } = procedure;
@@ -3440,6 +3666,10 @@ export const approveContributorSignUp = async ({ procedure, client }: { procedur
   }
 };
 
+/**
+ *
+ * @param data
+ */
 export const internalUserLinking = async (data) => {
   const client = await pool.connect();
   const { username, documento, tipoDocumento, tipoContribuyente, referenciaMunicipal } = data;
@@ -3483,6 +3713,12 @@ export const internalUserLinking = async (data) => {
   }
 };
 
+/**
+ *
+ * @param array
+ * @param number
+ * @param prop
+ */
 const recursiveRebate = (array, number, prop = 'monto'): any[] => {
   const minus = number / array.filter((a) => +a[prop] > 0).length;
   let _array = array.map((e) => {
@@ -3503,6 +3739,10 @@ const recursiveRebate = (array, number, prop = 'monto'): any[] => {
   } else return _array;
 };
 
+/**
+ *
+ * @param param0
+ */
 export const addRebateForDeclaration = async ({ process, user }) => {
   const client = await pool.connect();
   const { id, montoRebajado } = process;
@@ -3556,6 +3796,9 @@ export const addRebateForDeclaration = async ({ process, user }) => {
   }
 };
 
+/**
+ *
+ */
 export const createSpecialSettlement = async ({ process, user }) => {
   const client = await pool.connect();
   const { impuestos } = process;
@@ -3677,6 +3920,10 @@ export const createSpecialSettlement = async ({ process, user }) => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const approveContributorAELicense = async ({ data, client }: { data: any; client: PoolClient }) => {
   try {
     mainLogger.info(data);
@@ -3748,6 +3995,10 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const approveContributorBenefits = async ({ data, client }: { data: any; client: PoolClient }) => {
   try {
     const { contribuyente, beneficios } = data.funcionario;
@@ -3822,6 +4073,10 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const createCertificateForApplication = async ({ settlement, media, user }) => {
   const client = await pool.connect();
   const gtic = await gticPool.connect();
@@ -4529,6 +4784,10 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 const createReceiptForSpecialApplication = async ({ client, user, application }) => {
   try {
     const breakdownData = (
@@ -5395,6 +5654,10 @@ const createFineDocument = async ({ gticPool, pool, user, application }: Certifi
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const createAccountStatement = async ({ contributor, reference, typeUser }) => {
   const client = await pool.connect();
   const gtic = await gticPool.connect();
@@ -5462,6 +5725,10 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
   }
 };
 
+/**
+ *
+ * @param num
+ */
 export const fixatedAmount = (num: number): number => {
   return +parseFloat((+num).toPrecision(15)).toFixed(2);
 };
@@ -5641,12 +5908,20 @@ const certificateCreationSnippet = () => {
   // });
 };
 
+/**
+ *
+ * @param date
+ */
 const checkIfWeekend = (date: Moment) => {
   if (date.isoWeekday() === 6) date.add({ days: 2 });
   if (date.isoWeekday() === 7) date.add({ days: 1 });
   return date;
 };
 
+/**
+ *
+ * @param amountObject
+ */
 const addMissingCarriedAmounts = (amountObject) => {
   if (!amountObject.hasOwnProperty('AE')) amountObject.AE = { monto: 0 };
   if (!amountObject.hasOwnProperty('SM')) amountObject.SM = { monto: 0 };
@@ -5655,6 +5930,9 @@ const addMissingCarriedAmounts = (amountObject) => {
   return amountObject;
 };
 
+/**
+ *
+ */
 const certificateCases = switchcase({
   AE: { recibo: createReceiptForAEApplication, solvencia: createSolvencyForApplication },
   SM: { recibo: createReceiptForSMOrIUApplication },
@@ -5686,6 +5964,11 @@ const applicationStateEvents = {
   REBOTAR: 'rebotado_pi',
 };
 
+/**
+ *
+ * @param settlementType
+ * @param breakdown
+ */
 const breakdownCaseHandler = (settlementType, breakdown) => {
   // const query = breakdownCases(settlementType);
   const payload = switchcase({
@@ -5699,6 +5982,12 @@ const breakdownCaseHandler = (settlementType, breakdown) => {
   return payload;
 };
 
+/**
+ *
+ * @param process
+ * @param media
+ * @param payload
+ */
 const certificateCreationHandler = async (process, media, payload: CertificatePayload) => {
   try {
     const result = certificateCases(process)[media];
@@ -5713,6 +6002,11 @@ const certificateCreationHandler = async (process, media, payload: CertificatePa
   }
 };
 
+/**
+ *
+ * @param date
+ * @param months
+ */
 const addMonths = (date: Date, months): Date => {
   const d = date.getDate();
   date.setMonth(date.getMonth() + +months);

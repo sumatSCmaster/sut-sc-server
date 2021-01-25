@@ -12,6 +12,9 @@ const dev = process.env.NODE_ENV !== 'production';
 
 const pool = Pool.getInstance();
 
+/**
+ *
+ */
 export const getActivities = async (): Promise<Aliquot[]> => {
   const client = await pool.connect();
   try {
@@ -24,6 +27,10 @@ export const getActivities = async (): Promise<Aliquot[]> => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const updateActivitiesAliquots = async ({ aliquots }: { aliquots: Aliquot[] }) => {
   const client = await pool.connect();
   try {
@@ -56,6 +63,10 @@ export const updateActivitiesAliquots = async ({ aliquots }: { aliquots: Aliquot
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const getMunicipalReferenceActivities = async ({ docType, document }) => {
   const client = await pool.connect();
   try {
@@ -77,6 +88,10 @@ export const getMunicipalReferenceActivities = async ({ docType, document }) => 
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const updateContributorActivities = async ({ branchId, activities, branchInfo }) => {
   const client = await pool.connect();
   const { denomComercial, nombreRepresentante, telefonoMovil, email, estadoLicencia, tipoSociedad, esMonotributo, capitalSuscrito, actualizado, otrosImpuestos } = branchInfo;

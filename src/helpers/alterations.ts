@@ -10,6 +10,10 @@ import { mainLogger } from '@utils/logger';
 
 const pool = Pool.getInstance();
 
+/**
+ *
+ * @param param0
+ */
 export const getAEDeclarationsForAlteration = async ({ document, reference, docType, user, type }: { document: string; reference: string | null; docType: string; user: Usuario; type: string }) => {
   const client = await pool.connect();
   try {
@@ -68,6 +72,10 @@ export const getAEDeclarationsForAlteration = async ({ document, reference, docT
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const alterateAESettlements = async ({ settlements, type }) => {
   const client = await pool.connect();
   try {

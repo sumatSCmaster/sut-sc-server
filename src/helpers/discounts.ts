@@ -8,6 +8,10 @@ import { mainLogger } from '@utils/logger';
 const pool = Pool.getInstance();
 
 // ? DE ULTIMO
+/**
+ *
+ * @param param0
+ */
 export const getContributorDiscounts = async ({ typeDoc, doc, ref }) => {
   const client = await pool.connect();
   try {
@@ -56,6 +60,9 @@ export const getContributorDiscounts = async ({ typeDoc, doc, ref }) => {
 };
 
 // * DONE
+/**
+ *
+ */
 export const getActivityBranchDiscounts = async () => {
   const client = await pool.connect();
   try {
@@ -89,6 +96,10 @@ export const getActivityBranchDiscounts = async () => {
 };
 
 // * DONE
+/**
+ *
+ * @param param0
+ */
 export const createActivityDiscount = async ({ from, activities }: { from: Date; activities: Partial<ActividadEconomica & { ramos: any[] }>[] }) => {
   const client = await pool.connect();
   try {
@@ -133,6 +144,10 @@ export const createActivityDiscount = async ({ from, activities }: { from: Date;
 };
 
 // * DONE
+/**
+ *
+ * @param param0
+ */
 export const createContributorDiscount = async ({ typeDoc, doc, ref, from, branches }: { typeDoc: string; doc: string; ref: string; from: Date; branches: any[] }) => {
   const client = await pool.connect();
   try {
@@ -211,6 +226,11 @@ export const createContributorDiscount = async ({ typeDoc, doc, ref, from, branc
 };
 
 // * DONE
+/**
+ *
+ * @param id
+ * @param to
+ */
 export const updateEndTimeDiscount = async (id, to) => {
   const client = await pool.connect();
   try {

@@ -8,6 +8,10 @@ const dev = process.env.NODE_ENV !== 'production';
 
 const pool = Pool.getInstance();
 
+/**
+ *
+ * @param param0
+ */
 export const updateContributor = async ({ id, tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia }) => {
   const client = await pool.connect();
   try {
@@ -25,6 +29,10 @@ export const updateContributor = async ({ id, tipoDocumento, documento, razonSoc
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const updateRIM = async ({ id, telefono, email, denomComercial, nombreRepresentante, capitalSuscrito, tipoSociedad, parroquia, direccion, esMonotributo }) => {
   const client = await pool.connect();
   try {

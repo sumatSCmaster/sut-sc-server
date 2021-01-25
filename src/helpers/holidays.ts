@@ -5,6 +5,9 @@ import { DiaFeriado } from '@root/interfaces/sigt';
 
 const pool = Pool.getInstance();
 
+/**
+ *
+ */
 export const getHolidays = async (): Promise<DiaFeriado[]> => {
   const client = await pool.connect();
   try {
@@ -21,6 +24,10 @@ export const getHolidays = async (): Promise<DiaFeriado[]> => {
   }
 };
 
+/**
+ *
+ * @param data
+ */
 export const createHolidays = async (data: DiaFeriado[]): Promise<DiaFeriado[]> => {
   const client = await pool.connect();
   try {
@@ -38,6 +45,10 @@ export const createHolidays = async (data: DiaFeriado[]): Promise<DiaFeriado[]> 
   }
 };
 
+/**
+ *
+ * @param id
+ */
 export const deleteHoliday = async (id): Promise<DiaFeriado> => {
   const client = await pool.connect();
   try {

@@ -39,6 +39,10 @@ const template = async (props) => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const getDataForDefinitiveDeclaration = async ({ document, reference, docType }) => {
   const client = await pool.connect();
   const breakdownArray: any[] = [];
@@ -125,6 +129,10 @@ export const getDataForDefinitiveDeclaration = async ({ document, reference, doc
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const insertDefinitiveYearlyDeclaration = async ({ process, user }) => {
   const client = await pool.connect();
   try {
@@ -145,6 +153,10 @@ export const insertDefinitiveYearlyDeclaration = async ({ process, user }) => {
   }
 };
 
+/**
+ *
+ * @param payload
+ */
 const createReceiptForAEApplication = async (payload: { liquidaciones; contribuyente; totalLiquidado; totalPagado; ramo }) => {
   const { liquidaciones, contribuyente, totalLiquidado, totalPagado, ramo } = payload;
   try {

@@ -5,6 +5,9 @@ import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { PoolClient } from 'pg';
 const pool = Pool.getInstance();
 
+/**
+ *
+ */
 export const getDataForTaxValues = async () => {
   const client = await pool.connect();
   const anos = {};
@@ -34,6 +37,9 @@ export const getDataForTaxValues = async () => {
   }
 };
 
+/**
+ *
+ */
 export const getTaxValuesToDate = async () => {
   const client = await pool.connect();
   const anos = {};
@@ -63,6 +69,11 @@ export const getTaxValuesToDate = async () => {
   }
 };
 
+/**
+ *
+ * @param year
+ * @param client
+ */
 const getConstructionsByYear = async (year: number, client: PoolClient) => {
   const res = (
     await client.query(queries.GET_CONSTRUCTION_BY_YEAR, [year]).catch((e) => {
@@ -74,6 +85,11 @@ const getConstructionsByYear = async (year: number, client: PoolClient) => {
   });
 };
 
+/**
+ *
+ * @param year
+ * @param client
+ */
 const getGroundsByYear = async (year: number, client: PoolClient) => {
   const res = (
     await client.query(queries.GET_GROUNDS_BY_YEAR, [year]).catch((e) => {
@@ -106,6 +122,10 @@ const getGroundsByYear = async (year: number, client: PoolClient) => {
   );
 };
 
+/**
+ *
+ * @param ground
+ */
 export const updateGroundValuesByFactor = async (ground) => {
   const client = await pool.connect();
   const year = new Date().getFullYear();
@@ -133,6 +153,10 @@ export const updateGroundValuesByFactor = async (ground) => {
   }
 };
 
+/**
+ *
+ * @param construction
+ */
 export const updateConstructionValuesByFactor = async (construction) => {
   const client = await pool.connect();
   const year = new Date().getFullYear();
@@ -160,6 +184,11 @@ export const updateConstructionValuesByFactor = async (construction) => {
   }
 };
 
+/**
+ *
+ * @param ground
+ * @param sector
+ */
 export const updateGroundValuesBySector = async (ground, sector) => {
   const client = await pool.connect();
   const year = new Date().getFullYear();
@@ -201,6 +230,11 @@ export const updateGroundValuesBySector = async (ground, sector) => {
   }
 };
 
+/**
+ *
+ * @param construction
+ * @param model
+ */
 export const updateConstructionValuesByModel = async (construction, model) => {
   const client = await pool.connect();
   const year = new Date().getFullYear();

@@ -30,6 +30,10 @@ export const processRetentionFile = async (file) => {
   return {};
 };
 
+/**
+ *
+ * @param param0
+ */
 export const getRetentionMonths = async ({ document, reference, docType, user }: { document: string; reference: string; docType: string; user: Usuario }) => {
   const client = await pool.connect();
   let debtRD;
@@ -89,6 +93,10 @@ export const getRetentionMonths = async ({ document, reference, docType, user }:
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const getRetentionChargingsForDocumentAndReference = async ({ document, reference }) => {
   const client = await pool.connect();
   try {
@@ -109,6 +117,10 @@ export const getRetentionChargingsForDocumentAndReference = async ({ document, r
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 //TODO: hacer el desglose de retencion y apuntar al ramo de retencion
 export const insertRetentions = async ({ process, user }) => {
   const client = await pool.connect();
@@ -390,6 +402,10 @@ export const insertRetentions = async ({ process, user }) => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const createRetentionAgent = async ({ docType, document }) => {
   const client = await pool.connect();
   try {
@@ -430,6 +446,10 @@ export const createRetentionAgent = async ({ docType, document }) => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const updateRetentionAgentStatus = async ({ id, status }) => {
   const client = await pool.connect();
   try {
@@ -450,6 +470,10 @@ export const updateRetentionAgentStatus = async ({ id, status }) => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const updateRetentionAgentRIM = async ({ id, reference }) => {
   const client = await pool.connect();
   try {
@@ -470,6 +494,9 @@ export const updateRetentionAgentRIM = async ({ id, reference }) => {
   }
 };
 
+/**
+ *
+ */
 export const getRetentionAgents = async () => {
   const client = await pool.connect();
   try {
@@ -503,6 +530,11 @@ export const getRetentionAgents = async () => {
   }
 };
 
+/**
+ *
+ * @param date
+ * @param months
+ */
 const addMonths = (date: Date, months): Date => {
   const d = date.getDate();
   date.setMonth(date.getMonth() + +months);

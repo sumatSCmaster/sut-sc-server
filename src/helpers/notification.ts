@@ -11,6 +11,13 @@ import { getApplicationsAndSettlementsById, getApplicationsAndSettlementsByIdNot
 const pool = Pool.getInstance();
 const users = getUsers();
 
+/**
+ *
+ * @param id
+ * @param blocked
+ * @param emitter
+ * @param client
+ */
 export const blockUserEvent = async (id: number, blocked: boolean, emitter: Usuario, client: PoolClient) => {
   try {
     const usuario = (await client.query('SELECT * FROM usuario WHERE id_usuario = $1', [id])).rows[0];
@@ -30,6 +37,10 @@ export const blockUserEvent = async (id: number, blocked: boolean, emitter: Usua
   }
 };
 
+/**
+ *
+ * @param user
+ */
 export const getNotifications = async (user: Usuario): Promise<Notificacion[] | any> => {
   const client = await pool.connect();
   try {
@@ -124,6 +135,10 @@ export const getNotifications = async (user: Usuario): Promise<Notificacion[] | 
   }
 };
 
+/**
+ *
+ * @param user
+ */
 export const markAllAsRead = async (user: Usuario): Promise<object> => {
   const client = await pool.connect();
   try {
@@ -140,6 +155,16 @@ export const markAllAsRead = async (user: Usuario): Promise<object> => {
   }
 };
 
+/**
+ *
+ * @param sender
+ * @param description
+ * @param type
+ * @param concept
+ * @param payload
+ * @param client
+ * @param isValidating
+ */
 export const sendNotification = async (sender: Usuario, description: string, type: string, concept: string, payload: Partial<Tramite | Multa>, client: PoolClient, isValidating: boolean = false) => {
   try {
     notificationHandler(sender, description, type, payload, concept, client, isValidating);
@@ -148,6 +173,15 @@ export const sendNotification = async (sender: Usuario, description: string, typ
   }
 };
 
+/**
+ *
+ * @param sender
+ * @param description
+ * @param payload
+ * @param concept
+ * @param client
+ * @param isValidating
+ */
 const broadcastForProcedureInit = async (sender: Usuario, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient, isValidating: boolean) => {
   const socket = users.get(`${sender.nacionalidad}-${sender.cedula}`);
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
@@ -186,6 +220,15 @@ const broadcastForProcedureInit = async (sender: Usuario, description: string, p
   }
 };
 
+/**
+ *
+ * @param sender
+ * @param description
+ * @param payload
+ * @param concept
+ * @param client
+ * @param isValidating
+ */
 const broadcastForProcedureUpdate = async (sender: Usuario, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient, isValidating: boolean) => {
   const io = getIo();
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
@@ -245,6 +288,15 @@ const broadcastForProcedureUpdate = async (sender: Usuario, description: string,
   }
 };
 
+/**
+ *
+ * @param sender
+ * @param description
+ * @param payload
+ * @param concept
+ * @param client
+ * @param isValidating
+ */
 const broadcastForAffairInit = async (sender: Usuario, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient, isValidating: boolean) => {
   const io = getIo();
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
@@ -283,6 +335,15 @@ const broadcastForAffairInit = async (sender: Usuario, description: string, payl
 };
 
 //DONE
+/**
+ *
+ * @param sender
+ * @param description
+ * @param payload
+ * @param concept
+ * @param client
+ * @param isValidating
+ */
 const broadcastForAffairUpdate = async (sender: Usuario, description: string, payload: Partial<Tramite>, concept: string, client: PoolClient, isValidating: boolean) => {
   const io = getIo();
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
@@ -321,6 +382,15 @@ const broadcastForAffairUpdate = async (sender: Usuario, description: string, pa
 };
 
 //DONE
+/**
+ *
+ * @param sender
+ * @param description
+ * @param payload
+ * @param concept
+ * @param client
+ * @param isValidating
+ */
 const broadcastForFiningInit = async (sender: Usuario, description: string, payload: Partial<Multa>, concept: string, client: PoolClient, isValidating: boolean) => {
   const socket = users.get(`${sender.nacionalidad}-${sender.cedula}`);
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
@@ -374,6 +444,15 @@ const broadcastForFiningInit = async (sender: Usuario, description: string, payl
 };
 
 //DONE
+/**
+ *
+ * @param sender
+ * @param description
+ * @param payload
+ * @param concept
+ * @param client
+ * @param isValidating
+ */
 const broadcastForFiningUpdate = async (sender: Usuario, description: string, payload: Partial<Multa>, concept: string, client: PoolClient, isValidating: boolean) => {
   const socket = users.get(`${sender.nacionalidad}-${sender.cedula}`);
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
@@ -435,6 +514,15 @@ const broadcastForFiningUpdate = async (sender: Usuario, description: string, pa
 };
 
 //FIXME: esto se va a descontrolaaaaarrrrrrr, el que se quedo pegao se quedo pegao
+/**
+ *
+ * @param sender
+ * @param description
+ * @param payload
+ * @param concept
+ * @param client
+ * @param isValidating
+ */
 const broadcastForApplicationInit = async (sender: Usuario, description: string, payload: Partial<Solicitud & { nombreCorto: string; estado: string }>, concept: string, client: PoolClient, isValidating: boolean) => {
   const socket = users.get(`${sender.nacionalidad}-${sender.cedula}`);
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
@@ -472,6 +560,15 @@ const broadcastForApplicationInit = async (sender: Usuario, description: string,
   }
 };
 
+/**
+ *
+ * @param sender
+ * @param description
+ * @param payload
+ * @param concept
+ * @param client
+ * @param isValidating
+ */
 const broadcastForApplicationUpdate = async (sender: Usuario, description: string, payload: Partial<Solicitud & { nombreCorto: string; estado: string }>, concept: string, client: PoolClient, isValidating: boolean) => {
   const socket = users.get(`${sender.nacionalidad}-${sender.cedula}`);
   const emisor = `${sender.nacionalidad}-${sender.cedula}`;
@@ -530,6 +627,14 @@ const broadcastForApplicationUpdate = async (sender: Usuario, description: strin
   }
 };
 
+/**
+ *
+ * @param sender
+ * @param receiver
+ * @param description
+ * @param payload
+ * @param notification
+ */
 const formatNotification = (sender: string, receiver: string | null, description: string, payload: Partial<Tramite | Multa | (Solicitud & { estado: string; nombreCorto: string })>, notification: any): Notificacion => {
   return {
     id: notification.id,
@@ -543,6 +648,9 @@ const formatNotification = (sender: string, receiver: string | null, description
   };
 };
 
+/**
+ *
+ */
 const notificationTypes = switchcase({
   CREATE_PROCEDURE: broadcastForProcedureInit,
   UPDATE_PROCEDURE: broadcastForProcedureUpdate,
@@ -554,6 +662,16 @@ const notificationTypes = switchcase({
   UPDATE_APPLICATION: broadcastForApplicationUpdate,
 })(null);
 
+/**
+ *
+ * @param sender
+ * @param description
+ * @param type
+ * @param payload
+ * @param concept
+ * @param client
+ * @param isValidating
+ */
 const notificationHandler = async (sender: Usuario, description: string, type: string, payload: Partial<Tramite | Multa>, concept: string, client: PoolClient, isValidating: boolean) => {
   const notificationSender = notificationTypes(type);
   try {

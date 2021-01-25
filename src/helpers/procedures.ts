@@ -17,9 +17,8 @@ const pool = Pool.getInstance();
 
 /**
  *
- * @typedef {import('./../interfaces/sigt').ValidatedPayment} ValidatePayment
+ * @param user
  */
-
 export const getAvailableProcedures = async (user): Promise<{ instanciasDeTramite: any; instanciasDeMulta: any; instanciasDeImpuestos: any; instanciasDeSoporte: any }> => {
   const client: any = await pool.connect();
   client.tipoUsuario = user.tipoUsuario;
@@ -57,6 +56,10 @@ export const getAvailableProcedures = async (user): Promise<{ instanciasDeTramit
   }
 };
 
+/**
+ *
+ * @param req
+ */
 export const getAvailableProceduresOfInstitution = async (req: { params: { [id: string]: number }; user: { tipoUsuario: number } }): Promise<{ options: Institucion; instanciasDeTramite }> => {
   const client: PoolClient & { tipoUsuario?: number } = await pool.connect(); //Para cascadear el tipousuario a la busqueda de campos
   client.tipoUsuario = req.user.tipoUsuario;
@@ -82,10 +85,20 @@ export const getAvailableProceduresOfInstitution = async (req: { params: { [id: 
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 const esDaniel = ({ tipoUsuario, institucion }) => {
   return tipoUsuario === 2 && institucion.id === 9;
 };
 
+/**
+ *
+ * @param user
+ * @param client
+ * @param support
+ */
 const getProcedureInstances = async (user, client: PoolClient, support?) => {
   try {
     let response = (await procedureInstanceHandler(user, client, support)).rows; //TODO: corregir el handler para que no sea tan forzado
@@ -149,6 +162,11 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
   }
 };
 
+/**
+ *
+ * @param user
+ * @param client
+ */
 const getFineInstances = async (user, client: PoolClient) => {
   try {
     let response = (await fineInstanceHandler(user, client)).rows;
@@ -181,6 +199,11 @@ const getFineInstances = async (user, client: PoolClient) => {
   }
 };
 
+/**
+ *
+ * @param user
+ * @param client
+ */
 const getSettlementInstances = async (user, client: PoolClient) => {
   try {
     if (belongsToAnInstitution(user)) {
@@ -213,6 +236,12 @@ const getSettlementInstances = async (user, client: PoolClient) => {
   }
 };
 
+/**
+ *
+ * @param institution
+ * @param tipoUsuario
+ * @param client
+ */
 const getProcedureInstancesByInstitution = async (institution, tipoUsuario, client: PoolClient) => {
   try {
     const response = (await procedureInstanceHandlerByInstitution(tipoUsuario, institution.id, client)).rows;
@@ -268,6 +297,11 @@ const getProcedureInstancesByInstitution = async (institution, tipoUsuario, clie
   }
 };
 
+/**
+ *
+ * @param institution
+ * @param client
+ */
 const getProcedureByInstitution = async (institution, client: PoolClient): Promise<Institucion[] | any> => {
   return Promise.all(
     institution.map(async (institucion) => {
@@ -298,6 +332,11 @@ const getProcedureByInstitution = async (institution, client: PoolClient): Promi
   });
 };
 
+/**
+ *
+ * @param procedure
+ * @param client
+ */
 const getSectionByProcedure = async (procedure, client: PoolClient): Promise<TipoTramite[] | any> => {
   return await Promise.all(
     procedure.map(async (al) => {
@@ -336,6 +375,12 @@ const getSectionByProcedure = async (procedure, client: PoolClient): Promise<Tip
   });
 };
 
+/**
+ *
+ * @param section
+ * @param tramiteId
+ * @param client
+ */
 const getFieldsBySection = async (section, tramiteId, client): Promise<Campo[] | any> => {
   return Promise.all(
     section.map(async (el) => {
@@ -354,6 +399,11 @@ const getFieldsBySection = async (section, tramiteId, client): Promise<Campo[] |
   });
 };
 
+/**
+ *
+ * @param id
+ * @param newCost
+ */
 export const updateProcedureCost = async (id: string, newCost: string): Promise<Partial<TipoTramite>> => {
   const client = await pool.connect();
   try {
@@ -381,6 +431,10 @@ export const updateProcedureCost = async (id: string, newCost: string): Promise<
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const getFieldsForValidations = async ({ id, type }) => {
   const client = await pool.connect();
   let response;
@@ -408,6 +462,10 @@ export const getFieldsForValidations = async ({ id, type }) => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const getProcedureById = async ({ id, client }: { id: number; client: PoolClient }): Promise<Partial<Tramite>> => {
   try {
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [id])).rows[0];
@@ -435,12 +493,19 @@ export const getProcedureById = async ({ id, client }: { id: number; client: Poo
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 const isNotPrepaidProcedure = ({ suffix, user }: { suffix: string; user: Usuario }) => {
   const condition = false;
   if ((suffix === 'tl' && user.tipoUsuario !== 4) || !!['pd', 'ompu', 'rc', 'bc', 'lic', 'lict', 'sup'].find((el) => el === suffix)) return !condition;
   return condition;
 };
 
+/**
+ *
+ */
 export const getProcedureCosts = async () => {
   const client = await pool.connect();
   try {
@@ -638,6 +703,11 @@ export const validateProcedure = async (procedure, user: Usuario, client) => {
   }
 };
 
+/**
+ *
+ * @param procedure
+ * @param user
+ */
 export const processProcedure = async (procedure, user: Usuario) => {
   const client = await pool.connect();
   let { datos, bill } = procedure;
@@ -752,6 +822,11 @@ export const processProcedure = async (procedure, user: Usuario) => {
   }
 };
 
+/**
+ *
+ * @param procedure
+ * @param user
+ */
 export const addPaymentProcedure = async (procedure, user: Usuario) => {
   const client = await pool.connect();
   let { pago } = procedure;
@@ -812,6 +887,11 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
   }
 };
 
+/**
+ *
+ * @param procedure
+ * @param user
+ */
 export const reviseProcedure = async (procedure, user: Usuario) => {
   const client = await pool.connect();
   const { aprobado, observaciones } = procedure.revision;
@@ -937,6 +1017,11 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
   }
 };
 
+/**
+ *
+ * @param procedure
+ * @param user
+ */
 export const inspectProcedure = async (procedure, user: Usuario) => {
   const client = await pool.connect();
   const { aprobado, observaciones } = procedure.revision;
@@ -1023,6 +1108,11 @@ export const inspectProcedure = async (procedure, user: Usuario) => {
   }
 };
 
+/**
+ *
+ * @param procedure
+ * @param client
+ */
 const reviseProcedureForMassiveApproval = async (procedure: Partial<Tramite | any>, client: PoolClient): Promise<Partial<Tramite>> => {
   const { aprobado, observaciones } = procedure.revision;
   let dir, respState, datos;
@@ -1138,6 +1228,11 @@ const reviseProcedureForMassiveApproval = async (procedure: Partial<Tramite | an
   }
 };
 
+/**
+ *
+ * @param idArray
+ * @param user
+ */
 export const approveAllLicenses = async (idArray: number[], user: Usuario): Promise<any> => {
   const client = await pool.connect();
   try {
@@ -1177,6 +1272,10 @@ export const approveAllLicenses = async (idArray: number[], user: Usuario): Prom
   }
 };
 
+/**
+ *
+ * @param id
+ */
 export const generateCertificate = async (id) => {
   const client = await pool.connect();
   try {
@@ -1193,6 +1292,13 @@ export const generateCertificate = async (id) => {
   }
 };
 
+/**
+ *
+ * @param ordinances
+ * @param id
+ * @param type
+ * @param client
+ */
 const insertOrdinancesByProcedure = async (ordinances, id, type, client: PoolClient) => {
   return Promise.all(
     ordinances.map(async (el, key) => {
@@ -1216,6 +1322,13 @@ const insertOrdinancesByProcedure = async (ordinances, id, type, client: PoolCli
   );
 };
 
+/**
+ *
+ * @param procedure
+ * @param user
+ * @param client
+ * @param analyst
+ */
 export const initProcedureAnalist = async (procedure, user: Usuario, client: PoolClient, analyst) => {
   // const client = await pool.connect();
   const { tipoTramite, datos, pago } = procedure;
@@ -1305,6 +1418,12 @@ export const initProcedureAnalist = async (procedure, user: Usuario, client: Poo
   }
 };
 
+/**
+ *
+ * @param procedure
+ * @param user
+ * @param client
+ */
 export const processProcedureAnalist = async (procedure, user: Usuario, client: PoolClient) => {
   let { datos, bill } = procedure;
   let dir,
@@ -1411,12 +1530,20 @@ export const processProcedureAnalist = async (procedure, user: Usuario, client: 
   }
 };
 
+/**
+ *
+ * @param procedure
+ * @param client
+ */
 const getNextEventForProcedure = async (procedure, client): Promise<any> => {
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
   const nextEvent = procedureEventHandler(procedure.sufijo, response.state);
   return nextEvent;
 };
 
+/**
+ *
+ */
 const procedureEvents = switchcase({
   pa: { iniciado: 'validar_pa', validando: 'enproceso_pa', enproceso: 'finalizar_pa' },
   pd: { iniciado: 'enproceso_pd', enproceso: 'ingresardatos_pd', ingresardatos: 'validar_pd', validando: 'finalizar_pd' },
@@ -1455,42 +1582,82 @@ const procedureEvents = switchcase({
   sup: { iniciado: 'enproceso_sup', enproceso: { finalizado: 'finalizar_sup', true: 'revisar_sup', false: 'rechazar_sup' }, enrevision: { true: 'aprobar_sup', false: 'rechazar_sup' } },
 })(null);
 
+/**
+ *
+ * @param suffix
+ * @param state
+ */
 const procedureEventHandler = (suffix, state) => {
   return procedureEvents(suffix)[state];
 };
 
+/**
+ *
+ * @param param0
+ */
 const isSuperuser = ({ tipoUsuario }) => {
   return tipoUsuario === 1;
 };
 
+/**
+ *
+ * @param param0
+ */
 const isAdmin = ({ tipoUsuario }) => {
   return tipoUsuario === 2;
 };
 
+/**
+ *
+ * @param param0
+ */
 const isOfficial = ({ tipoUsuario }) => {
   return tipoUsuario === 3;
 };
 
+/**
+ *
+ * @param param0
+ */
 const isDirector = ({ tipoUsuario }) => {
   return tipoUsuario === 5;
 };
 
+/**
+ *
+ * @param param0
+ */
 const isExternalUser = ({ tipoUsuario }) => {
   return tipoUsuario === 4;
 };
 
+/**
+ *
+ * @param param0
+ */
 const belongsToAnInstitution = ({ institucion }) => {
   return institucion !== undefined;
 };
 
+/**
+ *
+ * @param param0
+ */
 const handlesSocialCases = ({ institucion }) => {
   return institucion.id === 0;
 };
 
+/**
+ *
+ * @param param0
+ */
 const belongsToSedetama = ({ institucion }) => {
   return institucion.nombreCorto === 'SEDETAMA';
 };
 
+/**
+ *
+ */
 const procedureInstances = switchcase({
   0: queries.GET_SOCIAL_CASES_STATE,
   1: queries.GET_ALL_PROCEDURE_INSTANCES,
@@ -1532,6 +1699,12 @@ const procedureInstances = switchcase({
   8: 'SELECT * FROM tramites_state_with_resources WHERE usuario = $1 AND tipotramite = 37 ORDER BY fechacreacion DESC LIMIT 500;',
 })(null);
 
+/**
+ *
+ * @param user
+ * @param client
+ * @param support
+ */
 const procedureInstanceHandler = (user, client, support) => {
   let query;
   let payload;
@@ -1572,6 +1745,12 @@ const procedureInstanceHandler = (user, client, support) => {
   return client.query(procedureInstances(query), [payload]);
 };
 
+/**
+ *
+ * @param tipoUsuario
+ * @param idInstitucion
+ * @param client
+ */
 const procedureInstanceHandlerByInstitution = (tipoUsuario, idInstitucion, client) => {
   let query;
   query = tipoUsuario;
@@ -1583,6 +1762,9 @@ const procedureInstanceHandlerByInstitution = (tipoUsuario, idInstitucion, clien
   }
 };
 
+/**
+ *
+ */
 const fineInstances = switchcase({
   1: queries.GET_ALL_FINES,
   2: queries.GET_FINES_DIRECTOR_OR_ADMIN,
@@ -1614,15 +1796,27 @@ const fineInstanceHandler = (user, client) => {
   return query !== 1 ? client.query(fineInstances(query), payload) : client.query(fineInstances(query));
 };
 
+/**
+ *
+ */
 const fieldsBySection = switchcase({
   0: queries.GET_FIELDS_FOR_SOCIAL_CASE,
   4: queries.GET_FIELDS_BY_SECTION,
 })(queries.GET_FIELDS_BY_SECTION_FOR_OFFICIALS);
 
+/**
+ *
+ * @param typeUser
+ * @param payload
+ * @param client
+ */
 const fieldsBySectionHandler = (typeUser, payload, client) => {
   return client.query(fieldsBySection(typeUser), [...payload]);
 };
 
+/**
+ *
+ */
 const updateProcedure = switchcase({
   validando: null,
   enproceso: processProcedure,
@@ -1634,6 +1828,11 @@ const updateProcedure = switchcase({
   finalizado: null,
 })(null);
 
+/**
+ *
+ * @param procedure
+ * @param user
+ */
 export const updateProcedureHandler = async (procedure, user) => {
   const client = await pool.connect();
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];

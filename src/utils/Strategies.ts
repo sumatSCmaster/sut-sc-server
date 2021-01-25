@@ -30,6 +30,9 @@ const JwtStrategy = new JWT(optJwt, async (payload, done) => {
   return done(null, payload.sub);
 });
 
+/**
+ *
+ */
 const GoogleStrategy = new Google(optGoogle, async (accessToken, refreshToken, profile, done) => {
   let request = await getByOAuthID(profile.id);
   if (request?.err) {
@@ -66,6 +69,9 @@ const GoogleStrategy = new Google(optGoogle, async (accessToken, refreshToken, p
   }
 });
 
+/**
+ *
+ */
 const FacebookStrategy = new Facebook(optFacebook, async (accessToken, refreshToken, profile, done) => {
   let request = await getByOAuthID(profile.id);
   if (request?.err) {
@@ -102,6 +108,12 @@ const optLocal = {
   passwordField: 'password',
 };
 
+/**
+ *
+ * @param username
+ * @param password
+ * @param done
+ */
 const verifyLocal: VerifyFunction = async (username: string, password: string, done: any) => {
   const user: Usuario | null = await getUserByUsername(username);
   if (!user) return done(null, false, { message: 'Bad Credentials' });

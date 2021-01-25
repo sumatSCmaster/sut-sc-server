@@ -10,6 +10,10 @@ const pool = Pool.getInstance();
 
 const fixMonth = (m: string) => m.charAt(0).toUpperCase() + m.slice(1).toLowerCase();
 
+/**
+ *
+ * @param s
+ */
 const getNoiceState = (s: string): string => {
   switch (s) {
     case 'iniciado':
@@ -40,6 +44,10 @@ const getNoiceState = (s: string): string => {
 };
 
 //dios mio que ternario tan feo
+/**
+ *
+ * @param user
+ */
 export const getStats = (user: Usuario) => {
   if (user.tipoUsuario === IDsTipoUsuario.Superuser) return getSuperUserStats();
   if (user.tipoUsuario === IDsTipoUsuario.UsuarioExterno) return getExternalStats(user.id);
@@ -53,6 +61,9 @@ export const getStats = (user: Usuario) => {
       : getMayoraltyStats();
 };
 
+/**
+ *
+ */
 const getSuperUserStats = async () => {
   const client = await pool.connect();
   try {
@@ -153,6 +164,10 @@ const getSuperUserStats = async () => {
   }
 };
 
+/**
+ *
+ * @param id
+ */
 const getExternalStats = async (id: number) => {
   const client = await pool.connect();
   try {
@@ -179,6 +194,9 @@ const getExternalStats = async (id: number) => {
   }
 };
 
+/**
+ *
+ */
 const getMayoraltyStats = async () => {
   const client = await pool.connect();
   try {
@@ -279,6 +297,10 @@ const getMayoraltyStats = async () => {
   }
 };
 
+/**
+ *
+ * @param institution
+ */
 const getOfficialStats = async (institution: number | undefined) => {
   const client = await pool.connect();
   try {
@@ -379,6 +401,10 @@ const getOfficialStats = async (institution: number | undefined) => {
   }
 };
 
+/**
+ *
+ * @param institution
+ */
 const getOfficialFiningStats = async (institution: number | undefined) => {
   const client = await pool.connect();
   try {
@@ -479,6 +505,9 @@ const getOfficialFiningStats = async (institution: number | undefined) => {
   }
 };
 
+/**
+ *
+ */
 const getOfficialApplicationStats = async () => {
   const client = await pool.connect();
   try {
@@ -581,6 +610,10 @@ const getOfficialApplicationStats = async () => {
   }
 };
 
+/**
+ *
+ * @param struct
+ */
 const formatStats = (struct) => ({
   totalGraph: {
     count: struct.totalCount,
@@ -606,10 +639,18 @@ const formatStats = (struct) => ({
   },
 });
 
+/**
+ *
+ * @param expression
+ */
 const isFiniteNumber = (expression) => {
   return isFinite(expression) ? expression : 0;
 };
 
+/**
+ *
+ * @param param0
+ */
 export const getStatsSedemat = async ({ institution }: { institution: number }) => {
   const client = await pool.connect();
   const totalSolvencyRate: any[] = [];
@@ -850,6 +891,10 @@ export const getStatsSedemat = async ({ institution }: { institution: number }) 
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const getStatsSedematWithDate = async ({ institution, date }: { institution: number; date: string }) => {
   const client = await pool.connect();
   const totalSolvencyRate: any[] = [];
@@ -1088,6 +1133,10 @@ export const getStatsSedematWithDate = async ({ institution, date }: { instituti
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const bsByBranchInterval = async ({ institution, startingDate, endingDate }) => {
   mainLogger.info('bsByBranchInterval -> endingDate', endingDate);
   mainLogger.info('bsByBranchInterval -> startingDate', startingDate);

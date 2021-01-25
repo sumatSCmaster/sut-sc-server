@@ -29,6 +29,9 @@ const template = async (props) => {
   }
 };
 
+/**
+ *
+ */
 export const getScales = async () => {
   const client = await pool.connect();
   try {
@@ -49,6 +52,11 @@ export const getScales = async () => {
   }
 };
 
+/**
+ *
+ * @param id
+ * @param tariff
+ */
 export const updateScale = async (id, tariff) => {
   const client = await pool.connect();
   try {
@@ -69,6 +77,10 @@ export const updateScale = async (id, tariff) => {
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const createScale = async ({ description, tariff }) => {
   const client = await pool.connect();
   try {

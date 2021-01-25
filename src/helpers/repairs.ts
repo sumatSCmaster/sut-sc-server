@@ -30,6 +30,10 @@ export const processRetentionFile = async (file) => {
   return {};
 };
 
+/**
+ *
+ * @param param0
+ */
 export const getRepairYears = async ({ document, reference, docType, user }: { document: string; reference: string; docType: string; user: Usuario }) => {
   const client = await pool.connect();
   let debtREP;
@@ -77,6 +81,10 @@ export const getRepairYears = async ({ document, reference, docType, user }: { d
   }
 };
 
+/**
+ *
+ * @param param0
+ */
 export const insertRepairs = async ({ process, user }) => {
   const client = await pool.connect();
   const { reparo } = process;
