@@ -5,25 +5,39 @@ import switchcase from '@utils/switch';
 import { PoolClient } from 'pg';
 import { errorMessageExtractor, errorMessageGenerator } from './errors';
 import { mainLogger } from '@utils/logger';
+import Redis from '@utils/redis';
 
 const pool = Pool.getInstance();
 
 export const getMenu = async (user): Promise<Institucion[]> => {
+  let REDIS_KEY = `options:${user.tipoUsuario === 4 ? 'external' : 'inst'}`;
   const client: any = await pool.connect();
+  const redisClient = Redis.getInstance();
   client.tipoUsuario = user.tipoUsuario;
+  let options: Institucion[];
   try {
-    const response = await client.query(queries.GET_ALL_INSTITUTION);
-    let institution: Institucion[] = response.rows.map((el) => {
-      return {
-        id: el.id_institucion,
-        nombreCompleto: el.nombre_completo,
-        nombreCorto: el.nombre_corto,
-      };
-    });
-    if (user.tipoUsuario === 4) {
-      institution = institution.filter((el) => el.id !== 0);
+    mainLogger.info('getMenu - try');
+    let cachedOptions = await redisClient.getAsync(REDIS_KEY);
+    if (cachedOptions !== null) {
+      mainLogger.info(`getMenu - getting cached options ${REDIS_KEY}`);
+      options = JSON.parse(cachedOptions);
+    } else {
+      const response = await client.query(queries.GET_ALL_INSTITUTION);
+      let institution: Institucion[] = response.rows.map((el) => {
+        return {
+          id: el.id_institucion,
+          nombreCompleto: el.nombre_completo,
+          nombreCorto: el.nombre_corto,
+        };
+      });
+      if (user.tipoUsuario === 4) {
+        institution = institution.filter((el) => el.id !== 0);
+      }
+      options = await getProcedureByInstitution(institution, client);
+      await redisClient.setAsync(REDIS_KEY, JSON.stringify(options));
+      await redisClient.expireAsync(REDIS_KEY, 36000);
     }
-    const options: Institucion[] = await getProcedureByInstitution(institution, client);
+
     return options;
   } catch (error) {
     mainLogger.error(error);
