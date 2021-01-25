@@ -255,6 +255,25 @@ export interface DatosSucursal {
   creditoFiscal: number;
 }
 
+export interface ValidatedPayment {
+  id: number;
+  monto: number;
+  idBanco: number;
+  aprobado: boolean;
+  idTramite: number;
+  pagoPrevio: boolean;
+  referencia: string;
+  fechaDePago: Date;
+  codigoTramite: string | null;
+  codigoMulta: string | null;
+  fechaDeAprobacion: Date;
+  tipoTramite: number;
+  documento: number;
+  nacionalidad: string;
+  solicitudAprobada: boolean;
+  concepto: string;
+}
+
 export interface Publicidad {
   articulos: {
     id: number;

@@ -10,6 +10,7 @@ import moment from 'moment';
 import { mainLogger } from '@utils/logger';
 const pool = Pool.getInstance();
 
+// ! acurero
 export const getAllBanks = async () => {
   const client = await pool.connect();
   try {
@@ -30,6 +31,7 @@ export const getAllBanks = async () => {
   }
 };
 
+// ! acurero
 const typeProcess = switchcase({
   TRAMITE: async ({ id, client }: { id: number; client: PoolClient }) => {
     try {
@@ -76,6 +78,7 @@ const typeProcess = switchcase({
   },
 })(null);
 
+// ! acurero
 export const paymentReferenceSearch = async ({ reference, bank }) => {
   const client = await pool.connect();
   mainLogger.info(reference, bank);
@@ -115,6 +118,7 @@ export const paymentReferenceSearch = async ({ reference, bank }) => {
   }
 };
 
+// ! acurero
 const reversePaymentCase = switchcase({
   TRAMITE: async ({ id, client }: { id: number; client: PoolClient }) => {
     const REVERSARPAGO = 'reversarpago_tramite';
@@ -178,6 +182,7 @@ const reversePaymentCase = switchcase({
   },
 })(null);
 
+// ! acurero
 export const reversePaymentForProcess = async ({ id, concept }: { id: number; concept: string }) => {
   const client = await pool.connect();
   try {
@@ -199,6 +204,7 @@ export const reversePaymentForProcess = async ({ id, concept }: { id: number; co
   }
 };
 
+// ! acurero
 const getPaymentsByProcessId = async ({ id, concept, client }: { id: number; concept: string; client: PoolClient }) => {
   try {
     const pagos = (
@@ -213,6 +219,7 @@ const getPaymentsByProcessId = async ({ id, concept, client }: { id: number; con
   }
 };
 
+// ! acurero
 const getProcessFiscalCredit = async ({ id, client }: { id: number; client: PoolClient }) => {
   try {
     const creditoGenerado = (await client.query('SELECT id_credito_fiscal AS id, credito, fecha_creacion AS "fechaCreacion" FROM impuesto.credito_fiscal WHERE id_solicitud = $1', [id])).rows;
@@ -347,6 +354,7 @@ export const validatePayments = async (body, user) => {
   }
 };
 
+// ! acurero
 export const insertPaymentReference = async (payment: any, procedure: number, client: PoolClient) => {
   const { referencia, banco, costo, fecha, concepto, user, destino } = payment;
   try {
@@ -356,6 +364,7 @@ export const insertPaymentReference = async (payment: any, procedure: number, cl
   }
 };
 
+// ! acurero
 export const insertPaymentCashier = async (payment: any, procedure: number, client: PoolClient) => {
   const { referencia, banco, costo, fecha, concepto, metodoPago, user, destino } = payment;
   try {

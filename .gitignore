@@ -3,6 +3,7 @@
 /avatar
 /uploads
 /archivos/*
+/docs
 !/archivos/recaudos/
 .vscode
 .env

@@ -1,6 +1,6 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
-import { Institucion, TipoTramite, Campo, Tramite, Usuario, Liquidacion } from '@interfaces/sigt';
+import { Institucion, TipoTramite, Campo, Tramite, Usuario, Liquidacion, ValidatedPayment } from '@interfaces/sigt';
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { insertPaymentReference, insertPaymentCashier } from './banks';
 import { PoolClient } from 'pg';
@@ -14,6 +14,11 @@ import { createVehicleStructureForProcedure } from './vehicles';
 import { mainLogger } from '@utils/logger';
 
 const pool = Pool.getInstance();
+
+/**
+ *
+ * @typedef {import('./../interfaces/sigt').ValidatedPayment} ValidatePayment
+ */
 
 export const getAvailableProcedures = async (user): Promise<{ instanciasDeTramite: any; instanciasDeMulta: any; instanciasDeImpuestos: any; instanciasDeSoporte: any }> => {
   const client: any = await pool.connect();
@@ -453,6 +458,12 @@ export const getProcedureCosts = async () => {
   }
 };
 
+/**
+ * Starts the procedure, changes its initial state, and creates a request form. Simultaneously, sends email to user and creates notification for all interested parties
+ * @param procedure Procedure type, data and payment (if any) for procedure initialization
+ * @param user User data from token payload
+ * @returns Response payload with freshly created procedure
+ */
 export const procedureInit = async (procedure, user: Usuario) => {
   const client = await pool.connect();
   const { tipoTramite, datos, pago } = procedure;
@@ -553,6 +564,13 @@ export const procedureInit = async (procedure, user: Usuario) => {
   }
 };
 
+/**
+ * This method is a callback that's being executed by the payment validation endpoint, it changes the state of the procedure
+ * @param procedure Procedure payload from payment validation helper
+ * @param user User from token payload
+ * @param client Database client
+ * @returns Response payload with procedure
+ */
 export const validateProcedure = async (procedure, user: Usuario, client) => {
   let dir, respState;
   try {
