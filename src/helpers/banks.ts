@@ -448,8 +448,31 @@ export const listProcedurePayments = async (type_doc, doc) => {
     WHERE s.state = 'validando' OR s.state = 'ingresardatos'
     GROUP BY l.id_solicitud;`);
     let montosConvenioPromise = client.query(`
+    WITH solicitud_cte AS (
+      SELECT id_solicitud FROM impuesto.solicitud WHERE aprobado = false AND tipo_solicitud = 'CONVENIO'
+    ),
+    convenio_cte AS (
+      SELECT * FROM impuesto.convenio WHERE id_solicitud IN (SELECT id_solicitud FROM solicitud_cte)
+    ),
+    fraccion_cte AS (
+      SELECT * FROM impuesto.fraccion WHERE id_convenio IN (SELECT id_convenio FROM convenio_cte)
+    ),
+    
+    fstate AS (
+      SELECT f.id_fraccion AS id,
+        f.id_convenio AS idconvenio,
+        f.monto,
+        f.fecha,
+        ev.state
+       FROM (SELECT * FROM fraccion_cte) f
+         JOIN ( SELECT ef.id_fraccion,
+                impuesto.fraccion_fsm(ef.event::text ORDER BY ef.id_evento_fraccion) AS state
+               FROM impuesto.evento_fraccion ef
+               WHERE id_fraccion IN (select id_fraccion from fraccion_cte)
+              GROUP BY ef.id_fraccion) ev ON f.id_fraccion = ev.id_fraccion
+    )  
     SELECT c.id_convenio, SUM(monto) as monto
-    FROM impuesto.fraccion_state fs
+    FROM fstate fs
     INNER JOIN impuesto.convenio c ON c.id_convenio = fs.idconvenio
     WHERE fs.state = 'validando' OR fs.state = 'ingresardatos'
     GROUP BY c.id_convenio;`);
@@ -565,8 +588,31 @@ export const listTaxPayments = async () => {
     WHERE s.state = 'validando' OR s.state = 'ingresardatos'
     GROUP BY l.id_solicitud;`);
     let montosConvenioPromise = client.query(`
+    WITH solicitud_cte AS (
+      SELECT id_solicitud FROM impuesto.solicitud WHERE aprobado = false AND tipo_solicitud = 'CONVENIO'
+    ),
+    convenio_cte AS (
+      SELECT * FROM impuesto.convenio WHERE id_solicitud IN (SELECT id_solicitud FROM solicitud_cte)
+    ),
+    fraccion_cte AS (
+      SELECT * FROM impuesto.fraccion WHERE id_convenio IN (SELECT id_convenio FROM convenio_cte)
+    ),
+    
+    fstate AS (
+      SELECT f.id_fraccion AS id,
+        f.id_convenio AS idconvenio,
+        f.monto,
+        f.fecha,
+        ev.state
+       FROM (SELECT * FROM fraccion_cte) f
+         JOIN ( SELECT ef.id_fraccion,
+                impuesto.fraccion_fsm(ef.event::text ORDER BY ef.id_evento_fraccion) AS state
+               FROM impuesto.evento_fraccion ef
+               WHERE id_fraccion IN (select id_fraccion from fraccion_cte)
+              GROUP BY ef.id_fraccion) ev ON f.id_fraccion = ev.id_fraccion
+    )  
     SELECT c.id_convenio, SUM(monto) as monto
-    FROM impuesto.fraccion_state fs
+    FROM fstate fs
     INNER JOIN impuesto.convenio c ON c.id_convenio = fs.idconvenio
     WHERE fs.state = 'validando' OR fs.state = 'ingresardatos'
     GROUP BY c.id_convenio;`);
