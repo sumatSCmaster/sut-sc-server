@@ -4,6 +4,7 @@ import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { PoolClient } from 'pg';
 import { Usuario } from '@root/interfaces/sigt';
 import { mainLogger } from '@utils/logger';
+import Redis from '@utils/redis';
 
 const pool = Pool.getInstance();
 
@@ -29,9 +30,22 @@ export const checkVehicleExists = () => async (req: any, res, next) => {
 
 export const getBrands = async (): Promise<Response & { marcas: { id: number; nombre: string }[] }> => {
   const client = await pool.connect();
+  const redisClient = Redis.getInstance();
+  let brands;
   try {
-    const res = await client.query(queries.GET_VEHICLE_BRANDS);
-    return { marcas: res.rows, status: 200, message: 'Marcas de vehiculos obtenidas' };
+    mainLogger.info('getBrands - try');
+    let cachedBrands = await redisClient.getAsync('vehicleBrands');
+    if (cachedBrands !== null) {
+      mainLogger.info(`getBrands - getting cached brands`);
+      brands = JSON.parse(cachedBrands);
+    } else {
+      mainLogger.info('getBrands - getting brands from db');
+      const res = await client.query(queries.GET_VEHICLE_BRANDS);
+      brands = res.rows;
+      await redisClient.setAsync('vehicleBrands', JSON.stringify(brands));
+      await redisClient.expireAsync('vehicleBrands', 36000);
+    }
+    return { marcas: brands, status: 200, message: 'Marcas de vehiculos obtenidas' };
   } catch (error) {
     mainLogger.error(error);
     throw {
