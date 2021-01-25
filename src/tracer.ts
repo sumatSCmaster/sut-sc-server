@@ -1,6 +1,6 @@
 import tracer from 'dd-trace';
 import { decode } from 'jsonwebtoken';
-import { mainLogger } from '@utils/logger';
+import { mainLogger } from './utils/logger';
 tracer.init(); // initialized in a different file to avoid hoisting
 tracer.use('express', {
   hooks: {
