@@ -465,12 +465,40 @@ export const listProcedurePayments = async (type_doc, doc) => {
     );
     let tramDataPromise = client.query(
       `
-    SELECT s.*, p.*, b.id_banco, u.nacionalidad AS "tipoDocumento", u.cedula AS "documento", 'TRAMITE' as "tipoSolicitud", s.costo as montotram
-    FROM tramites_state s 
-    INNER JOIN usuario u ON u.id_usuario = s.usuario
-    INNER JOIN pago p ON p.id_procedimiento = s.id 
-    INNER JOIN banco b ON b.id_banco = p.id_banco
-    WHERE s.state = 'validando' AND p.concepto = 'TRAMITE' AND u.nacionalidad = $1 AND u.cedula = $2 ORDER BY id_procedimiento, id_pago;`,
+      WITH usuario_cte AS (
+        SELECT * FROM usuario WHERE Nacionalidad = $1 AND cedula = $2
+      ), tramite_cte AS (
+        SELECT * FROM tramite WHERE id_usuario = (SELECT id_usuario FROM usuario_cte)
+      ),
+      pago_cte AS (
+        SELECT * FROM pago WHERE concepto = 'TRAMITE' AND id_procedimiento IN (SELECT id_tramite FROM tramite_cte)
+      )
+      SELECT s.*, p.*, b.id_banco, u.nacionalidad AS "tipoDocumento", u.cedula AS "documento", 'TRAMITE' as "tipoSolicitud", s.costo as montotram
+          FROM (SELECT t.id_tramite AS id,
+          t.datos,
+          t.id_tipo_tramite AS tipotramite,
+          t.costo,
+          t.fecha_creacion AS fechacreacion,
+          t.codigo_tramite AS codigotramite,
+          t.id_usuario AS usuario,
+          t.url_planilla AS planilla,
+          t.url_certificado AS certificado,
+          ev.state,
+          t.aprobado,
+          t.fecha_culminacion AS fechaculminacion
+         FROM tramite_cte t
+           JOIN ( SELECT evento_tramite.id_tramite,
+                  tramite_evento_fsm(evento_tramite.event ORDER BY evento_tramite.id_evento_tramite) AS state
+                 FROM evento_tramite
+                 WHERE id_tramite IN (select id_tramite from tramite_cte)
+                GROUP BY evento_tramite.id_tramite) ev ON t.id_tramite = ev.id_tramite
+      ) s 
+          INNER JOIN usuario_cte u ON u.id_usuario = s.usuario
+          INNER JOIN pago_cte p ON p.id_procedimiento = s.id 
+          INNER JOIN banco b ON b.id_banco = p.id_banco
+          WHERE s.state = 'validando' AND p.concepto = 'TRAMITE' AND u.nacionalidad = $1 AND u.cedula = $2 ORDER BY id_procedimiento, id_pago;
+      
+      `,
       [type_doc, doc]
     );
     let [data, convData, tramData] = await Promise.all([dataPromise, convDataPromise, tramDataPromise]);
