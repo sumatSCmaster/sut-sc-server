@@ -8,6 +8,7 @@ const router = Router();
 
 router.get('/', async (req, res) => {
   const [error, data] = await fulfill(getBranches());
+  mainLogger.info(`${error?.message} ${error?.stack}`);
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
 });
