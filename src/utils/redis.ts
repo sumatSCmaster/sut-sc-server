@@ -6,7 +6,7 @@ import { mainLogger } from './logger';
 const dev = process.env.NODE_ENV !== 'production';
 
 function getRedis() {
-  const clientConf = dev ? { url: process.env.REDIS_URL } : { url: process.env.REDIS_URL, tls: { rejectUnauthorized: false } };
+  const clientConf = { url: process.env.REDIS_URL, tls: { rejectUnauthorized: false } };
   const client: redis.RedisClient = redis.createClient(clientConf);
   client.on('ready', () => {
     mainLogger.info(`Redis client ready`);
