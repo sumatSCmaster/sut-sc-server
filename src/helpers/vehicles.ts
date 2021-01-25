@@ -29,12 +29,13 @@ export const checkVehicleExists = () => async (req: any, res, next) => {
 };
 
 export const getBrands = async (): Promise<Response & { marcas: { id: number; nombre: string }[] }> => {
+  const REDIS_KEY = 'vehicleBrands';
   const client = await pool.connect();
   const redisClient = Redis.getInstance();
   let brands;
   try {
     mainLogger.info('getBrands - try');
-    let cachedBrands = await redisClient.getAsync('vehicleBrands');
+    let cachedBrands = await redisClient.getAsync(REDIS_KEY);
     if (cachedBrands !== null) {
       mainLogger.info(`getBrands - getting cached brands`);
       brands = JSON.parse(cachedBrands);
@@ -42,8 +43,8 @@ export const getBrands = async (): Promise<Response & { marcas: { id: number; no
       mainLogger.info('getBrands - getting brands from db');
       const res = await client.query(queries.GET_VEHICLE_BRANDS);
       brands = res.rows;
-      await redisClient.setAsync('vehicleBrands', JSON.stringify(brands));
-      await redisClient.expireAsync('vehicleBrands', 36000);
+      await redisClient.setAsync(REDIS_KEY, JSON.stringify(brands));
+      await redisClient.expireAsync(REDIS_KEY, 36000);
     }
     return { marcas: brands, status: 200, message: 'Marcas de vehiculos obtenidas' };
   } catch (error) {
@@ -59,13 +60,27 @@ export const getBrands = async (): Promise<Response & { marcas: { id: number; no
 };
 
 export const getVehicleTypes = async (): Promise<Response & { tipoVehiculo: VehicleType[] }> => {
+  const REDIS_KEY = 'vehicleTypes';
   const client = await pool.connect();
+  const redisClient = Redis.getInstance();
+  let types;
   try {
-    const response = (await client.query(queries.GET_VEHICLE_TYPES)).rows.map(async (type: VehicleType) => {
-      type.categorias = await Promise.all(await getVehicleCategoriesByType(type.id, client));
-      return type;
-    });
-    const types: VehicleType[] = await Promise.all(response);
+    mainLogger.info('getVehicleTypes - try');
+    let cachedTypes = await redisClient.getAsync(REDIS_KEY);
+    if (cachedTypes !== null) {
+      mainLogger.info('getVehicleTypes - getting cached types');
+      types = JSON.parse(cachedTypes);
+    } else {
+      mainLogger.info('getVehicleTypes - getting types from db');
+      const response = (await client.query(queries.GET_VEHICLE_TYPES)).rows.map(async (type: VehicleType) => {
+        type.categorias = await Promise.all(await getVehicleCategoriesByType(type.id, client));
+        return type;
+      });
+      types = await Promise.all(response);
+      await redisClient.setAsync(REDIS_KEY, JSON.stringify(types));
+      await redisClient.expireAsync(REDIS_KEY, 36000);
+    }
+
     return { status: 200, message: 'Tipos de vehiculos obtenidos', tipoVehiculo: types };
   } catch (error) {
     mainLogger.error(error);
