@@ -2028,6 +2028,7 @@ const getApplicationInstancesPayload = async ({ application, contributor, typeUs
     const rebajaInteresMoratorioP = getDefaultInterestRebateByApplication({ id: application.id_solicitud, date: application.fecha, state, client });
 
     const [interesMoratorio, rebajaInteresMoratorio, creditoFiscalD, rimD] = await Promise.all([interesMoratorioP, rebajaInteresMoratorioP, creditoFiscalP, rimP]);
+    console.log(rimD);
     const rim = rimD?.rows[0]?.referencia_municipal;
     const creditoFiscal = creditoFiscalD?.rows[0]?.credito || 0;
 
