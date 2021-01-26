@@ -1581,9 +1581,9 @@ const procedureEvents = switchcase({
   bc: { iniciado: 'revisar_bc', enrevision: { true: 'aprobar_bc', false: 'rechazar_bc' } },
   lae: { iniciado: 'validar_lae', validando: 'enproceso_lae', ingresardatos: 'validar_lae', enproceso: { true: 'revisar_lae', false: 'rechazar_lae' }, enrevision: { true: 'aprobar_lae', false: 'rechazar_lae' } },
   lic: {
-    iniciado: 'enproceso_lic',
-    enproceso: 'inspeccion_lic',
-    inspeccion: { true: 'ingresardatos_lic', false: 'rechazar_lic' },
+    iniciado: 'ingresardatos_lic',
+    // enproceso: 'inspeccion_lic',
+    // inspeccion: { true: 'ingresardatos_lic', false: 'rechazar_lic' },
     ingresardatos: 'validar_lic',
     validando: 'revisar1_lic',
     enrevision_analista: { true: 'revisar2_lic', false: 'rechazar_lic' },
@@ -1591,8 +1591,8 @@ const procedureEvents = switchcase({
     // enrevision: { true: 'aprobar_lic', false: 'rechazar_lic', rebotar: 'rebotar_lic' },
   },
   lict: {
-    iniciado: 'enproceso_lict',
-    enproceso: 'ingresardatos_lict',
+    iniciado: 'ingresardatos_lict',
+    // enproceso: 'ingresardatos_lict',
     ingresardatos: 'validar_lict',
     validando: 'revisar1_lict',
     enrevision_analista: { true: 'revisar2_lict', false: 'rechazar_lict' },
