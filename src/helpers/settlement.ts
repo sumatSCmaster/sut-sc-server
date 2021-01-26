@@ -2049,7 +2049,7 @@ const getApplicationInstancesPayload = async ({ application, contributor, typeUs
       rebajado: application.rebajado,
       tipo: application.tipo_solicitud,
       estado: state,
-      referenciaMunicipal: liquidacionesP[0]?.id_registro_municipal ? rim : undefined,
+      referenciaMunicipal: liquidacionesD?.rows[0]?.id_registro_municipal ? rim : undefined,
       monto,
       montoPetro,
       liquidaciones,
