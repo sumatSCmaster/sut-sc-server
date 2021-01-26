@@ -13,7 +13,7 @@ const dev = process.env.NODE_ENV !== 'production';
 const pool = Pool.getInstance();
 
 /**
- *
+ * Gets all economic activities, with its aliquots, descriptions, tributable minimum
  */
 export const getActivities = async (): Promise<Aliquot[]> => {
   const client = await pool.connect();
@@ -28,8 +28,9 @@ export const getActivities = async (): Promise<Aliquot[]> => {
 };
 
 /**
- *
- * @param param0
+ * Updates economic activities: code, description, tributable minimum
+ * @param payload Economic activities to be updated
+ * @returns Updated economic activties
  */
 export const updateActivitiesAliquots = async ({ aliquots }: { aliquots: Aliquot[] }) => {
   const client = await pool.connect();

@@ -1571,8 +1571,8 @@ const procedureEvents = switchcase({
     ingresardatos: 'validar_lic',
     validando: 'revisar1_lic',
     enrevision_analista: { true: 'revisar2_lic', false: 'rechazar_lic' },
-    enrevision_gerente: { true: 'revisar3_lic', false: 'rechazar_lic', rebotar: 'rebotar_lic' },
-    enrevision: { true: 'aprobar_lic', false: 'rechazar_lic', rebotar: 'rebotar_lic' },
+    enrevision_gerente: { true: 'aprobar_lic', false: 'rechazar_lic', rebotar: 'rebotar_lic' },
+    // enrevision: { true: 'aprobar_lic', false: 'rechazar_lic', rebotar: 'rebotar_lic' },
   },
   lict: {
     iniciado: 'enproceso_lict',
@@ -1580,8 +1580,8 @@ const procedureEvents = switchcase({
     ingresardatos: 'validar_lict',
     validando: 'revisar1_lict',
     enrevision_analista: { true: 'revisar2_lict', false: 'rechazar_lict' },
-    enrevision_gerente: { true: 'revisar3_lict', false: 'rechazar_lict', rebotar: 'rebotar_lict' },
-    enrevision: { true: 'aprobar_lict', false: 'rechazar_lict', rebotar: 'rebotar_lict' },
+    enrevision_gerente: { true: 'aprobar_lict', false: 'rechazar_lict', rebotar: 'rebotar_lict' },
+    // enrevision: { true: 'aprobar_lict', false: 'rechazar_lict', rebotar: 'rebotar_lict' },
   },
   sup: { iniciado: 'enproceso_sup', enproceso: { finalizado: 'finalizar_sup', true: 'revisar_sup', false: 'rechazar_sup' }, enrevision: { true: 'aprobar_sup', false: 'rechazar_sup' } },
 })(null);
