@@ -4,6 +4,7 @@ import { Parroquia } from '@interfaces/sigt';
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import Redis from '@utils/redis';
 import { mainLogger } from '@utils/logger';
+import { PoolClient } from 'pg';
 const pool = Pool.getInstance();
 
 /**
@@ -15,8 +16,8 @@ export const getAllParishes = async (): Promise<{
   message: string;
 }> => {
   const REDIS_KEY = 'parishes';
-  const client = await pool.connect();
   const redisClient = Redis.getInstance();
+  let client: PoolClient | undefined;
   let parroquias: Parroquia[];
   try {
     mainLogger.info('getAllParishes - try');
@@ -25,6 +26,7 @@ export const getAllParishes = async (): Promise<{
       mainLogger.info('getAllParishes - getting cached parishes');
       parroquias = JSON.parse(cachedParishes);
     } else {
+      client = await pool.connect();
       const response = await client.query(queries.GET_PARISHES);
       parroquias = response.rows;
       await redisClient.setAsync(REDIS_KEY, JSON.stringify(parroquias));
@@ -39,7 +41,7 @@ export const getAllParishes = async (): Promise<{
       message: errorMessageGenerator(error) || 'Error al obtener las parroquias',
     };
   } finally {
-    client.release();
+    if (client) client.release();
   }
 };
 
