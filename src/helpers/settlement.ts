@@ -2017,9 +2017,9 @@ const getApplicationInstancesPayload = async ({ application, contributor, typeUs
     const montoP = client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application.id_solicitud]);
     const montoPetroP = type !== 'RETENCION' ? client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [application.id_solicitud]) : null;
     const [liquidacionesD, docsD, stateD, montoD, montoPetroD] = await Promise.all([liquidacionesP, docsP, stateP, montoP, montoPetroP]);
-    const docs = docsD.rows[0];
-    const state = stateD.rows[0].state;
-    const monto = montoD.rows[0].monto_total;
+    const docs = docsD?.rows[0];
+    const state = stateD?.rows[0].state;
+    const monto = montoD?.rows[0].monto_total;
     const montoPetro = montoPetroD?.rows[0].monto_total;
 
     const rimP = client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidacionesD.rows[0]?.id_registro_municipal]);
@@ -2028,8 +2028,8 @@ const getApplicationInstancesPayload = async ({ application, contributor, typeUs
     const rebajaInteresMoratorioP = getDefaultInterestRebateByApplication({ id: application.id_solicitud, date: application.fecha, state, client });
 
     const [interesMoratorio, rebajaInteresMoratorio, creditoFiscalD, rimD] = await Promise.all([interesMoratorioP, rebajaInteresMoratorioP, creditoFiscalP, rimP]);
-    const rim = rimD.rows[0]?.referencia_municipal;
-    const creditoFiscal = creditoFiscalD.rows[0]?.credito || 0;
+    const rim = rimD?.rows[0]?.referencia_municipal;
+    const creditoFiscal = creditoFiscalD?.rows[0]?.credito || 0;
 
     const liquidaciones = await Promise.all(liquidacionesD.rows.filter((el) => el.tipoProcedimiento !== 'MULTAS').map((el) => getSettlementFormat(el, type, client)));
     const multas = await Promise.all(liquidacionesD.rows.filter((el) => el.tipoProcedimiento === 'MULTAS').map((el) => getFiningFormat(el, type, client)));

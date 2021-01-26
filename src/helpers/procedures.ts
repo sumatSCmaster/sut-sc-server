@@ -546,6 +546,10 @@ export const procedureInit = async (procedure, user: Usuario) => {
       datos.vehiculo = await createVehicleStructureForProcedure(datos.vehiculo, client);
     }
 
+    if (!![34, 35].find((el) => el === tipoTramite)) {
+      user.id = datos.usuario.id;
+    }
+
     const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify(datosP), user.id])).rows[0];
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.idTramite])).rows[0];
