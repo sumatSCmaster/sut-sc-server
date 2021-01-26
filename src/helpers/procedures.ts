@@ -16,8 +16,9 @@ import { mainLogger } from '@utils/logger';
 const pool = Pool.getInstance();
 
 /**
- *
- * @param user
+ * Gets instances of procedures, finings, settlements and support with the user token
+ * @param user User payload provided by token
+ * @returns Procedures, finings, settlements and support instances
  */
 export const getAvailableProcedures = async (user): Promise<{ instanciasDeTramite: any; instanciasDeMulta: any; instanciasDeImpuestos: any; instanciasDeSoporte: any }> => {
   const client: any = await pool.connect();
@@ -86,18 +87,18 @@ export const getAvailableProceduresOfInstitution = async (req: { params: { [id: 
 };
 
 /**
- *
- * @param param0
+ * Verifies if user is indeed Daniel
+ * @param payload user type and institution
  */
 const esDaniel = ({ tipoUsuario, institucion }) => {
   return tipoUsuario === 2 && institucion.id === 9;
 };
 
 /**
- *
- * @param user
- * @param client
- * @param support
+ * Gets procedure instances based on user type
+ * @param user User payload provided by bearer token
+ * @param client Database client
+ * @param support Conditional support user
  */
 const getProcedureInstances = async (user, client: PoolClient, support?) => {
   try {
@@ -163,9 +164,9 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
 };
 
 /**
- *
- * @param user
- * @param client
+ * Gets fining instances based on user type
+ * @param user User payload provided by bearer token
+ * @param client Database client
  */
 const getFineInstances = async (user, client: PoolClient) => {
   try {
@@ -200,9 +201,9 @@ const getFineInstances = async (user, client: PoolClient) => {
 };
 
 /**
- *
- * @param user
- * @param client
+ * Gets settlement instances based on user type
+ * @param user User payload provided by bearer token
+ * @param client Database client
  */
 const getSettlementInstances = async (user, client: PoolClient) => {
   try {
@@ -237,10 +238,10 @@ const getSettlementInstances = async (user, client: PoolClient) => {
 };
 
 /**
- *
- * @param institution
- * @param tipoUsuario
- * @param client
+ * Gets procedure instances based on user type and institution
+ * @param institution Institution id
+ * @param tipoUsuario User type, defines if external o internal
+ * @param client Database client
  */
 const getProcedureInstancesByInstitution = async (institution, tipoUsuario, client: PoolClient) => {
   try {
@@ -400,9 +401,10 @@ const getFieldsBySection = async (section, tramiteId, client): Promise<Campo[] |
 };
 
 /**
- *
- * @param id
- * @param newCost
+ * Updates procedure cost by id
+ * @param id Procedure id
+ * @param newCost New amount for procedure
+ * @returns Updated procedure model
  */
 export const updateProcedureCost = async (id: string, newCost: string): Promise<Partial<TipoTramite>> => {
   const client = await pool.connect();
@@ -432,8 +434,9 @@ export const updateProcedureCost = async (id: string, newCost: string): Promise<
 };
 
 /**
- *
- * @param param0
+ * Gets fields for the procedure in its actual state
+ * @param payload Payload may contain procedure id and type, which represents an instance and a model
+ * @returns Fields and takings for next validation sequence
  */
 export const getFieldsForValidations = async ({ id, type }) => {
   const client = await pool.connect();
@@ -463,8 +466,9 @@ export const getFieldsForValidations = async ({ id, type }) => {
 };
 
 /**
- *
- * @param param0
+ * Gets a procedure instance by its unique id
+ * @param payload Payload may contain procedure id and database client
+ * @returns Procedure instance
  */
 export const getProcedureById = async ({ id, client }: { id: number; client: PoolClient }): Promise<Partial<Tramite>> => {
   try {
@@ -494,8 +498,9 @@ export const getProcedureById = async ({ id, client }: { id: number; client: Poo
 };
 
 /**
- *
- * @param param0
+ * Checks if procedure is not prepaid
+ * @param payload Payload may contain suffix and user object
+ * @returns Boolean value. True represents that the procedure is postpaid, false represents that the procedure is prepaid
  */
 const isNotPrepaidProcedure = ({ suffix, user }: { suffix: string; user: Usuario }) => {
   const condition = false;
@@ -504,7 +509,8 @@ const isNotPrepaidProcedure = ({ suffix, user }: { suffix: string; user: Usuario
 };
 
 /**
- *
+ * Gets procedure costs
+ * @returns Response payload with procedure costs by model id
  */
 export const getProcedureCosts = async () => {
   const client = await pool.connect();
@@ -547,7 +553,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
     }
 
     if (!![34, 35].find((el) => el === tipoTramite)) {
-      user.id = datos.usuario.id;
+      user.id = datos.usuario;
     }
 
     const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify(datosP), user.id])).rows[0];
@@ -1431,10 +1437,11 @@ export const initProcedureAnalist = async (procedure, user: Usuario, client: Poo
 };
 
 /**
- *
- * @param procedure
- * @param user
- * @param client
+ * Process procedure in analist viewpoint, changing its state
+ * @param procedure Procedure payload to be processed
+ * @param user User payload from bearer token
+ * @param client Database client
+ * @returns Response payload with freshly updated procedure instance
  */
 export const processProcedureAnalist = async (procedure, user: Usuario, client: PoolClient) => {
   let { datos, bill } = procedure;
@@ -1543,9 +1550,10 @@ export const processProcedureAnalist = async (procedure, user: Usuario, client: 
 };
 
 /**
- *
- * @param procedure
- * @param client
+ * Checks for the next state of the procedure state machine
+ * @param procedure Procedure object which contains procedure id and suffix
+ * @param client Database client
+ * @returns Next state for procedure
  */
 const getNextEventForProcedure = async (procedure, client): Promise<any> => {
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
@@ -1595,73 +1603,81 @@ const procedureEvents = switchcase({
 })(null);
 
 /**
- *
- * @param suffix
- * @param state
+ * Invokes procedure state machine switchcase to obtain next state
+ * @param suffix Procedure model suffix
+ * @param state Actual procedure instance state
  */
 const procedureEventHandler = (suffix, state) => {
   return procedureEvents(suffix)[state];
 };
 
 /**
- *
- * @param param0
+ * Checks if user is Superuser
+ * @param payload Payload may have user type
+ * @returns {boolean}
  */
 const isSuperuser = ({ tipoUsuario }) => {
   return tipoUsuario === 1;
 };
 
 /**
- *
- * @param param0
+ * Checks if user is admin
+ * @param payload Payload may have user type
+ * @returns {boolean}
  */
 const isAdmin = ({ tipoUsuario }) => {
   return tipoUsuario === 2;
 };
 
 /**
- *
- * @param param0
+ * Checks if user is official
+ * @param payload Payload may have user type
+ * @returns {boolean}
  */
 const isOfficial = ({ tipoUsuario }) => {
   return tipoUsuario === 3;
 };
 
 /**
- *
- * @param param0
+ * Checks if user is director
+ * @param payload Payload may have user type
+ * @returns {boolean}
  */
 const isDirector = ({ tipoUsuario }) => {
   return tipoUsuario === 5;
 };
 
 /**
- *
- * @param param0
+ * Checks if user is external user
+ * @param payload Payload may have user type
+ * @returns {boolean}
  */
 const isExternalUser = ({ tipoUsuario }) => {
   return tipoUsuario === 4;
 };
 
 /**
- *
- * @param param0
+ * Checks if user belongs to an institution
+ * @param payload Payload may have user type
+ * @returns {boolean}
  */
 const belongsToAnInstitution = ({ institucion }) => {
   return institucion !== undefined;
 };
 
 /**
- *
- * @param param0
+ * Checks if user handles social cases
+ * @param payload Payload may have user type
+ * @returns {boolean}
  */
 const handlesSocialCases = ({ institucion }) => {
   return institucion.id === 0;
 };
 
 /**
- *
- * @param param0
+ * Checks if user belongs to SEDETAMA
+ * @param payload Payload may have user type
+ * @returns {boolean}
  */
 const belongsToSedetama = ({ institucion }) => {
   return institucion.nombreCorto === 'SEDETAMA';
@@ -1712,10 +1728,10 @@ const procedureInstances = switchcase({
 })(null);
 
 /**
- *
- * @param user
- * @param client
- * @param support
+ * Gets procedure instances due to multiple conditions
+ * @param user User payload
+ * @param client Database client
+ * @param support Support user identification
  */
 const procedureInstanceHandler = (user, client, support) => {
   let query;
