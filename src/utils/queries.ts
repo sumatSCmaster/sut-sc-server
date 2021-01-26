@@ -2014,55 +2014,78 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   GROUP BY z.fecha, z.ramo ORDER BY z.fecha`,
 
   //  Con intervalo proporcionado
-  TOTAL_BS_BY_BRANCH_IN_MONTH_WITH_INTERVAL: `SELECT ramo, COALESCE(SUM(monto),0) AS valor FROM (
-    (SELECT r.descripcion_corta AS ramo, SUM(l.monto) AS monto
-        FROM ((SELECT DISTINCT l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto  FROM impuesto.liquidacion l WHERE id_solicitud IS NOT NULL AND id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE fecha_aprobado BETWEEN $1 AND $2 AND tipo_solicitud != 'CONVENIO') UNION SELECT l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto FROM impuesto.liquidacion l WHERE id_solicitud IS NULL AND fecha_liquidacion BETWEEN $1 AND $2 order by id_solicitud)) l
-        LEFT JOIN (SELECT *, s.id_solicitud AS id_solicitud_q
-                        FROM impuesto.solicitud s
-                        INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud)
-            AS state FROM impuesto.evento_solicitud es GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud WHERE fecha_aprobado BETWEEN $1 AND $2 )
-        se ON l.id_solicitud = se.id_solicitud_q
+  TOTAL_BS_BY_BRANCH_IN_MONTH_WITH_INTERVAL: `WITH 
+  solicitud_range_q AS (
+    select * from impuesto.solicitud WHERE fecha_aprobado BETWEEN $1 AND $2
+  ), fraccion_q AS (
+    SELECT * FROM impuesto.fraccion WHERE fecha_aprobado BETWEEN $1 AND $2
+  ), liq_q AS (
+    SELECT DISTINCT l.id_solicitud, l.id_liquidacion, l.id_subramo, l.monto  
+    FROM impuesto.liquidacion l 
+    WHERE id_solicitud IS NOT NULL 
+    AND id_solicitud IN (SELECT id_solicitud 
+                          FROM solicitud_range_q
+                          WHERE tipo_solicitud != 'CONVENIO') 
+    UNION SELECT l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto 
+    FROM impuesto.liquidacion l 
+    WHERE id_solicitud IS NULL 
+    AND fecha_liquidacion 
+    BETWEEN $1 AND $2
+    
+  ), distinct_liq_q AS (
+    SELECT DISTINCT ON (id_solicitud) id_solicitud, id_subramo, id_liquidacion FROM impuesto.liquidacion WHERE fecha_liquidacion BETWEEN $1 AND $2
+  ),
+  
+  solicitud_q as (
+    SELECT *, s.id_solicitud AS id_solicitud_q
+                          FROM impuesto.solicitud s
+                          INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud)
+              AS state FROM impuesto.evento_solicitud es WHERE id_solicitud IN (SELECT id_solicitud FROM solicitud_range_q)  GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud WHERE fecha_aprobado BETWEEN $1 AND $2
+  )
+  
+  SELECT ramo, COALESCE(SUM(monto),0) AS valor FROM (
+      (SELECT r.descripcion_corta AS ramo, SUM(l.monto) AS monto
+          FROM liq_q l
+          LEFT JOIN  solicitud_q
+          se ON l.id_solicitud = se.id_solicitud_q
+          RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo
+          INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo
+          WHERE r.descripcion_corta IN ('AE','SM','IU','PP')
+          GROUP BY ramo
+          ORDER BY ramo)
+      UNION
+      (SELECT r.descripcion_corta AS ramo, SUM(f.monto) AS monto
+        FROM fraccion_q f
+        INNER JOIN impuesto.convenio USING (id_convenio)
+        INNER JOIN impuesto.solicitud USING (id_solicitud)
+        INNER JOIN distinct_liq_q l USING (id_solicitud)
         RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo
         INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo
         WHERE r.descripcion_corta IN ('AE','SM','IU','PP')
         GROUP BY ramo
         ORDER BY ramo)
-    UNION
-    (SELECT r.descripcion_corta AS ramo, SUM(f.monto) AS monto
-      FROM (SELECT * FROM impuesto.fraccion WHERE fecha_aprobado BETWEEN $1 AND $2) f
-      INNER JOIN impuesto.convenio USING (id_convenio)
-      INNER JOIN impuesto.solicitud USING (id_solicitud)
-      INNER JOIN (SELECT DISTINCT ON (id_solicitud) id_solicitud, id_subramo, id_liquidacion FROM impuesto.liquidacion ) l USING (id_solicitud)
-      RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo
-      INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo
-      WHERE r.descripcion_corta IN ('AE','SM','IU','PP')
-      GROUP BY ramo
-      ORDER BY ramo)
+        UNION
+         (SELECT 'OTROS' AS ramo, SUM(l.monto) AS monto
+          FROM liq_q l
+          LEFT JOIN solicitud_q
+          se ON l.id_solicitud = se.id_solicitud_q
+          RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo
+          INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo
+          WHERE r.codigo NOT IN ('112','111','122','114')
+          GROUP BY ramo
+          ORDER BY ramo)
       UNION
-       (SELECT 'OTROS' AS ramo, SUM(l.monto) AS monto
-        FROM ((SELECT DISTINCT l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto  FROM impuesto.liquidacion l WHERE id_solicitud IS NOT NULL AND id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE fecha_aprobado BETWEEN $1 AND $2 AND tipo_solicitud != 'CONVENIO') UNION SELECT l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto FROM impuesto.liquidacion l WHERE id_solicitud IS NULL AND fecha_liquidacion BETWEEN $1 AND $2 order by id_solicitud)) l
-        LEFT JOIN (SELECT *, s.id_solicitud AS id_solicitud_q
-                        FROM impuesto.solicitud s
-                        INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud)
-            AS state FROM impuesto.evento_solicitud es GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud WHERE fecha_aprobado BETWEEN $1 AND $2 )
-        se ON l.id_solicitud = se.id_solicitud_q
+      (SELECT 'OTROS' AS ramo, SUM(f.monto) AS monto
+        FROM fraccion_q f
+        INNER JOIN impuesto.convenio USING (id_convenio)
+        INNER JOIN impuesto.solicitud USING (id_solicitud)
+        INNER JOIN distinct_liq_q l USING (id_solicitud)
         RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo
         INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo
         WHERE r.codigo NOT IN ('112','111','122','114')
         GROUP BY ramo
-        ORDER BY ramo)
-    UNION
-    (SELECT 'OTROS' AS ramo, SUM(f.monto) AS monto
-      FROM (SELECT * FROM impuesto.fraccion WHERE fecha_aprobado BETWEEN $1 AND $2) f
-      INNER JOIN impuesto.convenio USING (id_convenio)
-      INNER JOIN impuesto.solicitud USING (id_solicitud)
-      INNER JOIN (SELECT DISTINCT ON (id_solicitud) id_solicitud, id_subramo, id_liquidacion FROM impuesto.liquidacion ) l USING (id_solicitud)
-      RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo
-      INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo
-      WHERE r.codigo NOT IN ('112','111','122','114')
-      GROUP BY ramo
-      ORDER BY ramo)) x 
-        GROUP BY ramo;`,
+        ORDER BY ramo)) x 
+          GROUP BY ramo;`,
 
   //  3. Total recaudado por mes (gráfico de linea con anotaciones)
   //  Sin fecha proporcionada
