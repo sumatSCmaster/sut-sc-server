@@ -708,9 +708,10 @@ export const validateProcedure = async (procedure, user: Usuario, client) => {
 };
 
 /**
- *
- * @param procedure
- * @param user
+ * Process procedure from analist viewpoint and changes its state
+ * @param procedure Procedure payload
+ * @param user User from token payload
+ * @returns Response payload with procedure
  */
 export const processProcedure = async (procedure, user: Usuario) => {
   const client = await pool.connect();
@@ -827,9 +828,10 @@ export const processProcedure = async (procedure, user: Usuario) => {
 };
 
 /**
- *
- * @param procedure
- * @param user
+ * Adds a payment to a postpaid procedure, updating its state to await for payment validation
+ * @param procedure Procedure payload
+ * @param user User from token payload
+ * @returns Response payload with procedure
  */
 export const addPaymentProcedure = async (procedure, user: Usuario) => {
   const client = await pool.connect();
@@ -892,9 +894,10 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
 };
 
 /**
- *
- * @param procedure
- * @param user
+ * Revises procedure for definitive approval made by a senior officer
+ * @param procedure Procedure payload for revision
+ * @param user User from token payload
+ * @returns Response payload with procedure
  */
 export const reviseProcedure = async (procedure, user: Usuario) => {
   const client = await pool.connect();
@@ -1022,9 +1025,10 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
 };
 
 /**
- *
- * @param procedure
- * @param user
+ * Mostly used for estate inspection, changes the state of the procedure by an inspector
+ * @param procedure Procedure payload for inspection
+ * @param user User from token payload
+ * @returns Response payload with procedure
  */
 export const inspectProcedure = async (procedure, user: Usuario) => {
   const client = await pool.connect();
@@ -1113,9 +1117,10 @@ export const inspectProcedure = async (procedure, user: Usuario) => {
 };
 
 /**
- *
- * @param procedure
- * @param client
+ * Revises procedure for definitive approval made by a senior officer, but in a massive scope
+ * @param procedure Procedure payload for revision
+ * @param user User from token payload
+ * @returns Response payload with procedure
  */
 const reviseProcedureForMassiveApproval = async (procedure: Partial<Tramite | any>, client: PoolClient): Promise<Partial<Tramite>> => {
   const { aprobado, observaciones } = procedure.revision;
@@ -1233,9 +1238,10 @@ const reviseProcedureForMassiveApproval = async (procedure: Partial<Tramite | an
 };
 
 /**
- *
- * @param idArray
- * @param user
+ * Approves Economic Activity procedure in "revision" state, in a massive scope
+ * @param idArray Array of procedure ids for simultaneous approval
+ * @param user User from token payload
+ * @returns Response payload with approved licenses
  */
 export const approveAllLicenses = async (idArray: number[], user: Usuario): Promise<any> => {
   const client = await pool.connect();
@@ -1277,8 +1283,9 @@ export const approveAllLicenses = async (idArray: number[], user: Usuario): Prom
 };
 
 /**
- *
- * @param id
+ * Lazily generates certificate for the designated procedure.
+ * @param id Procedure id
+ * @returns URL to be opened by client with generated certificate
  */
 export const generateCertificate = async (id) => {
   const client = await pool.connect();
@@ -1327,11 +1334,12 @@ const insertOrdinancesByProcedure = async (ordinances, id, type, client: PoolCli
 };
 
 /**
- *
- * @param procedure
- * @param user
- * @param client
- * @param analyst
+ * Starts the procedure, changes its initial state, and creates a request form. Simultaneously, sends email to user and creates notification for all interested parties
+ * @param procedure Procedure type, data and payment (if any) for procedure initialization
+ * @param user User data from token payload
+ * @param client Database client
+ * @param analyst Analyst user id for audit issues
+ * @returns Response payload with freshly created procedure
  */
 export const initProcedureAnalist = async (procedure, user: Usuario, client: PoolClient, analyst) => {
   // const client = await pool.connect();
