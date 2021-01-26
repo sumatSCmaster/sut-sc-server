@@ -1579,7 +1579,28 @@ ORDER BY razon_social;`,
   ADD_ORIGINAL_APPLICATION_ID_IN_PATCH_APPLICATION: 'UPDATE impuesto.solicitud SET id_solicitud_original = $1 WHERE id_solicitud = $2',
   GET_LAST_AE_SETTLEMENT_BY_AE_ID: 'SELECT * FROM impuesto.get_last_settlement_by_ae($1, $2)',
   GET_SETTLEMENT_BY_ID: 'SELECT * FROM impuesto.liquidacion WHERE id_liquidacion = $1',
-  GET_PATCH_APPLICATION_BY_ORIGINAL_ID_AND_STATE: 'SELECT s.*, ss.state FROM impuesto.solicitud s INNER JOIN impuesto.solicitud_state ss ON s.id_solicitud = ss.id WHERE s.id_solicitud_original = $1 AND ss.state = $2',
+  GET_PATCH_APPLICATION_BY_ORIGINAL_ID_AND_STATE: `
+      
+    WITH solicitud_cte AS (
+      SELECT * FROM impuesto.solicitud WHERE id_solicitud_original = $1
+    )
+    SELECT s.*, ss.state FROM impuesto.solicitud s 
+    INNER JOIN (SELECT s.id_solicitud AS id,
+        s.id_tipo_tramite AS tipotramite,
+        s.aprobado,
+        s.fecha,
+        s.fecha_aprobado AS "fechaAprobacion",
+        ev.state,
+        s.tipo_solicitud AS "tipoSolicitud",
+        s.id_contribuyente
+      FROM solicitud_cte s
+        JOIN ( SELECT es.id_solicitud,
+                impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+              FROM impuesto.evento_solicitud es
+              WHERE id_solicitud IN (SELECT id_solicitud FROM solicitud_cte)
+              GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud) ss ON s.id_solicitud = ss.id 
+    WHERE s.id_solicitud_original = $1 AND ss.state = $2
+`,
   GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID: 'SELECT * FROM impuesto.get_last_settlement_by_estate($1, $2)',
   GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID_NATURAL: 'SELECT * FROM impuesto.get_last_settlement_by_estate_natural($1, $2)',
   GET_ESTATE_BY_ID: 'SELECT * FROM inmueble_urbano INNER JOIN parroquia ON parroquia.id = inmueble_urbano.id_parroquia WHERE id_inmueble = $1',
