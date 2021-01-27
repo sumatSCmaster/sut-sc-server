@@ -8,7 +8,7 @@ import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { renderFile } from 'pug';
 import { errorMessageExtractor } from './errors';
-import { QueryResult } from 'pg';
+import { PoolClient, QueryResult } from 'pg';
 import * as fs from 'fs';
 import * as pdf from 'html-pdf';
 import { groupBy } from 'lodash';
@@ -24,7 +24,7 @@ const pool = Pool.getInstance();
 
 export const getBranchesD = async () => {
   mainLogger.info(`getBranches`);
-  const client = await pool.connect();
+  let client: PoolClient | undefined;
   const redisClient = Redis.getInstance();
   try {
     mainLogger.info(`getBranches - try`);
@@ -34,11 +34,14 @@ export const getBranchesD = async () => {
       return JSON.parse(cachedBranches);
     } else {
       mainLogger.info('getBranches - getting branches from db');
+      client = await pool.connect();
       const branches = await client.query(queries.GET_BRANCHES);
       let allBranches = await Promise.all(
         branches.rows.map(async (el) => {
-          el.subramos = (await client.query(queries.GET_SUBRANCHES_BY_ID, [el.id])).rows;
-          return el;
+          if (client) {
+            el.subramos = (await client.query(queries.GET_SUBRANCHES_BY_ID, [el.id])).rows;
+            return el;
+          }
         })
       );
       await redisClient.setAsync('branches', JSON.stringify(allBranches));
@@ -49,7 +52,7 @@ export const getBranchesD = async () => {
     mainLogger.error(`getBranches - ERROR ${e.message}`);
     throw e;
   } finally {
-    client.release();
+    if (client) client.release();
   }
 };
 
