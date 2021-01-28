@@ -36,7 +36,7 @@ export const checkVehicleExists = () => async (req: any, res, next) => {
  */
 export const getBrands = async (): Promise<Response & { marcas: { id: number; nombre: string }[] }> => {
   const REDIS_KEY = 'vehicleBrands';
-  const client = await pool.connect();
+  let client: PoolClient | undefined;
   const redisClient = Redis.getInstance();
   let brands;
   try {
@@ -47,6 +47,7 @@ export const getBrands = async (): Promise<Response & { marcas: { id: number; no
       brands = JSON.parse(cachedBrands);
     } else {
       mainLogger.info('getBrands - getting brands from db');
+      client = await pool.connect();
       const res = await client.query(queries.GET_VEHICLE_BRANDS);
       brands = res.rows;
       await redisClient.setAsync(REDIS_KEY, JSON.stringify(brands));
@@ -61,7 +62,7 @@ export const getBrands = async (): Promise<Response & { marcas: { id: number; no
       message: errorMessageGenerator(error) || error.message || 'Error al obtener marcas de vehiculos',
     };
   } finally {
-    client.release();
+    if (client) client.release();
   }
 };
 
@@ -70,7 +71,7 @@ export const getBrands = async (): Promise<Response & { marcas: { id: number; no
  */
 export const getVehicleTypes = async (): Promise<Response & { tipoVehiculo: VehicleType[] }> => {
   const REDIS_KEY = 'vehicleTypes';
-  const client = await pool.connect();
+  let client: PoolClient | undefined;
   const redisClient = Redis.getInstance();
   let types;
   try {
@@ -81,9 +82,13 @@ export const getVehicleTypes = async (): Promise<Response & { tipoVehiculo: Vehi
       types = JSON.parse(cachedTypes);
     } else {
       mainLogger.info('getVehicleTypes - getting types from db');
+      client = await pool.connect();
       const response = (await client.query(queries.GET_VEHICLE_TYPES)).rows.map(async (type: VehicleType) => {
-        type.categorias = await Promise.all(await getVehicleCategoriesByType(type.id, client));
-        return type;
+        if (client) {
+          type.categorias = await Promise.all(await getVehicleCategoriesByType(type.id, client));
+          return type;
+        }
+        return;
       });
       types = await Promise.all(response);
       await redisClient.setAsync(REDIS_KEY, JSON.stringify(types));
@@ -99,7 +104,7 @@ export const getVehicleTypes = async (): Promise<Response & { tipoVehiculo: Vehi
       message: errorMessageGenerator(error) || error.message || 'Error al obtener tipos de vehiculos',
     };
   } finally {
-    client.release();
+    if (client) client.release();
   }
 };
 
