@@ -541,7 +541,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
   let costo, respState, dir, cert, datosP, ordenanzas;
   try {
     client.query('BEGIN');
-    datosP = { usuario: datos };
+    datosP = !![29, 30, 31, 32, 33, 34, 35].find((el) => el === tipoTramite) ? { usuario: datos, funcionario: datos } : { usuario: datos };
     if (tipoTramite === 26) {
       const { tipoDocumento, documento, registroMunicipal } = datos.contribuyente;
       const hasActiveAgreement = (await client.query(queries.CONTRIBUTOR_HAS_ACTIVE_AGREEMENT_PROCEDURE, [tipoDocumento, documento, registroMunicipal])).rowCount > 0;
