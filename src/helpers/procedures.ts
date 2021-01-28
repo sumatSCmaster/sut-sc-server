@@ -537,8 +537,8 @@ export const getProcedureCosts = async () => {
  */
 export const procedureInit = async (procedure, user: Usuario) => {
   const client = await pool.connect();
-  const { tipoTramite, datos, pago } = procedure;
-  let costo, respState, dir, cert, datosP;
+  const { tipoTramite, datos, pago, bill } = procedure;
+  let costo, respState, dir, cert, datosP, ordenanzas;
   try {
     client.query('BEGIN');
     datosP = { usuario: datos };
@@ -562,6 +562,17 @@ export const procedureInit = async (procedure, user: Usuario) => {
     response.sufijo = resources.sufijo;
     costo = isNotPrepaidProcedure({ suffix: resources.sufijo, user }) ? null : pago.costo || resources.costo_base;
     mainLogger.info('🚀 ~ file: procedures.ts ~ line 473 ~ procedureInit ~ costo', costo);
+
+    if (!![29, 30, 31, 32, 33, 34, 35].find((el) => el === tipoTramite)) {
+      if (!bill) return { status: 400, message: 'Es necesario asignar un precio a una licencia de licores' };
+      costo = bill.totalBs;
+      ordenanzas = {
+        items: await insertOrdinancesByProcedure(bill.items, response.idTramite, tipoTramite, client),
+        totalBs: bill.totalBs,
+        totalPetro: bill.totalPetro,
+      };
+    }
+
     const nextEvent = await getNextEventForProcedure(response, client);
 
     if (pago && resources.sufijo !== 'tl' && nextEvent.startsWith('validar')) {
@@ -609,6 +620,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
       nombreTramiteLargo: response.nombretramitelargo,
       nombreTramiteCorto: response.nombretramitecorto,
       aprobado: response.aprobado,
+      bill: ordenanzas,
     };
     await sendNotification(user, `Un trámite de tipo ${tramite.nombreTramiteLargo} ha sido creado`, 'CREATE_PROCEDURE', 'TRAMITE', tramite, client);
     client.query('COMMIT');
