@@ -13,12 +13,11 @@ const pool = Pool.getInstance();
  *
  * @param user
  */
-export const getMenu = async (user): Promise<Institucion[]> => {
+export const getMenu = async (user): Promise<Institucion[] | undefined > => {
   let REDIS_KEY = `options:${user.tipoUsuario === 4 ? 'external' : 'inst'}`;
-  const client: any = await pool.connect();
+  let client: PoolClient & { tipoUsuario?: any } | undefined;
   const redisClient = Redis.getInstance();
-  client.tipoUsuario = user.tipoUsuario;
-  let options: Institucion[];
+  let options: Institucion[] | undefined = undefined;
   try {
     mainLogger.info('getMenu - try');
     let cachedOptions = await redisClient.getAsync(REDIS_KEY);
@@ -26,23 +25,27 @@ export const getMenu = async (user): Promise<Institucion[]> => {
       mainLogger.info(`getMenu - getting cached options ${REDIS_KEY}`);
       options = JSON.parse(cachedOptions);
     } else {
-      const response = await client.query(queries.GET_ALL_INSTITUTION);
-      let institution: Institucion[] = response.rows.map((el) => {
-        return {
-          id: el.id_institucion,
-          nombreCompleto: el.nombre_completo,
-          nombreCorto: el.nombre_corto,
-        };
-      });
-      if (user.tipoUsuario === 4) {
-        institution = institution.filter((el) => el.id !== 0);
+      client = Object.assign(await pool.connect(), user.tipoUsuario);
+      if (client) {
+        const response = await client.query(queries.GET_ALL_INSTITUTION);
+        let institution: Institucion[] = response.rows.map((el) => {
+          return {
+            id: el.id_institucion,
+            nombreCompleto: el.nombre_completo,
+            nombreCorto: el.nombre_corto,
+          };
+        });
+        if (user.tipoUsuario === 4) {
+          institution = institution.filter((el) => el.id !== 0);
+        }
+        options = await getProcedureByInstitution(institution, client);
+        await redisClient.setAsync(REDIS_KEY, JSON.stringify(options));
+        await redisClient.expireAsync(REDIS_KEY, 36000);
       }
-      options = await getProcedureByInstitution(institution, client);
-      await redisClient.setAsync(REDIS_KEY, JSON.stringify(options));
-      await redisClient.expireAsync(REDIS_KEY, 36000);
-    }
 
+    }
     return options;
+
   } catch (error) {
     mainLogger.error(error);
     throw {
@@ -51,7 +54,7 @@ export const getMenu = async (user): Promise<Institucion[]> => {
       message: errorMessageGenerator(error) || error.message || 'Error al obtener los tramites',
     };
   } finally {
-    client.release();
+    if (client) client.release();
   }
 };
 
