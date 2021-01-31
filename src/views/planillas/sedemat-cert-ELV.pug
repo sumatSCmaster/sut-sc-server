@@ -30,7 +30,7 @@ html
               p#title
                 b EXPENDIO DE BEBIDAS ALCOHÓLICAS
                 br
-                b LICENCIA N° #{licencia}
+                b LICENCIA N° #{licencia || datos.funcionario.licencia.numeroLicencia}
               div
                 img#QR(src=QR, alt='QR')
             div#planilla
@@ -57,7 +57,7 @@ html
                   span #{datos.funcionario.licencia.categoriaLicencia}
                 p 
                   b HORARIO: 
-                  span #{datos.funcionario.horaInicio} a #{datos.funcionario.horaFin}
+                  span #{datos.funcionario.horario}
                 p 
                   b REPRESENTANTE LEGAL: 
                   span #{datos.funcionario.representanteLegal}   
@@ -162,7 +162,7 @@ html
               p#title
                 b EXPENDIO DE BEBIDAS ALCOHÓLICAS
                 br
-                b LICENCIA N° #{licencia}
+                b LICENCIA N° #{licencia || datos.funcionario.licencia.numeroLicencia}
               div
                 img#QR(src=QR, alt='QR')
             div#planilla
@@ -189,7 +189,7 @@ html
                   span #{datos.funcionario.licencia.categoriaLicencia}
                 p 
                   b HORARIO: 
-                  span #{datos.funcionario.horaInicio} a #{datos.funcionario.horaFin}
+                  span #{datos.funcionario.horario}
                 p 
                   b REPRESENTANTE LEGAL: 
                   span #{datos.funcionario.representanteLegal}   

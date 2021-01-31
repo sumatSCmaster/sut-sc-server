@@ -3,6 +3,7 @@ import queries from '@utils/queries';
 import { errorMessageGenerator } from './errors';
 import Redis from '@utils/redis';
 import { mainLogger } from '@utils/logger';
+import { PoolClient } from 'pg';
 const pool = Pool.getInstance();
 
 /**
@@ -101,7 +102,7 @@ export const getUsdValue = async () => {
 
 export const getPetro = async () => {
   const REDIS_KEY = 'petro';
-  const client = await pool.connect();
+  let client: PoolClient | undefined;
   const redisClient = Redis.getInstance();
   let petro;
   try {
@@ -109,6 +110,7 @@ export const getPetro = async () => {
     if (cachedPetro !== null) {
       petro = cachedPetro;
     } else {
+      client = await pool.connect();
       petro = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
       await redisClient.setAsync(REDIS_KEY, petro);
       await redisClient.expireAsync(REDIS_KEY, 1800);
@@ -118,6 +120,6 @@ export const getPetro = async () => {
     mainLogger.error(`getPetro - ERROR ${e.message}`);
     throw e;
   } finally {
-    client.release();
+    if (client) client.release();
   }
 };

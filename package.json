@@ -58,7 +58,7 @@
     "passport-google-oauth": "^2.0.0",
     "passport-jwt": "^4.0.0",
     "passport-local": "^1.0.0",
-    "pg": "^7.17.1",
+    "pg": "^8.5.0",
     "phantomjs-prebuilt": "^2.1.16",
     "pug": "^2.0.4",
     "qrcode": "^1.4.4",
