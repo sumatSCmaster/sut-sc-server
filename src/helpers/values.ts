@@ -17,14 +17,14 @@ export const updatePetroValue = async (value) => {
   let result: any;
   try {
     await client.query('BEGIN');
-    result = (await client.query(queries.UPDATE_PETRO_VALUE, [value])).rows[0];
+    result = (await client.query(queries.UPDATE_PETRO_VALUE, [value])).rows[0].valor_en_bs;
     await client.query('COMMIT');
-    await redisClient.setAsync(REDIS_KEY, JSON.stringify(result));
+    await redisClient.setAsync(REDIS_KEY, result);
     await redisClient.expireAsync(REDIS_KEY, 1800);
     return {
       status: 200,
       message: 'Se ha actualizado el valor del PETRO',
-      petro: result.valor_en_bs,
+      petro: result,
     };
   } catch (e) {
     client.query('ROLLBACK');
