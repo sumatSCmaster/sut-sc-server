@@ -14,10 +14,9 @@ export const updatePetroValue = async (value) => {
   const client = await pool.connect();
   const REDIS_KEY = 'petro';
   const redisClient = Redis.getInstance();
-  let result: any;
   try {
     await client.query('BEGIN');
-    result = (await client.query(queries.UPDATE_PETRO_VALUE, [value])).rows[0].valor_en_bs;
+    const result = (await client.query(queries.UPDATE_PETRO_VALUE, [value])).rows[0].valor_en_bs;
     await client.query('COMMIT');
     await redisClient.setAsync(REDIS_KEY, result);
     await redisClient.expireAsync(REDIS_KEY, 1800);
