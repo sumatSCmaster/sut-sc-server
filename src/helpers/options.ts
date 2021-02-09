@@ -13,9 +13,9 @@ const pool = Pool.getInstance();
  *
  * @param user
  */
-export const getMenu = async (user): Promise<Institucion[] | undefined > => {
-  let REDIS_KEY = `options:${user.tipoUsuario === 4 ? 'external' : 'inst'}`;
-  let client: PoolClient & { tipoUsuario?: any } | undefined;
+export const getMenu = async (user): Promise<Institucion[] | undefined> => {
+  let REDIS_KEY = `options:${user.tipoUsuario}`;
+  let client: (PoolClient & { tipoUsuario?: any }) | undefined;
   const redisClient = Redis.getInstance();
   let options: Institucion[] | undefined = undefined;
   try {
@@ -42,10 +42,8 @@ export const getMenu = async (user): Promise<Institucion[] | undefined > => {
         await redisClient.setAsync(REDIS_KEY, JSON.stringify(options));
         await redisClient.expireAsync(REDIS_KEY, 36000);
       }
-
     }
     return options;
-
   } catch (error) {
     mainLogger.error(error);
     throw {
