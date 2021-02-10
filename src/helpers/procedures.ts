@@ -625,13 +625,15 @@ export const procedureInit = async (procedure, user: Usuario) => {
     await sendNotification(user, `Un trámite de tipo ${tramite.nombreTramiteLargo} ha sido creado`, 'CREATE_PROCEDURE', 'TRAMITE', tramite, client);
     client.query('COMMIT');
 
-    sendEmail({
-      ...tramite,
-      codigo: tramite.codigoTramite,
-      nombreUsuario: user.nombreUsuario,
-      nombreCompletoUsuario: user.nombreCompleto,
-      estado: respState.rows[0].state,
-    });
+    if (tipoTramite !== 26) {
+      sendEmail({
+        ...tramite,
+        codigo: tramite.codigoTramite,
+        nombreUsuario: user.nombreUsuario,
+        nombreCompletoUsuario: user.nombreCompleto,
+        estado: respState.rows[0].state,
+      });
+    }
 
     return {
       status: 201,
