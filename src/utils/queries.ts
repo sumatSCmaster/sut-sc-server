@@ -1430,6 +1430,52 @@ FROM x
 INNER JOIN impuesto.solicitud s ON s.id_solicitud = x.id_solicitud
 INNER JOIN impuesto.contribuyente cont ON cont.id_contribuyente = s.id_contribuyente
 ORDER BY razon_social;`,
+  GET_INGRESS_CONDO: `SELECT ramo, descripcion, codigo, SUM("cantidadIng") as "cantidadIng", SUM(ingresado) as ingresado FROM ( 
+    (SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadIng", SUM(l.monto) as ingresado 
+        FROM ((SELECT DISTINCT ON (l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto) l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto, l.datos, s.id_contribuyente
+                FROM impuesto.liquidacion l 
+                INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud
+                WHERE l.id_solicitud IS NOT NULL 
+                AND s.id_contribuyente IN (SELECT id_contribuyente FROM impuesto.condominio)
+                AND l.id_solicitud IN (SELECT id_solicitud 
+                                        FROM impuesto.solicitud 
+                                        WHERE fecha_aprobado BETWEEN $1 AND $2
+                                        AND tipo_solicitud != 'CONVENIO') )) l 
+        LEFT JOIN (SELECT *, s.id_solicitud AS id_solicitud_q 
+                        FROM impuesto.solicitud s 
+                        INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) 
+            AS state FROM impuesto.evento_solicitud es GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud WHERE fecha_aprobado BETWEEN $1 AND $2) 
+        se ON l.id_solicitud = se.id_solicitud_q
+        RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo 
+        INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo 
+        GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion
+        ORDER BY ramo)
+    UNION
+    (SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadIng", SUM(f.monto) as ingresado 
+      FROM (SELECT * FROM impuesto.fraccion WHERE fecha_aprobado BETWEEN $1 AND $2) f
+      INNER JOIN impuesto.convenio USING (id_convenio)
+      INNER JOIN impuesto.solicitud USING (id_solicitud)
+      INNER JOIN (SELECT DISTINCT ON (id_solicitud) id_solicitud, id_subramo, id_liquidacion, datos FROM impuesto.liquidacion ) l USING (id_solicitud)
+      FULL OUTER JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo 
+      LEFT JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo 
+      WHERE solicitud.id_contribuyente IN (SELECT id_contribuyente FROM impuesto.condominio)
+      GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion
+      ORDER BY ramo)) x
+        WHERE codigo != '915' AND codigo IN ('122', '111')
+        GROUP BY ramo, descripcion, codigo;`,
+  GET_LIQUIDATED_CONDO: `SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadLiq", SUM(CASE WHEN monto IS NOT NULL THEN monto ELSE (monto_petro * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) END) as liquidado 
+  FROM (SELECT *  FROM impuesto.liquidacion 
+          INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud 
+          WHERE fecha_liquidacion BETWEEN $1 AND $2
+          AND s.id_contribuyente IN (SELECT id_contribuyente FROM impuesto.condominio)) l 
+  INNER JOIN (SELECT *, s.id_solicitud AS id_solicitud_q FROM impuesto.solicitud s 
+                  INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) 
+      AS state FROM impuesto.evento_solicitud es GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud) 
+  se ON l.id_solicitud = se.id_solicitud_q
+  RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo 
+  INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo 
+  GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion
+  ORDER BY ramo;`,
   //CIERRE DE CAJA
   GET_CASHIER_POS: `SELECT b.nombre as banco, SUM(p.monto) as monto, COUNT(*) as transacciones
         FROM pago p 

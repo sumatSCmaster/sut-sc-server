@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
-import { generateBranchesReport, getBranches, getTransfersReport } from '@helpers/branches';
+import { generateBranchesReport, getBranches, getTransfersReport, getCondoReport } from '@helpers/branches';
 import { authenticate } from 'passport';
 import { mainLogger } from '@utils/logger';
 
@@ -23,6 +23,13 @@ router.post('/', authenticate('jwt'), async (req, res) => {
 router.post('/reportTransf', authenticate('jwt'), async (req, res) => {
   const { from, to } = req.body;
   const [error, data] = await fulfill(getTransfersReport({ from, to }));
+  if (error) res.status(500).json({ error, status: 500 });
+  if (data) res.status(200).json({ status: 200, data });
+});
+
+router.post('/', authenticate('jwt'), async (req, res) => {
+  const { from, to } = req.body;
+  const [error, data] = await fulfill(getCondoReport({ from, to }));
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
 });
