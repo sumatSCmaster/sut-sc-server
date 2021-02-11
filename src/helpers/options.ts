@@ -25,7 +25,7 @@ export const getMenu = async (user): Promise<Institucion[] | undefined> => {
       mainLogger.info(`getMenu - getting cached options ${REDIS_KEY}`);
       options = JSON.parse(cachedOptions);
     } else {
-      client = Object.assign(await pool.connect(), user.tipoUsuario);
+      client = await pool.connect();
       if (client !== undefined) {
         client.tipoUsuario = user.tipoUsuario;
       }
@@ -43,6 +43,7 @@ export const getMenu = async (user): Promise<Institucion[] | undefined> => {
           institution = institution.filter((el) => el.id !== 0);
         }
         options = await getProcedureByInstitution(institution, client);
+        await client.release();
         await redisClient.setAsync(REDIS_KEY, JSON.stringify(options));
         await redisClient.expireAsync(REDIS_KEY, 36000);
       }
@@ -55,8 +56,6 @@ export const getMenu = async (user): Promise<Institucion[] | undefined> => {
       error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || error.message || 'Error al obtener los tramites',
     };
-  } finally {
-    if (client) client.release();
   }
 };
 
