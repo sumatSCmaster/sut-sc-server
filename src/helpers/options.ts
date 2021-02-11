@@ -26,6 +26,7 @@ export const getMenu = async (user): Promise<Institucion[] | undefined> => {
       options = JSON.parse(cachedOptions);
     } else {
       client = Object.assign(await pool.connect(), user.tipoUsuario);
+      mainLogger.info(`client tipoUsuario ${client?.tipoUsuario}`);
       if (client) {
         const response = await client.query(queries.GET_ALL_INSTITUTION);
         let institution: Institucion[] = response.rows.map((el) => {
