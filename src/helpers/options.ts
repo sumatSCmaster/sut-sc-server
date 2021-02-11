@@ -15,7 +15,7 @@ const pool = Pool.getInstance();
  */
 export const getMenu = async (user): Promise<Institucion[] | undefined> => {
   let REDIS_KEY = `options:${user.tipoUsuario}`;
-  let client: (PoolClient & { tipoUsuario?: any }) | undefined;
+  let client: (PoolClient & { tipoUsuario?: any }) | undefined = undefined;
   const redisClient = Redis.getInstance();
   let options: Institucion[] | undefined = undefined;
   try {
@@ -26,6 +26,9 @@ export const getMenu = async (user): Promise<Institucion[] | undefined> => {
       options = JSON.parse(cachedOptions);
     } else {
       client = Object.assign(await pool.connect(), user.tipoUsuario);
+      if (client !== undefined) {
+        client.tipoUsuario = user.tipoUsuario;
+      }
       mainLogger.info(`client tipoUsuario ${client?.tipoUsuario}`);
       if (client) {
         const response = await client.query(queries.GET_ALL_INSTITUTION);
