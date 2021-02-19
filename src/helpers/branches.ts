@@ -464,14 +464,14 @@ export const getCondoReport = async (payload) => {
             }
           });
         } catch (e) {
-          mainLogger.error(e.message)
+          mainLogger.info(e.message)
           throw e;
         } finally {
         }
       }
     });
   } catch (error) {
-    mainLogger.error(error.message)
+    mainLogger.info(error.message)
     throw errorMessageExtractor(error);
   } finally {
     client.release();

@@ -146,7 +146,7 @@ export const getIUTariffForContributor = async ({ estate, id, declaration, date 
     mainLogger.info('getIUTariffForContributor ~ impuestoInmueble', impuestoInmueble);
     if (!id) return impuestoInmueble;
     const now = moment().locale('ES').subtract(1, 'M');
-    const lastAEApplication = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, id])).rows.find((el) => el.datos.fecha.month === now.format('MMMM') && el.datos.fecha.year === now.year())?.monto_petro;
+    const lastAEApplication = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, id])).rows.find((el) => (el.datos.fecha?.month || el.datos.month )  === now.format('MMMM') && (el.datos.fecha?.year || el.datos.year) === now.year())?.monto_petro;
     const AEDeclaration = Math.round(isNaN(+declaration!) ? fixatedAmount(lastAEApplication * PETRO) : +declaration!);
     mainLogger.info('getIUTariffForContributor ~ AEDeclaration', AEDeclaration);
     if (!AEDeclaration && typeof AEDeclaration !== 'number') throw { status: 422, message: 'Debe realizar una declaracion de AE de este mes para poder realizar el calculo de IU' };
