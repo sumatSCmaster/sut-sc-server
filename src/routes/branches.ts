@@ -27,9 +27,11 @@ router.post('/reportTransf', authenticate('jwt'), async (req, res) => {
   if (data) res.status(200).json({ status: 200, data });
 });
 
-router.post('/condoReport', authenticate('jwt'), async (req, res) => {
+router.post('/condoReport',  authenticate('jwt'), async (req, res) => {
   const { from, to } = req.body;
+  console.log('AAAAAAAAAAAAAAAAAAAAA')
   const [error, data] = await fulfill(getCondoReport({ from, to }));
+  console.log('AAAAAAAAAAAAAAAAAAAAA', error.message)
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
 });

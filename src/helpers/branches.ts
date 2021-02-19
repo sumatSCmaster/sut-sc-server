@@ -447,6 +447,7 @@ export const getCondoReport = async (payload) => {
         try {
           pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toBuffer(async (err, buffer) => {
             if (err) {
+              mainLogger.error(err)
               rej(err);
             } else {
               const bucketParams = {
@@ -463,12 +464,14 @@ export const getCondoReport = async (payload) => {
             }
           });
         } catch (e) {
+          mainLogger.error(e.message)
           throw e;
         } finally {
         }
       }
     });
   } catch (error) {
+    mainLogger.error(error.message)
     throw errorMessageExtractor(error);
   } finally {
     client.release();
