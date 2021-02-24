@@ -3682,7 +3682,8 @@ export const internalUserLinking = async (data) => {
     if (!contributor) throw { status: 404, message: 'El contribuyente proporcionado no existe' };
     if (!!(await hasLinkedContributor(user.id))) throw { status: 409, message: 'El usuario suministrado ya tiene un contribuyente asociado' };
     await client.query(queries.ASSIGN_CONTRIBUTOR_TO_USER, [contributor.id_contribuyente, user.id]);
-    if (tipoContribuyente === 'JURIDICO') {
+    const condo = await isCondominium(tipoDocumento, documento, client);
+    if (tipoContribuyente === 'JURIDICO' && !condo) {
       if (!referenciaMunicipal) throw { status: 404, message: 'Debe proporcionar un RIM para realizar el enlace para un contribuyente juridico' };
       const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [referenciaMunicipal, contributor.id_contribuyente])).rows[0];
       if (!branch) throw { status: 404, message: 'La sucursal proporcionada no existe' };
