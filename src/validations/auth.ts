@@ -66,7 +66,7 @@ const validations = {
   rif: check('tramite.datos.rif').exists().withMessage('Debe incluir el rif de la ubicacion').isString().isLength({ min: 1 }).withMessage('Debe incluir un rif valido'),
   razonSocial: check('tramite.datos.razonSocial').exists().withMessage('Debe incluir la razon social').isString().isLength({ min: 1 }).withMessage('Debe incluir una razon social valida'),
   tipoOcupacion: check('tramite.datos.tipoOcupacion').exists().withMessage('Debe incluir el tipo de ocupacion del establecimiento').isString().isLength({ min: 1 }).withMessage('Debe incluir un tipo de ocupacion del establecimiento'),
-  areaConstruccion: check('tramite.datos.areaConstruccion').exists().withMessage('Debe incluir el area de construccion').isInt().withMessage('Area de construccion invalida'),
+  areaConstruccion: check('tramite.datos.areaConstruccion').exists().withMessage('Debe incluir el area de construccion').isNumeric().withMessage('Area de construccion invalida'),
   numeroProyecto: check('tramite.datos.numeroProyecto').exists().withMessage('Debe incluir el numero del proyecto').isInt().withMessage('Debe incluir un numero de proyecto valido'),
   fechaAprobacion: check('tramite.datos.fechaAprobacion').exists().withMessage('Debe incluir la fecha de aprobacion del proyecto').isString().isLength({ min: 1 }).withMessage('Debe incluir una fecha de aprobacion valida'),
   codigoPermisoConstruccion: check('tramite.datos.codigoPermisoConstruccion')
@@ -99,7 +99,7 @@ const validations = {
   ubicacionEdificio: check('tramite.datos.ubicacionEdificio').exists().withMessage('Debe incluir la ubicacion del edificio').isString().isLength({ min: 1 }).withMessage('La ubicacion del edificio no puede ser vacia'),
   datosRegistro: check('tramite.datos.datosRegistro').exists().withMessage('Debe incluir los datos de registro del inmueble').isString().isLength({ min: 1 }).withMessage('Los datos de registro no pueden ser vacios'),
   circuito: check('tramite.datos.circuito').exists().withMessage('Debe incluir el circuito del inmueble').isString().isLength({ min: 1 }).withMessage('El circuito del inmueble no puede ser vacio'),
-  areaTerreno: check('tramite.datos.areaTerreno').exists().withMessage('Debe incluir el area del terreno del inmueble').isInt().withMessage('Debe incluir un area del terreno del inmueble valida'),
+  areaTerreno: check('tramite.datos.areaTerreno').exists().withMessage('Debe incluir el area del terreno del inmueble').isNumeric().withMessage('Debe incluir un area del terreno del inmueble valida'),
   plano: check('tramite.datos.plano').exists().withMessage('Debe incluir el plano del inmueble').isString().isLength({ min: 1 }).withMessage('El plano del inmueble no puede ser vacio'),
   codCat: check('tramite.datos.codCat').exists().withMessage('Debe incluir el codigo catastral del inmueble').isString().isLength({ min: 1 }).withMessage('El codigo catastral no puede ser vacio'),
   croquis: check('tramite.datos.croquis').exists().withMessage('Debe incluir el croquis del inmueble').isString().isLength({ min: 1 }).withMessage('El croquis no puede ser vacio'),
