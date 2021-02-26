@@ -4621,11 +4621,6 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
     if (application.idSubramo === 9) {
       const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
       let breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID + ' ORDER BY fecha_vencimiento DESC', [application.id, 9])).rows;
-      breakdownData = breakdownData.sort((a, b) => {
-        if (mesesNumerico[a.datos.fecha.month] > mesesNumerico[b.datos.fecha.month] && +a.datos.fecha.year >= +b.datos.fecha.year ) return 1;
-        else if (mesesNumerico[a.datos.fecha.month] < mesesNumerico[b.datos.fecha.month] && +a.datos.fecha.year <= +b.datos.fecha.year) return -1;
-        else return 0;
-      });
       for (let inm of breakdownData[0].datos.desglose) {
         const inmueble = await pool.query(queries.GET_ESTATE_BY_ID, [inm.inmueble]);
         const avaluo = await pool.query(queries.GET_CURRENT_APPRAISALS_BY_ID, [inm.inmueble]);
