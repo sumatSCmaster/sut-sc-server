@@ -4617,18 +4617,16 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
     let certInfoArray: any[] = [];
     motivo = application.descripcionSubramo;
     ramo = application.descripcionRamo;
-    mainLogger.info(`createReceiptForIUApplication - application id ${application.id}`)
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     if (application.idSubramo === 9) {
       const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
       let breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID + ' ORDER BY fecha_vencimiento DESC', [application.id, 9])).rows;
       breakdownData = breakdownData.sort((a, b) => {
-        if (mesesNumerico[a.datos.fecha.month] > mesesNumerico[b.datos.fecha.month] && +a.datos.fecha.year >= +b.datos.fecha.year ) return 1;
-        else if (mesesNumerico[a.datos.fecha.month] < mesesNumerico[b.datos.fecha.month] && +a.datos.fecha.year <= +b.datos.fecha.year) return -1;
+        if (mesesNumerico[a.datos.fecha.mes] > mesesNumerico[b.datos.fecha.month]) return -1;
+        else if (mesesNumerico[a.datos.fecha.mes] < mesesNumerico[b.datos.fecha.month]) return 1;
         else return 0;
       });
       for (let inm of breakdownData[breakdownData.length - 1].datos.desglose) {
-        mainLogger.info(`createReceiptForIUApplication breakdownData inm ${inm.inmueble} ${inm.monto}`)
         const inmueble = await pool.query(queries.GET_ESTATE_BY_ID, [inm.inmueble]);
         const avaluo = await pool.query(queries.GET_CURRENT_APPRAISALS_BY_ID, [inm.inmueble]);
         certInfo = {
@@ -4653,8 +4651,7 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
         certInfoArray.push({ ...certInfo });
       }
     }
-    mainLogger.info(`createReceiptForIUApplication certinfoarray`);
-    mainLogger.info(`${certInfoArray}`)
+
     return new Promise(async (res, rej) => {
       try {
         let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-IU.pug`), certInfo));
