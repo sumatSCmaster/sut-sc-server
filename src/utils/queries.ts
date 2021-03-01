@@ -1506,7 +1506,7 @@ ORDER BY razon_social;`,
     GROUP BY u.nombre_completo;`,
   GET_ALL_CASHIERS_TOTAL_INT: `SELECT u.nombre_completo, SUM(p.monto) AS monto
   FROM pago p INNER JOIN usuario u USING (id_usuario)
-  WHERE p.fecha_de_pago BETWEEN $1 AND $2 AND u.id_tipo_usuario != 4
+  WHERE p.fecha_de_pago BETWEEN $1 AND $2 AND u.id_tipo_usuario != 4 AND u.id_usuario != 6915
   GROUP BY u.nombre_completo;`,
   GET_ALL_CASHIERS_METHODS_TOTAL: `SELECT p.metodo_pago AS tipo, SUM(p.monto) AS monto, COUNT(*) AS transacciones
     FROM pago p 
@@ -1543,7 +1543,7 @@ ORDER BY razon_social;`,
       LEFT JOIN impuesto.solicitud s ON s.id_solicitud = p.id_procedimiento AND p.concepto = 'IMPUESTO'
       LEFT JOIN tramite t ON t.id_tramite = p.id_procedimiento AND p.concepto = 'TRAMITE'
       LEFT JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite
-      WHERE p.fecha_de_aprobacion::date BETWEEN $1::date AND $2::date AND u.id_tipo_usuario != 4`,
+      WHERE p.fecha_de_aprobacion::date BETWEEN $1::date AND $2::date AND u.id_tipo_usuario != 4 AND u.id_usuario != 6915`,
   //EXONERACIONES
   GET_CONTRIBUTOR:
     'SELECT c.id_contribuyente as id, razon_social AS "razonSocial", rm.denominacion_comercial AS "denominacionComercial", c.tipo_documento AS "tipoDocumento", c.documento, rm.id_registro_municipal AS "idRegistroMunicipal", rm.referencia_municipal AS "referenciaMunicipal" FROM impuesto.contribuyente c INNER JOIN impuesto.registro_municipal rm ON rm.id_contribuyente = c.id_contribuyente WHERE c.tipo_documento = $1 AND c.documento = $2 AND rm.referencia_municipal = $3;',
