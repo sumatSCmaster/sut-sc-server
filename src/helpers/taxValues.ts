@@ -263,6 +263,7 @@ export const updateConstructionValuesByModel = async (construction, model) => {
     return { status: 200, message: 'Valor fiscal de la construccion actualizado!', anos };
   } catch (error) {
     client.query('ROLLBACK');
+    mainLogger.error(`Error ${error.message}`)
     throw {
       status: 500,
       error: errorMessageExtractor(error),
