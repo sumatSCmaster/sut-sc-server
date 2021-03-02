@@ -3,6 +3,7 @@ import queries from '@utils/queries';
 import { Parroquia } from '@interfaces/sigt';
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { PoolClient } from 'pg';
+import { mainLogger } from '@utils/logger';
 const pool = Pool.getInstance();
 
 /**
@@ -27,6 +28,8 @@ export const getDataForTaxValues = async () => {
     );
     return { status: 200, message: 'Informacion inicial de valores fiscales obtenida', datos: { parroquias, tiposConstruccion, anos } };
   } catch (error) {
+
+    mainLogger.error(`Error ${error?.message}`);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -143,6 +146,7 @@ export const updateGroundValuesByFactor = async (ground) => {
     return { status: 200, message: 'Valor fiscal de los terrenos actualizado!', anos };
   } catch (error) {
     client.query('ROLLBACK');
+    mainLogger.error(`Error ${error?.message}`);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -174,6 +178,7 @@ export const updateConstructionValuesByFactor = async (construction) => {
     return { status: 200, message: 'Valor fiscal de las construcciones actualizado!', anos };
   } catch (error) {
     client.query('ROLLBACK');
+    mainLogger.error(`Error ${error?.message}`);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -220,6 +225,7 @@ export const updateGroundValuesBySector = async (ground, sector) => {
     return { status: 200, message: 'Valor fiscal del terreno actualizado!', anos };
   } catch (error) {
     client.query('ROLLBACK');
+    mainLogger.error(`Error ${error?.message}`);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
