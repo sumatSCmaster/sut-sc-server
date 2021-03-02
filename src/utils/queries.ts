@@ -2694,10 +2694,10 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   ORDER BY pe.id_plazo_descuento DESC;`,
   ECONOMIC_ACTIVITY_HAS_DISCOUNT_IN_BRANCH: `SELECT * FROM impuesto.actividad_economica_descuento INNER JOIN
    impuesto.plazo_descuento USING (id_plazo_descuento) 
-   WHERE id_actividad_economica = $1 AND id_ramo = (SELECT id_ramo FROM impuesto.ramo WHERE codigo = $2 LIMIT 1) AND fecha_inicio <= $3 AND (fecha_fin IS NULL OR fecha_fin >= now()::date)`,
+   WHERE id_actividad_economica = $1 AND id_ramo = (SELECT id_ramo FROM impuesto.ramo WHERE codigo = $2 LIMIT 1) AND fecha_inicio <= $3 AND (fecha_fin IS NULL OR $3 <= fecha_fin)`,
   CONTRIBUTOR_HAS_DISCOUNT_IN_BRANCH: `SELECT * FROM impuesto.contribuyente_descuento INNER JOIN
    impuesto.plazo_descuento USING (id_plazo_descuento) 
-   WHERE id_registro_municipal = $1 AND id_ramo=(SELECT id_ramo FROM impuesto.ramo WHERE codigo = $2 LIMIT 1) AND fecha_inicio <= $3 AND (fecha_fin IS NULL OR fecha_fin >= now()::date)`,
+   WHERE id_registro_municipal = $1 AND id_ramo=(SELECT id_ramo FROM impuesto.ramo WHERE codigo = $2 LIMIT 1) AND fecha_inicio <= $3 AND (fecha_fin IS NULL OR $3 <= fecha_fin)`,
   GET_CHARGINGS: `WITH cobranz AS (
     SELECT id_registro_municipal, id_cobranza AS "idCobranza", cob.id_cartera AS "idCartera", cob.contactado, estatus_telefonico as "estatusTelefonico",
     observaciones ,
