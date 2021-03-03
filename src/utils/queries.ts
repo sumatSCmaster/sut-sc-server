@@ -159,7 +159,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
   GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID: `
   WITH tramite_cte as (
-    SELECT * FROM tramite WHERE  fecha_creacion > (NOW() - interval '20 days') AND id_tipo_tramite NOT IN (39, 40) ORDER BY fecha_creacion DESC FETCH FIRST 600 ROWS ONLY
+    SELECT * FROM tramite WHERE  fecha_creacion > (NOW() - interval '3 months') AND id_tipo_tramite IN (SELECT id_tipo_tramite FROM tipo_tramite WHERE id_institucion = $1) AND id_tipo_tramite NOT IN (27, 29, 30, 31, 32, 33, 34, 35, 39, 40) ORDER BY fecha_creacion DESC FETCH FIRST 1000 ROWS ONLY
   )
   SELECT ts.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS 
       nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, 
@@ -185,14 +185,14 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
       
       INNER JOIN tipo_tramite ON ts.tipotramite = 
       tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = 
-      tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 ORDER BY ts.fechacreacion DESC FETCH FIRST 500 ROWS ONLY;
+      tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 ORDER BY ts.fechacreacion DESC FETCH FIRST 1000 ROWS ONLY;
 `,
   GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION:
     "SELECT tramites_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
     nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, \
     tipo_tramite.pago_previo AS \"pagoPrevio\"  FROM tramites_state INNER JOIN tipo_tramite ON tramites_state.tipotramite = \
     tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = \
-    tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 AND tramites_state.state IN ('enproceso', 'inspeccion', 'enrevision') ORDER BY tramites_state.fechacreacion DESC LIMIT 500;",
+    tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 AND tramites_state.state IN ('enproceso', 'inspeccion', 'enrevision') ORDER BY tramites_state.fechacreacion DESC LIMIT 1000;",
   GET_ALL_PROCEDURES_EXCEPT_VALIDATING_ONES:
     'SELECT tramites_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
   nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, \
@@ -1430,6 +1430,53 @@ FROM x
 INNER JOIN impuesto.solicitud s ON s.id_solicitud = x.id_solicitud
 INNER JOIN impuesto.contribuyente cont ON cont.id_contribuyente = s.id_contribuyente
 ORDER BY razon_social;`,
+  GET_INGRESS_CONDO: `SELECT ramo, descripcion, codigo, SUM("cantidadIng") as "cantidadIng", SUM(ingresado) as ingresado FROM ( 
+    (SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadIng", SUM(l.monto) as ingresado 
+        FROM ((SELECT DISTINCT ON (l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto) l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto, l.datos, s.id_contribuyente
+                FROM impuesto.liquidacion l 
+                INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud
+                WHERE l.id_solicitud IS NOT NULL 
+                AND s.id_contribuyente IN (SELECT id_contribuyente FROM impuesto.condominio)
+                AND l.id_solicitud IN (SELECT id_solicitud 
+                                        FROM impuesto.solicitud 
+                                        WHERE fecha_aprobado BETWEEN $1 AND $2
+                                        AND tipo_solicitud != 'CONVENIO') )) l 
+        LEFT JOIN (SELECT *, s.id_solicitud AS id_solicitud_q 
+                        FROM impuesto.solicitud s 
+                        INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) 
+            AS state FROM impuesto.evento_solicitud es GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud WHERE fecha_aprobado BETWEEN $1 AND $2) 
+        se ON l.id_solicitud = se.id_solicitud_q
+        RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo 
+        INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo 
+        GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion
+        ORDER BY ramo)
+    UNION
+    (SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadIng", SUM(f.monto) as ingresado 
+      FROM (SELECT * FROM impuesto.fraccion WHERE fecha_aprobado BETWEEN $1 AND $2) f
+      INNER JOIN impuesto.convenio USING (id_convenio)
+      INNER JOIN impuesto.solicitud USING (id_solicitud)
+      INNER JOIN (SELECT DISTINCT ON (id_solicitud) id_solicitud, id_subramo, id_liquidacion, datos FROM impuesto.liquidacion ) l USING (id_solicitud)
+      FULL OUTER JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo 
+      LEFT JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo 
+      WHERE solicitud.id_contribuyente IN (SELECT id_contribuyente FROM impuesto.condominio)
+      GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion
+      ORDER BY ramo)) x
+        WHERE codigo != '915' AND codigo IN ('122', '111')
+        GROUP BY ramo, descripcion, codigo;`,
+  GET_LIQUIDATED_CONDO: `SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadLiq", SUM(CASE WHEN monto IS NOT NULL THEN monto ELSE (monto_petro * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) END) as liquidado 
+  FROM (SELECT *, s.id_solicitud as idsoli  FROM impuesto.liquidacion l
+          INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud 
+          WHERE fecha_liquidacion BETWEEN $1 AND $2
+          AND s.id_contribuyente IN (SELECT id_contribuyente FROM impuesto.condominio)) l 
+  INNER JOIN (SELECT *, s.id_solicitud AS id_solicitud_q FROM impuesto.solicitud s 
+                  INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) 
+      AS state FROM impuesto.evento_solicitud es GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud) 
+  se ON l.idsoli = se.id_solicitud_q
+  RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo 
+  INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo 
+  WHERE codigo != '915' AND codigo IN ('122', '111')
+  GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion
+  ORDER BY ramo;`,
   //CIERRE DE CAJA
   GET_CASHIER_POS: `SELECT b.nombre as banco, SUM(p.monto) as monto, COUNT(*) as transacciones
         FROM pago p 
@@ -1459,7 +1506,7 @@ ORDER BY razon_social;`,
     GROUP BY u.nombre_completo;`,
   GET_ALL_CASHIERS_TOTAL_INT: `SELECT u.nombre_completo, SUM(p.monto) AS monto
   FROM pago p INNER JOIN usuario u USING (id_usuario)
-  WHERE p.fecha_de_pago BETWEEN $1 AND $2 AND u.id_tipo_usuario != 4
+  WHERE p.fecha_de_pago BETWEEN $1 AND $2 AND u.id_tipo_usuario != 4 AND u.id_usuario != 6915
   GROUP BY u.nombre_completo;`,
   GET_ALL_CASHIERS_METHODS_TOTAL: `SELECT p.metodo_pago AS tipo, SUM(p.monto) AS monto, COUNT(*) AS transacciones
     FROM pago p 
@@ -1496,7 +1543,7 @@ ORDER BY razon_social;`,
       LEFT JOIN impuesto.solicitud s ON s.id_solicitud = p.id_procedimiento AND p.concepto = 'IMPUESTO'
       LEFT JOIN tramite t ON t.id_tramite = p.id_procedimiento AND p.concepto = 'TRAMITE'
       LEFT JOIN tipo_tramite tt ON t.id_tipo_tramite = tt.id_tipo_tramite
-      WHERE p.fecha_de_aprobacion::date BETWEEN $1::date AND $2::date AND u.id_tipo_usuario != 4`,
+      WHERE p.fecha_de_aprobacion::date BETWEEN $1::date AND $2::date AND u.id_tipo_usuario != 4 AND u.id_usuario != 6915`,
   //EXONERACIONES
   GET_CONTRIBUTOR:
     'SELECT c.id_contribuyente as id, razon_social AS "razonSocial", rm.denominacion_comercial AS "denominacionComercial", c.tipo_documento AS "tipoDocumento", c.documento, rm.id_registro_municipal AS "idRegistroMunicipal", rm.referencia_municipal AS "referenciaMunicipal" FROM impuesto.contribuyente c INNER JOIN impuesto.registro_municipal rm ON rm.id_contribuyente = c.id_contribuyente WHERE c.tipo_documento = $1 AND c.documento = $2 AND rm.referencia_municipal = $3;',
@@ -2647,10 +2694,10 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   ORDER BY pe.id_plazo_descuento DESC;`,
   ECONOMIC_ACTIVITY_HAS_DISCOUNT_IN_BRANCH: `SELECT * FROM impuesto.actividad_economica_descuento INNER JOIN
    impuesto.plazo_descuento USING (id_plazo_descuento) 
-   WHERE id_actividad_economica = $1 AND id_ramo = (SELECT id_ramo FROM impuesto.ramo WHERE codigo = $2 LIMIT 1) AND fecha_inicio <= $3 AND (fecha_fin IS NULL OR fecha_fin >= now()::date)`,
+   WHERE id_actividad_economica = $1 AND id_ramo = (SELECT id_ramo FROM impuesto.ramo WHERE codigo = $2 LIMIT 1) AND fecha_inicio <= $3 AND (fecha_fin IS NULL OR $3 <= fecha_fin)`,
   CONTRIBUTOR_HAS_DISCOUNT_IN_BRANCH: `SELECT * FROM impuesto.contribuyente_descuento INNER JOIN
    impuesto.plazo_descuento USING (id_plazo_descuento) 
-   WHERE id_registro_municipal = $1 AND id_ramo=(SELECT id_ramo FROM impuesto.ramo WHERE codigo = $2 LIMIT 1) AND fecha_inicio <= $3 AND (fecha_fin IS NULL OR fecha_fin >= now()::date)`,
+   WHERE id_registro_municipal = $1 AND id_ramo=(SELECT id_ramo FROM impuesto.ramo WHERE codigo = $2 LIMIT 1) AND fecha_inicio <= $3 AND (fecha_fin IS NULL OR $3 <= fecha_fin)`,
   GET_CHARGINGS: `WITH cobranz AS (
     SELECT id_registro_municipal, id_cobranza AS "idCobranza", cob.id_cartera AS "idCartera", cob.contactado, estatus_telefonico as "estatusTelefonico",
     observaciones ,

@@ -11,7 +11,7 @@ export default class Pool {
     if (!Pool.instance) {
       const opt: PoolConfig = {
         connectionString: process.env.GTIC_DATABASE_URL,
-        ssl: true,
+        ssl: { rejectUnauthorized: false },
       };
       Pool.instance = new PgPool(opt);
     }

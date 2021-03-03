@@ -146,7 +146,7 @@ export const getIUTariffForContributor = async ({ estate, id, declaration, date 
     mainLogger.info('getIUTariffForContributor ~ impuestoInmueble', impuestoInmueble);
     if (!id) return impuestoInmueble;
     const now = moment().locale('ES').subtract(1, 'M');
-    const lastAEApplication = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, id])).rows.find((el) => el.datos.fecha.month === now.format('MMMM') && el.datos.fecha.year === now.year())?.monto_petro;
+    const lastAEApplication = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, id])).rows.find((el) => (el.datos.fecha?.month || el.datos.month )  === now.format('MMMM') && (el.datos.fecha?.year || el.datos.year) === now.year())?.monto_petro;
     const AEDeclaration = Math.round(isNaN(+declaration!) ? fixatedAmount(lastAEApplication * PETRO) : +declaration!);
     mainLogger.info('getIUTariffForContributor ~ AEDeclaration', AEDeclaration);
     if (!AEDeclaration && typeof AEDeclaration !== 'number') throw { status: 422, message: 'Debe realizar una declaracion de AE de este mes para poder realizar el calculo de IU' };
@@ -2049,7 +2049,7 @@ const getApplicationInstancesPayload = async ({ application, contributor, typeUs
       rebajado: application.rebajado,
       tipo: application.tipo_solicitud,
       estado: state,
-      referenciaMunicipal: liquidacionesP[0]?.id_registro_municipal ? rim : undefined,
+      referenciaMunicipal: liquidacionesD?.rows[0]?.id_registro_municipal ? rim : undefined,
       monto,
       montoPetro,
       liquidaciones,
@@ -3173,6 +3173,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
     mainLogger.info('addTaxApplicationPayment -> solicitud', solicitud);
     const pagoSum = +payment.map((e) => fixatedAmount(+e.costo)).reduce((e, i) => e + i, 0);
     mainLogger.info('addTaxApplicationPayment -> pagoSum', pagoSum);
+    mainLogger.info(`addTaxApplicationPayment -> ${payment.map((pay) => `concepto ${applicationType} referencia ${pay?.referencia} banco ${pay?.banco} metodo_pago ${pay.metodoPago}`).join(' , ')}`)
     if (pagoSum < fixatedAmount(+solicitud.monto_total)) throw { status: 401, message: `La suma de los montos es insuficiente para poder insertar el pago, con un déficit de Bs. ${fixatedAmount(+solicitud.monto_total) - pagoSum}` };
     const creditoPositivo = pagoSum - fixatedAmount(+solicitud.monto_total);
     await Promise.all(
@@ -4054,9 +4055,9 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
             const agreement = (await client.query(queries.CREATE_AGREEMENT, [applicationAG.id_solicitud, x.porciones.length])).rows[0];
             const settlementsAG = (await client.query(queries.CHANGE_SETTLEMENT_TO_NEW_APPLICATION, [applicationAG.id_solicitud, contributorWithBranch.id_registro_municipal, x.idRamo])).rows[0];
             const costo = +(+(await client.query(queries.CHANGE_SETTLEMENT_BRANCH_TO_AGREEMENT, [x.idRamo, applicationAG.id_solicitud])).rows.reduce((x, j) => x + +j.monto_petro, 0)).toFixed(8);
-            mainLogger.info('//if -> costo', costo);
+            mainLogger.info(`//if -> costo ${costo}`);
             const totalSolicitud = +(+x.porciones.reduce((x, j) => x + j.monto, 0)).toFixed(8);
-            mainLogger.info('//if -> totalSolicitud', totalSolicitud);
+            mainLogger.info(`//if -> totalSolicitud ${totalSolicitud}`);
             if (costo > totalSolicitud) throw { status: 403, message: 'La suma de las fracciones del convenio debe ser exactamente igual al total de la deuda' };
             const benefitAgreement = await Promise.all(
               x.porciones.map(async (el) => {
@@ -4620,12 +4621,7 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
     if (application.idSubramo === 9) {
       const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
       let breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID + ' ORDER BY fecha_vencimiento DESC', [application.id, 9])).rows;
-      breakdownData = breakdownData.sort((a, b) => {
-        if (mesesNumerico[a.datos.fecha.mes] > mesesNumerico[b.datos.fecha.month]) return -1;
-        else if (mesesNumerico[a.datos.fecha.mes] < mesesNumerico[b.datos.fecha.month]) return 1;
-        else return 0;
-      });
-      for (let inm of breakdownData[breakdownData.length - 1].datos.desglose) {
+      for (let inm of breakdownData[0].datos.desglose) {
         const inmueble = await pool.query(queries.GET_ESTATE_BY_ID, [inm.inmueble]);
         const avaluo = await pool.query(queries.GET_CURRENT_APPRAISALS_BY_ID, [inm.inmueble]);
         certInfo = {
@@ -4643,7 +4639,7 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
             parroquia: inmueble?.rows[0]?.nombre,
             rim: referencia?.referencia_municipal || null, //Si no posee no me la envies o la envias null
             valorFiscal: avaluo?.rows[0]?.avaluo || null,
-            periodo: mesesCardinal[breakdownData[breakdownData.length - 1].datos.fecha.month], //el mes
+            periodo: mesesCardinal[breakdownData[0].datos.fecha.month], //el mes
             fechaLetra: `${moment(breakdownData[0].fecha_vencimiento).get('date')} de ${breakdownData[0].datos.fecha.month} del ${breakdownData[0].datos.fecha.year}.`,
           },
         };

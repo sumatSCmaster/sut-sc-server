@@ -2,6 +2,7 @@ import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import moment from 'moment';
 import { getUsers } from '@config/socket';
+import { mainLogger } from '@utils/logger';
 
 
 const pool = Pool.getInstance();
@@ -41,6 +42,7 @@ export const createFiscalization = async (user ,{typeDoc, doc, rim}) => {
 
         return { message: 'Fiscalizacion creada.', fiscalizacion: newFisc, status: 200 }
     } catch (err) {
+        mainLogger.error(err.message);
         throw err
     } finally {
         client.release()
