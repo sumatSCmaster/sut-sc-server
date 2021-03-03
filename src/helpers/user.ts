@@ -136,6 +136,7 @@ export const createAdmin = async (user: Payloads.CrearAdmin): Promise<Partial<Us
     };
     return usuario;
   } catch (e) {
+    mainLogger.error(`Error createAdmin ${e.message}`)
     client.query('ROLLBACK');
     throw errorMessageExtractor(e);
   } finally {
