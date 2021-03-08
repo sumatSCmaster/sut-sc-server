@@ -536,12 +536,15 @@ export const getProcedureCosts = async () => {
  * @returns Response payload with freshly created procedure
  */
 export const procedureInit = async (procedure, user: Usuario) => {
+  mainLogger.info(`procedureInit ${procedure.tipoTramite} usuario ${user.id}`)
   const client = await pool.connect();
   const { tipoTramite, datos, pago, bill } = procedure;
   let costo, respState, dir, cert, datosP, ordenanzas;
   try {
-    client.query('BEGIN');
+    mainLogger.info(`procedureInit begin`)
+    await client.query('BEGIN');
     datosP = !![29, 30, 31, 32, 33, 34, 35].find((el) => el === tipoTramite) ? { usuario: datos, funcionario: datos } : { usuario: datos };
+    mainLogger.info(`procedureInit datosP ${datosP}`)
     if (tipoTramite === 26) {
       const { tipoDocumento, documento, registroMunicipal } = datos.contribuyente;
       const hasActiveAgreement = (await client.query(queries.CONTRIBUTOR_HAS_ACTIVE_AGREEMENT_PROCEDURE, [tipoDocumento, documento, registroMunicipal])).rowCount > 0;
@@ -643,6 +646,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
   } catch (error) {
     client.query('ROLLBACK');
     mainLogger.error(error);
+    mainLogger.error(error.message)
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
