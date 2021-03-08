@@ -46,7 +46,7 @@ export const getAvailableProcedures = async (user): Promise<{ instanciasDeTramit
     mainLogger.info(`getAvailableProcedures: finished obtaining instances`);
     return { instanciasDeTramite, instanciasDeMulta, instanciasDeImpuestos, instanciasDeSoporte };
   } catch (error) {
-    mainLogger.error(error);
+    mainLogger.error(`get procedures error ${error.message}`);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
