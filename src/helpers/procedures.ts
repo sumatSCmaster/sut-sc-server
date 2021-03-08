@@ -625,6 +625,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
       aprobado: response.aprobado,
       bill: ordenanzas,
     };
+    mainLogger.info(`procedureinit notif`)
     await sendNotification(user, `Un trámite de tipo ${tramite.nombreTramiteLargo} ha sido creado`, 'CREATE_PROCEDURE', 'TRAMITE', tramite, client);
     client.query('COMMIT');
 

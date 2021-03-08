@@ -9,6 +9,7 @@ import { fulfill } from '@utils/resolver';
 import instances from './procedureInstances';
 import { createMockCertificate } from '@utils/forms';
 import { setTracingTag, getUserIdFromReq } from '@utils/tracing';
+import { mainLogger } from '@utils/logger';
 
 const router = Router();
 
@@ -40,6 +41,7 @@ router.patch('/:id', authenticate('jwt'), isOfficial, async (req, res) => {
 router.post('/init', validate(), checkResult, authenticate('jwt'), async (req: any, res) => {
   const { tramite } = req.body;
   const [error, data] = await fulfill(procedureInit(tramite, req.user));
+  mainLogger.error(`procedure/init error ${error?.message}`)
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
