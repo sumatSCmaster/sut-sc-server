@@ -40,6 +40,7 @@ router.patch('/:id', authenticate('jwt'), isOfficial, async (req, res) => {
 
 router.post('/init', validate(), checkResult, authenticate('jwt'), async (req: any, res) => {
   const { tramite } = req.body;
+  mainLogger.error(`procedure/init start`)
   const [error, data] = await fulfill(procedureInit(tramite, req.user));
   mainLogger.error(`procedure/init error ${error?.message}`)
   if (error) res.status(500).json(error);
