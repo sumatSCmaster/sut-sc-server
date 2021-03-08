@@ -60,7 +60,7 @@ block content
           div.td(style={ width: '50%' }).border-bottom.border-right
             p 
               b Nombre o Razon Social:
-              span &nbsp; #{datos.usuario.propietarios[0].nombre}
+              span &nbsp; #{datos.usuario.propietarios[0].razonSocial}
           div.td(style={ width: '50%' }).border-bottom
             p
               b Cédula o RIF:
@@ -92,14 +92,11 @@ block content
             b Dirección:
             span &nbsp; #{datos.usuario.ubicadoEn}
       div.tr            
-        div.td(style={ width: '50%' }).border-right
+        div.td(style={ width: '100%' }).border-right
           p
             b Parroquia:
             span &nbsp; #{datos.usuario.parroquia}
-        div.td(style={ width: '50%' })
-          p
-            b Tipo de inmueble:
-            span &nbsp; #{datos.usuario.tipoInmueble}
+    
     div#recaudos
       h3 REQUISITOS OBLIGATORIOS
       hr.divider
