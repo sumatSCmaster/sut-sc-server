@@ -158,7 +158,7 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
     }
     return esDaniel(user) ? res.filter((row) => ![27, 39, 40].includes(row.tipoTramite)) : res;
   } catch (error) {
-    mainLogger.error(errorMessageExtractor(error));
+    mainLogger.error(`procedure tramite instances ${error.message}`);
     throw new Error('Error al obtener instancias de tramite');
   }
 };
@@ -195,7 +195,7 @@ const getFineInstances = async (user, client: PoolClient) => {
       return multa;
     });
   } catch (error) {
-    mainLogger.error(errorMessageExtractor(error));
+    mainLogger.error(`Instancias de multa error ${error.message}`);
     throw new Error('Error al obtener instancias de multa');
   }
 };
@@ -232,7 +232,7 @@ const getSettlementInstances = async (user, client: PoolClient) => {
       return liquidacion;
     });
   } catch (error) {
-    mainLogger.error(errorMessageExtractor(error));
+    mainLogger.error(`Error instancias de liquidacion ${error.message}`);
     throw new Error('Error al obtener instancias de liquidacion');
   }
 };
