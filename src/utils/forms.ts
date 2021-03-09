@@ -33,7 +33,6 @@ export const createRequestForm = async (procedure, client: PoolClient): Promise<
 
 export const createCertificate = async (procedure, client: PoolClient): Promise<string> => {
   const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION, [procedure.idTramite])).rows[0];
-  mainLogger.info(inspect(tramite, true, 3)):
   const PETRO = (await client.query(queries.GET_PETRO_VALUE_FORMAT)).rows[0].valor;
   const costoFormateado = tramite?.costo ? new Intl.NumberFormat('de-DE').format(parseFloat(tramite?.costo)) : '0';
   const procedureData = {
