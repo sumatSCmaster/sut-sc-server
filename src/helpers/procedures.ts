@@ -753,7 +753,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
       procedure.sufijo = resources.sufijo;
     }
 
-    if (!!['pd', 'ompu', 'lic', 'lict'].find((el) => el === procedure.sufijo)) {
+    if (!!['pd', 'ompu', 'cr', 'lic', 'lict'].find((el) => el === procedure.sufijo)) {
       if (!bill) return { status: 400, message: 'Es necesario asignar un precio a un tramite postpago' };
       costo = bill.totalBs;
       ordenanzas = {
