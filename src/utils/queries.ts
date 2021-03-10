@@ -188,11 +188,34 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
       tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 ORDER BY ts.fechacreacion DESC FETCH FIRST 1000 ROWS ONLY;
 `,
   GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION:
-    "SELECT tramites_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
-    nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, \
-    tipo_tramite.pago_previo AS \"pagoPrevio\"  FROM tramites_state INNER JOIN tipo_tramite ON tramites_state.tipotramite = \
-    tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = \
-    tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 AND tramites_state.state IN ('enproceso', 'inspeccion', 'enrevision') ORDER BY tramites_state.fechacreacion DESC LIMIT 1000;",
+    `WITH tramite_cte as (
+      SELECT * FROM tramite WHERE  fecha_creacion > (NOW() - interval '3 months') AND id_tipo_tramite IN (SELECT id_tipo_tramite FROM tipo_tramite WHERE id_institucion = $1) ORDER BY fecha_creacion DESC FETCH FIRST 1000 ROWS ONLY
+    )
+    SELECT ts.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS 
+        nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, 
+        tipo_tramite.pago_previo AS "pagoPrevio" FROM (SELECT t.id_tramite AS id,
+        t.datos,
+        t.id_tipo_tramite AS tipotramite,
+        t.costo,
+        t.fecha_creacion AS fechacreacion,
+        t.codigo_tramite AS codigotramite,
+        t.id_usuario AS usuario,
+        t.url_planilla AS planilla,
+        t.url_certificado AS certificado,
+        ev.state,
+        t.aprobado,
+        t.fecha_culminacion AS fechaculminacion
+       FROM (SELECT * FROM tramite_cte) t
+         JOIN ( SELECT evento_tramite.id_tramite,
+                tramite_evento_fsm(evento_tramite.event ORDER BY evento_tramite.id_evento_tramite) AS state
+               FROM evento_tramite
+               WHERE id_tramite IN (select id_tramite from tramite_cte)
+              GROUP BY evento_tramite.id_tramite) ev ON t.id_tramite = ev.id_tramite)
+        ts 
+        
+        INNER JOIN tipo_tramite ON ts.tipotramite = 
+        tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = 
+        tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 AND tS.state IN ('enproceso', 'inspeccion', 'enrevision') ORDER BY ts.fechacreacion DESC FETCH FIRST 1000 ROWS ONLY;`,
   GET_ALL_PROCEDURES_EXCEPT_VALIDATING_ONES:
     'SELECT tramites_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
   nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, \
