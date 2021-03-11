@@ -876,6 +876,14 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
       await insertPaymentReference(pago, procedure.idTramite, client);
     }
 
+    if (pago && nextEvent.startsWith('finalizar')) {
+      pago.costo = resources.costo;
+      pago.concepto = 'TRAMITE';
+      pago.user = user.id;
+      const newPago = await insertPaymentReference(pago, procedure.idTramite, client);
+      await client.query('UDPATE pago SET aprobado = true, fecha_aprobacion = DEFAULT WHERE id_pago = $1', [newPago.rows[0].id_pago]);
+    }
+
     const respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, null, resources.costo || null, null]);
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
     const tramite: Partial<Tramite> = {
@@ -1601,6 +1609,7 @@ const procedureEvents = switchcase({
     enproceso: { true: 'aprobar_ompu', false: 'rechazar_ompu' },
     enrevision: { true: 'ingresardatos_ompu', false: 'rechazar_ompu' },
     ingresardatos: 'validar_ompu',
+    pagocajero: 'finalizar_ompu',
     validando: 'finalizar_ompu',
   },
   rc: { iniciado: 'procesar_rc', enproceso: { true: 'aprobar_rc', false: 'rechazar_rc' } },
@@ -1879,6 +1888,7 @@ const updateProcedure = switchcase({
   enrevision_gerente: reviseProcedure,
   enrevision: reviseProcedure,
   ingresardatos: addPaymentProcedure,
+  pagocajero: addPaymentProcedure,
   finalizado: null,
 })(null);
 
