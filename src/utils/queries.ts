@@ -217,7 +217,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
         
         INNER JOIN tipo_tramite ON ts.tipotramite = 
         tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = 
-        tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = ANY (SELECT cond from condq) AND tS.state IN ('enproceso', 'inspeccion', 'enrevision') ORDER BY ts.fechacreacion DESC FETCH FIRST 1000 ROWS ONLY;`,
+        tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = ANY (SELECT unnest(cond) from condq) AND tS.state IN ('enproceso', 'inspeccion', 'enrevision') ORDER BY ts.fechacreacion DESC FETCH FIRST 1000 ROWS ONLY;`,
   GET_ALL_PROCEDURES_EXCEPT_VALIDATING_ONES:
     'SELECT tramites_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
   nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, \
