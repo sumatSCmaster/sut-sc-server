@@ -188,11 +188,12 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
       tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 ORDER BY ts.fechacreacion DESC;
 `,
   GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION:
-    `WITH tramite_cte as (
-      SELECT * FROM tramite WHERE  fecha_creacion > (NOW() - interval '3 months') AND id_tipo_tramite IN (SELECT id_tipo_tramite FROM tipo_tramite WHERE id_institucion = $1) ORDER BY fecha_creacion DESC FETCH FIRST 1000 ROWS ONLY
-    ), condq AS (
+    `WITH condq AS (
       SELECT CASE WHEN $1 = 9 THEN '{3,9}'::int[] ELSE ARRAY[$1] END AS cond
-    )
+    ),
+    tramite_cte as (
+      SELECT * FROM tramite WHERE  fecha_creacion > (NOW() - interval '3 months') AND id_tipo_tramite IN (SELECT id_tipo_tramite FROM tipo_tramite WHERE id_institucion = ANY (SELECT unnest(cond) from condq) ) ORDER BY fecha_creacion DESC FETCH FIRST 1000 ROWS ONLY
+    ) 
     SELECT ts.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS 
         nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, 
         tipo_tramite.pago_previo AS "pagoPrevio" FROM (SELECT t.id_tramite AS id,
