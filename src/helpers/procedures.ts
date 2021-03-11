@@ -881,7 +881,7 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
       pago.concepto = 'TRAMITE';
       pago.user = user.id;
       const newPago = await insertPaymentReference(pago, procedure.idTramite, client);
-      await client.query('UDPATE pago SET aprobado = true, fecha_aprobacion = DEFAULT WHERE id_pago = $1', [newPago.rows[0].id_pago]);
+      await client.query('UPDATE pago SET aprobado = true, fecha_aprobacion = DEFAULT WHERE id_pago = $1', [newPago.rows[0].id_pago]);
     }
 
     const respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, null, resources.costo || null, null]);
