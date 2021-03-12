@@ -79,7 +79,7 @@ export const validateVehicle = async (placa: string) => {
     const multasVehiculo = await client.query(queries.APPROVED_FINING_BY_VEHICLE_PLATE, [placa])
     const vehiculoSolvente = await client.query(queries.IS_VEHICLE_UP_TO_DATE, [placa])
     
-    return { fines: multasVehiculo.rowCount > 0, solvent: vehiculoSolvente.rows[0].solvent, status: 200 }
+    return { fines: multasVehiculo.rowCount > 0, solvent: vehiculoSolvente.rows[0].solvente, status: 200 }
   } catch (e) {
     throw {
       status: 500,
