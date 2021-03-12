@@ -3263,7 +3263,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   WHERE id_usuario = $1
   ORDER BY v.id_vehiculo`,
   CHECK_VEHICLE_EXISTS_FOR_USER: `SELECT 1 FROM impuesto.vehiculo WHERE id_usuario = $1 AND placa_vehiculo = $2`,
-  CHECK_VEHICLE_EXISTS: `SELECT 1 FROM impuesto.vehiculo WHERE id_usuario = $1 AND LOWER(placa_vehiculo) = LOWER($1)`,
+  CHECK_VEHICLE_EXISTS: `SELECT 1 FROM impuesto.vehiculo WHERE LOWER(placa_vehiculo) = LOWER($1)`,
   
   UPDATE_VEHICLE_PAYMENT_DATE: `UPDATE impuesto.vehiculo SET fecha_ultima_actualizacion = DEFAULT WHERE id_vehiculo = $1`,
   GET_VEHICLE_SUBCATEGORY_BY_ID: `SELECT descripcion FROM impuesto.subcategoria_vehiculo WHERE id_subcategoria_vehiculo = $1`,
@@ -3329,7 +3329,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   `,
   // Validatedoc
   APPROVED_FINING_BY_DOC: `SELECT * FROM multa WHERE nacionalidad = $1 AND cedula = $2 AND aprobado = false;`,
-  APPROVED_FINING_BY_VEHICLE_PLATE: `SELECT * FROM multa WHERE LOWER(datos->>'placa') = LOWER($1)  AND aprobado = false;`,
+  APPROVED_FINING_BY_VEHICLE_PLATE: `SELECT * FROM multa WHERE LOWER(CASE WHEN datos->>'placa' IS NOT NULL THEN datos->>'placa' ELSE 'N/A' END) = LOWER($1)  AND aprobado = false;`,
   IS_VEHICLE_UP_TO_DATE: `SELECT CASE 
                                   WHEN cv.id_tipo_vehiculo = 1 
                                   THEN EXTRACT('year' FROM fecha_ultima_actualizacion) = EXTRACT('year' FROM current_timestamp) 
