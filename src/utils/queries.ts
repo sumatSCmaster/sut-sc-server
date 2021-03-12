@@ -3329,7 +3329,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   `,
   // Validatedoc
   APPROVED_FINING_BY_DOC: `SELECT * FROM multa WHERE nacionalidad = $1 AND cedula = $2 AND aprobado = false;`,
-  APPROVED_FINING_BY_VEHICLE_PLATE: `SELECT * FROM multa WHERE LOWER(CASE WHEN datos->>'placa' IS NOT NULL THEN datos->>'placa' ELSE 'N/A' END) = LOWER($1)  AND aprobado = false;`,
+  APPROVED_FINING_BY_VEHICLE_PLATE: `SELECT * FROM multa WHERE LOWER(CASE WHEN datos#>>'{funcionario, placa}' IS NOT NULL THEN datos#>>'{funcionario, placa}' ELSE 'N/A' END) = LOWER($1)  AND aprobado = false;`,
   IS_VEHICLE_UP_TO_DATE: `SELECT CASE 
                                   WHEN cv.id_tipo_vehiculo = 1 
                                   THEN EXTRACT('year' FROM fecha_ultima_actualizacion) = EXTRACT('year' FROM current_timestamp) 

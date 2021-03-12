@@ -73,13 +73,14 @@ export const validateSedematById = async (id: string) => {
 export const validateVehicle = async (placa: string) => {
   const client = await pool.connect();
   try {
+    let notExists = false;
     if((await client.query(queries.CHECK_VEHICLE_EXISTS, [placa])).rowCount === 0){
-      throw new Error('Placa no encontrada');
+      notExists = true;
     }
     const multasVehiculo = await client.query(queries.APPROVED_FINING_BY_VEHICLE_PLATE, [placa])
     const vehiculoSolvente = await client.query(queries.IS_VEHICLE_UP_TO_DATE, [placa])
     
-    return { fines: multasVehiculo.rowCount > 0, solvent: vehiculoSolvente.rows[0].solvente, status: 200 }
+    return { fines: multasVehiculo.rowCount > 0, solvent: notExists ? false : vehiculoSolvente.rows[0].solvente, status: 200 }
   } catch (e) {
     throw {
       status: 500,
