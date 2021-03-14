@@ -640,14 +640,56 @@ export const listTaxPayments = async () => {
         WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' AND p.concepto IN ('IMPUESTO', 'RETENCION') ORDER BY id_procedimiento, id_pago;
     `);
     let convDataPromise = client.query(`
-    SELECT s.id, s.fecha, fs.state, c.documento, c.tipo_documento AS "tipoDocumento", s."tipoSolicitud", fs.idconvenio, p.id_pago, p.referencia, p.monto, p.fecha_de_pago, b.id_banco, p.aprobado
-    FROM impuesto.solicitud_state s
+    
+WITH solicitud_cte AS (
+  SELECT s.id_solicitud, id_usuario, aprobado, fecha, fecha_aprobado, id_tipo_tramite, id_contribuyente, tipo_Solicitud, id_solicitud_original
+  FROM impuesto.solicitud s WHERE aprobado = false AND s.tipo_solicitud = 'CONVENIO'
+), eventos_cte AS (
+  SELECT id_evento_solicitud, id_solicitud, event FROM impuesto.evento_solicitud WHERE id_solicitud IN (SELECT id_solicitud FROM solicitud_cte)
+), fraccion_cte AS (
+  SELECT f.id_fraccion,
+    f.id_convenio,
+    f.monto,
+    f.fecha
+    FROM impuesto.fraccion f 
+), eventos_fraccion_cte AS (
+  SELECT id_evento_fraccion, id_fraccion, event FROM impuesto.evento_fraccion WHERE id_fraccion IN (SELECT id_fraccion FROM fraccion_cte)
+)
+SELECT s.id, s.fecha, fs.state, c.documento, c.tipo_documento AS "tipoDocumento", s."tipoSolicitud", fs.idconvenio, p.id_pago, p.referencia, p.monto, p.fecha_de_pago, b.id_banco, p.aprobado
+    FROM 
+    (
+        SELECT s.id_solicitud as id, 
+          id_tipo_tramite as tipotramite,
+          aprobado, 
+          fecha, 
+          fecha_aprobado AS "fechaAprobacion",  
+          impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state,
+          tipo_Solicitud AS "tipoSolicitud", 
+          id_contribuyente
+        
+        FROM solicitud_cte s
+        INNER JOIN eventos_cte es ON es.id_solicitud = s.id_solicitud
+        GROUP BY s.id_solicitud, id_usuario, aprobado, fecha, fecha_aprobado, id_tipo_tramite, id_contribuyente, tipo_Solicitud, id_solicitud_original
+
+    ) s
     INNER JOIN impuesto.convenio conv ON conv.id_solicitud = s.id
-    INNER JOIN impuesto.fraccion_state fs ON fs.idconvenio = conv.id_convenio
+    INNER JOIN (
+
+
+      SELECT f.id_fraccion AS id,
+    f.id_convenio AS idconvenio,
+    f.monto,
+    f.fecha,
+    impuesto.fraccion_fsm(ec.event::text ORDER BY ec.id_evento_fraccion) AS state
+   FROM fraccion_cte f
+   INNER JOIN eventos_fraccion_cte ec ON f.id_fraccion = ec.id_fraccion 
+    GROUP BY f.id_fraccion ,f.id_convenio, f.monto, F.fecha
+
+    ) fs ON fs.idconvenio = conv.id_convenio
     INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente
     INNER JOIN pago p ON p.id_procedimiento = fs.id
     INNER JOIN banco b ON b.id_banco = p.id_banco
-    WHERE s."tipoSolicitud" = 'CONVENIO' AND fs.state = 'validando' AND p.concepto = 'CONVENIO' ORDER BY id_procedimiento, id_pago;
+    WHERE fs.state = 'validando' AND p.concepto = 'CONVENIO' ORDER BY id_procedimiento, id_pago;
     `);
 
     let montosSolicitudPromise = client.query(`
