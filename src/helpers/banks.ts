@@ -693,26 +693,30 @@ SELECT s.id, s.fecha, fs.state, c.documento, c.tipo_documento AS "tipoDocumento"
     `);
 
     let montosSolicitudPromise = client.query(`
-    SELECT l.id_solicitud, SUM(monto) as monto
-    FROM (
-      SELECT s.id_solicitud AS id,
-    s.id_tipo_tramite AS tipotramite,
-    s.aprobado,
-    s.fecha,
-    s.fecha_aprobado AS "fechaAprobacion",
-    ev.state,
-    s.tipo_solicitud AS "tipoSolicitud",
-    s.id_contribuyente
-   FROM impuesto.solicitud s
-     JOIN ( SELECT es.id_solicitud,
-            impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
-           FROM impuesto.evento_solicitud es
-           INNER JOIN (SELECT id_solicitud FROM impuesto.solicitud WHERE aprobado = false) s ON s.id_solicitud = es.id_solicitud
-          GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
-    ) s  
-    INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
-    WHERE s.state = 'validando' OR s.state = 'ingresardatos'
-    GROUP BY l.id_solicitud;`);
+    WITH solicitud_cte AS (
+      SELECT s.id_solicitud, id_usuario, aprobado, fecha, fecha_aprobado, id_tipo_tramite, id_contribuyente, tipo_Solicitud, id_solicitud_original
+      FROM impuesto.solicitud s WHERE aprobado = false
+    ), eventos_cte AS (
+      SELECT id_evento_solicitud, id_solicitud, event FROM impuesto.evento_solicitud WHERE id_solicitud IN (SELECT id_solicitud FROM solicitud_cte)
+    )
+     SELECT l.id_solicitud, SUM(monto) as monto
+        FROM (
+          SELECT s.id_solicitud as id, 
+              id_tipo_tramite as tipotramite,
+              aprobado, 
+              fecha, 
+              fecha_aprobado AS "fechaAprobacion",  
+              impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state,
+              tipo_Solicitud AS "tipoSolicitud", 
+              id_contribuyente
+            
+            FROM solicitud_cte s
+            INNER JOIN eventos_cte es ON es.id_solicitud = s.id_solicitud
+            GROUP BY s.id_solicitud, id_usuario, aprobado, fecha, fecha_aprobado, id_tipo_tramite, id_contribuyente, tipo_Solicitud, id_solicitud_original
+        ) s  
+        INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
+        WHERE s.state = 'validando' OR s.state = 'ingresardatos'
+        GROUP BY l.id_solicitud;`);
     let montosConvenioPromise = client.query(`
     WITH solicitud_cte AS (
       SELECT id_solicitud FROM impuesto.solicitud WHERE aprobado = false AND tipo_solicitud = 'CONVENIO'
