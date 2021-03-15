@@ -1,0 +1,14 @@
+multa IU
+fijarse en create special settlements
+
+cedula
+multa aprobado con cedula
+cambiar complete_multa_state con fecha_aprobacion
+
+placa
+multas por placa en la tabla de multas
+
+con placa buscar el vehiculo como tal para año/trimestre/loquesea
+por fecha_de_actualizacion
+tipo vehiculo 1 es por mes
+tipo vehiculo 2 es por año

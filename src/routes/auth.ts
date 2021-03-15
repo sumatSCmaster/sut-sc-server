@@ -11,6 +11,7 @@ import { isSuperuser, isAdmin } from '@middlewares/auth';
 import { fulfill } from '@utils/resolver';
 import { errorMessageGenerator, errorMessageExtractor } from '@helpers/errors';
 import { forgotPassword, recoverPassword, getUserData } from '@helpers/auth';
+import { mainLogger } from '@utils/logger';
 
 const router = Router();
 
@@ -68,6 +69,7 @@ router.post('/createAdmin', authenticate('jwt'), isSuperuser, authValidations.cr
     const salt = genSaltSync(10);
     req.body.usuario.password = hashSync(req.body.usuario.password, salt);
     const user = await createAdmin({ ...req.body.usuario }).catch((e) => {
+      mainLogger.error(`Error ${e.message}`)
       res.status(500).json({
         status: 500,
         error: errorMessageExtractor(e),
@@ -82,6 +84,7 @@ router.post('/createAdmin', authenticate('jwt'), isSuperuser, authValidations.cr
       });
     }
   } catch (e) {
+    mainLogger.error(`Error ${e.message}`)
     res.status(500).json({
       status: 500,
       error: errorMessageExtractor(e),

@@ -159,7 +159,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
   GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID: `
   WITH tramite_cte as (
-    SELECT * FROM tramite WHERE  fecha_creacion > (NOW() - interval '3 months') AND id_tipo_tramite IN (SELECT id_tipo_tramite FROM tipo_tramite WHERE id_institucion = $1) AND id_tipo_tramite NOT IN (27, 29, 30, 31, 32, 33, 34, 35, 39, 40) ORDER BY fecha_creacion DESC FETCH FIRST 1000 ROWS ONLY
+    SELECT * FROM tramite WHERE  fecha_creacion > (NOW() - interval '3 months') AND id_tipo_tramite IN (SELECT id_tipo_tramite FROM tipo_tramite WHERE id_institucion = $1) AND id_tipo_tramite NOT IN (27, 29, 30, 31, 32, 33, 34, 35, 39, 40) ORDER BY fecha_creacion DESC FETCH FIRST 2000 ROWS ONLY
   )
   SELECT ts.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS 
       nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, 
@@ -185,14 +185,42 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
       
       INNER JOIN tipo_tramite ON ts.tipotramite = 
       tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = 
-      tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 ORDER BY ts.fechacreacion DESC FETCH FIRST 1000 ROWS ONLY;
+      tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 ORDER BY ts.fechacreacion DESC;
 `,
   GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION:
-    "SELECT tramites_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
-    nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, \
-    tipo_tramite.pago_previo AS \"pagoPrevio\"  FROM tramites_state INNER JOIN tipo_tramite ON tramites_state.tipotramite = \
-    tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = \
-    tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 AND tramites_state.state IN ('enproceso', 'inspeccion', 'enrevision') ORDER BY tramites_state.fechacreacion DESC LIMIT 2500;",
+    `WITH condq AS (
+      SELECT CASE WHEN $1 = 9 THEN '{3,9}'::int[] ELSE ARRAY[$1] END AS cond
+    ),
+    tramite_cte as (
+      SELECT * FROM tramite WHERE  fecha_creacion > (NOW() - interval '3 months') 
+      AND id_tipo_tramite IN (SELECT id_tipo_tramite FROM tipo_tramite WHERE id_institucion = ANY (SELECT unnest(cond) from condq) ) 
+      ORDER BY fecha_creacion DESC FETCH FIRST 2500 ROWS ONLY
+    ) 
+    SELECT ts.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS 
+        nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, 
+        tipo_tramite.pago_previo AS "pagoPrevio" FROM (SELECT t.id_tramite AS id,
+        t.datos,
+        t.id_tipo_tramite AS tipotramite,
+        t.costo,
+        t.fecha_creacion AS fechacreacion,
+        t.codigo_tramite AS codigotramite,
+        t.id_usuario AS usuario,
+        t.url_planilla AS planilla,
+        t.url_certificado AS certificado,
+        ev.state,
+        t.aprobado,
+        t.fecha_culminacion AS fechaculminacion
+       FROM (SELECT * FROM tramite_cte) t
+         JOIN ( SELECT evento_tramite.id_tramite,
+                tramite_evento_fsm(evento_tramite.event ORDER BY evento_tramite.id_evento_tramite) AS state
+               FROM evento_tramite
+               WHERE id_tramite IN (select id_tramite from tramite_cte)
+              GROUP BY evento_tramite.id_tramite) ev ON t.id_tramite = ev.id_tramite)
+        ts 
+        
+        INNER JOIN tipo_tramite ON ts.tipotramite = 
+        tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = 
+        tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = ANY (SELECT unnest(cond) from condq) AND tS.state IN ('enproceso', 'inspeccion', 'enrevision', 'pagocajero') ORDER BY ts.fechacreacion DESC FETCH FIRST 2500 ROWS ONLY;`,
   GET_ALL_PROCEDURES_EXCEPT_VALIDATING_ONES:
     'SELECT tramites_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
   nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, \
@@ -3235,6 +3263,8 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   WHERE id_usuario = $1
   ORDER BY v.id_vehiculo`,
   CHECK_VEHICLE_EXISTS_FOR_USER: `SELECT 1 FROM impuesto.vehiculo WHERE id_usuario = $1 AND placa_vehiculo = $2`,
+  CHECK_VEHICLE_EXISTS: `SELECT 1 FROM impuesto.vehiculo WHERE LOWER(placa_vehiculo) = LOWER($1)`,
+  
   UPDATE_VEHICLE_PAYMENT_DATE: `UPDATE impuesto.vehiculo SET fecha_ultima_actualizacion = DEFAULT WHERE id_vehiculo = $1`,
   GET_VEHICLE_SUBCATEGORY_BY_ID: `SELECT descripcion FROM impuesto.subcategoria_vehiculo WHERE id_subcategoria_vehiculo = $1`,
   GET_VEHICLE_BRAND_BY_ID: `SELECT nombre AS descripcion FROM impuesto.marca_vehiculo WHERE id_marca_vehiculo = $1`,
@@ -3297,6 +3327,21 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   DELETE_CONDO_OWNER: `
       DELETE FROM impuesto.condominio_propietario WHERE id_condominio = $1 AND id_contribuyente = $2;
   `,
+  // Validatedoc
+  APPROVED_FINING_BY_DOC: `SELECT * FROM multa WHERE nacionalidad = $1 AND cedula = $2 AND aprobado = false;`,
+  APPROVED_FINING_BY_VEHICLE_PLATE: `SELECT * FROM multa WHERE LOWER(CASE WHEN datos#>>'{funcionario, placa}' IS NOT NULL THEN datos#>>'{funcionario, placa}' ELSE 'N/A' END) = LOWER($1)  AND aprobado = false;`,
+  IS_VEHICLE_UP_TO_DATE: `SELECT CASE 
+                                  WHEN cv.id_tipo_vehiculo = 1 
+                                  THEN EXTRACT('year' FROM fecha_ultima_actualizacion) = EXTRACT('year' FROM current_timestamp) 
+                                      AND EXTRACT('month' FROM fecha_ultima_actualizacion) = EXTRACT('month' FROM current_timestamp)
+                                  WHEN cv.id_tipo_vehiculo = 2
+                                  THEN EXTRACT('year' FROM fecha_ultima_actualizacion) = EXTRACT('year' FROM current_timestamp) 
+                                  END
+                                  AS solvente
+                          FROM impuesto.vehiculo v
+                          INNER JOIN impuesto.subcategoria_vehiculo scv ON scv.id_subcategoria_vehiculo = v.id_subcategoria_vehiculo
+                          INNER JOIN impuesto.categoria_vehiculo cv ON cv.id_categoria_vehiculo = scv.id_categoria_vehiculo
+                          WHERE LOWER(placa_vehiculo) = LOWER($1)`,
   gtic: {
     GET_NATURAL_CONTRIBUTOR:
       'SELECT * FROM tb004_contribuyente c INNER JOIN tb002_tipo_contribuyente tc ON tc.co_tipo = c.co_tipo WHERE nu_cedula = $1 AND tx_tp_doc = $2 AND (trim(nb_representante_legal) NOT IN (SELECT trim(nb_marca) FROM tb014_marca_veh) AND trim(nb_representante_legal) NOT IN (SELECT trim(tx_marca) FROM t45_vehiculo_marca) OR trim(nb_representante_legal) IS NULL) ORDER BY co_contribuyente DESC',

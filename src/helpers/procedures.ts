@@ -46,7 +46,7 @@ export const getAvailableProcedures = async (user): Promise<{ instanciasDeTramit
     mainLogger.info(`getAvailableProcedures: finished obtaining instances`);
     return { instanciasDeTramite, instanciasDeMulta, instanciasDeImpuestos, instanciasDeSoporte };
   } catch (error) {
-    mainLogger.error(error);
+    mainLogger.error(`get procedures error ${error.message}`);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -158,7 +158,7 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
     }
     return esDaniel(user) ? res.filter((row) => ![27, 39, 40].includes(row.tipoTramite)) : res;
   } catch (error) {
-    mainLogger.error(errorMessageExtractor(error));
+    mainLogger.error(`procedure tramite instances ${error.message}`);
     throw new Error('Error al obtener instancias de tramite');
   }
 };
@@ -195,7 +195,7 @@ const getFineInstances = async (user, client: PoolClient) => {
       return multa;
     });
   } catch (error) {
-    mainLogger.error(errorMessageExtractor(error));
+    mainLogger.error(`Instancias de multa error ${error.message}`);
     throw new Error('Error al obtener instancias de multa');
   }
 };
@@ -232,7 +232,7 @@ const getSettlementInstances = async (user, client: PoolClient) => {
       return liquidacion;
     });
   } catch (error) {
-    mainLogger.error(errorMessageExtractor(error));
+    mainLogger.error(`Error instancias de liquidacion ${error.message}`);
     throw new Error('Error al obtener instancias de liquidacion');
   }
 };
@@ -504,7 +504,7 @@ export const getProcedureById = async ({ id, client }: { id: number; client: Poo
  */
 const isNotPrepaidProcedure = ({ suffix, user }: { suffix: string; user: Usuario }) => {
   const condition = false;
-  if ((suffix === 'tl' && user.tipoUsuario !== 4) || !!['pd', 'ompu', 'rc', 'bc', 'lic', 'lict', 'sup'].find((el) => el === suffix)) return !condition;
+  if ((suffix === 'tl' && user.tipoUsuario !== 4) || !!['pd', 'ompu', 'rc', 'bc', 'lic', 'lict', 'sup', 'cr'].find((el) => el === suffix)) return !condition;
   return condition;
 };
 
@@ -536,12 +536,15 @@ export const getProcedureCosts = async () => {
  * @returns Response payload with freshly created procedure
  */
 export const procedureInit = async (procedure, user: Usuario) => {
+  mainLogger.info(`procedureInit ${procedure.tipoTramite} usuario ${user.id}`)
   const client = await pool.connect();
   const { tipoTramite, datos, pago, bill } = procedure;
   let costo, respState, dir, cert, datosP, ordenanzas;
   try {
-    client.query('BEGIN');
+    mainLogger.info(`procedureInit begin`)
+    await client.query('BEGIN');
     datosP = !![29, 30, 31, 32, 33, 34, 35].find((el) => el === tipoTramite) ? { usuario: datos, funcionario: datos } : { usuario: datos };
+    mainLogger.info(`procedureInit datosP ${datosP}`)
     if (tipoTramite === 26) {
       const { tipoDocumento, documento, registroMunicipal } = datos.contribuyente;
       const hasActiveAgreement = (await client.query(queries.CONTRIBUTOR_HAS_ACTIVE_AGREEMENT_PROCEDURE, [tipoDocumento, documento, registroMunicipal])).rowCount > 0;
@@ -622,6 +625,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
       aprobado: response.aprobado,
       bill: ordenanzas,
     };
+    mainLogger.info(`procedureinit notif`)
     await sendNotification(user, `Un trámite de tipo ${tramite.nombreTramiteLargo} ha sido creado`, 'CREATE_PROCEDURE', 'TRAMITE', tramite, client);
     client.query('COMMIT');
 
@@ -643,6 +647,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
   } catch (error) {
     client.query('ROLLBACK');
     mainLogger.error(error);
+    mainLogger.error(error.message)
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
@@ -748,7 +753,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
       procedure.sufijo = resources.sufijo;
     }
 
-    if (!!['pd', 'ompu', 'lic', 'lict'].find((el) => el === procedure.sufijo)) {
+    if (!!['pd', 'ompu', 'cr', 'lic', 'lict'].find((el) => el === procedure.sufijo)) {
       if (!bill) return { status: 400, message: 'Es necesario asignar un precio a un tramite postpago' };
       costo = bill.totalBs;
       ordenanzas = {
@@ -869,6 +874,14 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
       pago.concepto = 'TRAMITE';
       pago.user = user.id;
       await insertPaymentReference(pago, procedure.idTramite, client);
+    }
+
+    if (pago && nextEvent.startsWith('finalizar')) {
+      pago.costo = resources.costo;
+      pago.concepto = 'TRAMITE';
+      pago.user = user.id;
+      const newPago = await insertPaymentReference(pago, procedure.idTramite, client);
+      await client.query('UPDATE pago SET aprobado = true, fecha_de_aprobacion = DEFAULT WHERE id_pago = $1', [newPago.rows[0].id_pago]);
     }
 
     const respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, null, resources.costo || null, null]);
@@ -1581,7 +1594,13 @@ const getNextEventForProcedure = async (procedure, client): Promise<any> => {
 const procedureEvents = switchcase({
   pa: { iniciado: 'validar_pa', validando: 'enproceso_pa', enproceso: 'finalizar_pa' },
   pd: { iniciado: 'enproceso_pd', enproceso: 'ingresardatos_pd', ingresardatos: 'validar_pd', validando: 'finalizar_pd' },
-  cr: { iniciado: 'validar_cr', validando: 'enproceso_cr', enproceso: 'revisar_cr', enrevision: { true: 'finalizar_cr', false: 'rechazar_cr' } },
+  // cr: { iniciado: 'validar_cr', validando: 'enproceso_cr', enproceso: 'revisar_cr', enrevision: { true: 'finalizar_cr', false: 'rechazar_cr' } },
+  cr: { 
+    iniciado: 'enproceso_cr',  
+    enproceso: 'revisar_cr', 
+    enrevision: { true: 'pagocajero_cr', false: 'rechazar_cr' }, 
+    pagocajero: 'finalizar_cr',
+  },
   tl: { iniciado: { true: 'validar_tl', false: 'finalizar_tl' }, validando: 'finalizar_tl' },
   veh: { iniciado: 'validar_veh', validando: 'finalizar_veh' },
   ompu: {
@@ -1867,6 +1886,7 @@ const updateProcedure = switchcase({
   enrevision_gerente: reviseProcedure,
   enrevision: reviseProcedure,
   ingresardatos: addPaymentProcedure,
+  pagocajero: addPaymentProcedure,
   finalizado: null,
 })(null);
 

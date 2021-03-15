@@ -69,3 +69,41 @@ export const validateSedematById = async (id: string) => {
     client.release();
   }
 }
+
+export const validateVehicle = async (placa: string) => {
+  const client = await pool.connect();
+  try {
+    let notExists = false;
+    if((await client.query(queries.CHECK_VEHICLE_EXISTS, [placa])).rowCount === 0){
+      notExists = true;
+    }
+    const multasVehiculo = await client.query(queries.APPROVED_FINING_BY_VEHICLE_PLATE, [placa])
+    const vehiculoSolvente = await client.query(queries.IS_VEHICLE_UP_TO_DATE, [placa])
+    
+    return { fines: multasVehiculo.rowCount > 0, solvent: notExists ? false : vehiculoSolvente.rows[0].solvente, status: 200 }
+  } catch (e) {
+    throw {
+      status: 500,
+      error: errorMessageExtractor(e),
+      message: e.message || 'Error al obtener informacion de validacion',
+    };
+  } finally {
+    client.release();
+  }
+}
+
+export const validatePerson = async (tipo_documento:string, documento: string) => {
+  const client = await pool.connect();
+  try {
+    const multasUsuario = await client.query(queries.APPROVED_FINING_BY_DOC, [tipo_documento, documento]);
+    return { fines: multasUsuario.rowCount > 0, status: 200 };
+  } catch (e) {
+    throw {
+      status: 500,
+      error: errorMessageExtractor(e),
+      message: errorMessageGenerator(e) || 'Error al obtener informacion de validacion',
+    };
+  } finally {
+    client.release();
+  }
+}

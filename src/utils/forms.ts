@@ -9,6 +9,7 @@ import * as qr from 'qrcode';
 import { errorMessageGenerator, errorMessageExtractor } from '@helpers/errors';
 import { getAllBanks } from '@helpers/banks';
 import { mainLogger } from './logger';
+import { inspect } from 'util'
 const written = require('written-number');
 
 const pool = Pool.getInstance();

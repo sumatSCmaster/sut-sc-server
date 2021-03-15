@@ -3,6 +3,7 @@ import { fulfill } from '@utils/resolver';
 import { getFieldsForValidations } from '@helpers/procedures';
 import { IDsTipoUsuario as userTypes } from '@interfaces/sigt';
 import { Pool } from 'pg';
+import { mainLogger } from '@utils/logger';
 
 const estimacionSimple = [
   check('tramite.datos.estimacionSimple').exists().withMessage('Debe incluir la estimacion simple'),
@@ -276,12 +277,15 @@ export const validate = () => {
   return async (req, res, next) => {
     if (req.body.tramite.hasOwnProperty('aprobado') && !req.body.tramite.aprobado) return next();
     const validaciones = await isValidProcedure(req, res);
+    mainLogger.info(`validate validaciones ${validaciones} ${validaciones.length}`)
     await Promise.all(validaciones.map((validation) => validation.run(req)));
+    mainLogger.info(`validate calling next`)
     next();
   };
 };
 const isValidProcedure = async (req, res) => {
   const [error, data] = await fulfill(getFieldsForValidations({ id: req.body.tramite.idTramite, type: req.body.tramite.tipoTramite }));
+  mainLogger.info(`isvalidprocedure ${error?.message}`)
   if (error) res.status(error.status).json(error);
   if (data) {
     const arr = data.fields.map((el) => validations[el.validacion]);
