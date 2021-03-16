@@ -190,8 +190,8 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
       compens.ingresadoTotal = compens.subRamo.reduce((prev, next) => prev + +next.ingresado, 0);
       compens.cantidadIngTotal = compens.subRamo.reduce((prev, next) => prev + +next.cantidadIng, 0);
       branches = branches.concat(compens);
-      mainLogger.info('Branches');
-      mainLogger.info(inspect(branches));
+      //mainLogger.info('Branches');
+      //mainLogger.info(inspect(branches));
       if (!alcaldia) {
         const transfersByBank = (await client.query(queries.GET_TRANSFERS_BY_BANK, [payload.from, payload.to, payload.from, payload.to, payload.from, payload.to, payload.from, payload.to, payload.from, payload.to])).rows;
 

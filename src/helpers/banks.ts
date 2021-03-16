@@ -892,7 +892,7 @@ export const addPayment = async ({ id, fechaDePago, referencia, monto, banco }) 
     );
     return { status: 200, data: res.rows };
   } catch (e) {
-    mainLogger.info(e);
+    mainLogger.error(`${e.message}`);
     throw e;
   } finally {
     client.release();

@@ -59,13 +59,14 @@ export const createCondominium = async ({ type_doc, doc }) => {
   const client = await pool.connect();
   mainLogger.info(`createCondominium - type_doc ${type_doc} doc ${doc}`);
   try {
-    client.query('BEGIN');
+    await client.query('BEGIN');
     const result = await client.query(queries.CREATE_CONDOMINIUM, [type_doc, doc]);
     const [condo] = (await client.query(queries.GET_CONDOMINIUM, [result.rows[0].id_condominio])).rows;
-    client.query('COMMIT');
+    await client.query('COMMIT');
     return condo;
   } catch (error) {
     client.query('ROLLBACK');
+    mainLogger.error(`createCondominium - ${error.message}`)
     throw {
       error: error.message,
       message: `Error al agregar el condominio`,
@@ -78,14 +79,14 @@ export const createCondominium = async ({ type_doc, doc }) => {
 export const addOwner = async ({ condo_id, type_doc, doc }) => {
   const client = await pool.connect();
   try {
-    client.query('BEGIN');
+    await client.query('BEGIN');
     const result = await client.query(queries.ADD_CONDO_OWNER, [type_doc, doc, condo_id]);
 
-    client.query('COMMIT');
+    await client.query('COMMIT');
     return await getCondominium(condo_id);
   } catch (error) {
     client.query('ROLLBACK');
-    mainLogger.error(error);
+    mainLogger.error(`createCondominium - ${error.message}`);
     throw {
       error: error,
       message: error.message,
