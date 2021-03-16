@@ -997,14 +997,14 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       if (procedure.hasOwnProperty('rebotado')) {
         respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent['rebotar'], datos || null, null, null]);
       } else {
-        if (aprobado && nextEvent[aprobado].startsWith('aprobar')) {
+        // if (aprobado && nextEvent[aprobado].startsWith('aprobar')) {
           datos = !![29, 30, 31, 32].find((el) => el === resources.tipoTramite) ? await installLiquorLicense(datos, client) : await renewLiquorLicense(datos, client);
           procedure.datos = datos;
           dir = await createCertificate(procedure, client);
           respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, dir, null]);
-        } else {
-          respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
-        }
+        // } else {
+        //   respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
+        // }
       }
     } else {
       if (aprobado) {
