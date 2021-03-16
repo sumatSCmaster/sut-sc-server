@@ -916,6 +916,7 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
     return { status: 200, message: 'Datos de pago de trámite añadidos', tramite };
   } catch (error) {
     client.query('ROLLBACK');
+    mainLogger.error(error.message)
     throw {
       status: 500,
       error: errorMessageExtractor(error),
