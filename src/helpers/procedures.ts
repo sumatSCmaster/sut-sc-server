@@ -997,18 +997,12 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       if (procedure.hasOwnProperty('rebotado')) {
         respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent['rebotar'], datos || null, null, null]);
       } else {
-        mainLogger.info('aprobado---------->');
-        mainLogger.info(aprobado);
-        mainLogger.info('nextEvent--------->');
-        mainLogger.info(nextEvent[aprobado]);
         if (aprobado && nextEvent[aprobado].startsWith('aprobar')) {
-          mainLogger.info('Entro en aprobaaaar');
           datos = !![29, 30, 31, 32].find((el) => el === resources.tipoTramite) ? await installLiquorLicense(datos, client) : await renewLiquorLicense(datos, client);
           procedure.datos = datos;
           dir = await createCertificate(procedure, client);
           respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, dir, null]);
         } else {
-          mainLogger.info('Entro en rechazar');
           respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
         }
       }

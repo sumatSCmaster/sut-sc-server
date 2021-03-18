@@ -112,9 +112,8 @@ export const createMockCertificate = async (procedure) => {
       certificado: tramite.sufijo === 'ompu' ? (tramite.aprobado ? tramite.formatocertificado : tramite.formatorechazo) : tramite.formatocertificado,
       bancos: (await getAllBanks()).banks,
     };
-    mainLogger.info('datos:', datosCertificado.datos, 'datos.funcionario:', datosCertificado.datos.funcionario);
+    mainLogger.info('<-----------datos certificado----------->:',datosCertificado);
 
-    mainLogger.info('--------------->', datosCertificado.bancos);
     const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
       ...datosCertificado,
       cache: false,
