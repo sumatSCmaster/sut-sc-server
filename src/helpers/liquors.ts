@@ -90,7 +90,7 @@ export const renewLiquorLicense = async (data, client: PoolClient) => {
     const { tipoTramite } = data;
     const license = (
       await client.query(
-        'UPDATE impuesto.licencia_licores SET tipo_licencia =$1, categoria_licencia = $2, fecha_inicio = $3, fecha_fin = $4 WHERE id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $5 LIMIT 1), RETURNING *',
+        'UPDATE impuesto.licencia_licores SET tipo_licencia =$1, categoria_licencia = $2, fecha_inicio = $3, fecha_fin = $4 WHERE id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $5 LIMIT 1) RETURNING *',
         [tipoLicencia(tipoTramite), categoriaLicencia[tipoTramite], moment().format('MM-DD-YYYY'), (fechaFin && moment(fechaFin).format('MM-DD-YYYY')) || moment().add(2, 'years').format('MM-DD-YYYY'), referenciaMunicipal]
       )
     ).rows[0];
