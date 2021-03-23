@@ -49,11 +49,8 @@ block content
             td(colspan=3) #{datos.funcionario.direccion}
           tr
           tr
-            th(scope='row') &Aacute;REA DE CONSTRUCCIÓN:
+            th(scope='row') &Aacute;REA:
             td  #{datos.funcionario.areaConstruccion > 0 ? `${datos.funcionario.areaConstruccion} m²` : 'N/A' } 
-          tr
-            th(scope='row') &Aacute;REA DE TERRENO:
-            td  #{datos.funcionario.areaTerreno} m²
           tr
             th(scope='row') PLANO:
             td(colspan=3) #{datos.funcionario.plano || ''}

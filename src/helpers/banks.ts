@@ -612,59 +612,111 @@ export const listTaxPayments = async () => {
   const client = await pool.connect();
   try {
     let dataPromise = client.query(`
-    SELECT s.*, p.*, b.id_banco, c.documento, c.tipo_documento AS "tipoDocumento" 
-    FROM (
-      SELECT s.id_solicitud AS id,
-    s.id_tipo_tramite AS tipotramite,
-    s.aprobado,
-    s.fecha,
-    s.fecha_aprobado AS "fechaAprobacion",
-    ev.state,
-    s.tipo_solicitud AS "tipoSolicitud",
-    s.id_contribuyente
-   FROM impuesto.solicitud s
-     JOIN ( SELECT es.id_solicitud,
-            impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
-           FROM impuesto.evento_solicitud es
-           INNER JOIN (SELECT id_solicitud FROM impuesto.solicitud WHERE aprobado = false) s ON s.id_solicitud = es.id_solicitud
-          GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
-    ) s 
-    INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente 
-    INNER JOIN pago p ON p.id_procedimiento = s.id 
-    INNER JOIN banco b ON b.id_banco = p.id_banco
-    WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' AND p.concepto IN ('IMPUESTO', 'RETENCION') ORDER BY id_procedimiento, id_pago;`);
+    WITH solicitud_cte AS (
+      SELECT s.id_solicitud, id_usuario, aprobado, fecha, fecha_aprobado, id_tipo_tramite, id_contribuyente, tipo_Solicitud, id_solicitud_original
+      FROM impuesto.solicitud s WHERE aprobado = false
+    ), eventos_cte AS (
+      SELECT id_evento_solicitud, id_solicitud, event FROM impuesto.evento_solicitud WHERE id_solicitud IN (SELECT id_solicitud FROM solicitud_cte)
+    )
+        SELECT s.*, p.*, b.id_banco, c.documento, c.tipo_documento AS "tipoDocumento" 
+        FROM (
+            SELECT s.id_solicitud as id, 
+              id_tipo_tramite as tipotramite,
+              aprobado, 
+              fecha, 
+              fecha_aprobado AS "fechaAprobacion",  
+              impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state,
+              tipo_Solicitud AS "tipoSolicitud", 
+              id_contribuyente
+            
+            FROM solicitud_cte s
+            INNER JOIN eventos_cte es ON es.id_solicitud = s.id_solicitud
+            GROUP BY s.id_solicitud, id_usuario, aprobado, fecha, fecha_aprobado, id_tipo_tramite, id_contribuyente, tipo_Solicitud, id_solicitud_original
+    
+        ) s 
+        INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente 
+        INNER JOIN pago p ON p.id_procedimiento = s.id 
+        INNER JOIN banco b ON b.id_banco = p.id_banco
+        WHERE s."tipoSolicitud" IN ('IMPUESTO', 'RETENCION') AND s.state = 'validando' AND p.concepto IN ('IMPUESTO', 'RETENCION') ORDER BY id_procedimiento, id_pago;
+    `);
     let convDataPromise = client.query(`
-    SELECT s.id, s.fecha, fs.state, c.documento, c.tipo_documento AS "tipoDocumento", s."tipoSolicitud", fs.idconvenio, p.id_pago, p.referencia, p.monto, p.fecha_de_pago, b.id_banco, p.aprobado
-    FROM impuesto.solicitud_state s
+    
+WITH solicitud_cte AS (
+  SELECT s.id_solicitud, id_usuario, aprobado, fecha, fecha_aprobado, id_tipo_tramite, id_contribuyente, tipo_Solicitud, id_solicitud_original
+  FROM impuesto.solicitud s WHERE aprobado = false AND s.tipo_solicitud = 'CONVENIO'
+), eventos_cte AS (
+  SELECT id_evento_solicitud, id_solicitud, event FROM impuesto.evento_solicitud WHERE id_solicitud IN (SELECT id_solicitud FROM solicitud_cte)
+), fraccion_cte AS (
+  SELECT f.id_fraccion,
+    f.id_convenio,
+    f.monto,
+    f.fecha
+    FROM impuesto.fraccion f 
+), eventos_fraccion_cte AS (
+  SELECT id_evento_fraccion, id_fraccion, event FROM impuesto.evento_fraccion WHERE id_fraccion IN (SELECT id_fraccion FROM fraccion_cte)
+)
+SELECT s.id, s.fecha, fs.state, c.documento, c.tipo_documento AS "tipoDocumento", s."tipoSolicitud", fs.idconvenio, p.id_pago, p.referencia, p.monto, p.fecha_de_pago, b.id_banco, p.aprobado
+    FROM 
+    (
+        SELECT s.id_solicitud as id, 
+          id_tipo_tramite as tipotramite,
+          aprobado, 
+          fecha, 
+          fecha_aprobado AS "fechaAprobacion",  
+          impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state,
+          tipo_Solicitud AS "tipoSolicitud", 
+          id_contribuyente
+        
+        FROM solicitud_cte s
+        INNER JOIN eventos_cte es ON es.id_solicitud = s.id_solicitud
+        GROUP BY s.id_solicitud, id_usuario, aprobado, fecha, fecha_aprobado, id_tipo_tramite, id_contribuyente, tipo_Solicitud, id_solicitud_original
+
+    ) s
     INNER JOIN impuesto.convenio conv ON conv.id_solicitud = s.id
-    INNER JOIN impuesto.fraccion_state fs ON fs.idconvenio = conv.id_convenio
+    INNER JOIN (
+
+
+      SELECT f.id_fraccion AS id,
+    f.id_convenio AS idconvenio,
+    f.monto,
+    f.fecha,
+    impuesto.fraccion_fsm(ec.event::text ORDER BY ec.id_evento_fraccion) AS state
+   FROM fraccion_cte f
+   INNER JOIN eventos_fraccion_cte ec ON f.id_fraccion = ec.id_fraccion 
+    GROUP BY f.id_fraccion ,f.id_convenio, f.monto, F.fecha
+
+    ) fs ON fs.idconvenio = conv.id_convenio
     INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente
     INNER JOIN pago p ON p.id_procedimiento = fs.id
     INNER JOIN banco b ON b.id_banco = p.id_banco
-    WHERE s."tipoSolicitud" = 'CONVENIO' AND fs.state = 'validando' AND p.concepto = 'CONVENIO' ORDER BY id_procedimiento, id_pago;
+    WHERE fs.state = 'validando' AND p.concepto = 'CONVENIO' ORDER BY id_procedimiento, id_pago;
     `);
 
     let montosSolicitudPromise = client.query(`
-    SELECT l.id_solicitud, SUM(monto) as monto
-    FROM (
-      SELECT s.id_solicitud AS id,
-    s.id_tipo_tramite AS tipotramite,
-    s.aprobado,
-    s.fecha,
-    s.fecha_aprobado AS "fechaAprobacion",
-    ev.state,
-    s.tipo_solicitud AS "tipoSolicitud",
-    s.id_contribuyente
-   FROM impuesto.solicitud s
-     JOIN ( SELECT es.id_solicitud,
-            impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
-           FROM impuesto.evento_solicitud es
-           INNER JOIN (SELECT id_solicitud FROM impuesto.solicitud WHERE aprobado = false) s ON s.id_solicitud = es.id_solicitud
-          GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
-    ) s  
-    INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
-    WHERE s.state = 'validando' OR s.state = 'ingresardatos'
-    GROUP BY l.id_solicitud;`);
+    WITH solicitud_cte AS (
+      SELECT s.id_solicitud, id_usuario, aprobado, fecha, fecha_aprobado, id_tipo_tramite, id_contribuyente, tipo_Solicitud, id_solicitud_original
+      FROM impuesto.solicitud s WHERE aprobado = false
+    ), eventos_cte AS (
+      SELECT id_evento_solicitud, id_solicitud, event FROM impuesto.evento_solicitud WHERE id_solicitud IN (SELECT id_solicitud FROM solicitud_cte)
+    )
+     SELECT l.id_solicitud, SUM(monto) as monto
+        FROM (
+          SELECT s.id_solicitud as id, 
+              id_tipo_tramite as tipotramite,
+              aprobado, 
+              fecha, 
+              fecha_aprobado AS "fechaAprobacion",  
+              impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state,
+              tipo_Solicitud AS "tipoSolicitud", 
+              id_contribuyente
+            
+            FROM solicitud_cte s
+            INNER JOIN eventos_cte es ON es.id_solicitud = s.id_solicitud
+            GROUP BY s.id_solicitud, id_usuario, aprobado, fecha, fecha_aprobado, id_tipo_tramite, id_contribuyente, tipo_Solicitud, id_solicitud_original
+        ) s  
+        INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id 
+        WHERE s.state = 'validando' OR s.state = 'ingresardatos'
+        GROUP BY l.id_solicitud;`);
     let montosConvenioPromise = client.query(`
     WITH solicitud_cte AS (
       SELECT id_solicitud FROM impuesto.solicitud WHERE aprobado = false AND tipo_solicitud = 'CONVENIO'
@@ -840,7 +892,7 @@ export const addPayment = async ({ id, fechaDePago, referencia, monto, banco }) 
     );
     return { status: 200, data: res.rows };
   } catch (e) {
-    mainLogger.info(e);
+    mainLogger.error(`${e.message}`);
     throw e;
   } finally {
     client.release();

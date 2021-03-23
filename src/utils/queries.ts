@@ -1917,7 +1917,7 @@ ORDER BY fecha_liquidacion DESC;
                FROM impuesto.evento_solicitud es
                WHERE id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE id_registro_municipal = $2 LIMIT 1))
               GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
-    ) ss)`,
+    ) ss ON ss.id_liquidacion = l.id_liquidacion)`,
   GET_USER_BY_APPLICATION_AND_RIM: 'SELECT id_usuario FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud WHERE l.id_registro_municipal = $1',
   ADD_VERIFIED_CONTRIBUTOR: "INSERT INTO impuesto.verificacion_telefono (fecha_verificacion, verificado, id_usuario) VALUES ((NOW() - interval '4 hours'), true, $1) RETURNING *",
   GET_USER_IN_CHARGE_OF_BRANCH:
