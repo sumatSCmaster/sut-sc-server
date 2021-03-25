@@ -37,6 +37,7 @@ import chargings from './chargings';
 import fisc from './fiscalization';
 import condominium from './condominium';
 import survey from './survey';
+import external from './external/bankApi'
 
 const router = Router();
 
@@ -77,6 +78,7 @@ router.use('/wallet', chargings);
 router.use('/fiscalization', fisc);
 router.use('/condominium', condominium);
 router.use('/survey', survey);
+router.use('/external', external);
 router.use(resources);
 
 router.get('/', (req, res) => {
