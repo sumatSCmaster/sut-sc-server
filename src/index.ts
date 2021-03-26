@@ -62,7 +62,7 @@ app.use(
     // origin: process.env.NODE_ENV !== 'production' ? process.env.CLIENT_URL : true,
     origin: '*',
     methods: 'POST, PUT, GET, DELETE, OPTIONS, PATCH',
-    allowedHeaders: 'Accept, Content-Type, Accept-Encoding, Content-Length, Authorization',
+    allowedHeaders: 'Accept, Content-Type, Accept-Encoding, Content-Length, Authorization, X-SUT-API-Key',
     credentials: true,
   })
 );
