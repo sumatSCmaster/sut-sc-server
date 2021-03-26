@@ -27,7 +27,7 @@ export const getSettlementsByRifAndRim = async (rif, rim, apiKey) => {
     `, [rif, rim]));
     mainLogger.info(`Validate docs ${validateDocuments.rows[0]}`)
     if(validateDocuments.rowCount === 0){
-      throw new Error('Documento no encontrado.')
+      throw new Error('Error de parámetros')
     }
     const debts = (await client.query(`
     WITH solicitud_cte AS (
@@ -62,7 +62,7 @@ export const payApplications = async (pagos: {id: number, referencia: string, mo
     if(!valid){
       throw new Error('No autorizado')
     }
-    for(let pago of pagos){
+    for(let pago of Array.from(pagos)){
       await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO, [pago.id]);
       const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [pago.id])).rows[0];
       if (pago.monto < fixatedAmount(+solicitud.monto_total)) {
