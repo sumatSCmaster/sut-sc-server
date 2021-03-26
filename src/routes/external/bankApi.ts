@@ -12,7 +12,7 @@ router.get('/', apiCheckMiddleware, async (req, res) => {
   }
   const [error, data] = await fulfill(getSettlementsByRifAndRim(rif, rim, req.headers['x-sut-api-key']))
   if (error) res.status(500).json({ error: error.message, status: 500 });
-  if (data) res.status(data.status).json({ ...data });
+  if (data) res.status(data.status).json({ solicitudes: data });
 });
 
 router.post('/', apiCheckMiddleware ,async (req, res) => {
