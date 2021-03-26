@@ -1,6 +1,7 @@
 import Pool from "@utils/Pool";
 import queries from "@utils/queries";
 import { fixatedAmount } from "@helpers/settlement";
+import { mainLogger } from "@utils/logger";
 
 const pool = Pool.getInstance();
 
@@ -12,7 +13,9 @@ const validateKey = async (key, client): Promise<[boolean, number]> => {
 export const getSettlementsByRifAndRim = async (rif, rim, apiKey) => {
   const client = await pool.connect();
   try {
+    mainLogger.info(`Rif ${rif} rim ${rim}`)
     const [valid, bankId] = await validateKey(apiKey, client);
+    mainLogger.info(`Valid ${valid} Bankid ${bankId}`)
     if(!valid){
       throw new Error('No autorizado')
     }
@@ -22,6 +25,7 @@ export const getSettlementsByRifAndRim = async (rif, rim, apiKey) => {
       INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = rm.id_contribuyente
       WHERE CONCAT(c.tipo_documento, '-', c.documento) = $1 AND rm.referencia_municipal = $2; 
     `, [rif, rim]));
+    mainLogger.info(`Validate docs ${validateDocuments.rows[0]}`)
     if(validateDocuments.rowCount === 0){
       throw new Error('Documento no encontrado.')
     }
