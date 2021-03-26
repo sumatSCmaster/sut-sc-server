@@ -78,7 +78,7 @@ router.use('/wallet', chargings);
 router.use('/fiscalization', fisc);
 router.use('/condominium', condominium);
 router.use('/survey', survey);
-router.use('/external', external);
+router.use('/api', external);
 router.use(resources);
 
 router.get('/', (req, res) => {

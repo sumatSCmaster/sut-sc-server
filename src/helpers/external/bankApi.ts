@@ -19,7 +19,7 @@ export const getSettlementsByRifAndRim = async (rif, rim, apiKey) => {
     const validateDocuments = (await client.query(`
       SELECT c.id_contribuyente, rm.id_registro_municipal
       FROM impuesto.registro_municipal rm
-      INNER JOIN impuesto.contribuyente c
+      INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = rm.id_contribuyente
       WHERE CONCAT(c.tipo_documento, '-', c.documento) = $1 rm.referencia_municipal = $2; 
     `, [rif, rim]));
     if(validateDocuments.rowCount > 0){
