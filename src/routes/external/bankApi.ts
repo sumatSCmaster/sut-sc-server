@@ -3,6 +3,7 @@ import { fulfill } from '@utils/resolver';
 import { apiCheckMiddleware } from './middleware/ApiKeyCheck';
 import { getSettlementsByRifAndRim, payApplications } from '@helpers/external/bankApi';
 import { inspect } from 'util';
+import { mainLogger } from '@utils/logger';
 
 const router = Router();
 
@@ -17,8 +18,8 @@ router.get('/', apiCheckMiddleware, async (req, res) => {
 });
 
 router.post('/', apiCheckMiddleware ,async (req, res) => {
-  inspect(req.body, true, 2, true)
-  if(req.body === undefined || req.body.pagos === undefined || req.body.pagos === null ) {
+  mainLogger.info(inspect(req.body, true, 2, true))
+  if(req.body === undefined || req.body.pagos === undefined) {
     return res.status(400).json({error: "Error de parámetros"})
   }
   const [error, data] = await fulfill(payApplications(req.body.pagos, req.headers['x-sut-api-key'] as string))
