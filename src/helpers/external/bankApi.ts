@@ -52,7 +52,7 @@ export const getSettlementsByRifAndRim = async (rif, rim, apiKey) => {
     client.release();
   }
 }
-
+// todo pasarle rif y rim 
 // id: id de la solicitud, referencia: referencia de pago, monto: monto de la referencia
 export const payApplications = async (pagos: {id: number, referencia: string, monto: number}[], apiKey: string) => {
   const client = await pool.connect();
@@ -63,6 +63,8 @@ export const payApplications = async (pagos: {id: number, referencia: string, mo
       throw new Error('No autorizado')
     }
     for(let pago of Array.from(pagos)){
+      
+
       await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO, [pago.id]);
       const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [pago.id])).rows[0];
       if (pago.monto < fixatedAmount(+solicitud.monto_total)) {
@@ -86,7 +88,7 @@ export const payApplications = async (pagos: {id: number, referencia: string, mo
     return true;
   } catch(e) {
     await client.query('ROLLBACK');
-    throw e;
+    throw new Error(e.message || 'Error de servidor');
   } finally {
     client.release();
   }
