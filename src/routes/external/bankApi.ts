@@ -16,7 +16,7 @@ router.get('/', apiCheckMiddleware, async (req, res) => {
 });
 
 router.post('/', apiCheckMiddleware ,async (req, res) => {
-  if(req.body === undefined) {
+  if(req.body === undefined || req.body.pagos === undefined || req.body.pagos === null ) {
     return res.status(400).json({error: "Error de parámetros"})
   }
   const [error, data] = await fulfill(payApplications(req.body.pagos, req.headers['x-sut-api-key'] as string))
