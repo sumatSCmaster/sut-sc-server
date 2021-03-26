@@ -83,7 +83,7 @@ export const payApplications = async (pagos: {id: number, referencia: string, mo
       mainLogger.info('Complete')
     }
 
-    return;
+    return true;
   } catch(e) {
     await client.query('ROLLBACK');
     throw e;

@@ -24,7 +24,7 @@ router.post('/', apiCheckMiddleware ,async (req, res) => {
   }
   const [error, data] = await fulfill(payApplications(req.body.pagos, req.headers['x-sut-api-key'] as string))
   if (error) res.status(400).json({ error: error.message });
-  if (data) res.status(200).json({ ...data });
+  if (data) res.status(200).json({ message: 'Pagos realizados exitosamente'});
 });
 
 export default router;
