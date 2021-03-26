@@ -82,7 +82,7 @@ export const payApplications = async (pagos: {id: number, referencia: string, mo
       (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [pago.id, 'aprobacionbanco_pi']))
       mainLogger.info('Complete')
     }
-
+    await client.query('COMMIT');
     return true;
   } catch(e) {
     await client.query('ROLLBACK');
