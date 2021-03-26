@@ -20,7 +20,7 @@ export const getSettlementsByRifAndRim = async (rif, rim, apiKey) => {
       SELECT c.id_contribuyente, rm.id_registro_municipal
       FROM impuesto.registro_municipal rm
       INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = rm.id_contribuyente
-      WHERE CONCAT(c.tipo_documento, '-', c.documento) = $1 rm.referencia_municipal = $2; 
+      WHERE CONCAT(c.tipo_documento, '-', c.documento) = $1 AND rm.referencia_municipal = $2; 
     `, [rif, rim]));
     if(validateDocuments.rowCount > 0){
       throw new Error('Documento no encontrado.')
