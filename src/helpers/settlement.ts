@@ -29,6 +29,7 @@ import { uniqBy, chunk } from 'lodash';
 import { isCondominium, isCondoOwner } from './condominium';
 import { mainLogger } from '@utils/logger';
 const written = require('written-number');
+import { inspect } from 'util';
 
 const gticPool = GticPool.getInstance();
 const pool = Pool.getInstance();
@@ -277,8 +278,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
     const contributorHasBranch = (await client.query(queries.GET_CONTRIBUTOR_HAS_BRANCH, [contributor.id_contribuyente])).rowCount > 0;
     if (!reference && contributorHasBranch) throw { status: 403, message: 'El contribuyente posee una referencia municipal, debe ingresarla' };
-    mainLogger.info('branch', branch);
-    mainLogger.info('contributor', contributor);
+    mainLogger.info(`branch ${inspect(branch)}`);
+    mainLogger.info(`contributor ${inspect(contributor)}`, );
     if ((!branch && reference) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEMAT' };
     const lastSettlementQuery = !!reference && branch ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
     const lastSettlementPayload = !!reference && branch ? branch?.id_registro_municipal : contributor.id_contribuyente;
@@ -303,7 +304,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.PP, contributor.id_contribuyente])).rows[0];
     if (contributor.tipo_contribuyente === 'JURIDICO' && !!['CESANTE', 'INHABILITADO', 'SANCIONADO'].find((state) => state === branch?.estado_licencia))
       throw { status: 401, message: `La referencia municipal proporcionada se encuentra en estado ${branch?.estado_licencia}` };
-    mainLogger.info(lastSettlementPayload);
+    mainLogger.info(inspect(lastSettlementPayload));
     mainLogger.info(lastSettlementQuery);
     if (AEApplicationExists && SMApplicationExists && IUApplicationExists && PPApplicationExists) return { status: 409, message: 'Ya existe una declaracion de impuestos para este mes' };
     const now = moment(new Date());
@@ -311,6 +312,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const esContribuyenteTop = !!branch ? (await client.query(queries.BRANCH_IS_ONE_BEST_PAYERS, [branch?.id_registro_municipal, monthDateForTop.format('MMMM'), monthDateForTop.year()])).rowCount > 0 : false;
     //AE
     if (branch && branch?.referencia_municipal && !AEApplicationExists) {
+      mainLogger.info('AE')
       const solvencyCost = branch?.estado_licencia === 'TEMPORAL' ? +(await client.query(queries.GET_SCALE_FOR_TEMPORAL_AE_SOLVENCY)).rows[0].indicador : +(await client.query(queries.GET_SCALE_FOR_PERMANENT_AE_SOLVENCY)).rows[0].indicador;
       const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
       if (economicActivities.length === 0) throw { status: 404, message: 'El contribuyente no posee aforos asociados' };
@@ -357,6 +359,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       }
     }
     //SM
+    mainLogger.info('SM')
     const estates = (await client.query(branch ? queries.GET_ESTATES_FOR_JURIDICAL_CONTRIBUTOR : queries.GET_ESTATES_FOR_NATURAL_CONTRIBUTOR, [branch ? branch.id_registro_municipal : contributor.id_contribuyente])).rows;
     if (!SMApplicationExists && !isPartOfCondominium) {
       let lastSM = (await client.query(lastSettlementQuery, [codigosRamo.SM, lastSettlementPayload])).rows[0];
@@ -412,6 +415,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     }
 
     //IU
+    mainLogger.info('IU')
     if (estates.length > 0) {
       if (!IUApplicationExists && !isPartOfCondominium) {
         IU = [];
@@ -480,6 +484,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     }
 
     //PP
+    mainLogger.info('PP')
     if (!PPApplicationExists) {
       let debtPP;
       let lastPP = (await client.query(lastSettlementQuery, [codigosRamo.PP, lastSettlementPayload])).rows[0];
@@ -581,6 +586,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         montoPP: 0.05,
       };
     }
+    mainLogger.info('return')
     return {
       status: 200,
       message: 'Impuestos obtenidos satisfactoriamente',
@@ -607,7 +613,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       },
     };
   } catch (error) {
-    mainLogger.error(error);
+    mainLogger.error(inspect(error));
+    mainLogger.error(error.message)
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -2030,7 +2037,6 @@ const getApplicationInstancesPayload = async ({ application, contributor, typeUs
     const rebajaInteresMoratorioP = getDefaultInterestRebateByApplication({ id: application.id_solicitud, date: application.fecha, state, client });
 
     const [interesMoratorio, rebajaInteresMoratorio, creditoFiscalD, rimD] = await Promise.all([interesMoratorioP, rebajaInteresMoratorioP, creditoFiscalP, rimP]);
-    console.log(rimD);
     const rim = rimD?.rows[0]?.referencia_municipal;
     const creditoFiscal = creditoFiscalD?.rows[0]?.credito || 0;
 
