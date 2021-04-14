@@ -740,6 +740,7 @@ export const validateProcedure = async (procedure, user: Usuario, client) => {
  */
 export const processProcedure = async (procedure, user: Usuario) => {
   const client = await pool.connect();
+  mainLogger.info(JSON.stringify(procedure))
   let { datos, bill } = procedure;
   let dir,
     respState,
