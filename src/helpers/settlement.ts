@@ -3543,10 +3543,10 @@ export const approveContributorSignUp = async ({ procedure, client }: { procedur
     const contributor = (await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [tipoDocumento, documentoIdentidad, razonSocial, denominacionComercial, siglas, parish, sector, direccion, puntoReferencia, true, tipoContribuyente])).rows[0];
     await client.query(queries.ASSIGN_CONTRIBUTOR_TO_USER, [contributor.id_contribuyente, usuario]);
     const x = (await client.query(queries.ADD_VERIFIED_CONTRIBUTOR, [usuario])).rows[0];
-    mainLogger.info(procedure);
+    mainLogger.info(JSON.stringify(procedure));
     return structureContributor(contributor);
   } catch (error) {
-    mainLogger.error(error);
+    mainLogger.error(error.message);
     throw error;
   }
 };
