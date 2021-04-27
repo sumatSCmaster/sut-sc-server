@@ -108,11 +108,13 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
       const permissions = (await client.query(queries.GET_USER_PERMISSIONS, [user.id])).rows.map((row) => +row.id_tipo_tramite) || [];
       response = response.filter((tram) => permissions.includes(tram.tipotramite));
     }
+    const tramiteIds = response.map((el) => el.id);
+    const ordinancesQ = (await client.query(queries.ORDINANCES_PROCEDURE_INSTANCES_BY_IDS, [tramiteIds])).rows
     let res: any[] = await Promise.all(
       response.map(async (el) => {
         let ordinances;
         if (!el.pagoPrevio) {
-          ordinances = (await client.query(queries.ORDINANCES_PROCEDURE_INSTANCES, [el.id])).rows;
+          ordinances = ordinancesQ.filter((ord) => ord.idTramite === el.id)
         }
         const tramite: Partial<Tramite> = {
           id: el.id,
