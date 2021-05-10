@@ -1634,7 +1634,7 @@ ORDER BY razon_social;`,
   BRANCH_IS_EXONERATED:
     'SELECT * FROM impuesto.ramo_exoneracion INNER JOIN impuesto.plazo_exoneracion USING (id_plazo_exoneracion) WHERE id_ramo = (SELECT id_ramo FROM impuesto.ramo WHERE codigo = $1) AND fecha_inicio <= $2 AND (fecha_fin IS NULL OR fecha_fin >= now()::date)',
   CONTRIBUTOR_IS_EXONERATED:
-    'SELECT * FROM impuesto.contribuyente_exoneracion INNER JOIN impuesto.plazo_exoneracion USING (id_plazo_exoneracion) WHERE id_registro_municipal = $1 AND id_actividad_economica IS NULL AND fecha_inicio <= $2 AND (fecha_fin IS NULL OR fecha_fin >= now()::date)',
+    'SELECT * FROM impuesto.contribuyente_exoneracion INNER JOIN impuesto.plazo_exoneracion USING (id_plazo_exoneracion) WHERE id_registro_municipal = $1 AND id_actividad_economica IS NULL AND fecha_inicio <= $2 AND (fecha_fin IS NULL OR fecha_fin >= $2)',
   CONTRIBUTOR_ECONOMIC_ACTIVIES_IS_EXONERATED:
     'SELECT * FROM impuesto.contribuyente_exoneracion INNER JOIN impuesto.plazo_exoneracion USING (id_plazo_exoneracion) WHERE id_registro_municipal = $1 AND id_actividad_economica = $2 AND fecha_inicio <= $3 AND (fecha_fin IS NULL OR fecha_fin >= now()::date)',
   MUNICIPAL_SERVICE_BY_ACTIVITIES_IS_EXONERATED: `WITH actividades AS (
