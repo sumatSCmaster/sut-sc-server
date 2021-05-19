@@ -42,7 +42,7 @@ export const getSettlementsByRifAndRim = async (rif, rim, apiKey) => {
                 ) ev ON s.id_solicitud = ev.id_solicitud
     INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id_solicitud AND l.id_solicitud = ev.id_solicitud
     INNER JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo
-    INNER JOIN impuesto.ramo r ON r.id_ramo = sub.id_subramo
+    INNER JOIN impuesto.ramo r ON r.id_ramo = sub.id_ramo
     WHERE ev.state = 'ingresardatos'
     GROUP BY s.id_solicitud
     `, [validateDocuments.rows[0].id_contribuyente]));
