@@ -25,7 +25,7 @@ export const getSettlementsByRifAndRim = async (rif, rim, apiKey) => {
       INNER JOIN impuesto.contribuyente c ON c.id_contribuyente = rm.id_contribuyente
       WHERE CONCAT(c.tipo_documento, '-', c.documento) = $1 AND rm.referencia_municipal = $2; 
     `, [rif, rim]));
-    mainLogger.info(`Validate docs ${validateDocuments.rows[0]}`)
+    mainLogger.info(`Validate docs ${JSON.stringify(validateDocuments.rows[0])}`)
     if(validateDocuments.rowCount === 0){
       throw new Error('Error de parámetros')
     }
