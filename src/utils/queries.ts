@@ -194,7 +194,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     tramite_cte as (
       SELECT * FROM tramite WHERE  fecha_creacion > (NOW() - interval '7 months') 
       AND id_tipo_tramite IN (SELECT id_tipo_tramite FROM tipo_tramite WHERE id_institucion = ANY (SELECT unnest(cond) from condq) ) 
-      ORDER BY fecha_creacion DESC FETCH FIRST 10000 ROWS ONLY
+      ORDER BY fecha_creacion DESC FETCH FIRST 20000 ROWS ONLY
     ) 
     SELECT ts.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS 
         nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, 
@@ -220,7 +220,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
         
         INNER JOIN tipo_tramite ON ts.tipotramite = 
         tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = 
-        tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = ANY (SELECT unnest(cond) from condq) AND tS.state IN ('enproceso', 'inspeccion', 'enrevision', 'pagocajero') ORDER BY ts.fechacreacion DESC FETCH FIRST 10000 ROWS ONLY;`,
+        tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = ANY (SELECT unnest(cond) from condq) AND tS.state IN ('enproceso', 'inspeccion', 'enrevision', 'pagocajero') ORDER BY ts.fechacreacion DESC FETCH FIRST 20000 ROWS ONLY;`,
   GET_ALL_PROCEDURES_EXCEPT_VALIDATING_ONES:
     'SELECT tramites_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
   nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, \
