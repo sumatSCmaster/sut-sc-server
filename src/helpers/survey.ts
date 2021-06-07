@@ -22,16 +22,17 @@ export const getSurvey = async (id_contribuyente) => {
   }
 };
 
-export const addSurvey = async ({ id_contribuyente, respuesta1, respuesta2, respuesta3, respuesta4, respuesta5, respuesta6 }) => {
+export const addSurvey = async ({ id_contribuyente, respuesta1, respuesta2, respuesta3, respuesta4, respuesta5, respuesta6, respuesta7 }) => {
   const client = await pool.connect();
   try {
-    const res = await client.query(`INSERT INTO encuesta (respuesta1, respuesta2, respuesta3, respuesta4, respuesta5, respuesta6, id_contribuyente) VALUES ($1,$2,$3,$4,$5,$6,$7) returning *`, [
+    const res = await client.query(`INSERT INTO encuesta (respuesta1, respuesta2, respuesta3, respuesta4, respuesta5, respuesta6, respuesta7, id_contribuyente) VALUES ($1,$2,$3,$4,$5,$6,$7, $8) returning *`, [
       respuesta1,
       respuesta2,
       respuesta3,
       respuesta4,
       respuesta5,
       respuesta6,
+      respuesta7,
       id_contribuyente,
     ]);
     return {
