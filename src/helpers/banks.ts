@@ -8,8 +8,9 @@ import switchcase from '@utils/switch';
 import { validateApplication, validateAgreementFraction, getApplicationsAndSettlementsById, getAgreementFractionById, getApplicationsAndSettlementsByIdNots, fixatedAmount } from './settlement';
 import moment from 'moment';
 import { mainLogger } from '@utils/logger';
+import { promisify } from 'util';
 const pool = Pool.getInstance();
-
+const SI = promisify(setImmediate);
 // ! acurero
 /**
  *
@@ -371,11 +372,16 @@ export const validatePayments = async (body, user) => {
       status: 201,
     };
   } catch (e) {
+    await SI()
     await client.query('ROLLBACK');
+
+    
     mainLogger.error(`error ep message: ${e.message} ${e}`);
     throw errorMessageExtractor(e);
   } finally {
+    await SI()
     client.release();
+
   }
 };
 
