@@ -219,7 +219,7 @@ export const getEstateByCod = async ({ codCat }) => {
                                               FROM inmueble_urbano iu
                                               INNER JOIN impuesto.inmueble_contribuyente ic ON ic.id_inmueble = iu.id_inmueble
                                               INNER JOIN impuesto.contribuyente cont ON cont.id_contribuyente = ic.id_contribuyente
-                                              WHERE iu.id_inmueble = $1`, [estate.rows[0].id_registro_municipal])).rows
+                                              WHERE iu.id_inmueble = $1`, [estate.rows[0].id])).rows
     return {
       status: 200,
       message: 'Inmueble encontrado',
