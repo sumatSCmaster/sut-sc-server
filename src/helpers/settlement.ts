@@ -144,7 +144,7 @@ export const getIUTariffForContributor = async ({ estate, id, declaration, date 
     const avaluo = (await client.query(queries.GET_ESTATE_APPRAISAL_BY_ID_AND_YEAR, [estate.id_inmueble, date.year()])).rows[0]?.avaluo || estate.avaluo;
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const impuestoInmueble = Math.round(fixatedAmount((avaluo * PETRO * (estate.tipo_inmueble === 'COMERCIAL' ? 0.01 : 0.005)) / 12));
-    mainLogger.info('getIUTariffForContributor ~ impuestoInmueble', impuestoInmueble);
+    mainLogger.info(`getIUTariffForContributor ~ impuestoInmueble ${impuestoInmueble}`);
     if (!id) return impuestoInmueble;
     const now = moment().locale('ES').subtract(1, 'M');
     const lastAEApplication = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, id])).rows.find(
@@ -3550,10 +3550,10 @@ export const approveContributorSignUp = async ({ procedure, client }: { procedur
     const contributor = (await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [tipoDocumento, documentoIdentidad, razonSocial, denominacionComercial, siglas, parish, sector, direccion, puntoReferencia, true, tipoContribuyente])).rows[0];
     await client.query(queries.ASSIGN_CONTRIBUTOR_TO_USER, [contributor.id_contribuyente, usuario]);
     const x = (await client.query(queries.ADD_VERIFIED_CONTRIBUTOR, [usuario])).rows[0];
-    mainLogger.info(procedure);
+    mainLogger.info(JSON.stringify(procedure));
     return structureContributor(contributor);
   } catch (error) {
-    mainLogger.error(error);
+    mainLogger.error(error.message);
     throw error;
   }
 };

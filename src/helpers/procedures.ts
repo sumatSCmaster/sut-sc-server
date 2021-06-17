@@ -742,6 +742,7 @@ export const validateProcedure = async (procedure, user: Usuario, client) => {
  */
 export const processProcedure = async (procedure, user: Usuario) => {
   const client = await pool.connect();
+  mainLogger.info(JSON.stringify(procedure))
   let { datos, bill } = procedure;
   let dir,
     respState,
@@ -750,6 +751,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
   try {
     client.query('BEGIN');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.idTramite])).rows[0];
+    mainLogger.info(`Resources ${JSON.stringify(resources)}`)
     procedure.tipoTramite = resources.tipoTramite;
     if (!procedure.hasOwnProperty('sufijo')) {
       procedure.sufijo = resources.sufijo;
@@ -765,9 +767,11 @@ export const processProcedure = async (procedure, user: Usuario) => {
       };
     }
     const nextEvent = await getNextEventForProcedure(procedure, client);
-
+    mainLogger.info(JSON.stringify(nextEvent))
     if (datos) {
+      mainLogger.info(`datos ${JSON.stringify(datos)}`)
       const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
+      mainLogger.info(`prevData ${JSON.stringify(prevData)}`)
       if (!prevData.datos.funcionario) datos = { usuario: prevData.datos.usuario, funcionario: datos };
       else if (prevData.datos.funcionario) datos = { usuario: prevData.datos.usuario, funcionario: datos };
       else datos = prevData.datos;
@@ -777,7 +781,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
       const { aprobado } = procedure;
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
       await client.query(queries.UPDATE_APPROVED_STATE_FOR_PROCEDURE, [aprobado, procedure.idTramite]);
-
+      mainLogger.info(`respState ${JSON.stringify(respState)}`)
       if (procedure.sufijo === 'rc' && aprobado) {
         if (resources.tipoTramite === 27) await approveContributorSignUp({ procedure: (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0], client });
         else if (resources.tipoTramite === 38) mainLogger.info('si');
@@ -843,7 +847,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
     return { status: 200, message: 'Tramite procesado', tramite };
   } catch (error) {
     client.query('ROLLBACK');
-    mainLogger.error(error);
+    mainLogger.error(error.message);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -918,6 +922,7 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
     return { status: 200, message: 'Datos de pago de trámite añadidos', tramite };
   } catch (error) {
     client.query('ROLLBACK');
+    mainLogger.error(error.message)
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -1586,6 +1591,7 @@ export const processProcedureAnalist = async (procedure, user: Usuario, client: 
  */
 const getNextEventForProcedure = async (procedure, client): Promise<any> => {
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
+  mainLogger.info(`getNextEventForProcedure - response ${JSON.stringify(response)}`)
   const nextEvent = procedureEventHandler(procedure.sufijo, response.state);
   return nextEvent;
 };
@@ -1900,6 +1906,7 @@ const updateProcedure = switchcase({
 export const updateProcedureHandler = async (procedure, user) => {
   const client = await pool.connect();
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
+  mainLogger.info(`id ${procedure.idTramite} state ${response.state}`)
   client.release();
   const newProcedureState = updateProcedure(response.state);
   return newProcedureState ? await newProcedureState(procedure, user) : { status: 500, message: 'No es posible actualizar el trámite' };

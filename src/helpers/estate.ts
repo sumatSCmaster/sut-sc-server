@@ -207,10 +207,23 @@ export const getEstateByCod = async ({ codCat }) => {
       throw new Error('Inmueble no encontrado.');
     }
 
+    const propietorRim = (await client.query(`SELECT CONCAT(cont.tipo_documento, '-', cont.documento) as rif, 
+                                                            rm.referencia_municipal as rim, razon_social as "razonSocial", 
+                                                            rm.denominacion_comercial as "denominacionComercial", telefono_celular as telefono, 
+                                                            email, rm.direccion
+    FROM impuesto.registro_municipal rm
+    INNER JOIN impuesto.contribuyente cont ON cont.id_contribuyente = rm.id_contribuyente
+    WHERE id_registro_municipal = $1`, [estate.rows[0].id_registro_municipal])).rows[0]
+
+    const propietors = (await client.query(`SELECT CONCAT(cont.tipo_documento, '-', cont.documento) as rif, razon_social as "razonSocial", relacion
+                                              FROM inmueble_urbano iu
+                                              INNER JOIN impuesto.inmueble_contribuyente ic ON ic.id_inmueble = iu.id_inmueble
+                                              INNER JOIN impuesto.contribuyente cont ON cont.id_contribuyente = ic.id_contribuyente
+                                              WHERE iu.id_inmueble = $1`, [estate.rows[0].id])).rows
     return {
       status: 200,
       message: 'Inmueble encontrado',
-      inmueble: { ...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
+      inmueble: { ...estate.rows[0], propietarioRim: propietorRim , propietarios: propietors ,avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
     };
   } catch (e) {
     throw {

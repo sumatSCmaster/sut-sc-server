@@ -11,7 +11,7 @@ block content
     p#title
       b EXPENDIO DE BEBIDAS ALCOHÓLICAS
       br
-      b LICENCIA N° #{licencia || datos.funcionario.licencia.numeroLicencia}
+      b LICENCIA N° #{licencia || (datos.funcionario.licencia && datos.funcionario.licencia.numeroLicencia) ? datos.funcionario.licencia.numeroLicencia : ''}
     div
       img#QR(src=QR, alt='QR')
   div#planilla
@@ -60,4 +60,4 @@ block content
       p De conformidad con el Artículo 28 de la ordenanza sobre Expendio, Distribución y Consumo de Bebidas Alcohólicas del Municipio Maracaibo, los contribuyentes deben renovar su autorización de Expendio oportunamente, así como cumplir con todos los trámites que modifique el registro según las condiciones en las que fue otorgadas, así mismo deberá cumplir con los deberes formales establecidos en la misma ordenanza, en caso contrario será sancionado de conformidad con la legislación vigente.
     div(style={'text-align':'center'})
       p
-        b NRO. DE CONTROL #{licencia || datos.funcionario.licencia.numeroLicencia}
+        b NRO. DE CONTROL #{licencia || (datos.funcionario.licencia && datos.funcionario.licencia.numeroLicencia) ? datos.funcionario.licencia.numeroLicencia : ''}
