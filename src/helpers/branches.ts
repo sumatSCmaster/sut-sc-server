@@ -303,6 +303,7 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
       }
     });
   } catch (error) {
+    mainLogger.error(error.message)
     throw errorMessageExtractor(error);
   } finally {
     client.release();
