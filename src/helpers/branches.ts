@@ -164,19 +164,19 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
             const convenio = branch.subRamo.findIndex((sr) => sr.ramo === '122.2');
             const gtic = branch.subRamo.findIndex((sr) => sr.ramo === '122.5');
             if(pagoOrdinario > -1){
-              let newS = branch.subramo[pagoOrdinario];
+              let newS = branch.subRamo[pagoOrdinario];
               newS.ingresado = `GAS ${(+newS.ingresado) * 0.21}/ ASEO ${(+newS.ingresado)}`
               newS.liquidado = `GAS ${(+newS.liquidado) * 0.21}/ ASEO ${(+newS.liquidado)}`
               branch.subramo[pagoOrdinario] = newS;
             }
             if(convenio > -1){
-              let newS = branch.subramo[convenio];
+              let newS = branch.subRamo[convenio];
               newS.ingresado = `GAS ${(+newS.ingresado) * 0.21}/ ASEO ${(+newS.ingresado)}`
               newS.liquidado = `GAS ${(+newS.liquidado) * 0.21}/ ASEO ${(+newS.liquidado)}`
               branch.subramo[convenio] = newS;
             }
             if(gtic > -1){
-              let newS = branch.subramo[gtic];
+              let newS = branch.subRamo[gtic];
               newS.ingresado = `GAS ${(+newS.ingresado) * 0.21}/ ASEO ${(+newS.ingresado)}`
               newS.liquidado = `GAS ${(+newS.liquidado) * 0.21}/ ASEO ${(+newS.liquidado)}`
               branch.subramo[gtic] = newS;
