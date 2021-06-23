@@ -183,10 +183,7 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
             }
             console.log(JSON.stringify(branch, null, 2))
             console.log(JSON.stringify(origS, null, 2))
-            return {
-              ...branch,
-              ...origS
-            }
+            return origS
           }
           return {
             ...branch,
@@ -196,7 +193,7 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
             cantidadIngTotal: branch.subRamo.reduce((prev, next) => prev + +next.cantidadIng, 0),
           };
         })
-        .filter((branch) => branch.subRamo.reduce((prev, next) => prev + +next.ingresado + +next.liquidado, 0) > 0);
+        .filter((branch) => branch.subRamo.reduce((prev, next) => prev + +next.ingresado + +next.liquidado, 0) > 0 || branch.subRamo.some((sr) => sr.codigo === '122'));
 
       let compens: any = {
         id: 53,
