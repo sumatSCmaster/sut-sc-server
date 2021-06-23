@@ -167,19 +167,19 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
               let newS = branch.subRamo[pagoOrdinario];
               newS.ingresado = `GAS ${(+newS.ingresado) * 0.21}/ ASEO ${(+newS.ingresado)}`
               newS.liquidado = `GAS ${(+newS.liquidado) * 0.21}/ ASEO ${(+newS.liquidado)}`
-              branch.subramo[pagoOrdinario] = newS;
+              branch.subRamo[pagoOrdinario] = newS;
             }
             if(convenio > -1){
               let newS = branch.subRamo[convenio];
               newS.ingresado = `GAS ${(+newS.ingresado) * 0.21}/ ASEO ${(+newS.ingresado)}`
               newS.liquidado = `GAS ${(+newS.liquidado) * 0.21}/ ASEO ${(+newS.liquidado)}`
-              branch.subramo[convenio] = newS;
+              branch.subRamo[convenio] = newS;
             }
             if(gtic > -1){
               let newS = branch.subRamo[gtic];
               newS.ingresado = `GAS ${(+newS.ingresado) * 0.21}/ ASEO ${(+newS.ingresado)}`
               newS.liquidado = `GAS ${(+newS.liquidado) * 0.21}/ ASEO ${(+newS.liquidado)}`
-              branch.subramo[gtic] = newS;
+              branch.subRamo[gtic] = newS;
             }
             return origS
           }
