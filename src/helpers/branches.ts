@@ -152,6 +152,37 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
           };
         })
         .map((branch) => {
+          if(branch.ramo === '122'){
+            let origS = {
+              ...branch,
+              liquidadoTotal: branch.subRamo.reduce((prev, next) => prev + +next.liquidado, 0),
+              cantidadLiqTotal: branch.subRamo.reduce((prev, next) => prev + +next.cantidadLiq, 0),
+              ingresadoTotal: branch.subRamo.reduce((prev, next) => prev + +next.ingresado, 0),
+              cantidadIngTotal: branch.subRamo.reduce((prev, next) => prev + +next.cantidadIng, 0),
+            };
+            const pagoOrdinario = branch.subRamo.findIndex((sr) => sr.ramo === '122.1');
+            const convenio = branch.subRamo.findIndex((sr) => sr.ramo === '122.2');
+            const gtic = branch.subRamo.findIndex((sr) => sr.ramo === '122.5');
+            if(pagoOrdinario > -1){
+              let newS = branch.subramo[pagoOrdinario];
+              newS.ingresado = `GAS ${(+newS.ingresado) * 0.21}/ ASEO ${(+newS.ingresado)}`
+              newS.liquidado = `GAS ${(+newS.liquidado) * 0.21}/ ASEO ${(+newS.liquidado)}`
+              branch.subramo[pagoOrdinario] = newS;
+            }
+            if(convenio > -1){
+              let newS = branch.subramo[convenio];
+              newS.ingresado = `GAS ${(+newS.ingresado) * 0.21}/ ASEO ${(+newS.ingresado)}`
+              newS.liquidado = `GAS ${(+newS.liquidado) * 0.21}/ ASEO ${(+newS.liquidado)}`
+              branch.subramo[convenio] = newS;
+            }
+            if(gtic > -1){
+              let newS = branch.subramo[gtic];
+              newS.ingresado = `GAS ${(+newS.ingresado) * 0.21}/ ASEO ${(+newS.ingresado)}`
+              newS.liquidado = `GAS ${(+newS.liquidado) * 0.21}/ ASEO ${(+newS.liquidado)}`
+              branch.subramo[gtic] = newS;
+            }
+            return origS
+          }
           return {
             ...branch,
             liquidadoTotal: branch.subRamo.reduce((prev, next) => prev + +next.liquidado, 0),
