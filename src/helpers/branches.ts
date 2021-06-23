@@ -111,7 +111,7 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
         return val;
       });
 
-      let final = groupBy(result, (res) => res.codigo);
+      let final = groupBy(Object.assign({},result), (res) => res.codigo);
       let branches = (await client.query(queries.GET_BRANCHES_FOR_REPORT)).rows.filter((row) => row.ramo in final);
 
       let ivaSM: any = {
