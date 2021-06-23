@@ -26,29 +26,25 @@ export const generateReceipt = async (
       (await client.query(queries.GET_APPLICATION_VIEW_BY_ID, [
         payload.application,
       ])).rows[0];
-    const payment =
-      (await client.query(
-        queries.GET_PAYMENT_FROM_REQ_ID_GROUP_BY_PAYMENT_TYPE,
-        [applicationView.id],
-      )).rows;
-    const paymentRows =
-      (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [
-        applicationView.id,
-        "IMPUESTO",
-      ])).rows;
+    const payment = (await client.query(
+      queries.GET_PAYMENT_FROM_REQ_ID_GROUP_BY_PAYMENT_TYPE,
+      [applicationView.id],
+    )).rows;
+    const paymentRows = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [
+      applicationView.id,
+      "IMPUESTO",
+    ])).rows;
     const paymentTotal = payment.reduce((prev, next) => prev + +next.monto, 0);
-    const cashier =
-      (await client.query(queries.GET_USER_INFO_BY_ID, [
-        paymentRows[0]?.id_usuario,
-      ])).rows;
+    const cashier = (await client.query(queries.GET_USER_INFO_BY_ID, [
+      paymentRows[0]?.id_usuario,
+    ])).rows;
     const breakdownData =
       (await client.query(queries.GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID, [
         applicationView.id,
       ])).rows;
-    const referencia =
-      (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [
-        applicationView.idLiquidacion,
-      ])).rows[0];
+    const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [
+      applicationView.idLiquidacion,
+    ])).rows[0];
     const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [
       paymentRows[0]?.id_usuario,
       `${process.env.AWS_ACCESS_URL}//sedemat/recibo/${applicationView.id}/recibo.pdf`,
@@ -182,29 +178,25 @@ export const generateReceiptAgreement = async (
       (await client.query(queries.GET_AGREEMENT_VIEW_BY_FRACTION_ID, [
         payload.agreement,
       ])).rows[0];
-    const payment =
-      (await client.query(
-        queries.GET_PAYMENT_FROM_REQ_ID_GROUP_BY_PAYMENT_TYPE_AGREEMENT,
-        [applicationView.id_fraccion],
-      )).rows;
-    const paymentRows =
-      (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [
-        applicationView.id_fraccion,
-        "CONVENIO",
-      ])).rows;
+    const payment = (await client.query(
+      queries.GET_PAYMENT_FROM_REQ_ID_GROUP_BY_PAYMENT_TYPE_AGREEMENT,
+      [applicationView.id_fraccion],
+    )).rows;
+    const paymentRows = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [
+      applicationView.id_fraccion,
+      "CONVENIO",
+    ])).rows;
     const paymentTotal = payment.reduce((prev, next) => prev + +next.monto, 0);
-    const cashier =
-      (await client.query(queries.GET_USER_INFO_BY_ID, [
-        paymentRows[0]?.id_usuario,
-      ])).rows;
+    const cashier = (await client.query(queries.GET_USER_INFO_BY_ID, [
+      paymentRows[0]?.id_usuario,
+    ])).rows;
     const breakdownData =
       (await client.query(queries.GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID, [
         applicationView.id,
       ])).rows;
-    const referencia =
-      (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [
-        applicationView.idLiquidacion,
-      ])).rows[0];
+    const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [
+      applicationView.idLiquidacion,
+    ])).rows[0];
     const recibo = await client.query(queries.INSERT_AGREEMENT_RECEIPT_RECORD, [
       paymentRows[0]?.id_usuario,
       `${process.env.AWS_ACCESS_URL}//sedemat/recibo/agreement/${applicationView.id_fraccion}/recibo.pdf`,
@@ -342,21 +334,19 @@ export const generateRepairReceipt = async (
     (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_GROUP_BY_PAYMENT_TYPE, [
       applicationView.id,
     ])).rows;
-  const paymentRows =
-    (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [
-      applicationView.id,
-      "IMPUESTO",
-    ])).rows;
+  const paymentRows = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [
+    applicationView.id,
+    "IMPUESTO",
+  ])).rows;
   mainLogger.info("payment", payment);
   mainLogger.info("paymentRows", paymentRows);
   const paymentTotal = payment.reduce((prev, next) => prev + +next.monto, 0);
   mainLogger.info("paymentTotal", paymentTotal);
   // const cashier = (await client.query(queries.GET_USER_INFO_BY_ID, [paymentRows[0]?.id_usuario])).rows;
   // const breakdownData = (await client.query(queries.GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID, [applicationView.id])).rows;
-  const referencia =
-    (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [
-      applicationView.idLiquidacion,
-    ])).rows[0];
+  const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [
+    applicationView.idLiquidacion,
+  ])).rows[0];
   const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [
     paymentRows[0]?.id_usuario,
     ``,
@@ -497,7 +487,7 @@ export const createOnDemandCertificate = async (
 ): Promise<{ status: number; messsage: string; url: string }> => {
   const client = await pool.connect();
   let certificateValues = [...data];
-  console.log("1", JSON.stringify(certificateValues, null, 2));
+  mainLogger.info(`1 ${JSON.stringify(certificateValues, null, 2)}`);
   try {
     const pugFile = {
       IU: "sedemat-solvencia-IU",
@@ -508,10 +498,9 @@ export const createOnDemandCertificate = async (
     if (type === "LIC") {
       const { renovacion } = certificateValues[0].datos;
       if (!renovacion) {
-        const numeroLicencia =
-          (await client.query(
-            `SELECT concat(date_part('year'::text, CURRENT_DATE), '-', lpad(nextval('impuesto.licencia_seq'::regclass)::text, 7, '0'::text)) AS "numeroLicencia"`,
-          )).rows[0].numeroLicencia;
+        const numeroLicencia = (await client.query(
+          `SELECT concat(date_part('year'::text, CURRENT_DATE), '-', lpad(nextval('impuesto.licencia_seq'::regclass)::text, 7, '0'::text)) AS "numeroLicencia"`,
+        )).rows[0].numeroLicencia;
         certificateValues = certificateValues.map((el) => {
           el.licencia = `${el.datos.funcionario.licencia}-${numeroLicencia}`;
           return el;
@@ -523,7 +512,7 @@ export const createOnDemandCertificate = async (
         });
       }
     }
-    console.log("1", JSON.stringify(certificateValues, null, 2));
+    mainLogger.info(`2 ${JSON.stringify(certificateValues, null, 2)}`);
     const index = new Date().getTime().toString().substr(6);
     const bucketKey = `/sedemat/${type}/${index}/certificado.pdf`;
     const buffers = await createCertificateBuffers(
