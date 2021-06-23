@@ -181,7 +181,12 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
               newS.liquidado = `GAS ${(+newS.liquidado) * 0.21}/ ASEO ${(+newS.liquidado)}`
               branch.subRamo[gtic] = newS;
             }
-            return origS
+            console.log(JSON.stringify(branch, null, 2))
+            console.log(JSON.stringify(origS, null, 2))
+            return {
+              ...branch,
+              ...origS
+            }
           }
           return {
             ...branch,
