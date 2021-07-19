@@ -54,8 +54,6 @@ export const getSettlementsByRifAndRim = async (rif, rim, apiKey) => {
     client.release();
   }
 }
-// todo pasarle rif y rim 
-// id: id de la solicitud, referencia: referencia de pago, monto: monto de la referencia
 export const payApplications = async (pagos: {id: number, referencia: string, monto: number}[], apiKey: string) => {
   const client = await pool.connect();
   try {
@@ -90,6 +88,49 @@ export const payApplications = async (pagos: {id: number, referencia: string, mo
     }
     await client.query('COMMIT');
     return true;
+  } catch(e) {
+    await client.query('ROLLBACK');
+    throw new Error(e.message || 'Error de servidor');
+  } finally {
+    client.release();
+  }
+}
+
+export const checkBankPayment = async (referencia: string, apiKey: string) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const [valid, idBanco] = await validateKey(apiKey, client);
+    mainLogger.info(`${valid} ${idBanco}`)
+    if(!valid){
+      throw new Error('No autorizado')
+    }
+    const pago = await client.query(`SELECT * FROM pago WHERE referencia = $1 AND id_banco = $2;`, [referencia, idBanco])
+    await client.query('COMMIT');
+    return pago.rowCount > 0;
+  } catch(e) {
+    await client.query('ROLLBACK');
+    throw new Error(e.message || 'Error de servidor');
+  } finally {
+    client.release();
+  }
+}
+
+export const rollbackPayment = async (referencia: string, apiKey: string) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const [valid, idBanco] = await validateKey(apiKey, client);
+    mainLogger.info(`${valid} ${idBanco}`)
+    if(!valid){
+      throw new Error('No autorizado')
+    }
+    const pago = await client.query(`SELECT * FROM pago WHERE referencia = $1 AND id_banco = $2;`, [referencia, idBanco]);
+    await client.query(`UPDATE impuesto.solicitud SET aprobado = false, fecha_aprobado = NULL WHERE id_solicitud = $1`, [pago.rows[0].id_procedimiento]);
+    await client.query(`DELETE FROM impuesto.evento_solicitud WHERE id_solicitud = $1 AND event = 'aprobacionbanco_pi'`, [pago.rows[0].id_procedimiento]);
+    await client.query(`DELETE FROM pago WHERE id_pago = $1`, [pago.rows[0].id_procedimiento])
+    await client.query('COMMIT');
+    return pago.rowCount > 0;
   } catch(e) {
     await client.query('ROLLBACK');
     throw new Error(e.message || 'Error de servidor');
