@@ -133,7 +133,7 @@ export const rollbackPayment = async (referencia: string, apiKey: string) => {
     if(!pago.rows[0]) throw new Error('Referencia no encontrada')
     await client.query(`UPDATE impuesto.solicitud SET aprobado = false, fecha_aprobado = NULL WHERE id_solicitud = $1`, [pago.rows[0].id_procedimiento]);
     await client.query(`DELETE FROM impuesto.evento_solicitud WHERE id_solicitud = $1 AND event = 'aprobacionbanco_pi'`, [pago.rows[0].id_procedimiento]);
-    await client.query(`DELETE FROM pago WHERE id_pago = $1`, [pago.rows[0].id_procedimiento])
+    await client.query(`DELETE FROM pago WHERE id_pago = $1`, [pago.rows[0].id_pago])
     await client.query('COMMIT');
     return true;
   } catch(e) {
