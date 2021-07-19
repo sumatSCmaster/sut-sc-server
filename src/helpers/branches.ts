@@ -165,24 +165,24 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
             const gtic = branch.subRamo.findIndex((sr) => sr.ramo === '122.5');
             if(pagoOrdinario > -1){
               let newS = branch.subRamo[pagoOrdinario];
-              newS.ingresado = `GAS ${(+newS.ingresado) * 0.21}/ ASEO ${(+newS.ingresado)}`
-              newS.liquidado = `GAS ${(+newS.liquidado) * 0.21}/ ASEO ${(+newS.liquidado)}`
+              newS.ingresado = `GAS ${(+newS.ingresado) * 0.21}/ ASEO ${(+newS.ingresado * 0.79)}`
+              newS.liquidado = `GAS ${(+newS.liquidado) * 0.21}/ ASEO ${(+newS.liquidado * 0.79)}`
               branch.subRamo[pagoOrdinario] = newS;
             }
             if(convenio > -1){
               let newS = branch.subRamo[convenio];
-              newS.ingresado = `GAS ${(+newS.ingresado) * 0.21}/ ASEO ${(+newS.ingresado)}`
-              newS.liquidado = `GAS ${(+newS.liquidado) * 0.21}/ ASEO ${(+newS.liquidado)}`
+              newS.ingresado = `GAS ${(+newS.ingresado) * 0.21}/ ASEO ${(+newS.ingresado * 0.79)}`
+              newS.liquidado = `GAS ${(+newS.liquidado) * 0.21}/ ASEO ${(+newS.liquidado * 0.79)}`
               branch.subRamo[convenio] = newS;
             }
             if(gtic > -1){
               let newS = branch.subRamo[gtic];
-              newS.ingresado = `GAS ${(+newS.ingresado) * 0.21}/ ASEO ${(+newS.ingresado)}`
-              newS.liquidado = `GAS ${(+newS.liquidado) * 0.21}/ ASEO ${(+newS.liquidado)}`
+              newS.ingresado = `GAS ${(+newS.ingresado) * 0.21}/ ASEO ${(+newS.ingresado * 0.79)}`
+              newS.liquidado = `GAS ${(+newS.liquidado) * 0.21}/ ASEO ${(+newS.liquidado * 0.79)}`
               branch.subRamo[gtic] = newS;
             }
-            console.log(JSON.stringify(branch, null, 2))
-            console.log(JSON.stringify(origS, null, 2))
+            mainLogger.info(JSON.stringify(branch, null, 2))
+            mainLogger.info(JSON.stringify(origS, null, 2))
             return origS
           }
           return {
@@ -194,7 +194,7 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
           };
         })
         .filter((branch) => branch.subRamo.reduce((prev, next) => prev + +next.ingresado + +next.liquidado, 0) > 0 || branch.subRamo.some((sr) => sr.codigo === '122'));
-
+      
       let compens: any = {
         id: 53,
         ramo: '925',
@@ -258,8 +258,7 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
           creditoFiscal: cred,
         };
       }
-      mainLogger.info(liquidated.rows.reduce((prev, next) => prev + +next.cantidadLiq, 0) + compens.cantidadLiqTotal);
-      mainLogger.info(liquidated.rows.reduce((prev, next) => prev + +next.liquidado, 0) + compens.liquidadoTotal);
+      mainLogger.info(JSON.stringify(branches, null, 2))
       const html = renderFile(resolve(__dirname, alcaldia ? `../views/planillas/sedemat-RPRA.pug` : `../views/planillas/sedemat-RPR.pug`), {
         moment: require('moment'),
         institucion: 'SEDEMAT',
