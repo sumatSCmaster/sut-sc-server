@@ -37,7 +37,7 @@ router.get('/check', apiCheckMiddleware, async (req, res) => {
   res.status(data ? 200 : 404).json(data ? { mensaje: 'Solicitud encontrada' } : { mensaje: 'Solicitud no encontrada'});
 });
 
-router.get('/rollback', apiCheckMiddleware, async (req, res) => {
+router.post('/rollback', apiCheckMiddleware, async (req, res) => {
   if(req.body === undefined || req.body.referencia === undefined) {
     return res.status(400).json({error: "Error de parámetros"})
   }
