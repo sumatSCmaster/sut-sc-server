@@ -42,8 +42,8 @@ router.post('/rollback', apiCheckMiddleware, async (req, res) => {
     return res.status(400).json({error: "Error de parámetros"})
   }
   const [error, data] = await fulfill(rollbackPayment(req.body.referencia, req.headers['x-sut-api-key'] as string))
-  if (error) res.status(400).json({ error: error.message, status: 500 });
-  if (data) res.status(data ? 200 : 404).json(data ? { mensaje: 'Rollback realizado exitosamente' } : { mensaje: 'Referencia no encontrada'});
+  if (error) return res.status(400).json({ error: error.message, status: 500 });
+  res.status(data ? 200 : 404).json(data ? { mensaje: 'Rollback realizado exitosamente' } : { mensaje: 'Referencia no encontrada'});
 });
 
 export default router;
