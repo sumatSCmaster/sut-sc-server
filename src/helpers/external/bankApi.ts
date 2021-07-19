@@ -98,17 +98,21 @@ export const payApplications = async (pagos: {id: number, referencia: string, mo
 
 export const checkBankPayment = async (referencia: string, apiKey: string) => {
   const client = await pool.connect();
+  mainLogger.info('checkBankPayment')
   try {
     await client.query('BEGIN');
+    mainLogger.info('checkBankPayment BEGIN')
     const [valid, idBanco] = await validateKey(apiKey, client);
     mainLogger.info(`${valid} ${idBanco}`)
     if(!valid){
       throw new Error('No autorizado')
     }
     const pago = await client.query(`SELECT * FROM pago WHERE referencia = $1 AND id_banco = $2;`, [referencia, idBanco])
+    mainLogger.info('checkBankPayment PAGO')
     await client.query('COMMIT');
     return pago.rowCount > 0;
   } catch(e) {
+    mainLogger.error(e.message)
     await client.query('ROLLBACK');
     throw new Error(e.message || 'Error de servidor');
   } finally {
