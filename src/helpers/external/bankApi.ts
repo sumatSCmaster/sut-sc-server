@@ -130,7 +130,7 @@ export const rollbackPayment = async (referencia: string, apiKey: string) => {
       throw new Error('No autorizado')
     }
     const pago = await client.query(`SELECT * FROM pago WHERE referencia = $1 AND id_banco = $2;`, [referencia, idBanco]);
-    if(!pago.rows[0]) return false
+    if(!pago.rows[0]) throw new Error('Referencia no encontrada')
     await client.query(`UPDATE impuesto.solicitud SET aprobado = false, fecha_aprobado = NULL WHERE id_solicitud = $1`, [pago.rows[0].id_procedimiento]);
     await client.query(`DELETE FROM impuesto.evento_solicitud WHERE id_solicitud = $1 AND event = 'aprobacionbanco_pi'`, [pago.rows[0].id_procedimiento]);
     await client.query(`DELETE FROM pago WHERE id_pago = $1`, [pago.rows[0].id_procedimiento])
