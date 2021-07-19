@@ -59,7 +59,6 @@ export const getBranchesD = async () => {
 export const getBranches = async () => {
   return await tracer.trace('getBranches', getBranchesD);
 };
-
 export const generateBranchesReport = async (user, payload: { from: Date; to: Date; alcaldia: boolean }) => {
   const client = await pool.connect();
   try {
@@ -111,7 +110,7 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
         return val;
       });
 
-      let final = groupBy(Object.assign({},result), (res) => res.codigo);
+      let final = groupBy(result, (res) => res.codigo);
       let branches = (await client.query(queries.GET_BRANCHES_FOR_REPORT)).rows.filter((row) => row.ramo in final);
 
       let ivaSM: any = {
@@ -152,39 +151,6 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
           };
         })
         .map((branch) => {
-          if(branch.ramo === '122'){
-            let origS = {
-              ...branch,
-              liquidadoTotal: branch.subRamo.reduce((prev, next) => prev + +next.liquidado, 0),
-              cantidadLiqTotal: branch.subRamo.reduce((prev, next) => prev + +next.cantidadLiq, 0),
-              ingresadoTotal: branch.subRamo.reduce((prev, next) => prev + +next.ingresado, 0),
-              cantidadIngTotal: branch.subRamo.reduce((prev, next) => prev + +next.cantidadIng, 0),
-            };
-            const pagoOrdinario = branch.subRamo.findIndex((sr) => sr.ramo === '122.1');
-            const convenio = branch.subRamo.findIndex((sr) => sr.ramo === '122.2');
-            const gtic = branch.subRamo.findIndex((sr) => sr.ramo === '122.5');
-            if(pagoOrdinario > -1){
-              let newS = branch.subRamo[pagoOrdinario];
-              newS.ingresado = `GAS ${(+newS.ingresado) * 0.21}/ ASEO ${(+newS.ingresado * 0.79)}`
-              newS.liquidado = `GAS ${(+newS.liquidado) * 0.21}/ ASEO ${(+newS.liquidado * 0.79)}`
-              branch.subRamo[pagoOrdinario] = newS;
-            }
-            if(convenio > -1){
-              let newS = branch.subRamo[convenio];
-              newS.ingresado = `GAS ${(+newS.ingresado) * 0.21}/ ASEO ${(+newS.ingresado * 0.79)}`
-              newS.liquidado = `GAS ${(+newS.liquidado) * 0.21}/ ASEO ${(+newS.liquidado * 0.79)}`
-              branch.subRamo[convenio] = newS;
-            }
-            if(gtic > -1){
-              let newS = branch.subRamo[gtic];
-              newS.ingresado = `GAS ${(+newS.ingresado) * 0.21}/ ASEO ${(+newS.ingresado * 0.79)}`
-              newS.liquidado = `GAS ${(+newS.liquidado) * 0.21}/ ASEO ${(+newS.liquidado * 0.79)}`
-              branch.subRamo[gtic] = newS;
-            }
-            mainLogger.info(JSON.stringify(branch, null, 2))
-            mainLogger.info(JSON.stringify(origS, null, 2))
-            return origS
-          }
           return {
             ...branch,
             liquidadoTotal: branch.subRamo.reduce((prev, next) => prev + +next.liquidado, 0),
@@ -193,8 +159,8 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
             cantidadIngTotal: branch.subRamo.reduce((prev, next) => prev + +next.cantidadIng, 0),
           };
         })
-        .filter((branch) => branch.subRamo.reduce((prev, next) => prev + +next.ingresado + +next.liquidado, 0) > 0 || branch.subRamo.some((sr) => sr.codigo === '122'));
-      
+        .filter((branch) => branch.subRamo.reduce((prev, next) => prev + +next.ingresado + +next.liquidado, 0) > 0);
+
       let compens: any = {
         id: 53,
         ramo: '925',
@@ -258,7 +224,8 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
           creditoFiscal: cred,
         };
       }
-      mainLogger.info(JSON.stringify(branches, null, 2))
+      mainLogger.info(liquidated.rows.reduce((prev, next) => prev + +next.cantidadLiq, 0) + compens.cantidadLiqTotal);
+      mainLogger.info(liquidated.rows.reduce((prev, next) => prev + +next.liquidado, 0) + compens.liquidadoTotal);
       const html = renderFile(resolve(__dirname, alcaldia ? `../views/planillas/sedemat-RPRA.pug` : `../views/planillas/sedemat-RPR.pug`), {
         moment: require('moment'),
         institucion: 'SEDEMAT',
@@ -304,7 +271,6 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
       }
     });
   } catch (error) {
-    mainLogger.error(error.message)
     throw errorMessageExtractor(error);
   } finally {
     client.release();
