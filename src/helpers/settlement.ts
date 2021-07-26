@@ -3349,7 +3349,7 @@ export const validateApplication = async (body, user, client) => {
 
     return;
   } catch (error) {
-    mainLogger.error(`validateApplication IMPUESTO Error ${body.idTramite}`)
+    mainLogger.error(`validateApplication IMPUESTO Error ${error.message} ${body.idTramite}`)
     mainLogger.error(error.message);
     throw {
       status: 500,
@@ -3412,7 +3412,7 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
 
     return;
   } catch (error) {
-    mainLogger.error(`validateApplication CONVENIO Error ${body.idTramite}`)
+    mainLogger.error(`validateApplication CONVENIO Error ${error.message} ${body.idTramite}`)
     mainLogger.error(error.message)
     throw {
       status: 500,
