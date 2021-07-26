@@ -376,7 +376,7 @@ export const validatePayments = async (body, user) => {
     await client.query('ROLLBACK');
 
     
-    mainLogger.error(`error ep message: ${e.message} ${e}`);
+    mainLogger.error(`error ep message: ${e.message} ${JSON.stringify(e)}`);
     throw errorMessageExtractor(e);
   } finally {
     await SI()
