@@ -6,7 +6,7 @@ import { mainLogger } from "@utils/logger";
 const pool = Pool.getInstance();
 
 const validateKey = async (key, client): Promise<[boolean, number]> => {
-  const keyQuery = await client.query(`SELECT * FROM bank_api_keys WHERE api_key = $1`, [key]);
+  const keyQuery = await client.query(`SELECT * FROM impuesto.bank_api_keys WHERE api_key = $1`, [key]);
   return [keyQuery.rowCount > 0, keyQuery.rows[0].id_banco];
 }
 
