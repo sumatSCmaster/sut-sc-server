@@ -187,8 +187,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
       tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = 
       tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 ORDER BY ts.fechacreacion DESC;
 `,
-  GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION:
-    `WITH condq AS (
+  GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION: `WITH condq AS (
       SELECT CASE WHEN $1 = 9 THEN '{3,9}'::int[] ELSE ARRAY[$1] END AS cond
     ),
     tramite_cte as (
@@ -1287,6 +1286,21 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
             WHERE p.concepto = 'CONVENIO' AND P.metodo_pago = 'TRANSFERENCIA' AND p.fecha_de_aprobacion BETWEEN $9 AND $10
             GROUP BY p.id_banco_destino, b.nombre
             ) x GROUP BY id_banco, banco;`,
+  GET_TRANSFERS_BY_BANK_BY_APPROVAL_NEW: `WITH myconstants (rDay,rMes,rYear,idBanco) as (
+              values (EXTRACT(day FROM $1),EXTRACT(month FROM $1) + 1,EXTRACT(year FROM $1),19)
+           )
+           select pago.referencia,pago.monto,pago.fecha_de_pago,pago.fecha_de_aprobacion,banco.nombre
+           from pago,banco,myconstants where 
+           pago.id_banco_destino=banco.id_banco and
+           pago.aprobado=true and
+           pago.metodo_pago='TRANSFERENCIA' and
+           EXTRACT(DAY FROM pago.fecha_de_pago)=rDay and
+           EXTRACT(MONTH FROM pago.fecha_de_pago)=rMes and
+           EXTRACT(YEAR FROM pago.fecha_de_pago)=rYear and
+           pago.id_banco_destino=idBanco and
+           EXTRACT(DAY FROM pago.fecha_de_aprobacion)=rDay and
+           EXTRACT(MONTH FROM pago.fecha_de_aprobacion)=rMes and
+           EXTRACT(YEAR FROM pago.fecha_de_aprobacion)=rYear;`,
   GET_TRANSFERS_BY_BANK_BY_APPROVAL: `
   WITH liquidaciones AS (SELECT DISTINCT l.id_solicitud
     FROM ((SELECT DISTINCT l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto  FROM impuesto.liquidacion l WHERE id_solicitud IS NOT NULL AND id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE fecha_aprobado BETWEEN $1 AND $2 AND tipo_solicitud != 'CONVENIO') UNION SELECT l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto FROM impuesto.liquidacion l WHERE id_solicitud IS NULL AND fecha_liquidacion BETWEEN  $3 AND $4 order by id_solicitud)) l 
@@ -3275,7 +3289,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   ORDER BY v.id_vehiculo`,
   CHECK_VEHICLE_EXISTS_FOR_USER: `SELECT 1 FROM impuesto.vehiculo WHERE id_usuario = $1 AND placa_vehiculo = $2`,
   CHECK_VEHICLE_EXISTS: `SELECT 1 FROM impuesto.vehiculo WHERE LOWER(placa_vehiculo) = LOWER($1)`,
-  
+
   UPDATE_VEHICLE_PAYMENT_DATE: `UPDATE impuesto.vehiculo SET fecha_ultima_actualizacion = DEFAULT WHERE id_vehiculo = $1`,
   GET_VEHICLE_SUBCATEGORY_BY_ID: `SELECT descripcion FROM impuesto.subcategoria_vehiculo WHERE id_subcategoria_vehiculo = $1`,
   GET_VEHICLE_BRAND_BY_ID: `SELECT nombre AS descripcion FROM impuesto.marca_vehiculo WHERE id_marca_vehiculo = $1`,

@@ -277,6 +277,79 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
   }
 };
 
+export const getTransfersReportBank = async ({ reportName = 'RPRTransferenciasBanco', day }) => {
+  mainLogger.info(`getTransfersReport - Creating transfers by method of approval from ${day}`);
+  const client = await pool.connect();
+  try {
+    const transformStream = new Transform({
+      transform(chunk, encoding, callback) {
+        this.push(chunk);
+        callback();
+      },
+    });
+
+    transformStream.on('finish', () => {
+      mainLogger.info('getTransfersReport - Stream finished writing');
+    });
+
+    const workbook = new ExcelJs.stream.xlsx.WorkbookWriter({
+      stream: transformStream,
+    });
+    workbook.creator = 'SUT';
+    workbook.created = new Date();
+    workbook.views = [
+      {
+        x: 0,
+        y: 0,
+        width: 10000,
+        height: 20000,
+        firstSheet: 0,
+        activeTab: 1,
+        visibility: 'visible',
+      },
+    ];
+
+    const sheet = workbook.addWorksheet(reportName);
+    const result = await client.query(queries.GET_TRANSFERS_BY_BANK_BY_APPROVAL_NEW, [day]);
+
+    mainLogger.info(`getTransfersReport - Got query, rowCount: ${result.rowCount}`);
+
+    sheet.columns = result.fields.map((row) => {
+      return { header: row.name, key: row.name, width: 32 };
+    });
+
+    for (let row of result.rows) {
+      sheet.addRow(row, 'i').commit();
+    }
+
+    sheet.commit();
+
+    await workbook.commit();
+
+    mainLogger.info(`getTransfersReport - Committed workbook`);
+    if (dev) {
+      const dir = `../../archivos/${reportName}.xlsx`;
+      const stream = fs.createWriteStream(require('path').resolve(`./archivos/${reportName}.xlsx`));
+      await workbook.xlsx.write(stream);
+      return dir;
+    } else {
+      const bucketParams = {
+        Bucket: process.env.BUCKET_NAME as string,
+
+        Key: `/sedemat/reportes/${reportName}.xlsx`,
+      };
+      await S3Client.upload({ ...bucketParams, Body: transformStream, ACL: 'public-read', ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }).promise();
+
+      return `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`;
+    }
+  } catch (error) {
+    mainLogger.error(error);
+    throw errorMessageExtractor(error);
+  } finally {
+    client.release();
+  }
+};
+
 export const getTransfersReport = async ({ reportName = 'RPRTransferencias', from, to }) => {
   mainLogger.info(`getTransfersReport - Creating transfers by method of approval from ${from} to ${to}`);
   const client = await pool.connect();
@@ -446,7 +519,7 @@ export const getCondoReport = async (payload) => {
         try {
           pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toBuffer(async (err, buffer) => {
             if (err) {
-              mainLogger.error(err)
+              mainLogger.error(err);
               rej(err);
             } else {
               const bucketParams = {
@@ -463,14 +536,14 @@ export const getCondoReport = async (payload) => {
             }
           });
         } catch (e) {
-          mainLogger.info(e.message)
+          mainLogger.info(e.message);
           throw e;
         } finally {
         }
       }
     });
   } catch (error) {
-    mainLogger.info(error.message)
+    mainLogger.info(error.message);
     throw errorMessageExtractor(error);
   } finally {
     client.release();
