@@ -277,7 +277,7 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
   }
 };
 
-export const getTransfersReportBank = async ({ reportName = 'RPRTransferenciasBanco', day }) => {
+export const getTransfersReportBank = async ({ reportName = 'RPRTransferenciasBanco', day, id }) => {
   mainLogger.info(`getTransfersReport - Creating transfers by method of approval from ${day}`);
   const client = await pool.connect();
   try {
@@ -310,7 +310,7 @@ export const getTransfersReportBank = async ({ reportName = 'RPRTransferenciasBa
     ];
 
     const sheet = workbook.addWorksheet(reportName);
-    const result = await client.query(queries.GET_TRANSFERS_BY_BANK_BY_APPROVAL_NEW, [day]);
+    const result = await client.query(queries.GET_TRANSFERS_BY_BANK_BY_APPROVAL_NEW, [day, id]);
 
     mainLogger.info(`getTransfersReport - Got query, rowCount: ${result.rowCount}`);
 

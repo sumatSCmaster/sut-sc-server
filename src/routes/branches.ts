@@ -27,9 +27,10 @@ router.post('/reportTransf', authenticate('jwt'), async (req, res) => {
   if (data) res.status(200).json({ status: 200, data });
 });
 
-router.post('/reportTransfBank', authenticate('jwt'), async (req, res) => {
+router.post('/reportTransfBank/:id', authenticate('jwt'), async (req, res) => {
+  const { id } = req.params;
   const { day } = req.body;
-  const [error, data] = await fulfill(getTransfersReportBank({ day }));
+  const [error, data] = await fulfill(getTransfersReportBank({ day, id }));
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
 });
