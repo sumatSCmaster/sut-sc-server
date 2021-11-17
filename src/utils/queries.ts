@@ -1303,7 +1303,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   //          EXTRACT(MONTH FROM pago.fecha_de_aprobacion)=rMes and
   //          EXTRACT(YEAR FROM pago.fecha_de_aprobacion)=rYear;`,
   GET_TRANSFERS_BY_BANK_BY_APPROVAL_NEW: `SELECT referencia, monto, fecha_de_pago, id_banco, banco.nombre
-  FROM pago JOIN banco ON (id_banco) WHERE CONCAT(EXTRACT(YEAR FROM fecha_de_pago),
+  FROM pago JOIN banco USING (id_banco) WHERE CONCAT(EXTRACT(YEAR FROM fecha_de_pago),
   EXTRACT(month FROM fecha_de_pago), EXTRACT(DAY FROM fecha_de_pago)) = CONCAT(EXTRACT(YEAR FROM fecha_de_aprobacion),
   EXTRACT(month FROM fecha_de_aprobacion), EXTRACT(DAY FROM fecha_de_aprobacion))
   AND fecha_de_pago = $1 AND id_banco = $2 AND metodo_pago = 'TRANSFERENCIA';`,
