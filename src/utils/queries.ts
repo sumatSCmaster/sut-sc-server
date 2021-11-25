@@ -1212,7 +1212,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
 
   //REPORTES
   GET_INGRESS: `SELECT ramo, descripcion, codigo, SUM("cantidadIng") as "cantidadIng", SUM(ingresado) * 1000000 as ingresado FROM ( 
-    (SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadIng", SUM(CASE WHEN l.id_subramo = 107 OR l.id_subramo = 108 THEN (CASE WHEN (l.datos->>'IVA')::numeric = 16 THEN (monto * 1000000 / 1.16 ) WHEN (l.datos->>'IVA')::numeric = 4 THEN (monto * 1000000 / 1.04 ) ELSE (monto * 1000000 / 1.16 ) END ) ELSE monto * 1000000 END ) as ingresado 
+    (SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadIng", SUM(CASE WHEN l.id_subramo = 107 OR l.id_subramo = 108 THEN (CASE WHEN (l.datos->>'IVA')::numeric = 16 THEN (monto / 1.16 ) WHEN (l.datos->>'IVA')::numeric = 4 THEN (monto / 1.04 ) ELSE (monto / 1.16 ) END ) ELSE monto END ) as ingresado 
         FROM ((SELECT DISTINCT ON (l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto) l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto, l.datos 
                 FROM impuesto.liquidacion l 
                 WHERE id_solicitud IS NOT NULL 
