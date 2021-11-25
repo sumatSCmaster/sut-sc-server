@@ -187,8 +187,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
       tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = 
       tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 ORDER BY ts.fechacreacion DESC;
 `,
-  GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION:
-    `WITH condq AS (
+  GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION: `WITH condq AS (
       SELECT CASE WHEN $1 = 9 THEN '{3,9}'::int[] ELSE ARRAY[$1] END AS cond
     ),
     tramite_cte as (
@@ -1212,8 +1211,8 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   UPDATE_CODE: 'UPDATE impuesto.verificacion_telefono SET codigo_verificacion = $1, fecha_verificacion = CURRENT_TIMESTAMP WHERE id_usuario = $2',
 
   //REPORTES
-  GET_INGRESS: `SELECT ramo, descripcion, codigo, SUM("cantidadIng") as "cantidadIng", SUM(ingresado) as ingresado FROM ( 
-    (SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadIng", SUM(CASE WHEN l.id_subramo = 107 OR l.id_subramo = 108 THEN (CASE WHEN (l.datos->>'IVA')::numeric = 16 THEN (monto / 1.16 ) WHEN (l.datos->>'IVA')::numeric = 4 THEN (monto / 1.04 ) ELSE (monto / 1.16 ) END ) ELSE monto END ) as ingresado 
+  GET_INGRESS: `SELECT ramo, descripcion, codigo, SUM("cantidadIng") as "cantidadIng", SUM(ingresado) * 1000000 as ingresado FROM ( 
+    (SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadIng", SUM(CASE WHEN l.id_subramo = 107 OR l.id_subramo = 108 THEN (CASE WHEN (l.datos->>'IVA')::numeric = 16 THEN (monto * 1000000 / 1.16 ) WHEN (l.datos->>'IVA')::numeric = 4 THEN (monto * 1000000 / 1.04 ) ELSE (monto * 1000000 / 1.16 ) END ) ELSE monto * 1000000 END ) as ingresado 
         FROM ((SELECT DISTINCT ON (l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto) l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto, l.datos 
                 FROM impuesto.liquidacion l 
                 WHERE id_solicitud IS NOT NULL 
@@ -1247,7 +1246,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
       ORDER BY ramo)) x
         WHERE codigo != '915'
         GROUP BY ramo, descripcion, codigo;`,
-  GET_LIQUIDATED: `SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadLiq", SUM(CASE WHEN monto IS NOT NULL THEN monto ELSE (monto_petro * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) END) as liquidado 
+  GET_LIQUIDATED: `SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadLiq", SUM(CASE WHEN monto IS NOT NULL THEN monto * 1000000 ELSE (monto_petro * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) * 1000000 END) as liquidado 
         FROM (SELECT *  FROM impuesto.liquidacion WHERE fecha_liquidacion BETWEEN $1 AND $2) l 
         INNER JOIN (SELECT *, s.id_solicitud AS id_solicitud_q FROM impuesto.solicitud s 
                         INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) 
@@ -1291,7 +1290,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   //             values (EXTRACT(day FROM $1),EXTRACT(month FROM $1) + 1,EXTRACT(year FROM $1),19)
   //          )
   //          select pago.referencia,pago.monto,pago.fecha_de_pago,pago.fecha_de_aprobacion,banco.nombre
-  //          from pago,banco,myconstants where 
+  //          from pago,banco,myconstants where
   //          pago.id_banco_destino=banco.id_banco and
   //          pago.aprobado=true and
   //          pago.metodo_pago='TRANSFERENCIA' and
@@ -3295,7 +3294,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   ORDER BY v.id_vehiculo`,
   CHECK_VEHICLE_EXISTS_FOR_USER: `SELECT 1 FROM impuesto.vehiculo WHERE id_usuario = $1 AND placa_vehiculo = $2`,
   CHECK_VEHICLE_EXISTS: `SELECT 1 FROM impuesto.vehiculo WHERE LOWER(placa_vehiculo) = LOWER($1)`,
-  
+
   UPDATE_VEHICLE_PAYMENT_DATE: `UPDATE impuesto.vehiculo SET fecha_ultima_actualizacion = DEFAULT WHERE id_vehiculo = $1`,
   GET_VEHICLE_SUBCATEGORY_BY_ID: `SELECT descripcion FROM impuesto.subcategoria_vehiculo WHERE id_subcategoria_vehiculo = $1`,
   GET_VEHICLE_BRAND_BY_ID: `SELECT nombre AS descripcion FROM impuesto.marca_vehiculo WHERE id_marca_vehiculo = $1`,
