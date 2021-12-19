@@ -402,6 +402,13 @@ const getFieldsBySection = async (section, tramiteId, client): Promise<Campo[] |
   });
 };
 
+function roundNumber(value, places) {
+  const multiplier = Math.pow(10, places);
+  return Math.round(value * multiplier) / multiplier;
+}
+
+const roundTwoDecimals = (value) => roundNumber(value, 2);
+
 /**
  * Updates procedure cost by id
  * @param id Procedure id
@@ -413,7 +420,7 @@ export const updateProcedureCost = async (id: string, newCost: string): Promise<
   try {
     client.query('BEGIN');
     const res = (await client.query(queries.GET_PETRO_VALUE)).rows[0];
-    const response = (await client.query(queries.UPDATE_PROCEDURE_COST, [id, newCost, parseFloat(newCost) * parseFloat(res.valor_en_bs)])).rows[0];
+    const response = (await client.query(queries.UPDATE_PROCEDURE_COST, [id, newCost, roundTwoDecimals(parseFloat(newCost) * parseFloat(res.valor_en_bs))])).rows[0];
     const newProcedure = (await client.query(queries.GET_ONE_PROCEDURE, [id])).rows[0];
     const procedure: Partial<TipoTramite> = {
       id: newProcedure.id_tipo_tramite,
