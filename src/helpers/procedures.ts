@@ -513,7 +513,7 @@ export const getProcedureById = async ({ id, client }: { id: number; client: Poo
  */
 const isNotPrepaidProcedure = ({ suffix, user }: { suffix: string; user: Usuario }) => {
   const condition = false;
-  if ((suffix === 'tl' && user.tipoUsuario !== 4) || !!['pd', 'ompu', 'rc', 'bc', 'lic', 'lict', 'sup', 'cr'].find((el) => el === suffix)) return !condition;
+  if ((suffix === 'tl' && user.tipoUsuario !== 4) || !!['pd', 'ompu', 'rc', 'bc', 'lic', 'lict', 'sup'].find((el) => el === suffix)) return !condition;
   return condition;
 };
 
@@ -1611,10 +1611,11 @@ const procedureEvents = switchcase({
   pd: { iniciado: 'enproceso_pd', enproceso: 'ingresardatos_pd', ingresardatos: 'validar_pd', validando: 'finalizar_pd' },
   // cr: { iniciado: 'validar_cr', validando: 'enproceso_cr', enproceso: 'revisar_cr', enrevision: { true: 'finalizar_cr', false: 'rechazar_cr' } },
   cr: { 
-    iniciado: 'enproceso_cr',  
+    iniciado: 'validar_cr',
+    validando: {true:'enproceso_cr', false:'finalizar_cr'},  
     enproceso: 'revisar_cr', 
-    enrevision: { true: 'pagocajero_cr', false: 'rechazar_cr' }, 
-    pagocajero: 'finalizar_cr',
+    enrevision: { true: 'finalizar_cr', false: 'rechazar_cr' }, 
+    //pagocajero: 'finalizar_cr',
   },
   tl: { iniciado: { true: 'validar_tl', false: 'finalizar_tl' }, validando: 'finalizar_tl' },
   veh: { iniciado: 'validar_veh', validando: 'finalizar_veh' },

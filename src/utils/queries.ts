@@ -159,7 +159,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   FROM tramites_state_with_resources tsr INNER JOIN tipo_tramite ttr ON tsr.tipotramite=ttr.id_tipo_tramite WHERE tsr.id=$1',
   GET_PROCEDURES_INSTANCES_BY_INSTITUTION_ID: `
   WITH tramite_cte as (
-    SELECT * FROM tramite WHERE  fecha_creacion > (NOW() - interval '3 months') AND id_tipo_tramite IN (SELECT id_tipo_tramite FROM tipo_tramite WHERE id_institucion = $1) AND id_tipo_tramite NOT IN (27, 29, 30, 31, 32, 33, 34, 35, 39, 40) ORDER BY fecha_creacion DESC FETCH FIRST 1000 ROWS ONLY
+    SELECT * FROM tramite WHERE  fecha_creacion > (NOW() - interval '6 months') AND id_tipo_tramite IN (SELECT id_tipo_tramite FROM tipo_tramite WHERE id_institucion = $1) AND id_tipo_tramite NOT IN (27, 29, 30, 31, 32, 33, 34, 35, 39, 40) ORDER BY fecha_creacion DESC FETCH FIRST 8000 ROWS ONLY
   )
   SELECT ts.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS 
       nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, 
@@ -191,9 +191,9 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
       SELECT CASE WHEN $1 = 9 THEN '{3,9}'::int[] ELSE ARRAY[$1] END AS cond
     ),
     tramite_cte as (
-      SELECT * FROM tramite WHERE  fecha_creacion > (NOW() - interval '3 months') 
+      SELECT * FROM tramite WHERE  fecha_creacion > (NOW() - interval '7 months') 
       AND id_tipo_tramite IN (SELECT id_tipo_tramite FROM tipo_tramite WHERE id_institucion = ANY (SELECT unnest(cond) from condq) ) 
-      ORDER BY fecha_creacion DESC FETCH FIRST 2000 ROWS ONLY
+      ORDER BY fecha_creacion DESC FETCH FIRST 20000 ROWS ONLY
     ) 
     SELECT ts.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS 
         nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, 
@@ -219,7 +219,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
         
         INNER JOIN tipo_tramite ON ts.tipotramite = 
         tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = 
-        tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = ANY (SELECT unnest(cond) from condq) AND tS.state IN ('enproceso', 'inspeccion', 'enrevision', 'pagocajero') ORDER BY ts.fechacreacion DESC FETCH FIRST 2000 ROWS ONLY;`,
+        tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = ANY (SELECT unnest(cond) from condq) AND tS.state IN ('enproceso', 'inspeccion', 'enrevision', 'pagocajero') ORDER BY ts.fechacreacion DESC FETCH FIRST 20000 ROWS ONLY;`,
   GET_ALL_PROCEDURES_EXCEPT_VALIDATING_ONES:
     'SELECT tramites_state.*, institucion.nombre_completo AS nombrelargo, institucion.nombre_corto AS \
   nombrecorto, tipo_tramite.nombre_tramite AS nombretramitelargo, tipo_tramite.nombre_corto AS nombretramitecorto, \
@@ -1290,7 +1290,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   //             values (EXTRACT(day FROM $1),EXTRACT(month FROM $1) + 1,EXTRACT(year FROM $1),19)
   //          )
   //          select pago.referencia,pago.monto,pago.fecha_de_pago,pago.fecha_de_aprobacion,banco.nombre
-  //          from pago,banco,myconstants where 
+  //          from pago,banco,myconstants where
   //          pago.id_banco_destino=banco.id_banco and
   //          pago.aprobado=true and
   //          pago.metodo_pago='TRANSFERENCIA' and
@@ -1304,8 +1304,8 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_TRANSFERS_BY_BANK_BY_APPROVAL_NEW: `SELECT referencia, monto, fecha_de_pago, id_banco, banco.nombre
   FROM pago JOIN banco USING (id_banco) WHERE CONCAT(EXTRACT(YEAR FROM fecha_de_pago),
   EXTRACT(month FROM fecha_de_pago), EXTRACT(DAY FROM fecha_de_pago)) = CONCAT(EXTRACT(YEAR FROM fecha_de_aprobacion),
-  EXTRACT(month FROM fecha_de_aprobacion), EXTRACT(DAY FROM fecha_de_aprobacion)) AND fecha_de_pago = $1
-  AND id_banco = $2;`,
+  EXTRACT(month FROM fecha_de_aprobacion), EXTRACT(DAY FROM fecha_de_aprobacion))
+  AND fecha_de_pago = $1 AND id_banco = $2 AND metodo_pago = 'TRANSFERENCIA';`,
   GET_TRANSFERS_BY_BANK_BY_APPROVAL: `
   WITH liquidaciones AS (SELECT DISTINCT l.id_solicitud
     FROM ((SELECT DISTINCT l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto  FROM impuesto.liquidacion l WHERE id_solicitud IS NOT NULL AND id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE fecha_aprobado BETWEEN $1 AND $2 AND tipo_solicitud != 'CONVENIO') UNION SELECT l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto FROM impuesto.liquidacion l WHERE id_solicitud IS NULL AND fecha_liquidacion BETWEEN  $3 AND $4 order by id_solicitud)) l 
@@ -1663,7 +1663,7 @@ ORDER BY razon_social;`,
   BRANCH_IS_EXONERATED:
     'SELECT * FROM impuesto.ramo_exoneracion INNER JOIN impuesto.plazo_exoneracion USING (id_plazo_exoneracion) WHERE id_ramo = (SELECT id_ramo FROM impuesto.ramo WHERE codigo = $1) AND fecha_inicio <= $2 AND (fecha_fin IS NULL OR fecha_fin >= now()::date)',
   CONTRIBUTOR_IS_EXONERATED:
-    'SELECT * FROM impuesto.contribuyente_exoneracion INNER JOIN impuesto.plazo_exoneracion USING (id_plazo_exoneracion) WHERE id_registro_municipal = $1 AND id_actividad_economica IS NULL AND fecha_inicio <= $2 AND (fecha_fin IS NULL OR fecha_fin >= now()::date)',
+    'SELECT * FROM impuesto.contribuyente_exoneracion INNER JOIN impuesto.plazo_exoneracion USING (id_plazo_exoneracion) WHERE id_registro_municipal = $1 AND id_actividad_economica IS NULL AND fecha_inicio <= $2 AND (fecha_fin IS NULL OR fecha_fin >= $2)',
   CONTRIBUTOR_ECONOMIC_ACTIVIES_IS_EXONERATED:
     'SELECT * FROM impuesto.contribuyente_exoneracion INNER JOIN impuesto.plazo_exoneracion USING (id_plazo_exoneracion) WHERE id_registro_municipal = $1 AND id_actividad_economica = $2 AND fecha_inicio <= $3 AND (fecha_fin IS NULL OR fecha_fin >= now()::date)',
   MUNICIPAL_SERVICE_BY_ACTIVITIES_IS_EXONERATED: `WITH actividades AS (
@@ -3331,14 +3331,14 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   GET_CONDOMINIUM_OWNERS: `
       SELECT id_condominio AS "idCondominio", cont.id_contribuyente as "idContribuyente", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial", p.nombre as "parroquia", cont.direccion 
       FROM impuesto.contribuyente cont
-      INNER JOIN parroquia p ON p.id = cont.id_parroquia
+      LEFT JOIN parroquia p ON p.id = cont.id_parroquia
       INNER JOIN impuesto.condominio_propietario cp ON cp.id_contribuyente = cont.id_contribuyente
       WHERE cp.id_condominio = $1;
   `,
   GET_CONDOMINIUM_OWNER_BY_DOC: `
       SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial", p.nombre as "parroquia", cont.direccion
       FROM impuesto.contribuyente cont
-      INNER JOIN parroquia p ON p.id = cont.id_parroquia
+      LEFT JOIN parroquia p ON p.id = cont.id_parroquia
       INNER JOIN impuesto.condominio_propietario cp ON cont.id_contribuyente = cp.id_contribuyente
       WHERE cont.tipo_documento = $1 AND cont.documento = $2;
   `,

@@ -11,7 +11,7 @@ block content
     p#title
       b EXPENDIO DE BEBIDAS ALCOHÓLICAS
       br
-      b LICENCIA N° #{licencia || (datos.funcionario.licencia && datos.funcionario.licencia.numeroLicencia) ? datos.funcionario.licencia.numeroLicencia : ''}
+      b LICENCIA N° #{licencia || (datos.funcionario.licencia && datos.funcionario.licencia.numeroLicencia) ? datos.funcionario.licencia : licencia}
     div
       img#QR(src=QR, alt='QR')
   div#planilla
