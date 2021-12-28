@@ -649,7 +649,6 @@ const isFiniteNumber = (expression) => {
 
 export const getStatsSedematSettlements = async ({ institution }: { institution: number }) => {
   const client = await pool.connect();
-  const totalSolvencyRate: any[] = [];
   const AE: any[] = [],
     SM: any[] = [],
     IU: any[] = [],
@@ -729,6 +728,9 @@ export const getStatsSedematSettlements = async ({ institution }: { institution:
         AR: totalARDeclarations,
         top: totalTopContrDeclarations,
       },
+      mensual: {
+        totalLiquidaciones: { AE, SM, IU, PP },
+      }
     };
     await client.query('COMMIT');
     return { status: 200, message: 'Estadisticas obtenidas!', estadisticas };
@@ -747,11 +749,6 @@ export const getStatsSedematSettlements = async ({ institution }: { institution:
 
 export const getStatsSedematTotal = async ({ institution }: { institution: number }) => {
   const client = await pool.connect();
-  const totalSolvencyRate: any[] = [];
-  const AE: any[] = [],
-    SM: any[] = [],
-    IU: any[] = [],
-    PP: any[] = [];
   
   try {
     await client.query('BEGIN');
@@ -856,10 +853,7 @@ export const getStatsSedematTotal = async ({ institution }: { institution: numbe
 export const getStatsSedematGraphs = async ({ institution }: { institution: number }) => {
   const client = await pool.connect();
   const totalSolvencyRate: any[] = [];
-  const AE: any[] = [],
-    SM: any[] = [],
-    IU: any[] = [],
-    PP: any[] = [];
+
   try {
     await client.query('BEGIN');
     // if (institution !== Instituciones.SEDEMAT) throw { status: 403, message: 'Sólo un miembro de SEDEMAT puede acceder a esta información' };
@@ -935,7 +929,6 @@ export const getStatsSedematGraphs = async ({ institution }: { institution: numb
         totalTasasAE: totalSolvencyRate,
         totalBsPorRamo: totalBsByBranch,
         recaudado: { totalRecaudacion: totalGainings, extra: extraInfo },
-        totalLiquidaciones: { AE, SM, IU, PP },
       },
       contribuyentes: {
         AR: totalARDeclarations,
