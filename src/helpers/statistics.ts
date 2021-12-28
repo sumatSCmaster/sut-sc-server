@@ -725,10 +725,6 @@ export const getStatsSedematSettlements = async ({ institution }: { institution:
     }))[0];
 
     const estadisticas = {
-      mensual: {
-        totalTasasAE: totalSolvencyRate,
-        totalLiquidaciones: { AE, SM, IU, PP },
-      },
       contribuyentes: {
         AR: totalARDeclarations,
         top: totalTopContrDeclarations,
@@ -756,7 +752,7 @@ export const getStatsSedematTotal = async ({ institution }: { institution: numbe
     SM: any[] = [],
     IU: any[] = [],
     PP: any[] = [];
-
+  
   try {
     await client.query('BEGIN');
     const now = moment().locale('ES');
@@ -831,10 +827,6 @@ export const getStatsSedematTotal = async ({ institution }: { institution: numbe
           liquidados: totalAEDeclarations,
           pagados: totalAEPayments,
         },
-      },
-      mensual: {
-        totalTasasAE: totalSolvencyRate,
-        totalLiquidaciones: { AE, SM, IU, PP },
       },
       coeficientes: {
         TDI,
@@ -998,10 +990,6 @@ export const getStatsSedematTop = async ({ institution }: { institution: number 
     }))[0];
 
     const estadisticas = {
-      mensual: {
-        totalTasasAE: totalSolvencyRate,
-        totalLiquidaciones: { AE, SM, IU, PP },
-      },
       contribuyentes: {
         AR: totalARDeclarations,
         top: totalTopContrDeclarations,
