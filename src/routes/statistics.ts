@@ -1,12 +1,36 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
 import { authenticate } from 'passport';
-import { getStats, getStatsSedemat, getStatsSedematWithDate, bsByBranchInterval } from '@helpers/statistics';
+import { getStats, getStatsSedematWithDate, bsByBranchInterval, getStatsSedematTotal, getStatsSedematSettlements, getStatsSedematTop, getStatsSedematGraphs, getStatsSedemat } from '@helpers/statistics';
 
 const router = Router();
 
 router.get('/', authenticate('jwt'), async (req: any, res) => {
   const [err, data] = await fulfill(getStats(req.user));
+  if (err) res.status(500).json(err);
+  if (data) res.status(200).json(data);
+});
+
+router.get('/sedemat/top', async (req: any, res) => {
+  const [err, data] = await fulfill(getStatsSedematTop({ institution: req.user?.institucion?.id }));
+  if (err) res.status(500).json(err);
+  if (data) res.status(200).json(data);
+});
+
+router.get('/sedemat/total', async (req: any, res) => {
+  const [err, data] = await fulfill(getStatsSedematTotal({ institution: req.user?.institucion?.id }));
+  if (err) res.status(500).json(err);
+  if (data) res.status(200).json(data);
+});
+
+router.get('/sedemat/graphs', async (req: any, res) => {
+  const [err, data] = await fulfill(getStatsSedematGraphs({ institution: req.user?.institucion?.id }));
+  if (err) res.status(500).json(err);
+  if (data) res.status(200).json(data);
+});
+
+router.get('/sedemat/settlements', async (req: any, res) => {
+  const [err, data] = await fulfill(getStatsSedematSettlements({ institution: req.user?.institucion?.id }));
   if (err) res.status(500).json(err);
   if (data) res.status(200).json(data);
 });
