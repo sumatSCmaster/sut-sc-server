@@ -37,9 +37,9 @@ router.post('/reportTransfBank/:id', authenticate('jwt'), async (req, res) => {
 
 router.post('/condoReport', authenticate('jwt'), async (req, res) => {
   const { from, to } = req.body;
-  mainLogger.info('AAAAAAAAAAAAAAAAAAAAA')
+  mainLogger.info('AAAAAAAAAAAAAAAAAAAAA');
   const [error, data] = await fulfill(getCondoReport({ from, to }));
-  mainLogger.info(`AAAAAAAAAAAAAAAAAAAAA ${error?.message}`)
+  mainLogger.info(`AAAAAAAAAAAAAAAAAAAAA ${error?.message}`);
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
 });
