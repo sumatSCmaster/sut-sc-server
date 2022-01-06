@@ -32,7 +32,7 @@ body {
 
 #alcaldia,
 #logo {
-  width: 200px;
+  width: calc(354px * 1.77);
   height: 354px;
   object-fit: contain;
 }
