@@ -37,7 +37,7 @@ html
               when 'SEDEMAT'
                   - nombre = 'Servicio Desconcentrado Municipal de Administración Tributaria'
                   - rif = 'G-20002908-0'
-            p Alcaldia Bolivariana de Maracaibo
+            p Alcaldia de Maracaibo
             p #{nombre}
             p R.I.F.: #{rif}
           div.header-child
@@ -58,9 +58,9 @@ html
               when 'IMTCUMA'
                 - src = 'images/imtcuma.png' 
               when 'SEDEMAT'
-                - src ='images/sedemat.png'                                 
+                - src ='images/sedemat-logo.png'                                 
               default
-                - src = 'images/LogoAlcaldia.png'
+                - src = 'images/alcaldia-logo.png'
             if institucion === 'PMM' || institucion === 'CBM'
               img#logo(src=src, style={width:'100px !important'})
             else
