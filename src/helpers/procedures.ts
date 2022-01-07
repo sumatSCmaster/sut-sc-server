@@ -109,12 +109,12 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
       response = response.filter((tram) => permissions.includes(tram.tipotramite));
     }
     const tramiteIds = response.map((el) => el.id);
-    const ordinancesQ = (await client.query(queries.ORDINANCES_PROCEDURE_INSTANCES_BY_IDS, [tramiteIds])).rows
+    const ordinancesQ = (await client.query(queries.ORDINANCES_PROCEDURE_INSTANCES_BY_IDS, [tramiteIds])).rows;
     let res: any[] = await Promise.all(
       response.map(async (el) => {
         let ordinances;
         if (!el.pagoPrevio) {
-          ordinances = ordinancesQ.filter((ord) => ord.idTramite === el.id)
+          ordinances = ordinancesQ.filter((ord) => ord.idTramite === el.id);
         }
         const tramite: Partial<Tramite> = {
           id: el.id,
@@ -309,7 +309,9 @@ const getProcedureByInstitution = async (institution, client: PoolClient): Promi
   return Promise.all(
     institution.map(async (institucion) => {
       institucion.tiposUsuarios = await Promise.all(
-        (await client.query(queries.GET_USER_TYPES)).rows.map(async (el) => ({
+        (
+          await client.query(queries.GET_USER_TYPES)
+        ).rows.map(async (el) => ({
           id: el.id_tipo_usuario,
           descripcion: el.descripcion,
           cargos: await Promise.all((await client.query(queries.GET_JOBS_BY_TYPES_AND_INSTITUTION, [el.id_tipo_usuario, institucion.id])).rows),
@@ -401,7 +403,6 @@ const getFieldsBySection = async (section, tramiteId, client): Promise<Campo[] |
     };
   });
 };
-
 
 function roundNumber(value, places) {
   const multiplier = Math.pow(10, places);
@@ -514,7 +515,7 @@ export const getProcedureById = async ({ id, client }: { id: number; client: Poo
  */
 const isNotPrepaidProcedure = ({ suffix, user }: { suffix: string; user: Usuario }) => {
   const condition = false;
-  if ((suffix === 'tl' && user.tipoUsuario !== 4) || !!['pd', 'ompu', 'rc', 'bc', 'lic', 'lict', 'sup', 'cr'].find((el) => el === suffix)) return !condition;
+  if ((suffix === 'tl' && user.tipoUsuario !== 4) || !!['pd', 'ompu', 'rc', 'bc', 'lic', 'lict', 'sup'].find((el) => el === suffix)) return !condition;
   return condition;
 };
 
@@ -546,15 +547,15 @@ export const getProcedureCosts = async () => {
  * @returns Response payload with freshly created procedure
  */
 export const procedureInit = async (procedure, user: Usuario) => {
-  mainLogger.info(`procedureInit ${procedure.tipoTramite} usuario ${user.id}`)
+  mainLogger.info(`procedureInit ${procedure.tipoTramite} usuario ${user.id}`);
   const client = await pool.connect();
   const { tipoTramite, datos, pago, bill } = procedure;
   let costo, respState, dir, cert, datosP, ordenanzas;
   try {
-    mainLogger.info(`procedureInit begin`)
+    mainLogger.info(`procedureInit begin`);
     await client.query('BEGIN');
     datosP = !![29, 30, 31, 32, 33, 34, 35].find((el) => el === tipoTramite) ? { usuario: datos, funcionario: datos } : { usuario: datos };
-    mainLogger.info(`procedureInit datosP ${datosP}`)
+    mainLogger.info(`procedureInit datosP ${datosP}`);
     if (tipoTramite === 26) {
       const { tipoDocumento, documento, registroMunicipal } = datos.contribuyente;
       const hasActiveAgreement = (await client.query(queries.CONTRIBUTOR_HAS_ACTIVE_AGREEMENT_PROCEDURE, [tipoDocumento, documento, registroMunicipal])).rowCount > 0;
@@ -635,7 +636,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
       aprobado: response.aprobado,
       bill: ordenanzas,
     };
-    mainLogger.info(`procedureinit notif`)
+    mainLogger.info(`procedureinit notif`);
     await sendNotification(user, `Un trámite de tipo ${tramite.nombreTramiteLargo} ha sido creado`, 'CREATE_PROCEDURE', 'TRAMITE', tramite, client);
     client.query('COMMIT');
 
@@ -657,7 +658,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
   } catch (error) {
     client.query('ROLLBACK');
     mainLogger.error(error);
-    mainLogger.error(error.message)
+    mainLogger.error(error.message);
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
@@ -750,7 +751,7 @@ export const validateProcedure = async (procedure, user: Usuario, client) => {
  */
 export const processProcedure = async (procedure, user: Usuario) => {
   const client = await pool.connect();
-  mainLogger.info(JSON.stringify(procedure))
+  mainLogger.info(JSON.stringify(procedure));
   let { datos, bill } = procedure;
   let dir,
     respState,
@@ -759,13 +760,13 @@ export const processProcedure = async (procedure, user: Usuario) => {
   try {
     client.query('BEGIN');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.idTramite])).rows[0];
-    mainLogger.info(`Resources ${JSON.stringify(resources)}`)
+    mainLogger.info(`Resources ${JSON.stringify(resources)}`);
     procedure.tipoTramite = resources.tipoTramite;
     if (!procedure.hasOwnProperty('sufijo')) {
       procedure.sufijo = resources.sufijo;
     }
 
-    if (!!['pd', 'ompu', 'cr', 'lic', 'lict'].find((el) => el === procedure.sufijo)) {
+    if (!!['pd', 'lic', 'lict'].find((el) => el === procedure.sufijo)) {
       if (!bill) return { status: 400, message: 'Es necesario asignar un precio a un tramite postpago' };
       costo = bill.totalBs;
       ordenanzas = {
@@ -775,11 +776,11 @@ export const processProcedure = async (procedure, user: Usuario) => {
       };
     }
     const nextEvent = await getNextEventForProcedure(procedure, client);
-    mainLogger.info(JSON.stringify(nextEvent))
+    mainLogger.info(JSON.stringify(nextEvent));
     if (datos) {
-      mainLogger.info(`datos ${JSON.stringify(datos)}`)
+      mainLogger.info(`datos ${JSON.stringify(datos)}`);
       const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
-      mainLogger.info(`prevData ${JSON.stringify(prevData)}`)
+      mainLogger.info(`prevData ${JSON.stringify(prevData)}`);
       if (!prevData.datos.funcionario) datos = { usuario: prevData.datos.usuario, funcionario: datos };
       else if (prevData.datos.funcionario) datos = { usuario: prevData.datos.usuario, funcionario: datos };
       else datos = prevData.datos;
@@ -789,7 +790,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
       const { aprobado } = procedure;
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
       await client.query(queries.UPDATE_APPROVED_STATE_FOR_PROCEDURE, [aprobado, procedure.idTramite]);
-      mainLogger.info(`respState ${JSON.stringify(respState)}`)
+      mainLogger.info(`respState ${JSON.stringify(respState)}`);
       if (procedure.sufijo === 'rc' && aprobado) {
         if (resources.tipoTramite === 27) await approveContributorSignUp({ procedure: (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0], client });
         else if (resources.tipoTramite === 38) mainLogger.info('si');
@@ -930,7 +931,7 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
     return { status: 200, message: 'Datos de pago de trámite añadidos', tramite };
   } catch (error) {
     client.query('ROLLBACK');
-    mainLogger.error(error.message)
+    mainLogger.error(error.message);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -1599,7 +1600,7 @@ export const processProcedureAnalist = async (procedure, user: Usuario, client: 
  */
 const getNextEventForProcedure = async (procedure, client): Promise<any> => {
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
-  mainLogger.info(`getNextEventForProcedure - response ${JSON.stringify(response)}`)
+  mainLogger.info(`getNextEventForProcedure - response ${JSON.stringify(response)}`);
   const nextEvent = procedureEventHandler(procedure.sufijo, response.state);
   return nextEvent;
 };
@@ -1611,20 +1612,24 @@ const procedureEvents = switchcase({
   pa: { iniciado: 'validar_pa', validando: 'enproceso_pa', enproceso: 'finalizar_pa' },
   pd: { iniciado: 'enproceso_pd', enproceso: 'ingresardatos_pd', ingresardatos: 'validar_pd', validando: 'finalizar_pd' },
   // cr: { iniciado: 'validar_cr', validando: 'enproceso_cr', enproceso: 'revisar_cr', enrevision: { true: 'finalizar_cr', false: 'rechazar_cr' } },
-  cr: { 
-    iniciado: 'enproceso_cr',  
-    enproceso: 'revisar_cr', 
-    enrevision: { true: 'pagocajero_cr', false: 'rechazar_cr' }, 
-    pagocajero: 'finalizar_cr',
+  cr: {
+    iniciado: 'validar_cr',
+    validando: { true: 'enproceso_cr', false: 'finalizar_cr' },
+    enproceso: { inspeccion: 'inspeccionar_cr', correccion: 'corregir_cr', revision: 'revisar_cr' },
+    eninspeccion: { false: 'enproceso_cr' },
+    encorreccion: { false: 'enproceso_cr' },
+    enrevision: { true: 'revisardirector_cr', false: 'enproceso_cr' },
+    enrevision_gerente: { aprobado: 'aprobar_cr', rebotado: 'rebotar_cr', rechazado: 'rechazar_cr' },
+    //pagocajero: 'finalizar_cr',
   },
   tl: { iniciado: { true: 'validar_tl', false: 'finalizar_tl' }, validando: 'finalizar_tl' },
   veh: { iniciado: 'validar_veh', validando: 'finalizar_veh' },
   ompu: {
-    iniciado: 'enproceso_ompu',
+    iniciado: 'validar_ompu',
     enproceso: { true: 'aprobar_ompu', false: 'rechazar_ompu' },
-    enrevision: { true: 'ingresardatos_ompu', false: 'rechazar_ompu' },
-    ingresardatos: 'validar_ompu',
-    validando: 'finalizar_ompu',
+    enrevision: { true: 'finalizar_ompu', false: 'rechazar_ompu' },
+    // ingresardatos: 'validar_ompu',
+    validando: 'enproceso_ompu',
   },
   rc: { iniciado: 'procesar_rc', enproceso: { true: 'aprobar_rc', false: 'rechazar_rc' } },
   bc: { iniciado: 'revisar_bc', enrevision: { true: 'aprobar_bc', false: 'rechazar_bc' } },
@@ -1914,7 +1919,7 @@ const updateProcedure = switchcase({
 export const updateProcedureHandler = async (procedure, user) => {
   const client = await pool.connect();
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
-  mainLogger.info(`id ${procedure.idTramite} state ${response.state}`)
+  mainLogger.info(`id ${procedure.idTramite} state ${response.state}`);
   client.release();
   const newProcedureState = updateProcedure(response.state);
   return newProcedureState ? await newProcedureState(procedure, user) : { status: 500, message: 'No es posible actualizar el trámite' };

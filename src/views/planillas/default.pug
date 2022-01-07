@@ -8,7 +8,7 @@ html
       block header
         header#header
           div.header-child
-            img#alcaldia(src='images/LogoAlcaldia.png')
+            img#alcaldia(src='images/alcaldia-logo.png')
           div.header-child
             - var nombre = ''
             - var rif = ''
@@ -37,7 +37,7 @@ html
               when 'SEDEMAT'
                   - nombre = 'Servicio Desconcentrado Municipal de Administración Tributaria'
                   - rif = 'G-20002908-0'
-            p Alcaldia Bolivariana de Maracaibo
+            p Alcaldia de Maracaibo
             p #{nombre}
             p R.I.F.: #{rif}
           div.header-child
@@ -58,14 +58,14 @@ html
               when 'IMTCUMA'
                 - src = 'images/imtcuma.png' 
               when 'SEDEMAT'
-                - src ='images/sedemat.png'                                 
+                - src ='images/sedemat-logo.png'                                 
               default
-                - src = 'images/LogoAlcaldia.png'
+                - src = 'images/alcaldia-logo.png'
             if institucion === 'PMM' || institucion === 'CBM'
               img#logo(src=src, style={width:'100px !important'})
             else
               img#logo(src=src)
-        img#divider(src='images/Divider.png')
+        img#divider(src='images/franja-2.0.png')
       div#content
         block title                                                                 
           if !datos.funcionario
@@ -84,7 +84,7 @@ html
               - direccion = 'Av.3F con calle 81, Sector Valle Frío, Edif. CPU. Teléfono: 0414-3677150'
             when 'SEDEMAT'
               - direccion = 'Telfs. (0261) 793.55.08 (Master) Fax. (0261) 793.58.69 Av. 3F entre calles 81 y 81A, Edif. CPU Planta Baja'                
-          img#divider(src='images/Divider.png')
+          img#divider(src='images/franja-2.0.png')
           div(style={ display: '-webkit-flex', padding: '0px 50px', 'justify-content': 'center', '-webkit-justify-content': 'center' })
             p(style={ display: '-webkit-flex', '-webkit-justify-content': 'center', '-webkit-align-items': 'center', 'margin': '0px 50px' }) #{direccion}
-            img(src='images/footer_logo.png')
+            img(src='images/alcaldia-logo.png' height='64' width='148')
