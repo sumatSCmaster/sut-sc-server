@@ -60,6 +60,9 @@ const queries = {
   CHECK_IF_ADMIN: "SELECT 1 FROM usuario u \
     INNER JOIN tipo_usuario tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
     WHERE tu.descripcion = 'Administrador' AND u.cedula = $1",
+  CHECK_IF_CHIEF: "SELECT 1 FROM usuario u \
+    INNER JOIN tipo_usuario tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
+    WHERE tu.descripcion = 'Jefe de Departamento' AND u.cedula = $1",
   CHECK_IF_SUPERUSER: "SELECT 1 FROM usuario u \
   INNER JOIN tipo_usuario tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
   WHERE tu.descripcion = 'Superuser' AND u.cedula = $1",
