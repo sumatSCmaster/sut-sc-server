@@ -1662,6 +1662,10 @@ const procedureEvents = switchcase({
  * @param state Actual procedure instance state
  */
 const procedureEventHandler = (suffix, state) => {
+  console.log('Suffix es ', suffix)
+  console.log('State es ', state)
+  mainLogger.info(`Suffix es ${suffix}`)
+  mainLogger.info(`State es ${state}`)
   return procedureEvents(suffix)[state];
 };
 
