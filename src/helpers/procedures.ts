@@ -104,7 +104,7 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
   try {
     let response = (await procedureInstanceHandler(user, client, support)).rows; //TODO: corregir el handler para que no sea tan forzado
     const takings = (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [response.map((el) => +el.id)])).rows;
-    if (user.tipoUsuario === 3) {
+    if (user.tipoUsuario === 3 || user.tipoUsuario === 6) {
       const permissions = (await client.query(queries.GET_USER_PERMISSIONS, [user.id])).rows.map((row) => +row.id_tipo_tramite) || [];
       response = response.filter((tram) => permissions.includes(tram.tipotramite));
     }
