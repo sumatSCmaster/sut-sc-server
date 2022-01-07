@@ -3473,6 +3473,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       INNER JOIN tb046_ae_ramo r ON r.co_ramo = l.co_ramo INNER JOIN tb034_motivo m ON m.co_motivo = l.co_motivo \
       WHERE dm.co_contribuyente = $1 AND EXTRACT(YEAR FROM dm.created_at) = EXTRACT(YEAR FROM CURRENT_DATE);',
   },
+  ADD_MOVEMENT: "INSERT INTO movimientos (id_procedimiento, id_usuario, fecha_movimiento, tipo_movimiento) VALUES ($1, $2, (NOW() - interval '4 hours'), $3)",
 };
 
 export default queries;
