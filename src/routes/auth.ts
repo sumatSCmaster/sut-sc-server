@@ -3,7 +3,7 @@ import { generateToken } from '@utils/Strategies';
 import { authenticate } from 'passport';
 //import { createAdmin } from "@helpers/user";
 import * as authValidations from '@validations/auth';
-import { checkIfAdmin, checkIfSuperuser, checkIfOfficial, checkIfDirector } from '@utils/user';
+import { checkIfAdmin, checkIfSuperuser, checkIfOfficial, checkIfDirector, checkIfChief } from '@utils/user';
 import { hashSync, genSaltSync } from 'bcryptjs';
 import { checkResult } from '@validations/index';
 import { createSuperuser, createAdmin, completeExtUserSignUp, addInstitute, signUpUser, addPermissions, isBlocked } from '@helpers/user';
@@ -22,6 +22,15 @@ router.post('/login', authValidations.isLogged, authValidations.login, checkResu
       message: 'Inicio de sesion exitoso',
       token: generateToken(req.user),
       superuser: true,
+      user: req.user,
+    });
+  } else if (await checkIfChief(req.user.cedula)) {
+    req.user = await addInstitute(req.user);
+    req.user = await addPermissions(req.user);
+    res.status(200).json({
+      status: 200,
+      message: 'Inicio de sesion exitoso.',
+      token: generateToken(req.user),
       user: req.user,
     });
   } else if (await checkIfAdmin(req.user.cedula)) {
@@ -69,7 +78,7 @@ router.post('/createAdmin', authenticate('jwt'), isSuperuser, authValidations.cr
     const salt = genSaltSync(10);
     req.body.usuario.password = hashSync(req.body.usuario.password, salt);
     const user = await createAdmin({ ...req.body.usuario }).catch((e) => {
-      mainLogger.error(`Error ${e.message}`)
+      mainLogger.error(`Error ${e.message}`);
       res.status(500).json({
         status: 500,
         error: errorMessageExtractor(e),
@@ -84,7 +93,7 @@ router.post('/createAdmin', authenticate('jwt'), isSuperuser, authValidations.cr
       });
     }
   } catch (e) {
-    mainLogger.error(`Error ${e.message}`)
+    mainLogger.error(`Error ${e.message}`);
     res.status(500).json({
       status: 500,
       error: errorMessageExtractor(e),

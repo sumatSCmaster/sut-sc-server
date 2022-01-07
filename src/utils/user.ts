@@ -40,6 +40,18 @@ export const checkIfAdmin = async (id: string) => {
   }
 };
 
+export const checkIfChief = async (id: string) => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(queries.CHECK_IF_CHIEF, [id]);
+    return result.rowCount > 0;
+  } catch (e) {
+    throw errorMessageExtractor(e);
+  } finally {
+    client.release();
+  }
+};
+
 export const checkIfSuperuser = async (id: string) => {
   const client = await pool.connect();
   try {
