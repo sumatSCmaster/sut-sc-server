@@ -775,10 +775,10 @@ export const processProcedure = async (procedure, user: Usuario) => {
         totalPetro: bill.totalPetro,
       };
     }
-    console.log('Procedure es ', procedure)
-    console.log('Client es ', client)
-    mainLogger.info(`Procedure es ${procedure}`)
-    mainLogger.info(`Client es ${client}`)
+    console.log('Procedure es ', procedure);
+    console.log('Client es ', client);
+    mainLogger.info(`Procedure es ${procedure}`);
+    mainLogger.info(`Client es ${client}`);
     const nextEvent = await getNextEventForProcedure(procedure, client);
     mainLogger.info(JSON.stringify(nextEvent));
     if (datos) {
@@ -1606,7 +1606,8 @@ const getNextEventForProcedure = async (procedure, client): Promise<any> => {
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
   mainLogger.info(`getNextEventForProcedure - response ${JSON.stringify(response)}`);
   const nextEvent = procedureEventHandler(procedure.sufijo, response.state);
-  return nextEvent;
+  if (typeof nextEvent === 'string') return nextEvent;
+  return nextEvent[procedure.aprobado];
 };
 
 /**
@@ -1666,10 +1667,10 @@ const procedureEvents = switchcase({
  * @param state Actual procedure instance state
  */
 const procedureEventHandler = (suffix, state) => {
-  console.log('Suffix es ', suffix)
-  console.log('State es ', state)
-  mainLogger.info(`Suffix es ${suffix}`)
-  mainLogger.info(`State es ${state}`)
+  console.log('Suffix es ', suffix);
+  console.log('State es ', state);
+  mainLogger.info(`Suffix es ${suffix}`);
+  mainLogger.info(`State es ${state}`);
   return procedureEvents(suffix)[state];
 };
 
