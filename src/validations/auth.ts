@@ -172,6 +172,8 @@ const validations = {
   capitalSuscrito: check('tramite.datos.capitalSuscrito').exists().withMessage('Debe incluir el capital suscrito').isInt().isLength({ min: 1 }).withMessage('El capital suscrito no puede ser vacio'),
   tipoSociedadContrib: check('tramite.datos.tipoSociedadContrib').exists().withMessage('Debe incluir el tipo de sociedad del contribuyente').isString().isLength({ min: 1 }).withMessage('El tipo de sociedad del contribuyente no puede ser vacio'),
   estadoLicencia: check('tramite.datos.estadoLicencia').exists().withMessage('Debe incluir el estado de la licencia').isString().isLength({ min: 1 }).withMessage('El estado de la licencia no puede ser vacio'),
+  observacionProceso: check('tramite.datos.observacionProceso').optional(),
+  tipoProceso: check('tramite.datos.tipoProceso').exists().withMessage('Debe la accion a realizar').isString().isLength({ min: 1 }).withMessage('El tipo de proceso no puede ser nulo'),
 };
 
 export const createSuperuser = [
