@@ -1876,7 +1876,7 @@ const fineInstanceHandler = (user, client) => {
       if (isAdmin(user) || isDirector(user)) {
         query = 2;
         payload = [user.institucion.nombreCompleto];
-      } else if (isOfficial(user)) {
+      } else if (isOfficial(user) || user.tipoUsuario == 6) {
         query = 3;
         payload = [user.institucion.nombreCompleto];
       }
