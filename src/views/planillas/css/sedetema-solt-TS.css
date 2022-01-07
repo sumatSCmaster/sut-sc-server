@@ -18,7 +18,7 @@
   -webkit-justify-content: center;
   transform: rotate(45deg);
   -webkit-transform: rotate(45deg);
-  opacity: 0.50;
+  opacity: 1;
   font-family: Arial, Helvetica, sans-serif;
   color: #202020;
   font-size: 20px;
@@ -60,7 +60,8 @@
   height: 50%;
 }
 
-#fecha-destino > p, #footer > p {
+#fecha-destino > p,
+#footer > p {
   margin: 0;
   font-size: 12px;
   font-family: Arial, Helvetica, sans-serif;

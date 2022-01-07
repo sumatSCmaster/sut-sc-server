@@ -59,7 +59,6 @@ export const getBranchesD = async () => {
 export const getBranches = async () => {
   return await tracer.trace('getBranches', getBranchesD);
 };
-
 export const generateBranchesReport = async (user, payload: { from: Date; to: Date; alcaldia: boolean }) => {
   const client = await pool.connect();
   try {
@@ -520,7 +519,7 @@ export const getCondoReport = async (payload) => {
         try {
           pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toBuffer(async (err, buffer) => {
             if (err) {
-              mainLogger.error(err)
+              mainLogger.error(err);
               rej(err);
             } else {
               const bucketParams = {
@@ -537,14 +536,14 @@ export const getCondoReport = async (payload) => {
             }
           });
         } catch (e) {
-          mainLogger.info(e.message)
+          mainLogger.info(e.message);
           throw e;
         } finally {
         }
       }
     });
   } catch (error) {
-    mainLogger.info(error.message)
+    mainLogger.info(error.message);
     throw errorMessageExtractor(error);
   } finally {
     client.release();

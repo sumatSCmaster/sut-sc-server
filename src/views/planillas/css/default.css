@@ -25,14 +25,20 @@ body {
 #header,
 #footer {
   width: 100%;
-  height: 100px;
+  height: 150px;
   display: flex;
   display: -webkit-flex;
 }
 
-#alcaldia,
-#logo {
+#alcaldia {
   width: 200px;
+  height: 100px;
+  object-fit: contain;
+}
+
+#logo {
+  width: 240px;
+  height: 100%;
   object-fit: contain;
 }
 
@@ -110,7 +116,7 @@ img#divider {
   -webkit-flex-direction: column;
   flex: 1;
   -webkit-flex: 1;
-  background: url('../images/background.png');
+  /* background: url('../images/background.png'); */
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
@@ -272,7 +278,9 @@ ul {
   text-align: center;
 }
 
-.table-normal tr, td, th {
+.table-normal tr,
+td,
+th {
   border: 1px solid #707f90;
 }
 
@@ -325,7 +333,7 @@ ul {
   flex-wrap: nowrap;
   -webkit-flex-wrap: nowrap;
 }
-.grow1{
+.grow1 {
   flex-grow: 1;
   -webkit-flex-grow: 1;
 }
@@ -349,7 +357,7 @@ ul {
 
 .row-constancy > div {
   flex: 1;
-  -webkit-flex: 1; 
+  -webkit-flex: 1;
 }
 
 @media print {
@@ -357,11 +365,12 @@ ul {
     page-break-inside: avoid !important;
   }
 }
-.center > p, .center{
+.center > p,
+.center {
   text-align: center !important;
   display: -webkit-flex;
-  align-items:center;
+  align-items: center;
   justify-content: center;
-  -webkit-align-items:center;
+  -webkit-align-items: center;
   -webkit-justify-content: center;
 }

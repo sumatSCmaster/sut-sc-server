@@ -29,7 +29,7 @@
 }
 
 .certificado-background {
-  background: url("../../images/background.png");
+  /* background: url("../../images/background.png"); */
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
