@@ -1813,6 +1813,9 @@ const procedureInstanceHandler = (user, client, support) => {
       } else if (belongsToSedetama(user)) {
         query = 6;
         payload = user.institucion.id;
+      } else if (user.tipoUsuario === 6) {
+        query = 3;
+        payload = user.institucion.id;
       } else {
         query = user.tipoUsuario;
         payload = user.institucion.id;
