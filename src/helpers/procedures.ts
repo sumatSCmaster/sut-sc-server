@@ -1606,6 +1606,7 @@ const getNextEventForProcedure = async (procedure, client): Promise<any> => {
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
   mainLogger.info(`getNextEventForProcedure - response ${JSON.stringify(response)}`);
   const nextEvent = procedureEventHandler(procedure.sufijo, response.state);
+  console.log(response.state, nextEvent, procedure);
   if (typeof nextEvent === 'string') return nextEvent;
   if (response.state === 'enrevision' && procedure.sufijo === 'cr') return nextEvent[procedure.revision.aprobado];
   return nextEvent[procedure.aprobado];
