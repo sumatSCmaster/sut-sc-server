@@ -775,6 +775,10 @@ export const processProcedure = async (procedure, user: Usuario) => {
         totalPetro: bill.totalPetro,
       };
     }
+    console.log('Procedure es ', procedure)
+    console.log('Client es ', client)
+    mainLogger.info(`Procedure es ${procedure}`)
+    mainLogger.info(`Client es ${client}`)
     const nextEvent = await getNextEventForProcedure(procedure, client);
     mainLogger.info(JSON.stringify(nextEvent));
     if (datos) {
