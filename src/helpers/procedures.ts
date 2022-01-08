@@ -1606,7 +1606,6 @@ const getNextEventForProcedure = async (procedure, client): Promise<any> => {
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
   mainLogger.info(`getNextEventForProcedure - response ${JSON.stringify(response)}`);
   const nextEvent = procedureEventHandler(procedure.sufijo, response.state);
-  // console.log(response.state, nextEvent[procedure.revision.aprobado], procedure);
   if (typeof nextEvent === 'string') return nextEvent;
   if (response.state === 'enrevision' && procedure.sufijo === 'cr') return nextEvent[procedure.revision.aprobado];
   return nextEvent[procedure.aprobado];
@@ -1625,7 +1624,7 @@ const procedureEvents = switchcase({
     enproceso: { inspeccion: 'inspeccionar_cr', correccion: 'corregir_cr', revision: 'revisar_cr' },
     eninspeccion: { false: 'enproceso_cr' },
     encorreccion: { false: 'enproceso_cr' },
-    enrevision: { true: 'revisardirector_cr', false: 'enproceso_cr' },
+    enrevision: { true: 'revisardirector_cr', false: 'rebotar_cr' },
     enrevision_gerente: { aprobado: 'aprobar_cr', rebotado: 'rebotar_cr', rechazado: 'rechazar_cr' },
     //pagocajero: 'finalizar_cr',
   },
