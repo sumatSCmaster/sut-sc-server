@@ -1031,7 +1031,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
         if (procedure.sufijo !== 'bc' && procedure.sufijo !== 'sup') dir = await createCertificate(procedure, client);
         respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, aprobado]);
       } else {
-        respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent === 'revisardirector_cr' ? nextEvent : nextEvent[aprobado], datos || null, null, null]);
+        respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent === 'revisardirector_cr' || nextEvent === 'rebotar_cr' ? nextEvent : nextEvent[aprobado], datos || null, null, null]);
       }
     }
 
