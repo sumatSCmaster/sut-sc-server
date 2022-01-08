@@ -1026,7 +1026,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
         }
       }
     } else {
-      if (aprobado && procedure.revision.aprobado ? procedure.revision.aprobado !== 'enrevisiondirector_cr' : true) {
+      if (aprobado && typeof aprobado === 'string') {
         if (resources.tipoTramite === 28 || resources.tipoTramite === 36) procedure.datos = await approveContributorAELicense({ data: datos, client });
         if (procedure.sufijo !== 'bc' && procedure.sufijo !== 'sup') dir = await createCertificate(procedure, client);
         respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, aprobado]);
