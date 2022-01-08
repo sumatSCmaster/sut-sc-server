@@ -1026,7 +1026,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
         }
       }
     } else {
-      if (aprobado) {
+      if (aprobado && procedure.revision.aprobado ? procedure.revision.aprobado !== 'enrevisiondirector_cr' : true) {
         if (resources.tipoTramite === 28 || resources.tipoTramite === 36) procedure.datos = await approveContributorAELicense({ data: datos, client });
         if (procedure.sufijo !== 'bc' && procedure.sufijo !== 'sup') dir = await createCertificate(procedure, client);
         respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, aprobado]);
@@ -1606,7 +1606,7 @@ const getNextEventForProcedure = async (procedure, client): Promise<any> => {
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
   mainLogger.info(`getNextEventForProcedure - response ${JSON.stringify(response)}`);
   const nextEvent = procedureEventHandler(procedure.sufijo, response.state);
-  console.log(response.state, nextEvent, procedure);
+  console.log(response.state, nextEvent[procedure.revision.aprobado], procedure);
   if (typeof nextEvent === 'string') return nextEvent;
   if (response.state === 'enrevision' && procedure.sufijo === 'cr') return nextEvent[procedure.revision.aprobado];
   return nextEvent[procedure.aprobado];
