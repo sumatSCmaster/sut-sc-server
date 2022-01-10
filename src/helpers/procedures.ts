@@ -1626,7 +1626,7 @@ const procedureEvents = switchcase({
     inspeccion: { false: 'enproceso_cr' },
     encorreccion: { false: 'enproceso_cr' },
     enrevision: { true: 'revisardirector_cr', false: 'rebotar_cr' },
-    enrevision_gerente: { aprobado: 'aprobar_cr', rebotado: 'rebotar_cr', rechazado: 'rechazar_cr' },
+    enrevision_gerente: { true: 'aprobar_cr', false: 'rebotar_cr', rechazado: 'rechazar_cr' },
     //pagocajero: 'finalizar_cr',
   },
   tl: { iniciado: { true: 'validar_tl', false: 'finalizar_tl' }, validando: 'finalizar_tl' },
