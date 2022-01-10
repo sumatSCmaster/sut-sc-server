@@ -1920,6 +1920,7 @@ const updateProcedure = switchcase({
   validando: null,
   enproceso: processProcedure,
   inspeccion: inspectProcedure,
+  encorreccion: inspectProcedure,
   enrevision_analista: reviseProcedure,
   enrevision_gerente: reviseProcedure,
   enrevision: reviseProcedure,
