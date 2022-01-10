@@ -816,6 +816,9 @@ export const processProcedure = async (procedure, user: Usuario) => {
       }));
       mainLogger.info(datos);
       mainLogger.info('creo y me parec q se rompio aki');
+      if (procedure.sufijo === 'cr' && procedure.datos.observacion) {
+        await client.query(queries.INSERT_OBSERVATION, [procedure.idTramite, procedure.datos.observacionProceso]);
+      }
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
     } else {
       if (nextEvent.startsWith('finalizar')) {

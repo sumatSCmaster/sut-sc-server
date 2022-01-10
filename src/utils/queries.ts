@@ -134,6 +134,7 @@ const queries = {
     "SELECT ct.*, camp.nombre, camp.tipo, camp.validacion, camp.col FROM campo_tramite ct INNER JOIN\
     campo camp ON ct.id_campo = camp.id_campo WHERE ct.id_seccion = $1 AND ct.id_tipo_tramite = $2 AND (ct.estado='iniciado' OR ct.estado = 'ingresardatos') \
     ORDER BY ct.orden",
+  INSERT_OBSERVATION: 'INSERT INTO tramite_observaciones (id_tramite, observaciones) VALUES ($1, $2);',
   GET_FIELDS_BY_SECTION_FOR_OFFICIALS:
     "SELECT ct.*, camp.nombre, camp.tipo, camp.validacion, camp.col FROM campo_tramite ct INNER JOIN\
     campo camp ON ct.id_campo = camp.id_campo WHERE ct.id_seccion = $1 AND ct.id_tipo_tramite = $2 \
