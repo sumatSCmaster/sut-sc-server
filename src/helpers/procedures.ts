@@ -1124,7 +1124,7 @@ export const inspectProcedure = async (procedure, user: Usuario) => {
     //     respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
     //   }
     // } else {
-    respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
+    respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, null, null]);
     // }
 
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
