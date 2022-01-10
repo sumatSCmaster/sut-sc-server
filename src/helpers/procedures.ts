@@ -1613,7 +1613,12 @@ const getNextEventForProcedure = async (procedure, client): Promise<any> => {
   mainLogger.info(`getNextEventForProcedure - response ${JSON.stringify(response)}`);
   const nextEvent = procedureEventHandler(procedure.sufijo, response.state);
   if (typeof nextEvent === 'string') return nextEvent;
-  if ((response.state === 'enrevision' && procedure.sufijo === 'cr') || (response.state === 'inspeccion' && procedure.sufijo === 'cr') || (response.state === 'enrevision_gerente' && procedure.sufijo === 'cr'))
+  if (
+    (response.state === 'enrevision' && procedure.sufijo === 'cr') ||
+    (response.state === 'inspeccion' && procedure.sufijo === 'cr') ||
+    (response.state === 'enrevision_gerente' && procedure.sufijo === 'cr') ||
+    (response.state === 'encorreccion' && procedure.sufijo === 'cr')
+  )
     return nextEvent[procedure.revision.aprobado];
   return nextEvent[procedure.aprobado];
 };
