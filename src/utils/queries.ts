@@ -3478,6 +3478,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       WHERE dm.co_contribuyente = $1 AND EXTRACT(YEAR FROM dm.created_at) = EXTRACT(YEAR FROM CURRENT_DATE);',
   },
   ADD_MOVEMENT: "INSERT INTO movimientos (id_procedimiento, id_usuario, fecha_movimiento, tipo_movimiento) VALUES ($1, $2, (NOW() - interval '4 hours'), $3)",
+  GET_OBSERVATIONS: "SELECT * FROM tramite_observaciones WHERE id_tramite = $1 ORDER BY fecha DESC LIMIT 1"
 };
 
 export default queries;
