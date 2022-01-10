@@ -5,7 +5,7 @@ import { getObservations } from '@helpers/observations';
 
 const router = Router();
 
-router.get('/', authenticate('jwt'), async (req: any, res) => {
+router.get('/', async (req: any, res) => {
   const { idTramite } = req.query;
   const [error, data] = await fulfill(getObservations(idTramite));
   if (error) res.status(500).json(error);
