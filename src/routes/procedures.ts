@@ -62,8 +62,8 @@ router.post('/certificate/:id', authenticate('jwt'), async (req: any, res) => {
 });
 
 router.put('/update', validate(), checkResult, authenticate('jwt'), isAuth, async (req: any, res) => {
-  const { tramite, id } = req.body;
-  const [error, data] = await fulfill(updateProcedureHandler(tramite, req.user, id));
+  const { tramite, idUsuario } = req.body;
+  const [error, data] = await fulfill(updateProcedureHandler(tramite, req.user, idUsuario));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
