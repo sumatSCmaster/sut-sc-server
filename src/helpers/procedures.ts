@@ -1120,7 +1120,9 @@ export const inspectProcedure = async (procedure, user: Usuario, idUser) => {
         nro: row.referencia,
       }));
     }
-
+    if (procedure.estado === 'encorreccion') {
+      datos = procedure.datos;
+    }
     // if (procedure.sufijo === 'ompu') {
     //   if (aprobado) {
     //     dir = await createCertificate(procedure, client);
