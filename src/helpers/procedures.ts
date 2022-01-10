@@ -749,7 +749,7 @@ export const validateProcedure = async (procedure, user: Usuario, client) => {
  * @param user User from token payload
  * @returns Response payload with procedure
  */
-export const processProcedure = async (procedure, user: Usuario) => {
+export const processProcedure = async (procedure, user: Usuario, idUser) => {
   const client = await pool.connect();
   mainLogger.info(JSON.stringify(procedure));
   let { datos, bill } = procedure;
@@ -829,7 +829,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
         respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, costo || null, null]);
       }
     }
-
+    await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, `cambio de estado ${nextEvent}`]);
     await client.query('COMMIT');
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
     const tramite: Partial<Tramite> = {
@@ -880,7 +880,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
  * @param user User from token payload
  * @returns Response payload with procedure
  */
-export const addPaymentProcedure = async (procedure, user: Usuario) => {
+export const addPaymentProcedure = async (procedure, user: Usuario, idUser) => {
   const client = await pool.connect();
   let { pago } = procedure;
   try {
@@ -927,6 +927,7 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
       aprobado: response.aprobado,
     };
     await sendNotification(user, `Se añadieron los datos de pago de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
+    await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, `cambio de estado ${nextEvent}`]);
     client.query('COMMIT');
     sendEmail({
       ...tramite,
@@ -955,7 +956,7 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
  * @param user User from token payload
  * @returns Response payload with procedure
  */
-export const reviseProcedure = async (procedure, user: Usuario) => {
+export const reviseProcedure = async (procedure, user: Usuario, idUser) => {
   const client = await pool.connect();
   const { aprobado, observaciones } = procedure.revision;
   let dir, respState, datos;
@@ -1058,6 +1059,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       aprobado: response.aprobado,
     };
     await sendNotification(user, `Se realizó la revisión de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
+    await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, `cambio de estado ${nextEvent}`]);
     client.query('COMMIT');
     sendEmail({
       ...tramite,
@@ -1086,7 +1088,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
  * @param user User from token payload
  * @returns Response payload with procedure
  */
-export const inspectProcedure = async (procedure, user: Usuario) => {
+export const inspectProcedure = async (procedure, user: Usuario, idUser) => {
   const client = await pool.connect();
   const { aprobado, observaciones } = procedure.revision;
   let dir, respState, datos;
@@ -1150,6 +1152,7 @@ export const inspectProcedure = async (procedure, user: Usuario) => {
       aprobado: response.aprobado,
     };
     await sendNotification(user, `Se realizó la inspección de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
+    await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, `cambio de estado ${nextEvent}`]);
     client.query('COMMIT');
     sendEmail({
       ...tramite,
@@ -1934,11 +1937,11 @@ const updateProcedure = switchcase({
  * @param procedure
  * @param user
  */
-export const updateProcedureHandler = async (procedure, user) => {
+export const updateProcedureHandler = async (procedure, user, id) => {
   const client = await pool.connect();
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
   mainLogger.info(`id ${procedure.idTramite} state ${response.state}`);
   client.release();
   const newProcedureState = updateProcedure(response.state);
-  return newProcedureState ? await newProcedureState(procedure, user) : { status: 500, message: 'No es posible actualizar el trámite' };
+  return newProcedureState ? await newProcedureState(procedure, user, id) : { status: 500, message: 'No es posible actualizar el trámite' };
 };
