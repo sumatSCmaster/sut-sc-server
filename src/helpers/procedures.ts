@@ -129,7 +129,7 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
           fechaCreacion: el.fechacreacion,
           codigoTramite: el.codigotramite,
           usuario: el.usuario,
-          nombreUltimoEditor: lastEditor.nombre_completo,
+          nombreUltimoEditor: lastEditor,
           nombreLargo: el.nombrelargo,
           nombreCorto: el.nombrecorto,
           nombreTramiteLargo: el.nombretramitelargo,
