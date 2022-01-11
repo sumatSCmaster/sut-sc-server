@@ -51,7 +51,7 @@ const queries = {
   GET_ADMIN_INSTITUTE:
     'SELECT i.*, cf.bloqueado, c.descripcion AS cargo, c.id_cargo AS "idCargo" FROM institucion i INNER JOIN cargo c ON i.id_institucion = c.id_institucion INNER JOIN cuenta_funcionario cf ON c.id_cargo = cf.id_cargo \
     WHERE cf.id_usuario = $1;',
-  GET_LAST_EDITOR: `SELECT nombre_completo FROM usuario WHERE id_usuario = (SELECT id_usuario FROM movimientos WHERE id_procedimiento = $1 ORDER BY fecha_movimiento DESC LIMIT 1);`,
+  GET_LAST_EDITOR_AND_DATE: `SELECT nombre_completo, fecha_movimiento FROM usuario JOIN movimientos USING (id_usuario) WHERE id_procedimiento = $1 ORDER BY fecha_movimiento DESC LIMIT 1;`,
   CHECK_IF_OFFICIAL: "SELECT 1 FROM usuario u \
     INNER JOIN tipo_usuario tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
     WHERE tu.descripcion = 'Funcionario' AND u.cedula = $1",

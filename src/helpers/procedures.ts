@@ -113,7 +113,7 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
     let res: any[] = await Promise.all(
       response.map(async (el) => {
         let ordinances;
-        const lastEditor = (await client.query(queries.GET_LAST_EDITOR, [el.id])).rows[0];
+        const lastEditor = (await client.query(queries.GET_LAST_EDITOR_AND_DATE, [el.id])).rows[0];
         if (!el.pagoPrevio) {
           ordinances = ordinancesQ.filter((ord) => ord.idTramite === el.id);
         }
@@ -129,7 +129,7 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
           fechaCreacion: el.fechacreacion,
           codigoTramite: el.codigotramite,
           usuario: el.usuario,
-          nombreUltimoEditor: lastEditor,
+          datosUltimoEditor: lastEditor,
           nombreLargo: el.nombrelargo,
           nombreCorto: el.nombrecorto,
           nombreTramiteLargo: el.nombretramitelargo,
