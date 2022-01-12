@@ -56,7 +56,7 @@ router.get('/sedemat/natural', async (req, res) => {
 router.get('/sedemat/contributor/rim/', async (req, res) => {
   const [error, data] = await fulfill(taxPayerEstatesByRIM(req.query));
   mainLogger.info(error);
-  if (error) res.status(500).json(error.message);
+  if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
 

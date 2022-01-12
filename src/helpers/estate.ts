@@ -289,7 +289,11 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
   } catch (e: any) {
     mainLogger.error(e);
     await client.query('ROLLBACK');
-    throw e;
+    throw {
+      status: e.status || 500,
+      error: errorMessageExtractor(e),
+      message: errorMessageGenerator(e) || e.message || 'Error al crear el inmueble',
+    };
   } finally {
     client.release();
   }
