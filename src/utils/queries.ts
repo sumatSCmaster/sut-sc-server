@@ -2007,7 +2007,7 @@ ORDER BY fecha_liquidacion DESC;
     WHERE id_parroquia = $1`,
   GET_APPRAISALS_BY_ID: 'SELECT anio, avaluo AS avaluo FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1',
   GET_CURRENT_APPRAISALS_BY_ID: "SELECT anio, avaluo FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 and anio = EXTRACT('year' FROM CURRENT_DATE);",
-  GET_APPROVED_CPU_PROCEDURE: 'SELECT 1 FROM tramite WHERE codigo_tramite = $1 AND aprobado = true;',
+  GET_APPROVED_CPU_PROCEDURE: 'SELECT 1 FROM tramite WHERE codigo_tramite = $1 AND aprobado = true AND id_tipo_tramite = 16;',
   CREATE_BARE_ESTATE: `INSERT INTO inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, tipo_inmueble, dir_doc, cod_tramite)
     VALUES (default, $1, $2, $3, $4, $5, $6, $7, $8) RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", dir_doc AS "dirDoc"`,
