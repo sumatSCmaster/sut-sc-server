@@ -274,7 +274,7 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
   try {
     await client.query('BEGIN');
     const codIsApproved = (await client.query(queries.GET_APPROVED_CPU_PROCEDURE, [codigoCpu])).rows[0];
-    if (!codIsApproved) throw new Error();
+    if (!codIsApproved) throw new Error('El código ingresado no pertenece a un trámite aprobado');
     const estate = (await client.query(queries.CREATE_BARE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, dirDoc, codigoCpu])).rows[0];
     mainLogger.info(estate);
     await client.query(queries.ADD_MOVEMENT, [estate.id, userId, 'inmueble_registrado']);
@@ -286,10 +286,10 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
     await client.query('COMMIT');
 
     return { status: 200, inmueble: { ...estate, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.id])).rows } };
-  } catch (e) {
+  } catch (e: any) {
     mainLogger.error(e);
     await client.query('ROLLBACK');
-    throw new Error('El código ingresado no pertenece a un trámite aprobado');
+    throw e.message;
   } finally {
     client.release();
   }
