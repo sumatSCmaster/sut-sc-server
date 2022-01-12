@@ -269,14 +269,16 @@ export const parishEstates = async ({ idParroquia }) => {
   }
 };
 
-export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc, userId }) => {
+export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc, userId, codigoCpu }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const estate = (await client.query(queries.CREATE_BARE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, dirDoc])).rows[0];
+    const codIsApproved = (await client.query(queries.GET_APPROVED_CPU_PROCEDURE, [codigoCpu])).rows[0];
+    if (!codIsApproved) throw new Error('El código ingresado no pertenece a un trámite aprobado');
+    const estate = (await client.query(queries.CREATE_BARE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, dirDoc, codigoCpu])).rows[0];
     mainLogger.info(estate);
-    const movimiento = await client.query(queries.ADD_MOVEMENT, [estate.id, userId, 'inmueble_registrado']);
-    const appraisals = await Promise.all(
+    await client.query(queries.ADD_MOVEMENT, [estate.id, userId, 'inmueble_registrado']);
+    await Promise.all(
       avaluos.map((row) => {
         return client.query(queries.INSERT_ESTATE_VALUE, [estate.id, row.avaluo, row.anio]);
       })
