@@ -45,7 +45,7 @@ export const getAvailableProcedures = async (user): Promise<{ instanciasDeTramit
     const [instanciasDeTramite, instanciasDeMulta, instanciasDeImpuestos, instanciasDeSoporte] = await Promise.all([instanciasDeTramiteP, instanciasDeMultaP, instanciasDeImpuestosP, instanciasDeSoporteP]);
     mainLogger.info(`getAvailableProcedures: finished obtaining instances`);
     return { instanciasDeTramite, instanciasDeMulta, instanciasDeImpuestos, instanciasDeSoporte };
-  } catch (error) {
+  } catch (error: any) {
     mainLogger.error(`get procedures error ${error.message}`);
     throw {
       status: 500,
@@ -161,7 +161,7 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
       res = res.filter((row) => row.tipoTramite !== 37);
     }
     return esDaniel(user) ? res.filter((row) => ![27, 39, 40].includes(row.tipoTramite)) : res;
-  } catch (error) {
+  } catch (error: any) {
     mainLogger.error(`procedure tramite instances ${error.message}`);
     throw new Error('Error al obtener instancias de tramite');
   }
@@ -198,7 +198,7 @@ const getFineInstances = async (user, client: PoolClient) => {
 
       return multa;
     });
-  } catch (error) {
+  } catch (error: any) {
     mainLogger.error(`Instancias de multa error ${error.message}`);
     throw new Error('Error al obtener instancias de multa');
   }
@@ -235,7 +235,7 @@ const getSettlementInstances = async (user, client: PoolClient) => {
 
       return liquidacion;
     });
-  } catch (error) {
+  } catch (error: any) {
     mainLogger.error(`Error instancias de liquidacion ${error.message}`);
     throw new Error('Error al obtener instancias de liquidacion');
   }
@@ -657,7 +657,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
       message: 'Tramite iniciado!',
       tramite,
     };
-  } catch (error) {
+  } catch (error: any) {
     client.query('ROLLBACK');
     mainLogger.error(error);
     mainLogger.error(error.message);
@@ -734,7 +734,7 @@ export const validateProcedure = async (procedure, user: Usuario, client) => {
       estado: respState.rows[0].state,
     });
     return { status: 200, message: 'Pago del tramite validado', tramite };
-  } catch (error) {
+  } catch (error: any) {
     mainLogger.error(`validateProcedure - ERROR ${error.message} idTramite ${procedure.idTramite}`);
     throw {
       status: 500,
@@ -863,7 +863,7 @@ export const processProcedure = async (procedure, user: Usuario, idUser) => {
       estado: respState.rows[0].state,
     });
     return { status: 200, message: 'Tramite procesado', tramite };
-  } catch (error) {
+  } catch (error: any) {
     client.query('ROLLBACK');
     mainLogger.error(error.message);
     throw {
@@ -939,7 +939,7 @@ export const addPaymentProcedure = async (procedure, user: Usuario, idUser) => {
       estado: respState.rows[0].state,
     });
     return { status: 200, message: 'Datos de pago de trámite añadidos', tramite };
-  } catch (error) {
+  } catch (error: any) {
     client.query('ROLLBACK');
     mainLogger.error(error.message);
     throw {
@@ -1071,7 +1071,7 @@ export const reviseProcedure = async (procedure, user: Usuario, idUser) => {
       estado: respState.rows[0].state,
     });
     return { status: 200, message: 'Trámite revisado', tramite };
-  } catch (error) {
+  } catch (error: any) {
     mainLogger.error(error);
     client.query('ROLLBACK');
     throw {
@@ -1166,7 +1166,7 @@ export const inspectProcedure = async (procedure, user: Usuario, idUser) => {
       estado: respState.rows[0].state,
     });
     return { status: 200, message: 'Inspección del trámite cargada', tramite };
-  } catch (error) {
+  } catch (error: any) {
     mainLogger.error(error);
     client.query('ROLLBACK');
     throw {
@@ -1332,7 +1332,7 @@ export const approveAllLicenses = async (idArray: number[], user: Usuario): Prom
     );
     await client.query('COMMIT');
     return { status: 200, message: 'Licencias aprobadas satisfactoriamente', tramites };
-  } catch (error) {
+  } catch (error: any) {
     client.query('ROLLBACK');
     mainLogger.error(error);
     throw {

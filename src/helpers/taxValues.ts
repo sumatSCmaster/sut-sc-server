@@ -28,7 +28,6 @@ export const getDataForTaxValues = async () => {
     );
     return { status: 200, message: 'Informacion inicial de valores fiscales obtenida', datos: { parroquias, tiposConstruccion, anos } };
   } catch (error) {
-
     mainLogger.error(`Error ${error?.message}`);
     throw {
       status: 500,
@@ -194,9 +193,8 @@ export const updateConstructionValuesByFactor = async (construction) => {
  * @param ground
  * @param sector
  */
-export const updateGroundValuesBySector = async (ground, sector) => {
+export const updateGroundValuesBySector = async (ground, sector, year) => {
   const client = await pool.connect();
-  const year = new Date().getFullYear();
   const { valorFiscal } = ground;
   try {
     client.query('BEGIN');
@@ -263,7 +261,7 @@ export const updateConstructionValuesByModel = async (construction, model) => {
     return { status: 200, message: 'Valor fiscal de la construccion actualizado!', anos };
   } catch (error) {
     client.query('ROLLBACK');
-    mainLogger.error(`Error ${error.message}`)
+    mainLogger.error(`Error ${error.message}`);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
