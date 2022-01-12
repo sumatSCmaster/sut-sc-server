@@ -289,7 +289,7 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
   } catch (e: any) {
     mainLogger.error(e);
     await client.query('ROLLBACK');
-    throw new Error(e.message);
+    throw e;
   } finally {
     client.release();
   }
