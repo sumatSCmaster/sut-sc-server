@@ -1540,15 +1540,19 @@ ORDER BY razon_social;`,
   WHERE codigo != '915' AND codigo IN ('122', '111')
   GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion
   ORDER BY ramo;`,
-  GET_LIQUIDATED_CONDO_DISCLOSED: ` SELECT CONCAT (data.tipo_documento,data.documento) AS documento, data.razon_social AS razon_social, data.aprobado AS aprobado, SUM (
-    CASE WHEN data.monto IS NOT NULL THEN data.monto ELSE (data.monto_petro * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) END) AS monto
-    FROM (SELECT c.tipo_documento, c.documento, c.razon_social, s.aprobado, l.monto, l.monto_petro
-         FROM impuesto.condominio d INNER JOIN impuesto.contribuyente c ON d.id_contribuyente = c.id_contribuyente
-        INNER JOIN impuesto.solicitud s ON d.id_contribuyente = s.id_contribuyente INNER JOIN impuesto.liquidacion l
-        ON s.id_solicitud = l.id_solicitud WHERE l.fecha_liquidacion BETWEEN $1 AND $2
-       GROUP BY c.tipo_documento, c.documento, c.razon_social, s.aprobado, l.monto, l.monto_petro) as data 
-       GROUP BY data.tipo_documento, data.documento, data.razon_social, data.aprobado ORDER BY razon_social 
-  `
+  GET_LIQUIDATED_CONDO_DISCLOSED: `SELECT CONCAT (data.tipo_documento,data.documento) AS Documento, data.razon_social AS RazonSocial, 
+	(CASE WHEN data.aprobado = true THEN 'Solvente' ELSE 'Vigente' END) AS Estado,
+	data.ramo AS Ramo, data.subRamo AS SubRamo, SUM (CASE WHEN data.monto IS NOT NULL THEN data.monto ELSE (data.monto_petro * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) END) AS monto
+    FROM (SELECT c.tipo_documento, c.documento, c.razon_social, r.descripcion as ramo, sub.descripcion as subramo,
+	s.aprobado, l.monto, l.monto_petro FROM impuesto.condominio d INNER JOIN impuesto.contribuyente c 
+		  ON d.id_contribuyente = c.id_contribuyente INNER JOIN impuesto.solicitud s 
+		  ON d.id_contribuyente = s.id_contribuyente INNER JOIN impuesto.liquidacion l
+		  ON s.id_solicitud = l.id_solicitud RIGHT JOIN impuesto.subramo sub 
+		  ON sub.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sub.id_ramo 
+		  WHERE l.fecha_liquidacion BETWEEN $1 AND $2
+       	GROUP BY c.tipo_documento, c.documento, c.razon_social, s.aprobado, l.monto, l.monto_petro, r.descripcion, sub.descripcion) as data 
+       	GROUP BY data.tipo_documento, data.documento, data.razon_social, data.aprobado, data.ramo, data.subramo ORDER BY razon_social;
+  `,
   //CIERRE DE CAJA
   GET_CASHIER_POS: `SELECT b.nombre as banco, SUM(p.monto) as monto, COUNT(*) as transacciones
         FROM pago p 

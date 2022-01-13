@@ -585,7 +585,6 @@ export const getCondoReportDisclosed = async ({reportName='ReporteCondoL', from,
 
     const sheet = workbook.addWorksheet(reportName);
     const result = await client.query(queries.GET_LIQUIDATED_CONDO_DISCLOSED, [from, to]);
-    console.log(result)
 
     mainLogger.info(`getCondoLReport - Got query, rowCount: ${result.rowCount}`);
 
