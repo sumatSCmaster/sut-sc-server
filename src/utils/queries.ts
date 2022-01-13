@@ -3313,7 +3313,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       INNER JOIN impuesto.tipo_vehiculo tv USING (id_tipo_vehiculo)
       WHERE v.id_vehiculo = $1`,
   // CONDOMINIO
-  GET_CONDOMINIUM_TYPE_BY_ID: 'SELECT tipo_condominio FROM impuesto.condominio JOIN impuesto.tipo_condominio ON impuesto.condominio.tipo_condominio = impuesto.tipo_condominio.id_tipo_condominio WHERE id_condominio = $1',
+  GET_CONDOMINIUM_TYPE_BY_ID: 'SELECT tipo_condominio FROM impuesto.condominio JOIN impuesto.tipo_condominio USING (id_tipo_condominio) WHERE id_condominio = $1',
   GET_CONDOMINIUMS: `
       SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
       FROM impuesto.contribuyente cont
