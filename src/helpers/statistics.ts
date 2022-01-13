@@ -1248,13 +1248,12 @@ export const getStatsSedemat = async ({ institution }: { institution: number }) 
 export const getContributorsStatistics = async (): Promise<any> => {
   const client: PoolClient = await pool.connect();
   try {
-    const contributors = (await client.query(queries.GET_ALL_CONTRIBUTORS_WITH_DECLARED_MUNICIPAL_SERVICES)).rows[0];
-    if (contributors)
-      return {
-        message: 'ok',
-        data: contributors,
-        status: 200,
-      };
+    const contributors = (await client.query(queries.GET_ALL_CONTRIBUTORS_WITH_DECLARED_MUNICIPAL_SERVICES)).rows;
+    return {
+      message: 'ok',
+      data: contributors,
+      status: 200,
+    };
   } catch (error) {
     mainLogger.error(error);
     throw {
