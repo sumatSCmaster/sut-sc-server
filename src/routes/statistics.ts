@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
 import { authenticate } from 'passport';
-import { getStats, getStatsSedematWithDate, bsByBranchInterval, getStatsSedematTotal, getStatsSedematSettlements, getStatsSedematTop, getStatsSedematGraphs, getStatsSedemat } from '@helpers/statistics';
+import { getStats, getStatsSedematWithDate, bsByBranchInterval, getStatsSedematTotal, getStatsSedematSettlements, getStatsSedematTop, getStatsSedematGraphs, getStatsSedemat, getContributorsStatistics } from '@helpers/statistics';
 
 const router = Router();
 
@@ -51,6 +51,12 @@ router.get('/sedemat/:date', async (req: any, res) => {
 router.get('/sedemat/branch/bs', async (req: any, res) => {
   const { fechaInicio: startingDate, fechaFin: endingDate } = req.query;
   const [err, data] = await fulfill(bsByBranchInterval({ institution: req.user?.institucion?.id, startingDate, endingDate }));
+  if (err) res.status(500).json(err);
+  if (data) res.status(200).json(data);
+});
+
+router.get('/sedemat/contributors', async (req: any, res) => {
+  const [err, data] = await fulfill(getContributorsStatistics());
   if (err) res.status(500).json(err);
   if (data) res.status(200).json(data);
 });

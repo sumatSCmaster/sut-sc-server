@@ -6,6 +6,7 @@ import { Usuario, IDsTipoUsuario, Instituciones } from '@root/interfaces/sigt';
 import { fixatedAmount } from './settlement';
 import { request } from 'express';
 import { mainLogger } from '@utils/logger';
+import { PoolClient } from 'pg';
 const pool = Pool.getInstance();
 
 const fixMonth = (m: string) => m.charAt(0).toUpperCase() + m.slice(1).toLowerCase();
@@ -730,7 +731,7 @@ export const getStatsSedematSettlements = async ({ institution }: { institution:
       },
       mensual: {
         totalLiquidaciones: { AE, SM, IU, PP },
-      }
+      },
     };
     await client.query('COMMIT');
     return { status: 200, message: 'Estadisticas obtenidas!', estadisticas };
@@ -749,7 +750,7 @@ export const getStatsSedematSettlements = async ({ institution }: { institution:
 
 export const getStatsSedematTotal = async ({ institution }: { institution: number }) => {
   const client = await pool.connect();
-  
+
   try {
     await client.query('BEGIN');
     const now = moment().locale('ES');
@@ -970,10 +971,7 @@ export const getStatsSedematTop = async ({ institution }: { institution: number 
     // 2. Top 1000 contribuyentes que han declarado/pagado por mes
     const totalTopContrDeclarationsP = client.query(queries.TOTAL_TOP_CONTRIBUTOR_DECLARATIONS_AND_PAYMENTS_IN_MONTH, [moment().locale('ES').subtract(2, 'M').format('MMMM'), moment().locale('ES').subtract(2, 'M').year()]);
 
-    const [totalARDeclarationsA, totalTopContrDeclarationsA] = await Promise.all([
-      totalARDeclarationsP,
-      totalTopContrDeclarationsP,
-    ]);
+    const [totalARDeclarationsA, totalTopContrDeclarationsA] = await Promise.all([totalARDeclarationsP, totalTopContrDeclarationsP]);
 
     const totalARDeclarations = totalARDeclarationsA.rows.map((el) => ({ total: +el.total, liquidado: +el.liquidado, pagado: +el.pagado }))[0];
     const totalTopContrDeclarations = totalTopContrDeclarationsA.rows.map((el) => ({
@@ -1003,12 +1001,11 @@ export const getStatsSedematTop = async ({ institution }: { institution: number 
   }
 };
 
-
 /**
  *
  * @param param0
  */
- export const getStatsSedemat = async ({ institution }: { institution: number }) => {
+export const getStatsSedemat = async ({ institution }: { institution: number }) => {
   const client = await pool.connect();
   const totalSolvencyRate: any[] = [];
   const AE: any[] = [],
@@ -1242,6 +1239,27 @@ export const getStatsSedematTop = async ({ institution }: { institution: number 
       status: error.status || 500,
       error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || error.message || 'Error al obtener estadisticas de SEDEMAT',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const getContributorsStatistics = async (): Promise<any> => {
+  const client: PoolClient = await pool.connect();
+  try {
+    const contributors = (await client.query(queries.GET_ALL_CONTRIBUTORS_WITH_DECLARED_MUNICIPAL_SERVICES)).rows[0];
+    return {
+      message: 'ok',
+      data: contributors,
+      status: 200,
+    };
+  } catch (error) {
+    mainLogger.error(error);
+    throw {
+      status: error.status || 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener estadisticas de contribuyentes',
     };
   } finally {
     client.release();

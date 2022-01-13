@@ -92,7 +92,7 @@ router.post('/createAdmin', authenticate('jwt'), isSuperuser, authValidations.cr
         usuario: user,
       });
     }
-  } catch (e) {
+  } catch (e: any) {
     mainLogger.error(`Error ${e.message}`);
     res.status(500).json({
       status: 500,

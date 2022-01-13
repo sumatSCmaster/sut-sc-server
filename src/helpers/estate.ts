@@ -235,7 +235,7 @@ export const getEstateByCod = async ({ codCat }) => {
       message: 'Inmueble encontrado',
       inmueble: { ...estate.rows[0], propietarioRim: propietorRim, propietarios: propietors, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
     };
-  } catch (e) {
+  } catch (e: any) {
     throw {
       error: e,
       message: e.message,
@@ -325,7 +325,7 @@ export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosC
     await client.query('COMMIT');
     return { status: 200, message: 'Inmueble actualizado' };
     // return {inmueble: {...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows }};
-  } catch (e) {
+  } catch (e: any) {
     await client.query('ROLLBACK');
     throw {
       error: e,
@@ -403,7 +403,7 @@ export const linkCommercial = async ({ codCat, rim, relacion }) => {
       message: 'Inmueble enlazado',
       inmueble: { ...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
     };
-  } catch (e) {
+  } catch (e: any) {
     throw {
       error: e,
       message: e.message,
@@ -433,7 +433,7 @@ export const unlinkCommercial = async ({ codCat, rim }) => {
       status: 200,
       message: 'Inmueble enlazado',
     };
-  } catch (e) {
+  } catch (e: any) {
     throw {
       error: e,
       message: e.message,
@@ -466,7 +466,7 @@ export const linkNatural = async ({ codCat, typeDoc, doc, relacion }) => {
       message: 'Inmueble enlazado',
       inmueble: { ...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
     };
-  } catch (e) {
+  } catch (e: any) {
     throw {
       error: e,
       message: e.message,
@@ -496,7 +496,7 @@ export const unlinkNatural = async ({ codCat, typeDoc, doc }) => {
       status: 200,
       message: 'Inmueble desenlazado',
     };
-  } catch (e) {
+  } catch (e: any) {
     throw {
       error: e,
       message: e.message,
