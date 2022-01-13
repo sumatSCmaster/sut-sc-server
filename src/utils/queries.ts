@@ -3489,7 +3489,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   },
   ADD_MOVEMENT: "INSERT INTO movimientos (id_procedimiento, id_usuario, fecha_movimiento, tipo_movimiento) VALUES ($1, $2, (NOW() - interval '4 hours'), $3);",
   GET_OBSERVATIONS: 'SELECT * FROM tramite_observaciones WHERE id_tramite = $1 ORDER BY fecha DESC LIMIT 1;',
-  GET_ALL_CONTRIBUTORS_WITH_DECLARED_MUNICIPAL_SERVICES: `SELECT nombre_representante, denominacion_comercial, fecha_aprobacion, monto, id_solicitud FROM impuesto.registro_municipal r INNER JOIN (SELECT DISTINCT ON (id_registro_municipal) * FROM (SELECT * FROM impuesto.liquidacion WHERE EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM (NOW() - interval '4 hours')) AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM (NOW() - interval '4 hours')) AND id_subramo = 10) x) l USING (id_registro_municipal) INNER JOIN impuesto.solicitud s USING (id_solicitud) WHERE s.aprobado = true;`,
+  GET_ALL_CONTRIBUTORS_WITH_DECLARED_MUNICIPAL_SERVICES: `SELECT nombre_representante, denominacion_comercial, fecha_aprobacion, monto, id_solicitud FROM impuesto.registro_municipal r INNER JOIN (SELECT DISTINCT ON (id_registro_municipal) * FROM (SELECT * FROM impuesto.liquidacion WHERE EXTRACT(month FROM fecha_liquidacion) = EXTRACT('month' FROM (NOW() - interval '4 hours')) AND EXTRACT(year FROM fecha_liquidacion) = EXTRACT(year FROM (NOW() - interval '4 hours')) AND id_subramo = 10) x) l USING (id_registro_municipal);`,
 };
 
 export default queries;
