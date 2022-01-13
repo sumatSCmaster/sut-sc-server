@@ -1548,7 +1548,7 @@ ORDER BY razon_social;`,
         ON s.id_solicitud = l.id_solicitud WHERE l.fecha_liquidacion BETWEEN $1 AND $2
        GROUP BY c.tipo_documento, c.documento, c.razon_social, s.aprobado, l.monto, l.monto_petro) as data 
        GROUP BY data.tipo_documento, data.documento, data.razon_social, data.aprobado ORDER BY razon_social 
-  `
+  `,
   //CIERRE DE CAJA
   GET_CASHIER_POS: `SELECT b.nombre as banco, SUM(p.monto) as monto, COUNT(*) as transacciones
         FROM pago p 
