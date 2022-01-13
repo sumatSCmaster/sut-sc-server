@@ -5,7 +5,7 @@ import { getCondominiumType } from '@helpers/condominiumType';
 
 const router = Router();
 
-router.get('/search', authenticate('jwt'), async (req: any, res) => {
+router.get('/search/:id', authenticate('jwt'), async (req: any, res) => {
   const { id } = req.params;
   const [err, data] = await fulfill(getCondominiumType(id));
   if (err) res.status(500).json({ err, status: 500 });
