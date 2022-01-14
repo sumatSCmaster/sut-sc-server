@@ -55,6 +55,7 @@ const queries = {
   CHECK_IF_OFFICIAL: "SELECT 1 FROM usuario u \
     INNER JOIN tipo_usuario tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
     WHERE tu.descripcion = 'Funcionario' AND u.cedula = $1",
+  GET_APPROVED_CPU_PROCEDURE: 'SELECT 1 FROM tramite WHERE id_tipo_tramite = 16 AND aprobado = true;',
   CHECK_IF_DIRECTOR: "SELECT 1 FROM usuario u \
     INNER JOIN tipo_usuario tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
     WHERE tu.descripcion = 'Director/Gerente' AND u.cedula = $1",
