@@ -1834,7 +1834,12 @@ const procedureInstanceHandler = (user, client, support) => {
         query = 3;
         payload = user.institucion.id;
       } else {
-        query = user.tipoUsuario;
+        if(user.institucion?.cargo?.id === 46){
+          query = 5;
+        }
+        else{
+          query = user.tipoUsuario;
+        }
         payload = user.institucion.id;
       }
     }
