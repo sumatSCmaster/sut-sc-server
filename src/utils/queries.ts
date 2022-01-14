@@ -55,7 +55,7 @@ const queries = {
   CHECK_IF_OFFICIAL: "SELECT 1 FROM usuario u \
     INNER JOIN tipo_usuario tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
     WHERE tu.descripcion = 'Funcionario' AND u.cedula = $1",
-  GET_APPROVED_CPU_PROCEDURE: 'SELECT 1 FROM tramite WHERE id_tipo_tramite = 16 AND aprobado = true;',
+  GET_APPROVED_CPU_PROCEDURE: 'SELECT 1 FROM tramite WHERE id_tipo_tramite = 16 AND aprobado = true AND codigo_tramite = $1;',
   CHECK_IF_DIRECTOR: "SELECT 1 FROM usuario u \
     INNER JOIN tipo_usuario tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
     WHERE tu.descripcion = 'Director/Gerente' AND u.cedula = $1",
@@ -2021,8 +2021,8 @@ ORDER BY fecha_liquidacion DESC;
     WHERE id_parroquia = $1`,
   GET_APPRAISALS_BY_ID: 'SELECT anio, avaluo AS avaluo FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1',
   GET_CURRENT_APPRAISALS_BY_ID: "SELECT anio, avaluo FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 and anio = EXTRACT('year' FROM CURRENT_DATE);",
-  CREATE_BARE_ESTATE: `INSERT INTO inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, tipo_inmueble, dir_doc)
-    VALUES (default, $1, $2, $3, $4, $5, $6, $7) RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
+  CREATE_BARE_ESTATE: `INSERT INTO inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, tipo_inmueble, dir_doc, cod_tramite)
+    VALUES (default, $1, $2, $3, $4, $5, $6, $7, $8) RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", dir_doc AS "dirDoc"`,
   CREATE_BARE_ESTATE_NATURAL: `INSERT INTO inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, tipo_inmueble)
     VALUES (default, $1, $2, $3, $4, $5, 'RESIDENCIAL') RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
