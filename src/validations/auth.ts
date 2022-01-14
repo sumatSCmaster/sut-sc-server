@@ -174,6 +174,7 @@ const validations = {
   estadoLicencia: check('tramite.datos.estadoLicencia').exists().withMessage('Debe incluir el estado de la licencia').isString().isLength({ min: 1 }).withMessage('El estado de la licencia no puede ser vacio'),
   observacionProceso: check('tramite.datos.observacionProceso').optional(),
   tipoProceso: check('tramite.datos.tipoProceso').exists().withMessage('Debe la accion a realizar').isString().isLength({ min: 1 }).withMessage('El tipo de proceso no puede ser nulo'),
+  codigoTramite: check('tramite.datos.codigoTramite').exists().withMessage('Debe incluir el código del trámite').isString().isAlphanumeric().withMessage('El código del trámite debe ser alfa númerico'),
 };
 
 export const createSuperuser = [
