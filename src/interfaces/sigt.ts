@@ -104,6 +104,7 @@ export interface Tramite {
   usuario: Usuario;
   tipoTramite: number;
   consecutivo?: number;
+  datosUltimoEditor: string;
   nombreLargo: string;
   nombreCorto: string;
   nombreTramiteLargo: string;

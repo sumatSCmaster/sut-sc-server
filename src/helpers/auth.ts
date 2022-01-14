@@ -17,13 +17,15 @@ export const forgotPassword = async (email) => {
     mainLogger.info(`forgotPassword - emailExists ${emailExists}`);
     if (emailExists) {
       const recuperacion = (await client.query(queries.ADD_PASSWORD_RECOVERY, [email, uuidv4()])).rows[0];
-      mainLogger.info(await transporter.sendMail({
-        from: process.env.MAIL_ADDRESS || 'info@sutmaracaibo.com',
-        to: email,
-        subject: 'Recuperación de contraseña',
-        text: `Enlace de recuperacion: ${process.env.CLIENT_URL}/olvidoContraseña?recvId=${recuperacion.token_recuperacion}`,
-        html: generateHtmlMail(`${process.env.CLIENT_URL}/olvidoContraseña?recvId=${recuperacion.token_recuperacion}`, email),
-      }));
+      mainLogger.info(
+        await transporter.sendMail({
+          from: process.env.MAIL_ADDRESS || 'info@sutmaracaibo.com',
+          to: email,
+          subject: 'Recuperación de contraseña',
+          text: `Enlace de recuperacion: ${process.env.CLIENT_URL}/olvidoContraseña?recvId=${recuperacion.token_recuperacion}`,
+          html: generateHtmlMail(`${process.env.CLIENT_URL}/olvidoContraseña?recvId=${recuperacion.token_recuperacion}`, email),
+        })
+      );
 
       return { status: 200, message: 'Revise su bandeja de correo' };
     } else {
@@ -88,7 +90,7 @@ export async function getUserData(id, tipoUsuario) {
       const officialData = await client.query(queries.GET_OFFICIAL_DATA_FROM_USERNAME, [user.nombreUsuario]);
       user = await addInstitute(user);
       user.cuentaFuncionario = officialData.rows[0];
-      if (tipoUsuario === 3) {
+      if (tipoUsuario === 3 || tipoUsuario === 6) {
         user = await addPermissions(user);
       }
     }

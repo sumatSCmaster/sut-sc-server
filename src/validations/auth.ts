@@ -173,8 +173,8 @@ const validations = {
   tipoSociedadContrib: check('tramite.datos.tipoSociedadContrib').exists().withMessage('Debe incluir el tipo de sociedad del contribuyente').isString().isLength({ min: 1 }).withMessage('El tipo de sociedad del contribuyente no puede ser vacio'),
   estadoLicencia: check('tramite.datos.estadoLicencia').exists().withMessage('Debe incluir el estado de la licencia').isString().isLength({ min: 1 }).withMessage('El estado de la licencia no puede ser vacio'),
   observacionProceso: check('tramite.datos.observacionProceso').optional(),
-  tipoProceso: check('tramite.datos.tipoProceso').exists().withMessage('Debe especificar la accion a realizar').isString().isLength({ min: 1 }).withMessage('El tipo de tramite no puede ser vacio')
-
+  tipoProceso: check('tramite.datos.tipoProceso').exists().withMessage('Debe especificar la accion a realizar').isString().isLength({ min: 1 }).withMessage('El tipo de tramite no puede ser vacio'),
+  codigoTramite: check('tramite.datos.codigoTramite').exists().withMessage('Debe incluir el código del trámite').isString().isAlphanumeric().withMessage('El código del trámite debe ser alfa númerico'),
 };
 
 export const createSuperuser = [

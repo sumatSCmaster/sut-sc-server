@@ -2,10 +2,17 @@ import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import moment from 'moment';
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
-import { Usuario, IDsTipoUsuario, Instituciones } from '@root/interfaces/sigt';
+import { Usuario, IDsTipoUsuario } from '@root/interfaces/sigt';
 import { fixatedAmount } from './settlement';
-import { request } from 'express';
+import { Transform } from 'stream';
 import { mainLogger } from '@utils/logger';
+import { PoolClient } from 'pg';
+import S3Client from '@utils/s3';
+import ExcelJs from 'exceljs';
+import * as fs from 'fs';
+
+const dev = process.env.NODE_ENV !== 'production';
+
 const pool = Pool.getInstance();
 
 const fixMonth = (m: string) => m.charAt(0).toUpperCase() + m.slice(1).toLowerCase();
@@ -730,7 +737,7 @@ export const getStatsSedematSettlements = async ({ institution }: { institution:
       },
       mensual: {
         totalLiquidaciones: { AE, SM, IU, PP },
-      }
+      },
     };
     await client.query('COMMIT');
     return { status: 200, message: 'Estadisticas obtenidas!', estadisticas };
@@ -749,7 +756,7 @@ export const getStatsSedematSettlements = async ({ institution }: { institution:
 
 export const getStatsSedematTotal = async ({ institution }: { institution: number }) => {
   const client = await pool.connect();
-  
+
   try {
     await client.query('BEGIN');
     const now = moment().locale('ES');
@@ -970,10 +977,7 @@ export const getStatsSedematTop = async ({ institution }: { institution: number 
     // 2. Top 1000 contribuyentes que han declarado/pagado por mes
     const totalTopContrDeclarationsP = client.query(queries.TOTAL_TOP_CONTRIBUTOR_DECLARATIONS_AND_PAYMENTS_IN_MONTH, [moment().locale('ES').subtract(2, 'M').format('MMMM'), moment().locale('ES').subtract(2, 'M').year()]);
 
-    const [totalARDeclarationsA, totalTopContrDeclarationsA] = await Promise.all([
-      totalARDeclarationsP,
-      totalTopContrDeclarationsP,
-    ]);
+    const [totalARDeclarationsA, totalTopContrDeclarationsA] = await Promise.all([totalARDeclarationsP, totalTopContrDeclarationsP]);
 
     const totalARDeclarations = totalARDeclarationsA.rows.map((el) => ({ total: +el.total, liquidado: +el.liquidado, pagado: +el.pagado }))[0];
     const totalTopContrDeclarations = totalTopContrDeclarationsA.rows.map((el) => ({
@@ -1003,12 +1007,11 @@ export const getStatsSedematTop = async ({ institution }: { institution: number 
   }
 };
 
-
 /**
  *
  * @param param0
  */
- export const getStatsSedemat = async ({ institution }: { institution: number }) => {
+export const getStatsSedemat = async ({ institution }: { institution: number }) => {
   const client = await pool.connect();
   const totalSolvencyRate: any[] = [];
   const AE: any[] = [],
@@ -1243,6 +1246,81 @@ export const getStatsSedematTop = async ({ institution }: { institution: number 
       error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || error.message || 'Error al obtener estadisticas de SEDEMAT',
     };
+  } finally {
+    client.release();
+  }
+};
+
+export const getContributorsStatistics = async (date: any): Promise<any> => {
+  const client: PoolClient = await pool.connect();
+
+  try {
+    const requestedDate = moment(date).locale('ES');
+    const result = await client.query(queries.GET_ALL_CONTRIBUTORS_WITH_DECLARED_MUNICIPAL_SERVICES, [requestedDate.format('MM-DD-YYYY')]);
+    const reportName = 'contributors-report';
+    const transformStream = new Transform({
+      transform(chunk, encoding, callback) {
+        this.push(chunk);
+        callback();
+      },
+    });
+
+    transformStream.on('finish', () => {
+      mainLogger.info('contributorsReport - Stream finished writing');
+    });
+
+    const workbook = new ExcelJs.stream.xlsx.WorkbookWriter({
+      stream: transformStream,
+    });
+    workbook.creator = 'SUT';
+    workbook.created = new Date();
+    workbook.views = [
+      {
+        x: 0,
+        y: 0,
+        width: 10000,
+        height: 20000,
+        firstSheet: 0,
+        activeTab: 1,
+        visibility: 'visible',
+      },
+    ];
+
+    const sheet = workbook.addWorksheet(reportName);
+
+    mainLogger.info(`contributorsReport - Got query, rowCount: ${result.rowCount}`);
+
+    sheet.columns = result.fields.map((row) => {
+      return { header: row.name, key: row.name, width: 32 };
+    });
+
+    for (let row of result.rows) {
+      sheet.addRow(row, 'i').commit();
+      mainLogger.info(row);
+    }
+
+    sheet.commit();
+
+    await workbook.commit();
+
+    mainLogger.info(`contributorsReport - Committed workbook`);
+    if (dev) {
+      const dir = `../../archivos/${reportName}.xlsx`;
+      const stream = fs.createWriteStream(require('path').resolve(`./archivos/${reportName}.xlsx`));
+      await workbook.xlsx.write(stream);
+      return dir;
+    } else {
+      const bucketParams = {
+        Bucket: process.env.BUCKET_NAME as string,
+
+        Key: `/sedemat/reportes/${reportName}.xlsx`,
+      };
+      await S3Client.upload({ ...bucketParams, Body: transformStream, ACL: 'public-read', ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }).promise();
+
+      return `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`;
+    }
+  } catch (error) {
+    throw errorMessageExtractor(error);
   } finally {
     client.release();
   }

@@ -51,6 +51,7 @@ const queries = {
   GET_ADMIN_INSTITUTE:
     'SELECT i.*, cf.bloqueado, c.descripcion AS cargo, c.id_cargo AS "idCargo" FROM institucion i INNER JOIN cargo c ON i.id_institucion = c.id_institucion INNER JOIN cuenta_funcionario cf ON c.id_cargo = cf.id_cargo \
     WHERE cf.id_usuario = $1;',
+  GET_LAST_EDITOR_AND_DATE: `SELECT nombre_completo, fecha_movimiento FROM usuario JOIN movimientos USING (id_usuario) WHERE id_procedimiento = $1 ORDER BY fecha_movimiento DESC LIMIT 1;`,
   CHECK_IF_OFFICIAL: "SELECT 1 FROM usuario u \
     INNER JOIN tipo_usuario tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
     WHERE tu.descripcion = 'Funcionario' AND u.cedula = $1",
@@ -60,6 +61,9 @@ const queries = {
   CHECK_IF_ADMIN: "SELECT 1 FROM usuario u \
     INNER JOIN tipo_usuario tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
     WHERE tu.descripcion = 'Administrador' AND u.cedula = $1",
+  CHECK_IF_CHIEF: "SELECT 1 FROM usuario u \
+    INNER JOIN tipo_usuario tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
+    WHERE tu.descripcion = 'Jefe de Departamento' AND u.cedula = $1",
   CHECK_IF_SUPERUSER: "SELECT 1 FROM usuario u \
   INNER JOIN tipo_usuario tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
   WHERE tu.descripcion = 'Superuser' AND u.cedula = $1",
@@ -131,6 +135,7 @@ const queries = {
     "SELECT ct.*, camp.nombre, camp.tipo, camp.validacion, camp.col FROM campo_tramite ct INNER JOIN\
     campo camp ON ct.id_campo = camp.id_campo WHERE ct.id_seccion = $1 AND ct.id_tipo_tramite = $2 AND (ct.estado='iniciado' OR ct.estado = 'ingresardatos') \
     ORDER BY ct.orden",
+  INSERT_OBSERVATION: 'INSERT INTO tramite_observaciones (id_tramite, observaciones) VALUES ($1, $2);',
   GET_FIELDS_BY_SECTION_FOR_OFFICIALS:
     "SELECT ct.*, camp.nombre, camp.tipo, camp.validacion, camp.col FROM campo_tramite ct INNER JOIN\
     campo camp ON ct.id_campo = camp.id_campo WHERE ct.id_seccion = $1 AND ct.id_tipo_tramite = $2 \
@@ -3321,7 +3326,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       INNER JOIN impuesto.tipo_vehiculo tv USING (id_tipo_vehiculo)
       WHERE v.id_vehiculo = $1`,
   // CONDOMINIO
-
+  GET_CONDOMINIUM_TYPE_BY_ID: 'SELECT tipo_condominio FROM impuesto.condominio JOIN impuesto.tipo_condominio USING (id_tipo_condominio) WHERE id_condominio = $1',
   GET_CONDOMINIUMS: `
       SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
       FROM impuesto.contribuyente cont
@@ -3486,7 +3491,12 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       INNER JOIN tb046_ae_ramo r ON r.co_ramo = l.co_ramo INNER JOIN tb034_motivo m ON m.co_motivo = l.co_motivo \
       WHERE dm.co_contribuyente = $1 AND EXTRACT(YEAR FROM dm.created_at) = EXTRACT(YEAR FROM CURRENT_DATE);',
   },
-  ADD_MOVEMENT: "INSERT INTO movimientos (id_procedimiento, id_usuario, fecha_movimiento, tipo_movimiento) VALUES ($1, $2, (NOW() - interval '4 hours'), $3)",
+  ADD_MOVEMENT: "INSERT INTO movimientos (id_procedimiento, id_usuario, fecha_movimiento, tipo_movimiento) VALUES ($1, $2, (NOW() - interval '4 hours'), $3);",
+  GET_OBSERVATIONS: 'SELECT * FROM tramite_observaciones WHERE id_tramite = $1 ORDER BY fecha DESC LIMIT 1;',
+  GET_ALL_CONTRIBUTORS_WITH_DECLARED_MUNICIPAL_SERVICES: `SELECT nombre_representante, denominacion_comercial, fecha_aprobacion, monto, id_solicitud FROM impuesto.registro_municipal r 
+  INNER JOIN (SELECT DISTINCT ON (id_registro_municipal) * FROM 
+  (SELECT * FROM impuesto.liquidacion WHERE EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1::date)
+  AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1::date) AND id_subramo = 10) x) l USING (id_registro_municipal);`,
 };
 
 export default queries;
