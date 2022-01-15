@@ -46,8 +46,8 @@ block content
         td #{datos.funcionario.estimacionSimple.esTerreno ? datos.funcionario.estimacionSimple.terreno.sector : 'N/A'}
         td #{datos.funcionario.estimacionSimple.valoresFiscales[Object.keys(datos.funcionario.estimacionSimple.valoresFiscales)[4]].split('Petros ')[1]}
     table(style={ width: '50%', margin: '20px 0'}).table-normal
-      caption VALOR FISCAL (BS. S.)
-      - var years = Object.keys(datos.funcionario.estimacionSimple.valoresFiscales).reverse().slice(1)
+      caption VALOR FISCAL (Petros)
+      - var years = Object.keys(datos.funcionario.estimacionSimple.valoresFiscales).revers+ e().slice(1)
       each year in years
         tr  
           td(style={ width: '50%', 'background-color': '#fadc68'}) #{year}
