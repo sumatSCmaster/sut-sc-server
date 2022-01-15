@@ -4,6 +4,16 @@ import { errorMessageGenerator, errorMessageExtractor } from './errors';
 
 const pool = Pool.getInstance();
 
+export const editCondominiumType = async (id: number, type: number) => {
+  const client = await pool.connect();
+  try {
+    const response = (await client.query(queries.EDIT_CONDO_TYPE_BY_ID, [id, type])).rows[0];
+    return { status: 200, message: 'condominio actualizado exitosamente', nuevoTipo: response };
+  } catch (e: any) {
+    throw { status: 500, message: errorMessageGenerator(e) || errorMessageExtractor(e) || e.message };
+  }
+};
+
 export const getCondominiumType = async (id: number) => {
   const client = await pool.connect();
   try {
