@@ -9,7 +9,11 @@ export const getCondominiumType = async (id: number) => {
   try {
     const response = (await client.query(queries.GET_CONDOMINIUM_TYPE_BY_ID, [id])).rows[0];
     const response2 = (await client.query(queries.GET_ALL_CONDO_TYPES)).rows;
-    const condoTypes = { tipoA: response2.filter((elem) => elem.tipo_condominio === 'TIPO A'), tipoB: response2.filter((elem) => elem.tipo_condominio === 'TIPO B'), tipoC: response2.filter((elem) => elem.tipo_condominio === 'TIPO C') };
+    const condoTypes = {
+      tipoA: response2.filter((elem) => elem.tipo_condominio === 'TIPO A').map((elem) => elem[0]),
+      tipoB: response2.filter((elem) => elem.tipo_condominio === 'TIPO B').map((elem) => elem[0]),
+      tipoC: response2.filter((elem) => elem.tipo_condominio === 'TIPO C').map((elem) => elem[0]),
+    };
     return { status: 200, message: 'tipo de condominio obtenido', tipoCondominio: response || 'no asignado', infoCondominios: condoTypes };
   } catch (e: any) {
     throw {
