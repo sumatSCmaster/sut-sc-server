@@ -8,8 +8,9 @@ export const getCondominiumType = async (id: number) => {
   const client = await pool.connect();
   try {
     const response = (await client.query(queries.GET_CONDOMINIUM_TYPE_BY_ID, [id])).rows[0];
-    const response2 = await client.query(queries.GET_ALL_CONDO_TYPES);
-    return { status: 200, message: 'tipo de condominio obtenido', tipoCondominio: response || 'no asignado', infoCondominios: response2 };
+    const response2 = (await client.query(queries.GET_ALL_CONDO_TYPES)).rows;
+    const condoTypes = { tipoA: response2.filter((elem) => elem.tipo_condominio === 'TIPO A'), tipoB: response2.filter((elem) => elem.tipo_condominio === 'TIPO B'), tipoC: response2.filter((elem) => elem.tipo_condominio === 'TIPO C') };
+    return { status: 200, message: 'tipo de condominio obtenido', tipoCondominio: response || 'no asignado', infoCondominios: condoTypes };
   } catch (e: any) {
     throw {
       status: 500,
