@@ -300,6 +300,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   UPDATE_STATE_SOCIAL_CASE: 'SELECT update_caso_state($1, $2, $3) as state', //idcaso, event, datos
   UPDATE_PROCEDURE_INSTANCE_COST: 'UPDATE tramite SET costo = $1 WHERE id_tramite = $2',
   UPDATE_APPROVED_STATE_FOR_PROCEDURE: "UPDATE TRAMITE SET aprobado=$1, fecha_culminacion = (NOW() - interval '4 hours') WHERE id_tramite=$2",
+  UPDATE_UNAPPROVED_STATE_FOR_PROCEDURE: 'UPDATE TRAMITE SET aprobado=$1 WHERE id_tramite=$2',
 
   //parroquias
   GET_PARISHES: 'SELECT * FROM parroquia;',

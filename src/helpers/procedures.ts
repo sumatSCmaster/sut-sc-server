@@ -751,6 +751,27 @@ export const validateProcedure = async (procedure, user: Usuario, client) => {
  * @param user User from token payload
  * @returns Response payload with procedure
  */
+const finishedProcedure = async (procedure, user, idUser) => {
+  const client = await pool.connect();
+  try {
+    client.query('BEGIN');
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.idTramite])).rows[0];
+    procedure.tipoTramite = resources.tipoTramite;
+    if (!procedure.hasOwnProperty('sufijo')) {
+      procedure.sufijo = resources.sufijo;
+    }
+    if (procedure.sufijo !== 'cr') throw new Error('El trámite no pertenece a catastro');
+    const nextEvent = await getNextEventForProcedure(procedure, client);
+    await client.query(queries.UPDATE_UNAPPROVED_STATE_FOR_PROCEDURE, [false, procedure.idTramite]);
+    await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, null, null, null]);
+    await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, `cambio de estado ${nextEvent}`]);
+    await client.query('COMMIT');
+    return { status: 200, message: 'Trámite procesado' };
+  } catch (e) {
+    client.query('ROLLBACK');
+    throw { status: 500, error: errorMessageExtractor(e), message: errorMessageGenerator(e) || 'Error al procesar el trámite' };
+  }
+};
 export const processProcedure = async (procedure, user: Usuario, idUser) => {
   const client = await pool.connect();
   mainLogger.info(JSON.stringify(procedure));
@@ -824,10 +845,9 @@ export const processProcedure = async (procedure, user: Usuario, idUser) => {
         procedure.datos = datos;
         dir = await createCertificate(procedure, client);
         respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, datos || null, dir || null, true]);
+      } else if (procedure.sufijo === 'cr' && procedure.datos.observacionProceso) {
+        await client.query(queries.INSERT_OBSERVATION, [procedure.idTramite, procedure.datos.observacionProceso]);
       } else {
-        if (procedure.sufijo === 'cr' && procedure.datos.observacionProceso) {
-          await client.query(queries.INSERT_OBSERVATION, [procedure.idTramite, procedure.datos.observacionProceso]);
-        }
         respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, costo || null, null]);
       }
     }
@@ -1642,6 +1662,7 @@ const procedureEvents = switchcase({
     encorreccion: { false: 'enproceso_cr' },
     enrevision: { true: 'revisardirector_cr', false: 'rebotar_cr' },
     enrevision_gerente: { true: 'aprobar_cr', false: 'rebotar_cr', rechazado: 'rechazar_cr' },
+    finalizado: 'enproceso_cr',
     //pagocajero: 'finalizar_cr',
   },
   tl: { iniciado: { true: 'validar_tl', false: 'finalizar_tl' }, validando: 'finalizar_tl' },
@@ -1938,7 +1959,7 @@ const updateProcedure = switchcase({
   enrevision: reviseProcedure,
   ingresardatos: addPaymentProcedure,
   pagocajero: addPaymentProcedure,
-  finalizado: null,
+  finalizado: finishedProcedure,
 })(null);
 
 /**
