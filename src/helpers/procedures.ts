@@ -845,11 +845,12 @@ export const processProcedure = async (procedure, user: Usuario, idUser) => {
         procedure.datos = datos;
         dir = await createCertificate(procedure, client);
         respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, datos || null, dir || null, true]);
-      } else if (procedure.sufijo === 'cr' && procedure.datos.observacionProceso) {
-        await client.query(queries.INSERT_OBSERVATION, [procedure.idTramite, procedure.datos.observacionProceso]);
       } else {
-        respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, costo || null, null]);
+        if (procedure.sufijo === 'cr' && procedure.datos.observacionProceso) {
+          await client.query(queries.INSERT_OBSERVATION, [procedure.idTramite, procedure.datos.observacionProceso]);
+        }
       }
+      respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, costo || null, null]);
     }
     await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, `cambio de estado ${nextEvent}`]);
     await client.query('COMMIT');
