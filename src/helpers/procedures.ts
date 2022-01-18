@@ -45,7 +45,7 @@ export const getAvailableProcedures = async (user): Promise<{ instanciasDeTramit
     const [instanciasDeTramite, instanciasDeMulta, instanciasDeImpuestos, instanciasDeSoporte] = await Promise.all([instanciasDeTramiteP, instanciasDeMultaP, instanciasDeImpuestosP, instanciasDeSoporteP]);
     mainLogger.info(`getAvailableProcedures: finished obtaining instances`);
     return { instanciasDeTramite, instanciasDeMulta, instanciasDeImpuestos, instanciasDeSoporte };
-  } catch (error) {
+  } catch (error: any) {
     mainLogger.error(`get procedures error ${error.message}`);
     throw {
       status: 500,
@@ -104,7 +104,7 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
   try {
     let response = (await procedureInstanceHandler(user, client, support)).rows; //TODO: corregir el handler para que no sea tan forzado
     const takings = (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [response.map((el) => +el.id)])).rows;
-    if (user.tipoUsuario === 3) {
+    if (user.tipoUsuario === 3 || user.tipoUsuario === 6) {
       const permissions = (await client.query(queries.GET_USER_PERMISSIONS, [user.id])).rows.map((row) => +row.id_tipo_tramite) || [];
       response = response.filter((tram) => permissions.includes(tram.tipotramite));
     }
@@ -113,6 +113,7 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
     let res: any[] = await Promise.all(
       response.map(async (el) => {
         let ordinances;
+        const lastEditor = (await client.query(queries.GET_LAST_EDITOR_AND_DATE, [el.id])).rows[0];
         if (!el.pagoPrevio) {
           ordinances = ordinancesQ.filter((ord) => ord.idTramite === el.id);
         }
@@ -128,6 +129,7 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
           fechaCreacion: el.fechacreacion,
           codigoTramite: el.codigotramite,
           usuario: el.usuario,
+          datosUltimoEditor: lastEditor,
           nombreLargo: el.nombrelargo,
           nombreCorto: el.nombrecorto,
           nombreTramiteLargo: el.nombretramitelargo,
@@ -159,7 +161,7 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
       res = res.filter((row) => row.tipoTramite !== 37);
     }
     return esDaniel(user) ? res.filter((row) => ![27, 39, 40].includes(row.tipoTramite)) : res;
-  } catch (error) {
+  } catch (error: any) {
     mainLogger.error(`procedure tramite instances ${error.message}`);
     throw new Error('Error al obtener instancias de tramite');
   }
@@ -196,7 +198,7 @@ const getFineInstances = async (user, client: PoolClient) => {
 
       return multa;
     });
-  } catch (error) {
+  } catch (error: any) {
     mainLogger.error(`Instancias de multa error ${error.message}`);
     throw new Error('Error al obtener instancias de multa');
   }
@@ -233,7 +235,7 @@ const getSettlementInstances = async (user, client: PoolClient) => {
 
       return liquidacion;
     });
-  } catch (error) {
+  } catch (error: any) {
     mainLogger.error(`Error instancias de liquidacion ${error.message}`);
     throw new Error('Error al obtener instancias de liquidacion');
   }
@@ -655,7 +657,7 @@ export const procedureInit = async (procedure, user: Usuario) => {
       message: 'Tramite iniciado!',
       tramite,
     };
-  } catch (error) {
+  } catch (error: any) {
     client.query('ROLLBACK');
     mainLogger.error(error);
     mainLogger.error(error.message);
@@ -732,7 +734,7 @@ export const validateProcedure = async (procedure, user: Usuario, client) => {
       estado: respState.rows[0].state,
     });
     return { status: 200, message: 'Pago del tramite validado', tramite };
-  } catch (error) {
+  } catch (error: any) {
     mainLogger.error(`validateProcedure - ERROR ${error.message} idTramite ${procedure.idTramite}`);
     throw {
       status: 500,
@@ -749,7 +751,7 @@ export const validateProcedure = async (procedure, user: Usuario, client) => {
  * @param user User from token payload
  * @returns Response payload with procedure
  */
-export const processProcedure = async (procedure, user: Usuario) => {
+export const processProcedure = async (procedure, user: Usuario, idUser) => {
   const client = await pool.connect();
   mainLogger.info(JSON.stringify(procedure));
   let { datos, bill } = procedure;
@@ -775,6 +777,10 @@ export const processProcedure = async (procedure, user: Usuario) => {
         totalPetro: bill.totalPetro,
       };
     }
+    console.log('Procedure es ', procedure);
+    console.log('Client es ', client);
+    mainLogger.info(`Procedure es ${procedure}`);
+    mainLogger.info(`Client es ${client}`);
     const nextEvent = await getNextEventForProcedure(procedure, client);
     mainLogger.info(JSON.stringify(nextEvent));
     if (datos) {
@@ -819,10 +825,13 @@ export const processProcedure = async (procedure, user: Usuario) => {
         dir = await createCertificate(procedure, client);
         respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, datos || null, dir || null, true]);
       } else {
+        if (procedure.sufijo === 'cr' && procedure.datos.observacionProceso) {
+          await client.query(queries.INSERT_OBSERVATION, [procedure.idTramite, procedure.datos.observacionProceso]);
+        }
         respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, costo || null, null]);
       }
     }
-
+    await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, `cambio de estado ${nextEvent}`]);
     await client.query('COMMIT');
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
     const tramite: Partial<Tramite> = {
@@ -854,7 +863,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
       estado: respState.rows[0].state,
     });
     return { status: 200, message: 'Tramite procesado', tramite };
-  } catch (error) {
+  } catch (error: any) {
     client.query('ROLLBACK');
     mainLogger.error(error.message);
     throw {
@@ -873,7 +882,7 @@ export const processProcedure = async (procedure, user: Usuario) => {
  * @param user User from token payload
  * @returns Response payload with procedure
  */
-export const addPaymentProcedure = async (procedure, user: Usuario) => {
+export const addPaymentProcedure = async (procedure, user: Usuario, idUser) => {
   const client = await pool.connect();
   let { pago } = procedure;
   try {
@@ -920,6 +929,7 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
       aprobado: response.aprobado,
     };
     await sendNotification(user, `Se añadieron los datos de pago de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
+    await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, `cambio de estado ${nextEvent}`]);
     client.query('COMMIT');
     sendEmail({
       ...tramite,
@@ -929,7 +939,7 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
       estado: respState.rows[0].state,
     });
     return { status: 200, message: 'Datos de pago de trámite añadidos', tramite };
-  } catch (error) {
+  } catch (error: any) {
     client.query('ROLLBACK');
     mainLogger.error(error.message);
     throw {
@@ -948,7 +958,7 @@ export const addPaymentProcedure = async (procedure, user: Usuario) => {
  * @param user User from token payload
  * @returns Response payload with procedure
  */
-export const reviseProcedure = async (procedure, user: Usuario) => {
+export const reviseProcedure = async (procedure, user: Usuario, idUser) => {
   const client = await pool.connect();
   const { aprobado, observaciones } = procedure.revision;
   let dir, respState, datos;
@@ -1022,12 +1032,12 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
         }
       }
     } else {
-      if (aprobado) {
+      if (aprobado && nextEvent !== 'revisardirector_cr') {
         if (resources.tipoTramite === 28 || resources.tipoTramite === 36) procedure.datos = await approveContributorAELicense({ data: datos, client });
         if (procedure.sufijo !== 'bc' && procedure.sufijo !== 'sup') dir = await createCertificate(procedure, client);
-        respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, dir || null, aprobado]);
+        respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent === 'aprobar_cr' ? nextEvent : nextEvent[aprobado], datos || null, dir || null, aprobado]);
       } else {
-        respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
+        respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent === 'revisardirector_cr' || nextEvent === 'rebotar_cr' ? nextEvent : nextEvent[aprobado], datos || null, null, null]);
       }
     }
 
@@ -1051,6 +1061,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       aprobado: response.aprobado,
     };
     await sendNotification(user, `Se realizó la revisión de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
+    await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, `cambio de estado ${nextEvent}`]);
     client.query('COMMIT');
     sendEmail({
       ...tramite,
@@ -1060,7 +1071,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
       estado: respState.rows[0].state,
     });
     return { status: 200, message: 'Trámite revisado', tramite };
-  } catch (error) {
+  } catch (error: any) {
     mainLogger.error(error);
     client.query('ROLLBACK');
     throw {
@@ -1079,7 +1090,7 @@ export const reviseProcedure = async (procedure, user: Usuario) => {
  * @param user User from token payload
  * @returns Response payload with procedure
  */
-export const inspectProcedure = async (procedure, user: Usuario) => {
+export const inspectProcedure = async (procedure, user: Usuario, idUser) => {
   const client = await pool.connect();
   const { aprobado, observaciones } = procedure.revision;
   let dir, respState, datos;
@@ -1111,7 +1122,9 @@ export const inspectProcedure = async (procedure, user: Usuario) => {
         nro: row.referencia,
       }));
     }
-
+    if (procedure.estado === 'encorreccion') {
+      datos = procedure.datos;
+    }
     // if (procedure.sufijo === 'ompu') {
     //   if (aprobado) {
     //     dir = await createCertificate(procedure, client);
@@ -1120,7 +1133,7 @@ export const inspectProcedure = async (procedure, user: Usuario) => {
     //     respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
     //   }
     // } else {
-    respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
+    respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, null, null]);
     // }
 
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
@@ -1143,6 +1156,7 @@ export const inspectProcedure = async (procedure, user: Usuario) => {
       aprobado: response.aprobado,
     };
     await sendNotification(user, `Se realizó la inspección de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
+    await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, `cambio de estado ${nextEvent}`]);
     client.query('COMMIT');
     sendEmail({
       ...tramite,
@@ -1152,7 +1166,7 @@ export const inspectProcedure = async (procedure, user: Usuario) => {
       estado: respState.rows[0].state,
     });
     return { status: 200, message: 'Inspección del trámite cargada', tramite };
-  } catch (error) {
+  } catch (error: any) {
     mainLogger.error(error);
     client.query('ROLLBACK');
     throw {
@@ -1318,7 +1332,7 @@ export const approveAllLicenses = async (idArray: number[], user: Usuario): Prom
     );
     await client.query('COMMIT');
     return { status: 200, message: 'Licencias aprobadas satisfactoriamente', tramites };
-  } catch (error) {
+  } catch (error: any) {
     client.query('ROLLBACK');
     mainLogger.error(error);
     throw {
@@ -1602,7 +1616,15 @@ const getNextEventForProcedure = async (procedure, client): Promise<any> => {
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
   mainLogger.info(`getNextEventForProcedure - response ${JSON.stringify(response)}`);
   const nextEvent = procedureEventHandler(procedure.sufijo, response.state);
-  return nextEvent;
+  if (typeof nextEvent === 'string') return nextEvent;
+  if (
+    (response.state === 'enrevision' && procedure.sufijo === 'cr') ||
+    (response.state === 'inspeccion' && procedure.sufijo === 'cr') ||
+    (response.state === 'enrevision_gerente' && procedure.sufijo === 'cr') ||
+    (response.state === 'encorreccion' && procedure.sufijo === 'cr')
+  )
+    return nextEvent[procedure.revision.aprobado];
+  return nextEvent[procedure.aprobado];
 };
 
 /**
@@ -1616,10 +1638,10 @@ const procedureEvents = switchcase({
     iniciado: 'validar_cr',
     validando: { true: 'enproceso_cr', false: 'finalizar_cr' },
     enproceso: { inspeccion: 'inspeccionar_cr', correccion: 'corregir_cr', revision: 'revisar_cr' },
-    eninspeccion: { false: 'enproceso_cr' },
+    inspeccion: { false: 'enproceso_cr' },
     encorreccion: { false: 'enproceso_cr' },
-    enrevision: { true: 'revisardirector_cr', false: 'enproceso_cr' },
-    enrevision_gerente: { aprobado: 'aprobar_cr', rebotado: 'rebotar_cr', rechazado: 'rechazar_cr' },
+    enrevision: { true: 'revisardirector_cr', false: 'rebotar_cr' },
+    enrevision_gerente: { true: 'aprobar_cr', false: 'rebotar_cr', rechazado: 'rechazar_cr' },
     //pagocajero: 'finalizar_cr',
   },
   tl: { iniciado: { true: 'validar_tl', false: 'finalizar_tl' }, validando: 'finalizar_tl' },
@@ -1662,6 +1684,10 @@ const procedureEvents = switchcase({
  * @param state Actual procedure instance state
  */
 const procedureEventHandler = (suffix, state) => {
+  console.log('Suffix es ', suffix);
+  console.log('State es ', state);
+  mainLogger.info(`Suffix es ${suffix}`);
+  mainLogger.info(`State es ${state}`);
   return procedureEvents(suffix)[state];
 };
 
@@ -1804,8 +1830,16 @@ const procedureInstanceHandler = (user, client, support) => {
       } else if (belongsToSedetama(user)) {
         query = 6;
         payload = user.institucion.id;
+      } else if (user.tipoUsuario === 6) {
+        query = 3;
+        payload = user.institucion.id;
       } else {
-        query = user.tipoUsuario;
+        if(user.institucion?.cargo?.id === 46){
+          query = 5;
+        }
+        else{
+          query = user.tipoUsuario;
+        }
         payload = user.institucion.id;
       }
     }
@@ -1864,7 +1898,7 @@ const fineInstanceHandler = (user, client) => {
       if (isAdmin(user) || isDirector(user)) {
         query = 2;
         payload = [user.institucion.nombreCompleto];
-      } else if (isOfficial(user)) {
+      } else if (isOfficial(user) || user.tipoUsuario == 6) {
         query = 3;
         payload = [user.institucion.nombreCompleto];
       }
@@ -1903,6 +1937,7 @@ const updateProcedure = switchcase({
   validando: null,
   enproceso: processProcedure,
   inspeccion: inspectProcedure,
+  encorreccion: inspectProcedure,
   enrevision_analista: reviseProcedure,
   enrevision_gerente: reviseProcedure,
   enrevision: reviseProcedure,
@@ -1916,11 +1951,11 @@ const updateProcedure = switchcase({
  * @param procedure
  * @param user
  */
-export const updateProcedureHandler = async (procedure, user) => {
+export const updateProcedureHandler = async (procedure, user, id) => {
   const client = await pool.connect();
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
   mainLogger.info(`id ${procedure.idTramite} state ${response.state}`);
   client.release();
   const newProcedureState = updateProcedure(response.state);
-  return newProcedureState ? await newProcedureState(procedure, user) : { status: 500, message: 'No es posible actualizar el trámite' };
+  return newProcedureState ? await newProcedureState(procedure, user, id) : { status: 500, message: 'No es posible actualizar el trámite' };
 };

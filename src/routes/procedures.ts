@@ -40,9 +40,9 @@ router.patch('/:id', authenticate('jwt'), isOfficial, async (req, res) => {
 
 router.post('/init', validate(), checkResult, authenticate('jwt'), async (req: any, res) => {
   const { tramite } = req.body;
-  mainLogger.error(`procedure/init start`)
+  mainLogger.error(`procedure/init start`);
   const [error, data] = await fulfill(procedureInit(tramite, req.user));
-  mainLogger.error(`procedure/init error ${error?.message}`)
+  mainLogger.error(`procedure/init error ${error?.message}`);
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
@@ -62,8 +62,8 @@ router.post('/certificate/:id', authenticate('jwt'), async (req: any, res) => {
 });
 
 router.put('/update', validate(), checkResult, authenticate('jwt'), isAuth, async (req: any, res) => {
-  const { tramite } = req.body;
-  const [error, data] = await fulfill(updateProcedureHandler(tramite, req.user));
+  const { tramite, idUsuario } = req.body;
+  const [error, data] = await fulfill(updateProcedureHandler(tramite, req.user, idUsuario));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });

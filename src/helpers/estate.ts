@@ -207,25 +207,35 @@ export const getEstateByCod = async ({ codCat }) => {
       throw new Error('Inmueble no encontrado.');
     }
 
-    const propietorRim = (await client.query(`SELECT CONCAT(cont.tipo_documento, '-', cont.documento) as rif, 
+    const propietorRim = (
+      await client.query(
+        `SELECT CONCAT(cont.tipo_documento, '-', cont.documento) as rif, 
                                                             rm.referencia_municipal as rim, razon_social as "razonSocial", 
                                                             rm.denominacion_comercial as "denominacionComercial", telefono_celular as telefono, 
                                                             email, rm.direccion
     FROM impuesto.registro_municipal rm
     INNER JOIN impuesto.contribuyente cont ON cont.id_contribuyente = rm.id_contribuyente
-    WHERE id_registro_municipal = $1`, [estate.rows[0].id_registro_municipal])).rows[0]
+    WHERE id_registro_municipal = $1`,
+        [estate.rows[0].id_registro_municipal]
+      )
+    ).rows[0];
 
-    const propietors = (await client.query(`SELECT CONCAT(cont.tipo_documento, '-', cont.documento) as rif, razon_social as "razonSocial", relacion
+    const propietors = (
+      await client.query(
+        `SELECT CONCAT(cont.tipo_documento, '-', cont.documento) as rif, razon_social as "razonSocial", relacion
                                               FROM inmueble_urbano iu
                                               INNER JOIN impuesto.inmueble_contribuyente ic ON ic.id_inmueble = iu.id_inmueble
                                               INNER JOIN impuesto.contribuyente cont ON cont.id_contribuyente = ic.id_contribuyente
-                                              WHERE iu.id_inmueble = $1`, [estate.rows[0].id])).rows
+                                              WHERE iu.id_inmueble = $1`,
+        [estate.rows[0].id]
+      )
+    ).rows;
     return {
       status: 200,
       message: 'Inmueble encontrado',
-      inmueble: { ...estate.rows[0], propietarioRim: propietorRim , propietarios: propietors ,avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
+      inmueble: { ...estate.rows[0], propietarioRim: propietorRim, propietarios: propietors, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
     };
-  } catch (e) {
+  } catch (e: any) {
     throw {
       error: e,
       message: e.message,
@@ -259,13 +269,16 @@ export const parishEstates = async ({ idParroquia }) => {
   }
 };
 
-export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc }) => {
+export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc, userId, codigoCpu }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const estate = (await client.query(queries.CREATE_BARE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, dirDoc])).rows[0];
+    const codIsApproved = (await client.query(queries.GET_APPROVED_CPU_PROCEDURE, [codigoCpu])).rows[0];
+    if (!codIsApproved) throw new Error('El código ingresado no pertenece a un trámite aprobado de solvencia de inmuebles');
+    const estate = (await client.query(queries.CREATE_BARE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, dirDoc, codigoCpu])).rows[0];
     mainLogger.info(estate);
-    const appraisals = await Promise.all(
+    await client.query(queries.ADD_MOVEMENT, [estate.id, userId, 'inmueble_registrado']);
+    await Promise.all(
       avaluos.map((row) => {
         return client.query(queries.INSERT_ESTATE_VALUE, [estate.id, row.avaluo, row.anio]);
       })
@@ -273,20 +286,25 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
     await client.query('COMMIT');
 
     return { status: 200, inmueble: { ...estate, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.id])).rows } };
-  } catch (e) {
+  } catch (e: any) {
     mainLogger.error(e);
     await client.query('ROLLBACK');
-    throw e;
+    throw {
+      status: e.status || 500,
+      error: errorMessageExtractor(e),
+      message: errorMessageGenerator(e) || e.message || 'Error al crear el inmueble',
+    };
   } finally {
     client.release();
   }
 };
 
-export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc }) => {
+export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc, userId }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     let estate = (await client.query(queries.GET_ESTATE_BY_CODCAT, [codCat])).rows[0];
+    const movimiento = await client.query(queries.ADD_MOVEMENT, [id, userId, 'inmueble_modificado']);
     if (estate.enlazado && tipoInmueble === 'RESIDENCIAL') {
       const commercialEstates = await client.query(queries.CHECK_IF_HAS_COMMERCIAL_ESTATES, [estate.id_registro_municipal]);
       const allEstates = await client.query(queries.COUNT_ESTATES, [estate.id_registro_municipal]);
@@ -307,7 +325,7 @@ export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosC
     await client.query('COMMIT');
     return { status: 200, message: 'Inmueble actualizado' };
     // return {inmueble: {...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows }};
-  } catch (e) {
+  } catch (e: any) {
     await client.query('ROLLBACK');
     throw {
       error: e,
@@ -385,7 +403,7 @@ export const linkCommercial = async ({ codCat, rim, relacion }) => {
       message: 'Inmueble enlazado',
       inmueble: { ...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
     };
-  } catch (e) {
+  } catch (e: any) {
     throw {
       error: e,
       message: e.message,
@@ -415,7 +433,7 @@ export const unlinkCommercial = async ({ codCat, rim }) => {
       status: 200,
       message: 'Inmueble enlazado',
     };
-  } catch (e) {
+  } catch (e: any) {
     throw {
       error: e,
       message: e.message,
@@ -448,7 +466,7 @@ export const linkNatural = async ({ codCat, typeDoc, doc, relacion }) => {
       message: 'Inmueble enlazado',
       inmueble: { ...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
     };
-  } catch (e) {
+  } catch (e: any) {
     throw {
       error: e,
       message: e.message,
@@ -478,7 +496,7 @@ export const unlinkNatural = async ({ codCat, typeDoc, doc }) => {
       status: 200,
       message: 'Inmueble desenlazado',
     };
-  } catch (e) {
+  } catch (e: any) {
     throw {
       error: e,
       message: e.message,
