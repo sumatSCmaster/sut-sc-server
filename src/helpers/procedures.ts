@@ -1616,7 +1616,7 @@ const getNextEventForProcedure = async (procedure, client): Promise<any> => {
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
   mainLogger.info(`getNextEventForProcedure - response ${JSON.stringify(response)}`);
   const nextEvent = procedureEventHandler(procedure.sufijo, response.state);
-  if (typeof nextEvent === 'string') return nextEvent;
+  if (typeof nextEvent === 'string' || (procedure.sufijo === 'sup' && (response.state === 'enproceso' || response.state === 'enrevision'))) return nextEvent;
   if (
     (response.state === 'enrevision' && procedure.sufijo === 'cr') ||
     (response.state === 'inspeccion' && procedure.sufijo === 'cr') ||
@@ -1834,10 +1834,9 @@ const procedureInstanceHandler = (user, client, support) => {
         query = 3;
         payload = user.institucion.id;
       } else {
-        if(user.institucion?.cargo?.id === 46){
+        if (user.institucion?.cargo?.id === 46) {
           query = 5;
-        }
-        else{
+        } else {
           query = user.tipoUsuario;
         }
         payload = user.institucion.id;
