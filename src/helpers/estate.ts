@@ -269,13 +269,11 @@ export const parishEstates = async ({ idParroquia }) => {
   }
 };
 
-export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc, userId, codigoCpu }) => {
+export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc, userId }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const codIsApproved = (await client.query(queries.GET_APPROVED_CPU_PROCEDURE, [codigoCpu])).rows[0];
-    if (!codIsApproved) throw new Error('El código ingresado no pertenece a un trámite aprobado de solvencia de inmuebles');
-    const estate = (await client.query(queries.CREATE_BARE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, dirDoc, codigoCpu])).rows[0];
+    const estate = (await client.query(queries.CREATE_BARE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, dirDoc])).rows[0];
     mainLogger.info(estate);
     await client.query(queries.ADD_MOVEMENT, [estate.id, userId, 'inmueble_registrado']);
     await Promise.all(
