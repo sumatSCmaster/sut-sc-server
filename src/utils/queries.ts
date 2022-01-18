@@ -55,6 +55,7 @@ const queries = {
   CHECK_IF_OFFICIAL: "SELECT 1 FROM usuario u \
     INNER JOIN tipo_usuario tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
     WHERE tu.descripcion = 'Funcionario' AND u.cedula = $1",
+  GET_APPROVED_CPU_PROCEDURE: 'SELECT 1 FROM tramite WHERE id_tipo_tramite = 16 AND aprobado = true AND codigo_tramite = $1;',
   CHECK_IF_DIRECTOR: "SELECT 1 FROM usuario u \
     INNER JOIN tipo_usuario tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
     WHERE tu.descripcion = 'Director/Gerente' AND u.cedula = $1",
@@ -299,6 +300,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   UPDATE_STATE_SOCIAL_CASE: 'SELECT update_caso_state($1, $2, $3) as state', //idcaso, event, datos
   UPDATE_PROCEDURE_INSTANCE_COST: 'UPDATE tramite SET costo = $1 WHERE id_tramite = $2',
   UPDATE_APPROVED_STATE_FOR_PROCEDURE: "UPDATE TRAMITE SET aprobado=$1, fecha_culminacion = (NOW() - interval '4 hours') WHERE id_tramite=$2",
+  UPDATE_UNAPPROVED_STATE_FOR_PROCEDURE: 'UPDATE TRAMITE SET aprobado=$1 WHERE id_tramite=$2',
 
   //parroquias
   GET_PARISHES: 'SELECT * FROM parroquia;',
@@ -2020,8 +2022,8 @@ ORDER BY fecha_liquidacion DESC;
     WHERE id_parroquia = $1`,
   GET_APPRAISALS_BY_ID: 'SELECT anio, avaluo AS avaluo FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1',
   GET_CURRENT_APPRAISALS_BY_ID: "SELECT anio, avaluo FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 and anio = EXTRACT('year' FROM CURRENT_DATE);",
-  CREATE_BARE_ESTATE: `INSERT INTO inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, tipo_inmueble, dir_doc)
-    VALUES (default, $1, $2, $3, $4, $5, $6, $7) RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
+  CREATE_BARE_ESTATE: `INSERT INTO inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, tipo_inmueble, dir_doc, cod_tramite)
+    VALUES (default, $1, $2, $3, $4, $5, $6, $7, $8) RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", dir_doc AS "dirDoc"`,
   CREATE_BARE_ESTATE_NATURAL: `INSERT INTO inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, tipo_inmueble)
     VALUES (default, $1, $2, $3, $4, $5, 'RESIDENCIAL') RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
@@ -3326,7 +3328,9 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       INNER JOIN impuesto.tipo_vehiculo tv USING (id_tipo_vehiculo)
       WHERE v.id_vehiculo = $1`,
   // CONDOMINIO
-  GET_CONDOMINIUM_TYPE_BY_ID: 'SELECT tipo_condominio FROM impuesto.condominio JOIN impuesto.tipo_condominio USING (id_tipo_condominio) WHERE id_condominio = $1',
+  EDIT_CONDO_TYPE_BY_ID: 'UPDATE impuesto.condominio SET id_tipo_condominio = $2 WHERE id_condominio = $1 RETURNING *;',
+  GET_ALL_CONDO_TYPES: 'SELECT * FROM impuesto.tipo_condominio',
+  GET_CONDOMINIUM_TYPE_BY_ID: 'SELECT tipo_condominio, tarifa_gas, tarifa_aseo, tarifa_inmueble_urbano FROM impuesto.condominio JOIN impuesto.tipo_condominio USING (id_tipo_condominio) WHERE id_condominio = $1',
   GET_CONDOMINIUMS: `
       SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
       FROM impuesto.contribuyente cont
