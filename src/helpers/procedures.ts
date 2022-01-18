@@ -765,8 +765,26 @@ const finishedProcedure = async (procedure, user, idUser) => {
     await client.query(queries.UPDATE_UNAPPROVED_STATE_FOR_PROCEDURE, [false, procedure.idTramite]);
     await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, null, null, null]);
     await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, `cambio de estado ${nextEvent}`]);
+    const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
+    const tramite: Partial<Tramite> = {
+      id: response.id,
+      tipoTramite: response.tipotramite,
+      estado: response.state,
+      datos: response.datos,
+      planilla: response.planilla,
+      costo: response.costo,
+      fechaCreacion: response.fechacreacion,
+      fechaCulminacion: response.fechaculminacion,
+      codigoTramite: response.codigotramite,
+      usuario: response.usuario,
+      nombreLargo: response.nombrelargo,
+      nombreCorto: response.nombrecorto,
+      nombreTramiteLargo: response.nombretramitelargo,
+      nombreTramiteCorto: response.nombretramitecorto,
+      aprobado: response.aprobado,
+    };
     await client.query('COMMIT');
-    return { status: 200, message: 'Trámite procesado' };
+    return { status: 200, message: 'Trámite procesado', tramite };
   } catch (e) {
     client.query('ROLLBACK');
     throw { status: 500, error: errorMessageExtractor(e), message: errorMessageGenerator(e) || 'Error al procesar el trámite' };
