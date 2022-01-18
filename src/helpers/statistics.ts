@@ -1258,20 +1258,8 @@ export const getContributorsStatistics = async (date: any): Promise<any> => {
     const requestedDate = moment(date).locale('ES');
     const result = await client.query(queries.GET_ALL_CONTRIBUTORS_WITH_DECLARED_MUNICIPAL_SERVICES, [requestedDate.format('MM-DD-YYYY')]);
     const reportName = 'contributors-report';
-    const transformStream = new Transform({
-      transform(chunk, encoding, callback) {
-        this.push(chunk);
-        callback();
-      },
-    });
 
-    transformStream.on('finish', () => {
-      mainLogger.info('contributorsReport - Stream finished writing');
-    });
-
-    const workbook = new ExcelJs.stream.xlsx.WorkbookWriter({
-      stream: transformStream,
-    });
+    const workbook = new ExcelJs.Workbook();
     workbook.creator = 'SUT';
     workbook.created = new Date();
     workbook.views = [
@@ -1286,39 +1274,32 @@ export const getContributorsStatistics = async (date: any): Promise<any> => {
       },
     ];
 
-    const sheet = workbook.addWorksheet(reportName);
-
-    mainLogger.info(`contributorsReport - Got query, rowCount: ${result.rowCount}`);
+    const sheet = workbook.addWorksheet();
 
     sheet.columns = result.fields.map((row) => {
       return { header: row.name, key: row.name, width: 32 };
     });
 
-    for (let row of result.rows) {
-      sheet.addRow(row, 'i').commit();
-      mainLogger.info(row);
-    }
+    sheet.addRows(result.rows, 'i');
 
-    sheet.commit();
+    const bucketParams = {
+      Bucket: process.env.BUCKET_NAME as string,
+      Key: `/sedemat/reportes/${reportName}.txt`,
+      Body: await workbook.xlsx.writeBuffer(),
+      ACL: 'public-read',
+      ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    };
 
-    await workbook.commit();
-
-    mainLogger.info(`contributorsReport - Committed workbook`);
-    if (dev) {
-      const dir = `../../archivos/${reportName}.xlsx`;
-      const stream = fs.createWriteStream(require('path').resolve(`./archivos/${reportName}.xlsx`));
-      await workbook.xlsx.write(stream);
-      return dir;
-    } else {
-      const bucketParams = {
-        Bucket: process.env.BUCKET_NAME as string,
-
-        Key: `/sedemat/reportes/${reportName}.xlsx`,
-      };
-      await S3Client.upload({ ...bucketParams, Body: transformStream, ACL: 'public-read', ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }).promise();
-
-      return `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`;
-    }
+    return new Promise(async (resolve, reject) => {
+      try {
+        await S3Client.putObject({
+          ...bucketParams,
+        }).promise();
+        resolve(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+      } catch (error) {
+        reject(error);
+      }
+    });
   } catch (error) {
     throw errorMessageExtractor(error);
   } finally {
