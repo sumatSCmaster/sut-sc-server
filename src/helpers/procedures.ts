@@ -962,6 +962,8 @@ export const reviseProcedure = async (procedure, user: Usuario, idUser) => {
   const client = await pool.connect();
   const { aprobado, observaciones } = procedure.revision;
   let dir, respState, datos;
+  console.log(procedure.revision, 'p.revision');
+  mainLogger.info(procedure.revision, 'p.revision');
   try {
     client.query('BEGIN');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.idTramite])).rows[0];
@@ -974,6 +976,8 @@ export const reviseProcedure = async (procedure, user: Usuario, idUser) => {
       procedure.sufijo = resources.sufijo;
     }
     const nextEvent = await getNextEventForProcedure(procedure, client);
+    console.log(nextEvent[aprobado], 'AAAAAAAAAAAA');
+    mainLogger.info(nextEvent[aprobado], 'aAAAAA');
 
     if (observaciones && !aprobado) {
       const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
@@ -1028,6 +1032,7 @@ export const reviseProcedure = async (procedure, user: Usuario, idUser) => {
           dir = await createCertificate(procedure, client);
           respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, dir, null]);
         } else {
+          console.log(nextEvent[aprobado], 'nextEvent[aprobado]');
           respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos || null, null, null]);
         }
       }
@@ -1616,7 +1621,7 @@ const getNextEventForProcedure = async (procedure, client): Promise<any> => {
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
   mainLogger.info(`getNextEventForProcedure - response ${JSON.stringify(response)}`);
   const nextEvent = procedureEventHandler(procedure.sufijo, response.state);
-  if (typeof nextEvent === 'string' || (procedure.sufijo === 'sup' && (response.state === 'enproceso' || response.state === 'enrevision'))) return nextEvent;
+  if (typeof nextEvent === 'string' || (procedure.sufijo === 'sup' && (response.state === 'enproceso' || response.state === 'enrevision')) || (response.state === 'enrevision' && procedure.sufijo === 'lae')) return nextEvent;
   if (
     (response.state === 'enrevision' && procedure.sufijo === 'cr') ||
     (response.state === 'inspeccion' && procedure.sufijo === 'cr') ||
