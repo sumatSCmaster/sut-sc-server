@@ -824,6 +824,7 @@ export const processProcedure = async (procedure, user: Usuario, idUser) => {
       }
     } else if (resources.tipoTramite === 37) {
       const { aprobado, estado } = procedure;
+      console.log(nextEvent[aprobado], 'rodrigo');
       respState =
         estado === 'finalizado'
           ? await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[estado], datos || null, dir || null, true])
@@ -1637,7 +1638,6 @@ const getNextEventForProcedure = async (procedure, client): Promise<any> => {
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
   mainLogger.info(`getNextEventForProcedure - response ${JSON.stringify(response)}`);
   const nextEvent = procedureEventHandler(procedure.sufijo, response.state);
-  console.log(nextEvent);
   if (typeof nextEvent === 'string' || (procedure.sufijo === 'sup' && response.state === 'enproceso')) return nextEvent;
   if (
     (response.state === 'enrevision' && procedure.sufijo === 'cr') ||
