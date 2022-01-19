@@ -1646,7 +1646,7 @@ export const processProcedureAnalist = async (procedure, user: Usuario, client: 
     throw {
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al procesar putaaaaaaaaa jhonder mardicion el trámite',
+      message: errorMessageGenerator(error) || error.message || 'Error al procesar el trámite',
     };
   }
 };
