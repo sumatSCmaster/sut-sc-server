@@ -55,6 +55,7 @@ const queries = {
   CHECK_IF_OFFICIAL: "SELECT 1 FROM usuario u \
     INNER JOIN tipo_usuario tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
     WHERE tu.descripcion = 'Funcionario' AND u.cedula = $1",
+  GET_APPROVED_CPU_PROCEDURE: 'SELECT 1 FROM tramite WHERE id_tipo_tramite = 16 AND aprobado = true AND codigo_tramite = $1;',
   CHECK_IF_DIRECTOR: "SELECT 1 FROM usuario u \
     INNER JOIN tipo_usuario tu ON tu.id_tipo_usuario = u.id_tipo_usuario \
     WHERE tu.descripcion = 'Director/Gerente' AND u.cedula = $1",
@@ -299,6 +300,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   UPDATE_STATE_SOCIAL_CASE: 'SELECT update_caso_state($1, $2, $3) as state', //idcaso, event, datos
   UPDATE_PROCEDURE_INSTANCE_COST: 'UPDATE tramite SET costo = $1 WHERE id_tramite = $2',
   UPDATE_APPROVED_STATE_FOR_PROCEDURE: "UPDATE TRAMITE SET aprobado=$1, fecha_culminacion = (NOW() - interval '4 hours') WHERE id_tramite=$2",
+  UPDATE_UNAPPROVED_STATE_FOR_PROCEDURE: 'UPDATE TRAMITE SET aprobado=$1 WHERE id_tramite=$2',
 
   //parroquias
   GET_PARISHES: 'SELECT * FROM parroquia;',
@@ -3326,7 +3328,9 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       INNER JOIN impuesto.tipo_vehiculo tv USING (id_tipo_vehiculo)
       WHERE v.id_vehiculo = $1`,
   // CONDOMINIO
-  GET_CONDOMINIUM_TYPE_BY_ID: 'SELECT tipo_condominio FROM impuesto.condominio JOIN impuesto.tipo_condominio USING (id_tipo_condominio) WHERE id_condominio = $1',
+  EDIT_CONDO_TYPE_BY_ID: 'UPDATE impuesto.condominio SET id_tipo_condominio = $2 WHERE id_condominio = $1 RETURNING *;',
+  GET_ALL_CONDO_TYPES: 'SELECT * FROM impuesto.tipo_condominio',
+  GET_CONDOMINIUM_TYPE_BY_ID: 'SELECT tipo_condominio, tarifa_gas, tarifa_aseo, tarifa_inmueble_urbano FROM impuesto.condominio JOIN impuesto.tipo_condominio USING (id_tipo_condominio) WHERE id_condominio = $1',
   GET_CONDOMINIUMS: `
       SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
       FROM impuesto.contribuyente cont
