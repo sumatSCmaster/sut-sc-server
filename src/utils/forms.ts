@@ -99,6 +99,7 @@ export const createMockCertificate = async (procedure) => {
     const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION_MOCK, [procedure])).rows[0];
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${tramite.id}`, { errorCorrectionLevel: 'H' });
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
+    mainLogger.info(tramite.datos, "tramite.datos");
     const datosCertificado = {
       id: tramite.id,
       fecha: tramite.fechacreacion,
