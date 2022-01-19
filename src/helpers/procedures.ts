@@ -1533,7 +1533,7 @@ export const initProcedureAnalist = async (procedure, user: Usuario, client: Poo
     throw {
       status: 500,
       error: errorMessageExtractor(e),
-      message: errorMessageGenerator(e) || e.message || 'Error al realizar el tramite por interno',
+      message: errorMessageGenerator(e) || e.message || `Error al realizar el tramite por ${e.message}`,
     };
   }
 };
