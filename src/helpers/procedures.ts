@@ -1528,12 +1528,12 @@ export const initProcedureAnalist = async (procedure, user: Usuario, client: Poo
       message: 'Tramite iniciado!',
       tramite,
     };
-  } catch (e) {
+  } catch (e: any) {
     mainLogger.error(e);
     throw {
       status: 500,
       error: errorMessageExtractor(e),
-      message: errorMessageGenerator(e) || 'Error al realizar el tramite por interno',
+      message: errorMessageGenerator(e) || e.message || `Error al realizar el tramite por ${e}`,
     };
   }
 };
@@ -1646,7 +1646,7 @@ export const processProcedureAnalist = async (procedure, user: Usuario, client: 
     throw {
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al procesar el trámite',
+      message: errorMessageGenerator(error) || error.message || 'Error al procesar el trámite',
     };
   }
 };
