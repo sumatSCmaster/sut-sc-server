@@ -1630,7 +1630,7 @@ export const processProcedureAnalist = async (procedure, user: Usuario, client: 
       aprobado: response.aprobado,
       bill: ordenanzas,
     };
-
+    console.log('prueba rodrigo');
     await sendNotification(user, `Se ha procesado un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
     sendEmail({
       ...tramite,
