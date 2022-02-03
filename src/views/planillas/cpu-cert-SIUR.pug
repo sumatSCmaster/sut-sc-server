@@ -1,0 +1,54 @@
+extends default
+
+block content
+  div#fecha
+    p 
+      b FECHA:
+      span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+    p 
+      b Codigo de Tramite:
+      span &nbsp; #{codigo}
+  div#planilla
+    div#text-input
+      p Ciudadano:
+        br
+        b Lcdo. Daniel Jose Boza Muñoz
+        br
+        b Intendente Municipal Tributario
+        br
+        | Su Despacho.
+      h2(style={'text-align': 'center'}) DETERMINACIÓN DEL VALOR FISCAL DE INMUEBLES URBANOS
+      p 
+        b PROPIETARIO: 
+        | #{datos.funcionario.propietarios[0].razonSocial} 
+        b C.I. O RIF: &nbsp;
+        | #{datos.funcionario.propietarios[0].nacionalidad}-#{datos.funcionario.propietarios[0].cedulaORif} 
+        br
+        | En atención a su solicitud de determinación de impuesto sobre inmuebles urbanos, ubicados en: #{datos.funcionario.ubicadoEn} 
+        br
+        | Parroquia: #{datos.funcionario.parroquiaEdificio} 
+        br
+        | Se le realizó la estimación del valor fiscal del inmueble arrojando lo siguiente:
+    table(style={ width: '100%', margin: '20px 0'}).table-normal                                  
+      // FIXME: Cambiar la estructura a la correcta  
+      tr
+        th Tipo de inmueble
+        th Área del terreno (m²)
+        th Área de construcción (m²)
+        th Tipo de construcción
+        th Sector
+        th Valor fiscal
+      tr        
+        td #{datos.funcionario.estimacionSimple.esTerreno && datos.funcionario.estimacionSimple.esConstruccion ? 'TERRENO CON CONSTRUCCIÓN' : datos.funcionario.estimacionSimple.esTerreno ? 'TERRENO' : 'CONSTRUCCIÓN'}
+        td #{datos.funcionario.estimacionSimple.esTerreno ? datos.funcionario.estimacionSimple.terreno.area : 'N/A'}
+        td #{datos.funcionario.estimacionSimple.esConstruccion ? datos.funcionario.estimacionSimple.construccion.area : 'N/A'}
+        td #{datos.funcionario.estimacionSimple.esConstruccion ? datos.funcionario.estimacionSimple.construccion.modelo : 'N/A'}
+        td #{datos.funcionario.estimacionSimple.esTerreno ? datos.funcionario.estimacionSimple.terreno.sector : 'N/A'}
+        td #{datos.funcionario.estimacionSimple.valoresFiscales[Object.keys(datos.funcionario.estimacionSimple.valoresFiscales)[4]].split('Petros ')[1]}
+    table(style={ width: '50%', margin: '20px 0'}).table-normal
+      caption VALOR FISCAL (Petros)
+      - var years = Object.keys(datos.funcionario.estimacionSimple.valoresFiscales).revers+ e().slice(1)
+      each year in years
+        tr  
+          td(style={ width: '50%', 'background-color': '#fadc68'}) #{year}
+          td(style={ width: '50%'}) #{datos.funcionario.estimacionSimple.valoresFiscales[year].split('Petros ')[1]}                

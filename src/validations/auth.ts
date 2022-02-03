@@ -173,6 +173,7 @@ const validations = {
   tipoSociedadContrib: check('tramite.datos.tipoSociedadContrib').exists().withMessage('Debe incluir el tipo de sociedad del contribuyente').isString().isLength({ min: 1 }).withMessage('El tipo de sociedad del contribuyente no puede ser vacio'),
   estadoLicencia: check('tramite.datos.estadoLicencia').exists().withMessage('Debe incluir el estado de la licencia').isString().isLength({ min: 1 }).withMessage('El estado de la licencia no puede ser vacio'),
   observacionProceso: check('tramite.datos.observacionProceso').optional(),
+  solvenciaRRI: check('tramite.datos.solvenciaRRI').exists().withMessage('Debe especificar la accion a realizar').isBoolean().withMessage('El nada no puede ser vacio'),
   tipoProceso: check('tramite.datos.tipoProceso').exists().withMessage('Debe especificar la accion a realizar').isString().isLength({ min: 1 }).withMessage('El tipo de tramite no puede ser vacio'),
   codigoTramite: check('tramite.datos.codigoTramite').exists().withMessage('Debe incluir el código del trámite').isString().isAlphanumeric().withMessage('El código del trámite debe ser alfa númerico'),
 };
@@ -280,15 +281,15 @@ export const validate = () => {
   return async (req, res, next) => {
     if (req.body.tramite.hasOwnProperty('aprobado') && !req.body.tramite.aprobado) return next();
     const validaciones = await isValidProcedure(req, res);
-    mainLogger.info(`validate validaciones ${validaciones} ${validaciones.length}`)
+    mainLogger.info(`validate validaciones ${validaciones} ${validaciones.length}`);
     await Promise.all(validaciones.map((validation) => validation.run(req)));
-    mainLogger.info(`validate calling next`)
+    mainLogger.info(`validate calling next`);
     next();
   };
 };
 const isValidProcedure = async (req, res) => {
   const [error, data] = await fulfill(getFieldsForValidations({ id: req.body.tramite.idTramite, type: req.body.tramite.tipoTramite }));
-  mainLogger.info(`isvalidprocedure ${error?.message}`)
+  mainLogger.info(`isvalidprocedure ${error?.message}`);
   if (error) res.status(error.status).json(error);
   if (data) {
     const arr = data.fields.map((el) => validations[el.validacion]);
