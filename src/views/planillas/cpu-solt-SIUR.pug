@@ -1,0 +1,134 @@
+extends default
+
+block content
+  div#fecha
+    p 
+      b FECHA:
+      span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+    p 
+      b Codigo de Tramite:
+      span &nbsp; #{codigo}
+  div#planilla      
+    div.table                                  
+      div.th
+        p DATOS DEL SOLICITANTE
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Nombre:
+            span &nbsp; #{datos.usuario.nombre}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Cédula:
+            span &nbsp; #{datos.usuario.cedula}
+      div.tr
+        div.td(style={ width: '50%' }).border-bottom.border-right
+          p
+            b Telefono:
+            span &nbsp; #{datos.usuario.telefono}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Correo:
+            span &nbsp; #{datos.usuario.correo}
+      div.tr
+        div.td(style={ width: '50%' }).border-right
+          p
+            b Dirección:
+            span &nbsp; #{datos.usuario.direccion}
+        div.td(style={ width: '50%' })
+          p
+            b Parroquia:
+            span &nbsp; #{datos.usuario.parroquia}
+    div.table
+      if datos.usuario.propietarios.length  > 1
+        div.th
+          p DATOS DE PROPIETARIOS         
+        each propietario in datos.usuario.propietarios
+          div.tr
+            div.td(style={ width: '50%' }).border-bottom.border-right
+              p 
+                b Nombre o Razon Social:
+                span &nbsp; #{propietario.razonSocial}
+            div.td(style={ width: '50%' }).border-bottom
+              p
+                b Cédula o RIF:
+                span &nbsp; #{propietario.nacionalidad}-#{propietario.cedulaORif}      
+      else
+        div.th
+          p DATOS DE PROPIETARIO
+        div.tr
+          div.td(style={ width: '50%' }).border-bottom.border-right
+            p 
+              b Nombre o Razon Social:
+              span &nbsp; #{datos.usuario.propietarios[0].nombre}
+          div.td(style={ width: '50%' }).border-bottom
+            p
+              b Cédula o RIF:
+              span &nbsp; #{datos.usuario.propietarios[0].nacionalidad}-#{datos.usuario.propietarios[0].cedulaORif}
+        div.tr
+          div.td(style={ width: '50%' }).border-bottom.border-right
+            p
+              b Telefono:
+              span &nbsp; #{datos.usuario.propietarios[0].telefono}
+          div.td(style={ width: '50%' }).border-bottom
+            p
+              b Correo:
+              span &nbsp; #{datos.usuario.propietarios[0].correo}
+        div.tr
+          div.td(style={ width: '50%' }).border-right
+            p
+              b Dirección:
+              span &nbsp; #{datos.usuario.propietarios[0].direccion}
+          div.td(style={ width: '50%' })
+            p
+              b Parroquia:
+              span &nbsp; #{datos.usuario.propietarios[0].parroquia}            
+    div.table            
+      div.th
+        p DATOS DEL INMUEBLE Y/O PARCELA
+      div.tr
+        div.td(style={ width: '100%' }).border-bottom
+          p
+            b Dirección:
+            span &nbsp; #{datos.usuario.ubicadoEn}
+      // FIXME: Cambiar la estructura a la correcta  
+      div.tr            
+        div.td(style={ width: '50%' }).border-right.border-bottom
+          p
+            b Parroquia:
+            span &nbsp; #{datos.usuario.parroquia}
+        div.td(style={ width: '50%' }).border-bottom
+          p
+            b Indicar si existe Terreno:
+            span &nbsp; #{datos.usuario.tipoInmueble}
+      div.tr            
+        div.td(style={ width: '50%' }).border-right
+          p
+            b  Terreno + Construcción:
+            span &nbsp; #{datos.usuario.parroquia}
+        div.td(style={ width: '50%' })
+          p
+            b Construcción:
+            span &nbsp; #{datos.usuario.tipoInmueble}            
+    div#recaudos
+      h3 REQUISITOS OBLIGATORIOS
+      hr.divider
+      ul
+        li Copia de la Cédula de Identidad del Propietario.
+        li Copia del documento de propiedad registrado del inmueble.
+        ul(style={ 'padding-left': '15px' })
+          li Si el inmueble pertenece a una sucesión presentar copia de la planilla sucesoral y Rif.
+          li Si el inmueble pertenece a una persona jurídica presentar copia del RIF.
+          li Si es un parcela miento u urbanización presentar documento, relación de parcelas vendidas y Constancia de habitabilidad
+        li Constancia de nomenclatura emitida por la Oficina Municipal de Catastro
+        li Copia del pago de la factura de los Servicios Municipales (Gas, Aseo, Inmueble).
+        li Si el trámite no lo realiza el Propietario, presentar un poder y copia de la Cédula de Identidad del mismo.
+        li Traer el timbre fiscal por un valor 0,02 Unidades Tributarias (UT).
+      hr.divider
+    div(style={'margin-bottom':'50px', 'font-size':'14px', 'padding-bottom': '20px'})
+      h3 OBSERVACIONES GENERALES
+      ul
+        li Todos los recaudos deberán ser consignados en una carpeta marrón oficio con su respectivo gancho y separadores entre cada requisito.
+        li Solo se iniciara el proceso de revisión cuando los recaudos Estén Completos.
+        li El monto a pagar por concepto de tasas administrativas de conformidad con lo establecido en la Ordenanza sobre Tasas Administrativas por expedición de Licencias, Permisos, Ventas, Copias y Certificación de Documentos del Municipio Maracaibo serán.     
+                                
