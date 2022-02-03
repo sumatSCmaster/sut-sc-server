@@ -1661,6 +1661,7 @@ const getNextEventForProcedure = async (procedure, client): Promise<any> => {
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
   mainLogger.info(`getNextEventForProcedure - response ${JSON.stringify(response)}`);
   const nextEvent = procedureEventHandler(procedure.sufijo, response.state);
+
   if (typeof nextEvent === 'string' || procedure.sufijo === 'lae' || procedure.sufijo === 'rc' || procedure.sufijo === 'bc' || (procedure.sufijo === 'sup' && (response.state === 'enproceso' || response.state === 'enrevision'))) return nextEvent;
   if (
     (response.state === 'enrevision' && procedure.sufijo === 'cr') ||
@@ -1681,8 +1682,9 @@ const procedureEvents = switchcase({
   // cr: { iniciado: 'validar_cr', validando: 'enproceso_cr', enproceso: 'revisar_cr', enrevision: { true: 'finalizar_cr', false: 'rechazar_cr' } },
   cr: {
     iniciado: 'validar_cr',
-    validando: { true: 'enproceso_cr', false: 'finalizar_cr' },
+    validando: { true: 'enproceso_cr', false: 'finalizar_cr', cat: 'enprocesocat_cr' },
     enproceso: { inspeccion: 'inspeccionar_cr', correccion: 'corregir_cr', revision: 'revisar_cr' },
+    enprocesocat: { enproceso: 'enproceso_cr', correccion: 'corregir_cr' },
     inspeccion: { false: 'enproceso_cr' },
     encorreccion: { false: 'enproceso_cr' },
     enrevision: { true: 'revisardirector_cr', false: 'rebotar_cr' },
