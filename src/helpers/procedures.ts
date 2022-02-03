@@ -1686,7 +1686,7 @@ const procedureEvents = switchcase({
     enproceso: { inspeccion: 'inspeccionar_cr', correccion: 'corregir_cr', revision: 'revisar_cr' },
     enprocesocat: { enproceso: 'enproceso_cr', correccion: 'corregir_cr' },
     inspeccion: { false: 'enproceso_cr' },
-    encorreccion: { false: 'enproceso_cr' },
+    encorreccion: { false: 'enproceso_cr', cat: 'enprocesocat_cr' },
     enrevision: { true: 'revisardirector_cr', false: 'rebotar_cr' },
     enrevision_gerente: { true: 'aprobar_cr', false: 'rebotar_cr', rechazado: 'rechazar_cr' },
     finalizado: 'enproceso_cr',
