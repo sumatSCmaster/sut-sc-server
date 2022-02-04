@@ -1983,6 +1983,7 @@ const fieldsBySectionHandler = (typeUser, payload, client) => {
 const updateProcedure = switchcase({
   validando: null,
   enproceso: processProcedure,
+  enprocesocat: processProcedure,
   inspeccion: inspectProcedure,
   encorreccion: inspectProcedure,
   enrevision_analista: reviseProcedure,
