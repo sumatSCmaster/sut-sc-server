@@ -314,6 +314,7 @@ export const approveSinglePayment = async (id, user) => {
         solicitudAprobada: solicitudInfo?.solicitudAprobada || convenioInfo?.solicitudAprobada || retencionInfo?.solicitudAprobada || undefined,
         concepto: pago.concepto,
       };
+      console.log(body, 'RODRIGO VALIDACION DE PAGO');
       await validationHandler({ concept: pago.concepto, body: body, user, client });
       await client.query('COMMIT');
       return { body, status: 200 };
