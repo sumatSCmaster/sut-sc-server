@@ -1,5 +1,8 @@
 extends default
 
+block css
+  link(rel="stylesheet", href="css/cpu-cert-SIUR.css")
+
 block content
   div#fecha
     p 
@@ -12,9 +15,9 @@ block content
     div#text-input
       p Ciudadano:
         br
-        b Lcdo. Daniel Jose Boza Muñoz
+        b Arquitecto. Javier Fuenmayor
         br
-        b Intendente Municipal Tributario
+        b Director de Catastro.
         br
         | Su Despacho.
       h2(style={'text-align': 'center'}) DETERMINACIÓN DEL VALOR FISCAL DE INMUEBLES URBANOS
@@ -52,3 +55,18 @@ block content
         tr  
           td(style={ width: '50%', 'background-color': '#fadc68'}) #{year}
           td(style={ width: '50%'}) #{datos.funcionario.estimacionSimple.valoresFiscales[year].split('Petros ')[1]}                
+    .sections.row
+    .funcionarios.row
+      .grow1
+        p.grow1 Aprobado: 
+        h4 Arquitecto. Javier Fuenmayor
+        h4 Director de Catastro
+        div(style='width: 360px; padding: 2px 0;margin-top: 20px')
+          img(src="images/director-cat.png", style={width:'320px'}, alt="Director", srcset="")
+      .grow1
+        p.grow1 Aprobado: 
+        h4 Nedwin Montero
+        h4 Jefe
+        div(style='width: 360px; padding: 2px 0;margin-top: 20px')
+          img(src="images/jefe-val.png", style={width:'320px'}, alt="Adjunto Nomenclatura", srcset="")
+  

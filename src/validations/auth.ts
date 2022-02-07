@@ -176,6 +176,7 @@ const validations = {
   solvenciaRRI: check('tramite.datos.solvenciaRRI').exists().withMessage('Debe especificar la accion a realizar').isBoolean().withMessage('El nada no puede ser vacio'),
   tipoProceso: check('tramite.datos.tipoProceso').exists().withMessage('Debe especificar la accion a realizar').isString().isLength({ min: 1 }).withMessage('El tipo de tramite no puede ser vacio'),
   codigoTramite: check('tramite.datos.codigoTramite').exists().withMessage('Debe incluir el código del trámite').isString().isAlphanumeric().withMessage('El código del trámite debe ser alfa númerico'),
+  inputRRI: check('tramite.datos.inputRRI').exists().withMessage('Debe especificar la accion a realizar').isString().withMessage('El campo de RRI no puede ser vacio')
 };
 
 export const createSuperuser = [

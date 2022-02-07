@@ -300,7 +300,7 @@ export const approveSinglePayment = async (id, user) => {
         id: pago.id,
         monto: pago.monto,
         idBanco: pago.id_banco,
-        aprobado: pago.aprobado,
+        aprobado: tramiteInfo?.tipotramite === 43 ? 'cat' : pago.aprobado,
         idTramite: pago.id_procedimiento,
         pagoPrevio: tramiteInfo?.pago_previo,
         referencia: pago.referencia,
@@ -314,6 +314,7 @@ export const approveSinglePayment = async (id, user) => {
         solicitudAprobada: solicitudInfo?.solicitudAprobada || convenioInfo?.solicitudAprobada || retencionInfo?.solicitudAprobada || undefined,
         concepto: pago.concepto,
       };
+      console.log(body, 'RODRIGO VALIDACION DE PAGO');
       await validationHandler({ concept: pago.concepto, body: body, user, client });
       await client.query('COMMIT');
       return { body, status: 200 };
@@ -341,7 +342,7 @@ export const validatePayments = async (body, user) => {
           id: el.id,
           monto: el.monto,
           idBanco: el.idbanco,
-          aprobado: el.aprobado,
+          aprobado: el.tipoTramite === 43 ? 'cat' : el.aprobado,
           idTramite: el.idprocedimiento,
           pagoPrevio: el.pagoprevio,
           referencia: el.referencia,
