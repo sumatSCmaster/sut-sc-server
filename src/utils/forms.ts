@@ -139,39 +139,38 @@ export const createMockCertificate = async (procedure) => {
 export const createRRICertificate = async (procedure, areaTerreno, areaConstruccion, codigoRRI) => {
   const client = await pool.connect();
   try {
-    const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION_MOCK, [procedure])).rows[0];
-    mainLogger.info(tramite.datos, 'tramite.datos');
-    const datosCertificado = {
-      id: tramite.id,
-      fecha: tramite.fechacreacion,
-      codigo: tramite.codigotramite,
-      formato: tramite.formato,
-      tramite: tramite.nombretramitelargo,
-      institucion: tramite.nombrecorto,
-      datos: {
-        ...tramite.datos,
-        areaTerreno,
-        areaConstruccion,
-        codigoRRI,
-      },
-      estado: 'finalizado',
-      tipoTramite: tramite.tipotramite,
-      certificado: 'cpu-solv-RRI',
-    };
-    mainLogger.info('<-----------datos certificado----------->:', datosCertificado);
+    return new Promise(async (res, rej) => {
+      const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION_MOCK, [procedure])).rows[0];
+      mainLogger.info(tramite.datos, 'tramite.datos');
+      const datosCertificado = {
+        id: tramite.id,
+        fecha: tramite.fechacreacion,
+        codigo: tramite.codigotramite,
+        formato: tramite.formato,
+        tramite: tramite.nombretramitelargo,
+        institucion: tramite.nombrecorto,
+        datos: {
+          ...tramite.datos,
+          areaTerreno,
+          areaConstruccion,
+          codigoRRI,
+        },
+        estado: 'finalizado',
+        tipoTramite: tramite.tipotramite,
+        certificado: 'cpu-solv-RRI',
+      };
+      mainLogger.info('<-----------datos certificado----------->:', datosCertificado);
 
-    const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
-      ...datosCertificado,
-      cache: false,
-      moment: require('moment'),
-    });
+      const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
+        ...datosCertificado,
+        cache: false,
+        moment: require('moment'),
+      });
 
-    const pdff = pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
-    let link;
-    pdff.toBuffer(async (err, buffer) => {
-      try {
+      const pdff = pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
+      pdff.toBuffer(async (err, buffer) => {
         if (err) {
-          throw err;
+          rej(err);
         } else {
           const bucketParams = {
             Bucket: process.env.BUCKET_NAME as string,
@@ -183,15 +182,11 @@ export const createRRICertificate = async (procedure, areaTerreno, areaConstrucc
             ACL: 'public-read',
             ContentType: 'application/pdf',
           }).promise();
-          link = `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`;
-          console.log(link);
+          res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+          // console.log(link);
         }
-      } catch (e) {
-        throw e;
-      }
+      });
     });
-    console.log(link, 'RODRIGO AFUERA');
-    return link;
   } catch (error) {
     throw {
       status: 500,
