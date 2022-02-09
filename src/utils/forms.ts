@@ -155,7 +155,7 @@ export const createRRICertificate = async (procedure, areaTerreno, areaConstrucc
       },
       estado: 'finalizado',
       tipoTramite: tramite.tipotramite,
-      certificado: 'CPU-solv-RRI',
+      certificado: 'cpu-solv-RRI',
     };
     mainLogger.info('<-----------datos certificado----------->:', datosCertificado);
 
