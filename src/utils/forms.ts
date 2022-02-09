@@ -184,6 +184,7 @@ export const createRRICertificate = async (procedure, areaTerreno, areaConstrucc
             ContentType: 'application/pdf',
           }).promise();
           link = `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`;
+          console.log(link);
         }
       } catch (e) {
         throw e;
