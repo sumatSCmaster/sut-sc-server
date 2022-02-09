@@ -4,7 +4,7 @@ import { createMockCertificate } from '@utils/forms';
 
 const router = Router();
 
-router.get('/reportSolvRRI', async (req: any, res) => {
+router.get('/', async (req: any, res) => {
   const { id } = req.query;
   const [error, data] = await fulfill(createMockCertificate(id));
   if (error) res.status(500).json(error);
