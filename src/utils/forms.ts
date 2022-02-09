@@ -9,7 +9,7 @@ import * as qr from 'qrcode';
 import { errorMessageGenerator, errorMessageExtractor } from '@helpers/errors';
 import { getAllBanks } from '@helpers/banks';
 import { mainLogger } from './logger';
-import { inspect } from 'util'
+import { inspect } from 'util';
 const written = require('written-number');
 
 const pool = Pool.getInstance();
@@ -99,7 +99,7 @@ export const createMockCertificate = async (procedure) => {
     const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION_MOCK, [procedure])).rows[0];
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${tramite.id}`, { errorCorrectionLevel: 'H' });
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
-    mainLogger.info(tramite.datos, "tramite.datos");
+    mainLogger.info(tramite.datos, 'tramite.datos');
     const datosCertificado = {
       id: tramite.id,
       fecha: tramite.fechacreacion,
@@ -113,7 +113,7 @@ export const createMockCertificate = async (procedure) => {
       certificado: tramite.sufijo === 'ompu' ? (tramite.aprobado ? tramite.formatocertificado : tramite.formatorechazo) : tramite.formatocertificado,
       bancos: (await getAllBanks()).banks,
     };
-    mainLogger.info('<-----------datos certificado----------->:',datosCertificado);
+    mainLogger.info('<-----------datos certificado----------->:', datosCertificado);
 
     const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
       ...datosCertificado,
@@ -129,6 +129,46 @@ export const createMockCertificate = async (procedure) => {
       status: 500,
       error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al crear el certificado',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const createRRICertificate = async (procedure, areaTerreno, areaConstruccion, codigoRRI) => {
+  const client = await pool.connect();
+  try {
+    const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION_MOCK, [procedure])).rows[0];
+    mainLogger.info(tramite.datos, 'tramite.datos');
+    const datosCertificado = {
+      id: tramite.id,
+      fecha: tramite.fechacreacion,
+      codigo: tramite.codigotramite,
+      formato: tramite.formato,
+      tramite: tramite.nombretramitelargo,
+      institucion: tramite.nombrecorto,
+      datos: {
+        ...tramite.datos,
+        areaTerreno, areaConstruccion, codigoRRI
+      },
+      estado: 'finalizado',
+      tipoTramite: tramite.tipotramite,
+      certificado: tramite.sufijo === 'ompu' ? (tramite.aprobado ? tramite.formatocertificado : tramite.formatorechazo) : tramite.formatocertificado
+    };
+    mainLogger.info('<-----------datos certificado----------->:', datosCertificado);
+
+    const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
+      ...datosCertificado,
+      cache: false,
+      moment: require('moment'),
+    });
+
+    return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
+  } catch (error) {
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al crear el certificado RRI',
     };
   } finally {
     client.release();
