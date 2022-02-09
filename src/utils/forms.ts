@@ -175,7 +175,7 @@ export const createRRICertificate = async (procedure, areaTerreno, areaConstrucc
         } else {
           const bucketParams = {
             Bucket: process.env.BUCKET_NAME as string,
-            Key: `/CPU/planillas/${tramite.id}/certificadoRRI.pdf`,
+            Key: `CPU/planillas/${tramite.id}/certificadoRRI.pdf`,
           };
           await S3Client.putObject({
             ...bucketParams,
@@ -190,6 +190,7 @@ export const createRRICertificate = async (procedure, areaTerreno, areaConstrucc
         throw e;
       }
     });
+    console.log(link, 'RODRIGO AFUERA');
     return link;
   } catch (error) {
     throw {
