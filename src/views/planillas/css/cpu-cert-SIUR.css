@@ -1,0 +1,73 @@
+.funcionarios {
+  border-top: 1px solid slategray;
+}
+
+.funcionarios div {
+  padding: 3px;
+  border-right: slategray solid 1px;
+  height: 130px;
+  display: flex;
+  display: -webkit-flex;
+  align-items: center;
+  -webkit-align-items: center;
+  flex-direction: column;
+  -webkit-flex-direction: column;
+  justify-content: flex-end;
+  -webkit-justify-content: flex-end;
+}
+
+.funcionarios h4 {
+  font-size: 1em;
+  font-weight: normal;
+  margin: 0;
+}
+.funcionarios p {
+  align-self: flex-start;
+  -webkit-align-self: flex-start;
+}
+
+.row {
+  width: 100%;
+  display: flex;
+  display: -webkit-flex;
+  align-items: stretch;
+  -webkit-align-items: stretch;
+  flex-wrap: nowrap;
+  -webkit-flex-wrap: nowrap;
+}
+
+.grow1 {
+  flex-grow: 1;
+  -webkit-flex-grow: 1;
+}
+
+.grow2 {
+  flex-grow: 2;
+  -webkit-flex-grow: 2;
+}
+.grow3 {
+  flex-grow: 2;
+  -webkit-flex-grow: 2;
+}
+
+.sections div {
+  border-top: 1px solid slategray;
+  border-right: 1px solid slategray;
+  height: 55px;
+  display: flex;
+  display: -webkit-flex;
+  align-items: center;
+  -webkit-align-items: center;
+  flex-direction: column;
+  -webkit-flex-direction: column;
+  justify-content: space-around;
+  -webkit-justify-content: space-around;
+}
+
+.sections h6 {
+  font-size: 1em;
+  margin: 0;
+}
+.sections p {
+  font-weight: normal;
+}
