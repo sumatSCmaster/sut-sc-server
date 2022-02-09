@@ -149,11 +149,13 @@ export const createRRICertificate = async (procedure, areaTerreno, areaConstrucc
       institucion: tramite.nombrecorto,
       datos: {
         ...tramite.datos,
-        areaTerreno, areaConstruccion, codigoRRI
+        areaTerreno,
+        areaConstruccion,
+        codigoRRI,
       },
       estado: 'finalizado',
       tipoTramite: tramite.tipotramite,
-      certificado: tramite.sufijo === 'ompu' ? (tramite.aprobado ? tramite.formatocertificado : tramite.formatorechazo) : tramite.formatocertificado
+      certificado: 'CPU-solv-RRI',
     };
     mainLogger.info('<-----------datos certificado----------->:', datosCertificado);
 
