@@ -1,18 +1,27 @@
 extends default
 
+block css
+  link(rel="stylesheet", href="css/cpu-solv-RRI.css")
+
 block content
-  div
-    p
-      b EXP.:
-      |  #{codigo}
-    p
-      b FECHA:
-      |  #{moment(fecha).format('DD/MM/YYYY')}
+  div.banda-tramite
+     p
+        b EXP.:
+        |  #{codigo}
+     p
+        b FECHA:
+        |  #{moment(fecha).format('DD/MM/YYYY')}
   div 
-    h1 REGISTRO REFERENCIAL DEL INMUEBLE 
+     h1 REGISTRO REFERENCIAL DEL INMUEBLE 
   div 
-    p DIRECCIÓN: #{datos.direccion}
-    p PARROQUIA: #{datos.parroquia}
-    P AREA DE TERRENO:
-    P AREA DE CONSTRUCCIÓN: 
-    p R.R INMUEBLE: 
+     p DIRECCIÓN: #{datos.direccion}
+     p PARROQUIA: #{datos.parroquia}
+     if datos.areaTerreno
+        P AREA DE TERRENO: #{datos.areaTerreno}
+     if datos.areaConstruccion 
+         P AREA DE CONSTRUCCIÓN: #{datos.areaConstruccion}
+     p R.R INMUEBLE: 
+        b #{datos.codigoRRI}
+        |
+  div 
+     h1#watermark VALIDO USO CATASTRO
