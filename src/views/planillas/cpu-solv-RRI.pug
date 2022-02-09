@@ -4,7 +4,7 @@ block css
   link(rel="stylesheet", href="css/cpu-solv-RRI.css")
 
 block content
-  div.banda-tramite
+  div.row
      p
         b EXP.:
         |  #{codigo}
@@ -13,7 +13,7 @@ block content
         |  #{moment(fecha).format('DD/MM/YYYY')}
   div 
      h1 REGISTRO REFERENCIAL DEL INMUEBLE 
-  div 
+  div.container-data 
      p DIRECCIÓN: #{datos.direccion}
      p PARROQUIA: #{datos.parroquia}
      if datos.areaTerreno
