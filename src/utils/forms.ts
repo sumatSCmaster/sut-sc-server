@@ -167,8 +167,7 @@ export const createRRICertificate = async (procedure, areaTerreno, areaConstrucc
         moment: require('moment'),
       });
 
-      const pdff = pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
-      pdff.toBuffer(async (err, buffer) => {
+      pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toBuffer(async (err, buffer) => {
         if (err) {
           rej(err);
         } else {
@@ -182,8 +181,8 @@ export const createRRICertificate = async (procedure, areaTerreno, areaConstrucc
             ACL: 'public-read',
             ContentType: 'application/pdf',
           }).promise();
+          client.query(queries.INSERT_RRI, [codigoRRI, procedure, `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`]);
           res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
-          // console.log(link);
         }
       });
     });
