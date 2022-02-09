@@ -1,19 +1,18 @@
 extends default
 
 block content
-
-div
-   p
+  div
+    p
       b EXP.:
       |  #{codigo}
-   p
+    p
       b FECHA:
       |  #{moment(fecha).format('DD/MM/YYYY')}
-div 
-   h1 REGISTRO REFERENCIAL DEL INMUEBLE 
-div 
-   p DIRECCIÓN: #{datos.direccion}
-   p PARROQUIA: #{datos.parroquia}
-   P AREA DE TERRENO:
-   P AREA DE CONSTRUCCIÓN: 
-   p R.R INMUEBLE: 
+  div 
+    h1 REGISTRO REFERENCIAL DEL INMUEBLE 
+  div 
+    p DIRECCIÓN: #{datos.direccion}
+    p PARROQUIA: #{datos.parroquia}
+    P AREA DE TERRENO:
+    P AREA DE CONSTRUCCIÓN: 
+    p R.R INMUEBLE: 
