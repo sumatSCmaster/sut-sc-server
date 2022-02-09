@@ -9,6 +9,7 @@ import * as qr from 'qrcode';
 import { errorMessageGenerator, errorMessageExtractor } from '@helpers/errors';
 import { getAllBanks } from '@helpers/banks';
 import { mainLogger } from './logger';
+import S3Client from '@utils/s3';
 import { inspect } from 'util';
 const written = require('written-number');
 
@@ -165,7 +166,23 @@ export const createRRICertificate = async (procedure, areaTerreno, areaConstrucc
       moment: require('moment'),
     });
 
-    return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
+    return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toBuffer(async (err, buffer) => {
+      if (err) {
+        throw err;
+      } else {
+        const bucketParams = {
+          Bucket: process.env.BUCKET_NAME as string,
+          Key: `/CPU/planillas/${tramite.id}/certificadoRRI.pdf`,
+        };
+        await S3Client.putObject({
+          ...bucketParams,
+          Body: buffer,
+          ACL: 'public-read',
+          ContentType: 'application/pdf',
+        }).promise();
+        return `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`;
+      }
+    });
   } catch (error) {
     throw {
       status: 500,
