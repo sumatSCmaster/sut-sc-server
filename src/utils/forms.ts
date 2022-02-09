@@ -169,20 +169,24 @@ export const createRRICertificate = async (procedure, areaTerreno, areaConstrucc
     const pdff = pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
     let link;
     pdff.toBuffer(async (err, buffer) => {
-      if (err) {
-        throw err;
-      } else {
-        const bucketParams = {
-          Bucket: process.env.BUCKET_NAME as string,
-          Key: `/CPU/planillas/${tramite.id}/certificadoRRI.pdf`,
-        };
-        await S3Client.putObject({
-          ...bucketParams,
-          Body: buffer,
-          ACL: 'public-read',
-          ContentType: 'application/pdf',
-        }).promise();
-        link = `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`;
+      try {
+        if (err) {
+          throw err;
+        } else {
+          const bucketParams = {
+            Bucket: process.env.BUCKET_NAME as string,
+            Key: `/CPU/planillas/${tramite.id}/certificadoRRI.pdf`,
+          };
+          await S3Client.putObject({
+            ...bucketParams,
+            Body: buffer,
+            ACL: 'public-read',
+            ContentType: 'application/pdf',
+          }).promise();
+          link = `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`;
+        }
+      } catch (e) {
+        throw e;
       }
     });
     return link;
