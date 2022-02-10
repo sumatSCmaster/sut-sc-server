@@ -10,3 +10,5 @@ router.get('/', async (req, res) => {
   if (err) res.status(500).json(err);
   res.status(200).json(data);
 });
+
+export default router;
