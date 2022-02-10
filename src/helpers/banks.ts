@@ -274,12 +274,12 @@ export const approveSinglePayment = async (id, user) => {
       }
 
       if (pago.concepto === 'TRAMITE') {
-        await client.query(queries.UPDATE_UNAPPROVED_STATE_FOR_PROCEDURE, [true, pago.idProcedimiento]);
-        const prcdInfo = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [pago.idProcedimiento])).rows[0];
+        await client.query(queries.UPDATE_UNAPPROVED_STATE_FOR_PROCEDURE, [true, pago.id_procedimiento]);
+        const prcdInfo = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [pago.id_procedimiento])).rows[0];
         console.log(prcdInfo, 'RODRIGO prcdInfo');
-        const nextEvent = await getNextEventForProcedure({ idTramite: pago.idProcedimiento, sufijo: prcdInfo.sufijo, aprobado: prcdInfo?.tipoTramite === 43 ? 'cat' : true }, client);
+        const nextEvent = await getNextEventForProcedure({ idTramite: pago.id_procedimiento, sufijo: prcdInfo.sufijo, aprobado: prcdInfo?.tipoTramite === 43 ? 'cat' : true }, client);
         console.log(nextEvent, 'RODRIGO');
-        await client.query(queries.UPDATE_STATE, [pago.idProcedimiento, nextEvent, null, null, null]);
+        await client.query(queries.UPDATE_STATE, [pago.id_procedimiento, nextEvent, null, null, null]);
       }
 
       const solicitudInfo = pago.concepto === 'IMPUESTO' ? (await client.query(queries.PAYMENT_SETTLEMENT_INFO, [id])).rows[0] : null;
