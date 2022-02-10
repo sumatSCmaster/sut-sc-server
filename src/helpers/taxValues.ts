@@ -239,9 +239,8 @@ export const updateGroundValuesBySector = async (ground, sector, year) => {
  * @param construction
  * @param model
  */
-export const updateConstructionValuesByModel = async (construction, model) => {
+export const updateConstructionValuesByModel = async (construction, model, year) => {
   const client = await pool.connect();
-  const year = new Date().getFullYear();
   const { valorFiscal } = construction;
   try {
     client.query('BEGIN');

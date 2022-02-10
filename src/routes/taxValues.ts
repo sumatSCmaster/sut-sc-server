@@ -27,7 +27,8 @@ router.patch('/constructions', async (req: any, res) => {
 router.patch('/constructions/:model', async (req: any, res) => {
   const { activo } = req.body;
   const { model } = req.params;
-  const [err, data] = await fulfill(updateConstructionValuesByModel(activo, model));
+  const { year } = req.query;
+  const [err, data] = await fulfill(updateConstructionValuesByModel(activo, model, year));
   if (err) res.status(500).json(err);
   if (data) res.status(200).json(data);
 });
