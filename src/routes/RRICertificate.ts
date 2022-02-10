@@ -4,7 +4,7 @@ import { getRRICertificates } from '@helpers/RRICertificate';
 
 const router = Router();
 
-router.get('/', async (req, res) => {
+router.post('/', async (req, res) => {
   const { ids } = req.body;
   const [err, data] = await fulfill(getRRICertificates(ids));
   if (err) res.status(500).json(err);
