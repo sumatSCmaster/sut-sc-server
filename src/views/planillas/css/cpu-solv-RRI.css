@@ -21,7 +21,7 @@
   margin-bottom: 45px;
 }
 
-.con.container-data {
+.container-data {
   display: flex;
   display: -webkit-flex;
   flex-direction: column;
