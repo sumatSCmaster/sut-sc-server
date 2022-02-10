@@ -5,8 +5,8 @@ import { createRRICertificate } from '@utils/forms';
 const router = Router();
 
 router.get('/', async (req: any, res) => {
-  const { id, areaTerreno, areaConstruccion, codigoRRI } = req.query;
-  const [error, data] = await fulfill(createRRICertificate(id, areaTerreno, areaConstruccion, codigoRRI));
+  const { id, areaTerreno, areaConstruccion, codigoRRI, ubicadoEn, parroquiaEdificio } = req.query;
+  const [error, data] = await fulfill(createRRICertificate(id, areaTerreno, areaConstruccion, codigoRRI, ubicadoEn, parroquiaEdificio));
   if (error) res.status(500).json(error);
   if (data) res.status(200).json(data);
 });
