@@ -14,11 +14,11 @@ block content
   div 
      h1 REGISTRO REFERENCIAL DEL INMUEBLE 
   div.container-data 
-     p DIRECCIÓN: #{datos.direccion}
-     p PARROQUIA: #{datos.parroquia}
-     if datos.areaTerreno
+     p DIRECCIÓN: #{datos.funcionario.ubicadoEn}
+     p PARROQUIA: #{datos.funcionario.parroquiaEdificio}
+     if datos.funcionario.estimacionSimple.esTerreno
         P AREA DE TERRENO: #{datos.areaTerreno}
-     if datos.areaConstruccion 
+     if datos.funcionario.estimacionSimple.esConstruccion 
          P AREA DE CONSTRUCCIÓN: #{datos.areaConstruccion}
      p R.R INMUEBLE: 
         h1 #{datos.codigoRRI}
