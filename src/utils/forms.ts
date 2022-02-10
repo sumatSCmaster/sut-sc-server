@@ -160,7 +160,7 @@ export const createRRICertificate = async (procedure, areaTerreno, areaConstrucc
         certificado: 'cpu-solv-RRI',
       };
       mainLogger.info('<-----------datos certificado----------->:', datosCertificado);
-
+      console.log(datosCertificado)
       const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
         ...datosCertificado,
         cache: false,
