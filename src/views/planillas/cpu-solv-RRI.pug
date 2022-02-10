@@ -14,8 +14,14 @@ block content
   div 
      h1 REGISTRO REFERENCIAL DEL INMUEBLE 
   div.container-data 
-     p DIRECCIÓN: #{datos.ubicadoEn}
-     p PARROQUIA: #{datos.parroquiaEdificio}
+     if datos.usuario.ubicadoEn
+         p DIRECCIÓN: #{datos.usuario.ubicadoEn}
+     if datos.usuario.parroquiaEdificio
+         p PARROQUIA: #{datos.usuario.parroquiaEdificio}
+     if datos.ubicadoEn
+         p DIRECCIÓN: #{datos.ubicadoEn}
+     if datos.parroquiaEdificio
+         p PARROQUIA: #{datos.parroquiaEdificio}
      P AREA DE TERRENO: #{datos.areaTerreno ? datos.areaTerreno + ' M2' : 'N/A'}
      P AREA DE CONSTRUCCIÓN: #{datos.areaConstruccion ? datos.areaConstruccion + ' M2' : 'N/A'}
      p R.R INMUEBLE: 
