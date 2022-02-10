@@ -375,6 +375,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_PROPERTY_OWNERS: 'SELECT p.id_propietario AS "idpropietario", razon_social AS "razonSocial", cedula, rif, email, pi.id_inmueble \
     FROM propietario p INNER JOIN propietario_inmueble pi ON p.id_propietario = pi.id_propietario;',
   GET_PROPERTY_BY_ID: 'SELECT * FROM inmueble_urbano_view WHERE id=$1',
+  GET_RRI_CERTIFICATES_BY_IDS: `SELECT id_tramite AS "idTramite", url_certificado AS "urlCertificado" FROM inmueble_rri WHERE id_tramite = ANY ($1::int[])`,
   INSERT_RRI: `INSERT INTO inmueble_rri (codigo_rri, id_tramite, url_certificado) VALUES ($1, $2, $3)`,
 
   //ordenanza
