@@ -17,9 +17,9 @@ block content
      p DIRECCIÓN: #{datos.funcionario.ubicadoEn}
      p PARROQUIA: #{datos.funcionario.parroquiaEdificio}
      if datos.funcionario.estimacionSimple.esTerreno
-        P AREA DE TERRENO: #{datos.areaTerreno}
+        P AREA DE TERRENO: #{datos.areaTerreno} M2
      if datos.funcionario.estimacionSimple.esConstruccion 
-         P AREA DE CONSTRUCCIÓN: #{datos.areaConstruccion}
+         P AREA DE CONSTRUCCIÓN: #{datos.areaConstruccion} M2
      p R.R INMUEBLE: 
         h1 #{datos.codigoRRI}
   div 
