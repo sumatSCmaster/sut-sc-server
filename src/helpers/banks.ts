@@ -279,7 +279,7 @@ export const approveSinglePayment = async (id, user) => {
         console.log(prcdInfo, 'RODRIGO prcdInfo');
         const nextEvent = await getNextEventForProcedure({ idTramite: pago.id_procedimiento, sufijo: prcdInfo.sufijo, aprobado: prcdInfo?.tipoTramite === 43 ? 'cat' : true }, client);
         console.log(nextEvent, 'RODRIGO');
-        await client.query(queries.UPDATE_STATE, [pago.id_procedimiento, nextEvent, null, null, null]);
+        await client.query(queries.UPDATE_STATE, [pago.id_procedimiento, nextEvent, null, parseInt(prcdInfo.costo), null]);
       }
 
       const solicitudInfo = pago.concepto === 'IMPUESTO' ? (await client.query(queries.PAYMENT_SETTLEMENT_INFO, [id])).rows[0] : null;
