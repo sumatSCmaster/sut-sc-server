@@ -161,6 +161,7 @@ export const createRRICertificate = async (procedure, areaTerreno, areaConstrucc
       };
       mainLogger.info('<-----------datos certificado----------->:', datosCertificado);
       console.log(datosCertificado, 'PABLITO');
+      console.log(tramite, 'PABLITO');
       const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
         ...datosCertificado,
         cache: false,
