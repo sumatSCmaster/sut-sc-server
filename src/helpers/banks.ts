@@ -273,14 +273,14 @@ export const approveSinglePayment = async (id, user) => {
         }
       }
 
-      if (pago.concepto === 'TRAMITE') {
-        await client.query(queries.UPDATE_UNAPPROVED_STATE_FOR_PROCEDURE, [true, pago.id_procedimiento]);
-        const prcdInfo = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [pago.id_procedimiento])).rows[0];
-        console.log(prcdInfo, 'RODRIGO prcdInfo');
-        const nextEvent = await getNextEventForProcedure({ idTramite: pago.id_procedimiento, sufijo: prcdInfo.sufijo, aprobado: prcdInfo?.tipoTramite === 43 ? 'cat' : true }, client);
-        console.log(nextEvent, 'RODRIGO');
-        await client.query(queries.UPDATE_STATE, [pago.id_procedimiento, nextEvent, null, parseInt(prcdInfo.costo), null]);
-      }
+      // if (pago.concepto === 'TRAMITE') {
+      //   await client.query(queries.UPDATE_UNAPPROVED_STATE_FOR_PROCEDURE, [true, pago.id_procedimiento]);
+      //   const prcdInfo = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [pago.id_procedimiento])).rows[0];
+      //   console.log(prcdInfo, 'RODRIGO prcdInfo');
+      //   const nextEvent = await getNextEventForProcedure({ idTramite: pago.id_procedimiento, sufijo: prcdInfo.sufijo, aprobado: prcdInfo?.tipoTramite === 43 ? 'cat' : true }, client);
+      //   console.log(nextEvent, 'RODRIGO');
+      //   await client.query(queries.UPDATE_STATE, [pago.id_procedimiento, nextEvent, null, parseInt(prcdInfo.costo), null]);
+      // }
 
       const solicitudInfo = pago.concepto === 'IMPUESTO' ? (await client.query(queries.PAYMENT_SETTLEMENT_INFO, [id])).rows[0] : null;
 
@@ -324,7 +324,6 @@ export const approveSinglePayment = async (id, user) => {
         solicitudAprobada: solicitudInfo?.solicitudAprobada || convenioInfo?.solicitudAprobada || retencionInfo?.solicitudAprobada || undefined,
         concepto: pago.concepto,
       };
-      console.log(body, 'RODRIGO VALIDACION DE PAGO');
       await validationHandler({ concept: pago.concepto, body: body, user, client });
       await client.query('COMMIT');
       return { body, status: 200 };
