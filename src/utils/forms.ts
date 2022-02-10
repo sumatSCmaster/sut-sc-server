@@ -136,7 +136,7 @@ export const createMockCertificate = async (procedure) => {
   }
 };
 
-export const createRRICertificate = async (procedure, areaTerreno, areaConstruccion, codigoRRI) => {
+export const createRRICertificate = async (procedure, areaTerreno, areaConstruccion, codigoRRI, ubicadoEn, parroquiaEdificio) => {
   const client = await pool.connect();
   try {
     return new Promise(async (res, rej) => {
@@ -154,6 +154,8 @@ export const createRRICertificate = async (procedure, areaTerreno, areaConstrucc
           areaTerreno,
           areaConstruccion,
           codigoRRI,
+          ubicadoEn, 
+          parroquiaEdificio
         },
         estado: 'finalizado',
         tipoTramite: tramite.tipotramite,
