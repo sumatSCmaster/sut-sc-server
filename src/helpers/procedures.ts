@@ -8,7 +8,7 @@ import switchcase from '@utils/switch';
 import { sendNotification } from './notification';
 import { sendEmail } from './events/procedureUpdateState';
 import { createRequestForm, createCertificate } from '@utils/forms';
-import { approveContributorBenefits, approveContributorSignUp, approveContributorAELicense, createSettlementForProcedure } from './settlement';
+import { approveContributorBenefits, approveContributorSignUp, approveContributorAELicense, createSettlementForProcedure, createSettlementForCPUProcedure } from './settlement';
 import { installLiquorLicense, renewLiquorLicense } from './liquors';
 import { createVehicleStructureForProcedure } from './vehicles';
 import { mainLogger } from '@utils/logger';
@@ -704,6 +704,7 @@ export const validateProcedure = async (procedure, user: Usuario, client) => {
       // dir = await createCertificate(procedure, client);
       respState = await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent, null, dir || null, true]);
     } else {
+      await createSettlementForCPUProcedure(procedure, client);
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, null, null, null]);
     }
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];

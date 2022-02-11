@@ -279,7 +279,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const contributorHasBranch = (await client.query(queries.GET_CONTRIBUTOR_HAS_BRANCH, [contributor.id_contribuyente])).rowCount > 0;
     if (!reference && contributorHasBranch) throw { status: 403, message: 'El contribuyente posee una referencia municipal, debe ingresarla' };
     mainLogger.info(`branch ${inspect(branch)}`);
-    mainLogger.info(`contributor ${inspect(contributor)}`, );
+    mainLogger.info(`contributor ${inspect(contributor)}`);
     if ((!branch && reference) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEMAT' };
     const lastSettlementQuery = !!reference && branch ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
     const lastSettlementPayload = !!reference && branch ? branch?.id_registro_municipal : contributor.id_contribuyente;
@@ -312,7 +312,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const esContribuyenteTop = !!branch ? (await client.query(queries.BRANCH_IS_ONE_BEST_PAYERS, [branch?.id_registro_municipal, monthDateForTop.format('MMMM'), monthDateForTop.year()])).rowCount > 0 : false;
     //AE
     if (branch && branch?.referencia_municipal && !AEApplicationExists) {
-      mainLogger.info('AE')
+      mainLogger.info('AE');
       const solvencyCost = branch?.estado_licencia === 'TEMPORAL' ? +(await client.query(queries.GET_SCALE_FOR_TEMPORAL_AE_SOLVENCY)).rows[0].indicador : +(await client.query(queries.GET_SCALE_FOR_PERMANENT_AE_SOLVENCY)).rows[0].indicador;
       const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
       if (economicActivities.length === 0) throw { status: 404, message: 'El contribuyente no posee aforos asociados' };
@@ -359,7 +359,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       }
     }
     //SM
-    mainLogger.info('SM')
+    mainLogger.info('SM');
     const estates = (await client.query(branch ? queries.GET_ESTATES_FOR_JURIDICAL_CONTRIBUTOR : queries.GET_ESTATES_FOR_NATURAL_CONTRIBUTOR, [branch ? branch.id_registro_municipal : contributor.id_contribuyente])).rows;
     if (!SMApplicationExists && !isPartOfCondominium) {
       let lastSM = (await client.query(lastSettlementQuery, [codigosRamo.SM, lastSettlementPayload])).rows[0];
@@ -415,7 +415,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     }
 
     //IU
-    mainLogger.info('IU')
+    mainLogger.info('IU');
     if (estates.length > 0) {
       if (!IUApplicationExists && !isPartOfCondominium) {
         IU = [];
@@ -484,7 +484,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     }
 
     //PP
-    mainLogger.info('PP')
+    mainLogger.info('PP');
     if (!PPApplicationExists) {
       let debtPP;
       let lastPP = (await client.query(lastSettlementQuery, [codigosRamo.PP, lastSettlementPayload])).rows[0];
@@ -586,7 +586,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         montoPP: 0.05,
       };
     }
-    mainLogger.info('return')
+    mainLogger.info('return');
     return {
       status: 200,
       message: 'Impuestos obtenidos satisfactoriamente',
@@ -614,7 +614,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     };
   } catch (error) {
     mainLogger.error(inspect(error));
-    mainLogger.error(error.message)
+    mainLogger.error(error.message);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
@@ -772,7 +772,9 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
     const contributorExists = (await gtic.query(contributorQuery, [document, docType])).rowCount > 0;
     if (!contributorExists) throw { status: 404, message: 'Contribuyente no encontrado', linked: false };
     const linkingData = await Promise.all(
-      (await gtic.query(contributorQuery, [document, docType])).rows
+      (
+        await gtic.query(contributorQuery, [document, docType])
+      ).rows
         .map(async (el) => {
           mainLogger.info(el);
           const contributorExists = (await client.query(queries.TAX_PAYER_EXISTS, [el.tx_tp_doc, el.tx_dist_contribuyente === 'J' ? el.tx_rif : el.nu_cedula])).rows;
@@ -787,7 +789,9 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
             }),
             sucursales: await Promise.all(
               el.tx_dist_contribuyente === 'J'
-                ? (await gtic.query(queries.gtic.GET_JURIDICAL_CONTRIBUTOR, [el.tx_rif, el.tx_tp_doc])).rows.map(async (x) => {
+                ? (
+                    await gtic.query(queries.gtic.GET_JURIDICAL_CONTRIBUTOR, [el.tx_rif, el.tx_tp_doc])
+                  ).rows.map(async (x) => {
                     let convenios: any;
                     const inmuebles = await Promise.all((await gtic.query(queries.gtic.GET_ESTATES_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureEstates(j)));
                     const liquidaciones = await Promise.all((await gtic.query(queries.gtic.GET_SETTLEMENTS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureSettlements(j)));
@@ -859,7 +863,9 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                     };
                     return { datosSucursal, inmuebles, liquidaciones, multas, convenios, actividadesEconomicas };
                   })
-                : (await gtic.query(queries.gtic.GET_NATURAL_CONTRIBUTOR, [el.nu_cedula, el.tx_tp_doc])).rows.map(async (x) => {
+                : (
+                    await gtic.query(queries.gtic.GET_NATURAL_CONTRIBUTOR, [el.nu_cedula, el.tx_tp_doc])
+                  ).rows.map(async (x) => {
                     let datos;
                     if (x.nu_referencia) {
                       let convenios: any;
@@ -966,7 +972,9 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
             ),
             actividadesEconomicas: el.nu_referencia
               ? await Promise.all(
-                  (await gtic.query(typeUser === 'JURIDICO' ? queries.gtic.ECONOMIC_ACTIVITIES_JURIDICAL : queries.gtic.ECONOMIC_ACTIVIES_NATURAL, [docType, document])).rows.map((x) => ({
+                  (
+                    await gtic.query(typeUser === 'JURIDICO' ? queries.gtic.ECONOMIC_ACTIVITIES_JURIDICAL : queries.gtic.ECONOMIC_ACTIVIES_NATURAL, [docType, document])
+                  ).rows.map((x) => ({
                     id: x.nu_ref_actividad,
                     descripcion: x.tx_actividad,
                     alicuota: x.nu_porc_alicuota,
@@ -1180,7 +1188,9 @@ export const logInExternalLinking = async ({ credentials }) => {
     const { attemptedUser, canBeLinked } = await externalUserForLinkingExists({ user: credentials.nombreUsuario, password: credentials.password, gtic });
     if (!canBeLinked) return { status: 403, message: 'Credenciales incorrectas' };
     const contributors = await Promise.all(
-      (await gtic.query(queries.gtic.GET_CONTRIBUTOR_BY_REPRESENTATIVE_USER_EXTENDED, [attemptedUser.id_tb004_contribuyente])).rows
+      (
+        await gtic.query(queries.gtic.GET_CONTRIBUTOR_BY_REPRESENTATIVE_USER_EXTENDED, [attemptedUser.id_tb004_contribuyente])
+      ).rows
         .map(async (el) => {
           const contributorExists = (await client.query(queries.TAX_PAYER_EXISTS, [el.tx_tp_doc, el.tx_dist_contribuyente === 'J' ? el.tx_rif : el.nu_cedula])).rows;
           if (contributorExists.length > 0) return getLinkedContributorData(contributorExists[0]);
@@ -1194,7 +1204,9 @@ export const logInExternalLinking = async ({ credentials }) => {
             }),
             sucursales: await Promise.all(
               el.tx_dist_contribuyente === 'J'
-                ? (await gtic.query(queries.gtic.GET_JURIDICAL_CONTRIBUTOR, [el.tx_rif, el.tx_tp_doc])).rows.map(async (x) => {
+                ? (
+                    await gtic.query(queries.gtic.GET_JURIDICAL_CONTRIBUTOR, [el.tx_rif, el.tx_tp_doc])
+                  ).rows.map(async (x) => {
                     let convenios: any;
                     const inmuebles = await Promise.all((await gtic.query(queries.gtic.GET_ESTATES_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureEstates(j)));
                     const liquidaciones = await Promise.all((await gtic.query(queries.gtic.GET_SETTLEMENTS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureSettlements(j)));
@@ -1263,7 +1275,9 @@ export const logInExternalLinking = async ({ credentials }) => {
                     };
                     return { datosSucursal, inmuebles, liquidaciones, multas, convenios, actividadesEconomicas };
                   })
-                : (await gtic.query(queries.gtic.GET_NATURAL_CONTRIBUTOR, [el.nu_cedula, el.tx_tp_doc])).rows.map(async (x) => {
+                : (
+                    await gtic.query(queries.gtic.GET_NATURAL_CONTRIBUTOR, [el.nu_cedula, el.tx_tp_doc])
+                  ).rows.map(async (x) => {
                     let datos;
                     if (x.nu_referencia) {
                       let convenios: any;
@@ -1368,7 +1382,9 @@ export const logInExternalLinking = async ({ credentials }) => {
                   })
             ),
             actividadesEconomicas: await Promise.all(
-              (await gtic.query(el.tx_dist_contribuyente === 'J' ? queries.gtic.ECONOMIC_ACTIVITIES_JURIDICAL : queries.gtic.ECONOMIC_ACTIVIES_NATURAL, [el.tx_tp_doc, el.tx_dist_contribuyente === 'J' ? el.tx_rif : el.nu_cedula])).rows.map((x) => ({
+              (
+                await gtic.query(el.tx_dist_contribuyente === 'J' ? queries.gtic.ECONOMIC_ACTIVITIES_JURIDICAL : queries.gtic.ECONOMIC_ACTIVIES_NATURAL, [el.tx_tp_doc, el.tx_dist_contribuyente === 'J' ? el.tx_rif : el.nu_cedula])
+              ).rows.map((x) => ({
                 id: x.nu_ref_actividad,
                 descripcion: x.tx_actividad,
                 alicuota: x.nu_porc_alicuota,
@@ -1418,7 +1434,9 @@ const getLinkedContributorData = async (contributor: any) => {
       puntoReferencia: contributor.punto_referencia,
     };
     const sucursales = await Promise.all(
-      (await client.query('SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = $1', [contributor.id_contribuyente])).rows
+      (
+        await client.query('SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = $1', [contributor.id_contribuyente])
+      ).rows
         .filter((el) => !el.actualizado)
         .map(async (el) => {
           const inmueble = (await client.query('SELECT * FROM inmueble_urbano WHERE id_registro_municipal = $1 ORDER BY id_inmueble DESC LIMIT 1', [el.id_registro_municipal])).rows[0];
@@ -1488,6 +1506,24 @@ export const createSettlementForProcedure = async (process, client) => {
     };
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const liquidacion = (await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [null, (monto / PETRO).toFixed(8), ramo, 'Pago ordinario', datos, moment().endOf('month').format('MM-DD-YYYY'), referenciaMunicipal])).rows[0];
+    await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO_SETTLEMENT, [liquidacion.id_liquidacion]);
+    await client.query(queries.FINISH_ROUNDING_SETTLEMENT, [liquidacion.id_liquidacion]);
+  } catch (e) {
+    throw e;
+  }
+};
+
+export const createSettlementForCPUProcedure = async (procedure, client) => {
+  try {
+    const { idTramite, monto, sufijo } = procedure;
+    const ramo = switchcase({ cr: 'DIRECCION DE CATASTRO', ompu: 'DIRECCION DE OMPU' })(null)(sufijo);
+    const datos = {
+      fecha: { month: moment().toDate().toLocaleDateString('ES', { month: 'long' }), year: moment().year() },
+      descripcion: 'TRAMITE',
+      idTramite,
+    };
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
+    const liquidacion = (await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [null, (monto / PETRO).toFixed(8), ramo, 'Pago ordinario', datos, moment().endOf('month').format('MM-DD-YYYY'), null])).rows[0];
     await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO_SETTLEMENT, [liquidacion.id_liquidacion]);
     await client.query(queries.FINISH_ROUNDING_SETTLEMENT, [liquidacion.id_liquidacion]);
   } catch (e) {
@@ -1676,7 +1712,9 @@ export const getAgreements = async ({ user }: { user: Usuario }) => {
     const hasApplications = (await client.query(queries.GET_AGREEMENTS_BY_USER, [user.id])).rows.length > 0;
     if (!hasApplications) throw { status: 404, message: 'El usuario no posee convenios' };
     const applications: any[] = await Promise.all(
-      (await client.query(queries.GET_AGREEMENTS_BY_USER, [user.id])).rows.map(async (el) => {
+      (
+        await client.query(queries.GET_AGREEMENTS_BY_USER, [user.id])
+      ).rows.map(async (el) => {
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
         const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
         return {
@@ -1781,7 +1819,9 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
   try {
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const application = await Promise.all(
-      (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows.map(async (el) => {
+      (
+        await client.query(queries.GET_APPLICATION_BY_ID, [id])
+      ).rows.map(async (el) => {
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
         const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
         const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
@@ -1863,7 +1903,9 @@ export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client
   try {
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const application = await Promise.all(
-      (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows.map(async (el) => {
+      (
+        await client.query(queries.GET_APPLICATION_BY_ID, [id])
+      ).rows.map(async (el) => {
         const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
         const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
         const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
@@ -1942,7 +1984,9 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
   try {
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const applications: Solicitud[] = await Promise.all(
-      (await client.query(queries.GET_APPLICATION_INSTANCES_BY_USER, [user.id])).rows
+      (
+        await client.query(queries.GET_APPLICATION_INSTANCES_BY_USER, [user.id])
+      ).rows
         .filter((el) => el.tipo_solicitud !== 'CONVENIO')
         .map(async (el) => {
           const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
@@ -2115,9 +2159,8 @@ export const getApplicationsAndSettlementsForContributor = async ({ referencia, 
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows[0];
     if (!contributor) throw { status: 404, message: 'El contribuyente no existe' };
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
-    const userApplications = (referencia
-      ? await client.query(queries.GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR, [contributor.id_contribuyente, referencia])
-      : await client.query(queries.GET_APPLICATION_INSTANCES_FOR_NATURAL_CONTRIBUTOR, [contributor.id_contribuyente])
+    const userApplications = (
+      referencia ? await client.query(queries.GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR, [contributor.id_contribuyente, referencia]) : await client.query(queries.GET_APPLICATION_INSTANCES_FOR_NATURAL_CONTRIBUTOR, [contributor.id_contribuyente])
     ).rows;
     const hasApplications = userApplications.length > 0;
     if (!hasApplications) return { status: 404, message: 'El usuario no tiene solicitudes' };
@@ -2325,9 +2368,10 @@ export const getEntireDebtsForContributor = async ({ reference, docType, documen
     if (typeUser === 'JURIDICO' && !branch) throw { status: 404, message: 'La sucursal proporcionada no existe' };
     const hasActiveAgreement = (await client.query(queries.CONTRIBUTOR_HAS_ACTIVE_AGREEMENT_PROCEDURE, [docType, document, reference])).rowCount > 0;
     if (hasActiveAgreement) throw { status: 403, message: 'El contribuyente ya posee una solicitud de beneficio en revision' };
-    const liquidaciones = (typeUser === 'NATURAL'
-      ? await client.query(queries.GET_APPLICATION_DEBTS_FOR_NATURAL_CONTRIBUTOR, [contribuyente.id_contribuyente])
-      : await client.query(queries.GET_APPLICATION_DEBTS_BY_MUNICIPAL_REGISTRY, [reference, contribuyente.id_contribuyente])
+    const liquidaciones = (
+      typeUser === 'NATURAL'
+        ? await client.query(queries.GET_APPLICATION_DEBTS_FOR_NATURAL_CONTRIBUTOR, [contribuyente.id_contribuyente])
+        : await client.query(queries.GET_APPLICATION_DEBTS_BY_MUNICIPAL_REGISTRY, [reference, contribuyente.id_contribuyente])
     ).rows;
     const hasSettlements = liquidaciones.length > 0;
     if (!hasSettlements) return { status: 404, message: 'El contribuyente no posee deudas' };
@@ -3349,7 +3393,7 @@ export const validateApplication = async (body, user, client) => {
 
     return;
   } catch (error) {
-    mainLogger.error(`validateApplication IMPUESTO Error ${error.message} ${body.idTramite}`)
+    mainLogger.error(`validateApplication IMPUESTO Error ${error.message} ${body.idTramite}`);
     mainLogger.error(error.message);
     throw {
       status: 500,
@@ -3412,8 +3456,8 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
 
     return;
   } catch (error) {
-    mainLogger.error(`validateApplication CONVENIO Error ${error.message} ${body.idTramite}`)
-    mainLogger.error(error.message)
+    mainLogger.error(`validateApplication CONVENIO Error ${error.message} ${body.idTramite}`);
+    mainLogger.error(error.message);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
