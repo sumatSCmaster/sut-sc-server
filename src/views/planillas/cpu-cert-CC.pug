@@ -17,7 +17,8 @@ block content
           |  #{moment(fecha).format('DD/MM/YYYY')}
       #tramite(style='width: 50%;')
         h1 C&Oacute;DIGO CATASTRAL
-        h3 N&deg; #{datos.funcionario.codCat.toUpperCase()}
+        p 
+          b.codigoCatastral N&deg; #{datos.funcionario.codCat.toUpperCase()}
       div(style='width: 20%; padding: 2px 0;')
         img#QR(src=QR, alt='QR')
     .datos-certificado.row
