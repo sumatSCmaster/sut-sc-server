@@ -9,7 +9,8 @@ import * as qr from 'qrcode';
 import { errorMessageGenerator, errorMessageExtractor } from '@helpers/errors';
 import { getAllBanks } from '@helpers/banks';
 import { mainLogger } from './logger';
-import { inspect } from 'util'
+import S3Client from '@utils/s3';
+import { inspect } from 'util';
 const written = require('written-number');
 
 const pool = Pool.getInstance();
@@ -99,7 +100,7 @@ export const createMockCertificate = async (procedure) => {
     const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION_MOCK, [procedure])).rows[0];
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${tramite.id}`, { errorCorrectionLevel: 'H' });
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
-    mainLogger.info(tramite.datos, "tramite.datos");
+    mainLogger.info(tramite.datos, 'tramite.datos');
     const datosCertificado = {
       id: tramite.id,
       fecha: tramite.fechacreacion,
@@ -113,7 +114,7 @@ export const createMockCertificate = async (procedure) => {
       certificado: tramite.sufijo === 'ompu' ? (tramite.aprobado ? tramite.formatocertificado : tramite.formatorechazo) : tramite.formatocertificado,
       bancos: (await getAllBanks()).banks,
     };
-    mainLogger.info('<-----------datos certificado----------->:',datosCertificado);
+    mainLogger.info('<-----------datos certificado----------->:', datosCertificado);
 
     const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
       ...datosCertificado,
@@ -129,6 +130,70 @@ export const createMockCertificate = async (procedure) => {
       status: 500,
       error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || 'Error al crear el certificado',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const createRRICertificate = async (procedure, areaTerreno, areaConstruccion, codigoRRI, ubicadoEn, parroquiaEdificio) => {
+  const client = await pool.connect();
+  try {
+    return new Promise(async (res, rej) => {
+      const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION_MOCK, [procedure])).rows[0];
+      mainLogger.info(tramite.datos, 'tramite.datos');
+      const datosCertificado = {
+        id: tramite.id,
+        fecha: tramite.fechacreacion,
+        codigo: tramite.codigotramite,
+        formato: tramite.formato,
+        tramite: tramite.nombretramitelargo,
+        institucion: tramite.nombrecorto,
+        datos: {
+          ...tramite.datos,
+          areaTerreno,
+          areaConstruccion,
+          codigoRRI,
+          ubicadoEn, 
+          parroquiaEdificio
+        },
+        estado: 'finalizado',
+        tipoTramite: tramite.tipotramite,
+        certificado: 'cpu-solv-RRI',
+      };
+      mainLogger.info('<-----------datos certificado----------->:', datosCertificado);
+      console.log(datosCertificado, 'PABLITO datosCertificado');
+      console.log(tramite, 'PABLITO tramite');
+      const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
+        ...datosCertificado,
+        cache: false,
+        moment: require('moment'),
+      });
+
+      pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toBuffer(async (err, buffer) => {
+        if (err) {
+          rej(err);
+        } else {
+          const bucketParams = {
+            Bucket: process.env.BUCKET_NAME as string,
+            Key: `CPU/planillas/${tramite.id}/certificadoRRI.pdf`,
+          };
+          await S3Client.putObject({
+            ...bucketParams,
+            Body: buffer,
+            ACL: 'public-read',
+            ContentType: 'application/pdf',
+          }).promise();
+          client.query(queries.INSERT_RRI, [codigoRRI, procedure, `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`]);
+          res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+        }
+      });
+    });
+  } catch (error) {
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al crear el certificado RRI',
     };
   } finally {
     client.release();
