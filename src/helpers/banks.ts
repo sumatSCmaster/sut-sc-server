@@ -351,7 +351,7 @@ export const validatePayments = async (body, user) => {
           id: el.id,
           monto: el.monto,
           idBanco: el.idbanco,
-          aprobado: el.tipoTramite === 43 ? 'cat' : el.aprobado,
+          aprobado: el.tipotramite === 43 ? 'cat' : el.aprobado,
           idTramite: el.idprocedimiento,
           pagoPrevio: el.pagoprevio,
           referencia: el.referencia,
