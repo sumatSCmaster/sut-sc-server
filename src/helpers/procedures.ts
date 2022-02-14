@@ -1885,6 +1885,8 @@ const procedureInstanceHandler = (user, client, support) => {
       } else {
         if (user.institucion?.cargo?.id === 46) {
           query = 5;
+        } else if (user.institucion?.cargo?.id === 97) {
+          query = 2;
         } else {
           query = user.tipoUsuario;
         }
