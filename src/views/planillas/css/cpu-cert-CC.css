@@ -56,7 +56,6 @@ td {
 
 .funcionarios div {
   padding: 3px;
-  border-right: slategray solid 1px;
   height: 130px;
   display: flex;
   display: -webkit-flex;
@@ -256,6 +255,10 @@ td {
 .grow1 {
   flex-grow: 1;
   -webkit-flex-grow: 1;
+}
+
+.grow1 h4 {
+  margin: 4px 0px;
 }
 
 .grow2 {
