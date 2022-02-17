@@ -18,7 +18,7 @@ const dev = process.env.NODE_ENV !== 'production';
 
 const pool = Pool.getInstance();
 
-export const    createRPR = async (payload: { from: Date; to: Date; alcaldia: boolean }) => {
+export const createRPR = async (complement: string, payload: { from: Date; to: Date; alcaldia: boolean }) => {
   const client = await pool.connect();
   return new Promise(async (res, rej) => {
     mainLogger.info(payload);
@@ -211,7 +211,7 @@ export const    createRPR = async (payload: { from: Date; to: Date; alcaldia: bo
           } else {
             const bucketParams = {
               Bucket: process.env.BUCKET_NAME as string,
-              Key: alcaldia ? 'sedemat/reportes/RPRA.pdf' : 'sedemat/reportes/RPR.pdf',
+              Key: alcaldia ? 'sedemat/reportes/RPRA.pdf' : `sedemat/reportes/RPR${complement}.pdf`,
             };
             await S3Client.putObject({
               ...bucketParams,

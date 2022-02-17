@@ -64,7 +64,7 @@ export const getBranches = async () => {
 export const generateBranchesReport = async (user, payload: { from: Date; to: Date; alcaldia: boolean }) => {
   const client = await pool.connect();
   try {
-    await createRPR(payload);
+    await createRPR('', payload);
   } catch (error) {
     throw errorMessageExtractor(error);
   } finally {
@@ -84,7 +84,7 @@ export const generateBranchesReportByMonth = async (user, payload: { from: Date;
         mainLogger.info('getAllBranchesByMonth - getting cached branches by month');
         branchesLink = cachedBranches;
       } else {
-        branchesLink = await createRPR(payload);
+        branchesLink = await createRPR('Month', payload);
         await redisClient.setAsync(REDIS_KEY, JSON.stringify(branchesLink));
         await redisClient.expireAsync(REDIS_KEY, 3600);
       }
@@ -108,7 +108,7 @@ export const generateBranchesReportByDay = async (user, payload: { from: Date; t
         mainLogger.info('getAllBranchesByDay - getting cached branches by day');
         branchesLink = cachedBranches;
       } else {
-        branchesLink = await createRPR(payload);
+        branchesLink = await createRPR('Day', payload);
         await redisClient.setAsync(REDIS_KEY, JSON.stringify(branchesLink));
         await redisClient.expireAsync(REDIS_KEY, 3600);
       }
