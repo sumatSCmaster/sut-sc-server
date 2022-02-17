@@ -63,23 +63,56 @@ export const getBranches = async () => {
 
 export const generateBranchesReport = async (user, payload: { from: Date; to: Date; alcaldia: boolean }) => {
   const client = await pool.connect();
-  const REDIS_KEY = 'branchesRPR';
+  try {
+    await createRPR(payload);
+  } catch (error) {
+    throw errorMessageExtractor(error);
+  } finally {
+    client.release();
+  }
+};
+
+export const generateBranchesReportByMonth = async (user, payload: { from: Date; to: Date; alcaldia: boolean }) => {
+  const client = await pool.connect();
+  const REDIS_KEY = 'branchesRPRMonth';
   const redisClient = Redis.getInstance();
   let branchesLink;
   try {
-    return new Promise(async (res, rej) => {
-      mainLogger.info('getAllBranches - try');
+      mainLogger.info('getAllBranchesByMonth - try');
       let cachedBranches = await redisClient.getAsync(REDIS_KEY);
       if (cachedBranches !== null) {
-        mainLogger.info('getAllBranches - getting cached branches');
+        mainLogger.info('getAllBranchesByMonth - getting cached branches by month');
         branchesLink = cachedBranches;
       } else {
         branchesLink = await createRPR(payload);
         await redisClient.setAsync(REDIS_KEY, JSON.stringify(branchesLink));
         await redisClient.expireAsync(REDIS_KEY, 3600);
       }
-      res(branchesLink);
-    })
+      return branchesLink;
+  } catch (error) {
+    throw errorMessageExtractor(error);
+  } finally {
+    client.release();
+  }
+};
+
+export const generateBranchesReportByDay = async (user, payload: { from: Date; to: Date; alcaldia: boolean }) => {
+  const client = await pool.connect();
+  const REDIS_KEY = 'branchesRPRDay';
+  const redisClient = Redis.getInstance();
+  let branchesLink;
+  try {
+      mainLogger.info('getAllBranchesByDay - try');
+      let cachedBranches = await redisClient.getAsync(REDIS_KEY);
+      if (cachedBranches !== null) {
+        mainLogger.info('getAllBranchesByDay - getting cached branches by day');
+        branchesLink = cachedBranches;
+      } else {
+        branchesLink = await createRPR(payload);
+        await redisClient.setAsync(REDIS_KEY, JSON.stringify(branchesLink));
+        await redisClient.expireAsync(REDIS_KEY, 3600);
+      }
+      return branchesLink;
   } catch (error) {
     throw errorMessageExtractor(error);
   } finally {

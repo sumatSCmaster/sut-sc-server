@@ -18,7 +18,7 @@ const dev = process.env.NODE_ENV !== 'production';
 
 const pool = Pool.getInstance();
 
-export const createRPR = async (payload: { from: Date; to: Date; alcaldia: boolean }) => {
+export const    createRPR = async (payload: { from: Date; to: Date; alcaldia: boolean }) => {
   const client = await pool.connect();
   return new Promise(async (res, rej) => {
     mainLogger.info(payload);
