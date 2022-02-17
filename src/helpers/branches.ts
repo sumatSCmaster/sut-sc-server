@@ -60,9 +60,10 @@ export const getBranchesD = async () => {
 export const getBranches = async () => {
   return await tracer.trace('getBranches', getBranchesD);
 };
+
 export const generateBranchesReport = async (user, payload: { from: Date; to: Date; alcaldia: boolean }) => {
   const client = await pool.connect();
-  const REDIS_KEY = 'branches';
+  const REDIS_KEY = 'branchesRPR';
   const redisClient = Redis.getInstance();
   let branchesLink;
   try {
