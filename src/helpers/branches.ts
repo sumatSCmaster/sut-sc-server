@@ -19,6 +19,7 @@ import ExcelJs from 'exceljs';
 import tracer from 'dd-trace';
 import { createRPR } from '@utils/createRPR';
 import { response } from 'express';
+import { arrayreports } from '@utils/arrayReports';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -65,7 +66,9 @@ export const getBranches = async () => {
 export const generateBranchesReport = async (user, payload: { from: Date; to: Date; alcaldia: boolean }) => {
   const client = await pool.connect();
   try {
-    return await createRPR('', payload);
+    const id = '1';
+    createRPR(id, payload);
+    return id;
   } catch (error) {
     throw errorMessageExtractor(error);
   } finally {
@@ -73,51 +76,11 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
   }
 };
 
-export const generateBranchesReportByMonth = async (user, payload: { from: Date; to: Date; alcaldia: boolean }) => {
-  const client = await pool.connect();
-  const REDIS_KEY = 'branchesRPRMonth';
-  const redisClient = Redis.getInstance();
-  let branchesLink;
+export const generateBranchesReportById = async (id) => {
   try {
-    mainLogger.info('getAllBranchesByMonth - try');
-    let cachedBranches = await redisClient.getAsync(REDIS_KEY);
-    if (cachedBranches !== null) {
-      mainLogger.info('getAllBranchesByMonth - getting cached branches by month');
-      branchesLink = cachedBranches;
-    } else {
-      branchesLink = await createRPR('Month', payload);
-      await redisClient.setAsync(REDIS_KEY, JSON.stringify(branchesLink));
-      await redisClient.expireAsync(REDIS_KEY, 3600);
-    }
-    return branchesLink;
+    return arrayreports.find((ele) => ele.id === id)?.url;
   } catch (error) {
     throw errorMessageExtractor(error);
-  } finally {
-    client.release();
-  }
-};
-
-export const generateBranchesReportByDay = async (user, payload: { from: Date; to: Date; alcaldia: boolean }) => {
-  const client = await pool.connect();
-  const REDIS_KEY = 'branchesRPRDay';
-  const redisClient = Redis.getInstance();
-  let branchesLink;
-  try {
-    mainLogger.info('getAllBranchesByDay - try');
-    let cachedBranches = await redisClient.getAsync(REDIS_KEY);
-    if (cachedBranches !== null) {
-      mainLogger.info('getAllBranchesByDay - getting cached branches by day');
-      branchesLink = cachedBranches;
-    } else {
-      branchesLink = await createRPR('Day', payload);
-      await redisClient.setAsync(REDIS_KEY, JSON.stringify(branchesLink));
-      await redisClient.expireAsync(REDIS_KEY, 3600);
-    }
-    return branchesLink;
-  } catch (error) {
-    throw errorMessageExtractor(error);
-  } finally {
-    client.release();
   }
 };
 

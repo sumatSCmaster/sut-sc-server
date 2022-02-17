@@ -13,12 +13,13 @@ import * as pdf from 'html-pdf';
 import { groupBy } from 'lodash';
 import { mainLogger } from '@utils/logger';
 import Redis from '@utils/redis';
+import { arrayreports } from './arrayReports';
 
 const dev = process.env.NODE_ENV !== 'production';
 
 const pool = Pool.getInstance();
 
-export const createRPR = async (complement: string, payload: { from: Date; to: Date; alcaldia: boolean }) => {
+export const createRPR = async (id: string, payload: { from: Date; to: Date; alcaldia: boolean }) => {
   const client = await pool.connect();
   return new Promise(async (res, rej) => {
     mainLogger.info(payload);
@@ -211,7 +212,7 @@ export const createRPR = async (complement: string, payload: { from: Date; to: D
           } else {
             const bucketParams = {
               Bucket: process.env.BUCKET_NAME as string,
-              Key: alcaldia ? 'sedemat/reportes/RPRA.pdf' : `sedemat/reportes/RPR${complement}.pdf`,
+              Key: alcaldia ? 'sedemat/reportes/RPRA.pdf' : `sedemat/reportes/RPR.pdf`,
             };
             await S3Client.putObject({
               ...bucketParams,
@@ -219,8 +220,11 @@ export const createRPR = async (complement: string, payload: { from: Date; to: D
               ACL: 'public-read',
               ContentType: 'application/pdf',
             }).promise();
-            console.log(`RODRIGO BUCKET SNIPET ${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
-            res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+            arrayreports.push({
+              id,
+              url: `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`,
+            });
+            res('resolved');
           }
         });
       } catch (e) {
