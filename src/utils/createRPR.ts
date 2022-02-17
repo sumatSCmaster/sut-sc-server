@@ -219,7 +219,7 @@ export const createRPR = async (complement: string, payload: { from: Date; to: D
               ACL: 'public-read',
               ContentType: 'application/pdf',
             }).promise();
-            console.log('RODRIGO BUCKET SNIPET');
+            console.log(`RODRIGO BUCKET SNIPET ${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
             res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
           }
         });
