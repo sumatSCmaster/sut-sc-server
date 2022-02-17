@@ -67,17 +67,19 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
   const redisClient = Redis.getInstance();
   let branchesLink;
   try {
-    mainLogger.info('getAllBranches - try');
-    let cachedBranches = await redisClient.getAsync(REDIS_KEY);
-    if (cachedBranches !== null) {
-      mainLogger.info('getAllBranches - getting cached branches');
-      branchesLink = cachedBranches;
-    } else {
-      branchesLink = await createRPR(payload);
-      await redisClient.setAsync(REDIS_KEY, JSON.stringify(branchesLink));
-      await redisClient.expireAsync(REDIS_KEY, 3600);
-    }
-    return branchesLink;
+    return new Promise(async (res, rej) => {
+      mainLogger.info('getAllBranches - try');
+      let cachedBranches = await redisClient.getAsync(REDIS_KEY);
+      if (cachedBranches !== null) {
+        mainLogger.info('getAllBranches - getting cached branches');
+        branchesLink = cachedBranches;
+      } else {
+        branchesLink = await createRPR(payload);
+        await redisClient.setAsync(REDIS_KEY, JSON.stringify(branchesLink));
+        await redisClient.expireAsync(REDIS_KEY, 3600);
+      }
+      res(branchesLink);
+    })
   } catch (error) {
     throw errorMessageExtractor(error);
   } finally {
