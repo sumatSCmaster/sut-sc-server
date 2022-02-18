@@ -224,6 +224,7 @@ export const createRPR = async (id: string, payload: { from: Date; to: Date; alc
               id,
               url: `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`,
             });
+            console.log(arrayreports, 'RODRIGO CREATERPR');
             res('resolved');
           }
         });
