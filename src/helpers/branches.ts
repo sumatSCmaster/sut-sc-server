@@ -78,7 +78,9 @@ export const generateBranchesReport = async (user, payload: { from: Date; to: Da
 
 export const generateBranchesReportById = async (id) => {
   try {
-    return arrayreports.find((ele) => ele.id === id)?.url;
+    const report = arrayreports.find((ele) => ele.id === id)?.url; //handle not found report
+    if (!report) throw new Error('La solicitud sigue en proceso...');
+    return report;
   } catch (error) {
     throw errorMessageExtractor(error);
   }
