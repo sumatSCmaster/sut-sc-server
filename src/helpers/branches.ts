@@ -66,7 +66,7 @@ export const getBranches = async () => {
 export const generateBranchesReport = async (user, payload: { from: Date; to: Date; alcaldia: boolean }) => {
   const client = await pool.connect();
   try {
-    const id = '1';
+    const id = Math.trunc(Math.random() * 10000).toString();
     createRPR(id, payload);
     return id;
   } catch (error) {
