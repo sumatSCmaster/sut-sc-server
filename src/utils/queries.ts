@@ -1557,6 +1557,16 @@ ORDER BY razon_social;`,
        	GROUP BY c.tipo_documento, c.documento, c.razon_social, s.aprobado, l.monto, l.monto_petro, r.descripcion, sub.descripcion) as data 
        	GROUP BY data.tipo_documento, data.documento, data.razon_social, data.aprobado, data.ramo, data.subramo ORDER BY razon_social;
   `,
+  GET_CPU_TIME_FUNCTIONARY:`SELECT t.codigo_tramite, DATE_PART('day', t.fecha_culminacion - t.fecha_creacion) AS dia, t.fecha_creacion, t.fecha_culminacion,u.nombre_completo, ca.descripcion AS cargo
+    FROM movimientos m
+    INNER JOIN cuenta_funcionario cf ON m.id_usuario = cf.id_usuario
+    INNER JOIN cargo ca ON ca.id_cargo = cf.id_cargo
+    INNER JOIN tramite t ON t.id_tramite = m.id_procedimiento
+    INNER JOIN usuario u ON u.id_usuario = m.id_usuario
+    WHERE m.tipo_movimiento like '%cr' 
+    AND TO_CHAR(t.fecha_creacion,'yyyy-mm-dd') >= $1
+    AND TO_CHAR(t.fecha_culminacion,'yyyy-mm-dd') <= $2
+    ORDER BY cargo, t.codigo_tramite, t.fecha_creacion`,
   //CIERRE DE CAJA
   GET_CASHIER_POS: `SELECT b.nombre as banco, SUM(p.monto) as monto, COUNT(*) as transacciones
         FROM pago p 
