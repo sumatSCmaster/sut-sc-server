@@ -80,6 +80,7 @@ export const generateBranchesReportById = async (id) => {
   try {
     const report = arrayreports.find((ele) => ele.id === id)?.url; //handle not found report
     if (!report) throw new Error('La solicitud sigue en proceso...');
+    arrayreports.splice(arrayreports.findIndex((ele) => ele.id === id));
     return report;
   } catch (error) {
     throw errorMessageExtractor(error);
