@@ -89,7 +89,7 @@ router.use('/observation', observation);
 router.use(resources);
 router.use('/reportSolvRRI', reportSolvRRI);
 router.use('/RRICertificate', RRICertificate);
-router.use('./reportCPU', reportCPU);
+router.use('/reportCPU', reportCPU);
 
 router.get('/', (req, res) => {
   res.status(200).json({

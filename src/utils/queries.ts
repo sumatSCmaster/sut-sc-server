@@ -1564,8 +1564,8 @@ ORDER BY razon_social;`,
     INNER JOIN tramite t ON t.id_tramite = m.id_procedimiento
     INNER JOIN usuario u ON u.id_usuario = m.id_usuario
     WHERE m.tipo_movimiento like '%cr' 
-    AND TO_CHAR(t.fecha_creacion,'yyyy-mm-dd') >= $1
-    AND TO_CHAR(t.fecha_culminacion,'yyyy-mm-dd') <= $2
+    AND t.fecha_creacion >= $1
+    AND t.fecha_culminacion <= $2
     ORDER BY cargo, t.codigo_tramite, t.fecha_creacion`,
   //CIERRE DE CAJA
   GET_CASHIER_POS: `SELECT b.nombre as banco, SUM(p.monto) as monto, COUNT(*) as transacciones
