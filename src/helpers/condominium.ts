@@ -87,9 +87,16 @@ export const addOwner = async ({ condo_id, type_doc, doc }) => {
   } catch (error) {
     client.query('ROLLBACK');
     mainLogger.error(`createCondominium - ${error.message}`);
+    let mess = ' ';
+    if (error.message.includes('duplicate'))
+      mess = 'Este propietario ya es parte del condominio.';
+    else if (error.message.includes('null'))
+      mess = 'No se encontró un usuario con la documentación ingresada.';
+    else
+      mess = 'Error al agregar el propietario.';
     throw {
       error: error,
-      message: error.message,
+      message: mess,
     };
   } finally {
     client.release();
