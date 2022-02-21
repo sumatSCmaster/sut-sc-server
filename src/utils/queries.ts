@@ -127,6 +127,7 @@ const queries = {
   SOCIAL_CASE_INIT: 'SELECT * FROM insert_caso(0, $1, $2);', //datos, id usuario
   CREATE_RECEIPT: 'INSERT INTO factura_tramite (id_factura, id_tramite) VALUES (default, $1) RETURNING *;',
   ADD_ITEM_TO_RECEIPT: 'INSERT INTO detalle_factura (id_detalle, id_factura, nombre, costo) VALUES (default, $1, $2, $3)',
+  DELETE_PROCEDURE_TAKINGS: `DELETE FROM tramite_archivo_recaudo WHERE id_tramite = $1`,
   INSERT_TAKINGS_IN_PROCEDURE: 'INSERT INTO tramite_archivo_recaudo VALUES ($1,$2)',
   GET_SECTIONS_BY_PROCEDURE: 'SELECT DISTINCT sect.id_seccion as id, sect.nombre FROM\
   campo_tramite ct RIGHT JOIN seccion sect ON ct.id_seccion=sect.id_seccion WHERE ct.id_tipo_tramite=$1 ORDER BY sect.id_seccion',
@@ -1557,7 +1558,7 @@ ORDER BY razon_social;`,
        	GROUP BY c.tipo_documento, c.documento, c.razon_social, s.aprobado, l.monto, l.monto_petro, r.descripcion, sub.descripcion) as data 
        	GROUP BY data.tipo_documento, data.documento, data.razon_social, data.aprobado, data.ramo, data.subramo ORDER BY razon_social;
   `,
-  GET_CPU_TIME_FUNCTIONARY:`SELECT t.codigo_tramite, DATE_PART('day', t.fecha_culminacion - t.fecha_creacion) AS dia, t.fecha_creacion, t.fecha_culminacion,u.nombre_completo, ca.descripcion AS cargo
+  GET_CPU_TIME_FUNCTIONARY: `SELECT t.codigo_tramite, DATE_PART('day', t.fecha_culminacion - t.fecha_creacion) AS dia, t.fecha_creacion, t.fecha_culminacion,u.nombre_completo, ca.descripcion AS cargo
     FROM movimientos m
     INNER JOIN cuenta_funcionario cf ON m.id_usuario = cf.id_usuario
     INNER JOIN cargo ca ON ca.id_cargo = cf.id_cargo
