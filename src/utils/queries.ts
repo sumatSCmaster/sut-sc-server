@@ -3346,7 +3346,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   GET_ALL_CONDO_TYPES: 'SELECT * FROM impuesto.tipo_condominio',
   GET_CONDOMINIUM_TYPE_BY_ID: 'SELECT tipo_condominio, tarifa_gas, tarifa_aseo, tarifa_inmueble_urbano, FROM impuesto.condominio JOIN impuesto.tipo_condominio USING (id_tipo_condominio) WHERE id_condominio = $1',
   GET_CONDOMINIUMS: `
-      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial", cond.apartamentos,
+      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial", cond.apartamentos
       FROM impuesto.contribuyente cont
       INNER JOIN impuesto.condominio cond ON cond.id_contribuyente = cont.id_contribuyente;
   `,
