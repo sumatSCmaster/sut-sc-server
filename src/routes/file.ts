@@ -87,12 +87,17 @@ const uploadFile = async (req, res, next) => {
 };
 
 router.post('/:type/:id?/:getId?', uploadFile, async (req: any, res) => {
-  const { id, type } = req.params;
+  const { id, type, getId } = req.params;
   const media = req.files.map((file) => typeMedia(`tramites/${id}`)(file)(process.env.NODE_ENV));
   const client = await pool.connect();
   try {
     if (media.length > 0 && type === 'takings') {
-      const procedure = (await client.query(queries.GET_ID_FROM_PROCEDURE_STATE_BY_CODE, [id])).rows[0];
+      let procedure;
+      if(getId){
+        procedure = {id};
+      }else{
+        procedure = (await client.query(queries.GET_ID_FROM_PROCEDURE_STATE_BY_CODE, [id])).rows[0];
+      }
       client.query('BEGIN');
       await Promise.all(
         media.map(async (urlRecaudo) => {
