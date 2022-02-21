@@ -86,7 +86,7 @@ const uploadFile = async (req, res, next) => {
   // }
 };
 
-router.post('/:type/:id?', uploadFile, async (req: any, res) => {
+router.post('/:type/:id?/:getId?', uploadFile, async (req: any, res) => {
   const { id, type } = req.params;
   const media = req.files.map((file) => typeMedia(`tramites/${id}`)(file)(process.env.NODE_ENV));
   const client = await pool.connect();
