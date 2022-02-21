@@ -42,6 +42,7 @@ import external from './external/bankApi';
 import observation from './observation';
 import reportSolvRRI from './reportSolvRRI';
 import RRICertificate from './RRICertificate';
+import reportCPU from './reportCPU';
 
 const router = Router();
 
@@ -88,6 +89,7 @@ router.use('/observation', observation);
 router.use(resources);
 router.use('/reportSolvRRI', reportSolvRRI);
 router.use('/RRICertificate', RRICertificate);
+router.use('/reportCPU', reportCPU);
 
 router.get('/', (req, res) => {
   res.status(200).json({
