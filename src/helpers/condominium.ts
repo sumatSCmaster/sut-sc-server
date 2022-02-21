@@ -2,6 +2,7 @@ import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { mainLogger } from '@utils/logger';
 import { PoolClient } from 'pg';
+import { errorMessageExtractor, errorMessageGenerator } from './errors';
 
 const pool = Pool.getInstance();
 
@@ -151,5 +152,15 @@ export const isCondoOwner = async (type_doc, doc, conn: PoolClient | null = null
     };
   } finally {
     if (!conn) client.release();
+  }
+};
+
+export const editCondominiumApart = async (id: number, apartments: number) => {
+  const client = await pool.connect();
+  try {
+    const response = (await client.query(queries.EDIT_CONDO_APART_BY_ID, [id, apartments])).rows[0];
+    return { status: 200, message: 'condominio actualizado exitosamente', nuevoApart: response };
+  } catch (e: any) {
+    throw { status: 500, message: errorMessageGenerator(e) || errorMessageExtractor(e) || e.message };
   }
 };
