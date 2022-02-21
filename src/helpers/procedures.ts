@@ -817,6 +817,11 @@ export const processProcedure = async (procedure, user: Usuario, idUser) => {
         totalPetro: bill.totalPetro,
       };
     }
+
+    if (procedure.aprobado === 'correccion') {
+      client.query(queries.DELETE_PROCEDURE_TAKINGS, [procedure.idTramite]);
+    }
+
     console.log('Procedure es ', procedure);
     console.log('Client es ', client);
     mainLogger.info(`Procedure es ${procedure}`);
