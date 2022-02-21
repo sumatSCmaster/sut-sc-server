@@ -3344,21 +3344,21 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   EDIT_CONDO_TYPE_BY_ID: 'UPDATE impuesto.condominio SET id_tipo_condominio = $2 WHERE id_condominio = $1 RETURNING *;',
   EDIT_CONDO_APART_BY_ID: 'UPDATE impuesto.condominio SET apartamentos = $2 WHERE id_condominio = $1 RETURNING *;',
   GET_ALL_CONDO_TYPES: 'SELECT * FROM impuesto.tipo_condominio',
-  GET_CONDOMINIUM_TYPE_BY_ID: 'SELECT tipo_condominio, tarifa_gas, tarifa_aseo, tarifa_inmueble_urbano FROM impuesto.condominio JOIN impuesto.tipo_condominio USING (id_tipo_condominio) WHERE id_condominio = $1',
+  GET_CONDOMINIUM_TYPE_BY_ID: 'SELECT tipo_condominio, tarifa_gas, tarifa_aseo, tarifa_inmueble_urbano, FROM impuesto.condominio JOIN impuesto.tipo_condominio USING (id_tipo_condominio) WHERE id_condominio = $1',
   GET_CONDOMINIUMS: `
-      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
+      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial", cond.apartamentos,
       FROM impuesto.contribuyente cont
       INNER JOIN impuesto.condominio cond ON cond.id_contribuyente = cont.id_contribuyente;
   `,
   GET_CONDOMINIUM: `
-      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial", p.nombre as "parroquia"
+      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial", cond.apartamentos, p.nombre as "parroquia"
       FROM impuesto.contribuyente cont
       INNER JOIN parroquia p ON p.id = cont.id_parroquia
       INNER JOIN impuesto.condominio cond ON cond.id_contribuyente = cont.id_contribuyente
       WHERE id_condominio = $1
   `,
   GET_CONDOMINIUM_BY_DOC: `
-      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial", p.nombre as "parroquia"
+      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial", cond.apartamentos, p.nombre as "parroquia"
       FROM impuesto.contribuyente cont
       INNER JOIN parroquia p ON p.id = cont.id_parroquia
       INNER JOIN impuesto.condominio cond ON cond.id_contribuyente = cont.id_contribuyente
