@@ -818,7 +818,7 @@ export const processProcedure = async (procedure, user: Usuario, idUser) => {
       };
     }
     if (procedure.aprobado === 'correccion') {
-      client.query(queries.DELETE_PROCEDURE_TAKINGS, procedure.idTramite);
+      client.query(queries.DELETE_PROCEDURE_TAKINGS, [procedure.idTramite]);
     }
     console.log('Procedure es ', procedure);
     console.log('Client es ', client);
