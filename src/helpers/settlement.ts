@@ -253,9 +253,24 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
     let trimestreVar;
     IU.forEach((codcat) =>
       codcat.deuda.forEach((deuda, i) => {
-        if (i % 3 === 0) {
+        if (i % 3 === 0 && i !== 0) {
           deudas.push(trimestreVar);
           trimestreVar = undefined;
+          trimestreVar = {
+            trimestre: trimestreVar
+              ? trimestreVar.trimestre
+              : deuda.month.includes('enero') || deuda.month.includes('febrero') || deuda.month.includes('marzo')
+              ? 'Primer Trimestre'
+              : deuda.month.includes('abril') || deuda.month.includes('mayo') || deuda.month.includes('junio')
+              ? 'Segundo Trimestre'
+              : deuda.month.includes('julio') || deuda.month.includes('agosto') || deuda.month.includes('septiembre')
+              ? 'Tercer Trimestre'
+              : 'Cuarto Trimestre',
+            year: trimestreVar ? trimestreVar.year : deuda.year,
+            exonerado: deuda.exonerado,
+            descuento: deuda.descuento,
+            impuestoInmueble: trimestreVar ? trimestreVar.impuestoInmueble + deuda.impuestoInmueble : deuda.impuestoInmueble,
+          };
         } else {
           trimestreVar = {
             trimestre: trimestreVar
