@@ -290,22 +290,24 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
         }
         if (i + 1 === codcat.deuda.length && i % 3 === 2) {
           trimestreVar = {
-            trimestre: trimestreVar,
+            trimestre: trimestreVar.trimestre,
             year: trimestreVar.year,
             exonerado: trimestreVar.exonerado,
             descuento: trimestreVar.descuento,
             impuestoInmueble: (trimestreVar.impuestoInmueble * 3) / 2,
           };
+          console.log('PRIMERO', i % 3);
           deudas.push(trimestreVar);
         }
         if (i + 1 === codcat.deuda.length && i % 3 === 1) {
           trimestreVar = {
-            trimestre: trimestreVar,
+            trimestre: trimestreVar.tramite,
             year: trimestreVar.year,
             exonerado: trimestreVar.exonerado,
             descuento: trimestreVar.descuento,
             impuestoInmueble: trimestreVar.impuestoInmueble * 3,
           };
+          console.log('SEGUNDO', i % 3);
           deudas.push(trimestreVar);
         }
       })
