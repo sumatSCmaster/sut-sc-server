@@ -251,8 +251,8 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
     console.log('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
     const deudas: any = [];
     let trimestreVar;
-    const prueba = IU.map((codcat) =>
-      codcat.forEach((deuda, i) => {
+    IU.forEach((codcat) =>
+      codcat.deuda.forEach((deuda, i) => {
         if (i % 3 === 0) {
           deudas.push(trimestreVar);
           trimestreVar = undefined;
@@ -275,7 +275,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
         }
       })
     );
-    console.log(IU[0].deuda, prueba, 'RODRIGO');
+    console.log(IU[0].deuda, deudas, 'RODRIGO');
     return { status: 200, message: 'Liquidaciones de IU obtenidas', IU };
   } catch (error) {
     mainLogger.error(error);
