@@ -248,6 +248,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
         // }
       }
     }
+    console.log(IU, 'RODRIGO');
     return { status: 200, message: 'Liquidaciones de IU obtenidas', IU };
   } catch (error) {
     mainLogger.error(error);
