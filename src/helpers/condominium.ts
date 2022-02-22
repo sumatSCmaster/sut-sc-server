@@ -164,3 +164,18 @@ export const editCondominiumApart = async (id: number, apartments: number) => {
     throw { status: 500, message: errorMessageGenerator(e) || errorMessageExtractor(e) || e.message };
   }
 };
+
+export const getCondominiumPayments = async (id: number) => {
+  const client = await pool.connect();
+  try {
+    const { rows: payments } = await client.query(queries.GET_CONDO_PAYMENTS, [id]);
+    return { status: 200, message: 'pagos de condominio obtenidos exitosamente', payments:payments };
+  } catch (error) {
+    throw {
+      error: error,
+      message: error.message,
+    };
+  } finally {
+    client.release();
+  }
+};
