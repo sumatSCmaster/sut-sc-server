@@ -248,6 +248,29 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
         // }
       }
     }
+    let deuda, trimestreVar;
+    IU = IU.map((codcat) =>
+      codcat.forEach((deuda, i) => {
+        if (i % 3 === 0) {
+        } else {
+          trimestreVar = {
+            trimestre: trimestreVar
+              ? trimestreVar.trimestre
+              : deuda.month.includes('enero') || deuda.month.includes('febrero') || deuda.month.includes('marzo')
+              ? 'Primer Trimestre'
+              : deuda.month.includes('abril') || deuda.month.includes('mayo') || deuda.month.includes('junio')
+              ? 'Segundo Trimestre'
+              : deuda.month.includes('julio') || deuda.month.includes('agosto') || deuda.month.includes('septiembre')
+              ? 'Tercer Trimestre'
+              : 'Cuarto Trimestre',
+            year: trimestreVar ? trimestreVar.year : deuda.year,
+            exonerado: deuda.exonerado,
+            descuento: deuda.descuento,
+            sss,
+          };
+        }
+      })
+    );
     console.log(IU[0].deuda, 'RODRIGO');
     return { status: 200, message: 'Liquidaciones de IU obtenidas', IU };
   } catch (error) {
