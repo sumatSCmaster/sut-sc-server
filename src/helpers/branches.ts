@@ -235,10 +235,12 @@ export const getTransfersReport = async ({ reportName = 'RPRTransferencias', fro
 
 export const getCondoReport = async (payload) => {
   mainLogger.info(payload, 'condoReport info');
+  console.log(payload, 'payload');
   const client = await pool.connect();
   try {
     return new Promise(async (res, rej) => {
       mainLogger.info(payload, 'payload');
+      console.log(payload, 'payload');
       let pagos = {};
       const ingress = await client.query(queries.GET_INGRESS_CONDO, [payload.from, payload.to]);
       const liquidated = await client.query(queries.GET_LIQUIDATED_CONDO, [payload.from, payload.to]);
