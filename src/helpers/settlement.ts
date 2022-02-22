@@ -294,7 +294,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
             year: trimestreVar.year,
             exonerado: trimestreVar.exonerado,
             descuento: trimestreVar.descuento,
-            impuestoInmueble: (trimestreVar.impuestoInmueble * 4) / 3,
+            impuestoInmueble: (trimestreVar.impuestoInmueble * 3) / 2,
           };
           deudas.push(trimestreVar);
         }
@@ -304,7 +304,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
             year: trimestreVar.year,
             exonerado: trimestreVar.exonerado,
             descuento: trimestreVar.descuento,
-            impuestoInmueble: (trimestreVar.impuestoInmueble * 5) / 3,
+            impuestoInmueble: trimestreVar.impuestoInmueble * 3,
           };
           deudas.push(trimestreVar);
         }
