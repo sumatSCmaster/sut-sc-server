@@ -288,7 +288,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
             impuestoInmueble: trimestreVar ? trimestreVar.impuestoInmueble + deuda.impuestoInmueble : deuda.impuestoInmueble,
           };
         }
-        if (i + 1 === codcat.deuda.length && i % 3 === 2) {
+        if (i + 1 === codcat.deuda.length && (i + 1) % 3 === 2) {
           trimestreVar = {
             trimestre: trimestreVar.trimestre,
             year: trimestreVar.year,
@@ -296,10 +296,9 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
             descuento: trimestreVar.descuento,
             impuestoInmueble: (trimestreVar.impuestoInmueble * 3) / 2,
           };
-          console.log('PRIMERO', i % 3);
           deudas.push(trimestreVar);
         }
-        if (i + 1 === codcat.deuda.length && i % 3 === 1) {
+        if (i + 1 === codcat.deuda.length && (i + 1) % 3 === 1) {
           trimestreVar = {
             trimestre: trimestreVar.tramite,
             year: trimestreVar.year,
@@ -307,7 +306,6 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
             descuento: trimestreVar.descuento,
             impuestoInmueble: trimestreVar.impuestoInmueble * 3,
           };
-          console.log('SEGUNDO', i % 3);
           deudas.push(trimestreVar);
         }
       })
