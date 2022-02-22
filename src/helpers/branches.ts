@@ -234,130 +234,134 @@ export const getTransfersReport = async ({ reportName = 'RPRTransferencias', fro
 };
 
 export const getCondoReport = async (payload) => {
+  mainLogger.info(payload, 'condoReport info');
   const client = await pool.connect();
-  try {
-    return new Promise(async (res, rej) => {
-      mainLogger.info(payload);
-      let pagos = {};
-      const ingress = await client.query(queries.GET_INGRESS_CONDO, [payload.from, payload.to]);
-      const liquidated = await client.query(queries.GET_LIQUIDATED_CONDO, [payload.from, payload.to]);
-      let pivot;
-      let other;
-      let pivotColumns;
-      let columns;
-      if (ingress.rowCount > liquidated.rowCount) {
-        pivot = ingress;
-        pivotColumns = ['cantidadIng', 'ingresado'];
-        other = liquidated;
-        columns = ['cantidadliq', 'liquidado'];
-      } else if (liquidated.rowCount > ingress.rowCount) {
-        pivot = liquidated;
-        pivotColumns = ['cantidadLiq', 'liquidado'];
-        other = ingress;
-        columns = ['cantidadIng', 'ingresado'];
-      } else {
-        pivot = ingress;
-        pivotColumns = ['cantidadIng', 'ingresado'];
-        other = liquidated;
-        columns = ['cantidadLiq', 'liquidado'];
-      }
+  return {
+    ok: true,
+  };
+  // try {
+  //   return new Promise(async (res, rej) => {
+  //     mainLogger.info(payload);
+  //     let pagos = {};
+  //     const ingress = await client.query(queries.GET_INGRESS_CONDO, [payload.from, payload.to]);
+  //     const liquidated = await client.query(queries.GET_LIQUIDATED_CONDO, [payload.from, payload.to]);
+  //     let pivot;
+  //     let other;
+  //     let pivotColumns;
+  //     let columns;
+  //     if (ingress.rowCount > liquidated.rowCount) {
+  //       pivot = ingress;
+  //       pivotColumns = ['cantidadIng', 'ingresado'];
+  //       other = liquidated;
+  //       columns = ['cantidadliq', 'liquidado'];
+  //     } else if (liquidated.rowCount > ingress.rowCount) {
+  //       pivot = liquidated;
+  //       pivotColumns = ['cantidadLiq', 'liquidado'];
+  //       other = ingress;
+  //       columns = ['cantidadIng', 'ingresado'];
+  //     } else {
+  //       pivot = ingress;
+  //       pivotColumns = ['cantidadIng', 'ingresado'];
+  //       other = liquidated;
+  //       columns = ['cantidadLiq', 'liquidado'];
+  //     }
 
-      let result = pivot.rows.reduce((prev, next) => {
-        if (other.rows.some((otherRow) => otherRow.ramo === next.ramo)) {
-          let otherRow = other.rows.find((el) => el.ramo === next.ramo);
-          next[columns[0]] = otherRow[columns[0]];
-          next[columns[1]] = otherRow[columns[1]];
-        }
-        prev.push(next);
-        return prev;
-      }, []);
+  //     let result = pivot.rows.reduce((prev, next) => {
+  //       if (other.rows.some((otherRow) => otherRow.ramo === next.ramo)) {
+  //         let otherRow = other.rows.find((el) => el.ramo === next.ramo);
+  //         next[columns[0]] = otherRow[columns[0]];
+  //         next[columns[1]] = otherRow[columns[1]];
+  //       }
+  //       prev.push(next);
+  //       return prev;
+  //     }, []);
 
-      let filtered = other.rows.filter((val) => !result.find((resultRow) => resultRow.ramo === val.ramo));
+  //     let filtered = other.rows.filter((val) => !result.find((resultRow) => resultRow.ramo === val.ramo));
 
-      result.push(...filtered);
-      pivotColumns.push(...columns);
-      result = result.map((val) => {
-        for (let col of pivotColumns) {
-          val[col] = val[col] || 0;
-        }
-        return val;
-      });
+  //     result.push(...filtered);
+  //     pivotColumns.push(...columns);
+  //     result = result.map((val) => {
+  //       for (let col of pivotColumns) {
+  //         val[col] = val[col] || 0;
+  //       }
+  //       return val;
+  //     });
 
-      let final = groupBy(result, (res) => res.codigo);
-      let branches = (await client.query(queries.GET_BRANCHES_FOR_REPORT)).rows.filter((row) => row.ramo in final);
+  //     let final = groupBy(result, (res) => res.codigo);
+  //     let branches = (await client.query(queries.GET_BRANCHES_FOR_REPORT)).rows.filter((row) => row.ramo in final);
 
-      branches = branches
-        .map((branch) => {
-          return {
-            ...branch,
-            subRamo: final[branch.ramo],
-          };
-        })
-        .map((branch) => {
-          return {
-            ...branch,
-            liquidadoTotal: branch.subRamo.reduce((prev, next) => prev + +next.liquidado, 0),
-            cantidadLiqTotal: branch.subRamo.reduce((prev, next) => prev + +next.cantidadLiq, 0),
-            ingresadoTotal: branch.subRamo.reduce((prev, next) => prev + +next.ingresado, 0),
-            cantidadIngTotal: branch.subRamo.reduce((prev, next) => prev + +next.cantidadIng, 0),
-          };
-        })
-        .filter((branch) => branch.subRamo.reduce((prev, next) => prev + +next.ingresado + +next.liquidado, 0) > 0);
+  //     branches = branches
+  //       .map((branch) => {
+  //         return {
+  //           ...branch,
+  //           subRamo: final[branch.ramo],
+  //         };
+  //       })
+  //       .map((branch) => {
+  //         return {
+  //           ...branch,
+  //           liquidadoTotal: branch.subRamo.reduce((prev, next) => prev + +next.liquidado, 0),
+  //           cantidadLiqTotal: branch.subRamo.reduce((prev, next) => prev + +next.cantidadLiq, 0),
+  //           ingresadoTotal: branch.subRamo.reduce((prev, next) => prev + +next.ingresado, 0),
+  //           cantidadIngTotal: branch.subRamo.reduce((prev, next) => prev + +next.cantidadIng, 0),
+  //         };
+  //       })
+  //       .filter((branch) => branch.subRamo.reduce((prev, next) => prev + +next.ingresado + +next.liquidado, 0) > 0);
 
-      mainLogger.info(liquidated.rows.reduce((prev, next) => prev + +next.cantidadLiq, 0));
-      mainLogger.info(liquidated.rows.reduce((prev, next) => prev + +next.liquidado, 0));
-      const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-RPRA.pug`), {
-        moment: require('moment'),
-        institucion: 'SEDEMAT',
-        datos: {
-          ingresos: chunk(branches, 8),
-          acumuladoIngresos: `CONTENIDO: CONDOMINIOS, DESDE EL ${moment(payload.from).subtract(4, 'h').format('DD/MM/YYYY')} AL ${moment(payload.to).subtract(4, 'h').format('DD/MM/YYYY')}`,
-          cantidadLiqTotal: liquidated.rows.reduce((prev, next) => prev + +next.cantidadLiq, 0),
-          liquidadoTotal: liquidated.rows.reduce((prev, next) => prev + +next.liquidado, 0),
-          ingresadoTotal: ingress.rows.reduce((prev, next) => prev + +next.ingresado, 0),
-          cantidadIngTotal: ingress.rows.reduce((prev, next) => prev + +next.cantidadIng, 0),
-          metodoPago: pagos,
-        },
-      });
-      const pdfDir = resolve(__dirname, `../../archivos/sedemat/reportes/RPRA.pdf`);
-      const dir = `${process.env.SERVER_URL}/sedemat/reportes/RPRA.pdf`;
-      if (dev) {
-        pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
-          res(dir);
-        });
-      } else {
-        try {
-          pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toBuffer(async (err, buffer) => {
-            if (err) {
-              mainLogger.error(err);
-              rej(err);
-            } else {
-              const bucketParams = {
-                Bucket: process.env.BUCKET_NAME as string,
-                Key: 'sedemat/reportes/RPRCondominio.pdf',
-              };
-              await S3Client.putObject({
-                ...bucketParams,
-                Body: buffer,
-                ACL: 'public-read',
-                ContentType: 'application/pdf',
-              }).promise();
-              res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
-            }
-          });
-        } catch (e) {
-          mainLogger.info(e.message);
-          throw e;
-        } finally {
-        }
-      }
-    });
-  } catch (error) {
-    mainLogger.info(error.message);
-    throw errorMessageExtractor(error);
-  } finally {
-    client.release();
-  }
+  //     mainLogger.info(liquidated.rows.reduce((prev, next) => prev + +next.cantidadLiq, 0));
+  //     mainLogger.info(liquidated.rows.reduce((prev, next) => prev + +next.liquidado, 0));
+  //     const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-RPRA.pug`), {
+  //       moment: require('moment'),
+  //       institucion: 'SEDEMAT',
+  //       datos: {
+  //         ingresos: chunk(branches, 8),
+  //         acumuladoIngresos: `CONTENIDO: CONDOMINIOS, DESDE EL ${moment(payload.from).subtract(4, 'h').format('DD/MM/YYYY')} AL ${moment(payload.to).subtract(4, 'h').format('DD/MM/YYYY')}`,
+  //         cantidadLiqTotal: liquidated.rows.reduce((prev, next) => prev + +next.cantidadLiq, 0),
+  //         liquidadoTotal: liquidated.rows.reduce((prev, next) => prev + +next.liquidado, 0),
+  //         ingresadoTotal: ingress.rows.reduce((prev, next) => prev + +next.ingresado, 0),
+  //         cantidadIngTotal: ingress.rows.reduce((prev, next) => prev + +next.cantidadIng, 0),
+  //         metodoPago: pagos,
+  //       },
+  //     });
+  //     const pdfDir = resolve(__dirname, `../../archivos/sedemat/reportes/RPRA.pdf`);
+  //     const dir = `${process.env.SERVER_URL}/sedemat/reportes/RPRA.pdf`;
+  //     if (dev) {
+  //       pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
+  //         res(dir);
+  //       });
+  //     } else {
+  //       try {
+  //         pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toBuffer(async (err, buffer) => {
+  //           if (err) {
+  //             mainLogger.error(err);
+  //             rej(err);
+  //           } else {
+  //             const bucketParams = {
+  //               Bucket: process.env.BUCKET_NAME as string,
+  //               Key: 'sedemat/reportes/RPRCondominio.pdf',
+  //             };
+  //             await S3Client.putObject({
+  //               ...bucketParams,
+  //               Body: buffer,
+  //               ACL: 'public-read',
+  //               ContentType: 'application/pdf',
+  //             }).promise();
+  //             res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+  //           }
+  //         });
+  //       } catch (e) {
+  //         mainLogger.info(e.message);
+  //         throw e;
+  //       } finally {
+  //       }
+  //     }
+  //   });
+  // } catch (error) {
+  //   mainLogger.info(error.message);
+  //   throw errorMessageExtractor(error);
+  // } finally {
+  //   client.release();
+  // }
 };
 
 export const getCondoReportDisclosed = async ({ reportName = 'ReporteCondoL', from, to }) => {
