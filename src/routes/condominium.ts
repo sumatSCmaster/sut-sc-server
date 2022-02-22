@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
-import { getCondominium, getCondominiums, deleteCondominium, createCondominium, addOwner, deleteOwner, editCondominiumApart } from '@helpers/condominium';
+import { getCondominium, getCondominiums, deleteCondominium, createCondominium, addOwner, deleteOwner, editCondominiumApart, getCondominiumPayments } from '@helpers/condominium';
 import { authenticate } from 'passport';
 
 const router = Router();
@@ -47,6 +47,13 @@ router.put('/apart/edit/:id', authenticate('jwt'), async (req: any, res) => {
   const [err, data] = await fulfill(editCondominiumApart(id, apartments ));
   if (err) res.status(500).json({ err, status: 500 });
   if (data) res.status(200).json(data);
+});
+
+router.get('/payments/:id', authenticate('jwt'), async (req: any, res) => {
+  const { id } = req.params
+  const [error, data] = await fulfill(getCondominiumPayments(id));
+  if (error) res.status(500).json({ message: error.message, status: 500 });
+  if (data) res.status(200).json({ status: 200, data });
 });
 
 export default router;
