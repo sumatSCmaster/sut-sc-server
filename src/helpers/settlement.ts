@@ -144,19 +144,19 @@ export const getIUTariffForContributor = async ({ estate, id, declaration, date 
     const avaluo = (await client.query(queries.GET_ESTATE_APPRAISAL_BY_ID_AND_YEAR, [estate.id_inmueble, date.year()])).rows[0]?.avaluo || estate.avaluo;
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const impuestoInmueble = Math.round(fixatedAmount((avaluo * PETRO * (estate.tipo_inmueble === 'COMERCIAL' ? 0.01 : 0.005)) / 12));
-    mainLogger.info(`getIUTariffForContributor ~ impuestoInmueble ${impuestoInmueble}`);
+    // mainLogger.info(`getIUTariffForContributor ~ impuestoInmueble ${impuestoInmueble}`);
     if (!id) return impuestoInmueble;
     const now = moment().locale('ES').subtract(1, 'M');
     const lastAEApplication = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, id])).rows.find(
       (el) => (el.datos.fecha?.month || el.datos.month) === now.format('MMMM') && (el.datos.fecha?.year || el.datos.year) === now.year()
     )?.monto_petro;
     const AEDeclaration = Math.round(isNaN(+declaration!) ? fixatedAmount(lastAEApplication * PETRO) : +declaration!);
-    mainLogger.info('getIUTariffForContributor ~ AEDeclaration', AEDeclaration);
+    // mainLogger.info('getIUTariffForContributor ~ AEDeclaration', AEDeclaration);
     if (!AEDeclaration && typeof AEDeclaration !== 'number') throw { status: 422, message: 'Debe realizar una declaracion de AE de este mes para poder realizar el calculo de IU' };
     const taxableMin = Math.round(fixatedAmount((await client.query(queries.GET_LITTLEST_TAXABLE_MINIMUM_FOR_CONTRIBUTOR, [id])).rows[0].minimo_tributable * PETRO));
-    mainLogger.info('getIUTariffForContributor ~ taxableMin', taxableMin);
+    // mainLogger.info('getIUTariffForContributor ~ taxableMin', taxableMin);
     const impuestoDefinitivo = taxableMin > impuestoInmueble ? taxableMin : impuestoInmueble;
-    mainLogger.info('getIUTariffForContributor ~ impuestoDefinitivo', impuestoDefinitivo);
+    // mainLogger.info('getIUTariffForContributor ~ impuestoDefinitivo', impuestoDefinitivo);
     if (AEDeclaration === 0) return impuestoInmueble > taxableMin ? taxableMin : impuestoInmueble;
     return impuestoDefinitivo > AEDeclaration ? AEDeclaration : impuestoDefinitivo;
   } catch (error) {
@@ -248,6 +248,69 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
         // }
       }
     }
+    console.log('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
+    const deudas: any = [];
+    let trimestreVar;
+    IU.forEach((codcat) =>
+      codcat.deuda.forEach((deuda, i) => {
+        if (i % 3 === 0 && i !== 0) {
+          deudas.push(trimestreVar);
+          trimestreVar = undefined;
+          trimestreVar = {
+            trimestre: trimestreVar
+              ? trimestreVar.trimestre
+              : deuda.month.includes('enero') || deuda.month.includes('febrero') || deuda.month.includes('marzo')
+              ? 'Primer Trimestre'
+              : deuda.month.includes('abril') || deuda.month.includes('mayo') || deuda.month.includes('junio')
+              ? 'Segundo Trimestre'
+              : deuda.month.includes('julio') || deuda.month.includes('agosto') || deuda.month.includes('septiembre')
+              ? 'Tercer Trimestre'
+              : 'Cuarto Trimestre',
+            year: trimestreVar ? trimestreVar.year : deuda.year,
+            exonerado: deuda.exonerado,
+            descuento: deuda.descuento,
+            impuestoInmueble: trimestreVar ? trimestreVar.impuestoInmueble + deuda.impuestoInmueble : deuda.impuestoInmueble,
+          };
+        } else {
+          trimestreVar = {
+            trimestre: trimestreVar
+              ? trimestreVar.trimestre
+              : deuda.month.includes('enero') || deuda.month.includes('febrero') || deuda.month.includes('marzo')
+              ? 'Primer Trimestre'
+              : deuda.month.includes('abril') || deuda.month.includes('mayo') || deuda.month.includes('junio')
+              ? 'Segundo Trimestre'
+              : deuda.month.includes('julio') || deuda.month.includes('agosto') || deuda.month.includes('septiembre')
+              ? 'Tercer Trimestre'
+              : 'Cuarto Trimestre',
+            year: trimestreVar ? trimestreVar.year : deuda.year,
+            exonerado: deuda.exonerado,
+            descuento: deuda.descuento,
+            impuestoInmueble: trimestreVar ? trimestreVar.impuestoInmueble + deuda.impuestoInmueble : deuda.impuestoInmueble,
+          };
+        }
+        if (i + 1 === codcat.deuda.length && (i + 1) % 3 === 2) {
+          trimestreVar = {
+            trimestre: trimestreVar.trimestre,
+            year: trimestreVar.year,
+            exonerado: trimestreVar.exonerado,
+            descuento: trimestreVar.descuento,
+            impuestoInmueble: (trimestreVar.impuestoInmueble * 3) / 2,
+          };
+          deudas.push(trimestreVar);
+        }
+        if (i + 1 === codcat.deuda.length && (i + 1) % 3 === 1) {
+          trimestreVar = {
+            trimestre: trimestreVar.tramite,
+            year: trimestreVar.year,
+            exonerado: trimestreVar.exonerado,
+            descuento: trimestreVar.descuento,
+            impuestoInmueble: trimestreVar.impuestoInmueble * 3,
+          };
+          deudas.push(trimestreVar);
+        }
+      })
+    );
+    console.log(IU[0].deuda, deudas, 'RODRIGO');
     return { status: 200, message: 'Liquidaciones de IU obtenidas', IU };
   } catch (error) {
     mainLogger.error(error);
