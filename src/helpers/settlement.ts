@@ -248,10 +248,13 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
         // }
       }
     }
-    let deuda, trimestreVar;
-    IU = IU.map((codcat) =>
+    const deudas: any = [];
+    let trimestreVar;
+    const prueba = IU.map((codcat) =>
       codcat.forEach((deuda, i) => {
         if (i % 3 === 0) {
+          deudas.push(trimestreVar);
+          trimestreVar = undefined;
         } else {
           trimestreVar = {
             trimestre: trimestreVar
@@ -266,12 +269,12 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
             year: trimestreVar ? trimestreVar.year : deuda.year,
             exonerado: deuda.exonerado,
             descuento: deuda.descuento,
-            sss,
+            impuestoInmueble: trimestreVar ? trimestreVar.impuestoInmueble + deuda.impuestoInmueble : deuda.impuestoInmueble,
           };
         }
       })
     );
-    console.log(IU[0].deuda, 'RODRIGO');
+    console.log(IU[0].deuda, prueba, 'RODRIGO');
     return { status: 200, message: 'Liquidaciones de IU obtenidas', IU };
   } catch (error) {
     mainLogger.error(error);
