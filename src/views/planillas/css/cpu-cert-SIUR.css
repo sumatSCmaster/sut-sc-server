@@ -1,10 +1,5 @@
-.funcionarios {
-  border-top: 1px solid slategray;
-}
-
 .funcionarios div {
   padding: 3px;
-  border-right: slategray solid 1px;
   height: 130px;
   display: flex;
   display: -webkit-flex;
@@ -51,8 +46,6 @@
 }
 
 .sections div {
-  border-top: 1px solid slategray;
-  border-right: 1px solid slategray;
   height: 55px;
   display: flex;
   display: -webkit-flex;
@@ -62,6 +55,10 @@
   -webkit-flex-direction: column;
   justify-content: space-around;
   -webkit-justify-content: space-around;
+}
+
+.grow1 h4 {
+  margin: 4px 0px;
 }
 
 .sections h6 {
