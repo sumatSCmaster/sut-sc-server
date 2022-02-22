@@ -817,6 +817,11 @@ export const processProcedure = async (procedure, user: Usuario, idUser) => {
         totalPetro: bill.totalPetro,
       };
     }
+
+    if (procedure.aprobado === 'correccion') {
+      client.query(queries.DELETE_PROCEDURE_TAKINGS, [procedure.idTramite]);
+    }
+
     console.log('Procedure es ', procedure);
     console.log('Client es ', client);
     mainLogger.info(`Procedure es ${procedure}`);
@@ -1876,7 +1881,7 @@ const procedureInstanceHandler = (user, client, support) => {
         query = 6;
         payload = user.institucion.id;
       } else if (user.tipoUsuario === 6) {
-        query = 3;
+        query = user.institucion?.cargo?.id === 47 ? 2 : 3;
         payload = user.institucion.id;
       } else {
         if (user.institucion?.cargo?.id === 46) {
