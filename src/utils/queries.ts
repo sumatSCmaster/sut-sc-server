@@ -3352,6 +3352,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   AND fecha_aprobado IS NOT null 
   AND l.id_subramo IN ($2)
   ORDER BY fecha_aprobado DESC 
+  limit 1
   `,
   EDIT_CONDO_TYPE_BY_ID: 'UPDATE impuesto.condominio SET id_tipo_condominio = $2 WHERE id_condominio = $1 RETURNING *;',
   EDIT_CONDO_APART_BY_ID: 'UPDATE impuesto.condominio SET apartamentos = $2 WHERE id_condominio = $1 RETURNING *;',
