@@ -67,7 +67,7 @@ export const createCondominium = async ({ type_doc, doc }) => {
     return condo;
   } catch (error) {
     client.query('ROLLBACK');
-    mainLogger.error(`createCondominium - ${error.message}`)
+    mainLogger.error(`createCondominium - ${error.message}`);
     throw {
       error: error.message,
       message: `Error al agregar el condominio`,
@@ -89,12 +89,9 @@ export const addOwner = async ({ condo_id, type_doc, doc }) => {
     client.query('ROLLBACK');
     mainLogger.error(`createCondominium - ${error.message}`);
     let mess = ' ';
-    if (error.message.includes('duplicate'))
-      mess = 'Este propietario ya es parte del condominio.';
-    else if (error.message.includes('null'))
-      mess = 'No se encontró un usuario con la documentación ingresada.';
-    else
-      mess = 'Error al agregar el propietario.';
+    if (error.message.includes('duplicate')) mess = 'Este propietario ya es parte del condominio.';
+    else if (error.message.includes('null')) mess = 'No se encontró un usuario con la documentación ingresada.';
+    else mess = 'Error al agregar el propietario.';
     throw {
       error: error,
       message: mess,
@@ -168,8 +165,16 @@ export const editCondominiumApart = async (id: number, apartments: number) => {
 export const getCondominiumPayments = async (id: number) => {
   const client = await pool.connect();
   try {
-    const { rows: payments } = await client.query(queries.GET_CONDO_PAYMENTS, [id]);
-    return { status: 200, message: 'pagos de condominio obtenidos exitosamente', payments:payments };
+    const { rows: paymentGas } = await client.query(queries.GET_CONDO_PAYMENTS, [id, 107]);
+    const { rows: paymentAseo } = await client.query(queries.GET_CONDO_PAYMENTS, [id, 108]);
+    return {
+      status: 200,
+      message: 'pagos de condominio obtenidos exitosamente',
+      payments: {
+        gas: paymentGas[0],
+        aseo: paymentAseo[0],
+      },
+    };
   } catch (error) {
     throw {
       error: error,
