@@ -3350,7 +3350,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id_solicitud 
   WHERE cp.id_condominio = $1
   AND fecha_aprobado IS NOT null 
-  AND l.id_subramo IN $2
+  AND l.id_subramo IN ($2)
   ORDER BY fecha_aprobado DESC 
   `,
   EDIT_CONDO_TYPE_BY_ID: 'UPDATE impuesto.condominio SET id_tipo_condominio = $2 WHERE id_condominio = $1 RETURNING *;',
