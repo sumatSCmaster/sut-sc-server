@@ -171,9 +171,9 @@ export const getCondominiumPayments = async (id: number) => {
       status: 200,
       message: 'pagos de condominio obtenidos exitosamente',
       payments: {
-        gas: paymentGas,
-        aseo: paymentAseo,
-        ok: true
+        gas: paymentGas[0],
+        aseo: paymentAseo[0],
+        payments: true,
       },
     };
   } catch (error) {
