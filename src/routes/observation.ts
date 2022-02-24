@@ -7,8 +7,6 @@ import { mainLogger } from '@utils/logger';
 const router = Router();
 
 router.get('/', authenticate('jwt'), async (req: any, res) => {
-  console.log(req.query, "req.query");
-  mainLogger.info(req.query, "req");
   const { idTramite } = req.query;
   const [error, data] = await fulfill(getObservations(idTramite));
   if (error) res.status(500).json(error);
