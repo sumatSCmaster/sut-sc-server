@@ -3341,7 +3341,19 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       INNER JOIN impuesto.tipo_vehiculo tv USING (id_tipo_vehiculo)
       WHERE v.id_vehiculo = $1`,
   // CONDOMINIO
-  GET_CONDO_PAYMENTS: `SELECT cp.id_contribuyente, s.fecha_aprobado, l.fecha_liquidacion, l.id_subramo, l.monto, l.monto_petro  FROM impuesto.condominio_propietario cp INNER JOIN impuesto.contribuyente cont ON cp.id_contribuyente = cont.id_contribuyente INNER JOIN impuesto.condominio cond ON cond.id_condominio = cp.id_condominio INNER JOIN impuesto.solicitud s ON s.id_contribuyente = cont.id_contribuyente INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id_solicitud WHERE cp.id_condominio = $1 AND l.id_subramo IN (107,108)`,
+  GET_CONDO_PAYMENTS: `
+  SELECT cp.id_contribuyente, s.fecha_aprobado, l.fecha_liquidacion, l.id_subramo, l.monto, l.monto_petro 
+  FROM impuesto.condominio_propietario cp 
+  INNER JOIN impuesto.contribuyente cont ON cp.id_contribuyente = cont.id_contribuyente 
+  INNER JOIN impuesto.condominio cond ON cond.id_condominio = cp.id_condominio 
+  INNER JOIN impuesto.solicitud s ON s.id_contribuyente = cont.id_contribuyente 
+  INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id_solicitud 
+  WHERE cp.id_condominio = $1
+  AND fecha_aprobado IS NOT null 
+  AND l.id_subramo IN ($2)
+  ORDER BY fecha_aprobado DESC 
+  limit 1
+  `,
   EDIT_CONDO_TYPE_BY_ID: 'UPDATE impuesto.condominio SET id_tipo_condominio = $2 WHERE id_condominio = $1 RETURNING *;',
   EDIT_CONDO_APART_BY_ID: 'UPDATE impuesto.condominio SET apartamentos = $2 WHERE id_condominio = $1 RETURNING *;',
   GET_ALL_CONDO_TYPES: 'SELECT * FROM impuesto.tipo_condominio',
