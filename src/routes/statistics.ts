@@ -44,8 +44,6 @@ router.get('/sedemat', async (req: any, res) => {
 
 router.get('/sedemat/contributors', async (req, res) => {
   const { date } = req.query;
-  mainLogger.info(date, req.query, "req.query");
-  console.log(req.params, "params");
   const [err, data] = await fulfill(getContributorsStatistics(date));
   if (err) res.status(500).json(err);
   if (data) res.status(200).json(data);

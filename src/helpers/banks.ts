@@ -341,7 +341,6 @@ export const approveSinglePayment = async (id, user) => {
 
 export const validatePayments = async (body, user) => {
   const client = await pool.connect();
-  console.log(body, 'body');
   try {
     await client.query('BEGIN');
     const res = await client.query(queries.VALIDATE_PAYMENTS, [body]);
@@ -376,7 +375,6 @@ export const validatePayments = async (body, user) => {
         })();
       })
     );
-    console.log(res, 'response del VALIDATE_PAYMENTS ordenao');
     await client.query('COMMIT');
     return {
       validatePayments: { data },

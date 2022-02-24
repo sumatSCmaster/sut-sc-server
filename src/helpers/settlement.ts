@@ -144,19 +144,19 @@ export const getIUTariffForContributor = async ({ estate, id, declaration, date 
     const avaluo = (await client.query(queries.GET_ESTATE_APPRAISAL_BY_ID_AND_YEAR, [estate.id_inmueble, date.year()])).rows[0]?.avaluo || estate.avaluo;
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const impuestoInmueble = Math.round(fixatedAmount((avaluo * PETRO * (estate.tipo_inmueble === 'COMERCIAL' ? 0.01 : 0.005)) / 12));
-    mainLogger.info(`getIUTariffForContributor ~ impuestoInmueble ${impuestoInmueble}`);
+    // mainLogger.info(`getIUTariffForContributor ~ impuestoInmueble ${impuestoInmueble}`);
     if (!id) return impuestoInmueble;
     const now = moment().locale('ES').subtract(1, 'M');
     const lastAEApplication = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.AE, id])).rows.find(
       (el) => (el.datos.fecha?.month || el.datos.month) === now.format('MMMM') && (el.datos.fecha?.year || el.datos.year) === now.year()
     )?.monto_petro;
     const AEDeclaration = Math.round(isNaN(+declaration!) ? fixatedAmount(lastAEApplication * PETRO) : +declaration!);
-    mainLogger.info('getIUTariffForContributor ~ AEDeclaration', AEDeclaration);
+    // mainLogger.info('getIUTariffForContributor ~ AEDeclaration', AEDeclaration);
     if (!AEDeclaration && typeof AEDeclaration !== 'number') throw { status: 422, message: 'Debe realizar una declaracion de AE de este mes para poder realizar el calculo de IU' };
     const taxableMin = Math.round(fixatedAmount((await client.query(queries.GET_LITTLEST_TAXABLE_MINIMUM_FOR_CONTRIBUTOR, [id])).rows[0].minimo_tributable * PETRO));
-    mainLogger.info('getIUTariffForContributor ~ taxableMin', taxableMin);
+    // mainLogger.info('getIUTariffForContributor ~ taxableMin', taxableMin);
     const impuestoDefinitivo = taxableMin > impuestoInmueble ? taxableMin : impuestoInmueble;
-    mainLogger.info('getIUTariffForContributor ~ impuestoDefinitivo', impuestoDefinitivo);
+    // mainLogger.info('getIUTariffForContributor ~ impuestoDefinitivo', impuestoDefinitivo);
     if (AEDeclaration === 0) return impuestoInmueble > taxableMin ? taxableMin : impuestoInmueble;
     return impuestoDefinitivo > AEDeclaration ? AEDeclaration : impuestoDefinitivo;
   } catch (error) {

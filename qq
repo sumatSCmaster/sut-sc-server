@@ -1,0 +1,148 @@
+[33m57120e16[m[33m ([m[1;36mHEAD -> [m[1;32mdevelop[m[33m, [m[1;31morigin/develop[m[33m)[m a
+[33mcf265758[m firmas cert-NM 3
+[33m0532602c[m firmas cert-NM 3
+[33mc51a2ad9[m firmas cert-NM 2
+[33m1f08f130[m firmas cert-NM
+[33m8b1b7823[m Firma width changed
+[33m255137a7[m cpu-cert-CC.css updt
+[33m5486845a[m firma jefe NM
+[33m9e1375e0[m adapting getProcedures to cargo 97
+[33m073757e7[m fixing banks helpers tipotramite
+[33macfea0c9[m Merge branch 'develop' of https://github.com/Waku-Software/sut-server into develop
+[33md6763aec[m adding createSettlementForCPUProcedure
+[33m684b1838[m reporte codigo cat de h2 a p
+[33mea169edb[m h2 reporte codigo cat
+[33mf435af3e[m h6 to h3
+[33m8db30ec2[m h6 to h3
+[33m2c202729[m certificado codigo cat a h6
+[33meff7c0ea[m reporte cc font-size codigo catastral
+[33mdc6cfb69[m reporte cc font-size codigo catastral
+[33m37e9bff0[m Merge branch 'develop' of https://github.com/Waku-Software/sut-server into develop
+[33mab069904[m taxValues fixes, adding years
+[33m06a396c3[m reporte solv RRI
+[33m3976d098[m Merge branch 'develop' of https://github.com/Waku-Software/sut-server into develop
+[33m7730ee69[m reporte solv RRI
+[33m3f6da082[m Merge branch 'develop' of https://github.com/Waku-Software/sut-server into develop
+[33m598055a2[m getRRICertificates endpoint created
+[33m89345867[m reporte solv RRI
+[33mc25b75ba[m reporte solv RRI
+[33ma1218c05[m console reporte solv RRI
+[33m9ef6d51b[m Merge branch 'develop' of https://github.com/Waku-Software/sut-server into develop
+[33ma6888eff[m getRRICertificates endpoint created
+[33m98a997ec[m Merge branch 'develop' of https://github.com/Waku-Software/sut-server into develop
+[33m3b994648[m datos reporte solv RRI
+[33m7ec2daa7[m Merge branch 'develop' of https://github.com/Waku-Software/sut-server into develop
+[33m2cf4d552[m getRRICertificates endpoint created
+[33m38db8778[m Merge branch 'develop' of https://github.com/Waku-Software/sut-server into develop
+[33ma8f575b6[m console endpoint reporte solv RRI
+[33md5d5364f[m getRRICertificates endpoint created
+[33med264e84[m getRRICertificates endpoint created
+[33m4b338962[m datos reporte solv RRI
+[33m58c1a97a[m estilos reporte solv RRI
+[33m12e7f029[m estilos reporte solv RRI
+[33m2dc7d230[m Merge branch 'develop' of https://github.com/Waku-Software/sut-server into develop
+[33ma492928f[m pug y css reporte solv RRI
+[33m843f963c[m Merge branch 'develop' of https://github.com/Waku-Software/sut-server into develop
+[33m965d130e[m createRRICertficate
+[33m821df60f[m Merge branch 'develop' of https://github.com/Waku-Software/sut-server into develop
+[33macfc8022[m estilos pug reporte solv rri
+[33m2c49c282[m createRRICertficate
+[33m1293cd4a[m createRRICertficate
+[33m2ef5dae9[m createRRICertficate
+[33me31742bf[m createRRICertficate
+[33mbf73bfe9[m modifying cpu-solv-RRI.pug
+[33m8b95c9c5[m modifying cpu-solv-RRI.pug
+[33m33d66b69[m modifying cpu-solv-RRI.pug
+[33mbab11f78[m modifying reportSolvRRI get route
+[33mfd4646cb[m modifying reportSolvRRI get route
+[33m691b8f92[m metodo createRRICertificate
+[33m02b24ed9[m modifying reportSolvRRI get route
+[33m427249a3[m endpoint report solv RRI ruta
+[33m7a872ccd[m Merge branch 'develop' of https://github.com/Waku-Software/sut-server into develop
+[33m39dd9718[m cambio params por query endpoint reporte solv RRI
+[33m93be4b3f[m adding reportSolvRRI to index router
+[33m3e420b5b[m Merge branch 'develop' of https://github.com/Waku-Software/sut-server into develop
+[33m2746328a[m endpoint y pug reporte solv RRI
+[33m90de33a0[m Merge branch 'develop' of https://github.com/Waku-Software/sut-server into develop
+[33m592ba8c9[m changing getProceduresByInstitution for GerenteRecaudacion
+[33mae552009[m validacion RRI
+[33m1e906e93[m firmas x_x
+[33m81bc89c2[m firma size 6
+[33m7416b454[m Merge branch 'develop' of https://github.com/Waku-Software/sut-server into develop
+[33mba19c4e6[m validateSinglePayment modification
+[33m79c03c80[m firma size 5
+[33m7eb3acdd[m firma size 4
+[33m0d7b268f[m Merge branch 'develop' of https://github.com/Waku-Software/sut-server into develop
+[33m8206f325[m validateSinglePayment modification
+[33m98004e00[m firma size 3
+[33me791fc6b[m firma size 2
+[33m2257d0f1[m firma size 1
+[33m25b19bdb[m firmas cpu
+[33m4a185232[m Intendente name change
+[33m23452b5a[m updateProcedure added enprocesocat
+[33m04b5ff85[m modifying GET_PROGRESS_PROCEDURES query
+[33m53a4bead[m modifying to accept enprocesocat state into state machine
+[33m4276e0c3[m modifying to accept enprocesocat state into state machine
+[33mcf055a33[m fixing siu siur certificates
+[33mb286461a[m tipoInmuebleSolvencia
+[33m8684abf0[m construccion tipoInmueble solvencia SIUR 2
+[33m3b6ae6d0[m construccion tipoInmueble solvencia SIUR
+[33mfecbe7fd[m cpu planillas SIUR
+[33ma6a82ac1[m adding check validations
+[33m63e98b18[m adding check validations
+[33m56e49eb7[m Merge branch 'develop' of https://github.com/Waku-Software/sut-server into develop
+[33m7897000d[m adding conditionals to nextEventForProcedure
+[33m7fda6031[m CPU icon changed
+[33m8b0c141a[m Merge pull request #11 from Waku-Software/develop
+[33m4ed2f24c[m pdf licencia fix 5
+[33m5f023a69[m[33m ([m[1;32mmaster[m[33m)[m Merge pull request #10 from Waku-Software/develop
+[33m2c782a60[m Merge branch 'master' into develop
+[33m681aab7b[m pdf licencia fix 4
+[33m0d21a3f3[m pdf licencia fix 3
+[33m772fc790[m pdf licencia fix 2
+[33mca1e8f32[m pdf licencia fix 1
+[33mab82abe8[m licences pdf line overlap fix
+[33m1ac646b9[m adding / to LIC url in aws
+[33m7ce7fef6[m firmas de certificado de licencias actualizado
+[33mcf03c18b[m fixing lae procedure nextEvent
+[33me57ef5b2[m fixing lae procedure nextEvent
+[33m00974012[m showing specific error in procedureInitAnalist
+[33m59cb5479[m showing specific error in procedureInitAnalist
+[33ma9bdf42d[m showing specific error in procedureInitAnalist
+[33mb0e71020[m showing specific error in procedureInitAnalist
+[33mf2aa3527[m showing specific error in procedureInitAnalist
+[33m21eb7d7e[m showing specific error in procedureInitAnalist
+[33mba631960[m Merge pull request #9 from Waku-Software/develop
+[33mb95e7f3e[m disabling codigo_tramite functionality fron createBareEstate
+[33m2e866682[m disabling codigo_tramite functionality fron createBareEstate
+[33m79348320[m disabling codigo_tramite functionality fron createBareEstate
+[33m19b38c5d[m Merge pull request #8 from Waku-Software/develop
+[33m2a607bc1[m Merge branch 'master' into develop
+[33m6519f1be[m returning procedure in finishedProcedure function
+[33m7f4d7bf1[m licencias AE procedures updated
+[33m41eb8359[m fixing support procedure
+[33m4a6266b6[m getNextEventForProcedure support fix
+[33m793932f9[m getNextEventForProcedure support fix
+[33m43798d70[m getNextEventForProcedure support fix
+[33mca0bb91d[m getNextEventForProcedure support fix
+[33m2e92a22a[m fixing support procedures
+[33m02cb761e[m fixing createBareEstate function
+[33m7dabe6db[m Merge branch 'master' of https://github.com/Waku-Software/sut-server
+[33mc918a738[m improved build time in contributors report xlsx
+[33m3424d694[m adding finishedProcedure function
+[33mc108b057[m adding finishedProcedure function
+[33m171408e8[m adding edit endpoint on condotype
+[33mb39fa656[m adding edit endpoint on condotype
+[33m993764bd[m fix in condominiumType helper
+[33m4a56f797[m fix in condominiumType helper
+[33m20c2fd83[m fix in condominiumType helper
+[33m8dc7f8ab[m fix in condominiumType helper
+[33m293fde60[m fix in condominiumType helper
+[33m4e95faef[m fix in condominiumType helper
+[33m1dfaae8f[m fix in condominiumType helper
+[33m3f65f78f[m fix in condominiumType helper
+[33mfa1482f5[m fix in condominiumType helper
+[33mb0b66e7f[m Merge branch 'develop' of https://github.com/Waku-Software/sut-server into develop
+[33m1a82b04b[m fix in condominiumType helper
+[33mcb99c32c[m caption VALOR FISCAL in cpu-cert-SIU.pug changed Bs to Petros
+[33m9dad2d88[m cpu-cert-SIU.pug fixed

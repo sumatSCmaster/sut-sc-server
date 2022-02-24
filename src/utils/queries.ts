@@ -377,8 +377,8 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     FROM propietario p INNER JOIN propietario_inmueble pi ON p.id_propietario = pi.id_propietario;',
   GET_PROPERTY_BY_ID: 'SELECT * FROM inmueble_urbano_view WHERE id=$1',
   GET_RRI_CERTIFICATES_BY_IDS: `SELECT id_tramite AS "idTramite", url_certificado AS "urlCertificado" FROM inmueble_rri WHERE id_tramite = ANY ($1::int[])`,
+  GET_RRI_BY_ID_TRAMITE:'SELECT codigo_rri FROM inmueble_rri WHERE id_tramite = $1',
   INSERT_RRI: `INSERT INTO inmueble_rri (codigo_rri, id_tramite, url_certificado) VALUES ($1, $2, $3)`,
-
   //ordenanza
   CREATE_ORDINANCE:
     'WITH ordenanzaTmp AS (INSERT INTO ordenanza (descripcion, tarifa, id_valor) \
@@ -1558,6 +1558,16 @@ ORDER BY razon_social;`,
        	GROUP BY c.tipo_documento, c.documento, c.razon_social, s.aprobado, l.monto, l.monto_petro, r.descripcion, sub.descripcion) as data 
        	GROUP BY data.tipo_documento, data.documento, data.razon_social, data.aprobado, data.ramo, data.subramo ORDER BY razon_social;
   `,
+  GET_CPU_TIME_FUNCTIONARY: `SELECT t.codigo_tramite, DATE_PART('day', t.fecha_culminacion - t.fecha_creacion) AS dia, t.fecha_creacion, t.fecha_culminacion,u.nombre_completo, ca.descripcion AS cargo
+    FROM movimientos m
+    INNER JOIN cuenta_funcionario cf ON m.id_usuario = cf.id_usuario
+    INNER JOIN cargo ca ON ca.id_cargo = cf.id_cargo
+    INNER JOIN tramite t ON t.id_tramite = m.id_procedimiento
+    INNER JOIN usuario u ON u.id_usuario = m.id_usuario
+    WHERE m.tipo_movimiento like '%cr' 
+    AND t.fecha_creacion >= $1
+    AND t.fecha_culminacion <= $2
+    ORDER BY cargo, t.codigo_tramite, t.fecha_creacion`,
   //CIERRE DE CAJA
   GET_CASHIER_POS: `SELECT b.nombre as banco, SUM(p.monto) as monto, COUNT(*) as transacciones
         FROM pago p 
@@ -3331,23 +3341,37 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
       INNER JOIN impuesto.tipo_vehiculo tv USING (id_tipo_vehiculo)
       WHERE v.id_vehiculo = $1`,
   // CONDOMINIO
+  GET_CONDO_PAYMENTS: `
+  SELECT cp.id_contribuyente, s.fecha_aprobado, l.fecha_liquidacion, l.id_subramo, l.monto, l.monto_petro 
+  FROM impuesto.condominio_propietario cp 
+  INNER JOIN impuesto.contribuyente cont ON cp.id_contribuyente = cont.id_contribuyente 
+  INNER JOIN impuesto.condominio cond ON cond.id_condominio = cp.id_condominio 
+  INNER JOIN impuesto.solicitud s ON s.id_contribuyente = cont.id_contribuyente 
+  INNER JOIN impuesto.liquidacion l ON l.id_solicitud = s.id_solicitud 
+  WHERE cp.id_condominio = $1
+  AND fecha_aprobado IS NOT null 
+  AND l.id_subramo IN ($2)
+  ORDER BY fecha_aprobado DESC 
+  limit 1
+  `,
   EDIT_CONDO_TYPE_BY_ID: 'UPDATE impuesto.condominio SET id_tipo_condominio = $2 WHERE id_condominio = $1 RETURNING *;',
+  EDIT_CONDO_APART_BY_ID: 'UPDATE impuesto.condominio SET apartamentos = $2 WHERE id_condominio = $1 RETURNING *;',
   GET_ALL_CONDO_TYPES: 'SELECT * FROM impuesto.tipo_condominio',
   GET_CONDOMINIUM_TYPE_BY_ID: 'SELECT tipo_condominio, tarifa_gas, tarifa_aseo, tarifa_inmueble_urbano FROM impuesto.condominio JOIN impuesto.tipo_condominio USING (id_tipo_condominio) WHERE id_condominio = $1',
   GET_CONDOMINIUMS: `
-      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial"
+      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial", cond.apartamentos
       FROM impuesto.contribuyente cont
       INNER JOIN impuesto.condominio cond ON cond.id_contribuyente = cont.id_contribuyente;
   `,
   GET_CONDOMINIUM: `
-      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial", p.nombre as "parroquia"
+      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial", cond.apartamentos, p.nombre as "parroquia"
       FROM impuesto.contribuyente cont
       INNER JOIN parroquia p ON p.id = cont.id_parroquia
       INNER JOIN impuesto.condominio cond ON cond.id_contribuyente = cont.id_contribuyente
       WHERE id_condominio = $1
   `,
   GET_CONDOMINIUM_BY_DOC: `
-      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial", p.nombre as "parroquia"
+      SELECT id_condominio AS "idCondominio", CONCAT(cont.tipo_documento, '-', cont.documento) AS documento, cont.razon_social AS "razonSocial", cond.apartamentos, p.nombre as "parroquia"
       FROM impuesto.contribuyente cont
       INNER JOIN parroquia p ON p.id = cont.id_parroquia
       INNER JOIN impuesto.condominio cond ON cond.id_contribuyente = cont.id_contribuyente

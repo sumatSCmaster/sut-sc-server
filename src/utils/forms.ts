@@ -100,6 +100,9 @@ export const createMockCertificate = async (procedure) => {
     const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION_MOCK, [procedure])).rows[0];
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${tramite.id}`, { errorCorrectionLevel: 'H' });
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
+    let codigoRRI;
+    if(tramite.nombretramitecorto === 'SIUR'){codigoRRI = (await client.query(queries.GET_RRI_BY_ID_TRAMITE,[tramite.id])).rows[0];}
+
     mainLogger.info(tramite.datos, 'tramite.datos');
     const datosCertificado = {
       id: tramite.id,
@@ -113,6 +116,7 @@ export const createMockCertificate = async (procedure) => {
       tipoTramite: tramite.tipotramite,
       certificado: tramite.sufijo === 'ompu' ? (tramite.aprobado ? tramite.formatocertificado : tramite.formatorechazo) : tramite.formatocertificado,
       bancos: (await getAllBanks()).banks,
+      codigoRRI: tramite.nombretramitecorto === 'SIUR' ? codigoRRI : ''
     };
     mainLogger.info('<-----------datos certificado----------->:', datosCertificado);
 
