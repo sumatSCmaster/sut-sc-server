@@ -1624,7 +1624,7 @@ export const processProcedureAnalist = async (procedure, user: Usuario, client: 
       aprobado: response.aprobado,
       bill: ordenanzas,
     };
-
+    console.log('prueba rodrigo');
     await sendNotification(user, `Se ha procesado un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
     sendEmail({
       ...tramite,
@@ -1651,7 +1651,7 @@ export const processProcedureAnalist = async (procedure, user: Usuario, client: 
  * @param client Database client
  * @returns Next state for procedure
  */
-const getNextEventForProcedure = async (procedure, client): Promise<any> => {
+export const getNextEventForProcedure = async (procedure, client): Promise<any> => {
   const response = (await client.query(queries.GET_PROCEDURE_STATE, [procedure.idTramite])).rows[0];
   mainLogger.info(`getNextEventForProcedure - response ${JSON.stringify(response)}`);
   const nextEvent = procedureEventHandler(procedure.sufijo, response.state);
@@ -1670,7 +1670,7 @@ const getNextEventForProcedure = async (procedure, client): Promise<any> => {
 /**
  *
  */
-const procedureEvents = switchcase({
+export const procedureEvents = switchcase({
   pa: { iniciado: 'validar_pa', validando: 'enproceso_pa', enproceso: 'finalizar_pa' },
   pd: { iniciado: 'enproceso_pd', enproceso: 'ingresardatos_pd', ingresardatos: 'validar_pd', validando: 'finalizar_pd' },
   // cr: { iniciado: 'validar_cr', validando: 'enproceso_cr', enproceso: 'revisar_cr', enrevision: { true: 'finalizar_cr', false: 'rechazar_cr' } },
@@ -1725,7 +1725,7 @@ const procedureEvents = switchcase({
  * @param suffix Procedure model suffix
  * @param state Actual procedure instance state
  */
-const procedureEventHandler = (suffix, state) => {
+export const procedureEventHandler = (suffix, state) => {
   return procedureEvents(suffix)[state];
 };
 
