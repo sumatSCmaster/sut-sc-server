@@ -74,7 +74,7 @@
   display: -webkit-flex;
   justify-content: end;
   -webkit-justify-content: end;
-  align-items: flex-end;
-  -webkit-align-items: flex-end;
+  align-items: end;
+  -webkit-align-items: end;
   width: 80%;
 }
