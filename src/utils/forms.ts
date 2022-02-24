@@ -101,7 +101,7 @@ export const createMockCertificate = async (procedure) => {
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${tramite.id}`, { errorCorrectionLevel: 'H' });
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     let codigoRRI;
-    if(tramite.nombretramitecorto === 'SIUR'){codigoRRI = (await client.query(queries.GET_RRI_BY_ID_TRAMITE,[tramite.id])).rows[0];}
+    if(tramite.nombretramitecorto === 'SIUR'){codigoRRI = (await client.query(queries.GET_RRI_BY_ID_TRAMITE,[tramite.id])).rows[0].codigo_rri;}
 
     mainLogger.info(tramite.datos, 'tramite.datos');
     const datosCertificado = {
