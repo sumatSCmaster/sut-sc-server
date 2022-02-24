@@ -5,6 +5,7 @@ import { validateProcedure, getProcedureById } from './procedures';
 import { validateFining } from './fines';
 import { PoolClient } from 'pg';
 import switchcase from '@utils/switch';
+import { procedureEventHandler, getNextEventForProcedure, procedureEvents } from './procedures';
 import { validateApplication, validateAgreementFraction, getApplicationsAndSettlementsById, getAgreementFractionById, getApplicationsAndSettlementsByIdNots, fixatedAmount } from './settlement';
 import moment from 'moment';
 import { mainLogger } from '@utils/logger';
@@ -271,6 +272,15 @@ export const approveSinglePayment = async (id, user) => {
           await client.query(queries.UPDATE_PAYMENT_SETTLEMENT, [id]);
         }
       }
+
+      // if (pago.concepto === 'TRAMITE') {
+      //   await client.query(queries.UPDATE_UNAPPROVED_STATE_FOR_PROCEDURE, [true, pago.id_procedimiento]);
+      //   const prcdInfo = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [pago.id_procedimiento])).rows[0];
+      //   console.log(prcdInfo, 'RODRIGO prcdInfo');
+      //   const nextEvent = await getNextEventForProcedure({ idTramite: pago.id_procedimiento, sufijo: prcdInfo.sufijo, aprobado: prcdInfo?.tipoTramite === 43 ? 'cat' : true }, client);
+      //   console.log(nextEvent, 'RODRIGO');
+      //   await client.query(queries.UPDATE_STATE, [pago.id_procedimiento, nextEvent, null, parseInt(prcdInfo.costo), null]);
+      // }
 
       const solicitudInfo = pago.concepto === 'IMPUESTO' ? (await client.query(queries.PAYMENT_SETTLEMENT_INFO, [id])).rows[0] : null;
 
