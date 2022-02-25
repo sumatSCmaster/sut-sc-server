@@ -80,3 +80,8 @@
   align-items: start;
   -webkit-align-items: start;
 }
+
+.containerCodigo > p {
+  padding: 0;
+  margin: 5px;
+}
