@@ -70,8 +70,13 @@
 }
 
 .containerCodigo{
+  margin-top: 10px;
   display: flex;
   display: -webkit-flex;
   flex-direction: column;
   -webkit-flex-direction: column;
+  justify-content: start;
+  -webkit-justify-content: start;
+  align-items: start;
+  -webkit-align-items: start;
 }
