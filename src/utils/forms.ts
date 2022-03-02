@@ -36,6 +36,8 @@ export const createCertificate = async (procedure, client: PoolClient): Promise<
   const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION, [procedure.idTramite])).rows[0];
   const PETRO = (await client.query(queries.GET_PETRO_VALUE_FORMAT)).rows[0].valor;
   const costoFormateado = tramite?.costo ? new Intl.NumberFormat('de-DE').format(parseFloat(tramite?.costo)) : '0';
+  const tramiteCodigoRRI = tramite.nombretramitecorto === 'SIUR' ? (await client.query(queries.GET_RRI_BY_ID_TRAMITE,[tramite.id])).rows[0]?.codigo_rri : 'N/A';
+
   const procedureData = {
     id: procedure.idTramite,
     fecha: tramite.fechacreacion,
@@ -49,6 +51,7 @@ export const createCertificate = async (procedure, client: PoolClient): Promise<
     PETRO,
     costoFormateado,
     bancos: (await getAllBanks()).banks,
+    codigoRRI: tramite.nombretramitecorto === 'SIUR' ? tramiteCodigoRRI : 'N/A'
   };
   const form = (await createForm(procedureData, client)) as string;
   return form;
