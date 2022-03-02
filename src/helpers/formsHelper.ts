@@ -9,7 +9,7 @@ const written = require('written-number');
 
 const dev = process.env.NODE_ENV !== 'production';
 
-export const createForm = async ({ fecha, codigo, formato, tramite, institucion, id, datos, tipoTramite, estado, costoFormateado = '', PETRO = '', costo = 0 }, client) => {
+export const createForm = async ({ fecha, codigo, formato, tramite, institucion, id, datos, tipoTramite, estado, costoFormateado = '', PETRO = '', costo = 0, codigoRRI = '' }, client) => {
   const response = (await client.query(queries.GET_PLANILLA_AND_CERTIFICATE_TYPE_PROCEDURE, [tipoTramite])).rows[0];
   const aprobado = (await client.query(queries.GET_APPROVED_STATE_FOR_PROCEDURE, [id])).rows[0]?.aprobado;
   const planilla = estado === 'iniciado' ? response.planilla : response.sufijo === 'ompu' ? (aprobado ? response.certificado : response.planilla_rechazo) : response.certificado;
@@ -32,6 +32,7 @@ export const createForm = async ({ fecha, codigo, formato, tramite, institucion,
       PETRO,
       costo,
       written,
+      codigoRRI
     });
 
     const pdfDir = resolve(__dirname, `../../archivos/tramites/${codigo}/${dir.split('/').pop()}`);
