@@ -69,12 +69,19 @@
   font-weight: normal;
 }
 
-.containerCodigoRRI{
+.containerCodigo{
+  margin-top: 10px;
   display: flex;
   display: -webkit-flex;
-  justify-content: end;
-  -webkit-justify-content: end;
-  align-items: end;
-  -webkit-align-items: end;
-  width: 80%;
+  flex-direction: column;
+  -webkit-flex-direction: column;
+  justify-content: start;
+  -webkit-justify-content: start;
+  align-items: start;
+  -webkit-align-items: start;
+}
+
+.containerCodigo > p {
+  padding: 0;
+  margin: 5px;
 }
