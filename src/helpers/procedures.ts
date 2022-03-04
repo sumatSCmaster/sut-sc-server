@@ -103,6 +103,7 @@ const esDaniel = ({ tipoUsuario, institucion }) => {
 const getProcedureInstances = async (user, client: PoolClient, support?) => {
   try {
     let response = (await procedureInstanceHandler(user, client, support)).rows; //TODO: corregir el handler para que no sea tan forzado
+    console.log(response, 'RODRIGO MEU DEUSSSSS OBRIGADO SEMPRE PAIIIIII');
     const takings = (await client.query(queries.GET_TAKINGS_OF_INSTANCES, [response.map((el) => +el.id)])).rows;
     if (user.tipoUsuario === 3 || user.tipoUsuario === 6) {
       const permissions = (await client.query(queries.GET_USER_PERMISSIONS, [user.id])).rows.map((row) => +row.id_tipo_tramite) || [];
@@ -1873,7 +1874,6 @@ const procedureInstanceHandler = (user, client, support) => {
       } else {
         if (user.institucion?.cargo?.id === 46 || user.institucion?.cargo?.id === 98) {
           query = 5;
-          console.log('SERA Q FUNCIONA DIOS MIOOOOOOO MEU DEUSSSSSSSSSSS');
         } else if (user.institucion?.cargo?.id === 97) {
           query = 2;
         } else {
