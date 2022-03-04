@@ -36,7 +36,7 @@ export const createCertificate = async (procedure, client: PoolClient): Promise<
   const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION, [procedure.idTramite])).rows[0];
   const PETRO = (await client.query(queries.GET_PETRO_VALUE_FORMAT)).rows[0].valor;
   const costoFormateado = tramite?.costo ? new Intl.NumberFormat('de-DE').format(parseFloat(tramite?.costo)) : '0';
-  const tramiteCodigoRRI = tramite.nombretramitecorto === 'SIUR' ? (await client.query(queries.GET_RRI_BY_ID_TRAMITE,[tramite.id])).rows[0]?.codigo_rri : 'N/A';
+  const tramiteCodigoRRI = tramite.nombretramitecorto === 'SIUR' ? (await client.query(queries.GET_RRI_BY_ID_TRAMITE, [tramite.id])).rows[0]?.codigo_rri : 'N/A';
 
   const procedureData = {
     id: procedure.idTramite,
@@ -51,7 +51,7 @@ export const createCertificate = async (procedure, client: PoolClient): Promise<
     PETRO,
     costoFormateado,
     bancos: (await getAllBanks()).banks,
-    codigoRRI: tramite.nombretramitecorto === 'SIUR' ? tramiteCodigoRRI : 'N/A'
+    codigoRRI: tramite.nombretramitecorto === 'SIUR' ? tramiteCodigoRRI : 'N/A',
   };
   const form = (await createForm(procedureData, client)) as string;
   return form;
@@ -104,7 +104,9 @@ export const createMockCertificate = async (procedure) => {
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${tramite.id}`, { errorCorrectionLevel: 'H' });
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     let codigoRRI;
-    if(tramite.nombretramitecorto === 'SIUR'){codigoRRI = (await client.query(queries.GET_RRI_BY_ID_TRAMITE,[tramite.id])).rows[0]?.codigo_rri;}
+    if (tramite.nombretramitecorto === 'SIUR') {
+      codigoRRI = (await client.query(queries.GET_RRI_BY_ID_TRAMITE, [tramite.id])).rows[0]?.codigo_rri;
+    }
 
     mainLogger.info(tramite.datos, 'tramite.datos');
     const datosCertificado = {
@@ -119,7 +121,7 @@ export const createMockCertificate = async (procedure) => {
       tipoTramite: tramite.tipotramite,
       certificado: tramite.sufijo === 'ompu' ? (tramite.aprobado ? tramite.formatocertificado : tramite.formatorechazo) : tramite.formatocertificado,
       bancos: (await getAllBanks()).banks,
-      codigoRRI: tramite.nombretramitecorto === 'SIUR' ? (codigoRRI ? codigoRRI : 'N/A') : ''
+      codigoRRI: tramite.nombretramitecorto === 'SIUR' ? (codigoRRI ? codigoRRI : 'N/A') : '',
     };
     mainLogger.info('<-----------datos certificado----------->:', datosCertificado);
 
@@ -161,16 +163,14 @@ export const createRRICertificate = async (procedure, areaTerreno, areaConstrucc
           areaTerreno,
           areaConstruccion,
           codigoRRI,
-          ubicadoEn, 
-          parroquiaEdificio
+          ubicadoEn,
+          parroquiaEdificio,
         },
         estado: 'finalizado',
         tipoTramite: tramite.tipotramite,
         certificado: 'cpu-solv-RRI',
       };
       mainLogger.info('<-----------datos certificado----------->:', datosCertificado);
-      console.log(datosCertificado, 'PABLITO datosCertificado');
-      console.log(tramite, 'PABLITO tramite');
       const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
         ...datosCertificado,
         cache: false,
