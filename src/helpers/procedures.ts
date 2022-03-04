@@ -1624,7 +1624,6 @@ export const processProcedureAnalist = async (procedure, user: Usuario, client: 
       aprobado: response.aprobado,
       bill: ordenanzas,
     };
-    console.log('prueba rodrigo');
     await sendNotification(user, `Se ha procesado un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
     sendEmail({
       ...tramite,
@@ -1874,6 +1873,7 @@ const procedureInstanceHandler = (user, client, support) => {
       } else {
         if (user.institucion?.cargo?.id === 46 || user.institucion?.cargo?.id === 98) {
           query = 5;
+          console.log('SERA Q FUNCIONA DIOS MIOOOOOOO MEU DEUSSSSSSSSSSS');
         } else if (user.institucion?.cargo?.id === 97) {
           query = 2;
         } else {
