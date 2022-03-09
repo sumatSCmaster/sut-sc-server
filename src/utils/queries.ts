@@ -808,7 +808,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     impuesto.liquidacion l ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.solicitud s ON l.id_solicitud = s.id_solicitud INNER JOIN\
      (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state FROM impuesto.evento_solicitud es GROUP\
       BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud INNER JOIN impuesto.contribuyente c ON s.id_contribuyente = c.id_contribuyente WHERE\
-       ev.state = 'ingresardatos' AND c.id_contribuyente = $1 GROUP BY rm.descripcion, rm.id_ramo HAVING SUM(l.monto_petro) > 0",
+       ev.state = 'ingresardatos' AND c.id_contribuyente = $1 AND fecha_liquidacion <> '2022' GROUP BY rm.descripcion, rm.id_ramo HAVING SUM(l.monto_petro) > 0", //AÑO DE LA LIQUIDACIÓN MODIFICADO PARA QUE NO SE TRAIGA LAS DE 2022, CAMBIO HECHO EL 09/03/2022
   GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR:
     'SELECT DISTINCT ON (s.id_solicitud, s.fecha) * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud WHERE s.id_contribuyente = $1\
      AND l.id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $2 AND id_contribuyente = $1 LIMIT 1) ORDER BY s.fecha DESC',
@@ -1925,7 +1925,7 @@ ORDER BY fecha_liquidacion DESC;
   INSERT_DISCOUNT_FOR_SETTLEMENT: 'INSERT INTO impuesto.liquidacion_descuento (id_liquidacion, porcentaje_descuento) VALUES ($1, $2)',
   CREATE_AGREEMENT: 'INSERT INTO impuesto.convenio (id_solicitud, cantidad) VALUES ($1, $2) RETURNING *',
   CREATE_AGREEMENT_FRACTION: 'SELECT * FROM impuesto.insert_fraccion($1, $2, $3, $4)',
-  UPDATE_SETTLEMENT_AMOUNT_AND_DATA: 'UPDATE impuesto.liquidacion SET datos = $1, monto_petro = $2 WHERE id_liquidacion = $3 RETURNING *',
+  UPDATE_SETTLEMENT_AMOUNT_AND_DATA: `UPDATE impuesto.liquidacion SET datos = $1, monto_petro = $2 WHERE id_liquidacion = $3 AND EXTRACT(year FROM fecha_liquidacion) <> '2022' RETURNING *`, //AÑO DE LA LIQUIDACIÓN MODIFICADO PARA QUE NO MODIFIQUE LAS DE 2022, CAMBIO HECHO EL 09/03/2022
   GET_ACTIVE_AE_SETTLEMENTS_FOR_COMPLEMENTATION: `SELECT l.*, s.state as estado FROM impuesto.liquidacion l 
   INNER JOIN (SELECT s.id_solicitud AS id,
   s.id_tipo_tramite AS tipotramite,
