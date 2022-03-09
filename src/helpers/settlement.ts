@@ -3967,7 +3967,6 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
                 const newDatos = { ...el.datos, descuento: x.porcDescuento };
                 const newMonto = (el.monto_petro * (1 - x.porcDescuento)).toFixed(8);
                 const newSettlement = (await client.query(queries.UPDATE_SETTLEMENT_AMOUNT_AND_DATA, [newDatos, newMonto, el.id_liquidacion])).rows[0];
-                console.log(newSettlement, 'RODRIGO MI DIOS POR FAVOR VAMOS BOQUITAAAAAAA');
                 return {
                   id: newSettlement.id_liquidacion,
                   ramo: branch,
