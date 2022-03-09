@@ -377,7 +377,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     FROM propietario p INNER JOIN propietario_inmueble pi ON p.id_propietario = pi.id_propietario;',
   GET_PROPERTY_BY_ID: 'SELECT * FROM inmueble_urbano_view WHERE id=$1',
   GET_RRI_CERTIFICATES_BY_IDS: `SELECT id_tramite AS "idTramite", url_certificado AS "urlCertificado" FROM inmueble_rri WHERE id_tramite = ANY ($1::int[])`,
-  GET_RRI_BY_ID_TRAMITE:'SELECT codigo_rri FROM inmueble_rri WHERE id_tramite = $1',
+  GET_RRI_BY_ID_TRAMITE: 'SELECT codigo_rri FROM inmueble_rri WHERE id_tramite = $1',
   INSERT_RRI: `INSERT INTO inmueble_rri (codigo_rri, id_tramite, url_certificado) VALUES ($1, $2, $3)`,
   //ordenanza
   CREATE_ORDINANCE:
@@ -801,13 +801,14 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     AND sr.descripcion != 'Convenio de Pago' 
     AND R.referencia_municipal= $1 
     AND r.id_contribuyente = $2 
-    GROUP BY rm.id_ramo, rm.descripcion HAVING SUM (l.monto_petro) > 0`,
+    AND EXTRACT(year FROM l.fecha_liquidacion) <> '2022'
+    GROUP BY rm.id_ramo, rm.descripcion HAVING SUM (l.monto_petro) > 0`, //AÑO DE LA LIQUIDACIÓN MODIFICADO PARA QUE NO SE TRAIGA LAS DE 2022, CAMBIO HECHO EL 09/03/2022
   GET_APPLICATION_DEBTS_FOR_NATURAL_CONTRIBUTOR:
     "SELECT DISTINCT m.id_ramo, rm.descripcion, ROUND(SUM(l.monto_petro),8) as monto FROM impuesto.ramo rm INNER JOIN impuesto.subramo sr ON rm.id_ramo = sr.id_ramo INNER JOIN\
     impuesto.liquidacion l ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.solicitud s ON l.id_solicitud = s.id_solicitud INNER JOIN\
      (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state FROM impuesto.evento_solicitud es GROUP\
       BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud INNER JOIN impuesto.contribuyente c ON s.id_contribuyente = c.id_contribuyente WHERE\
-       ev.state = 'ingresardatos' AND c.id_contribuyente = $1 GROUP BY rm.descripcion, rm.id_ramo HAVING SUM(l.monto_petro) > 0",
+       ev.state = 'ingresardatos' AND c.id_contribuyente = $1 AND fecha_liquidacion <> '2022' GROUP BY rm.descripcion, rm.id_ramo HAVING SUM(l.monto_petro) > 0", //AÑO DE LA LIQUIDACIÓN MODIFICADO PARA QUE NO SE TRAIGA LAS DE 2022, CAMBIO HECHO EL 09/03/2022
   GET_APPLICATION_INSTANCES_BY_CONTRIBUTOR:
     'SELECT DISTINCT ON (s.id_solicitud, s.fecha) * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud WHERE s.id_contribuyente = $1\
      AND l.id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $2 AND id_contribuyente = $1 LIMIT 1) ORDER BY s.fecha DESC',
@@ -1558,16 +1559,22 @@ ORDER BY razon_social;`,
        	GROUP BY c.tipo_documento, c.documento, c.razon_social, s.aprobado, l.monto, l.monto_petro, r.descripcion, sub.descripcion) as data 
        	GROUP BY data.tipo_documento, data.documento, data.razon_social, data.aprobado, data.ramo, data.subramo ORDER BY razon_social;
   `,
-  GET_CPU_TIME_FUNCTIONARY: `SELECT t.codigo_tramite, DATE_PART('day', t.fecha_culminacion - t.fecha_creacion) AS dia, t.fecha_creacion, t.fecha_culminacion,u.nombre_completo, ca.descripcion AS cargo
-    FROM movimientos m
-    INNER JOIN cuenta_funcionario cf ON m.id_usuario = cf.id_usuario
-    INNER JOIN cargo ca ON ca.id_cargo = cf.id_cargo
-    INNER JOIN tramite t ON t.id_tramite = m.id_procedimiento
-    INNER JOIN usuario u ON u.id_usuario = m.id_usuario
-    WHERE m.tipo_movimiento like '%cr' 
-    AND t.fecha_creacion >= $1
-    AND t.fecha_culminacion <= $2
-    ORDER BY cargo, t.codigo_tramite, t.fecha_creacion`,
+  GET_CPU_TIME_FUNCTIONARY: `SELECT t.codigo_tramite
+  ,DATE_PART('day', t.fecha_culminacion - t.fecha_creacion) AS dia
+  ,TO_CHAR(t.fecha_creacion, 'DD-MM-YYYY HH24:MI') AS tramite_fecha_creacion
+  ,TO_CHAR(t.fecha_culminacion, 'DD-MM-YYYY HH24:MI') AS tramite_fecha_culminacion
+  ,TO_CHAR(m.fecha_movimiento, 'DD-MM-YYYY HH24:MI') AS fecha_movimiento
+  ,u.nombre_completo AS nombre_de_funcionario ,ca.descripcion AS cargo 
+  ,m.tipo_movimiento
+  FROM movimientos m
+  INNER JOIN cuenta_funcionario cf ON m.id_usuario = cf.id_usuario
+  INNER JOIN cargo ca ON ca.id_cargo = cf.id_cargo
+  INNER JOIN tramite t ON t.id_tramite = m.id_procedimiento
+  INNER JOIN usuario u ON u.id_usuario = m.id_usuario
+  WHERE t.codigo_tramite LIKE '%CPU%' 
+  AND t.fecha_creacion >= $1
+  AND t.fecha_culminacion <= $2
+  ORDER BY t.codigo_tramite, m.fecha_movimiento;`,
   //CIERRE DE CAJA
   GET_CASHIER_POS: `SELECT b.nombre as banco, SUM(p.monto) as monto, COUNT(*) as transacciones
         FROM pago p 
@@ -1919,12 +1926,12 @@ ORDER BY fecha_liquidacion DESC;
                  WHERE id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE id_registro_municipal = $1 LIMIT 1))
                 GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
       ) ss  ON ss.id = l.id_solicitud 
-  WHERE ss.state = 'ingresardatos' AND id_registro_municipal = $1 AND
-   id_subramo IN (SELECT id_subramo FROM impuesto.subramo WHERE descripcion !='Convenio de Pago' AND id_ramo = $2);`,
+  WHERE ss.state = 'ingresardatos' AND id_registro_municipal = $1 AND EXTRACT(YEAR FROM l.fecha_liquidacion) <> '2022' AND
+   id_subramo IN (SELECT id_subramo FROM impuesto.subramo WHERE descripcion !='Convenio de Pago' AND id_ramo = $2);`, //AÑO DE LA LIQUIDACIÓN MODIFICADO PARA QUE NO MODIFIQUE LAS DE 2022, CAMBIO HECHO EL 09/03/2022
   INSERT_DISCOUNT_FOR_SETTLEMENT: 'INSERT INTO impuesto.liquidacion_descuento (id_liquidacion, porcentaje_descuento) VALUES ($1, $2)',
   CREATE_AGREEMENT: 'INSERT INTO impuesto.convenio (id_solicitud, cantidad) VALUES ($1, $2) RETURNING *',
   CREATE_AGREEMENT_FRACTION: 'SELECT * FROM impuesto.insert_fraccion($1, $2, $3, $4)',
-  UPDATE_SETTLEMENT_AMOUNT_AND_DATA: 'UPDATE impuesto.liquidacion SET datos = $1, monto_petro = $2 WHERE id_liquidacion = $3 RETURNING *',
+  UPDATE_SETTLEMENT_AMOUNT_AND_DATA: `UPDATE impuesto.liquidacion SET datos = $1, monto_petro = $2 WHERE id_liquidacion = $3 RETURNING *`,
   GET_ACTIVE_AE_SETTLEMENTS_FOR_COMPLEMENTATION: `SELECT l.*, s.state as estado FROM impuesto.liquidacion l 
   INNER JOIN (SELECT s.id_solicitud AS id,
   s.id_tipo_tramite AS tipotramite,
