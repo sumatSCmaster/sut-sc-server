@@ -1920,12 +1920,12 @@ ORDER BY fecha_liquidacion DESC;
                  WHERE id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE id_registro_municipal = $1 LIMIT 1))
                 GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
       ) ss  ON ss.id = l.id_solicitud 
-  WHERE ss.state = 'ingresardatos' AND id_registro_municipal = $1 AND
-   id_subramo IN (SELECT id_subramo FROM impuesto.subramo WHERE descripcion !='Convenio de Pago' AND id_ramo = $2);`,
+  WHERE ss.state = 'ingresardatos' AND id_registro_municipal = $1 AND EXTRACT(YEAR FROM l.fecha_liquidacion) <> '2022' AND
+   id_subramo IN (SELECT id_subramo FROM impuesto.subramo WHERE descripcion !='Convenio de Pago' AND id_ramo = $2);`, //AÑO DE LA LIQUIDACIÓN MODIFICADO PARA QUE NO MODIFIQUE LAS DE 2022, CAMBIO HECHO EL 09/03/2022
   INSERT_DISCOUNT_FOR_SETTLEMENT: 'INSERT INTO impuesto.liquidacion_descuento (id_liquidacion, porcentaje_descuento) VALUES ($1, $2)',
   CREATE_AGREEMENT: 'INSERT INTO impuesto.convenio (id_solicitud, cantidad) VALUES ($1, $2) RETURNING *',
   CREATE_AGREEMENT_FRACTION: 'SELECT * FROM impuesto.insert_fraccion($1, $2, $3, $4)',
-  UPDATE_SETTLEMENT_AMOUNT_AND_DATA: `UPDATE impuesto.liquidacion SET datos = $1, monto_petro = $2 WHERE id_liquidacion = $3 AND EXTRACT(year FROM fecha_liquidacion) <> '2022' RETURNING *`, //AÑO DE LA LIQUIDACIÓN MODIFICADO PARA QUE NO MODIFIQUE LAS DE 2022, CAMBIO HECHO EL 09/03/2022
+  UPDATE_SETTLEMENT_AMOUNT_AND_DATA: `UPDATE impuesto.liquidacion SET datos = $1, monto_petro = $2 WHERE id_liquidacion = $3 RETURNING *`,
   GET_ACTIVE_AE_SETTLEMENTS_FOR_COMPLEMENTATION: `SELECT l.*, s.state as estado FROM impuesto.liquidacion l 
   INNER JOIN (SELECT s.id_solicitud AS id,
   s.id_tipo_tramite AS tipotramite,
