@@ -377,7 +377,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     FROM propietario p INNER JOIN propietario_inmueble pi ON p.id_propietario = pi.id_propietario;',
   GET_PROPERTY_BY_ID: 'SELECT * FROM inmueble_urbano_view WHERE id=$1',
   GET_RRI_CERTIFICATES_BY_IDS: `SELECT id_tramite AS "idTramite", url_certificado AS "urlCertificado" FROM inmueble_rri WHERE id_tramite = ANY ($1::int[])`,
-  GET_RRI_BY_ID_TRAMITE:'SELECT codigo_rri FROM inmueble_rri WHERE id_tramite = $1',
+  GET_RRI_BY_ID_TRAMITE: 'SELECT codigo_rri FROM inmueble_rri WHERE id_tramite = $1',
   INSERT_RRI: `INSERT INTO inmueble_rri (codigo_rri, id_tramite, url_certificado) VALUES ($1, $2, $3)`,
   //ordenanza
   CREATE_ORDINANCE:
@@ -801,7 +801,8 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     AND sr.descripcion != 'Convenio de Pago' 
     AND R.referencia_municipal= $1 
     AND r.id_contribuyente = $2 
-    GROUP BY rm.id_ramo, rm.descripcion HAVING SUM (l.monto_petro) > 0`,
+    AND EXTRACT(year FROM l.fecha_liquidacion) <> '2022'
+    GROUP BY rm.id_ramo, rm.descripcion HAVING SUM (l.monto_petro) > 0`, //AÑO DE LA LIQUIDACIÓN MODIFICADO PARA QUE NO SE TRAIGA LAS DE 2022, CAMBIO HECHO EL 09/03/2022
   GET_APPLICATION_DEBTS_FOR_NATURAL_CONTRIBUTOR:
     "SELECT DISTINCT m.id_ramo, rm.descripcion, ROUND(SUM(l.monto_petro),8) as monto FROM impuesto.ramo rm INNER JOIN impuesto.subramo sr ON rm.id_ramo = sr.id_ramo INNER JOIN\
     impuesto.liquidacion l ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.solicitud s ON l.id_solicitud = s.id_solicitud INNER JOIN\
