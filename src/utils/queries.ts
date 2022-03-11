@@ -878,7 +878,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   INNER JOIN (SELECT * FROM impuesto.actividad_economica_sucursal WHERE id_registro_municipal = $1) aes ON aes.numero_referencia = ae.numero_referencia
   ORDER BY minimo_tributable ASC 
   LIMIT 1;`,
-  GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID: `SELECT datos, monto, fecha_liquidacion, fecha_vencimiento FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud WHERE l.id_solicitud = $1 AND l.id_subramo = $2`,
+  GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID: `SELECT datos, monto, fecha_liquidacion, fecha_vencimiento FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud WHERE l.id_liquidacion = $1 AND l.id_subramo = $2`,
   CREATE_TAX_PAYMENT_APPLICATION: "SELECT * FROM impuesto.insert_solicitud($1, (SELECT id_tipo_tramite FROM tipo_tramite WHERE nombre_tramite = 'Pago de Impuestos'), $2)",
   UPDATE_TAX_APPLICATION_PAYMENT: 'SELECT * FROM impuesto.update_solicitud_state ($1, $2)',
   COMPLETE_TAX_APPLICATION_PAYMENT: 'SELECT * FROM impuesto.complete_solicitud_state($1, $2, null, true)',
