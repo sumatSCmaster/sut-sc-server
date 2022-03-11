@@ -801,7 +801,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     AND sr.descripcion != 'Convenio de Pago' 
     AND R.referencia_municipal= $1 
     AND r.id_contribuyente = $2 
-    AND EXTRACT(year FROM l.fecha_liquidacion) <> '2022'
+    AND l.datos#>>'{fecha, year}' <> '2022'
     GROUP BY rm.id_ramo, rm.descripcion HAVING SUM (l.monto_petro) > 0`, //AÑO DE LA LIQUIDACIÓN MODIFICADO PARA QUE NO SE TRAIGA LAS DE 2022, CAMBIO HECHO EL 09/03/2022
   GET_APPLICATION_DEBTS_FOR_NATURAL_CONTRIBUTOR:
     "SELECT DISTINCT m.id_ramo, rm.descripcion, ROUND(SUM(l.monto_petro),8) as monto FROM impuesto.ramo rm INNER JOIN impuesto.subramo sr ON rm.id_ramo = sr.id_ramo INNER JOIN\
@@ -1926,7 +1926,7 @@ ORDER BY fecha_liquidacion DESC;
                  WHERE id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE id_registro_municipal = $1 LIMIT 1))
                 GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
       ) ss  ON ss.id = l.id_solicitud 
-  WHERE ss.state = 'ingresardatos' AND id_registro_municipal = $1 AND EXTRACT(YEAR FROM l.fecha_liquidacion) <> '2022' AND
+  WHERE ss.state = 'ingresardatos' AND id_registro_municipal = $1 AND l.datos#>>'{fecha, year}' <> '2022' AND
    id_subramo IN (SELECT id_subramo FROM impuesto.subramo WHERE descripcion !='Convenio de Pago' AND id_ramo = $2);`, //AÑO DE LA LIQUIDACIÓN MODIFICADO PARA QUE NO MODIFIQUE LAS DE 2022, CAMBIO HECHO EL 09/03/2022
   INSERT_DISCOUNT_FOR_SETTLEMENT: 'INSERT INTO impuesto.liquidacion_descuento (id_liquidacion, porcentaje_descuento) VALUES ($1, $2)',
   CREATE_AGREEMENT: 'INSERT INTO impuesto.convenio (id_solicitud, cantidad) VALUES ($1, $2) RETURNING *',
