@@ -377,7 +377,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     FROM propietario p INNER JOIN propietario_inmueble pi ON p.id_propietario = pi.id_propietario;',
   GET_PROPERTY_BY_ID: 'SELECT * FROM inmueble_urbano_view WHERE id=$1',
   GET_RRI_CERTIFICATES_BY_IDS: `SELECT id_tramite AS "idTramite", url_certificado AS "urlCertificado" FROM inmueble_rri WHERE id_tramite = ANY ($1::int[])`,
-  GET_RRI_BY_ID_TRAMITE: 'SELECT * FROM inmueble_rri WHERE id_tramite = 81213 ORDER BY fecha_creacion DESC LIMIT 1',
+  GET_RRI_BY_ID_TRAMITE: 'SELECT codigo_rri FROM inmueble_rri WHERE id_tramite = $1 ORDER BY fecha_creacion DESC LIMIT 1',
   INSERT_RRI: `INSERT INTO inmueble_rri (codigo_rri, id_tramite, url_certificado, fecha_creacion) VALUES ($1, $2, $3,(NOW() - interval '4 hours'))`,
   //ordenanza
   CREATE_ORDINANCE:
