@@ -1,0 +1,63 @@
+extends default
+block css
+  link(rel="stylesheet", href="css/sedemat.css")
+block title
+block content
+  div#fecha
+    p 
+      b FECHA:
+      span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+  div.titleWithQR
+    p#title
+      b EXPENDIO DE BEBIDAS ALCOHÓLICAS
+      br
+      b LICENCIA N° #{licencia || (datos.funcionario.licencia && datos.funcionario.licencia.numeroLicencia) ? datos.funcionario.licencia : licencia}
+    div
+      img#QR(src=QR, alt='QR')
+  div#planilla
+    div(style={'text-align':'justify'})
+      p La Alcaldía de Maracaibo, de conformidad con el Artículo 45 del Decreto con Rango, Valor y Fuerza de la Ley de Impuesto de Alcohol y especies Alcohólicas publicada en Gaceta Oficial No. 6.151 Extraordinario de fecha 18/11/2014, en concordancia con la Ordenanza sobre Expendio. Distribución y Consumo de Especies Alcohólicas del Municipio Maracaibo publicada en Gaceta Municipal No. 315-14, de fecha 16/12/2014, a través del Servicio Desconcentrado Municipal de Administración Tributaria (SEDEMAT), otorga la presente autorización a:
+    div(style={'text-align':'start', 'margin-top':'50px'})
+      p 
+        b CONTRIBUYENTE: 
+        span #{datos.funcionario.razonSocial}
+      p 
+        b CON EL LEMA COMERCIAL: 
+        span #{datos.funcionario.denomComercial}
+      p 
+        b DOMICILIO FISCAL: 
+        span #{datos.funcionario.domicilio}   
+      p 
+        b RIM: 
+        span #{datos.funcionario.referenciaMunicipal}   
+      p 
+        b RIF: 
+        span #{datos.funcionario.tipoDocumento}-#{datos.funcionario.documento}
+      p 
+        b CLASIFICACIÓN DE EXPENDIOS: 
+        span #{datos.funcionario.clasificacion}
+      p 
+        b HORARIO: 
+        span #{datos.funcionario.horario}
+      p 
+        b REPRESENTANTE LEGAL: 
+        span #{datos.funcionario.representanteLegal}   
+    div(style={'text-align':'justify'})
+      p
+        span Por haber cumplido con los requisitos establecidos en la Ordenanza sobre Expendio Distribución y Consumo de Especies Alcohólicas del Municipio Maracaibo.
+        br
+        b Se expide en Maracaibo el dia #{moment().format('DD')} de #{moment().locale('es').format('MMMM')} del #{moment().format('YYYY')}.
+        br
+        b Esta Licencia es Válida hasta el: #{moment().add(2,'y').format('DD/MM/YYYY')}.
+    div(style={'justify-content': 'center', 'text-align': '-webkit-center', 'margin-top':'50px', 'margin-bottom':'50px'})
+      div(style={width:'350px'})
+        //- hr(style={'background-color':'#000', width:'350px', height:"2px", border:'none'})
+        img(src="images/firma2.png", style={width:'350px' }, alt="", srcset="")
+        b ESTA AUTORIZACIÓN ES INTRANSFERIBLE
+        br
+        b DEBE COLOCARSE EN UN LUGAR VISIBLE
+    div(style={'text-align':'justify'})
+      p De conformidad con el Artículo 28 de la ordenanza sobre Expendio, Distribución y Consumo de Bebidas Alcohólicas del Municipio Maracaibo, los contribuyentes deben renovar su autorización de Expendio oportunamente, así como cumplir con todos los trámites que modifique el registro según las condiciones en las que fue otorgadas, así mismo deberá cumplir con los deberes formales establecidos en la misma ordenanza, en caso contrario será sancionado de conformidad con la legislación vigente.
+    div(style={'text-align':'center'})
+      p
+        b NRO. DE CONTROL #{licencia || (datos.funcionario.licencia && datos.funcionario.licencia.numeroLicencia) ? datos.funcionario.licencia.numeroLicencia : ''}

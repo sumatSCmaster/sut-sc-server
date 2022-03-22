@@ -1,0 +1,71 @@
+extends default
+block css
+  link(rel="stylesheet", href="css/sedemat.css")
+block title
+block content
+  div#fecha
+    p
+      b FECHA:
+      span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+    p 
+      b Codigo de Recibo:
+      | &nbsp; #{datos.codigoRecibo}
+  div#planilla
+    div
+      h2 RECIBO
+    div.center
+      div.ticket(style={'border':'2px solid #3387ca'})
+        div.ticket-data
+          div
+            p
+              b Razon Social:&nbsp;
+              br
+              | #{datos.razonSocial}
+            p
+              b Documento:&nbsp;
+              br
+              | #{datos.tipoDocumento}-#{datos.documentoIden}
+            p
+              b Dirección:&nbsp;
+              br
+              | #{datos.direccion}            
+      
+          div(style={'margin-left':'5%'})
+            p
+              b RIM:&nbsp;
+              br
+              | #{datos.rim}
+            p
+              b Teléfono:&nbsp;
+              br
+              | #{datos.telefono}
+            p
+              b Cajero:&nbsp;
+              br
+              | #{datos.cajero}                 
+          div(style={'-webkit-flex': '0.5'}).center
+            img#QR(src=QR style={'margin-bottom': '10px'})
+    div           
+      each item in datos.items           
+        div(style={'font-size':'20px', 'font-weight':'bold'}).row-constancy
+          div(style={'text-align':'start', }) Descripción
+          div.center Fecha
+          div.center Monto (Bs)
+        hr.divider
+        each row in item
+          div.row-constancy.break-page
+            div(style={'text-align':'start' }) #{row.descripcion}
+            div.center #{row.mes}, #{row.anio}
+            div.center #{new Intl.NumberFormat('de-DE', {minimumFractionDigits:2}).format(row.monto ? row.monto : 0)}
+      hr.divider
+      div.row-constancy.break-page
+        div(style={'-webkit-flex': '2'}).end SubTotal
+        div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.subTotal? (datos.subTotal): 0)}      
+      div.row-constancy.break-page
+        div(style={'-webkit-flex': '2'}).end Multa
+        div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.multa ? (datos.multa): 0)}
+      div.row-constancy.break-page
+        div(style={'-webkit-flex': '2'}).end Total Bs.
+        div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.total ? (datos.total): 0)}        
+                 
+block footer
