@@ -34,10 +34,10 @@ html
               when 'IMTCUMA'
                 - nombre = 'Instituto Municipal de Transporte Colectivo y Urbano de Pasajeros del Municipio Maracaibo'
                 - rif = '' 
-              when 'SEDEMAT'
-                  - nombre = 'Servicio Desconcentrado Municipal de Administración Tributaria'
-                  - rif = 'G-20002908-0'
-            p Alcaldia de Maracaibo
+              when 'SEDEBAT'
+                  - nombre = 'Servicio Desconcentrado Bolivariano de Administración Tributaria'
+                  - rif = 'G-200091533'
+            p Alcaldia de San Francisco
             p #{nombre}
             p R.I.F.: #{rif}
           div.header-child
@@ -57,8 +57,8 @@ html
                 - src = 'images/POLIMARACAIBO.png' 
               when 'IMTCUMA'
                 - src = 'images/imtcuma.png' 
-              when 'SEDEMAT'
-                - src ='images/sedemat-logo.png'                                 
+              when 'SEDEBAT'
+                - src ='images/sedebat-logo.png'                                 
               default
                 - src = 'images/alcaldia-logo.png'
             if institucion === 'PMM' || institucion === 'CBM'
@@ -82,7 +82,7 @@ html
               - direccion = 'Avenida 3E Entre Calles 72 y 73. Sector La Lago, Edificio Club de Leones. Teléfono: (0261) 7934400'
             when 'CPU'
               - direccion = 'Av.3F con calle 81, Sector Valle Frío, Edif. CPU. Teléfono: 0414-3677150'
-            when 'SEDEMAT'
+            when 'SEDEBAT'
               - direccion = 'Telfs. (0261) 793.55.08 (Master) Fax. (0261) 793.58.69 Av. 3F entre calles 81 y 81A, Edif. CPU Planta Baja'                
           img#divider(src='images/franja-2.0.png')
           div(style={ display: '-webkit-flex', padding: '0px 50px', 'justify-content': 'center', '-webkit-justify-content': 'center' })
