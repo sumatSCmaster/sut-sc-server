@@ -185,9 +185,9 @@ export const createRPR = async (id: string, payload: { from: Date; to: Date; alc
     }
     mainLogger.info(liquidated.rows.reduce((prev, next) => prev + +next.cantidadLiq, 0) + compens.cantidadLiqTotal);
     mainLogger.info(liquidated.rows.reduce((prev, next) => prev + +next.liquidado, 0) + compens.liquidadoTotal);
-    const html = renderFile(resolve(__dirname, alcaldia ? `../views/planillas/sedemat-RPRA.pug` : `../views/planillas/sedemat-RPR.pug`), {
+    const html = renderFile(resolve(__dirname, alcaldia ? `../views/planillas/sedebat-RPRA.pug` : `../views/planillas/sedebat-RPR.pug`), {
       moment: require('moment'),
-      institucion: 'SEDEMAT',
+      institucion: 'SEDEBAT',
       datos: {
         ingresos: chunk(branches, 8),
         acumuladoIngresos: `CONTENIDO: TODOS LOS RAMOS, DESDE EL ${moment(payload.from).subtract(4, 'h').format('DD/MM/YYYY')} AL ${moment(payload.to).subtract(4, 'h').format('DD/MM/YYYY')}`,
@@ -198,8 +198,8 @@ export const createRPR = async (id: string, payload: { from: Date; to: Date; alc
         metodoPago: pagos,
       },
     });
-    const pdfDir = resolve(__dirname, alcaldia ? `../../archivos/sedemat/reportes/RPRA.pdf` : `../../archivos/sedemat/reportes/RPR.pdf`);
-    const dir = alcaldia ? `${process.env.SERVER_URL}/sedemat/reportes/RPRA.pdf` : `${process.env.SERVER_URL}/sedemat/reportes/RPR.pdf`;
+    const pdfDir = resolve(__dirname, alcaldia ? `../../archivos/sedebat/reportes/RPRA.pdf` : `../../archivos/sedebat/reportes/RPR.pdf`);
+    const dir = alcaldia ? `${process.env.SERVER_URL}/sedebat/reportes/RPRA.pdf` : `${process.env.SERVER_URL}/sedebat/reportes/RPR.pdf`;
     if (dev) {
       pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
         res(dir);
@@ -212,7 +212,7 @@ export const createRPR = async (id: string, payload: { from: Date; to: Date; alc
           } else {
             const bucketParams = {
               Bucket: process.env.BUCKET_NAME as string,
-              Key: alcaldia ? 'sedemat/reportes/RPRA.pdf' : `sedemat/reportes/RPR.pdf`,
+              Key: alcaldia ? 'sedebat/reportes/RPRA.pdf' : `sedebat/reportes/RPR.pdf`,
             };
             await S3Client.putObject({
               ...bucketParams,

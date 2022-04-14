@@ -40,7 +40,7 @@ export const getRetentionMonths = async ({ document, reference, docType, user }:
   try {
     if (!reference) throw { status: 403, message: 'Debe incluir un RIM de Agente de Retención' };
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows[0];
-    if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
+    if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEBAT' };
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
     if (!branch) throw { status: 404, message: 'No existe el RIM de Agente de Retención proporcionado' };
     const RD0ApplicationExists = (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.RD0, branch.id_registro_municipal])).rows[0];
@@ -384,7 +384,7 @@ export const insertRetentions = async ({ process, user }) => {
     //   `Se ha iniciado una solicitud para el contribuyente con el documento de identidad: ${solicitud.tipoDocumento}-${solicitud.documento}`,
     //   'CREATE_APPLICATION',
     //   'IMPUESTO',
-    //   { ...solicitud, estado: state, nombreCorto: 'SEDEMAT' },
+    //   { ...solicitud, estado: state, nombreCorto: 'SEDEBAT' },
     //   client
     // );
     return { status: 201, message: 'Declaracion de retencion creada satisfactoriamente', solicitud };

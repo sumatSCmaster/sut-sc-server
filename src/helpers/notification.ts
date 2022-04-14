@@ -111,7 +111,7 @@ export const getNotifications = async (user: Usuario): Promise<Notificacion[] | 
         const solicitud: Solicitud & { estado: string; nombreCorto: string } = {
           ...impuesto,
           estado: el.estadoNotificacion,
-          nombreCorto: 'SEDEMAT',
+          nombreCorto: 'SEDEBAT',
         };
         const notificacion = {
           id: el.id,

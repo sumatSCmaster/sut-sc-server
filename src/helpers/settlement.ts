@@ -174,11 +174,11 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
   let IU: any = undefined;
   try {
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [type, document])).rows[0];
-    if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
+    if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEBAT' };
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
     const contributorHasBranch = (await client.query(queries.GET_CONTRIBUTOR_HAS_BRANCH, [contributor.id_contribuyente])).rowCount > 0;
     if (!reference && contributorHasBranch) throw { status: 403, message: 'El contribuyente posee una referencia municipal, debe ingresarla' };
-    if ((!branch && reference) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEMAT' };
+    if ((!branch && reference) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEBAT' };
     const lastSettlementQuery = !!reference && branch ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
     const lastSettlementPayload = !!reference && branch ? branch?.id_registro_municipal : contributor.id_contribuyente;
     const IUApplicationExists =
@@ -274,13 +274,13 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
   let IU: any = undefined;
   try {
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [type, document])).rows[0];
-    if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
+    if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEBAT' };
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
     const contributorHasBranch = (await client.query(queries.GET_CONTRIBUTOR_HAS_BRANCH, [contributor.id_contribuyente])).rowCount > 0;
     if (!reference && contributorHasBranch) throw { status: 403, message: 'El contribuyente posee una referencia municipal, debe ingresarla' };
     mainLogger.info(`branch ${inspect(branch)}`);
     mainLogger.info(`contributor ${inspect(contributor)}`);
-    if ((!branch && reference) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEMAT' };
+    if ((!branch && reference) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en SEDEBAT' };
     const lastSettlementQuery = !!reference && branch ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
     const lastSettlementPayload = !!reference && branch ? branch?.id_registro_municipal : contributor.id_contribuyente;
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
@@ -644,7 +644,7 @@ export const getTaxPayerInfo = async ({ docType, document, type, gtic, client })
   try {
     if (type === 'NATURAL') {
       const naturalContributor = (await gtic.query(queries.gtic.GET_NATURAL_CONTRIBUTOR, [document, docType])).rows[0];
-      if (!naturalContributor) return { status: 200, contribuyente: { tipoContribuyente: type }, message: 'No existe un usuario registrado en SEDEMAT' };
+      if (!naturalContributor) return { status: 200, contribuyente: { tipoContribuyente: type }, message: 'No existe un usuario registrado en SEDEBAT' };
       taxPayer = {
         tipoContribuyente: type,
         documento: document,
@@ -662,7 +662,7 @@ export const getTaxPayerInfo = async ({ docType, document, type, gtic, client })
       };
     } else {
       const juridicalContributor = (await gtic.query(queries.gtic.GET_JURIDICAL_CONTRIBUTOR, [document, docType])).rows[0];
-      if (!juridicalContributor) return { status: 200, contribuyente: { tipoContribuyente: type }, message: 'No existe un usuario registrado en SEDEMAT' };
+      if (!juridicalContributor) return { status: 200, contribuyente: { tipoContribuyente: type }, message: 'No existe un usuario registrado en SEDEBAT' };
       taxPayer = {
         tipoContribuyente: type,
         documento: document,
@@ -2363,7 +2363,7 @@ export const getEntireDebtsForContributor = async ({ reference, docType, documen
     mainLogger.info(document, typeUser, docType, reference);
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const contribuyente = (await client.query(queries.GET_CONTRIBUTOR_BY_DOCUMENT_AND_DOC_TYPE, [document, docType])).rows[0];
-    if (!contribuyente) return { status: 404, message: 'El contribuyente no está registrado en SEDEMAT' };
+    if (!contribuyente) return { status: 404, message: 'El contribuyente no está registrado en SEDEBAT' };
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contribuyente.id_contribuyente])).rows[0];
     if (typeUser === 'JURIDICO' && !branch) throw { status: 404, message: 'La sucursal proporcionada no existe' };
     const hasActiveAgreement = (await client.query(queries.CONTRIBUTOR_HAS_ACTIVE_AGREEMENT_PROCEDURE, [docType, document, reference])).rowCount > 0;
@@ -2787,7 +2787,7 @@ export const initialUserLinking = async (linkingData, user) => {
     throw {
       status: error.tiempo ? 429 : 500,
       ...error,
-      message: errorMessageGenerator(error) || error.error.message || 'Error al iniciar el enlace de usuario de SEDEMAT',
+      message: errorMessageGenerator(error) || error.error.message || 'Error al iniciar el enlace de usuario de SEDEBAT',
     };
   } finally {
     client.release();
@@ -3060,7 +3060,7 @@ export const insertSettlements = async ({ process, user }) => {
     //   `Se ha iniciado una solicitud para el contribuyente con el documento de identidad: ${solicitud.tipoDocumento}-${solicitud.documento}`,
     //   'CREATE_APPLICATION',
     //   'IMPUESTO',
-    //   { ...solicitud, estado: state, nombreCorto: 'SEDEMAT' },
+    //   { ...solicitud, estado: state, nombreCorto: 'SEDEBAT' },
     //   client
     // );
     return { status: 201, message: 'Liquidaciones de impuestos creadas satisfactoriamente', solicitud };
@@ -3160,7 +3160,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
     //   `Se ${user.tipoUsuario === 4 ? `han ingresado los datos de pago` : `ha validado el pago`} de una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
     //   'UPDATE_APPLICATION',
     //   'IMPUESTO',
-    //   { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
+    //   { ...applicationInstance, estado: state, nombreCorto: 'SEDEBAT' },
     //   client
     // );
     return { status: 200, message: 'Pago añadido para la solicitud declarada', solicitud: applicationInstance };
@@ -3226,7 +3226,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
 //       `Se ${user.tipoUsuario === 4 ? `han ingresado los datos de pago` : `ha validado el pago`} de una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
 //       'UPDATE_APPLICATION',
 //       'IMPUESTO',
-//       { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
+//       { ...applicationInstance, estado: state, nombreCorto: 'SEDEBAT' },
 //       client
 //     );
 //     return { status: 200, message: 'Pago añadido para la solicitud declarada', solicitud: applicationInstance };
@@ -3325,7 +3325,7 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
     //   `Se ${user.tipoUsuario === 4 ? `han ingresado los datos de pago` : `ha validado el pago`} de un convenio para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
     //   'UPDATE_APPLICATION',
     //   'IMPUESTO',
-    //   { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
+    //   { ...applicationInstance, estado: state, nombreCorto: 'SEDEBAT' },
     //   client
     // );
     return { status: 200, message: 'Pago añadido para la solicitud declarada', solicitud: applicationInstance };
@@ -3387,7 +3387,7 @@ export const validateApplication = async (body, user, client) => {
     //   `Se ha finalizado una solicitud de pago de impuestos para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
     //   'UPDATE_APPLICATION',
     //   'IMPUESTO',
-    //   { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
+    //   { ...applicationInstance, estado: state, nombreCorto: 'SEDEBAT' },
     //   client
     // );
 
@@ -3450,7 +3450,7 @@ export const validateAgreementFraction = async (body, user, client: PoolClient) 
     //   `Se ha finalizado un pago de convenios para el contribuyente: ${applicationInstance.tipoDocumento}-${applicationInstance.documento}`,
     //   'UPDATE_APPLICATION',
     //   'IMPUESTO',
-    //   { ...applicationInstance, estado: state, nombreCorto: 'SEDEMAT' },
+    //   { ...applicationInstance, estado: state, nombreCorto: 'SEDEBAT' },
     //   client
     // );
 
@@ -3842,7 +3842,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
     //   `Se ha completado una solicitud de pago especial para el contribuyente con el documento de identidad: ${solicitud.tipoDocumento}-${solicitud.documento}`,
     //   'CREATE_APPLICATION',
     //   'IMPUESTO',
-    //   { ...solicitud, estado: state, nombreCorto: 'SEDEMAT' },
+    //   { ...solicitud, estado: state, nombreCorto: 'SEDEBAT' },
     //   client
     // );
     return { status: 201, message: 'Solicitud de liquidacion especial creada satisfactoriamente', solicitud };
@@ -4077,10 +4077,10 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     return new Promise(async (res, rej) => {
-      const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-AE.pug`), {
+      const html = renderFile(resolve(__dirname, `../views/planillas/sedebat-solvencia-AE.pug`), {
         moment: require('moment'),
         tramite: 'PAGO DE IMPUESTOS',
-        institucion: 'SEDEMAT',
+        institucion: 'SEDEBAT',
         QR: linkQr,
         datos: {
           codigo: application.id,
@@ -4096,8 +4096,8 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
           fechaLetra: `${moment().date()} de ${application.datos.fecha.month} de ${application.datos.fecha.year}`,
         },
       });
-      const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`);
-      const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`;
+      const pdfDir = resolve(__dirname, `../../archivos/sedebat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`);
+      const dir = `${process.env.SERVER_URL}/sedebat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`;
       if (dev) {
         pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
           await pool.query(queries.UPDATE_CERTIFICATE_SETTLEMENT, [dir, application.idLiquidacion]);
@@ -4112,7 +4112,7 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
               const bucketParams = {
                 Bucket: process.env.BUCKET_NAME as string,
 
-                Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`,
+                Key: `/sedebat/${application.id}/AE/${application.idLiquidacion}/solvencia.pdf`,
               };
               await S3Client.putObject({
                 ...bucketParams,
@@ -4178,7 +4178,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
           fecha: currentDate,
           tipo: 'SM',
           titulo: 'FACTURA POR SERVICIOS MUNICIPALES',
-          institucion: 'SEDEMAT',
+          institucion: 'SEDEBAT',
           datos: {
             nroSolicitud: application.id,
             nroPlanilla: 10010111,
@@ -4243,7 +4243,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             fecha: currentDate,
             tipo: 'SM',
             titulo: 'FACTURA POR SERVICIOS MUNICIPALES',
-            institucion: 'SEDEMAT',
+            institucion: 'SEDEBAT',
             datos: {
               nroSolicitud: application.id,
               nroPlanilla: 10010111,
@@ -4309,7 +4309,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
         moment: require('moment'),
         fecha: currentDate,
         titulo: 'FACTURA POR SERVICIOS MUNICIPALES',
-        institucion: 'SEDEMAT',
+        institucion: 'SEDEBAT',
         datos: {
           nroSolicitud: application.id,
           nroPlanilla: 10010111,
@@ -4367,7 +4367,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
           moment: require('moment'),
           fecha: currentDate,
           titulo: 'FACTURA INMUEBLE URBANO',
-          institucion: 'SEDEMAT',
+          institucion: 'SEDEBAT',
           datos: {
             nroSolicitud: application.id,
             nroPlanilla: 10010111,
@@ -4412,10 +4412,10 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
 
     return new Promise(async (res, rej) => {
       try {
-        let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-SM.pug`), certInfo));
-        const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/${application.idSubramo === 9 ? 'IU' : 'SM'}/${application.idLiquidacion}/recibo.pdf`);
-        const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/${application.idSubramo === 9 ? 'IU' : 'SM'}/${application.idLiquidacion}/recibo.pdf`;
-        const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+        let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedebat-cert-SM.pug`), certInfo));
+        const pdfDir = resolve(__dirname, `../../archivos/sedebat/${application.id}/${application.idSubramo === 9 ? 'IU' : 'SM'}/${application.idLiquidacion}/recibo.pdf`);
+        const dir = `${process.env.SERVER_URL}/sedebat/${application.id}/${application.idSubramo === 9 ? 'IU' : 'SM'}/${application.idLiquidacion}/recibo.pdf`;
+        const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedebat/${application.id}`, { errorCorrectionLevel: 'H' });
 
         let buffersArray: any[] = await Promise.all(
           htmlArray.map((html) => {
@@ -4482,7 +4482,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               const bucketParams = {
                 Bucket: process.env.BUCKET_NAME as string,
 
-                Key: `/sedemat/${application.id}/${application.idSubramo === 9 ? 'IU' : 'SM'}/${application.idLiquidacion}/recibo.pdf`,
+                Key: `/sedebat/${application.id}/${application.idSubramo === 9 ? 'IU' : 'SM'}/${application.idLiquidacion}/recibo.pdf`,
               };
               await S3Client.putObject({
                 ...bucketParams,
@@ -4510,7 +4510,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                   const bucketParams = {
                     Bucket: process.env.BUCKET_NAME as string,
 
-                    Key: `/sedemat/${application.id}/${application.idSubramo === 9 ? 'IU' : 'SM'}/${application.idLiquidacion}/recibo.pdf`,
+                    Key: `/sedebat/${application.id}/${application.idSubramo === 9 ? 'IU' : 'SM'}/${application.idLiquidacion}/recibo.pdf`,
                   };
                   await S3Client.putObject({
                     ...bucketParams,
@@ -4565,7 +4565,7 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
           moment: require('moment'),
           fecha: moment().format('MM-DD-YYYY'),
           titulo: 'CERTIFICADO POR PROPIEDAD INMOBILIARIA',
-          institucion: 'SEDEMAT',
+          institucion: 'SEDEBAT',
           datos: {
             mes: moment(breakdownData[0].fecha_vencimiento).get('month') + 1,
             anio: moment(breakdownData[0].fecha_vencimiento).get('year'),
@@ -4585,10 +4585,10 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
 
     return new Promise(async (res, rej) => {
       try {
-        let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-solvencia-IU.pug`), certInfo));
-        const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/IU/${application.idLiquidacion}/certificado.pdf`);
-        const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/IU/${application.idLiquidacion}/certificado.pdf`;
-        const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+        let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedebat-solvencia-IU.pug`), certInfo));
+        const pdfDir = resolve(__dirname, `../../archivos/sedebat/${application.id}/IU/${application.idLiquidacion}/certificado.pdf`);
+        const dir = `${process.env.SERVER_URL}/sedebat/${application.id}/IU/${application.idLiquidacion}/certificado.pdf`;
+        const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedebat/${application.id}`, { errorCorrectionLevel: 'H' });
 
         let buffersArray: any[] = await Promise.all(
           htmlArray.map((html) => {
@@ -4655,7 +4655,7 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
               const bucketParams = {
                 Bucket: process.env.BUCKET_NAME as string,
 
-                Key: `/sedemat/${application.id}/IU/${application.idLiquidacion}/certificado.pdf`,
+                Key: `/sedebat/${application.id}/IU/${application.idLiquidacion}/certificado.pdf`,
               };
               await S3Client.putObject({
                 ...bucketParams,
@@ -4683,7 +4683,7 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
                   const bucketParams = {
                     Bucket: process.env.BUCKET_NAME as string,
 
-                    Key: `/sedemat/${application.id}/IU/${application.idLiquidacion}/certificado.pdf`,
+                    Key: `/sedebat/${application.id}/IU/${application.idLiquidacion}/certificado.pdf`,
                   };
                   await S3Client.putObject({
                     ...bucketParams,
@@ -4737,7 +4737,7 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
     const payment = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_DEST, [application.id, 'IMPUESTO'])).rows;
     const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [
       payment[0].id_usuario,
-      `${process.env.AWS_ACCESS_URL}/sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
+      `${process.env.AWS_ACCESS_URL}/sedebat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
       application.razonSocial,
       referencia?.referencia_municipal,
       'ESPECIAL',
@@ -4756,7 +4756,7 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
       certAE = {
         fecha: moment().format('YYYY-MM-DD'),
         tramite: 'LIQUIDACIONES ESPECIALES',
-        institucion: 'SEDEMAT',
+        institucion: 'SEDEBAT',
         moment: require('moment'),
         QR: linkQr,
         datos: {
@@ -4807,11 +4807,11 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
 
     return new Promise(async (res, rej) => {
       try {
-        let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-LE.pug`), certInfo));
+        let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedebat-cert-LE.pug`), certInfo));
         mainLogger.info(htmlArray.length);
-        const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`);
-        const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`;
-        const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+        const pdfDir = resolve(__dirname, `../../archivos/sedebat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`);
+        const dir = `${process.env.SERVER_URL}/sedebat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`;
+        const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedebat/${application.id}`, { errorCorrectionLevel: 'H' });
 
         let buffersArray: any[] = await Promise.all(
           htmlArray.map((html) => {
@@ -4881,7 +4881,7 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
                 const bucketParams = {
                   Bucket: process.env.BUCKET_NAME as string,
 
-                  Key: `sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
+                  Key: `sedebat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
                 };
                 await S3Client.putObject({
                   ...bucketParams,
@@ -4922,7 +4922,7 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
                     const bucketParams = {
                       Bucket: process.env.BUCKET_NAME as string,
 
-                      Key: `sedemat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
+                      Key: `sedebat/${application.id}/special/${application.idLiquidacion}/recibo.pdf`,
                     };
                     await S3Client.putObject({
                       ...bucketParams,
@@ -4962,10 +4962,10 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
 
     // return new Promise(async (res, rej) => {
 
-    //   // const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-AE.pug`), certAE);
-    //   // const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
-    //   // const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
-    //   // const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+    //   // const html = renderFile(resolve(__dirname, `../views/planillas/sedebat-cert-AE.pug`), certAE);
+    //   // const pdfDir = resolve(__dirname, `../../archivos/sedebat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
+    //   // const dir = `${process.env.SERVER_URL}/sedebat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
+    //   // const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedebat/${application.id}`, { errorCorrectionLevel: 'H' });
     //   // if (dev) {
     //   //   pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
     //   //     await pool.query(queries.UPDATE_RECEIPT_FOR_SETTLEMENTS, [dir, application.idProcedimiento, application.id]);
@@ -4980,7 +4980,7 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
     //   //         const bucketParams = {
     //   //           Bucket: process.env.BUCKET_NAME as string,
 
-    //   //           Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
+    //   //           Key: `/sedebat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
     //   //         };
     //   //         await S3Client.putObject({
     //   //           ...bucketParams,
@@ -5023,7 +5023,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
         fecha: moment().format('YYYY-MM-DD'),
         tramite: 'PAGO DE IMPUESTOS',
         moment: require('moment'),
-        institucion: 'SEDEMAT',
+        institucion: 'SEDEBAT',
         QR: linkQr,
         datos: {
           nroSolicitud: application.id,
@@ -5071,10 +5071,10 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
 
     return new Promise(async (res, rej) => {
       try {
-        let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-AE.pug`), certInfo));
-        const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
-        const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
-        const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+        let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedebat-cert-AE.pug`), certInfo));
+        const pdfDir = resolve(__dirname, `../../archivos/sedebat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
+        const dir = `${process.env.SERVER_URL}/sedebat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
+        const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedebat/${application.id}`, { errorCorrectionLevel: 'H' });
         let buffersArray: any[] = await Promise.all(
           htmlArray.map((html) => {
             return new Promise((res, rej) => {
@@ -5140,7 +5140,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
               const bucketParams = {
                 Bucket: process.env.BUCKET_NAME as string,
 
-                Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
+                Key: `/sedebat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
               };
               await S3Client.putObject({
                 ...bucketParams,
@@ -5168,7 +5168,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
                   const bucketParams = {
                     Bucket: process.env.BUCKET_NAME as string,
 
-                    Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
+                    Key: `/sedebat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
                   };
                   await S3Client.putObject({
                     ...bucketParams,
@@ -5198,10 +5198,10 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
 
     // return new Promise(async (res, rej) => {
 
-    //   // const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-AE.pug`), certAE);
-    //   // const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
-    //   // const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
-    //   // const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+    //   // const html = renderFile(resolve(__dirname, `../views/planillas/sedebat-cert-AE.pug`), certAE);
+    //   // const pdfDir = resolve(__dirname, `../../archivos/sedebat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
+    //   // const dir = `${process.env.SERVER_URL}/sedebat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
+    //   // const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedebat/${application.id}`, { errorCorrectionLevel: 'H' });
     //   // if (dev) {
     //   //   pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
     //   //     await pool.query(queries.UPDATE_RECEIPT_FOR_SETTLEMENTS, [dir, application.idProcedimiento, application.id]);
@@ -5216,7 +5216,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
     //   //         const bucketParams = {
     //   //           Bucket: process.env.BUCKET_NAME as string,
 
-    //   //           Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
+    //   //           Key: `/sedebat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
     //   //         };
     //   //         await S3Client.putObject({
     //   //           ...bucketParams,
@@ -5299,10 +5299,10 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
 
     return new Promise(async (res, rej) => {
       try {
-        let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-PP.pug`), certInfo));
-        const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/PP/${application.idLiquidacion}/recibo.pdf`);
-        const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/PP/${application.idLiquidacion}/recibo.pdf`;
-        const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedemat/${application.id}`, { errorCorrectionLevel: 'H' });
+        let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedebat-cert-PP.pug`), certInfo));
+        const pdfDir = resolve(__dirname, `../../archivos/sedebat/${application.id}/PP/${application.idLiquidacion}/recibo.pdf`);
+        const dir = `${process.env.SERVER_URL}/sedebat/${application.id}/PP/${application.idLiquidacion}/recibo.pdf`;
+        const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedebat/${application.id}`, { errorCorrectionLevel: 'H' });
 
         let buffersArray: any[] = await Promise.all(
           htmlArray.map((html) => {
@@ -5368,7 +5368,7 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
             if (buffersArray.length === 1) {
               const bucketParams = {
                 Bucket: process.env.BUCKET_NAME as string,
-                Key: `/sedemat/${application.id}/PP/${application.idLiquidacion}/certificado.pdf`,
+                Key: `/sedebat/${application.id}/PP/${application.idLiquidacion}/certificado.pdf`,
               };
               await S3Client.putObject({
                 ...bucketParams,
@@ -5396,7 +5396,7 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
                   const bucketParams = {
                     Bucket: process.env.BUCKET_NAME as string,
 
-                    Key: `/sedemat/${application.id}/PP/${application.idLiquidacion}/certificado.pdf`,
+                    Key: `/sedebat/${application.id}/PP/${application.idLiquidacion}/certificado.pdf`,
                   };
                   await S3Client.putObject({
                     ...bucketParams,
@@ -5438,9 +5438,9 @@ const createPatentDocument = async ({ gticPool, pool, user, application }: Certi
     const cashier = (await pool.query(queries.GET_USER_INFO_BY_ID, [payment[0].id_usuario])).rows;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     return new Promise(async (res, rej) => {
-      const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-cert-LAE.pug`), {
+      const html = renderFile(resolve(__dirname, `../views/planillas/sedebat-cert-LAE.pug`), {
         moment: require('moment'),
-        institucion: 'SEDEMAT',
+        institucion: 'SEDEBAT',
         QR: linkQr,
         datos: {
           contribuyente: {
@@ -5487,8 +5487,8 @@ const createPatentDocument = async ({ gticPool, pool, user, application }: Certi
           totalCred: '',
         },
       });
-      const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/AE/${application.idLiquidacion}/patente.pdf`);
-      const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/AE/${application.idLiquidacion}/patente.pdf`;
+      const pdfDir = resolve(__dirname, `../../archivos/sedebat/${application.id}/AE/${application.idLiquidacion}/patente.pdf`);
+      const dir = `${process.env.SERVER_URL}/sedebat/${application.id}/AE/${application.idLiquidacion}/patente.pdf`;
       if (dev) {
         pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
           res(dir);
@@ -5502,7 +5502,7 @@ const createPatentDocument = async ({ gticPool, pool, user, application }: Certi
               const bucketParams = {
                 Bucket: process.env.BUCKET_NAME as string,
 
-                Key: `/sedemat/${application.id}/AE/${application.idLiquidacion}/patente.pdf`,
+                Key: `/sedebat/${application.id}/AE/${application.idLiquidacion}/patente.pdf`,
               };
               await S3Client.putObject({
                 ...bucketParams,
@@ -5530,9 +5530,9 @@ const createFineDocument = async ({ gticPool, pool, user, application }: Certifi
     const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
     return new Promise(async (res, rej) => {
-      const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-MULTAS.pug`), {
+      const html = renderFile(resolve(__dirname, `../views/planillas/sedebat-MULTAS.pug`), {
         moment: require('moment'),
-        institucion: 'SEDEMAT',
+        institucion: 'SEDEBAT',
         QR: linkQr,
         datos: {
           razonSocial: application.razonSocial,
@@ -5551,8 +5551,8 @@ const createFineDocument = async ({ gticPool, pool, user, application }: Certifi
           }),
         },
       });
-      const pdfDir = resolve(__dirname, `../../archivos/sedemat/${application.id}/MUL/${application.idLiquidacion}/mult.pdf`);
-      const dir = `${process.env.SERVER_URL}/sedemat/${application.id}/MUL/${application.idLiquidacion}/mult.pdf`;
+      const pdfDir = resolve(__dirname, `../../archivos/sedebat/${application.id}/MUL/${application.idLiquidacion}/mult.pdf`);
+      const dir = `${process.env.SERVER_URL}/sedebat/${application.id}/MUL/${application.idLiquidacion}/mult.pdf`;
       if (dev) {
         pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
           res(dir);
@@ -5566,7 +5566,7 @@ const createFineDocument = async ({ gticPool, pool, user, application }: Certifi
               const bucketParams = {
                 Bucket: process.env.BUCKET_NAME as string,
 
-                Key: `/sedemat/${application.id}/MUL/${application.idLiquidacion}/solvencia.pdf`,
+                Key: `/sedebat/${application.id}/MUL/${application.idLiquidacion}/solvencia.pdf`,
               };
               await S3Client.putObject({
                 ...bucketParams,
@@ -5638,12 +5638,12 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
       datosLiquidacion: chunk(statement, 22),
       saldoFinal,
     };
-    const html = renderFile(resolve(__dirname, `../views/planillas/sedemat-EC.pug`), {
+    const html = renderFile(resolve(__dirname, `../views/planillas/sedebat-EC.pug`), {
       ...datosCertificado,
       cache: false,
       moment: require('moment'),
       written,
-      institucion: 'SEDEMAT',
+      institucion: 'SEDEBAT',
     });
     return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
   } catch (error) {
@@ -5705,7 +5705,7 @@ export const getSettlementsReport = async (user, payload: { from: Date; to: Date
           const bucketParams = {
             Bucket: process.env.BUCKET_NAME as string,
 
-            Key: '/sedemat/reportes/liquidaciones.xlsx',
+            Key: '/sedebat/reportes/liquidaciones.xlsx',
           };
           await S3Client.putObject({
             ...bucketParams,
@@ -5765,7 +5765,7 @@ export const getIvaReport = async (user, payload: { from: Date; to: Date }) => {
           const bucketParams = {
             Bucket: process.env.BUCKET_NAME as string,
 
-            Key: '/sedemat/reportes/libro-iva.xlsx',
+            Key: '/sedebat/reportes/libro-iva.xlsx',
           };
           await S3Client.putObject({
             ...bucketParams,
@@ -6001,16 +6001,16 @@ interface datoLiquidacion {
 
 //     if (AEApplicationExists && SMApplicationExists && IUApplicationExists && PPApplicationExists) return { status: 409, message: 'Ya existe una declaracion de impuestos para este mes' };
 //     const contributor = (reference ? await gtic.query(queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS, [document, reference, type]) : await gtic.query(queries.gtic.NATURAL_CONTRIBUTOR_EXISTS, [document, type])).rows[0];
-//     if (!contributor) return { status: 404, message: 'No existe un contribuyente registrado en SEDEMAT' };
+//     if (!contributor) return { status: 404, message: 'No existe un contribuyente registrado en SEDEBAT' };
 //     const now = moment(new Date());
 //     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
 //     //AE
 //     if (contributor.nu_referencia && !AEApplicationExists) {
 //       const economicActivities = (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [contributor.co_contribuyente])).rows;
-//       if (economicActivities.length === 0) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
+//       if (economicActivities.length === 0) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEBAT' };
 //       let lastEA = (await gtic.query(queries.gtic.GET_ACTIVE_ECONOMIC_ACTIVITIES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
 //       if (!lastEA) lastEA = (await gtic.query(queries.gtic.GET_PAID_ECONOMIC_ACTIVITIES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-//       if (!lastEA) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
+//       if (!lastEA) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEBAT' };
 //       const lastEAPayment = moment(lastEA.fe_liquidacion);
 //       const pastMonthEA = moment(lastEA.fe_liquidacion).subtract(1, 'M');
 //       const EADate = moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
@@ -6042,7 +6042,7 @@ interface datoLiquidacion {
 //       if (!SMApplicationExists) {
 //         let lastSM = (await gtic.query(queries.gtic.GET_ACTIVE_MUNICIPAL_SERVICES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
 //         if (!lastSM) lastSM = (await gtic.query(queries.gtic.GET_PAID_MUNICIPAL_SERVICES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-//         if (!lastSM) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
+//         if (!lastSM) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEBAT' };
 //         const lastSMPayment = moment(lastSM.fe_liquidacion);
 //         const pastMonthSM = moment(lastSM.fe_liquidacion).subtract(1, 'M');
 //         const SMDate = moment([lastSMPayment.year(), lastSMPayment.month(), 1]);
@@ -6076,7 +6076,7 @@ interface datoLiquidacion {
 //       if (!IUApplicationExists) {
 //         let lastIU = (await gtic.query(queries.gtic.GET_ACTIVE_URBAN_ESTATE_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
 //         if (!lastIU) lastIU = (await gtic.query(queries.gtic.GET_PAID_URBAN_ESTATE_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-//         if (!lastIU) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEMAT' };
+//         if (!lastIU) return { status: 404, message: 'Debe completar su pago en las oficinas de SEDEBAT' };
 //         const lastIUPayment = moment(lastIU.fe_liquidacion);
 //         const pastMonthIU = moment(lastIU.fe_liquidacion).subtract(1, 'M');
 //         const IUDate = moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
