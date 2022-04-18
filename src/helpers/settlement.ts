@@ -2888,109 +2888,109 @@ export const insertSettlements = async ({ process, user }) => {
       contributorReference?.estado_licencia === 'TEMPORAL' ? +(await client.query(queries.GET_SCALE_FOR_TEMPORAL_AE_SOLVENCY)).rows[0].indicador : +(await client.query(queries.GET_SCALE_FOR_PERMANENT_AE_SOLVENCY)).rows[0].indicador;
 
     // ! Logica de multas
-    const hasAE = impuestos.find((el) => el.ramo === 'AE');
-    if (hasAE) {
-      const now = moment().utcOffset(-4).locale('ES');
-      const pivot = moment().utcOffset(-4).locale('ES');
-      const taxableMin = await (await client.query(queries.GET_LITTLEST_TAXABLE_MINIMUM_FOR_CONTRIBUTOR, [contributorReference?.id_registro_municipal])).rows[0].minimo_tributable;
-      const onlyAE = impuestos
-        .filter((el) => el.ramo === 'AE')
-        .sort((a, b) => (pivot.month(a.fechaCancelada.month).toDate() === pivot.month(b.fechaCancelada.month).toDate() ? 0 : pivot.month(a.fechaCancelada.month).toDate() > pivot.month(b.fechaCancelada.month).toDate() ? 1 : -1));
-      const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).year(onlyAE[0].fechaCancelada.year).startOf('month');
-      const comparingDate = now.clone().startOf('month');
-      finingMonths = new Array(comparingDate.diff(finingDate, 'M')).fill({});
-      if (finingMonths.length > 0) {
-        finingMonths = await Promise.all(
-          onlyAE.map(async (el, i) => {
-            if (i === 0) return;
-            const exonerado = await isExonerated(
-              { branch: codigosRamo.MUL, contributor: contributorReference?.id_registro_municipal, activity: el.id_actividad_economica, startingDate: moment().locale('ES').month(el.fechaCancelada.month).startOf('month') },
-              client
-            );
-            if (exonerado) return;
-            const currentMonth = now.clone().subtract(1, 'M');
-            const comparedMonth = moment().utcOffset(-4).locale('ES').month(el.fechaCancelada.month).year(el.fechaCancelada.year);
-            const percentage = await finingPercentage({ currentMonth, comparedMonth, branch: 'AE', client });
-            const amount = el.monto - solvencyCost > 0 ? el.monto - solvencyCost : +taxableMin;
-            if (percentage === 0) return;
-            const multa = Promise.resolve(
-              client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION_PETRO, [
-                application.id_solicitud,
-                (amount * percentage).toFixed(8),
-                {
-                  fecha: {
-                    month: moment().locale('ES').month(el.fechaCancelada.month).toDate().toLocaleDateString('ES', { month: 'long' }),
-                    year: moment().locale('ES').year(el.fechaCancelada.year).format('YYYY'),
-                  },
-                  descripcion: 'Multa por Declaracion Fuera de Plazo',
-                  monto: percentage,
-                },
-                moment().locale('ES').month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
-                (contributorReference && contributorReference.id_registro_municipal) || null,
-              ])
-            )
-              .then((el) => el.rows[0])
-              .then((data) => {
-                return { id: data.id_liquidacion, fecha: data.datos.fecha, monto: +data.monto_petro, descripcion: data.datos.descripcion };
-              });
-            return multa;
-          })
-        );
-      }
-      const exonerado = await isExonerated({ branch: codigosRamo.MUL, contributor: contributorReference?.id_registro_municipal, activity: null, startingDate: moment().format('MM-DD-YYYY') }, client);
-      if (now.date() > FINING_THRESHOLD_DATE && !exonerado) {
-        const basePercentage = +(await client.query(queries.GET_SCALE_FOR_AE_FINING_STARTING_AMOUNT)).rows[0].indicador;
-        const amount = onlyAE[0].monto - solvencyCost > 0 ? onlyAE[0].monto - solvencyCost : taxableMin;
-        const multa = (
-          await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION_PETRO, [
-            application.id_solicitud,
-            (amount * basePercentage).toFixed(8),
-            {
-              fecha: {
-                month: moment().utcOffset(-4).subtract(1, 'M').toDate().toLocaleDateString('ES', { month: 'long' }),
-                year: moment().utcOffset(-4).subtract(1, 'M').year(),
-              },
-              descripcion: 'Multa por Declaracion Fuera de Plazo',
-              monto: basePercentage,
-            },
-            moment().subtract(1, 'M').endOf('month').format('MM-DD-YYYY'),
-            (contributorReference && contributorReference.id_registro_municipal) || null,
-          ])
-        ).rows[0];
-        const fine = { id: multa.id_liquidacion, fecha: multa.datos.fecha, monto: +multa.monto, descripcion: multa.datos.descripcion };
+    // const hasAE = impuestos.find((el) => el.ramo === 'AE');
+    // if (hasAE) {
+    //   const now = moment().utcOffset(-4).locale('ES');
+    //   const pivot = moment().utcOffset(-4).locale('ES');
+    //   const taxableMin = await (await client.query(queries.GET_LITTLEST_TAXABLE_MINIMUM_FOR_CONTRIBUTOR, [contributorReference?.id_registro_municipal])).rows[0].minimo_tributable;
+    //   const onlyAE = impuestos
+    //     .filter((el) => el.ramo === 'AE')
+    //     .sort((a, b) => (pivot.month(a.fechaCancelada.month).toDate() === pivot.month(b.fechaCancelada.month).toDate() ? 0 : pivot.month(a.fechaCancelada.month).toDate() > pivot.month(b.fechaCancelada.month).toDate() ? 1 : -1));
+    //   const finingDate = moment().locale('ES').month(onlyAE[0].fechaCancelada.month).year(onlyAE[0].fechaCancelada.year).startOf('month');
+    //   const comparingDate = now.clone().startOf('month');
+    //   finingMonths = new Array(comparingDate.diff(finingDate, 'M')).fill({});
+    //   if (finingMonths.length > 0) {
+    //     finingMonths = await Promise.all(
+    //       onlyAE.map(async (el, i) => {
+    //         if (i === 0) return;
+    //         const exonerado = await isExonerated(
+    //           { branch: codigosRamo.MUL, contributor: contributorReference?.id_registro_municipal, activity: el.id_actividad_economica, startingDate: moment().locale('ES').month(el.fechaCancelada.month).startOf('month') },
+    //           client
+    //         );
+    //         if (exonerado) return;
+    //         const currentMonth = now.clone().subtract(1, 'M');
+    //         const comparedMonth = moment().utcOffset(-4).locale('ES').month(el.fechaCancelada.month).year(el.fechaCancelada.year);
+    //         const percentage = await finingPercentage({ currentMonth, comparedMonth, branch: 'AE', client });
+    //         const amount = el.monto - solvencyCost > 0 ? el.monto - solvencyCost : +taxableMin;
+    //         if (percentage === 0) return;
+    //         const multa = Promise.resolve(
+    //           client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION_PETRO, [
+    //             application.id_solicitud,
+    //             (amount * percentage).toFixed(8),
+    //             {
+    //               fecha: {
+    //                 month: moment().locale('ES').month(el.fechaCancelada.month).toDate().toLocaleDateString('ES', { month: 'long' }),
+    //                 year: moment().locale('ES').year(el.fechaCancelada.year).format('YYYY'),
+    //               },
+    //               descripcion: 'Multa por Declaracion Fuera de Plazo',
+    //               monto: percentage,
+    //             },
+    //             moment().locale('ES').month(el.fechaCancelada.month).endOf('month').format('MM-DD-YYYY'),
+    //             (contributorReference && contributorReference.id_registro_municipal) || null,
+    //           ])
+    //         )
+    //           .then((el) => el.rows[0])
+    //           .then((data) => {
+    //             return { id: data.id_liquidacion, fecha: data.datos.fecha, monto: +data.monto_petro, descripcion: data.datos.descripcion };
+    //           });
+    //         return multa;
+    //       })
+    //     );
+    //   }
+    //   const exonerado = await isExonerated({ branch: codigosRamo.MUL, contributor: contributorReference?.id_registro_municipal, activity: null, startingDate: moment().format('MM-DD-YYYY') }, client);
+    //   if (now.date() > FINING_THRESHOLD_DATE && !exonerado) {
+    //     const basePercentage = +(await client.query(queries.GET_SCALE_FOR_AE_FINING_STARTING_AMOUNT)).rows[0].indicador;
+    //     const amount = onlyAE[0].monto - solvencyCost > 0 ? onlyAE[0].monto - solvencyCost : taxableMin;
+    //     const multa = (
+    //       await client.query(queries.CREATE_FINING_FOR_LATE_APPLICATION_PETRO, [
+    //         application.id_solicitud,
+    //         (amount * basePercentage).toFixed(8),
+    //         {
+    //           fecha: {
+    //             month: moment().utcOffset(-4).subtract(1, 'M').toDate().toLocaleDateString('ES', { month: 'long' }),
+    //             year: moment().utcOffset(-4).subtract(1, 'M').year(),
+    //           },
+    //           descripcion: 'Multa por Declaracion Fuera de Plazo',
+    //           monto: basePercentage,
+    //         },
+    //         moment().subtract(1, 'M').endOf('month').format('MM-DD-YYYY'),
+    //         (contributorReference && contributorReference.id_registro_municipal) || null,
+    //       ])
+    //     ).rows[0];
+    //     const fine = { id: multa.id_liquidacion, fecha: multa.datos.fecha, monto: +multa.monto, descripcion: multa.datos.descripcion };
 
-        // finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
-        finingMonths.push(fine);
-      }
-    }
-    // ! Logica de multas
+    //     // finingAmount = finingAmount + augment < maxFining ? finingAmount + augment : maxFining;
+    //     finingMonths.push(fine);
+    //   }
+    // }
+    // // ! Logica de multas
 
-    const impuestosExt = impuestos.map((x, i, j) => {
-      if (x.ramo === 'AE') {
-        const costoSolvencia = solvencyCost;
-        x.monto = +x.monto - costoSolvencia;
-        j.push({ monto: costoSolvencia, ramo: 'SAE', fechaCancelada: x.fechaCancelada });
-      }
-      if (x.ramo === 'SM') {
-        const liquidacionGas = {
-          ramo: branchNames['SM'],
-          fechaCancelada: x.fechaCancelada,
-          monto: process.esAgenteRetencion || process.esAgenteSENIAT ? ((+x.desglose.reduce((x, j) => x + j.montoGas, 0) / PETRO) * 1.04).toFixed(8) : ((+x.desglose.reduce((x, j) => x + j.montoGas, 0) / PETRO) * 1.16).toFixed(8),
-          desglose: x.desglose,
-          descripcion: 'Pago del Servicio de Gas',
-        };
-        const liquidacionAseo = {
-          ramo: branchNames['SM'],
-          fechaCancelada: x.fechaCancelada,
-          monto: process.esAgenteRetencion || process.esAgenteSENIAT ? ((+x.desglose.reduce((x, j) => x + j.montoAseo, 0) / PETRO) * 1.04).toFixed(8) : ((+x.desglose.reduce((x, j) => x + j.montoAseo, 0) / PETRO) * 1.16).toFixed(8),
-          desglose: x.desglose,
-          descripcion: 'Pago del Servicio de Aseo',
-        };
-        j.push(liquidacionAseo);
-        j.push(liquidacionGas);
-      }
-      return x;
-    });
+    // const impuestosExt = impuestos.map((x, i, j) => {
+    //   if (x.ramo === 'AE') {
+    //     const costoSolvencia = solvencyCost;
+    //     x.monto = +x.monto - costoSolvencia;
+    //     j.push({ monto: costoSolvencia, ramo: 'SAE', fechaCancelada: x.fechaCancelada });
+    //   }
+    //   if (x.ramo === 'SM') {
+    //     const liquidacionGas = {
+    //       ramo: branchNames['SM'],
+    //       fechaCancelada: x.fechaCancelada,
+    //       monto: process.esAgenteRetencion || process.esAgenteSENIAT ? ((+x.desglose.reduce((x, j) => x + j.montoGas, 0) / PETRO) * 1.04).toFixed(8) : ((+x.desglose.reduce((x, j) => x + j.montoGas, 0) / PETRO) * 1.16).toFixed(8),
+    //       desglose: x.desglose,
+    //       descripcion: 'Pago del Servicio de Gas',
+    //     };
+    //     const liquidacionAseo = {
+    //       ramo: branchNames['SM'],
+    //       fechaCancelada: x.fechaCancelada,
+    //       monto: process.esAgenteRetencion || process.esAgenteSENIAT ? ((+x.desglose.reduce((x, j) => x + j.montoAseo, 0) / PETRO) * 1.04).toFixed(8) : ((+x.desglose.reduce((x, j) => x + j.montoAseo, 0) / PETRO) * 1.16).toFixed(8),
+    //       desglose: x.desglose,
+    //       descripcion: 'Pago del Servicio de Aseo',
+    //     };
+    //     j.push(liquidacionAseo);
+    //     j.push(liquidacionGas);
+    //   }
+    //   return x;
+    // });
 
     const settlement: Liquidacion[] = await Promise.all(
       impuestos
