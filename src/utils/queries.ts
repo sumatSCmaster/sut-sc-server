@@ -2016,8 +2016,8 @@ ORDER BY fecha_liquidacion DESC;
     'SELECT ae.id_actividad_economica AS id, ae.numero_referencia as "numeroReferencia", ae.descripcion, ae.alicuota, ae.minimo_tributable AS "minimoTributable" \
     FROM impuesto.actividad_economica_sucursal aec \
     INNER JOIN impuesto.actividad_economica ae ON ae.numero_referencia = aec.numero_referencia WHERE id_registro_municipal = $1;',
-  GET_BRANCHES: 'SELECT id_ramo AS id, codigo, descripcion, descripcion_corta, liquidacion_especial AS "liquidacionEspecial" FROM impuesto.ramo;',
-  GET_SUBRANCHES_BY_ID: 'SELECT id_subramo AS id, descripcion, subindice FROM impuesto.subramo WHERE id_ramo = $1',
+  GET_BRANCHES: `SSELECT id_ramo AS id, codigo, descripcion, descripcion_corta, liquidacion_especial AS "liquidacionEspecial", (monto * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) AS "monto" FROM impuesto.ramo;`,
+  GET_SUBRANCHES_BY_ID: `SELECT id_subramo AS id, descripcion, subindice, (monto * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) AS "monto" FROM impuesto.subramo WHERE id_ramo = $1`,
   GET_BRANCHES_FOR_REPORT: 'SELECT id_ramo AS id, codigo AS "ramo", descripcion, descripcion_corta FROM impuesto.ramo;',
   GET_SUT_ESTATE_BY_ID: 'SELECT * FROM inmueble_urbano WHERE id_inmueble = $1',
   IS_SPECIAL_SETTLEMENT: 'SELECT * FROM impuesto.ramo WHERE codigo = (SELECT codigo FROM impuesto.ramo WHERE id_ramo=$1) AND codigo IN (SELECT codigo FROM impuesto.ramo WHERE liquidacion_especial = true);',
