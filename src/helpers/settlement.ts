@@ -391,7 +391,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       );
 
       SM =
-        estates.length > 0
+        /*estates.length > 0
           ? await Promise.all(
               estates.map(async (el) => {
                 const tarifaAseo = await getCleaningTariffForEstate({ estate: el, branchId: branch?.id_registro_municipal, client });
@@ -399,7 +399,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                 return { id: el.id_inmueble, tipoInmueble: el.tipo_inmueble, codCat: el.cod_catastral, direccionInmueble: el.direccion, tarifaAseo, tarifaGas, deuda: debtSM };
               })
             )
-          : !!branch?.id_registro_municipal
+          :*/ !!branch?.id_registro_municipal
           ? [
               {
                 id: 0,
