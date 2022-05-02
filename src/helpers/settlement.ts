@@ -2241,6 +2241,7 @@ export const formatContributor = async (contributor, client: PoolClient) => {
       liquidaciones: !branches.length
         ? (await client.query(queries.GET_SETTLEMENTS_FOR_CONTRIBUTOR_SEARCH, [contributor.id_contribuyente])).rows.map((el) => ({
             id: el.id_liquidacion,
+            fechaPerteneciente: {month: JSON.parse(el.datos).month, year: JSON.parse(el.datos).year },
             fechaLiquidacion: el.fecha_liquidacion,
             fechaVencimiento: el.fecha_vencimiento,
             monto: +el.monto,
