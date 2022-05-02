@@ -2344,6 +2344,7 @@ export const contributorSearch = async ({ document, docType, name }) => {
     const contributorExists = contribuyentes.length > 0;
     if (!contributorExists) return { status: 404, message: 'No existen coincidencias con la razon social o documento proporcionado' };
     contribuyentes = await Promise.all(contribuyentes.map(async (el) => await formatContributor(el, client)));
+    console.log(contribuyentes);
     return { status: 200, message: 'Contribuyente obtenido', contribuyentes };
   } catch (error) {
     throw {
