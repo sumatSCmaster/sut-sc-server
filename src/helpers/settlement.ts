@@ -308,8 +308,9 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     mainLogger.info(lastSettlementQuery);
     if (AEApplicationExists && SMApplicationExists && IUApplicationExists && PPApplicationExists) return { status: 409, message: 'Ya existe una declaracion de impuestos para este mes' };
     const now = moment(new Date());
-    const monthDateForTop = moment().locale('ES').subtract(2, 'M');
-    const esContribuyenteTop = !!branch ? (await client.query(queries.BRANCH_IS_ONE_BEST_PAYERS, [branch?.id_registro_municipal, monthDateForTop.format('MMMM'), monthDateForTop.year()])).rowCount > 0 : false;
+    // const monthDateForTop = moment().locale('ES').subtract(2, 'M');
+    // const esContribuyenteTop = !!branch ? (await client.query(queries.BRANCH_IS_ONE_BEST_PAYERS, [branch?.id_registro_municipal, monthDateForTop.format('MMMM'), monthDateForTop.year()])).rowCount > 0 : false; //LOGICA DE CONSTRIBUYENTES TOP
+    const esContribuyenteTop = false;
     //AE
     if (branch && branch?.referencia_municipal && !AEApplicationExists) {
       mainLogger.info('AE');
