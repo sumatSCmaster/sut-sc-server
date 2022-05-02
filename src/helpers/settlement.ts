@@ -2305,7 +2305,7 @@ export const formatBranch = async (branch, contributor, client) => {
       otrosImpuestos: inicioImpuestos.filter((el) => el),
       liquidaciones: (await client.query(queries.GET_SETTLEMENTS_FOR_BRANCH_SEARCH, [branch.id_registro_municipal])).rows.map((el) => ({
         id: el.id_liquidacion,
-        fechaPerteneciente: console.log(el.datos),
+        fechaPerteneciente: {month: JSON.parse(el.datos).fecha.month, year: JSON.parse(el.datos).fecha.year },
         fechaLiquidacion: el.fecha_liquidacion,
         fechaVencimiento: el.fecha_vencimiento,
         monto: +el.monto,
