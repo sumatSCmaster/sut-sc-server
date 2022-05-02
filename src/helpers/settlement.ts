@@ -2966,32 +2966,32 @@ export const insertSettlements = async ({ process, user }) => {
     // }
     // // ! Logica de multas
 
-    // const impuestosExt = impuestos.map((x, i, j) => {
-    //   if (x.ramo === 'AE') {
-    //     const costoSolvencia = solvencyCost;
-    //     x.monto = +x.monto - costoSolvencia;
-    //     j.push({ monto: costoSolvencia, ramo: 'SAE', fechaCancelada: x.fechaCancelada });
-    //   }
-    //   if (x.ramo === 'SM') {
-    //     const liquidacionGas = {
-    //       ramo: branchNames['SM'],
-    //       fechaCancelada: x.fechaCancelada,
-    //       monto: process.esAgenteRetencion || process.esAgenteSENIAT ? ((+x.desglose.reduce((x, j) => x + j.montoGas, 0) / PETRO) * 1.04).toFixed(8) : ((+x.desglose.reduce((x, j) => x + j.montoGas, 0) / PETRO) * 1.16).toFixed(8),
-    //       desglose: x.desglose,
-    //       descripcion: 'Pago del Servicio de Gas',
-    //     };
-    //     const liquidacionAseo = {
-    //       ramo: branchNames['SM'],
-    //       fechaCancelada: x.fechaCancelada,
-    //       monto: process.esAgenteRetencion || process.esAgenteSENIAT ? ((+x.desglose.reduce((x, j) => x + j.montoAseo, 0) / PETRO) * 1.04).toFixed(8) : ((+x.desglose.reduce((x, j) => x + j.montoAseo, 0) / PETRO) * 1.16).toFixed(8),
-    //       desglose: x.desglose,
-    //       descripcion: 'Pago del Servicio de Aseo',
-    //     };
-    //     j.push(liquidacionAseo);
-    //     j.push(liquidacionGas);
-    //   }
-    //   return x;
-    // });
+    const impuestosExt = impuestos.map((x, i, j) => {
+      if (x.ramo === 'AE') {
+        const costoSolvencia = solvencyCost;
+        x.monto = +x.monto - costoSolvencia;
+        j.push({ monto: costoSolvencia, ramo: 'SAE', fechaCancelada: x.fechaCancelada });
+      }
+      if (x.ramo === 'SM') {
+        const liquidacionGas = {
+          ramo: branchNames['SM'],
+          fechaCancelada: x.fechaCancelada,
+          monto: process.esAgenteRetencion || process.esAgenteSENIAT ? ((+x.desglose.reduce((x, j) => x + j.montoGas, 0) / PETRO) * 1.04).toFixed(8) : ((+x.desglose.reduce((x, j) => x + j.montoGas, 0) / PETRO) * 1.16).toFixed(8),
+          desglose: x.desglose,
+          descripcion: 'Pago del Servicio de Gas',
+        };
+        const liquidacionAseo = {
+          ramo: branchNames['SM'],
+          fechaCancelada: x.fechaCancelada,
+          monto: process.esAgenteRetencion || process.esAgenteSENIAT ? ((+x.desglose.reduce((x, j) => x + j.montoAseo, 0) / PETRO) * 1.04).toFixed(8) : ((+x.desglose.reduce((x, j) => x + j.montoAseo, 0) / PETRO) * 1.16).toFixed(8),
+          desglose: x.desglose,
+          descripcion: 'Pago del Servicio de Aseo',
+        };
+        j.push(liquidacionAseo);
+        j.push(liquidacionGas);
+      }
+      return x;
+    });
 
     const settlement: Liquidacion[] = await Promise.all(
       impuestos
