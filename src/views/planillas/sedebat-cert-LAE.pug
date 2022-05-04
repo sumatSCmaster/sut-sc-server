@@ -20,7 +20,6 @@ html
           div#fecha
             p 
               b San francisco, #{moment(fecha).format('DD/MM/YYYY')}
-          img#QR(src=QR, alt='QR')
         div#planilla(style={'font-size':'13px'})
           div(style={'margin-bottom':'20px'})
             div.table(style={'width':'100%', 'font-size':'16px', 'font-weight': 'bold'})
@@ -51,15 +50,15 @@ html
                 p #{datos.funcionario.referenciaMunicipal ? datos.funcionario.referenciaMunicipal : ' '} 
               div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
                 p #{datos.usuario.contribuyente.representanteLegal ? datos.usuario.contribuyente.representanteLegal : ' '}
-          div.table(style={'font-size':'13px','margin-top':'20px'})
+          div.table(style={'font-size':'13px'})
             div.tr
-              div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+              div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
                 p 
                   b Nro. Solicitud
-              div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+              div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
                 p 
                   b FECHA DE SOLICITUD 
-              div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+              div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
                 p 
                   b FECHA DE OTORGAMIENTO 
             div.tr
@@ -69,7 +68,7 @@ html
                 p #{moment(fecha).format('DD/MM/YYYY')}
               div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
                 p #{moment(fecha).format('DD/MM/YYYY')}
-          div.table(style={'font-size':'13px','margin-top':'20px'})
+          div.table(style={'font-size':'13px'})
             div.tr
               div.th.center.border-bottom
                 p
@@ -77,7 +76,7 @@ html
             div.tr
               each item in datos.funcionario.actividadesEconomicas
                 div.tr.break-page
-                  div(style={'text-align':'justify', '-webkit-flex': 1}).td.all-border
+                  div(style={'text-align':'justify', 'width':'100%', '-webkit-flex': 1}).td.all-border
                     p #{item.descripcion}
             div.tr
               div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
@@ -90,10 +89,15 @@ html
               div(style={'-webkit-flex': 1, 'text-align':'justify'}).td.border-right.border-bottom.center
                 p SE LES PARTICIPA QUE, VISTO QUE SE HAN CUMPLIDO CON LAS FORMALIDADES PREVISTAS EN LA ORDENANZA Nro. Nº 534 REFFORMA PARCIAL DE LA ORDENANZA QUE CREA Y REGULA EL IMPUESTO SOBRE ACTIVIDADES ECONÓMICAS DEL MUNICIPIO SAN FRANCISCO DADA, FIRMADA Y SELLADA EN EL DESPACHO DEL ALCALDE, A LOS SEIS (06) DÍAS DEL MES DE NOVIEMBRE DE DOS MIL VEINTE EN EL MUNICIPIO SAN FRANCISCO ESTADO ZULIA, ÁREA METROPOLITANA DE LA CIUDAD DE MARACAIBO A LOS 15 DÍAS DEL MES DE DICIEMBRE DE 2013. AÑO 210 DE LA INDEPENDENCIA Y 161° DE LA FEDERACIÓN, SE HA DISPUESTO ACCEDER A LO SOLICITADO.
       footer#footer
-        div(style={ '-webkit-flex': 1, 'justify-content': 'center', '-webkit-justify-content': 'center' })
-          div
-            b FIRMA AUTORIZADA
-            b Lorena Ojeda
-            b Intendente Tributario Municipal 
-          div
-            p Urb. Coromoto, calle 171, sede de la Alcaldía de San Francisco, RIF G-200092076
+        div(style={'display':'flex', '-webkit-flex': 1, 'justify-content': 'center', '-webkit-justify-content': 'center' })
+          div(style={'display':'flex', '-webkit-flex': 1, 'justify-content': 'center', '-webkit-justify-content': 'center' })
+            div
+              b FIRMA AUTORIZADA
+            div  
+              b Lorena Ojeda
+            div  
+              b Intendente Tributario Municipal 
+            div
+              p Urb. Coromoto, calle 171, sede de la Alcaldía de San Francisco, RIF G-200092076
+          div(style={'display':'flex', '-webkit-flex': 2, 'justify-content': 'center', '-webkit-justify-content': 'center' })
+            img#QR(src=QR, alt='QR')
