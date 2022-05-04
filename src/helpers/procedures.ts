@@ -232,6 +232,8 @@ const getSettlementInstances = async (user, client: PoolClient) => {
         aprobado: el.aprobado,
         estado: el.state,
       };
+      
+      console.log(el.monto, 'no se  por que no funciona');
 
       return liquidacion;
     });
