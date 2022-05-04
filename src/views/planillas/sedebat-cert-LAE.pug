@@ -16,7 +16,7 @@ html
           img#alcaldia(src='images/sedebat-logo.png')
       img#divider(src='images/franja-2.0.png')
       div#content
-        div(style={'margin-bottom':'20px', '-webkit-flex': 1, '-webkit-justify-content': 'end' })
+        div(style={'margin-bottom':'20px', '-webkit-flex': 1, '-webkit-justify-content': 'end', '-webkit-flex-direction': 'row' })
           div#fecha
             p San francisco, #{moment(fecha).format('DD/MM/YYYY')}
           img#QR(src=QR, alt='QR')
@@ -73,9 +73,9 @@ html
               div.th.center.border-bottom
                 p
                   b ACTIVIDADES AUTORIZADAS
-            each item in datos.funcionario.actividadesEconomicas
-              div(style={'text-align':'justify', '-webkit-flex': 1}).tr
-                p #{item.descripcion}
+              each item in datos.funcionario.actividadesEconomicas
+                div(style={'text-align':'justify', '-webkit-flex': 1}).tr
+                  p #{item.descripcion}
             div.tr
               div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
                 b DIRECCIÓN DEL ESTABLECIMIENTO: 
