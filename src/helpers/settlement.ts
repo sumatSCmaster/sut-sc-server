@@ -5452,6 +5452,7 @@ const createPatentDocument = async ({ gticPool, pool, user, application }: Certi
             denomComercial: application.denomComercial,
             rif: `${application.tipoDocumento}-${application.documento}`,
             rim: referencia?.referencia_municipal,
+            representanteLegal: referencia?.nombre_representante,
             direccion: application.direccion,
           },
           nroSolicitud: application.id,
