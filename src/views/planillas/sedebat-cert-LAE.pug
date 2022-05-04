@@ -16,7 +16,7 @@ html
           img#alcaldia(src='images/sedebat-logo.png')
       img#divider(src='images/franja-2.0.png')
       div#content
-        div(style={'margin-bottom':'20px', '-webkit-flex': 1, '-webkit-justify-content': 'end', '-webkit-flex-direction': 'row' })
+        div(style={'margin-bottom':'50px'})
           div#fecha
             p San francisco, #{moment(fecha).format('DD/MM/YYYY')}
             img#QR(src=QR, alt='QR')
@@ -75,14 +75,14 @@ html
                   b ACTIVIDADES AUTORIZADAS
               div.tr
                 each item in datos.funcionario.actividadesEconomicas
-                  div.tr.break-page
+                  div.td.border-bottom.center
                     p #{item.descripcion}
             div.tr
-              div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+              div(style={'-webkit-flex': 1, '-webkit-justify-content': 'start'}).td.border-right.border-bottom.center
                 b DIRECCIÓN DEL ESTABLECIMIENTO: 
                 b #{datos.usuario.contribuyente.direccion}
             div.tr
-              div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+              div(style={'-webkit-flex': 1, '-webkit-justify-content': 'start' }).td.border-right.border-bottom.center
                 b NOTA: 
                 p Licencia de Actividades Económicas, válida por un (1) año a partir de la fecha de otorgamiento.
             div.tr
