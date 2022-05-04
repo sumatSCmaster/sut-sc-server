@@ -19,7 +19,7 @@ html
         div(style={'margin-bottom':'20px', '-webkit-flex': 1, '-webkit-justify-content': 'end', '-webkit-flex-direction': 'row' })
           div#fecha
             p San francisco, #{moment(fecha).format('DD/MM/YYYY')}
-          img#QR(src=QR, alt='QR')
+            img#QR(src=QR, alt='QR')
         div#planilla(style={'font-size':'13px'})
           div(style={'margin-bottom':'20px'})
             div.table(style={'width':'100%', 'font-size':'16px', 'font-weight': 'bold'})
@@ -49,7 +49,7 @@ html
               div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
                 p #{datos.funcionario.referenciaMunicipal ? datos.funcionario.referenciaMunicipal : ' '} 
               div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
-                p #{datos.usuario.contribuyente.representanteLegal ? datos.usuario.contribuyente.representanteLegal : ' '}
+                p #{datos.funcionario.representanteLegal ? datos.funcionario.representanteLegal : ' '}
           div.table(style={'font-size':'13px'})
             div.tr
               div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
@@ -73,9 +73,10 @@ html
               div.th.center.border-bottom
                 p
                   b ACTIVIDADES AUTORIZADAS
-              each item in datos.funcionario.actividadesEconomicas
-                div(style={'text-align':'justify', '-webkit-flex': 1}).tr
-                  p #{item.descripcion}
+              div.tr
+                each item in datos.funcionario.actividadesEconomicas
+                  div.tr.break-page
+                    p #{item.descripcion}
             div.tr
               div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
                 b DIRECCIÓN DEL ESTABLECIMIENTO: 
