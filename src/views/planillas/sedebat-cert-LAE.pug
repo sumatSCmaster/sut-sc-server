@@ -14,16 +14,17 @@ html
           p Servicio Desconcentrado Bolivariano de Administración Tributaria
         div.header-child
           img#alcaldia(src='images/sedebat-logo.png')
+      img#divider(src='images/franja-2.0.png')
       div#content
-        div#fecha
-          p 
-            b FECHA:
-            span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
-        div.titleWithQR
-          img#QR(src=QR, alt='QR')
+        div(style={'-webkit-flex': 1, '-webkit-justify-content': 'end' })
+          div#fecha
+            p 
+              b San francisco, #{moment(fecha).format('DD/MM/YYYY')}
+          div.titleWithQR
+            img#QR(src=QR, alt='QR')
         div#planilla(style={'font-size':'13px'})
           div(style={'margin-bottom':'20px'})
-            div.table(style={'width':'90%', 'font-size':'16px', 'font-weight': 'bold'})
+            div.table(style={'width':'100%', 'font-size':'16px', 'font-weight': 'bold'})
               div.tr
                 div.th(style={'-webkit-flex': 1}).border-bottom.center
                   p
@@ -32,45 +33,54 @@ html
             div.tr
               div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
                 p
-                  b CONTRIBUYENTE:
-              div(style={'-webkit-flex': 6}).td.border-bottom.border-right
-                p #{datos.usuario.contribuyente.razonSocial}
+                  b CONTRIBUYENTE
               div(style={'-webkit-flex': 2}).td.border-bottom
                 p
-                  b RIF - C.I:&nbsp;
-                  span #{datos.usuario.contribuyente.tipoDocumento}-#{datos.usuario.contribuyente.documento}
+                  b RIF - C.I
               div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
                 p
-                  b N° DE LICENCIA: #{datos.funcionario.referenciaMunicipal ? datos.funcionario.referenciaMunicipal : ' '} 
+                  b N° DE LICENCIA 
               div(style={'-webkit-flex': 2}).td.border-bottom
                 p
-                  b REPRESENTANTE LEGAL: 
+                  b REPRESENTANTE LEGAL
+            div.tr
+              div(style={'-webkit-flex': 2}).td.border-bottom.border-right
+                p #{datos.usuario.contribuyente.razonSocial}
+              div(style={'-webkit-flex': 2}).td.border-bottom.border-right
+                p #{datos.usuario.contribuyente.tipoDocumento}-#{datos.usuario.contribuyente.documento}
+              div(style={'-webkit-flex': 2}).td.border-bottom.border-right
+                p #{datos.funcionario.referenciaMunicipal ? datos.funcionario.referenciaMunicipal : ' '} 
+              div(style={'-webkit-flex': 2}).td.border-bottom.border-right
+                p #{datos.representanteLegal ? datos.representanteLegal : ' '}
             div.tr
               div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
                 p 
-                  b Nro. Solicitud: #{datos.idTramite ? datos.idTramite : ' '}
+                  b Nro. Solicitud
               div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
                 p 
                   b FECHA DE SOLICITUD 
               div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
                 p 
-                  b FECHA DE OTORGAMIENTO
+                  b FECHA DE OTORGAMIENTO 
             div.tr
-              .th.center.border-bottom
+              div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+                p #{datos.idTramite ? datos.idTramite : ' '}
+              div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+                p #{moment(fecha).format('DD/MM/YYYY')}
+              div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+                p #{moment(fecha).format('DD/MM/YYYY')}
+            div.tr
+              div.th.center.border-bottom
                 p
                   b ACTIVIDADES AUTORIZADAS
-              div.tr
-                div(style={'-webkit-flex': 5}).td.border-right.center
-                  p
-                    b DESCRIPCIÓN
+            div.tr
               each item in datos.funcionario.actividadesEconomicas
                 div.tr.break-page
                   div(style={'-webkit-flex': 5}).td.border-right.center.border-top
                     p #{item.descripcion}
             div.tr
               div(style={'-webkit-flex': 2}).td.border-right.center
-                b DIRECCIÓN:
-                p #{datos.usuario.contribuyente.direccion}
+                b DIRECCIÓN DEL ESTABLECIMIENTO: #{datos.usuario.contribuyente.direccion}
             div.tr
               div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
                 b NOTA: 
@@ -80,7 +90,9 @@ html
                 p SE LES PARTICIPA QUE, VISTO QUE SE HAN CUMPLIDO CON LAS FORMALIDADES PREVISTAS EN LA ORDENANZA Nro. Nº 534 REFFORMA PARCIAL DE LA ORDENANZA QUE CREA Y REGULA EL IMPUESTO SOBRE ACTIVIDADES ECONÓMICAS DEL MUNICIPIO SAN FRANCISCO DADA, FIRMADA Y SELLADA EN EL DESPACHO DEL ALCALDE, A LOS SEIS (06) DÍAS DEL MES DE NOVIEMBRE DE DOS MIL VEINTE EN EL MUNICIPIO SAN FRANCISCO ESTADO ZULIA, ÁREA METROPOLITANA DE LA CIUDAD DE MARACAIBO A LOS 15 DÍAS DEL MES DE DICIEMBRE DE 2013. AÑO 210 DE LA INDEPENDENCIA Y 161° DE LA FEDERACIÓN, SE HA DISPUESTO ACCEDER A LO SOLICITADO.
       footer#footer
         div(style={ display: '-webkit-flex', padding: '0px 50px', 'justify-content': 'center', '-webkit-justify-content': 'center' })
-          b FIRMA AUTORIZADA
-          b Lorena Ojeda
-          b Intendente Tributario Municipal 
-          p Urb. Coromoto, calle 171, sede de la Alcaldía de San Francisco, RIF G-200092076
+          div
+            b FIRMA AUTORIZADA
+            b Lorena Ojeda
+            b Intendente Tributario Municipal 
+          div
+            p Urb. Coromoto, calle 171, sede de la Alcaldía de San Francisco, RIF G-200092076
