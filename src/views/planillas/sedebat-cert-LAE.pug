@@ -18,8 +18,8 @@ html
       div#content
         div(style={'margin-bottom':'20px', '-webkit-flex': 1, '-webkit-justify-content': 'end' })
           div#fecha
-            p 
-              b San francisco, #{moment(fecha).format('DD/MM/YYYY')}
+            p San francisco, #{moment(fecha).format('DD/MM/YYYY')}
+          img#QR(src=QR, alt='QR')
         div#planilla(style={'font-size':'13px'})
           div(style={'margin-bottom':'20px'})
             div.table(style={'width':'100%', 'font-size':'16px', 'font-weight': 'bold'})
@@ -27,18 +27,18 @@ html
                 div.th(style={'-webkit-flex': 1}).border-bottom.center
                   p
                     b LICENCIA DE ACTIVIDADES ECONÓMICAS                             
-          div.table(style={'font-size':'13px','margin-top':'20px'})
+          div.table(style={'font-size':'13px'})
             div.tr
-              div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+              div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
                 p
                   b CONTRIBUYENTE
-              div(style={'-webkit-flex': 2}).td.border-bottom
+              div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
                 p
                   b RIF - C.I
-              div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+              div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
                 p
                   b N° DE LICENCIA 
-              div(style={'-webkit-flex': 2}).td.border-bottom
+              div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
                 p
                   b REPRESENTANTE LEGAL
             div.tr
@@ -75,12 +75,13 @@ html
                   b ACTIVIDADES AUTORIZADAS
             div.tr
               each item in datos.funcionario.actividadesEconomicas
-                div.tr.break-page
-                  div(style={'text-align':'justify', 'width':'100%', '-webkit-flex': 1}).td.all-border
+                div.tr
+                  div(style={'text-align':'justify', 'width':'100%', '-webkit-flex': 1}).td.border-bottom
                     p #{item.descripcion}
             div.tr
               div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
-                b DIRECCIÓN DEL ESTABLECIMIENTO: #{datos.usuario.contribuyente.direccion}
+                b DIRECCIÓN DEL ESTABLECIMIENTO: 
+                b #{datos.usuario.contribuyente.direccion}
             div.tr
               div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
                 b NOTA: 
@@ -99,5 +100,4 @@ html
               b Intendente Tributario Municipal 
             div
               p Urb. Coromoto, calle 171, sede de la Alcaldía de San Francisco, RIF G-200092076
-          div(style={'display':'flex', '-webkit-flex': 2, 'justify-content': 'center', '-webkit-justify-content': 'center' })
-            img#QR(src=QR, alt='QR')
+         
