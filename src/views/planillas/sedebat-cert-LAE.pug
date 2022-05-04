@@ -73,11 +73,9 @@ html
               div.th.center.border-bottom
                 p
                   b ACTIVIDADES AUTORIZADAS
-            div.tr
-              each item in datos.funcionario.actividadesEconomicas
-                div.tr
-                  div(style={'text-align':'justify', 'width':'100%', '-webkit-flex': 1}).td.border-bottom
-                    p #{item.descripcion}
+            each item in datos.funcionario.actividadesEconomicas
+              div(style={'text-align':'justify', '-webkit-flex': 1}).tr
+                p #{item.descripcion}
             div.tr
               div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
                 b DIRECCIÓN DEL ESTABLECIMIENTO: 
@@ -100,4 +98,3 @@ html
               b Intendente Tributario Municipal 
             div
               p Urb. Coromoto, calle 171, sede de la Alcaldía de San Francisco, RIF G-200092076
-         
