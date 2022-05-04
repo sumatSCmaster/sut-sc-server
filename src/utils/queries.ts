@@ -819,7 +819,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_SETTLEMENT_INSTANCES:
     'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo INNER JOIN impuesto.solicitud_state sst ON sst.id = s.id_solicitud',
   GET_SETTLEMENT_INSTANCES_BY_ID: `
-    SELECT * FROM impuesto.solicitud s 
+    SELECT l.monto AS "montoLiquidacion", * FROM impuesto.solicitud s 
     INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud 
     INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo 
     INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo 

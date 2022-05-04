@@ -211,10 +211,7 @@ const getFineInstances = async (user, client: PoolClient) => {
  */
 const getSettlementInstances = async (user, client: PoolClient) => {
   try {
-    if (belongsToAnInstitution(user)) {
-      return [];
-    } else {
-    }
+    if (belongsToAnInstitution(user)) return [];
     let query = queries.GET_SETTLEMENT_INSTANCES_BY_ID;
     let payload = [user.id];
     let response = (await client.query(query, payload)).rows;
@@ -224,7 +221,7 @@ const getSettlementInstances = async (user, client: PoolClient) => {
         ramo: el.descripcion,
         nombreCorto: el.descripcion_corta,
         fecha: { month: el.datos.fecha?.month || el.datos.month, year: el.datos.fecha?.year || el.datos.year },
-        monto: el.monto,
+        monto: el.montoLiquidacion,
         montoPetro: el.monto_petro,
         certificado: el.certificado,
         recibo: el.recibo,
@@ -232,6 +229,8 @@ const getSettlementInstances = async (user, client: PoolClient) => {
         aprobado: el.aprobado,
         estado: el.state,
       };
+      
+      console.log(el.montoLiquidacion, 'no se  por que no funciona');
 
       return liquidacion;
     });
