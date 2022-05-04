@@ -1,207 +1,86 @@
-extends default
-block css
-  link(rel="stylesheet", href="css/sedemat.css")
-block title
-block content
-  div#fecha
-    p 
-      b FECHA:
-      span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
-  div.titleWithQR
-    p#title
-      b PATENTE DE LICENCIA DE ACTIVIDAD ECONÓMICA
-      br
-      b RIM: #{datos.funcionario.referenciaMunicipal ? datos.funcionario.referenciaMunicipal : 'POR CREAR'}    
-    div
-      img#QR(src=QR, alt='QR')
-  div#planilla(style={'font-size':'13px'})
-    div(style={'margin-bottom':'20px'})
-      div.table(style={'width':'90%', 'font-size':'16px', 'font-weight': 'bold'})
-        div.tr
-          div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
-            p 
-              b Nro. Solicitud
-          div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
-            p
-              b MOTIVO
-          div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
-            p
-              b Liquidador
-          div(style={'-webkit-flex': 2}).td.border-bottom.center
-            p
-              b Cajero
-        div.tr
-          div(style={'-webkit-flex': 1}).td.border-right.center
-            p  #{datos.idTramite ? datos.idTramite : 'POR CREAR'}
-          div(style={'-webkit-flex': 1}).td.border-right.center
-            p  RG2020
-          div(style={'-webkit-flex': 2}).td.border-right.center
-            p  #{datos.usuario.contribuyente.razonSocial}
-          div(style={'-webkit-flex': 2}).td.center
-            p  #{datos.cajero ? datos.cajero : 'N/A'}
-    div.table(style={'font-size':'13px','margin-top':'20px'})
-      .tr
-        div(style={'-webkit-flex': 1,'padding-right':'1px'}).td.center.border-bottom
+html
+  head
+    title Template
+    link(rel="stylesheet", href="css/sedemat.css")
+    block css
+  body
+    div#wrapper
+      header#header
+        div.header-child
+          img#alcaldia(src='images/alcaldia-logo.png')
+        div.header-child
+          p Estado Zulia
+          p Alcaldía del Municipio San Francisco
+          p Servicio Desconcentrado Bolivariano de Administración Tributaria
+        div.header-child
+          img#alcaldia(src='images/sedebat-logo.png')
+      div#content
+        div#fecha
           p 
-            b Tipo De Trámite: 112 - Licencia de Actividad Económica
-      .tr
-        div(style={'-webkit-flex': 2}).td.center.border-right.border-bottom
-          p 
-            b Capital Suscrito:
-        div(style={'-webkit-flex': 4}).td.center.border-right.border-bottom
-          p #{datos.funcionario.capitalSuscrito}
-        div(style={'-webkit-flex': 2.5}).td.center.border-right.border-bottom
-          p 
-            b Fecha Inscripcion:
-        div(style={'-webkit-flex': 1.5}).td.center.border-bottom
-          p #{moment().format('DD/MM/YYYY')}
-      .tr
-        div(style={'-webkit-flex': 2}).td.center.border-right.border-bottom
-          p 
-            b Tipo de sociedad:
-        div(style={'-webkit-flex': 8, 'padding-left': '1px'}).td.center.border-bottom
-          p #{datos.funcionario.tipoSociedadContrib}
-      if datos.funcionario.estadoLicencia === 'TEMPORAL'
-        .tr
-          div(style={'-webkit-flex': 2}).td.center.border-right
-            p 
-              b Estado de la Licencia
-          div(style={'-webkit-flex': 3}).td.center.border-right
-            p #{datos.funcionario.estadoLicencia}
-          div(style={'-webkit-flex': 2}).td.center.border-right
-            p 
-              b Fecha de Vencimiento
-          div(style={'-webkit-flex': 3}).td.center
-            p #{moment().add(3,'months').format('DD/MM/YYYY')}
-      else
-        .tr
-          div(style={'-webkit-flex': 2}).td.center.border-right
-            p 
-              b Estado de la Licencia
-          div(style={'-webkit-flex': 8}).td.center
-            p #{datos.funcionario.estadoLicencia}                             
-    div.table(style={'font-size':'13px','margin-top':'20px'})
-      div.tr
-        div.th(style={'-webkit-flex': 1}).border-bottom.center
-          p
-            b CONTRIBUYENTE
-      div.tr
-        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
-          p
-            b RAZÓN SOCIAL:
-        div(style={'-webkit-flex': 6}).td.border-bottom.border-right
-          p #{datos.usuario.contribuyente.razonSocial}
-        div(style={'-webkit-flex': 2}).td.border-bottom
-          p
-            b RIF:&nbsp;
-            span #{datos.usuario.contribuyente.tipoDocumento}-#{datos.usuario.contribuyente.documento}
-      div.tr
-        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
-          p
-            b DENOM. COMERCIAL:
-        div(style={'-webkit-flex': 6}).td.border-bottom.border-right
-          p #{datos.funcionario.denominacionComercial}
-        div(style={'-webkit-flex': 2}).td.border-bottom
-          p
-            b REF:&nbsp;
-            span #{datos.funcionario.referenciaMunicipal ? datos.funcionario.referenciaMunicipal : 'POR CREAR'}          
-      div.tr
-        div(style={'-webkit-flex': 2}).td.border-right.center
-          p
-            b DIRECCIÓN:
-        div(style={'-webkit-flex': 8, 'padding-left':'5px'}).td
-          p #{datos.usuario.contribuyente.direccion}
-    div.table
-      .tr
-        .th.center.border-bottom
-          p
-            b ACTIVIDADES
-      div.tr
-        div(style={'-webkit-flex': 1}).td.border-right.center
-          p
-            b CÓDIGO
-        div(style={'-webkit-flex': 5}).td.border-right.center
-          p
-            b DESCRIPCIÓN
-        div(style={'-webkit-flex': 1.5}).td.border-right.center
-          p
-            b ALICUOTA
-        div(style={'-webkit-flex': 1}).td.border-right.center
-          p
-            b PERIODO
-        div(style={'-webkit-flex': 1.5}).td.center
-          p
-            b FECHA INICIO    
-      each item in datos.funcionario.actividadesEconomicas
-        div.tr.break-page
-          div(style={'-webkit-flex': 1}).td.border-right.center.border-top
-            p #{item.codigo}
-          div(style={'-webkit-flex': 5}).td.border-right.center.border-top
-            p #{item.descripcion}
-          div(style={'-webkit-flex': 1.5}).td.border-right.center.border-top
-            p #{item.alicuota}
-          div(style={'-webkit-flex': 1}).td.border-right.center.border-top
-            p #{moment().format('YYYY')}
-          div(style={'-webkit-flex': 1.5}).td.center.border-top
-            p #{moment(item.desde).format('DD/MM/YYYY')}
-    div(style={'margin-top':'20px'}).table.break-page
-      div.tr.break-page
-        div(style={'-webkit-flex': 8}).th.border-right.border-bottom.center
-          p
-            b CONCEPTO
-        div(style={'-webkit-flex': 2}).th.border-bottom.center
-          p
-            b IMPUESTO
-      div.tr.break-page
-        div(style={'-webkit-flex': 8}).td.border-right
-          p Pago por Licencia de Actividad Económica
-        div(style={'-webkit-flex': 2}).td.center
-          p #{costoFormateado}
-    div(style={'margin-top':'20px'}).table.break-page
-      .tr.break-page
-        .th.center.border-bottom
-          p
-            b ESTATUS DE PAGO 
-      div.tr.break-page
-        div(style={'-webkit-flex': 2}).td.border-right.center
-          p
-            b Forma de Pago
-        div(style={'-webkit-flex': 3}).td.border-right.center
-          p
-            b BANCO
-        div(style={'-webkit-flex': 1}).td.border-right.center
-          p
-            b Fecha
-        div(style={'-webkit-flex': 1.5}).td.border-right.center
-          p
-            b N°DEPOSITO
-        div(style={'-webkit-flex': 2.5}).td.center
-          p
-            b MONTO CANCELADO
-      each item in datos.funcionario.pago
-        div.tr.break-page
-          div(style={'-webkit-flex': 2}).td.border-right.center.border-top
-            p #{item.formaPago}
-          div(style={'-webkit-flex': 3}).td.border-right.center.border-top
-            p #{item.banco}
-          div(style={'-webkit-flex': 1}).td.border-right.center.border-top
-            p #{moment(item.fecha).format('DD/MM/YYYY')}
-          div(style={'-webkit-flex': 1.5}).td.border-right.center.border-top
-            p #{item.nro}
-          div(style={'-webkit-flex': 2.5}).td.center.border-top
-            p Bs #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.monto ? item.monto : 0)}        
-    div(style={'margin-top':'20px'}).table.break-page
-      div(style={'background-color':'rgba(0,0,0,0.2)'}).tr
-        div(style={'-webkit-flex': 1}).td.border-right.center
-          p
-            b Total Liquidado:
-            span &nbsp;Bs #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.funcionario.totalLiq ? (datos.funcionario.totalLiq) : (2*(parseFloat(PETRO))))}
-        div(style={'-webkit-flex': 1}).td.border-right.center
-          p
-            b Total Recaudado:
-            span &nbsp;Bs #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.funcionario.totalRecaudado ?( datos.funcionario.totalRecaudado) : (2*(parseFloat(PETRO))))}
-        div(style={'-webkit-flex': 1}).td.center
-          p
-            b Total Credito Fiscal:
-            span &nbsp;Bs #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.funcionario.totalCred ? (datos.funcionario.totalCred) : 0)}
-block footer
+            b FECHA:
+            span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+        div.titleWithQR
+          img#QR(src=QR, alt='QR')
+        div#planilla(style={'font-size':'13px'})
+          div(style={'margin-bottom':'20px'})
+            div.table(style={'width':'90%', 'font-size':'16px', 'font-weight': 'bold'})
+              div.tr
+                div.th(style={'-webkit-flex': 1}).border-bottom.center
+                  p
+                    b LICENCIA DE ACTIVIDADES ECONÓMICAS                             
+          div.table(style={'font-size':'13px','margin-top':'20px'})
+            div.tr
+              div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+                p
+                  b CONTRIBUYENTE:
+              div(style={'-webkit-flex': 6}).td.border-bottom.border-right
+                p #{datos.usuario.contribuyente.razonSocial}
+              div(style={'-webkit-flex': 2}).td.border-bottom
+                p
+                  b RIF - C.I:&nbsp;
+                  span #{datos.usuario.contribuyente.tipoDocumento}-#{datos.usuario.contribuyente.documento}
+              div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+                p
+                  b N° DE LICENCIA: #{datos.funcionario.referenciaMunicipal ? datos.funcionario.referenciaMunicipal : ' '} 
+              div(style={'-webkit-flex': 2}).td.border-bottom
+                p
+                  b REPRESENTANTE LEGAL: 
+            div.tr
+              div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+                p 
+                  b Nro. Solicitud: #{datos.idTramite ? datos.idTramite : ' '}
+              div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+                p 
+                  b FECHA DE SOLICITUD 
+              div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+                p 
+                  b FECHA DE OTORGAMIENTO
+            div.tr
+              .th.center.border-bottom
+                p
+                  b ACTIVIDADES AUTORIZADAS
+              div.tr
+                div(style={'-webkit-flex': 5}).td.border-right.center
+                  p
+                    b DESCRIPCIÓN
+              each item in datos.funcionario.actividadesEconomicas
+                div.tr.break-page
+                  div(style={'-webkit-flex': 5}).td.border-right.center.border-top
+                    p #{item.descripcion}
+            div.tr
+              div(style={'-webkit-flex': 2}).td.border-right.center
+                b DIRECCIÓN:
+                p #{datos.usuario.contribuyente.direccion}
+            div.tr
+              div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+                b NOTA: 
+                p Licencia de Actividades Económicas, válida por un (1) año a partir de la fecha de otorgamiento.
+            div.tr
+              div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
+                p SE LES PARTICIPA QUE, VISTO QUE SE HAN CUMPLIDO CON LAS FORMALIDADES PREVISTAS EN LA ORDENANZA Nro. Nº 534 REFFORMA PARCIAL DE LA ORDENANZA QUE CREA Y REGULA EL IMPUESTO SOBRE ACTIVIDADES ECONÓMICAS DEL MUNICIPIO SAN FRANCISCO DADA, FIRMADA Y SELLADA EN EL DESPACHO DEL ALCALDE, A LOS SEIS (06) DÍAS DEL MES DE NOVIEMBRE DE DOS MIL VEINTE EN EL MUNICIPIO SAN FRANCISCO ESTADO ZULIA, ÁREA METROPOLITANA DE LA CIUDAD DE MARACAIBO A LOS 15 DÍAS DEL MES DE DICIEMBRE DE 2013. AÑO 210 DE LA INDEPENDENCIA Y 161° DE LA FEDERACIÓN, SE HA DISPUESTO ACCEDER A LO SOLICITADO.
+      footer#footer
+        div(style={ display: '-webkit-flex', padding: '0px 50px', 'justify-content': 'center', '-webkit-justify-content': 'center' })
+          b FIRMA AUTORIZADA
+          b Lorena Ojeda
+          b Intendente Tributario Municipal 
+          p Urb. Coromoto, calle 171, sede de la Alcaldía de San Francisco, RIF G-200092076
