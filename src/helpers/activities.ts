@@ -279,9 +279,12 @@ export const generatePatentDocument = async ({branchId}) => {
             razonSocial: contribuyente.razon_social,
             tipoDocumento: contribuyente.tipo_documento,
           }
+        },
+        funcionario:{
+          actividadesEconomicas: economicActivities,
+          referenciaMunicipal: referencia.referencia_municipal
         }
       },
-      actividadesEconomicas: economicActivities,
       estado: 'finalizado',
     });
 
