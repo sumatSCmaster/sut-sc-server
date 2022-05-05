@@ -48,7 +48,10 @@ html
               div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
                 p #{datos.funcionario.referenciaMunicipal ? datos.funcionario.referenciaMunicipal : ' '} 
               div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
-                p #{datos.nombre_representante ? datos.nombre_representante : ' '}
+                p #{nombreRepresentante ? nombreRepresentante : 'n'}
+                p #{datos.nombreRepresentante ? datos.nombreRepresentante : 'd'}
+                p #{datos.funcionario.nombreRepresentante ? datos.funcionario.nombreRepresentante : 'f'}
+
           div.table(style={'font-size':'13px'})
             div.tr
               div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
