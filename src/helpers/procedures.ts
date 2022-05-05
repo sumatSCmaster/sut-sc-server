@@ -547,7 +547,7 @@ export const getProcedureCosts = async () => {
  * @param user User data from token payload
  * @returns Response payload with freshly created procedure
  */
-export const procedureInit = async (procedure, user: Usuario) => {
+export const procedureInit = async (procedure, user: Usuario, id) => {
   mainLogger.info(`procedureInit ${procedure.tipoTramite} usuario ${user.id}`);
   const client = await pool.connect();
   const { tipoTramite, datos, pago, bill } = procedure;
@@ -571,12 +571,16 @@ export const procedureInit = async (procedure, user: Usuario) => {
       user.id = datos.usuario;
     }
 
-    const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify(datosP), user.id])).rows[0];
+    const response = (await client.query(queries.PROCEDURE_INIT, [tipoTramite, JSON.stringify(datosP), [39, 40].includes(tipoTramite) && id ? id : user.id])).rows[0];
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.idTramite])).rows[0];
     response.sufijo = resources.sufijo;
     costo = isNotPrepaidProcedure({ suffix: resources.sufijo, user }) ? null : pago.costo || resources.costo_base;
     mainLogger.info('🚀 ~ file: procedures.ts ~ line 473 ~ procedureInit ~ costo', costo);
+
+    if (!![39, 40].find((el) => el === tipoTramite)) {
+      response.aprobado = procedure.aprobado;
+    }
 
     if (!![29, 30, 31, 32, 33, 34, 35].find((el) => el === tipoTramite)) {
       if (!bill) return { status: 400, message: 'Es necesario asignar un precio a una licencia de licores' };
@@ -595,6 +599,14 @@ export const procedureInit = async (procedure, user: Usuario) => {
       pago.concepto = 'TRAMITE';
       pago.user = user.id;
       await insertPaymentReference(pago, response.id, client);
+    }
+    
+    if (resources.sufijo === 'veh' && pago.destino) {
+      // client.query(queries.UPDATE_PROCEDURE_PAID_TO_TRUE, [response.idTramite]);
+      client.query(queries.UPDATE_VEHICLE_PAYMENT_DATE, [datos.vehiculo.id]);
+      pago.concepto = 'TRAMITE';
+      pago.user = user.id;
+      await insertPaymentCashier(pago, response.id, client);
     }
 
     if (resources.sufijo === 'tl') {
@@ -1685,7 +1697,7 @@ export const procedureEvents = switchcase({
     //pagocajero: 'finalizar_cr',
   },
   tl: { iniciado: { true: 'validar_tl', false: 'finalizar_tl' }, validando: 'finalizar_tl' },
-  veh: { iniciado: 'validar_veh', validando: 'finalizar_veh' },
+  veh: { iniciado: { true: 'finalizar_veh', false: 'validar_veh' }, validando: 'finalizar_veh' },
   ompu: {
     iniciado: 'validar_ompu',
     enproceso: { true: 'aprobar_ompu', false: 'rechazar_ompu' },
