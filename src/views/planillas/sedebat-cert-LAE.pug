@@ -17,7 +17,8 @@ html
       img#divider(src='images/franja-2.0.png')
       div#content
         div(style={'margin-bottom':'50px', 'margin-top':'50px'})
-          div#fecha(style={ '-webkit-align-items': 'end', '-webkit-justify-content': 'end'})
+          div#fecha(style={ '-webkit-align-items': 'end', '-webkit-justify-content': 'space-between'})
+            div
             p San francisco, #{moment(fecha).format('DD/MM/YYYY')}
             img#QR(src=QR, alt='QR')
         div#planilla(style={'font-size':'13px'})
