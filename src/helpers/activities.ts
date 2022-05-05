@@ -272,8 +272,14 @@ export const generatePatentDocument = async ({branchId}) => {
       moment: require('moment'),
       institucion: 'SEDEBAT',
       ...referencia,
-      usuario: {
-        contribuyente:{...contribuyente}
+      datos: {
+        usuario: {
+          contribuyente:{
+            ...contribuyente,
+            razonSocial: contribuyente.razon_social,
+            tipoDocumento: contribuyente.tipo_documento,
+          }
+        }
       },
       actividadesEconomicas: economicActivities,
       estado: 'finalizado',
