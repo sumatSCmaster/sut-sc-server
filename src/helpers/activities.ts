@@ -274,7 +274,6 @@ export const generatePatentDocument = async ({branchId}) => {
       institucion: 'SEDEBAT',
       QR: linkQr,
       datos: {
-        ...referencia,
         usuario: {
           contribuyente:{
             ...contribuyente,
@@ -284,7 +283,8 @@ export const generatePatentDocument = async ({branchId}) => {
         },
         funcionario:{
           actividadesEconomicas: economicActivities,
-          referenciaMunicipal: referencia.referencia_municipal
+          referenciaMunicipal: referencia.referencia_municipal,
+          nombreRepresentante: referencia.nombre_representante
         }
       },
       estado: 'finalizado',
