@@ -16,8 +16,8 @@ html
           img#alcaldia(src='images/sedebat-logo.png')
       img#divider(src='images/franja-2.0.png')
       div#content
-        div(style={'margin-bottom':'50px', 'margin-top':'50px'})
-          div#fecha(style={ '-webkit-align-items': 'end', '-webkit-justify-content': 'space-between'})
+        div(style={'margin-bottom':'50px', 'margin-top':'50px', 'width':'100%'})
+          div#fecha(style={ '-webkit-align-items': 'end !important', '-webkit-justify-content': 'space-between'})
             div
             p San francisco, #{moment(fecha).format('DD/MM/YYYY')}
             img#QR(src=QR, alt='QR')
@@ -50,7 +50,7 @@ html
               div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
                 p #{datos.funcionario.referenciaMunicipal ? datos.funcionario.referenciaMunicipal : ' '} 
               div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
-                p #{datos.funcionario.representanteLegal ? datos.funcionario.representanteLegal : ' '}
+                p #{datos.contribuyente.representanteLegal ? datos.contribuyente.representanteLegal : ' '}
           div.table(style={'font-size':'13px'})
             div.tr
               div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
@@ -80,8 +80,8 @@ html
                   p #{item.descripcion}
             div.tr
               div(style={'-webkit-flex': 1, '-webkit-justify-content': 'start'}).td.border-right.border-bottom.center
-                b DIRECCIÓN DEL ESTABLECIMIENTO: 
-                b #{datos.usuario.contribuyente.direccion}
+                p 
+                  b DIRECCIÓN DEL ESTABLECIMIENTO: #{datos.usuario.contribuyente.direccion}
             div.tr
               div(style={'-webkit-flex': 1, '-webkit-justify-content': 'start' }).td.border-right.border-bottom.center
                 b NOTA: 
