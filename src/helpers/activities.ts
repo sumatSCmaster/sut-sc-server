@@ -7,6 +7,9 @@ import { errorMessageExtractor, errorMessageGenerator } from './errors';
 import { formatBranch, codigosRamo } from './settlement';
 import moment from 'moment';
 import { mainLogger } from '@utils/logger';
+import * as qr from 'qrcode';
+import S3Client from '@utils/s3';
+import { renderFile } from 'pug';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -258,6 +261,33 @@ export const updateContributorActivities = async ({ branchId, activities, branch
   }
 };
 
+export const generatePatentDocument = async ({branchId}) => {
+  const client = await pool.connect();
+  try {
+    const referencia = (await client.query(queries.GET_REGISTRO_MUNICIPAL_BY_ID, [ branchId ])).rows[0];
+    const economicActivities = (await pool.query(' SELECT ae.id_actividad_economica AS id, ae.numero_referencia as codigo, ae.descripcion, ae.alicuota, ae.minimo_tributable, aec.aplicable_desde AS desde FROM impuesto.actividad_economica_sucursal aec INNER JOIN impuesto.actividad_economica ae ON ae.numero_referencia = aec.numero_referencia WHERE id_registro_municipal = $1;', [branchId])).rows;
+    const contribuyente = (await client.query('SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1', [ referencia.id_contribuyente ])).rows[0];
+
+    const html = renderFile(resolve(__dirname, `../views/planillas/sedebat-cert-LAE.pug`), {
+      moment: require('moment'),
+      institucion: 'SEDEBAT',
+      ...referencia,
+      contribuyente:{...contribuyente},
+      actividadesEconomicas: economicActivities,
+      estado: 'finalizado',
+    });
+
+    return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
+  } catch (error) {
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || 'Error al generar el certificado',
+    };
+  } finally {
+    client.release();
+  }
+};
 interface Aliquot {
   id: number;
   codigo: string;

@@ -843,6 +843,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     `,
   GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID: `SELECT r.descripcion AS "descripcionRamo", sr.descripcion AS "descripcionSubramo", l.monto, l.datos,l.fecha_liquidacion AS "fechaLiquidacion" FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo INNER JOIN impuesto.solicitud_state sst ON sst.id = s.id_solicitud WHERE s.id_solicitud = $1;`,
   GET_APPLICATION_VIEW_BY_SETTLEMENT: 'SELECT * FROM impuesto.solicitud_view WHERE "idLiquidacion" = $1',
+  GET_REGISTRO_MUNICIPAL_BY_ID: `SELECT * FROM impuesto.registro_municipal WHERE id_registro_municipal = $1`,
   GET_APPLICATION_VIEW_BY_ID: 'SELECT * FROM impuesto.solicitud_view WHERE id = $1',
   GET_AGREEMENT_VIEW_BY_FRACTION_ID: `SELECT *,f.monto AS "montoFraccion", f.fecha_aprobado AS "fechaAprobacionFraccion" 
   FROM impuesto.solicitud_view sv INNER JOIN impuesto.convenio c ON sv.id=c.id_solicitud 
