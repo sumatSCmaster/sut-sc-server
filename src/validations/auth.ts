@@ -362,7 +362,7 @@ export const isSuperuser = (req, res, next) => {
 };
 
 export const isSuperuserOrDaniel = (req, res, next) => {
-  if (req.user.tipoUsuario === userTypes.Superuser || req.user?.institucion?.cargo?.id === 24) next();
+  if (req.user.tipoUsuario === userTypes.Superuser || req.user?.institucion?.cargo?.id === 24 || req.user?.institucion?.cargo?.id === 90) next();
   else {
     res.send({
       status: 401,
