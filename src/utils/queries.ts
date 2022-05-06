@@ -440,9 +440,11 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
 
   //valor
   GET_PETRO_VALUE: "SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'",
+  GET_PESO_VALUE: `SELECT valor_en_bs FROM valor WHERE descripcion = 'PESO'`,
   GET_USD_VALUE: "SELECT valor_en_bs FROM valor WHERE descripcion = 'Dolar'",
   GET_PETRO_VALUE_FORMAT: "SELECT valor_en_bs AS valor FROM valor WHERE descripcion = 'PETRO'",
   UPDATE_PETRO_VALUE: "UPDATE valor SET valor_en_bs = $1 WHERE descripcion = 'PETRO' RETURNING valor_en_bs;",
+  UPDATE_PESO_VALUE: "UPDATE valor SET valor_en_bs = $1 WHERE descripcion = 'PESO' RETURNING valor_en_bs;",
   UPDATE_USD_VALUE: "UPDATE valor SET valor_en_bs = $1 WHERE descripcion = 'Dolar' RETURNING valor_en_bs;",
 
   //Estadisticas
