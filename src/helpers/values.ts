@@ -48,7 +48,7 @@ export const updatePesoValue = async (value) => {
     await redisClient.expireAsync(REDIS_KEY, 1800);
     return {
       status: 200,
-      message: 'Se ha actualizado el valor del PETRO',
+      message: 'Se ha actualizado el valor del PESO',
       peso: result,
     };
   } catch (e) {
