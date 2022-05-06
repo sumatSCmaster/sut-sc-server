@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
-import { updatePetroValue, getPetroValue, getUsdValue, updateUsdValue } from '@helpers/values';
+import { updatePetroValue, getPetroValue, getUsdValue, updateUsdValue, getPesoValue, updatePesoValue } from '@helpers/values';
 import { isSuperuser, isSuperuserOrDaniel } from '@validations/auth';
 import { authenticate } from 'passport';
 
