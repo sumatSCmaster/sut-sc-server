@@ -263,7 +263,7 @@ export const getChargingsByWalletExcel = async (id) => {
       try {
         const bucketParams = {
           Bucket: process.env.BUCKET_NAME as string,
-          Key: `/sedebat/reportes/carteras/${id}.xlsx`,
+          Key: `/hacienda/reportes/carteras/${id}.xlsx`,
         };
         await S3Client.putObject({
           ...bucketParams,

@@ -70,9 +70,9 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
   }, {});
   try {
     return new Promise(async (res, rej) => {
-      const html = renderFile(resolve(__dirname, `../views/planillas/sedebat-cierreCaja.pug`), {
+      const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-cierreCaja.pug`), {
         moment: require('moment'),
-        institucion: 'SEDEBAT',
+        institucion: 'HACIENDA',
         datos: {
           cajero: userName,
           fecha: payload.day,
@@ -91,8 +91,8 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
           },
         },
       });
-      const pdfDir = resolve(__dirname, `../../archivos/sedebat/cierreCaja/${userId}/cierre.pdf`);
-      const dir = `${process.env.SERVER_URL}/sedebat/cierreCaja/${userId}/cierre.pdf`;
+      const pdfDir = resolve(__dirname, `../../archivos/hacienda/cierreCaja/${userId}/cierre.pdf`);
+      const dir = `${process.env.SERVER_URL}/hacienda/cierreCaja/${userId}/cierre.pdf`;
       if (dev) {
         pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
           res(dir);
@@ -105,7 +105,7 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
             } else {
               const bucketParams = {
                 Bucket: process.env.BUCKET_NAME as string,
-                Key: `/sedebat/cierreCaja/${userId}/cierre.pdf`,
+                Key: `/hacienda/cierreCaja/${userId}/cierre.pdf`,
               };
               await S3Client.putObject({
                 ...bucketParams,
@@ -145,14 +145,14 @@ export const generateAllCashiersReport = async (user, payload: { from?: Date; to
 
   try {
     return new Promise(async (res, rej) => {
-      const html = renderFile(resolve(__dirname, `../views/planillas/sedebat-cierreCajaJefe.pug`), {
+      const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-cierreCajaJefe.pug`), {
         moment: require('moment'),
-        institucion: 'SEDEBAT',
+        institucion: 'HACIENDA',
         chunk,
         datos: paymentBreakdown,
       });
-      const pdfDir = resolve(__dirname, `../../archivos/sedebat/cajaAll/cierre.pdf`);
-      const dir = `${process.env.SERVER_URL}/sedebat/cajaAll/cierre.pdf`;
+      const pdfDir = resolve(__dirname, `../../archivos/hacienda/cajaAll/cierre.pdf`);
+      const dir = `${process.env.SERVER_URL}/hacienda/cajaAll/cierre.pdf`;
       if (dev) {
         pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
           res(dir);
@@ -165,7 +165,7 @@ export const generateAllCashiersReport = async (user, payload: { from?: Date; to
             } else {
               const bucketParams = {
                 Bucket: process.env.BUCKET_NAME as string,
-                Key: `/sedebat/cajaAll/cierre.pdf`,
+                Key: `/hacienda/cajaAll/cierre.pdf`,
               };
               await S3Client.putObject({
                 ...bucketParams,

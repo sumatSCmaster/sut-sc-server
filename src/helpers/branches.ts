@@ -146,7 +146,7 @@ export const getTransfersReportBank = async ({ reportName = 'RPRTransferenciasBa
       const bucketParams = {
         Bucket: process.env.BUCKET_NAME as string,
 
-        Key: `/sedebat/reportes/${reportName}.xlsx`,
+        Key: `/hacienda/reportes/${reportName}.xlsx`,
       };
       await S3Client.upload({ ...bucketParams, Body: transformStream, ACL: 'public-read', ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }).promise();
 
@@ -219,7 +219,7 @@ export const getTransfersReport = async ({ reportName = 'RPRTransferencias', fro
       const bucketParams = {
         Bucket: process.env.BUCKET_NAME as string,
 
-        Key: `/sedebat/reportes/${reportName}.xlsx`,
+        Key: `/hacienda/reportes/${reportName}.xlsx`,
       };
       await S3Client.upload({ ...bucketParams, Body: transformStream, ACL: 'public-read', ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }).promise();
 
@@ -307,9 +307,9 @@ export const getCondoReport = async (payload) => {
 
       mainLogger.info(liquidated.rows.reduce((prev, next) => prev + +next.cantidadLiq, 0));
       mainLogger.info(liquidated.rows.reduce((prev, next) => prev + +next.liquidado, 0));
-      const html = renderFile(resolve(__dirname, `../views/planillas/sedebat-RPRA.pug`), {
+      const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-RPRA.pug`), {
         moment: require('moment'),
-        institucion: 'SEDEBAT',
+        institucion: 'HACIENDA',
         datos: {
           // ingresos: chunk(branches, 8),
           acumuladoIngresos: `CONTENIDO: CONDOMINIOS, DESDE EL ${moment(payload.from).subtract(4, 'h').format('DD/MM/YYYY')} AL ${moment(payload.to).subtract(4, 'h').format('DD/MM/YYYY')}`,
@@ -320,8 +320,8 @@ export const getCondoReport = async (payload) => {
           metodoPago: pagos,
         },
       });
-      const pdfDir = resolve(__dirname, `../../archivos/sedebat/reportes/RPRA.pdf`);
-      const dir = `${process.env.SERVER_URL}/sedebat/reportes/RPRA.pdf`;
+      const pdfDir = resolve(__dirname, `../../archivos/hacienda/reportes/RPRA.pdf`);
+      const dir = `${process.env.SERVER_URL}/hacienda/reportes/RPRA.pdf`;
       if (dev) {
         pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
           res(dir);
@@ -335,7 +335,7 @@ export const getCondoReport = async (payload) => {
             } else {
               const bucketParams = {
                 Bucket: process.env.BUCKET_NAME as string,
-                Key: 'sedebat/reportes/RPRCondominio.pdf',
+                Key: 'hacienda/reportes/RPRCondominio.pdf',
               };
               await S3Client.putObject({
                 ...bucketParams,
@@ -420,7 +420,7 @@ export const getCondoReportDisclosed = async ({ reportName = 'ReporteCondoL', fr
       const bucketParams = {
         Bucket: process.env.BUCKET_NAME as string,
 
-        Key: `/sedebat/reportes/${reportName}.xlsx`,
+        Key: `/hacienda/reportes/${reportName}.xlsx`,
       };
       await S3Client.upload({ ...bucketParams, Body: transformStream, ACL: 'public-read', ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }).promise();
 
