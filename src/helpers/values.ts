@@ -183,6 +183,7 @@ export const getPeso = async () => {
       peso = cachedPeso;
     } else {
       client = await pool.connect();
+      console.log(await client.query(queries.GET_PESO_VALUE));
       peso = (await client.query(queries.GET_PESO_VALUE)).rows[0].valor_en_bs;
       await redisClient.setAsync(REDIS_KEY, peso);
       await redisClient.expireAsync(REDIS_KEY, 1800);
