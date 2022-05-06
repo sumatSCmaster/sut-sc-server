@@ -87,13 +87,13 @@ export const getPesoValue = async () => {
     const result = await getPeso();
     return {
       status: 200,
-      message: 'Se ha obtenido el valor de la PETRO',
+      message: 'Se ha obtenido el valor del PESO',
       peso: result,
     };
   } catch (e) {
     throw {
       status: 500,
-      error: errorMessageGenerator(e) || 'Error en obtencion del valor de la PESO',
+      error: errorMessageGenerator(e) || 'Error en obtencion del valor del PESO',
     };
   } finally {
   }
@@ -178,12 +178,10 @@ export const getPeso = async () => {
   let peso;
   try {
     const cachedPeso = await redisClient.getAsync(REDIS_KEY);
-    	console.log(cachedPeso);
     if (cachedPeso !== null) {
       peso = cachedPeso;
     } else {
       client = await pool.connect();
-      console.log(await client.query(queries.GET_PESO_VALUE));
       peso = (await client.query(queries.GET_PESO_VALUE)).rows[0].valor_en_bs;
       await redisClient.setAsync(REDIS_KEY, peso);
       await redisClient.expireAsync(REDIS_KEY, 1800);
