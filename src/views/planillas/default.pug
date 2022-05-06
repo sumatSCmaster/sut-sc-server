@@ -34,10 +34,10 @@ html
               when 'IMTCUMA'
                 - nombre = 'Instituto Municipal de Transporte Colectivo y Urbano de Pasajeros del Municipio Maracaibo'
                 - rif = '' 
-              when 'SEDEBAT'
-                  - nombre = 'SEDEBAT'
-                  - rif = 'G-200091533'
-            p Alcaldia de San Francisco
+              when 'HACIENDA'
+                  - nombre = 'ALCALDIA DEL MUNICIPIO SAN CRISTOBAL DIRECCION DE HACIENDA'
+                  - rif = 'G-20000479-7'
+            p REPUBLICA BOLIVARIANA DE VENEZUELA
             p #{nombre}
             p R.I.F.: #{rif}
           div.header-child
@@ -57,8 +57,8 @@ html
                 - src = 'images/POLIMARACAIBO.png' 
               when 'IMTCUMA'
                 - src = 'images/imtcuma.png' 
-              when 'SEDEBAT'
-                - src ='images/sedebat-logo.png'                                 
+              when 'HACIENDA'
+                - src ='images/encabezado-alcaldia.png'                                 
               default
                 - src = 'images/alcaldia-logo.png'
             if institucion === 'PMM' || institucion === 'CBM'
@@ -82,8 +82,8 @@ html
               - direccion = 'Avenida 3E Entre Calles 72 y 73. Sector La Lago, Edificio Club de Leones. Teléfono: (0261) 7934400'
             when 'CPU'
               - direccion = 'Av.3F con calle 81, Sector Valle Frío, Edif. CPU. Teléfono: 0414-3677150'
-            when 'SEDEBAT'
-              - direccion = 'Telfs. (0261) 793.55.08 (Master) Fax. (0261) 793.58.69 Av. 3F entre calles 81 y 81A, Edif. CPU Planta Baja'                
+            when 'HACIENDA'
+              - direccion = 'av Alberto Carnevalli local nro s/n urb merida San Cristobal Tachira zona postal 5001'                
           //- img#divider(src='images/franja-2.0.png')
           //- div(style={ display: '-webkit-flex', padding: '0px 50px', 'justify-content': 'center', '-webkit-justify-content': 'center' })
           //-   p(style={ display: '-webkit-flex', '-webkit-justify-content': 'center', '-webkit-align-items': 'center', 'margin': '0px 50px' }) #{direccion}
