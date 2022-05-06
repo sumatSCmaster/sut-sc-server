@@ -4,11 +4,10 @@ block css
 block header
   div(style={display:'-webkit-flex', 'align-items': 'center'})
     div(style={'-webkit-flex': 3, 'text-align':'start'})
-      img(src="images/hacienda-logo.png", alt="hacienda" style={width:'150px', height:'150px'})
+      img(src="images/encabezado-alcaldia.png", alt="sedebat" style={width:'150px', height:'150px'})
     div(style={'-webkit-flex': 1})
       div(style={'margin':'15px 0'})
         h3(style={'margin': '0 auto'}) SOLVENCIA MUNICIPAL 
-        h3(style={'margin': '0 auto'}) N A.E.- #{datos.codigo}
       div(style={'border':'1px solid grey'})
         div.tr(style={'font-size': '12px'})
           div(style={'-webkit-flex': 1})
@@ -35,44 +34,30 @@ block content
         .td
           p
             b El Contribuyente:
-            span &nbsp;#{datos.contribuyente}.&nbsp;
+            span &nbsp;#{datos.contribuyente}&nbsp;
       .tr
-        .td
-          p
-            b R.I.M:
-            span &nbsp;#{datos.rim},&nbsp;
         .td
           p
             b C.I./R.I.F:
-            span &nbsp;#{datos.cedulaORif}.&nbsp;
+            span &nbsp;#{datos.cedulaORif}&nbsp;
       .tr
         .td
           p
-            b Dirección:
-            span &nbsp;#{datos.direccion ? (datos.direccion.trim() !== '' ? datos.direccion : 'Dirección Sin Asignar') : 'Dirección Sin Asignar'}.&nbsp;
+            b Representante del Inmueble Ubicado en:
+            span &nbsp;#{datos.direccion ? (datos.direccion.trim() !== '' ? datos.direccion : 'Dirección Sin Asignar') : ''}.&nbsp;
       .tr
         .td
           p
-            b Representante Legal:
-            span &nbsp;#{datos.representanteLegal}.&nbsp;
+            b Parroquia:
+            span &nbsp;#{datos.parroquia}&nbsp;
+        .td
+          p
+            b Identificado con el R.I.M:
+            span &nbsp;#{datos.rim ? datos.rim : 'N/A'}&nbsp; 
       .tr
         .td
           p
-            b Se encuentra solvente con el impuesto a las Actividades Económicas hasta el:
-            span &nbsp;#{datos.periodo}&nbsp;
-      .tr
-        .td
-          p
-            b Mes del año
-            span &nbsp;#{datos.anio}&nbsp;
-        .td
-          p
-            b Esta solvencia es valida por el mes en curso.
-      .tr
-        .td
-          p
-            b San Francisco,
-            span &nbsp; #{datos.fechaLetra}.
+            b Se encuentra solvente con el impuesto sobre los Servicios Municipales
     div(style={'margin-top':"40%"}).flex.center
       div(style={height:"180px"})
         img(src=QR, alt='QR', style={height:"100%"})
@@ -80,4 +65,4 @@ block content
         hr(style={'z-index':'2', 'background-color':'#000', width:'350px', height:"2px", border:'none'})
         img(src="images/firma.png", style={'margin-top':'-90px', 'z-index':'1',width:'350px'}, alt="", srcset="")
       div(style={height:"200px"})
-        img(src='images/AE-Logo.png', alt='logo', style={height:"100%"})
+        img(src='images/sm.png', alt='logo', style={'margin-top':'-70px',width:'250px'})
