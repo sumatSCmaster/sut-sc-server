@@ -51,7 +51,7 @@ export const getDataForDefinitiveDeclaration = async ({ document, reference, doc
     const proposedYear = now.clone().subtract(1, 'year');
     if (!reference) throw { status: 403, message: 'Debe incluir un RIM' };
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows[0];
-    if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEBAT' };
+    if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en HACIENDA' };
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
     if (!branch) throw { status: 404, message: 'No existe el RIM proporcionado' };
     const lastYearDeclaration = (await client.query(queries.ALL_YEAR_SETTLEMENTS_EXISTS_FOR_LAST_YEAR_AE_DECLARATION, [codigosRamo.AE, branch.id_registro_municipal, proposedYear.year()])).rows;
@@ -178,7 +178,7 @@ const createReceiptForAEApplication = async (payload: { liquidaciones; contribuy
         fecha: moment().format('YYYY-MM-DD'),
         tramite: 'PAGO DE IMPUESTOS',
         moment: require('moment'),
-        institucion: 'SEDEBAT',
+        institucion: 'HACIENDA',
         datos: {
           nroSolicitud: el.id,
           nroPlanilla: new Date().getTime().toString().slice(7),
@@ -213,10 +213,10 @@ const createReceiptForAEApplication = async (payload: { liquidaciones; contribuy
 
     return new Promise(async (res, rej) => {
       try {
-        let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/sedebat-cert-DAE.pug`), certInfo));
-        const pdfDir = resolve(__dirname, `../../archivos/sedebat/definitive-declaration/AE/${contribuyente.anio}/${contribuyente.id}/recibo.pdf`);
-        const dir = `${process.env.SERVER_URL}/sedebat/definitive-declaration/AE/${contribuyente.anio}/${contribuyente.id}/recibo.pdf`;
-        // const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedebat/${application.id}`, { errorCorrectionLevel: 'H' });
+        let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/hacienda-cert-DAE.pug`), certInfo));
+        const pdfDir = resolve(__dirname, `../../archivos/hacienda/definitive-declaration/AE/${contribuyente.anio}/${contribuyente.id}/recibo.pdf`);
+        const dir = `${process.env.SERVER_URL}/hacienda/definitive-declaration/AE/${contribuyente.anio}/${contribuyente.id}/recibo.pdf`;
+        // const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/hacienda/${application.id}`, { errorCorrectionLevel: 'H' });
         let buffersArray: any[] = await Promise.all(
           htmlArray.map((html) => {
             return new Promise((res, rej) => {
@@ -281,7 +281,7 @@ const createReceiptForAEApplication = async (payload: { liquidaciones; contribuy
             if (buffersArray.length === 1) {
               const bucketParams = {
                 Bucket: process.env.BUCKET_NAME as string,
-                Key: `/sedebat/definitive-declaration/AE/${contribuyente.anio}/${contribuyente.id}/recibo.pdf`,
+                Key: `/hacienda/definitive-declaration/AE/${contribuyente.anio}/${contribuyente.id}/recibo.pdf`,
               };
               await S3Client.putObject({
                 ...bucketParams,
@@ -308,7 +308,7 @@ const createReceiptForAEApplication = async (payload: { liquidaciones; contribuy
                 .then(async (buffer) => {
                   const bucketParams = {
                     Bucket: process.env.BUCKET_NAME as string,
-                    Key: `/sedebat/definitive-declaration/AE/${contribuyente.anio}/${contribuyente.id}/recibo.pdf`,
+                    Key: `/hacienda/definitive-declaration/AE/${contribuyente.anio}/${contribuyente.id}/recibo.pdf`,
                   };
                   await S3Client.putObject({
                     ...bucketParams,
@@ -338,10 +338,10 @@ const createReceiptForAEApplication = async (payload: { liquidaciones; contribuy
 
     // return new Promise(async (res, rej) => {
 
-    //   // const html = renderFile(resolve(__dirname, `../views/planillas/sedebat-cert-AE.pug`), certAE);
-    //   // const pdfDir = resolve(__dirname, `../../archivos/sedebat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
-    //   // const dir = `${process.env.SERVER_URL}/sedebat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
-    //   // const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/sedebat/${application.id}`, { errorCorrectionLevel: 'H' });
+    //   // const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-cert-AE.pug`), certAE);
+    //   // const pdfDir = resolve(__dirname, `../../archivos/hacienda/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`);
+    //   // const dir = `${process.env.SERVER_URL}/hacienda/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`;
+    //   // const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/hacienda/${application.id}`, { errorCorrectionLevel: 'H' });
     //   // if (dev) {
     //   //   pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
     //   //     await pool.query(queries.UPDATE_RECEIPT_FOR_SETTLEMENTS, [dir, application.idProcedimiento, application.id]);
@@ -356,7 +356,7 @@ const createReceiptForAEApplication = async (payload: { liquidaciones; contribuy
     //   //         const bucketParams = {
     //   //           Bucket: process.env.BUCKET_NAME as string,
 
-    //   //           Key: `/sedebat/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
+    //   //           Key: `/hacienda/${application.id}/AE/${application.idLiquidacion}/recibo.pdf`,
     //   //         };
     //   //         await S3Client.putObject({
     //   //           ...bucketParams,

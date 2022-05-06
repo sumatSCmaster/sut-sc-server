@@ -37,7 +37,7 @@ export const getMunicipalServicesByContributor = async ({ reference, document, d
   const client = await pool.connect();
   try {
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows[0];
-    if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en SEDEBAT' };
+    if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en HACIENDA' };
     if (!reference) throw { status: 404, message: 'Debe proporcionar el RIM del contribuyente' };
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
     if (!branch) throw { status: 404, message: 'La sucursal solicitada no existe' };

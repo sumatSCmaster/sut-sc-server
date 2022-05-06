@@ -268,9 +268,9 @@ export const generatePatentDocument = async ({branchId}) => {
     const economicActivities = (await pool.query(' SELECT ae.id_actividad_economica AS id, ae.numero_referencia as codigo, ae.descripcion, ae.alicuota, ae.minimo_tributable, aec.aplicable_desde AS desde FROM impuesto.actividad_economica_sucursal aec INNER JOIN impuesto.actividad_economica ae ON ae.numero_referencia = aec.numero_referencia WHERE id_registro_municipal = $1;', [branchId])).rows;
     const contribuyente = (await client.query('SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1', [ referencia.id_contribuyente ])).rows[0];
 
-    const html = renderFile(resolve(__dirname, `../views/planillas/sedebat-cert-LAE-SIM.pug`), {
+    const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-cert-LAE-SIM.pug`), {
       moment: require('moment'),
-      institucion: 'SEDEBAT',
+      institucion: 'HACIENDA',
       datos: {
         usuario: {
           contribuyente:{

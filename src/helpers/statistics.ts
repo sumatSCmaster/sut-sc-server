@@ -747,7 +747,7 @@ export const getStatsSedematSettlements = async ({ institution }: { institution:
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || error.message || 'Error al obtener estadisticas de SEDEBAT',
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener estadisticas de HACIENDA',
     };
   } finally {
     client.release();
@@ -846,7 +846,7 @@ export const getStatsSedematTotal = async ({ institution }: { institution: numbe
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || error.message || 'Error al obtener estadisticas de SEDEBAT',
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener estadisticas de HACIENDA',
     };
   } finally {
     client.release();
@@ -863,7 +863,7 @@ export const getStatsSedematGraphs = async ({ institution }: { institution: numb
 
   try {
     await client.query('BEGIN');
-    // if (institution !== Instituciones.SEDEMAT) throw { status: 403, message: 'Sólo un miembro de SEDEBAT puede acceder a esta información' };
+    // if (institution !== Instituciones.SEDEMAT) throw { status: 403, message: 'Sólo un miembro de HACIENDA puede acceder a esta información' };
 
     // Graficas mensuales
     // 1. Tasas de AE liquidadas/pagadas (por día reflejado en gráfico de barras)
@@ -950,7 +950,7 @@ export const getStatsSedematGraphs = async ({ institution }: { institution: numb
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || error.message || 'Error al obtener estadisticas de SEDEBAT',
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener estadisticas de HACIENDA',
     };
   } finally {
     client.release();
@@ -970,7 +970,7 @@ export const getStatsSedematTop = async ({ institution }: { institution: number 
     PP: any[] = [];
   try {
     await client.query('BEGIN');
-    // if (institution !== Instituciones.SEDEMAT) throw { status: 403, message: 'Sólo un miembro de SEDEBAT puede acceder a esta información' };
+    // if (institution !== Instituciones.SEDEMAT) throw { status: 403, message: 'Sólo un miembro de HACIENDA puede acceder a esta información' };
     // Top contribuyentes
     // 1. Agentes de retención que han declarado/pagado por mes
     const totalARDeclarationsP = client.query(queries.TOTAL_AR_DECLARATIONS_AND_PAYMENTS_IN_MONTH);
@@ -1000,7 +1000,7 @@ export const getStatsSedematTop = async ({ institution }: { institution: number 
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || error.message || 'Error al obtener estadisticas de SEDEBAT',
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener estadisticas de HACIENDA',
     };
   } finally {
     client.release();
@@ -1020,7 +1020,7 @@ export const getStatsSedemat = async ({ institution }: { institution: number }) 
     PP: any[] = [];
   try {
     await client.query('BEGIN');
-    // if (institution !== Instituciones.SEDEMAT) throw { status: 403, message: 'Sólo un miembro de SEDEBAT puede acceder a esta información' };
+    // if (institution !== Instituciones.SEDEMAT) throw { status: 403, message: 'Sólo un miembro de HACIENDA puede acceder a esta información' };
     const now = moment().locale('ES');
     // Totales
     // 1. Total de usuarios registrados en SUT
@@ -1244,7 +1244,7 @@ export const getStatsSedemat = async ({ institution }: { institution: number }) 
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || error.message || 'Error al obtener estadisticas de SEDEBAT',
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener estadisticas de HACIENDA',
     };
   } finally {
     client.release();
@@ -1284,7 +1284,7 @@ export const getContributorsStatistics = async (date: any): Promise<any> => {
 
     const bucketParams = {
       Bucket: process.env.BUCKET_NAME as string,
-      Key: `/sedebat/reportes/${reportName}.txt`,
+      Key: `/hacienda/reportes/${reportName}.txt`,
       Body: await workbook.xlsx.writeBuffer(),
       ACL: 'public-read',
       ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -1319,7 +1319,7 @@ export const getStatsSedematWithDate = async ({ institution, date }: { instituti
     IU: any[] = [],
     PP: any[] = [];
   try {
-    // if (institution !== Instituciones.SEDEMAT) throw { status: 403, message: 'Sólo un miembro de SEDEBAT puede acceder a esta información' };
+    // if (institution !== Instituciones.SEDEMAT) throw { status: 403, message: 'Sólo un miembro de HACIENDA puede acceder a esta información' };
     const now = moment().locale('ES');
     const requestedDate = moment(date).locale('ES');
     mainLogger.error(requestedDate.format('MM-DD-YYYY'));
@@ -1542,7 +1542,7 @@ export const getStatsSedematWithDate = async ({ institution, date }: { instituti
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || error.message || 'Error al obtener estadisticas de SEDEBAT',
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener estadisticas de HACIENDA',
     };
   } finally {
     client.release();
@@ -1560,7 +1560,7 @@ export const bsByBranchInterval = async ({ institution, startingDate, endingDate
   const totalSolvencyRate: any[] = [];
   const totalSettlements: any[] = [];
   try {
-    // if (institution !== Instituciones.SEDEMAT) throw { status: 403, message: 'Sólo un miembro de SEDEBAT puede acceder a esta información' };
+    // if (institution !== Instituciones.SEDEMAT) throw { status: 403, message: 'Sólo un miembro de HACIENDA puede acceder a esta información' };
     const now = moment().locale('ES');
     const requestedDateS = moment(startingDate).locale('ES');
     mainLogger.info('//if -> requestedDateS', requestedDateS);
@@ -1588,7 +1588,7 @@ export const bsByBranchInterval = async ({ institution, startingDate, endingDate
     throw {
       status: error.status || 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || error.message || 'Error al obtener estadisticas de SEDEBAT',
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener estadisticas de HACIENDA',
     };
   } finally {
     client.release();

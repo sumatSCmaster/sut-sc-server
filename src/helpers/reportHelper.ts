@@ -47,7 +47,7 @@ export const getSettlementsReport = async ({ query, reportName }) => {
           const bucketParams = {
             Bucket: process.env.BUCKET_NAME as string,
 
-            Key: '/sedebat/reportes/liquidaciones.xlsx',
+            Key: '/hacienda/reportes/liquidaciones.xlsx',
           };
           await S3Client.putObject({
             ...bucketParams,
