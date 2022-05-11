@@ -1668,6 +1668,8 @@ export const getNextEventForProcedure = async (procedure, client): Promise<any> 
   mainLogger.info(`getNextEventForProcedure - response ${JSON.stringify(response)}`);
   const nextEvent = procedureEventHandler(procedure.sufijo, response.state);
 
+  console.log('PABLO getNextEventForProcedure', 'response', response, 'nextEvent', typeof nextEvent, nextEvent)
+
   if (typeof nextEvent === 'string' || procedure.sufijo === 'lae' || procedure.sufijo === 'rc' || procedure.sufijo === 'bc' || (procedure.sufijo === 'sup' && (response.state === 'enproceso' || response.state === 'enrevision'))) return nextEvent;
   if (
     (response.state === 'enrevision' && procedure.sufijo === 'cr') ||
