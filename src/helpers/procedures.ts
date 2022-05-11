@@ -594,7 +594,7 @@ export const procedureInit = async (procedure, user: Usuario, id) => {
 
     const nextEvent = await getNextEventForProcedure(response, client);
 
-    console.log('PABLO',nextEvent, resources.sufijo)
+    console.log('PABLO','nextEvent', nextEvent, 'sufijo', resources.sufijo, 'response', response)
 
     if (pago && resources.sufijo !== 'tl' && nextEvent.startsWith('validar')) {
       pago.costo = costo;
