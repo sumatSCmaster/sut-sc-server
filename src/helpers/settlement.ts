@@ -3140,8 +3140,6 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
         })();
       })
     );
-    console.log(payment);
-    console.log(user);
 
     applicationType !== 'RETENCION' && (await client.query(queries.FINISH_ROUNDING, [application]));
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
@@ -3154,7 +3152,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
       const retentionDetail = (await client.query(queries.GET_RETENTION_DETAIL_BY_APPLICATION_ID, [application])).rows;
       await Promise.all(retentionDetail.map(async (x) => await client.query(queries.CREATE_RETENTION_FISCAL_CREDIT, [x.rif, x.numero_referencia, x.monto_retenido, true, application])));
     }
-
+    console.log(user, 'yori')
     const applicationInstance = await getApplicationsAndSettlementsByIdNots({ id: application, user }, client);
     if (user.tipoUsuario !== 4) {
       if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
