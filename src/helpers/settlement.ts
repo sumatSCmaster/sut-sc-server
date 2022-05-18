@@ -3119,6 +3119,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
             if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
             const nearbyHolidays = (await client.query(queries.GET_HOLIDAYS_BASED_ON_PAYMENT_DATE, [el.fecha])).rows;
             console.log(payment);
+            console.log(user);
             const paymentDate = checkIfWeekend(moment(el.fecha));
             if (nearbyHolidays.length > 0) {
               while (nearbyHolidays.find((el) => moment(el.dia).format('YYYY-MM-DD') === paymentDate.format('YYYY-MM-DD'))) paymentDate.add({ days: 1 });
