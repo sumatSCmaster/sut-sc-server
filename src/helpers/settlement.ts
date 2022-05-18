@@ -3118,6 +3118,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
           try {
             if (!el.costo) throw { status: 403, message: 'Debe incluir el monto a ser pagado' };
             const nearbyHolidays = (await client.query(queries.GET_HOLIDAYS_BASED_ON_PAYMENT_DATE, [el.fecha])).rows;
+            console.log(payment);
             const paymentDate = checkIfWeekend(moment(el.fecha));
             if (nearbyHolidays.length > 0) {
               while (nearbyHolidays.find((el) => moment(el.dia).format('YYYY-MM-DD') === paymentDate.format('YYYY-MM-DD'))) paymentDate.add({ days: 1 });
@@ -3138,8 +3139,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
         })();
       })
     );
-      
-    console.log('probando aqui');
+
     applicationType !== 'RETENCION' && (await client.query(queries.FINISH_ROUNDING, [application]));
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const state =
