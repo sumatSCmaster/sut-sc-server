@@ -3138,7 +3138,8 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
         })();
       })
     );
-
+      
+    console.log('probando aqui');
     applicationType !== 'RETENCION' && (await client.query(queries.FINISH_ROUNDING, [application]));
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const state =
@@ -3156,7 +3157,6 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
       if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
       applicationInstance.recibo = await generateReceipt({ application }, client);
     }
-    console.log('probando aqui');
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente?.id]);
     await client.query('COMMIT');
 
