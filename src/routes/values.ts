@@ -36,7 +36,7 @@ router.patch('/dolar', authenticate('jwt'), isSuperuserOrDaniel, async (req, res
   if (data) res.status(200).json({ ...data });
 });
 
-router.get('/dolar', authenticate('jwt'), isSuperuserOrDaniel, async (req, res) => {
+router.get('/dolar', authenticate('jwt'), async (req, res) => {
   const [error, data] = await fulfill(getUsdValue());
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ ...data });
@@ -48,7 +48,7 @@ router.patch('/euro', authenticate('jwt'), isSuperuserOrDaniel, async (req, res)
   if (data) res.status(200).json({ ...data });
 });
 
-router.get('/euro', authenticate('jwt'), isSuperuserOrDaniel, async (req, res) => {
+router.get('/euro', authenticate('jwt'), async (req, res) => {
   const [error, data] = await fulfill(getEuroValue());
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ ...data });
