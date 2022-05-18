@@ -3140,6 +3140,8 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
         })();
       })
     );
+    console.log(payment);
+    console.log(user);
 
     applicationType !== 'RETENCION' && (await client.query(queries.FINISH_ROUNDING, [application]));
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
