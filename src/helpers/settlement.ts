@@ -1911,6 +1911,7 @@ export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client
         const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
         const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
         const type = el.tipo_solicitud;
+        console.log(docs);
         return {
           id: el.id_solicitud,
           usuario: typeof user === 'object' ? user : { id: user },
