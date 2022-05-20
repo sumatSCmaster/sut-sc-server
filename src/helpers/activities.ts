@@ -30,6 +30,16 @@ export const getActivities = async (): Promise<Aliquot[]> => {
   }
 };
 
+export const getSMActivities = async () => {
+  const client = await pool.connect();
+  try {
+    const smActivities = (await client.query(queries.GET_SM_ACTIVITIES)).rows;
+    return {status: 200, smActivities}
+  } catch(e) {
+    throw {status: 500, message: e.message || 'Error al obteener tabulador de servicios municipales'}
+  }
+}
+
 /**
  * Updates economic activities: code, description, tributable minimum
  * @param payload Economic activities to be updated

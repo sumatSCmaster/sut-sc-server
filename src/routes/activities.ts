@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
-import { getActivities, getMunicipalReferenceActivities, updateActivitiesAliquots, updateContributorActivities, generatePatentDocument } from '@helpers/activities';
+import { getActivities, getMunicipalReferenceActivities, updateActivitiesAliquots, updateContributorActivities, generatePatentDocument, getSMActivities } from '@helpers/activities';
 import { authenticate } from 'passport';
 
 const router = Router();
@@ -9,6 +9,12 @@ router.get('/', authenticate('jwt'), async (req, res) => {
   const [error, data] = await fulfill(getActivities());
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
+});
+
+router.get('/sm', authenticate('jwt'), async (req, res) => {
+  const [error, data] = await fulfill(getSMActivities());
+  if (error) res.status(500).json(error);
+  if (data) res.status(200).json(data);
 });
 
 router.get('/rim', authenticate('jwt'), async (req, res) => {
