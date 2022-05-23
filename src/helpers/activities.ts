@@ -265,7 +265,7 @@ export const updateContributorActivities = async ({ branchId, activities, branch
       //   activities
       //     .sort((a, b) => (moment(a.desde).isSameOrBefore(moment(b.desde)) ? 1 : -1))
       //     .map(async (x, index) => {
-      await client.query(queries.UPDATE_ECONOMIC_ACTIVITIES_FOR_BRANCH, [tarifaAseo.id_tarifa_aseo, branchId, servicioMunicipal.desde]);
+      await client.query(queries.UPDATE_MUNICIPAL_SERVICES_FOR_BRANCH, [tarifaAseo.id_tarifa_aseo, branchId, servicioMunicipal.desde]);
       // const aeExists = (await client.query(queries.GET_LAST_AE_SETTLEMENT_BY_AE_ID, [servicioMunicipal.id, branchId])).rows[0];
       const settlement =
               // !aeExists &&
