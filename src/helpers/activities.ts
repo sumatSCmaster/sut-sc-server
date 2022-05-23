@@ -106,7 +106,7 @@ export const getMunicipalReferenceActivities = async ({ docType, document }) => 
  *
  * @param param0
  */
-export const updateContributorActivities = async ({ branchId, activities, branchInfo }) => {
+export const updateContributorActivities = async ({ branchId, activities, branchInfo, servicioMunicipal }) => {
   const client = await pool.connect();
   const { denomComercial, nombreRepresentante, telefonoMovil, email, estadoLicencia, tipoSociedad, esMonotributo, capitalSuscrito, actualizado, otrosImpuestos } = branchInfo;
   try {
@@ -254,7 +254,34 @@ export const updateContributorActivities = async ({ branchId, activities, branch
         );
       }
     }
+    if (servicioMunicipal) {
+      await client.query('DELETE FROM impuesto.tarifa_aseo_sucursal WHERE id_registro_municipal = $1', [branchId]);
+      await client.query(queries.NULLIFY_APPLICATION_CONSTRAINT_BY_BRANCH_AND_RIM, [codigosRamo.SM, branchId]);
+      await client.query(queries.NULLIFY_SETTLEMENT_CONSTRAINT_BY_BRANCH_AND_RIM, [codigosRamo.SM, branchId]);
+      const tarifaAseo = (await client.query(queries.GET_SM_BY_CODE, [servicioMunicipal.codigo])).rows[0];
+      // await client.query(queries.DELETE_SETTLEMENTS_BY_BRANCH_CODE_AND_RIM, [codigosRamo.AE, branchId]);
 
+      // await Promise.all(
+      //   activities
+      //     .sort((a, b) => (moment(a.desde).isSameOrBefore(moment(b.desde)) ? 1 : -1))
+      //     .map(async (x, index) => {
+      await client.query(queries.UPDATE_ECONOMIC_ACTIVITIES_FOR_BRANCH, [tarifaAseo.id_tarifa_aseo, branchId, servicioMunicipal.desde]);
+      // const aeExists = (await client.query(queries.GET_LAST_AE_SETTLEMENT_BY_AE_ID, [servicioMunicipal.id, branchId])).rows[0];
+      const settlement =
+              // !aeExists &&
+        (
+          await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+            null,
+            0.0,
+            'SM',
+            'Pago ordinario',
+            { fecha: { month: moment(servicioMunicipal.desde).toDate().toLocaleString('es-ES', { month: 'long' }), year: moment(servicioMunicipal.desde).year() }, desglose: [{ aforo: servicioMunicipal.id }] },
+            moment(servicioMunicipal.desde).endOf('month').format('MM-DD-YYYY'),
+            branchId,
+          ])
+        ).rows[0];
+      await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [servicioMunicipal.desde, settlement.id_liquidacion]);
+    }
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [updatedRegistry.id_contribuyente]);
     await client.query('COMMIT');
     return { status: 200, message: 'Actividades ecónomicas y/o estado de licencia actualizado' };

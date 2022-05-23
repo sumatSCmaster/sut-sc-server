@@ -1391,6 +1391,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
         INNER JOIN impuesto.solicitud USING (id_solicitud)
         INNER JOIN (SELECT DISTINCT ON (id_solicitud) id_solicitud, id_subramo, id_liquidacion, monto, datos FROM impuesto.liquidacion WHERE id_subramo = 102 ) l USING (id_solicitud)
   ) X;`,
+  GET_SM_BY_CODE: `SELECT * FROM impuesto.tarifa_aseo WHERE codigo = $1`,
   GET_SM_IVA_IMAU: `SELECT SUM(ingresado) AS ingresado, SUM("cantidadIng") as "cantidadIng"
       FROM (
       SELECT COALESCE(SUM(CASE WHEN (l.datos->>'IVA')::numeric = 16 THEN ((monto * (0.16)) / 1.16 ) WHEN (l.datos->>'IVA')::numeric = 4 THEN ((monto * (0.04)) / 1.04 ) ELSE ((monto * (0.16)) / 1.16 ) END ),0) AS ingresado, COALESCE(COUNT(*), 0) AS "cantidadIng"
@@ -2020,6 +2021,8 @@ ORDER BY fecha_liquidacion DESC;
   UPDATE_LICENSE_STATUS: 'UPDATE impuesto.registro_municipal SET estado_licencia = $1 WHERE id_registro_municipal = $2',
   UPDATE_ECONOMIC_ACTIVITIES_FOR_BRANCH:
     'INSERT INTO impuesto.actividad_economica_sucursal AS aes (id_registro_municipal, numero_referencia, aplicable_desde) VALUES ($1, $2, $3) ON CONFLICT (id_registro_municipal, numero_referencia) DO UPDATE SET aplicable_desde = EXCLUDED.aplicable_desde returning *, xmax::text::int > 0 AS updated;',
+  UPDATE_MUNICIPAL_SERVICES_FOR_BRANCH:
+    'INSERT INTO impuesto.tarifa_aseo_sucursal AS sm (id_tarifa_aseo, id_registro_municipal, aplicable_desde) VALUES ($1, $2, $3) ON CONFLICT (id_registro_municipal, id_tarifa_aseo) DO UPDATE SET aplicable_desde = EXCLUDED.aplicable_desde returning *, xmax::text::int > 0 AS updated;',
   GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR:
     'SELECT ae.id_actividad_economica AS id, ae.numero_referencia as "numeroReferencia", ae.descripcion, ae.alicuota, ae.minimo_tributable AS "minimoTributable" \
     FROM impuesto.actividad_economica_sucursal aec \
