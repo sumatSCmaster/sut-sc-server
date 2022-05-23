@@ -1080,6 +1080,7 @@ WHERE rm.codigo = $1 AND l.id_registro_municipal = $2 AND EXTRACT('month' FROM l
           FROM impuesto.registro_municipal
           WHERE id_registro_municipal = $2 LIMIT 1)
       ORDER BY fecha_liquidacion LIMIT 1;`,
+  GET_SM_INFO_BY_BRANCHID: `SELECT * FROM impuesto.tarifa_aseo JOIN impuesto.tarifa_aseo_sucursal USING(id_tarifa_aseo) WHERE id_registro_municipal = $1`,
   GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR:
     'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l on s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON\
   l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND s.id_contribuyente = $2\
