@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAllBanks, validatePayments, listTaxPayments, updatePayment, addPayment, paymentReferenceSearch, reversePaymentForProcess, approveSinglePayment, listProcedurePayments } from '@helpers/banks';
+import { getAllBanks, validatePayments, listTaxPayments, updatePayment, addPayment, paymentReferenceSearch, reversePaymentForProcess, approveSinglePayment, listProcedurePayments, setAccountState } from '@helpers/banks';
 import { fulfill } from '@utils/resolver';
 import { errorMessageGenerator } from '@helpers/errors';
 import { authenticate } from 'passport';
@@ -13,6 +13,13 @@ router.get('/', async (req, res) => {
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
 });
+
+router.post('/accountState', async (req, res) => {
+  const {data} = req.body;
+  const [err, dataa] = await fulfill(setAccountState(data));
+  if (err) res.status(err.status).json(err);
+  if (dataa) res.status(dataa.status).json(dataa); 
+})
 
 router.get('/reference/search', async (req, res) => {
   const { referencia: reference, banco: bank } = req.query;

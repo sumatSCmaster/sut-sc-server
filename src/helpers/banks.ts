@@ -36,6 +36,18 @@ export const getAllBanks = async () => {
   }
 };
 
+
+export const setAccountState = async ({data, bank}) => {
+  const client = await pool.connect();
+  try {
+    const accountStateExists = (await client.query(queries.GET_ACCOUNT_STATE_BY_BANK, [bank])).rows;
+    accountStateExists.length > 0 ? await client.query(queries.UPDATE_ACCOUNT_STATE, [data, bank]) : await client.query(queries.SET_ACCOUNT_STATE, [bank, data]);
+    return {status: 200, message: 'Estado de cuenta subido exitosamente'}
+  } catch (e) {
+    throw {status: 500, message: e.message}
+  }
+}
+
 // ! acurero
 /**
  *
