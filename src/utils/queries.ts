@@ -95,6 +95,7 @@ const queries = {
   GET_ACCOUNT_STATE_BY_BANK: `SELECT * FROM estado_cuenta WHERE id_banco = $1`,
   UPDATE_ACCOUNT_STATE: `UPDATE estado_cuenta SET data = $1 WHERE id_banco = $2`,
   SET_ACCOUNT_STATE: `INSERT INTO estado_cuenta (id_banco, data, fecha_actualizacion) VALUES ($1, $2, NOW() - interval '4 hours')`,
+  GET_ALL_ACCOUNT_STATES: `SELECT * FROM estado_cuenta;`,
   GET_BANK_ACCOUNTS_FOR_INSTITUTION:
     'SELECT id_institucion_banco AS id, id_institucion AS institucion, id_banco AS banco, \
     numero_cuenta AS numerocuenta, nombre_titular AS nombretitular, documento_de_identificacion AS documento FROM institucion_banco WHERE id_institucion = $1',

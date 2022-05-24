@@ -36,6 +36,15 @@ export const getAllBanks = async () => {
   }
 };
 
+export const getAccountState = async () => {
+  const client = await pool.connect();
+  try {
+    const response = (await client.query(queries.GET_ALL_ACCOUNT_STATES)).rows;
+    return {status: 200, accountState: response}
+  } catch (e) {
+    throw {status: 500, message: e.message}
+  }
+}
 
 export const setAccountState = async ({data, bank}) => {
   const client = await pool.connect();
