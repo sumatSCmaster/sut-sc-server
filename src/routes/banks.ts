@@ -15,8 +15,7 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/accountState', async (req, res) => {
-  const {data} = req.body;
-  const [err, dataa] = await fulfill(setAccountState(data));
+  const [err, dataa] = await fulfill(setAccountState(req.body));
   if (err) res.status(err.status).json(err);
   if (dataa) res.status(dataa.status).json(dataa); 
 })
