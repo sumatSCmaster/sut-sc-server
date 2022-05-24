@@ -42,7 +42,7 @@ export const setAccountState = async ({data, bank}) => {
   try {
     console.log(data, bank);
     const accountStateExists = (await client.query(queries.GET_ACCOUNT_STATE_BY_BANK, [bank])).rows;
-    accountStateExists.length > 0 ? await client.query(queries.UPDATE_ACCOUNT_STATE, [data, bank]) : await client.query(queries.SET_ACCOUNT_STATE, [bank, data]);
+    accountStateExists.length > 0 ? await client.query(queries.UPDATE_ACCOUNT_STATE, [JSON.stringify(data), bank]) : await client.query(queries.SET_ACCOUNT_STATE, [bank, JSON.stringify(data)]);
     return {status: 200, message: 'Estado de cuenta subido exitosamente'}
   } catch (e) {
     throw {status: 500, message: e.message}
