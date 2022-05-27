@@ -2165,13 +2165,13 @@ ORDER BY fecha_liquidacion DESC;
   //  2. Bs por ramo por día liquidado/ingresado (4 ramos principales reflejado en gráfico de torta)
   //  Sin fecha proporcionada
   TOTAL_BS_BY_BRANCH_IN_MONTH: `WITH solicitud_view AS (
-    SELECT * FROM impuesto.solicitud S
+    SELECT *, l.monto AS montos FROM impuesto.solicitud S
     RIGHT JOIN impuesto.liquidacion l USING (id_solicitud)
     LEFT JOIN impuesto.subramo USING (id_subramo)
     LEFT JOIN impuesto.ramo USING (id_ramo)
   )
 
-  SELECT z.fecha, COALESCE(SUM(monto),0) AS valor, z.ramo FROM solicitud_view v
+  SELECT z.fecha, COALESCE(SUM(montos),0) AS valor, z.ramo FROM solicitud_view v
   RIGHT JOIN (SELECT generate_series::date AS fecha, c.column1 as ramo FROM generate_series($1, $2, interval '1 day') CROSS JOIN (SELECT * FROM (VALUES ('AE'), ('SM'), ('IU'), ('PP')) XX) c )
   z ON v.fecha_aprobado = z.fecha AND v.descripcion_corta = z.ramo
   WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
@@ -2181,13 +2181,13 @@ ORDER BY fecha_liquidacion DESC;
 
   //  Con fecha proporcionada
   TOTAL_BS_BY_BRANCH_IN_MONTH_WITH_DATE: `WITH solicitud_view AS (
-    SELECT * FROM impuesto.solicitud S
+    SELECT *, l.monto AS montos FROM impuesto.solicitud S
     RIGHT JOIN impuesto.liquidacion l USING (id_solicitud)
     LEFT JOIN impuesto.subramo USING (id_subramo)
     LEFT JOIN impuesto.ramo USING (id_ramo)
   )
 
-  SELECT z.fecha, COALESCE(SUM(monto),0) AS valor, z.ramo FROM solicitud_view v
+  SELECT z.fecha, COALESCE(SUM(montos),0) AS valor, z.ramo FROM solicitud_view v
 RIGHT JOIN (SELECT generate_series::date AS fecha, c.column1 as ramo FROM generate_series($1, $2, interval '1 day') CROSS JOIN (SELECT * FROM (VALUES ('AE'), ('SM'), ('IU'), ('PP')) XX) c )
   z ON v.fecha_aprobado = z.fecha AND v.descripcion_corta = z.ramo
 WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
