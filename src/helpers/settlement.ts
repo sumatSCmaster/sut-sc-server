@@ -2994,7 +2994,7 @@ export const insertSettlements = async ({ process, user }) => {
           descripcion: 'Pago del Servicio de Aseo',
         };
         j.push(liquidacionAseo);
-        j.push(liquidacionGas);
+        // j.push(liquidacionGas);
       }
       return x;
     });
