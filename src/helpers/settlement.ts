@@ -4030,6 +4030,7 @@ export const createCertificateForApplication = async ({ settlement, media, user 
   const gtic = await gticPool.connect();
   try {
     client.query('BEGIN');
+    console.log(settlement, media, 'RONALDOOOOOO');
     const applicationView = (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement])).rows[0];
     if (applicationView[media]) return { status: 200, message: 'Certificado generado satisfactoriamente', media: applicationView[media] };
     const dir = await certificateCreationHandler(applicationView.descripcionCortaRamo, media, {
