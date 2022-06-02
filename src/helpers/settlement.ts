@@ -5017,6 +5017,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
   try {
     if (application.idSubramo === 23) throw new Error('No es una liquidacion admisible para generar recibo');
     if (application.idSubramo === 235) throw new Error('Certificado no disponible');
+    console.log('vamos ave aki');
     const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
 
     const PETRO = (await pool.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
