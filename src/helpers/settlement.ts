@@ -5077,7 +5077,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
 
       certInfoArray.push(certAE);
     }
-
+    console.log('LUISSSSS NAZZARIOOOOO', application);
     return new Promise(async (res, rej) => {
       try {
         let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/hacienda-cert-AE.pug`), certInfo));
@@ -5250,7 +5250,7 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
   try {
     if (application.idSubramo !== 12) throw new Error('No se puede generar este recibo');
 
-    
+
     mainLogger.info('e');
     let certInfo;
     let certInfoArray: any[] = [];
