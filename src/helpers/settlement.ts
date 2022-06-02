@@ -4025,11 +4025,12 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
  *
  * @param param0
  */
-export const createCertificateForApplication = async ({ settlement, media, user }) => {
+export const createCertificateForApplication = async ({ idLiquidacion, media, user }) => {
   const client = await pool.connect();
   const gtic = await gticPool.connect();
   try {
     client.query('BEGIN');
+    const settlement = await client.query('SELECT id_solicitud FROM impuesto.liquidacion WHERE id_liquidacion = $1', [idLiquidacion]);
     console.log(settlement, media, 'RONALDOOOOOO');
     const applicationView = (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement])).rows[0];
     if (applicationView[media]) return { status: 200, message: 'Certificado generado satisfactoriamente', media: applicationView[media] };

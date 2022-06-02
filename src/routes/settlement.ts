@@ -152,7 +152,7 @@ router.post('/:id/:certificate', authenticate('jwt'), async (req: any, res) => {
   const { id, certificate } = req.params;
   const [error, data] = await fulfill(
     createCertificateForApplication({
-      settlement: id,
+      idLiquidacion: id,
       media: certificate,
       user: req.user,
     })
