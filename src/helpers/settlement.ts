@@ -4030,7 +4030,7 @@ export const createCertificateForApplication = async ({ idLiquidacion, media, us
   const gtic = await gticPool.connect();
   try {
     client.query('BEGIN');
-    const settlement = await client.query('SELECT id_solicitud FROM impuesto.liquidacion WHERE id_liquidacion = $1', [idLiquidacion]);
+    const settlement = (await client.query('SELECT id_solicitud FROM impuesto.liquidacion WHERE id_liquidacion = $1', [idLiquidacion])).rows[0].id_solicitud;
     console.log(settlement, media, 'RONALDOOOOOO');
     const applicationView = (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement])).rows[0];
     if (applicationView[media]) return { status: 200, message: 'Certificado generado satisfactoriamente', media: applicationView[media] };
@@ -5017,7 +5017,6 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
   try {
     if (application.idSubramo === 23) throw new Error('No es una liquidacion admisible para generar recibo');
     if (application.idSubramo === 235) throw new Error('Certificado no disponible');
-    console.log('vamos ave aki');
     const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
 
     const PETRO = (await pool.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
