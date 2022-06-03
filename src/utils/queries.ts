@@ -853,7 +853,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID: `SELECT r.descripcion AS "descripcionRamo", sr.descripcion AS "descripcionSubramo", l.monto, l.datos,l.fecha_liquidacion AS "fechaLiquidacion" FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo INNER JOIN impuesto.solicitud_state sst ON sst.id = s.id_solicitud WHERE s.id_solicitud = $1;`,
   GET_APPLICATION_VIEW_BY_SETTLEMENT: `
   SELECT s.id_solicitud AS "id", s.id_usuario AS "usuario", s.aprobado, s.fecha AS "fechaCreacion", l.id_liquidacion AS "idLiquidacion",
-  l.monto AS "montoLiquidacion", l.recibo, l.certificado, sr.id_subramo AS "idSubramo", l.datos, sr.subindice, sr.descripcion AS "descripcionSubramo",
+  l.monto AS "montoLiquidacion", l.recibo, l.certificado, l.certificado AS "solvencia", sr.id_subramo AS "idSubramo", l.datos, sr.subindice, sr.descripcion AS "descripcionSubramo",
   r.codigo AS "codigoRamo", r.descripcion AS "descripcionRamo", r.descripcion_corta AS "descripcionCortaRamo", c.id_contribuyente AS "contribuyente", c.tipo_documento AS "tipoDocumento",
   c.documento, c.razon_social AS "razonSocial", c.denominacion_comercial AS "denominacionComercial", c.siglas, c.sector, c.direccion, 
   c.punto_referencia AS "puntoReferencia", c.verificado, c.tipo_contribuyente AS "tipoContribyente" 
