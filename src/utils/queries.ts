@@ -858,11 +858,11 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   c.documento, c.razon_social AS "razonSocial", c.denominacion_comercial AS "denominacionComercial", c.siglas, c.sector, c.direccion, 
   c.punto_referencia AS "puntoReferencia", c.verificado, c.tipo_contribuyente AS "tipoContribyente" 
   FROM impuesto.solicitud s 
-  INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_liquidacion
+  INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud
   INNER JOIN impuesto.subramo sr ON l.id_subramo = sr.id_subramo
   INNER JOIN impuesto.ramo r ON sr.id_ramo = r.id_ramo
   INNER JOIN impuesto.contribuyente c ON s.id_contribuyente = c.id_contribuyente
-  WHERE s.id_solicitud = $1
+  WHERE l.id_solicitud = $1
   `,
   GET_REGISTRO_MUNICIPAL_BY_ID: `SELECT * FROM impuesto.registro_municipal WHERE id_registro_municipal = $1`,
   GET_APPLICATION_VIEW_BY_ID: 'SELECT * FROM impuesto.solicitud_view WHERE id = $1',
