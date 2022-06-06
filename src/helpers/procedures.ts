@@ -1016,6 +1016,7 @@ export const reviseProcedure = async (procedure, user: Usuario, idUser) => {
   let dir, respState, datos;
   try {
     client.query('BEGIN');
+    console.log('LUIS CRUZ');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.idTramite])).rows[0];
 
     if (!procedure.hasOwnProperty('revision')) {
@@ -1026,7 +1027,6 @@ export const reviseProcedure = async (procedure, user: Usuario, idUser) => {
       procedure.sufijo = resources.sufijo;
     }
     const nextEvent = await getNextEventForProcedure(procedure, client);
-    console.log(nextEvent, 'LUIS CRUZ');
     if (observaciones && !aprobado) {
       const prevData = (await client.query(queries.GET_PROCEDURE_DATA, [procedure.idTramite])).rows[0];
       prevData.datos.funcionario = { ...prevData.datos.funcionario, observaciones };
