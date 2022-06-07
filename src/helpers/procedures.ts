@@ -1545,6 +1545,76 @@ export const initProcedureAnalist = async (procedure, user: Usuario, client: Poo
   }
 };
 
+export const initProcedureAnalistAB = async (procedure, user: Usuario, client: PoolClient, analyst) => {
+  // const client = await pool.connect();
+  const { contribuyente, pago } = procedure;
+  let costo, respState, dir, cert, datosP;
+  try {
+    datosP = { usuario: contribuyente };
+    const response = (await client.query(queries.PROCEDURE_INIT, [procedure.tipo === 'b' ? 113 : 112, JSON.stringify(datosP), user.id])).rows[0];
+    response.idTramite = response.id;
+    const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.idTramite])).rows[0];
+    response.sufijo = resources.sufijo;
+    costo = isNotPrepaidProcedure({ suffix: resources.sufijo, user }) ? null : pago.costo || resources.costo_base;
+    const nextEvent = await getNextEventForProcedure(response, client);
+
+    if (pago.length > 0 && nextEvent.startsWith('validar')) {
+      await Promise.all(
+        pago.map(async (p) => {
+          p.concepto = 'TRAMITE';
+          p.user = analyst;
+          await insertPaymentCashier(p, response.id, client);
+        })
+      );
+    }
+
+        dir = await createRequestForm(response, client);
+        respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, costo, null]);
+        cert = await createCertificate(response, client);
+        respState = await client.query(queries.COMPLETE_STATE, [response.idTramite, nextEvent, null, dir || null, true]);
+
+    const tramite: Partial<Tramite> = {
+      id: response.id,
+      tipoTramite: response.tipotramite,
+      estado: respState.rows[0].state,
+      datos: datosP,
+      planilla: dir,
+      certificado: cert,
+      costo,
+      fechaCreacion: response.fechacreacion,
+      fechaCulminacion: response.fechaculminacion,
+      codigoTramite: response.codigotramite,
+      usuario: response.usuario,
+      nombreLargo: response.nombrelargo,
+      nombreCorto: response.nombrecorto,
+      nombreTramiteLargo: response.nombretramitelargo,
+      nombreTramiteCorto: response.nombretramitecorto,
+      aprobado: response.aprobado,
+    };
+    // await sendNotification(user, `Un trámite de tipo ${tramite.nombreTramiteLargo} ha sido creado`, 'CREATE_PROCEDURE', 'TRAMITE', tramite, client);
+    // sendEmail({
+    //   ...tramite,
+    //   codigo: tramite.codigoTramite,
+    //   nombreUsuario: user.nombreUsuario,
+    //   nombreCompletoUsuario: user.nombreCompleto,
+    //   estado: respState.rows[0].state,
+    // });
+
+    return {
+      status: 201,
+      message: 'Tramite iniciado!',
+      tramite,
+    };
+  } catch (e: any) {
+    mainLogger.error(e);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(e),
+      message: errorMessageGenerator(e) || e.message || `Error al realizar el tramite por ${e}`,
+    };
+  }
+}
+
 /**
  * Process procedure in analist viewpoint, changing its state
  * @param procedure Procedure payload to be processed
