@@ -1573,11 +1573,11 @@ export const initProcedureAnalistAB = async (procedure, user: Usuario, client: P
     pago.user = analyst;
     await insertPaymentCashier(pago, response.id, client);
 
-        dir = await createRequestForm(response, client);
+        // dir = await createRequestForm(response, client);
         respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, costo, null]);
         nextEvent = await getNextEventForProcedure(response, client);
         cert = await createCertificate(response, client);
-        respState = await client.query(queries.COMPLETE_STATE, [response.idTramite, nextEvent, null, dir || null, true]);
+        respState = await client.query(queries.COMPLETE_STATE, [response.idTramite, nextEvent, null, cert || null, true]);
 
     const tramite: Partial<Tramite> = {
       id: response.id,
