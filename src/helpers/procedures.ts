@@ -1550,6 +1550,7 @@ export const initProcedureAnalistAB = async (procedure, user: Usuario, client: P
   const { contribuyente, pago } = procedure;
   let costo, respState, dir, cert, datosP;
   try {
+    await client.query('BEGIN');
     datosP = { usuario: contribuyente };
     const response = (await client.query(queries.PROCEDURE_INIT, [procedure.tipo === 'b' ? 113 : 112, JSON.stringify(datosP), user.id])).rows[0];
     console.log(datosP, user.id, pago, 'LUIS CASTILLO');
@@ -1604,7 +1605,7 @@ export const initProcedureAnalistAB = async (procedure, user: Usuario, client: P
     //   nombreCompletoUsuario: user.nombreCompleto,
     //   estado: respState.rows[0].state,
     // });
-
+    await client.query('COMMIT');
     return {
       status: 201,
       message: 'Tramite iniciado!',
