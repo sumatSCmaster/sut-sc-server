@@ -24,6 +24,7 @@ block header
             div(style={'-webkit-flex': 1}).td.center
               p(style={'margin': '0 auto', 'padding':'auto 0', 'font-size':'20px'}) 
                 b #{moment().format('YYYY')}
+img#divider(src='images/franja-2.0.png')
 block title
 block content
   div#planilla.solvencia
@@ -58,16 +59,21 @@ block content
         .td
           p
             b El contribuyente se encuentra solvente con el municipio a la fecha de:
-            span &nbsp;#{moment()}&nbsp;
+            span &nbsp;#{moment().format('DD/MM/YYYY')}&nbsp;
       .tr
         .td
           p
             b Esta solvencia es valida por los siguientes tres meses.
-    div(style={'margin-top':"50px"}).flex.center
+    div(style={'margin-top':"30%"}).flex.center
       div(style={height:"180px"})
-        img(src=QR, alt='QR', style={width:'450px', height:"100%"})
+        img(src=QR, alt='QR', style={width:'400px', height:"110%"})
       div.item-firma
-        img(src="images/firma.png", style={'margin-top':'-90px', 'z-index':'1',width:'450px'}, alt="", srcset="")
+        img(src="images/firma.png", style={'margin-top':'-90px', 'z-index':'1',width:'400px', height:"110%"}, alt="", srcset="")
       div(style={height:"200px"})
-        img(src='images/SOLVENCIA-TIPO-B.png', alt='logo', style={width:'450px', height:"100%"})
-block footer 
+        img(src='images/SOLVENCIA-TIPO-B.png', alt='logo', style={width:'400px', height:"110%"})
+footer
+  img#divider(src='images/franja-2.0.png')
+  div(style={ display: '-webkit-flex', padding: '0px 50px', 'justify-content': 'center', '-webkit-justify-content': 'center' })
+    p(style={ display: '-webkit-flex', '-webkit-justify-content': 'center', '-webkit-align-items': 'center', 'margin': '0px 50px' }) #{'Avenida Alberto Carnevalli, Urbanización Merida, San Cristóbal, Estado Táchira, Venezuela. Zona postal 5001 RIF G-20000479-7'}
+    p(style={ display: '-webkit-flex', '-webkit-justify-content': 'center', '-webkit-align-items': 'center', 'margin': '0px 50px' }) #{'Teléfono Central 0276 - 3472022 / 0276- 3476036 / 0261- 3477465'}
+    img(src='images/alcaldia-logo.png' height='64' width='148')
