@@ -1805,6 +1805,8 @@ export const procedureEvents = switchcase({
     // enrevision_gerente: { true: 'aprobar_lict', false: 'rechazar_lict', rebotar: 'rebotar_lict' },
     enrevision: { true: 'aprobar_lict', false: 'rechazar_lict', rebotar: 'rebotar_lict' },
   },
+  soa: {iniciado: 'validar_soa', validando: 'finalizar_soa'},
+  sob: {iniciado: 'validar_sob', validando: 'finalizar_sob'},
   sup: { iniciado: 'enproceso_sup', enproceso: { finalizado: 'finalizar_sup', true: 'revisar_sup', false: 'rechazar_sup' }, enrevision: { true: 'aprobar_sup', false: 'rechazar_sup' } },
 })(null);
 
