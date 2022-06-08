@@ -1558,15 +1558,19 @@ export const initProcedureAnalistAB = async (procedure, user: Usuario, client: P
     costo = isNotPrepaidProcedure({ suffix: resources.sufijo, user }) ? null : pago.costo || resources.costo_base;
     const nextEvent = await getNextEventForProcedure(response, client);
 
-    if (pago.length > 0 && nextEvent.startsWith('validar')) {
-      await Promise.all(
-        pago.map(async (p) => {
-          p.concepto = 'TRAMITE';
-          p.user = analyst;
-          await insertPaymentCashier(p, response.id, client);
-        })
-      );
-    }
+    // if (pago.length > 0 && nextEvent.startsWith('validar')) {
+    //   await Promise.all(
+    //     pago.map(async (p) => {
+    //       p.concepto = 'TRAMITE';
+    //       p.user = analyst;
+    //       await insertPaymentCashier(p, response.id, client);
+    //     })
+    //   );
+    // }
+    console.log(nextEvent, 'LUIS CASTILLO');
+    pago.concepto = 'TRAMITE';
+    pago.user = analyst;
+    await insertPaymentCashier(pago, response.id, client);
 
         dir = await createRequestForm(response, client);
         respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, costo, null]);
