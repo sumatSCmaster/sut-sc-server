@@ -1557,7 +1557,7 @@ export const initProcedureAnalistAB = async (procedure, user: Usuario, client: P
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.idTramite])).rows[0];
     response.sufijo = resources.sufijo;
     costo = isNotPrepaidProcedure({ suffix: resources.sufijo, user }) ? null : pago.costo || resources.costo_base;
-    const nextEvent = await getNextEventForProcedure(response, client);
+    let nextEvent = await getNextEventForProcedure(response, client);
 
     // if (pago.length > 0 && nextEvent.startsWith('validar')) {
     //   await Promise.all(
@@ -1574,6 +1574,7 @@ export const initProcedureAnalistAB = async (procedure, user: Usuario, client: P
 
         dir = await createRequestForm(response, client);
         respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, costo, null]);
+        nextEvent = await getNextEventForProcedure(response, client);
         cert = await createCertificate(response, client);
         respState = await client.query(queries.COMPLETE_STATE, [response.idTramite, nextEvent, null, dir || null, true]);
 
