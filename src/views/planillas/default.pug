@@ -76,6 +76,7 @@ html
       block footer
         footer#footer
           - var direccion = ''
+          - var telefono = ''
           case institucion
             when 'CBM'
               - direccion = 'Av. 8 (Santa Rita), Esq. Calle 86 (Antiguo FIME), Sede Comandancia General. Teléfonos: (0261) 7186058 / 7186065 / 7186066.'
@@ -84,8 +85,10 @@ html
             when 'CPU'
               - direccion = 'Av.3F con calle 81, Sector Valle Frío, Edif. CPU. Teléfono: 0414-3677150'
             when 'HACIENDA'
-              - direccion = 'av Alberto Carnevalli local nro s/n urb merida San Cristobal Tachira zona postal 5001'                
-          //- img#divider(src='images/franja-2.0.png')
-          //- div(style={ display: '-webkit-flex', padding: '0px 50px', 'justify-content': 'center', '-webkit-justify-content': 'center' })
-          //-   p(style={ display: '-webkit-flex', '-webkit-justify-content': 'center', '-webkit-align-items': 'center', 'margin': '0px 50px' }) #{direccion}
-          //-   img(src='images/alcaldia-logo.png' height='64' width='148')
+              - direccion = 'Avenida Alberto Carnevalli, Urbanización Merida, San Cristóbal, Estado Táchira, Venezuela. Zona postal 5001 RIF G-20000479-7'
+              - telefono = 'Teléfono Central 0276 - 3472022 / 0276- 3476036 / 0261- 3477465'
+          img#divider(src='images/franja-2.0.png')
+          div(style={ display: '-webkit-flex', padding: '0px 50px', 'justify-content': 'center', '-webkit-justify-content': 'center' })
+            p(style={ display: '-webkit-flex', '-webkit-justify-content': 'center', '-webkit-align-items': 'center', 'margin': '0px 50px' }) #{direccion}
+            p(style={ display: '-webkit-flex', '-webkit-justify-content': 'center', '-webkit-align-items': 'center', 'margin': '0px 50px' }) #{telefono}
+            img(src='images/alcaldia-logo.png' height='64' width='148')
