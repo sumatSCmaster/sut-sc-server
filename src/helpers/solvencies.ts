@@ -14,6 +14,16 @@ export const getSolvencyBCandidates = async ({tipoDocumento, documento}) => {
     } catch(e) {throw {status: 500, message: e.message}}
 }
 
+export const getSolvencyACandidates = async ({tipoDocumento, documento}) => {
+    const client = await pool.connect();
+    try {
+        const solvencyRIMInfo = (await client.query(queries.GET_SOLVENCY_A_RIM_CANDIDATES_BY_RIF, [tipoDocumento, documento])).rows[0];
+        const solvencyContrInfo = await (await client.query(queries.GET_SOLVENCY_B_RIF_CANDIDATES_BY_RIF, [tipoDocumento, documento])).rows[0];
+        const result = {contribuyente: solvencyContrInfo, sucursales: [...solvencyRIMInfo]}
+        return {status: 200, data: result};
+    } catch(e) {throw {status: 500, message: e.message}}
+}
+
 export const createSolvencyB = async ({pago, contribuyente}, user) => {
     try {const pool = Pool.getInstance();
     const client = await pool.connect();

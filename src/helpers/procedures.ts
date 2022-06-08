@@ -1552,7 +1552,8 @@ export const initProcedureAnalistAB = async (procedure, user: Usuario, client: P
   try {
     await client.query('BEGIN');
     datosP = { usuario: contribuyente };
-    const response = (await client.query(queries.PROCEDURE_INIT, [procedure.tipo === 'b' ? 113 : 112, JSON.stringify(datosP), user.id])).rows[0];
+    const contribId = (await client.query('SELECT DISTINCT(id_usuario) FROM usuario JOIN impuesto.contribuyente USING(id_contribuyente) WHERE tipo_documento = $1 AND documento = $2')).rows[0];
+    const response = (await client.query(queries.PROCEDURE_INIT, [procedure.tipo === 'b' ? 113 : 112, JSON.stringify(datosP), contribId || user.id])).rows[0];
     console.log(datosP, user.id, pago, 'LUIS CASTILLO');
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.idTramite])).rows[0];
