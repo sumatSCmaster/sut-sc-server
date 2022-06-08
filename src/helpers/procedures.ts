@@ -1552,24 +1552,29 @@ export const initProcedureAnalistAB = async (procedure, user: Usuario, client: P
   try {
     datosP = { usuario: contribuyente };
     const response = (await client.query(queries.PROCEDURE_INIT, [procedure.tipo === 'b' ? 113 : 112, JSON.stringify(datosP), user.id])).rows[0];
+    console.log(datosP, user.id, pago, 'LUIS CASTILLO');
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.idTramite])).rows[0];
     response.sufijo = resources.sufijo;
     costo = isNotPrepaidProcedure({ suffix: resources.sufijo, user }) ? null : pago.costo || resources.costo_base;
-    const nextEvent = await getNextEventForProcedure(response, client);
+    let nextEvent = await getNextEventForProcedure(response, client);
 
-    if (pago.length > 0 && nextEvent.startsWith('validar')) {
-      await Promise.all(
-        pago.map(async (p) => {
-          p.concepto = 'TRAMITE';
-          p.user = analyst;
-          await insertPaymentCashier(p, response.id, client);
-        })
-      );
-    }
+    // if (pago.length > 0 && nextEvent.startsWith('validar')) {
+    //   await Promise.all(
+    //     pago.map(async (p) => {
+    //       p.concepto = 'TRAMITE';
+    //       p.user = analyst;
+    //       await insertPaymentCashier(p, response.id, client);
+    //     })
+    //   );
+    // }
+    pago.concepto = 'TRAMITE';
+    pago.user = analyst;
+    await insertPaymentCashier(pago, response.id, client);
 
         dir = await createRequestForm(response, client);
         respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, costo, null]);
+        nextEvent = await getNextEventForProcedure(response, client);
         cert = await createCertificate(response, client);
         respState = await client.query(queries.COMPLETE_STATE, [response.idTramite, nextEvent, null, dir || null, true]);
 
@@ -1801,6 +1806,8 @@ export const procedureEvents = switchcase({
     // enrevision_gerente: { true: 'aprobar_lict', false: 'rechazar_lict', rebotar: 'rebotar_lict' },
     enrevision: { true: 'aprobar_lict', false: 'rechazar_lict', rebotar: 'rebotar_lict' },
   },
+  soa: {iniciado: 'validar_soa', validando: 'finalizar_soa'},
+  sob: {iniciado: 'validar_sob', validando: 'finalizar_sob'},
   sup: { iniciado: 'enproceso_sup', enproceso: { finalizado: 'finalizar_sup', true: 'revisar_sup', false: 'rechazar_sup' }, enrevision: { true: 'aprobar_sup', false: 'rechazar_sup' } },
 })(null);
 
