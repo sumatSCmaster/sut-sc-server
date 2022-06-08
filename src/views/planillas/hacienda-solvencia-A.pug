@@ -24,6 +24,7 @@ block header
             div(style={'-webkit-flex': 1}).td.center
               p(style={'margin': '0 auto', 'padding':'auto 0', 'font-size':'20px'}) 
                 b #{datos.anio}
+  img#divider(src='images/franja-2.0.png')
 block title
 block content
   div#planilla.solvencia
@@ -106,10 +107,10 @@ block content
           div(style={'width':"100%"}).td.center
             p
               b(style={'font-size':'22px'}) El Registrador
-    div(style={'margin-top':"10%"}).flex.center
+    div(style={'margin-top':"50px"}).flex.center
       div(style={height:"180px"})
-        img(src=QR, alt='QR', style={height:"100%"})
+        img(src=QR, alt='QR', style={width:'300px', height:"300px"})
       div.item-firma
-        img(src="images/firma.png", style={'margin-top':'-90px', 'z-index':'1',width:'350px'}, alt="", srcset="")
+        img(src="images/firma.png", style={'margin-top':'-90px', 'z-index':'1', width:'375px', height:"375px"}, alt="", srcset="")
       div(style={height:"200px"})
-        img(src='images/SOLVENCIA-TIPO-A.png', alt='logo', style={'margin-top':'-70px',width:'300px'})
+        img(src='images/SOLVENCIA-TIPO-A.png', alt='logo', style={width:'300px', height:"300px"})
