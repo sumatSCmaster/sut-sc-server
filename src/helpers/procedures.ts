@@ -1613,6 +1613,7 @@ export const initProcedureAnalistAB = async (procedure, user: Usuario, client: P
     };
   } catch (e: any) {
     mainLogger.error(e);
+    await client.query('ROLLBACK');
     throw {
       status: 500,
       error: errorMessageExtractor(e),
