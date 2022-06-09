@@ -75,6 +75,11 @@ block content
             p
               b Tipo de Inmueble:
               span &nbsp;#{datos.usuario.inmueble.tipo_inmueble}&nbsp;
+        .tr
+          .td
+            p
+              b Ultimo Avaluo:
+              span &nbsp;#{datos.usuario.sucursal.inmueble.avaluo}&nbsp;
       if datos.usuario.sucursal 
         .tr
           .td
@@ -100,6 +105,11 @@ block content
             p
               b Tipo de Inmueble:
               span &nbsp;#{datos.usuario.sucursal.inmueble.tipo_inmueble}&nbsp;
+        .tr
+          .td
+            p
+              b Ultimo Avaluo:
+              span &nbsp;#{datos.usuario.sucursal.inmueble.avaluo}&nbsp;
     div(style={'margin-top':"90px"}).flex.center
       div(style={height:"180px"})
         img(src=QR, alt='QR', style={width:'300px', height:"300px"})
