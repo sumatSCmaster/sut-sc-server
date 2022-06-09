@@ -40,7 +40,7 @@ block content
         .td
           p
             b R.I.M:
-            span &nbsp;#{datos.usuario.rim ? datos.usuario.rim : 'N/A'},&nbsp;
+            span &nbsp;#{datos.usuario.sucursal.referencia_municipal ? datos.usuario.sucursal.referencia_municipal : 'N/A'},&nbsp;
         .td
           p
             b C.I./R.I.F:
@@ -54,7 +54,7 @@ block content
         .td
           p
             b Representante Legal:
-            span &nbsp;#{datos.usuario.representante_legal ? datos.usuario.representanteLegal : 'N/A'}.&nbsp;
+            span &nbsp;#{datos.usuario.sucursal.nombre_representante ? datos.usuario.sucursal.nombre_representante : 'N/A'}.&nbsp;
       .tr
         .td
           p
