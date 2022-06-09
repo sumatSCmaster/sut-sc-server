@@ -34,8 +34,8 @@ export const getSolvencyACandidates = async ({tipoDocumento, documento}) => {
             if (rimHasSolvencyB) return {...rim, inmuebles: (await client.query('SELECT * FROM inmueble_urbano WHERE id_registro_municipal = $1', [rim.id_registro_municipal])).rows}
             return {...rim}
         }))) : [];
-        newSolvencyRIMInfo.filter(rim => rim.inmuebles);
-        const result = {contribuyente: solvencyContrInfo || undefined, sucursales: [...newSolvencyRIMInfo]}
+        const newestSolvencyRIMInfo = newSolvencyRIMInfo.filter(rim => rim.inmuebles);
+        const result = {contribuyente: solvencyContrInfo || undefined, sucursales: [...newestSolvencyRIMInfo]}
         return {status: 200, data: result};
     } catch(e) {throw {status: 500, message: e.message}}
 }
