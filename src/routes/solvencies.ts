@@ -1,7 +1,7 @@
 import Router from 'express';
 import { authenticate } from 'passport';
 import { fulfill } from '@utils/resolver';
-import { createSolvencyB, getSolvencyACandidates, getSolvencyBCandidates } from '@helpers/solvencies';
+import { createSolvencyAB, getSolvencyACandidates, getSolvencyBCandidates } from '@helpers/solvencies';
 
 const router = Router();
 
@@ -14,7 +14,7 @@ router.get('/b', authenticate('jwt'), async (req, res) => {
 
 router.post('/b', authenticate('jwt'), async (req, res) => {
     const {tramite} = req.body;
-    const [error, data] = await fulfill(createSolvencyB(tramite, req.user));
+    const [error, data] = await fulfill(createSolvencyAB(tramite, req.user, 'b'));
     if (error) res.status(error.status).json(error);
     if (data) res.status(data.status).json(data);
 })
@@ -27,7 +27,7 @@ router.get('/a', authenticate('jwt'), async (req, res) => {
 
 router.post('/a', authenticate('jwt'), async (req, res) => {
     const {tramite} = req.body;
-    const [error, data] = await fulfill(createSolvencyB(tramite, req.user));
+    const [error, data] = await fulfill(createSolvencyAB(tramite, req.user, 'a'));
     if (error) res.status(error.status).json(error);
     if (data) res.status(data.status).json(data);
 })
