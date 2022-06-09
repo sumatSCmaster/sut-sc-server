@@ -50,7 +50,7 @@ block content
         .td
           p
             b Identificado con el R.I.M:
-            span &nbsp;#{datos.usuario.sucursal.referencia_municipal ? datos.usuario.sucursal.referencia_municipal : 'N/A'}&nbsp; 
+            span &nbsp;#{datos.usuario.referencia_municipal ? datos.usuario.referencia_municipal : 'N/A'}&nbsp; 
       .tr
         .td
           p
@@ -60,6 +60,26 @@ block content
         .td
           p
             b Esta solvencia es valida por los siguientes tres meses.
+      if datos.usuario.inmueble 
+        .tr
+          .td
+            p
+              b(style={'text-decoration': 'underline', 'font-size':'20px'}) Inmobiliario
+        .tr
+          .td
+            p
+              b Codigo Catastral:
+              span &nbsp;#{datos.usuario.inmueble.cod_catastral}&nbsp;
+        .tr
+          .td
+            p
+              b Direccion:
+              span &nbsp;#{datos.usuario.inmueble.cod_catastral}&nbsp;
+        .tr
+          .td
+            p
+              b Tipo de Inmueble:
+              span &nbsp;#{datos.usuario.inmueble.tipo_inmueble}&nbsp;
     div(style={'margin-top':"90px"}).flex.center
       div(style={height:"180px"})
         img(src=QR, alt='QR', style={width:'300px', height:"300px"})
