@@ -32,6 +32,7 @@ export const getSolvencyACandidates = async ({tipoDocumento, documento}) => {
         const newSolvencyRIMInfo = (solvencyRIMInfo.length > 0) ? (await Promise.all(solvencyRIMInfo.map(async rim => {
             const rimHasSolvencyB = await client.query(`SELECT EXISTS(SELECT * FROM tramite WHERE datos#>>'{usuario, rim}' = $1)`, [rim.referencia_municipal])
             if (rimHasSolvencyB) return {...rim, inmuebles: (await client.query('SELECT * FROM inmueble_urbano WHERE id_registro_municipal = $1', [rim.id_registro_municipal])).rows}
+            console.log('aaaaaaaaAAAAAAAAAAAAAAAAA')
             return {...rim}
         }))) : [];
         newSolvencyRIMInfo.filter(rim => rim.inmuebles);
