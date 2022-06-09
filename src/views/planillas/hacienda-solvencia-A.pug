@@ -74,12 +74,32 @@ block content
           .td
             p
               b Direccion:
-              span &nbsp;#{datos.usuario.inmueble.cod_catastral}&nbsp;
+              span &nbsp;#{datos.usuario.inmueble.direccion}&nbsp;
         .tr
           .td
             p
               b Tipo de Inmueble:
               span &nbsp;#{datos.usuario.inmueble.tipo_inmueble}&nbsp;
+      if datos.usuario.sucursal 
+        .tr
+          .td
+            p
+              b(style={'text-decoration': 'underline', 'font-size':'20px'}) Inmobiliario
+        .tr
+          .td
+            p
+              b Codigo Catastral:
+              span &nbsp;#{datos.usuario.sucursal.inmueble.cod_catastral}&nbsp;
+        .tr
+          .td
+            p
+              b Direccion:
+              span &nbsp;#{datos.usuario.sucursal.inmueble.direccion}&nbsp;
+        .tr
+          .td
+            p
+              b Tipo de Inmueble:
+              span &nbsp;#{datos.usuario.sucursal.inmueble.tipo_inmueble}&nbsp;
     div(style={'margin-top':"90px"}).flex.center
       div(style={height:"180px"})
         img(src=QR, alt='QR', style={width:'300px', height:"300px"})
