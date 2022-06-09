@@ -9,7 +9,7 @@ const pool = Pool.getInstance();
 export const getSolvencyBCandidates = async ({tipoDocumento, documento}) => {
     const client = await pool.connect();
     try {
-        const contribHasUser = (await client.query('SELECT EXISTS(SELECT DISTINCT(id_usuario) FROM usuario JOIN impuesto.contribuyente USING(id_contribuyente) WHERE tipo_documento = $1 AND documento = $2)')).rows[0];
+        const contribHasUser = (await client.query('SELECT EXISTS(SELECT DISTINCT(id_usuario) FROM usuario JOIN impuesto.contribuyente USING(id_contribuyente) WHERE tipo_documento = $1 AND documento = $2)', [tipoDocumento, documento])).rows[0];
         if (!contribHasUser) throw {status: 401, message: 'El contribuyente no posee un usuario asociado'};
         const solvencyRIMInfo = (await client.query(queries.GET_SOLVENCY_B_RIM_CANDIDATES_BY_RIF, [tipoDocumento, documento])).rows;
         const solvencyContrInfo = await (await client.query(queries.GET_SOLVENCY_B_RIF_CANDIDATES_BY_RIF, [tipoDocumento, documento])).rows[0];
@@ -30,7 +30,8 @@ export const getSolvencyACandidates = async ({tipoDocumento, documento}) => {
         //logica para las sucursales
         const solvencyRIMInfo = (await client.query('SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2)', [tipoDocumento, documento])).rows;
         const newSolvencyRIMInfo = (solvencyRIMInfo.length > 0) ? (await Promise.all(solvencyRIMInfo.map(async rim => {
-            const rimHasSolvencyB = (await client.query(`SELECT EXISTS(SELECT * FROM tramite WHERE datos#>>'{usuario, rim}' = $1 AND fecha_culminacion > $2)`, [rim.referencia_municipal, moment().subtract(3, 'month').format('YYYY-MM-DD')])).rows[0];
+            const rimHasSolvencyB = (await client.query(`SELECT EXISTS(SELECT * FROM tramite WHERE datos#>>'{usuario, rim}' = $1 AND id_tipo_tramite = 113 AND fecha_culminacion > $2)`, [rim.referencia_municipal, moment().subtract(3, 'month').format('YYYY-MM-DD')])).rows[0];
+            console.log(rimHasSolvencyB);
             if (rimHasSolvencyB) return {...rim, inmuebles: (await client.query('SELECT * FROM inmueble_urbano WHERE id_registro_municipal = $1', [rim.id_registro_municipal])).rows}
             return {...rim}
         }))) : [];
