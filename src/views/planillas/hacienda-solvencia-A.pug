@@ -49,11 +49,6 @@ block content
       .tr
         .td
           p
-            b Identificado con el R.I.M:
-            span &nbsp;#{datos.usuario.referencia_municipal ? datos.usuario.referencia_municipal : 'N/A'}&nbsp; 
-      .tr
-        .td
-          p
             b El contribuyente se encuentra solvente con el municipio a la fecha de:
             span &nbsp;#{moment().format('DD/MM/YYYY')}&nbsp;
       .tr
@@ -85,6 +80,11 @@ block content
           .td
             p
               b(style={'text-decoration': 'underline', 'font-size':'20px'}) Inmobiliario
+        .tr
+          .td
+            p
+              b Identificado con el R.I.M:
+              span &nbsp;#{datos.usuario.sucursal.referencia_municipal ? datos.usuario.sucursal.referencia_municipal : 'N/A'}&nbsp; 
         .tr
           .td
             p
