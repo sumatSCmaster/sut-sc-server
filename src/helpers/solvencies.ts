@@ -27,7 +27,7 @@ export const getSolvencyACandidates = async ({tipoDocumento, documento}) => {
         const solvencyRIMInfo = contribHasSolvencyB ? (await client.query('SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2)', [tipoDocumento, documento])).rows : [];
         const newSolvencyRIMInfo = (solvencyRIMInfo.length > 0) ? (await Promise.all(solvencyRIMInfo.map(async rim => ({...rim, inmuebles: (await client.query('SELECT * FROM inmueble_urbano WHERE id_registro_municipal = $1', [rim.id_registro_municipal])).rows})))) : [];
         const solvencyContrInfo = (await client.query(queries.GET_SOLVENCY_B_RIF_CANDIDATES_BY_RIF, [tipoDocumento, documento])).rows[0];
-        solvencyContrInfo.inmuebles = (await client.query('SELECT * FROM inmueble_urbano WHERE id_inmueble IN (SELECT id_inmueble FROM inmueble_contribuyente WHERE id_contribuyente = $1)', [solvencyContrInfo.id_contribuyente])).rows;
+        solvencyContrInfo.inmuebles = (await client.query('SELECT * FROM inmueble_urbano WHERE id_inmueble IN (SELECT id_inmueble FROM impuesto.inmueble_contribuyente WHERE id_contribuyente = $1)', [solvencyContrInfo.id_contribuyente])).rows;
         const result = {contribuyente: solvencyContrInfo, sucursales: [...newSolvencyRIMInfo]}
         return {status: 200, data: result};
     } catch(e) {throw {status: 500, message: e.message}}
