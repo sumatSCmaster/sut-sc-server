@@ -16,57 +16,52 @@ block header
                 b Mes
             div(style={'-webkit-flex': 1}).td.center
               p(style={'margin': '0 auto','padding':'auto 15px', 'font-size':'20px','border-right':'1px solid grey', 'width':'100%'}) 
-                b #{datos.mes}                
+                b #{moment().format('MM')}              
           div(style={'-webkit-flex': 1})
             div(style={'-webkit-flex': 1}).td.center
               p(style={'margin': '0 auto','padding':'0','border-bottom':'1px solid grey', 'width':'100%'})
                 b Año
             div(style={'-webkit-flex': 1}).td.center
               p(style={'margin': '0 auto', 'padding':'auto 0', 'font-size':'20px'}) 
-                b #{datos.anio}
+                b #{moment().format('YYYY')}
   img#divider(src='images/franja-2.0.png')
 block title
 block content
   div#planilla.solvencia
-    div(style={'margin-bottom':'5%','margin-toP':'10%'}).center
+    div(style={'margin-bottom':'25px','margin-top':'25px'}).center
         h3 El Intendente Municipal Tributario hace constar que
     div
       .tr
         .td
           p
             b El Contribuyente:
-            span &nbsp;#{datos.contribuyente}&nbsp;
+            span &nbsp;#{datos.usuario.razon_social}&nbsp;
       .tr
         .td
           p
             b C.I./R.I.F:
-            span &nbsp;#{datos.cedulaORif}&nbsp;
+            span &nbsp;#{datos.usuario.documento}&nbsp;
       .tr
         .td
           p
             b Representante del Inmueble Ubicado en:
-            span &nbsp;#{datos.direccion ? (datos.direccion.trim() !== '' ? datos.direccion : 'Dirección Sin Asignar') : ''}.&nbsp;
+            span &nbsp;#{datos.usuario.direccion ? (datos.usuario.direccion.trim() !== '' ? datos.usuario.direccion : 'Dirección Sin Asignar') : ''}.&nbsp;
       .tr
-        .td
-          p
-            b Parroquia:
-            span &nbsp;#{datos.parroquia}&nbsp;
         .td
           p
             b Identificado con el R.I.M:
-            span &nbsp;#{datos.rim ? datos.rim : 'N/A'}&nbsp; 
+            span &nbsp;#{datos.usuario.sucursal.referencia_municipal ? datos.usuario.sucursal.referencia_municipal : 'N/A'}&nbsp; 
       .tr
         .td
           p
-            b Valor Fiscal:
-            span &nbsp;#{parseFloat(datos.valorFiscal).toFixed(6)}&nbsp;
-            img(src="images/petro.png", alt="alt", style={width:'22px', 'margin-bottom':'-2px', 'margin-left':'2px'})
+            b El contribuyente se encuentra solvente con el municipio a la fecha de:
+            span &nbsp;#{moment().format('DD/MM/YYYY')}&nbsp;
       .tr
         .td
           p
-            b Se encuentra solvente con el impuesto de la solvencia tipo A
+            b Esta solvencia es valida por los siguientes tres meses.
     div(style={'margin-top':"5%"})
-      div(style={border:'1px solid #000', width:'40%', padding:'1%', 'font-size':'16px'})
+      div(style={border:'1px solid #000', width:'100%', padding:'1%', 'font-size':'16px'})
         .tr
           div(style={'width':"100%"}).td.center
             p
