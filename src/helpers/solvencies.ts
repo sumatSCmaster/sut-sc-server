@@ -30,7 +30,7 @@ export const getSolvencyACandidates = async ({tipoDocumento, documento}) => {
         //logica para las sucursales
         const solvencyRIMInfo = (await client.query('SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2)', [tipoDocumento, documento])).rows;
         const newSolvencyRIMInfo = (solvencyRIMInfo.length > 0) ? (await Promise.all(solvencyRIMInfo.map(async rim => {
-            const rimHasSolvencyB = await client.query(`SELECT EXISTS(SELECT COUNT(*) FROM tramite WHERE datos$>>'{usuario, rim}' = $1)`, [rim.referencia_municipal])
+            const rimHasSolvencyB = await client.query(`SELECT EXISTS(SELECT COUNT(*) FROM tramite WHERE datos#>>'{usuario, rim}' = $1)`, [rim.referencia_municipal])
             if (rimHasSolvencyB) return {...rim, inmuebles: (await client.query('SELECT * FROM inmueble_urbano WHERE id_registro_municipal = $1', [rim.id_registro_municipal])).rows}
             return {...rim}
         }))) : [];
