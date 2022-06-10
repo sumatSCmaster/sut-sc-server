@@ -42,6 +42,11 @@ block content
             p
               b R.I.M:
               span &nbsp;#{datos.usuario.sucursal.referencia_municipal ? datos.usuario.sucursal.referencia_municipal : 'N/A'},&nbsp;
+        .tr
+          .td
+            p
+              b Representante Legal:
+              span &nbsp;#{datos.usuario.sucursal.nombre_representante ? datos.usuario.sucursal.nombre_representante : 'N/A'}.&nbsp;
       .tr
         .td
           p
@@ -52,11 +57,6 @@ block content
           p
             b Dirección:
             span &nbsp;#{datos.usuario.direccion ? (datos.usuario.direccion.trim() !== '' ? datos.usuario.direccion : 'Dirección Sin Asignar') : 'Dirección Sin Asignar'}.&nbsp;
-      .tr
-        .td
-          p
-            b Representante Legal:
-            span &nbsp;#{datos.usuario.sucursal.nombre_representante ? datos.usuario.sucursal.nombre_representante : 'N/A'}.&nbsp;
       .tr
         .td
           p
