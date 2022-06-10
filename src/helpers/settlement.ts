@@ -3156,6 +3156,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
     }
     const applicationInstance = await getApplicationsAndSettlementsByIdNots({ id: application, user }, client);
     console.log(application)
+    await client.query(`REFRESH MATERIALIZED VIEW impuesto.solicitud_view`);
     if (user.tipoUsuario !== 4) {
       if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
       applicationInstance.recibo = await generateReceipt({ application }, client);
