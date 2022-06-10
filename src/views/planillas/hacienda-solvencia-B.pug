@@ -36,11 +36,13 @@ block content
           p
             b El Contribuyente:
             span &nbsp;#{datos.usuario.razon_social}.&nbsp;
+      if datos.usuario.sucursal
+        .tr
+          .td
+            p
+              b R.I.M:
+              span &nbsp;#{datos.usuario.sucursal.referencia_municipal ? datos.usuario.sucursal.referencia_municipal : 'N/A'},&nbsp;
       .tr
-        .td
-          p
-            b R.I.M:
-            span &nbsp;#{datos.usuario.sucursal.referencia_municipal ? datos.usuario.sucursal.referencia_municipal : 'N/A'},&nbsp;
         .td
           p
             b C.I./R.I.F:
