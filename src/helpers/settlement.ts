@@ -2975,8 +2975,8 @@ export const insertSettlements = async ({ process, user }) => {
     const impuestosExt = impuestos.map((x, i, j) => {
       if (x.ramo === 'AE') {
         const costoSolvencia = solvencyCost;
-        x.monto = +x.monto - costoSolvencia;
-        j.push({ monto: costoSolvencia, ramo: 'SAE', fechaCancelada: x.fechaCancelada });
+        // x.monto = +x.monto - costoSolvencia;
+        // j.push({ monto: costoSolvencia, ramo: 'SAE', fechaCancelada: x.fechaCancelada });
       }
       if (x.ramo === 'SM') {
         const liquidacionGas = {
