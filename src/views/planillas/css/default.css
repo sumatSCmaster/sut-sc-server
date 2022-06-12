@@ -272,6 +272,15 @@ ul {
   text-align: center;
 }
 
+.footer-row{
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: row;
+  flex-direction: row;
+  -webkit-flex-direction: row;
+  text-align: center; 
+}
+
 .table-normal {
   border-collapse: collapse;
   border: 1px solid #707f90;
