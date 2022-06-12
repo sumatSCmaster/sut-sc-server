@@ -1084,6 +1084,7 @@ export const reviseProcedure = async (procedure, user: Usuario, idUser) => {
         }
       }
     } else {
+      console.log(aprobado, nextEvent, 'LUIIIIIIIIIIIIIIIIIIIIIIIIIIII');
       if (aprobado && nextEvent !== 'revisardirector_cr' && nextEvent[aprobado].startsWith('finalizar')) {
         if (resources.tipoTramite === 28 || resources.tipoTramite === 36) procedure.datos = await approveContributorAELicense({ data: datos, client });
         if (procedure.sufijo !== 'bc' && procedure.sufijo !== 'sup') dir = await createCertificate(procedure, client);
