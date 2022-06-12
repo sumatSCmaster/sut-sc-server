@@ -273,12 +273,17 @@ ul {
 }
 
 .footer-row{
+  justify-content: center;
   display: -webkit-flex;
   display: flex;
   -webkit-flex-direction: row;
   flex-direction: row;
   -webkit-flex-direction: row;
   text-align: center; 
+}
+
+.mg-inline{
+  margin-inline: 10px;
 }
 
 .table-normal {
