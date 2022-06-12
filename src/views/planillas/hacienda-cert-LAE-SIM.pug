@@ -71,18 +71,17 @@ html
           img(src="images/firma.png", style={'margin-top':'-90px', 'z-index':'1',width:'450px'}, alt="", srcset="")
           img(src="images/firma-jefe-divicion-rentas.png", style={'margin-top':'-90px', 'z-index':'1',width:'450px'}, alt="", srcset="")
           p av Alberto Carnevalli local nro s/n urb merida San Cristobal Tachira zona postal 5001
-      footer#footer
+      footer
         - direccion = 'Avenida Alberto Carnevalli, Urbanización Merida, San Cristóbal, Estado Táchira, Venezuela. Zona postal 5001 RIF G-20000479-7'
         - telefono = 'Teléfono Central 0276 - 3472022 / 0276- 3476036 / 0261- 3477465'
         - email = 'despachoalcaldiasc@gmail.com'
         - instagram = '@alcaldiadelmunicipiosc'
         - twitter = '@gobiernosc'
         img#divider(src='images/franja-2.0.png')
-        div(style={ display: '-webkit-flex', padding: '0px 50px', 'justify-content': 'center', '-webkit-justify-content': 'center' })
-          div.footer-row
-            p #{direccion}
-            p #{telefono}
-            p #{email}
-            p #{twitter}
-            p #{instagram}
-          img(src='images/alcaldia-logo.png' height='64' width='64')
+        div.footer-row
+          p #{direccion}
+          p #{telefono}
+          p #{email}
+          p #{twitter}
+          p #{instagram}
+        img(src='images/alcaldia-logo.png' height='64' width='64')
