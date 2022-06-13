@@ -25,7 +25,7 @@ const dev = process.env.NODE_ENV !== 'production';
 
 const pool = Pool.getInstance();
 
-export const getBranchesD = async () => {
+export const getBranchesD = async (all, id) => {
   mainLogger.info(`getBranches`);
   let client: PoolClient | undefined;
   const redisClient = Redis.getInstance();
@@ -38,7 +38,13 @@ export const getBranchesD = async () => {
     } else {
       mainLogger.info('getBranches - getting branches from db');
       client = await pool.connect();
-      const branches = await client.query(queries.GET_BRANCHES);
+      let branches;
+      if (all) {
+        branches = await client.query(queries.GET_BRANCHES);
+      } else {
+        const idCargo = (await client.query(`SELECT id_cargo FROM cuenta_funcionario WHERE id_usuario = $1`, [id])).rows[0].id_cargo;
+        branches = await client.query(queries.GET_BRANCHES_BY_ROL, [idCargo]);
+      }
       let allBranches = await Promise.all(
         branches.rows.map(async (el) => {
           if (client) {
@@ -59,8 +65,8 @@ export const getBranchesD = async () => {
   }
 };
 
-export const getBranches = async () => {
-  return await tracer.trace('getBranches', getBranchesD);
+export const getBranches = async (all, id) => {
+  return await tracer.trace('getBranches', () => getBranchesD(all, id));
 };
 
 export const generateBranchesReport = async (user, payload: { from: Date; to: Date; alcaldia: boolean }) => {

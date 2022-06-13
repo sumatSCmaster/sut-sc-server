@@ -2051,6 +2051,7 @@ ORDER BY fecha_liquidacion DESC;
   MODIFY_BRANCH_REFERENCE: `UPDATE impuesto.registro_municipal SET referencia_municipal = $1 WHERE id_registro_municipal = $2`,
   BRANCH_EXISTS: `SELECT * FROM impuesto.registro_municipal WHERE referencia_municipal = $1`,
   GET_BRANCHES: `SELECT id_ramo AS id, codigo, descripcion, descripcion_corta, liquidacion_especial AS "liquidacionEspecial", (monto * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) AS "monto" FROM impuesto.ramo;`,
+  GET_BRANCHES_BY_ROL: `SELECT id_ramo AS id, codigo, descripcion, descripcion_corta, liquidacion_especial AS "liquidacionEspecial", (monto * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) AS "monto" FROM impuesto.ramo JOIN ramo_cargo USING(id_ramo) WHERE id_cargo = $1;`,
   GET_SUBRANCHES_BY_ID: `SELECT id_subramo AS id, descripcion, subindice, (monto * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) AS "monto" FROM impuesto.subramo WHERE id_ramo = $1`,
   GET_BRANCHES_FOR_REPORT: 'SELECT id_ramo AS id, codigo AS "ramo", descripcion, descripcion_corta FROM impuesto.ramo;',
   GET_SUT_ESTATE_BY_ID: 'SELECT * FROM inmueble_urbano WHERE id_inmueble = $1',

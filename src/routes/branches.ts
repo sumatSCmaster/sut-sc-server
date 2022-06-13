@@ -6,8 +6,10 @@ import { mainLogger } from '@utils/logger';
 
 const router = Router();
 
-router.get('/', async (req, res) => {
-  const [error, data] = await fulfill(getBranches());
+router.get('/', async (req: any, res) => {
+  const {all} = req.query;
+  const {id} = req.user;
+  const [error, data] = await fulfill(getBranches(all, id));
   mainLogger.info(`${error?.message} ${error?.stack}`);
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
