@@ -39,8 +39,8 @@ export const getBranchesD = async (all, id) => {
       mainLogger.info('getBranches - getting branches from db');
       client = await pool.connect();
       let branches;
-      console.log(all, 'PABLITO SE SALVOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO')
-      if (all) {
+      console.log(typeof all, 'PABLITO SE SALVOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO')
+      if (+all) {
         branches = await client.query(queries.GET_BRANCHES);
       } else {
         const idCargo = (await client.query(`SELECT id_cargo FROM cuenta_funcionario WHERE id_usuario = $1`, [id])).rows[0].id_cargo;
