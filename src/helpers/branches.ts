@@ -28,7 +28,7 @@ const pool = Pool.getInstance();
 export const getBranchesD = async (all, id) => {
   mainLogger.info(`getBranches`);
   let client: PoolClient | undefined;
-  const redisClient = Redis.getInstance();
+  // const redisClient = Redis.getInstance();
   try {
     mainLogger.info(`getBranches - try`);
     // let cachedBranches = await redisClient.getAsync('branches');
@@ -43,7 +43,7 @@ export const getBranchesD = async (all, id) => {
       if (+all) {
         branches = await client.query(queries.GET_BRANCHES);
       } else {
-        const idCargo = (await client.query(`SELECT id_cargo FROM cuenta_funcionario WHERE id_usuario = $1`, [id])).rows[0].id_cargo;
+        const idCargo = (await client.query(`SELECT id_cargo FROM cuenta_funcionario WHERE id_usuario = $1`, [id])).rows[0]?.id_cargo;
         branches = await client.query(queries.GET_BRANCHES_BY_ROL, [idCargo]);
       }
       let allBranches = await Promise.all(
