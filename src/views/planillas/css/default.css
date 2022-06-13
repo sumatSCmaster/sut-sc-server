@@ -220,6 +220,7 @@ ul {
 }
 
 .item-firma {
+  display: -webkit-flex;
   display: flex;
   justify-content: space-between;
   -webkit-justify-content: space-between;
