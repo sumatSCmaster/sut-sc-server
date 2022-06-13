@@ -39,6 +39,7 @@ export const getBranchesD = async (all, id) => {
       mainLogger.info('getBranches - getting branches from db');
       client = await pool.connect();
       let branches;
+      console.log(all, 'PABLITO SE SALVOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO')
       if (all) {
         branches = await client.query(queries.GET_BRANCHES);
       } else {
