@@ -6,7 +6,7 @@ import { mainLogger } from '@utils/logger';
 
 const router = Router();
 
-router.get('/', async (req: any, res) => {
+router.get('/', authenticate('jwt'), async (req: any, res) => {
   const {all} = req.query;
   const {id} = req.user;
   const [error, data] = await fulfill(getBranches(all, id));
