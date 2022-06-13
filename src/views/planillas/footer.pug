@@ -1,0 +1,28 @@
+footer#footer(style={'padding':'0px', 'margin-top':'10px'})
+    case institucion
+    when 'CBM'
+        - direccion = 'Av. 8 (Santa Rita), Esq. Calle 86 (Antiguo FIME), Sede Comandancia General. Teléfonos: (0261) 7186058 / 7186065 / 7186066.'
+    when 'SAGAS'
+        - direccion = 'Avenida 3E Entre Calles 72 y 73. Sector La Lago, Edificio Club de Leones. Teléfono: (0261) 7934400'
+    when 'CPU'
+        - direccion = 'Av.3F con calle 81, Sector Valle Frío, Edif. CPU. Teléfono: 0414-3677150'
+    when 'HACIENDA'
+        - direccion = 'Avenida Alberto Carnevalli, Urbanización Merida, San Cristóbal, Estado Táchira, Venezuela. Zona postal 5001 RIF G-20000479-7'
+        - telefono = 'Teléfono Central 0276 - 3472022 / 0276- 3476036 / 0261- 3477465'
+        - email = 'despachoalcaldiasc@gmail.com'
+        - instagram = '@alcaldiadelmunicipiosc'
+        - twitter = '@gobiernosc'
+    img#divider(src='images/franja-2.0.png')
+    div#footer(style={ 'margin': '0px', 'padding':'0px'})
+        p(style={'padding':'0px', 'margin-top':'10px'}) #{direccion}
+        p(style={'padding':'0px', 'margin':'0px'}) #{telefono}
+        div.footer-row(style={ 'margin-top': '10px','padding':'0px'})
+        div.footer-row(style={'padding':'0px', 'margin-top':'0px', 'margin-bottom': '0px','margin-left': '5px', 'margin-right': '5px'})
+            img(src="images/gmail.png" style={ 'margin': '0px', 'padding':'0px'}).icon
+            p(style={'padding':'0px', 'margin-top':'0px', 'margin-bottom': '0px','margin-left': '5px', 'margin-right': '5px'}) #{email}
+        div.footer-row(style={'padding':'0px', 'margin-top':'0px', 'margin-bottom': '0px', 'margin-left': '5px', 'margin-right': '5px'})
+            img(src="images/twitter.png" style={ 'margin': '0px', 'padding':'0px'}).icon
+            p(style={'padding':'0px', 'margin-top':'0px', 'margin-bottom': '0px','margin-left': '5px', 'margin-right': '5px'}) #{twitter}
+        div.footer-row(style={'padding':'0px', 'margin-top':'0px', 'margin-bottom': '0px', 'margin-left': '5px', 'margin-right': '5px'})
+            img(src="images/instagram.png" style={ 'margin': '0px', 'padding':'0px'}).icon
+            p(style={'padding':'0px', 'margin-top':'0px', 'margin-bottom': '0px','margin-left': '5px', 'margin-right': '5px'}) #{instagram}
