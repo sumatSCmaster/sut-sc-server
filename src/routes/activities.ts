@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
-import { getActivities, getMunicipalReferenceActivities, updateActivitiesAliquots, updateContributorActivities, generatePatentDocument, getSMActivities } from '@helpers/activities';
+import { createLicenseForContributor, getActivities, getMunicipalReferenceActivities, updateActivitiesAliquots, updateContributorActivities, generatePatentDocument, getSMActivities } from '@helpers/activities';
 import { authenticate } from 'passport';
 
 const router = Router();
@@ -50,5 +50,12 @@ router.get('/generatePatentDocument', async (req, res) => {
     });
   }
 });
+
+router.post('/submmitLicense', authenticate('jwt'), async (req, res) => {
+  const {datos: {tipoDocumento, documento, referenciaMunicipal}, datos } = req.body;
+  const [error, data] = await fulfill(createLicenseForContributor(tipoDocumento, documento, referenciaMunicipal, datos));
+  if (error) res.status(error.status).json(error);
+  if (data) res.status(200).json({message: 'Contribuyente ingresado exitosamente'});
+})
 
 export default router;
