@@ -58,11 +58,14 @@ block content
               b FECHA DE VENC.
           div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
             p
+              b MES
+          div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
+            p
               b MOTIVO
           div(style={'-webkit-flex':'1.25'}).th.center.border-right.border-bottom
             p
               b Estado
-          div(style={'-webkit-flex':'2'}).th.center.border-bottom
+          div(style={'-webkit-flex':'1'}).th.center.border-bottom
             p
               b MONTO PORCIÓN
         each item in liquidacion
@@ -78,14 +81,16 @@ block content
             div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom
               p #{item.fechaVencimiento}
             div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+              p #{item.mes}
+            div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
               p #{item.motivo}
             div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom
               p #{item.estado}
             if item.estado === 'VIGENTE'
-              div(style={'-webkit-flex':'2'}).td.center.border-bottom
+              div(style={'-webkit-flex':'1'}).td.center.border-bottom
                 p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)} *
             else
-              div(style={'-webkit-flex':'2'}).td.center.border-bottom
+              div(style={'-webkit-flex':'1'}).td.center.border-bottom
                 p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)}            
     .table.break-page
       .tr
