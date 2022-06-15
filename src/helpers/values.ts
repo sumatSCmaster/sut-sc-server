@@ -191,20 +191,20 @@ export const getUsdValue = async () => {
 };
 
 export const getPetro = async () => {
-  const REDIS_KEY = 'petro';
+  // const REDIS_KEY = 'petro';
   let client: PoolClient | undefined;
-  const redisClient = Redis.getInstance();
+  // const redisClient = Redis.getInstance();
   let petro;
   try {
-    const cachedPetro = await redisClient.getAsync(REDIS_KEY);
-    if (cachedPetro !== null) {
-      petro = cachedPetro;
-    } else {
+    // const cachedPetro = await redisClient.getAsync(REDIS_KEY);
+    // if (cachedPetro !== null) {
+    //   petro = cachedPetro;
+    // } else {
       client = await pool.connect();
       petro = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
-      await redisClient.setAsync(REDIS_KEY, petro);
-      await redisClient.expireAsync(REDIS_KEY, 1800);
-    }
+      // await redisClient.setAsync(REDIS_KEY, petro);
+      // await redisClient.expireAsync(REDIS_KEY, 1800);
+    // }
     return petro;
   } catch (e) {
     mainLogger.error(`getPetro - ERROR ${e.message}`);
