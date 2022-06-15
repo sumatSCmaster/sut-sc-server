@@ -142,7 +142,7 @@ export const generateAllCashiersReport = async (user, payload: { from?: Date; to
   for (let x in paymentBreakdown) {
     paymentBreakdown[x] = groupBy(paymentBreakdown[x], (val) => val.metodo_pago);
   }
-
+  console.log(paymentBreakdown, 'WILKMER')
   try {
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-cierreCajaJefe.pug`), {
