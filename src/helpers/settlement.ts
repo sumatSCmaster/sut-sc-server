@@ -1539,16 +1539,16 @@ export const createSettlementForCPUProcedure = async (procedure, client) => {
  */
 export const patchSettlement = async ({ id, settlement }) => {
   const client = await pool.connect();
-  const { fechaLiquidacion, subramo, estado } = settlement;
+  const { fechaLiquidacion, fechaPerteneciente, subramo, estado } = settlement;
   let liquidacion;
   try {
     await client.query('BEGIN');
     const prevSettlement = (await client.query(queries.GET_SETTLEMENT_BY_ID, [id])).rows[0];
     const proposedDate = moment(fechaLiquidacion);
-    const dateForData = !![10, 100].find((sr) => sr === subramo) ? moment(fechaLiquidacion).subtract(1, 'M') : moment(fechaLiquidacion);
+    // const dateForData = !![10, 100].find((sr) => sr === subramo) ? moment(fechaLiquidacion).subtract(1, 'M') : moment(fechaLiquidacion);
     const newData = {
       ...prevSettlement.datos,
-      fecha: { month: dateForData.locale('es').format('MMMM'), year: dateForData.year() },
+      fecha: { month: fechaPerteneciente.month, year: fechaPerteneciente.year },
     };
     //1000, validando
     const patchApplication = (await client.query(queries.GET_PATCH_APPLICATION_BY_ORIGINAL_ID_AND_STATE, [prevSettlement.id_solicitud, estado])).rows[0];
