@@ -788,6 +788,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
 
   //IMPUESTOS SEDEMAT
   TAX_PAYER_EXISTS: 'SELECT * FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2',
+  TAX_PAYER_EXISTS_AMBIGUOUS: `SELECT * FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento LIKE '%$2%'`,
   UPDATE_TAXPAYER: `UPDATE impuesto.contribuyente SET tipo_documento = $2, documento = $3, razon_social = $4, 
       denominacion_comercial = $5, siglas = $6, id_parroquia = $7, sector = $8, direccion = $9, punto_referencia = $10 WHERE id_contribuyente = $1;`,
   UPDATE_RIM:
