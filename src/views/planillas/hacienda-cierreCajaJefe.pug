@@ -102,5 +102,62 @@ block content
                       div #{new Intl.NumberFormat('de-DE').format(ele.monto)}          
                   div.row-constancy
                     div(style={'-webkit-flex': '3'}).end Total Bs.
-                    div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE').format(datos[item]['EFECTIVO'][0].summetodopagocajero)}                  
+                    div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE').format(datos[item]['EFECTIVO'][0].summetodopagocajero)}
+            when 'EFECTIVO DOLAR'
+              each el in chunk(datos[item]['EFECTIVO DOLAR'], 10)
+                div.break-page
+                  div(style={'font-size':'20px', 'font-weight':'bold', 'margin-top':'30px'}) EFECTIVO DOLAR
+                  div.row-constancy
+                    div Concepto
+                    div Fecha
+                    div Refencia
+                    div Monto
+                  hr(style={'height':'2px', }).divider
+                  each ele in el
+                    div.row-constancy
+                      div #{ele.concepto}
+                      div #{moment(ele.fecha_de_pago).format('DD/MM/YYYY')}
+                      div #{ele.referencia ? ele.referencia : 'N/A'}
+                      div #{new Intl.NumberFormat('de-DE').format(ele.monto)}          
+                  div.row-constancy
+                    div(style={'-webkit-flex': '3'}).end Total Bs.
+                    div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE').format(datos[item]['EFECTIVO DOLAR'][0].summetodopagocajero)}
+            when 'EFECTIVO EURO'
+              each el in chunk(datos[item]['EFECTIVO EURO'], 10)
+                div.break-page
+                  div(style={'font-size':'20px', 'font-weight':'bold', 'margin-top':'30px'}) EFECTIVO EURO
+                  div.row-constancy
+                    div Concepto
+                    div Fecha
+                    div Refencia
+                    div Monto
+                  hr(style={'height':'2px', }).divider
+                  each ele in el
+                    div.row-constancy
+                      div #{ele.concepto}
+                      div #{moment(ele.fecha_de_pago).format('DD/MM/YYYY')}
+                      div #{ele.referencia ? ele.referencia : 'N/A'}
+                      div #{new Intl.NumberFormat('de-DE').format(ele.monto)}          
+                  div.row-constancy
+                    div(style={'-webkit-flex': '3'}).end Total Bs.
+                    div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE').format(datos[item]['EFECTIVO EURO'][0].summetodopagocajero)}
+            when 'EFECTIVO PESO'
+              each el in chunk(datos[item]['EFECTIVO PESO'], 10)
+                div.break-page
+                  div(style={'font-size':'20px', 'font-weight':'bold', 'margin-top':'30px'}) EFECTIVO PESO
+                  div.row-constancy
+                    div Concepto
+                    div Fecha
+                    div Refencia
+                    div Monto
+                  hr(style={'height':'2px', }).divider
+                  each ele in el
+                    div.row-constancy
+                      div #{ele.concepto}
+                      div #{moment(ele.fecha_de_pago).format('DD/MM/YYYY')}
+                      div #{ele.referencia ? ele.referencia : 'N/A'}
+                      div #{new Intl.NumberFormat('de-DE').format(ele.monto)}          
+                  div.row-constancy
+                    div(style={'-webkit-flex': '3'}).end Total Bs.
+                    div(style={'-webkit-flex': '1'}).center #{new Intl.NumberFormat('de-DE').format(datos[item]['EFECTIVO PESO'][0].summetodopagocajero)}                 
 block footer
