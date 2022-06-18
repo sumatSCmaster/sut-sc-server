@@ -338,15 +338,21 @@ export const generatePatentDocument = async ({branchId}) => {
   }
 };
 
+const newBranchConsecutive = async (client) => {
+  await client.query(`UPDATE consecutivo SET consecutivo = consecutivo + 1 WHERE descripcion = 'LICENCIA DE AE';`)
+  return (await client.query(`SELECT consecutivo FROM consecutivo WHERE descripcion = 'LICENCIA DE AE'`)).rows[0].consecutivo;
+}
+
 export const createLicenseForContributor = async(tipoDocumento, documento, referenciaMunicipal, datos) => {
   const client = await pool.connect()
   try {
     const contributorExists = (await client.query(queries.TAX_PAYER_EXISTS, [tipoDocumento, documento])).rows[0];
     if (!contributorExists) throw {status: 400, message:'El contribuyente no existe'};
-    const branchExists = (await client.query(queries.BRANCH_EXISTS, [referenciaMunicipal])).rows[0];
+    const currentReferenciaMunicipal = referenciaMunicipal || newBranchConsecutive(client);
+    const branchExists = (await client.query(queries.BRANCH_EXISTS, [currentReferenciaMunicipal])).rows[0];
     if (branchExists) throw {status: 400, message: 'La sucursal ya esta registrada'};
     const branch = (await client.query(queries.ADD_BRANCH_FOR_CONTRIBUTOR, [contributorExists.id_contribuyente, datos.telefono, datos.email, datos.denominacionComercial, datos.nombreRepresentante, datos.capitalSuscrito, datos.tipoSociedadContrib, datos.estadoLicencia, datos.direccion, datos.parroquia, false])).rows[0];
-    await client.query(queries.MODIFY_BRANCH_REFERENCE, [referenciaMunicipal, branch.id_registro_municipal])
+    await client.query(queries.MODIFY_BRANCH_REFERENCE, [currentReferenciaMunicipal, branch.id_registro_municipal])
     return {status: 200, message: 'Sucursal registrada satisfactoriamente'}
   } catch(e) {
     throw {status: 500, message: e.message}
