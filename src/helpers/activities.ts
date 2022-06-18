@@ -319,7 +319,8 @@ export const generatePatentDocument = async ({branchId}) => {
         funcionario:{
           actividadesEconomicas: economicActivities,
           referenciaMunicipal: referencia.referencia_municipal,
-          nombreRepresentante: referencia.nombre_representante
+          nombreRepresentante: referencia.nombre_representante,
+          estadoLicencia: referencia.estado_licencia
         }
       },
       estado: 'finalizado',
