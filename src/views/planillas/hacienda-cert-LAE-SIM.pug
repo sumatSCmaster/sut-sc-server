@@ -58,14 +58,14 @@ html
             div.tr
               div(style={'-webkit-flex': 1, '-webkit-justify-content': 'start' }).td.border-right.border-bottom.center
                 b NOTA: 
+                - var lic = 'Licencia de Actividades Económicas'
                 case datos.funcionario.estadoLicencia
-                  - var lic = 'Licencia de Actividades Económicas'
                   when 'PERMANETE' 
                     p #{lic}, válida por un (1) año a partir de la fecha de otorgamiento.
                   when 'TEMPORAL'
                     p #{lic}, válida por (3) meses a partir de la fecha de otorgamiento.
-                  when 'PROVICIONAL' 
-                    p #{lic}, con autorización provicional por un (1) año a partir de la fecha de otorgamiento.
+                  when 'PROVISIONAL' 
+                    p #{lic}, con autorización provisional por un (1) año a partir de la fecha de otorgamiento.
                   default 
                     p ''
             div.tr
