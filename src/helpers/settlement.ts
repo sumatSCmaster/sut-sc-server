@@ -5446,7 +5446,7 @@ const createPatentDocument = async ({ gticPool, pool, user, application }: Certi
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
     const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
     const economicActivities = (await pool.query(queries.GET_ECONOMIC_ACTIVITIES_CONTRIBUTOR, [referencia?.referencia_municipal])).rows;
-    console.log('PABLO',referencia)
+
     const payment = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [application.id, 'TRAMITE'])).rows;
     const cashier = (await pool.query(queries.GET_USER_INFO_BY_ID, [payment[0].id_usuario])).rows;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
@@ -5463,7 +5463,6 @@ const createPatentDocument = async ({ gticPool, pool, user, application }: Certi
             rim: referencia?.referencia_municipal,
             representanteLegal: referencia?.nombre_representante,
             direccion: application.direccion,
-            estadoLicencia: referencia.estado_licencia
           },
           nroSolicitud: application.id,
           nroPlanilla: 112,
