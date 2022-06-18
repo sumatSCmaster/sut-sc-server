@@ -2075,6 +2075,7 @@ const updateProcedure = switchcase({
   inspeccion: inspectProcedure,
   encorreccion: inspectProcedure,
   enrevision_analista: reviseProcedure,
+  enrevision_renta: reviseProcedure,
   enrevision_gerente: reviseProcedure,
   enrevision: reviseProcedure,
   ingresardatos: addPaymentProcedure,
