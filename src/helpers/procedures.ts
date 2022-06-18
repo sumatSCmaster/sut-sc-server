@@ -213,6 +213,7 @@ const getSettlementInstances = async (user, client: PoolClient) => {
   try {
     if (belongsToAnInstitution(user)) return [];
     let query = queries.GET_SETTLEMENT_INSTANCES_BY_ID;
+    console.log(`ANDRE ${belongsToAnInstitution(user)}`)
     let payload = [user.id];
     let response = (await client.query(query, payload)).rows;
     return response.map((el) => {

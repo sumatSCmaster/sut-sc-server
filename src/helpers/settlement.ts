@@ -2989,11 +2989,11 @@ export const insertSettlements = async ({ process, user }) => {
         const liquidacionAseo = {
           ramo: branchNames['SM'],
           fechaCancelada: x.fechaCancelada,
-          monto: process.esAgenteRetencion || process.esAgenteSENIAT ? ((+x.desglose.reduce((x, j) => x + j.montoAseo, 0) / PETRO) * 1).toFixed(8) : ((+x.desglose.reduce((x, j) => x + j.montoAseo, 0) / PETRO) * 1).toFixed(8),
+          monto: process.esAgenteRetencion || process.esAgenteSENIAT ? ((+x.desglose.reduce((x, j) => x + j.montoAseo, 0)) * 1).toFixed(8) : ((+x.desglose.reduce((x, j) => x + j.montoAseo, 0)) * 1).toFixed(8),
           desglose: x.desglose,
           descripcion: 'Pago del Servicio de Aseo',
         };
-        j.push({ramo: 'TDS', fechaCancelada: x.fechaCancelada, monto: (+x.desglose.reduce((x, j) => x + j.montoAseo, 0) / PETRO) * .1, desglose: x.desglose})
+        j.push({ramo: 'TDS', fechaCancelada: x.fechaCancelada, monto: (+x.desglose.reduce((x, j) => x + j.montoAseo, 0)) * .1, desglose: x.desglose})
         j.push(liquidacionAseo);
         // j.push(liquidacionGas);
       }
