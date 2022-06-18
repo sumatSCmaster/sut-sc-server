@@ -1968,7 +1968,7 @@ const procedureInstanceHandler = (user, client, support) => {
         query = user.institucion?.cargo?.id === 47 ? 2 : 3;
         payload = user.institucion.id;
       } else {
-        if (user.institucion?.cargo?.id === 46 || user.institucion?.cargo?.id === 98) {
+        if (user.institucion?.cargo?.id === 46 || user.institucion?.cargo?.id === 98 || user.institucion?.cargo?.id === 36) {
           query = 5;
         } else if (user.institucion?.cargo?.id === 97) {
           query = 2;
