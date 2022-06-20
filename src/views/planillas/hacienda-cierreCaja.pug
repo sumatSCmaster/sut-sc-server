@@ -79,6 +79,30 @@ block content
         .tr.break-page
           div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
             p(style={'padding-left':'10px'})
+              b EFECTIVO DOLAR
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
+            p #{datos.metodoPago.efectivo.transacciones}
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.efectivoDolar.total ? (datos.metodoPago.efectivoDolar.total) : 0)}
+        .tr.break-page
+          div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
+            p(style={'padding-left':'10px'})
+              b EFECTIVO EURO
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
+            p #{datos.metodoPago.efectivo.transacciones}
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.efectivoEuro.total ? (datos.metodoPago.efectivoEuro.total) : 0)}
+        .tr.break-page
+          div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
+            p(style={'padding-left':'10px'})
+              b EFECTIVO PESO
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
+            p #{datos.metodoPago.efectivo.transacciones}
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.efectivoPeso.total ? (datos.metodoPago.efectivoPeso.total) : 0)}
+        .tr.break-page
+          div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
+            p(style={'padding-left':'10px'})
               b CHEQUES
           div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
             p #{datos.metodoPago.cheques.transacciones}            

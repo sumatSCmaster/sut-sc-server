@@ -1614,6 +1614,10 @@ ORDER BY razon_social;`,
         FROM pago p 
         LEFT JOIN banco b ON b.id_banco = p.id_banco
         WHERE p.fecha_de_pago = $1 AND p.metodo_pago LIKE 'EFECTIVO%' AND id_usuario = $2;`,
+GET_CASHIER_CASH_BROKEN_DOWN_BY_METHOD: `SELECT SUM(p.monto) as total, COUNT(*) AS transacciones, metodo_pago
+FROM pago p 
+LEFT JOIN banco b ON b.id_banco = p.id_banco
+WHERE p.fecha_de_pago = $1 AND p.metodo_pago LIKE 'EFECTIVO%' AND id_usuario = $2 GROUP BY metodo_pago;`,
   GET_CASHIER_CHECKS: `SELECT SUM(p.monto) as total, COUNT(*) as transacciones
         FROM pago p 
         INNER JOIN banco b ON b.id_banco = p.id_banco

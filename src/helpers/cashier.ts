@@ -38,7 +38,7 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
   const cashierPosTotal = +cashierPos.reduce((prev, next) => prev + +next.monto, 0);
   const cashierPosTransactions = +cashierPos.reduce((prev, next) => prev + +next.transacciones, 0);
 
-  const cashierCash = (await client.query(queries.GET_CASHIER_CASH, [payload.day, userId])).rows;
+  const cashierCash = (await client.query(queries.GET_CASHIER_CASH_BROKEN_DOWN_BY_METHOD, [payload.day, userId])).rows;
 
   const cashierChecks = (await client.query(queries.GET_CASHIER_CHECKS, [payload.day, userId])).rows;
   const cashierCredit = (await client.query(queries.GET_CASHIER_CREDIT, [payload.day, userId])).rows;
@@ -82,7 +82,10 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
               transacciones: cashierPosTransactions,
               items: cashierPos,
             },
-            efectivo: cashierCash[0],
+            efectivo: cashierCash.find(cash => cash.metodo_pago === 'EFECTIVO'),
+            efectivoDolar: cashierCash.find(cash => cash.metodo_pago === 'EFECTIVO DOLAR'),
+            efectivoPeso: cashierCash.find(cash => cash.metodo_pago === 'EFECTIVO PESO'),
+            efectivoEuro: cashierCash.find(cash => cash.metodo_pago === 'EFECTIVO EURO'),
             credFiscal: cashierCredit[0],
             cheques: cashierChecks[0],
             transferencias: cashierTransfersByBank,
