@@ -2342,6 +2342,7 @@ export const contributorSearch = async ({ document, docType, name }) => {
   try {
     mainLogger.info(document, name);
     mainLogger.info(!document && !name);
+    console.log(name, document);
     if (!document && !name) throw { status: 406, message: 'Debe aportar algun parametro para la busqueda' };
     if ((!!document && document.length < 4) || (!!name && name.length < 3)) throw { status: 406, message: 'Debe aportar mas datos para la busqueda' };
     contribuyentes = !!document && document.length >= 4 ? (await client.query(queries.TAX_PAYER_EXISTS_AMBIGUOUS, [docType, `${document}%`])).rows : (await client.query(queries.SEARCH_CONTRIBUTOR_BY_NAME, [`%${name}%`])).rows;

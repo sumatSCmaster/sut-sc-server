@@ -80,7 +80,7 @@ block content
         each item in datos.metodoPago
           div.ticket-data.break-page
             div(style={'-webkit-flex': '4'})
-              p(style={'margin': '5px'}) #{item.tipo}
+              p(style={'margin': '5px'}) #{item.tipo === 'EFECTIVO PESO' || item.tipo === 'EFECTIVO DOLAR' ? 'EFECTIVO' : item.tipo}
             div(style={'-webkit-flex': '3'}).center
               p(style={'margin': '5px'}) #{item.transacciones}
             div(style={'-webkit-flex': '3'}).center
