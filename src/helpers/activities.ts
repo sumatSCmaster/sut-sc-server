@@ -359,6 +359,41 @@ export const createLicenseForContributor = async(tipoDocumento, documento, refer
   }
 }
 
+export const certificateStatementReconciliationAE = async ({dataLiquidacion}) => {
+  const client = await pool.connect();
+  try {
+    const id_contribuyente = dataLiquidacion?.contribuyente?.id;
+    let correoContribuyente = (await client.query('SELECT nombre_de_usuario FROM usuario WHERE id_contribuyente = $1', [id_contribuyente])).rows[0];
+    correoContribuyente = correoContribuyente?.nombre_de_usuario ?? ' '
+    
+    console.log('PABLO',correoContribuyente)
+
+    const html = renderFile(resolve(__dirname, `../views/planillas/sedebat-constanciaDeclaracion-AE.pug`), {
+      moment: require('moment'),
+      institucion: 'SEDEBAT',
+      datos: {
+        usuario: {
+          contribuyente:{...dataLiquidacion.contribuyente}
+        }
+      },
+      liquidaciones: dataLiquidacion.liquidaciones,
+      referenciaMunicipal: dataLiquidacion.referenciaMunicipal,
+      montoTotal: dataLiquidacion.monto,
+      correoContribuyente
+    });
+
+    return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
+  } catch (error) {
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: error,
+    };
+  } finally {
+    client.release();
+  }
+};
+
 interface Aliquot {
   id: number;
   codigo: string;
