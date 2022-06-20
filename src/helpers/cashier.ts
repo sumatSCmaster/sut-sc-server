@@ -82,7 +82,7 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
               transacciones: cashierPosTransactions,
               items: cashierPos,
             },
-            efectivo: cashierCash[0],
+            efectivo: cashierCash,
             credFiscal: cashierCredit[0],
             cheques: cashierChecks[0],
             transferencias: cashierTransfersByBank,
