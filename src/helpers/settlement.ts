@@ -3115,6 +3115,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
     const pagoSum = fixatedAmount(+payment.map((e) => +e.costo).reduce((e, i) => e + i, 0));
     mainLogger.info('addTaxApplicationPayment -> pagoSum', pagoSum);
     mainLogger.info(`addTaxApplicationPayment -> ${payment.map((pay) => `concepto ${applicationType} referencia ${pay?.referencia} banco ${pay?.banco} metodo_pago ${pay.metodoPago}`).join(' , ')}`);
+    console.log(pagoSum, +payment.map((e) => fixatedAmount(+e.costo)).reduce((e, i) => e + i, 0), +solicitud.monto_total, fixatedAmount(+solicitud.monto_total))
     if (pagoSum < fixatedAmount(+solicitud.monto_total)) throw { status: 401, message: `La suma de los montos es insuficiente para poder insertar el pago, con un déficit de Bs. ${fixatedAmount(+solicitud.monto_total) - pagoSum}` };
     const creditoPositivo = pagoSum - fixatedAmount(+solicitud.monto_total);
     await Promise.all(
