@@ -69,6 +69,7 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
     return prev;
   }, {});
   try {
+    console.log(+cashierCash.reduce((a, c) => c.transacciones + a, 0), +cashierCash.reduce((a, c) => c.total + a, 0), cashierCash)
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-cierreCaja.pug`), {
         moment: require('moment'),
