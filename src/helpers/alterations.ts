@@ -27,7 +27,7 @@ export const getAEDeclarationsForAlteration = async ({ document, reference, docT
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
     if (!branch) throw { status: 404, message: 'La sucursal proporcionada no existe' };
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
-    const solvencyCost = branch?.estado_licencia === 'PERMANENTE' ? +(await client.query(queries.GET_SCALE_FOR_PERMANENT_AE_SOLVENCY)).rows[0].indicador : +(await client.query(queries.GET_SCALE_FOR_TEMPORAL_AE_SOLVENCY)).rows[0].indicador;
+    const solvencyCost = branch?.estado_licencia === 'PERMANENTE' ? +(await client.query(queries.GET_SCALE_FOR_PERMANENT_AE_SOLVENCY)).rows[0].indicador : +(await client.query(queries.GET_SCALE_FOR_PROVISIONAL_AE_SOLVENCY)).rows[0].indicador;
     const liquidaciones = await Promise.all(
       (await client.query(tiposCorreccion[type] === 'complementaria' ? queries.GET_ACTIVE_AE_SETTLEMENTS_FOR_COMPLEMENTATION : queries.GET_ACTIVE_AE_SETTLEMENTS_FOR_SUSTITUTION, [branch.id_registro_municipal])).rows.map(async (el) => {
         const startingDate = moment().locale('ES').month(el.datos.fecha.month).year(el.datos.fecha.year).startOf('month');

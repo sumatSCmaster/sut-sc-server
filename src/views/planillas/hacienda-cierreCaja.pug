@@ -11,7 +11,7 @@ block content
     p
       h2 CIERRE DE CAJA
   div#planilla(style={'font-size':'13px'})
-    div(style={'margin-top':'100px'}).table
+    div(style={'margin-top':'25px'}).table
       .tr
         .th.center.border-bottom 
           p
@@ -69,13 +69,14 @@ block content
           div(style={'-webkit-flex':'3'}).td.center.border-bottom
             p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.punto.total ? (datos.metodoPago.punto.total) : 0)}
         .tr.break-page
-          div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
-            p(style={'padding-left':'10px'})
-              b EFECTIVO
-          div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
-            p #{datos.metodoPago.efectivo.transacciones}
-          div(style={'-webkit-flex':'3'}).td.center.border-bottom
-            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.efectivo.total ? (datos.metodoPago.efectivo.total) : 0)}
+          each item in datos.metodoPago.efectivo
+            div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
+              p(style={'padding-left':'10px'})
+                b #{item.metodo_pago}
+            div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
+              p #{item.transacciones}
+            div(style={'-webkit-flex':'3'}).td.center.border-bottom
+              p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.total ? (item.total) : 0)}
         .tr.break-page
           div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
             p(style={'padding-left':'10px'})

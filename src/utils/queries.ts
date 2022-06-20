@@ -1610,7 +1610,7 @@ ORDER BY razon_social;`,
         INNER JOIN banco b ON b.id_banco = p.id_banco
         WHERE p.fecha_de_aprobacion::date = $1 AND p.metodo_pago = 'PUNTO DE VENTA' AND id_usuario = $2
         GROUP BY b.nombre;`,
-  GET_CASHIER_CASH: `SELECT SUM(p.monto) as total, COUNT(*) as transacciones
+  GET_CASHIER_CASH: `SELECT SUM(p.monto) as total, COUNT(*) as transacciones, p.metodo_pago
         FROM pago p 
         LEFT JOIN banco b ON b.id_banco = p.id_banco
         WHERE p.fecha_de_pago = $1 AND p.metodo_pago LIKE 'EFECTIVO%' AND id_usuario = $2;`,
@@ -3341,7 +3341,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   GET_SCALE_FOR_COMMERCIAL_ESTATE_PETRO_LIMIT: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 2`,
 
   GET_SCALE_FOR_PERMANENT_AE_SOLVENCY: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 3`,
-  GET_SCALE_FOR_TEMPORAL_AE_SOLVENCY: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 4`,
+  GET_SCALE_FOR_PROVISIONAL_AE_SOLVENCY: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 4`,
 
   GET_SCALE_FOR_INDUSTRIAL_ESTATE_MTS_COST: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 5`,
   GET_SCALE_FOR_INDUSTRIAL_ESTATE_PETRO_LIMIT: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 6`,
