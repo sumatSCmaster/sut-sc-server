@@ -1046,7 +1046,7 @@ export const reviseProcedure = async (procedure, user: Usuario, idUser) => {
       prevData.datos.funcionario = { ...procedure.datos };
       datos = prevData.datos;
       datos.idTramite = procedure.idTramite;
-      datos.funcionario.estadoLicencia = resources.tipoTramite === 28 ? 'PERMANENTE' : 'TEMPORAL';
+      datos.funcionario.estadoLicencia = resources.tipoTramite === 28 ? 'PERMANENTE' : 'PROVISIONAL';
       datos.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
         monto: row.monto,
         formaPago: row.metodo_pago,
