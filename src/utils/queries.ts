@@ -892,7 +892,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_IU_SETTLEMENTS_FOR_CONTRIBUTOR: 'SELECT * FROM impuesto.solicitud_view sv WHERE contribuyente = $1 AND "descripcionRamo" = \'IU\'',
   GET_PP_SETTLEMENTS_FOR_CONTRIBUTOR: 'SELECT * FROM impuesto.solicitud_view sv WHERE contribuyente = $1 AND "descripcionRamo" = \'PP\'',
 
-  SET_AMOUNT_IN_BS_BASED_ON_PETRO: "UPDATE impuesto.liquidacion SET monto = ROUND((monto_petro * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'))) WHERE id_solicitud = $1 RETURNING *;",
+  SET_AMOUNT_IN_BS_BASED_ON_PETRO: "UPDATE impuesto.liquidacion SET monto = (monto_petro * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) WHERE id_solicitud = $1 RETURNING *;",
   FINISH_ROUNDING: 'UPDATE impuesto.liquidacion SET monto = ROUND(monto, 2) WHERE id_solicitud = $1',
   SET_AMOUNT_IN_BS_BASED_ON_PETRO_SETTLEMENT: "UPDATE impuesto.liquidacion SET monto = ROUND((monto_petro * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'))) WHERE id_liquidacion = $1 RETURNING *;",
   FINISH_ROUNDING_SETTLEMENT: 'UPDATE impuesto.liquidacion SET monto = ROUND(monto, 2) WHERE id_liquidacion = $1',
