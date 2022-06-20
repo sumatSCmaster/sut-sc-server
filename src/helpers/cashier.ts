@@ -40,6 +40,7 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
 
   const cashierCash = (await client.query(queries.GET_CASHIER_CASH_BROKEN_DOWN_BY_METHOD, [payload.day, userId])).rows;
 
+  console.log(+cashierCash.reduce((a, c) => c.transacciones + a, 0), +cashierCash.reduce((a, c) => c.total + a, 0), cashierCash)
   const cashierChecks = (await client.query(queries.GET_CASHIER_CHECKS, [payload.day, userId])).rows;
   const cashierCredit = (await client.query(queries.GET_CASHIER_CREDIT, [payload.day, userId])).rows;
   const cashierTransfers = (await client.query(queries.GET_CASHIER_TRANSFERS, [payload.day, userId])).rows;
