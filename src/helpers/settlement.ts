@@ -5647,7 +5647,8 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
       direccion: contribuyente.direccion,
       telefono: branch?.telefono_celular || '',
     };
-    const saldoFinal = statement.map((e) => switchcase({ PAGADO: e.montoPorcion, VIGENTE: -e.montoPorcion, VALIDANDO: 0 })(null)(e.estado)).reduce((e, x) => fixatedAmount(e + x), 0);
+    // const saldoFinal = statement.map((e) => switchcase({ PAGADO: e.montoPorcion, VIGENTE: -e.montoPorcion, VALIDANDO: 0 })(null)(e.estado)).reduce((e, x) => fixatedAmount(e + x), 0);
+    const saldoFinal = statement.map((e) => {if(e.estado === 'VIGENTE') return e.montoPorcion}).reduce((e, x) => fixatedAmount(e + x), 0);
     const datosCertificado: accountStatement = {
       actividadesContribuyente: economicActivities,
       datosContribuyente,
