@@ -3843,6 +3843,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
       if (creditoPositivo > 0) await updateFiscalCredit({ id: application.id_solicitud, user, amount: creditoPositivo, client });
 
       state = await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
+      await client.query('REFRESH MATERIALIZED VIEW impuesto.solicitud_view');
       recibo = await createReceiptForSpecialApplication({ client, user, application: (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement[0].id])).rows[0] });
       await client.query('UPDATE impuesto.liquidacion SET recibo = $1 WHERE id_solicitud = $2', [recibo, application.id_solicitud]);
     }
