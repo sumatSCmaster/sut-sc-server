@@ -3845,7 +3845,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
       const idSolicitud = (await client.query(`SELECT id_solicitud FROM impuesto.liquidacion WHERE id_liquidacion = $1`, [settlement[0].id])).rows[0].id_solicitud;
       console.log((await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [idSolicitud])).rows, settlement[0]);
       console.log('yori4')
-      recibo = await createReceiptForSpecialApplication({ client, user, application: (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement[0].id])).rows[0] });
+      recibo = await createReceiptForSpecialApplication({ client, user, application: (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [idSolicitud])).rows[0] });
       await client.query('UPDATE impuesto.liquidacion SET recibo = $1 WHERE id_solicitud = $2', [recibo, application.id_solicitud]);
     }
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [application.id_contribuyente]);
