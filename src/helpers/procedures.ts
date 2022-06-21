@@ -1471,7 +1471,7 @@ export const initProcedureAnalist = async (procedure, user: Usuario, client: Poo
     costo = isNotPrepaidProcedure({ suffix: resources.sufijo, user }) ? null : pago.costo || resources.costo_base;
     const nextEvent = await getNextEventForProcedure(response, client);
 
-    if (pago.length > 0 && resources.sufijo !== 'tl' && nextEvent.startsWith('validar') && resources.sufijo !== 'lae') {
+    if (resources.sufijo !== 'lae' && pago && pago.length > 0 && resources.sufijo !== 'tl' && nextEvent.startsWith('validar')) {
       await Promise.all(
         pago.map(async (p) => {
           p.concepto = 'TRAMITE';
