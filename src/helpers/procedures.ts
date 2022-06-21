@@ -1468,7 +1468,7 @@ export const initProcedureAnalist = async (procedure, user: Usuario, client: Poo
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.idTramite])).rows[0];
     response.sufijo = resources.sufijo;
-    costo = isNotPrepaidProcedure({ suffix: resources.sufijo, user }) ? null : pago.costo || resources.costo_base;
+    costo = isNotPrepaidProcedure({ suffix: resources.sufijo, user }) ? null : pago?.costo || resources.costo_base;
     const nextEvent = await getNextEventForProcedure(response, client);
 
     if (resources.sufijo !== 'lae' && pago && pago.length > 0 && resources.sufijo !== 'tl' && nextEvent.startsWith('validar')) {
