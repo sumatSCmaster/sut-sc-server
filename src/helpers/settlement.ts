@@ -3525,7 +3525,7 @@ export const internalLicenseApproval = async (license, official: Usuario) => {
     if (!user) throw { status: 404, message: 'El usuario proporcionado no existe en SUT' };
     const userContributor = await hasLinkedContributor(user.id);
     if (license.datos.contribuyente.id !== userContributor?.id) throw { status: 401, message: 'El usuario de SUT proporcionado no tiene disponibilidad de crear licencias para el contribuyente seleccionado' };
-    const procedure = (await initProcedureAnalist({ tipoTramite: license.tipoTramite, datos: license.datos, pago: license.pagos }, user as Usuario, client, official.id)).tramite;
+    const procedure = (await initProcedureAnalist({ tipoTramite: license.tipoTramite, datos: license.datos, pago: license.pagos, idSolicitud: license.idSolicitud }, user as Usuario, client, official.id)).tramite;
     // license.datos.funcionario.pago = [license.pago]
     const res = await processProcedureAnalist({ idTramite: procedure.id, datos: license.datos, aprobado: true }, official, client);
     await client.query('COMMIT');
@@ -4746,7 +4746,7 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
         [application.id, application.idSubramo]
       )
     ).rows;
-    console.log('yori5', application);
+    console.log('yori5', application); //quien borre esto es MARICO
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const impuestoRecibo = PETRO * 2;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
