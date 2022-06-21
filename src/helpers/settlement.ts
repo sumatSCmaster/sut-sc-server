@@ -4746,6 +4746,7 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
         [application.id, application.idSubramo]
       )
     ).rows;
+    console.log('yori5', application);
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const impuestoRecibo = PETRO * 2;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
