@@ -3842,8 +3842,8 @@ export const createSpecialSettlement = async ({ process, user }) => {
       );
       if (creditoPositivo > 0) await updateFiscalCredit({ id: application.id_solicitud, user, amount: creditoPositivo, client });
       state = await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
-      const idSolicitud = (await client.query(`SELECT id_solicitud FROM impuesto.liquidacion WHERE id_liquidacion = $1`, settlement[0].id)).rows[0].id_solicitud;
-      console.log((await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [idSolicitud])), settlement[0]);
+      const idSolicitud = (await client.query(`SELECT id_solicitud FROM impuesto.liquidacion WHERE id_liquidacion = $1`, [settlement[0].id])).rows[0].id_solicitud;
+      console.log((await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [idSolicitud])).rows, settlement[0]);
       console.log('yori4')
       recibo = await createReceiptForSpecialApplication({ client, user, application: (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement[0].id])).rows[0] });
       await client.query('UPDATE impuesto.liquidacion SET recibo = $1 WHERE id_solicitud = $2', [recibo, application.id_solicitud]);
