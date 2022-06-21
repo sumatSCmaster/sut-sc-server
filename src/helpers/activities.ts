@@ -368,9 +368,9 @@ export const certificateStatementReconciliationAE = async ({dataLiquidacion}) =>
     
     console.log('PABLO',correoContribuyente)
 
-    const html = renderFile(resolve(__dirname, `../views/planillas/sedebat-constanciaDeclaracion-AE.pug`), {
+    const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-constanciaDeclaracion-AE.pug`), {
       moment: require('moment'),
-      institucion: 'SEDEBAT',
+      institucion: 'HACIENDA',
       datos: {
         usuario: {
           contribuyente:{...dataLiquidacion.contribuyente}
