@@ -71,6 +71,11 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
           total: next.monto,
           transacciones: next.transacciones,
         };
+      case 23:
+        prev.provincial = {
+          total: next.monto,
+          transacciones: next.transacciones,
+        };
     }
     return prev;
   }, {});

@@ -149,6 +149,14 @@ block content
           div(style={'-webkit-flex':'3'}).td.center.border-bottom
             p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.venezuela ? (datos.metodoPago.transferencias.venezuela.total) : 0)}
         .tr
+          div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
+            p(style={'padding-left':'10px'})
+              b TRANSFERENCIA PROVINCIAL
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
+            p #{datos.metodoPago.transferencias.provincial ? datos.metodoPago.transferencias.provincial.transacciones : 0}            
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.provincial ? (datos.metodoPago.transferencias.provincial.total) : 0)}
+        .tr
           div(style={'-webkit-flex':'4',}).th.border-right
             p
               b TOTALES
