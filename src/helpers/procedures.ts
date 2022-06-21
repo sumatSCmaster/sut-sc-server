@@ -1482,11 +1482,11 @@ export const initProcedureAnalist = async (procedure, user: Usuario, client: Poo
     }
 
     if(resources.sufijo === 'lae') {
-      const solicitudUsada = (await client.query('SELECT * FROM registro_solicitud_licencia WHERE id_solicitud = $1', [procedure.idSolicitud])).rows[0].id_solicitud
+      const solicitudUsada = (await client.query('SELECT * FROM registro_solicitud_licencia WHERE id_solicitud = $1', [procedure.idSolicitud])).rows[0]?.id_solicitud;
       if(solicitudUsada) throw {status: 406, message: 'La solicitud insertada ya ha sido utilizada'};
-      const solicitudPaga = (await client.query('SELECT * FROM impuesto.solicitud WHERE id_solicitud = $1 AND aprobado = true', [procedure.idSolicitud])).rows[0].id_solicitud;
+      const solicitudPaga = (await client.query('SELECT * FROM impuesto.solicitud WHERE id_solicitud = $1 AND aprobado = true', [procedure.idSolicitud])).rows[0]?.id_solicitud;
       if (!solicitudPaga) throw {status: 406, message: `El número ingresado pertenece a una solicitud vigente`};
-      const tasaCorrecta = (await client.query(`SELECT * FROM impuesto.liquidacion WHERE id_solicitud = $1 AND id_subramo = $2`, [procedure.idSolicitud, tipoTramite === 36 ? 803 : 802])).rows[0].id_solicitud;
+      const tasaCorrecta = (await client.query(`SELECT * FROM impuesto.liquidacion WHERE id_solicitud = $1 AND id_subramo = $2`, [procedure.idSolicitud, tipoTramite === 36 ? 803 : 802])).rows[0]?.id_solicitud;
       if (!tasaCorrecta) throw {status: 406, message: `El número de solicitud no pertenece a un pago de solicitud de licencia ${tipoTramite === 36 ? 'provisional' : 'permanente'}`}
       await client.query('INSERT INTO registro_solicitud_licencia (id_solicitud, id_tramite) VALUES ($1, $2)', [procedure.idSolicitud, response.idTramite])
     }
