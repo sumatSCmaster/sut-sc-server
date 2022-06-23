@@ -76,6 +76,11 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
           total: next.monto,
           transacciones: next.transacciones,
         };
+      case 36:
+        prev.sofiTasa = {
+          total: next.monto,
+          transacciones: next.transacciones,
+        };
     }
     return prev;
   }, {});
