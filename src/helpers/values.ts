@@ -215,20 +215,20 @@ export const getPetro = async () => {
 };
 
 export const getPeso = async () => {
-  const REDIS_KEY = 'peso';
+  // const REDIS_KEY = 'peso';
   let client: PoolClient | undefined;
-  const redisClient = Redis.getInstance();
+  // const redisClient = Redis.getInstance();
   let peso;
   try {
-    const cachedPeso = await redisClient.getAsync(REDIS_KEY);
-    if (cachedPeso !== null) {
-      peso = cachedPeso;
-    } else {
+    // const cachedPeso = await redisClient.getAsync(REDIS_KEY);
+    // if (cachedPeso !== null) {
+    //   peso = cachedPeso;
+    // } else {
       client = await pool.connect();
       peso = (await client.query(queries.GET_PESO_VALUE)).rows[0].valor_en_bs;
-      await redisClient.setAsync(REDIS_KEY, peso);
-      await redisClient.expireAsync(REDIS_KEY, 1800);
-    }
+    //   await redisClient.setAsync(REDIS_KEY, peso);
+    //   await redisClient.expireAsync(REDIS_KEY, 1800);
+    // }
     return peso;
   } catch (e) {
     mainLogger.error(`getPetro - ERROR ${e.message}`);
