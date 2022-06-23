@@ -122,22 +122,22 @@ block content
             p  #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.minTrib ? item.minTrib : 0)}
           div(style={'-webkit-flex': 2}).td.border-bottom.center
             p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.impuesto ? item.impuesto : 0)}
-      div.tr.break-page
-        div(style={'-webkit-flex': 1}).td.border-bottom.center
-          p
-            b TRAMITES INTERNOS
-      div.tr.break-page
-        div(style={'-webkit-flex': 8}).td.border-right.border-bottom.center
-          p
-            b CONCEPTO
-        div(style={'-webkit-flex': 2}).td.border-bottom.center
-          p
-            b IMPUESTO
-      div.tr.break-page
-        div(style={'-webkit-flex': 8}).td.border-right
-          p SOLVENCIA DE ACTIVIDADES ECONÓMICAS
-        div(style={'-webkit-flex': 2}).td.center
-          p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.tramitesInternos ? datos.tramitesInternos : 0)}
+      //- div.tr.break-page
+      //-   div(style={'-webkit-flex': 1}).td.border-bottom.center
+      //-     p
+      //-       b TRAMITES INTERNOS
+      //- div.tr.break-page
+      //-   div(style={'-webkit-flex': 8}).td.border-right.border-bottom.center
+      //-     p
+      //-       b CONCEPTO
+      //-   div(style={'-webkit-flex': 2}).td.border-bottom.center
+      //-     p
+      //-       b IMPUESTO
+      //- div.tr.break-page
+      //-   div(style={'-webkit-flex': 8}).td.border-right
+      //-     p SOLVENCIA DE ACTIVIDADES ECONÓMICAS
+      //-   div(style={'-webkit-flex': 2}).td.center
+      //-     p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.tramitesInternos ? datos.tramitesInternos : 0)}
     div(style={'margin-top':'20px'}).table.break-page
       if montoRebajado > 0
         div.tr.break-page

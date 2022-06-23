@@ -116,14 +116,14 @@ block content
             p #{datos.metodoPago.credFiscal.transacciones}            
           div(style={'-webkit-flex':'3'}).td.center.border-bottom
             p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.credFiscal.total ?  (datos.metodoPago.credFiscal.total):0 )}          
-        .tr.break-page
-          div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
-            p(style={'padding-left':'10px'})
-              b TRANSFERENCIA BOD
-          div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
-            p #{datos.metodoPago.transferencias.bod ? datos.metodoPago.transferencias.bod.transacciones : 0}            
-          div(style={'-webkit-flex':'3'}).td.center.border-bottom
-            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.bod ? (datos.metodoPago.transferencias.bod.total) : 0)}
+        //- .tr.break-page
+        //-   div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
+        //-     p(style={'padding-left':'10px'})
+        //-       b TRANSFERENCIA BOD
+        //-   div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
+        //-     p #{datos.metodoPago.transferencias.bod ? datos.metodoPago.transferencias.bod.transacciones : 0}            
+        //-   div(style={'-webkit-flex':'3'}).td.center.border-bottom
+        //-     p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.bod ? (datos.metodoPago.transferencias.bod.total) : 0)}
         .tr.break-page
           div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
             p(style={'padding-left':'10px'})
@@ -140,6 +140,22 @@ block content
             p #{datos.metodoPago.transferencias.bnc ? datos.metodoPago.transferencias.bnc.transacciones : 0}            
           div(style={'-webkit-flex':'3'}).td.center.border-bottom
             p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.bnc ? (datos.metodoPago.transferencias.bnc.total) : 0)}
+        .tr
+          div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
+            p(style={'padding-left':'10px'})
+              b TRANSFERENCIA VENEZUELA
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
+            p #{datos.metodoPago.transferencias.venezuela ? datos.metodoPago.transferencias.venezuela.transacciones : 0}            
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.venezuela ? (datos.metodoPago.transferencias.venezuela.total) : 0)}
+        .tr
+          div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
+            p(style={'padding-left':'10px'})
+              b TRANSFERENCIA PROVINCIAL
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
+            p #{datos.metodoPago.transferencias.provincial ? datos.metodoPago.transferencias.provincial.transacciones : 0}            
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.provincial ? (datos.metodoPago.transferencias.provincial.total) : 0)}
         .tr
           div(style={'-webkit-flex':'4',}).th.border-right
             p

@@ -66,6 +66,16 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
           total: next.monto,
           transacciones: next.transacciones,
         };
+      case 11:
+        prev.venezuela = {
+          total: next.monto,
+          transacciones: next.transacciones,
+        };
+      case 23:
+        prev.provincial = {
+          total: next.monto,
+          transacciones: next.transacciones,
+        };
     }
     return prev;
   }, {});
@@ -91,7 +101,7 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
             cheques: cashierChecks[0],
             transferencias: cashierTransfersByBank,
             transacciones: +cashierPosTransactions + +cashierCash.reduce((a, c) => +c.transacciones + a, 0) + +cashierChecks[0].transacciones + +cashierTransfersTransactions + +cashierCredit[0].transacciones,
-            total: +cashierPosTotal + +cashierCash.reduce((a, c) => +c.total + a, 0) + +cashierChecks[0].total + +cashierTransfersTotal + +cashierCredit[0].total,
+            total: +cashierPosTotal + +cashierCash.reduce((a, c) => +c.total + a, 0) + +cashierChecks[0].total + +cashierTransfersTotal
           },
         },
       });
