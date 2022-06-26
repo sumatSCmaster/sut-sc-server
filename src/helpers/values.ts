@@ -171,6 +171,16 @@ export const updateEuroValue = async (value) => {
   }
 };
 
+export const getAELiq = async() => {
+  const client = await pool.connect();
+  try {
+    const AELiqPends = (await client.query('SELECT * FROM impuesto.liquidacion WHERE id_subramo = 10 AND monto IS NULL AND id_solicitud IS NOT NULL')).rows;
+    return {AE: AELiqPends.map(liq => JSON.parse(liq.datos)), status: 200}
+  } catch(e) {
+    throw {message: e, status: 500}
+  }
+}
+
 export const getUsdValue = async () => {
   const client = await pool.connect();
   try {
