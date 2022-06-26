@@ -201,20 +201,20 @@ export const getUsdValue = async () => {
 };
 
 export const getPetro = async () => {
-  const REDIS_KEY = 'petro';
+  // const REDIS_KEY = 'petro';
   let client: PoolClient | undefined;
-  const redisClient = Redis.getInstance();
+  // const redisClient = Redis.getInstance();
   let petro;
   try {
-    const cachedPetro = await redisClient.getAsync(REDIS_KEY);
-    if (cachedPetro !== null) {
-      petro = cachedPetro;
-    } else {
+    // const cachedPetro = await redisClient.getAsync(REDIS_KEY);
+    // if (cachedPetro !== null) {
+    //   petro = cachedPetro;
+    // } else {
       client = await pool.connect();
       petro = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
-      await redisClient.setAsync(REDIS_KEY, petro);
-      await redisClient.expireAsync(REDIS_KEY, 1800);
-    }
+      // await redisClient.setAsync(REDIS_KEY, petro);
+      // await redisClient.expireAsync(REDIS_KEY, 1800);
+    // }
     return petro;
   } catch (e) {
     mainLogger.error(`getPetro - ERROR ${e.message}`);
@@ -225,20 +225,20 @@ export const getPetro = async () => {
 };
 
 export const getPeso = async () => {
-  const REDIS_KEY = 'peso';
+  // const REDIS_KEY = 'peso';
   let client: PoolClient | undefined;
-  const redisClient = Redis.getInstance();
+  // const redisClient = Redis.getInstance();
   let peso;
   try {
-    const cachedPeso = await redisClient.getAsync(REDIS_KEY);
-    if (cachedPeso !== null) {
-      peso = cachedPeso;
-    } else {
+    // const cachedPeso = await redisClient.getAsync(REDIS_KEY);
+    // if (cachedPeso !== null) {
+    //   peso = cachedPeso;
+    // } else {
       client = await pool.connect();
       peso = (await client.query(queries.GET_PESO_VALUE)).rows[0].valor_en_bs;
-      await redisClient.setAsync(REDIS_KEY, peso);
-      await redisClient.expireAsync(REDIS_KEY, 1800);
-    }
+    //   await redisClient.setAsync(REDIS_KEY, peso);
+    //   await redisClient.expireAsync(REDIS_KEY, 1800);
+    // }
     return peso;
   } catch (e) {
     mainLogger.error(`getPetro - ERROR ${e.message}`);

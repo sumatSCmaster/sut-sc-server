@@ -60,7 +60,7 @@ export const getDataForDefinitiveDeclaration = async ({ document, reference, doc
       .sort((a, b) => (moment().locale('ES').month(a.datos.fecha.month).year(a.datos.fecha.year).isBefore(moment().locale('ES').month(b.datos.fecha.month).year(b.datos.fecha.year)) ? 1 : -1));
     if (definitiveDeclaration.length === 0) throw { status: 409, message: 'Debe poseer declaraciones de AE correspondientes al año previo para generar el certificado' };
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
-    const solvencyCost = branch?.estado_licencia === 'PERMANENTE' ? +(await client.query(queries.GET_SCALE_FOR_PERMANENT_AE_SOLVENCY)).rows[0].indicador : +(await client.query(queries.GET_SCALE_FOR_TEMPORAL_AE_SOLVENCY)).rows[0].indicador;
+    const solvencyCost = branch?.estado_licencia === 'PERMANENTE' ? +(await client.query(queries.GET_SCALE_FOR_PERMANENT_AE_SOLVENCY)).rows[0].indicador : +(await client.query(queries.GET_SCALE_FOR_PROVISIONAL_AE_SOLVENCY)).rows[0].indicador;
     const liquidaciones = await Promise.all(
       definitiveDeclaration.map(async (el) => {
         const startingDate = moment().locale('ES').month(el.datos.fecha.month).year(el.datos.fecha.year).startOf('month');

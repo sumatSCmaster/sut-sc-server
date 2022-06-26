@@ -314,7 +314,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     //AE
     if (branch && branch?.referencia_municipal && !AEApplicationExists) {
       mainLogger.info('AE');
-      const solvencyCost = branch?.estado_licencia === 'TEMPORAL' ? +(await client.query(queries.GET_SCALE_FOR_TEMPORAL_AE_SOLVENCY)).rows[0].indicador : +(await client.query(queries.GET_SCALE_FOR_PERMANENT_AE_SOLVENCY)).rows[0].indicador;
+      const solvencyCost = branch?.estado_licencia === 'PROVISIONAL' ? +(await client.query(queries.GET_SCALE_FOR_PROVISIONAL_AE_SOLVENCY)).rows[0].indicador : +(await client.query(queries.GET_SCALE_FOR_PERMANENT_AE_SOLVENCY)).rows[0].indicador;
       const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
       if (economicActivities.length === 0) throw { status: 404, message: 'El contribuyente no posee aforos asociados' };
       let lastEA = (await client.query(lastSettlementQuery, [codigosRamo.AE, lastSettlementPayload])).rows.find((el) => !el.datos.hasOwnProperty('descripcion'));
@@ -1539,16 +1539,16 @@ export const createSettlementForCPUProcedure = async (procedure, client) => {
  */
 export const patchSettlement = async ({ id, settlement }) => {
   const client = await pool.connect();
-  const { fechaLiquidacion, subramo, estado } = settlement;
+  const { fechaLiquidacion, fechaPerteneciente, subramo, estado } = settlement;
   let liquidacion;
   try {
     await client.query('BEGIN');
     const prevSettlement = (await client.query(queries.GET_SETTLEMENT_BY_ID, [id])).rows[0];
     const proposedDate = moment(fechaLiquidacion);
-    const dateForData = !![10, 100].find((sr) => sr === subramo) ? moment(fechaLiquidacion).subtract(1, 'M') : moment(fechaLiquidacion);
+    // const dateForData = !![10, 100].find((sr) => sr === subramo) ? moment(fechaLiquidacion).subtract(1, 'M') : moment(fechaLiquidacion);
     const newData = {
       ...prevSettlement.datos,
-      fecha: { month: dateForData.locale('es').format('MMMM'), year: dateForData.year() },
+      fecha: { month: fechaPerteneciente.month, year: fechaPerteneciente.year },
     };
     //1000, validando
     const patchApplication = (await client.query(queries.GET_PATCH_APPLICATION_BY_ORIGINAL_ID_AND_STATE, [prevSettlement.id_solicitud, estado])).rows[0];
@@ -2309,7 +2309,7 @@ export const formatBranch = async (branch, contributor, client) => {
       otrosImpuestos: inicioImpuestos.filter((el) => el),
       liquidaciones: (await client.query(queries.GET_SETTLEMENTS_FOR_BRANCH_SEARCH, [branch.id_registro_municipal])).rows.map((el) => ({
         id: el.id_liquidacion,
-        fechaPerteneciente: {month: el.datos.fecha.month, year: el.datos.fecha.year },
+        fechaPerteneciente: {month: el?.datos?.fecha?.month, year: el?.datos?.fecha?.year },
         fechaLiquidacion: el.fecha_liquidacion,
         fechaVencimiento: el.fecha_vencimiento,
         monto: +el.monto,
@@ -2342,9 +2342,10 @@ export const contributorSearch = async ({ document, docType, name }) => {
   try {
     mainLogger.info(document, name);
     mainLogger.info(!document && !name);
+    console.log(name, document);
     if (!document && !name) throw { status: 406, message: 'Debe aportar algun parametro para la busqueda' };
-    if ((!!document && document.length < 6) || (!!name && name.length < 3)) throw { status: 406, message: 'Debe aportar mas datos para la busqueda' };
-    contribuyentes = !!document && document.length >= 6 ? (await client.query(queries.TAX_PAYER_EXISTS, [docType, document])).rows : (await client.query(queries.SEARCH_CONTRIBUTOR_BY_NAME, [`%${name}%`])).rows;
+    if ((!!document && document.length < 4) || (!!name && name.length < 3)) throw { status: 406, message: 'Debe aportar mas datos para la busqueda' };
+    contribuyentes = !!document && document.length >= 4 ? (await client.query(queries.TAX_PAYER_EXISTS_AMBIGUOUS, [docType, `${document}%`])).rows : (await client.query(queries.SEARCH_CONTRIBUTOR_BY_NAME, [`%${name}%`])).rows;
     const contributorExists = contribuyentes.length > 0;
     if (!contributorExists) return { status: 404, message: 'No existen coincidencias con la razon social o documento proporcionado' };
     contribuyentes = await Promise.all(contribuyentes.map(async (el) => await formatContributor(el, client)));
@@ -2892,7 +2893,7 @@ export const insertSettlements = async ({ process, user }) => {
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.tipoUsuario !== 4 ? process.usuario || null : user.id, process.contribuyente])).rows[0];
     const solvencyCost =
-      contributorReference?.estado_licencia === 'TEMPORAL' ? +(await client.query(queries.GET_SCALE_FOR_TEMPORAL_AE_SOLVENCY)).rows[0].indicador : +(await client.query(queries.GET_SCALE_FOR_PERMANENT_AE_SOLVENCY)).rows[0].indicador;
+      contributorReference?.estado_licencia === 'PROVISIONAL' ? +(await client.query(queries.GET_SCALE_FOR_PROVISIONAL_AE_SOLVENCY)).rows[0].indicador : +(await client.query(queries.GET_SCALE_FOR_PERMANENT_AE_SOLVENCY)).rows[0].indicador;
 
     // ! Logica de multas
     // const hasAE = impuestos.find((el) => el.ramo === 'AE');
@@ -2982,17 +2983,18 @@ export const insertSettlements = async ({ process, user }) => {
         const liquidacionGas = {
           ramo: branchNames['SM'],
           fechaCancelada: x.fechaCancelada,
-          monto: process.esAgenteRetencion || process.esAgenteSENIAT ? ((+x.desglose.reduce((x, j) => x + j.montoGas, 0) / PETRO) * 1.04).toFixed(8) : ((+x.desglose.reduce((x, j) => x + j.montoGas, 0) / PETRO) * 1.16).toFixed(8),
+          monto: process.esAgenteRetencion || process.esAgenteSENIAT ? ((+x.desglose.reduce((x, j) => x + j.montoGas, 0) / PETRO) * 1).toFixed(8) : ((+x.desglose.reduce((x, j) => x + j.montoGas, 0) / PETRO) * 1).toFixed(8),
           desglose: x.desglose,
           descripcion: 'Pago del Servicio de Gas',
         };
         const liquidacionAseo = {
           ramo: branchNames['SM'],
           fechaCancelada: x.fechaCancelada,
-          monto: process.esAgenteRetencion || process.esAgenteSENIAT ? ((+x.desglose.reduce((x, j) => x + j.montoAseo, 0) / PETRO) * 1.04).toFixed(8) : ((+x.desglose.reduce((x, j) => x + j.montoAseo, 0) / PETRO) * 1.16).toFixed(8),
+          monto: process.esAgenteRetencion || process.esAgenteSENIAT ? ((+x.desglose.reduce((x, j) => x + j.montoAseo, 0)) * 1).toFixed(8) : ((+x.desglose.reduce((x, j) => x + j.montoAseo, 0)) * 1).toFixed(8),
           desglose: x.desglose,
           descripcion: 'Pago del Servicio de Aseo',
         };
+        j.push({ramo: 'TDS', fechaCancelada: x.fechaCancelada, monto: (+x.desglose.reduce((x, j) => x + j.montoAseo, 0)) * .1, desglose: x.desglose})
         j.push(liquidacionAseo);
         // j.push(liquidacionGas);
       }
@@ -3111,9 +3113,10 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
     applicationType !== 'RETENCION' && (await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO, [application]));
     const solicitud = (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [application])).rows[0];
     mainLogger.info('addTaxApplicationPayment -> solicitud', solicitud);
-    const pagoSum = +payment.map((e) => fixatedAmount(+e.costo)).reduce((e, i) => e + i, 0);
+    const pagoSum = fixatedAmount(+payment.map((e) => +e.costo).reduce((e, i) => e + i, 0));
     mainLogger.info('addTaxApplicationPayment -> pagoSum', pagoSum);
     mainLogger.info(`addTaxApplicationPayment -> ${payment.map((pay) => `concepto ${applicationType} referencia ${pay?.referencia} banco ${pay?.banco} metodo_pago ${pay.metodoPago}`).join(' , ')}`);
+    console.log(pagoSum, +payment.map((e) => fixatedAmount(+e.costo)).reduce((e, i) => e + i, 0), +solicitud.monto_total, fixatedAmount(+solicitud.monto_total))
     if (pagoSum < fixatedAmount(+solicitud.monto_total)) throw { status: 401, message: `La suma de los montos es insuficiente para poder insertar el pago, con un déficit de Bs. ${fixatedAmount(+solicitud.monto_total) - pagoSum}` };
     const creditoPositivo = pagoSum - fixatedAmount(+solicitud.monto_total);
     await Promise.all(
@@ -3522,7 +3525,7 @@ export const internalLicenseApproval = async (license, official: Usuario) => {
     if (!user) throw { status: 404, message: 'El usuario proporcionado no existe en SUT' };
     const userContributor = await hasLinkedContributor(user.id);
     if (license.datos.contribuyente.id !== userContributor?.id) throw { status: 401, message: 'El usuario de SUT proporcionado no tiene disponibilidad de crear licencias para el contribuyente seleccionado' };
-    const procedure = (await initProcedureAnalist({ tipoTramite: license.tipoTramite, datos: license.datos, pago: license.pagos }, user as Usuario, client, official.id)).tramite;
+    const procedure = (await initProcedureAnalist({ tipoTramite: license.tipoTramite, datos: license.datos, pago: license.pagos, idSolicitud: license.idSolicitud }, user as Usuario, client, official.id)).tramite;
     // license.datos.funcionario.pago = [license.pago]
     const res = await processProcedureAnalist({ idTramite: procedure.id, datos: license.datos, aprobado: true }, official, client);
     await client.query('COMMIT');
@@ -3838,9 +3841,11 @@ export const createSpecialSettlement = async ({ process, user }) => {
         })
       );
       if (creditoPositivo > 0) await updateFiscalCredit({ id: application.id_solicitud, user, amount: creditoPositivo, client });
-
       state = await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
-      recibo = await createReceiptForSpecialApplication({ client, user, application: (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement[0].id])).rows[0] });
+      const idSolicitud = (await client.query(`SELECT id_solicitud FROM impuesto.liquidacion WHERE id_liquidacion = $1`, [settlement[0].id])).rows[0].id_solicitud;
+      console.log((await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [idSolicitud])).rows, settlement[0]);
+      console.log('yori4')
+      recibo = await createReceiptForSpecialApplication({ client, user, application: (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [idSolicitud])).rows[0] });
       await client.query('UPDATE impuesto.liquidacion SET recibo = $1 WHERE id_solicitud = $2', [recibo, application.id_solicitud]);
     }
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [application.id_contribuyente]);
@@ -4741,6 +4746,7 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
         [application.id, application.idSubramo]
       )
     ).rows;
+    console.log('yori5', application); //quien borre esto es MARICO
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const impuestoRecibo = PETRO * 2;
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
@@ -5063,15 +5069,15 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
             };
           }),
 
-          tramitesInternos: +impuestoRecibo,
+          tramitesInternos: 0,
           totalTasaRev: 0.0,
           anticipoYRetenciones: 0.0,
           interesMora: 0.0,
-          montoTotal: +application.montoLiquidacion + +impuestoRecibo,
+          montoTotal: +application.montoLiquidacion,
           observacion: 'Pago por Impuesto de Actividad Economica - VIA WEB',
           estatus: 'PAGADO',
-          totalLiq: +application.montoLiquidacion + +impuestoRecibo,
-          totalRecaudado: +application.montoLiquidacion + +impuestoRecibo,
+          totalLiq: +application.montoLiquidacion,
+          totalRecaudado: +application.montoLiquidacion,
           totalCred: 0.0,
         },
       };
@@ -5634,6 +5640,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
         motivo: el.descripcion_corta,
         estado: paymentState(el.state) || 'PAGADO',
         montoPorcion: fixatedAmount(el.monto) || fixatedAmount(el.monto_petro * PETRO),
+        mes: el.datos?.fecha?.month ?? 'N/A'
         // montoPorcion: activity && parseInt(activity.nu_ut) * PETRO > parseFloat(el.monto_declarado) ? parseInt(activity.nu_ut) * PETRO : parseFloat(el.monto_declarado),
       };
     });
@@ -5644,7 +5651,8 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
       direccion: contribuyente.direccion,
       telefono: branch?.telefono_celular || '',
     };
-    const saldoFinal = statement.map((e) => switchcase({ PAGADO: e.montoPorcion, VIGENTE: -e.montoPorcion, VALIDANDO: 0 })(null)(e.estado)).reduce((e, x) => fixatedAmount(e + x), 0);
+    // const saldoFinal = statement.map((e) => switchcase({ PAGADO: e.montoPorcion, VIGENTE: -e.montoPorcion, VALIDANDO: 0 })(null)(e.estado)).reduce((e, x) => fixatedAmount(e + x), 0);
+    const saldoFinal = statement.map((e) => switchcase({ VIGENTE: e.montoPorcion })(null)(e.estado)).reduce((e, x) => fixatedAmount(e + x), 0);
     const datosCertificado: accountStatement = {
       actividadesContribuyente: economicActivities,
       datosContribuyente,

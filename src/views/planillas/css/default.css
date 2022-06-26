@@ -30,6 +30,15 @@ body {
   display: -webkit-flex;
 }
 
+
+/* #pageHeader,
+#pageFooter {
+  width: 100%;
+  height: 150px;
+  display: flex;
+  display: -webkit-flex;
+} */
+
 #alcaldia {
   width: 200px;
   height: 100px;
@@ -275,6 +284,13 @@ ul {
   text-align: center;
 }
 
+/* #pageFooter {
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  -webkit-flex-direction: column;
+  text-align: center;
+} */
+
 .footer-row{
   justify-content: center;
   display: -webkit-flex;
@@ -288,6 +304,7 @@ ul {
   align-items: center;
   -webkit-align-items: center;
 }
+
 
 .icon{
   width: 24px;

@@ -788,6 +788,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
 
   //IMPUESTOS SEDEMAT
   TAX_PAYER_EXISTS: 'SELECT * FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2',
+  TAX_PAYER_EXISTS_AMBIGUOUS: `SELECT * FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento LIKE $2`,
   UPDATE_TAXPAYER: `UPDATE impuesto.contribuyente SET tipo_documento = $2, documento = $3, razon_social = $4, 
       denominacion_comercial = $5, siglas = $6, id_parroquia = $7, sector = $8, direccion = $9, punto_referencia = $10 WHERE id_contribuyente = $1;`,
   UPDATE_RIM:
@@ -891,7 +892,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_IU_SETTLEMENTS_FOR_CONTRIBUTOR: 'SELECT * FROM impuesto.solicitud_view sv WHERE contribuyente = $1 AND "descripcionRamo" = \'IU\'',
   GET_PP_SETTLEMENTS_FOR_CONTRIBUTOR: 'SELECT * FROM impuesto.solicitud_view sv WHERE contribuyente = $1 AND "descripcionRamo" = \'PP\'',
 
-  SET_AMOUNT_IN_BS_BASED_ON_PETRO: "UPDATE impuesto.liquidacion SET monto = ROUND((monto_petro * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'))) WHERE id_solicitud = $1 RETURNING *;",
+  SET_AMOUNT_IN_BS_BASED_ON_PETRO: "UPDATE impuesto.liquidacion SET monto = (monto_petro * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) WHERE id_solicitud = $1 RETURNING *;",
   FINISH_ROUNDING: 'UPDATE impuesto.liquidacion SET monto = ROUND(monto, 2) WHERE id_solicitud = $1',
   SET_AMOUNT_IN_BS_BASED_ON_PETRO_SETTLEMENT: "UPDATE impuesto.liquidacion SET monto = ROUND((monto_petro * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'))) WHERE id_liquidacion = $1 RETURNING *;",
   FINISH_ROUNDING_SETTLEMENT: 'UPDATE impuesto.liquidacion SET monto = ROUND(monto, 2) WHERE id_liquidacion = $1',
@@ -1250,7 +1251,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
 
   //REPORTES
   GET_INGRESS: `SELECT ramo, descripcion, codigo, SUM("cantidadIng") as "cantidadIng", SUM(ingresado) as ingresado FROM ( 
-    (SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadIng", SUM(CASE WHEN l.id_subramo = 107 OR l.id_subramo = 108 THEN (CASE WHEN (l.datos->>'IVA')::numeric = 16 THEN (monto / 1.16 ) WHEN (l.datos->>'IVA')::numeric = 4 THEN (monto / 1.04 ) ELSE (monto / 1.16 ) END ) ELSE monto END ) as ingresado 
+    (SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadIng", SUM(CASE WHEN l.id_subramo = 107 OR l.id_subramo = 108 THEN (CASE WHEN (l.datos->>'IVA')::numeric = 16 THEN (l.monto / 1.16 ) WHEN (l.datos->>'IVA')::numeric = 4 THEN (l.monto / 1.04 ) ELSE (l.monto / 1.16 ) END ) ELSE l.monto END ) as ingresado 
         FROM ((SELECT DISTINCT ON (l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto) l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto, l.datos 
                 FROM impuesto.liquidacion l 
                 WHERE id_solicitud IS NOT NULL 
@@ -1284,7 +1285,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
       ORDER BY ramo)) x
         WHERE codigo != '915'
         GROUP BY ramo, descripcion, codigo;`,
-  GET_LIQUIDATED: `SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadLiq", SUM(CASE WHEN monto IS NOT NULL THEN monto ELSE (monto_petro * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) END) as liquidado 
+  GET_LIQUIDATED: `SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadLiq", SUM(CASE WHEN l.monto IS NOT NULL THEN l.monto ELSE (monto_petro * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) END) as liquidado 
         FROM (SELECT *  FROM impuesto.liquidacion WHERE fecha_liquidacion BETWEEN $1 AND $2) l 
         INNER JOIN (SELECT *, s.id_solicitud AS id_solicitud_q FROM impuesto.solicitud s 
                         INNER JOIN (SELECT es.id_solicitud, impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) 
@@ -1609,10 +1610,14 @@ ORDER BY razon_social;`,
         INNER JOIN banco b ON b.id_banco = p.id_banco
         WHERE p.fecha_de_aprobacion::date = $1 AND p.metodo_pago = 'PUNTO DE VENTA' AND id_usuario = $2
         GROUP BY b.nombre;`,
-  GET_CASHIER_CASH: `SELECT SUM(p.monto) as total, COUNT(*) as transacciones
+  GET_CASHIER_CASH: `SELECT SUM(p.monto) as total, COUNT(*) as transacciones, p.metodo_pago
         FROM pago p 
         LEFT JOIN banco b ON b.id_banco = p.id_banco
-        WHERE p.fecha_de_pago = $1 AND p.metodo_pago = 'EFECTIVO' AND id_usuario = $2;`,
+        WHERE p.fecha_de_pago = $1 AND p.metodo_pago LIKE 'EFECTIVO%' AND id_usuario = $2;`,
+GET_CASHIER_CASH_BROKEN_DOWN_BY_METHOD: `SELECT SUM(p.monto) as total, COUNT(*) AS transacciones, metodo_pago
+FROM pago p 
+LEFT JOIN banco b ON b.id_banco = p.id_banco
+WHERE p.fecha_de_pago = $1 AND p.metodo_pago LIKE 'EFECTIVO%' AND id_usuario = $2 GROUP BY metodo_pago;`,
   GET_CASHIER_CHECKS: `SELECT SUM(p.monto) as total, COUNT(*) as transacciones
         FROM pago p 
         INNER JOIN banco b ON b.id_banco = p.id_banco
@@ -3336,7 +3341,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   GET_SCALE_FOR_COMMERCIAL_ESTATE_PETRO_LIMIT: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 2`,
 
   GET_SCALE_FOR_PERMANENT_AE_SOLVENCY: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 3`,
-  GET_SCALE_FOR_TEMPORAL_AE_SOLVENCY: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 4`,
+  GET_SCALE_FOR_PROVISIONAL_AE_SOLVENCY: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 4`,
 
   GET_SCALE_FOR_INDUSTRIAL_ESTATE_MTS_COST: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 5`,
   GET_SCALE_FOR_INDUSTRIAL_ESTATE_PETRO_LIMIT: `SELECT indicador FROM impuesto.baremo WHERE id_baremo = 6`,

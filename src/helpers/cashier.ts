@@ -38,8 +38,9 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
   const cashierPosTotal = +cashierPos.reduce((prev, next) => prev + +next.monto, 0);
   const cashierPosTransactions = +cashierPos.reduce((prev, next) => prev + +next.transacciones, 0);
 
-  const cashierCash = (await client.query(queries.GET_CASHIER_CASH, [payload.day, userId])).rows;
+  const cashierCash = (await client.query(queries.GET_CASHIER_CASH_BROKEN_DOWN_BY_METHOD, [payload.day, userId])).rows;
 
+  console.log(+cashierCash.reduce((a, c) => +c.transacciones + a, 0), +cashierCash.reduce((a, c) => +c.total + a, 0), cashierCash)
   const cashierChecks = (await client.query(queries.GET_CASHIER_CHECKS, [payload.day, userId])).rows;
   const cashierCredit = (await client.query(queries.GET_CASHIER_CREDIT, [payload.day, userId])).rows;
   const cashierTransfers = (await client.query(queries.GET_CASHIER_TRANSFERS, [payload.day, userId])).rows;
@@ -65,6 +66,21 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
           total: next.monto,
           transacciones: next.transacciones,
         };
+      case 11:
+        prev.venezuela = {
+          total: next.monto,
+          transacciones: next.transacciones,
+        };
+      case 23:
+        prev.provincial = {
+          total: next.monto,
+          transacciones: next.transacciones,
+        };
+      case 36:
+        prev.sofiTasa = {
+          total: next.monto,
+          transacciones: next.transacciones,
+        };
     }
     return prev;
   }, {});
@@ -82,12 +98,15 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
               transacciones: cashierPosTransactions,
               items: cashierPos,
             },
-            efectivo: cashierCash[0],
+            efectivo: cashierCash.find(cash => cash.metodo_pago === 'EFECTIVO') || {total: 0, transacciones: 0},
+            efectivoDolar: cashierCash.find(cash => cash.metodo_pago === 'EFECTIVO DOLAR') || {total: 0, transacciones: 0},
+            efectivoPeso: cashierCash.find(cash => cash.metodo_pago === 'EFECTIVO PESO') || {total: 0, transacciones: 0},
+            efectivoEuro: cashierCash.find(cash => cash.metodo_pago === 'EFECTIVO EURO') || {total: 0, transacciones: 0},
             credFiscal: cashierCredit[0],
             cheques: cashierChecks[0],
             transferencias: cashierTransfersByBank,
-            transacciones: +cashierPosTransactions + +cashierCash[0].transacciones + +cashierChecks[0].transacciones + +cashierTransfersTransactions + +cashierCredit[0].transacciones,
-            total: +cashierPosTotal + +cashierCash[0].total + +cashierChecks[0].total + +cashierTransfersTotal + +cashierCredit[0].total,
+            transacciones: +cashierPosTransactions + +cashierCash.reduce((a, c) => +c.transacciones + a, 0) + +cashierChecks[0].transacciones + +cashierTransfersTransactions + +cashierCredit[0].transacciones,
+            total: +cashierPosTotal + +cashierCash.reduce((a, c) => +c.total + a, 0) + +cashierChecks[0].total + +cashierTransfersTotal
           },
         },
       });
@@ -142,7 +161,7 @@ export const generateAllCashiersReport = async (user, payload: { from?: Date; to
   for (let x in paymentBreakdown) {
     paymentBreakdown[x] = groupBy(paymentBreakdown[x], (val) => val.metodo_pago);
   }
-
+  console.log(paymentBreakdown, 'WILKMER')
   try {
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-cierreCajaJefe.pug`), {

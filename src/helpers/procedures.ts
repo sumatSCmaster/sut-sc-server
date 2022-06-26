@@ -213,6 +213,7 @@ const getSettlementInstances = async (user, client: PoolClient) => {
   try {
     if (belongsToAnInstitution(user)) return [];
     let query = queries.GET_SETTLEMENT_INSTANCES_BY_ID;
+    console.log(`ANDRE ${belongsToAnInstitution(user)}`)
     let payload = [user.id];
     let response = (await client.query(query, payload)).rows;
     return response.map((el) => {
@@ -1045,7 +1046,7 @@ export const reviseProcedure = async (procedure, user: Usuario, idUser) => {
       prevData.datos.funcionario = { ...procedure.datos };
       datos = prevData.datos;
       datos.idTramite = procedure.idTramite;
-      datos.funcionario.estadoLicencia = resources.tipoTramite === 28 ? 'PERMANENTE' : 'TEMPORAL';
+      datos.funcionario.estadoLicencia = resources.tipoTramite === 28 ? 'PERMANENTE' : 'PROVISIONAL';
       datos.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
         monto: row.monto,
         formaPago: row.metodo_pago,
@@ -1271,7 +1272,7 @@ const reviseProcedureForMassiveApproval = async (procedure: Partial<Tramite | an
       prevData.datos.funcionario = { ...procedure.datos, observaciones };
       datos = prevData.datos;
       datos.idTramite = procedure.idTramite;
-      datos.funcionario.estadoLicencia = resources.tipoTramite === 28 ? 'PERMANENTE' : 'TEMPORAL';
+      datos.funcionario.estadoLicencia = resources.tipoTramite === 28 ? 'PERMANENTE' : 'PROVISIONAL';
       datos.funcionario.pago = (await pool.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
         monto: row.monto,
         formaPago: row.metodo_pago,
@@ -1467,10 +1468,10 @@ export const initProcedureAnalist = async (procedure, user: Usuario, client: Poo
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.idTramite])).rows[0];
     response.sufijo = resources.sufijo;
-    costo = isNotPrepaidProcedure({ suffix: resources.sufijo, user }) ? null : pago.costo || resources.costo_base;
+    costo = isNotPrepaidProcedure({ suffix: resources.sufijo, user }) ? null : pago?.costo || resources.costo_base;
     const nextEvent = await getNextEventForProcedure(response, client);
 
-    if (pago.length > 0 && resources.sufijo !== 'tl' && nextEvent.startsWith('validar')) {
+    if (resources.sufijo !== 'lae' && pago && pago.length > 0 && resources.sufijo !== 'tl' && nextEvent.startsWith('validar')) {
       await Promise.all(
         pago.map(async (p) => {
           p.concepto = 'TRAMITE';
@@ -1478,6 +1479,16 @@ export const initProcedureAnalist = async (procedure, user: Usuario, client: Poo
           await insertPaymentCashier(p, response.id, client);
         })
       );
+    }
+
+    if(resources.sufijo === 'lae') {
+      const solicitudUsada = (await client.query('SELECT * FROM registro_solicitud_licencia WHERE id_solicitud = $1', [procedure.idSolicitud])).rows[0]?.id_solicitud;
+      if(solicitudUsada) throw {status: 406, message: 'La solicitud insertada ya ha sido utilizada'};
+      const solicitudPaga = (await client.query('SELECT * FROM impuesto.solicitud WHERE id_solicitud = $1 AND aprobado = true', [procedure.idSolicitud])).rows[0]?.id_solicitud;
+      if (!solicitudPaga) throw {status: 406, message: `El número ingresado no pertenece a una solicitud solvente`};
+      const tasaCorrecta = (await client.query(`SELECT * FROM impuesto.liquidacion WHERE id_solicitud = $1 AND id_subramo = $2`, [procedure.idSolicitud, tipoTramite === 36 ? 803 : 802])).rows[0]?.id_solicitud;
+      if (!tasaCorrecta) throw {status: 406, message: `El número de solicitud no pertenece a un pago de solicitud de licencia ${tipoTramite === 36 ? 'provisional' : 'permanente'}`}
+      await client.query('INSERT INTO registro_solicitud_licencia (id_solicitud, id_tramite) VALUES ($1, $2)', [procedure.idSolicitud, response.idTramite])
     }
 
     if (resources.sufijo === 'tl') {
@@ -1790,7 +1801,7 @@ export const procedureEvents = switchcase({
   },
   rc: { iniciado: 'procesar_rc', enproceso: { true: 'aprobar_rc', false: 'rechazar_rc' } },
   bc: { iniciado: 'revisar_bc', enrevision: { true: 'aprobar_bc', false: 'rechazar_bc' } },
-  lae: { iniciado: 'validar_lae', validando: 'enproceso_lae', ingresardatos: 'validar_lae', enproceso: { true: 'revisar_lae', false: 'rechazar_lae' }, enrevision: { true: 'revisardirector_lae', false: 'rechazar_lae' }, enrevision_gerente: {true: 'aprobar_lae', false: 'rechazar_lae'} },
+  lae: { iniciado: 'validar_lae', validando: 'enproceso_lae', ingresardatos: 'validar_lae', enproceso: { true: 'revisar_lae', false: 'rechazar_lae' }, enrevision: { true: 'revisarrenta_lae', false: 'rechazar_lae' }, enrevision_renta: {true: 'revisardirector_lae', false: 'revisar_lae'}, enrevision_gerente: {true: 'aprobar_lae', false: 'revisar_lae'} },
   lic: {
     iniciado: 'ingresardatos_lic',
     // enproceso: 'inspeccion_lic',
@@ -1967,7 +1978,7 @@ const procedureInstanceHandler = (user, client, support) => {
         query = user.institucion?.cargo?.id === 47 ? 2 : 3;
         payload = user.institucion.id;
       } else {
-        if (user.institucion?.cargo?.id === 46 || user.institucion?.cargo?.id === 98) {
+        if (user.institucion?.cargo?.id === 46 || user.institucion?.cargo?.id === 98 || user.institucion?.cargo?.id === 36) {
           query = 5;
         } else if (user.institucion?.cargo?.id === 97) {
           query = 2;
@@ -2074,6 +2085,7 @@ const updateProcedure = switchcase({
   inspeccion: inspectProcedure,
   encorreccion: inspectProcedure,
   enrevision_analista: reviseProcedure,
+  enrevision_renta: reviseProcedure,
   enrevision_gerente: reviseProcedure,
   enrevision: reviseProcedure,
   ingresardatos: addPaymentProcedure,

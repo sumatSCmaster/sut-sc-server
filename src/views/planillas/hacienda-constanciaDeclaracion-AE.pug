@@ -1,0 +1,102 @@
+html
+  head
+    title Template
+    link(href='css/default.css' rel='stylesheet' type='text/css')
+    link(rel="stylesheet", href="css/sedemat.css")
+  body
+    div#wrapper
+      header#header
+        div.header-child
+          img#alcaldia(src='images/alcaldia-logo.png')
+        div.header-child
+          p REPÚBLICA BOLIVARIANA DE VENEZUELA
+          p ESTADO TÁCHIRA, ALCALDÍA DEL MUNICIPIO SAN CRISTÓBAL
+          p SUPERINTENDENCIA MUNICIPAL DE ADMINISTRACIÓN TRIBUTARIA DE SAN CRISTÓBAL (SUMATSC)
+        div.header-child
+          img#alcaldia(src='images/encabezado-alcaldia.png')
+      img#divider(src='images/franja-2.0.png')
+      div#content
+        div#planilla(style={'font-size':'13px'})
+          div(style={'margin-bottom':'25px', 'margin-top':'25px', 'width':'100%', 'display': '-webkit-flex', '-webkit-align-items': 'end', '-webkit-justify-content': 'start'})
+            p San Cristóbal, #{moment(fecha).format('DD/MM/YYYY')}
+          div(style={'margin-bottom':'20px'})
+            div.table(style={'width':'100%', 'font-size':'16px', 'font-weight': 'bold'})
+              div.tr
+                div.th(style={'-webkit-flex': 1}).border-bottom.center
+                  p
+                    b CONSTANCIA DE DECLARACIÓN DE ACTIVIDADES ECONÓMICAS                             
+          div.table(style={'font-size':'13px'})
+            div.tr
+              div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+                p
+                  b CONTRIBUYENTE
+              div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+                p
+                  b USUARIO DE S.U.T.
+              div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+                p
+                  b RIF - C.I
+              div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+                p
+                  b N° DE LICENCIA 
+            div.tr
+              div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+                p #{datos.usuario.contribuyente.razonSocial}
+              div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+                p #{correoContribuyente ? correoContribuyente : 'N/A'}
+              div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+                p #{datos.usuario.contribuyente.tipoDocumento}-#{datos.usuario.contribuyente.documento}
+              div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+                p #{referenciaMunicipal ? referenciaMunicipal : ' '} 
+          div(style={'margin-bottom':'20px'})
+            each item, index in liquidaciones
+              div.table(style={'font-size':'13px'}).break-page
+                div.tr
+                  div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+                    p Tipo de Liquidación
+                div.tr
+                  div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+                    p #{item.ramo}
+                div.tr
+                  div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+                    p Fecha
+                  div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+                    p Monto
+                  div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+                    p Monto Petro
+                div.tr
+                  div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+                    p #{item.fecha.month} #{item.fecha.year}
+                  div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+                    p Bs. #{item.monto}
+                  div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+                    p #{item.montoPetro}
+                each itemDesglose in liquidaciones[index].desglose
+                  div.tr
+                    div.th.center.border-bottom
+                      p
+                        b DECLARACIÓN DE ACTIVIDADES ECONÓMICAS
+                  div.tr
+                    div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+                      p 
+                        b AFORO: #{itemDesglose.descripcion}
+                  div.tr
+                    div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+                      p 
+                        b Alicuota: 
+                        p #{itemDesglose.alicuota} %
+                    div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+                      p 
+                        b Monto Declarado: 
+                        p Bs. #{itemDesglose.montoDeclarado}
+                    div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+                      p 
+                        b Impuestos: 
+                        p Bs. #{itemDesglose.montoCobrado}
+          div.table(style={'font-size':'13px'})
+            div.tr
+              div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+                p
+                  b Total Bs. #{montoTotal}
+          //- div(style={'margin-top':'10px'})
+            b El servicio desconcentrado de administración tributaria (SEDEBAT) Se reserva el derecho de practicar las auditorías pertinentes por errores de cálculo o datos suministrados

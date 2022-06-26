@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
-import { createLicenseForContributor, getActivities, getMunicipalReferenceActivities, updateActivitiesAliquots, updateContributorActivities, generatePatentDocument, getSMActivities } from '@helpers/activities';
+import { certificateStatementReconciliationAE, createLicenseForContributor, getActivities, getMunicipalReferenceActivities, updateActivitiesAliquots, updateContributorActivities, generatePatentDocument, getSMActivities } from '@helpers/activities';
 import { authenticate } from 'passport';
 
 const router = Router();
@@ -57,5 +57,16 @@ router.post('/submmitLicense', authenticate('jwt'), async (req, res) => {
   if (error) res.status(error.status).json(error);
   if (data) res.status(200).json({message: 'Contribuyente ingresado exitosamente'});
 })
+
+router.post('/statementReconciliationAE', authenticate('jwt'), async (req, res) => {
+  const [error, data] = await fulfill(certificateStatementReconciliationAE({ dataLiquidacion: req.body}));
+  if (error) res.status(error.status).json(error);
+  if (data){
+    data.toBuffer(async (err, buffer) => {
+      if (err) res.status(500).json({ status: 500, message: 'Error al procesar el pdf' });
+      res.contentType('application/pdf').send(buffer.toString('base64'));
+    });
+  }
+});
 
 export default router;
