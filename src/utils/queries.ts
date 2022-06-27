@@ -811,7 +811,6 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     AND sr.descripcion != 'Convenio de Pago' 
     AND R.referencia_municipal= $1 
     AND r.id_contribuyente = $2 
-    AND l.datos#>>'{fecha, year}' <> '2022'
     GROUP BY rm.id_ramo, rm.descripcion HAVING SUM (l.monto_petro) > 0`, //AÑO DE LA LIQUIDACIÓN MODIFICADO PARA QUE NO SE TRAIGA LAS DE 2022, CAMBIO HECHO EL 09/03/2022
   GET_APPLICATION_DEBTS_FOR_NATURAL_CONTRIBUTOR:
     "SELECT DISTINCT m.id_ramo, rm.descripcion, ROUND(SUM(l.monto_petro),8) as monto FROM impuesto.ramo rm INNER JOIN impuesto.subramo sr ON rm.id_ramo = sr.id_ramo INNER JOIN\

@@ -174,8 +174,15 @@ export const updateEuroValue = async (value) => {
 export const getAELiq = async() => {
   const client = await pool.connect();
   try {
+    const petro = +(await client.query(`SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'`)).rows[0].valor_en_bs;
     const AELiqPends = (await client.query('SELECT * FROM impuesto.liquidacion WHERE id_subramo = 10 AND monto IS NULL AND id_solicitud IS NOT NULL')).rows;
-    console.log(AELiqPends[0].datos);
+    // console.log(AELiqPends[0].datos);
+    AELiqPends.map(liq => ({...liq.datos?.desglose, idLiquidacion: liq.id_liquidacion})).forEach(async des => {
+      if (des.some(af => af.mt || 0 * petro < af.montoCobrado)) {
+        const montoTotalPetro = des.reduce((a, c) => a + c.montoCobrado, 0) / petro;
+        await client.query('UPDATE impuesto.liquidacion SET monto_petro = $1 WHERE id_liquidacion = $2', [montoTotalPetro, des.idLiquidacion])
+      }
+    })
     return {AE: AELiqPends.map(liq => liq.datos), status: 200}
   } catch(e) {
     throw {message: e.message, status: 500}
