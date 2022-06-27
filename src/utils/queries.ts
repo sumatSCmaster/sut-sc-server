@@ -1960,7 +1960,7 @@ ORDER BY fecha_liquidacion DESC;
                  WHERE id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE id_registro_municipal = $1 LIMIT 1))
                 GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
       ) ss  ON ss.id = l.id_solicitud 
-  WHERE ss.state = 'ingresardatos' AND id_registro_municipal = $1 AND l.datos#>>'{fecha, year}' <> '2022' AND
+  WHERE ss.state = 'ingresardatos' AND id_registro_municipal = $1 AND
    id_subramo IN (SELECT id_subramo FROM impuesto.subramo WHERE descripcion !='Convenio de Pago' AND id_ramo = $2);`, //AÑO DE LA LIQUIDACIÓN MODIFICADO PARA QUE NO MODIFIQUE LAS DE 2022, CAMBIO HECHO EL 09/03/2022
   INSERT_DISCOUNT_FOR_SETTLEMENT: 'INSERT INTO impuesto.liquidacion_descuento (id_liquidacion, porcentaje_descuento) VALUES ($1, $2)',
   CREATE_AGREEMENT: 'INSERT INTO impuesto.convenio (id_solicitud, cantidad) VALUES ($1, $2) RETURNING *',
