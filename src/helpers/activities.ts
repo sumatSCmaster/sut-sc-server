@@ -366,7 +366,6 @@ export const certificateStatementReconciliationAE = async ({dataLiquidacion}) =>
     let correoContribuyente = (await client.query('SELECT nombre_de_usuario FROM usuario WHERE id_contribuyente = $1', [id_contribuyente])).rows[0];
     correoContribuyente = correoContribuyente?.nombre_de_usuario ?? ' '
     
-    console.log('PABLO',correoContribuyente)
 
     const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-constanciaDeclaracion-AE.pug`), {
       moment: require('moment'),

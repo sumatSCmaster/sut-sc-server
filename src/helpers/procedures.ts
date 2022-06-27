@@ -213,7 +213,6 @@ const getSettlementInstances = async (user, client: PoolClient) => {
   try {
     if (belongsToAnInstitution(user)) return [];
     let query = queries.GET_SETTLEMENT_INSTANCES_BY_ID;
-    console.log(`ANDRE ${belongsToAnInstitution(user)}`)
     let payload = [user.id];
     let response = (await client.query(query, payload)).rows;
     return response.map((el) => {
@@ -231,7 +230,6 @@ const getSettlementInstances = async (user, client: PoolClient) => {
         estado: el.state,
       };
       
-      console.log(el.montoLiquidacion, 'no se  por que no funciona');
 
       return liquidacion;
     });
@@ -595,7 +593,6 @@ export const procedureInit = async (procedure, user: Usuario, id) => {
 
     const nextEvent = await getNextEventForProcedure(response, client);
 
-    console.log('PABLO','nextEvent', nextEvent, 'sufijo', resources.sufijo, 'response', response)
 
     if (pago && resources.sufijo !== 'tl' && nextEvent.startsWith('validar')) {
       pago.costo = costo;
@@ -1017,7 +1014,6 @@ export const reviseProcedure = async (procedure, user: Usuario, idUser) => {
   let dir, respState, datos;
   try {
     client.query('BEGIN');
-    console.log('LUIS CRUZ');
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [procedure.idTramite])).rows[0];
 
     if (!procedure.hasOwnProperty('revision')) {
@@ -1085,7 +1081,6 @@ export const reviseProcedure = async (procedure, user: Usuario, idUser) => {
         }
       }
     } else {
-      console.log(aprobado, nextEvent, 'LUIIIIIIIIIIIIIIIIIIIIIIIIIIII');
       if (aprobado && nextEvent !== 'revisardirector_cr' && nextEvent[aprobado].startsWith('aprobar')) {
         if (resources.tipoTramite === 28 || resources.tipoTramite === 36) procedure.datos = await approveContributorAELicense({ data: datos, client });
         if (procedure.sufijo !== 'bc' && procedure.sufijo !== 'sup') dir = await createCertificate(procedure, client);
@@ -1566,7 +1561,6 @@ export const initProcedureAnalistAB = async (procedure, user: Usuario, client: P
     datosP = { usuario: contribuyente };
     const contribId = (await client.query('SELECT DISTINCT(id_usuario) FROM usuario JOIN impuesto.contribuyente USING(id_contribuyente) WHERE tipo_documento = $1 AND documento = $2', [contribuyente.tipo_documento, contribuyente.documento])).rows[0].id_usuario;
     const response = (await client.query(queries.PROCEDURE_INIT, [procedure.tipo === 'b' ? 113 : 112, JSON.stringify(datosP), contribId || user.id])).rows[0];
-    console.log(datosP, user.id, pago, 'LUIS CASTILLO');
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.idTramite])).rows[0];
     response.sufijo = resources.sufijo;
@@ -1758,7 +1752,7 @@ export const getNextEventForProcedure = async (procedure, client): Promise<any> 
   mainLogger.info(`getNextEventForProcedure - response ${JSON.stringify(response)}`);
   const nextEvent = procedureEventHandler(procedure.sufijo, response.state);
 
-  console.log('PABLO getNextEventForProcedure', 'response', response, 'nextEvent', typeof nextEvent, nextEvent)
+  console.log('getNextEventForProcedure', 'response', response, 'nextEvent', typeof nextEvent, nextEvent)
 
   if (typeof nextEvent === 'string' || procedure.sufijo === 'lae' || procedure.sufijo === 'rc' || procedure.sufijo === 'bc' || (procedure.sufijo === 'sup' && (response.state === 'enproceso' || response.state === 'enrevision'))) return nextEvent;
   if (
