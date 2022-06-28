@@ -44,6 +44,7 @@ import reportSolvRRI from './reportSolvRRI';
 import RRICertificate from './RRICertificate';
 import reportCPU from './reportCPU';
 import solvencies from './solvencies';
+import report from './report';
 
 const router = Router();
 
@@ -92,6 +93,7 @@ router.use('/reportSolvRRI', reportSolvRRI);
 router.use('/RRICertificate', RRICertificate);
 router.use('/reportCPU', reportCPU);
 router.use('/solvencies', solvencies);
+router.use('/report', report);
 
 router.get('/', (req, res) => {
   res.status(200).json({
