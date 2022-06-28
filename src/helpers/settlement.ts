@@ -396,7 +396,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
           ? await Promise.all(
               estates.map(async (el) => {
                 const tarifaAseo = await getCleaningTariffForEstate({ estate: el, branchId: branch?.id_registro_municipal, client });
-                console.log(tarifaAseo);
+                console.log(tarifaAseo, 'PRUEBAAAAAAA');
                 // const tarifaGas = await getGasTariffForEstate({ estate: el, branchId: branch?.id_registro_municipal, client });
                 const tarifaGas = 0;
                 return { id: el.id_inmueble, tipoInmueble: el.tipo_inmueble, codCat: el.cod_catastral, direccionInmueble: el.direccion, tarifaAseo, tarifaGas, deuda: debtSM };
