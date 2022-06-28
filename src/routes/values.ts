@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
-import { updatePetroValue, getPetroValue, getUsdValue, updateUsdValue, getPesoValue, updatePesoValue, getEuroValue, updateEuroValue } from '@helpers/values';
+import { updatePetroValue, getPetroValue, getUsdValue, updateUsdValue, getPesoValue, updatePesoValue, getEuroValue, updateEuroValue, getAELiq } from '@helpers/values';
 import { isSuperuser, isSuperuserOrDaniel } from '@validations/auth';
 import { authenticate } from 'passport';
 
@@ -53,5 +53,11 @@ router.get('/euro', authenticate('jwt'), async (req, res) => {
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ ...data });
 });
+
+router.get('/petroAE', async(req,res) => {
+  const [err, data] = await fulfill(getAELiq());
+  if (err) res.status(err.status).json(err);
+  if(data) res.status(data.status).json(data);
+})
 
 export default router;

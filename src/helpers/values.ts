@@ -12,14 +12,15 @@ const pool = Pool.getInstance();
  */
 export const updatePetroValue = async (value) => {
   const client = await pool.connect();
-  const REDIS_KEY = 'petro';
-  const redisClient = Redis.getInstance();
+  // const REDIS_KEY = 'petro';
+  // const redisClient = Redis.getInstance();
   try {
     await client.query('BEGIN');
     const result = (await client.query(queries.UPDATE_PETRO_VALUE, [value])).rows[0].valor_en_bs;
+    await client.query(`UPDATE impuesto.liquidacion SET monto_petro = get_total_monto_bs((datos#>>'{desglose}')::jsonb) / (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO') WHERE id_subramo = 10 AND id_solicitud IS NOT NULL AND monto IS NULL;`);
     await client.query('COMMIT');
-    await redisClient.setAsync(REDIS_KEY, result);
-    await redisClient.expireAsync(REDIS_KEY, 1800);
+    // await redisClient.setAsync(REDIS_KEY, result);
+    // await redisClient.expireAsync(REDIS_KEY, 1800);
     return {
       status: 200,
       message: 'Se ha actualizado el valor del PETRO',
@@ -38,14 +39,14 @@ export const updatePetroValue = async (value) => {
 
 export const updatePesoValue = async (value) => {
   const client = await pool.connect();
-  const REDIS_KEY = 'peso';
-  const redisClient = Redis.getInstance();
+  // const REDIS_KEY = 'peso';
+  // const redisClient = Redis.getInstance();
   try {
     await client.query('BEGIN');
     const result = (await client.query(queries.UPDATE_PESO_VALUE, [value])).rows[0].valor_en_bs;
     await client.query('COMMIT');
-    await redisClient.setAsync(REDIS_KEY, result);
-    await redisClient.expireAsync(REDIS_KEY, 1800);
+    // await redisClient.setAsync(REDIS_KEY, result);
+    // await redisClient.expireAsync(REDIS_KEY, 1800);
     return {
       status: 200,
       message: 'Se ha actualizado el valor del PESO',
@@ -170,6 +171,24 @@ export const updateEuroValue = async (value) => {
     client.release();
   }
 };
+
+export const getAELiq = async() => {
+  const client = await pool.connect();
+  try {
+    const petro = +(await client.query(`SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'`)).rows[0].valor_en_bs;
+    const AELiqPends = (await client.query('SELECT * FROM impuesto.liquidacion WHERE id_subramo = 10 AND monto IS NULL AND id_solicitud IS NOT NULL')).rows;
+    // console.log(AELiqPends[0].datos);
+    AELiqPends.map(liq => ({...liq.datos?.desglose, idLiquidacion: liq.id_liquidacion})).forEach(async des => {
+      if (des.some(af => af.mt || 0 * petro < af.montoCobrado)) {
+        const montoTotalPetro = des.reduce((a, c) => a + c.montoCobrado, 0) / petro;
+        await client.query('UPDATE impuesto.liquidacion SET monto_petro = $1 WHERE id_liquidacion = $2', [montoTotalPetro, des.idLiquidacion])
+      }
+    })
+    return {AE: AELiqPends.map(liq => liq.datos), status: 200}
+  } catch(e) {
+    throw {message: e.message, status: 500}
+  }
+}
 
 export const getUsdValue = async () => {
   const client = await pool.connect();

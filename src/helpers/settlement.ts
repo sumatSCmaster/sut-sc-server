@@ -392,15 +392,17 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       );
 
       SM =
-        /*estates.length > 0
+        estates.length > 0
           ? await Promise.all(
               estates.map(async (el) => {
                 const tarifaAseo = await getCleaningTariffForEstate({ estate: el, branchId: branch?.id_registro_municipal, client });
-                const tarifaGas = await getGasTariffForEstate({ estate: el, branchId: branch?.id_registro_municipal, client });
+                console.log(tarifaAseo);
+                // const tarifaGas = await getGasTariffForEstate({ estate: el, branchId: branch?.id_registro_municipal, client });
+                const tarifaGas = 0;
                 return { id: el.id_inmueble, tipoInmueble: el.tipo_inmueble, codCat: el.cod_catastral, direccionInmueble: el.direccion, tarifaAseo, tarifaGas, deuda: debtSM };
               })
             )
-          :*/ !!branch?.id_registro_municipal
+          : /*!!branch?.id_registro_municipal
           ? [
               {
                 id: 0,
@@ -413,7 +415,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                 deuda: debtSM,
               },
             ]
-          : undefined;
+          :*/ undefined;
     }
 
     //IU
@@ -1912,7 +1914,7 @@ export const getApplicationsAndSettlementsByIdNots = async ({ id, user }, client
         const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
         const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
         const type = el.tipo_solicitud;
-        console.log(docs, 'yori3');
+        console.log(docs);
         return {
           id: el.id_solicitud,
           usuario: typeof user === 'object' ? user : { id: user },
@@ -3260,7 +3262,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
  * @param param0
  */
 const updateFiscalCredit = async ({ id, user, amount, client }) => {
-  console.log(id, user, amount, 'yori2')
+  console.log(id, user, amount)
   const fixatedApplication = await getApplicationsAndSettlementsByIdNots({ id, user }, client);
   const idReferenciaMunicipal = fixatedApplication.referenciaMunicipal
     ? (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [fixatedApplication.referenciaMunicipal, fixatedApplication.contribuyente.id])).rows[0].id_registro_municipal
@@ -5085,7 +5087,6 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
 
       certInfoArray.push(certAE);
     }
-    console.log('LUISSSSS NAZZARIOOOOO', application);
     return new Promise(async (res, rej) => {
       try {
         let htmlArray = certInfoArray.map((certInfo) => renderFile(resolve(__dirname, `../views/planillas/hacienda-cert-AE.pug`), certInfo));
