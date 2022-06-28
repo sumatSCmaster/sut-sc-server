@@ -392,15 +392,15 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       );
 
       SM =
-        /*estates.length > 0
+        estates.length > 0
           ? await Promise.all(
               estates.map(async (el) => {
                 const tarifaAseo = await getCleaningTariffForEstate({ estate: el, branchId: branch?.id_registro_municipal, client });
-                const tarifaGas = await getGasTariffForEstate({ estate: el, branchId: branch?.id_registro_municipal, client });
+                // const tarifaGas = await getGasTariffForEstate({ estate: el, branchId: branch?.id_registro_municipal, client });
                 return { id: el.id_inmueble, tipoInmueble: el.tipo_inmueble, codCat: el.cod_catastral, direccionInmueble: el.direccion, tarifaAseo, tarifaGas, deuda: debtSM };
               })
             )
-          :*/ !!branch?.id_registro_municipal
+          : /*!!branch?.id_registro_municipal
           ? [
               {
                 id: 0,
@@ -413,7 +413,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
                 deuda: debtSM,
               },
             ]
-          : undefined;
+          :*/ undefined;
     }
 
     //IU

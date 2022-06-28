@@ -39,14 +39,14 @@ export const updatePetroValue = async (value) => {
 
 export const updatePesoValue = async (value) => {
   const client = await pool.connect();
-  const REDIS_KEY = 'peso';
-  const redisClient = Redis.getInstance();
+  // const REDIS_KEY = 'peso';
+  // const redisClient = Redis.getInstance();
   try {
     await client.query('BEGIN');
     const result = (await client.query(queries.UPDATE_PESO_VALUE, [value])).rows[0].valor_en_bs;
     await client.query('COMMIT');
-    await redisClient.setAsync(REDIS_KEY, result);
-    await redisClient.expireAsync(REDIS_KEY, 1800);
+    // await redisClient.setAsync(REDIS_KEY, result);
+    // await redisClient.expireAsync(REDIS_KEY, 1800);
     return {
       status: 200,
       message: 'Se ha actualizado el valor del PESO',

@@ -84,20 +84,20 @@ export const getCleaningTariffForEstate = async ({ estate, branchId, client }) =
     // if (!estate && !branchId) return (await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto;
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     if (!estate && !!branchId) return (await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0]?.tarifa || 0 * PETRO;
-    const USD = (await client.query(queries.GET_USD_VALUE)).rows[0].valor_en_bs;
-    const costoMtsCom = +(await client.query(queries.GET_SCALE_FOR_COMMERCIAL_ESTATE_MTS_COST)).rows[0].indicador;
-    const limiteAseoCom = +(await client.query(queries.GET_SCALE_FOR_COMMERCIAL_ESTATE_PETRO_LIMIT)).rows[0].indicador;
-    const costoMtsInd = +(await client.query(queries.GET_SCALE_FOR_INDUSTRIAL_ESTATE_MTS_COST)).rows[0].indicador;
-    const limiteAseoInd = +(await client.query(queries.GET_SCALE_FOR_INDUSTRIAL_ESTATE_PETRO_LIMIT)).rows[0].indicador;
-    const costoMts = estate.tipo_inmueble === 'INDUSTRIAL' ? costoMtsInd : costoMtsCom;
-    const limiteAseo = estate.tipo_inmueble === 'INDUSTRIAL' ? limiteAseoInd : limiteAseoCom;
+    // const USD = (await client.query(queries.GET_USD_VALUE)).rows[0].valor_en_bs;
+    // const costoMtsCom = +(await client.query(queries.GET_SCALE_FOR_COMMERCIAL_ESTATE_MTS_COST)).rows[0].indicador;
+    // const limiteAseoCom = +(await client.query(queries.GET_SCALE_FOR_COMMERCIAL_ESTATE_PETRO_LIMIT)).rows[0].indicador;
+    // const costoMtsInd = +(await client.query(queries.GET_SCALE_FOR_INDUSTRIAL_ESTATE_MTS_COST)).rows[0].indicador;
+    // const limiteAseoInd = +(await client.query(queries.GET_SCALE_FOR_INDUSTRIAL_ESTATE_PETRO_LIMIT)).rows[0].indicador;
+    // const costoMts = estate.tipo_inmueble === 'INDUSTRIAL' ? costoMtsInd : costoMtsCom;
+    // const limiteAseo = estate.tipo_inmueble === 'INDUSTRIAL' ? limiteAseoInd : limiteAseoCom;
     const calculoAseo = !!['COMERCIAL', 'INDUSTRIAL'].find((type) => type === estate.tipo_inmueble)
-      ? estate.metros_construccion && +estate.metros_construccion !== 0
+      ? /*estate.metros_construccion && +estate.metros_construccion !== 0
         ? costoMts * PETRO * estate.metros_construccion
-        : +(await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto * PETRO
+        :*/ +(await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto * PETRO
       : +(await client.query(queries.GET_RESIDENTIAL_CLEANING_TARIFF)).rows[0].monto * PETRO;
-    const tarifaAseo = calculoAseo / PETRO > limiteAseo ? PETRO * limiteAseo : calculoAseo;
-    return +tarifaAseo;
+    // const tarifaAseo = calculoAseo / PETRO > limiteAseo ? PETRO * limiteAseo : calculoAseo;
+    return +calculoAseo;
   } catch (error) {
     throw {
       status: 500,
