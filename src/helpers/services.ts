@@ -83,7 +83,7 @@ export const getCleaningTariffForEstate = async ({ estate, branchId, client }) =
   try {
     // if (!estate && !branchId) return (await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].monto;
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
-    if (!estate && !!branchId) return (await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0]?.tarifa || 0 * PETRO;
+    if (!estate && !!branchId) return (await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0]?.tarifa || 0;
     // const USD = (await client.query(queries.GET_USD_VALUE)).rows[0].valor_en_bs;
     // const costoMtsCom = +(await client.query(queries.GET_SCALE_FOR_COMMERCIAL_ESTATE_MTS_COST)).rows[0].indicador;
     // const limiteAseoCom = +(await client.query(queries.GET_SCALE_FOR_COMMERCIAL_ESTATE_PETRO_LIMIT)).rows[0].indicador;
@@ -94,7 +94,7 @@ export const getCleaningTariffForEstate = async ({ estate, branchId, client }) =
     const calculoAseo = !!['COMERCIAL', 'INDUSTRIAL'].find((type) => type === estate.tipo_inmueble)
       ? /*estate.metros_construccion && +estate.metros_construccion !== 0
         ? costoMts * PETRO * estate.metros_construccion
-        :*/ +(await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].tarifa * PETRO
+        :*/ +(await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0].tarifa
       : +(await client.query(queries.GET_RESIDENTIAL_CLEANING_TARIFF)).rows[0].monto * PETRO;
     // const tarifaAseo = calculoAseo / PETRO > limiteAseo ? PETRO * limiteAseo : calculoAseo;
     return +calculoAseo;
