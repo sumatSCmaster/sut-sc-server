@@ -1603,6 +1603,22 @@ ORDER BY razon_social;`,
   AND t.fecha_creacion >= $1
   AND t.fecha_culminacion <= $2
   ORDER BY t.codigo_tramite, m.fecha_movimiento;`,
+  GET_ALL_CASH_TOTAL: `SELECT metodo_pago, SUM(monto) AS total FROM pago 
+    WHERE metodo_pago LIKE 'EFECTIVO%' AND TO_CHAR(fecha_de_aprobacion, 'YYYY-MM-DD') = TO_CHAR(now(), 'YYYY-MM-DD')
+    GROUP BY metodo_pago;`,
+  GET_ALL_TRANSFERS_DIFF_NOW_TOTAL: `SELECT p.id_banco_destino, b.nombre, p.metodo_pago, p.fecha_de_pago, SUM(p.monto) AS total 
+    FROM pago p
+    JOIN banco b ON b.id_banco = p.id_banco_destino 
+    WHERE metodo_pago = 'TRANSFERENCIA' AND TO_CHAR(fecha_de_aprobacion, 'YYYY-MM-DD') <> TO_CHAR(now(), 'YYYY-MM-DD')
+    GROUP BY p.metodo_pago, b.nombre, p.id_banco_destino, p.fecha_de_pago
+    ORDER BY p.id_banco_destino, p.fecha_de_pago`,
+  GET_ALL_PAY_DIFF_CASH_TOTAL: `SELECT p.id_banco_destino, b.nombre, p.metodo_pago, 
+    SUM(p.monto) AS total
+    FROM pago p
+    JOIN banco b ON b.id_banco = p.id_banco_destino 
+    WHERE metodo_pago NOT LIKE 'EFECTIVO%' AND TO_CHAR(fecha_de_aprobacion, 'YYYY-MM-DD') = TO_CHAR(now(), 'YYYY-MM-DD')
+    GROUP BY b.nombre, p.id_banco_destino, p.metodo_pago
+    ORDER BY p.id_banco_destino`,
   //CIERRE DE CAJA
   GET_CASHIER_POS: `SELECT b.nombre as banco, SUM(p.monto) as monto, COUNT(*) as transacciones
         FROM pago p 
