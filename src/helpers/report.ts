@@ -28,7 +28,7 @@ export const createRepotRMP = async () =>{
       
       let recaudado = totalCash + totalPayDiffCash;
       let totalRecaudado = formatCurrency(recaudado);
-      let totalIngresado = formatCurrency(recaudado - totalTrans);
+      let totalIngresado = formatCurrency(Math.abs(recaudado - totalTrans));
       let totalTransferDiffNow = formatCurrency(totalTrans)
 
       const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-RMP.pug`), {
