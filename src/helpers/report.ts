@@ -20,14 +20,15 @@ export const createRepotRMP = async () =>{
       payDiffCash
     });
 
-    return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
+    return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/hacienda-RMP.pug' })
     
   }  catch (error) {
-    throw {
-      status: 500,
-      error: errorMessageExtractor(error),
-      message: error,
-    };
+      console.log('PABLO',error)
+      throw {
+        status: 500,
+        error: errorMessageExtractor(error),
+        message: error,
+      };
   } finally {
     client.release();
   }
