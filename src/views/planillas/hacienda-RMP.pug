@@ -52,7 +52,7 @@ block content
             b TOTAL
       each item in transferDiffNow
         div.tr
-          div(style={'-webkit-flex': 2, 'margin-bottom':'20px'}).th.border-right.border-bottom.center
+          div(style={'-webkit-flex': 2, 'margin-bottom':'20px'}).td.border-bottom.border-right.center
             p
               b #{item.nombre_banco}
         div.tr
@@ -62,8 +62,11 @@ block content
           div(style={'-webkit-flex': 2, 'margin-bottom':'20px'}).td.border-bottom.border-right.center
             p #{item.total}
       div.tr
-          div(style={'-webkit-flex': 2, 'margin-bottom':'20px'}).td.border-bottom.border-right.center
-            p TOTAL TRANSFERENCIAS DE OTRAS FECHAS
-          div(style={'-webkit-flex': 2, 'margin-bottom':'20px'}).td.border-bottom.border-right.center
-            p #{totalTransferDiffNow}
+        div(style={'-webkit-flex': 2, 'margin-bottom':'20px'}).td.border-bottom.border-right.center
+          p 
+            b TOTAL TRANSFERENCIAS DE OTRAS FECHAS
+        div(style={'-webkit-flex': 2, 'margin-bottom':'20px'}).td.border-bottom.border-right.center
+          p
+              b #{totalTransferDiffNow}
+              
         
