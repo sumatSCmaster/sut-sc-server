@@ -71,3 +71,45 @@ export const createRepotRMP = async () =>{
   }
 }
 
+export const createReportRID = async () =>{
+  const client = await pool.connect();
+  try {
+
+    const reportName = 'ReporteIngresadoDetallado.pdf'
+
+    return new Promise(async (res, rej) => {
+      const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-RMP.pug`), {
+        institucion: 'HACIENDA',
+      });
+
+      pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
+        .toBuffer(async (err, buffer) => {
+          if (err) {
+            rej(err);
+          } else {
+            const bucketParams = {
+              Bucket: process.env.BUCKET_NAME as string,
+              Key: `/hacienda/${reportName}`,
+            };
+            await S3Client.putObject({
+              ...bucketParams,
+              Body: buffer,
+              ACL: 'public-read',
+              ContentType: 'application/pdf',
+            }).promise();
+            res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+          }
+        })
+      })
+    
+  }  catch (error) {
+      console.log('PABLO',error)
+      throw {
+        status: 500,
+        error: errorMessageExtractor(error),
+        message: error,
+      };
+  } finally {
+    client.release();
+  }
+}
