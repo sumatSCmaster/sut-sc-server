@@ -51,12 +51,12 @@ block content
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
           p
             b TOTAL
-      each item in transferDiffNow
-        div.tr
-          div(style={'-webkit-flex': 3}).td.border-bottom.border-right.center
-            p
-              b #{item.nombre_banco}
-          div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
-            p #{item.fecha}
-          div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
-            p #{item.total}
+    each item in transferDiffNow
+      div.tr
+        div(style={'-webkit-flex': 3}).td.border-bottom.border-right.center
+          p
+            b #{item.nombre_banco}
+        div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+          p #{item.fecha}
+        div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+          p #{item.total}
