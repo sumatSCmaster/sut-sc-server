@@ -17,6 +17,7 @@ export const updatePetroValue = async (value) => {
   try {
     await client.query('BEGIN');
     const result = (await client.query(queries.UPDATE_PETRO_VALUE, [value])).rows[0].valor_en_bs;
+    await client.query(`UPDATE impuesto.liquidacion SET datos = datos::jsonb || ('{"desglose":'||(add_min_trib((datos#>>'{desglose}')::jsonb))::text||'}')::jsonb WHERE id_subramo = 10 AND monto IS NULL AND id_solicitud IS NOT NULL AND datos#>>'{desglose, 0, "minimoTributable"}' IS NULL`);
     await client.query(`UPDATE impuesto.liquidacion SET monto_petro = get_total_monto_bs((datos#>>'{desglose}')::jsonb) / (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO') WHERE id_subramo = 10 AND id_solicitud IS NOT NULL AND monto IS NULL;`);
     await client.query('COMMIT');
     // await redisClient.setAsync(REDIS_KEY, result);
