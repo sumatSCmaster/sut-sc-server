@@ -37,9 +37,9 @@ block content
               b #{item.metodo_pago}
           div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
             p #{item.total}
-    div(style={'margin-bottom':'20px'})
-        h4 TRANSFERENCIAS DE OTRAS FECHAS
-    div.table(style={'font-size':'13px'})
+    //- div(style={'margin-bottom':'20px'})
+        //-  TRANSFERENCIAS DE OTRAS FECHAS
+    div(style={'font-size':'13px'}).table.break-page
       div.tr
         div(style={'-webkit-flex': 3}).th.border-right.border-bottom.center
           p
