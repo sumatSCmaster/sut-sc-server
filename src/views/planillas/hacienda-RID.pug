@@ -5,10 +5,10 @@ block title
 block content
   div#planilla(style={'font-size':'13px'})
     div(style={'margin-bottom':'20px'})
-      h2 REPORTE RECAUDADO E INGRESADO POR METODO DE PAGO
+      h2 REPORTE DE INGRESOS DETALLADO
     div.table(style={'font-size':'13px'})
       div.tr
-        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.border-left.center
           p
             b BANCO
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
@@ -19,27 +19,27 @@ block content
             b TOTAL
     each item in payDiffCash
       div.tr
-        div(style={'-webkit-flex': 2}).td.border-bottom.border-right.border-left.center
+        div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
           p #{item.nombre_banco}
         div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
           p #{item.metodo_pago}
         div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
-          p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(item.total)}
+          p #{item.total}
     each item in totalMetodoPago
       div.tr
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.border-left.center
           p
             b TOTAL #{item.metodo_pago}
-        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
-          p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(item.total)}
-    div.table(style={'font-size':'13px', 'margin-top':'20px', 'margin-bottom':'20px'})
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p #{item.total}
+    div.table(style={'font-size':'13px', 'margin-bottom':'20px'})
       each item in cash
         div.tr
           div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
             p
               b #{item.metodo_pago}
           div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
-            p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(item.total)}  
+            p #{item.total}  
     div(style={'margin-bottom':'20px'})
       h4 TRANSFERENCIAS DE OTRAS FECHAS
     div.table(style={'font-size':'13px'})
@@ -61,24 +61,23 @@ block content
         div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
           p #{item.fecha}
         div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
-          p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(item.total)}
+          p #{item.total}
     div.tr
       div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
         p
           b TOTAL TRANSFERENCIAS DE OTRAS FECHAS
       div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
         p #{totalTransferDiffNow}
-    div.table(style={'font-size':'13px'})
-      div.tr
-        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
-          p
-            b TOTAL RECAUDADO
-        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
-          p 
-            b TOTAL INGRESADO
-      div.tr
-        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
-          p #{totalRecaudado}
-        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
-          p #{totalIngresado}
+    //- div.table(style={'font-size':'13px'})
+    //-   div.tr
+    //-     div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+    //-       p
+    //-         b TOTAL RECAUDADO
+    //-     div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+    //-       p #{totalRecaudado}
+    //-   div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+    //-       p
+    //-         b TOTAL INGRESADO
+    //-     div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+    //-       p #{totalIngresado}
 block footer
