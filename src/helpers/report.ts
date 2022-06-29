@@ -1,8 +1,10 @@
 import queries from '@utils/queries';
 import { errorMessageExtractor } from './errors';
-import { pool } from 'pg';
 import { renderFile } from 'pug';
 import { resolve } from 'path';
+import Pool from '@utils/Pool';
+
+const pool = Pool.getInstance();
 
 export const createRepotRMP = async () =>{
   const client = await pool.connect();
