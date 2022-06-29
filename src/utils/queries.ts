@@ -1606,7 +1606,7 @@ ORDER BY razon_social;`,
   GET_ALL_CASH_TOTAL: `SELECT metodo_pago, SUM(monto) AS total FROM pago 
     WHERE metodo_pago LIKE 'EFECTIVO%' AND TO_CHAR(fecha_de_aprobacion, 'YYYY-MM-DD') = TO_CHAR(now(), 'YYYY-MM-DD')
     GROUP BY metodo_pago;`,
-  GET_ALL_TRANSFERS_DIFF_NOW_TOTAL: `SELECT p.id_banco_destino, b.nombre, p.metodo_pago, p.fecha_de_pago, SUM(p.monto) AS total 
+  GET_ALL_TRANSFERS_DIFF_NOW_TOTAL: `SELECT p.id_banco_destino, b.nombre AS nombre_banco, p.metodo_pago, p.fecha_de_pago AS fecha, SUM(p.monto) AS total 
     FROM pago p
     JOIN banco b ON b.id_banco = p.id_banco_destino 
     WHERE metodo_pago = 'TRANSFERENCIA' AND TO_CHAR(fecha_de_aprobacion, 'YYYY-MM-DD') <> TO_CHAR(now(), 'YYYY-MM-DD')

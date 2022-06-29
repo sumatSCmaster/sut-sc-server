@@ -4,11 +4,8 @@ block css
 block title
 block content
   div#planilla(style={'font-size':'13px'})
-    div(style={'margin-bottom':'25px', 'margin-top':'25px', 'width':'100%', 'display': '-webkit-flex', '-webkit-align-items': 'end', '-webkit-justify-content': 'start'})
-        b FECHA:
-        p #{moment().format('DD/MM/YYYY')}
     div(style={'margin-bottom':'20px'})
-        h2 REPORTE RECAUDADO E INGRESADO POR METODO DE PAGO
+      h2 REPORTE RECAUDADO E INGRESADO POR METODO DE PAGO
     div.table(style={'font-size':'13px'})
       div.tr
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
@@ -49,6 +46,9 @@ block content
           div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
             p
               b #{item.nombre}
+        div.tr
+          div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+            p #{item.fecha}
         div.tr
           div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
             p #{item.total}

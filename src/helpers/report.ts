@@ -41,7 +41,7 @@ export const createRepotRMP = async () =>{
               ACL: 'public-read',
               ContentType: 'application/pdf',
             }).promise();
-            res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+            res(`${process.env.AWS_ACCESS_URL}${bucketParams.Key}`);
           }
         })
       })
