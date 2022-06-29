@@ -29,17 +29,16 @@ block content
           p
         div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
           p
-    div.table(style={'font-size':'13px'})
+    div.table(style={'font-size':'13px', 'margin-bottom':'20px'})
       each item in cash
         div.tr
           div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
             p
               b #{item.metodo_pago}
           div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
-            p #{item.total}
-    
+            p #{item.total}  
     div(style={'margin-bottom':'20px'})
-      b TRANSFERENCIAS DE OTRAS FECHAS
+      h4 TRANSFERENCIAS DE OTRAS FECHAS
     div.table(style={'font-size':'13px'})
       div.tr
         div(style={'-webkit-flex': 3}).th.border-right.border-bottom.center
@@ -53,10 +52,18 @@ block content
             b TOTAL
     each item in transferDiffNow
       div.tr
-        div(style={'-webkit-flex': 3}).td.border-bottom.border-right.center
+        div(style={'-webkit-flex': 3}).td.border-bottom.border-right.border-left.center
           p
             b #{item.nombre_banco}
         div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
           p #{item.fecha}
         div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
           p #{item.total}
+    div.table(style={'font-size':'13px'})
+      div.tr
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p
+            b TOTAL TRANSFERENCIAS DE OTRAS FECHAS
+        div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+          p #{totalTransferDiffNow}
+block footer

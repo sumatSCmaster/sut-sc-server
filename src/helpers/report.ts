@@ -20,7 +20,7 @@ export const createRepotRMP = async () =>{
     let payDiffCash = (await client.query(queries.GET_ALL_PAY_DIFF_CASH_TOTAL)).rows;
 
     return new Promise(async (res, rej) => {
-      let totalTransferDiffNow = transferDiffNow.reduce((prev,curr) => +curr.total + +prev.total, 0)
+      let totalTransferDiffNow = transferDiffNow.map(t => +t.total).reduce((prev,curr) => curr + prev, 0);
 
       const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-RMP.pug`), {
         cash,
