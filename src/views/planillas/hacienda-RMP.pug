@@ -3,55 +3,67 @@ block css
   link(rel="stylesheet", href="css/sedemat.css")
 block title
 block content
-     div#planilla(style={'font-size':'13px'})
-        div(style={'margin-bottom':'25px', 'margin-top':'25px', 'width':'100%', 'display': '-webkit-flex', '-webkit-align-items': 'end', '-webkit-justify-content': 'start'})
-            b FECHA:
-            p #{moment(fecha).format('DD/MM/YYYY')}
-        div(style={'margin-bottom':'20px'})
-            h2 REPORTE RECAUDADO E INGRESADO POR METODO DE PAGO
-        div.table(style={'font-size':'13px'})
-            div.tr
-              div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
-                p
-                  b BANCO
-              div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
-                p
-                  b PUNTO DE VENTA
-              div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
-                p
-                  b TRANSFERENCIA
-              div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
-                p
-                  b TOTAL
-            div.tr
-              div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
-                p 
-              div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
-                p
-              div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
-                p
-              div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
-                p
-        div.table(style={'font-size':'13px'})
-            div.tr
-              div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
-                p
-                  b BANCO
-              div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
-                p
-                  b PUNTO DE VENTA
-              div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
-                p
-                  b TRANSFERENCIA
-              div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
-                p
-                  b TOTAL
-            div.tr
-              div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
-                p 
-              div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
-                p
-              div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
-                p
-              div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
-                p
+  div#planilla(style={'font-size':'13px'})
+    div(style={'margin-bottom':'20px'})
+      h2 REPORTE RECAUDADO E INGRESADO POR METODO DE PAGO
+    div.table(style={'font-size':'13px'})
+      div.tr
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p
+            b BANCO
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p
+            b PUNTO DE VENTA
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p
+            b TRANSFERENCIA
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p
+            b TOTAL
+      div.tr
+        div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+          p 
+        div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+          p
+        div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+          p
+        div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+          p
+    div.table(style={'font-size':'13px', 'margin-bottom':'20px'})
+      each item in cash
+        div.tr
+          div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+            p
+              b #{item.metodo_pago}
+          div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+            p #{item.total}  
+    div(style={'margin-bottom':'20px'})
+      h4 TRANSFERENCIAS DE OTRAS FECHAS
+    div.table(style={'font-size':'13px'})
+      div.tr
+        div(style={'-webkit-flex': 3}).th.border-right.border-bottom.center
+          p
+            b BANCO
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p
+            b FECHA
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p
+            b TOTAL
+    each item in transferDiffNow
+      div.tr
+        div(style={'-webkit-flex': 3}).td.border-bottom.border-right.border-left.center
+          p
+            b #{item.nombre_banco}
+        div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+          p #{item.fecha}
+        div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+          p #{item.total}
+    div.table(style={'font-size':'13px'})
+      div.tr
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p
+            b TOTAL TRANSFERENCIAS DE OTRAS FECHAS
+        div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+          p #{totalTransferDiffNow}
+block footer
