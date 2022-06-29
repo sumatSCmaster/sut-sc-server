@@ -20,10 +20,13 @@ export const createRepotRMP = async () =>{
     let payDiffCash = (await client.query(queries.GET_ALL_PAY_DIFF_CASH_TOTAL)).rows;
 
     return new Promise(async (res, rej) => {
+      let totalTransferDiffNow = transferDiffNow.reduce((prev,curr) => curr + prev, 0)
+
       const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-RMP.pug`), {
         cash,
         transferDiffNow,
-        payDiffCash
+        payDiffCash,
+        totalTransferDiffNow
       });
 
       pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
@@ -41,7 +44,7 @@ export const createRepotRMP = async () =>{
               ACL: 'public-read',
               ContentType: 'application/pdf',
             }).promise();
-            res(`${process.env.AWS_ACCESS_URL}${bucketParams.Key}`);
+            res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
           }
         })
       })
