@@ -19,7 +19,7 @@ export const createRepotRMP = async () =>{
     let transferDiffNow = (await client.query(queries.GET_ALL_TRANSFERS_DIFF_NOW_TOTAL)).rows;
     let cash = (await client.query(queries.GET_ALL_CASH_TOTAL)).rows;
     let payDiffCash = (await client.query(queries.GET_ALL_PAY_DIFF_CASH_TOTAL)).rows;
-    let totalMetodoPago = (await client.query(queries.TOTAL_TRANSFERS_DIFF_NOW)).rows;
+    let totalMetodoPago = (await client.query(queries.TOTAL_PAY_DIFF_CASH)).rows;
 
     return new Promise(async (res, rej) => {
       let totalTrans = transferDiffNow.map(t => +t.total).reduce((prev,curr) => curr + prev, 0);
