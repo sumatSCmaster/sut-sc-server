@@ -1612,13 +1612,13 @@ ORDER BY razon_social;`,
     WHERE metodo_pago = 'TRANSFERENCIA' AND TO_CHAR(fecha_de_aprobacion, 'YYYY-MM-DD') <> TO_CHAR(now(), 'YYYY-MM-DD')
     GROUP BY p.metodo_pago, b.nombre, p.id_banco_destino, p.fecha_de_pago
     ORDER BY p.id_banco_destino, p.fecha_de_pago`,
-  GET_ALL_PAY_DIFF_CASH_TOTAL: `SELECT p.id_banco_destino, b.nombre, p.metodo_pago, 
+  GET_ALL_PAY_DIFF_CASH_TOTAL: `SELECT p.id_banco_destino, b.nombre AS nombre_banco, p.metodo_pago, 
     SUM(p.monto) AS total
     FROM pago p
     JOIN banco b ON b.id_banco = p.id_banco_destino 
     WHERE metodo_pago NOT LIKE 'EFECTIVO%' AND TO_CHAR(fecha_de_aprobacion, 'YYYY-MM-DD') = TO_CHAR(now(), 'YYYY-MM-DD')
     GROUP BY b.nombre, p.id_banco_destino, p.metodo_pago
-    ORDER BY p.id_banco_destino`,
+    ORDER BY p.metodo_pago, p.id_banco_destino`,
   //CIERRE DE CAJA
   GET_CASHIER_POS: `SELECT b.nombre as banco, SUM(p.monto) as monto, COUNT(*) as transacciones
         FROM pago p 

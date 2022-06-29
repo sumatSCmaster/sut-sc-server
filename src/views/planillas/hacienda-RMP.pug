@@ -13,22 +13,18 @@ block content
             b BANCO
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
           p
-            b PUNTO DE VENTA
-        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
-          p
-            b TRANSFERENCIA
+            b METODO DE PAGO
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
           p
             b TOTAL
+    each item in payDiffCash
       div.tr
         div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
-          p 
+          p #{item.nombre_banco}
         div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
-          p
+          p #{item.metodo_pago}
         div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
-          p
-        div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
-          p
+          p #{item.total}
     div.table(style={'font-size':'13px', 'margin-bottom':'20px'})
       each item in cash
         div.tr
@@ -51,7 +47,7 @@ block content
           p
             b TOTAL
     each item in transferDiffNow
-      div.tr
+      div.tr.break-page
         div(style={'-webkit-flex': 3}).td.border-bottom.border-right.border-left.center
           p
             b #{item.nombre_banco}
