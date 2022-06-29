@@ -24,8 +24,8 @@ export const createRepotRMP = async () =>{
       let totalTransferDiffNow = transferDiffNow.map(t => +t.total).reduce((prev,curr) => curr + prev, 0);
       let totalCash = cash.map(c => +c.total).reduce((prev,curr) => curr + prev, 0);
       let totalPayDiffCash = totalMetodoPago.map(t => +t.total).reduce((prev,curr) => curr + prev, 0);
-      let totalRecaudado = totalCash + totalTransferDiffNow + totalPayDiffCash;
-      let totalIngresado = totalRecaudado;
+      let totalRecaudado = totalCash + totalPayDiffCash;
+      let totalIngresado = totalRecaudado - totalTransferDiffNow;
 
       const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-RMP.pug`), {
         institucion: 'HACIENDA',

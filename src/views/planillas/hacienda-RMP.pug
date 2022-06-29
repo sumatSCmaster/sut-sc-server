@@ -8,7 +8,7 @@ block content
       h2 REPORTE RECAUDADO E INGRESADO POR METODO DE PAGO
     div.table(style={'font-size':'13px'})
       div.tr
-        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.border-left.center
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
           p
             b BANCO
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
@@ -19,7 +19,7 @@ block content
             b TOTAL
     each item in payDiffCash
       div.tr
-        div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+        div(style={'-webkit-flex': 2}).td.border-bottom.border-right.border-left.center
           p #{item.nombre_banco}
         div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
           p #{item.metodo_pago}
@@ -30,9 +30,9 @@ block content
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.border-left.center
           p
             b TOTAL #{item.metodo_pago}
-        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
           p #{item.total}
-    div.table(style={'font-size':'13px', 'margin-bottom':'20px'})
+    div.table(style={'font-size':'13px', 'margin-top':'20px', 'margin-bottom':'20px'})
       each item in cash
         div.tr
           div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
@@ -68,4 +68,11 @@ block content
           b TOTAL TRANSFERENCIAS DE OTRAS FECHAS
       div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
         p #{totalTransferDiffNow}
+    div.table(style={'font-size':'13px'})
+      div.tr
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p
+            b TOTAL RECAUDADO
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p #{totalRecaudado}
 block footer
