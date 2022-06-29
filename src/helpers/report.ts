@@ -18,18 +18,25 @@ export const createRepotRMP = async () =>{
     let transferDiffNow = (await client.query(queries.GET_ALL_TRANSFERS_DIFF_NOW_TOTAL)).rows;
     let cash = (await client.query(queries.GET_ALL_CASH_TOTAL)).rows;
     let payDiffCash = (await client.query(queries.GET_ALL_PAY_DIFF_CASH_TOTAL)).rows;
+    let totalMetodoPago = (await client.query(queries.TOTAL_TRANSFERS_DIFF_NOW)).rows;
 
     return new Promise(async (res, rej) => {
       let totalTransferDiffNow = transferDiffNow.map(t => +t.total).reduce((prev,curr) => curr + prev, 0);
       let totalCash = cash.map(c => +c.total).reduce((prev,curr) => curr + prev, 0);
-      
+      let totalPayDiffCash = totalMetodoPago.map(t => +t.total).reduce((prev,curr) => curr + prev, 0);
+      let totalRecaudado = totalCash + totalTransferDiffNow + totalPayDiffCash;
+      let totalIngresado = totalRecaudado;
 
       const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-RMP.pug`), {
         institucion: 'HACIENDA',
         cash,
         transferDiffNow,
         payDiffCash,
-        totalTransferDiffNow
+        totalTransferDiffNow,
+        totalPayDiffCash,
+        totalMetodoPago,
+        totalRecaudado,
+        totalIngresado
       });
 
       pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
@@ -62,5 +69,4 @@ export const createRepotRMP = async () =>{
   } finally {
     client.release();
   }
-
 }
