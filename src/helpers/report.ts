@@ -3,6 +3,9 @@ import { errorMessageExtractor } from './errors';
 import { renderFile } from 'pug';
 import { resolve } from 'path';
 import Pool from '@utils/Pool';
+import * as pdf from 'html-pdf';
+import moment from 'moment';
+import * as qr from 'qrcode';
 
 const pool = Pool.getInstance();
 
