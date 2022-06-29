@@ -24,7 +24,7 @@ block content
         div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
           p #{item.metodo_pago}
         div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
-          p #{item.total}
+          p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(item.total)}
     each item in totalMetodoPago
       div.tr
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.border-left.center

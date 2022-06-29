@@ -22,11 +22,14 @@ export const createRepotRMP = async () =>{
     let totalMetodoPago = (await client.query(queries.TOTAL_TRANSFERS_DIFF_NOW)).rows;
 
     return new Promise(async (res, rej) => {
-      let totalTransferDiffNow = transferDiffNow.map(t => +t.total).reduce((prev,curr) => curr + prev, 0);
+      let totalTrans = transferDiffNow.map(t => +t.total).reduce((prev,curr) => curr + prev, 0);
       let totalCash = cash.map(c => +c.total).reduce((prev,curr) => curr + prev, 0);
       let totalPayDiffCash = totalMetodoPago.map(t => +t.total).reduce((prev,curr) => curr + prev, 0);
-      let totalRecaudado = +formatCurrency(totalCash + totalPayDiffCash);
-      let totalIngresado = +formatCurrency(totalRecaudado - totalTransferDiffNow);
+      
+      let recaudado = totalCash + totalPayDiffCash;
+      let totalRecaudado = formatCurrency(recaudado);
+      let totalIngresado = formatCurrency(recaudado - totalTrans);
+      let totalTransferDiffNow = formatCurrency(totalTrans)
 
       const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-RMP.pug`), {
         institucion: 'HACIENDA',
