@@ -82,7 +82,7 @@ export const createReportRID = async () =>{
     const reportName = 'ReporteIngresadoDetallado.pdf'
 
     return new Promise(async (res, rej) => {
-      const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-RMP.pug`), {
+      const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-RID.pug`), {
         institucion: 'HACIENDA',
       });
 
