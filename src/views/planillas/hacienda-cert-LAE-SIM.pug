@@ -20,7 +20,15 @@ html
           div(style={'margin-bottom':'25px', 'margin-top':'25px', 'width':'100%', 'display': '-webkit-flex', '-webkit-align-items': 'end', '-webkit-justify-content': 'start'})
             p San Cristóbal, #{moment(fecha).format('DD/MM/YYYY')}
           div(style={'margin-bottom':'20px'})
-            h2 LICENCIA DE ACTIVIDADES ECONÓMICAS                             
+            case datos.funcionario.estadoLicencia
+              when 'PERMANENTE' 
+                h2 AUTORIZACIÓN PERMANENTE DE ACTIVIDADES ECONÓMICAS
+              when 'TEMPORAL'
+                h2 AUTORIZACIÓN TEMPORAL DE ACTIVIDADES ECONÓMICAS
+              when 'PROVISIONAL' 
+                h2 AUTORIZACIÓN PROVISIONAL DE ACTIVIDADES ECONÓMICAS
+              default 
+                h2 LICENCIA DE ACTIVIDADES ECONÓMICAS.                       
           div.table(style={'font-size':'13px'})
             div.tr
               div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
