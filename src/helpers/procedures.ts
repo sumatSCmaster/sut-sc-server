@@ -1554,7 +1554,7 @@ export const initProcedureAnalist = async (procedure, user: Usuario, client: Poo
 
 export const initProcedureAnalistAB = async (procedure, user: Usuario, client: PoolClient, analyst) => {
   // const client = await pool.connect();
-  const { contribuyente } = procedure;
+  const { contribuyente, pago } = procedure;
   let costo, respState, dir, cert, datosP;
   try {
     await client.query('BEGIN');
@@ -1564,15 +1564,15 @@ export const initProcedureAnalistAB = async (procedure, user: Usuario, client: P
     response.idTramite = response.id;
     const resources = (await client.query(queries.GET_RESOURCES_FOR_PROCEDURE, [response.idTramite])).rows[0];
     response.sufijo = resources.sufijo;
-    // costo = isNotPrepaidProcedure({ suffix: resources.sufijo, user }) ? null : pago.costo || resources.costo_base;
+    costo = isNotPrepaidProcedure({ suffix: resources.sufijo, user }) ? null : pago.costo || resources.costo_base;
     let nextEvent = await getNextEventForProcedure(response, client);
-      const solicitudUsada = (await client.query('SELECT * FROM registro_solicitud_licencia WHERE id_solicitud = $1', [procedure.idSolicitud])).rows[0]?.id_solicitud;
-      if(solicitudUsada) throw {status: 406, message: 'La solicitud insertada ya ha sido utilizada'};
-      const solicitudPaga = (await client.query('SELECT * FROM impuesto.solicitud WHERE id_solicitud = $1 AND aprobado = true', [procedure.idSolicitud])).rows[0]?.id_solicitud;
-      if (!solicitudPaga) throw {status: 406, message: `El número ingresado no pertenece a una solicitud solvente`};
-      const tasaCorrecta = (await client.query(`SELECT * FROM impuesto.liquidacion WHERE id_solicitud = $1 AND id_subramo = $2`, [procedure.idSolicitud, 802])).rows[0]?.id_solicitud;
-      if (!tasaCorrecta) throw {status: 406, message: `El número de solicitud no pertenece a un pago de solicitud de licencia`}
-      await client.query('INSERT INTO registro_solicitud_licencia (id_solicitud, id_tramite) VALUES ($1, $2)', [procedure.idSolicitud, response.idTramite])
+      // const solicitudUsada = (await client.query('SELECT * FROM registro_solicitud_licencia WHERE id_solicitud = $1', [procedure.idSolicitud])).rows[0]?.id_solicitud;
+      // if(solicitudUsada) throw {status: 406, message: 'La solicitud insertada ya ha sido utilizada'};
+      // const solicitudPaga = (await client.query('SELECT * FROM impuesto.solicitud WHERE id_solicitud = $1 AND aprobado = true', [procedure.idSolicitud])).rows[0]?.id_solicitud;
+      // if (!solicitudPaga) throw {status: 406, message: `El número ingresado no pertenece a una solicitud solvente`};
+      // const tasaCorrecta = (await client.query(`SELECT * FROM impuesto.liquidacion WHERE id_solicitud = $1 AND id_subramo = $2`, [procedure.idSolicitud, 802])).rows[0]?.id_solicitud;
+      // if (!tasaCorrecta) throw {status: 406, message: `El número de solicitud no pertenece a un pago de solicitud de licencia`}
+      // await client.query('INSERT INTO registro_solicitud_licencia (id_solicitud, id_tramite) VALUES ($1, $2)', [procedure.idSolicitud, response.idTramite])
     // if (pago.length > 0 && nextEvent.startsWith('validar')) {
     //   await Promise.all(
     //     pago.map(async (p) => {
@@ -1582,9 +1582,9 @@ export const initProcedureAnalistAB = async (procedure, user: Usuario, client: P
     //     })
     //   );
     // }
-    // pago.concepto = 'TRAMITE';
-    // pago.user = analyst;
-    // await insertPaymentCashier(pago, response.id, client);
+    pago.concepto = 'TRAMITE';
+    pago.user = analyst;
+    await insertPaymentCashier(pago, response.id, client);
 
         // dir = await createRequestForm(response, client);
         respState = await client.query(queries.UPDATE_STATE, [response.id, nextEvent, null, costo, null]);
