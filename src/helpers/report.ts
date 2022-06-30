@@ -12,14 +12,13 @@ const pool = Pool.getInstance();
 const dev = process.env.NODE_ENV !== 'production';
 const formatCurrency = (number: number) => new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(number);
 
-export const createRepotRMP = async () =>{
+export const createRepotRMP = async (fecha) =>{
   const client = await pool.connect();
   try {
-
-    let transferDiffNow = (await client.query(queries.GET_ALL_TRANSFERS_DIFF_NOW_TOTAL)).rows;
-    let cash = (await client.query(queries.GET_ALL_CASH_TOTAL)).rows;
-    let payDiffCash = (await client.query(queries.GET_ALL_PAY_DIFF_CASH_TOTAL)).rows;
-    let totalMetodoPago = (await client.query(queries.TOTAL_PAY_DIFF_CASH)).rows;
+    let transferDiffNow = (await client.query(queries.GET_ALL_TRANSFERS_DIFF_NOW_TOTAL, [fecha])).rows;
+    let cash = (await client.query(queries.GET_ALL_CASH_TOTAL, [fecha])).rows;
+    let payDiffCash = (await client.query(queries.GET_ALL_PAY_DIFF_CASH_TOTAL, [fecha])).rows;
+    let totalMetodoPago = (await client.query(queries.TOTAL_PAY_DIFF_CASH, [fecha])).rows;
 
     return new Promise(async (res, rej) => {
       let totalTrans = transferDiffNow.map(t => +t.total).reduce((prev,curr) => curr + prev, 0);
@@ -40,7 +39,8 @@ export const createRepotRMP = async () =>{
         totalPayDiffCash,
         totalMetodoPago,
         totalRecaudado,
-        totalIngresado
+        totalIngresado,
+        fecha: moment().format('DD/MM/YYYY')
       });
 
       pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })

@@ -66,6 +66,10 @@ html
                 p 
                   b DIRECCIÓN DEL ESTABLECIMIENTO: #{datos.usuario.contribuyente.direccion}
             div.tr
+              div(style={'-webkit-flex': 1, '-webkit-justify-content': 'start'}).td.border-right.border-bottom.center
+                p 
+                  b OBJETO DE ACTIVIDAD ECONÓMICA: #{datos.funcionario.objeto ? datos.funcionario.objeto : 'N/A'}
+            div.tr
               div(style={'-webkit-flex': 1, '-webkit-justify-content': 'start' }).td.border-right.border-bottom.center
                 b NOTA: 
                 - var lic = 'Licencia de Actividades Económicas'
