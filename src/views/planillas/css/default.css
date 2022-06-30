@@ -252,6 +252,10 @@ ul {
   border-bottom: 1px solid #1287ca;
 }
 
+.border-top {
+  border-top: 1px solid #1287ca;
+}
+
 .underline {
   text-decoration: underline;
 }

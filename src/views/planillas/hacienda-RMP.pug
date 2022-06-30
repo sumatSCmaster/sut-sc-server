@@ -5,8 +5,7 @@ block title
 block content
   div#planilla(style={'font-size':'13px'})
     div(style={'margin-bottom':'25px', 'margin-top':'25px', 'width':'100%', 'display': '-webkit-flex', '-webkit-align-items': 'end', '-webkit-justify-content': 'start'})
-      p FECHA:
-        b #{fecha}
+      p FECHA: #{fecha}
     div(style={'margin-bottom':'20px'})
       h2 REPORTE RECAUDADO E INGRESADO POR METODO DE PAGO
     div.table(style={'font-size':'13px'})
@@ -50,30 +49,30 @@ block content
         div(style={'-webkit-flex': 3}).th.border-right.border-bottom.center
           p
             b BANCO
-        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+        div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
           p
             b REFERENCIA
-        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+        div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
           p
             b FECHA
-        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+        div(style={'-webkit-flex': 3}).th.border-right.border-bottom.center
           p
             b NOMBRE DE USUARIO
-        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+        div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
           p
             b TOTAL
     each item in transferDiffNow
       div.tr.break-page
-        div(style={'-webkit-flex': 3}).td.border-bottom.border-right.border-left.center
+        div(style={'-webkit-flex': 3}).td.border-top.border-bottom.border-right.border-left.center
           p
             b #{item.nombre_banco}
-        div(style={'-webkit-flex': 3}).td.border-bottom.border-right.border-left.center
+        div(style={'-webkit-flex': 1}).td.border-top.border-bottom.border-right.center
           p #{item.referencia}
-        div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+        div(style={'-webkit-flex': 1}).td.border-top.border-bottom.border-right.center
           p #{item.fecha}
-        div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+        div(style={'-webkit-flex': 3}).td.border-top.border-bottom.border-right.center
           p #{item.nombre_usuario}
-        div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
+        div(style={'-webkit-flex': 1}).td.border-top.border-bottom.border-right.center
           p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(item.total)}
     div.tr
       div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
