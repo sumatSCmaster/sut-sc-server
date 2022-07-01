@@ -2300,6 +2300,7 @@ export const formatBranch = async (branch, contributor, client) => {
       denomComercial: branch.denominacion_comercial,
       parroquia: branch.id_parroquia,
       nombreRepresentante: branch.nombre_representante,
+      objeto: branch.objeto,
       capitalSuscrito: branch.capital_suscrito,
       creditoFiscal: (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [branch.id_registro_municipal, 'JURIDICO'])).rows[0]?.credito || 0,
       creditoFiscalRetencion: (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, branch.referenciaMunicipal])).rows[0]?.credito || 0,
