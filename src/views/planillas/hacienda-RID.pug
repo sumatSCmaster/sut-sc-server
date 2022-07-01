@@ -13,14 +13,14 @@ block content
       div.tr
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
           p  TOTAL POR RAMO
-    each item in resultByBranch
-      div.tr.break-page
+      div.tr
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
           p Ramo
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
           p Monto Pagado
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
           p Monto Liquidado  
+    each item in resultByBranch
       div.tr.break-page
         div(style={'-webkit-flex': 2}).td.border-right.border-bottom.border-left.center
           p #{item.ramo}
@@ -32,11 +32,11 @@ block content
       div.tr.break-page
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
           p Total Monto Pagado
-        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
-          p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(totalMontoPagado)}
-      div.tr.break-page
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
           p Total Monto Liquidado
+      div.tr.break-page
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(totalMontoPagado)}
         div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
           p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(totalMontoLiquidacion)}
     div.table(style={'font-size':'13px'})

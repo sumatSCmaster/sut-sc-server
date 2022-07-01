@@ -85,8 +85,8 @@ export const createReportRID = async ({ from, to }) =>{
     
     let result = (await client.query(queries.GET_ENTERED_DETAILED, [from, to])).rows;
     let resultByBranch = (await client.query(queries.GET_TOTAL_ENTERED_DETAILED_BY_BRANCH, [from, to])).rows;
-    let totalMontoPagado =  resultByBranch.map(d => d.monto_pagado).reduce((prev,curr)=>{ return curr + prev },0)
-    let totalMontoLiquidacion =  resultByBranch.map(d => d.monto_liquidacion).reduce((prev,curr)=>{ return curr + prev },0)
+    let totalMontoPagado =  resultByBranch.map(d => +d.monto_pagado).reduce((prev,curr)=>{ return curr + prev },0)
+    let totalMontoLiquidacion =  resultByBranch.map(d => +d.monto_liquidacion).reduce((prev,curr)=>{ return curr + prev },0)
 
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-RID.pug`), {
