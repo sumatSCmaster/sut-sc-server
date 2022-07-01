@@ -4,6 +4,9 @@ block css
 block title
 block content
   div#planilla(style={'font-size':'13px'})
+    div(style={'margin-bottom':'25px', 'margin-top':'25px', 'width':'100%', 'display': '-webkit-flex', '-webkit-align-items': 'end', '-webkit-justify-content': 'start'})
+      p FECHA DE EMISIÓN: #{fecha}
+      p RANGO DE FECHA: #{fecha_desde} - #{fecha_hasta}
     div(style={'margin-bottom':'20px'})
       h2 REPORTE DE INGRESOS DETALLADO
     div.table(style={'font-size':'13px'})
