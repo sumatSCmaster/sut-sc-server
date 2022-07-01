@@ -9,27 +9,47 @@ block content
     div.table(style={'font-size':'13px'})
     each item in data
       div.tr.break-page
-        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
           p No. Solicitud: #{item.id_procedimiento}
+      div.tr.break-page
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p Referencia de Pago
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p Monto Pagado
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p Concepto
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p Metodo de Pago
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p Monto de Liquidación
+      div.tr.break-page
         div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
-          p Referencia de Pago: #{item.referencia}
+          p #{item.referencia}
         div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
-          p Monto Pagado: #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(item.monto_pagado)}
+          p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(item.monto_pagado)}
         div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
-          p Concepto: #{item.concepto}
+          p #{item.concepto}
         div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
-          p Metodo de Pago: #{item.metodo_pago}
+          p #{item.metodo_pago}
         div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
-          p Monto de Liquidación: #{item.monto_liquidacion}
+          p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(item.monto_liquidacion)}
       div.tr
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p Banco
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p Usuario
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p Tipo Usuario
+      div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p #{item.banco}
         div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
-          p Banco: #{item.banco}
+          p #{item.usuario}
         div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
-          p Usuario: #{item.usuario}
+          p #{item.tipo_usuario}
+      div.tr(style={'margin-bottom':'20px'})
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p Ramo
+      div.tr(style={'margin-bottom':'20px'})
         div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
-          p Tipo Usuario: #{item.tipo_usuario}
-      div.tr
-        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
-          p Ramo: #{item.ramo}
-    
+          p #{item.ramo}
 block footer
