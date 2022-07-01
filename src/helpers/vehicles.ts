@@ -258,8 +258,10 @@ export const linkVehicle = async(placa: string, id: number, isRim: boolean) => {
     const enlazadoARif = (await client.query('SELECT * FROM impuesto.vehiculo_contribuyente WHERE id_vehiculo = $1', [idVehiculo])).rows[0];
     if (enlazadoARif || enlazadoARim) throw {status: 406, message: 'El vehiculo ya esta enlazado a otro contribuyente'};
     isRim ? await client.query('UPDATE impuesto.vehiculo SET id_registro_municipal = $1 WHERE id_vehiculo = $2', [id, idVehiculo]) : await client.query('INSERT INTO impuesto.vehiculo_contribuyente(id_vehiculo, id_contribuyente) VALUES ($1, $2)', [idVehiculo, id]);
+    await client.query('COMMIT');
     return {status: 201, message: 'vehiculo enlazado de manera exitosa'};
   } catch(e) {
+    await client.query('ROLLBACK');
     throw {status: 500, message: e.message}
   }
 } 
@@ -270,8 +272,10 @@ export const unlinkVehicle = async(idVehiculo: number) => {
     await client.query('BEGIN');
     await client.query('UPDATE impuesto.vehiculo SET id_registro_municipal = null WHERE id_vehiculo = $1', [idVehiculo]);
     await client.query('DELETE FROM impuesto.vehiculo_contribuyente WHERE id_vehiculo = $1', [idVehiculo]);
+    await client.query('COMMIT');
     return {status: 201, message: 'vehiculo desenlazado de manera exitosa'};
   } catch(e) {
+    await client.query('ROLLBACK');
     throw {status: 500, message: e.message}
   }
 } 
