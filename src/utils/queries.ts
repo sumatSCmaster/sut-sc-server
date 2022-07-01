@@ -1604,31 +1604,48 @@ ORDER BY razon_social;`,
   AND t.fecha_culminacion <= $2
   ORDER BY t.codigo_tramite, m.fecha_movimiento;`,
   GET_ALL_CASH_TOTAL: `SELECT metodo_pago, SUM(monto) AS total FROM pago 
-    WHERE metodo_pago LIKE 'EFECTIVO%' AND TO_CHAR(fecha_de_aprobacion, 'YYYY/MM/DD') = TO_CHAR($1, 'YYYY/MM/DD')
+    WHERE metodo_pago LIKE 'EFECTIVO%' AND TO_CHAR(fecha_de_aprobacion, 'YYYY/MM/DD') = $1
     GROUP BY metodo_pago;`,
   GET_ALL_TRANSFERS_DIFF_NOW_TOTAL: `SELECT b.nombre AS nombre_banco, p.referencia, TO_CHAR(p.fecha_de_pago,'YYYY/MM/DD') AS fecha, p.monto AS total,
     u.nombre_completo AS nombre_usuario
     FROM pago p
     JOIN banco b ON b.id_banco = p.id_banco_destino 
     JOIN usuario u ON u.id_usuario = p.id_usuario
-    WHERE metodo_pago = 'TRANSFERENCIA' AND TO_CHAR(fecha_de_aprobacion, 'YYYY/MM/DD') = TO_CHAR_($1, 'YYYY/MM/DD')
+    WHERE metodo_pago = 'TRANSFERENCIA' AND TO_CHAR(fecha_de_aprobacion, 'YYYY/MM/DD') = $1
     AND u.id_tipo_usuario = 3
     ORDER BY p.id_banco_destino, fecha`,
   TOTAL_PAY_DIFF_CASH:`SELECT p.metodo_pago, 
     SUM(p.monto) AS total
     FROM pago p
     JOIN banco b ON b.id_banco = p.id_banco_destino 
-    WHERE metodo_pago NOT LIKE 'EFECTIVO%' AND TO_CHAR(fecha_de_aprobacion, 'YYYY/MM/DD') = TO_CHAR($1, 'YYYY/MM/DD')
+    WHERE metodo_pago NOT LIKE 'EFECTIVO%' AND TO_CHAR(fecha_de_aprobacion, 'YYYY/MM/DD') = $1
     GROUP BY  p.metodo_pago`,
   GET_ALL_PAY_DIFF_CASH_TOTAL: `SELECT p.id_banco_destino, b.nombre AS nombre_banco, p.metodo_pago, 
     SUM(p.monto) AS total
     FROM pago p
     JOIN banco b ON b.id_banco = p.id_banco_destino 
     JOIN usuario u ON u.id_usuario = p.id_usuario
-    WHERE metodo_pago NOT LIKE 'EFECTIVO%' AND TO_CHAR(fecha_de_aprobacion, 'YYYY/MM/DD') = TO_CHAR($1, 'YYYY/MM/DD')
+    WHERE metodo_pago NOT LIKE 'EFECTIVO%' AND TO_CHAR(fecha_de_aprobacion, 'YYYY/MM/DD') = $1
     AND u.id_tipo_usuario = 3
     GROUP BY b.nombre, p.id_banco_destino, p.metodo_pago
     ORDER BY p.metodo_pago, p.id_banco_destino`,
+  GET_ENTERED_DETAILED: `SELECT id_procedimiento, referencia, pago.monto AS monto_pagado, concepto, metodo_pago, impuesto.liquidacion.monto AS monto_liquidacion, banco.nombre AS banco, impuesto.ramo.descripcion AS ramo, usuario.nombre_completo AS usuario, (CASE WHEN usuario.id_tipo_usuario = 4 THEN 'Externo' ELSE 'Cajero' END) AS tipo_usuario 
+    FROM pago JOIN impuesto.solicitud ON id_procedimiento = id_solicitud 
+    JOIN impuesto.liquidacion USING(id_solicitud) 
+    JOIN banco ON id_banco_destino = banco.id_banco 
+    JOIN impuesto.subramo USING(id_subramo) 
+    JOIN impuesto.ramo USING(id_ramo) 
+    JOIN usuario ON pago.id_usuario = usuario.id_usuario 
+    WHERE fecha_de_aprobacion BETWEEN $1 AND $2 AND concepto = 'IMPUESTO'
+    UNION ALL
+    SELECT id_procedimiento, referencia, pago.monto AS monto_pagado, concepto, metodo_pago, impuesto.liquidacion.monto AS monto_liquidacion, banco.nombre AS banco, impuesto.ramo.descripcion AS ramo, usuario.nombre_completo AS usuario, (CASE WHEN usuario.id_tipo_usuario = 4 THEN 'Externo' ELSE 'Cajero' END) AS tipo_usuario
+    FROM pago JOIN impuesto.solicitud ON id_procedimiento = id_solicitud 
+    JOIN impuesto.liquidacion USING(id_solicitud) 
+    JOIN banco ON id_banco_destino = banco.id_banco 
+    JOIN impuesto.subramo USING(id_subramo) 
+    JOIN impuesto.ramo USING(id_ramo) 
+    JOIN usuario ON pago.id_usuario = usuario.id_usuario 
+    WHERE fecha_de_aprobacion BETWEEN $1 AND $2 AND concepto = 'TRAMITE';`,
   //CIERRE DE CAJA
   GET_CASHIER_POS: `SELECT b.nombre as banco, SUM(p.monto) as monto, COUNT(*) as transacciones
         FROM pago p 

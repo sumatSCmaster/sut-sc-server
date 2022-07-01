@@ -7,6 +7,7 @@ import * as pdf from 'html-pdf';
 import moment from 'moment';
 import * as qr from 'qrcode';
 import S3Client from '@utils/s3';
+import { groupBy } from 'lodash';
 
 const pool = Pool.getInstance();
 const dev = process.env.NODE_ENV !== 'production';
@@ -15,6 +16,7 @@ const formatCurrency = (number: number) => new Intl.NumberFormat('de-DE', { mini
 export const createRepotRMP = async (fecha) =>{
   const client = await pool.connect();
   try {
+    console.log('PABLO',fecha)
     let transferDiffNow = (await client.query(queries.GET_ALL_TRANSFERS_DIFF_NOW_TOTAL, [fecha])).rows;
     let cash = (await client.query(queries.GET_ALL_CASH_TOTAL, [fecha])).rows;
     let payDiffCash = (await client.query(queries.GET_ALL_PAY_DIFF_CASH_TOTAL, [fecha])).rows;
@@ -75,15 +77,22 @@ export const createRepotRMP = async (fecha) =>{
   }
 }
 
-export const createReportRID = async () =>{
+export const createReportRID = async ({ from, to }) =>{
   const client = await pool.connect();
   try {
 
     const reportName = 'ReporteIngresadoDetallado.pdf'
+    
+    let result = (await client.query(queries.GET_ENTERED_DETAILED, [from, to])).rows;
+
 
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-RID.pug`), {
         institucion: 'HACIENDA',
+        fecha: moment().format('DD/MM/YYYY'),
+        fecha_desde: moment(from).format('DD/MM/YYYY'),
+        fecha_hasta: moment(to).format('DD/MM/YYYY'),
+        data: result
       });
 
       pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })

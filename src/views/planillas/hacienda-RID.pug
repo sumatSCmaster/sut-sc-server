@@ -4,7 +4,56 @@ block css
 block title
 block content
   div#planilla(style={'font-size':'13px'})
+    div(style={'margin-bottom':'25px', 'margin-top':'25px', 'width':'100%', 'display': '-webkit-flex', '-webkit-align-items': 'end', '-webkit-justify-content': 'space-between'})
+      p FECHA DE EMISIÓN: #{fecha}
+      p RANGO DE FECHA: #{fecha_desde} - #{fecha_hasta}
     div(style={'margin-bottom':'20px'})
       h2 REPORTE DE INGRESOS DETALLADO
-    
+    div.table(style={'font-size':'13px'})
+    each item in data
+      div.tr.break-page
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p No. Solicitud: #{item.id_procedimiento}
+      div.tr.break-page
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p Referencia de Pago
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p Monto Pagado
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p Concepto
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p Metodo de Pago
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p Monto de Liquidación
+      div.tr.break-page
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.border-left.center
+          p #{item.referencia}
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(item.monto_pagado)}
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p #{item.concepto}
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p #{item.metodo_pago}
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(item.monto_liquidacion)}
+      div.tr.break-page
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p Banco
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p Usuario
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p Tipo Usuario
+      div.tr.break-page
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.border-left.center
+          p #{item.banco}
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p #{item.usuario}
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p #{item.tipo_usuario}
+      div.tr.break-page
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p Ramo
+      div.tr(style={'margin-bottom':'20px'}).break-page
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.border-left.center
+          p #{item.ramo}
 block footer

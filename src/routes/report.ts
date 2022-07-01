@@ -12,8 +12,9 @@ router.post('/methodPay', authenticate('jwt'), async (req, res) => {
   res.status(200).json({data, status: 200});
 });
 
-router.get('/ingresadoDetallado', authenticate('jwt'), async (req, res) => {
-  const [error, data] = await fulfill(createReportRID());
+router.post('/ingresadoDetallado', authenticate('jwt'), async (req, res) => {
+  const { from, to } = req.body;
+  const [error, data] = await fulfill(createReportRID({ from, to }));
   if (error) res.status(500).json({ message: error.message, status: 500 });
   res.status(200).json({data, status: 200});
 });
