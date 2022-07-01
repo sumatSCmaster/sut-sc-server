@@ -90,8 +90,8 @@ export const createReportRID = async ({ from, to }) =>{
       const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-RID.pug`), {
         institucion: 'HACIENDA',
         fecha: moment().format('DD/MM/YYYY'),
-        fecha_desde: moment(from).format('DD/MM/YYYY'),
-        fecha_hasta: moment(to).format('DD/MM/YYYY'),
+        fecha_desde: from.format('DD/MM/YYYY'),
+        fecha_hasta: to.format('DD/MM/YYYY'),
         data: result
       });
 
