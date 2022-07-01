@@ -41,7 +41,7 @@ router.get('/', authenticate('jwt'), async (req: any, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-router.post('/internal', authenticate('jwt'), checkVehicleExists(), async (req: any, res) => {
+router.post('/internal', authenticate('jwt'), async (req: any, res) => {
   const { vehiculo: vehicle, id } = req.body;
   req.user.id = id;
   const [err, data] = await fulfill(createVehicle(vehicle, req.user));
@@ -49,7 +49,7 @@ router.post('/internal', authenticate('jwt'), checkVehicleExists(), async (req: 
   if (data) res.status(data.status).json(data);
 });
 
-router.post('/internal/rim', authenticate('jwt'), checkVehicleExists(), async (req: any, res) => {
+router.post('/internal/rim', authenticate('jwt'), async (req: any, res) => {
   const { vehiculo: vehicle, id } = req.body;
   req.user.id = id;
   const [err, data] = await fulfill(createVehicleForRim(vehicle, req.user));
@@ -57,7 +57,7 @@ router.post('/internal/rim', authenticate('jwt'), checkVehicleExists(), async (r
   if (data) res.status(data.status).json(data);
 });
 
-router.post('/link', authenticate('jwt'), checkVehicleExists(), async (req: any, res) => {
+router.post('/link', authenticate('jwt'), async (req: any, res) => {
   const { placa, id, isRim } = req.body;
   req.user.id = id;
   const [err, data] = await fulfill(linkVehicle(placa, id, isRim));
@@ -65,7 +65,7 @@ router.post('/link', authenticate('jwt'), checkVehicleExists(), async (req: any,
   if (data) res.status(data.status).json(data);
 });
 
-router.post('/unlink', authenticate('jwt'), checkVehicleExists(), async (req: any, res) => {
+router.post('/unlink', authenticate('jwt'), async (req: any, res) => {
   const { idVehiculo } = req.body;
   const [err, data] = await fulfill(unlinkVehicle(idVehiculo));
   if (err) res.status(err.status).json(err);
