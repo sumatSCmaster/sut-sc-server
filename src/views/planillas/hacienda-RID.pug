@@ -23,7 +23,7 @@ block content
     each item in resultByBranch
       div.tr.break-page
         div(style={'-webkit-flex': 3}).td.border-right.border-bottom.border-left.center
-          p #{item.ramo}
+          p #{item.ramo.toUpperCase()}
         div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
           p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(item.monto_pagado)}
         div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
@@ -39,7 +39,7 @@ block content
           p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(totalMontoPagado)}
         div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
           p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(totalMontoLiquidacion)}
-    div.table(style={'font-size':'13px'})
+    div.table(style={'font-size':'13px'}).break-page
     each item in data
       div.tr.break-page
         div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
@@ -50,7 +50,7 @@ block content
         div(style={'-webkit-flex': 1}).td.border-right.border-bottom.border-left.center
           p #{item.id_procedimiento}
         div(style={'-webkit-flex': 3}).td.border-right.border-bottom.center
-          p #{item.ramo}
+          p #{item.ramo.toUpperCase()}
       div.tr.break-page
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
           p Referencia de Pago
