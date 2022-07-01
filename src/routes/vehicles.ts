@@ -8,8 +8,8 @@ const router = Router();
 
 router.get('/getByRif/:rif', authenticate('jwt'), async (req, res) => {
   const { rif } = req.params;
-  const { id_usuario } = await getIdByRif(rif);
-  const [err, data] = await fulfill(getVehiclesByContributor(id_usuario));
+  const { id_contribuyente } = await getIdByRif(rif);
+  const [err, data] = await fulfill(getVehiclesByContributor(id_contribuyente));
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
 });
