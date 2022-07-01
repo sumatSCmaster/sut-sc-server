@@ -1,7 +1,7 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
-import { PoolClient } from 'pg';
+import { ClientBase, PoolClient } from 'pg';
 import { Usuario } from '@root/interfaces/sigt';
 import { mainLogger } from '@utils/logger';
 import Redis from '@utils/redis';
@@ -174,7 +174,7 @@ export const getVehiclesByContributor = async (id?: number, rim?: number): Promi
  * @param payload
  * @param user
  */
-export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Response & { vehiculo: Vehicle }> => {
+export const createVehicleForRim = async (payload: Vehicle, user: Usuario): Promise<Response & { vehiculo: Vehicle }> => {
   const client = await pool.connect();
   const { marca, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible } = payload;
   try {
@@ -211,6 +211,70 @@ export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Re
   }
 };
 
+export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Response & { vehiculo: Vehicle }> => {
+  const client = await pool.connect();
+  const { marca, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible } = payload;
+  try {
+    await client.query('BEGIN');
+    const response = (await client.query(queries.CREATE_VEHICLE, [marca, null, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible])).rows[0];
+    await client.query(`INSERT INTO impuesto.vehiculo_contribuyente(id_vehiculo, id_contribuyente) VALUES($1, $2)`, [response.id_vehiculo, user.id])
+    await client.query('COMMIT');
+    const brand = (await client.query(queries.GET_VEHICLE_BRAND_BY_ID, [response.id_marca_vehiculo])).rows[0].descripcion;
+    const subcategory = (await client.query(queries.GET_VEHICLE_SUBCATEGORY_BY_ID, [response.id_subcategoria_vehiculo])).rows[0].descripcion;
+
+    const vehicle: Vehicle = {
+      id: response.id_vehiculo,
+      placa: response.placa_vehiculo,
+      marca: brand,
+      modelo: response.modelo_vehiculo,
+      color: response.color_vehiculo,
+      anio: response.anio_vehiculo,
+      serialCarroceria: response.serial_carroceria_vehiculo,
+      tipoCarroceria: response.tipo_carroceria_vehiculo,
+      tipoCombustible: response.tipo_combustible_vehiculo,
+      subcategoria: response.id_subcategoria_vehiculo || subcategory,
+      fechaUltimaActualizacion: response.fecha_ultima_actualizacion,
+    };
+    return { status: 201, message: 'Vehiculo creado satisfactoriamente', vehiculo: vehicle };
+  } catch (error) {
+    client.query('ROLLBACK');
+    mainLogger.error(error);
+    throw {
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'Error al crear vehiculo',
+    };
+  } finally {
+    client.release();
+  }
+};
+
+export const linkVehicle = async(placa: string, id: number, isRim: boolean) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const idVehiculo = (await client.query('SELECT id_vehiculo FROM impuesto.vehiculo WHERE placa_vehiculo = $1', [placa])).rows[0].id_vehiculo;
+    const enlazadoARim = (await client.query('SELECT * FROM impuesto.vehiculo WHERE id_registro_municipal IS NOT NULL AND id_vehiculo = $1', [idVehiculo])).rows[0];
+    const enlazadoARif = (await client.query('SELECT * FROM impuesto.vehiculo_contribuyente WHERE id_vehiculo = $1', [idVehiculo])).rows[0];
+    if (enlazadoARif || enlazadoARim) throw {status: 406, message: 'El vehiculo ya esta enlazado a otro contribuyente'};
+    isRim ? await client.query('UPDATE impuesto.vehiculo SET id_registro_municipal = $1 WHERE id_vehiculo = $2', [id, idVehiculo]) : await client.query('INSERT INTO impuesto.vehiculo_contribuyente(id_vehiculo, id_contribuyente) VALUES ($1, $2)', [idVehiculo, id]);
+    return {status: 201, message: 'vehiculo enlazado de manera exitosa'};
+  } catch(e) {
+    throw {status: 500, message: e.message}
+  }
+} 
+
+export const unlinkVehicle = async(idVehiculo: number) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('UPDATE impuesto.vehiculo SET id_registro_municipal = null WHERE id_vehiculo = $1', [idVehiculo]);
+    await client.query('DELETE FROM impuesto.vehiculo_contribuyente WHERE id_vehiculo = $1', [idVehiculo]);
+    return {status: 201, message: 'vehiculo desenlazado de manera exitosa'};
+  } catch(e) {
+    throw {status: 500, message: e.message}
+  }
+} 
 /**
  *
  * @param payload

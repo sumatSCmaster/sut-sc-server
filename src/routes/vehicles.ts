@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authenticate } from 'passport';
 import { getIdByRif, getIdByRim } from '@utils/user';
 import { fulfill } from '@utils/resolver';
-import { getVehiclesByContributor, getBrands, getVehicleTypes, createVehicle, updateVehicle, deleteVehicle, checkVehicleExists } from '@helpers/vehicles';
+import { getVehiclesByContributor, getBrands, getVehicleTypes, createVehicle, updateVehicle, deleteVehicle, checkVehicleExists, createVehicleForRim, linkVehicle, unlinkVehicle } from '@helpers/vehicles';
 
 const router = Router();
 
@@ -45,6 +45,29 @@ router.post('/internal', authenticate('jwt'), checkVehicleExists(), async (req: 
   const { vehiculo: vehicle, id } = req.body;
   req.user.id = id;
   const [err, data] = await fulfill(createVehicle(vehicle, req.user));
+  if (err) res.status(err.status).json(err);
+  if (data) res.status(data.status).json(data);
+});
+
+router.post('/internal/rim', authenticate('jwt'), checkVehicleExists(), async (req: any, res) => {
+  const { vehiculo: vehicle, id } = req.body;
+  req.user.id = id;
+  const [err, data] = await fulfill(createVehicleForRim(vehicle, req.user));
+  if (err) res.status(err.status).json(err);
+  if (data) res.status(data.status).json(data);
+});
+
+router.post('/link', authenticate('jwt'), checkVehicleExists(), async (req: any, res) => {
+  const { placa, id, isRim } = req.body;
+  req.user.id = id;
+  const [err, data] = await fulfill(linkVehicle(placa, id, isRim));
+  if (err) res.status(err.status).json(err);
+  if (data) res.status(data.status).json(data);
+});
+
+router.post('/unlink', authenticate('jwt'), checkVehicleExists(), async (req: any, res) => {
+  const { idVehiculo } = req.body;
+  const [err, data] = await fulfill(unlinkVehicle(idVehiculo));
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
 });
