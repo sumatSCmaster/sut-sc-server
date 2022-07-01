@@ -6,5 +6,30 @@ block content
   div#planilla(style={'font-size':'13px'})
     div(style={'margin-bottom':'20px'})
       h2 REPORTE DE INGRESOS DETALLADO
+    div.table(style={'font-size':'13px'})
+    each item in data
+      div.tr.break-page
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p No. Solicitud: #{item.id_procedimiento}
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p Referencia de Pago: #{item.referencia}
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p Monto Pagado: #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(item.monto_pagado)}
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p Concepto: #{item.concepto}
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p Metodo de Pago: #{item.metodo_pago}
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p Monto de Liquidación: #{item.monto_liquidacion}
+      div.tr
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p Banco: #{item.banco}
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p Usuario: #{item.usuario}
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p Tipo Usuario: #{item.tipo_usuario}
+      div.tr
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p Ramo: #{item.ramo}
     
 block footer

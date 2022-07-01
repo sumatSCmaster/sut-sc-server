@@ -7,6 +7,7 @@ import * as pdf from 'html-pdf';
 import moment from 'moment';
 import * as qr from 'qrcode';
 import S3Client from '@utils/s3';
+import { groupBy } from 'lodash';
 
 const pool = Pool.getInstance();
 const dev = process.env.NODE_ENV !== 'production';
@@ -76,15 +77,19 @@ export const createRepotRMP = async (fecha) =>{
   }
 }
 
-export const createReportRID = async () =>{
+export const createReportRID = async ({ from, to }) =>{
   const client = await pool.connect();
   try {
 
     const reportName = 'ReporteIngresadoDetallado.pdf'
+    
+    let result = (await client.query(queries.GET_ENTERED_DETAILED, [from, to])).rows;
+
 
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-RID.pug`), {
         institucion: 'HACIENDA',
+        data: result
       });
 
       pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
