@@ -10,7 +10,7 @@
 
 const queries = {
   // USUARIO
-  GET_USER_ID_BY_RIF: 'SELECT id_contribuyente FROM impuesto.contribuyente WHERE documento = $1;',
+  GET_USER_ID_BY_RIF: 'SELECT id_contribuyente FROM impuesto.contribuyente WHERE documento = $1 AND tipo_documento = $2;',
   CREATE_USER: `INSERT INTO usuario (nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, id_tipo_usuario, password, telefono) \
   VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
   ADD_PASSWORD: 'INSERT INTO cuenta_funcionario (id_usuario, password) VALUES ($1, $2);',
