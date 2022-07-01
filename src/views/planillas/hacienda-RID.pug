@@ -10,34 +10,35 @@ block content
     div(style={'margin-bottom':'20px'})
       h2 REPORTE DE INGRESOS DETALLADO
     div.table(style={'font-size':'13px'})
-      div.tr.break-page
+      div.tr
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
           p  TOTAL POR RAMO
     each item in resultByBranch
       div.tr.break-page
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
           p Ramo
-      div.tr.break-page
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
-          p Total Monto Pagado
-      div.tr.break-page
+          p Monto Pagado
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
-          p Total Monto Liquidado  
+          p Monto Liquidado  
       div.tr.break-page
         div(style={'-webkit-flex': 2}).td.border-right.border-bottom.border-left.center
           p #{item.ramo}
-      div.tr.break-page
         div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
           p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(item.monto_pagado)}
-      div.tr.break-page
         div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
           p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(item.monto_liquidacion)} 
     div.table(style={'font-size':'13px'})
       div.tr.break-page
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
-          p Total
+          p Total Monto Pagado
         div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
-          p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(totalByBranch)}
+          p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(totalMontoPagado)}
+      div.tr.break-page
+        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+          p Total Monto Liquidado
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(totalMontoLiquidacion)}
     div.table(style={'font-size':'13px'})
     each item in data
       div.tr.break-page
