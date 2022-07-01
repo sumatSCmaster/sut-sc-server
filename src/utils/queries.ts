@@ -10,7 +10,7 @@
 
 const queries = {
   // USUARIO
-  GET_USER_ID_BY_RIF: 'SELECT id_usuario FROM usuario WHERE cedula = $1;',
+  GET_USER_ID_BY_RIF: 'SELECT id_contribuyente FROM impuesto.contribuyente WHERE documento = $1 AND tipo_documento = $2;',
   CREATE_USER: `INSERT INTO usuario (nombre_completo, nombre_de_usuario, direccion, cedula, nacionalidad, id_tipo_usuario, password, telefono) \
   VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
   ADD_PASSWORD: 'INSERT INTO cuenta_funcionario (id_usuario, password) VALUES ($1, $2);',
@@ -3401,7 +3401,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   GET_VEHICLE_TYPES: `SELECT id_tipo_vehiculo AS id, descripcion FROM impuesto.tipo_vehiculo ORDER BY id_tipo_vehiculo`,
   GET_VEHICLE_CATEGORIES_BY_TYPE: `SELECT id_categoria_vehiculo AS id, descripcion FROM impuesto.categoria_vehiculo WHERE id_tipo_vehiculo = $1 ORDER BY id_categoria_vehiculo`,
   GET_VEHICLE_SUBCATEGORIES_BY_CATEGORY: `SELECT sv.id_subcategoria_vehiculo AS id, sv.descripcion, ROUND((v.valor_en_bs * sv.tarifa)) AS costo FROM impuesto.subcategoria_vehiculo sv INNER JOIN valor v USING (id_valor) WHERE id_categoria_vehiculo = $1 ORDER BY id_subcategoria_vehiculo`,
-  CREATE_VEHICLE: `INSERT INTO impuesto.vehiculo (id_marca_vehiculo, id_usuario, id_subcategoria_vehiculo, modelo_vehiculo, placa_vehiculo, anio_vehiculo, color_vehiculo, fecha_ultima_actualizacion, serial_carroceria_vehiculo, tipo_carroceria_vehiculo, tipo_combustible_vehiculo) VALUES ($1, $2, $3, $4, $5, $6, $7, null, $8, $9, $10) RETURNING *`,
+  CREATE_VEHICLE: `INSERT INTO impuesto.vehiculo (id_marca_vehiculo, id_contribuyente, id_subcategoria_vehiculo, modelo_vehiculo, placa_vehiculo, anio_vehiculo, color_vehiculo, fecha_ultima_actualizacion, serial_carroceria_vehiculo, tipo_carroceria_vehiculo, tipo_combustible_vehiculo) VALUES ($1, $2, $3, $4, $5, $6, $7, null, $8, $9, $10) RETURNING *`,
   UPDATE_VEHICLE: `UPDATE impuesto.vehiculo SET id_marca_vehiculo = $1, id_subcategoria_vehiculo = $2, modelo_vehiculo = $3, placa_vehiculo = $4, anio_vehiculo = $5, color_vehiculo = $6, serial_carroceria_vehiculo = $7, tipo_carroceria_vehiculo = $8, tipo_combustible_vehiculo = $9 WHERE id_vehiculo = $10 RETURNING *`,
   DELETE_VEHICLE: `DELETE FROM impuesto.vehiculo WHERE id_vehiculo = $1`,
   UPDATE_VEHICLE_SUBCATEGORY: `UPDATE impuesto.subcategoria_vehiculo SET id_valor = $1, tarifa = $2, descripcion = $3, id_categoria_vehiculo = $4 WHERE id_subcategoria_vehiculo = $5 RETURNING *`,
@@ -3412,9 +3412,9 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   FROM impuesto.marca_vehiculo mv 
   INNER JOIN impuesto.vehiculo v USING (id_marca_vehiculo) 
   INNER JOIN impuesto.subcategoria_vehiculo sv USING (id_subcategoria_vehiculo) 
-  WHERE id_usuario = $1
+  WHERE id_contribuyente = $1
   ORDER BY v.id_vehiculo`,
-  CHECK_VEHICLE_EXISTS_FOR_USER: `SELECT 1 FROM impuesto.vehiculo WHERE id_usuario = $1 AND placa_vehiculo = $2`,
+  CHECK_VEHICLE_EXISTS_FOR_USER: `SELECT 1 FROM impuesto.vehiculo WHERE id_contribuyente = $1 AND placa_vehiculo = $2`,
   CHECK_VEHICLE_EXISTS: `SELECT 1 FROM impuesto.vehiculo WHERE LOWER(placa_vehiculo) = LOWER($1)`,
 
   UPDATE_VEHICLE_PAYMENT_DATE: `UPDATE impuesto.vehiculo SET fecha_ultima_actualizacion = DEFAULT WHERE id_vehiculo = $1`,
