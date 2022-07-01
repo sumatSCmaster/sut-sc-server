@@ -14,19 +14,19 @@ block content
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
           p  TOTAL POR RAMO
       div.tr
-        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+        div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
           p Ramo
-        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+        div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
           p Monto Pagado
-        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+        div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
           p Monto Liquidado  
     each item in resultByBranch
       div.tr.break-page
         div(style={'-webkit-flex': 2}).td.border-right.border-bottom.border-left.center
           p #{item.ramo}
-        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+        div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
           p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(item.monto_pagado)}
-        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+        div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
           p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(item.monto_liquidacion)} 
     div.table(style={'font-size':'13px'})
       div.tr.break-page
@@ -42,8 +42,15 @@ block content
     div.table(style={'font-size':'13px'})
     each item in data
       div.tr.break-page
+        div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
+          p No. Solicitud
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
-          p No. Solicitud: #{item.id_procedimiento}
+          p Ramo
+      div.tr(style={'margin-bottom':'20px'}).break-page
+        div(style={'-webkit-flex': 1}).th.border-right.border-bottom.border-left.center
+          p #{item.id_procedimiento}
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+          p #{item.ramo}
       div.tr.break-page
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
           p Referencia de Pago
@@ -80,10 +87,4 @@ block content
           p #{item.usuario}
         div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
           p #{item.tipo_usuario}
-      div.tr.break-page
-        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
-          p Ramo
-      div.tr(style={'margin-bottom':'20px'}).break-page
-        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.border-left.center
-          p #{item.ramo}
 block footer
