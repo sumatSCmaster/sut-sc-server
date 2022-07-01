@@ -14,7 +14,7 @@ block content
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
           p  TOTAL POR RAMO
       div.tr
-        div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
+        div(style={'-webkit-flex': 3}).th.border-right.border-bottom.center
           p Ramo
         div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
           p Monto Pagado
@@ -22,7 +22,7 @@ block content
           p Monto Liquidado  
     each item in resultByBranch
       div.tr.break-page
-        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.border-left.center
+        div(style={'-webkit-flex': 3}).td.border-right.border-bottom.border-left.center
           p #{item.ramo}
         div(style={'-webkit-flex': 1}).td.border-right.border-bottom.center
           p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(item.monto_pagado)}
@@ -44,12 +44,12 @@ block content
       div.tr.break-page
         div(style={'-webkit-flex': 1}).th.border-right.border-bottom.center
           p No. Solicitud
-        div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
+        div(style={'-webkit-flex': 3}).th.border-right.border-bottom.center
           p Ramo
-      div.tr(style={'margin-bottom':'20px'}).break-page
-        div(style={'-webkit-flex': 1}).th.border-right.border-bottom.border-left.center
+      div.tr.break-page
+        div(style={'-webkit-flex': 1}).td.border-right.border-bottom.border-left.center
           p #{item.id_procedimiento}
-        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+        div(style={'-webkit-flex': 3}).td.border-right.border-bottom.center
           p #{item.ramo}
       div.tr.break-page
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
