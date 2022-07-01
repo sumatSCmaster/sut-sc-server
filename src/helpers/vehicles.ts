@@ -152,10 +152,10 @@ const getVehicleSubcategoriesByCategory = async (id: number, client: PoolClient)
  *
  * @param id
  */
-export const getVehiclesByContributor = async (id: number): Promise<Response & { vehiculos: Vehicle[] }> => {
+export const getVehiclesByContributor = async (id?: number, rim?: number): Promise<Response & { vehiculos: Vehicle[] }> => {
   const client = await pool.connect();
   try {
-    const vehicles: Vehicle[] = (await client.query(queries.GET_VEHICLES_BY_CONTRIBUTOR, [id])).rows;
+    const vehicles: Vehicle[] = id ? (await client.query(queries.GET_VEHICLES_BY_CONTRIBUTOR, [id])).rows : (await client.query(queries.GET_VEHICLES_BY_MUNICIPAL_REFERENCE, [rim])).rows;
     return { status: 200, message: 'Vehiculos del contribuyente obtenidos', vehiculos: vehicles };
   } catch (error) {
     mainLogger.error(error);

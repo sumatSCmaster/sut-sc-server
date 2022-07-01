@@ -16,6 +16,18 @@ export const getIdByRif = async (rif: string, pref:string) => {
   }
 };
 
+export const getIdByRim = async (rim:string) => {
+  const client = await pool.connect();
+  try {
+    const response = (await client.query(`SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $1`, [rim])).rows[0];
+    return response;
+  } catch (e) {
+    throw errorMessageExtractor(e);
+  } finally {
+    client.release();
+  }
+};
+
 export const checkIfOfficial = async (id: string) => {
   const client = await pool.connect();
   try {
