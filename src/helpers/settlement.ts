@@ -269,7 +269,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
   const client = await pool.connect();
   const gtic = await gticPool.connect();
   const montoAcarreado: any = {};
-  let SM, PP, MONO, VH;
+  let SM, PP, MONO;
   let AE: any[] = [];
   let IU: any = undefined;
   try {
@@ -302,7 +302,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       !!reference && !!branch
         ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.PP, branch?.id_registro_municipal])).rows[0]
         : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.PP, contributor.id_contribuyente])).rows[0];
-    const VHApplicationExists = false;
+    // const VHApplicationExists = false;
     if (contributor.tipo_contribuyente === 'JURIDICO' && !!['CESANTE', 'INHABILITADO', 'SANCIONADO'].find((state) => state === branch?.estado_licencia))
       throw { status: 401, message: `La referencia municipal proporcionada se encuentra en estado ${branch?.estado_licencia}` };
     mainLogger.info(inspect(lastSettlementPayload));
@@ -419,9 +419,9 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
           : undefined;
     }
     //VH
-    const vehicles = (await client.query(`SELECT * FROM impuesto.vehiculo WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.contribuyente WHERE documento = $1 AND tipo_documento = $2)`, [document, type])).rows;
-    if(!VHApplicationExists) {
-      VH = vehicles.length > 0 ? vehicles.map(vh => ({id: vh.id_vehiculo, vehiculo: vh, tarifa: 10})) : undefined};
+    // const vehicles = (await client.query(`SELECT * FROM impuesto.vehiculo WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.contribuyente WHERE documento = $1 AND tipo_documento = $2)`, [document, type])).rows;
+    // if(!VHApplicationExists) {
+    //   VH = vehicles.length > 0 ? vehicles.map(vh => ({id: vh.id_vehiculo, vehiculo: vh, tarifa: 10})) : undefined};
     //IU
     mainLogger.info('IU');
     if (estates.length > 0) {
