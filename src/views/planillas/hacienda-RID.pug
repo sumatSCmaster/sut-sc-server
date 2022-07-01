@@ -23,7 +23,7 @@ block content
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
           p Monto de Liquidación
       div.tr.break-page
-        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.border-left.center
           p #{item.referencia}
         div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
           p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(item.monto_pagado)}
@@ -33,24 +33,24 @@ block content
           p #{item.metodo_pago}
         div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
           p #{new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(item.monto_liquidacion)}
-      div.tr
+      div.tr.break-page
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
           p Banco
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
           p Usuario
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
           p Tipo Usuario
-      div.tr
-        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+      div.tr.break-page
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.border-left.center
           p #{item.banco}
         div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
           p #{item.usuario}
         div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
           p #{item.tipo_usuario}
-      div.tr(style={'margin-bottom':'20px'})
+      div.tr.break-page
         div(style={'-webkit-flex': 2}).th.border-right.border-bottom.center
           p Ramo
-      div.tr(style={'margin-bottom':'20px'})
-        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+      div.tr(style={'margin-bottom':'20px'}).break-page
+        div(style={'-webkit-flex': 2}).td.border-right.border-bottom.border-left.center
           p #{item.ramo}
 block footer
