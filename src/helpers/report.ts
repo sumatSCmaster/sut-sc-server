@@ -84,7 +84,8 @@ export const createReportRID = async ({ from, to }) =>{
     const reportName = 'ReporteIngresadoDetallado.pdf'
     
     let result = (await client.query(queries.GET_ENTERED_DETAILED, [from, to])).rows;
-
+    let resultByBranch = (await client.query(queries.GET_TOTAL_ENTERED_DETAILED_BY_BRANCH, [from, to])).rows;
+    let totalByBranch = resultByBranch.reduce((prev,curr)=>{ curr + prev },0)
 
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-RID.pug`), {
@@ -92,6 +93,8 @@ export const createReportRID = async ({ from, to }) =>{
         fecha: moment().format('DD/MM/YYYY'),
         fecha_desde: moment(from).format('DD/MM/YYYY'),
         fecha_hasta: moment(to).format('DD/MM/YYYY'),
+        totalByBranch,
+        resultByBranch,
         data: result
       });
 
