@@ -73,29 +73,35 @@ export const getVehicleTypes = async (): Promise<Response & { tipoVehiculo: Vehi
   const REDIS_KEY = 'vehicleTypes';
   let client: PoolClient | undefined;
   const redisClient = Redis.getInstance();
-  let types;
+  let categories;
   try {
-    mainLogger.info('getVehicleTypes - try');
-    let cachedTypes = await redisClient.getAsync(REDIS_KEY);
-    if (cachedTypes !== null) {
-      mainLogger.info('getVehicleTypes - getting cached types');
-      types = JSON.parse(cachedTypes);
+    mainLogger.info('getVehicleCategories - try');
+    let cachedCategories = await redisClient.getAsync(REDIS_KEY);
+    if (cachedCategories !== null) {
+      mainLogger.info('getVehicleCategories - getting cached categories');
+      categories = JSON.parse(cachedCategories);
     } else {
-      mainLogger.info('getVehicleTypes - getting types from db');
+      mainLogger.info('getVehicleCategories - getting categories from db');
       client = await pool.connect();
-      const response = (await client.query(queries.GET_VEHICLE_TYPES)).rows.map(async (type: VehicleType) => {
+      // const response = (await client.query(queries.GET_VEHICLE_TYPES)).rows.map(async (type: VehicleType) => {
+      //   if (client) {
+      //     type.categorias = await Promise.all(await getVehicleCategoriesByType(type.id, client));
+      //     return type;
+      //   }
+      //   return;
+      // });
+      const response = (await client.query(queries.GET_VEHICLE_CATEGORIES)).rows.map(async cat => {
         if (client) {
-          type.categorias = await Promise.all(await getVehicleCategoriesByType(type.id, client));
-          return type;
+          cat.subcategoria = await Promise.all(await getVehicleSubcategoriesByCategory(cat.id, client)); 
         }
         return;
-      });
-      types = await Promise.all(response);
-      await redisClient.setAsync(REDIS_KEY, JSON.stringify(types));
+      })
+      categories = await Promise.all(response);
+      await redisClient.setAsync(REDIS_KEY, JSON.stringify(categories));
       await redisClient.expireAsync(REDIS_KEY, 36000);
     }
 
-    return { status: 200, message: 'Tipos de vehiculos obtenidos', tipoVehiculo: types };
+    return { status: 200, message: 'Tipos de vehiculos obtenidos', tipoVehiculo: categories };
   } catch (error) {
     mainLogger.error(error);
     throw {

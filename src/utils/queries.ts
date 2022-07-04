@@ -947,6 +947,25 @@ RIGHT JOIN impuesto.liquidacion l on s.id = l.id_solicitud
 INNER JOIN impuesto.subramo sr ON l.id_subramo = sr.id_subramo
 INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo 
 WHERE rm.codigo = $1 AND l.id_registro_municipal = $2 AND EXTRACT('month' FROM l.fecha_liquidacion) = EXTRACT('month' FROM CURRENT_DATE) AND EXTRACT('year' FROM l.fecha_liquidacion) = EXTRACT('year' FROM CURRENT_DATE) ORDER BY fecha_liquidacion DESC`,
+CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED_BY_YEAR: `SELECT * FROM (SELECT s.id_solicitud AS id,
+  s.id_tipo_tramite AS tipotramite,
+  s.aprobado,
+  s.fecha,
+  s.fecha_aprobado AS "fechaAprobacion",
+  ev.state,
+  s.tipo_solicitud AS "tipoSolicitud",
+  s.id_contribuyente
+ FROM impuesto.solicitud s
+   JOIN ( SELECT es.id_solicitud,
+          impuesto.solicitud_fsm(es.event::text ORDER BY es.id_evento_solicitud) AS state
+         FROM impuesto.evento_solicitud es
+         WHERE id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE id_registro_municipal = $2 LIMIT 1))
+        GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
+) s 
+RIGHT JOIN impuesto.liquidacion l on s.id = l.id_solicitud 
+INNER JOIN impuesto.subramo sr ON l.id_subramo = sr.id_subramo
+INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo 
+WHERE rm.codigo = $1 AND l.id_registro_municipal = $2 AND EXTRACT('year' FROM l.fecha_liquidacion) = EXTRACT('year' FROM CURRENT_DATE) ORDER BY fecha_liquidacion DESC`,
   CURRENT_SETTLEMENT_EXISTS_IN_YEAR_FOR_CODE_AND_RIM:
     "SELECT * FROM impuesto.solicitud_state s INNER JOIN impuesto.liquidacion l on s.id = l.id_solicitud INNER JOIN impuesto.subramo sr ON\
           l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND l.id_registro_municipal =\
@@ -956,6 +975,10 @@ WHERE rm.codigo = $1 AND l.id_registro_municipal = $2 AND EXTRACT('month' FROM l
     SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l on s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON
     l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND s.id_contribuyente = $2
     AND EXTRACT('month' FROM l.fecha_liquidacion) = EXTRACT('month' FROM CURRENT_DATE) AND EXTRACT('year' FROM l.fecha_liquidacion) = EXTRACT('year' FROM CURRENT_DATE) ORDER BY fecha_liquidacion DESC`,
+  CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR_BY_YEAR: `
+    SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l on s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON
+    l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND s.id_contribuyente = $2
+    AND EXTRACT('year' FROM l.fecha_liquidacion) = EXTRACT('year' FROM CURRENT_DATE) ORDER BY fecha_liquidacion DESC`,
   GET_LAST_SETTLEMENTS_FOR_INSPECTION_BY_CONTRIBUTOR: `WITH solicitudcte AS (
     SELECT id_solicitud
     FROM impuesto.solicitud 
@@ -3418,6 +3441,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   // VEHICULOS
   GET_VEHICLE_BRANDS: `SELECT id_marca_vehiculo AS id, nombre FROM impuesto.marca_vehiculo ORDER BY nombre;`,
   GET_VEHICLE_TYPES: `SELECT id_tipo_vehiculo AS id, descripcion FROM impuesto.tipo_vehiculo ORDER BY id_tipo_vehiculo`,
+  GET_VEHICLE_CATEGORIES: `SELECT id_categoria_vehiculo AS id, descripcion FROM impuesto.categoria_vehiculo ORDER BY id_categoria_vehiculo`,
   GET_VEHICLE_CATEGORIES_BY_TYPE: `SELECT id_categoria_vehiculo AS id, descripcion FROM impuesto.categoria_vehiculo WHERE id_tipo_vehiculo = $1 ORDER BY id_categoria_vehiculo`,
   GET_VEHICLE_SUBCATEGORIES_BY_CATEGORY: `SELECT sv.id_subcategoria_vehiculo AS id, sv.descripcion, ROUND((v.valor_en_bs * sv.tarifa)) AS costo FROM impuesto.subcategoria_vehiculo sv INNER JOIN valor v USING (id_valor) WHERE id_categoria_vehiculo = $1 ORDER BY id_subcategoria_vehiculo`,
   CREATE_VEHICLE: `INSERT INTO impuesto.vehiculo (id_marca_vehiculo, id_registro_municipal, id_subcategoria_vehiculo, modelo_vehiculo, placa_vehiculo, anio_vehiculo, color_vehiculo, fecha_ultima_actualizacion, serial_carroceria_vehiculo, tipo_carroceria_vehiculo, tipo_combustible_vehiculo) VALUES ($1, $2, $3, $4, $5, $6, $7, null, $8, $9, $10) RETURNING *`,
