@@ -85,6 +85,12 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
           transacciones: next.transacciones,
         };
         break;
+      case 12:
+        prev.banCaribe = {
+          total: next.monto,
+          transacciones: next.transacciones,
+        };
+        break;
     }
     return prev;
   }, {});
