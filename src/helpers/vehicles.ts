@@ -94,6 +94,7 @@ export const getVehicleTypes = async (): Promise<Response & { tipoVehiculo: Vehi
         if (client) {
           cat.subcategoria = await Promise.all(await getVehicleSubcategoriesByCategory(cat.id, client)); 
         }
+        console.log(cat.categoria);
         return;
       })
       categories = await Promise.all(response);
