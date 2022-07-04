@@ -27,7 +27,7 @@ export const createRepotRMP = async (fecha) =>{
       let totalCash = cash.map(c => +c.total).reduce((prev,curr) => curr + prev, 0);
       let totalPayDiffCash = totalMetodoPago.map(t => +t.total).reduce((prev,curr) => curr + prev, 0);
       
-      let recaudado = totalCash + totalPayDiffCash + totalTrans;
+      let recaudado = totalCash + totalPayDiffCash;
       let totalRecaudado = formatCurrency(recaudado);
       let totalIngresado = formatCurrency(Math.abs(recaudado - totalTrans));
       let totalTransferDiffNow = formatCurrency(totalTrans)
