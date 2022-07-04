@@ -38,8 +38,8 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
   const cashierPosTotal = +cashierPos.reduce((prev, next) => prev + +next.monto, 0);
   const cashierPosTransactions = +cashierPos.reduce((prev, next) => prev + +next.transacciones, 0);
 
-  const cashierCash = (await client.query(queries.GET_CASHIER_CASH_BROKEN_DOWN_BY_METHOD, [payload.day, userId])).rows;
-
+  const cashierCash = (await client.query(queries.GET_CASHIER_CASH_BROKEN_DOWN_BY_METHOD, [payload.day, userId, moment(payload.day).add(1, 'days').format('YYYY-MM-DD')])).rows;
+  console.log(moment(payload.day).format('YYYY-MM-DD'), moment(payload.day).add(1, 'days').format('YYYY-MM-DD'));
   console.log(+cashierCash.reduce((a, c) => +c.transacciones + a, 0), +cashierCash.reduce((a, c) => +c.total + a, 0), cashierCash)
   const cashierChecks = (await client.query(queries.GET_CASHIER_CHECKS, [payload.day, userId])).rows;
   const cashierCredit = (await client.query(queries.GET_CASHIER_CREDIT, [payload.day, userId])).rows;
@@ -66,21 +66,25 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
           total: next.monto,
           transacciones: next.transacciones,
         };
+        break;
       case 11:
         prev.venezuela = {
           total: next.monto,
           transacciones: next.transacciones,
         };
+        break;
       case 23:
         prev.provincial = {
           total: next.monto,
           transacciones: next.transacciones,
         };
+        break;
       case 36:
         prev.sofiTasa = {
           total: next.monto,
           transacciones: next.transacciones,
         };
+        break;
     }
     return prev;
   }, {});
