@@ -1971,7 +1971,7 @@ ORDER BY fecha_liquidacion DESC;
   
   )
   
-  SELECT *,
+  SELECT id_ramo, id_subramo, id, "tipotramite", aprobado, fecha, "fechaAprobacion", state, "tipoSolicitud", id_contribuyente, id_liquidacion, id_solicitud, l.monto, certificado, recibo, fecha_liquidacion, datos, fecha_vencimiento, id_registro_municipal, remitido, monto_petro, subindice, r.descripcion, codigo, s.descripcion, descripcion_corta, liquidacion_especial,
   s.descripcion AS "descripcionSubramo",
   r.descripcion AS "descripcionRamo"
   FROM (SELECT s.id_solicitud AS id,
