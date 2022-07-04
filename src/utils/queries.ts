@@ -1641,7 +1641,9 @@ ORDER BY razon_social;`,
     SUM(p.monto) AS total
     FROM pago p
     JOIN banco b ON b.id_banco = p.id_banco_destino 
+    JOIN usuario u ON u.id_usuario = p.id_usuario
     WHERE metodo_pago NOT LIKE 'EFECTIVO%' AND TO_CHAR(fecha_de_aprobacion, 'YYYY/MM/DD') = $1
+    AND u.id_tipo_usuario = 3
     GROUP BY  p.metodo_pago`,
   GET_ALL_PAY_DIFF_CASH_TOTAL: `SELECT p.id_banco_destino, b.nombre AS nombre_banco, p.metodo_pago, 
     SUM(p.monto) AS total
@@ -2126,7 +2128,7 @@ ORDER BY fecha_liquidacion DESC;
     ORDER BY monto DESC
     LIMIT 1000) s)`,
   ADD_BRANCH_FOR_CONTRIBUTOR:
-    "INSERT INTO impuesto.registro_municipal (id_contribuyente, fecha_aprobacion, telefono_celular, email, denominacion_comercial, nombre_representante, actualizado, capital_suscrito, tipo_sociedad, estado_licencia, direccion, id_parroquia, es_monotributo) VALUES ($1, (NOW() - interval '4 hours'), $2, $3, $4, $5, true, $6, $7, $8, $9, $10, $11) RETURNING *",
+    "INSERT INTO impuesto.registro_municipal (id_contribuyente, fecha_aprobacion, telefono_celular, email, denominacion_comercial, nombre_representante, actualizado, capital_suscrito, tipo_sociedad, estado_licencia, direccion, id_parroquia, es_monotributo, objeto) VALUES ($1, (NOW() - interval '4 hours'), $2, $3, $4, $5, true, $6, $7, $8, $9, $10, $11, $12) RETURNING *",
   UPDATE_BRANCH_INFO: 'UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombre_representante = $2, telefono_celular = $3, email = $4, actualizado = $5, direccion = $6 WHERE referencia_municipal = $7 RETURNING *',
   UPDATE_LICENSE_STATUS: 'UPDATE impuesto.registro_municipal SET estado_licencia = $1 WHERE id_registro_municipal = $2',
   UPDATE_ECONOMIC_ACTIVITIES_FOR_BRANCH:
