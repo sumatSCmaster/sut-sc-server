@@ -3450,23 +3450,25 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   UPDATE_VEHICLE: `UPDATE impuesto.vehiculo SET id_marca_vehiculo = $1, id_subcategoria_vehiculo = $2, modelo_vehiculo = $3, placa_vehiculo = $4, anio_vehiculo = $5, color_vehiculo = $6, serial_carroceria_vehiculo = $7, tipo_carroceria_vehiculo = $8, tipo_combustible_vehiculo = $9 WHERE id_vehiculo = $10 RETURNING *`,
   DELETE_VEHICLE: `DELETE FROM impuesto.vehiculo WHERE id_vehiculo = $1`,
   UPDATE_VEHICLE_SUBCATEGORY: `UPDATE impuesto.subcategoria_vehiculo SET id_valor = $1, tarifa = $2, descripcion = $3, id_categoria_vehiculo = $4 WHERE id_subcategoria_vehiculo = $5 RETURNING *`,
-  GET_VEHICLES_BY_CONTRIBUTOR: `SELECT v.id_vehiculo AS id, mv.nombre AS marca, sv.id_subcategoria_vehiculo AS subcategoria, v.modelo_vehiculo AS modelo,
+  GET_VEHICLES_BY_CONTRIBUTOR: `SELECT v.id_vehiculo AS id, mv.nombre AS marca, sv.id_subcategoria_vehiculo AS idSubcategoria, sv.descripcion AS subcategoria, v.modelo_vehiculo AS modelo,
   v.placa_vehiculo AS placa, v.anio_vehiculo AS anio, v.color_vehiculo AS color, v.fecha_ultima_actualizacion AS "fechaUltimaActualizacion",
   v.serial_carroceria_vehiculo AS "serialCarroceria", v.tipo_carroceria_vehiculo AS "tipoCarroceria",
-  v.tipo_combustible_vehiculo AS "tipoCombustible" 
+  v.tipo_combustible_vehiculo AS "tipoCombustible", v.peso_vehiculo, v.cilindraje_vehiculo, v.serial_motor_vehiculo, cv.id_categoria_vehiculo AS idCategoria, cv.descripcion AS categoria
   FROM impuesto.marca_vehiculo mv 
   INNER JOIN impuesto.vehiculo v USING (id_marca_vehiculo) 
-  INNER JOIN impuesto.subcategoria_vehiculo sv USING (id_subcategoria_vehiculo) 
+  INNER JOIN impuesto.subcategoria_vehiculo sv USING (id_subcategoria_vehiculo)
+  INNER JOIN impuesto.categoria_vehiculo cv USING (id_categoria_vehiculo)
   JOIN impuesto.vehiculo_contribuyente USING(id_vehiculo)
   WHERE id_contribuyente = $1
   ORDER BY v.id_vehiculo`,
-  GET_VEHICLES_BY_MUNICIPAL_REFERENCE: `SELECT v.id_vehiculo AS id, mv.nombre AS marca, sv.id_subcategoria_vehiculo AS subcategoria, v.modelo_vehiculo AS modelo,
+  GET_VEHICLES_BY_MUNICIPAL_REFERENCE: `SELECT v.id_vehiculo AS id, mv.nombre AS marca, sv.id_subcategoria_vehiculo AS idSubcategoria, sv.descripcion AS subcategoria, v.modelo_vehiculo AS modelo,
   v.placa_vehiculo AS placa, v.anio_vehiculo AS anio, v.color_vehiculo AS color, v.fecha_ultima_actualizacion AS "fechaUltimaActualizacion",
   v.serial_carroceria_vehiculo AS "serialCarroceria", v.tipo_carroceria_vehiculo AS "tipoCarroceria",
-  v.tipo_combustible_vehiculo AS "tipoCombustible" 
+  v.tipo_combustible_vehiculo AS "tipoCombustible", v.peso_vehiculo, v.cilindraje_vehiculo, v.serial_motor_vehiculo, cv.id_categoria_vehiculo AS idCategoria, cv.descripcion AS categoria
   FROM impuesto.marca_vehiculo mv 
   INNER JOIN impuesto.vehiculo v USING (id_marca_vehiculo) 
-  INNER JOIN impuesto.subcategoria_vehiculo sv USING (id_subcategoria_vehiculo) 
+  INNER JOIN impuesto.subcategoria_vehiculo sv USING (id_subcategoria_vehiculo)
+  INNER JOIN impuesto.categoria_vehiculo cv USING (id_categoria_vehiculo)
   WHERE id_registro_municipal = $1
   ORDER BY v.id_vehiculo`,
   CHECK_VEHICLE_EXISTS_FOR_USER: `SELECT 1 FROM impuesto.vehiculo WHERE id_contribuyente = $1 AND placa_vehiculo = $2`,
