@@ -189,7 +189,7 @@ export const createVehicleForRim = async (payload: Vehicle, user: Usuario): Prom
     const response = (await client.query(queries.CREATE_VEHICLE, [marca, user.id, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible, peso, cilindraje, serialMotor])).rows[0];
     await client.query('COMMIT');
     const brand = (await client.query(queries.GET_VEHICLE_BRAND_BY_ID, [response.id_marca_vehiculo])).rows[0].descripcion;
-    const category = (await client.query(queries.GET_VEHICLE_SUBCATEGORY_BY_ID, [response.id_subcategoria_vehiculo])).rows[0].descripcion;
+    const responseVehicle = (await client.query(queries.GET_VEHICLE_BY_ID, [response.id_subcategoria_vehiculo])).rows[0].descripcion;
 
     const vehicle: Vehicle = {
       id: response.id_vehiculo,
@@ -201,10 +201,10 @@ export const createVehicleForRim = async (payload: Vehicle, user: Usuario): Prom
       serialCarroceria: response.serial_carroceria_vehiculo,
       tipoCarroceria: response.tipo_carroceria_vehiculo,
       tipoCombustible: response.tipo_combustible_vehiculo,
-      idSubcategoria: response.id_subcategoria_vehiculo || category.id_subcategoria_vehiculo,
-      subcategoria: category.subcategoria,
-      idCategoria: category.id_categoria_vehiculo,
-      categoria: category.categoria,
+      idSubcategoria: response.id_subcategoria_vehiculo || responseVehicle.id_subcategoria_vehiculo,
+      subcategoria: responseVehicle.subcategoria,
+      idCategoria: responseVehicle.id_categoria_vehiculo,
+      categoria: responseVehicle.categoria,
       fechaUltimaActualizacion: response.fecha_ultima_actualizacion,
       peso: response.peso_vehiculo, 
       cilindraje: response.cilindraje_vehiculo, 
@@ -233,7 +233,7 @@ export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Re
     await client.query(`INSERT INTO impuesto.vehiculo_contribuyente(id_vehiculo, id_contribuyente) VALUES($1, $2)`, [response.id_vehiculo, user.id])
     await client.query('COMMIT');
     const brand = (await client.query(queries.GET_VEHICLE_BRAND_BY_ID, [response.id_marca_vehiculo])).rows[0].descripcion;
-    const category = (await client.query(queries.GET_VEHICLE_CATEGORY_BY_SUBCATEGORIES, [response.id_subcategoria_vehiculo])).rows[0].descripcion;
+    const responseVehicle = (await client.query(queries.GET_VEHICLE_BY_ID, [response.id_subcategoria_vehiculo])).rows[0].descripcion;
 
     const vehicle: Vehicle = {
       id: response.id_vehiculo,
@@ -245,10 +245,10 @@ export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Re
       serialCarroceria: response.serial_carroceria_vehiculo,
       tipoCarroceria: response.tipo_carroceria_vehiculo,
       tipoCombustible: response.tipo_combustible_vehiculo,
-      idSubcategoria: response.id_subcategoria_vehiculo || category.id_subcategoria_vehiculo,
-      subcategoria: category.subcategoria,
-      idCategoria: category.id_categoria_vehiculo,
-      categoria: category.categoria,
+      idSubcategoria: response.id_subcategoria_vehiculo || responseVehicle.id_subcategoria_vehiculo,
+      subcategoria: responseVehicle.subcategoria,
+      idCategoria: responseVehicle.id_categoria_vehiculo,
+      categoria: responseVehicle.categoria,
       fechaUltimaActualizacion: response.fecha_ultima_actualizacion,
       peso: response.peso_vehiculo, 
       cilindraje: response.cilindraje_vehiculo, 
@@ -310,7 +310,7 @@ export const updateVehicle = async (payload: Vehicle, id: number): Promise<Respo
     await client.query('BEGIN');
     const response = (await client.query(queries.UPDATE_VEHICLE, [marca, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible, id])).rows[0];
     await client.query('COMMIT');
-    const category = (await client.query(queries.GET_VEHICLE_CATEGORY_BY_SUBCATEGORIES, [response.id_subcategoria_vehiculo])).rows[0].descripcion;
+    const responseVehicle = (await client.query(queries.GET_VEHICLE_BY_ID, [response.id_subcategoria_vehiculo])).rows[0].descripcion;
 
     const vehicle: Vehicle = {
       id: response.id_vehiculo,
@@ -319,10 +319,10 @@ export const updateVehicle = async (payload: Vehicle, id: number): Promise<Respo
       modelo: response.marca_vehiculo,
       color: response.color_vehiculo,
       anio: response.anio_vehiculo,
-      idSubcategoria: response.id_subcategoria_vehiculo || category.id_subcategoria_vehiculo,
-      subcategoria: category.subcategoria,
-      idCategoria: category.id_categoria_vehiculo,
-      categoria: category.categoria,
+      idSubcategoria: response.id_subcategoria_vehiculo || responseVehicle.id_subcategoria_vehiculo,
+      subcategoria: responseVehicle.subcategoria,
+      idCategoria: responseVehicle.id_categoria_vehiculo,
+      categoria: responseVehicle.categoria,
       serialCarroceria: response.serial_carroceria_vehiculo,
       tipoCarroceria: response.tipo_carroceria_vehiculo,
       tipoCombustible: response.tipo_combustible_vehiculo,
