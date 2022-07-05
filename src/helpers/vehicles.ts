@@ -183,10 +183,10 @@ export const getVehiclesByContributor = async (id?: number, rim?: number): Promi
  */
 export const createVehicleForRim = async (payload: Vehicle, user: Usuario): Promise<Response & { vehiculo: Vehicle }> => {
   const client = await pool.connect();
-  const { marca, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible } = payload;
+  const { marca, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible, peso, cilindraje, serialMotor } = payload;
   try {
     await client.query('BEGIN');
-    const response = (await client.query(queries.CREATE_VEHICLE, [marca, user.id, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible])).rows[0];
+    const response = (await client.query(queries.CREATE_VEHICLE, [marca, user.id, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible, peso, cilindraje, serialMotor])).rows[0];
     await client.query('COMMIT');
     const brand = (await client.query(queries.GET_VEHICLE_BRAND_BY_ID, [response.id_marca_vehiculo])).rows[0].descripcion;
     const subcategory = (await client.query(queries.GET_VEHICLE_SUBCATEGORY_BY_ID, [response.id_subcategoria_vehiculo])).rows[0].descripcion;
@@ -203,6 +203,9 @@ export const createVehicleForRim = async (payload: Vehicle, user: Usuario): Prom
       tipoCombustible: response.tipo_combustible_vehiculo,
       subcategoria: response.id_subcategoria_vehiculo || subcategory,
       fechaUltimaActualizacion: response.fecha_ultima_actualizacion,
+      peso: response.peso_vehiculo, 
+      cilindraje: response.cilindraje_vehiculo, 
+      serialMotor: response.serial_motor_vehiculo
     };
     return { status: 201, message: 'Vehiculo creado satisfactoriamente', vehiculo: vehicle };
   } catch (error) {
@@ -220,10 +223,10 @@ export const createVehicleForRim = async (payload: Vehicle, user: Usuario): Prom
 
 export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Response & { vehiculo: Vehicle }> => {
   const client = await pool.connect();
-  const { marca, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible } = payload;
+  const { marca, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible, peso, cilindraje, serialMotor } = payload;
   try {
     await client.query('BEGIN');
-    const response = (await client.query(queries.CREATE_VEHICLE, [marca, null, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible])).rows[0];
+    const response = (await client.query(queries.CREATE_VEHICLE, [marca, null, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible, peso, cilindraje, serialMotor])).rows[0];
     await client.query(`INSERT INTO impuesto.vehiculo_contribuyente(id_vehiculo, id_contribuyente) VALUES($1, $2)`, [response.id_vehiculo, user.id])
     await client.query('COMMIT');
     const brand = (await client.query(queries.GET_VEHICLE_BRAND_BY_ID, [response.id_marca_vehiculo])).rows[0].descripcion;
@@ -241,6 +244,9 @@ export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Re
       tipoCombustible: response.tipo_combustible_vehiculo,
       subcategoria: response.id_subcategoria_vehiculo || subcategory,
       fechaUltimaActualizacion: response.fecha_ultima_actualizacion,
+      peso: response.peso_vehiculo, 
+      cilindraje: response.cilindraje_vehiculo, 
+      serialMotor: response.serial_motor_vehiculo
     };
     return { status: 201, message: 'Vehiculo creado satisfactoriamente', vehiculo: vehicle };
   } catch (error) {
@@ -409,6 +415,9 @@ interface Vehicle {
   anio: number;
   color: string;
   fechaUltimaActualizacion: Date;
+  peso: string;
+  cilindraje: string;
+  serialMotor: string;
 }
 interface VehicleCategory {
   id: number;
