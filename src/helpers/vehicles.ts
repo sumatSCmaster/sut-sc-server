@@ -305,10 +305,10 @@ export const unlinkVehicle = async(idVehiculo: number) => {
  */
 export const updateVehicle = async (payload: Vehicle, id: number): Promise<Response & { vehiculo: Vehicle }> => {
   const client = await pool.connect();
-  const { peso, cilindraje, serialMotor, marca, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible } = payload;
+  const { peso, cilindraje, serialMotor, marca, subcategoria, modelo, placa, anio, color, serialCarroceria } = payload;
   try {
     await client.query('BEGIN');
-    const response = (await client.query(queries.UPDATE_VEHICLE, [marca, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible, id, peso, cilindraje, serialMotor])).rows[0];
+    const response = (await client.query(queries.UPDATE_VEHICLE, [marca, subcategoria, modelo, placa, anio, color, serialCarroceria, peso, cilindraje, serialMotor, id])).rows[0];
     await client.query('COMMIT');
     const responseVehicle = (await client.query(queries.GET_VEHICLE_BY_ID, [response.id_vehiculo])).rows[0];
 

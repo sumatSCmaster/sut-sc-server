@@ -3458,7 +3458,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   WHERE id_vehiculo = $1
   ORDER BY v.id_vehiculo`,
   CREATE_VEHICLE: `INSERT INTO impuesto.vehiculo (id_marca_vehiculo, id_registro_municipal, id_subcategoria_vehiculo, modelo_vehiculo, placa_vehiculo, anio_vehiculo, color_vehiculo, fecha_ultima_actualizacion, serial_carroceria_vehiculo, tipo_carroceria_vehiculo, tipo_combustible_vehiculo, peso_vehiculo, cilindraje_vehiculo, serial_motor_vehiculo) VALUES ($1, $2, $3, $4, $5, $6, $7, null, $8, $9, $10, $11, $12, $13) RETURNING *`,
-  UPDATE_VEHICLE: `UPDATE impuesto.vehiculo SET id_marca_vehiculo = $1, id_subcategoria_vehiculo = $2, modelo_vehiculo = $3, placa_vehiculo = $4, anio_vehiculo = $5, color_vehiculo = $6, serial_carroceria_vehiculo = $7, tipo_carroceria_vehiculo = $8, tipo_combustible_vehiculo = $9, peso_vehiculo = $11, cilindraje_vehiculo = $12, serial_motor_vehiculo = $13 WHERE id_vehiculo = $10 RETURNING *`,
+  UPDATE_VEHICLE: `UPDATE impuesto.vehiculo SET id_marca_vehiculo = $1, id_subcategoria_vehiculo = $2, modelo_vehiculo = $3, placa_vehiculo = $4, anio_vehiculo = $5, color_vehiculo = $6, serial_carroceria_vehiculo = $7, peso_vehiculo = $8, cilindraje_vehiculo = $9, serial_motor_vehiculo = $10 WHERE id_vehiculo = $11 RETURNING *`,
   DELETE_VEHICLE: `DELETE FROM impuesto.vehiculo WHERE id_vehiculo = $1`,
   UPDATE_VEHICLE_SUBCATEGORY: `UPDATE impuesto.subcategoria_vehiculo SET id_valor = $1, tarifa = $2, descripcion = $3, id_categoria_vehiculo = $4 WHERE id_subcategoria_vehiculo = $5 RETURNING *`,
   GET_VEHICLES_BY_CONTRIBUTOR: `SELECT v.id_vehiculo AS id, mv.nombre AS marca, sv.id_subcategoria_vehiculo AS idSubcategoria, sv.descripcion AS subcategoria, v.modelo_vehiculo AS modelo,
