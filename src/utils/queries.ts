@@ -1661,7 +1661,7 @@ ORDER BY razon_social;`,
     JOIN impuesto.subramo USING(id_subramo) 
     JOIN impuesto.ramo USING(id_ramo) 
     JOIN usuario ON pago.id_usuario = usuario.id_usuario 
-    WHERE fecha_de_aprobacion BETWEEN $1 AND $2 AND concepto = 'IMPUESTO'
+    WHERE TO_CHAR(fecha_de_aprobacion,'YYYY/MM/DD') = TO_CHAR($1,'YYYY/MM/DD') AND concepto = 'IMPUESTO'
     UNION ALL
     SELECT id_procedimiento, referencia, pago.monto AS monto_pagado, concepto, metodo_pago, impuesto.liquidacion.monto AS monto_liquidacion, banco.nombre AS banco, impuesto.ramo.descripcion AS ramo, usuario.nombre_completo AS usuario, (CASE WHEN usuario.id_tipo_usuario = 4 THEN 'Externo' ELSE 'Cajero' END) AS tipo_usuario
     FROM pago JOIN impuesto.solicitud ON id_procedimiento = id_solicitud 
@@ -1670,7 +1670,7 @@ ORDER BY razon_social;`,
     JOIN impuesto.subramo USING(id_subramo) 
     JOIN impuesto.ramo USING(id_ramo) 
     JOIN usuario ON pago.id_usuario = usuario.id_usuario 
-    WHERE fecha_de_aprobacion BETWEEN $1 AND $2 AND concepto = 'TRAMITE';`,
+    WHERE TO_CHAR(fecha_de_aprobacion,'YYYY/MM/DD') = TO_CHAR($1,'YYYY/MM/DD') AND concepto = 'TRAMITE';`,
   GET_TOTAL_ENTERED_DETAILED_BY_BRANCH:`WITH a AS (SELECT id_procedimiento, referencia, pago.monto AS monto_pagado, concepto, metodo_pago, impuesto.liquidacion.monto AS monto_liquidacion, banco.nombre AS banco, impuesto.ramo.descripcion AS ramo, usuario.nombre_completo AS usuario, (CASE WHEN usuario.id_tipo_usuario = 4 THEN 'Externo' ELSE 'Cajero' END) AS tipo_usuario 
     FROM pago JOIN impuesto.solicitud ON id_procedimiento = id_solicitud 
     JOIN impuesto.liquidacion USING(id_solicitud) 
@@ -1678,7 +1678,7 @@ ORDER BY razon_social;`,
     JOIN impuesto.subramo USING(id_subramo) 
     JOIN impuesto.ramo USING(id_ramo) 
     JOIN usuario ON pago.id_usuario = usuario.id_usuario 
-    WHERE fecha_de_aprobacion BETWEEN $1 AND $2 AND concepto = 'IMPUESTO'
+    WHERE TO_CHAR(fecha_de_aprobacion,'YYYY/MM/DD') = TO_CHAR($1,'YYYY/MM/DD') AND concepto = 'IMPUESTO'
     UNION ALL
     SELECT id_procedimiento, referencia, pago.monto AS monto_pagado, concepto, metodo_pago, impuesto.liquidacion.monto AS monto_liquidacion, banco.nombre AS banco, impuesto.ramo.descripcion AS ramo, usuario.nombre_completo AS usuario, (CASE WHEN usuario.id_tipo_usuario = 4 THEN 'Externo' ELSE 'Cajero' END) AS tipo_usuario
     FROM pago JOIN impuesto.solicitud ON id_procedimiento = id_solicitud 
@@ -1687,7 +1687,7 @@ ORDER BY razon_social;`,
     JOIN impuesto.subramo USING(id_subramo) 
     JOIN impuesto.ramo USING(id_ramo) 
     JOIN usuario ON pago.id_usuario = usuario.id_usuario 
-    WHERE fecha_de_aprobacion BETWEEN $1 AND $2 AND concepto = 'TRAMITE')
+    WHERE TO_CHAR(fecha_de_aprobacion,'YYYY/MM/DD') = TO_CHAR($1,'YYYY/MM/DD') AND concepto = 'TRAMITE')
 
     SELECT a.ramo, SUM(a.monto_pagado) AS monto_pagado, SUM(monto_liquidacion) AS monto_liquidacion FROM a GROUP BY ramo;`,
   //CIERRE DE CAJA
