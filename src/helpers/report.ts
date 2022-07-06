@@ -77,14 +77,15 @@ export const createRepotRMP = async (fecha) =>{
   }
 }
 
-export const createReportRID = async ({ from, to }) =>{
+export const createReportRID = async ({ fecha }) =>{
   const client = await pool.connect();
   try {
 
     const reportName = 'ReporteIngresadoDetallado.pdf'
+    console.log('PABLO REPORTE RID',fecha)
     
-    let result = (await client.query(queries.GET_ENTERED_DETAILED, [from, to])).rows;
-    let resultByBranch = (await client.query(queries.GET_TOTAL_ENTERED_DETAILED_BY_BRANCH, [from, to])).rows;
+    let result = (await client.query(queries.GET_ENTERED_DETAILED, [fecha])).rows;
+    let resultByBranch = (await client.query(queries.GET_TOTAL_ENTERED_DETAILED_BY_BRANCH, [fecha])).rows;
     let totalMontoPagado =  resultByBranch.map(d => +d.monto_pagado).reduce((prev,curr)=>{ return curr + prev },0)
     let totalMontoLiquidacion =  resultByBranch.map(d => +d.monto_liquidacion).reduce((prev,curr)=>{ return curr + prev },0)
 
