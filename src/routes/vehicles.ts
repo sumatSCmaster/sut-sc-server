@@ -72,7 +72,7 @@ router.post('/unlink', authenticate('jwt'), async (req: any, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-router.post('/', authenticate('jwt'), checkVehicleExists(), async (req: any, res) => {
+router.post('/', authenticate('jwt'), async (req: any, res) => {
   const { vehiculo: vehicle } = req.body;
   const [err, data] = await fulfill(createVehicle(vehicle, req.user));
   if (err) res.status(err.status).json(err);
