@@ -82,6 +82,7 @@ export const createReportRID = async ({ fecha }) =>{
   try {
 
     const reportName = 'ReporteIngresadoDetallado.pdf'
+    console.log('PABLO REPORTE RID',fecha)
     
     let result = (await client.query(queries.GET_ENTERED_DETAILED, [fecha])).rows;
     let resultByBranch = (await client.query(queries.GET_TOTAL_ENTERED_DETAILED_BY_BRANCH, [fecha])).rows;
