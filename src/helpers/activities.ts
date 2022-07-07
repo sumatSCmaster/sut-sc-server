@@ -323,9 +323,9 @@ export const generatePatentDocument = async ({branchId}) => {
           nombreRepresentante: referencia.nombre_representante,
           estadoLicencia: referencia.estado_licencia,
           objeto: referencia.objeto,
-          fechaTimbre: referencia.fechaTimbre,
-          bancoTimbre: referencia.bancoTimbre,
-          montoTimbre: referencia.montoTimbre
+          fechaTimbre: referencia.fecha_timbre,
+          bancoTimbre: referencia.banco_timbre,
+          montoTimbre: referencia.monto_timbre
         }
       },
       estado: 'finalizado',
