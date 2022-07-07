@@ -93,8 +93,7 @@ export const createReportRID = async ({ fecha }) =>{
       const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-RID.pug`), {
         institucion: 'HACIENDA',
         fecha: moment().format('DD/MM/YYYY'),
-        fecha_desde: moment(from).format('DD/MM/YYYY'),
-        fecha_hasta: moment(to).format('DD/MM/YYYY'),
+        fecha_desde: moment(fecha).format('DD/MM/YYYY'),
         totalMontoPagado,
         totalMontoLiquidacion,
         resultByBranch,
