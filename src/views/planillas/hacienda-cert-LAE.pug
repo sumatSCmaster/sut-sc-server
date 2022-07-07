@@ -87,6 +87,10 @@ html
                 p 
                   b DIRECCIÓN DEL ESTABLECIMIENTO: #{datos.usuario.contribuyente.direccion}
             div.tr
+              div(style={'-webkit-flex': 1, '-webkit-justify-content': 'start'}).td.border-right.border-bottom.center
+                p 
+                  b OBJETO DE ACTIVIDAD ECONÓMICA: #{datos.funcionario.objeto ? datos.funcionario.objeto : 'No Definido'}
+            div.tr
               div(style={'-webkit-flex': 1, '-webkit-justify-content': 'start' }).td.border-right.border-bottom.center
                 b NOTA: 
                 - var lic = 'Licencia de Actividades Económicas'
@@ -102,6 +106,8 @@ html
             div.tr
               div(style={'-webkit-flex': 1, 'text-align':'justify'}).td.border-right.border-bottom.center
                 p SE LES PARTICIPA QUE, VISTO QUE SE HAN CUMPLIDO CON LAS FORMALIDADES PREVISTAS EN LA ORDENANZA Nro. Nº 534 REFFORMA PARCIAL DE LA ORDENANZA QUE CREA Y REGULA EL IMPUESTO SOBRE ACTIVIDADES ECONÓMICAS DEL MUNICIPIO San Cristóbal DADA, FIRMADA Y SELLADA EN EL DESPACHO DEL ALCALDE, A LOS SEIS (06) DÍAS DEL MES DE NOVIEMBRE DE DOS MIL VEINTE EN EL MUNICIPIO SAN CRISTÓBAL ESTADO TACHIRA, ÁREA METROPOLITANA DE LA CIUDAD DE SAN CRISTÓBAL A LOS 15 DÍAS DEL MES DE DICIEMBRE DE 2013. AÑO 210 DE LA INDEPENDENCIA Y 161° DE LA FEDERACIÓN, SE HA DISPUESTO ACCEDER A LO SOLICITADO.
+        include timbreFiscal-AE.pug
+        +timbreFiscalAE(datos.funcionario.fechaTimbre,datos.funcionario.bancoTimbre,datos.funcionario.montoTimbre)
       div(style={'margin-top':"40%"}).center
         div.item-firma
           img(src="images/firma.png", style={'margin-top':'-90px', 'z-index':'1',width:'450px'}, alt="", srcset="")

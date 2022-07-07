@@ -105,12 +105,6 @@ body {
   height: 110px;
 }
 
-.timbre {
-  width: 100px;
-  height: 100px;
-  border: 1px solid black;
-}
-
 img#divider {
   width: 100%;
   height: 10px;
@@ -118,9 +112,11 @@ img#divider {
 
 .divider {
   height: 4px;
+  background-color: #1287ca;
   border: none;
 }
 
+#content {
   display: flex;
   display: -webkit-flex;
   align-items: center;
@@ -266,13 +262,17 @@ ul {
 
 .th {
   width: 100%;
+  background-color: #1287ca;
   padding: 5px 0px;
   font-size: 20px;
 }
+
 .th > p {
+  color: white;
   font-weight: bolder;
   margin: 0;
 }
+
 .tr {
   width: 100%;
   display: flex;
@@ -338,9 +338,11 @@ th {
 .table-normal caption {
   border: 1px solid #707f90;
   border-bottom: 0;
+  background-color: #fadc68;
 }
 
 .ticket {
+  border: 2px solid black;
   width: 75%;
   margin-top: 50px;
 }

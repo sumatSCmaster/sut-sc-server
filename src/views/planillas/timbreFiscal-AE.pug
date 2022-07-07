@@ -1,0 +1,19 @@
+mixin timbreFiscalAE(fecha,banco,monto)
+    div(style={'margin-top':"55%"})
+        div(style={border:'1px solid #000', width:'350px', padding:'1%', 'font-size':'16px'})
+            .tr
+                div(style={'width':"100%"}).td.center
+                    p
+                        b(style={'text-decoration': 'underline', 'font-size':'20px'}) Datos del Timbre Fiscal
+            .tr
+                .td
+                    p
+                        b Fecha: #{fecha ? moment(fecha).format('DD/MM/YYYY') : ''}
+            .tr
+                .td
+                    p
+                        b Banco: #{banco ? banco : ''}      
+            .tr
+                .td
+                    p
+                        b Monto: #{monto ? monto : ''}
