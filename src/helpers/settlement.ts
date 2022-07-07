@@ -3897,6 +3897,7 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
     const { usuario, funcionario } = data;
     const { actividadesEconomicas } = funcionario;
     const { contribuyente } = usuario;
+    console.log(funcionario, 'PRUEBAAA')
     const parish = (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [funcionario.parroquia])).rows[0]?.id;
     const registry = (
       await client.query(queries.ADD_BRANCH_FOR_CONTRIBUTOR, [
