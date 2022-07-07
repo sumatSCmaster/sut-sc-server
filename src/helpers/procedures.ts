@@ -776,7 +776,7 @@ const finishedProcedure = async (procedure, user, idUser) => {
     const nextEvent = await getNextEventForProcedure(procedure, client);
     await client.query(queries.UPDATE_UNAPPROVED_STATE_FOR_PROCEDURE, [false, procedure.idTramite]);
     await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, null, null, null]);
-    // await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, `cambio de estado ${nextEvent}`]);
+    await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, `cambio de estado ${nextEvent}`, 'TRAMITE']);
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
     const tramite: Partial<Tramite> = {
       id: response.id,
@@ -881,7 +881,7 @@ export const processProcedure = async (procedure, user: Usuario, idUser) => {
       }
       respState = await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent, datos || null, costo || null, null]);
     }
-    // await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, `cambio de estado ${nextEvent}`]);
+    await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, `cambio de estado ${typeof nextEvent === 'string' ? nextEvent : nextEvent[procedure.aprobado]}`, 'TRAMITE']);
     await client.query('COMMIT');
     const response = (await client.query(queries.GET_PROCEDURE_BY_ID, [procedure.idTramite])).rows[0];
     const tramite: Partial<Tramite> = {
@@ -979,7 +979,7 @@ export const addPaymentProcedure = async (procedure, user: Usuario, idUser) => {
       aprobado: response.aprobado,
     };
     await sendNotification(user, `Se añadieron los datos de pago de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
-    // await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, `cambio de estado ${nextEvent}`]);
+    await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, `cambio de estado ${nextEvent}`, 'TRAMITE']);
     client.query('COMMIT');
     sendEmail({
       ...tramite,
@@ -1110,7 +1110,7 @@ export const reviseProcedure = async (procedure, user: Usuario, idUser) => {
       aprobado: response.aprobado,
     };
     await sendNotification(user, `Se realizó la revisión de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
-    // await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, `cambio de estado ${nextEvent}`]);
+    await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, `cambio de estado ${typeof nextEvent === 'string' ? nextEvent : nextEvent[aprobado]}`, 'TRAMITE']);
     client.query('COMMIT');
     sendEmail({
       ...tramite,
@@ -1205,7 +1205,7 @@ export const inspectProcedure = async (procedure, user: Usuario, idUser) => {
       aprobado: response.aprobado,
     };
     await sendNotification(user, `Se realizó la inspección de un trámite de tipo ${tramite.nombreTramiteLargo}`, 'UPDATE_PROCEDURE', 'TRAMITE', tramite, client);
-    // await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, `cambio de estado ${nextEvent}`]);
+    await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, `cambio de estado ${typeof nextEvent === 'string' ? nextEvent : nextEvent[aprobado]}`, 'TRAMITE']);
     client.query('COMMIT');
     sendEmail({
       ...tramite,
