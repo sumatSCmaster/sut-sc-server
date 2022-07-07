@@ -2003,13 +2003,10 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
           const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
           const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
           const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
-          const responsable = (await client.query(queries.GET_APPLICATION_CREATOR_BY_MOVEMENT, [el.id_solicitud])).rows[0]?.nombre_completo;
           const type = el.tipo_solicitud;
-          console.log(responsable, 'MASTER')
 
           return {
             id: el.id_solicitud,
-            responsable,
             usuario: user,
             contribuyente: structureContributor(docs),
             aprobado: el.aprobado,
@@ -2101,6 +2098,7 @@ const getApplicationInstancesPayload = async ({ application, contributor, typeUs
     const liquidaciones = await Promise.all(liquidacionesD.rows.filter((el) => el.tipoProcedimiento !== 'MULTAS').map((el) => getSettlementFormat(el, type, client)));
     const multas = await Promise.all(liquidacionesD.rows.filter((el) => el.tipoProcedimiento === 'MULTAS').map((el) => getFiningFormat(el, type, client)));
     const creditoFiscalRetencion = (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, rim])).rows[0]?.credito || 0;
+    const responsable = (await client.query(queries.GET_APPLICATION_CREATOR_BY_MOVEMENT, [el.id_solicitud])).rows[0]?.nombre_completo;
 
     return {
       id: application.id_solicitud,
@@ -2108,6 +2106,7 @@ const getApplicationInstancesPayload = async ({ application, contributor, typeUs
       contribuyente: structureContributor(docs),
       aprobado: application.aprobado,
       creditoFiscal,
+      responsable,
       creditoFiscalRetencion,
       fecha: application.fecha,
       documento: docs.documento,
