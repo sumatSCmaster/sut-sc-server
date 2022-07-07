@@ -114,7 +114,7 @@ export const updateContributorActivities = async ({ branchId, activities, branch
     console.log('PABLO branchId=',branchId, branchInfo)
     const updatedRegistry = (
       await client.query(
-        'UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombre_representante = $2, telefono_celular = $3, email = $4, estado_licencia = $5, tipo_sociedad = $6, capital_suscrito = $7, es_monotributo = $8, objeto = $10, fechaTimbre = $11, bancoTimbre = $12, montoTimbre = $13 WHERE id_registro_municipal = $9 RETURNING *',
+        'UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombre_representante = $2, telefono_celular = $3, email = $4, estado_licencia = $5, tipo_sociedad = $6, capital_suscrito = $7, es_monotributo = $8, objeto = $10, fecha_timbre = $11, banco_timbre = $12, monto_timbre = $13 WHERE id_registro_municipal = $9 RETURNING *',
         [denomComercial, nombreRepresentante, telefonoMovil, email, estadoLicencia, tipoSociedad, capitalSuscrito, esMonotributo, branchId, objeto, fechaTimbre, bancoTimbre, montoTimbre]
       )
     ).rows[0];
