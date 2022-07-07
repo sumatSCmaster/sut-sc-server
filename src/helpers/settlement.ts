@@ -2005,6 +2005,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
           const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
           const responsable = (await client.query(queries.GET_APPLICATION_CREATOR_BY_MOVEMENT, [el.id_solicitud])).rows[0]?.nombre_completo;
           const type = el.tipo_solicitud;
+          console.log(responsable, 'MASTER')
 
           return {
             id: el.id_solicitud,
