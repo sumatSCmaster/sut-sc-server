@@ -108,13 +108,14 @@ export const getMunicipalReferenceActivities = async ({ docType, document }) => 
  */
 export const updateContributorActivities = async ({ branchId, activities, branchInfo, servicioMunicipal }) => {
   const client = await pool.connect();
-  const { denomComercial, nombreRepresentante, telefonoMovil, email, estadoLicencia, tipoSociedad, esMonotributo, capitalSuscrito, actualizado, otrosImpuestos, objeto } = branchInfo;
+  const { denomComercial, nombreRepresentante, telefonoMovil, email, estadoLicencia, tipoSociedad, esMonotributo, capitalSuscrito, actualizado, otrosImpuestos, objeto, fechaTimbre, bancoTimbre, montoTimbre } = branchInfo;
   try {
     await client.query('BEGIN');
+    console.log('PABLO branchId=',branchId, branchInfo)
     const updatedRegistry = (
       await client.query(
-        'UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombre_representante = $2, telefono_celular = $3, email = $4, estado_licencia = $5, tipo_sociedad = $6, capital_suscrito = $7, es_monotributo = $8, objeto = $10  WHERE id_registro_municipal = $9 RETURNING *',
-        [denomComercial, nombreRepresentante, telefonoMovil, email, estadoLicencia, tipoSociedad, capitalSuscrito, esMonotributo, branchId, objeto]
+        'UPDATE impuesto.registro_municipal SET denominacion_comercial = $1, nombre_representante = $2, telefono_celular = $3, email = $4, estado_licencia = $5, tipo_sociedad = $6, capital_suscrito = $7, es_monotributo = $8, objeto = $10, fecha_timbre = $11, banco_timbre = $12, monto_timbre = $13 WHERE id_registro_municipal = $9 RETURNING *',
+        [denomComercial, nombreRepresentante, telefonoMovil, email, estadoLicencia, tipoSociedad, capitalSuscrito, esMonotributo, branchId, objeto, fechaTimbre, bancoTimbre, montoTimbre]
       )
     ).rows[0];
 
@@ -322,9 +323,9 @@ export const generatePatentDocument = async ({branchId}) => {
           nombreRepresentante: referencia.nombre_representante,
           estadoLicencia: referencia.estado_licencia,
           objeto: referencia.objeto,
-          fechaTimbre: referencia.fechaTimbre,
-          bancoTimbre: referencia.bancoTimbre,
-          montoTimbre: referencia.montoTimbre
+          fechaTimbre: referencia.fecha_timbre,
+          bancoTimbre: referencia.banco_timbre,
+          montoTimbre: referencia.monto_timbre
         }
       },
       estado: 'finalizado',
