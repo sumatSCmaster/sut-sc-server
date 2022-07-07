@@ -2028,7 +2028,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
                   return {
                     id: el.id_liquidacion,
                     ramo: el.tipoProcedimiento,
-                    fecha: el.datos.fecha,
+                    fecha: el.datos?.fecha,
                     monto: +el.monto,
                     montoPetro: type !== 'RETENCION' ? +el.monto_petro : null,
                     esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
@@ -2045,7 +2045,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
                   return {
                     id: el.id_liquidacion,
                     ramo: el.tipoProcedimiento,
-                    fecha: el.datos.fecha,
+                    fecha: el.datos?.fecha,
                     monto: +el.monto,
                     montoPetro: type !== 'RETENCION' ? +el.monto_petro : null,
                     descripcion: el.datos.descripcion,
@@ -2098,6 +2098,7 @@ const getApplicationInstancesPayload = async ({ application, contributor, typeUs
     const liquidaciones = await Promise.all(liquidacionesD.rows.filter((el) => el.tipoProcedimiento !== 'MULTAS').map((el) => getSettlementFormat(el, type, client)));
     const multas = await Promise.all(liquidacionesD.rows.filter((el) => el.tipoProcedimiento === 'MULTAS').map((el) => getFiningFormat(el, type, client)));
     const creditoFiscalRetencion = (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, rim])).rows[0]?.credito || 0;
+    const responsable = (await client.query(queries.GET_APPLICATION_CREATOR_BY_MOVEMENT, [application.id_solicitud])).rows[0]?.nombre_completo;
 
     return {
       id: application.id_solicitud,
@@ -2105,6 +2106,7 @@ const getApplicationInstancesPayload = async ({ application, contributor, typeUs
       contribuyente: structureContributor(docs),
       aprobado: application.aprobado,
       creditoFiscal,
+      responsable,
       creditoFiscalRetencion,
       fecha: application.fecha,
       documento: docs.documento,
