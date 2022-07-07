@@ -3908,6 +3908,10 @@ export const approveContributorAELicense = async ({ data, client }: { data: any;
         funcionario.direccion,
         parish,
         funcionario.esMonotributo || false,
+        funcionario.objeto,
+        funcionario.montoTimbre,
+        funcionario.fechaTimbre,
+        funcionario.bancoTimbre
       ])
     ).rows[0];
     data.funcionario.referenciaMunicipal = registry.referencia_municipal;
