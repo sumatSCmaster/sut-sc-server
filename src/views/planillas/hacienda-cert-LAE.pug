@@ -17,9 +17,7 @@ html
       img#divider(src='images/franja-2.0.png')
       div#content
         div#planilla(style={'font-size':'13px'})
-          div(style={'margin-bottom':'25px', 'margin-top':'25px', 'width':'100%', 'display': '-webkit-flex', '-webkit-align-items': 'end', '-webkit-justify-content': 'start'})
-            p San Cristóbal, #{moment(fecha).format('DD/MM/YYYY')}
-          div(style={'margin-bottom':'25px', 'margin-top':'50px', 'width':'100%', 'display': '-webkit-flex', '-webkit-align-items': 'end', 'justify-content':'space-around', '-webkit-justify-content': 'space-around'})
+          div(style={'margin-bottom':'25px', 'margin-top':'15px', 'width':'100%', 'display': '-webkit-flex', '-webkit-align-items': 'end', 'justify-content':'space-around', '-webkit-justify-content': 'space-around'})
             div(style={height:"100px", width: '100px'})
             div(style={'margin-bottom':'20px'})
               case datos.usuario.estadoLicencia
@@ -113,5 +111,4 @@ html
           img(src="images/firma.png", style={'margin-top':'-90px', 'z-index':'1',width:'450px'}, alt="", srcset="")
           img(src="images/firma-jefe-divicion-rentas.png", style={'margin-top':'-90px', 'z-index':'1',width:'450px'}, alt="", srcset="")
           img(src="images/firma-jefe-divicion-ae.png", style={'margin-top':'-90px', 'z-index':'1',width:'450px'}, alt="", srcset="")
-      p.center av Alberto Carnevalli local nro s/n urb merida San Cristobal Tachira zona postal 5001
       include footer.pug
