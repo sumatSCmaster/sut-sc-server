@@ -11,7 +11,7 @@ mixin timbreFiscalAE(fecha,banco,monto)
                         b Fecha
                 .td
                     p
-                        b #{fecha ? fecha : ''}
+                        b #{fecha ? moment(fecha).format('DD/MM/YYYY') : ''}
             .tr
                 .td
                     p
