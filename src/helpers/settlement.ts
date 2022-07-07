@@ -2028,7 +2028,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
                   return {
                     id: el.id_liquidacion,
                     ramo: el.tipoProcedimiento,
-                    fecha: el.datos.fecha,
+                    fecha: el.datos?.fecha,
                     monto: +el.monto,
                     montoPetro: type !== 'RETENCION' ? +el.monto_petro : null,
                     esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
