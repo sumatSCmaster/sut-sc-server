@@ -277,7 +277,7 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
     // if (!codIsApproved) throw new Error('El código ingresado no pertenece a un trámite aprobado de solvencia de inmuebles');
     const estate = (await client.query(queries.CREATE_BARE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, dirDoc])).rows[0];
     mainLogger.info(estate);
-    await client.query(queries.ADD_MOVEMENT, [estate.id, userId, 'inmueble_registrado', 'INMUEBLE']);
+    // await client.query(queries.ADD_MOVEMENT, [estate.id, userId, 'inmueble_registrado', 'INMUEBLE']);
     await Promise.all(
       avaluos.map((row) => {
         return client.query(queries.INSERT_ESTATE_VALUE, [estate.id, row.avaluo, row.anio]);
@@ -304,7 +304,7 @@ export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosC
   try {
     await client.query('BEGIN');
     let estate = (await client.query(queries.GET_ESTATE_BY_CODCAT, [codCat])).rows[0];
-    const movimiento = await client.query(queries.ADD_MOVEMENT, [id, userId, 'inmueble_modificado', 'INMUEBLE']);
+    // const movimiento = await client.query(queries.ADD_MOVEMENT, [id, userId, 'inmueble_modificado', 'INMUEBLE']);
     if (estate.enlazado && tipoInmueble === 'RESIDENCIAL') {
       const commercialEstates = await client.query(queries.CHECK_IF_HAS_COMMERCIAL_ESTATES, [estate.id_registro_municipal]);
       const allEstates = await client.query(queries.COUNT_ESTATES, [estate.id_registro_municipal]);
