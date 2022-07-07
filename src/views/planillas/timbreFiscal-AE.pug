@@ -1,5 +1,5 @@
 mixin timbreFiscalAE(fecha,banco,monto)
-    div(style={'margin-top':"50%"})
+    div(style={'margin-top':"55%"})
         div(style={border:'1px solid #000', width:'350px', padding:'1%', 'font-size':'16px'})
             .tr
                 div(style={'width':"100%"}).td.center
@@ -8,21 +8,12 @@ mixin timbreFiscalAE(fecha,banco,monto)
             .tr
                 .td
                     p
-                        b Fecha
-                .td
-                    p
-                        b #{fecha ? moment(fecha).format('DD/MM/YYYY') : ''}
+                        b Fecha: #{fecha ? moment(fecha).format('DD/MM/YYYY') : ''}
             .tr
                 .td
                     p
-                        b Banco
-                .td
-                    p
-                        b #{banco ? banco : ''}      
+                        b Banco: #{banco ? banco : ''}      
             .tr
                 .td
                     p
-                        b Monto
-                .td
-                    p
-                        b #{monto ? monto : ''}
+                        b Monto: #{monto ? monto : ''}
