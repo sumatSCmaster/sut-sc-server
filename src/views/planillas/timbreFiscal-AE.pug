@@ -1,28 +1,28 @@
 mixin timbreFiscalAE(fecha,banco,monto)
-    div(style={'margin-top':"5%"})
-        div(style={border:'1px solid #000', width:'40%', padding:'1%', 'font-size':'16px'})
+    div(style={'margin-top':"20%"})
+        div(style={border:'1px solid #000', width:'350px', padding:'1%', 'font-size':'16px'})
             .tr
-            div(style={'width':"100%"}).td.center
-                p
-                b(style={'text-decoration': 'underline', 'font-size':'20px'}) Datos del Timbre Fiscal
+                div(style={'width':"100%"}).td.center
+                    p
+                        b(style={'text-decoration': 'underline', 'font-size':'20px'}) Datos del Timbre Fiscal
             .tr
-            .td
-                p
-                b Fecha
-            .td
-                p
-                    b #{fecha ? fecha : ''}
+                .td
+                    p
+                        b Fecha
+                .td
+                    p
+                        b #{fecha ? fecha : ''}
             .tr
-            .td
-                p
-                b Banco
-            .td
-                p
-                    b #{banco ? banco : ''}      
+                .td
+                    p
+                        b Banco
+                .td
+                    p
+                        b #{banco ? banco : ''}      
             .tr
-            .td
-                p
-                b Monto
-            .td
-                p
-                    b #{monto ? monto : ''}
+                .td
+                    p
+                        b Monto
+                .td
+                    p
+                        b #{monto ? monto : ''}
