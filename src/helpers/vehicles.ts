@@ -309,7 +309,6 @@ export const updateVehicle = async (payload: Vehicle, id: number): Promise<Respo
   const { peso, cilindraje, serialMotor, marca, subcategoria, modelo, placa, anio, color, serialCarroceria } = payload;
   try {
     await client.query('BEGIN');
-    console.log('PROBANDOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO')
     const response = (await client.query(queries.UPDATE_VEHICLE, [marca, subcategoria, modelo, placa, anio, color, serialCarroceria, peso, cilindraje, serialMotor, id])).rows[0];
     await client.query('COMMIT');
     const responseVehicle = (await client.query(queries.GET_VEHICLE_BY_ID, [response.id_vehiculo])).rows[0];
@@ -318,7 +317,7 @@ export const updateVehicle = async (payload: Vehicle, id: number): Promise<Respo
       id: response.id_vehiculo,
       placa: response.placa_vehiculo,
       marca: response.id_marca_vehiculo,
-      modelo: response.marca_vehiculo,
+      modelo: response.modelo_vehiculo,
       color: response.color_vehiculo,
       anio: response.anio_vehiculo,
       idSubcategoria: response.id_subcategoria_vehiculo || responseVehicle.id_subcategoria_vehiculo,
