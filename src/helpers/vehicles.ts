@@ -5,6 +5,7 @@ import { ClientBase, PoolClient } from 'pg';
 import { Usuario } from '@root/interfaces/sigt';
 import { mainLogger } from '@utils/logger';
 import Redis from '@utils/redis';
+import moment from 'moment';
 
 const pool = Pool.getInstance();
 
@@ -366,6 +367,39 @@ export const deleteVehicle = async (id: number): Promise<Response> => {
       error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || error.message || 'Error al eliminar vehiculo',
     };
+  } finally {
+    client.release();
+  }
+};
+
+export const updateVehicleDate = async ({ id, date, rim, taxpayer }) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const fromDate = moment(date).subtract(1, 'years');
+    const fromEndDate = fromDate.clone().endOf('month').format('MM-DD-YYYY');
+    const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [null, taxpayer])).rows[0];
+    const rimData = (await client.query(queries.GET_RIM_DATA, [rim])).rows[0];
+    const ghostSettlement = (
+      await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+        application.id_solicitud,
+        0.0,
+        'VH',
+        'Pago ordinario',
+        { year: fromDate.year(), desglose: [{ vehiculo: id }] },
+        fromEndDate,
+        rimData?.id || null,
+      ])
+    ).rows[0];
+    (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, 'ingresardatos_pi'])).rows[0].state;
+    const state = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, 'aprobacioncajero_pi'])).rows[0].state;
+    await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [fromDate.format('MM-DD-YYYY'), ghostSettlement.id_liquidacion]);
+    let updt = await client.query('UPDATE impuesto.vehiculo SET id_liquidacion_fecha_inicio = $1 WHERE id_vehiculo = $2', [ghostSettlement.id_liquidacion, id]);
+    await client.query('COMMIT');
+    return { status: 200, message: updt.rowCount > 0 ? 'Fecha enlazada' : 'No se actualizo un vehiculo' };
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
   } finally {
     client.release();
   }

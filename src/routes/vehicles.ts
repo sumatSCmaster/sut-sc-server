@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authenticate } from 'passport';
 import { getIdByRif, getIdByRim } from '@utils/user';
 import { fulfill } from '@utils/resolver';
-import { getVehiclesByContributor, getBrands, getVehicleTypes, createVehicle, updateVehicle, deleteVehicle, checkVehicleExists, createVehicleForRim, linkVehicle, unlinkVehicle } from '@helpers/vehicles';
+import { getVehiclesByContributor, getBrands, getVehicleTypes, createVehicle, updateVehicle, deleteVehicle, checkVehicleExists, createVehicleForRim, linkVehicle, unlinkVehicle, updateVehicleDate } from '@helpers/vehicles';
 
 const router = Router();
  
@@ -93,5 +93,11 @@ router.delete('/:id', authenticate('jwt'), async (req: any, res) => {
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
 });
+
+router.patch('/date', authenticate('jwt'), async (req: any, res) => {
+  const [error, data] = await fulfill(updateVehicleDate(req.body));
+  if (error) res.status(500).json(error);
+  if (data) res.status(data.status).json(data);
+})
 
 export default router;
