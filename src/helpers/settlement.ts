@@ -433,8 +433,9 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         const lastVHSettlement = test?.datos?.year;
         const VHDate = moment([lastVHSettlement, 0, 1]);
         const interpolation = now.diff(VHDate, 'years');
-        console.log(lastVHSettlement, test, VHDate.format('YYYY-MM-DD'), now.format('YYYY-MM-DD'), interpolation);
+        // console.log(lastVHSettlement, test, VHDate.format('YYYY-MM-DD'), now.format('YYYY-MM-DD'), interpolation);
         const deuda = interpolation ? new Array(interpolation).fill({year: null}).map((_, index) => ({year: now.year() - index})) : null;
+        console.log(deuda, 'MASTER');
         return deuda ? {id: vh.id_vehiculo, vehiculo: vh, tarifa: (await client.query('SELECT tarifa FROM impuesto.vehiculo JOIN impuesto.subcategoria_vehiculo USING(id_subcategoria_vehiculo) WHERE id_vehiculo = $1', [vh.id_vehiculo])).rows[0]?.tarifa, deuda } : null
       }) : undefined};
     //IU
