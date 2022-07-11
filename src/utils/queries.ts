@@ -3484,7 +3484,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   INNER JOIN impuesto.subcategoria_vehiculo sv USING (id_subcategoria_vehiculo)
   INNER JOIN impuesto.categoria_vehiculo cv USING (id_categoria_vehiculo)
   LEFT JOIN impuesto.liquidacion l ON v.id_liquidacion_fecha_inicio = l.id_liquidacion
-  WHERE id_registro_municipal = $1
+  WHERE v.id_registro_municipal = $1
   ORDER BY v.id_vehiculo`,
   CHECK_VEHICLE_EXISTS_FOR_USER: `SELECT 1 FROM impuesto.vehiculo WHERE id_contribuyente = $1 AND placa_vehiculo = $2`,
   CHECK_VEHICLE_EXISTS: `SELECT 1 FROM impuesto.vehiculo WHERE LOWER(placa_vehiculo) = LOWER($1)`,
