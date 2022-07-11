@@ -356,7 +356,7 @@ export const createLicenseForContributor = async(tipoDocumento, documento, refer
     const currentReferenciaMunicipal = referenciaMunicipal || (await newBranchConsecutive(client));
     const branchExists = (await client.query(queries.BRANCH_EXISTS, [currentReferenciaMunicipal])).rows[0];
     if (branchExists) throw {status: 400, message: 'La sucursal ya esta registrada'};
-    const branch = (await client.query(queries.ADD_BRANCH_FOR_CONTRIBUTOR, [contributorExists.id_contribuyente, datos.telefono, datos.email, datos.denominacionComercial, datos.nombreRepresentante, datos.capitalSuscrito, datos.tipoSociedadContrib, datos.estadoLicencia, datos.direccion, datos.parroquia, false])).rows[0];
+    const branch = (await client.query(queries.ADD_BRANCH_FOR_CONTRIBUTOR, [contributorExists.id_contribuyente, datos.telefono, datos.email, datos.denominacionComercial, datos.nombreRepresentante, datos.capitalSuscrito, datos.tipoSociedadContrib, datos.estadoLicencia, datos.direccion, datos.parroquia, false, null, null, null, null])).rows[0];
     await client.query(queries.MODIFY_BRANCH_REFERENCE, [currentReferenciaMunicipal, branch.id_registro_municipal])
     return {status: 200, message: 'Sucursal registrada satisfactoriamente'}
   } catch(e) {
