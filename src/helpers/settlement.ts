@@ -432,6 +432,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         const lastVHSettlement = (await client.query(`SELECT * FROM impuesto.liquidacion WHERE id_subramo = (SELECT id_subramo FROM impuesto.subramo JOIN impuesto.ramo USING(id_ramo) WHERE descripcion_corta = $1) AND (datos#>>'{desglose, 0, vehiculo}')::INT = $2 ORDER BY datos#>>'{fecha, year}' DESC LIMIT 1`)).rows[0]?.datos?.fecha?.year;
         const VHDate = moment([lastVHSettlement, 0, 1]);
         const interpolation = now.diff(VHDate, 'years');
+        console.log(VHDate.format('YYYY-MM-DD'), now.format('YYYY-MM-DD'), interpolation);
         const deuda = interpolation ? new Array(interpolation).fill({year: null}).map((_, index) => ({year: now.year() - index})) : null;
         return deuda ? {id: vh.id_vehiculo, vehiculo: vh, tarifa: (await client.query('SELECT tarifa FROM impuesto.vehiculo JOIN impuesto.subcategoria_vehiculo USING(id_subcategoria) WHERE id_vehiculo = $1', [vh.id_vehiculo])).rows[0]?.tarifa, deuda } : null
       }) : undefined};
