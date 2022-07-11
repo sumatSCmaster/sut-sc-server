@@ -3466,22 +3466,24 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   GET_VEHICLES_BY_CONTRIBUTOR: `SELECT v.id_vehiculo AS id, mv.nombre AS marca, sv.id_subcategoria_vehiculo AS idSubcategoria, sv.descripcion AS subcategoria, v.modelo_vehiculo AS modelo,
   v.placa_vehiculo AS placa, v.anio_vehiculo AS anio, v.color_vehiculo AS color, v.fecha_ultima_actualizacion AS "fechaUltimaActualizacion",
   v.serial_carroceria_vehiculo AS "serialCarroceria", v.tipo_carroceria_vehiculo AS "tipoCarroceria",
-  v.tipo_combustible_vehiculo AS "tipoCombustible", v.peso_vehiculo AS peso, v.cilindraje_vehiculo AS cilindraje, v.serial_motor_vehiculo AS "serialMotor", cv.id_categoria_vehiculo AS idCategoria, cv.descripcion AS categoria
-  FROM impuesto.marca_vehiculo mv 
+  v.tipo_combustible_vehiculo AS "tipoCombustible", v.peso_vehiculo AS peso, v.cilindraje_vehiculo AS cilindraje, v.serial_motor_vehiculo AS "serialMotor", cv.id_categoria_vehiculo AS idCategoria, cv.descripcion AS categoria, l.datos#>>'{year}' AS "fechaInicio"
+  FROM impuesto.marca_vehiculo mv
   INNER JOIN impuesto.vehiculo v USING (id_marca_vehiculo) 
   INNER JOIN impuesto.subcategoria_vehiculo sv USING (id_subcategoria_vehiculo)
   INNER JOIN impuesto.categoria_vehiculo cv USING (id_categoria_vehiculo)
   JOIN impuesto.vehiculo_contribuyente USING(id_vehiculo)
+  LEFT JOIN impuesto.liquidacion l ON v.id_liquidacion_fecha_inicio = l.id_liquidacion
   WHERE id_contribuyente = $1
   ORDER BY v.id_vehiculo`,
   GET_VEHICLES_BY_MUNICIPAL_REFERENCE: `SELECT v.id_vehiculo AS id, mv.nombre AS marca, sv.id_subcategoria_vehiculo AS idSubcategoria, sv.descripcion AS subcategoria, v.modelo_vehiculo AS modelo,
   v.placa_vehiculo AS placa, v.anio_vehiculo AS anio, v.color_vehiculo AS color, v.fecha_ultima_actualizacion AS "fechaUltimaActualizacion",
   v.serial_carroceria_vehiculo AS "serialCarroceria", v.tipo_carroceria_vehiculo AS "tipoCarroceria",
-  v.tipo_combustible_vehiculo AS "tipoCombustible", v.peso_vehiculo AS peso, v.cilindraje_vehiculo AS cilindraje, v.serial_motor_vehiculo AS "serialMotor", cv.id_categoria_vehiculo AS idCategoria, cv.descripcion AS categoria
+  v.tipo_combustible_vehiculo AS "tipoCombustible", v.peso_vehiculo AS peso, v.cilindraje_vehiculo AS cilindraje, v.serial_motor_vehiculo AS "serialMotor", cv.id_categoria_vehiculo AS idCategoria, cv.descripcion AS categoria, l.datos#>>'{year}' AS "fechaInicio"
   FROM impuesto.marca_vehiculo mv 
   INNER JOIN impuesto.vehiculo v USING (id_marca_vehiculo) 
   INNER JOIN impuesto.subcategoria_vehiculo sv USING (id_subcategoria_vehiculo)
   INNER JOIN impuesto.categoria_vehiculo cv USING (id_categoria_vehiculo)
+  LEFT JOIN impuesto.liquidacion l ON v.id_liquidacion_fecha_inicio = l.id_liquidacion
   WHERE id_registro_municipal = $1
   ORDER BY v.id_vehiculo`,
   CHECK_VEHICLE_EXISTS_FOR_USER: `SELECT 1 FROM impuesto.vehiculo WHERE id_contribuyente = $1 AND placa_vehiculo = $2`,
