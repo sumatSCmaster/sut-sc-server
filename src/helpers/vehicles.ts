@@ -385,7 +385,7 @@ export const updateVehicleDate = async ({ id, date, rim, taxpayer }) => {
         0.0,
         'VH',
         'Pago ordinario',
-        { year: fromDate.year(), desglose: [{ vehiculo: id }] },
+        { fecha: {year: fromDate.year()}, desglose: [{ vehiculo: id }] },
         fromEndDate,
         rimData?.id || null,
       ])

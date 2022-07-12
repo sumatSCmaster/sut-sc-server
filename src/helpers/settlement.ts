@@ -430,12 +430,10 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       // const dateInterpolationSM = Math.floor(now.diff(SMDate, 'M'));
       VH = vehicles.length > 0 ? (await Promise.all(vehicles.map(async vh => {
         const test = (await client.query(`SELECT * FROM impuesto.liquidacion WHERE id_subramo = (SELECT id_subramo FROM impuesto.subramo JOIN impuesto.ramo USING(id_ramo) WHERE descripcion_corta = $1) AND (datos#>>'{desglose, 0, vehiculo}')::INT = $2 ORDER BY datos#>>'{fecha, year}' DESC LIMIT 1`, ['VH', vh.id_vehiculo])).rows[0]
-        const lastVHSettlement = test?.datos?.year;
+        const lastVHSettlement = test?.datos?.fecha?.year;
         const VHDate = moment([lastVHSettlement, 0, 1]);
         const interpolation = now.diff(VHDate, 'years');
-        // console.log(lastVHSettlement, test, VHDate.format('YYYY-MM-DD'), now.format('YYYY-MM-DD'), interpolation);
         const deuda = interpolation ? new Array(interpolation).fill({year: null}).map((_, index) => ({year: now.year() - index})) : null;
-        console.log(deuda, 'MASTER');
         return deuda ? {id: vh.id_vehiculo, vehiculo: vh, tarifa: (await client.query('SELECT tarifa FROM impuesto.vehiculo JOIN impuesto.subcategoria_vehiculo USING(id_subcategoria_vehiculo) WHERE id_vehiculo = $1', [vh.id_vehiculo])).rows[0]?.tarifa, deuda } : null
       }))).filter(vh => vh) : undefined};
     //IU
