@@ -2320,6 +2320,7 @@ export const formatBranch = async (branch, contributor, client) => {
       denomComercial: branch.denominacion_comercial,
       parroquia: branch.id_parroquia,
       nombreRepresentante: branch.nombre_representante,
+      rebaja: branch.rebaja,
       objeto: branch.objeto,
       fechaTimbre: branch.fecha_timbre,
       bancoTimbre: branch.banco_timbre,
