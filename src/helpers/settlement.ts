@@ -400,7 +400,6 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
           ? await Promise.all(
               estates.map(async (el) => {
                 const tarifaAseo = await getCleaningTariffForEstate({ estate: el, branchId: branch?.id_registro_municipal, client });
-                console.log(tarifaAseo, 'PRUEBAAAAAAA');
                 // const tarifaGas = await getGasTariffForEstate({ estate: el, branchId: branch?.id_registro_municipal, client });
                 const tarifaGas = 0;
                 return { id: el.id_inmueble, tipoInmueble: el.tipo_inmueble, codCat: el.cod_catastral, direccionInmueble: el.direccion, tarifaAseo, tarifaGas, deuda: debtSM };
@@ -423,7 +422,6 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     }
     //VH
     const vehicles = (await client.query(`SELECT v.*, sv.descripcion AS subcategoria, cv.descripcion AS categoria FROM impuesto.vehiculo v JOIN impuesto.subcategoria_vehiculo sv USING(id_subcategoria_vehiculo) JOIN impuesto.categoria_vehiculo cv USING(id_categoria_vehiculo) WHERE id_registro_municipal = $1`, [branch.id_registro_municipal])).rows;
-    if(true) {
       // const lastVH = (await client.query(lastSettlementQuery, [codigosRamo.VH, lastSettlementPayload])).rows[0];
       // const lastVHPayment = (lastVH && moment(lastVH.fecha_liquidacion).add(1, 'years')) || moment().month(0);
       // const SMDate = moment([lastVHPayment.year(), lastVHPayment.month(), 1]);
@@ -435,7 +433,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         const interpolation = now.diff(VHDate, 'years');
         const deuda = interpolation ? new Array(interpolation).fill({year: null}).map((_, index) => ({year: now.year() - index})) : null;
         return deuda ? {id: vh.id_vehiculo, vehiculo: vh, tarifa: (await client.query('SELECT tarifa FROM impuesto.vehiculo JOIN impuesto.subcategoria_vehiculo USING(id_subcategoria_vehiculo) WHERE id_vehiculo = $1', [vh.id_vehiculo])).rows[0]?.tarifa, deuda } : null
-      }))).filter(vh => vh) : undefined};
+      }))).filter(vh => vh) : undefined;
     //IU
     mainLogger.info('IU');
     if (estates.length > 0) {

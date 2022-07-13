@@ -3466,7 +3466,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   GET_VEHICLES_BY_CONTRIBUTOR: `SELECT v.id_vehiculo AS id, mv.nombre AS marca, sv.id_subcategoria_vehiculo AS idSubcategoria, sv.descripcion AS subcategoria, v.modelo_vehiculo AS modelo,
   v.placa_vehiculo AS placa, v.anio_vehiculo AS anio, v.color_vehiculo AS color, v.fecha_ultima_actualizacion AS "fechaUltimaActualizacion",
   v.serial_carroceria_vehiculo AS "serialCarroceria", v.tipo_carroceria_vehiculo AS "tipoCarroceria",
-  v.tipo_combustible_vehiculo AS "tipoCombustible", v.peso_vehiculo AS peso, v.cilindraje_vehiculo AS cilindraje, v.serial_motor_vehiculo AS "serialMotor", cv.id_categoria_vehiculo AS idCategoria, cv.descripcion AS categoria, l.datos#>>'{year}' AS "fechaInicio"
+  v.tipo_combustible_vehiculo AS "tipoCombustible", v.peso_vehiculo AS peso, v.cilindraje_vehiculo AS cilindraje, v.serial_motor_vehiculo AS "serialMotor", cv.id_categoria_vehiculo AS idCategoria, cv.descripcion AS categoria, l.datos#>>'{fecha, year}' AS "fechaInicio"
   FROM impuesto.marca_vehiculo mv
   INNER JOIN impuesto.vehiculo v USING (id_marca_vehiculo) 
   INNER JOIN impuesto.subcategoria_vehiculo sv USING (id_subcategoria_vehiculo)
@@ -3478,7 +3478,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   GET_VEHICLES_BY_MUNICIPAL_REFERENCE: `SELECT v.id_vehiculo AS id, mv.nombre AS marca, sv.id_subcategoria_vehiculo AS idSubcategoria, sv.descripcion AS subcategoria, v.modelo_vehiculo AS modelo,
   v.placa_vehiculo AS placa, v.anio_vehiculo AS anio, v.color_vehiculo AS color, v.fecha_ultima_actualizacion AS "fechaUltimaActualizacion",
   v.serial_carroceria_vehiculo AS "serialCarroceria", v.tipo_carroceria_vehiculo AS "tipoCarroceria",
-  v.tipo_combustible_vehiculo AS "tipoCombustible", v.peso_vehiculo AS peso, v.cilindraje_vehiculo AS cilindraje, v.serial_motor_vehiculo AS "serialMotor", cv.id_categoria_vehiculo AS idCategoria, cv.descripcion AS categoria, l.datos#>>'{year}' AS "fechaInicio"
+  v.tipo_combustible_vehiculo AS "tipoCombustible", v.peso_vehiculo AS peso, v.cilindraje_vehiculo AS cilindraje, v.serial_motor_vehiculo AS "serialMotor", cv.id_categoria_vehiculo AS idCategoria, cv.descripcion AS categoria, l.datos#>>'{fecha, year}' AS "fechaInicio"
   FROM impuesto.marca_vehiculo mv 
   INNER JOIN impuesto.vehiculo v USING (id_marca_vehiculo) 
   INNER JOIN impuesto.subcategoria_vehiculo sv USING (id_subcategoria_vehiculo)
