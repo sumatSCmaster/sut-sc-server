@@ -316,7 +316,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     // const esContribuyenteTop = !!branch ? (await client.query(queries.BRANCH_IS_ONE_BEST_PAYERS, [branch?.id_registro_municipal, monthDateForTop.format('MMMM'), monthDateForTop.year()])).rowCount > 0 : false; //LOGICA DE CONSTRIBUYENTES TOP
     const esContribuyenteTop = false;
     //AE
-    if (branch && branch?.referencia_municipal && !AEApplicationExists) {
+    if (branch && branch?.referencia_municipal/* && !AEApplicationExists*/) {
       mainLogger.info('AE');
       const solvencyCost = branch?.estado_licencia === 'PROVISIONAL' ? +(await client.query(queries.GET_SCALE_FOR_PROVISIONAL_AE_SOLVENCY)).rows[0].indicador : +(await client.query(queries.GET_SCALE_FOR_PERMANENT_AE_SOLVENCY)).rows[0].indicador;
       const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
