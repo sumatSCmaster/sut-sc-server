@@ -339,6 +339,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       let lastEA = (await client.query(lastSettlementQueryAE, [codigosRamo.AE, lastSettlementPayload])).rows.find((el) => !el.datos.hasOwnProperty('descripcion'));
 
       const lastEAPayment = (lastEA && moment([lastEA.datos.fecha.year, Months[lastEA.datos.fecha.month], 1])) || moment().month(0);
+      console.log(lastEAPayment.format('YYYY-MM-DD'), 'MASTER');
       const pastMonthEA = (lastEA && moment([lastEA.datos.fecha.year, Months[lastEA.datos.fecha.month], 1]).subtract(1, 'M')) || moment().month(0);
       const EADate = moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
       // mainLogger.info(EADate);
