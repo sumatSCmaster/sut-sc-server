@@ -5693,11 +5693,13 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
         'noviembre',
         'diciembre'
       }
-    const statement = (await client.query(contributorQuery, [contributorPayload])).rows.sort((a, b) => {
+    const statement1 = (await client.query(contributorQuery, [contributorPayload])).rows.sort((a, b) => {
       if (Months[a.datos?.fecha?.month] > Months[b.datos?.fecha?.month]) return 1
       if (Months[a.datos?.fecha?.month] < Months[b.datos?.fecha?.month]) return -1
       return 0
-    }).map((el) => {
+    })
+    console.log(statement1, 'MASTER');
+    const statement = statement1.map((el) => {
       return {
         planilla: el.id_liquidacion,
         solicitud: el.id || new Date().getTime().toString().substr(6),
