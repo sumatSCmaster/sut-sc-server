@@ -421,7 +421,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
           : undefined;
     }
     //VH
-    const vehicles = (await client.query(`SELECT v.*, sv.descripcion AS subcategoria, cv.descripcion AS categoria FROM impuesto.vehiculo v JOIN impuesto.subcategoria_vehiculo sv USING(id_subcategoria_vehiculo) JOIN impuesto.categoria_vehiculo cv USING(id_categoria_vehiculo) WHERE id_registro_municipal = $1`, [branch.id_registro_municipal])).rows;
+    const vehicles = !branch ? (await client.query(`SELECT v.*, sv.descripcion AS subcategoria, cv.descripcion AS categoria FROM impuesto.vehiculo v JOIN impuesto.subcategoria_vehiculo sv USING(id_subcategoria_vehiculo) JOIN impuesto.categoria_vehiculo cv USING(id_categoria_vehiculo) JOIN impuesto.vehiculo_contribuyente USING(id_vehiculo) WHERE id_contribuyente = $1`, [contributor.id_contribuyente])).rows : (await client.query(`SELECT v.*, sv.descripcion AS subcategoria, cv.descripcion AS categoria FROM impuesto.vehiculo v JOIN impuesto.subcategoria_vehiculo sv USING(id_subcategoria_vehiculo) JOIN impuesto.categoria_vehiculo cv USING(id_categoria_vehiculo) WHERE id_registro_municipal = $1`, [branch.id_registro_municipal])).rows;
       // const lastVH = (await client.query(lastSettlementQuery, [codigosRamo.VH, lastSettlementPayload])).rows[0];
       // const lastVHPayment = (lastVH && moment(lastVH.fecha_liquidacion).add(1, 'years')) || moment().month(0);
       // const SMDate = moment([lastVHPayment.year(), lastVHPayment.month(), 1]);
