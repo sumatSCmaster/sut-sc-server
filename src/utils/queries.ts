@@ -1121,7 +1121,7 @@ WHERE rm.codigo = $1 AND l.id_registro_municipal = $2 AND EXTRACT('year' FROM l.
           ON sr.id_ramo = rm.id_ramo
       WHERE rm.codigo = $1
               AND l.id_registro_municipal = $2
-      ORDER BY  month_to_number(datos#>>'{fecha, month}') DESC LIMIT 1;`,
+      ORDER BY (datos#>>'{fecha, year}')::int, month_to_number(datos#>>'{fecha, month}') DESC LIMIT 1;`,
   GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED: `WITH solicitudcte AS (
       SELECT id_solicitud
       FROM impuesto.solicitud 
@@ -1163,7 +1163,7 @@ WHERE rm.codigo = $1 AND l.id_registro_municipal = $2 AND EXTRACT('year' FROM l.
   GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR_FOR_AE:
     `SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l on s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON\
   l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND s.id_contribuyente = $2\
-  ORDER BY month_to_number(datos#>>'{fecha, month}') DESC LIMIT 1`,
+  ORDER BY (datos#>>'{fecha, year}')::int, month_to_number(datos#>>'{fecha, month}') DESC LIMIT 1`,
   GET_SETTLEMENTS_FOR_CODE_AND_RIM:
     'SELECT * FROM impuesto.solicitud_state s INNER JOIN impuesto.liquidacion l on s.id = l.id_solicitud INNER JOIN impuesto.subramo sr ON \
 l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE rm.codigo = $1 AND l.id_registro_municipal =\
@@ -1879,6 +1879,7 @@ WHERE p.fecha_de_aprobacion BETWEEN $1 AND $3 AND p.metodo_pago LIKE 'EFECTIVO%'
   DELETE_SETTLEMENT: 'DELETE FROM impuesto.liquidacion WHERE id_liquidacion = $1',
   ADD_ORIGINAL_APPLICATION_ID_IN_PATCH_APPLICATION: 'UPDATE impuesto.solicitud SET id_solicitud_original = $1 WHERE id_solicitud = $2',
   GET_LAST_AE_SETTLEMENT_BY_AE_ID: 'SELECT * FROM impuesto.get_last_settlement_by_ae($1, $2)',
+  GET_LAST_AE_SETTLEMENT_BY_AE_ID_2: 'SELECT * FROM impuesto.get_last_settlement_by_ae_2($1, $2)',
   GET_SETTLEMENT_BY_ID: 'SELECT * FROM impuesto.liquidacion WHERE id_liquidacion = $1',
   GET_PATCH_APPLICATION_BY_ORIGINAL_ID_AND_STATE: `
       
