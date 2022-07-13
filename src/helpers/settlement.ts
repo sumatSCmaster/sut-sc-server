@@ -338,9 +338,9 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       if (economicActivities.length === 0) throw { status: 404, message: 'El contribuyente no posee aforos asociados' };
       let lastEA = (await client.query(lastSettlementQueryAE, [codigosRamo.AE, lastSettlementPayload])).rows.find((el) => !el.datos.hasOwnProperty('descripcion'));
 
-      const lastEAPayment = (lastEA && moment([lastEA.datos.fecha.year, Months[lastEA.datos.fecha.month], 1])) || moment().month(0);
+      const lastEAPayment = (lastEA && moment([lastEA.datos?.fecha?.year, Months[lastEA.datos?.fecha?.month], 1])) || moment().month(0);
       // console.log(lastEAPayment.format('YYYY-MM-DD'), 'MASTER');
-      const pastMonthEA = (lastEA && moment([lastEA.datos.fecha.year, Months[lastEA.datos.fecha.month], 1]).subtract(1, 'M')) || moment().month(0);
+      const pastMonthEA = (lastEA && moment([lastEA.datos?.fecha?.year, Months[lastEA.datos?.fecha?.month], 1]).subtract(1, 'M')) || moment().month(0);
       const EADate = moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
       // mainLogger.info(EADate);
       const dateInterpolation = Math.floor(now.diff(EADate, 'M'));
@@ -353,8 +353,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
           await Promise.all(
             economicActivities.map(async (el) => {
               const lastMonthPayment = (await client.query(queries.GET_LAST_AE_SETTLEMENT_BY_AE_ID_2, [el.id_actividad_economica, branch.id_registro_municipal])).rows[0];
-              console.log(moment(lastMonthPayment).format('YYYY-MM-DD'), 'MASTER');
-              const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment).startOf('month').isSameOrAfter(EADate) ? moment(lastMonthPayment.fecha_liquidacion).startOf('month') : EADate) : EADate;
+              console.log(moment([lastMonthPayment.datos?.fecha?.year, Months[lastMonthPayment.datos?.fecha?.month], 1]).format('YYYY-MM-DD'), 'MASTER');
+              const paymentDate = !!lastMonthPayment ? (moment([lastMonthPayment.datos?.fecha?.year, Months[lastMonthPayment.datos?.fecha?.month], 1]).startOf('month').isSameOrAfter(EADate) ? moment([lastMonthPayment.datos?.fecha?.year, Months[lastMonthPayment.datos?.fecha?.month], 1]).startOf('month') : EADate) : EADate;
               const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M'))) || (!lastMonthPayment && dateInterpolation) || 0;
               // paymentDate = paymentDate.isSameOrBefore(lastEAPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
               if (interpolation === 0) return null;
