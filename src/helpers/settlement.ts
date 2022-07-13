@@ -5679,7 +5679,25 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
           )
         ).rows) ||
       [];
-    const statement = (await client.query(contributorQuery, [contributorPayload])).rows.map((el) => {
+      enum Months {
+        'enero',
+        'febrero',
+        'marzo',
+        'abril',
+        'mayo',
+        'junio',
+        'julio',
+        'agosto',
+        'septiembre',
+        'octubre',
+        'noviembre',
+        'diciembre'
+      }
+    const statement = (await client.query(contributorQuery, [contributorPayload])).rows.sort((a, b) => {
+      if (Months[a.datos?.fecha?.month] > Months[b.datos?.fecha?.month]) return 1
+      if (Months[a.datos?.fecha?.month] < Months[b.datos?.fecha?.month]) return -1
+      return 0
+    }).map((el) => {
       return {
         planilla: el.id_liquidacion,
         solicitud: el.id || new Date().getTime().toString().substr(6),

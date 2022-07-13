@@ -1206,7 +1206,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     FROM impuesto.solicitud 
     WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE referencia_municipal = $1 LIMIT 1))
   
-    SELECT *
+    SELECT s.*, l.*, sr.id_subramo, sr.id_ramo, sr.subindice, sr.descripcion, rm.id_ramo, rm.codigo, rm.descripcion, rm.descripcion_corta, rm.liquidacion_especial
     FROM ( SELECT s.id_solicitud AS id,
       s.id_tipo_tramite AS tipotramite,
       s.aprobado,
