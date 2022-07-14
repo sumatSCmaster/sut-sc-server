@@ -2037,6 +2037,8 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
           const rim = client.query('SELECT * FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal]).rows;
           const type = el.tipo_solicitud;
 
+          console.log('PABLO REBAJA EXT', rim)
+
           return {
             id: el.id_solicitud,
             usuario: user,
