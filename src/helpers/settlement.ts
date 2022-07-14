@@ -2129,6 +2129,9 @@ const getApplicationInstancesPayload = async ({ application, contributor, typeUs
     const creditoFiscalRetencion = (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, rim])).rows[0]?.credito || 0;
     const responsable = (await client.query(queries.GET_APPLICATION_CREATOR_BY_MOVEMENT, [application.id_solicitud])).rows[0]?.nombre_completo;
 
+    console.log('PABLO REBAJA',rimD?.rows[0]?.rebaja, rimD.rows[0], 'responsable',responsable)
+
+
     return {
       id: application.id_solicitud,
       usuario: application.usuario,
