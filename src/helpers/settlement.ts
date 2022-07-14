@@ -395,7 +395,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         monto: lastSM && lastSM.mo_pendiente ? parseFloat(lastSM.mo_pendiente) : 0,
         fecha: { month: pastMonthSM.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthSM.year() },
       };
-      const debtSM = (await Promise.all(
+      const debtSM = dateInterpolationSM < 0 ? [] : (await Promise.all(
         new Array(dateInterpolationSM + 1).fill({ month: null, year: null }).map(async (value, index) => {
           let descuento;
           const date = addMonths(new Date(lastSMPayment.toDate()), index);
@@ -438,7 +438,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
               },
             ]
           : undefined;
-      // SM = SM.filter(SM => SM.deuda.length > 0);
+      SM = SM.filter(SM => SM.deuda.length > 0);
     }
     //VH
     const vehicles = !branch ? (await client.query(`SELECT v.*, sv.descripcion AS subcategoria, cv.descripcion AS categoria FROM impuesto.vehiculo v JOIN impuesto.subcategoria_vehiculo sv USING(id_subcategoria_vehiculo) JOIN impuesto.categoria_vehiculo cv USING(id_categoria_vehiculo) JOIN impuesto.vehiculo_contribuyente USING(id_vehiculo) WHERE id_contribuyente = $1`, [contributor.id_contribuyente])).rows : (await client.query(`SELECT v.*, sv.descripcion AS subcategoria, cv.descripcion AS categoria FROM impuesto.vehiculo v JOIN impuesto.subcategoria_vehiculo sv USING(id_subcategoria_vehiculo) JOIN impuesto.categoria_vehiculo cv USING(id_categoria_vehiculo) WHERE id_registro_municipal = $1`, [branch.id_registro_municipal])).rows;
