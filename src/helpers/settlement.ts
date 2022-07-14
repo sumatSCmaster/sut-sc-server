@@ -394,7 +394,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         monto: lastSM && lastSM.mo_pendiente ? parseFloat(lastSM.mo_pendiente) : 0,
         fecha: { month: pastMonthSM.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthSM.year() },
       };
-      const debtSM = dateInterpolationSM < 1 ? [] : (await Promise.all(
+      const debtSM = dateInterpolationSM < 0 ? [] : (await Promise.all(
         new Array(dateInterpolationSM + 1).fill({ month: null, year: null }).map(async (value, index) => {
           let descuento;
           const date = addMonths(new Date(lastSMPayment.toDate()), index);
