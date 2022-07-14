@@ -2115,7 +2115,7 @@ const getApplicationInstancesPayload = async ({ application, contributor, typeUs
     const monto = montoD?.rows[0].monto_total;
     const montoPetro = montoPetroD?.rows[0].monto_total;
 
-    const rimP = client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidacionesD.rows[0]?.id_registro_municipal]);
+    const rimP = client.query('SELECT * FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidacionesD.rows[0]?.id_registro_municipal]);
     const creditoFiscalP = client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [typeUser === 'JURIDICO' ? liquidacionesD.rows[0]?.id_registro_municipal : application.id_contribuyente, typeUser]);
     const interesMoratorioP = getDefaultInterestByApplication({ id: application.id_solicitud, date: application.fecha, state, client });
     const rebajaInteresMoratorioP = getDefaultInterestRebateByApplication({ id: application.id_solicitud, date: application.fecha, state, client });
