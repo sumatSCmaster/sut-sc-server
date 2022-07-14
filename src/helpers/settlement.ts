@@ -2046,7 +2046,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
             tipoDocumento: docs.tipo_documento,
             tipo: el.tipo_solicitud,
             rebajado: el.rebajado,
-            isRebaja: rim.rows[0].rebaja,
+            isRebaja: rim.rows[0]?.rebaja,
             estado: state,
             referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
               ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
