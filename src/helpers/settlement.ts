@@ -6002,6 +6002,7 @@ const breakdownCaseHandler = (settlementType, breakdown) => {
     'IU': { inmueble: breakdown.inmueble, monto: breakdown.monto, descuento: +breakdown.descuento },
     'PP': { subarticulo: breakdown.subarticulo, monto: breakdown.monto, cantidad: breakdown.cantidad, descuento: +breakdown.descuento },
     'SAE': { monto: breakdown.monto },
+    'VH': {vehiculo: breakdown.vehiculo, monto: breakdown.monto}
   })(null)(settlementType);
   return payload;
 };
