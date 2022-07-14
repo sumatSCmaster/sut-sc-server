@@ -176,6 +176,7 @@ export interface Solicitud {
   fecha: Date;
   monto: number;
   responsable?: string;
+  isRebaja?: boolean;
   liquidaciones: Liquidacion[];
   multas?: MultaImpuesto[];
 }
