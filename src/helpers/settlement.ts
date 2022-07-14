@@ -645,7 +645,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         creditoFiscal: fiscalCredit,
         creditoFiscalRetencion: retentionCredit,
         AE: (AE.length > 0 && AE) || undefined,
-        SM: SM.length > 0 ? SM : undefined,
+        SM: SM?.length > 0 ? SM : undefined,
         IU,
         PP,
         VH,
