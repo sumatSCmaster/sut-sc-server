@@ -394,8 +394,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         monto: lastSM && lastSM.mo_pendiente ? parseFloat(lastSM.mo_pendiente) : 0,
         fecha: { month: pastMonthSM.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthSM.year() },
       };
-      const debtSM = await Promise.all(
-        new Array(dateInterpolationSM < 0 ? dateInterpolationSM + 1 : 0).fill({ month: null, year: null }).map(async (value, index) => {
+      const debtSM = dateInterpolationSM < 0 ? [] : (await Promise.all(
+        new Array(dateInterpolationSM + 1).fill({ month: null, year: null }).map(async (value, index) => {
           let descuento;
           const date = addMonths(new Date(lastSMPayment.toDate()), index);
           const momentDate = moment(date);
@@ -411,7 +411,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
           const exonerado = await isExonerated({ branch: codigosRamo.SM, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
           return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado, descuento };
         })
-      );
+      ));
 
       SM =
         estates.length > 0
