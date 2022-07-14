@@ -390,6 +390,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       const pastMonthSM = (lastSM && moment(lastSM.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
       const SMDate = moment([lastSMPayment.year(), lastSMPayment.month(), 1]);
       const dateInterpolationSM = Math.floor(now.diff(SMDate, 'M'));
+      console.log(dateInterpolationSM, 'MASTER SM')
       montoAcarreado.SM = {
         monto: lastSM && lastSM.mo_pendiente ? parseFloat(lastSM.mo_pendiente) : 0,
         fecha: { month: pastMonthSM.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthSM.year() },
