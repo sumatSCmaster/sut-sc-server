@@ -2034,10 +2034,8 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
           const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
           const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
           const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
-          const rim = client.query('SELECT * FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal]);
+          const rim = (await client.query('SELECT * FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal]));
           const type = el.tipo_solicitud;
-
-          console.log('PABLO REBAJA EXT', rim, rim.rows[0])
 
           return {
             id: el.id_solicitud,
@@ -2048,6 +2046,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
             tipoDocumento: docs.tipo_documento,
             tipo: el.tipo_solicitud,
             rebajado: el.rebajado,
+            isRebaja: rim.rows[0]?.rebaja,
             estado: state,
             referenciaMunicipal: liquidaciones[0]?.id_registro_municipal
               ? (await client.query('SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal])).rows[0]?.referencia_municipal
