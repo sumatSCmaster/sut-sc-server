@@ -386,7 +386,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const estates = (await client.query(branch ? queries.GET_ESTATES_FOR_JURIDICAL_CONTRIBUTOR : queries.GET_ESTATES_FOR_NATURAL_CONTRIBUTOR, [branch ? branch.id_registro_municipal : contributor.id_contribuyente])).rows;
     if (!SMApplicationExists && !isPartOfCondominium) {
       let lastSM = (await client.query(lastSettlementQuery, [codigosRamo.SM, lastSettlementPayload])).rows[0];
-      const lastSMPayment = (lastSM && moment(lastSM.fecha_liquidacion)) || moment().month(0);
+      const lastSMPayment = (lastSM && moment(lastSM.fecha_liquidacion).add(1, 'M')) || moment().month(0);
       const pastMonthSM = (lastSM && moment(lastSM.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
       const SMDate = moment([lastSMPayment.year(), lastSMPayment.month(), 1]);
       const dateInterpolationSM = Math.floor(now.diff(SMDate, 'M'));
@@ -645,7 +645,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         creditoFiscal: fiscalCredit,
         creditoFiscalRetencion: retentionCredit,
         AE: (AE.length > 0 && AE) || undefined,
-        SM: SM.length > 0 ? SM : undefined,
+        SM: SM?.length > 0 ? SM : undefined,
         IU,
         PP,
         VH,
