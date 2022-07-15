@@ -2394,10 +2394,12 @@ export const contributorSearch = async ({ document, docType, name }) => {
   try {
     mainLogger.info(document, name);
     mainLogger.info(!document && !name);
-    console.log(name, document);
     if (!document && !name) throw { status: 406, message: 'Debe aportar algun parametro para la busqueda' };
     if ((!!document && document.length < 4) || (!!name && name.length < 3)) throw { status: 406, message: 'Debe aportar mas datos para la busqueda' };
-    contribuyentes = !!document && document.length >= 4 ? (await client.query(queries.TAX_PAYER_EXISTS_AMBIGUOUS, [docType, `${document}%`])).rows : (await client.query(queries.SEARCH_CONTRIBUTOR_BY_NAME, [`%${name}%`])).rows;
+    const a = [...document];
+    const newDocument = a.length >= 9 ? a.join() : new Array(9 - a.length).fill(0).concat(a).join(); 
+    console.log(newDocument, 'MASTER SEARCH TAXPAYER')
+    contribuyentes = !!document && document.length >= 4 ? (await client.query(queries.TAX_PAYER_EXISTS_AMBIGUOUS, [docType, `${newDocument}%`])).rows : (await client.query(queries.SEARCH_CONTRIBUTOR_BY_NAME, [`%${name}%`])).rows;
     const contributorExists = contribuyentes.length > 0;
     if (!contributorExists) return { status: 404, message: 'No existen coincidencias con la razon social o documento proporcionado' };
     contribuyentes = await Promise.all(contribuyentes.map(async (el) => await formatContributor(el, client)));
