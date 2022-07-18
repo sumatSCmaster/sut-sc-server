@@ -42,7 +42,8 @@ export const createRepotRMP = async (fecha) =>{
         totalMetodoPago,
         totalRecaudado,
         totalIngresado,
-        fecha: moment().format('DD/MM/YYYY')
+        fecha: moment().format('DD/MM/YYYY'),
+        fechaReporte: moment(fecha).format('DD/MM/YYYY')
       });
 
       pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' })
