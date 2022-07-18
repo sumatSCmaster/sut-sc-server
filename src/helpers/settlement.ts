@@ -307,7 +307,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     const VHApplicationExists = !!reference && !!branch
     ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED_BY_YEAR, [codigosRamo.PP, branch?.id_registro_municipal])).rows[0]
     : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR_BY_YEAR, [codigosRamo.PP, contributor.id_contribuyente])).rows[0];
-    if (contributor.tipo_contribuyente === 'JURIDICO' && !!['CESANTE', 'INHABILITADO', 'SANCIONADO'].find((state) => state === branch?.estado_licencia))
+    if (contributor.tipo_contribuyente === 'JURIDICO' && !!['CESANTE', 'INHABILITADA', 'SANCIONADO'].find((state) => state === branch?.estado_licencia))
       throw { status: 401, message: `La referencia municipal proporcionada se encuentra en estado ${branch?.estado_licencia}` };
     mainLogger.info(inspect(lastSettlementPayload));
     mainLogger.info(lastSettlementQuery);
@@ -317,7 +317,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     // const esContribuyenteTop = !!branch ? (await client.query(queries.BRANCH_IS_ONE_BEST_PAYERS, [branch?.id_registro_municipal, monthDateForTop.format('MMMM'), monthDateForTop.year()])).rowCount > 0 : false; //LOGICA DE CONSTRIBUYENTES TOP
     const esContribuyenteTop = false;
     //AE
-    if (branch && branch?.referencia_municipal/* && !AEApplicationExists*/) {
+    if (branch && branch?.referencia_municipal/* && !AEApplicationExists*/ && 'NO PASIVO' !== branch?.estado_licencia) {
       enum Months {
         'enero',
         'febrero',
