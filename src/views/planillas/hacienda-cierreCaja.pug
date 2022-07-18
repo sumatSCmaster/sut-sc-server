@@ -173,6 +173,14 @@ block content
           div(style={'-webkit-flex':'3'}).td.center.border-bottom
             p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.banCaribe ? (datos.metodoPago.transferencias.banCaribe.total) : 0)}
         .tr
+          div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
+            p(style={'padding-left':'10px'})
+              b TRANSFERENCIA 100% BANCO
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
+            p #{datos.metodoPago.transferencias.cienPorcientoBanco ? datos.metodoPago.transferencias.cienPorcientoBanco.transacciones : 0}            
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.cienPorcientoBanco ? (datos.metodoPago.transferencias.cienPorcientoBanco.total) : 0)}
+        .tr
           div(style={'-webkit-flex':'4',}).th.border-right
             p
               b TOTALES

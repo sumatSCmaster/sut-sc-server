@@ -91,6 +91,12 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
           transacciones: next.transacciones,
         };
         break;
+      case 20:
+        prev.cienPorcientoBanco = {
+          total: next.monto,
+          transacciones: next.transacciones,
+        }
+        break;
     }
     return prev;
   }, {});
