@@ -5764,7 +5764,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser,
     const datosCertificado: accountStatement = {
       actividadesContribuyente: economicActivities,
       datosContribuyente,
-      datosLiquidacion: chunk(statement, 22),
+      datosLiquidacion: chunk(statement, 20),
       saldoFinal,
     };
     const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-EC.pug`), {
