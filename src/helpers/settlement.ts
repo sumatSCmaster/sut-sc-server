@@ -3932,6 +3932,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
 export const createSolvencyABSettlement = async (datos, tipo, user) => {
   const client = await pool.connect();
   try {
+    client.query('BEGIN');
     const {contribuyente, sucursal, costo} = datos;
     const hasBranch = !!sucursal;
     const contributor = await client.query('SELECT * FROM impuesto.contribuyente WHERE documento = $1 AND tipo_documento = $2', [contribuyente.documento, contribuyente.tipo_documento]);
@@ -3948,8 +3949,10 @@ export const createSolvencyABSettlement = async (datos, tipo, user) => {
       null,
       hasBranch ? +sucursal.id_registro_municipal : null
     ]);
+    client.query('COMMIT');
     return {status: 200, liquidacion: settlement.rows[0], message: 'Liquidacion creada de manera exitosa'}
   } catch (e) {
+    client.query('ROLLBACK');
     throw {status: 500, message: e.message}
   }
 }
