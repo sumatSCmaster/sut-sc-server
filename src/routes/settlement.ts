@@ -63,8 +63,8 @@ router.get('/iu/declaration', authenticate('jwt'), async (req, res) => {
 
 router.get('/accountStatement/:contributor', async (req: any, res) => {
   const { contributor } = req.params;
-  const { tipoContribuyente, referencia } = req.query;
-  const [error, data] = await fulfill(createAccountStatement({ contributor, reference: referencia || null, typeUser: tipoContribuyente }));
+  const { tipoContribuyente, referencia, idCargo } = req.query;
+  const [error, data] = await fulfill(createAccountStatement({ contributor, reference: referencia || null, typeUser: tipoContribuyente, idCargo: idCargo }));
   if (error) res.status(500).json(error);
   if (data)
     data.toBuffer(async (err, buffer) => {

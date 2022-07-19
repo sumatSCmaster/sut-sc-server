@@ -5699,7 +5699,7 @@ const createFineDocument = async ({ gticPool, pool, user, application }: Certifi
  *
  * @param param0
  */
-export const createAccountStatement = async ({ contributor, reference, typeUser }) => {
+export const createAccountStatement = async ({ contributor, reference, typeUser, idCargo }) => {
   const client = await pool.connect();
   const gtic = await gticPool.connect();
   try {
@@ -5773,6 +5773,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser 
       moment: require('moment'),
       written,
       institucion: 'HACIENDA',
+      idCargo
     });
     return pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' });
   } catch (error) {
