@@ -3929,6 +3929,30 @@ export const createSpecialSettlement = async ({ process, user }) => {
   }
 };
 
+export const createSolvencyABSettlement = async (datos, tipo, user) => {
+  const client = await pool.connect();
+  try {
+    const {contribuyente, sucursal, costo} = datos;
+    const hasBranch = !!sucursal;
+    const contributor = await client.query('SELECT * FROM impuesto.contribuyente WHERE documento = $1 AND tipo_documento = $2', [contribuyente.documento, contribuyente.tipo_documento]);
+    if (!(contributor.rowCount > 0)) throw {status: 401, message: 'El contribuyente proporcionado no existe o no esta registrado en el sistema SUT'};
+    const userContributor = (await client.query('SELECT id_usuario FROM usuario WHERE id_contribuyente = $1', [contributor.rows[0].id_contribuyente])).rows[0]?.id_usuario;
+    const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [userContributor || user.id, contributor.rows[0].id_contribuyente])).rows[0];
+    const costoLiquidacion = tipo === 'a' ? costo : (await client.query('SELECT indicador FROM impuesto.baremo WHERE id_baremo = 13')).rows[0]?.indicador; 
+    const settlement = await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
+      application.id_solicitud,
+      costoLiquidacion,
+      `TASA DE SOLVENCIA TIPO ${tipo.toUpperCase()}`,
+      'Pago ordinario',
+      null,
+      hasBranch ? +sucursal.id_registro_municipal : null
+    ]);
+    return {status: 200, liquidacion: settlement.rows[0], message: 'Liquidacion creada de manera exitosa'}
+  } catch (e) {
+    throw {status: 500, message: e.message}
+  }
+}
+
 /**
  *
  * @param param0

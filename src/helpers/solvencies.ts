@@ -3,6 +3,7 @@ import queries from "@utils/queries";
 import { initProcedureAnalistAB } from "./procedures";
 import moment from "moment";
 import { sendRimVerification } from "./verification";
+import { createSolvencyABSettlement } from "./settlement";
 
 const pool = Pool.getInstance();
 
@@ -41,10 +42,11 @@ export const getSolvencyACandidates = async ({tipoDocumento, documento}) => {
     } catch(e) {throw {status: 500, message: e.message}}
 }
 
-export const createSolvencyAB = async ({pago, contribuyente}, user, tipo) => {
+export const createSolvencyAB = async ({contribuyente, sucursal}, user, tipo) => {
     try {const pool = Pool.getInstance();
     const client = await pool.connect();
-    return await initProcedureAnalistAB({pago, contribuyente, tipo}, user, client, user.id)
+    return await createSolvencyABSettlement({contribuyente, sucursal}, tipo, user)
+    // return await initProcedureAnalistAB({pago, contribuyente, tipo}, user, client, user.id)
     } catch(e) {
         throw {status: 500, message: e.message}
     }
