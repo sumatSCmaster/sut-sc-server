@@ -3949,6 +3949,7 @@ export const createSolvencyABSettlement = async (datos, tipo, user) => {
       null,
       hasBranch ? +sucursal.id_registro_municipal : null
     ]);
+    await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS]);
     client.query('COMMIT');
     return {status: 200, liquidacion: settlement.rows[0], message: 'Liquidacion creada de manera exitosa'}
   } catch (e) {
