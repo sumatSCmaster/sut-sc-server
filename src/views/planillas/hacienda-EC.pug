@@ -70,27 +70,27 @@ block content
               b MONTO PORCIÓN
         each item in liquidacion
           .tr.break-page
-            div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
+            div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom.break-page
               p #{item.planilla}
-            div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
+            div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom.break-page
               p #{item.solicitud}
-            div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+            div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom.break-page
               p #{item.porcion}
-            div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom
+            div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom.break-page
               p #{item.fechaLiquidacion}
-            div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom
+            div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom.break-page
               p #{item.fechaVencimiento}
-            div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+            div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom.break-page
               p #{item.mes}
-            div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+            div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom.break-page
               p #{item.motivo}
-            div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom
+            div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom.break-page
               p #{item.estado}
             if item.estado === 'VIGENTE'
-              div(style={'-webkit-flex':'1'}).td.center.border-bottom
+              div(style={'-webkit-flex':'1'}).td.center.border-bottom.break-page
                 p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)} *
             else
-              div(style={'-webkit-flex':'1'}).td.center.border-bottom
+              div(style={'-webkit-flex':'1'}).td.center.border-bottom.break-page
                 p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)}            
     .table.break-page
       .tr
