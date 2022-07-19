@@ -35,7 +35,7 @@ block content
         div(style={'-webkit-flex':'7'}).td
           p #{datosContribuyente.telefono}
     each liquidacion in datosLiquidacion
-      div(style={'margin-top':'20px'}).table.break-page
+      div(style={'margin-top':'20px'}).table
         .tr.break-page
           .th.center.border-bottom
             p
@@ -143,6 +143,5 @@ block content
         | el costo reflejado de las liquidaciones vigentes podrá fluctuar en el futuro con respecto a los cambios del valor del Petro
     if isCargo
       div(style={'margin-top':'10%', 'width':'100%', 'display': '-webkit-flex', '-webkit-align-items': 'center', '-webkit-justify-content': 'center'})
-        div.item-firma
-          img(src="images/firma.png", style={'margin-top':'-90px', 'z-index':'1',width:'450px'}, alt="", srcset="")
+        img(src="images/firma.png", style={'margin-top':'-90px', 'z-index':'1',width:'450px'}, alt="", srcset="")
 block footer         
