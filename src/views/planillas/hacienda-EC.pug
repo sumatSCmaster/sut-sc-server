@@ -83,7 +83,7 @@ block content
             div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom.break-page
               p #{item.mes}
             div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom.break-page
-              p #{item.motivo}
+              p(style={'word-wrap': 'break-word'}) #{item.motivo}
             div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom.break-page
               p #{item.estado}
             if item.estado === 'VIGENTE'
