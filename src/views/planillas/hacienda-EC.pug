@@ -41,16 +41,16 @@ block content
             p
               b ESTADO DE CUENTA DEL CONTRIBUYENTE
         .tr.break-page
-          div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
+          div(style={'-webkit-flex':'1.25'}).th.center.border-right.border-bottom
             p
               b PLANILLA
-          div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
+          div(style={'-webkit-flex':'1.25'}).th.center.border-right.border-bottom
             p
               b SOLICITUD
           div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
             p
               b PORCIÓN
-          div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
+          div(style={'-webkit-flex':'1.25'}).th.center.border-right.border-bottom
             p
               b FECHA LIQ.
           div(style={'-webkit-flex':'1.25'}).th.center.border-right.border-bottom
@@ -59,7 +59,7 @@ block content
           div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
             p
               b MES
-          div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
+          div(style={'-webkit-flex':'1.5'}).th.center.border-right.border-bottom
             p
               b MOTIVO
           div(style={'-webkit-flex':'1.25'}).th.center.border-right.border-bottom
@@ -70,19 +70,19 @@ block content
               b MONTO PORCIÓN
         each item in liquidacion
           .tr
-            div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom.break-page
+            div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom.break-page
               p #{item.planilla}
-            div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom.break-page
+            div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom.break-page
               p #{item.solicitud}
             div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom.break-page
               p #{item.porcion}
-            div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom.break-page
+            div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom.break-page
               p #{item.fechaLiquidacion}
             div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom.break-page
               p #{item.fechaVencimiento}
             div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom.break-page
               p #{item.mes}
-            div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom.break-page
+            div(style={'-webkit-flex':'1.5'}).td.center.border-right.border-bottom.break-page
               p(style={'word-wrap': 'break-word'}) #{item.motivo}
             div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom.break-page
               p #{item.estado}
