@@ -3944,6 +3944,7 @@ export const createSolvencyABSettlement = async (datos, tipo, user) => {
       costoLiquidacion,
       `TASA DE SOLVENCIA TIPO ${tipo.toUpperCase()}`,
       'Pago ordinario',
+      datos,
       null,
       hasBranch ? +sucursal.id_registro_municipal : null
     ]);
