@@ -30,6 +30,7 @@ import { isCondominium, isCondoOwner } from './condominium';
 import { mainLogger } from '@utils/logger';
 const written = require('written-number');
 import { inspect } from 'util';
+import { createForm } from './formsHelper';
 
 const gticPool = GticPool.getInstance();
 const pool = Pool.getInstance();
@@ -4177,6 +4178,61 @@ const mesesNumerico = {
   noviembre: 11,
   diciembre: 12,
 };
+
+const createVHSolvenciesForApplication = async ({application}) => {
+  const client = await pool.connect();
+  try {
+    const contribuyente = (await client.query('SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1', application.contribuyente));
+    const vehicles = await Promise.all(application.datos.desglose.map(async desglose => {
+      const vehiculo = (await client.query('SELECT v.*, mv.nombre, sv.descripcion AS impuesto, ct.descripcion FROM impuesto.vehiculo v JOIN impuesto.marca_vehiculo mv USING(id_marca_vehiculo) JOIN impuesto.subcategoria_vehiculo sv USING(id_subcategoria_vehiculo) JOIN impuesto.categoria_vehiculo cv USING(id_categoria_vehiculo) WHERE id_vehiculo = $1', [desglose.vehiculo]));
+      return {vehiculo, contribuyente};
+    }))
+    const certificados = await Promise.all(vehicles.map(async vehicle => {
+      const PETRO = (await client.query(`SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'`)).rows[0].valor_en_bs;
+      const costoFormateado = application ? new Intl.NumberFormat('de-DE').format(parseFloat(application.montoLiquidacion)) : '0';
+      const procedureData = {
+        id: application.id,
+      fecha: application.fechaCreacion,
+      codigo: 'N/A',
+      formato: 'VEH-001',
+      tramite: 'Impuesto sobre Vehículos',
+      institucion: 'HACIENDA',
+      datos: vehicle,
+      estado: 'finalizado',
+      tipoTramite: 39,
+      PETRO,
+      costoFormateado,
+      bancos: null,
+      codigoRRI: 'N/A',
+      };
+      const form = (await createForm(procedureData, client)) as string;
+      return form;
+    }));
+    return certificados;
+  //   const PETRO = (await client.query(`SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'`)).rows[0].valor_en_bs;
+  //   const costoFormateado = application ? new Intl.NumberFormat('de-DE').format(parseFloat(application.montoLiquidacion)) : '0';
+  //   const procedureData = {
+  //     id: application.id,
+  //   fecha: application.fechaCreacion,
+  //   codigo: 'N/A',
+  //   formato: 'VEH-001',
+  //   tramite: 'Impuesto sobre Vehículos',
+  //   institucion: 'HACIENDA',
+  //   datos: application,
+  //   estado: 'finalizado',
+  //   tipoTramite: 39,
+  //   PETRO,
+  //   costoFormateado,
+  //   bancos: null,
+  //   codigoRRI: 'N/A',
+  // };
+  // const form = (await createForm(procedureData, client)) as string;
+  // return form;
+} catch(e) {
+  throw e
+}
+}
+
 const createSolvencyForApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
@@ -6003,6 +6059,7 @@ const certificateCases = switchcase({
   IU: { recibo: createReceiptForSMOrIUApplication, certificado: createReceiptForIUApplication },
   PP: { recibo: createReceiptForPPApplication },
   MUL: { multa: createFineDocument },
+  VH: {solvencia: createVHSolvenciesForApplication}
 })(null);
 
 const breakdownCases = switchcase({

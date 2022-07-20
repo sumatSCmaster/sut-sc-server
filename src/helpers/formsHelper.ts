@@ -11,7 +11,8 @@ const dev = process.env.NODE_ENV !== 'production';
 
 export const createForm = async ({ fecha, codigo, formato, tramite, institucion, id, datos, tipoTramite, estado, costoFormateado = '', PETRO = '', costo = 0, codigoRRI = '' }, client) => {
   const response = (await client.query(queries.GET_PLANILLA_AND_CERTIFICATE_TYPE_PROCEDURE, [tipoTramite])).rows[0];
-  const aprobado = (await client.query(queries.GET_APPROVED_STATE_FOR_PROCEDURE, [id])).rows[0]?.aprobado;
+  // const aprobado = (await client.query(queries.GET_APPROVED_STATE_FOR_PROCEDURE, [id])).rows[0]?.aprobado;
+  const aprobado = true;
   const planilla = estado === 'iniciado' ? response.planilla : response.sufijo === 'ompu' ? (aprobado ? response.certificado : response.planilla_rechazo) : response.certificado;
   const dir = estado === 'iniciado' ? `${process.env.SERVER_URL}/tramites/${codigo}/planilla.pdf` : `${process.env.SERVER_URL}/tramites/${codigo}/certificado.pdf`;
   const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarDoc/${id}`, { errorCorrectionLevel: 'H' });

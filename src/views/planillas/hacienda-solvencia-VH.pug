@@ -7,8 +7,6 @@ block header
       img(src="images/alcaldia-logo.png", alt="hacienda" style={width:'350px', height:'150px'})
     div(style={'-webkit-flex': 1, 'height':'120px', 'text-align': 'end', 'font-size': '16px'})
       p
-        b Codigo: #{codigo}
-        br
         b Fecha #{moment().format('DD/MM/YYYY')} 
   img#divider(src='images/franja-2.0.png')       
 block title
@@ -25,17 +23,12 @@ block content
             p
               b Nombre Completo:
               br
-              span #{datos.funcionario.solicitante.nombreCompleto}&nbsp;
+              span #{datos.contribuyente.razon_social}&nbsp;
           .td(style={ '-webkit-flex': '1' })
             p
               b Documento:
               br
-              span #{datos.funcionario.solicitante.nacionalidad}-#{datos.funcionario.solicitante.cedula}&nbsp;              
-          .td(style={ '-webkit-flex': '1' })
-            p
-              b Telefono:
-              br
-              span #{datos.funcionario.solicitante.telefono}&nbsp;
+              span #{datos.contribuyente.tipo_documento}-#{datos.contribuyente.documento}&nbsp;
       div
         h2 Datos del Vehículo
       div
@@ -44,39 +37,39 @@ block content
             p
               b Placa:
               br
-              span #{datos.funcionario.vehiculo.placa}&nbsp;
+              span #{datos.vehiculo.placa_vehiculo}&nbsp;
           .td(style={ '-webkit-flex': '1' })
             p
               b Marca:
               br
-              span #{datos.funcionario.vehiculo.marca.descripcion}&nbsp; 
+              span #{datos.vehiculo.nombre}&nbsp; 
           .td(style={ '-webkit-flex': '1' })
             p
               b Modelo:
               br
-              span #{datos.funcionario.vehiculo.modelo}&nbsp; 
+              span #{datos.vehiculo.modelo_vehiculo}&nbsp; 
         .tr
           .td(style={ '-webkit-flex': '1' })
             p
               b Año:
               br
-              span #{datos.funcionario.vehiculo.anio}&nbsp;                            
+              span #{datos.vehiculo.anio_vehiculo}&nbsp;                            
           .td(style={ '-webkit-flex': '1' })
             p
               b Color:
               br
-              span #{datos.funcionario.vehiculo.color}&nbsp;
+              span #{datos.vehiculo.color_vehiculo}&nbsp;
         .tr
           .td(style={ '-webkit-flex': '1' })
             p
               b Categoria:
               br
-              span #{datos.funcionario.vehiculo.subcategoria.descripcion}&nbsp;         
+              span #{datos.vehiculo.descripcion}&nbsp;         
           .td(style={ '-webkit-flex': '1' })
             p
               b Categoria del Impuesto:
               br
-              span #{datos.funcionario.vehiculo.categoria.descripcion}&nbsp;         
+              span #{datos.vehiculo.impuesto}&nbsp;         
         .tr
           .td(style={ '-webkit-flex': '1' })
             p
