@@ -245,7 +245,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                 };
               })
           )
-        ).filter((el) => el);
+        )?.filter((el) => el);
         // }
       }
     }
@@ -378,7 +378,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
               };
             })
           )
-        ).filter((el) => el);
+        )?.filter((el) => el);
       }
     }
     //SM
@@ -438,7 +438,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
               },
             ]
           : undefined;
-      SM = SM.filter(SM => SM.deuda.length > 0);
+      SM = SM?.filter(SM => SM.deuda.length > 0);
     }
     //VH
     const vehicles = !branch ? (await client.query(`SELECT v.*, sv.descripcion AS subcategoria, cv.descripcion AS categoria FROM impuesto.vehiculo v JOIN impuesto.subcategoria_vehiculo sv USING(id_subcategoria_vehiculo) JOIN impuesto.categoria_vehiculo cv USING(id_categoria_vehiculo) JOIN impuesto.vehiculo_contribuyente USING(id_vehiculo) WHERE id_contribuyente = $1`, [contributor.id_contribuyente])).rows : (await client.query(`SELECT v.*, sv.descripcion AS subcategoria, cv.descripcion AS categoria FROM impuesto.vehiculo v JOIN impuesto.subcategoria_vehiculo sv USING(id_subcategoria_vehiculo) JOIN impuesto.categoria_vehiculo cv USING(id_categoria_vehiculo) WHERE id_registro_municipal = $1`, [branch.id_registro_municipal])).rows;
@@ -453,7 +453,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         const interpolation = now.diff(VHDate, 'years');
         const deuda = interpolation ? new Array(interpolation).fill({year: null}).map((_, index) => ({year: now.year() - index})) : null;
         return deuda ? {id: vh.id_vehiculo, vehiculo: vh, tarifa: (await client.query('SELECT tarifa FROM impuesto.vehiculo JOIN impuesto.subcategoria_vehiculo USING(id_subcategoria_vehiculo) WHERE id_vehiculo = $1', [vh.id_vehiculo])).rows[0]?.tarifa, deuda } : null
-      }))).filter(vh => vh) : undefined;
+      })))?.filter(vh => vh) : undefined;
     //IU
     mainLogger.info('IU');
     if (estates.length > 0) {
@@ -873,7 +873,7 @@ export const externalLinkingForCashier = async ({ document, docType, reference, 
                             return null;
                           })
                         )
-                      ).filter((el) => el);
+                      )?.filter((el) => el);
                       convenios = convenios.length > 0 ? uniqBy(convenios, 'id') : undefined;
                     }
                     inmuebles.push({
