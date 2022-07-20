@@ -4184,7 +4184,7 @@ const createVHSolvenciesForApplication = async ({application}) => {
   try {
     const contribuyente = (await client.query('SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1', [application.contribuyente]));
     const vehicles = await Promise.all(application.datos.desglose.map(async desglose => {
-      const vehiculo = (await client.query('SELECT v.*, mv.nombre, sv.descripcion AS impuesto, cv.descripcion FROM impuesto.vehiculo v JOIN impuesto.marca_vehiculo mv USING(id_marca_vehiculo) JOIN impuesto.subcategoria_vehiculo sv USING(id_subcategoria_vehiculo) JOIN impuesto.categoria_vehiculo cv USING(id_categoria_vehiculo) WHERE id_vehiculo = $1', [desglose.vehiculo]));
+      const vehiculo = (await client.query('SELECT v.*, mv.nombre, sv.descripcion AS impuesto, cv.descripcion FROM impuesto.vehiculo v JOIN impuesto.marca_vehiculo mv USING(id_marca_vehiculo) JOIN impuesto.subcategoria_vehiculo sv USING(id_subcategoria_vehiculo) JOIN impuesto.categoria_vehiculo cv USING(id_categoria_vehiculo) WHERE id_vehiculo = $1', [desglose.vehiculo])).rows[0];
       return {vehiculo, contribuyente};
     }))
     const certificados = await Promise.all(vehicles.map(async vehicle => {
@@ -4193,7 +4193,7 @@ const createVHSolvenciesForApplication = async ({application}) => {
       const procedureData = {
         id: application.id,
       fecha: application.fechaCreacion,
-      codigo: 'N/A',
+      codigo: `${application.id}`,
       formato: 'VEH-001',
       tramite: 'Impuesto sobre Vehículos',
       institucion: 'HACIENDA',
