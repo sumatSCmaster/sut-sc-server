@@ -4187,14 +4187,14 @@ const createVHSolvenciesForApplication = async ({application}) => {
       const vehiculo = (await client.query('SELECT v.*, mv.nombre, sv.descripcion AS impuesto, cv.descripcion FROM impuesto.vehiculo v JOIN impuesto.marca_vehiculo mv USING(id_marca_vehiculo) JOIN impuesto.subcategoria_vehiculo sv USING(id_subcategoria_vehiculo) JOIN impuesto.categoria_vehiculo cv USING(id_categoria_vehiculo) WHERE id_vehiculo = $1', [desglose.vehiculo])).rows[0];
       return {vehiculo, contribuyente};
     }))
-    console.log(application.datos.desglose, vehicles, 'MASTER VEHICULOS')
+    console.log(application.id, application.datos, vehicles, 'MASTER VEHICULOS')
     const certificados = await Promise.all(vehicles.map(async vehicle => {
       const PETRO = (await client.query(`SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'`)).rows[0].valor_en_bs;
       const costoFormateado = application ? new Intl.NumberFormat('de-DE').format(parseFloat(application.montoLiquidacion)) : '0';
       const procedureData = {
         id: `${application.idLiquidacion}${vehicle.id_vehiculo}`,
       fecha: application.fechaCreacion,
-      codigo: `${application.id}`,
+      codigo: `${application.idLiquidacion}${vehicle.id_vehiculo}`,
       formato: 'VEH-001',
       tramite: 'Impuesto sobre Vehículos',
       institucion: 'HACIENDA',
