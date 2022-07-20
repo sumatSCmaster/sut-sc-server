@@ -14,7 +14,7 @@ export const getSolvencyBCandidates = async ({tipoDocumento, documento}) => {
     try {
         const pastMonth = months[now.subtract(1, 'months').format('MMMM').toLowerCase()];
         const year = now.year();
-        console.log(pastMonth, now.subtract(1, 'months').format('MMMM'), 'MASTER SOLVENCY');
+        // console.log(pastMonth, now.subtract(1, 'months').format('MMMM'), 'MASTER SOLVENCY');
         const contribHasUser = (await client.query('SELECT EXISTS(SELECT DISTINCT(id_usuario) FROM usuario JOIN impuesto.contribuyente USING(id_contribuyente) WHERE tipo_documento = $1 AND documento = $2)', [tipoDocumento, documento])).rows[0];
         if (!contribHasUser) throw {status: 401, message: 'El contribuyente no posee un usuario asociado'};
         //Validacion si tiene liquidaciones sin pagar
@@ -32,6 +32,7 @@ export const getSolvencyBCandidates = async ({tipoDocumento, documento}) => {
         if (solvencyRIMInfo.length > 0) {
         await Promise.all(solvencyRIMInfo.map(async rim => {
             const upToDate = await client.query(`SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING(id_solicitud) WHERE aprobado = true AND id_registro_municipal = $1 AND id_subramo = 10 AND datos#>>'{fecha, month}' = $2 AND datos#>>'{fecha, year}' = $3`, [rim.id_registro_municipal, pastMonthAE, year]);
+            console.log(upToDate.rows, 'MASTER SOLVENCY')
             if (!(upToDate.rowCount > 0)) return undefined;
             return rim;
         }));
