@@ -22,7 +22,7 @@ export const getSolvencyBCandidates = async ({tipoDocumento, documento}) => {
         //Validacion si tiene liquidaciones sin pagar el contribuyente sin rim
         let solvencyContrInfo = (await client.query(queries.GET_SOLVENCY_B_RIF_CANDIDATES_BY_RIF, [tipoDocumento, documento])).rows[0];
         //Validacion si el contribuyente sin rim tiene vehiculos al dia
-        const hasVehicles = (await client.query('SELECT * FROM impuesto.vehiculo JOIN impuesto.vehiculo_contribuyente USING id_contribuyente WHERE id_contribuyente = $1', [solvencyContrInfo.id_contribuyente])).rows;
+        const hasVehicles = (await client.query('SELECT * FROM impuesto.vehiculo JOIN impuesto.vehiculo_contribuyente USING id_contribuyente WHERE id_contribuyente = $1', [solvencyContrInfo?.id_contribuyente || 0])).rows;
         if (hasVehicles.length > 0) {
             const solvencyContrVehicleValidation = await client.query(`SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING (id_solicitud) WHERE id_subramo = 804 AND aprobado = true AND id_registro_municipal IS NULL AND (datos#>>'{fecha, year}')::INT = $1 ORDER BY (datos#>>'{fecha, year}')::INT`, [year]);
             if (!(solvencyContrVehicleValidation.rowCount > 0)) solvencyContrInfo = undefined;
