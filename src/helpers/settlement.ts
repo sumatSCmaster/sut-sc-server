@@ -4127,16 +4127,20 @@ export const createCertificateForApplication = async ({ idLiquidacion, media, us
   try {
     client.query('BEGIN');
     const settlement = (await client.query('SELECT id_solicitud FROM impuesto.liquidacion WHERE id_liquidacion = $1', [idLiquidacion])).rows[0].id_solicitud;
-    const applicationView = (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement])).rows[0];
-    if (applicationView[media]) return { status: 200, message: 'Certificado generado satisfactoriamente', media: applicationView[media] };
-    const dir = await certificateCreationHandler(applicationView.descripcionCortaRamo, media, {
-      gticPool: gtic,
-      pool: client,
-      user,
-      application: applicationView,
-    });
+    const applicationView = (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement])).rows;
+    // if (applicationView[media]) return { status: 200, message: 'Certificado generado satisfactoriamente', media: applicationView[media] };
+    const dirs = await Promise.all(applicationView.map( async applicationView => {
+      const dir = await certificateCreationHandler(applicationView.descripcionCortaRamo, media, {
+        gticPool: gtic,
+        pool: client,
+        user,
+        application: applicationView,
+      });
+      return dir
+    }
+    ))
     client.query('COMMIT');
-    return { status: 200, message: 'Certificado generado satisfactoriamente', media: dir };
+    return { status: 200, message: 'Certificado generado satisfactoriamente', media: dirs };
   } catch (error) {
     client.query('ROLLBACK');
     mainLogger.error(error);
@@ -4187,14 +4191,14 @@ const createVHSolvenciesForApplication = async ({application}) => {
       const vehiculo = (await client.query('SELECT v.*, mv.nombre, sv.descripcion AS impuesto, cv.descripcion FROM impuesto.vehiculo v JOIN impuesto.marca_vehiculo mv USING(id_marca_vehiculo) JOIN impuesto.subcategoria_vehiculo sv USING(id_subcategoria_vehiculo) JOIN impuesto.categoria_vehiculo cv USING(id_categoria_vehiculo) WHERE id_vehiculo = $1', [desglose.vehiculo])).rows[0];
       return {vehiculo, contribuyente};
     }))
-    console.log(application.id, application.datos, vehicles, 'MASTER VEHICULOS')
+    console.log(application.id, application.desglose, vehicles, 'MASTER VEHICULOS')
     const certificados = await Promise.all(vehicles.map(async vehicle => {
       const PETRO = (await client.query(`SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'`)).rows[0].valor_en_bs;
       const costoFormateado = application ? new Intl.NumberFormat('de-DE').format(parseFloat(application.montoLiquidacion)) : '0';
       const procedureData = {
-        id: `${application.idLiquidacion}${vehicle.id_vehiculo}`,
+        id: `${application.idLiquidacion}${vehicle.vehiculo.id_vehiculo}`,
       fecha: application.fechaCreacion,
-      codigo: `${application.idLiquidacion}${vehicle.id_vehiculo}`,
+      codigo: `${application.idLiquidacion}${vehicle.vehiculo.id_vehiculo}`,
       formato: 'VEH-001',
       tramite: 'Impuesto sobre Vehículos',
       institucion: 'HACIENDA',
