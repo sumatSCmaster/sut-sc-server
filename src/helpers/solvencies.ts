@@ -9,11 +9,18 @@ const pool = Pool.getInstance();
 
 export const getSolvencyBCandidates = async ({tipoDocumento, documento}) => {
     const client = await pool.connect();
+    const now = moment();
     try {
+        const pastMonth = now.subtract(1, 'months').format('MM');
+        console.log(pastMonth, 'MASTER SOLVENCY');
         const contribHasUser = (await client.query('SELECT EXISTS(SELECT DISTINCT(id_usuario) FROM usuario JOIN impuesto.contribuyente USING(id_contribuyente) WHERE tipo_documento = $1 AND documento = $2)', [tipoDocumento, documento])).rows[0];
         if (!contribHasUser) throw {status: 401, message: 'El contribuyente no posee un usuario asociado'};
+        //Validacion si tiene liquidaciones sin pagar
         const solvencyRIMInfo = (await client.query(queries.GET_SOLVENCY_B_RIM_CANDIDATES_BY_RIF, [tipoDocumento, documento])).rows;
-        const solvencyContrInfo = await (await client.query(queries.GET_SOLVENCY_B_RIF_CANDIDATES_BY_RIF, [tipoDocumento, documento])).rows[0];
+        //Validacion si tiene liquidaciones sin pagar el contribuyente sin rim
+        const solvencyContrInfo = (await client.query(queries.GET_SOLVENCY_B_RIF_CANDIDATES_BY_RIF, [tipoDocumento, documento])).rows[0];
+        //Validacion si el contribuyente sin rim tiene vehiculos al dia
+        const solvencyContrVehicleValidation = await client.query('SELECT * FROM impuesto.liquidacion WHERE id_subramo = 804', [])
         const result = {contribuyente: solvencyContrInfo, sucursales: [...solvencyRIMInfo]}
         return {status: 200, data: result};
     } catch(e) {throw {status: 500, message: e.message}}
