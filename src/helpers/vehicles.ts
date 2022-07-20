@@ -231,7 +231,10 @@ export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Re
   try {
     await client.query('BEGIN');
     const response = (await client.query(queries.CREATE_VEHICLE, [marca, null, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible, peso, cilindraje, serialMotor])).rows[0];
-    await client.query(`INSERT INTO impuesto.vehiculo_contribuyente(id_vehiculo, id_contribuyente) VALUES($1, $2)`, [response.id_vehiculo, user.id])
+    const idContribuyente = (await client.query('SELECT id_contribuyente FROM usuario WHERE id_usuario = $1', [user.id])).rows[0]?.id_contribuyente;
+    if (idContribuyente) {
+      await client.query(`INSERT INTO impuesto.vehiculo_contribuyente(id_vehiculo, id_contribuyente) VALUES($1, $2)`, [response.id_vehiculo, idContribuyente])
+    }
     await client.query('COMMIT');
     const brand = (await client.query(queries.GET_VEHICLE_BRAND_BY_ID, [response.id_marca_vehiculo])).rows[0].descripcion;
     const responseVehicle = (await client.query(queries.GET_VEHICLE_BY_ID, [response.id_vehiculo])).rows[0];
