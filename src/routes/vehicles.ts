@@ -2,14 +2,14 @@ import { Router } from 'express';
 import { authenticate } from 'passport';
 import { getIdByRif, getIdByRim } from '@utils/user';
 import { fulfill } from '@utils/resolver';
-import { getVehiclesByContributor, getBrands, getVehicleTypes, createVehicle, updateVehicle, deleteVehicle, checkVehicleExists, createVehicleForRim, linkVehicle, unlinkVehicle, updateVehicleDate } from '@helpers/vehicles';
+import { getVehiclesByContributor, getBrands, getVehicleTypes, createVehicle, updateVehicle, deleteVehicle, checkVehicleExists, createVehicleForRim, linkVehicle, unlinkVehicle, updateVehicleDate, getVehiclesByContributorInternal } from '@helpers/vehicles';
 
 const router = Router();
  
 router.get('/getByRif/:rif/:pref', authenticate('jwt'), async (req, res) => {
   const { rif, pref } = req.params;
   const { id_contribuyente } = await getIdByRif(rif, pref);
-  const [err, data] = await fulfill(getVehiclesByContributor(id_contribuyente));
+  const [err, data] = await fulfill(getVehiclesByContributorInternal(id_contribuyente));
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
 });
@@ -17,7 +17,7 @@ router.get('/getByRif/:rif/:pref', authenticate('jwt'), async (req, res) => {
 router.get('/getByRim/:rim', authenticate('jwt'), async (req, res) => {
   const { rim } = req.params;
   const { id_registro_municipal } = await getIdByRim(rim);
-  const [err, data] = await fulfill(getVehiclesByContributor(0, id_registro_municipal));
+  const [err, data] = await fulfill(getVehiclesByContributorInternal(0, id_registro_municipal));
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
 });
