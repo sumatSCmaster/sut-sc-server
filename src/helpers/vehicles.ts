@@ -329,6 +329,8 @@ export const linkVehicle = async(placa: string, id: number, isRim: boolean) => {
     // };
     let vehicle = vehicles.find(v => v.placa === placa)
 
+    console.log('PABLO',vehicle, vehicles)
+
     return {status: 201, message: 'vehiculo enlazado de manera exitosa', vehicle};
   } catch(e) {
     await client.query('ROLLBACK');
