@@ -363,7 +363,7 @@ export const updateVehicle = async (payload: Vehicle, id: number): Promise<Respo
     await client.query('BEGIN');
     const response = (await client.query(queries.UPDATE_VEHICLE, [marca, subcategoria, modelo, placa, anio, color, serialCarroceria, peso, cilindraje, serialMotor, id])).rows[0];
     await client.query('COMMIT');
-    const responseVehicle = (await client.query(queries.GET_VEHICLE_BY_ID, [response.id_vehiculo])).rows[0];
+    const responseVehicle = (await client.query(queries.GET_VEHICLE_BY_ID, [id])).rows[0];
 
     const vehicle: Vehicle = {
       id: response.id_vehiculo,
