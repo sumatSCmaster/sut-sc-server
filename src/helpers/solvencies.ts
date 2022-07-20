@@ -31,7 +31,7 @@ export const getSolvencyBCandidates = async ({tipoDocumento, documento}) => {
         const pastMonthAE = months[now.subtract(2, 'months').format('MMMM').toLowerCase()];
         if (solvencyRIMInfo.length > 0) {
         await Promise.all(solvencyRIMInfo.map(async rim => {
-            const upToDate = await client.query(`SELECT * FROM impuesto.liquidacionn JOIN impuesto.solicitud USING(id_solicitud) WHERE aprobado = true AND id_registro_municipal = $1 AND id_subramo = 10 AND datos#>>'{fecha, month}' = $2 AND datos#>>'{fecha, year}' = $3`, [rim.id_registro_municipal, pastMonthAE, year]);
+            const upToDate = await client.query(`SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING(id_solicitud) WHERE aprobado = true AND id_registro_municipal = $1 AND id_subramo = 10 AND datos#>>'{fecha, month}' = $2 AND datos#>>'{fecha, year}' = $3`, [rim.id_registro_municipal, pastMonthAE, year]);
             if (!(upToDate.rowCount > 0)) return undefined;
             return rim;
         }));
