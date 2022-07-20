@@ -38,7 +38,7 @@ export const getSolvencyBCandidates = async ({tipoDocumento, documento}) => {
         solvencyRIMInfo = solvencyRIMInfo.filter(rim => rim);
         //Validacion que los rim esten al dia con servicios municipales
         await Promise.all(solvencyRIMInfo.map(async rim => {
-            const upToDate = await client.query(`SELECT * FROM impuesto.liquidacion WHERE aprobado = true AND id_registro_municipal = $1 AND id_subramo = 108 AND datos#>>'{fecha, month}' = $2 AND datos#>>'{fecha, year}' = $3`, [rim.id_registro_municipal, pastMonth, year]);
+            const upToDate = await client.query(`SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING(id_solicitud) WHERE aprobado = true AND id_registro_municipal = $1 AND id_subramo = 108 AND datos#>>'{fecha, month}' = $2 AND datos#>>'{fecha, year}' = $3`, [rim.id_registro_municipal, pastMonth, year]);
             if (!(upToDate.rowCount > 0)) return undefined;
             return rim;
         }));
@@ -47,7 +47,7 @@ export const getSolvencyBCandidates = async ({tipoDocumento, documento}) => {
         await Promise.all(solvencyRIMInfo.map(async rim => {
             const rimHasEstate = await client.query('SELECT * FROM inmueble_urbano WHERE id_registro_municipal = $1', [rim.id_registro_municipal]);
             if (rimHasEstate.rowCount > 0) {
-                const upToDate = await client.query(`SELECT * FROM impuesto.liquidacion WHERE aprobado = true AND id_registro_municipal = $1 AND id_subramo = 9 AND datos#>>'{fecha, month}' = $2 AND datos#>>'{fecha, year}' = $3`, [rim.id_registro_municipal, pastMonth, year]);
+                const upToDate = await client.query(`SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING(id_solicitud) WHERE aprobado = true AND id_registro_municipal = $1 AND id_subramo = 9 AND datos#>>'{fecha, month}' = $2 AND datos#>>'{fecha, year}' = $3`, [rim.id_registro_municipal, pastMonth, year]);
                 if (!(upToDate.rowCount > 0)) return undefined;
             }
             return rim;
@@ -57,7 +57,7 @@ export const getSolvencyBCandidates = async ({tipoDocumento, documento}) => {
         await Promise.all(solvencyRIMInfo.map(async rim => {
             const rimHasVehicles = await client.query('SELECT * FROM impuesto.vehiculo WHERE id_registro_municipal = $1', [rim.id_registro_municipal]);
             if (rimHasVehicles.rowCount > 0) {
-                const upToDate = await client.query(`SELECT * FROM impuesto.liquidacion WHERE aprobado = true AND id_registro_municipal = $1 AND id_subramo = 804 AND datos#>>'{fecha, month}' = $2 AND datos#>>'{fecha, year}' = $3`, [rim.id_registro_municipal, pastMonth, year]);
+                const upToDate = await client.query(`SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING(id_solicitud) WHERE aprobado = true AND id_registro_municipal = $1 AND id_subramo = 804 AND datos#>>'{fecha, month}' = $2 AND datos#>>'{fecha, year}' = $3`, [rim.id_registro_municipal, pastMonth, year]);
                 if (!(upToDate.rowCount > 0)) return undefined;
             }
             return rim;
