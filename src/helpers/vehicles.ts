@@ -297,37 +297,38 @@ export const linkVehicle = async(placa: string, id: number, isRim: boolean) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    const vehicles: Vehicle[] = id ? (await client.query(queries.GET_VEHICLES_BY_CONTRIBUTOR, [id])).rows : (await client.query(queries.GET_VEHICLES_BY_MUNICIPAL_REFERENCE, [id])).rows;
     const idVehiculo = (await client.query('SELECT id_vehiculo FROM impuesto.vehiculo WHERE placa_vehiculo = $1', [placa])).rows[0].id_vehiculo;
     const enlazadoARim = (await client.query('SELECT * FROM impuesto.vehiculo WHERE id_registro_municipal IS NOT NULL AND id_vehiculo = $1', [idVehiculo])).rows[0];
     const enlazadoARif = (await client.query('SELECT * FROM impuesto.vehiculo_contribuyente WHERE id_vehiculo = $1', [idVehiculo])).rows[0];
     if (enlazadoARif || enlazadoARim) throw {status: 406, message: 'El vehiculo ya esta enlazado a otro contribuyente'};
     isRim ? await client.query('UPDATE impuesto.vehiculo SET id_registro_municipal = $1 WHERE id_vehiculo = $2', [id, idVehiculo]) : await client.query('INSERT INTO impuesto.vehiculo_contribuyente(id_vehiculo, id_contribuyente) VALUES ($1, $2)', [idVehiculo, id]);
-    const response = (await client.query('SELECT * FROM impuesto.vehiculo WHERE placa_vehiculo = $1', [placa])).rows[0];
-    const brand = (await client.query(queries.GET_VEHICLE_BRAND_BY_ID, [response.id_marca_vehiculo])).rows[0].descripcion;
-    const responseVehicle = (await client.query(queries.GET_VEHICLE_BY_ID, [response.id_vehiculo])).rows[0];
+    // const response = (await client.query('SELECT * FROM impuesto.vehiculo WHERE placa_vehiculo = $1', [placa])).rows[0];
+    // const brand = (await client.query(queries.GET_VEHICLE_BRAND_BY_ID, [response.id_marca_vehiculo])).rows[0].descripcion;
+    // const responseVehicle = (await client.query(queries.GET_VEHICLE_BY_ID, [response.id_vehiculo])).rows[0];
     await client.query('COMMIT');
 
-    const vehicle: Vehicle = {
-      id: response.id_vehiculo,
-      placa: response.placa_vehiculo,
-      marca: brand,
-      modelo: response.modelo_vehiculo,
-      color: response.color_vehiculo,
-      anio: response.anio_vehiculo,
-      serialCarroceria: response.serial_carroceria_vehiculo,
-      tipoCarroceria: response.tipo_carroceria_vehiculo,
-      tipoCombustible: response.tipo_combustible_vehiculo,
-      idSubcategoria: response.id_subcategoria_vehiculo || responseVehicle.id_subcategoria_vehiculo,
-      subcategoria: responseVehicle.subcategoria,
-      idCategoria: responseVehicle.id_categoria_vehiculo,
-      categoria: responseVehicle.categoria,
-      fechaUltimaActualizacion: response.fecha_ultima_actualizacion,
-      peso: response.peso_vehiculo, 
-      cilindraje: response.cilindraje_vehiculo, 
-      serialMotor: response.serial_motor_vehiculo
-    };
+    // const vehicle: Vehicle = {
+    //   id: response.id_vehiculo,
+    //   placa: response.placa_vehiculo,
+    //   marca: brand,
+    //   modelo: response.modelo_vehiculo,
+    //   color: response.color_vehiculo,
+    //   anio: response.anio_vehiculo,
+    //   serialCarroceria: response.serial_carroceria_vehiculo,
+    //   tipoCarroceria: response.tipo_carroceria_vehiculo,
+    //   tipoCombustible: response.tipo_combustible_vehiculo,
+    //   idSubcategoria: response.id_subcategoria_vehiculo || responseVehicle.id_subcategoria_vehiculo,
+    //   subcategoria: responseVehicle.subcategoria,
+    //   idCategoria: responseVehicle.id_categoria_vehiculo,
+    //   categoria: responseVehicle.categoria,
+    //   fechaUltimaActualizacion: response.fecha_ultima_actualizacion,
+    //   peso: response.peso_vehiculo, 
+    //   cilindraje: response.cilindraje_vehiculo, 
+    //   serialMotor: response.serial_motor_vehiculo
+    // };
 
-    return {status: 201, message: 'vehiculo enlazado de manera exitosa', vehicle };
+    return {status: 201, message: 'vehiculo enlazado de manera exitosa', vehicle: vehicles.find(v => v.placa === placa)};
   } catch(e) {
     await client.query('ROLLBACK');
     throw {status: 500, message: e.message}
