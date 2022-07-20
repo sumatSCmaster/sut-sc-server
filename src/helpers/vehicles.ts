@@ -364,7 +364,7 @@ export const updateVehicle = async (payload: Vehicle, id: number): Promise<Respo
     const response = (await client.query(queries.UPDATE_VEHICLE, [marca, subcategoria, modelo, placa, anio, color, serialCarroceria, peso, cilindraje, serialMotor, id])).rows[0];
     await client.query('COMMIT');
     const responseVehicle = (await client.query(queries.GET_VEHICLE_BY_ID, [id])).rows[0];
-
+    const fechaInicio = +(await client.query(`SELECT datos#>>'{fecha, year}' AS year FROM impuesto.liquidacion WHERE (datos#>>'{desglose, 0, vehiculo}')::INT = $1 AND monto_petro = 0 AND datos#>>'{desglose, 0, monto}' IS NULL`, [id])).rows[0]?.year;
     const vehicle: Vehicle = {
       id: response.id_vehiculo,
       placa: response.placa_vehiculo,
@@ -381,6 +381,7 @@ export const updateVehicle = async (payload: Vehicle, id: number): Promise<Respo
       tipoCombustible: response.tipo_combustible_vehiculo,
       fechaUltimaActualizacion: response.fecha_ultima_actualizacion,
       peso: response.peso_vehiculo, 
+      fechaInicio,
       cilindraje: response.cilindraje_vehiculo, 
       serialMotor: response.serial_motor_vehiculo
     };
@@ -520,6 +521,7 @@ interface Vehicle {
   peso: string;
   cilindraje: string;
   serialMotor: string;
+  fechaInicio?: number;
 }
 interface VehicleCategory {
   id: number;

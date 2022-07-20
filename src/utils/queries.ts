@@ -3496,7 +3496,6 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   INNER JOIN impuesto.vehiculo v USING (id_marca_vehiculo) 
   INNER JOIN impuesto.subcategoria_vehiculo sv USING (id_subcategoria_vehiculo)
   INNER JOIN impuesto.categoria_vehiculo cv USING (id_categoria_vehiculo)
-  JOIN impuesto.vehiculo_contribuyente USING(id_vehiculo)
   WHERE id_vehiculo = $1
   ORDER BY v.id_vehiculo`,
   CREATE_VEHICLE: `INSERT INTO impuesto.vehiculo (id_marca_vehiculo, id_registro_municipal, id_subcategoria_vehiculo, modelo_vehiculo, placa_vehiculo, anio_vehiculo, color_vehiculo, fecha_ultima_actualizacion, serial_carroceria_vehiculo, tipo_carroceria_vehiculo, tipo_combustible_vehiculo, peso_vehiculo, cilindraje_vehiculo, serial_motor_vehiculo) VALUES ($1, $2, $3, $4, $5, $6, $7, null, $8, $9, $10, $11, $12, $13) RETURNING *`,
