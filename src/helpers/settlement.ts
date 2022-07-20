@@ -4127,20 +4127,20 @@ export const createCertificateForApplication = async ({ idLiquidacion, media, us
   try {
     client.query('BEGIN');
     const settlement = (await client.query('SELECT id_solicitud FROM impuesto.liquidacion WHERE id_liquidacion = $1', [idLiquidacion])).rows[0].id_solicitud;
-    const applicationView = (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement])).rows;
+    const applicationView = (await client.query(queries.GET_APPLICATION_VIEW_BY_SETTLEMENT, [settlement])).rows.find(liq => liq.idLiquidacion === idLiquidacion);
     // if (applicationView[media]) return { status: 200, message: 'Certificado generado satisfactoriamente', media: applicationView[media] };
-    const dirs = await Promise.all(applicationView.map( async applicationView => {
+    // const dirs = await Promise.all(applicationView.map( async applicationView => {
       const dir = await certificateCreationHandler(applicationView.descripcionCortaRamo, media, {
         gticPool: gtic,
         pool: client,
         user,
         application: applicationView,
       });
-      return dir
-    }
-    ))
+      // return dir
+    // }
+    // ))
     client.query('COMMIT');
-    return { status: 200, message: 'Certificado generado satisfactoriamente', media: dirs };
+    return { status: 200, message: 'Certificado generado satisfactoriamente', media: dir };
   } catch (error) {
     client.query('ROLLBACK');
     mainLogger.error(error);
