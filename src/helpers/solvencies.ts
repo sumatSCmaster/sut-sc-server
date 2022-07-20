@@ -36,6 +36,7 @@ export const getSolvencyBCandidates = async ({tipoDocumento, documento}) => {
             if (!(upToDate.rowCount > 0)) return undefined;
             return rim;
         }));
+        console.log(solvencyRIMInfo, 'MASTER SOLVENCY 2')
         solvencyRIMInfo = solvencyRIMInfo.filter(rim => rim);
         //Validacion que los rim esten al dia con servicios municipales
         await Promise.all(solvencyRIMInfo.map(async rim => {
