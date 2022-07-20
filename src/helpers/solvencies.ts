@@ -12,7 +12,7 @@ export const getSolvencyBCandidates = async ({tipoDocumento, documento}) => {
     const now = moment();
     const months = {january: 'enero', february: 'febrero', march: 'marzo', april: 'abril', may: 'mayo', june: 'junio', july: 'julio', august: 'agosto', september: 'septiembre', october: 'octubre', november: 'noviembre', december: 'diciembre'};
     try {
-        const pastMonth = months[now.subtract(1, 'months').format('MMMM')];
+        const pastMonth = months[now.subtract(1, 'months').format('MMMM').toLowerCase()];
         const year = now.year();
         console.log(pastMonth, now.subtract(1, 'months').format('MMMM'), 'MASTER SOLVENCY');
         const contribHasUser = (await client.query('SELECT EXISTS(SELECT DISTINCT(id_usuario) FROM usuario JOIN impuesto.contribuyente USING(id_contribuyente) WHERE tipo_documento = $1 AND documento = $2)', [tipoDocumento, documento])).rows[0];
@@ -22,13 +22,13 @@ export const getSolvencyBCandidates = async ({tipoDocumento, documento}) => {
         //Validacion si tiene liquidaciones sin pagar el contribuyente sin rim
         let solvencyContrInfo = (await client.query(queries.GET_SOLVENCY_B_RIF_CANDIDATES_BY_RIF, [tipoDocumento, documento])).rows[0];
         //Validacion si el contribuyente sin rim tiene vehiculos al dia
-        const hasVehicles = (await client.query('SELECT * FROM impuesto.vehiculo JOIN impuesto.vehiculo_contribuyente USING (id_contribuyente) WHERE id_contribuyente = $1', [solvencyContrInfo?.id_contribuyente || 0])).rows;
+        const hasVehicles = (await client.query('SELECT impuesto.vehiculo.* FROM impuesto.vehiculo JOIN impuesto.vehiculo_contribuyente USING (id_vehiculo) WHERE id_contribuyente = $1', [solvencyContrInfo?.id_contribuyente || 0])).rows;
         if (hasVehicles.length > 0) {
             const solvencyContrVehicleValidation = await client.query(`SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING (id_solicitud) WHERE id_subramo = 804 AND aprobado = true AND id_registro_municipal IS NULL AND (datos#>>'{fecha, year}')::INT = $1 ORDER BY (datos#>>'{fecha, year}')::INT`, [year]);
             if (!(solvencyContrVehicleValidation.rowCount > 0)) solvencyContrInfo = undefined;
         }
         //Validacion que los rim esten al dia con actividad economica
-        const pastMonthAE = months[now.subtract(2, 'months').format('MMMM')];
+        const pastMonthAE = months[now.subtract(2, 'months').format('MMMM').toLowerCase()];
         if (solvencyRIMInfo.length > 0) {
         await Promise.all(solvencyRIMInfo.map(async rim => {
             const upToDate = await client.query(`SELECT * FROM impuesto.liquidacionn JOIN impuesto.solicitud USING(id_solicitud) WHERE aprobado = true AND id_registro_municipal = $1 AND id_subramo = 10 AND datos#>>'{fecha, month}' = $2 AND datos#>>'{fecha, year}' = $3`, [rim.id_registro_municipal, pastMonthAE, year]);
