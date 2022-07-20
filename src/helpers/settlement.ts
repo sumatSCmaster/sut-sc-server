@@ -4140,7 +4140,7 @@ export const createCertificateForApplication = async ({ idLiquidacion, media, us
     }
     ))
     client.query('COMMIT');
-    return { status: 200, message: 'Certificado generado satisfactoriamente', media: dirs };
+    return { status: 200, message: 'Certificado generado satisfactoriamente', media: dirs.flat() };
   } catch (error) {
     client.query('ROLLBACK');
     mainLogger.error(error);
