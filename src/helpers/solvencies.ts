@@ -14,7 +14,7 @@ export const getSolvencyBCandidates = async ({tipoDocumento, documento}) => {
     try {
         const pastMonth = months[now.subtract(1, 'months').format('MMMM')];
         const year = now.year();
-        console.log(pastMonth, 'MASTER SOLVENCY');
+        console.log(pastMonth, now.subtract(1, 'months').format('MMMM'), 'MASTER SOLVENCY');
         const contribHasUser = (await client.query('SELECT EXISTS(SELECT DISTINCT(id_usuario) FROM usuario JOIN impuesto.contribuyente USING(id_contribuyente) WHERE tipo_documento = $1 AND documento = $2)', [tipoDocumento, documento])).rows[0];
         if (!contribHasUser) throw {status: 401, message: 'El contribuyente no posee un usuario asociado'};
         //Validacion si tiene liquidaciones sin pagar
@@ -22,7 +22,7 @@ export const getSolvencyBCandidates = async ({tipoDocumento, documento}) => {
         //Validacion si tiene liquidaciones sin pagar el contribuyente sin rim
         let solvencyContrInfo = (await client.query(queries.GET_SOLVENCY_B_RIF_CANDIDATES_BY_RIF, [tipoDocumento, documento])).rows[0];
         //Validacion si el contribuyente sin rim tiene vehiculos al dia
-        const hasVehicles = (await client.query('SELECT * FROM impuesto.vehiculo JOIN impuesto.vehiculo_contribuyente USING id_contribuyente WHERE id_contribuyente = $1', [solvencyContrInfo?.id_contribuyente || 0])).rows;
+        const hasVehicles = (await client.query('SELECT * FROM impuesto.vehiculo JOIN impuesto.vehiculo_contribuyente USING (id_contribuyente) WHERE id_contribuyente = $1', [solvencyContrInfo?.id_contribuyente || 0])).rows;
         if (hasVehicles.length > 0) {
             const solvencyContrVehicleValidation = await client.query(`SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING (id_solicitud) WHERE id_subramo = 804 AND aprobado = true AND id_registro_municipal IS NULL AND (datos#>>'{fecha, year}')::INT = $1 ORDER BY (datos#>>'{fecha, year}')::INT`, [year]);
             if (!(solvencyContrVehicleValidation.rowCount > 0)) solvencyContrInfo = undefined;
