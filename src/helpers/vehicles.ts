@@ -163,7 +163,9 @@ const getVehicleSubcategoriesByCategory = async (id: number, client: PoolClient)
 export const getVehiclesByContributor = async (id?: number, rim?: number): Promise<Response & { vehiculos: Vehicle[] }> => {
   const client = await pool.connect();
   try {
-    const vehicles: Vehicle[] = id ? (await client.query(queries.GET_VEHICLES_BY_CONTRIBUTOR, [id])).rows : (await client.query(queries.GET_VEHICLES_BY_MUNICIPAL_REFERENCE, [rim])).rows;
+    const idContribuyente = (await client.query('SELECT id_contribuyente FROM usuario WHERE id_usuario = $1', [id])).rows[0]?.id_contribuyente;
+    if (!idContribuyente) throw {status: 401, message: 'Debes ser un contribuyente para acceder a los impuestos vehiculares'}
+    const vehicles: Vehicle[] = id ? (await client.query(queries.GET_VEHICLES_BY_CONTRIBUTOR, [idContribuyente])).rows : (await client.query(queries.GET_VEHICLES_BY_MUNICIPAL_REFERENCE, [rim])).rows;
     return { status: 200, message: 'Vehiculos del contribuyente obtenidos', vehiculos: vehicles };
   } catch (error) {
     mainLogger.error(error);
