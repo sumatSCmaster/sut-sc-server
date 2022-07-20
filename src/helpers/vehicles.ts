@@ -297,7 +297,7 @@ export const linkVehicle = async(placa: string, id: number, isRim: boolean) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const vehicles: Vehicle[] = id ? (await client.query(queries.GET_VEHICLES_BY_CONTRIBUTOR, [id])).rows : (await client.query(queries.GET_VEHICLES_BY_MUNICIPAL_REFERENCE, [id])).rows;
+    const vehicles: Vehicle[] = isRim ? (await client.query(queries.GET_VEHICLES_BY_CONTRIBUTOR, [id])).rows : (await client.query(queries.GET_VEHICLES_BY_MUNICIPAL_REFERENCE, [id])).rows;
     const idVehiculo = (await client.query('SELECT id_vehiculo FROM impuesto.vehiculo WHERE placa_vehiculo = $1', [placa])).rows[0].id_vehiculo;
     const enlazadoARim = (await client.query('SELECT * FROM impuesto.vehiculo WHERE id_registro_municipal IS NOT NULL AND id_vehiculo = $1', [idVehiculo])).rows[0];
     const enlazadoARif = (await client.query('SELECT * FROM impuesto.vehiculo_contribuyente WHERE id_vehiculo = $1', [idVehiculo])).rows[0];
@@ -327,8 +327,9 @@ export const linkVehicle = async(placa: string, id: number, isRim: boolean) => {
     //   cilindraje: response.cilindraje_vehiculo, 
     //   serialMotor: response.serial_motor_vehiculo
     // };
+    let vehicle = vehicles.find(v => v.placa === placa)
 
-    return {status: 201, message: 'vehiculo enlazado de manera exitosa', vehicle: vehicles.find(v => v.placa === placa)};
+    return {status: 201, message: 'vehiculo enlazado de manera exitosa', vehicle};
   } catch(e) {
     await client.query('ROLLBACK');
     throw {status: 500, message: e.message}
