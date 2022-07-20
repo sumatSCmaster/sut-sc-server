@@ -857,8 +857,8 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_SOLVENCY_B_RIF_CANDIDATES_BY_RIF: `WITH b AS (
     SELECT DISTINCT(impuesto.contribuyente.*) 
     FROM usuario 
+    LEFT JOIN impuesto.solicitud USING(id_contribuyente) 
     JOIN impuesto.contribuyente ON usuario.id_contribuyente = impuesto.contribuyente.id_contribuyente 
-    JOIN impuesto.solicitud USING(id_contribuyente) 
     WHERE impuesto.solicitud.id_contribuyente NOT IN (SELECT id_contribuyente FROM (SELECT DISTINCT(impuesto.solicitud.*) FROM impuesto.solicitud JOIN impuesto.liquidacion USING (id_solicitud) WHERE id_registro_municipal IS NULL) s WHERE aprobado <> true AND id_contribuyente IS NOT NULL) OR id_solicitud IS NULL)
   SELECT * FROM b WHERE tipo_documento = $1 AND documento = $2`,
   GET_APPLICATION_VIEW_BY_SETTLEMENT: `

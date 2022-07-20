@@ -11,7 +11,7 @@ export const getSolvencyBCandidates = async ({tipoDocumento, documento}) => {
     const client = await pool.connect();
     const now = moment();
     try {
-        const pastMonth = now.subtract(1, 'months').format('MM');
+        const pastMonth = now.subtract(1, 'months').format('MMMM');
         console.log(pastMonth, 'MASTER SOLVENCY');
         const contribHasUser = (await client.query('SELECT EXISTS(SELECT DISTINCT(id_usuario) FROM usuario JOIN impuesto.contribuyente USING(id_contribuyente) WHERE tipo_documento = $1 AND documento = $2)', [tipoDocumento, documento])).rows[0];
         if (!contribHasUser) throw {status: 401, message: 'El contribuyente no posee un usuario asociado'};
