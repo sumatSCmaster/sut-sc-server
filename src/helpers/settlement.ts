@@ -3934,7 +3934,7 @@ export const createSolvencyABSettlement = async (datos, tipo, user) => {
   const client = await pool.connect();
   try {
     client.query('BEGIN');
-    const {contribuyente, sucursal, costo} = datos;
+    const {contribuyente, contribuyente: {sucursal}, costo} = datos;
     const months = {january: 'enero', february: 'febrero', march: 'marzo', april: 'abril', may: 'mayo', june: 'junio', july: 'julio', august: 'agosto', september: 'septiembre', october: 'octubre', november: 'noviembre', december: 'diciembre'};
     console.log(months[moment().format('MMMM').toLowerCase()], 'MASTER SOLVENCIES A B');
     datos.fecha = {month: months[moment().format('MMMM').toLowerCase()], year: moment().year()}
