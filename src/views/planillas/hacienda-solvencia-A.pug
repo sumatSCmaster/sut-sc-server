@@ -44,12 +44,12 @@ block content
       .tr
         .td
           p
-            b Representante del Inmueble Ubicado en:
+            b cuyo representante del Inmueble está ubicado en:
             span &nbsp;#{datos.contribuyente.direccion ? (datos.contribuyente.direccion.trim() !== '' ? datos.contribuyente.direccion : 'Dirección Sin Asignar') : ''}.&nbsp;
       .tr
         .td
           p
-            b El contribuyente se encuentra solvente con el municipio a la fecha de:
+            b se encuentra solvente con el municipio a la fecha de:
             span &nbsp;#{moment().format('DD/MM/YYYY')}&nbsp;
       .tr
         .td
