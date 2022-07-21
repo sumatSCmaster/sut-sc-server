@@ -3936,7 +3936,7 @@ export const createSolvencyABSettlement = async (datos, tipo, user) => {
     client.query('BEGIN');
     const {contribuyente, sucursal, costo} = datos;
     const months = {january: 'enero', february: 'febrero', march: 'marzo', april: 'abril', may: 'mayo', june: 'junio', july: 'julio', august: 'agosto', september: 'septiembre', october: 'octubre', november: 'noviembre', december: 'diciembre'};
-    console.log(moment().format('MMMM').toLowerCase(), 'MASTER SOLVENCIES A B');
+    console.log(months[moment().format('MMMM').toLowerCase()], 'MASTER SOLVENCIES A B');
     datos.fecha = {month: months[moment().format('MMMM').toLowerCase()], year: moment().year()}
     const hasBranch = !!sucursal;
     const contributor = await client.query('SELECT * FROM impuesto.contribuyente WHERE documento = $1 AND tipo_documento = $2', [contribuyente.documento, contribuyente.tipo_documento]);
