@@ -35,28 +35,28 @@ block content
         .td
           p
             b El Contribuyente:
-            span &nbsp;#{datos.usuario.razon_social}.&nbsp;
-      if datos.usuario.sucursal
+            span &nbsp;#{datos.contribuyente.razon_social}.&nbsp;
+      if datos.sucursal
         .tr
           .td
             p
               b R.I.M:
-              span &nbsp;#{datos.usuario.sucursal.referencia_municipal ? datos.usuario.sucursal.referencia_municipal : 'N/A'},&nbsp;
+              span &nbsp;#{datos.sucursal.referencia_municipal ? datos.sucursal.referencia_municipal : 'N/A'},&nbsp;
         .tr
           .td
             p
               b Representante Legal:
-              span &nbsp;#{datos.usuario.sucursal.nombre_representante ? datos.usuario.sucursal.nombre_representante : 'N/A'}.&nbsp;
+              span &nbsp;#{datos.sucursal.nombre_representante ? datos.sucursal.nombre_representante : 'N/A'}.&nbsp;
       .tr
         .td
           p
             b C.I./R.I.F:
-            span &nbsp;#{datos.usuario.documento}.&nbsp;
+            span &nbsp;#{datos.contribuyente.documento}.&nbsp;
       .tr
         .td
           p
             b Dirección:
-            span &nbsp;#{datos.usuario.direccion ? (datos.usuario.direccion.trim() !== '' ? datos.usuario.direccion : 'Dirección Sin Asignar') : 'Dirección Sin Asignar'}.&nbsp;
+            span &nbsp;#{datos.contribuyente.direccion ? (datos.contribuyente.direccion.trim() !== '' ? datos.contribuyente.direccion : 'Dirección Sin Asignar') : 'Dirección Sin Asignar'}.&nbsp;
       .tr
         .td
           p
