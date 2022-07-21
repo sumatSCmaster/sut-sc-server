@@ -3946,7 +3946,7 @@ export const createSolvencyABSettlement = async (datos, tipo, user) => {
     const costoLiquidacion = tipo === 'a' ? costo : (await client.query('SELECT indicador FROM impuesto.baremo WHERE id_baremo = 13')).rows[0]?.indicador; 
     const settlement = await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
       application.id_solicitud,
-      costoLiquidacion,
+      costoLiquidacion * (contribuyente.tipo_documento === 'J' ? 5 : 1),
       `TASA DE SOLVENCIA TIPO ${tipo.toUpperCase()}`,
       'Pago ordinario',
       datos,
