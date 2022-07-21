@@ -181,15 +181,15 @@ block content
         //-   div(style={'-webkit-flex':'3'}).td.center.border-bottom
         //-     p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.cienPorcientoBanco ? (datos.metodoPago.transferencias.cienPorcientoBanco.total) : 0)}
         
-        each item in transferencias
-          .tr.break-page
-            div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
-              p(style={'padding-left':'10px'})
-                b #{item.banco}
-            div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
-              p #{item.transacciones}            
-            div(style={'-webkit-flex':'3'}).td.center.border-bottom
-              p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.monto)}
+      each item in transferencias
+        .tr.break-page
+          div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
+            p(style={'padding-left':'10px'})
+              b #{item.banco}
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
+            p #{item.transacciones}            
+          div(style={'-webkit-flex':'3'}).td.center.border-bottom
+            p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.monto)}
         .tr.break-page
           div(style={'-webkit-flex':'4',}).th.border-right
             p
