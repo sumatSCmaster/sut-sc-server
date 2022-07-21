@@ -35,17 +35,17 @@ block content
         .td
           p
             b El Contribuyente:
-            span &nbsp;#{datos.usuario.razon_social}&nbsp;
+            span &nbsp;#{datos.contribuyente.razon_social}&nbsp;
       .tr
         .td
           p
             b C.I./R.I.F:
-            span &nbsp;#{datos.usuario.documento}&nbsp;
+            span &nbsp;#{datos.contribuyente.documento}&nbsp;
       .tr
         .td
           p
             b Representante del Inmueble Ubicado en:
-            span &nbsp;#{datos.usuario.direccion ? (datos.usuario.direccion.trim() !== '' ? datos.usuario.direccion : 'Dirección Sin Asignar') : ''}.&nbsp;
+            span &nbsp;#{datos.contribuyente.direccion ? (datos.contribuyente.direccion.trim() !== '' ? datos.contribuyente.direccion : 'Dirección Sin Asignar') : ''}.&nbsp;
       .tr
         .td
           p
@@ -55,7 +55,7 @@ block content
         .td
           p
             b Esta solvencia es valida por los siguientes tres meses.
-      if datos.usuario.inmueble 
+      if datos.contribuyente.inmueble 
         .tr
           .td
             p
@@ -64,23 +64,23 @@ block content
           .td
             p
               b Codigo Catastral:
-              span &nbsp;#{datos.usuario.inmueble.cod_catastral}&nbsp;
+              span &nbsp;#{datos.contribuyente.inmueble.cod_catastral}&nbsp;
         .tr
           .td
             p
               b Direccion:
-              span &nbsp;#{datos.usuario.inmueble.direccion}&nbsp;
+              span &nbsp;#{datos.contribuyente.inmueble.direccion}&nbsp;
         .tr
           .td
             p
               b Tipo de Inmueble:
-              span &nbsp;#{datos.usuario.inmueble.tipo_inmueble}&nbsp;
+              span &nbsp;#{datos.contribuyente.inmueble.tipo_inmueble}&nbsp;
         .tr
           .td
             p
               b Ultimo Avaluo:
-              span &nbsp; Bs. &nbsp;#{datos.usuario.inmueble.avaluo}&nbsp;
-      if datos.usuario.sucursal 
+              span &nbsp; Bs. &nbsp;#{datos.contribuyente.inmueble.avaluo}&nbsp;
+      if datos.sucursal 
         .tr
           .td
             p
@@ -89,27 +89,27 @@ block content
           .td
             p
               b Identificado con el R.I.M:
-              span &nbsp;#{datos.usuario.sucursal.referencia_municipal ? datos.usuario.sucursal.referencia_municipal : 'N/A'}&nbsp; 
+              span &nbsp;#{datos.sucursal.referencia_municipal ? datos.sucursal.referencia_municipal : 'N/A'}&nbsp; 
         .tr
           .td
             p
               b Codigo Catastral:
-              span &nbsp;#{datos.usuario.sucursal.inmueble.cod_catastral}&nbsp;
+              span &nbsp;#{datos.sucursal.inmueble.cod_catastral}&nbsp;
         .tr
           .td
             p
               b Direccion:
-              span &nbsp;#{datos.usuario.sucursal.inmueble.direccion}&nbsp;
+              span &nbsp;#{datos.sucursal.inmueble.direccion}&nbsp;
         .tr
           .td
             p
               b Tipo de Inmueble:
-              span &nbsp;#{datos.usuario.sucursal.inmueble.tipo_inmueble}&nbsp;
+              span &nbsp;#{datos.sucursal.inmueble.tipo_inmueble}&nbsp;
         .tr
           .td
             p
               b Ultimo Avaluo:
-              span &nbsp; Bs. &nbsp;#{datos.usuario.sucursal.inmueble.avaluo}&nbsp;
+              span &nbsp; Bs. &nbsp;#{datos.sucursal.inmueble.avaluo}&nbsp;
     div(style={'margin-top':"90px"}).flex.center
       div(style={height:"180px"})
         img(src=QR, alt='QR', style={width:'300px', height:"300px"})
