@@ -1,4 +1,4 @@
-footer#footer(style={'padding':'0px', 'margin-top':'10px'})
+footer#footer(style={'padding':'0px', 'margin-top':'10px', 'page-break-after': 'always'})
     - direccion = 'Avenida Alberto Carnevalli, Urbanización Merida, San Cristóbal, Estado Táchira, Venezuela. Zona postal 5001 RIF G-20000479-7'
     - telefono = 'Teléfono Central 0276 - 3472022 / 0276- 3476036 / 0261- 3477465'
     - email = 'despachoalcaldiasc@gmail.com'
@@ -8,13 +8,13 @@ footer#footer(style={'padding':'0px', 'margin-top':'10px'})
     div#footer(style={ 'margin': '0px', 'padding':'0px'})
         p(style={'line-height':'0.8','padding':'0px', 'margin-top':'3px'}) #{direccion}
         p(style={'padding':'0px', 'margin':'0px'}) #{telefono}
-        div.footer-row(style={ 'margin-top': '3px','padding':'0px'})
-        div.footer-row(style={'padding':'0px', 'margin-top':'3px', 'margin-bottom': '0px','margin-left': '5px', 'margin-right': '5px'})
-            img(src="images/gmail.png" style={ 'margin': '0px', 'padding':'0px'}).icon
-            p(style={'padding':'0px', 'margin-top':'0px', 'margin-bottom': '0px','margin-left': '5px', 'margin-right': '5px'}) #{email}
-        div.footer-row(style={'padding':'0px', 'margin-top':'3px', 'margin-bottom': '0px', 'margin-left': '5px', 'margin-right': '5px'})
-            img(src="images/instagram.png" style={ 'margin': '0px', 'padding':'0px'}).icon
-            p(style={'padding':'0px', 'margin-top':'0px', 'margin-bottom': '0px','margin-left': '5px', 'margin-right': '5px'}) #{instagram}
-        div.footer-row(style={'padding':'0px', 'margin-top':'3px', 'margin-bottom': '0px', 'margin-left': '5px', 'margin-right': '5px'})
-            img(src="images/twitter.png" style={ 'margin': '0px', 'padding':'0px'}).icon
-            p(style={'padding':'0px', 'margin-top':'0px', 'margin-bottom': '0px','margin-left': '5px', 'margin-right': '5px'}) #{twitter}
+        div(style={'margin-top': '3px','padding':'0px', 'width':'100%', 'display': '-webkit-flex', '-webkit-align-items': 'center', '-webkit-justify-content': 'space-between'})
+            div.footer-row(style={'padding':'0px', 'margin-top':'3px', 'margin-bottom': '0px','margin-left': '5px', 'margin-right': '5px'})
+                img(src="images/gmail.png" style={ 'margin': '0px', 'padding':'0px'}).icon
+                p(style={'padding':'0px', 'margin-top':'0px', 'margin-bottom': '0px','margin-left': '5px', 'margin-right': '5px'}) #{email}
+            div.footer-row(style={'padding':'0px', 'margin-top':'3px', 'margin-bottom': '0px', 'margin-left': '5px', 'margin-right': '5px'})
+                img(src="images/instagram.png" style={ 'margin': '0px', 'padding':'0px'}).icon
+                p(style={'padding':'0px', 'margin-top':'0px', 'margin-bottom': '0px','margin-left': '5px', 'margin-right': '5px'}) #{instagram}
+            div.footer-row(style={'padding':'0px', 'margin-top':'3px', 'margin-bottom': '0px', 'margin-left': '5px', 'margin-right': '5px'})
+                img(src="images/twitter.png" style={ 'margin': '0px', 'padding':'0px'}).icon
+                p(style={'padding':'0px', 'margin-top':'0px', 'margin-bottom': '0px','margin-left': '5px', 'margin-right': '5px'}) #{twitter}
