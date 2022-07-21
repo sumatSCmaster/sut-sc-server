@@ -4238,6 +4238,41 @@ const createVHSolvenciesForApplication = async ({application}) => {
 }
 }
 
+const createABSolvenciesForApplication = async ({application}) => {
+  const client = await pool.connect();
+  try {
+    // const contribuyente = (await client.query('SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1', [application.contribuyente])).rows[0];
+    // const vehicles = await Promise.all(application.datos.desglose.map(async desglose => {
+      // const vehiculo = (await client.query('SELECT v.*, mv.nombre, sv.descripcion AS impuesto, cv.descripcion FROM impuesto.vehiculo v JOIN impuesto.marca_vehiculo mv USING(id_marca_vehiculo) JOIN impuesto.subcategoria_vehiculo sv USING(id_subcategoria_vehiculo) JOIN impuesto.categoria_vehiculo cv USING(id_categoria_vehiculo) WHERE id_vehiculo = $1', [desglose.vehiculo])).rows[0];
+      // return {vehiculo, contribuyente};
+    // }))
+    // const certificados = await Promise.all(vehicles.map(async vehicle => {
+      const PETRO = (await client.query(`SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'`)).rows[0].valor_en_bs;
+      const costoFormateado = application ? new Intl.NumberFormat('de-DE').format(parseFloat(application.montoLiquidacion)) : '0';
+      const procedureData = {
+        id: application.idLiquidacion,
+      fecha: application.fechaCreacion,
+      codigo: application.idLiquidacion,
+      formato: `HACIENDA-SOL-${application.descripcionCortaRamo === 'SOLB' ? 'B' : 'A'}`,
+      tramite: `Solvencia Tipo ${application.descripcionCortaRamo === 'SOLB' ? 'B' : 'A'}`,
+      institucion: 'HACIENDA',
+      datos: application.datos,
+      estado: 'finalizado',
+      tipoTramite: application.descripcionCortaRamo === 'SOLB' ? 113 : 112,
+      PETRO,
+      costoFormateado,
+      bancos: null,
+      codigoRRI: 'N/A',
+      };
+      const form = (await createForm(procedureData, client)) as string;
+      return form;
+    // }));
+    // return certificados;
+} catch(e) {
+  throw e
+}
+}
+
 const createSolvencyForApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
   try {
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
@@ -6064,7 +6099,9 @@ const certificateCases = switchcase({
   IU: { recibo: createReceiptForSMOrIUApplication, certificado: createReceiptForIUApplication },
   PP: { recibo: createReceiptForPPApplication },
   MUL: { multa: createFineDocument },
-  VH: {solvencia: createVHSolvenciesForApplication}
+  VH: {solvencia: createVHSolvenciesForApplication},
+  SOLB: { solvencia: createABSolvenciesForApplication},
+  SOLA: {solvencia: createABSolvenciesForApplication}
 })(null);
 
 const breakdownCases = switchcase({
