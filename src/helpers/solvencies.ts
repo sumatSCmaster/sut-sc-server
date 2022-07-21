@@ -18,54 +18,54 @@ export const getSolvencyBCandidates = async ({tipoDocumento, documento}) => {
         const contribHasUser = (await client.query('SELECT EXISTS(SELECT DISTINCT(id_usuario) FROM usuario JOIN impuesto.contribuyente USING(id_contribuyente) WHERE tipo_documento = $1 AND documento = $2)', [tipoDocumento, documento])).rows[0];
         if (!contribHasUser) throw {status: 401, message: 'El contribuyente no posee un usuario asociado'};
         //Validacion si tiene liquidaciones sin pagar
-        let solvencyRIMInfo = (await client.query(queries.GET_SOLVENCY_B_RIM_CANDIDATES_BY_RIF, [tipoDocumento, documento])).rows;
+        let solvencyRIMInfo = (await client.query(`SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2 LIMIT 1)`, [tipoDocumento, documento])).rows;
         //Validacion si tiene liquidaciones sin pagar el contribuyente sin rim
-        let solvencyContrInfo = (await client.query(queries.GET_SOLVENCY_B_RIF_CANDIDATES_BY_RIF, [tipoDocumento, documento])).rows[0];
+        let solvencyContrInfo = (await client.query(`SELECT * FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2 LIMIT 1`, [tipoDocumento, documento])).rows[0];
         //Validacion si el contribuyente sin rim tiene vehiculos al dia
-        const hasVehicles = (await client.query('SELECT impuesto.vehiculo.* FROM impuesto.vehiculo JOIN impuesto.vehiculo_contribuyente USING (id_vehiculo) WHERE id_contribuyente = $1', [solvencyContrInfo?.id_contribuyente || 0])).rows;
-        if (hasVehicles.length > 0) {
-            const solvencyContrVehicleValidation = await client.query(`SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING (id_solicitud) WHERE id_subramo = 804 AND aprobado = true AND id_registro_municipal IS NULL AND (datos#>>'{fecha, year}')::INT = $1 ORDER BY (datos#>>'{fecha, year}')::INT`, [year]);
-            if (!(solvencyContrVehicleValidation.rowCount > 0)) solvencyContrInfo = undefined;
-        }
-        //Validacion que los rim esten al dia con actividad economica
-        const pastMonthAE = months[now.subtract(2, 'months').format('MMMM').toLowerCase()];
-        if (solvencyRIMInfo.length > 0) {
-        await Promise.all(solvencyRIMInfo.map(async rim => {
-            const upToDate = await client.query(`SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING(id_solicitud) WHERE aprobado = true AND id_registro_municipal = $1 AND id_subramo = 10 AND datos#>>'{fecha, month}' = $2 AND datos#>>'{fecha, year}' = $3`, [rim.id_registro_municipal, pastMonthAE, year]);
-            console.log(upToDate.rows, 'MASTER SOLVENCY')
-            if (!(upToDate.rowCount > 0)) return undefined;
-            return rim;
-        }));
-        console.log(solvencyRIMInfo, 'MASTER SOLVENCY 2')
-        solvencyRIMInfo = solvencyRIMInfo.filter(rim => rim);
-        //Validacion que los rim esten al dia con servicios municipales
-        await Promise.all(solvencyRIMInfo.map(async rim => {
-            const upToDate = await client.query(`SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING(id_solicitud) WHERE aprobado = true AND id_registro_municipal = $1 AND id_subramo = 108 AND datos#>>'{fecha, month}' = $2 AND datos#>>'{fecha, year}' = $3`, [rim.id_registro_municipal, pastMonth, year]);
-            if (!(upToDate.rowCount > 0)) return undefined;
-            return rim;
-        }));
-        solvencyRIMInfo = solvencyRIMInfo.filter(rim => rim);
-        //Validacion que los rim esten al dia con inmuebles urbanos
-        await Promise.all(solvencyRIMInfo.map(async rim => {
-            const rimHasEstate = await client.query('SELECT * FROM inmueble_urbano WHERE id_registro_municipal = $1', [rim.id_registro_municipal]);
-            if (rimHasEstate.rowCount > 0) {
-                const upToDate = await client.query(`SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING(id_solicitud) WHERE aprobado = true AND id_registro_municipal = $1 AND id_subramo = 9 AND datos#>>'{fecha, month}' = $2 AND datos#>>'{fecha, year}' = $3`, [rim.id_registro_municipal, pastMonth, year]);
-                if (!(upToDate.rowCount > 0)) return undefined;
-            }
-            return rim;
-        }));
-        solvencyRIMInfo = solvencyRIMInfo.filter(rim => rim);
-        //Validacion que los rim esten al dia con vehiculos
-        await Promise.all(solvencyRIMInfo.map(async rim => {
-            const rimHasVehicles = await client.query('SELECT * FROM impuesto.vehiculo WHERE id_registro_municipal = $1', [rim.id_registro_municipal]);
-            if (rimHasVehicles.rowCount > 0) {
-                const upToDate = await client.query(`SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING(id_solicitud) WHERE aprobado = true AND id_registro_municipal = $1 AND id_subramo = 804 AND datos#>>'{fecha, month}' = $2 AND datos#>>'{fecha, year}' = $3`, [rim.id_registro_municipal, pastMonth, year]);
-                if (!(upToDate.rowCount > 0)) return undefined;
-            }
-            return rim;
-        }));
-        solvencyRIMInfo = solvencyRIMInfo.filter(rim => rim);
-    }
+    //     const hasVehicles = (await client.query('SELECT impuesto.vehiculo.* FROM impuesto.vehiculo JOIN impuesto.vehiculo_contribuyente USING (id_vehiculo) WHERE id_contribuyente = $1', [solvencyContrInfo?.id_contribuyente || 0])).rows;
+    //     if (hasVehicles.length > 0) {
+    //         const solvencyContrVehicleValidation = await client.query(`SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING (id_solicitud) WHERE id_subramo = 804 AND aprobado = true AND id_registro_municipal IS NULL AND (datos#>>'{fecha, year}')::INT = $1 ORDER BY (datos#>>'{fecha, year}')::INT`, [year]);
+    //         if (!(solvencyContrVehicleValidation.rowCount > 0)) solvencyContrInfo = undefined;
+    //     }
+    //     //Validacion que los rim esten al dia con actividad economica
+    //     const pastMonthAE = months[now.subtract(2, 'months').format('MMMM').toLowerCase()];
+    //     if (solvencyRIMInfo.length > 0) {
+    //     await Promise.all(solvencyRIMInfo.map(async rim => {
+    //         const upToDate = await client.query(`SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING(id_solicitud) WHERE aprobado = true AND id_registro_municipal = $1 AND id_subramo = 10 AND datos#>>'{fecha, month}' = $2 AND datos#>>'{fecha, year}' = $3`, [rim.id_registro_municipal, pastMonthAE, year]);
+    //         console.log(upToDate.rows, 'MASTER SOLVENCY')
+    //         if (!(upToDate.rowCount > 0)) return undefined;
+    //         return rim;
+    //     }));
+    //     console.log(solvencyRIMInfo, 'MASTER SOLVENCY 2')
+    //     solvencyRIMInfo = solvencyRIMInfo.filter(rim => rim);
+    //     //Validacion que los rim esten al dia con servicios municipales
+    //     await Promise.all(solvencyRIMInfo.map(async rim => {
+    //         const upToDate = await client.query(`SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING(id_solicitud) WHERE aprobado = true AND id_registro_municipal = $1 AND id_subramo = 108 AND datos#>>'{fecha, month}' = $2 AND datos#>>'{fecha, year}' = $3`, [rim.id_registro_municipal, pastMonth, year]);
+    //         if (!(upToDate.rowCount > 0)) return undefined;
+    //         return rim;
+    //     }));
+    //     solvencyRIMInfo = solvencyRIMInfo.filter(rim => rim);
+    //     //Validacion que los rim esten al dia con inmuebles urbanos
+    //     await Promise.all(solvencyRIMInfo.map(async rim => {
+    //         const rimHasEstate = await client.query('SELECT * FROM inmueble_urbano WHERE id_registro_municipal = $1', [rim.id_registro_municipal]);
+    //         if (rimHasEstate.rowCount > 0) {
+    //             const upToDate = await client.query(`SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING(id_solicitud) WHERE aprobado = true AND id_registro_municipal = $1 AND id_subramo = 9 AND datos#>>'{fecha, month}' = $2 AND datos#>>'{fecha, year}' = $3`, [rim.id_registro_municipal, pastMonth, year]);
+    //             if (!(upToDate.rowCount > 0)) return undefined;
+    //         }
+    //         return rim;
+    //     }));
+    //     solvencyRIMInfo = solvencyRIMInfo.filter(rim => rim);
+    //     //Validacion que los rim esten al dia con vehiculos
+    //     await Promise.all(solvencyRIMInfo.map(async rim => {
+    //         const rimHasVehicles = await client.query('SELECT * FROM impuesto.vehiculo WHERE id_registro_municipal = $1', [rim.id_registro_municipal]);
+    //         if (rimHasVehicles.rowCount > 0) {
+    //             const upToDate = await client.query(`SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING(id_solicitud) WHERE aprobado = true AND id_registro_municipal = $1 AND id_subramo = 804 AND datos#>>'{fecha, month}' = $2 AND datos#>>'{fecha, year}' = $3`, [rim.id_registro_municipal, pastMonth, year]);
+    //             if (!(upToDate.rowCount > 0)) return undefined;
+    //         }
+    //         return rim;
+    //     }));
+    //     solvencyRIMInfo = solvencyRIMInfo.filter(rim => rim);
+    // }
         const result = {contribuyente: solvencyContrInfo, sucursales: [...solvencyRIMInfo]}
         return {status: 200, data: result};
     } catch(e) {throw {status: 500, message: e.message}}
