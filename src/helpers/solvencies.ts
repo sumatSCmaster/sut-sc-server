@@ -77,7 +77,7 @@ export const getSolvencyACandidates = async ({tipoDocumento, documento}) => {
         const contribHasUser = (await client.query('SELECT EXISTS(SELECT DISTINCT(id_usuario) FROM usuario JOIN impuesto.contribuyente USING(id_contribuyente) WHERE tipo_documento = $1 AND documento = $2)', [tipoDocumento, documento])).rows[0];
         if (!contribHasUser) throw {status: 401, message: 'El contribuyente no posee un usuario asociado'};
         //Logica para el contribuyente
-        const contribHasSolvencyB = (await client.query(queries.GET_SOLVENCY_A_RIM_CANDIDATES_BY_RIF, [tipoDocumento, documento, moment().format('YYYY-MM-DD')])).rows[0].exists;
+        const contribHasSolvencyB = (await client.query(queries.GET_SOLVENCY_A_RIM_CANDIDATES_BY_RIF, [documento, tipoDocumento, moment().format('YYYY-MM-DD')])).rows[0].exists;
         console.log(moment().format('YYYY-MM-DD'), 'MASTER')
         const solvencyContrInfo = (await client.query(`SELECT * FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2`, [tipoDocumento, documento])).rows[0];
         if (!solvencyContrInfo) throw {status: 401, message: 'El contribuyente no existe o no está registrado en el sistema SUT'};
