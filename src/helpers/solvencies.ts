@@ -77,7 +77,7 @@ export const getSolvencyACandidates = async ({tipoDocumento, documento}) => {
         const contribHasUser = (await client.query('SELECT EXISTS(SELECT DISTINCT(id_usuario) FROM usuario JOIN impuesto.contribuyente USING(id_contribuyente) WHERE tipo_documento = $1 AND documento = $2)', [tipoDocumento, documento])).rows[0];
         if (!contribHasUser) throw {status: 401, message: 'El contribuyente no posee un usuario asociado'};
         //Logica para el contribuyente
-        const contribHasSolvencyB = (await client.query(queries.GET_SOLVENCY_A_RIM_CANDIDATES_BY_RIF, [tipoDocumento, documento, moment().subtract(3, 'month').format('YYYY-MM-DD')])).rows[0].exists;
+        const contribHasSolvencyB = (await client.query(queries.GET_SOLVENCY_A_RIM_CANDIDATES_BY_RIF, [tipoDocumento, documento, moment().format('YYYY-MM-DD')])).rows[0].exists;
         const solvencyContrInfo = (await client.query(`SELECT * FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2`, [tipoDocumento, documento])).rows[0];
         if (!solvencyContrInfo) throw {status: 401, message: 'El contribuyente no existe o no está registrado en el sistema SUT'};
         solvencyContrInfo.hasSolvencyB = contribHasSolvencyB;
@@ -85,7 +85,7 @@ export const getSolvencyACandidates = async ({tipoDocumento, documento}) => {
         //logica para las sucursales
         const solvencyRIMInfo = (await client.query('SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2)', [tipoDocumento, documento])).rows;
         const newSolvencyRIMInfo = (solvencyRIMInfo.length > 0) ? (await Promise.all(solvencyRIMInfo.map(async rim => {
-            const rimHasSolvencyB = (await client.query(`SELECT EXISTS(SELECT * FROM tramite WHERE datos#>>'{usuario, sucursal, referencia_municipal}' = $1 AND id_tipo_tramite = 113 AND fecha_culminacion > $2)`, [rim.referencia_municipal, moment().subtract(3, 'month').format('YYYY-MM-DD')])).rows[0].exists;
+            const rimHasSolvencyB = (await client.query(`SELECT EXISTS(SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING(id_solicitud) WHERE id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $1) AND id_subramo = 824 AND aprobado = true AND fecha_vencimiento < $2)`, [rim.referencia_municipal, moment().format('YYYY-MM-DD')])).rows[0].exists;
             if (rimHasSolvencyB) return {...rim, inmuebles: (await client.query('SELECT inmueble_urbano.*, avaluo FROM inmueble_urbano JOIN (SELECT * FROM impuesto.avaluo_inmueble WHERE anio = (SELECT anio FROM impuesto.avaluo_inmueble GROUP BY anio ORDER BY anio DESC LIMIT 1)) a USING(id_inmueble) WHERE id_registro_municipal = $1 ORDER BY anio DESC', [rim.id_registro_municipal])).rows}
             return {...rim}
         }))) : [];
