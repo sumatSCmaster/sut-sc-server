@@ -121,7 +121,7 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
             efectivoEuro: cashierCash.find(cash => cash.metodo_pago === 'EFECTIVO EURO') || {total: 0, transacciones: 0},
             credFiscal: cashierCredit[0],
             cheques: cashierChecks[0],
-            transferencias: cashierTransfers,
+            transferencias: cashierTransfersByBank,
             transacciones: +cashierPosTransactions + +cashierCash.reduce((a, c) => +c.transacciones + a, 0) + +cashierChecks[0].transacciones + +cashierTransfersTransactions + +cashierCredit[0].transacciones,
             total: +cashierPosTotal + +cashierCash.reduce((a, c) => +c.total + a, 0) + +cashierChecks[0].total + +cashierTransfersTotal
           },
