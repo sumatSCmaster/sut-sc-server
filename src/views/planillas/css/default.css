@@ -292,6 +292,13 @@ ul {
   text-align: center;
 }
 
+.footer-col {
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  -webkit-flex-direction: column;
+  text-align: center;
+}
+
 /* #pageFooter {
   -webkit-flex-direction: column;
   flex-direction: column;
