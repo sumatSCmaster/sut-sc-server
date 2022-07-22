@@ -3943,10 +3943,12 @@ export const createSolvencyABSettlement = async (datos, tipo, user) => {
     if (!(contributor.rowCount > 0)) throw {status: 401, message: 'El contribuyente proporcionado no existe o no esta registrado en el sistema SUT'};
     const userContributor = (await client.query('SELECT id_usuario FROM usuario WHERE id_contribuyente = $1', [contributor.rows[0].id_contribuyente])).rows[0]?.id_usuario;
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [userContributor || user.id, contributor.rows[0].id_contribuyente])).rows[0];
-    const costoLiquidacion = tipo === 'a' ? costo : (await client.query('SELECT indicador FROM impuesto.baremo WHERE id_baremo = 13')).rows[0]?.indicador; 
+    const costoLiquidacion = tipo === 'a' ? +costo : (await client.query('SELECT indicador FROM impuesto.baremo WHERE id_baremo = 13')).rows[0]?.indicador; 
+    const costoLiqFinal = costoLiquidacion * (contribuyente.tipo_documento === 'J' ? 5 : 1);
+    console.log(costoLiqFinal, 'MASTER SOLVENCY A B')
     const settlement = await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
       application.id_solicitud,
-      costoLiquidacion * (contribuyente.tipo_documento === 'J' ? 5 : 1),
+      costoLiqFinal,
       `TASA DE SOLVENCIA TIPO ${tipo.toUpperCase()}`,
       'Pago ordinario',
       datos,
