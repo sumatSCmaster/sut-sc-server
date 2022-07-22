@@ -96,11 +96,11 @@ export const getSolvencyACandidates = async ({tipoDocumento, documento}) => {
     } catch(e) {throw {status: 500, message: e.message}}
 }
 
-export const createSolvencyAB = async ({contribuyente, sucursal}, user, tipo) => {
+export const createSolvencyAB = async ({contribuyente, sucursal, costo}, user, tipo) => {
     try {
     // const pool = Pool.getInstance();
     // const client = await pool.connect();
-    return await createSolvencyABSettlement({contribuyente, sucursal}, tipo, user)
+    return await createSolvencyABSettlement({contribuyente, sucursal, costo}, tipo, user)
     // return await initProcedureAnalistAB({pago, contribuyente, tipo}, user, client, user.id)
     } catch(e) {
         throw {status: 500, message: e.message}
