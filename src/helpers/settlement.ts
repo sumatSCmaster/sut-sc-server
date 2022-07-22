@@ -3944,8 +3944,8 @@ export const createSolvencyABSettlement = async (datos, tipo, user) => {
     const userContributor = (await client.query('SELECT id_usuario FROM usuario WHERE id_contribuyente = $1', [contributor.rows[0].id_contribuyente])).rows[0]?.id_usuario;
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [userContributor || user.id, contributor.rows[0].id_contribuyente])).rows[0];
     const costoLiquidacion = tipo === 'a' ? +costo : (await client.query('SELECT indicador FROM impuesto.baremo WHERE id_baremo = 13')).rows[0]?.indicador; 
-    const costoLiqFinal = costoLiquidacion * (contribuyente.tipo_documento === 'J' ? 5 : 1);
-    console.log(costoLiqFinal, 'MASTER SOLVENCY A B')
+    const costoLiqFinal = costoLiquidacion * (contribuyente.tipo_documento === 'J' && tipo === 'b' ? 5 : 1);
+    console.log(costoLiqFinal, costoLiquidacion, (contribuyente.tipo_documento === 'J' && tipo === 'b' ? 5 : 1), 'MASTER SOLVENCY A B')
     const settlement = await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
       application.id_solicitud,
       costoLiqFinal,
