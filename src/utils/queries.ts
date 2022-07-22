@@ -853,7 +853,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     `,
   GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID: `SELECT r.descripcion AS "descripcionRamo", sr.descripcion AS "descripcionSubramo", l.monto, l.datos,l.fecha_liquidacion AS "fechaLiquidacion" FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo INNER JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo INNER JOIN impuesto.solicitud_state sst ON sst.id = s.id_solicitud WHERE s.id_solicitud = $1;`,
   GET_SOLVENCY_B_RIM_CANDIDATES_BY_RIF: `SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2) AND id_registro_municipal NOT IN (SELECT id_registro_municipal FROM impuesto.liquidacion WHERE monto IS NULL AND id_solicitud IS NOT NULL AND id_registro_municipal IS NOT NULL)`,
-  GET_SOLVENCY_A_RIM_CANDIDATES_BY_RIF: `SELECT EXISTS(SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING(id_solicitud) WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.))`,
+  GET_SOLVENCY_A_RIM_CANDIDATES_BY_RIF: `SELECT EXISTS(SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING(id_solicitud) WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.contribuyente WHERE documento = $1 AND tipo_documento = $2) AND id_subramo = 824 AND aprobado = true)`,
   GET_SOLVENCY_B_RIF_CANDIDATES_BY_RIF: `WITH b AS (
     SELECT DISTINCT(impuesto.contribuyente.*) 
     FROM usuario 
