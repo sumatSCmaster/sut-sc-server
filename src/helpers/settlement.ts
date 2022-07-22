@@ -3950,7 +3950,7 @@ export const createSolvencyABSettlement = async (datos, tipo, user) => {
       `TASA DE SOLVENCIA TIPO ${tipo.toUpperCase()}`,
       'Pago ordinario',
       datos,
-      moment().endOf('month').format('YYYY-MM-DD'),
+      moment().add(3, 'months').endOf('month').format('YYYY-MM-DD'),
       hasBranch ? +sucursal.id_registro_municipal : null
     ]);
     await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.INGRESARDATOS]);
