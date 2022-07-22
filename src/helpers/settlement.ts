@@ -5253,7 +5253,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
               descripcion: row.descripcion,
               montoDeclarado: desglose.montoDeclarado,
               montoRebajado: +el.datos?.montoRebajado * PETRO || 0,
-              alicuota: row.alicuota / 100,
+              alicuota: row.alicuota,
               minTrib: +row.minimoTributable * PETRO,
               impuesto: desglose.montoCobrado || 0,
             };
