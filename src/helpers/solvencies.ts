@@ -85,7 +85,7 @@ export const getSolvencyACandidates = async ({tipoDocumento, documento}) => {
         //logica para las sucursales
         const solvencyRIMInfo = (await client.query('SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2)', [tipoDocumento, documento])).rows;
         const newSolvencyRIMInfo = (solvencyRIMInfo.length > 0) ? (await Promise.all(solvencyRIMInfo.map(async rim => {
-            const rimHasSolvencyB = (await client.query(`SELECT EXISTS(SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING(id_solicitud) WHERE id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $1) AND id_subramo = 824 AND aprobado = true AND fecha_vencimiento < $2)`, [rim.referencia_municipal, moment().format('YYYY-MM-DD')])).rows[0].exists;
+            const rimHasSolvencyB = (await client.query(`SELECT EXISTS(SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING(id_solicitud) WHERE id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $1) AND id_subramo = 824 AND aprobado = true AND fecha_vencimiento > $2)`, [rim.referencia_municipal, moment().format('YYYY-MM-DD')])).rows[0].exists;
             if (rimHasSolvencyB) return {...rim, inmuebles: (await client.query('SELECT inmueble_urbano.*, avaluo FROM inmueble_urbano JOIN (SELECT * FROM impuesto.avaluo_inmueble WHERE anio = (SELECT anio FROM impuesto.avaluo_inmueble GROUP BY anio ORDER BY anio DESC LIMIT 1)) a USING(id_inmueble) WHERE id_registro_municipal = $1 ORDER BY anio DESC', [rim.id_registro_municipal])).rows}
             return {...rim}
         }))) : [];
