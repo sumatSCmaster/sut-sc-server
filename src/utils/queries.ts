@@ -376,7 +376,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
     'SELECT i.id_inmueble AS "idInmueble", i.cod_catastral AS "codCatastral", i.direccion,\
   i.metros_construccion AS "metrosConstruccion", i.metros_terreno AS "metrosTerreno", i.fecha_creacion AS "fechaCreacion", \
   i.fecha_actualizacion AS "fechaActualizacion",  \
-  i.fecha_ultimo_avaluo AS "fechaUltimoAvaluo" , p.nombre AS parroquia FROM inmueble_urbano i \
+  i.fecha_ultimo_avaluo AS "fechaUltimoAvaluo" , p.nombre AS parroquia, dir_doc, AS "dirDoc", clasificacion FROM inmueble_urbano i \
   INNER JOIN parroquia p ON i.id_parroquia = p.id WHERE i.cod_catastral = $1;',
   GET_PROPERTY_OWNERS: 'SELECT p.id_propietario AS "idpropietario", razon_social AS "razonSocial", cedula, rif, email, pi.id_inmueble \
     FROM propietario p INNER JOIN propietario_inmueble pi ON p.id_propietario = pi.id_propietario;',
@@ -2192,9 +2192,9 @@ ORDER BY fecha_liquidacion DESC;
   GET_RIM_DATA: `SELECT id_registro_municipal AS id, referencia_municipal as "rim", telefono_celular AS "telefonoCelular", 
     telefono_habitacion AS "telefonoHabitacion", email, denominacion_comercial AS "denominacionComercial", nombre_representante AS "nombreRepresentante"
     FROM impuesto.registro_municipal WHERE referencia_municipal = $1`,
-  GET_ESTATES_BY_RIM: `SELECT id_inmueble AS id, id_liquidacion_fecha_inicio, dir_doc AS "dirDoc", cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion_contribuyente AS relacion FROM inmueble_urbano WHERE id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $1 ORDER BY id_registro_municipal DESC LIMIT 1);`,
+  GET_ESTATES_BY_RIM: `SELECT id_inmueble AS id, id_liquidacion_fecha_inicio, dir_doc AS "dirDoc", cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion_contribuyente AS relacion, clasificacion FROM inmueble_urbano WHERE id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $1 ORDER BY id_registro_municipal DESC LIMIT 1);`,
   GET_ESTATES_BY_NATURAL_CONTRIBUTOR: `SELECT id_inmueble AS id, id_liquidacion_fecha_inicio as id_liquidacion, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
-    metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", icn.relacion AS relacion, dir_doc AS "dirDoc" 
+    metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", icn.relacion AS relacion, dir_doc AS "dirDoc", clasificacion 
     FROM inmueble_urbano iu INNER JOIN impuesto.inmueble_contribuyente icn USING (id_inmueble)
     WHERE id_contribuyente = $1`,
   GET_ESTATES_BY_USER_INFO: `SELECT id_inmueble AS id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
@@ -2210,21 +2210,21 @@ ORDER BY fecha_liquidacion DESC;
     WHERE id_parroquia = $1`,
   GET_APPRAISALS_BY_ID: 'SELECT anio, avaluo AS avaluo FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1',
   GET_CURRENT_APPRAISALS_BY_ID: "SELECT anio, avaluo FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 and anio = EXTRACT('year' FROM CURRENT_DATE);",
-  CREATE_BARE_ESTATE: `INSERT INTO inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, tipo_inmueble, dir_doc)
-    VALUES (default, $1, $2, $3, $4, $5, $6, $7) RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
-    metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", dir_doc AS "dirDoc"`,
+  CREATE_BARE_ESTATE: `INSERT INTO inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, tipo_inmueble, dir_doc, clasificacion)
+    VALUES (default, $1, $2, $3, $4, $5, $6, $7, $8) RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
+    metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", dir_doc AS "dirDoc", clasificacion`,
   CREATE_BARE_ESTATE_NATURAL: `INSERT INTO inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, tipo_inmueble)
     VALUES (default, $1, $2, $3, $4, $5, 'RESIDENCIAL') RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble"`,
   CREATE_BARE_ESTATE_COMMERCIAL: `INSERT INTO inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, tipo_inmueble, id_registro_municipal)
     VALUES (default, $1, $2, $3, $4, $5, 'COMERCIAL', (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $6)) RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble"`,
-  UPDATE_ESTATE: `UPDATE inmueble_urbano SET direccion = $1, id_parroquia = $2, metros_construccion = $3, metros_terreno = $4, tipo_inmueble = $5, cod_catastral = $6, dir_doc = $8 WHERE id_inmueble = $7 RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
-  metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", dir_doc AS "dirDoc";`,
+  UPDATE_ESTATE: `UPDATE inmueble_urbano SET direccion = $1, id_parroquia = $2, metros_construccion = $3, metros_terreno = $4, tipo_inmueble = $5, cod_catastral = $6, dir_doc = $8, clasificacion = $9 WHERE id_inmueble = $7 RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
+  metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", dir_doc AS "dirDoc", clasificacion;`,
   GET_ESTATE_BY_CODCAT: `SELECT id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", id_parroquia AS "idParroquia",
-   metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion_contribuyente as relacion ,id_registro_municipal, id_registro_municipal IS NOT NULL as enlazado, dir_doc AS "dirDoc"  FROM inmueble_urbano WHERE cod_catastral = $1;`,
+   metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion_contribuyente as relacion ,id_registro_municipal, id_registro_municipal IS NOT NULL as enlazado, dir_doc AS "dirDoc", clasificacion FROM inmueble_urbano WHERE cod_catastral = $1;`,
   GET_ESTATE_BY_CODCAT_NAT: `SELECT id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
-   id_parroquia AS "idParroquia", metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion as relacion, dir_doc AS "dirDoc" 
+   id_parroquia AS "idParroquia", metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion as relacion, dir_doc AS "dirDoc", clasificacion 
    FROM inmueble_urbano iu LEFT JOIN impuesto.inmueble_contribuyente icn USING (id_inmueble) 
    WHERE cod_catastral = $1;`,
 
@@ -3491,21 +3491,21 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   GET_VEHICLE_BY_ID: `SELECT v.id_vehiculo AS id, mv.nombre AS marca, sv.id_subcategoria_vehiculo AS idSubcategoria, sv.descripcion AS subcategoria, v.modelo_vehiculo AS modelo,
   v.placa_vehiculo AS placa, v.anio_vehiculo AS anio, v.color_vehiculo AS color, v.fecha_ultima_actualizacion AS "fechaUltimaActualizacion",
   v.serial_carroceria_vehiculo AS "serialCarroceria", v.tipo_carroceria_vehiculo AS "tipoCarroceria",
-  v.tipo_combustible_vehiculo AS "tipoCombustible", v.peso_vehiculo AS peso, v.cilindraje_vehiculo AS cilindraje, v.serial_motor_vehiculo AS "serialMotor", cv.id_categoria_vehiculo AS idCategoria, cv.descripcion AS categoria
+  v.tipo_combustible_vehiculo AS "tipoCombustible", v.peso_vehiculo AS peso, v.cilindraje_vehiculo AS cilindraje, v.serial_motor_vehiculo AS "serialMotor", cv.id_categoria_vehiculo AS idCategoria, cv.descripcion AS categoria, cedula_propietario AS "cedulaPropietario", nombre_propietario AS "nombrePropietario"
   FROM impuesto.marca_vehiculo mv 
   INNER JOIN impuesto.vehiculo v USING (id_marca_vehiculo) 
   INNER JOIN impuesto.subcategoria_vehiculo sv USING (id_subcategoria_vehiculo)
   INNER JOIN impuesto.categoria_vehiculo cv USING (id_categoria_vehiculo)
   WHERE id_vehiculo = $1
   ORDER BY v.id_vehiculo`,
-  CREATE_VEHICLE: `INSERT INTO impuesto.vehiculo (id_marca_vehiculo, id_registro_municipal, id_subcategoria_vehiculo, modelo_vehiculo, placa_vehiculo, anio_vehiculo, color_vehiculo, fecha_ultima_actualizacion, serial_carroceria_vehiculo, tipo_carroceria_vehiculo, tipo_combustible_vehiculo, peso_vehiculo, cilindraje_vehiculo, serial_motor_vehiculo) VALUES ($1, $2, $3, $4, $5, $6, $7, null, $8, $9, $10, $11, $12, $13) RETURNING *`,
-  UPDATE_VEHICLE: `UPDATE impuesto.vehiculo SET id_marca_vehiculo = $1, id_subcategoria_vehiculo = $2, modelo_vehiculo = $3, placa_vehiculo = $4, anio_vehiculo = $5, color_vehiculo = $6, serial_carroceria_vehiculo = $7, peso_vehiculo = $8, cilindraje_vehiculo = $9, serial_motor_vehiculo = $10 WHERE id_vehiculo = $11 RETURNING *`,
+  CREATE_VEHICLE: `INSERT INTO impuesto.vehiculo (id_marca_vehiculo, id_registro_municipal, id_subcategoria_vehiculo, modelo_vehiculo, placa_vehiculo, anio_vehiculo, color_vehiculo, fecha_ultima_actualizacion, serial_carroceria_vehiculo, tipo_carroceria_vehiculo, tipo_combustible_vehiculo, peso_vehiculo, cilindraje_vehiculo, serial_motor_vehiculo, cedula_propietario, nombre_propietario) VALUES ($1, $2, $3, $4, $5, $6, $7, null, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
+  UPDATE_VEHICLE: `UPDATE impuesto.vehiculo SET id_marca_vehiculo = $1, id_subcategoria_vehiculo = $2, modelo_vehiculo = $3, placa_vehiculo = $4, anio_vehiculo = $5, color_vehiculo = $6, serial_carroceria_vehiculo = $7, peso_vehiculo = $8, cilindraje_vehiculo = $9, serial_motor_vehiculo = $10, cedula_propietario = $12, nombre_propietario = $13 WHERE id_vehiculo = $11 RETURNING *`,
   DELETE_VEHICLE: `DELETE FROM impuesto.vehiculo WHERE id_vehiculo = $1`,
   UPDATE_VEHICLE_SUBCATEGORY: `UPDATE impuesto.subcategoria_vehiculo SET id_valor = $1, tarifa = $2, descripcion = $3, id_categoria_vehiculo = $4 WHERE id_subcategoria_vehiculo = $5 RETURNING *`,
   GET_VEHICLES_BY_CONTRIBUTOR: `SELECT v.id_vehiculo AS id, mv.nombre AS marca, sv.id_subcategoria_vehiculo AS idSubcategoria, sv.descripcion AS subcategoria, v.modelo_vehiculo AS modelo,
   v.placa_vehiculo AS placa, v.anio_vehiculo AS anio, v.color_vehiculo AS color, v.fecha_ultima_actualizacion AS "fechaUltimaActualizacion",
   v.serial_carroceria_vehiculo AS "serialCarroceria", v.tipo_carroceria_vehiculo AS "tipoCarroceria",
-  v.tipo_combustible_vehiculo AS "tipoCombustible", v.peso_vehiculo AS peso, v.cilindraje_vehiculo AS cilindraje, v.serial_motor_vehiculo AS "serialMotor", cv.id_categoria_vehiculo AS idCategoria, cv.descripcion AS categoria, l.datos#>>'{fecha, year}' AS "fechaInicio"
+  v.tipo_combustible_vehiculo AS "tipoCombustible", v.peso_vehiculo AS peso, v.cilindraje_vehiculo AS cilindraje, v.serial_motor_vehiculo AS "serialMotor", cv.id_categoria_vehiculo AS idCategoria, cv.descripcion AS categoria, l.datos#>>'{fecha, year}' AS "fechaInicio", cedula_propietario AS "cedulaPropietario", nombre_propietario AS "nombrePropietario"
   FROM impuesto.marca_vehiculo mv
   INNER JOIN impuesto.vehiculo v USING (id_marca_vehiculo) 
   INNER JOIN impuesto.subcategoria_vehiculo sv USING (id_subcategoria_vehiculo)
@@ -3517,7 +3517,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   GET_VEHICLES_BY_MUNICIPAL_REFERENCE: `SELECT v.id_vehiculo AS id, mv.nombre AS marca, sv.id_subcategoria_vehiculo AS idSubcategoria, sv.descripcion AS subcategoria, v.modelo_vehiculo AS modelo,
   v.placa_vehiculo AS placa, v.anio_vehiculo AS anio, v.color_vehiculo AS color, v.fecha_ultima_actualizacion AS "fechaUltimaActualizacion",
   v.serial_carroceria_vehiculo AS "serialCarroceria", v.tipo_carroceria_vehiculo AS "tipoCarroceria",
-  v.tipo_combustible_vehiculo AS "tipoCombustible", v.peso_vehiculo AS peso, v.cilindraje_vehiculo AS cilindraje, v.serial_motor_vehiculo AS "serialMotor", cv.id_categoria_vehiculo AS idCategoria, cv.descripcion AS categoria, l.datos#>>'{fecha, year}' AS "fechaInicio"
+  v.tipo_combustible_vehiculo AS "tipoCombustible", v.peso_vehiculo AS peso, v.cilindraje_vehiculo AS cilindraje, v.serial_motor_vehiculo AS "serialMotor", cv.id_categoria_vehiculo AS idCategoria, cv.descripcion AS categoria, l.datos#>>'{fecha, year}' AS "fechaInicio", cedula_propietario AS "cedulaPropietario", nombre_propietario AS "nombrePropietario"
   FROM impuesto.marca_vehiculo mv 
   INNER JOIN impuesto.vehiculo v USING (id_marca_vehiculo) 
   INNER JOIN impuesto.subcategoria_vehiculo sv USING (id_subcategoria_vehiculo)
