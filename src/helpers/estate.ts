@@ -299,7 +299,7 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
   }
 };
 
-export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc, userId }) => {
+export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc, userId, clasificacion }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -320,7 +320,7 @@ export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosC
         return client.query(queries.INSERT_ESTATE_VALUE, [id, row.avaluo, row.anio]);
       })
     );
-    estate = await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, codCat, id, dirDoc]);
+    estate = await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, codCat, id, dirDoc, clasificacion]);
 
     await client.query('COMMIT');
     return { status: 200, message: 'Inmueble actualizado' };
