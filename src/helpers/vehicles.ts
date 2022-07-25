@@ -230,7 +230,9 @@ export const createVehicleForRim = async (payload: Vehicle, user: Usuario): Prom
       fechaUltimaActualizacion: response.fecha_ultima_actualizacion,
       peso: response.peso_vehiculo, 
       cilindraje: response.cilindraje_vehiculo, 
-      serialMotor: response.serial_motor_vehiculo
+      serialMotor: response.serial_motor_vehiculo,
+      cedulaPropietario: response.cedula_propietario,
+      nombrePropietario: response.nombre_propietario
     };
     return { status: 201, message: 'Vehiculo creado satisfactoriamente', vehiculo: vehicle };
   } catch (error) {
@@ -277,7 +279,9 @@ export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Re
       fechaUltimaActualizacion: response.fecha_ultima_actualizacion,
       peso: response.peso_vehiculo, 
       cilindraje: response.cilindraje_vehiculo, 
-      serialMotor: response.serial_motor_vehiculo
+      serialMotor: response.serial_motor_vehiculo,
+      cedulaPropietario: response.cedula_propietario,
+      nombrePropietario: response.nombre_propietario
     };
     return { status: 201, message: 'Vehiculo creado satisfactoriamente', vehiculo: vehicle };
   } catch (error) {
