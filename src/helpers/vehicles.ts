@@ -384,7 +384,9 @@ export const updateVehicle = async (payload: Vehicle, id: number): Promise<Respo
       peso: response.peso_vehiculo, 
       fechaInicio,
       cilindraje: response.cilindraje_vehiculo, 
-      serialMotor: response.serial_motor_vehiculo
+      serialMotor: response.serial_motor_vehiculo,
+      cedulaPropietario: response.cedula_propietario,
+      nombrePropietario: response.nombre_propietario
     };
 
     return { status: 200, message: 'Vehiculo actualizado', vehiculo: vehicle };
