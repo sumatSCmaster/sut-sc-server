@@ -154,6 +154,7 @@ export const taxPayerEstatesByNaturalCont = async ({ typeDoc, doc }) => {
           if (liq) {
             fecha = moment(liq.fecha_liquidacion).add(1, 'M');
           }
+          console.log(liq, fecha, 'MASTER INMUEBLE')
           res({
             ...row,
             avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [row.id])).rows,
