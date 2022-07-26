@@ -4204,7 +4204,7 @@ const createVHSolvenciesForApplication = async ({application}) => {
       const procedureData = {
         id: `${application.idLiquidacion}${vehicle.vehiculo.id_vehiculo}`,
       fecha: application.fechaCreacion,
-      codigo: `${application.idLiquidacion}${vehicle.vehiculo.id_vehiculo}`,
+      codigo: `${application.idLiquidacion}-${vehicle.vehiculo.id_vehiculo}`,
       formato: 'VEH-001',
       tramite: 'Impuesto sobre Vehículos',
       institucion: 'HACIENDA',
