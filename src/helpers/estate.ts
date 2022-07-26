@@ -149,7 +149,7 @@ export const taxPayerEstatesByNaturalCont = async ({ typeDoc, doc }) => {
     const estatesWithAppraisals = await Promise.all(
       estates.map((row) => {
         return new Promise(async (res, rej) => {
-          const liq = (await client.query('SELECT fecha_liquidacion FROM impuesto.liquidacion WHERE id_liquidacion = $1', [row.id_liquidacion_fecha_inicio])).rows[0];
+          const liq = (await client.query('SELECT fecha_liquidacion FROM impuesto.liquidacion WHERE id_liquidacion = $1', [row.id_liquidacion])).rows[0];
           let fecha;
           if (liq) {
             fecha = moment(liq.fecha_liquidacion).add(1, 'M');
