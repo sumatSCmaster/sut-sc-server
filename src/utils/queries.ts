@@ -795,6 +795,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   UPDATE_RIM:
     'UPDATE impuesto.registro_municipal SET telefono_celular = $2, email = $3, denominacion_comercial = $4, nombre_representante = $5, capital_suscrito = $6, tipo_sociedad = $7, telefono_habitacion = $8, id_parroquia = $9, direccion = $10, es_monotributo = $11 WHERE id_registro_municipal = $1',
   GET_APPLICATION_BY_ID: 'SELECT * FROM impuesto.solicitud WHERE id_solicitud = $1',
+  // GET_APPLICATION_BY_SETTLEMENT_ID: 'SELECT impuesto.solicitud.* FROM impuesto.solicitud JOIN impuesto.liquidacion USING(id_solicitud) WHERE id_liquidacion = $1 LIMIT 1;',
   GET_APPLICATION_BY_SETTLEMENT_ID: 'SELECT * FROM impuesto.solicitud WHERE id_solicitud = (SELECT id_solicitud FROM impuesto.liquidacion WHERE id_liquidacion = $1)',
   GET_APPLICATION_INSTANCES_BY_USER: 'SELECT * FROM impuesto.solicitud WHERE id_usuario = $1 ORDER BY fecha DESC',
   GET_APPLICATION_DEBTS_BY_MUNICIPAL_REGISTRY: `SELECT rm.id_ramo, rm.descripcion, ROUND(SUM(l.monto_petro),8) AS monto 

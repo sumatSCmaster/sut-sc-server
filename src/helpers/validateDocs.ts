@@ -4,11 +4,12 @@ import { errorMessageGenerator, errorMessageExtractor } from './errors';
 
 const pool = Pool.getInstance();
 
-export const validateDocById = async (id: string) => {
+export const validateDocById = async (oldId: string) => {
   const client = await pool.connect();
   const response = { message: '', status: 0, data: {} };
   try {
-    const res = await client.query(queries.GET_APPLICATION_BY_ID, [id]);
+    const id = oldId.split('-')[0];
+    const res = await client.query(queries.GET_APPLICATION_BY_SETTLEMENT_ID, [id]);
     // const cert = await client.query(queries.GET_CERTIFICATE_BY_PROCEDURE_ID, [id]);
     if (res.rowCount !== 0 && res.rows[0].aprobado) {
       const tramite = res.rows[0];
