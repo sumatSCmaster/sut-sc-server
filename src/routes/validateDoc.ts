@@ -25,7 +25,7 @@ router.get('/validarSedemat/:id', async (req, res) => {
   if (data) res.status(data.status).json(data);
 })
 
-router.get('/:id(\\d+)', async (req, res) => {
+router.get('/:id', async (req, res) => {
   const [err, data] = await fulfill(validateDocById(req.params['id']));
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
