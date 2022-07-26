@@ -1675,7 +1675,7 @@ ORDER BY razon_social;`,
     FROM pago p
     JOIN banco b ON b.id_banco = p.id_banco_destino 
     JOIN usuario u ON u.id_usuario = p.id_usuario
-    WHERE metodo_pago = 'TRANSFERENCIA' AND TO_CHAR(fecha_de_aprobacion, 'YYYY/MM/DD') = $1
+    WHERE metodo_pago = 'TRANSFERENCIA' AND TO_CHAR(fecha_de_aprobacion, 'YYYY/MM/DD') = $1 AND TO_CHAR(fecha_de_pago, 'YYYY/MM/DD') <> $1
     AND u.id_tipo_usuario = 3
     ORDER BY p.id_banco_destino, fecha`,
   TOTAL_PAY_DIFF_CASH:`SELECT p.metodo_pago, 
