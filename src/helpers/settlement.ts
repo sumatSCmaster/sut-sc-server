@@ -4202,7 +4202,7 @@ const createVHSolvenciesForApplication = async ({application}) => {
       const PETRO = (await client.query(`SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'`)).rows[0].valor_en_bs;
       const costoFormateado = application ? new Intl.NumberFormat('de-DE').format(parseFloat(application.montoLiquidacion)) : '0';
       const procedureData = {
-        id: `${application.idLiquidacion}${vehicle.vehiculo.id_vehiculo}`,
+        id: `${application.idLiquidacion}-${vehicle.vehiculo.id_vehiculo}`,
       fecha: application.fechaCreacion,
       codigo: `${application.idLiquidacion}-${vehicle.vehiculo.id_vehiculo}`,
       formato: 'VEH-001',
