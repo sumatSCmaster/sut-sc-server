@@ -9,6 +9,7 @@ export const validateDocById = async (oldId: string) => {
   const response = { message: '', status: 0, data: {} };
   try {
     const id = oldId.split('-')[0];
+    console.log(id, 'MASTER VALIDATE DOC')
     const res = await client.query(queries.GET_APPLICATION_BY_SETTLEMENT_ID, [id]);
     // const cert = await client.query(queries.GET_CERTIFICATE_BY_PROCEDURE_ID, [id]);
     if (res.rowCount !== 0 && res.rows[0].aprobado) {
