@@ -3118,7 +3118,7 @@ export const insertSettlements = async ({ process, user }) => {
       await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
     }
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [application.id_contribuyente]);
-    await client.query(queries.ADD_MOVEMENT, [application.id_solicitud, user.id, 'creando solicitud', 'IMPUESTO'])
+    await client.query(queries.ADD_MOVEMENT, [application.id_solicitud, user.id, 'creando solicitud declaracion', 'IMPUESTO'])
     await client.query('COMMIT');
     const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
     // await sendNotification(
@@ -3907,6 +3907,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
       await client.query('UPDATE impuesto.liquidacion SET recibo = $1 WHERE id_solicitud = $2', [recibo, application.id_solicitud]);
     }
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [application.id_contribuyente]);
+    await client.query(queries.ADD_MOVEMENT, [application.id_solicitud, user.id, 'creando solicitud especial', 'IMPUESTO'])
     await client.query('COMMIT');
     const solicitud = await getApplicationsAndSettlementsById({ id: application.id_solicitud, user });
     solicitud.recibo = recibo;
