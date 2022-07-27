@@ -5850,7 +5850,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser,
         fechaLiquidacion: moment(el.fecha_liquidacion).format('DD/MM/YYYY'),
         fechaVencimiento: moment(el.fecha_vencimiento).format('DD/MM/YYYY'),
         motivo: el.descripcion_corta,
-        estado: paymentState(el.state) || 'PAGADO',
+        estado: paymentState(el.state) || 'VIGENTE',
         montoPorcion: fixatedAmount(el.monto) || fixatedAmount(el.monto_petro * PETRO),
         mes: el.datos?.fecha?.month ?? 'N/A'
         // montoPorcion: activity && parseInt(activity.nu_ut) * PETRO > parseFloat(el.monto_declarado) ? parseInt(activity.nu_ut) * PETRO : parseFloat(el.monto_declarado),
