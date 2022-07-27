@@ -2938,6 +2938,7 @@ export const insertSettlements = async ({ process, user }) => {
   const FINING_THRESHOLD_DATE = 10;
   try {
     client.query('BEGIN');
+    if (!process.contribuyente) throw {status: 401, message: 'La declaración de impuestos no puede ser realizada por datos erróneos del contribuyente, favor comunicarse con SOPORTE'};
     const userContributor = user.tipoUsuario === 4 ? (await client.query(queries.GET_CONTRIBUTOR_BY_USER, [user.id])).rows : (await client.query(queries.TAX_PAYER_EXISTS, [process.tipoDocumento, process.documento])).rows;
     const userHasContributor = userContributor.length > 0;
     if (!userHasContributor) throw { status: 404, message: 'El usuario no esta asociado con ningun contribuyente' };
