@@ -166,6 +166,52 @@ export const getTransfersReportBank = async ({ reportName = 'RPRTransferenciasBa
   }
 };
 
+export const getTransfersExternalReport = async ({from, to} ,reportName = 'ReporteTransferenciasExterno') => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(queries.GET_EXTERNAL_TRANSFERS, [from, to]);
+    
+    const workbook = new ExcelJs.Workbook();
+    workbook.creator = 'SUT';
+    workbook.created = new Date();
+    workbook.views = [
+      {
+        x: 0,
+        y: 0,
+        width: 10000,
+        height: 20000,
+        firstSheet: 0,
+        activeTab: 1,
+        visibility: 'visible',
+      },
+    ];
+
+    const sheet = workbook.addWorksheet(reportName);
+    sheet.columns = result.fields.map((row) => {
+      return { header: row.name, key: row.name, width: 32 };
+    });
+
+    sheet.addRows(result.rows, 'i');
+
+    const bucketParams = {
+      Bucket: process.env.BUCKET_NAME as string,
+      Key: `/sumat/reportes/${reportName}.xlsx`,
+      Body: await workbook.xlsx.writeBuffer(),
+      ACL: 'public-read',
+      ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    };
+
+    await S3Client.putObject(bucketParams).promise();
+    return `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`;
+
+  } catch (error) {
+    mainLogger.error(error);
+    throw errorMessageExtractor(error);
+  } finally {
+    client.release();
+  }
+}
+
 export const getTransfersReport = async ({ reportName = 'RPRTransferencias', from, to }) => {
   mainLogger.info(`getTransfersReport - Creating transfers by method of approval from ${from} to ${to}`);
   const client = await pool.connect();

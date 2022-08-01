@@ -1409,6 +1409,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   EXTRACT(month FROM fecha_de_pago), EXTRACT(DAY FROM fecha_de_pago)) = CONCAT(EXTRACT(YEAR FROM fecha_de_aprobacion),
   EXTRACT(month FROM fecha_de_aprobacion), EXTRACT(DAY FROM fecha_de_aprobacion))
   AND fecha_de_pago = $1 AND id_banco = $2 AND metodo_pago = 'TRANSFERENCIA';`,
+  GET_EXTERNAL_TRANSFERS: `SELECT CONCAT(usuario.nacionalidad, '-', usuario.cedula) AS documento, usuario.nombre_completo, pago.referencia, banco.nombre, pago.monto, pago.fecha_de_pago, CASE WHEN aprobado = true THEN 'VALIDADA' ELSE 'POR VALIDAR' END AS estatus FROM pago JOIN usuario USING (id_usuario) JOIN banco USING (id_banco) WHERE fecha_de_pago BETWEEN $1 AND $2 AND id_tipo_usuario = 4 AND metodo_pago = 'TRANSFERENCIA' ORDER BY fecha_de_pago DESC;`,
   GET_TRANSFERS_BY_BANK_BY_APPROVAL: `
   WITH liquidaciones AS (SELECT DISTINCT l.id_solicitud
     FROM ((SELECT DISTINCT l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto  FROM impuesto.liquidacion l WHERE id_solicitud IS NOT NULL AND id_solicitud IN (SELECT id_solicitud FROM impuesto.solicitud WHERE fecha_aprobado BETWEEN $1 AND $2 AND tipo_solicitud != 'CONVENIO') UNION SELECT l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto FROM impuesto.liquidacion l WHERE id_solicitud IS NULL AND fecha_liquidacion BETWEEN  $3 AND $4 order by id_solicitud)) l 
