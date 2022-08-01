@@ -135,7 +135,7 @@ block content
       each item in datos.metodoPago
         div.tr.break-page
           div(style={'-webkit-flex': 2}).td.border-right.center.border-top
-            p #{item.formaPago}
+            P #{item.formaPago === 'EFECTIVO PESO' || item.formaPago === 'EFECTIVO DOLAR' || item.formaPago === 'EFECTIVO EURO' ? 'EFECTIVO' : item.formaPago}
           div(style={'-webkit-flex': 3}).td.border-right.center.border-top
             p #{item.banco}
           div(style={'-webkit-flex': 1}).td.border-right.center.border-top
