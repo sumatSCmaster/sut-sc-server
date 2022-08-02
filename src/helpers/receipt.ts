@@ -101,7 +101,7 @@ export const generateReceipt = async (payload: { application: number }, clientPa
                   await regClient.query('BEGIN');
                   const bucketParams = {
                     Bucket: process.env.BUCKET_NAME as string,
-                    Key: `/hacienda/recibo/${applicationView.id}/recibo.pdf`,
+                    Key: `hacienda/recibo/${applicationView.id}/recibo.pdf`,
                   };
                   await S3Client.putObject({
                     ...bucketParams,
