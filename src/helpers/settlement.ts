@@ -284,7 +284,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     mainLogger.info(`contributor ${inspect(contributor)}`);
     if ((!branch && reference) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en HACIENDA' };
     const lastSettlementQuery = !!reference && branch ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
-    const lastSettlementQueryAE = !!reference && branch ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED_FOR_AE : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
+    const lastSettlementQueryAESM = !!reference && branch ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED_FOR_AE : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
     const lastSettlementPayload = !!reference && branch ? branch?.id_registro_municipal : contributor.id_contribuyente;
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const isPartOfCondominium = (await isCondominium(type, document, client)) || (await isCondoOwner(type, document, client));
@@ -312,32 +312,32 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       throw { status: 401, message: `La referencia municipal proporcionada se encuentra en estado ${branch?.estado_licencia}` };
     mainLogger.info(inspect(lastSettlementPayload));
     mainLogger.info(lastSettlementQuery);
-    if (/*AEApplicationExists && */SMApplicationExists && IUApplicationExists && PPApplicationExists) return { status: 409, message: 'Ya existe una declaracion de impuestos para este mes' };
+    if (/*AEApplicationExists && SMApplicationExists && */IUApplicationExists && PPApplicationExists) return { status: 409, message: 'Ya existe una declaracion de impuestos para este mes' };
     const now = moment(new Date());
     // const monthDateForTop = moment().locale('ES').subtract(2, 'M');
     // const esContribuyenteTop = !!branch ? (await client.query(queries.BRANCH_IS_ONE_BEST_PAYERS, [branch?.id_registro_municipal, monthDateForTop.format('MMMM'), monthDateForTop.year()])).rowCount > 0 : false; //LOGICA DE CONSTRIBUYENTES TOP
     const esContribuyenteTop = false;
+    enum Months {
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre'
+    }
     //AE
     if (branch && branch?.referencia_municipal/* && !AEApplicationExists*/ && 'NO PASIVO' !== branch?.estado_licencia) {
-      enum Months {
-        'enero',
-        'febrero',
-        'marzo',
-        'abril',
-        'mayo',
-        'junio',
-        'julio',
-        'agosto',
-        'septiembre',
-        'octubre',
-        'noviembre',
-        'diciembre'
-      }
       mainLogger.info('AE');
       const solvencyCost = branch?.estado_licencia === 'PROVISIONAL' ? +(await client.query(queries.GET_SCALE_FOR_PROVISIONAL_AE_SOLVENCY)).rows[0].indicador : +(await client.query(queries.GET_SCALE_FOR_PERMANENT_AE_SOLVENCY)).rows[0].indicador;
       const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch.id_registro_municipal])).rows;
       if (economicActivities.length === 0) throw { status: 404, message: 'El contribuyente no posee aforos asociados' };
-      let lastEA = (await client.query(lastSettlementQueryAE, [codigosRamo.AE, lastSettlementPayload])).rows.find((el) => !el.datos.hasOwnProperty('descripcion'));
+      let lastEA = (await client.query(lastSettlementQueryAESM, [codigosRamo.AE, lastSettlementPayload])).rows.find((el) => !el.datos.hasOwnProperty('descripcion'));
 
       const lastEAPayment = (lastEA && moment([lastEA.datos?.fecha?.year, Months[lastEA.datos?.fecha?.month], 1]).add(1, 'months')) || moment().month(0);
       // console.log(lastEAPayment.format('YYYY-MM-DD'), 'MASTER');
@@ -385,9 +385,9 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     //SM
     mainLogger.info('SM');
     const estates = (await client.query(branch ? queries.GET_ESTATES_FOR_JURIDICAL_CONTRIBUTOR : queries.GET_ESTATES_FOR_NATURAL_CONTRIBUTOR, [branch ? branch.id_registro_municipal : contributor.id_contribuyente])).rows;
-    if (!SMApplicationExists && !isPartOfCondominium) {
-      let lastSM = (await client.query(lastSettlementQuery, [codigosRamo.SM, lastSettlementPayload])).rows[0];
-      const lastSMPayment = (lastSM && moment(lastSM.fecha_liquidacion).add(1, 'M')) || moment().month(0);
+    if (/*!SMApplicationExists && */!isPartOfCondominium) {
+      let lastSM = (await client.query(lastSettlementQueryAESM, [codigosRamo.SM, lastSettlementPayload])).rows[0];
+      const lastSMPayment = (lastSM && moment([lastSM.datos?.fecha?.year, Months[lastSM.datos?.fecha?.month], 1]).add(1, 'M')) || moment().month(0);
       const pastMonthSM = (lastSM && moment(lastSM.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
       const SMDate = moment([lastSMPayment.year(), lastSMPayment.month(), 1]);
       const dateInterpolationSM = Math.floor(now.diff(SMDate, 'M'));
