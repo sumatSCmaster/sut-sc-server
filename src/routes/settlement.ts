@@ -32,25 +32,9 @@ import {
   getIUSettlementsForContributor,
   getIvaReport,
 } from '@helpers/settlement';
-import s3Client from '@utils/s3';
 import { Usuario } from '@root/interfaces/sigt';
 import { generateReceipt, generateReceiptAgreement } from '@helpers/receipt';
 import { mainLogger } from '@utils/logger';
-import multer from 'multer';
-import multerS3 from 'multer-s3'
-
-const upload = async(req, res, next) => {
-  multer({
-    storage: multerS3({
-      s3: s3Client,
-      bucket: process.env.BUCKET_NAME,
-      acl: 'public-read',
-      key: function (req, file, cb) {
-          cb(null, `comprobantes/${file.originalname}`);
-      },
-    })
-  }).array('comprobantes')(req, res, next)
-}
 
 const router = Router();
 
@@ -256,7 +240,6 @@ router.put('/taxPayer/resend', authenticate('jwt'), async (req, res) => {
 
 router.put('/:id/payment', authenticate('jwt'), upload, async (req: any, res) => {
   const { procedimiento } = req.body;
-  console.log(req, 'MASTER ADDTAXPAYMENTAPPLICATION');
   const { id } = req.params;
   const [error, data] = await fulfill(addTaxApplicationPayment({ payment: procedimiento.pagos, interest: procedimiento.interesMoratorio, application: id, user: req.user }));
   if (error) res.status(500).json(error);
