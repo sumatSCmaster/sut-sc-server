@@ -28,7 +28,7 @@ export const generateReceipt = async (payload: { application: number }, clientPa
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [applicationView.idLiquidacion])).rows[0];
     const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [
       paymentRows[0]?.id_usuario,
-      `${process.env.AWS_ACCESS_URL}//hacienda/recibo/${applicationView.id}/recibo.pdf`,
+      `${process.env.AWS_ACCESS_URL}/hacienda/recibo/${applicationView.id}/recibo.pdf`,
       applicationView.razonSocial,
       referencia?.referencia_municipal,
       'IMPUESTO',
