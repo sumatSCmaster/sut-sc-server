@@ -631,10 +631,12 @@ export const listProcedurePayments = async (type_doc, doc) => {
           }, [])
         : [];
     
-        await data.forEach(async data => {
+        const newData = await Promise.all(data.map(async data => {
           data.comprobantes = (await client.query('SELECT url FROM comprobantes_pagos WHERE id_solicitud = $1', [data.id])).rows
-        })
-    return { status: 200, data };
+          console.log(data.comprobantes);
+          return data;
+        }))
+        return { status: 200, data: newData };
   } catch (e) {
     mainLogger.error(e);
     throw e;
@@ -840,11 +842,12 @@ SELECT s.id, s.fecha, fs.state, c.documento, c.tipo_documento AS "tipoDocumento"
             return prev;
           }, [])
         : [];
-    await data.forEach(async data => {
+    const newData = await Promise.all(data.map(async data => {
       data.comprobantes = (await client.query('SELECT url FROM comprobantes_pagos WHERE id_solicitud = $1', [data.id])).rows
       console.log(data.comprobantes);
-    })
-    return { status: 200, data };
+      return data;
+    }))
+    return { status: 200, data: newData };
   } catch (e) {
     mainLogger.error(e);
     throw e;
