@@ -535,7 +535,7 @@ export const listProcedurePayments = async (type_doc, doc) => {
       `,
       [type_doc, doc]
     );
-    let [data, convData, tramData] = await Promise.all([dataPromise, convDataPromise, tramDataPromise]);
+    let [data, convData, tramData] :any[] = await Promise.all([dataPromise, convDataPromise, tramDataPromise]);
     data.rows = data.rows.concat(convData.rows);
     data.rows = data.rows.concat(tramData.rows);
     let montosSolicitudPromise = client.query(`
@@ -630,7 +630,10 @@ export const listProcedurePayments = async (type_doc, doc) => {
             return prev;
           }, [])
         : [];
-
+    
+        await data.forEach(async data => {
+          data.comprobantes = (await client.query('SELECT url FROM comprobantes_pagos WHERE id_solicitud = $1', [data.id])).rows
+        })
     return { status: 200, data };
   } catch (e) {
     mainLogger.error(e);
@@ -837,6 +840,9 @@ SELECT s.id, s.fecha, fs.state, c.documento, c.tipo_documento AS "tipoDocumento"
             return prev;
           }, [])
         : [];
+    await data.forEach(async data => {
+      data.comprobantes = (await client.query('SELECT url FROM comprobantes_pagos WHERE id_solicitud = $1', [data.id])).rows
+    })
     return { status: 200, data };
   } catch (e) {
     mainLogger.error(e);
