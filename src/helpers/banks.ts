@@ -841,8 +841,8 @@ SELECT s.id, s.fecha, fs.state, c.documento, c.tipo_documento AS "tipoDocumento"
           }, [])
         : [];
     await data.forEach(async data => {
-      console.log('test VOUCHER MASTER');
       data.comprobantes = (await client.query('SELECT url FROM comprobantes_pagos WHERE id_solicitud = $1', [data.id])).rows
+      console.log(`test VOUCHER MASTER ${data.id} ${data.comprobantes}`);
     })
     return { status: 200, data };
   } catch (e) {
