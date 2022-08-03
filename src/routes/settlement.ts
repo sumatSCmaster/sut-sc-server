@@ -238,7 +238,7 @@ router.put('/taxPayer/resend', authenticate('jwt'), async (req, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-router.put('/:id/payment', authenticate('jwt'), upload, async (req: any, res) => {
+router.put('/:id/payment', authenticate('jwt'), async (req: any, res) => {
   const { procedimiento } = req.body;
   const { id } = req.params;
   const [error, data] = await fulfill(addTaxApplicationPayment({ payment: procedimiento.pagos, interest: procedimiento.interesMoratorio, application: id, user: req.user }));
