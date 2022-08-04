@@ -19,13 +19,13 @@ const dev = process.env.NODE_ENV !== 'production';
 
 const pool = Pool.getInstance();
 
-export const createRPR = async (id: string, payload: { from: Date; to: Date; alcaldia: boolean }) => {
+export const createRPR = async (id: string, payload: { from: Date; to: Date; alcaldia: boolean }, type: string) => {
   const client = await pool.connect();
   return new Promise(async (res, rej) => {
     mainLogger.info(payload);
     const alcaldia = payload.alcaldia;
     let pagos = {};
-    const ingress = await client.query(queries.GET_INGRESS, [payload.from, payload.to]);
+    const ingress = type === 'IDR' ? await client.query(queries.GET_PAID_LIQUIDATED, [payload.from, payload.to]) : await client.query(queries.GET_INGRESS, [payload.from, payload.to]);
     const liquidated = await client.query(queries.GET_LIQUIDATED, [payload.from, payload.to]);
     let pivot;
     let other;
@@ -189,6 +189,7 @@ export const createRPR = async (id: string, payload: { from: Date; to: Date; alc
       moment: require('moment'),
       institucion: 'HACIENDA',
       datos: {
+        type,
         ingresos: chunk(branches, 8),
         acumuladoIngresos: `CONTENIDO: TODOS LOS RAMOS, DESDE EL ${moment(payload.from).subtract(4, 'h').format('DD/MM/YYYY')} AL ${moment(payload.to).subtract(4, 'h').format('DD/MM/YYYY')}`,
         cantidadLiqTotal: liquidated.rows.reduce((prev, next) => prev + +next.cantidadLiq, 0) + compens.cantidadLiqTotal + ivaSM.cantidadLiqTotal,

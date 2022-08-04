@@ -69,11 +69,11 @@ export const getBranches = async (all, id) => {
   return await tracer.trace('getBranches', () => getBranchesD(all, id));
 };
 
-export const generateBranchesReport = async (user, payload: { from: Date; to: Date; alcaldia: boolean }) => {
+export const generateBranchesReport = async (user, payload: { from: Date; to: Date; alcaldia: boolean }, type:string) => {
   const client = await pool.connect();
   try {
     const id = Math.trunc(Math.random() * 10000).toString();
-    createRPR(id, payload);
+    createRPR(id, payload, type);
     return id;
   } catch (error) {
     throw errorMessageExtractor(error);
