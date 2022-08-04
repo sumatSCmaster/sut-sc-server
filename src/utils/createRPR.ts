@@ -78,17 +78,17 @@ export const createRPR = async (id: string, payload: { from: Date; to: Date; alc
       descripcion: 'IVA SM',
       descripcion_corta: null,
       subRamo: [
+        // {
+        //   ramo: '122.SAGAS',
+        //   descripcion: 'IVA SM - IVA SAGAS',
+        //   codigo: '122',
+        //   ...(await client.query(queries.GET_SM_IVA_SAGAS, [payload.from, payload.to])).rows[0],
+        //   liquidado: 0,
+        //   cantidadLiq: 0,
+        // },
         {
-          ramo: '122.SAGAS',
-          descripcion: 'IVA SM - IVA SAGAS',
-          codigo: '122',
-          ...(await client.query(queries.GET_SM_IVA_SAGAS, [payload.from, payload.to])).rows[0],
-          liquidado: 0,
-          cantidadLiq: 0,
-        },
-        {
-          ramo: '122.IMAU',
-          descripcion: 'IVA SM - IVA IMAU',
+          ramo: '122.ASEO',
+          descripcion: 'IVA SM - IVA ASEO',
           codigo: '122',
           ...(await client.query(queries.GET_SM_IVA_IMAU, [payload.from, payload.to])).rows[0],
           liquidado: 0,
