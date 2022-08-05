@@ -2293,6 +2293,7 @@ export const formatContributor = async (contributor, client: PoolClient) => {
             id: el.id_liquidacion,
             fechaLiquidacion: el.fecha_liquidacion,
             fechaVencimiento: el.fecha_vencimiento,
+            fechaPerteneciente: {month: el.datos?.fecha?.month, year: el.datos?.fecha?.year},
             monto: +el.monto,
             montoPetro: +el.monto_petro,
             estado: el.state || 'finalizado',
