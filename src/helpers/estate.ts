@@ -98,6 +98,7 @@ export const createPersonalEstate = async (procedure) => {
 
 export const taxPayerEstatesByRIM = async ({ typeDoc, rif, rim }) => {
   const client = await pool.connect();
+  let estates;
   try {
     mainLogger.info('taxPayerEStateBYRIM');
     const rimData = await client.query(queries.GET_RIM_DATA, [rim]);
@@ -108,8 +109,26 @@ export const taxPayerEstatesByRIM = async ({ typeDoc, rif, rim }) => {
     if (contributor.rowCount === 0) {
       throw new Error('Contribuyente no encontrado');
     }
-    const estates = (await client.query(queries.GET_ESTATES_BY_RIM, [rim])).rows;
-
+    estates = (await client.query(queries.GET_ESTATES_BY_RIM, [rim])).rows;
+    estates = await Promise.all(estates.map(async estate => {
+      let extraInfo;
+      switch(estate.clasificacion) {
+        case 'EJIDO':
+          extraInfo = (await client.query('SELECT id_inmueble AS id, uso, clase, tenencia, fecha_vencimiento AS "fechaVencimiento" FROM inmueble_ejidos WHERE id_inmueble = $1', [inmueble.id])).rows[0];
+          break;
+        case 'CEMENTERIO':
+          extraInfo = (await client.query('SELECT id_inmueble AS id, sector, area_servicios AS "areaServicios", tenencia FROM inmueble_cementerios WHERE id_inmueble = $1', [inmueble.id])).rows[0];
+          break;
+        case 'MERCADO':
+          extraInfo = (await client.query('SELECT id_inmueble AS id, mercados, tipo_local AS "tipoLocal", tipo_aeconomica AS "tipoAE" FROM inmueble_mercados WHERE id_inmueble = $1', [inmueble.id])).rows[0];
+          break;
+        case 'QUIOSCO':
+          extraInfo = (await client.query('SELECT id_inmueble AS id, objeto AS "objetoQuiosco", tipo AS "tipoQuiosco", zona AS "zonaQuiosco" FROM inmueble_quioscos WHERE id_inmueble = $1', [inmueble.id])).rows[0];
+          break;
+        default: break;
+        }
+      return {...estate, ...extraInfo};
+    }));
     const estatesWithAppraisals = await Promise.all(
       estates.map((row) => {
         return new Promise(async (res, rej) => {
@@ -140,12 +159,32 @@ export const taxPayerEstatesByRIM = async ({ typeDoc, rif, rim }) => {
 
 export const taxPayerEstatesByNaturalCont = async ({ typeDoc, doc }) => {
   const client = await pool.connect();
+  let estates, extraInfo;
   try {
     const contributor = await client.query(queries.GET_NATURAL_CONTRIBUTOR, [typeDoc, doc]);
     if (contributor.rowCount === 0) {
       throw new Error('Contribuyente no encontrado');
     }
-    const estates = (await client.query(queries.GET_ESTATES_BY_NATURAL_CONTRIBUTOR, [contributor.rows[0].id])).rows;
+    estates = (await client.query(queries.GET_ESTATES_BY_NATURAL_CONTRIBUTOR, [contributor.rows[0].id])).rows;
+    estates = await Promise.all(estates.map(async estate => {
+      let extraInfo;
+      switch(estate.clasificacion) {
+        case 'EJIDO':
+          extraInfo = (await client.query('SELECT id_inmueble AS id, uso, clase, tenencia, fecha_vencimiento AS "fechaVencimiento" FROM inmueble_ejidos WHERE id_inmueble = $1', [inmueble.id])).rows[0];
+          break;
+        case 'CEMENTERIO':
+          extraInfo = (await client.query('SELECT id_inmueble AS id, sector, area_servicios AS "areaServicios", tenencia FROM inmueble_cementerios WHERE id_inmueble = $1', [inmueble.id])).rows[0];
+          break;
+        case 'MERCADO':
+          extraInfo = (await client.query('SELECT id_inmueble AS id, mercados, tipo_local AS "tipoLocal", tipo_aeconomica AS "tipoAE" FROM inmueble_mercados WHERE id_inmueble = $1', [inmueble.id])).rows[0];
+          break;
+        case 'QUIOSCO':
+          extraInfo = (await client.query('SELECT id_inmueble AS id, objeto AS "objetoQuiosco", tipo AS "tipoQuiosco", zona AS "zonaQuiosco" FROM inmueble_quioscos WHERE id_inmueble = $1', [inmueble.id])).rows[0];
+          break;
+        default: break;
+        }
+      return {...estate, ...extraInfo};
+    }));
     const estatesWithAppraisals = await Promise.all(
       estates.map((row) => {
         return new Promise(async (res, rej) => {
