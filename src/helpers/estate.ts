@@ -114,16 +114,16 @@ export const taxPayerEstatesByRIM = async ({ typeDoc, rif, rim }) => {
       let extraInfo;
       switch(estate.clasificacion) {
         case 'EJIDO':
-          extraInfo = (await client.query('SELECT id_inmueble AS id, uso, clase, tenencia, fecha_vencimiento AS "fechaVencimiento" FROM inmueble_ejidos WHERE id_inmueble = $1', [inmueble.id])).rows[0];
+          extraInfo = (await client.query(queries.GET_COMMON_LAND, [estate.id])).rows[0];
           break;
         case 'CEMENTERIO':
-          extraInfo = (await client.query('SELECT id_inmueble AS id, sector, area_servicios AS "areaServicios", tenencia FROM inmueble_cementerios WHERE id_inmueble = $1', [inmueble.id])).rows[0];
+          extraInfo = (await client.query(queries.GET_GRAVEYARD, [estate.id])).rows[0];
           break;
         case 'MERCADO':
-          extraInfo = (await client.query('SELECT id_inmueble AS id, mercados, tipo_local AS "tipoLocal", tipo_aeconomica AS "tipoAE" FROM inmueble_mercados WHERE id_inmueble = $1', [inmueble.id])).rows[0];
+          extraInfo = (await client.query(queries.GET_MARKET_ESTATE, [estate.id])).rows[0];
           break;
         case 'QUIOSCO':
-          extraInfo = (await client.query('SELECT id_inmueble AS id, objeto AS "objetoQuiosco", tipo AS "tipoQuiosco", zona AS "zonaQuiosco" FROM inmueble_quioscos WHERE id_inmueble = $1', [inmueble.id])).rows[0];
+          extraInfo = (await client.query(queries.GET_QUIOSCO, [estate.id])).rows[0];
           break;
         default: break;
         }
@@ -170,16 +170,16 @@ export const taxPayerEstatesByNaturalCont = async ({ typeDoc, doc }) => {
       let extraInfo;
       switch(estate.clasificacion) {
         case 'EJIDO':
-          extraInfo = (await client.query('SELECT id_inmueble AS id, uso, clase, tenencia, fecha_vencimiento AS "fechaVencimiento" FROM inmueble_ejidos WHERE id_inmueble = $1', [inmueble.id])).rows[0];
+          extraInfo = (await client.query(queries.GET_COMMON_LAND, [estate.id])).rows[0];
           break;
         case 'CEMENTERIO':
-          extraInfo = (await client.query('SELECT id_inmueble AS id, sector, area_servicios AS "areaServicios", tenencia FROM inmueble_cementerios WHERE id_inmueble = $1', [inmueble.id])).rows[0];
+          extraInfo = (await client.query(queries.GET_GRAVEYARD, [estate.id])).rows[0];
           break;
         case 'MERCADO':
-          extraInfo = (await client.query('SELECT id_inmueble AS id, mercados, tipo_local AS "tipoLocal", tipo_aeconomica AS "tipoAE" FROM inmueble_mercados WHERE id_inmueble = $1', [inmueble.id])).rows[0];
+          extraInfo = (await client.query(queries.GET_MARKET_ESTATE, [estate.id])).rows[0];
           break;
         case 'QUIOSCO':
-          extraInfo = (await client.query('SELECT id_inmueble AS id, objeto AS "objetoQuiosco", tipo AS "tipoQuiosco", zona AS "zonaQuiosco" FROM inmueble_quioscos WHERE id_inmueble = $1', [inmueble.id])).rows[0];
+          extraInfo = (await client.query(queries.GET_QUIOSCO, [estate.id])).rows[0];
           break;
         default: break;
         }
@@ -274,16 +274,16 @@ export const getEstateByCod = async ({ codCat }) => {
     const inmueble = {...estate.rows[0]}
     switch(inmueble.clasificacion) {
       case 'EJIDO':
-        extraInfo = (await client.query('SELECT id_inmueble AS id, uso, clase, tenencia, fecha_vencimiento AS "fechaVencimiento" FROM inmueble_ejidos WHERE id_inmueble = $1', [inmueble.id])).rows[0];
+        extraInfo = (await client.query(queries.GET_COMMON_LAND, [inmueble.id])).rows[0];
         break;
       case 'CEMENTERIO':
-        extraInfo = (await client.query('SELECT id_inmueble AS id, sector, area_servicios AS "areaServicios", tenencia FROM inmueble_cementerios WHERE id_inmueble = $1', [inmueble.id])).rows[0];
+        extraInfo = (await client.query(queries.GET_GRAVEYARD, [inmueble.id])).rows[0];
         break;
       case 'MERCADO':
-        extraInfo = (await client.query('SELECT id_inmueble AS id, mercados, tipo_local AS "tipoLocal", tipo_aeconomica AS "tipoAE" FROM inmueble_mercados WHERE id_inmueble = $1', [inmueble.id])).rows[0];
+        extraInfo = (await client.query(queries.GET_MARKET_ESTATE, [inmueble.id])).rows[0];
         break;
       case 'QUIOSCO':
-        extraInfo = (await client.query('SELECT id_inmueble AS id, objeto AS "objetoQuiosco", tipo AS "tipoQuiosco", zona AS "zonaQuiosco" FROM inmueble_quioscos WHERE id_inmueble = $1', [inmueble.id])).rows[0];
+        extraInfo = (await client.query(queries.GET_QUIOSCO, [inmueble.id])).rows[0];
         break;
       default: break;
       }
@@ -377,7 +377,7 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
   }
 };
 
-export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc, userId, clasificacion }) => {
+export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc, userId, clasificacion, uso, clase, tenencia, contrato, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, sector}) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -399,7 +399,26 @@ export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosC
       })
     );
     estate = await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, codCat, id, dirDoc, clasificacion]);
-
+    switch(estate.clasificacion) {
+      case 'EJIDO':
+        const ejido = (await client.query(queries.UPDATE_COMMON_LAND, [estate.id, uso, clase, tenencia, contrato, fechaVencimiento])).rows[0];
+        estate = {...estate, ...ejido};
+        break;
+      case 'MERCADO':
+        const mercado = (await client.query(queries.UPDATE_MARKET_ESTATE, [estate.id, mercados, tipoLocal, tipoAE])).rows[0];
+        estate = {...estate, ...mercado};
+        break;
+      case 'QUIOSCO':
+        const quiosco = (await client.query(queries.UPDATE_QUIOSCO , [estate.id, objetoQuiosco, tipoQuiosco, zonaQuiosco])).rows[0];
+        estate = {...estate, ...quiosco};
+        break;
+      case 'CEMENTERIO':
+        const cementerio = (await client.query(queries.UPDATE_GRAVEYARD, [estate.id, areaServicios, tenencia, sector])).rows[0];
+        estate = {...estate, ...cementerio};
+        break;
+      default:
+       break;
+    }
     await client.query('COMMIT');
     return { status: 200, message: 'Inmueble actualizado' };
     // return {inmueble: {...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows }};
