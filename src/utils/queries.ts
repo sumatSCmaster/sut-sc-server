@@ -2222,6 +2222,10 @@ ORDER BY fecha_liquidacion DESC;
     WHERE id_parroquia = $1`,
   GET_APPRAISALS_BY_ID: 'SELECT anio, avaluo AS avaluo FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1',
   GET_CURRENT_APPRAISALS_BY_ID: "SELECT anio, avaluo FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 and anio = EXTRACT('year' FROM CURRENT_DATE);",
+  INSERT_COMMON_LAND: `INSERT INTO inmueble_ejidos(id_inmueble, uso, clase, tenencia, contrato, fecha_vencimiento) VALUES ($1, $2, $3, $4, $5) RETURNING id_inmueble AS id, uso, clase, tenencia, contrato, fecha_vencimiento AS "fechaVencimiento";`,
+  INSERT_GRAVEYARD: `INSERT INTO inmueble_cementerios(id_inmueble, area_servicios, tenencia, sector) VALUES ($1, $2, $3, $4) RETURNING id_inmueble AS id, area_servicios AS "areaServicios", tenencia, sector;`,
+  INSERT_QUIOSCO: `INSERT INTO inmueble_quioscos(id_inmueble, objeto, tipo, zona) VALUES ($1, $2, $3, $4) RETURNING id_inmueble AS id, objeto AS "objetoQuiosco", tipo AS "tipoQuiosco", zona AS "zonaQuiosco";`,
+  INSERT_MARKET_ESTATE: `INSERT INTO inmueble_mercados(id_inmueble, mercados, tipo_local, tipo_aeconomica) VALUES ($1, $2, $3, $4) RETURNING id_inmueble AS id, mercados, tipo_local AS "tipoLocal", tipo_aeconomica AS "tipoAE";`,
   CREATE_BARE_ESTATE: `INSERT INTO inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, tipo_inmueble, dir_doc, clasificacion)
     VALUES (default, $1, $2, $3, $4, $5, $6, $7, $8) RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", dir_doc AS "dirDoc", clasificacion`,
