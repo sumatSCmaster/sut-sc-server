@@ -398,7 +398,7 @@ export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosC
         return client.query(queries.INSERT_ESTATE_VALUE, [id, row.avaluo, row.anio]);
       })
     );
-    estate = await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, codCat, id, dirDoc, clasificacion]);
+    estate = (await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, codCat, id, dirDoc, clasificacion])).rows[0];
     switch(estate.clasificacion) {
       case 'EJIDO':
         const ejido = (await client.query(queries.UPDATE_COMMON_LAND, [estate.id, uso, clase, tenencia, contrato, fechaVencimiento])).rows[0];
@@ -494,11 +494,26 @@ export const linkCommercial = async ({ codCat, rim, relacion }) => {
     await client.query(queries.LINK_ESTATE_WITH_RIM, [rimData.rows[0].id, codCat, relacion]);
 
     estate = await client.query(queries.GET_ESTATE_BY_CODCAT, [codCat]);
-
+    let extraInfo;
+    switch(estate.rows[0].clasificacion) {      
+      case 'EJIDO':
+          extraInfo = (await client.query(queries.GET_COMMON_LAND, [estate.rows[0].id])).rows[0];
+          break;
+        case 'CEMENTERIO':
+          extraInfo = (await client.query(queries.GET_GRAVEYARD, [estate.rows[0].id])).rows[0];
+          break;
+        case 'MERCADO':
+          extraInfo = (await client.query(queries.GET_MARKET_ESTATE, [estate.rows[0].id])).rows[0];
+          break;
+        case 'QUIOSCO':
+          extraInfo = (await client.query(queries.GET_QUIOSCO, [estate.rows[0].id])).rows[0];
+          break;
+        default: break;
+        }
     return {
       status: 200,
       message: 'Inmueble enlazado',
-      inmueble: { ...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
+      inmueble: { ...estate.rows[0], ...extraInfo, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
     };
   } catch (e: any) {
     throw {
@@ -557,11 +572,26 @@ export const linkNatural = async ({ codCat, typeDoc, doc, relacion }) => {
     await client.query(queries.LINK_ESTATE_WITH_NATURAL_CONTRIBUTOR_EX, [estate.rows[0].id, contributor.rows[0].id, relacion]);
 
     estate = await client.query(queries.GET_ESTATE_BY_CODCAT_NAT, [codCat]);
-
+    let extraInfo;
+    switch(estate.rows[0].clasificacion) {      
+      case 'EJIDO':
+          extraInfo = (await client.query(queries.GET_COMMON_LAND, [estate.rows[0].id])).rows[0];
+          break;
+        case 'CEMENTERIO':
+          extraInfo = (await client.query(queries.GET_GRAVEYARD, [estate.rows[0].id])).rows[0];
+          break;
+        case 'MERCADO':
+          extraInfo = (await client.query(queries.GET_MARKET_ESTATE, [estate.rows[0].id])).rows[0];
+          break;
+        case 'QUIOSCO':
+          extraInfo = (await client.query(queries.GET_QUIOSCO, [estate.rows[0].id])).rows[0];
+          break;
+        default: break;
+        }
     return {
       status: 200,
       message: 'Inmueble enlazado',
-      inmueble: { ...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
+      inmueble: { ...estate.rows[0], ...extraInfo, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
     };
   } catch (e: any) {
     throw {
