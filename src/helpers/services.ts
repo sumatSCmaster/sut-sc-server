@@ -94,7 +94,7 @@ export const getCleaningTariffForEstate = async ({ estate, branchId, client }) =
     const calculoAseo = !!['COMERCIAL', 'INDUSTRIAL'].find((type) => type === estate.tipo_inmueble)
       ? /*estate.metros_construccion && +estate.metros_construccion !== 0
         ? costoMts * PETRO * estate.metros_construccion
-        :*/ +(await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0]?.tarifa || 0
+        :*/ +(await client.query(queries.GET_AE_CLEANING_TARIFF, [branchId])).rows[0]?.tarifa || +(await client.query(`SELECT indicador FROM impuesto.baremo WHERE descripcion = 'Tarifa por Inmueble Desocupado'`)).rows[0]?.indicador
       : +(await client.query(queries.GET_RESIDENTIAL_CLEANING_TARIFF)).rows[0]?.monto;
     // const tarifaAseo = calculoAseo / PETRO > limiteAseo ? PETRO * limiteAseo : calculoAseo;
     return +calculoAseo;
