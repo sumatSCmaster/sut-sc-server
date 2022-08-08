@@ -454,6 +454,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         const VHDate = moment([lastVHSettlement, 0, 1]);
         const interpolation = now.diff(VHDate, 'years');
         const deuda = interpolation ? new Array(interpolation).fill({year: null}).map((_, index) => ({year: now.year() - index})) : null;
+        console.log(deuda, interpolation);
         return deuda ? {id: vh.id_vehiculo, vehiculo: vh, tarifa: (await client.query('SELECT tarifa FROM impuesto.vehiculo JOIN impuesto.subcategoria_vehiculo USING(id_subcategoria_vehiculo) WHERE id_vehiculo = $1', [vh.id_vehiculo])).rows[0]?.tarifa, deuda } : null
       })))?.filter(vh => vh) : undefined;
     //IU
