@@ -98,6 +98,7 @@ export const createPersonalEstate = async (procedure) => {
 
 export const taxPayerEstatesByRIM = async ({ typeDoc, rif, rim }) => {
   const client = await pool.connect();
+  let estates;
   try {
     mainLogger.info('taxPayerEStateBYRIM');
     const rimData = await client.query(queries.GET_RIM_DATA, [rim]);
@@ -108,8 +109,26 @@ export const taxPayerEstatesByRIM = async ({ typeDoc, rif, rim }) => {
     if (contributor.rowCount === 0) {
       throw new Error('Contribuyente no encontrado');
     }
-    const estates = (await client.query(queries.GET_ESTATES_BY_RIM, [rim])).rows;
-
+    estates = (await client.query(queries.GET_ESTATES_BY_RIM, [rim])).rows;
+    estates = await Promise.all(estates.map(async estate => {
+      let extraInfo;
+      switch(estate.clasificacion) {
+        case 'EJIDO':
+          extraInfo = (await client.query(queries.GET_COMMON_LAND, [estate.id])).rows[0];
+          break;
+        case 'CEMENTERIO':
+          extraInfo = (await client.query(queries.GET_GRAVEYARD, [estate.id])).rows[0];
+          break;
+        case 'MERCADO':
+          extraInfo = (await client.query(queries.GET_MARKET_ESTATE, [estate.id])).rows[0];
+          break;
+        case 'QUIOSCO':
+          extraInfo = (await client.query(queries.GET_QUIOSCO, [estate.id])).rows[0];
+          break;
+        default: break;
+        }
+      return {...estate, ...extraInfo};
+    }));
     const estatesWithAppraisals = await Promise.all(
       estates.map((row) => {
         return new Promise(async (res, rej) => {
@@ -140,12 +159,32 @@ export const taxPayerEstatesByRIM = async ({ typeDoc, rif, rim }) => {
 
 export const taxPayerEstatesByNaturalCont = async ({ typeDoc, doc }) => {
   const client = await pool.connect();
+  let estates, extraInfo;
   try {
     const contributor = await client.query(queries.GET_NATURAL_CONTRIBUTOR, [typeDoc, doc]);
     if (contributor.rowCount === 0) {
       throw new Error('Contribuyente no encontrado');
     }
-    const estates = (await client.query(queries.GET_ESTATES_BY_NATURAL_CONTRIBUTOR, [contributor.rows[0].id])).rows;
+    estates = (await client.query(queries.GET_ESTATES_BY_NATURAL_CONTRIBUTOR, [contributor.rows[0].id])).rows;
+    estates = await Promise.all(estates.map(async estate => {
+      let extraInfo;
+      switch(estate.clasificacion) {
+        case 'EJIDO':
+          extraInfo = (await client.query(queries.GET_COMMON_LAND, [estate.id])).rows[0];
+          break;
+        case 'CEMENTERIO':
+          extraInfo = (await client.query(queries.GET_GRAVEYARD, [estate.id])).rows[0];
+          break;
+        case 'MERCADO':
+          extraInfo = (await client.query(queries.GET_MARKET_ESTATE, [estate.id])).rows[0];
+          break;
+        case 'QUIOSCO':
+          extraInfo = (await client.query(queries.GET_QUIOSCO, [estate.id])).rows[0];
+          break;
+        default: break;
+        }
+      return {...estate, ...extraInfo};
+    }));
     const estatesWithAppraisals = await Promise.all(
       estates.map((row) => {
         return new Promise(async (res, rej) => {
@@ -200,6 +239,7 @@ export const userEstates = async ({ typeDoc, doc }) => {
 
 export const getEstateByCod = async ({ codCat }) => {
   const client = await pool.connect();
+  let extraInfo;
   try {
     mainLogger.info('getEstateByCod');
     const estate = await client.query(queries.GET_ESTATE_BY_CODCAT, [codCat]);
@@ -231,10 +271,27 @@ export const getEstateByCod = async ({ codCat }) => {
         [estate.rows[0].id]
       )
     ).rows;
+    const inmueble = {...estate.rows[0]}
+    switch(inmueble.clasificacion) {
+      case 'EJIDO':
+        extraInfo = (await client.query(queries.GET_COMMON_LAND, [inmueble.id])).rows[0];
+        break;
+      case 'CEMENTERIO':
+        extraInfo = (await client.query(queries.GET_GRAVEYARD, [inmueble.id])).rows[0];
+        break;
+      case 'MERCADO':
+        extraInfo = (await client.query(queries.GET_MARKET_ESTATE, [inmueble.id])).rows[0];
+        break;
+      case 'QUIOSCO':
+        extraInfo = (await client.query(queries.GET_QUIOSCO, [inmueble.id])).rows[0];
+        break;
+      default: break;
+      }
+    
     return {
       status: 200,
       message: 'Inmueble encontrado',
-      inmueble: { ...estate.rows[0], propietarioRim: propietorRim, propietarios: propietors, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
+      inmueble: { ...estate.rows[0], ...extraInfo, propietarioRim: propietorRim, propietarios: propietors, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
     };
   } catch (e: any) {
     throw {
@@ -270,13 +327,33 @@ export const parishEstates = async ({ idParroquia }) => {
   }
 };
 
-export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc, userId, clasificacion }) => {
+export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc, userId, clasificacion, uso, tenencia, contrato, clase, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, sector }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     // const codIsApproved = (await client.query(queries.GET_APPROVED_CPU_PROCEDURE, [codigoCpu])).rows[0];
     // if (!codIsApproved) throw new Error('El código ingresado no pertenece a un trámite aprobado de solvencia de inmuebles');
-    const estate = (await client.query(queries.CREATE_BARE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, dirDoc, clasificacion])).rows[0];
+    let estate = (await client.query(queries.CREATE_BARE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, dirDoc, clasificacion])).rows[0];
+    switch(estate.clasificacion) {
+      case 'EJIDO':
+        const ejido = (await client.query(queries.INSERT_COMMON_LAND, [estate.id, uso, clase, tenencia, contrato, fechaVencimiento])).rows[0];
+        estate = {...estate, ...ejido};
+        break;
+      case 'MERCADO':
+        const mercado = (await client.query(queries.INSERT_MARKET_ESTATE, [estate.id, mercados, tipoLocal, tipoAE])).rows[0];
+        estate = {...estate, ...mercado};
+        break;
+      case 'QUIOSCO':
+        const quiosco = (await client.query(queries.INSERT_QUIOSCO , [estate.id, objetoQuiosco, tipoQuiosco, zonaQuiosco])).rows[0];
+        estate = {...estate, ...quiosco};
+        break;
+      case 'CEMENTERIO':
+        const cementerio = (await client.query(queries.INSERT_GRAVEYARD, [estate.id, areaServicios, tenencia, sector])).rows[0];
+        estate = {...estate, ...cementerio};
+        break;
+      default:
+       break;
+    }
     mainLogger.info(estate);
     // await client.query(queries.ADD_MOVEMENT, [estate.id, userId, 'inmueble_registrado', 'INMUEBLE']);
     await Promise.all(
@@ -300,7 +377,7 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
   }
 };
 
-export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc, userId, clasificacion }) => {
+export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc, userId, clasificacion, uso, clase, tenencia, contrato, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, sector}) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -321,8 +398,32 @@ export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosC
         return client.query(queries.INSERT_ESTATE_VALUE, [id, row.avaluo, row.anio]);
       })
     );
-    estate = await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, codCat, id, dirDoc, clasificacion]);
-
+    estate = (await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, codCat, id, dirDoc, clasificacion])).rows[0];
+    await client.query('DELETE FROM inmueble_ejidos WHERE id_inmueble = $1', [estate.id]);
+    await client.query('DELETE FROM inmueble_mercados WHERE id_inmueble = $1', [estate.id]);
+    await client.query('DELETE FROM inmueble_cementerios WHERE id_inmueble = $1', [estate.id]);
+    await client.query('DELETE FROM inmueble_quioscos WHERE id_inmueble = $1', [estate.id]);
+    console.log(estate, 'MASTER ESTATE');
+    switch(estate.clasificacion) {
+      case 'EJIDO':
+        const ejido = (await client.query(queries.INSERT_COMMON_LAND, [estate.id, uso, clase, tenencia, contrato, fechaVencimiento])).rows[0];
+        estate = {...estate, ...ejido};
+        break;
+      case 'MERCADO':
+        const mercado = (await client.query(queries.INSERT_MARKET_ESTATE, [estate.id, mercados, tipoLocal, tipoAE])).rows[0];
+        estate = {...estate, ...mercado};
+        break;
+      case 'QUIOSCO':
+        const quiosco = (await client.query(queries.INSERT_QUIOSCO , [estate.id, objetoQuiosco, tipoQuiosco, zonaQuiosco])).rows[0];
+        estate = {...estate, ...quiosco};
+        break;
+      case 'CEMENTERIO':
+        const cementerio = (await client.query(queries.INSERT_GRAVEYARD, [estate.id, areaServicios, tenencia, sector])).rows[0];
+        estate = {...estate, ...cementerio};
+        break;
+      default:
+       break;
+    }
     await client.query('COMMIT');
     return { status: 200, message: 'Inmueble actualizado' };
     // return {inmueble: {...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows }};
@@ -398,11 +499,26 @@ export const linkCommercial = async ({ codCat, rim, relacion }) => {
     await client.query(queries.LINK_ESTATE_WITH_RIM, [rimData.rows[0].id, codCat, relacion]);
 
     estate = await client.query(queries.GET_ESTATE_BY_CODCAT, [codCat]);
-
+    let extraInfo;
+    switch(estate.rows[0].clasificacion) {      
+      case 'EJIDO':
+          extraInfo = (await client.query(queries.GET_COMMON_LAND, [estate.rows[0].id])).rows[0];
+          break;
+        case 'CEMENTERIO':
+          extraInfo = (await client.query(queries.GET_GRAVEYARD, [estate.rows[0].id])).rows[0];
+          break;
+        case 'MERCADO':
+          extraInfo = (await client.query(queries.GET_MARKET_ESTATE, [estate.rows[0].id])).rows[0];
+          break;
+        case 'QUIOSCO':
+          extraInfo = (await client.query(queries.GET_QUIOSCO, [estate.rows[0].id])).rows[0];
+          break;
+        default: break;
+        }
     return {
       status: 200,
       message: 'Inmueble enlazado',
-      inmueble: { ...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
+      inmueble: { ...estate.rows[0], ...extraInfo, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
     };
   } catch (e: any) {
     throw {
@@ -461,11 +577,26 @@ export const linkNatural = async ({ codCat, typeDoc, doc, relacion }) => {
     await client.query(queries.LINK_ESTATE_WITH_NATURAL_CONTRIBUTOR_EX, [estate.rows[0].id, contributor.rows[0].id, relacion]);
 
     estate = await client.query(queries.GET_ESTATE_BY_CODCAT_NAT, [codCat]);
-
+    let extraInfo;
+    switch(estate.rows[0].clasificacion) {      
+      case 'EJIDO':
+          extraInfo = (await client.query(queries.GET_COMMON_LAND, [estate.rows[0].id])).rows[0];
+          break;
+        case 'CEMENTERIO':
+          extraInfo = (await client.query(queries.GET_GRAVEYARD, [estate.rows[0].id])).rows[0];
+          break;
+        case 'MERCADO':
+          extraInfo = (await client.query(queries.GET_MARKET_ESTATE, [estate.rows[0].id])).rows[0];
+          break;
+        case 'QUIOSCO':
+          extraInfo = (await client.query(queries.GET_QUIOSCO, [estate.rows[0].id])).rows[0];
+          break;
+        default: break;
+        }
     return {
       status: 200,
       message: 'Inmueble enlazado',
-      inmueble: { ...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
+      inmueble: { ...estate.rows[0], ...extraInfo, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
     };
   } catch (e: any) {
     throw {
