@@ -312,6 +312,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       throw { status: 401, message: `La referencia municipal proporcionada se encuentra en estado ${branch?.estado_licencia}` };
     mainLogger.info(inspect(lastSettlementPayload));
     mainLogger.info(lastSettlementQuery);
+    console.log('testing')
     if (/*AEApplicationExists && SMApplicationExists && */IUApplicationExists && PPApplicationExists) return { status: 409, message: 'Ya existe una declaracion de impuestos para este mes' };
     const now = moment(new Date());
     // const monthDateForTop = moment().locale('ES').subtract(2, 'M');
