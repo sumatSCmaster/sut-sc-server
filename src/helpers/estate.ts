@@ -403,6 +403,7 @@ export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosC
     await client.query('DELETE FROM inmueble_mercados WHERE id_inmueble = $1', [estate.id]);
     await client.query('DELETE FROM inmueble_cementerios WHERE id_inmueble = $1', [estate.id]);
     await client.query('DELETE FROM inmueble_quioscos WHERE id_inmueble = $1', [estate.id]);
+    console.log(estate, 'MASTER ESTATE');
     switch(estate.clasificacion) {
       case 'EJIDO':
         const ejido = (await client.query(queries.UPDATE_COMMON_LAND, [estate.id, uso, clase, tenencia, contrato, fechaVencimiento])).rows[0];
