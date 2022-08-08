@@ -406,19 +406,19 @@ export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosC
     console.log(estate, 'MASTER ESTATE');
     switch(estate.clasificacion) {
       case 'EJIDO':
-        const ejido = (await client.query(queries.UPDATE_COMMON_LAND, [estate.id, uso, clase, tenencia, contrato, fechaVencimiento])).rows[0];
+        const ejido = (await client.query(queries.INSERT_COMMON_LAND, [estate.id, uso, clase, tenencia, contrato, fechaVencimiento])).rows[0];
         estate = {...estate, ...ejido};
         break;
       case 'MERCADO':
-        const mercado = (await client.query(queries.UPDATE_MARKET_ESTATE, [estate.id, mercados, tipoLocal, tipoAE])).rows[0];
+        const mercado = (await client.query(queries.INSERT_MARKET_ESTATE, [estate.id, mercados, tipoLocal, tipoAE])).rows[0];
         estate = {...estate, ...mercado};
         break;
       case 'QUIOSCO':
-        const quiosco = (await client.query(queries.UPDATE_QUIOSCO , [estate.id, objetoQuiosco, tipoQuiosco, zonaQuiosco])).rows[0];
+        const quiosco = (await client.query(queries.INSERT_QUIOSCO , [estate.id, objetoQuiosco, tipoQuiosco, zonaQuiosco])).rows[0];
         estate = {...estate, ...quiosco};
         break;
       case 'CEMENTERIO':
-        const cementerio = (await client.query(queries.UPDATE_GRAVEYARD, [estate.id, areaServicios, tenencia, sector])).rows[0];
+        const cementerio = (await client.query(queries.INSERT_GRAVEYARD, [estate.id, areaServicios, tenencia, sector])).rows[0];
         estate = {...estate, ...cementerio};
         break;
       default:
