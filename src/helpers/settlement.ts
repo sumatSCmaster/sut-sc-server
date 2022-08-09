@@ -4256,7 +4256,7 @@ export const getCertificatesForSettlement = async (idLiquidacion) => {
   const client = await pool.connect();
   try {
     const certificados = (await client.query('SELECT url FROM impuesto.vehiculo_recibo WHERE id_liquidacion = $1', [idLiquidacion])).rows?.map(cert => cert.url);
-    return {status: 200, certificados};
+    return {status: 200, certificados: certificados || []};
   } catch(e) {
     throw({status: 500, message: e.message || 'Error al obtener los certificados'})
   } finally {
