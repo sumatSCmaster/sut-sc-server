@@ -4445,13 +4445,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             totalIva: `${formatCurrency(totalIva)} Bs`,
             totalRetencionIva: `${formatCurrency(totalRetencionIva)} Bs`, // TODO: Retencion
             totalIvaPagar: `${formatCurrency(totalIvaPagar)} Bs`,
-            montoTotalImpuesto: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+            montoTotalImpuesto: `${formatCurrency(totalMonto)} Bs`,
             interesesMoratorio: '0.00 Bs', // TODO: Intereses moratorios
             estatus: 'PAGADO',
             esAgenteSENIAT: breakdownJoin[0].datos.esAgenteSENIAT || undefined,
             observacion: 'Pago por Servicios Municipales',
-            totalLiq: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
-            totalRecaudado: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+            totalLiq: `${formatCurrency(totalMonto)} Bs`,
+            totalRecaudado: `${formatCurrency(totalMonto)} Bs`,
             totalCred: `0.00 Bs`, // TODO: Credito fiscal
           },
         };
@@ -4512,13 +4512,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               totalIva: `${formatCurrency(totalIva)} Bs`,
               totalRetencionIva: `${formatCurrency(totalRetencionIva)} Bs`, // TODO: Retencion
               totalIvaPagar: `${formatCurrency(totalIvaPagar)} Bs`,
-              montoTotalImpuesto: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+              montoTotalImpuesto: `${formatCurrency(totalMonto)} Bs`,
               interesesMoratorio: '0.00 Bs', // TODO: Intereses moratorios
               estatus: 'PAGADO',
               esAgenteSENIAT: breakdownJoin[0].datos.esAgenteSENIAT || undefined,
               observacion: 'Pago por Servicios Municipales',
-              totalLiq: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
-              totalRecaudado: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+              totalLiq: `${formatCurrency(totalMonto)} Bs`,
+              totalRecaudado: `${formatCurrency(totalMonto)} Bs`,
               totalCred: `0.00 Bs`, // TODO: Credito fiscal
             },
           };
@@ -4563,12 +4563,12 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
           totalIva: `${formatCurrency(totalIva)} Bs`,
           totalRetencionIva: '0,00 Bs ', // TODO: Retencion
           totalIvaPagar: `${formatCurrency(totalIva)} Bs`,
-          montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs`,
+          montoTotalImpuesto: `${formatCurrency(totalMonto)} Bs`,
           interesesMoratorio: '0.00 Bs', // TODO: Intereses moratorios
           estatus: 'PAGADO',
           observacion: 'Pago por Servicios Municipales',
-          totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs`,
-          totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs`,
+          totalLiq: `${formatCurrency(totalMonto)} Bs`,
+          totalRecaudado: `${formatCurrency(totalMonto)} Bs`,
           totalCred: `0.00 Bs`, // TODO: Credito fiscal
         },
       };
