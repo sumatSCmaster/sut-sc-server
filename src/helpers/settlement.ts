@@ -4376,6 +4376,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     let endOfMonthFechaVenc = fechaCreLiq.clone().endOf('month').format('DD/MM/YYYY');
     let currentDate = moment().format('MM-DD-YYYY');
 
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
+
     if (application.idSubramo === 107 || application.idSubramo === 108) {
       const breakdownGas = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID + ' ORDER BY fecha_vencimiento DESC', [application.id, 107])).rows
       // .map((row) =>
@@ -4428,8 +4430,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               breakdownJoin.map((row) => {
                 return {
                   periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                  declGas: `${formatCurrency(+row.datos.desglose[0].montoGas)}`,
-                  declAseo: `${formatCurrency(+row.datos.desglose[0].montoAseo)}`,
+                  declGas: `${formatCurrency(+row.datos.desglose[0].montoGas * PETRO)}`,
+                  declAseo: `${formatCurrency(+row.datos.desglose[0].montoAseo * PETRO)}`,
                 };
               }),
               2
@@ -4495,8 +4497,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                   let currDesg = row.datos.desglose.find((desg) => desg.inmueble === el.id_inmueble);
                   return {
                     periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                    declGas: `${formatCurrency(+currDesg.montoGas)}`,
-                    declAseo: `${formatCurrency(+currDesg.montoAseo)}`,
+                    declGas: `${formatCurrency(+currDesg.montoGas * PETRO)}`,
+                    declAseo: `${formatCurrency(+currDesg.montoAseo * PETRO)}`,
                   };
                 }),
                 2

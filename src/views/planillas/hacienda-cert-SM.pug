@@ -41,7 +41,7 @@ html
                   div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
                     p
                       b MOTIVO
-                  div(style={'-webkit-flex': 3}).td.border-right.border-bottom.center
+                  div(style={'-webkit-flex': 3, 'width:': '100%'}).td.border-right.border-bottom.center
                     p
                       b Liquidador
                   div(style={'-webkit-flex': 2}).td.border-bottom.center.border-right
@@ -195,18 +195,18 @@ html
                 div(style={'-webkit-flex': 2}).th.border-bottom.border-right
                   p
                     b Estatus:
-                div(style={'-webkit-flex': 8}).th.border-bottom
+                div(style={'-webkit-flex': 8}).td.border-bottom
                   p #{datos.estatus}
               div.tr
                 div(style={'-webkit-flex': 1}).th.border-bottom
                   p
                     b OBSERVACIONES
               div.tr
-                div(style={'-webkit-flex': 1}).td
+                div(style={'-webkit-flex': 1}).td.all-border
                   p
                     span &nbsp; #{datos.observacion}
             else
-              div(style={'margin-top':'50px'}).table.break-page
+              div(style={'margin-top':'20px'}).table.break-page
                 div.tr
                   div(style={'-webkit-flex': 2}).th.border-bottom.border-right
                     p
@@ -221,7 +221,7 @@ html
                   div(style={'-webkit-flex': 1}).td
                     p
                       span &nbsp; #{datos.observacion}
-            div.table.break-page
+            div(style={'margin-top':'20px'}).table.break-page
               div(style={'background-color':'rgba(0,0,0,0.2)'}).tr
                 div(style={'-webkit-flex': 1}).td.border-right.center
                   p
