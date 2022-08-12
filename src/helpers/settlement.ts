@@ -4376,7 +4376,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     let endOfMonthFechaVenc = fechaCreLiq.clone().endOf('month').format('DD/MM/YYYY');
     let currentDate = moment().format('MM-DD-YYYY');
 
-    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
+    const PETRO = (await pool.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
 
     if (application.idSubramo === 107 || application.idSubramo === 108) {
       const breakdownGas = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID + ' ORDER BY fecha_vencimiento DESC', [application.id, 107])).rows
