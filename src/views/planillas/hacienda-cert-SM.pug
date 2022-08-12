@@ -38,10 +38,10 @@ html
                   div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
                     p 
                       b Nro. Solicitud
-                  div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+                  div(style={'-webkit-flex': 3}).td.border-right.border-bottom.center
                     p
                       b MOTIVO
-                  div(style={'-webkit-flex': 3, 'width:': '100%'}).td.border-right.border-bottom.center
+                  div(style={'-webkit-flex': 2, 'width:': '100%'}).td.border-right.border-bottom.center
                     p
                       b Liquidador
                   div(style={'-webkit-flex': 2}).td.border-bottom.center.border-right
@@ -202,7 +202,7 @@ html
                   p
                     b OBSERVACIONES
               div.tr
-                div(style={'-webkit-flex': 1}).td.all-border
+                div(style={'-webkit-flex': 1}).td
                   p
                     span &nbsp; #{datos.observacion}
             else
@@ -221,7 +221,7 @@ html
                   div(style={'-webkit-flex': 1}).td
                     p
                       span &nbsp; #{datos.observacion}
-            div(style={'margin-top':'20px'}).table.break-page
+            div(style={'margin-top':'20px', 'margin-bottom':'20px'}).table.break-page
               div(style={'background-color':'rgba(0,0,0,0.2)'}).tr
                 div(style={'-webkit-flex': 1}).td.border-right.center
                   p
@@ -231,4 +231,4 @@ html
                   p
                     b Total Recaudado:
                     span &nbsp; #{datos.totalRecaudado}
-          include footer.pug
+        include footer.pug
