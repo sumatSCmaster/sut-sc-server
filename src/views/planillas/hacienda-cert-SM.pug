@@ -122,7 +122,7 @@ html
                     p
                       b TARIFA DE SERVICIOS MUNICIPALES
                 div.tr
-                  div(style={'-webkit-flex': 5.5}).th.center.border-right
+                  div(style={'-webkit-flex': 2.5}).th.center.border-right
                     p
                       b PERIODOS
                   //- div(style={'-webkit-flex': 2.5}).th.center.border-right
@@ -133,7 +133,7 @@ html
                       b ASEO
                 each item in datos.declarations[index] 
                   div.tr
-                    div(style={'-webkit-flex': 5.5}).td.center.border-right.border-top
+                    div(style={'-webkit-flex': 2.5}).td.center.border-right.border-top
                       p #{item.periodos}
                     //- div(style={'-webkit-flex': 2.5}).td.center.border-right.border-top
                     //-   p #{item.declGas}
@@ -161,12 +161,12 @@ html
                     //-   div(style={'border-top':'1px solid #000', 'width':'100%'}).td.border-right.center
                     //-     p 
                     //-       span &nbsp; #{aux[0].direccion ? aux[0].direccion : 'Dirección Sin Asingar'}
-                    div(style={'-webkit-flex': 2.5}).border-right
+                    div(style={'-webkit-flex': 2.5}).border-right.border-top
                       each item in aux
                           div.td.center.break-page
                             p 
                               span &nbsp; #{item.periodos}
-                    div(style={'-webkit-flex': 2})
+                    div(style={'-webkit-flex': 2}).border-top
                       each item in aux                      
                           div.td.center.break-page
                             p 
