@@ -120,6 +120,10 @@ html
                 div.tr
                   div(style={'-webkit-flex': 5.5}).th.center.border-right
                     p
+                      b TARIFA DE SERVICIOS MUNICIPALES
+                div.tr
+                  div(style={'-webkit-flex': 5.5}).th.center.border-right
+                    p
                       b PERIODOS
                   //- div(style={'-webkit-flex': 2.5}).th.center.border-right
                   //-   p
@@ -141,7 +145,11 @@ html
                   div.tr
                     div(style={'-webkit-flex': 5.5}).th.center.border-right
                       p
-                        b DIRECCIÓN
+                        b SERVICIOS MUNICIPALES
+                  div.tr
+                    //- div(style={'-webkit-flex': 5.5}).th.center.border-right
+                    //-   p
+                    //-     b DIRECCIÓN
                     div(style={'-webkit-flex': 2.5}).th.center.border-right
                       p
                         b PERIODOS
@@ -149,10 +157,10 @@ html
                       p
                         b IMPUESTO                 
                   div(style={'display':'-webkit-flex'})
-                    div(style={'-webkit-flex': 5.5}).tr
-                      div(style={'border-top':'1px solid #000', 'width':'100%'}).td.border-right.center
-                        p 
-                          span &nbsp; #{aux[0].direccion ? aux[0].direccion : 'Dirección Sin Asingar'}
+                    //- div(style={'-webkit-flex': 5.5}).tr
+                    //-   div(style={'border-top':'1px solid #000', 'width':'100%'}).td.border-right.center
+                    //-     p 
+                    //-       span &nbsp; #{aux[0].direccion ? aux[0].direccion : 'Dirección Sin Asingar'}
                     div(style={'-webkit-flex': 2.5}).border-right
                       each item in aux
                           div(style={'border-top':'1px solid #000'}).td.center.break-page
