@@ -161,14 +161,14 @@ html
                     //-   div(style={'border-top':'1px solid #000', 'width':'100%'}).td.border-right.center
                     //-     p 
                     //-       span &nbsp; #{aux[0].direccion ? aux[0].direccion : 'Dirección Sin Asingar'}
-                    div(style={'-webkit-flex': 2.5}).border-right.border-top
+                    div(style={'-webkit-flex': 2.5}).border-right
                       each item in aux
-                          div.td.center.break-page
+                          div.td.center.break-page.border-top
                             p 
                               span &nbsp; #{item.periodos}
-                    div(style={'-webkit-flex': 2}).border-top
+                    div(style={'-webkit-flex': 2})
                       each item in aux                      
-                          div.td.center.break-page
+                          div.td.center.break-page.border-top
                             p 
                               span &nbsp; #{item.impuesto}
               if tipo === 'SM'
