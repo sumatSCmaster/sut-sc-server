@@ -4430,8 +4430,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               breakdownJoin.map((row) => {
                 return {
                   periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                  declGas: `${formatCurrency(+row.datos.desglose[0].montoGas * PETRO)}`,
-                  declAseo: `${formatCurrency(+row.datos.desglose[0].montoAseo * PETRO)}`,
+                  declGas: `${formatCurrency(+row.datos.desglose[0].montoGas)}`,
+                  declAseo: `${formatCurrency(+row.datos.desglose[0].montoAseo)}`,
                 };
               }),
               2
@@ -4497,8 +4497,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                   let currDesg = row.datos.desglose.find((desg) => desg.inmueble === el.id_inmueble);
                   return {
                     periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                    declGas: `${formatCurrency(+currDesg.montoGas * PETRO)}`,
-                    declAseo: `${formatCurrency(+currDesg.montoAseo * PETRO)}`,
+                    declGas: `${formatCurrency(+currDesg.montoGas)}`,
+                    declAseo: `${formatCurrency(+currDesg.montoAseo)}`,
                   };
                 }),
                 2

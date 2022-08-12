@@ -118,7 +118,7 @@ html
             if datos.declarations
               div(style={'margin-top':'20px'}).table.break-page
                 div.tr
-                  div(style={'-webkit-flex': 5.5}).th.center.border-right
+                  div(style={'-webkit-flex': 5.5}).th.center.border-bottom
                     p
                       b TARIFA DE SERVICIOS MUNICIPALES
                 div.tr
@@ -143,7 +143,7 @@ html
               div(style={'display':'-webkit-flex'})
                 div.table(style={'-webkit-flex': 5.5})
                   div.tr
-                    div(style={'-webkit-flex': 5.5}).th.center.border-right
+                    div(style={'-webkit-flex': 5.5}).th.center.border-bottom
                       p
                         b SERVICIOS MUNICIPALES
                   div.tr
@@ -163,12 +163,12 @@ html
                     //-       span &nbsp; #{aux[0].direccion ? aux[0].direccion : 'Dirección Sin Asingar'}
                     div(style={'-webkit-flex': 2.5}).border-right
                       each item in aux
-                          div(style={'border-top':'1px solid #000'}).td.center.break-page
+                          div.td.center.break-page
                             p 
                               span &nbsp; #{item.periodos}
                     div(style={'-webkit-flex': 2})
                       each item in aux                      
-                          div(style={'border-top':'1px solid #000'}).td.center.break-page
+                          div.td.center.break-page
                             p 
                               span &nbsp; #{item.impuesto}
               if tipo === 'SM'
