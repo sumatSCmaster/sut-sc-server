@@ -41,7 +41,7 @@ html
                   div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
                     p
                       b MOTIVO
-                  div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+                  div(style={'-webkit-flex': 3}).td.border-right.border-bottom.center
                     p
                       b Liquidador
                   div(style={'-webkit-flex': 2}).td.border-bottom.center.border-right
@@ -53,7 +53,7 @@ html
                 div.tr
                   div(style={'-webkit-flex': 2}).td.border-right.center
                     p #{datos.nroSolicitud}
-                  div(style={'-webkit-flex': 2}).td.border-right.center
+                  div(style={'-webkit-flex': 3}).td.border-right.center
                     p #{datos.motivo}
                   div(style={'-webkit-flex': 2}).td.border-right.center
                     p  USUARIO WEB
@@ -97,7 +97,8 @@ html
                 div(style={'-webkit-flex': 2, padding:'0 1px'}).td.border-right.border-bottom.center
                   p Razón Social:
                 div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
-                  p #{datos.propietario.razonSocial}
+                  p 
+                    span &nbsp; #{datos.propietario.razonSocial}
                 div(style={'-webkit-flex': 2.5}).td.border-bottom
                   p 
                     b RIF.:
@@ -230,10 +231,4 @@ html
                   p
                     b Total Recaudado:
                     span &nbsp; #{datos.totalRecaudado}
-          footer#footer
-            - var direccion = 'Telfs. (0261) 793.55.08 (Master) Fax. (0261) 793.58.69 Av. 3F entre calles 81 y 81A, Edif. CPU Planta Baja' 
-            - index++            
-            img#divider(src='images/franja-2.0.png')
-            div(style={ display: '-webkit-flex', padding: '0px 50px', 'justify-content': 'center', '-webkit-justify-content': 'center' })
-              p(style={ display: '-webkit-flex', '-webkit-justify-content': 'center', '-webkit-align-items': 'center', 'margin': '0px 50px' }) #{direccion}
-              img(src='images/alcaldia-logo.png' height='64' width='148')
+          include footer.pug
