@@ -71,7 +71,7 @@ router.patch('/payment/:id/', authenticate('jwt'), async (req, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-router.patch('/payment/:id/:concept', authenticate('jwt'), async (req, res) => {
+router.patch('/delete/payment/:id/:concept', authenticate('jwt'), async (req, res) => {
   const { id, concept } = req.params;
   const {observaciones: observations} = req.body;
   const [err, data] = await fulfill(reversePaymentForProcess({ id: +id, concept, observations, user: req.user }));

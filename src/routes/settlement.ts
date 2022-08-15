@@ -279,7 +279,7 @@ router.patch('/rebate/:id', authenticate('jwt'), async (req, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-router.patch('/:id', authenticate('jwt'), async (req, res) => {
+router.patch('/delete/:id', authenticate('jwt'), async (req, res) => {
   const { id } = req.params;
   const {observaciones: observations} = req.body;
   const [error, data] = await fulfill(deleteSettlement(+id, observations, req.user));
