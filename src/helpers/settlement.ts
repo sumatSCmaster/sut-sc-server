@@ -2039,8 +2039,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
           const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
           const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
           const rim = (await client.query('SELECT * FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal]));
-          const type = el.tipo_solicitud;
-
+            const type = el.tipo_solicitud;
           return {
             id: el.id_solicitud,
             usuario: user,
@@ -2092,6 +2091,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
                   };
                 })
             ),
+            planillasDeclaracion: (await client.query('SELECT url FROM impuesto.planillas_iva WHERE id_solicitud = $1', [el.id_solicitud])).rows?.map(row => row.url),
             interesMoratorio: await getDefaultInterestByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
             rebajaInteresMoratorio: await getDefaultInterestRebateByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
           };
@@ -2160,6 +2160,7 @@ const getApplicationInstancesPayload = async ({ application, contributor, typeUs
       montoPetro,
       liquidaciones,
       multas,
+      planillasDeclaracion: (await client.query('SELECT url FROM impuesto.planillas_iva WHERE id_solicitud = $1', [application.id_solicitud])).rows?.map(row => row.url),
       interesMoratorio,
       rebajaInteresMoratorio,
     };
@@ -4394,7 +4395,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
         }
         return prev;
       }, breakdownAseo);
-      const totalMonto = breakdownJoin.reduce((prev, next) => prev + +next.monto, 0);
+      const totalMonto = breakdownJoin.reduce((prev, next) => prev + +next.monto, 0) * 1.1;
       const iva = breakdownJoin[0].datos.IVA || 16;
       const totalIva = totalMonto * 0.16;
       const totalRetencionIva = totalMonto * (0.16 - fixatedAmount(iva ? iva / 100 : 0.16));
@@ -4430,11 +4431,10 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               breakdownJoin.map((row) => {
                 return {
                   periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                  declGas: `${formatCurrency(+row.datos.desglose[0].montoGas)}`,
-                  declAseo: `${formatCurrency(+row.datos.desglose[0].montoAseo)}`,
+                  declAseo: `${formatCurrency(+row.monto / 10)}`,
                 };
               }),
-              2
+              3
             ),
             items: chunk(
               breakdownJoin.map((row) => {
@@ -4494,14 +4494,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               },
               declarations: chunk(
                 breakdownJoin.map((row) => {
-                  let currDesg = row.datos.desglose.find((desg) => desg.inmueble === el.id_inmueble);
+                  // let currDesg = row.datos.desglose.find((desg) => desg.inmueble === el.id_inmueble);
                   return {
                     periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                    declGas: `${formatCurrency(+currDesg.montoGas)}`,
-                    declAseo: `${formatCurrency(+currDesg.montoAseo)}`,
+                    declAseo: `${formatCurrency(+row.monto / 10)}`,
                   };
                 }),
-                2
+                3
               ),
               items: chunk(
                 breakdownJoin.map((row) => {
@@ -4561,7 +4560,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             return {
               direccion: 'No disponible',
               periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-              impuesto: formatCurrency(row.monto),
+              impuesto: formatCurrency(row.monto), 
             };
           }),
           totalIva: `${formatCurrency(totalIva)} Bs`,

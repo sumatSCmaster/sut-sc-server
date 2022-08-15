@@ -3,8 +3,7 @@ html
     title Template
     link(href='css/default.css' rel='stylesheet' type='text/css')
     link(rel="stylesheet", href="css/sedemat.css")
-    -var index = 0
-  each aux in datos.items
+  each aux, index in datos.items
     body
       div#wrapper
         block header
@@ -12,11 +11,9 @@ html
             div.header-child
               img#alcaldia(src='images/alcaldia-logo.png')
             div.header-child
-              - var nombre = 'HACIENDA'
-              - var rif = 'G-200091533'
-              p Alcaldia Bolivariana de San Cristóbal
-              p #{nombre}
-              p R.I.F.: #{rif}
+              p REPÚBLICA BOLIVARIANA DE VENEZUELA
+              p ESTADO TÁCHIRA, ALCALDÍA DEL MUNICIPIO SAN CRISTÓBAL
+              p SUPERINTENDENCIA MUNICIPAL DE ADMINISTRACIÓN TRIBUTARIA DE SAN CRISTÓBAL (SUMATSC)
             div.header-child
               - var src = 'images/encabezado-alcaldia.png'
                 img#logo(src=src)
@@ -120,7 +117,7 @@ html
                 div.tr
                   div(style={'-webkit-flex': 5.5}).th.center.border-bottom
                     p
-                      b TARIFA DE SERVICIOS MUNICIPALES
+                      b TASA DEL 10% DE SERVICIOS MUNICIPALES
                 div.tr
                   div(style={'-webkit-flex': 2.5}).th.center.border-right
                     p
@@ -145,7 +142,7 @@ html
                   div.tr
                     div(style={'-webkit-flex': 5.5}).th.center.border-bottom
                       p
-                        b SERVICIOS MUNICIPALES
+                        b IMPUESTO POR SERVICIOS MUNICIPALES
                   div.tr
                     //- div(style={'-webkit-flex': 5.5}).th.center.border-right
                     //-   p

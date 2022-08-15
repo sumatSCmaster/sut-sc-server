@@ -179,6 +179,7 @@ export interface Solicitud {
   isRebaja?: boolean;
   liquidaciones: Liquidacion[];
   multas?: MultaImpuesto[];
+  planillasDeclaracion?: any[];
 }
 
 export interface MultaImpuesto {
