@@ -4431,11 +4431,10 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               breakdownJoin.map((row) => {
                 return {
                   periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                  declGas: `${formatCurrency(+row.datos.desglose[0].montoGas)}`,
-                  declAseo: `${formatCurrency(+row.datos.desglose[0].montoAseo)}`,
+                  declAseo: `${formatCurrency(+row.monto / 10)}`,
                 };
               }),
-              2
+              3
             ),
             items: chunk(
               breakdownJoin.map((row) => {
@@ -4495,14 +4494,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               },
               declarations: chunk(
                 breakdownJoin.map((row) => {
-                  let currDesg = row.datos.desglose.find((desg) => desg.inmueble === el.id_inmueble);
+                  // let currDesg = row.datos.desglose.find((desg) => desg.inmueble === el.id_inmueble);
                   return {
                     periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                    declGas: `${formatCurrency(+currDesg.montoGas)}`,
-                    declAseo: `${formatCurrency(+currDesg.montoAseo)}`,
+                    declAseo: `${formatCurrency(+row.monto / 10)}`,
                   };
                 }),
-                2
+                3
               ),
               items: chunk(
                 breakdownJoin.map((row) => {
@@ -4562,7 +4560,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             return {
               direccion: 'No disponible',
               periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-              impuesto: formatCurrency(row.monto),
+              impuesto: formatCurrency(row.monto), 
             };
           }),
           totalIva: `${formatCurrency(totalIva)} Bs`,
