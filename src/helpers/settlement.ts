@@ -1654,7 +1654,7 @@ export const patchSettlement = async ({ id, settlement }) => {
  *
  * @param id
  */
-export const deleteSettlement = async (id: number, observations: string) => {
+export const deleteSettlement = async (id: number, observations: string, user: any) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -1662,6 +1662,7 @@ export const deleteSettlement = async (id: number, observations: string) => {
     const state = (await client.query(queries.GET_APPLICATION_STATE, [application.id_solicitud])).rows[0]?.state;
     if (!state || state !== 'ingresardatos') throw { status: 403, message: 'La liquidacion que desea eliminar se encuentra validando pago o finalizada' };
     await client.query(queries.RECORD_NULIFIED_SETTLEMENT, [id, observations]);
+    await client.query(queries.ADD_MOVEMENT, [application.id_solicitud, user.id, 'liquidacion borrada', 'IMPUESTO']);
     await client.query(queries.DELETE_SETTLEMENT, [id]);
     await client.query('COMMIT');
     return { status: 200, message: 'Liquidacion eliminada satisfactoriamente' };
