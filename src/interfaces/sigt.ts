@@ -115,6 +115,7 @@ export interface Tramite {
   certificado: string | null;
   aprobado: boolean;
   bill: any;
+  usuarioSoporte?: string;
 }
 
 export interface Multa {
