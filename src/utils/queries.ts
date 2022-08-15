@@ -1414,7 +1414,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   //          EXTRACT(DAY FROM pago.fecha_de_aprobacion)=rDay and
   //          EXTRACT(MONTH FROM pago.fecha_de_aprobacion)=rMes and
   //          EXTRACT(YEAR FROM pago.fecha_de_aprobacion)=rYear;`,
-  GET_TRANSFERS_BY_BANK_BY_APPROVAL_NEW: `SELECT referencia, monto, fecha_de_pago, id_banco, banco.nombre
+  GET_TRANSFERS_BY_BANK_BY_APPROVAL_NEW: `SELECT referencia, monto, fecha_de_pago AS "fecha de pago", fecha_de_aprobacion AS "fecha de aprobación", banco.nombre
   FROM pago JOIN banco USING (id_banco) WHERE fecha_de_aprobacion BETWEEN $1 AND $2 AND id_banco = $3 AND metodo_pago = 'TRANSFERENCIA';`,
   GET_EXTERNAL_TRANSFERS: `SELECT CONCAT(usuario.nacionalidad, '-', usuario.cedula) AS documento, usuario.nombre_completo, pago.referencia, banco.nombre, pago.monto, pago.fecha_de_pago, CASE WHEN aprobado = true THEN 'VALIDADA' ELSE 'POR VALIDAR' END AS estatus FROM pago JOIN usuario USING (id_usuario) JOIN banco USING (id_banco) WHERE fecha_de_pago BETWEEN $1 AND $2 AND id_tipo_usuario = 4 AND metodo_pago = 'TRANSFERENCIA' ORDER BY fecha_de_pago DESC;`,
   GET_TRANSFERS_BY_BANK_BY_APPROVAL: `
