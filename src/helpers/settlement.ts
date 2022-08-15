@@ -2160,7 +2160,7 @@ const getApplicationInstancesPayload = async ({ application, contributor, typeUs
       montoPetro,
       liquidaciones,
       multas,
-      planillasDeclaracion: (await client.query('SELECT url FROM impuesto.planillas_iva WHERE id_solicitud = $1', [el.id_solicitud])).rows?.map(row => row.url),
+      planillasDeclaracion: (await client.query('SELECT url FROM impuesto.planillas_iva WHERE id_solicitud = $1', [application.id_solicitud])).rows?.map(row => row.url),
       interesMoratorio,
       rebajaInteresMoratorio,
     };
