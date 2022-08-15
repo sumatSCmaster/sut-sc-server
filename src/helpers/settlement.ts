@@ -2092,6 +2092,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
                   };
                 })
             ),
+            planillasDeclaracion: (await client.query('SELECT url FROM impuesto.planillas_iva WHERE id_solicitud = $1', [el.id_solicitud])).rows?.map(row => row.url),
             interesMoratorio: await getDefaultInterestByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
             rebajaInteresMoratorio: await getDefaultInterestRebateByApplication({ id: el.id_solicitud, date: el.fecha, state, client }),
           };
