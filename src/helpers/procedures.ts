@@ -857,7 +857,7 @@ export const processProcedure = async (procedure, user: Usuario, idUser) => {
         estado === 'finalizado'
           ? await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[estado], datos || null, dir || null, true])
           : await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
-      await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, 'ticket de soporte puesto en proceso(estado enrevision)', 'TRAMITE']);
+      await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, estado === 'finalizado' ? 'ticket de soporte puesto en proceso(estado enrevision)' : 'ticket de soporte finalizado', 'TRAMITE']);
     } else if (!![28, 36].find((type) => type === resources.tipoTramite)) {
       const { aprobado } = procedure;
       datos.funcionario.pago = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({
