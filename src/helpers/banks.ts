@@ -180,6 +180,7 @@ const reversePaymentCase = switchcase({
       await client.query(queries.SET_NON_APPROVED_STATE_FOR_APPLICATION, [id]);
       await client.query(queries.NULLIFY_AMOUNT_IN_REVERSED_APPLICATION, [id]);
       const idPago = (await client.query('SELECT id_pago FROM pago WHERE id_procedimiento = $1 AND concepto = $2', [id, 'IMPUESTO'])).rows[0]?.id_pago;
+      console.log(idPago, id)
       await client.query(queries.ADD_MOVEMENT, [idPago, user.id, 'pago de impuesto borrado', 'IMPUESTO']);
       await client.query(queries.RECORD_NULIFIED_PAYMENT, [id, observations, 'IMPUESTO']);
       return await getApplicationsAndSettlementsByIdNots({ id, user: null }, client);
