@@ -157,19 +157,19 @@ export const paymentReferenceSearch = async ({ reference, bank }) => {
  *
  */
 const reversePaymentCase = switchcase({
-  TRAMITE: async ({ id, client }: { id: number; client: PoolClient }) => {
+  TRAMITE: async ({ id, client, observations }: { id: number; client: PoolClient, observations: string }) => {
     const REVERSARPAGO = 'reversarpago_tramite';
     try {
       await client.query(queries.DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT, [id, 'TRAMITE']);
       await client.query(queries.UPDATE_STATE, [id, REVERSARPAGO, null, null, null]);
       await client.query(queries.SET_NON_APPROVED_STATE_FOR_PROCEDURE, [id]);
-      await client.query(queries.RECORD_NULIFIED_PROCEDURE_PAYMENT, [id]);
+      await client.query(queries.RECORD_NULIFIED_PAYMENT, [id, observations, 'TRAMITE']);
       return await getProcedureById({ id, client });
     } catch (e) {
       throw e;
     }
   },
-  IMPUESTO: async ({ id, client }: { id: number; client: PoolClient }) => {
+  IMPUESTO: async ({ id, client, observations }: { id: number; client: PoolClient, observations: string }) => {
     const REVERSARPAGO = 'reversarpago_solicitud';
     try {
       await client.query(queries.DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT, [id, 'IMPUESTO']);
@@ -177,25 +177,26 @@ const reversePaymentCase = switchcase({
       await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [id, REVERSARPAGO]);
       await client.query(queries.SET_NON_APPROVED_STATE_FOR_APPLICATION, [id]);
       await client.query(queries.NULLIFY_AMOUNT_IN_REVERSED_APPLICATION, [id]);
-      await client.query(queries.RECORD_NULIFIED_APPLICATION_PAYMENT, [id]);
+      await client.query(queries.RECORD_NULIFIED_PAYMENT, [id, observations, 'IMPUESTO']);
       return await getApplicationsAndSettlementsByIdNots({ id, user: null }, client);
     } catch (e) {
       throw e;
     }
   },
-  RETENCION: async ({ id, client }: { id: number; client: PoolClient }) => {
+  RETENCION: async ({ id, client, observations }: { id: number; client: PoolClient, observations: string }) => {
     const REVERSARPAGO = 'reversarpago_solicitud';
     try {
       await client.query(queries.DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT, [id, 'RETENCION']);
       await client.query(queries.DELETE_FISCAL_CREDIT_BY_APPLICATION_ID, [id]);
       await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [id, REVERSARPAGO]);
       await client.query(queries.SET_NON_APPROVED_STATE_FOR_APPLICATION, [id]);
+      await client.query(queries.RECORD_NULIFIED_PAYMENT, [id, observations, 'RETENCION']);
       return await getApplicationsAndSettlementsByIdNots({ id, user: null }, client);
     } catch (e) {
       throw e;
     }
   },
-  CONVENIO: async ({ id, client }: { id: number; client: PoolClient }) => {
+  CONVENIO: async ({ id, client, observations }: { id: number; client: PoolClient, observations: string }) => {
     const REVERSARPAGO = 'reversarpago_fraccion';
     const REVERSARPAGO_SOLICITUD = 'reversarpago_solicitud';
     try {
@@ -203,6 +204,7 @@ const reversePaymentCase = switchcase({
       await client.query(queries.UPDATE_FRACTION_STATE, [id, REVERSARPAGO]);
       await client.query(queries.SET_NON_APPROVED_STATE_FOR_AGREEMENT_FRACTION, [id]);
       await client.query(queries.NULLIFY_AMOUNT_IN_REVERSED_FRACTION, [id]);
+      await client.query(queries.RECORD_NULIFIED_PAYMENT, [id, observations, 'CONVENIO']);
 
       const application = await getApplicationsAndSettlementsByIdNots(
         { id: (await client.query('SELECT id_solicitud FROM impuesto.fraccion INNER JOIN impuesto.convenio USING (id_convenio) WHERE id_fraccion = $1', [id])).rows[0].id_solicitud, user: null },
@@ -226,12 +228,12 @@ const reversePaymentCase = switchcase({
  *
  * @param param0
  */
-export const reversePaymentForProcess = async ({ id, concept }: { id: number; concept: string }) => {
+export const reversePaymentForProcess = async ({ id, concept, observations }: { id: number; concept: string, observations: string }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     const action = reversePaymentCase(concept);
-    const procedimiento = await action({ id, client });
+    const procedimiento = await action({ id, client, observations });
     await client.query('COMMIT');
     return { status: 200, message: 'Pagos reversados correctamente', procedimiento };
   } catch (error) {

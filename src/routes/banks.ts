@@ -73,7 +73,8 @@ router.patch('/payment/:id/', authenticate('jwt'), async (req, res) => {
 
 router.delete('/payment/:id/:concept', authenticate('jwt'), async (req, res) => {
   const { id, concept } = req.params;
-  const [err, data] = await fulfill(reversePaymentForProcess({ id: +id, concept }));
+  const {observaciones: observations} = req.body;
+  const [err, data] = await fulfill(reversePaymentForProcess({ id: +id, concept, observations }));
   if (err) res.status(500).json(err);
   if (data) res.status(data.status).json(data);
 });
