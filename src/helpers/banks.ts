@@ -163,6 +163,7 @@ const reversePaymentCase = switchcase({
       await client.query(queries.DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT, [id, 'TRAMITE']);
       await client.query(queries.UPDATE_STATE, [id, REVERSARPAGO, null, null, null]);
       await client.query(queries.SET_NON_APPROVED_STATE_FOR_PROCEDURE, [id]);
+      await client.query(queries.RECORD_NULIFIED_PROCEDURE_PAYMENT, [id]);
       return await getProcedureById({ id, client });
     } catch (e) {
       throw e;
@@ -176,6 +177,7 @@ const reversePaymentCase = switchcase({
       await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [id, REVERSARPAGO]);
       await client.query(queries.SET_NON_APPROVED_STATE_FOR_APPLICATION, [id]);
       await client.query(queries.NULLIFY_AMOUNT_IN_REVERSED_APPLICATION, [id]);
+      await client.query(queries.RECORD_NULIFIED_APPLICATION_PAYMENT, [id]);
       return await getApplicationsAndSettlementsByIdNots({ id, user: null }, client);
     } catch (e) {
       throw e;

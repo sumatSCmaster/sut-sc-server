@@ -1892,6 +1892,8 @@ WHERE p.fecha_de_aprobacion BETWEEN $1 AND $3 AND p.metodo_pago LIKE 'EFECTIVO%'
   UPDATE_SETTLEMENT_CORRECTION: 'UPDATE impuesto.liquidacion SET fecha_liquidacion = $1, fecha_vencimiento = $2, datos = $3, id_subramo = $4, id_solicitud = $5 WHERE id_liquidacion = $6 RETURNING *',
   DELETE_SETTLEMENT: 'DELETE FROM impuesto.liquidacion WHERE id_liquidacion = $1',
   RECORD_NULIFIED_SETTLEMENT: 'INSERT INTO impuesto.liquidacion_anulado (SELECT * FROM impuesto.liquidacion WHERE id_liquidacion = $1)',
+  RECORD_NULIFIED_PROCEDURE_PAYMENT: `INSERT INTO pago_anulado (SELECT * FROM pago WHERE id_procedimiento = $1 AND concepto = 'TRAMITE')`,
+  RECORD_NULIFIED_APPLICATION_PAYMENT: `INSERT INTO pago_anulado (SELECT * FROM pago WHERE id_procedimiento = $1 AND concepto = 'IMPUESTO')`,
   ADD_ORIGINAL_APPLICATION_ID_IN_PATCH_APPLICATION: 'UPDATE impuesto.solicitud SET id_solicitud_original = $1 WHERE id_solicitud = $2',
   GET_LAST_AE_SETTLEMENT_BY_AE_ID: 'SELECT * FROM impuesto.get_last_settlement_by_ae($1, $2)',
   GET_LAST_AE_SETTLEMENT_BY_AE_ID_2: 'SELECT * FROM impuesto.get_last_settlement_by_ae_2($1, $2)',
