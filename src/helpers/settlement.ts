@@ -4376,13 +4376,17 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     let endOfMonthFechaVenc = fechaCreLiq.clone().endOf('month').format('DD/MM/YYYY');
     let currentDate = moment().format('MM-DD-YYYY');
 
+    const PETRO = (await pool.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
+
     if (application.idSubramo === 107 || application.idSubramo === 108) {
-      const breakdownGas = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID + ' ORDER BY fecha_vencimiento DESC', [application.id, 107])).rows.map((row) =>
-        row.datos.IVA ? { ...row, monto: row.monto / (1 + row.datos.IVA / 100) } : { ...row, monto: row.monto / 1.16 }
-      );
-      const breakdownAseo: any[] = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID + ' ORDER BY fecha_vencimiento DESC', [application.id, 108])).rows.map((row) =>
-        row.datos.IVA ? { ...row, monto: row.monto / (1 + row.datos.IVA / 100) } : { ...row, monto: row.monto / 1.16 }
-      );
+      const breakdownGas = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID + ' ORDER BY fecha_vencimiento DESC', [application.id, 107])).rows
+      // .map((row) =>
+      //   row.datos.IVA ? { ...row, monto: row.monto / (1 + row.datos.IVA / 100) } : { ...row, monto: row.monto / 1.16 }
+      // );
+      const breakdownAseo: any[] = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID + ' ORDER BY fecha_vencimiento DESC', [application.id, 108])).rows
+      // .map((row) =>
+      //   row.datos.IVA ? { ...row, monto: row.monto / (1 + row.datos.IVA / 100) } : { ...row, monto: row.monto / 1.16 }
+      // );
       const breakdownJoin = breakdownGas.reduce((prev: any[], next) => {
         let i = prev.findIndex((aseoRow) => aseoRow.datos.fecha.month === next.datos.fecha.month && aseoRow.datos.fecha.year === next.datos.fecha.year);
         if (i > -1) {
@@ -4426,8 +4430,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               breakdownJoin.map((row) => {
                 return {
                   periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                  declGas: `${formatCurrency(+row.datos.desglose[0].montoGas * (1 + iva / 100))}`,
-                  declAseo: `${formatCurrency(+row.datos.desglose[0].montoAseo * (1 + iva / 100))}`,
+                  declGas: `${formatCurrency(+row.datos.desglose[0].montoGas)}`,
+                  declAseo: `${formatCurrency(+row.datos.desglose[0].montoAseo)}`,
                 };
               }),
               2
@@ -4445,13 +4449,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             totalIva: `${formatCurrency(totalIva)} Bs`,
             totalRetencionIva: `${formatCurrency(totalRetencionIva)} Bs`, // TODO: Retencion
             totalIvaPagar: `${formatCurrency(totalIvaPagar)} Bs`,
-            montoTotalImpuesto: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+            montoTotalImpuesto: `${formatCurrency(totalMonto)} Bs`,
             interesesMoratorio: '0.00 Bs', // TODO: Intereses moratorios
             estatus: 'PAGADO',
             esAgenteSENIAT: breakdownJoin[0].datos.esAgenteSENIAT || undefined,
             observacion: 'Pago por Servicios Municipales',
-            totalLiq: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
-            totalRecaudado: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+            totalLiq: `${formatCurrency(totalMonto)} Bs`,
+            totalRecaudado: `${formatCurrency(totalMonto)} Bs`,
             totalCred: `0.00 Bs`, // TODO: Credito fiscal
           },
         };
@@ -4493,8 +4497,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                   let currDesg = row.datos.desglose.find((desg) => desg.inmueble === el.id_inmueble);
                   return {
                     periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                    declGas: `${formatCurrency(+currDesg.montoGas * (1 + iva / 100))}`,
-                    declAseo: `${formatCurrency(+currDesg.montoAseo * (1 + iva / 100))}`,
+                    declGas: `${formatCurrency(+currDesg.montoGas)}`,
+                    declAseo: `${formatCurrency(+currDesg.montoAseo)}`,
                   };
                 }),
                 2
@@ -4512,13 +4516,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               totalIva: `${formatCurrency(totalIva)} Bs`,
               totalRetencionIva: `${formatCurrency(totalRetencionIva)} Bs`, // TODO: Retencion
               totalIvaPagar: `${formatCurrency(totalIvaPagar)} Bs`,
-              montoTotalImpuesto: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+              montoTotalImpuesto: `${formatCurrency(totalMonto)} Bs`,
               interesesMoratorio: '0.00 Bs', // TODO: Intereses moratorios
               estatus: 'PAGADO',
               esAgenteSENIAT: breakdownJoin[0].datos.esAgenteSENIAT || undefined,
               observacion: 'Pago por Servicios Municipales',
-              totalLiq: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
-              totalRecaudado: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+              totalLiq: `${formatCurrency(totalMonto)} Bs`,
+              totalRecaudado: `${formatCurrency(totalMonto)} Bs`,
               totalCred: `0.00 Bs`, // TODO: Credito fiscal
             },
           };
@@ -4563,12 +4567,12 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
           totalIva: `${formatCurrency(totalIva)} Bs`,
           totalRetencionIva: '0,00 Bs ', // TODO: Retencion
           totalIvaPagar: `${formatCurrency(totalIva)} Bs`,
-          montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs`,
+          montoTotalImpuesto: `${formatCurrency(totalMonto)} Bs`,
           interesesMoratorio: '0.00 Bs', // TODO: Intereses moratorios
           estatus: 'PAGADO',
           observacion: 'Pago por Servicios Municipales',
-          totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs`,
-          totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs`,
+          totalLiq: `${formatCurrency(totalMonto)} Bs`,
+          totalRecaudado: `${formatCurrency(totalMonto)} Bs`,
           totalCred: `0.00 Bs`, // TODO: Credito fiscal
         },
       };
