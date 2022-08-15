@@ -4395,7 +4395,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
         }
         return prev;
       }, breakdownAseo);
-      const totalMonto = breakdownJoin.reduce((prev, next) => prev + +next.monto, 0);
+      const totalMonto = breakdownJoin.reduce((prev, next) => prev + +next.monto, 0) * 1.1;
       const iva = breakdownJoin[0].datos.IVA || 16;
       const totalIva = totalMonto * 0.16;
       const totalRetencionIva = totalMonto * (0.16 - fixatedAmount(iva ? iva / 100 : 0.16));
