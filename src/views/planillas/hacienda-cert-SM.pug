@@ -38,10 +38,10 @@ html
                   div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
                     p 
                       b Nro. Solicitud
-                  div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+                  div(style={'-webkit-flex': 3}).td.border-right.border-bottom.center
                     p
                       b MOTIVO
-                  div(style={'-webkit-flex': 2}).td.border-right.border-bottom.center
+                  div(style={'-webkit-flex': 2, 'width:': '100%'}).td.border-right.border-bottom.center
                     p
                       b Liquidador
                   div(style={'-webkit-flex': 2}).td.border-bottom.center.border-right
@@ -53,7 +53,7 @@ html
                 div.tr
                   div(style={'-webkit-flex': 2}).td.border-right.center
                     p #{datos.nroSolicitud}
-                  div(style={'-webkit-flex': 2}).td.border-right.center
+                  div(style={'-webkit-flex': 3}).td.border-right.center
                     p #{datos.motivo}
                   div(style={'-webkit-flex': 2}).td.border-right.center
                     p  USUARIO WEB
@@ -97,7 +97,8 @@ html
                 div(style={'-webkit-flex': 2, padding:'0 1px'}).td.border-right.border-bottom.center
                   p Razón Social:
                 div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
-                  p #{datos.propietario.razonSocial}
+                  p 
+                    span &nbsp; #{datos.propietario.razonSocial}
                 div(style={'-webkit-flex': 2.5}).td.border-bottom
                   p 
                     b RIF.:
@@ -117,30 +118,38 @@ html
             if datos.declarations
               div(style={'margin-top':'20px'}).table.break-page
                 div.tr
-                  div(style={'-webkit-flex': 5.5}).th.center.border-right
+                  div(style={'-webkit-flex': 5.5}).th.center.border-bottom
                     p
-                      b PERIODOS
+                      b TARIFA DE SERVICIOS MUNICIPALES
+                div.tr
                   div(style={'-webkit-flex': 2.5}).th.center.border-right
                     p
-                      b GAS
+                      b PERIODOS
+                  //- div(style={'-webkit-flex': 2.5}).th.center.border-right
+                  //-   p
+                  //-     b GAS
                   div(style={'-webkit-flex': 2}).th.center
                     p
                       b ASEO
                 each item in datos.declarations[index] 
                   div.tr
-                    div(style={'-webkit-flex': 5.5}).td.center.border-right.border-top
-                      p #{item.periodos}
                     div(style={'-webkit-flex': 2.5}).td.center.border-right.border-top
-                      p #{item.declGas}
+                      p #{item.periodos}
+                    //- div(style={'-webkit-flex': 2.5}).td.center.border-right.border-top
+                    //-   p #{item.declGas}
                     div(style={'-webkit-flex': 2}).td.center.border-top
                       p #{item.declAseo}                               
             div
               div(style={'display':'-webkit-flex'})
                 div.table(style={'-webkit-flex': 5.5})
                   div.tr
-                    div(style={'-webkit-flex': 5.5}).th.center.border-right
+                    div(style={'-webkit-flex': 5.5}).th.center.border-bottom
                       p
-                        b DIRECCIÓN
+                        b SERVICIOS MUNICIPALES
+                  div.tr
+                    //- div(style={'-webkit-flex': 5.5}).th.center.border-right
+                    //-   p
+                    //-     b DIRECCIÓN
                     div(style={'-webkit-flex': 2.5}).th.center.border-right
                       p
                         b PERIODOS
@@ -148,40 +157,40 @@ html
                       p
                         b IMPUESTO                 
                   div(style={'display':'-webkit-flex'})
-                    div(style={'-webkit-flex': 5.5}).tr
-                      div(style={'border-top':'1px solid #000', 'width':'100%'}).td.border-right.center
-                        p 
-                          span &nbsp; #{aux[0].direccion ? aux[0].direccion : 'Dirección Sin Asingar'}
+                    //- div(style={'-webkit-flex': 5.5}).tr
+                    //-   div(style={'border-top':'1px solid #000', 'width':'100%'}).td.border-right.center
+                    //-     p 
+                    //-       span &nbsp; #{aux[0].direccion ? aux[0].direccion : 'Dirección Sin Asingar'}
                     div(style={'-webkit-flex': 2.5}).border-right
                       each item in aux
-                          div(style={'border-top':'1px solid #000'}).td.center.break-page
+                          div.td.center.break-page.border-top
                             p 
                               span &nbsp; #{item.periodos}
                     div(style={'-webkit-flex': 2})
                       each item in aux                      
-                          div(style={'border-top':'1px solid #000'}).td.center.break-page
+                          div.td.center.break-page.border-top
                             p 
                               span &nbsp; #{item.impuesto}
               if tipo === 'SM'
                 div(style={'margin-top':'20px'}).table.break-page
-                  div.tr
-                    div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
-                      p
-                        b TOTAL IVA (16%)
-                    div(style={'-webkit-flex': 4.5}).td.border-bottom.end
-                      p #{datos.totalIva}
-                  div.tr              
-                    div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
-                      p
-                        b TOTAL RETENCION IVA (75%)
-                    div(style={'-webkit-flex': 4.5}).td.border-bottom.end
-                      p #{datos.totalRetencionIva}
-                  div.tr            
-                    div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
-                      p
-                        b TOTAL IVA A PAGAR
-                    div(style={'-webkit-flex': 4.5}).td.border-bottom.end
-                      p #{datos.totalIvaPagar}
+                  //- div.tr
+                  //-   div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
+                  //-     p
+                  //-       b TOTAL IVA (16%)
+                  //-   div(style={'-webkit-flex': 4.5}).td.border-bottom.end
+                  //-     p #{datos.totalIva}
+                  //- div.tr              
+                  //-   div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
+                  //-     p
+                  //-       b TOTAL RETENCION IVA (75%)
+                  //-   div(style={'-webkit-flex': 4.5}).td.border-bottom.end
+                  //-     p #{datos.totalRetencionIva}
+                  //- div.tr            
+                  //-   div(style={'-webkit-flex': 5.5}).td.border-right.border-bottom
+                  //-     p
+                  //-       b TOTAL IVA A PAGAR
+                  //-   div(style={'-webkit-flex': 4.5}).td.border-bottom.end
+                  //-     p #{datos.totalIvaPagar}
                   div.tr
                     div(style={'-webkit-flex': 5.5}).td.border-right
                       p
@@ -205,7 +214,7 @@ html
                   p
                     span &nbsp; #{datos.observacion}
             else
-              div(style={'margin-top':'50px'}).table.break-page
+              div(style={'margin-top':'20px'}).table.break-page
                 div.tr
                   div(style={'-webkit-flex': 2}).th.border-bottom.border-right
                     p
@@ -220,7 +229,7 @@ html
                   div(style={'-webkit-flex': 1}).td
                     p
                       span &nbsp; #{datos.observacion}
-            div.table.break-page
+            div(style={'margin-top':'20px', 'margin-bottom':'0px'}).table.break-page
               div(style={'background-color':'rgba(0,0,0,0.2)'}).tr
                 div(style={'-webkit-flex': 1}).td.border-right.center
                   p
@@ -230,10 +239,4 @@ html
                   p
                     b Total Recaudado:
                     span &nbsp; #{datos.totalRecaudado}
-          footer#footer
-            - var direccion = 'Telfs. (0261) 793.55.08 (Master) Fax. (0261) 793.58.69 Av. 3F entre calles 81 y 81A, Edif. CPU Planta Baja' 
-            - index++            
-            img#divider(src='images/franja-2.0.png')
-            div(style={ display: '-webkit-flex', padding: '0px 50px', 'justify-content': 'center', '-webkit-justify-content': 'center' })
-              p(style={ display: '-webkit-flex', '-webkit-justify-content': 'center', '-webkit-align-items': 'center', 'margin': '0px 50px' }) #{direccion}
-              img(src='images/alcaldia-logo.png' height='64' width='148')
+        include footer.pug

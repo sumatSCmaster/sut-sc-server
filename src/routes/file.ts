@@ -54,6 +54,12 @@ const uploadFile = async (req, res, next) => {
         fileFilter: photoFilter,
       }).array('comprobantes')(req, res, next);
       break;
+      case 'planillas':
+      multer({
+        storage: diskStorage('planillas/' + req.params.id),
+        fileFilter: photoFilter,
+      }).array('planillas')(req, res, next);
+      break;
     case 'finings':
       multer({
         storage: diskStorage('tramites/' + req.params.id),
@@ -129,6 +135,16 @@ router.post('/:type/:id?/:getId?', uploadFile, async (req: any, res) => {
       await Promise.all(
         media.map(async (urlRecuado) => {
           await client.query('INSERT INTO comprobantes_pagos (id_solicitud, url) VALUES ($1, $2)', [id, urlRecuado])
+        })
+      )
+      client.query('COMMIT');
+    }
+    
+    if(media.length > 0 && type === 'planillas') {
+      client.query('BEGIN');
+      await Promise.all(
+        media.map(async (urlRecuado) => {
+          await client.query('INSERT INTO impuesto.planillas_iva (id_solicitud, url) VALUES ($1, $2)', [id, urlRecuado])
         })
       )
       client.query('COMMIT');

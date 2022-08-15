@@ -31,6 +31,7 @@ import {
   deleteSettlement,
   getIUSettlementsForContributor,
   getIvaReport,
+  getCertificatesForSettlement,
 } from '@helpers/settlement';
 import { Usuario } from '@root/interfaces/sigt';
 import { generateReceipt, generateReceiptAgreement } from '@helpers/receipt';
@@ -124,6 +125,13 @@ router.get('/debts/:tipoContribuyente', authenticate('jwt'), async (req, res) =>
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
 });
+
+router.get('/vehiculoCert/:idLiquidacion', authenticate('jwt'), async (req, res) => {
+  const {idLiquidacion} = req.params;
+  const [err, data] = await fulfill(getCertificatesForSettlement(idLiquidacion));
+  if (err) res.status(err.status).json(err);
+  if (data) res.status(data.status).json(data);
+}) 
 
 router.post('/report', authenticate('jwt'), async (req, res) => {
   const { from, to, ramo } = req.body;

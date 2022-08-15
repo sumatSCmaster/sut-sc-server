@@ -4203,7 +4203,6 @@ const createVHSolvenciesForApplication = async ({application}) => {
       const vehiculo = (await client.query('SELECT v.*, mv.nombre, sv.descripcion AS impuesto, cv.descripcion FROM impuesto.vehiculo v JOIN impuesto.marca_vehiculo mv USING(id_marca_vehiculo) JOIN impuesto.subcategoria_vehiculo sv USING(id_subcategoria_vehiculo) JOIN impuesto.categoria_vehiculo cv USING(id_categoria_vehiculo) WHERE id_vehiculo = $1', [desglose.vehiculo])).rows[0];
       return {vehiculo, contribuyente};
     }))
-    console.log(application.id, application.desglose, vehicles, 'MASTER VEHICULOS')
     const certificados = await Promise.all(vehicles.map(async vehicle => {
       const PETRO = (await client.query(`SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'`)).rows[0].valor_en_bs;
       const costoFormateado = application ? new Intl.NumberFormat('de-DE').format(parseFloat(application.montoLiquidacion)) : '0';
@@ -4225,6 +4224,10 @@ const createVHSolvenciesForApplication = async ({application}) => {
       const form = (await createForm(procedureData, client)) as string;
       return form;
     }));
+    await Promise.all(certificados.map(async(certificado) => {
+      const [idLiquidacion, idVehiculo] = certificado.split('/')[certificado.split('/').length - 1].split('-');
+      await client.query('INSERT INTO impuesto.vehiculo_recibo (id_vehiculo, id_liquidacion, url) VALUES ($1, $2, $3)', [idVehiculo, idLiquidacion, certificado]);
+    }))
     return certificados;
   //   const PETRO = (await client.query(`SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO'`)).rows[0].valor_en_bs;
   //   const costoFormateado = application ? new Intl.NumberFormat('de-DE').format(parseFloat(application.montoLiquidacion)) : '0';
@@ -4248,6 +4251,17 @@ const createVHSolvenciesForApplication = async ({application}) => {
 } catch(e) {
   throw e
 }
+}
+export const getCertificatesForSettlement = async (idLiquidacion) => {
+  const client = await pool.connect();
+  try {
+    const certificados = (await client.query('SELECT url FROM impuesto.vehiculo_recibo WHERE id_liquidacion = $1', [idLiquidacion])).rows?.map(cert => cert.url);
+    return {status: 200, certificados: certificados || []};
+  } catch(e) {
+    throw({status: 500, message: e.message || 'Error al obtener los certificados'})
+  } finally {
+    await client.release();
+  }
 }
 
 const createABSolvenciesForApplication = async ({application}) => {
@@ -4362,13 +4376,17 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
     let endOfMonthFechaVenc = fechaCreLiq.clone().endOf('month').format('DD/MM/YYYY');
     let currentDate = moment().format('MM-DD-YYYY');
 
+    const PETRO = (await pool.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
+
     if (application.idSubramo === 107 || application.idSubramo === 108) {
-      const breakdownGas = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID + ' ORDER BY fecha_vencimiento DESC', [application.id, 107])).rows.map((row) =>
-        row.datos.IVA ? { ...row, monto: row.monto / (1 + row.datos.IVA / 100) } : { ...row, monto: row.monto / 1.16 }
-      );
-      const breakdownAseo: any[] = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID + ' ORDER BY fecha_vencimiento DESC', [application.id, 108])).rows.map((row) =>
-        row.datos.IVA ? { ...row, monto: row.monto / (1 + row.datos.IVA / 100) } : { ...row, monto: row.monto / 1.16 }
-      );
+      const breakdownGas = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID + ' ORDER BY fecha_vencimiento DESC', [application.id, 107])).rows
+      // .map((row) =>
+      //   row.datos.IVA ? { ...row, monto: row.monto / (1 + row.datos.IVA / 100) } : { ...row, monto: row.monto / 1.16 }
+      // );
+      const breakdownAseo: any[] = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID + ' ORDER BY fecha_vencimiento DESC', [application.id, 108])).rows
+      // .map((row) =>
+      //   row.datos.IVA ? { ...row, monto: row.monto / (1 + row.datos.IVA / 100) } : { ...row, monto: row.monto / 1.16 }
+      // );
       const breakdownJoin = breakdownGas.reduce((prev: any[], next) => {
         let i = prev.findIndex((aseoRow) => aseoRow.datos.fecha.month === next.datos.fecha.month && aseoRow.datos.fecha.year === next.datos.fecha.year);
         if (i > -1) {
@@ -4412,8 +4430,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               breakdownJoin.map((row) => {
                 return {
                   periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                  declGas: `${formatCurrency(+row.datos.desglose[0].montoGas * (1 + iva / 100))}`,
-                  declAseo: `${formatCurrency(+row.datos.desglose[0].montoAseo * (1 + iva / 100))}`,
+                  declGas: `${formatCurrency(+row.datos.desglose[0].montoGas)}`,
+                  declAseo: `${formatCurrency(+row.datos.desglose[0].montoAseo)}`,
                 };
               }),
               2
@@ -4431,13 +4449,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             totalIva: `${formatCurrency(totalIva)} Bs`,
             totalRetencionIva: `${formatCurrency(totalRetencionIva)} Bs`, // TODO: Retencion
             totalIvaPagar: `${formatCurrency(totalIvaPagar)} Bs`,
-            montoTotalImpuesto: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+            montoTotalImpuesto: `${formatCurrency(totalMonto)} Bs`,
             interesesMoratorio: '0.00 Bs', // TODO: Intereses moratorios
             estatus: 'PAGADO',
             esAgenteSENIAT: breakdownJoin[0].datos.esAgenteSENIAT || undefined,
             observacion: 'Pago por Servicios Municipales',
-            totalLiq: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
-            totalRecaudado: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+            totalLiq: `${formatCurrency(totalMonto)} Bs`,
+            totalRecaudado: `${formatCurrency(totalMonto)} Bs`,
             totalCred: `0.00 Bs`, // TODO: Credito fiscal
           },
         };
@@ -4479,8 +4497,8 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
                   let currDesg = row.datos.desglose.find((desg) => desg.inmueble === el.id_inmueble);
                   return {
                     periodos: `${row.datos.fecha.month} ${row.datos.fecha.year}`.toUpperCase(),
-                    declGas: `${formatCurrency(+currDesg.montoGas * (1 + iva / 100))}`,
-                    declAseo: `${formatCurrency(+currDesg.montoAseo * (1 + iva / 100))}`,
+                    declGas: `${formatCurrency(+currDesg.montoGas)}`,
+                    declAseo: `${formatCurrency(+currDesg.montoAseo)}`,
                   };
                 }),
                 2
@@ -4498,13 +4516,13 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               totalIva: `${formatCurrency(totalIva)} Bs`,
               totalRetencionIva: `${formatCurrency(totalRetencionIva)} Bs`, // TODO: Retencion
               totalIvaPagar: `${formatCurrency(totalIvaPagar)} Bs`,
-              montoTotalImpuesto: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+              montoTotalImpuesto: `${formatCurrency(totalMonto)} Bs`,
               interesesMoratorio: '0.00 Bs', // TODO: Intereses moratorios
               estatus: 'PAGADO',
               esAgenteSENIAT: breakdownJoin[0].datos.esAgenteSENIAT || undefined,
               observacion: 'Pago por Servicios Municipales',
-              totalLiq: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
-              totalRecaudado: `${formatCurrency(totalMonto + totalIvaPagar)} Bs`,
+              totalLiq: `${formatCurrency(totalMonto)} Bs`,
+              totalRecaudado: `${formatCurrency(totalMonto)} Bs`,
               totalCred: `0.00 Bs`, // TODO: Credito fiscal
             },
           };
@@ -4549,12 +4567,12 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
           totalIva: `${formatCurrency(totalIva)} Bs`,
           totalRetencionIva: '0,00 Bs ', // TODO: Retencion
           totalIvaPagar: `${formatCurrency(totalIva)} Bs`,
-          montoTotalImpuesto: `${formatCurrency(totalMonto + totalIva)} Bs`,
+          montoTotalImpuesto: `${formatCurrency(totalMonto)} Bs`,
           interesesMoratorio: '0.00 Bs', // TODO: Intereses moratorios
           estatus: 'PAGADO',
           observacion: 'Pago por Servicios Municipales',
-          totalLiq: `${formatCurrency(totalMonto + totalIva)} Bs`,
-          totalRecaudado: `${formatCurrency(totalMonto + totalIva)} Bs`,
+          totalLiq: `${formatCurrency(totalMonto)} Bs`,
+          totalRecaudado: `${formatCurrency(totalMonto)} Bs`,
           totalCred: `0.00 Bs`, // TODO: Credito fiscal
         },
       };
