@@ -93,9 +93,10 @@ export const generateBranchesReportById = async (id) => {
   }
 };
 
-export const getTransfersReportBank = async ({ reportName = 'RPRTransferenciasBanco', day, id }) => {
-  mainLogger.info(`getTransfersReport - Creating transfers by method of approval from ${day}`);
+export const getTransfersReportBank = async ({ reportName = 'RPRTransferenciasBanco', from, to, id }) => {
+  mainLogger.info(`getTransfersReport - Creating transfers by method of approval from ${from} to ${to}`);
   const client = await pool.connect();
+  const newFrom = from + ' 23:59:59.999999+00'
   try {
     const transformStream = new Transform({
       transform(chunk, encoding, callback) {
@@ -126,7 +127,7 @@ export const getTransfersReportBank = async ({ reportName = 'RPRTransferenciasBa
     ];
 
     const sheet = workbook.addWorksheet(reportName);
-    const result = await client.query(queries.GET_TRANSFERS_BY_BANK_BY_APPROVAL_NEW, [day, id]);
+    const result = await client.query(queries.GET_TRANSFERS_BY_BANK_BY_APPROVAL_NEW, [newFrom, to, id]);
 
     mainLogger.info(`getTransfersReport - Got query, rowCount: ${result.rowCount}`);
 
