@@ -279,9 +279,10 @@ router.patch('/rebate/:id', authenticate('jwt'), async (req, res) => {
   if (data) res.status(data.status).json(data);
 });
 
-router.delete('/:id', authenticate('jwt'), async (req, res) => {
+router.patch('/delete/:id', authenticate('jwt'), async (req, res) => {
   const { id } = req.params;
-  const [error, data] = await fulfill(deleteSettlement(+id));
+  const {observaciones: observations} = req.body;
+  const [error, data] = await fulfill(deleteSettlement(+id, observations, req.user));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });

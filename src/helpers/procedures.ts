@@ -113,6 +113,7 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
     let res: any[] = await Promise.all(
       response.map(async (el) => {
         let ordinances;
+        const usuarioSoporte = support ? (await client.query(`SELECT nombre_completo FROM usuario WHERE id_usuario = (SELECT id_usuario FROM movimientos WHERE id_procedimiento = $1 AND concepto = 'TRAMITE' ORDER BY fecha_movimiento DESC)`, [el.id])).rows[0]?.nombre_completo : undefined;
         const lastEditor = (await client.query(queries.GET_LAST_EDITOR_AND_DATE, [el.id])).rows[0];
         if (!el.pagoPrevio) {
           ordinances = ordinancesQ.filter((ord) => ord.idTramite === el.id);
@@ -153,6 +154,7 @@ const getProcedureInstances = async (user, client: PoolClient, support?) => {
                 totalPetro: ordinances.reduce((p, n) => p + +n.petro, 0),
               }
             : undefined,
+            usuarioSoporte
         };
         return tramite;
       })
@@ -857,6 +859,7 @@ export const processProcedure = async (procedure, user: Usuario, idUser) => {
         estado === 'finalizado'
           ? await client.query(queries.COMPLETE_STATE, [procedure.idTramite, nextEvent[estado], datos || null, dir || null, true])
           : await client.query(queries.UPDATE_STATE, [procedure.idTramite, nextEvent[aprobado], datos, costo, null]);
+      await client.query(queries.ADD_MOVEMENT, [procedure.idTramite, idUser, estado !== 'finalizado' ? 'ticket de soporte puesto en proceso(estado enrevision)' : 'ticket de soporte finalizado', 'TRAMITE']);
     } else if (!![28, 36].find((type) => type === resources.tipoTramite)) {
       const { aprobado } = procedure;
       datos.funcionario.pago = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [procedure.idTramite, 'TRAMITE'])).rows.map((row) => ({

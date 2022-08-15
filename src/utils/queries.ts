@@ -1414,11 +1414,8 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   //          EXTRACT(DAY FROM pago.fecha_de_aprobacion)=rDay and
   //          EXTRACT(MONTH FROM pago.fecha_de_aprobacion)=rMes and
   //          EXTRACT(YEAR FROM pago.fecha_de_aprobacion)=rYear;`,
-  GET_TRANSFERS_BY_BANK_BY_APPROVAL_NEW: `SELECT referencia, monto, fecha_de_pago, id_banco, banco.nombre
-  FROM pago JOIN banco USING (id_banco) WHERE CONCAT(EXTRACT(YEAR FROM fecha_de_pago),
-  EXTRACT(month FROM fecha_de_pago), EXTRACT(DAY FROM fecha_de_pago)) = CONCAT(EXTRACT(YEAR FROM fecha_de_aprobacion),
-  EXTRACT(month FROM fecha_de_aprobacion), EXTRACT(DAY FROM fecha_de_aprobacion))
-  AND fecha_de_pago = $1 AND id_banco = $2 AND metodo_pago = 'TRANSFERENCIA';`,
+  GET_TRANSFERS_BY_BANK_BY_APPROVAL_NEW: `SELECT referencia, monto, fecha_de_pago AS "fecha de pago", fecha_de_aprobacion AS "fecha de aprobación", banco.nombre
+  FROM pago JOIN banco USING (id_banco) WHERE fecha_de_aprobacion BETWEEN $1 AND $2 AND id_banco = $3 AND metodo_pago = 'TRANSFERENCIA';`,
   GET_EXTERNAL_TRANSFERS: `SELECT CONCAT(usuario.nacionalidad, '-', usuario.cedula) AS documento, usuario.nombre_completo, pago.referencia, banco.nombre, pago.monto, pago.fecha_de_pago, CASE WHEN aprobado = true THEN 'VALIDADA' ELSE 'POR VALIDAR' END AS estatus FROM pago JOIN usuario USING (id_usuario) JOIN banco USING (id_banco) WHERE fecha_de_pago BETWEEN $1 AND $2 AND id_tipo_usuario = 4 AND metodo_pago = 'TRANSFERENCIA' ORDER BY fecha_de_pago DESC;`,
   GET_TRANSFERS_BY_BANK_BY_APPROVAL: `
   WITH liquidaciones AS (SELECT DISTINCT l.id_solicitud
@@ -1894,6 +1891,9 @@ WHERE p.fecha_de_aprobacion BETWEEN $1 AND $3 AND p.metodo_pago LIKE 'EFECTIVO%'
   WHERE (t IS NOT NULL);`,
   UPDATE_SETTLEMENT_CORRECTION: 'UPDATE impuesto.liquidacion SET fecha_liquidacion = $1, fecha_vencimiento = $2, datos = $3, id_subramo = $4, id_solicitud = $5 WHERE id_liquidacion = $6 RETURNING *',
   DELETE_SETTLEMENT: 'DELETE FROM impuesto.liquidacion WHERE id_liquidacion = $1',
+  RECORD_NULIFIED_SETTLEMENT: `INSERT INTO impuesto.liquidacion_anulado (SELECT *, $2 AS observaciones, NOW() - interval '4 hours' AS fecha_anulado FROM impuesto.liquidacion WHERE id_liquidacion = $1)`,
+  RECORD_NULIFIED_PAYMENT: `INSERT INTO pago_anulado (SELECT *, $2 AS observaciones, NOW() - interval '4 hours' AS fecha_anulado FROM pago WHERE id_procedimiento = $1 AND concepto = $3)`,
+  // RECORD_NULIFIED_APPLICATION_PAYMENT: `INSERT INTO pago_anulado (SELECT *, $2 AS observaciones, NOW() - interval '4 hours' AS fecha_anulado FROM pago WHERE id_procedimiento = $1 AND concepto = 'IMPUESTO')`,
   ADD_ORIGINAL_APPLICATION_ID_IN_PATCH_APPLICATION: 'UPDATE impuesto.solicitud SET id_solicitud_original = $1 WHERE id_solicitud = $2',
   GET_LAST_AE_SETTLEMENT_BY_AE_ID: 'SELECT * FROM impuesto.get_last_settlement_by_ae($1, $2)',
   GET_LAST_AE_SETTLEMENT_BY_AE_ID_2: 'SELECT * FROM impuesto.get_last_settlement_by_ae_2($1, $2)',
