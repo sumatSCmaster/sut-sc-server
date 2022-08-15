@@ -2040,7 +2040,6 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
           const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
           const rim = (await client.query('SELECT * FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal]));
             const type = el.tipo_solicitud;
-          console.log('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
           return {
             id: el.id_solicitud,
             usuario: user,
@@ -2161,6 +2160,7 @@ const getApplicationInstancesPayload = async ({ application, contributor, typeUs
       montoPetro,
       liquidaciones,
       multas,
+      planillasDeclaracion: (await client.query('SELECT url FROM impuesto.planillas_iva WHERE id_solicitud = $1', [el.id_solicitud])).rows?.map(row => row.url),
       interesMoratorio,
       rebajaInteresMoratorio,
     };
