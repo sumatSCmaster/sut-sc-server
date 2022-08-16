@@ -646,7 +646,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_PROCEDURE_CREATOR: 'SELECT * FROM USUARIO WHERE id_usuario = $1',
   GET_FINING_TARGET: 'SELECT cedula, nacionalidad FROM multa_state WHERE id=$1',
   GET_APPLICATION_CREATOR: 'SELECT usr.cedula, usr.nacionalidad FROM USUARIO usr INNER JOIN impuesto.solicitud_view sv ON usr.id_usuario = sv.usuario WHERE usr.id_usuario = $1',
-  GET_APPLICATION_CREATOR_BY_MOVEMENT: `SELECT nombre_completo FROM usuario WHERE id_usuario = (SELECT id_usuario FROM movimientos WHERE id_procedimiento = $1 AND concepto = 'IMPUESTO')`,
+  GET_APPLICATION_CREATOR_BY_MOVEMENT: `SELECT nombre_completo FROM usuario WHERE id_usuario = (SELECT id_usuario FROM movimientos WHERE id_procedimiento = $1 AND concepto = 'IMPUESTO' AND tipo_movimiento LIKE 'creando%')`,
   CREATE_NOTIFICATION: "INSERT INTO notificacion (id_procedimiento, emisor, receptor, descripcion, status, \
     fecha, estado, concepto) VALUES ($1, $2, $3, $4, false, (NOW() - interval '4 hours'), $5, $6) RETURNING id_notificacion",
   GET_PROCEDURE_NOTIFICATION_BY_ID: `SELECT * FROM (SELECT n.id_notificacion AS id,
