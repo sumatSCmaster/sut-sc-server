@@ -2134,7 +2134,7 @@ const getApplicationInstancesPayload = async ({ application, contributor, typeUs
     const rim = rimD?.rows[0]?.referencia_municipal;
     const creditoFiscal = creditoFiscalD?.rows[0]?.credito || 0;
 
-    console.log('MARDITA SUBQUERY');
+    console.log('MARDITA SUBQUERY', application.id_solicitud);
 
     const liquidaciones = await Promise.all(liquidacionesD.rows.filter((el) => el.tipoProcedimiento !== 'MULTAS').map((el) => getSettlementFormat(el, type, client)));
     const multas = await Promise.all(liquidacionesD.rows.filter((el) => el.tipoProcedimiento === 'MULTAS').map((el) => getFiningFormat(el, type, client)));
