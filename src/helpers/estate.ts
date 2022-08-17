@@ -420,7 +420,7 @@ export const updateEstate = async ({ id, codCat, newCodCat, direccion, idParroqu
     await client.query('DELETE FROM impuesto.inmueble_tributo WHERE id_inmueble = $1', [estate.id]);
     await client.query('DELETE FROM inmueble.detalle_codigo WHERE id_inmueble = $1', [estate.id]);
     await client.query('INSERT INTO inmueble.detalle_codigo (id_inmueble, id_manzana, id_tipo_tierra_urbana, id_tipo_construccion) VALUES($1, $2, $3, $4)', [estate.id, manzana, tipoTierraUrbana.id_tipo_tierra_urbana, tipoConstruccion.id_tipo_construccion])
-    await client.query('INSERT INTO impuesto.inmueble_tributo', [estate.id, claseTerreno, valorConstruccion]);
+    await client.query('INSERT INTO impuesto.inmueble_tributo (id_inmueble, id_clase_terreno, id_valor_construccion) VALUES ($1, $2, $3)', [estate.id, claseTerreno, valorConstruccion]);
     console.log(estate, 'MASTER ESTATE');
     switch(estate.clasificacion) {
       case 'EJIDO':
