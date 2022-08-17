@@ -284,6 +284,10 @@ export const getEstateByCod = async ({ codCat }) => {
       )
     ).rows;
     const inmueble = {...estate.rows[0]}
+    inmueble.tipoTierraUrbana = (await client.query('SELECT * FROM inmueble.tipo_tierra_urbana WHERE id_tipo_tierra_urbana = $1', [inmueble.idTipoTierraUrbana])).rows[0];
+    inmueble.tipoConstruccion = (await client.query('SELECT * FROM inmueble.tipo_construccion WHERE id_tipo_construccion = $1', [inmueble.idTipoConstruccion])).rows[0];
+    inmueble.claseTerreno = (await client.query('SELECT * FROM inmueble.clase_terreno WHERE id_clase_terreno = (SELECT id_clase_terreno FROM impuesto.inmueble_tributo WHERE id_inmueble = $1)', [inmueble.id]));
+    inmueble.valorConstruccion = (await client.query('SELECT * FROM inmueble.valor_construccion WHERE id_valor_construccion = (SELECT id_valor_construccion FROM impuesto.inmueble_tributo WHERE id_inmueble = $1)', [inmueble.id]));
     switch(inmueble.clasificacion) {
       case 'EJIDO':
         extraInfo = (await client.query(queries.GET_COMMON_LAND, [inmueble.id])).rows[0];
@@ -345,7 +349,7 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
     await client.query('BEGIN');
     // const codIsApproved = (await client.query(queries.GET_APPROVED_CPU_PROCEDURE, [codigoCpu])).rows[0];
     // if (!codIsApproved) throw new Error('El código ingresado no pertenece a un trámite aprobado de solvencia de inmuebles');
-    let estate = (await client.query(queries.CREATE_BARE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, dirDoc, clasificacion])).rows[0];
+    let estate = (await client.query(queries.CREATE_BARE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, dirDoc, clasificacion, tipoTierraUrbana.id_tipo_tierra_urbana, tipoConstruccion.id_tipo_construccion])).rows[0];
     switch(estate.clasificacion) {
       case 'EJIDO':
         const ejido = (await client.query(queries.INSERT_COMMON_LAND, [estate.id, uso, clase, tenencia, contrato, fechaVencimiento])).rows[0];
@@ -369,7 +373,7 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
     mainLogger.info(estate);
     // await client.query(queries.ADD_MOVEMENT, [estate.id, userId, 'inmueble_registrado', 'INMUEBLE']);
     await client.query(queries.INSERT_ESTATE_VALUE, [estate.id, tipoTierraUrbana.monto * metrosTerreno, tipoConstruccion.monto * metrosConstruccion ]);
-    await client.query('INSERT INTO impuesto.inmueble_tributo (id_inmueble, id_clase_terreno, id_valor_construccion) VALUES ($1, $2, $3)', [estate.id, claseTerreno, valorConstruccion])
+    await client.query('INSERT INTO impuesto.inmueble_tributo (id_inmueble, id_clase_terreno, id_valor_construccion) VALUES ($1, $2, $3)', [estate.id, claseTerreno, valorConstruccion]);
     await client.query('COMMIT');
 
     return { status: 200, inmueble: { ...estate, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.id])).rows } };
