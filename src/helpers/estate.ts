@@ -289,6 +289,8 @@ export const getEstateByCod = async ({ codCat }) => {
     inmueble.claseTerreno = (await client.query('SELECT * FROM inmueble.clase_terreno WHERE id_clase_terreno = (SELECT id_clase_terreno FROM impuesto.inmueble_tributo WHERE id_inmueble = $1)', [inmueble.id])).rows[0];
     inmueble.valorConstruccion = (await client.query('SELECT * FROM inmueble.valor_construccion WHERE id_valor_construccion = (SELECT id_valor_construccion FROM impuesto.inmueble_tributo WHERE id_inmueble = $1)', [inmueble.id])).rows[0];
     inmueble.manzana = (await client.query('SELECT * FROM inmueble.manzana WHERE id_manzana = $1', [inmueble.codigoCatastral.split('-')[inmueble.codigoCatastral.split('-').length - 4]])).rows[0];
+    delete inmueble.idTipoConstruccion;
+    delete inmueble.idTipoTierraUrbana;
     switch(inmueble.clasificacion) {
       case 'EJIDO':
         extraInfo = (await client.query(queries.GET_COMMON_LAND, [inmueble.id])).rows[0];
