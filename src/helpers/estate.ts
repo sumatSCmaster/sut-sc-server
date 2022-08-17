@@ -12,7 +12,7 @@ export const getEstatesInfo = async () => {
   const client = await pool.connect();
   try {
     const entities = (await client.query('SELECT * FROM inmueble.entidad')).rows;
-    const parishes = (await client.query('SELECT * FROM inmueble.parroquia')).rows;
+    const parishes = (await client.query('SELECT * FROM inmueble.parroquia WHERE id_parroquia <> 5')).rows;
     const ambits = (await client.query('SELECT * FROM inmueble.ambito')).rows;
     const sectors = (await client.query('SELECT * FROM inmueble.sector')).rows;
     const blocks = (await client.query('SELECT * FROM inmueble.manzana')).rows;
