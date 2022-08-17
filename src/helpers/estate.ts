@@ -395,7 +395,7 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
   }
 };
 
-export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, tipoTierraUrbana, tipoConstruccion, dirDoc, claseTerreno, valorConstruccion, manzana, userId, clasificacion, uso, clase, tenencia, contrato, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, sector}) => {
+export const updateEstate = async ({ id, codCat, newCodCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, tipoTierraUrbana, tipoConstruccion, dirDoc, claseTerreno, valorConstruccion, manzana, userId, clasificacion, uso, clase, tenencia, contrato, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, sector}) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -412,7 +412,7 @@ export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosC
     }
     await client.query(`DELETE FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1`, [id]);
     await client.query(queries.INSERT_ESTATE_VALUE, [id, tipoTierraUrbana.monto * metrosTerreno, tipoConstruccion.monto * metrosConstruccion]);
-    estate = (await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, codCat, id, dirDoc, clasificacion])).rows[0];
+    estate = (await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, newCodCat, id, dirDoc, clasificacion])).rows[0];
     await client.query('DELETE FROM inmueble_ejidos WHERE id_inmueble = $1', [estate.id]);
     await client.query('DELETE FROM inmueble_mercados WHERE id_inmueble = $1', [estate.id]);
     await client.query('DELETE FROM inmueble_cementerios WHERE id_inmueble = $1', [estate.id]);
