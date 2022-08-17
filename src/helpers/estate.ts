@@ -339,7 +339,7 @@ export const parishEstates = async ({ idParroquia }) => {
   }
 };
 
-export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc, userId, clasificacion, uso, tenencia, contrato, clase, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, sector }) => {
+export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, tipoTierraUrbana, tipoConstruccion, dirDoc, userId, clasificacion, uso, tenencia, contrato, clase, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, sector }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -368,11 +368,7 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
     }
     mainLogger.info(estate);
     // await client.query(queries.ADD_MOVEMENT, [estate.id, userId, 'inmueble_registrado', 'INMUEBLE']);
-    await Promise.all(
-      avaluos.map((row) => {
-        return client.query(queries.INSERT_ESTATE_VALUE, [estate.id, row.avaluo, row.anio]);
-      })
-    );
+    await client.query(queries.INSERT_ESTATE_VALUE, [estate.id, tipoTierraUrbana.monto * metrosTerreno, tipoConstruccion.monto * metrosConstruccion ]);
     await client.query('COMMIT');
 
     return { status: 200, inmueble: { ...estate, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.id])).rows } };
