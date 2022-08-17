@@ -289,7 +289,7 @@ export const getEstateByCod = async ({ codCat }) => {
     inmueble.claseTerreno = (await client.query('SELECT * FROM inmueble.clase_terreno WHERE id_clase_terreno = (SELECT id_clase_terreno FROM impuesto.inmueble_tributo WHERE id_inmueble = $1)', [inmueble.id])).rows[0];
     inmueble.valorConstruccion = (await client.query('SELECT * FROM inmueble.valor_construccion WHERE id_valor_construccion = (SELECT id_valor_construccion FROM impuesto.inmueble_tributo WHERE id_inmueble = $1)', [inmueble.id])).rows[0];
     inmueble.manzana = (await client.query('SELECT * FROM inmueble.manzana WHERE cod_manzana = $1', [inmueble.codigoCatastral.split('-')[inmueble.codigoCatastral.split('-').length - 4]])).rows[0];
-    inmueble.ambito = (await client.query('SELECT * FROM inmueble.ambito WHERE cod_ambito = $1', [inmueble.codigoCatastral.split('-').find(elem => /[a-zA-Z]/.test(elem))])).rows;
+    inmueble.ambito = (await client.query('SELECT * FROM inmueble.ambito WHERE cod_ambito = $1', [inmueble.codigoCatastral.split('-').find(elem => /[a-zA-Z]/.test(elem))])).rows[0];
     delete inmueble.idTipoConstruccion;
     delete inmueble.idTipoTierraUrbana;
     switch(inmueble.clasificacion) {
