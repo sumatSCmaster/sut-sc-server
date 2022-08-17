@@ -286,8 +286,9 @@ export const getEstateByCod = async ({ codCat }) => {
     const inmueble = {...estate.rows[0]}
     inmueble.tipoTierraUrbana = (await client.query('SELECT * FROM inmueble.tipo_tierra_urbana WHERE id_tipo_tierra_urbana = $1', [inmueble.idTipoTierraUrbana])).rows[0];
     inmueble.tipoConstruccion = (await client.query('SELECT * FROM inmueble.tipo_construccion WHERE id_tipo_construccion = $1', [inmueble.idTipoConstruccion])).rows[0];
-    inmueble.claseTerreno = (await client.query('SELECT * FROM inmueble.clase_terreno WHERE id_clase_terreno = (SELECT id_clase_terreno FROM impuesto.inmueble_tributo WHERE id_inmueble = $1)', [inmueble.id]));
-    inmueble.valorConstruccion = (await client.query('SELECT * FROM inmueble.valor_construccion WHERE id_valor_construccion = (SELECT id_valor_construccion FROM impuesto.inmueble_tributo WHERE id_inmueble = $1)', [inmueble.id]));
+    inmueble.claseTerreno = (await client.query('SELECT * FROM inmueble.clase_terreno WHERE id_clase_terreno = (SELECT id_clase_terreno FROM impuesto.inmueble_tributo WHERE id_inmueble = $1)', [inmueble.id])).rows[0];
+    inmueble.valorConstruccion = (await client.query('SELECT * FROM inmueble.valor_construccion WHERE id_valor_construccion = (SELECT id_valor_construccion FROM impuesto.inmueble_tributo WHERE id_inmueble = $1)', [inmueble.id])).rows[0];
+    inmueble.manzana = (await client.query('SELECT * FROM inmueble.manzana WHERE id_manzana = $1', [inmueble.codigoCatastral.split('-')[inmueble.codigoCatastral.split('-').length - 4]])).rows[0];
     switch(inmueble.clasificacion) {
       case 'EJIDO':
         extraInfo = (await client.query(queries.GET_COMMON_LAND, [inmueble.id])).rows[0];
@@ -349,7 +350,6 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
     await client.query('BEGIN');
     // const codIsApproved = (await client.query(queries.GET_APPROVED_CPU_PROCEDURE, [codigoCpu])).rows[0];
     // if (!codIsApproved) throw new Error('El código ingresado no pertenece a un trámite aprobado de solvencia de inmuebles');
-    console.log(tipoTierraUrbana, tipoConstruccion, 'MASTER CREATE BARE ESTATE');
     let estate = (await client.query(queries.CREATE_BARE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, dirDoc, clasificacion, tipoTierraUrbana.id_tipo_tierra_urbana, tipoConstruccion.id_tipo_construccion])).rows[0];
     switch(estate.clasificacion) {
       case 'EJIDO':
