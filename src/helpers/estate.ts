@@ -11,8 +11,20 @@ const pool = Pool.getInstance();
 export const getEstatesInfo = async () => {
   const client = await pool.connect();
   try {
-    const estates = (await client.query(queries.GET_ALL_PROPERTIES)).rows;
-    return await addOwners(estates, client);
+    const entities = (await client.query('SELECT * FROM inmueble.entidad')).rows;
+    const parishes = (await client.query('SELECT * FROM inmueble.parroquia')).rows;
+    const ambits = (await client.query('SELECT * FROM inmueble.ambito')).rows;
+    const sectors = (await client.query('SELECT * FROM inmueble.sector')).rows;
+    const blocks = (await client.query('SELECT * FROM inmueble.manzana')).rows;
+    const urbanLandTypes = (await client.query('SELECT * FROM inmueble.tipo_tierra_urbana')).rows;
+    const buildingTypes = (await client.query('SELECT * FROM inmueble.tipo_edificacion')).rows;
+    const buildingClassifications = (await client.query('SELECT * FROM inmueble.clase_edificacion')).rows;
+    const constructionTypes = (await client.query('SELECT * FROM inmueble.tipo_construccion')).rows;
+    const dwellingTypes = (await client.query('SELECT * FROM inmueble.tipo_vivienda')).rows;
+    const constructionValues = (await client.query('SELECT * FROM inmueble.valor_construccion')).rows;
+    const landClasses = (await client.query('SELECT * FROM inmueble.clase_terreno')).rows;
+    // return await addOwners(estates, client);
+    return {data: {entities, parishes, ambits, sectors, blocks, urbanLandTypes, buildingTypes, buildingClassifications, constructionTypes, dwellingTypes, constructionValues, landClasses}, status: 200}
   } catch (e) {
     throw {
       status: 500,
