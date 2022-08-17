@@ -308,7 +308,7 @@ export const getEstateByCod = async ({ codCat }) => {
     return {
       status: 200,
       message: 'Inmueble encontrado',
-      inmueble: { ...estate.rows[0], ...extraInfo, propietarioRim: propietorRim, propietarios: propietors, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
+      inmueble: { ...inmueble, ...extraInfo, propietarioRim: propietorRim, propietarios: propietors, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
     };
   } catch (e: any) {
     throw {
