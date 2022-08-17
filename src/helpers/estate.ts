@@ -349,6 +349,7 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
     await client.query('BEGIN');
     // const codIsApproved = (await client.query(queries.GET_APPROVED_CPU_PROCEDURE, [codigoCpu])).rows[0];
     // if (!codIsApproved) throw new Error('El código ingresado no pertenece a un trámite aprobado de solvencia de inmuebles');
+    console.log(tipoTierraUrbana, tipoConstruccion, 'MASTER CREATE BARE ESTATE');
     let estate = (await client.query(queries.CREATE_BARE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, dirDoc, clasificacion, tipoTierraUrbana.id_tipo_tierra_urbana, tipoConstruccion.id_tipo_construccion])).rows[0];
     switch(estate.clasificacion) {
       case 'EJIDO':
