@@ -289,7 +289,8 @@ export const getEstateByCod = async ({ codCat }) => {
     inmueble.claseTerreno = (await client.query('SELECT * FROM inmueble.clase_terreno WHERE id_clase_terreno = (SELECT id_clase_terreno FROM impuesto.inmueble_tributo WHERE id_inmueble = $1)', [inmueble.id])).rows[0];
     inmueble.valorConstruccion = (await client.query('SELECT * FROM inmueble.valor_construccion WHERE id_valor_construccion = (SELECT id_valor_construccion FROM impuesto.inmueble_tributo WHERE id_inmueble = $1)', [inmueble.id])).rows[0];
     inmueble.manzana = (await client.query('SELECT * FROM inmueble.manzana WHERE id_manzana = (SELECT id_manzana FROM inmueble.detalle_codigo WHERE id_inmueble = $1)', [inmueble.id])).rows[0];
-    inmueble.ambito = (await client.query('SELECT * FROM inmueble.ambito WHERE cod_ambito = $1', [inmueble.codigoCatastral.split('-').find(elem => /[a-zA-Z]/.test(elem))])).rows[0];
+    console.log(inmueble.codigoCatastral.slice(inmueble.codigoCatastral.findIndex(elem => /[a-zA-Z]/.test(elem)), 2), 'TEST MASTER ESTATES')
+    inmueble.ambito = (await client.query('SELECT * FROM inmueble.ambito WHERE cod_ambito = $1', [inmueble.codigoCatastral.slice(inmueble.codigoCatastral.findIndex(elem => /[a-zA-Z]/.test(elem)), 2)])).rows[0];
     delete inmueble.idTipoConstruccion;
     delete inmueble.idTipoTierraUrbana;
     switch(inmueble.clasificacion) {
