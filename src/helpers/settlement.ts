@@ -224,7 +224,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                 const lastMonthPayment = !!branch
                 ? (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID, [el.id_inmueble, branch?.id_registro_municipal])).rows[0]
                 : (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID_NATURAL, [el.id_inmueble, contributor.id_contribuyente])).rows[0];               
-                const lastMonthPaymentMoment = !!lastMonthPayment ? moment(lastMonthPayment) : moment().startOf('year');
+                const lastMonthPaymentMoment = !!lastMonthPayment ? moment(lastMonthPayment.fecha_liquidacion) : moment().startOf('year');
                 // const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month').isSameOrBefore(IUDate) ? moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month') : IUDate) : IUDate;
                 // const paymentDate = el.clasificacion === 'CEMENTERIO' ? moment(lastMonthPayment).startOf('year') : moment(lastMonthPayment).startOf('month');
                 if (lastMonthPayment) {

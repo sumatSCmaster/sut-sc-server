@@ -463,6 +463,7 @@ export const updateEstateDate = async ({ id, date, rim, taxpayer }) => {
   try {
     await client.query('BEGIN');
     const fromDate = moment(date).subtract(1, 'M');
+    const IUData = (await client.query('SELECT clasificacion FROM inmueble_urbano WHERE id_inmueble = $1', [id])).rows[0]?.clasificacion;
     const fromEndDate = fromDate.clone().endOf('month').format('MM-DD-YYYY');
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [null, taxpayer])).rows[0];
     const rimData = (await client.query(queries.GET_RIM_DATA, [rim])).rows[0];
@@ -472,7 +473,7 @@ export const updateEstateDate = async ({ id, date, rim, taxpayer }) => {
         0.0,
         'IU',
         'Pago ordinario',
-        { month: fromDate.toDate().toLocaleString('es-ES', { month: 'long' }), year: fromDate.year(), desglose: [{ inmueble: id }] },
+        { month: fromDate.toDate().toLocaleString('es-ES', { month: 'long' }), year: fromDate.year(), desglose: [{ inmueble: id, clasificacion: IUData }] },
         fromEndDate,
         rimData?.id || null,
       ])
