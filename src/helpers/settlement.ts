@@ -230,15 +230,15 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                 if (lastMonthPayment) {
                   switch (el.clasificacion) {
                     case 'MERCADO':
-                      paymentDate = moment(lastMonthPaymentMoment).month() < 6 ? moment([lastMonthPaymentMoment.year(), 5, 1]) : moment([lastMonthPaymentMoment.year(), 11, 1]); 
+                      paymentDate = lastMonthPaymentMoment.month() < 6 ? moment([lastMonthPaymentMoment.year(), 5, 1]) : moment([lastMonthPaymentMoment.year(), 11, 1]); 
                       interpolation = Math.floor(now.diff(paymentDate, 'M')) / 6;
                     break;
                     case 'CEMENTERIO':
-                      paymentDate = moment(lastMonthPaymentMoment).startOf('year'); 
+                      paymentDate = lastMonthPaymentMoment.startOf('year'); 
                       interpolation = Math.floor(now.diff(paymentDate, 'years'));
                       break;
                     default:
-                      paymentDate = moment(lastMonthPaymentMoment).month() < 3 ? moment([lastMonthPaymentMoment.year(), 2, 1]) : moment(lastMonthPaymentMoment).month() < 6 ? moment([lastMonthPaymentMoment.year(), 5, 1]) : moment(lastMonthPaymentMoment).month() < 9 ? moment([lastMonthPaymentMoment.year(), 8, 1]) : moment([lastMonthPaymentMoment.year(), 11, 1]); 
+                      paymentDate = lastMonthPaymentMoment.month() < 3 ? moment([lastMonthPaymentMoment.year(), 2, 1]) : lastMonthPaymentMoment.month() < 6 ? moment([lastMonthPaymentMoment.year(), 5, 1]) : lastMonthPaymentMoment.month() < 9 ? moment([lastMonthPaymentMoment.year(), 8, 1]) : moment([lastMonthPaymentMoment.year(), 11, 1]); 
                       interpolation = Math.floor(now.diff(paymentDate, 'M')) / 3;
                   }
                 } else {
@@ -263,7 +263,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                       let descuento;
                       // const date = addMonths(new Date(paymentDate.toDate()), index);
                       // const momentDate = moment(date);
-                      console.log(paymentDate, arr.length);
+                      console.log(paymentDate.format('YYYY/MM/DD'), arr.length);
                       const [period, year] = addPeriods(paymentDate, index, el.clasificacion);
                       const impuestoInmueble = (await newGetIUTariffForContributor({ estate: el, year }, client));
                       // const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch?.id_registro_municipal])).rows;
