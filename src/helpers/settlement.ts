@@ -275,7 +275,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                         // 0;
                       // const exonerado = await isExonerated({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
                       const exonerado = false;
-                      return { period, year, exonerado, descuento, impuestoInmueble };
+                      return { period, year, exonerado, descuento, impuestoInmueble: {terreno: impuestoInmueble[0], construccion: impuestoInmueble[1]} };
                     })
                   ),
                 };
