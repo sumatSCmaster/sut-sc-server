@@ -6255,12 +6255,13 @@ const addPeriods = (startDate: any, index: number, classification: string ) => {
       result = ['', moment([newDate.year() + index + 1, 0, 1]).year()];
       break;
     case 'MERCADO':
-      result = [monthToTrimester(newDate.add('months', index * 6).month()), newDate.add('months', index * 6).year()];
+      result = [monthToTrimester(newDate.add(index * 6, 'months').month()), newDate.add(index * 6, 'months').year()];
       break;
     default:
-      result = [monthToTrimester(newDate.add('months', index * 3).month()), newDate.add('months', index * 3).year()];
+      result = [monthToTrimester(newDate.add(index * 3, 'months').month()), newDate.add(index * 3, 'months').year()];
       break;
   }
+  console.log(result);
   return result;
 }
 
