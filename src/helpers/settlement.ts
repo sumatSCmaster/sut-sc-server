@@ -259,14 +259,15 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                   direccionInmueble: el.direccion,
                   clasificacion: el.clasificacion,
                   ultimosAvaluos: {terreno: +el.avaluo_terreno, construccion: +el.avaluo_construccion},
-                  deuda: await Promise.all(
+                  deuda: (async(interpolation, paymentDate, estate) => {
+                    return await Promise.all(
                     new Array(interpolation).fill({ period: null, year: null }).map(async (value, index, arr) => {
                       let descuento;
                       // const date = addMonths(new Date(paymentDate.toDate()), index);
                       // const momentDate = moment(date);
                       console.log(paymentDate.format('YYYY/MM/DD'), arr.length);
                       const [period, year] = addPeriods(paymentDate, index, el.clasificacion);
-                      const impuestoInmueble = (await newGetIUTariffForContributor({ estate: el, year }, client));
+                      const impuestoInmueble = (await newGetIUTariffForContributor({ estate, year }, client));
                       // const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch?.id_registro_municipal])).rows;
                       descuento = 0
                         // (economicActivities.length > 0 &&
@@ -282,7 +283,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                       const exonerado = false;
                       return { period, year, exonerado, descuento, impuestoInmueble };
                     })
-                  ),
+                  )})(interpolation, paymentDate, el),
                 };
               })
           )
