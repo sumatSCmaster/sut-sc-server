@@ -219,6 +219,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
               .map(async (el) => {
                 // let paymentDate: Moment = lastIUPayment;
                 // let interpolation = dateInterpolationIU;
+                console.log('TESTING IU MASTER')
                 let interpolation;
                 let paymentDate;
                 const lastMonthPayment = !!branch
