@@ -262,7 +262,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                       // // const date = addMonths(new Date(paymentDate.toDate()), index);
                       // // const momentDate = moment(date);
                       console.log(paymentDate.format('YYYY/MM/DD'), arr.length);
-                      // const [period, year] = addPeriods(paymentDate, index, el.clasificacion);
+                      const [period, year] = addPeriods(paymentDate, index, el.clasificacion);
                       // const impuestoInmueble = (await newGetIUTariffForContributor({ estate, year }, client));
                       // // const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch?.id_registro_municipal])).rows;
                       // descuento = 0
