@@ -143,7 +143,7 @@ export const hasDiscount = async ({ branch, contributor, activity, startingDate 
  */
 export const newGetIUTariffForContributor = async ({ estate, year }: { estate: any, year: number }, client: PoolClient) => {
   try {
-    const avaluos = (await client.query('SELECT avaluo_terreno, avaluo_construccion FROM impuesto.avaluo WHERE id_inmueble = $1 AND anio = EXTRACT(year FROM CURRENT_DATE)', [estate.id_inmueble])).rows[0];
+    const avaluos = (await client.query('SELECT avaluo_terreno, avaluo_construccion FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 AND anio = EXTRACT(year FROM CURRENT_DATE)', [estate.id_inmueble])).rows[0];
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const period = moment().year() - year;
     const impuestoTerreno = ((await client.query('SELECT indicador FROM impuesto.inmueble_tributo JOIN impuesto.clase_terreno USING(id_clase_terreno) JOIN impuesto.clase_terreno_periodos USING(id_clase_terreno) WHERE id_inmueble = $1 AND periodo = $2', [estate.id_inmueble, period])).rows[0]?.indicador * avaluos.avaluo_terreno) || 0;
