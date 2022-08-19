@@ -232,7 +232,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                     case 'MERCADO':
                       paymentDate = lastMonthPaymentMoment.month() < 6 ? moment([lastMonthPaymentMoment.year(), 5, 1]) : moment([lastMonthPaymentMoment.year(), 11, 1]); 
                       interpolation = Math.floor(now.diff(paymentDate, 'M')) / 6;
-                    break;
+                      break;
                     case 'CEMENTERIO':
                       paymentDate = lastMonthPaymentMoment.startOf('year'); 
                       interpolation = Math.floor(now.diff(paymentDate, 'years'));
@@ -240,6 +240,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                     default:
                       paymentDate = lastMonthPaymentMoment.month() < 3 ? moment([lastMonthPaymentMoment.year(), 2, 1]) : lastMonthPaymentMoment.month() < 6 ? moment([lastMonthPaymentMoment.year(), 5, 1]) : lastMonthPaymentMoment.month() < 9 ? moment([lastMonthPaymentMoment.year(), 8, 1]) : moment([lastMonthPaymentMoment.year(), 11, 1]); 
                       interpolation = Math.floor(now.diff(paymentDate, 'M')) / 3;
+                      break;
                   }
                 } else {
                   interpolation = dateInterpolationIU + 1 || 1;
