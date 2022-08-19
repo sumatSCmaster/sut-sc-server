@@ -256,7 +256,8 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                   id: el.id_inmueble,
                   codCat: el.cod_catastral,
                   direccionInmueble: el.direccion,
-                  ultimoAvaluo: +el.avaluo,
+                  clasificacion: el.clasificacion,
+                  ultimosAvaluos: {terreno: +el.avaluo_terreno, construccion: +el.avaluo_construccion},
                   deuda: await Promise.all(
                     new Array(interpolation).fill({ period: null, year: null }).map(async (value, index) => {
                       let descuento;
