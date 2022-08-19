@@ -189,6 +189,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
   const client = await pool.connect();
   let IU: any = undefined;
   try {
+    console.log('TESTING IU MASTER 1')
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [type, document])).rows[0];
     if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en HACIENDA' };
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor.id_contribuyente])).rows[0];
@@ -205,7 +206,9 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
     const estates = (await client.query(branch ? queries.GET_ESTATES_FOR_JURIDICAL_CONTRIBUTOR : queries.GET_ESTATES_FOR_NATURAL_CONTRIBUTOR, [branch ? branch.id_registro_municipal : contributor.id_contribuyente])).rows;
     //IU
     if (estates.length > 0) {
+      console.log('TESTING IU MASTER 2')
       if (!IUApplicationExists) {
+        console.log('TESTING IU MASTER 3')
         let lastIU = (await client.query(lastSettlementQuery, [codigosRamo.IU, lastSettlementPayload])).rows[0];
         const lastIUPayment = (lastIU && moment(lastIU.fecha_liquidacion).add(1, 'M')) || moment().month(0);
         const pastMonthIU = (lastIU && moment(lastIU.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
