@@ -145,7 +145,7 @@ export const newGetIUTariffForContributor = async ({ estate, year }: { estate: a
   try {
     const avaluos = (await client.query('SELECT avaluo_terreno, avaluo_construccion FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 AND anio = EXTRACT(year FROM CURRENT_DATE)', [estate.id_inmueble])).rows[0];
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
-    const period = moment().year() - year;
+    const period = moment().year() - year + 1;
     const impuestoTerreno = ((await client.query('SELECT indicador FROM impuesto.inmueble_tributo JOIN inmueble.clase_terreno USING(id_clase_terreno) JOIN inmueble.clase_terreno_periodos USING(id_clase_terreno) WHERE id_inmueble = $1 AND periodo = $2', [estate.id_inmueble, period])).rows[0]?.indicador * avaluos.avaluo_terreno) || 0;
     const impuestoConstruccion = ((await client.query('SELECT indicador FROM impuesto.inmueble_tributo JOIN inmueble.valor_construccion USING(id_valor_construccion) WHERE id_inmueble = $1', [estate.id_inmueble])).rows[0]?.indicador * avaluos.avaluo_construccion) || 0;
     return [impuestoTerreno, impuestoConstruccion];
@@ -259,10 +259,11 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                   clasificacion: el.clasificacion,
                   ultimosAvaluos: {terreno: +el.avaluo_terreno, construccion: +el.avaluo_construccion},
                   deuda: await Promise.all(
-                    new Array(interpolation).fill({ period: null, year: null }).map(async (value, index) => {
+                    new Array(interpolation).fill({ period: null, year: null }).map(async (value, index, arr) => {
                       let descuento;
                       // const date = addMonths(new Date(paymentDate.toDate()), index);
                       // const momentDate = moment(date);
+                      console.log(paymentDate, arr.length);
                       const [period, year] = addPeriods(paymentDate, index, el.clasificacion);
                       const impuestoInmueble = (await newGetIUTariffForContributor({ estate: el, year }, client));
                       // const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch?.id_registro_municipal])).rows;
@@ -6260,6 +6261,7 @@ const addPeriods = (startDate: any, index: number, classification: string ) => {
       break;
     default:
       result = [monthToTrimester(startDate.add('months', index * 3).month()), startDate.add('months', index * 3).year()];
+      break;
   }
   return result;
 }
