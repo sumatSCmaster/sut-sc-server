@@ -241,7 +241,6 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                       interpolation = Math.floor(now.diff(paymentDate, 'M')) / 3;
                       break;
                   }
-                // const newPaymentDate = paymentDate;
                 // paymentDate = paymentDate.isSameOrBefore(lastEAPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
                 if (interpolation === 0) return null;
                 // if (lastMonthPayment) {
@@ -258,26 +257,26 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                   deuda: (async(interpolation, paymentDate, estate) => {
                     return await Promise.all(
                     new Array(interpolation).fill({ period: null, year: null }).map(async (value, index, arr) => {
-                      // let descuento;
-                      // // const date = addMonths(new Date(paymentDate.toDate()), index);
-                      // // const momentDate = moment(date);
+                      let descuento;
+                      // const date = addMonths(new Date(paymentDate.toDate()), index);
+                      // const momentDate = moment(date);
                       console.log(paymentDate.format('YYYY/MM/DD'), arr.length);
                       const [period, year] = addPeriods(paymentDate, index, el.clasificacion);
-                      // const impuestoInmueble = (await newGetIUTariffForContributor({ estate, year }, client));
-                      // // const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch?.id_registro_municipal])).rows;
-                      // descuento = 0
-                      //   // (economicActivities.length > 0 &&
-                      //   //   (
-                      //   //     await Promise.all(
-                      //   //       economicActivities.map(
-                      //   //         async (activity) => await hasDiscount({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client)
-                      //   //       )
-                      //   //     )
-                      //   //   ).reduce((current, next) => (current < next ? next : current))) ||
-                      //   // 0;
-                      // // const exonerado = await isExonerated({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
-                      // const exonerado = false;
-                      // return { period, year, exonerado, descuento, impuestoInmueble };
+                      const impuestoInmueble = (await newGetIUTariffForContributor({ estate, year }, client));
+                      // const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch?.id_registro_municipal])).rows;
+                      descuento = 0
+                        // (economicActivities.length > 0 &&
+                        //   (
+                        //     await Promise.all(
+                        //       economicActivities.map(
+                        //         async (activity) => await hasDiscount({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client)
+                        //       )
+                        //     )
+                        //   ).reduce((current, next) => (current < next ? next : current))) ||
+                        // 0;
+                      // const exonerado = await isExonerated({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
+                      const exonerado = false;
+                      return { period, year, exonerado, descuento, impuestoInmueble };
                     })
                   )})(interpolation, paymentDate, el),
                 };
@@ -6250,15 +6249,16 @@ const addMonths = (date: Date, months): Date => {
 
 const addPeriods = (startDate: any, index: number, classification: string ) => {
   let result;
+  const newDate = moment(startDate);
   switch (classification) {
     case 'CEMENTERIO':
-      result = ['', moment([startDate.year() + index + 1, 0, 1]).year()];
+      result = ['', moment([newDate.year() + index + 1, 0, 1]).year()];
       break;
     case 'MERCADO':
-      result = [monthToTrimester(startDate.add('months', index * 6).month()), startDate.add('months', index * 6).year()];
+      result = [monthToTrimester(newDate.add('months', index * 6).month()), newDate.add('months', index * 6).year()];
       break;
     default:
-      result = [monthToTrimester(startDate.add('months', index * 3).month()), startDate.add('months', index * 3).year()];
+      result = [monthToTrimester(newDate.add('months', index * 3).month()), newDate.add('months', index * 3).year()];
       break;
   }
   return result;
