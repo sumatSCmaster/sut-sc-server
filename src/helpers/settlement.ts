@@ -31,6 +31,7 @@ import { mainLogger } from '@utils/logger';
 const written = require('written-number');
 import { inspect } from 'util';
 import { createForm } from './formsHelper';
+import { TodayInstance } from 'twilio/lib/rest/api/v2010/account/usage/record/today';
 
 const gticPool = GticPool.getInstance();
 const pool = Pool.getInstance();
@@ -228,9 +229,9 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                 // const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month').isSameOrBefore(IUDate) ? moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month') : IUDate) : IUDate;
                 // const paymentDate = el.clasificacion === 'CEMENTERIO' ? moment(lastMonthPayment).startOf('year') : moment(lastMonthPayment).startOf('month');
                   switch (el.clasificacion) {
-                    case 'MERCADO':
-                      paymentDate = lastMonthPaymentMoment.month() < 6 ? moment([lastMonthPaymentMoment.year(), 5, 1]) : moment([lastMonthPaymentMoment.year(), 11, 1]); 
-                      interpolation = Math.floor(now.diff(paymentDate, 'M')) / 6;
+                    case 'MERCADO' || 'QUIOSCO':
+                      paymentDate = moment([lastMonthPaymentMoment.year(), lastMonthPaymentMoment.month(), 1]);
+                      interpolation = Math.floor(now.diff(paymentDate, 'M'));
                       break;
                     case 'CEMENTERIO':
                       paymentDate = lastMonthPaymentMoment.startOf('year'); 
@@ -6253,8 +6254,8 @@ const addPeriods = (startDate: any, index: number, classification: string ) => {
     case 'CEMENTERIO':
       result = ['', moment([newDate.year() + index + 1, 0, 1]).year()];
       break;
-    case 'MERCADO':
-      result = [monthToTrimester(newDate.add(index * 6, 'months').month()), newDate.year()];
+    case 'MERCADO' || 'QUIOSCO':
+      result = [newDate.add(index, 'months').toDate().toLocaleString('es-ES', {month: 'long'}), newDate.year()];
       break;
     default:
       result = [monthToTrimester(newDate.add(index * 3, 'months').month()), newDate.year()];
@@ -6266,10 +6267,6 @@ const addPeriods = (startDate: any, index: number, classification: string ) => {
 
 const monthToTrimester = (month: number) => {
   return month < 3 ? 'Primer Trimestre' : month < 6 ? 'Segundo Trimestre' : month < 9 ? 'Tercer Trimestre' : 'Cuarto Trimestre';
-}
-
-const monthToSemester = (month: number) => {
-  return month < 6 ? 'Primer Semestre' : 'Segundo Semestre';
 }
 
 interface CertificatePayload {
