@@ -445,7 +445,7 @@ export const updateEstate = async ({ id, codCat, newCodCat, direccion, idParroqu
        break;
     }
     await client.query('COMMIT');
-    return { status: 200, message: 'Inmueble actualizado' };
+    return { status: 200, message: 'Inmueble actualizado', inmueble: estate };
     // return {inmueble: {...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows }};
   } catch (e: any) {
     await client.query('ROLLBACK');
