@@ -333,10 +333,10 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       !!reference && !!branch
         ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.SM, branch?.id_registro_municipal])).rows[0]
         : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.SM, contributor.id_contribuyente])).rows[0];
-    const IUApplicationExists =
-      !!reference && !!branch
-        ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.IU, branch?.id_registro_municipal])).rows[0]
-        : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.IU, contributor.id_contribuyente])).rows[0];
+    const IUApplicationExists = false;
+      // !!reference && !!branch
+      //   ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.IU, branch?.id_registro_municipal])).rows[0]
+      //   : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.IU, contributor.id_contribuyente])).rows[0];
     const PPApplicationExists =
       !!reference && !!branch
         ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.PP, branch?.id_registro_municipal])).rows[0]
