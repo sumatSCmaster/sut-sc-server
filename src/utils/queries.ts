@@ -1228,7 +1228,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
             WHERE id_solicitud IN (SELECT * FROM solicitudcte)
             GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
     ) s
-    RIGHT JOIN impuesto.liquidacion l
+    INNER JOIN impuesto.liquidacion l
       ON s.id = l.id_solicitud
     INNER JOIN impuesto.subramo sr
       ON l.id_subramo = sr.id_subramo
