@@ -349,7 +349,7 @@ export const parishEstates = async ({ idParroquia }) => {
   }
 };
 
-export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, tipoTierraUrbana, tipoConstruccion, dirDoc, claseTerreno, valorConstruccion, manzana, userId, clasificacion, uso, tenencia, contrato, clase, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, sector }) => {
+export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, tipoTierraUrbana, tipoConstruccion, dirDoc, claseTerreno, valorConstruccion, manzana, userId, clasificacion, uso, tenencia, contrato, clase, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, areaServiciosIndicador, sector, canonArrendamientoMercado, canonArrendamientoQuiosco }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -362,15 +362,15 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
         estate = {...estate, ...ejido};
         break;
       case 'MERCADO':
-        const mercado = (await client.query(queries.INSERT_MARKET_ESTATE, [estate.id, mercados, tipoLocal, tipoAE])).rows[0];
+        const mercado = (await client.query(queries.INSERT_MARKET_ESTATE, [estate.id, mercados, tipoLocal, tipoAE, canonArrendamientoMercado])).rows[0];
         estate = {...estate, ...mercado};
         break;
       case 'QUIOSCO':
-        const quiosco = (await client.query(queries.INSERT_QUIOSCO , [estate.id, objetoQuiosco, tipoQuiosco, zonaQuiosco])).rows[0];
+        const quiosco = (await client.query(queries.INSERT_QUIOSCO , [estate.id, objetoQuiosco, tipoQuiosco, zonaQuiosco, canonArrendamientoQuiosco])).rows[0];
         estate = {...estate, ...quiosco};
         break;
       case 'CEMENTERIO':
-        const cementerio = (await client.query(queries.INSERT_GRAVEYARD, [estate.id, areaServicios, tenencia, sector])).rows[0];
+        const cementerio = (await client.query(queries.INSERT_GRAVEYARD, [estate.id, areaServicios, tenencia, sector, areaServiciosIndicador])).rows[0];
         estate = {...estate, ...cementerio};
         break;
       default:
@@ -397,7 +397,7 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
   }
 };
 
-export const updateEstate = async ({ id, codCat, newCodCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, tipoTierraUrbana, tipoConstruccion, dirDoc, claseTerreno, valorConstruccion, manzana, userId, clasificacion, uso, clase, tenencia, contrato, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, sector}) => {
+export const updateEstate = async ({ id, codCat, newCodCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, areaServiciosIndicador, tipoTierraUrbana, tipoConstruccion, dirDoc, claseTerreno, valorConstruccion, manzana, userId, clasificacion, uso, clase, tenencia, contrato, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, sector, canonArrendamientoQuiosco, canonArrendamientoMercado}) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -430,15 +430,15 @@ export const updateEstate = async ({ id, codCat, newCodCat, direccion, idParroqu
         estate = {...estate, ...ejido};
         break;
       case 'MERCADO':
-        const mercado = (await client.query(queries.INSERT_MARKET_ESTATE, [estate.id, mercados, tipoLocal, tipoAE])).rows[0];
+        const mercado = (await client.query(queries.INSERT_MARKET_ESTATE, [estate.id, mercados, tipoLocal, tipoAE, canonArrendamientoMercado])).rows[0];
         estate = {...estate, ...mercado};
         break;
       case 'QUIOSCO':
-        const quiosco = (await client.query(queries.INSERT_QUIOSCO , [estate.id, objetoQuiosco, tipoQuiosco, zonaQuiosco])).rows[0];
+        const quiosco = (await client.query(queries.INSERT_QUIOSCO , [estate.id, objetoQuiosco, tipoQuiosco, zonaQuiosco, canonArrendamientoQuiosco])).rows[0];
         estate = {...estate, ...quiosco};
         break;
       case 'CEMENTERIO':
-        const cementerio = (await client.query(queries.INSERT_GRAVEYARD, [estate.id, areaServicios, tenencia, sector])).rows[0];
+        const cementerio = (await client.query(queries.INSERT_GRAVEYARD, [estate.id, areaServicios, tenencia, sector, areaServiciosIndicador])).rows[0];
         estate = {...estate, ...cementerio};
         break;
       default:
