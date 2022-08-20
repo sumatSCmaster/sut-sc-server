@@ -276,7 +276,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                         // 0;
                       // const exonerado = await isExonerated({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
                       const exonerado = false;
-                      return { period, year, exonerado, descuento, impuestoInmueble: {terreno: impuestoInmueble[0], construccion: impuestoInmueble[1]} };
+                      return { period, year, exonerado, descuento, impuestoInmueble: {terreno: impuestoInmueble[0], construccion: impuestoInmueble[1]}, tipoPeriodo: el.clasificacion === 'MERCADO' || el.clasificacion === 'QUIOSCO' ? 'mensual' : el.clasificacion === 'CEMENTERIO' ? 'anual' : 'trimestral'};
                     })
                   ))].slice(1),
                 };
@@ -6252,7 +6252,7 @@ const addPeriods = (startDate: any, index: number, classification: string ) => {
   const newDate = moment(startDate);
   switch (classification) {
     case 'CEMENTERIO':
-      result = ['anual', moment([newDate.year() + index + 1, 0, 1]).year()];
+      result = ['Anual', moment([newDate.year() + index, 0, 1]).year()];
       break;
     case 'MERCADO' || 'QUIOSCO':
       result = [newDate.add(index, 'months').toDate().toLocaleString('es-ES', {month: 'long'}), newDate.year()];
