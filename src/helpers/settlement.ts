@@ -254,8 +254,8 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                   direccionInmueble: el.direccion,
                   clasificacion: el.clasificacion,
                   ultimosAvaluos: {terreno: +el.avaluo_terreno, construccion: +el.avaluo_construccion},
-                  deuda: await Promise.all(
-                    new Array(interpolation).fill({ period: null, year: null }).map(async (value, index, arr) => {
+                  deuda: [...(await Promise.all(
+                    new Array(interpolation + 1).fill({ period: null, year: null }).map(async (value, index, arr) => {
                       let descuento;
                       // const date = addMonths(new Date(paymentDate.toDate()), index);
                       // const momentDate = moment(date);
@@ -277,7 +277,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                       const exonerado = false;
                       return { period, year, exonerado, descuento, impuestoInmueble: {terreno: impuestoInmueble[0], construccion: impuestoInmueble[1]} };
                     })
-                  ),
+                  ))].slice(1),
                 };
               })
           )
@@ -6266,6 +6266,10 @@ const addPeriods = (startDate: any, index: number, classification: string ) => {
 
 const monthToTrimester = (month: number) => {
   return month < 3 ? 'Primer Trimestre' : month < 6 ? 'Segundo Trimestre' : month < 9 ? 'Tercer Trimestre' : 'Cuarto Trimestre';
+}
+
+const monthToSemester = (month: number) => {
+  return month < 6 ? 'Primer Semestre' : 'Segundo Semestre';
 }
 
 interface CertificatePayload {
