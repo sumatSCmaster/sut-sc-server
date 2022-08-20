@@ -189,6 +189,20 @@ export const getIUTariffForContributor = async ({ estate, id, declaration, date 
 export const getIUSettlementsForContributor = async ({ document, reference, type, declaration }: { document: string; reference: string | null; type: string; declaration?: number }) => {
   const client = await pool.connect();
   let IU: any = undefined;
+  enum Months {
+    'enero',
+    'febrero',
+    'marzo',
+    'abril',
+    'mayo',
+    'junio',
+    'julio',
+    'agosto',
+    'septiembre',
+    'octubre',
+    'noviembre',
+    'diciembre'
+  }
   try {
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [type, document])).rows[0];
     if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en HACIENDA' };
@@ -225,7 +239,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                 const lastMonthPayment = !!branch
                 ? (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID, [el.id_inmueble, branch?.id_registro_municipal])).rows[0]
                 : (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID_NATURAL, [el.id_inmueble, contributor.id_contribuyente])).rows[0];               
-                const lastMonthPaymentMoment = !!lastMonthPayment ? moment([lastMonthPayment?.datos?.fecha?.year, lastMonthPayment?.datos?.fecha?.month === 'Primer Trimestre' ? 2 : lastMonthPayment?.datos?.fecha?.month === 'Segundo Trimestre' ? 5 : lastMonthPayment?.datos?.fecha?.month === 'Tercer Trimestre' ? 8 : lastMonthPayment?.datos?.fecha?.month === 'Cuarto Trimestre' || lastMonthPayment?.datos?.fecha?.month === 'Anual' ? 11 : lastMonthPayment?.datos?.fecha?.month, 1 ]) : moment().startOf('year');
+                const lastMonthPaymentMoment = !!lastMonthPayment ? moment([lastMonthPayment?.datos?.fecha?.year, lastMonthPayment?.datos?.fecha?.month === 'Primer Trimestre' ? 2 : lastMonthPayment?.datos?.fecha?.month === 'Segundo Trimestre' ? 5 : lastMonthPayment?.datos?.fecha?.month === 'Tercer Trimestre' ? 8 : lastMonthPayment?.datos?.fecha?.month === 'Cuarto Trimestre' || lastMonthPayment?.datos?.fecha?.month === 'Anual' ? 11 : Months[lastMonthPayment?.datos?.fecha?.month], 1 ]) : moment().startOf('year');
                 // const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month').isSameOrBefore(IUDate) ? moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month') : IUDate) : IUDate;
                 // const paymentDate = el.clasificacion === 'CEMENTERIO' ? moment(lastMonthPayment).startOf('year') : moment(lastMonthPayment).startOf('month');
                   switch (el.clasificacion) {
@@ -238,7 +252,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                       interpolation = Math.floor(now.diff(paymentDate, 'years'));
                       break;
                     default:
-                      paymentDate = moment([lastMonthPaymentMoment.year(), lastMonthPaymentMoment.month(), 1]);
+                      paymentDate = lastMonthPaymentMoment.month() < 3 ? moment([lastMonthPaymentMoment.year(), 2, 1]) : lastMonthPaymentMoment.month() < 6 ? moment([lastMonthPaymentMoment.year(), 5, 1]) : lastMonthPaymentMoment.month() < 9 ? moment([lastMonthPaymentMoment.year(), 8, 1]) : moment([lastMonthPaymentMoment.year(), 11, 1]); 
                       interpolation = Math.floor(now.diff(paymentDate, 'M')) / 3;
                       break;
                   }
