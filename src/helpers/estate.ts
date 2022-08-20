@@ -467,13 +467,23 @@ export const updateEstateDate = async ({ id, date, rim, taxpayer }) => {
     const fromEndDate = fromDate.clone().endOf('month').format('MM-DD-YYYY');
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [null, taxpayer])).rows[0];
     const rimData = (await client.query(queries.GET_RIM_DATA, [rim])).rows[0];
+    const period = ((fromDate, classification) => {
+      switch(classification) {
+        case 'MERCADO' || 'QUIOSCO':
+          return fromDate.toDate().toLocaleString('es-ES', { month: 'long' });
+        case 'CEMENTERIO':
+          return 'Anual';
+        default:
+          return fromDate.month() < 3 ? 'Primer Trimestre' : fromDate.month() < 6 ? 'Segundo Trimestre' : fromDate.month() < 9 ? 'Tercer Trimestre' : 'Cuarto Trimestre';  
+      }
+    })(fromDate, IUData);
     const ghostSettlement = (
       await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
         application.id_solicitud,
         0.0,
         'IU',
         'Pago ordinario',
-        { month: fromDate.toDate().toLocaleString('es-ES', { month: 'long' }), year: fromDate.year(), desglose: [{ inmueble: id, clasificacion: IUData }] },
+        { fecha: {month: period, year: fromDate.year()}, desglose: [{ inmueble: id, clasificacion: IUData }] },
         fromEndDate,
         rimData?.id || null,
       ])
