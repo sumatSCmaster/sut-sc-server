@@ -2231,9 +2231,9 @@ ORDER BY fecha_liquidacion DESC;
   UPDATE_QUIOSCO: `UPDATE inmueble_quioscos SET objeto = $2, tipo = $3, zona = $4 WHERE id_inmueble = $1;`,
   UPDATE_MARKET_ESTATE: `UPDATE inmueble_mercados SET mercados = $2, tipo_local = $3, tipo_aeconomica = $4 WHERE id_inmueble = $1;`,
   GET_COMMON_LAND: `SELECT id_inmueble AS id, uso, clase, tenencia, fecha_vencimiento AS "fechaVencimiento", contrato FROM inmueble_ejidos WHERE id_inmueble = $1;`,
-  GET_GRAVEYARD: `SELECT id_inmueble AS id, sector, area_servicios AS "areaServicios", tenencia FROM inmueble_cementerios WHERE id_inmueble = $1;`,
-  GET_MARKET_ESTATE: `SELECT id_inmueble AS id, mercados, tipo_local AS "tipoLocal", tipo_aeconomica AS "tipoAE" FROM inmueble_mercados WHERE id_inmueble = $1;`,
-  GET_QUIOSCO: `SELECT id_inmueble AS id, objeto AS "objetoQuiosco", tipo AS "tipoQuiosco", zona AS "zonaQuiosco" FROM inmueble_quioscos WHERE id_inmueble = $1;`,
+  GET_GRAVEYARD: `SELECT id_inmueble AS id, sector, area_servicios AS "areaServicios", tenencia, area_servicios_indicador AS "areaServiciosIndicador" FROM inmueble_cementerios WHERE id_inmueble = $1;`,
+  GET_MARKET_ESTATE: `SELECT id_inmueble AS id, mercados, tipo_local AS "tipoLocal", tipo_aeconomica AS "tipoAE", canon_arrendamiento AS "canonArrendamientoMercado" FROM inmueble_mercados WHERE id_inmueble = $1;`,
+  GET_QUIOSCO: `SELECT id_inmueble AS id, objeto AS "objetoQuiosco", tipo AS "tipoQuiosco", zona AS "zonaQuiosco", canon_arrendamiento AS "canonArrendamientoQuiosco" FROM inmueble_quioscos WHERE id_inmueble = $1;`,
   CREATE_BARE_ESTATE: `INSERT INTO inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, tipo_inmueble, dir_doc, clasificacion)
     VALUES (default, $1, $2, $3, $4, $5, $6, $7, $8) RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", dir_doc AS "dirDoc", clasificacion`,
