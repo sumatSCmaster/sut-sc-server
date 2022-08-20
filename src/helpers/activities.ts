@@ -10,6 +10,7 @@ import { mainLogger } from '@utils/logger';
 import * as qr from 'qrcode';
 import S3Client from '@utils/s3';
 import { renderFile } from 'pug';
+import { map } from 'lodash';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -152,7 +153,7 @@ export const updateContributorActivities = async ({ branchId, activities, branch
 
     if (!actualizado) {
       await client.query('DELETE FROM impuesto.actividad_economica_sucursal WHERE id_registro_municipal = $1', [branchId]);
-      const applicationIds = (await client.query(`WITH ev AS (SELECT id_solicitud, impuesto.solicitud_fsm(event ORDER BY id_evento_solicitud) AS state FROM impuesto.evento_solicitud GROUP BY id_solicitud) SELECT id_solicitud FROM impuesto.liquidacion JOIN ev USING(id_solicitud) WHERE id_registro_municipal = $1 AND id_subramo = 10 AND state = 'ingresardatos'`, [branchId])).rows[0]?.id_solicitud;
+      const applicationIds = (await client.query(`WITH ev AS (SELECT id_solicitud, impuesto.solicitud_fsm(event ORDER BY id_evento_solicitud) AS state FROM impuesto.evento_solicitud GROUP BY id_solicitud) SELECT id_solicitud FROM impuesto.liquidacion JOIN ev USING(id_solicitud) WHERE id_registro_municipal = $1 AND id_subramo = 10 AND state = 'ingresardatos'`, [branchId])).rows?.map(elem => elem.id_solicitud);
       await Promise.all(applicationIds.map(async (id) => {
         const hasOtherSettlements = (await client.query(`SELECT * FROM impuesto.liquidacion WHERE id_solicitud = $1 AND id_subramo <> 10`, [id])).rows?.map(elem => elem.id_liquidacion);
         if (hasOtherSettlements.length > 0) {
