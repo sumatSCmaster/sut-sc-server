@@ -3106,7 +3106,7 @@ export const insertSettlements = async ({ process, user }) => {
         .map(async (el) => {
           const datos = {
             desglose: el.desglose ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
-            fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },
+            fecha: { month: el.ramo === 'IU' ? el.fechaCancelada.period : el.fechaCancelada.month, year: el.fechaCancelada.year },
             IVA: el.ramo === branchNames['SM'] ? (process.esAgenteRetencion || process.esAgenteSENIAT ? 4 : 16) : undefined,
             esAgenteSENIAT: el.ramo === branchNames['SM'] ? process.esAgenteSENIAT || undefined : undefined,
             esAgenteRetencion: el.ramo === branchNames['SM'] ? process.esAgenteRetencion || undefined : undefined,
@@ -3123,7 +3123,7 @@ export const insertSettlements = async ({ process, user }) => {
               datos,
               el.ramo === 'AE'
                 ? moment().locale('ES').month(el.fechaCancelada.month).year(el.fechaCancelada.year).add(1, 'M').endOf('month').format('MM-DD-YYYY')
-                : moment().locale('ES').month(el.fechaCancelada.month).year(el.fechaCancelada.year).endOf('month').format('MM-DD-YYYY'),
+                : el.ramo === 'IU' ? moment().locale('ES').month(el.fechaCancelada.period === 'Primer Trimestre' ? 'marzo' : el.fechaCancelada.period === 'Segundo Trimestre' ? 'junio' : el.fechaCancelada.period === 'Tercer Trimestre' ? 'septiembre' : (el.fechaCancelada.period === 'Cuarto Trimestre' || el.fechaCancelada.period === 'Anual') ? 'diciembre' : el.fechaCancelada.period).year(el.fechaCancelada.year).endOf('month').format('MM-DD-YYYY') : moment().locale('ES').month(el.fechaCancelada.month).year(el.fechaCancelada.year).endOf('month').format('MM-DD-YYYY'),
               (contributorReference && contributorReference.id_registro_municipal) || null,
             ])
           ).rows[0];
