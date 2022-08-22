@@ -130,26 +130,35 @@ html
                     p #{datos.metodoPago.credFiscal.transacciones}            
                   div(style={'-webkit-flex':'3'}).td.center.border-bottom
                     p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.credFiscal.total ?  (datos.metodoPago.credFiscal.total):0 )}          
-                if (datos.metodoPago.transferencias.length > 0 && datos.metodoPago.transferencias.length < 3)
-                each item in datos.metodoPago.transferencias
+                if (datos.metodoPago.transferencias.length > 0 && datos.metodoPago.transferencias.length =< 4)
+                  each item in datos.metodoPago.transferencias
+                    .tr.break-page
+                      div(style={'-webkit-flex':'6', 'text-align':'start'}).th.border-bottom.border-right
+                        p(style={'padding-left':'10px'})
+                          b TRANSFERENCIA #{item.banco.toUpperCase()}
+                      div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
+                        p #{item.transacciones}            
+                      div(style={'-webkit-flex':'3'}).td.center.border-bottom
+                        p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.monto)}
                   .tr.break-page
-                    div(style={'-webkit-flex':'6', 'text-align':'start'}).th.border-bottom.border-right
-                      p(style={'padding-left':'10px'})
-                        b TRANSFERENCIA #{item.banco.toUpperCase()}
-                    div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
-                      p #{item.transacciones}            
-                    div(style={'-webkit-flex':'3'}).td.center.border-bottom
-                      p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.monto)}
-                .tr.break-page
-                  div(style={'-webkit-flex':'6',}).th.border-right
-                    p
-                      b TOTALES
-                  div(style={'-webkit-flex':'3'}).td.center.border-right
-                    p #{datos.metodoPago.transacciones}            
-                  div(style={'-webkit-flex':'3'}).td.center
-                    p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.total ? (datos.metodoPago.total):0)}  
-      //- include footer.pug
-if datos.metodoPago.transferencias.length > 5
+                    div(style={'-webkit-flex':'6',}).th.border-right
+                      p
+                        b TOTALES
+                    div(style={'-webkit-flex':'3'}).td.center.border-right
+                      p #{datos.metodoPago.transacciones}            
+                    div(style={'-webkit-flex':'3'}).td.center
+                      p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.total ? (datos.metodoPago.total):0)}  
+                else 
+                  .tr.break-page
+                    div(style={'-webkit-flex':'6',}).th.border-right
+                      p
+                        b TOTALES
+                    div(style={'-webkit-flex':'3'}).td.center.border-right
+                      p #{datos.metodoPago.transacciones}            
+                    div(style={'-webkit-flex':'3'}).td.center
+                      p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.total ? (datos.metodoPago.total):0)}
+      include footer.pug
+if datos.metodoPago.transferencias.length >= 4
   div#wrapper
     div#header
       div.header-child
@@ -184,4 +193,4 @@ if datos.metodoPago.transferencias.length > 5
                 p #{datos.metodoPago.transacciones}            
               div(style={'-webkit-flex':'3'}).td.center
                 p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.total ? (datos.metodoPago.total):0)}  
-    //- include footer.pug
+    include footer.pug
