@@ -1916,8 +1916,8 @@ WHERE p.fecha_de_aprobacion BETWEEN $1 AND $3 AND p.metodo_pago LIKE 'EFECTIVO%'
               GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud) ss ON s.id_solicitud = ss.id 
     WHERE s.id_solicitud_original = $1 AND ss.state = $2
 `,
-  GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID: 'SELECT * FROM impuesto.get_last_settlement_by_estate($1, $2)',
-  GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID_NATURAL: 'SELECT * FROM impuesto.get_last_settlement_by_estate_natural($1, $2)',
+  GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID: 'SELECT * FROM impuesto.get_last_settlement_by_estate_2($1, $2)',
+  GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID_NATURAL: 'SELECT * FROM impuesto.get_last_settlement_by_estate_natural_2($1, $2)',
   GET_ESTATE_BY_ID: 'SELECT * FROM inmueble_urbano INNER JOIN parroquia ON parroquia.id = inmueble_urbano.id_parroquia WHERE id_inmueble = $1',
   GET_BRANCHES_BY_CONTRIBUTOR_ID: 'SELECT * FROM impuesto.registro_municipal WHERE id_contribuyente = $1',
   GET_ECONOMIC_ACTIVITY_BY_RIM:

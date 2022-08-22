@@ -47,61 +47,69 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
   mainLogger.info(cashierTransfers);
   const cashierTransfersTotal = +cashierTransfers.reduce((prev, next) => prev + +next.monto, 0);
   const cashierTransfersTransactions = +cashierTransfers.reduce((prev, next) => prev + +next.transacciones, 0);
-  const cashierTransfersByBank = cashierTransfers.reduce((prev, next) => {
-    switch (next.id) {
-      case 1:
-        prev.bod = {
-          total: next.monto,
-          transacciones: next.transacciones,
-        };
-        break;
-      case 2:
-        prev.banesco = {
-          total: next.monto,
-          transacciones: next.transacciones,
-        };
-        break;
-      case 3:
-        prev.bnc = {
-          total: next.monto,
-          transacciones: next.transacciones,
-        };
-        break;
-      case 11:
-        prev.venezuela = {
-          total: next.monto,
-          transacciones: next.transacciones,
-        };
-        break;
-      case 23:
-        prev.provincial = {
-          total: next.monto,
-          transacciones: next.transacciones,
-        };
-        break;
-      case 36:
-        prev.sofiTasa = {
-          total: next.monto,
-          transacciones: next.transacciones,
-        };
-        break;
-      case 12:
-        prev.banCaribe = {
-          total: next.monto,
-          transacciones: next.transacciones,
-        };
-        break;
-      case 20:
-        prev.cienPorcientoBanco = {
-          total: next.monto,
-          transacciones: next.transacciones,
-        }
-        break;
-    }
-    return prev;
-  }, {});
+  // const cashierTransfersByBank = cashierTransfers.reduce((prev, next) => {
+  //   switch (next.id) {
+  //     case 1:
+  //       prev.push({
+  //         total: next.monto,
+  //         transacciones: next.transacciones,
+  //         nombre: 'bod'
+  //       });
+  //       break;
+  //     case 2:
+  //       prev.push({
+  //         total: next.monto,
+  //         transacciones: next.transacciones,
+  //         nombre: 'banesco'
+  //       });
+  //       break;
+  //     case 3:
+  //       prev.push({
+  //         total: next.monto,
+  //         transacciones: next.transacciones,
+  //         nombre: 'bnc'
+  //       });
+  //       break;
+  //     case 11:
+  //       prev.push({
+  //         total: next.monto,
+  //         transacciones: next.transacciones,
+  //         nombre: 'venezuela'
+  //       });
+  //       break;
+  //     case 23:
+  //       prev.push({
+  //         total: next.monto,
+  //         transacciones: next.transacciones,
+  //         nombre: 'provincial'
+  //       });
+  //       break;
+  //     case 36:
+  //       prev.push({
+  //         total: next.monto,
+  //         transacciones: next.transacciones,
+  //         nombre: 'sofitasa'
+  //       });
+  //       break;
+  //     case 12:
+  //       prev.push({
+  //         total: next.monto,
+  //         transacciones: next.transacciones,
+  //         nombre: 'bancaribe'
+  //       });
+  //       break;
+  //     case 20:
+  //       prev.push({
+  //         total: next.monto,
+  //         transacciones: next.transacciones,
+  //         nombre: 'cien porciento banco'
+  //       })
+  //       break;
+  //   }
+  //   return prev;
+  // }, []);
   try {
-    console.log('PABLO',cashierTransfers)
+    // console.log('PABLO',cashierTransfersByBank,cashierTransfers )
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-cierreCaja.pug`), {
         moment: require('moment'),
@@ -121,7 +129,7 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
             efectivoEuro: cashierCash.find(cash => cash.metodo_pago === 'EFECTIVO EURO') || {total: 0, transacciones: 0},
             credFiscal: cashierCredit[0],
             cheques: cashierChecks[0],
-            transferencias: cashierTransfersByBank,
+            transferencias: cashierTransfers,
             transacciones: +cashierPosTransactions + +cashierCash.reduce((a, c) => +c.transacciones + a, 0) + +cashierChecks[0].transacciones + +cashierTransfersTransactions + +cashierCredit[0].transacciones,
             total: +cashierPosTotal + +cashierCash.reduce((a, c) => +c.total + a, 0) + +cashierChecks[0].total + +cashierTransfersTotal
           },
