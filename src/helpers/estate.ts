@@ -151,7 +151,7 @@ export const taxPayerEstatesByRIM = async ({ typeDoc, rif, rim }) => {
           }
           res({
             ...row,
-            avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [row.id])).rows,
+            avaluos: (await client.query('SELECT avaluo_terreno AS "avaluoTerreno", avaluo_construccion AS "avaluoConstruccion" FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 ORDER BY anio DESC LIMIT 1', [row.id])).rows[0],
             fechaInicio: fecha || null,
           });
         });
@@ -208,7 +208,7 @@ export const taxPayerEstatesByNaturalCont = async ({ typeDoc, doc }) => {
           console.log(liq, fecha, row, 'MASTER INMUEBLE')
           res({
             ...row,
-            avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [row.id])).rows,
+            avaluos: (await client.query('SELECT avaluo_terreno AS "avaluoTerreno", avaluo_construccion AS "avaluoConstruccion" FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 ORDER BY anio DESC LIMIT 1', [row.id])).rows[0],
             fechaInicio: fecha || null,
           });
         });
@@ -290,10 +290,10 @@ export const getEstateByCod = async ({ codCat }) => {
     inmueble.valorConstruccion = (await client.query('SELECT * FROM inmueble.valor_construccion WHERE id_valor_construccion = (SELECT id_valor_construccion FROM impuesto.inmueble_tributo WHERE id_inmueble = $1)', [inmueble.id])).rows[0];
     inmueble.manzana = (await client.query('SELECT * FROM inmueble.manzana WHERE id_manzana = (SELECT id_manzana FROM inmueble.detalle_codigo WHERE id_inmueble = $1)', [inmueble.id])).rows[0];
     const cod = inmueble.codigoCatastral.split('').findIndex(elem => /[a-zA-Z]/.test(elem));
-    console.log(inmueble.codigoCatastral.slice(cod, cod + 3), 'TEST MASTER ESTATES')
     inmueble.ambito = (await client.query('SELECT * FROM inmueble.ambito WHERE cod_ambito = $1', [inmueble.codigoCatastral.slice(cod, cod + 3)])).rows[0];
     delete inmueble.idTipoConstruccion;
     delete inmueble.idTipoTierraUrbana;
+    inmueble.avaluos = (await client.query('SELECT avaluo_terreno AS "avaluoTerreno", avaluo_construccion AS "avaluoConstruccion" FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 ORDER BY anio DESC LIMIT 1', [inmueble.id])).rows[0];
     switch(inmueble.clasificacion) {
       case 'EJIDO':
         extraInfo = (await client.query(queries.GET_COMMON_LAND, [inmueble.id])).rows[0];
