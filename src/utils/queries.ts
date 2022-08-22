@@ -1210,7 +1210,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_ALL_SETTLEMENTS_FOR_RIM: `WITH solicitudcte AS (
     SELECT id_solicitud
     FROM impuesto.solicitud 
-    WHERE id_solicitud = (SELECT id_solicitud FROM impuesto.liquidacion WHERE id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $1 LIMIT 1)))
+    WHERE id_solicitud IN (SELECT id_solicitud FROM impuesto.liquidacion WHERE id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $1 LIMIT 1)))
   
     SELECT s.*, l.*, sr.id_subramo, sr.id_ramo, sr.subindice, sr.descripcion, rm.id_ramo, rm.codigo, rm.descripcion, rm.descripcion_corta, rm.liquidacion_especial
     FROM ( SELECT s.id_solicitud AS id,
