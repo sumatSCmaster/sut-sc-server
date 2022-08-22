@@ -198,7 +198,7 @@ block content
             p #{datos.metodoPago.transacciones}            
           div(style={'-webkit-flex':'3'}).td.center
             p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.total ? (datos.metodoPago.total):0)}  
-include footer.pug
+//- include footer.pug
 
 //- if datos.metodoPago.transferencias.length === 8
 //- extends default
