@@ -290,7 +290,6 @@ export const getEstateByCod = async ({ codCat }) => {
     inmueble.valorConstruccion = (await client.query('SELECT * FROM inmueble.valor_construccion WHERE id_valor_construccion = (SELECT id_valor_construccion FROM impuesto.inmueble_tributo WHERE id_inmueble = $1)', [inmueble.id])).rows[0];
     inmueble.manzana = (await client.query('SELECT * FROM inmueble.manzana WHERE id_manzana = (SELECT id_manzana FROM inmueble.detalle_codigo WHERE id_inmueble = $1)', [inmueble.id])).rows[0];
     const cod = inmueble.codigoCatastral.split('').findIndex(elem => /[a-zA-Z]/.test(elem));
-    console.log(inmueble.codigoCatastral.slice(cod, cod + 3), 'TEST MASTER ESTATES')
     inmueble.ambito = (await client.query('SELECT * FROM inmueble.ambito WHERE cod_ambito = $1', [inmueble.codigoCatastral.slice(cod, cod + 3)])).rows[0];
     delete inmueble.idTipoConstruccion;
     delete inmueble.idTipoTierraUrbana;
