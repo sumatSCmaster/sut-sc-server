@@ -130,7 +130,7 @@ html
                     p #{datos.metodoPago.credFiscal.transacciones}            
                   div(style={'-webkit-flex':'3'}).td.center.border-bottom
                     p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.credFiscal.total ?  (datos.metodoPago.credFiscal.total):0 )}          
-                if datos.metodoPago.transferencias.length > 0 && datos.metodoPago.transferencias.length <= 3
+                if datos.metodoPago.transferencias.length > 0 && datos.metodoPago.transferencias.length < 3
                 each item in datos.metodoPago.transferencias
                   .tr.break-page
                     div(style={'-webkit-flex':'6', 'text-align':'start'}).th.border-bottom.border-right
