@@ -165,7 +165,7 @@ export const createRRICertificate = async (codigoCatastral, metrosTerreno, metro
           clasificacion,
           tipoInmueble
         },
-        certificado: 'cpu-solv-RRI',
+        certificado: 'hacienda-cert-IU'
       };
       mainLogger.info('<-----------datos certificado----------->:', datosCertificado);
       const html = renderFile(resolve(__dirname, `../views/planillas/${datosCertificado.certificado}.pug`), {
@@ -180,7 +180,7 @@ export const createRRICertificate = async (codigoCatastral, metrosTerreno, metro
         } else {
           const bucketParams = {
             Bucket: process.env.BUCKET_NAME as string,
-            Key: `CPU/planillas/${datosCertificado.id}/certificadoRRI.pdf`,
+            Key: `HACIENDA/planillas/${datosCertificado.id}/certificadoIU.pdf`,
           };
           await S3Client.putObject({
             ...bucketParams,
