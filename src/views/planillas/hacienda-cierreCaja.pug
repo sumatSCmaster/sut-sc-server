@@ -16,8 +16,8 @@ html
           img#logo(src='images/encabezado-alcaldia.png')
       img#divider(src='images/franja-2.0.png')
       div#content
-        div#planilla(style={'font-size':'13px'})
-          div#fecha
+        div(style={'font-size':'13px', 'width':'100%', 'height': '85%'})
+          div(style={'margin-bottom':'25px', 'margin-top':'25px', 'width':'100%', 'display': '-webkit-flex', '-webkit-align-items': 'start', '-webkit-justify-content': 'start'})
             p 
               b FECHA:
               span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
@@ -171,7 +171,7 @@ if datos.metodoPago.transferencias.length >= 3
         img#logo(src='images/encabezado-alcaldia.png')
     img#divider(src='images/franja-2.0.png')
     div#content
-      div#planilla(style={'font-size':'13px'})
+      div(style={'font-size':'13px', 'width':'100%', 'height': '85%'})
         div(style={'margin-top':'25px', 'width':'100%'})
           div(style={'width':'60%'}).table.break-page
             .tr.break-page
