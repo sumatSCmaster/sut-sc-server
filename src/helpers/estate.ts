@@ -11,8 +11,20 @@ const pool = Pool.getInstance();
 export const getEstatesInfo = async () => {
   const client = await pool.connect();
   try {
-    const estates = (await client.query(queries.GET_ALL_PROPERTIES)).rows;
-    return await addOwners(estates, client);
+    const entities = (await client.query('SELECT * FROM inmueble.entidad')).rows;
+    const parishes = (await client.query('SELECT * FROM inmueble.parroquia WHERE id_parroquia <> 5')).rows;
+    const ambits = (await client.query('SELECT * FROM inmueble.ambito')).rows;
+    const sectors = (await client.query('SELECT * FROM inmueble.sector')).rows;
+    const blocks = (await client.query('SELECT * FROM inmueble.manzana')).rows;
+    const urbanLandTypes = (await client.query('SELECT * FROM inmueble.tipo_tierra_urbana')).rows;
+    const buildingTypes = (await client.query('SELECT * FROM inmueble.tipo_edificacion')).rows;
+    const buildingClassifications = (await client.query('SELECT * FROM inmueble.clase_edificacion')).rows;
+    const constructionTypes = (await client.query('SELECT * FROM inmueble.tipo_construccion')).rows;
+    const dwellingTypes = (await client.query('SELECT * FROM inmueble.tipo_vivienda')).rows;
+    const constructionValues = (await client.query('SELECT * FROM inmueble.valor_construccion')).rows;
+    const landClasses = (await client.query('SELECT * FROM inmueble.clase_terreno')).rows;
+    // return await addOwners(estates, client);
+    return {data: {entities, parishes, ambits, sectors, blocks, urbanLandTypes, buildingTypes, buildingClassifications, constructionTypes, dwellingTypes, constructionValues, landClasses}, status: 200}
   } catch (e) {
     throw {
       status: 500,
@@ -272,6 +284,16 @@ export const getEstateByCod = async ({ codCat }) => {
       )
     ).rows;
     const inmueble = {...estate.rows[0]}
+    inmueble.tipoTierraUrbana = (await client.query('SELECT * FROM inmueble.tipo_tierra_urbana WHERE id_tipo_tierra_urbana = (SELECT id_tipo_tierra_urbana FROM inmueble.detalle_codigo WHERE id_inmueble = $1)', [inmueble.id])).rows[0];
+    inmueble.tipoConstruccion = (await client.query('SELECT * FROM inmueble.tipo_construccion WHERE id_tipo_construccion = (SELECT id_tipo_construccion FROM inmueble.detalle_codigo WHERE id_inmueble = $1)', [inmueble.id])).rows[0];
+    inmueble.claseTerreno = (await client.query('SELECT * FROM inmueble.clase_terreno WHERE id_clase_terreno = (SELECT id_clase_terreno FROM impuesto.inmueble_tributo WHERE id_inmueble = $1)', [inmueble.id])).rows[0];
+    inmueble.valorConstruccion = (await client.query('SELECT * FROM inmueble.valor_construccion WHERE id_valor_construccion = (SELECT id_valor_construccion FROM impuesto.inmueble_tributo WHERE id_inmueble = $1)', [inmueble.id])).rows[0];
+    inmueble.manzana = (await client.query('SELECT * FROM inmueble.manzana WHERE id_manzana = (SELECT id_manzana FROM inmueble.detalle_codigo WHERE id_inmueble = $1)', [inmueble.id])).rows[0];
+    const cod = inmueble.codigoCatastral.split('').findIndex(elem => /[a-zA-Z]/.test(elem));
+    console.log(inmueble.codigoCatastral.slice(cod, cod + 3), 'TEST MASTER ESTATES')
+    inmueble.ambito = (await client.query('SELECT * FROM inmueble.ambito WHERE cod_ambito = $1', [inmueble.codigoCatastral.slice(cod, cod + 3)])).rows[0];
+    delete inmueble.idTipoConstruccion;
+    delete inmueble.idTipoTierraUrbana;
     switch(inmueble.clasificacion) {
       case 'EJIDO':
         extraInfo = (await client.query(queries.GET_COMMON_LAND, [inmueble.id])).rows[0];
@@ -291,7 +313,7 @@ export const getEstateByCod = async ({ codCat }) => {
     return {
       status: 200,
       message: 'Inmueble encontrado',
-      inmueble: { ...estate.rows[0], ...extraInfo, propietarioRim: propietorRim, propietarios: propietors, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
+      inmueble: { ...inmueble, ...extraInfo, propietarioRim: propietorRim, propietarios: propietors, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
     };
   } catch (e: any) {
     throw {
@@ -327,7 +349,7 @@ export const parishEstates = async ({ idParroquia }) => {
   }
 };
 
-export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc, userId, clasificacion, uso, tenencia, contrato, clase, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, sector }) => {
+export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, tipoTierraUrbana, tipoConstruccion, dirDoc, claseTerreno, valorConstruccion, manzana, userId, clasificacion, uso, tenencia, contrato, clase, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, areaServiciosIndicador, sector, canonArrendamientoMercado, canonArrendamientoQuiosco }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -340,15 +362,15 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
         estate = {...estate, ...ejido};
         break;
       case 'MERCADO':
-        const mercado = (await client.query(queries.INSERT_MARKET_ESTATE, [estate.id, mercados, tipoLocal, tipoAE])).rows[0];
+        const mercado = (await client.query(queries.INSERT_MARKET_ESTATE, [estate.id, mercados, tipoLocal, tipoAE, canonArrendamientoMercado])).rows[0];
         estate = {...estate, ...mercado};
         break;
       case 'QUIOSCO':
-        const quiosco = (await client.query(queries.INSERT_QUIOSCO , [estate.id, objetoQuiosco, tipoQuiosco, zonaQuiosco])).rows[0];
+        const quiosco = (await client.query(queries.INSERT_QUIOSCO , [estate.id, objetoQuiosco, tipoQuiosco, zonaQuiosco, canonArrendamientoQuiosco])).rows[0];
         estate = {...estate, ...quiosco};
         break;
       case 'CEMENTERIO':
-        const cementerio = (await client.query(queries.INSERT_GRAVEYARD, [estate.id, areaServicios, tenencia, sector])).rows[0];
+        const cementerio = (await client.query(queries.INSERT_GRAVEYARD, [estate.id, areaServicios, tenencia, sector, areaServiciosIndicador])).rows[0];
         estate = {...estate, ...cementerio};
         break;
       default:
@@ -356,11 +378,9 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
     }
     mainLogger.info(estate);
     // await client.query(queries.ADD_MOVEMENT, [estate.id, userId, 'inmueble_registrado', 'INMUEBLE']);
-    await Promise.all(
-      avaluos.map((row) => {
-        return client.query(queries.INSERT_ESTATE_VALUE, [estate.id, row.avaluo, row.anio]);
-      })
-    );
+    await client.query(queries.INSERT_ESTATE_VALUE, [estate.id, tipoTierraUrbana.monto * metrosTerreno, tipoConstruccion.monto * metrosConstruccion ]);
+    await client.query('INSERT INTO impuesto.inmueble_tributo (id_inmueble, id_clase_terreno, id_valor_construccion) VALUES ($1, $2, $3)', [estate.id, claseTerreno, valorConstruccion]);
+    await client.query('INSERT INTO inmueble.detalle_codigo (id_inmueble, id_manzana, id_tipo_tierra_urbana, id_tipo_construccion) VALUES($1, $2, $3, $4)', [estate.id, manzana, tipoTierraUrbana.id_tipo_tierra_urbana, tipoConstruccion.id_tipo_construccion])
     await client.query('COMMIT');
 
     return { status: 200, inmueble: { ...estate, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.id])).rows } };
@@ -377,7 +397,7 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
   }
 };
 
-export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, dirDoc, userId, clasificacion, uso, clase, tenencia, contrato, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, sector}) => {
+export const updateEstate = async ({ id, codCat, newCodCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, areaServiciosIndicador, tipoTierraUrbana, tipoConstruccion, dirDoc, claseTerreno, valorConstruccion, manzana, userId, clasificacion, uso, clase, tenencia, contrato, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, sector, canonArrendamientoQuiosco, canonArrendamientoMercado}) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -393,16 +413,16 @@ export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosC
       }
     }
     await client.query(`DELETE FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1`, [id]);
-    const appraisals = await Promise.all(
-      avaluos.map((row) => {
-        return client.query(queries.INSERT_ESTATE_VALUE, [id, row.avaluo, row.anio]);
-      })
-    );
-    estate = (await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, codCat, id, dirDoc, clasificacion])).rows[0];
+    await client.query(queries.INSERT_ESTATE_VALUE, [id, tipoTierraUrbana.monto * metrosTerreno, tipoConstruccion.monto * metrosConstruccion]);
+    estate = (await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, newCodCat, id, dirDoc, clasificacion])).rows[0];
     await client.query('DELETE FROM inmueble_ejidos WHERE id_inmueble = $1', [estate.id]);
     await client.query('DELETE FROM inmueble_mercados WHERE id_inmueble = $1', [estate.id]);
     await client.query('DELETE FROM inmueble_cementerios WHERE id_inmueble = $1', [estate.id]);
     await client.query('DELETE FROM inmueble_quioscos WHERE id_inmueble = $1', [estate.id]);
+    await client.query('DELETE FROM impuesto.inmueble_tributo WHERE id_inmueble = $1', [estate.id]);
+    await client.query('DELETE FROM inmueble.detalle_codigo WHERE id_inmueble = $1', [estate.id]);
+    await client.query('INSERT INTO inmueble.detalle_codigo (id_inmueble, id_manzana, id_tipo_tierra_urbana, id_tipo_construccion) VALUES($1, $2, $3, $4)', [estate.id, manzana, tipoTierraUrbana.id_tipo_tierra_urbana, tipoConstruccion.id_tipo_construccion])
+    await client.query('INSERT INTO impuesto.inmueble_tributo (id_inmueble, id_clase_terreno, id_valor_construccion) VALUES ($1, $2, $3)', [estate.id, claseTerreno, valorConstruccion]);
     console.log(estate, 'MASTER ESTATE');
     switch(estate.clasificacion) {
       case 'EJIDO':
@@ -410,22 +430,22 @@ export const updateEstate = async ({ id, codCat, direccion, idParroquia, metrosC
         estate = {...estate, ...ejido};
         break;
       case 'MERCADO':
-        const mercado = (await client.query(queries.INSERT_MARKET_ESTATE, [estate.id, mercados, tipoLocal, tipoAE])).rows[0];
+        const mercado = (await client.query(queries.INSERT_MARKET_ESTATE, [estate.id, mercados, tipoLocal, tipoAE, canonArrendamientoMercado])).rows[0];
         estate = {...estate, ...mercado};
         break;
       case 'QUIOSCO':
-        const quiosco = (await client.query(queries.INSERT_QUIOSCO , [estate.id, objetoQuiosco, tipoQuiosco, zonaQuiosco])).rows[0];
+        const quiosco = (await client.query(queries.INSERT_QUIOSCO , [estate.id, objetoQuiosco, tipoQuiosco, zonaQuiosco, canonArrendamientoQuiosco])).rows[0];
         estate = {...estate, ...quiosco};
         break;
       case 'CEMENTERIO':
-        const cementerio = (await client.query(queries.INSERT_GRAVEYARD, [estate.id, areaServicios, tenencia, sector])).rows[0];
+        const cementerio = (await client.query(queries.INSERT_GRAVEYARD, [estate.id, areaServicios, tenencia, sector, areaServiciosIndicador])).rows[0];
         estate = {...estate, ...cementerio};
         break;
       default:
        break;
     }
     await client.query('COMMIT');
-    return { status: 200, message: 'Inmueble actualizado' };
+    return { status: 200, message: 'Inmueble actualizado', inmueble: estate };
     // return {inmueble: {...estate.rows[0], avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows }};
   } catch (e: any) {
     await client.query('ROLLBACK');
@@ -443,16 +463,27 @@ export const updateEstateDate = async ({ id, date, rim, taxpayer }) => {
   try {
     await client.query('BEGIN');
     const fromDate = moment(date).subtract(1, 'M');
+    const IUData = (await client.query('SELECT clasificacion FROM inmueble_urbano WHERE id_inmueble = $1', [id])).rows[0]?.clasificacion;
     const fromEndDate = fromDate.clone().endOf('month').format('MM-DD-YYYY');
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [null, taxpayer])).rows[0];
     const rimData = (await client.query(queries.GET_RIM_DATA, [rim])).rows[0];
+    const period = ((fromDate, classification) => {
+      switch(classification) {
+        case 'MERCADO' || 'QUIOSCO':
+          return fromDate.toDate().toLocaleString('es-ES', { month: 'long' });
+        case 'CEMENTERIO':
+          return 'Anual';
+        default:
+          return fromDate.month() < 3 ? 'Primer Trimestre' : fromDate.month() < 6 ? 'Segundo Trimestre' : fromDate.month() < 9 ? 'Tercer Trimestre' : 'Cuarto Trimestre';  
+      }
+    })(fromDate, IUData);
     const ghostSettlement = (
       await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
         application.id_solicitud,
         0.0,
         'IU',
         'Pago ordinario',
-        { month: fromDate.toDate().toLocaleString('es-ES', { month: 'long' }), year: fromDate.year(), desglose: [{ inmueble: id }] },
+        { fecha: {month: period, year: fromDate.year()}, desglose: [{ inmueble: id, clasificacion: IUData }] },
         fromEndDate,
         rimData?.id || null,
       ])

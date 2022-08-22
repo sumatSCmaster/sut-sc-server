@@ -1210,7 +1210,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
   GET_ALL_SETTLEMENTS_FOR_RIM: `WITH solicitudcte AS (
     SELECT id_solicitud
     FROM impuesto.solicitud 
-    WHERE id_contribuyente = (SELECT id_contribuyente FROM impuesto.registro_municipal WHERE referencia_municipal = $1 LIMIT 1))
+    WHERE id_solicitud = (SELECT id_solicitud FROM impuesto.liquidacion WHERE id_registro_municipal = (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $1 LIMIT 1)))
   
     SELECT s.*, l.*, sr.id_subramo, sr.id_ramo, sr.subindice, sr.descripcion, rm.id_ramo, rm.codigo, rm.descripcion, rm.descripcion_corta, rm.liquidacion_especial
     FROM ( SELECT s.id_solicitud AS id,
@@ -1228,16 +1228,12 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
             WHERE id_solicitud IN (SELECT * FROM solicitudcte)
             GROUP BY es.id_solicitud) ev ON s.id_solicitud = ev.id_solicitud
     ) s
-    RIGHT JOIN impuesto.liquidacion l
+    INNER JOIN impuesto.liquidacion l
       ON s.id = l.id_solicitud
     INNER JOIN impuesto.subramo sr
       ON l.id_subramo = sr.id_subramo
     INNER JOIN impuesto.ramo rm
       ON sr.id_ramo = rm.id_ramo
-    WHERE l.id_registro_municipal = 
-      (SELECT id_registro_municipal
-      FROM impuesto.registro_municipal
-      WHERE referencia_municipal = $1 LIMIT 1)
     ORDER BY  fecha_liquidacion;`,
   GET_ALL_SETTLEMENTS_FOR_CONTRIBUTOR: `SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l on s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON \
   l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE AND s.id_contribuyente = $1\
@@ -1891,9 +1887,9 @@ WHERE p.fecha_de_aprobacion BETWEEN $1 AND $3 AND p.metodo_pago LIKE 'EFECTIVO%'
   WHERE (t IS NOT NULL);`,
   UPDATE_SETTLEMENT_CORRECTION: 'UPDATE impuesto.liquidacion SET fecha_liquidacion = $1, fecha_vencimiento = $2, datos = $3, id_subramo = $4, id_solicitud = $5 WHERE id_liquidacion = $6 RETURNING *',
   DELETE_SETTLEMENT: 'DELETE FROM impuesto.liquidacion WHERE id_liquidacion = $1',
-  RECORD_NULIFIED_SETTLEMENT: `INSERT INTO impuesto.liquidacion_anulado (SELECT *, $2 AS observaciones, NOW() - interval '4 hours' AS fecha_anulado FROM impuesto.liquidacion WHERE id_liquidacion = $1)`,
-  RECORD_NULIFIED_PAYMENT: `INSERT INTO pago_anulado (SELECT *, $2 AS observaciones, NOW() - interval '4 hours' AS fecha_anulado FROM pago WHERE id_procedimiento = $1 AND concepto = $3)`,
-  // RECORD_NULIFIED_APPLICATION_PAYMENT: `INSERT INTO pago_anulado (SELECT *, $2 AS observaciones, NOW() - interval '4 hours' AS fecha_anulado FROM pago WHERE id_procedimiento = $1 AND concepto = 'IMPUESTO')`,
+  RECORD_NULLIFIED_SETTLEMENT: `INSERT INTO impuesto.liquidacion_anulado (SELECT *, $2 AS observaciones, NOW() - interval '4 hours' AS fecha_anulado FROM impuesto.liquidacion WHERE id_liquidacion = $1)`,
+  RECORD_NULLIFIED_PAYMENT: `INSERT INTO pago_anulado (SELECT *, $2 AS observaciones, NOW() - interval '4 hours' AS fecha_anulado FROM pago WHERE id_procedimiento = $1 AND concepto = $3)`,
+  // RECORD_NULLIFIED_APPLICATION_PAYMENT: `INSERT INTO pago_anulado (SELECT *, $2 AS observaciones, NOW() - interval '4 hours' AS fecha_anulado FROM pago WHERE id_procedimiento = $1 AND concepto = 'IMPUESTO')`,
   ADD_ORIGINAL_APPLICATION_ID_IN_PATCH_APPLICATION: 'UPDATE impuesto.solicitud SET id_solicitud_original = $1 WHERE id_solicitud = $2',
   GET_LAST_AE_SETTLEMENT_BY_AE_ID: 'SELECT * FROM impuesto.get_last_settlement_by_ae($1, $2)',
   GET_LAST_AE_SETTLEMENT_BY_AE_ID_2: 'SELECT * FROM impuesto.get_last_settlement_by_ae_2($1, $2)',
@@ -1939,7 +1935,7 @@ WHERE p.fecha_de_aprobacion BETWEEN $1 AND $3 AND p.metodo_pago LIKE 'EFECTIVO%'
   GET_PUBLICITY_CATEGORIES: 'SELECT * FROM impuesto.categoria_propaganda',
   GET_PUBLICITY_SUBCATEGORIES: 'SELECT * FROM impuesto.tipo_aviso_propaganda',
   GET_PUBLICITY: "SELECT id_tipo_aviso_propaganda, concat(cp.descripcion, ' - ', tap.descripcion) AS descripcion FROM impuesto.categoria_propaganda cp INNER JOIN impuesto.tipo_aviso_propaganda tap USING (id_categoria_propaganda);",
-  INSERT_ESTATE_VALUE: 'INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo, anio) VALUES ($1,$2,$3)',
+  INSERT_ESTATE_VALUE: `INSERT INTO impuesto.avaluo_inmueble (id_inmueble, avaluo_terreno, avaluo_construccion, anio) VALUES ($1,$2, $3, EXTRACT(year FROM NOW() - interval'4 hours'))`,
   CHECK_IF_HAS_COMMERCIAL_ESTATES: `SELECT COUNT(*) as commercials FROM inmueble_urbano WHERE id_registro_municipal = $1 AND tipo_inmueble = 'COMERCIAL';`,
   COUNT_ESTATES: `SELECT COUNT(*) as allestates FROM inmueble_urbano WHERE id_registro_municipal = $1;`,
   SET_DATE_FOR_LINKED_APPROVED_APPLICATION: 'UPDATE impuesto.solicitud SET fecha = $1, fecha_aprobado = $1 WHERE id_solicitud = $2',
@@ -2220,20 +2216,20 @@ ORDER BY fecha_liquidacion DESC;
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", id_registro_municipal AS "idRim"
     FROM inmueble_urbaano iu
     WHERE id_parroquia = $1`,
-  GET_APPRAISALS_BY_ID: 'SELECT anio, avaluo AS avaluo FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1',
+  GET_APPRAISALS_BY_ID: 'SELECT anio, avaluo_terreno AS "avaluoTerreno", avaluo_construccion AS "avaluoConstruccion" FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1',
   GET_CURRENT_APPRAISALS_BY_ID: "SELECT anio, avaluo FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 and anio = EXTRACT('year' FROM CURRENT_DATE);",
   INSERT_COMMON_LAND: `INSERT INTO inmueble_ejidos(id_inmueble, uso, clase, tenencia, contrato, fecha_vencimiento) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id_inmueble AS id, uso, clase, tenencia, contrato, fecha_vencimiento AS "fechaVencimiento";`,
-  INSERT_GRAVEYARD: `INSERT INTO inmueble_cementerios(id_inmueble, area_servicios, tenencia, sector) VALUES ($1, $2, $3, $4) RETURNING id_inmueble AS id, area_servicios AS "areaServicios", tenencia, sector;`,
-  INSERT_QUIOSCO: `INSERT INTO inmueble_quioscos(id_inmueble, objeto, tipo, zona) VALUES ($1, $2, $3, $4) RETURNING id_inmueble AS id, objeto AS "objetoQuiosco", tipo AS "tipoQuiosco", zona AS "zonaQuiosco";`,
-  INSERT_MARKET_ESTATE: `INSERT INTO inmueble_mercados(id_inmueble, mercados, tipo_local, tipo_aeconomica) VALUES ($1, $2, $3, $4) RETURNING id_inmueble AS id, mercados, tipo_local AS "tipoLocal", tipo_aeconomica AS "tipoAE";`,
+  INSERT_GRAVEYARD: `INSERT INTO inmueble_cementerios(id_inmueble, area_servicios, tenencia, sector, area_servicios_indicador) VALUES ($1, $2, $3, $4, $5) RETURNING id_inmueble AS id, area_servicios AS "areaServicios", tenencia, sector, area_servicios_indicador AS "areaServiciosIndicador";`,
+  INSERT_QUIOSCO: `INSERT INTO inmueble_quioscos(id_inmueble, objeto, tipo, zona, canon_arrendamiento) VALUES ($1, $2, $3, $4, $5) RETURNING id_inmueble AS id, objeto AS "objetoQuiosco", tipo AS "tipoQuiosco", zona AS "zonaQuiosco", canon_arrendamiento AS "canonArrendamientoQuiosco";`,
+  INSERT_MARKET_ESTATE: `INSERT INTO inmueble_mercados(id_inmueble, mercados, tipo_local, tipo_aeconomica, canon_arrendamiento) VALUES ($1, $2, $3, $4, $5) RETURNING id_inmueble AS id, mercados, tipo_local AS "tipoLocal", tipo_aeconomica AS "tipoAE", canon_arrendamiento AS "canonArrendamientoMercado";`,
   UPDATE_COMMON_LAND: `UPDATE inmueble_ejidos SET uso = $2, clase = $3, tenencia = $4, contrato = $5, fecha_vencimiento = $6 WHERE id_inmueble = $1;`,
   UPDATE_GRAVEYARD: `UPDATE inmueble_cementerios SET area_servicios = $2, tenencia = $3, sector = $4 WHERE id_inmueble = $1;`,
   UPDATE_QUIOSCO: `UPDATE inmueble_quioscos SET objeto = $2, tipo = $3, zona = $4 WHERE id_inmueble = $1;`,
   UPDATE_MARKET_ESTATE: `UPDATE inmueble_mercados SET mercados = $2, tipo_local = $3, tipo_aeconomica = $4 WHERE id_inmueble = $1;`,
   GET_COMMON_LAND: `SELECT id_inmueble AS id, uso, clase, tenencia, fecha_vencimiento AS "fechaVencimiento", contrato FROM inmueble_ejidos WHERE id_inmueble = $1;`,
-  GET_GRAVEYARD: `SELECT id_inmueble AS id, sector, area_servicios AS "areaServicios", tenencia FROM inmueble_cementerios WHERE id_inmueble = $1;`,
-  GET_MARKET_ESTATE: `SELECT id_inmueble AS id, mercados, tipo_local AS "tipoLocal", tipo_aeconomica AS "tipoAE" FROM inmueble_mercados WHERE id_inmueble = $1;`,
-  GET_QUIOSCO: `SELECT id_inmueble AS id, objeto AS "objetoQuiosco", tipo AS "tipoQuiosco", zona AS "zonaQuiosco" FROM inmueble_quioscos WHERE id_inmueble = $1;`,
+  GET_GRAVEYARD: `SELECT id_inmueble AS id, sector, area_servicios AS "areaServicios", tenencia, area_servicios_indicador AS "areaServiciosIndicador" FROM inmueble_cementerios WHERE id_inmueble = $1;`,
+  GET_MARKET_ESTATE: `SELECT id_inmueble AS id, mercados, tipo_local AS "tipoLocal", tipo_aeconomica AS "tipoAE", canon_arrendamiento AS "canonArrendamientoMercado" FROM inmueble_mercados WHERE id_inmueble = $1;`,
+  GET_QUIOSCO: `SELECT id_inmueble AS id, objeto AS "objetoQuiosco", tipo AS "tipoQuiosco", zona AS "zonaQuiosco", canon_arrendamiento AS "canonArrendamientoQuiosco" FROM inmueble_quioscos WHERE id_inmueble = $1;`,
   CREATE_BARE_ESTATE: `INSERT INTO inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, tipo_inmueble, dir_doc, clasificacion)
     VALUES (default, $1, $2, $3, $4, $5, $6, $7, $8) RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", dir_doc AS "dirDoc", clasificacion`,
@@ -2246,7 +2242,7 @@ ORDER BY fecha_liquidacion DESC;
   UPDATE_ESTATE: `UPDATE inmueble_urbano SET direccion = $1, id_parroquia = $2, metros_construccion = $3, metros_terreno = $4, tipo_inmueble = $5, cod_catastral = $6, dir_doc = $8, clasificacion = $9 WHERE id_inmueble = $7 RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
   metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", dir_doc AS "dirDoc", clasificacion;`,
   GET_ESTATE_BY_CODCAT: `SELECT id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", id_parroquia AS "idParroquia",
-   metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion_contribuyente as relacion ,id_registro_municipal, id_registro_municipal IS NOT NULL as enlazado, dir_doc AS "dirDoc", clasificacion FROM inmueble_urbano WHERE cod_catastral = $1;`,
+   metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion_contribuyente as relacion ,id_registro_municipal, id_registro_municipal IS NOT NULL as enlazado, dir_doc AS "dirDoc", clasificacion, id_tipo_tierra_urbana AS "idTipoTierraUrbana", id_tipo_construccion AS "idTipoConstruccion" FROM inmueble_urbano WHERE cod_catastral = $1;`,
   GET_ESTATE_BY_CODCAT_NAT: `SELECT id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
    id_parroquia AS "idParroquia", metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion as relacion, dir_doc AS "dirDoc", clasificacion 
    FROM inmueble_urbano iu LEFT JOIN impuesto.inmueble_contribuyente icn USING (id_inmueble) 

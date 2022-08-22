@@ -31,6 +31,7 @@ import { mainLogger } from '@utils/logger';
 const written = require('written-number');
 import { inspect } from 'util';
 import { createForm } from './formsHelper';
+import { TodayInstance } from 'twilio/lib/rest/api/v2010/account/usage/record/today';
 
 const gticPool = GticPool.getInstance();
 const pool = Pool.getInstance();
@@ -141,6 +142,23 @@ export const hasDiscount = async ({ branch, contributor, activity, startingDate 
  * @param param0
  * @param client
  */
+export const newGetIUTariffForContributor = async ({ estate, year }: { estate: any, year: number }, client: PoolClient) => {
+  try {
+    const avaluos = (await client.query('SELECT avaluo_terreno, avaluo_construccion FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 AND anio = EXTRACT(year FROM CURRENT_DATE)', [estate.id_inmueble])).rows[0];
+    const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
+    const period = moment().year() - year + 1;
+    const impuestoTerreno = ((await client.query('SELECT indicador FROM impuesto.inmueble_tributo JOIN inmueble.clase_terreno USING(id_clase_terreno) JOIN inmueble.clase_terreno_periodos USING(id_clase_terreno) WHERE id_inmueble = $1 AND periodo = $2', [estate.id_inmueble, period])).rows[0]?.indicador * avaluos.avaluo_terreno) || 0;
+    const impuestoCementerio = +(await client.query('SELECT area_servicios_indicador FROM inmueble_cementerios WHERE id_inmueble = $1', [estate.id_inmueble])).rows[0]?.area_servicios_indicador || 0;
+    const impuestoMercado = +(await client.query('SELECT canon_arrendamiento FROM inmueble_mercados WHERE id_inmueble = $1', [estate.id_inmueble])).rows[0]?.canon_arrendamiento || 0;
+    const impuestoQuiosco = +(await client.query('SELECT canon_arrendamiento FROM inmueble_quioscos WHERE id_inmueble = $1', [estate.id_inmueble])).rows[0]?.canon_arrendamiento || 0;
+    const impuestoConstruccion = ((await client.query('SELECT indicador FROM impuesto.inmueble_tributo JOIN inmueble.valor_construccion USING(id_valor_construccion) WHERE id_inmueble = $1', [estate.id_inmueble])).rows[0]?.indicador * avaluos.avaluo_construccion) || 0;
+    return estate.clasificacion === 'CEMENTERIO' ? [impuestoCementerio, 0] : estate.clasificacion === 'MERCADO' ? [impuestoMercado, 0] : estate.clasificacion === 'QUIOSCO' ? [impuestoQuiosco, 0] : [impuestoTerreno, impuestoConstruccion];
+  } catch (error) {
+    mainLogger.error(error);
+    throw error;
+  }
+};
+// OLD IU TARIFF FUNCTION
 export const getIUTariffForContributor = async ({ estate, id, declaration, date }: { estate: any; id: number; declaration?: number; date: Moment }, client: PoolClient) => {
   try {
     const avaluo = (await client.query(queries.GET_ESTATE_APPRAISAL_BY_ID_AND_YEAR, [estate.id_inmueble, date.year()])).rows[0]?.avaluo || estate.avaluo;
@@ -174,6 +192,20 @@ export const getIUTariffForContributor = async ({ estate, id, declaration, date 
 export const getIUSettlementsForContributor = async ({ document, reference, type, declaration }: { document: string; reference: string | null; type: string; declaration?: number }) => {
   const client = await pool.connect();
   let IU: any = undefined;
+  enum Months {
+    'enero',
+    'febrero',
+    'marzo',
+    'abril',
+    'mayo',
+    'junio',
+    'julio',
+    'agosto',
+    'septiembre',
+    'octubre',
+    'noviembre',
+    'diciembre'
+  }
   try {
     const contributor = (await client.query(queries.TAX_PAYER_EXISTS, [type, document])).rows[0];
     if (!contributor) throw { status: 404, message: 'No existe un contribuyente registrado en HACIENDA' };
@@ -183,11 +215,11 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
     if ((!branch && reference) || (branch && !branch.actualizado)) throw { status: 404, message: 'La sucursal no esta actualizada o no esta registrada en HACIENDA' };
     const lastSettlementQuery = !!reference && branch ? queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM_OPTIMIZED : queries.GET_LAST_SETTLEMENT_FOR_CODE_AND_CONTRIBUTOR;
     const lastSettlementPayload = !!reference && branch ? branch?.id_registro_municipal : contributor.id_contribuyente;
-    const IUApplicationExists =
-      !!reference && !!branch
-        ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.IU, branch?.id_registro_municipal])).rows[0]
-        : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.IU, contributor.id_contribuyente])).rows[0];
-    const now = moment(new Date());
+    const IUApplicationExists = false;
+      // !!reference && !!branch
+      //   ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.IU, branch?.id_registro_municipal])).rows[0]
+      //   : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.IU, contributor.id_contribuyente])).rows[0];
+    const now = moment(new Date()).endOf('year').startOf('month');
     const estates = (await client.query(branch ? queries.GET_ESTATES_FOR_JURIDICAL_CONTRIBUTOR : queries.GET_ESTATES_FOR_NATURAL_CONTRIBUTOR, [branch ? branch.id_registro_municipal : contributor.id_contribuyente])).rows;
     //IU
     if (estates.length > 0) {
@@ -201,15 +233,32 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
         IU = (
           await Promise.all(
             estates
-              .filter((el) => +el.avaluo)
+              .filter((el) => +el.avaluo_construccion && +el.avaluo_terreno)
               .map(async (el) => {
                 // let paymentDate: Moment = lastIUPayment;
                 // let interpolation = dateInterpolationIU;
+                let interpolation;
+                let paymentDate;
                 const lastMonthPayment = !!branch
-                  ? (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID, [el.id_inmueble, branch?.id_registro_municipal])).rows[0]
-                  : (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID_NATURAL, [el.id_inmueble, contributor.id_contribuyente])).rows[0];
-                const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month').isSameOrBefore(IUDate) ? moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month') : IUDate) : IUDate;
-                const interpolation = (!!lastMonthPayment && Math.floor(now.diff(paymentDate, 'M')) + 1) || (!lastMonthPayment && dateInterpolationIU + 1) || 1;
+                ? (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID, [el.id_inmueble, branch?.id_registro_municipal])).rows[0]
+                : (await client.query(queries.GET_LAST_IU_SETTLEMENT_BY_ESTATE_ID_NATURAL, [el.id_inmueble, contributor.id_contribuyente])).rows[0];               
+                const lastMonthPaymentMoment = !!lastMonthPayment ? moment([lastMonthPayment?.datos?.fecha?.year, lastMonthPayment?.datos?.fecha?.month === 'Primer Trimestre' ? 2 : lastMonthPayment?.datos?.fecha?.month === 'Segundo Trimestre' ? 5 : lastMonthPayment?.datos?.fecha?.month === 'Tercer Trimestre' ? 8 : lastMonthPayment?.datos?.fecha?.month === 'Cuarto Trimestre' || lastMonthPayment?.datos?.fecha?.month === 'Anual' ? 11 : Months[lastMonthPayment?.datos?.fecha?.month], 1 ]) : moment().startOf('year');
+                // const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month').isSameOrBefore(IUDate) ? moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month') : IUDate) : IUDate;
+                // const paymentDate = el.clasificacion === 'CEMENTERIO' ? moment(lastMonthPayment).startOf('year') : moment(lastMonthPayment).startOf('month');
+                  switch (el.clasificacion) {
+                    case 'MERCADO' || 'QUIOSCO':
+                      paymentDate = moment([lastMonthPaymentMoment.year(), lastMonthPaymentMoment.month(), 1]);
+                      interpolation = Math.floor(now.diff(paymentDate, 'M'));
+                      break;
+                    case 'CEMENTERIO':
+                      paymentDate = lastMonthPaymentMoment.startOf('year'); 
+                      interpolation = Math.floor(now.diff(paymentDate, 'years'));
+                      break;
+                    default:
+                      paymentDate = lastMonthPaymentMoment.month() < 3 ? moment([lastMonthPaymentMoment.year(), 2, 1]) : lastMonthPaymentMoment.month() < 6 ? moment([lastMonthPaymentMoment.year(), 5, 1]) : lastMonthPaymentMoment.month() < 9 ? moment([lastMonthPaymentMoment.year(), 8, 1]) : moment([lastMonthPaymentMoment.year(), 11, 1]); 
+                      interpolation = Math.floor(now.diff(paymentDate, 'M')) / 3;
+                      break;
+                  }
                 // paymentDate = paymentDate.isSameOrBefore(lastEAPayment) ? moment([paymentDate.year(), paymentDate.month(), 1]) : moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
                 if (interpolation === 0) return null;
                 // if (lastMonthPayment) {
@@ -221,28 +270,32 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                   id: el.id_inmueble,
                   codCat: el.cod_catastral,
                   direccionInmueble: el.direccion,
-                  ultimoAvaluo: +el.avaluo,
-                  deuda: await Promise.all(
-                    new Array(interpolation).fill({ month: null, year: null }).map(async (value, index) => {
+                  clasificacion: el.clasificacion,
+                  ultimosAvaluos: {terreno: +el.avaluo_terreno, construccion: +el.avaluo_construccion},
+                  deuda: [...(await Promise.all(
+                    new Array(interpolation + 1).fill({ period: null, year: null }).map(async (value, index, arr) => {
                       let descuento;
-                      const date = addMonths(new Date(paymentDate.toDate()), index);
-                      const momentDate = moment(date);
-                      const impuestoInmueble = +(await getIUTariffForContributor({ estate: el, declaration, date: momentDate, id: branch?.id_registro_municipal }, client));
-                      const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch?.id_registro_municipal])).rows;
-                      descuento =
-                        (economicActivities.length > 0 &&
-                          (
-                            await Promise.all(
-                              economicActivities.map(
-                                async (activity) => await hasDiscount({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client)
-                              )
-                            )
-                          ).reduce((current, next) => (current < next ? next : current))) ||
-                        0;
-                      const exonerado = await isExonerated({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
-                      return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear(), exonerado, descuento, impuestoInmueble };
+                      // const date = addMonths(new Date(paymentDate.toDate()), index);
+                      // const momentDate = moment(date);
+                      console.log(paymentDate.format('YYYY/MM/DD'), arr.length);
+                      const [period, year] = addPeriods(paymentDate, index, el.clasificacion);
+                      const impuestoInmueble = (await newGetIUTariffForContributor({ estate: el, year }, client));
+                      // const economicActivities = (await client.query(queries.GET_ECONOMIC_ACTIVITIES_BY_CONTRIBUTOR, [branch?.id_registro_municipal])).rows;
+                      descuento = 0
+                        // (economicActivities.length > 0 &&
+                        //   (
+                        //     await Promise.all(
+                        //       economicActivities.map(
+                        //         async (activity) => await hasDiscount({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: activity.id_actividad_economica, startingDate: momentDate.startOf('month') }, client)
+                        //       )
+                        //     )
+                        //   ).reduce((current, next) => (current < next ? next : current))) ||
+                        // 0;
+                      // const exonerado = await isExonerated({ branch: codigosRamo.IU, contributor: branch?.id_registro_municipal, activity: null, startingDate: momentDate.startOf('month') }, client);
+                      const exonerado = false;
+                      return { period, year, exonerado, descuento, impuestoInmueble: {terreno: impuestoInmueble[0], construccion: impuestoInmueble[1]}, tipoPeriodo: el.clasificacion === 'MERCADO' || el.clasificacion === 'QUIOSCO' ? 'mensual' : el.clasificacion === 'CEMENTERIO' ? 'anual' : 'trimestral'};
                     })
-                  ),
+                  ))].slice(1),
                 };
               })
           )
@@ -297,10 +350,10 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       !!reference && !!branch
         ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.SM, branch?.id_registro_municipal])).rows[0]
         : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.SM, contributor.id_contribuyente])).rows[0];
-    const IUApplicationExists =
-      !!reference && !!branch
-        ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.IU, branch?.id_registro_municipal])).rows[0]
-        : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.IU, contributor.id_contribuyente])).rows[0];
+    const IUApplicationExists = false;
+      // !!reference && !!branch
+      //   ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.IU, branch?.id_registro_municipal])).rows[0]
+      //   : (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_CONTRIBUTOR, [codigosRamo.IU, contributor.id_contribuyente])).rows[0];
     const PPApplicationExists =
       !!reference && !!branch
         ? (await client.query(queries.CURRENT_SETTLEMENT_EXISTS_FOR_CODE_AND_RIM_OPTIMIZED, [codigosRamo.PP, branch?.id_registro_municipal])).rows[0]
@@ -1661,7 +1714,7 @@ export const deleteSettlement = async (id: number, observations: string, user: a
     const application = (await client.query(queries.GET_APPLICATION_BY_SETTLEMENT_ID, [id])).rows[0];
     const state = (await client.query(queries.GET_APPLICATION_STATE, [application.id_solicitud])).rows[0]?.state;
     if (!state || state !== 'ingresardatos') throw { status: 403, message: 'La liquidacion que desea eliminar se encuentra validando pago o finalizada' };
-    await client.query(queries.RECORD_NULIFIED_SETTLEMENT, [id, observations]);
+    await client.query(queries.RECORD_NULLIFIED_SETTLEMENT, [id, observations]);
     await client.query(queries.ADD_MOVEMENT, [application.id_solicitud, user.id, 'liquidacion borrada', 'IMPUESTO']);
     await client.query(queries.DELETE_SETTLEMENT, [id]);
     await client.query('COMMIT');
@@ -2036,9 +2089,10 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
         await client.query(queries.GET_APPLICATION_INSTANCES_BY_USER, [user.id])
       ).rows
         .filter((el) => el.tipo_solicitud !== 'CONVENIO')
-        .map(async (el) => {
+        .map(async (el, i, a) => {
           const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
           const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
+          console.log(i, a.length, 'prueba MASTER INSTANCES')
           const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
           const rim = (await client.query('SELECT * FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal]));
             const type = el.tipo_solicitud;
@@ -2953,6 +3007,7 @@ export const insertSettlements = async ({ process, user }) => {
     const benefittedUser = (await client.query(queries.GET_USER_IN_CHARGE_OF_BRANCH_BY_ID, [contributorReference?.id_registro_municipal])).rows[0];
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.tipoUsuario !== 4 ? process.usuario || null : user.id, process.contribuyente])).rows[0];
+    console.log(process, 'TEST MASTER INSERT SETTLEMENTS');
     const solvencyCost =
       contributorReference?.estado_licencia === 'PROVISIONAL' ? +(await client.query(queries.GET_SCALE_FOR_PROVISIONAL_AE_SOLVENCY)).rows[0].indicador : +(await client.query(queries.GET_SCALE_FOR_PERMANENT_AE_SOLVENCY)).rows[0].indicador;
 
@@ -3068,7 +3123,7 @@ export const insertSettlements = async ({ process, user }) => {
         .map(async (el) => {
           const datos = {
             desglose: el.desglose ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
-            fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },
+            fecha: { month: el.ramo === 'IU' ? el.fechaCancelada.period : el.fechaCancelada.month, year: el.fechaCancelada.year },
             IVA: el.ramo === branchNames['SM'] ? (process.esAgenteRetencion || process.esAgenteSENIAT ? 4 : 16) : undefined,
             esAgenteSENIAT: el.ramo === branchNames['SM'] ? process.esAgenteSENIAT || undefined : undefined,
             esAgenteRetencion: el.ramo === branchNames['SM'] ? process.esAgenteRetencion || undefined : undefined,
@@ -3085,7 +3140,7 @@ export const insertSettlements = async ({ process, user }) => {
               datos,
               el.ramo === 'AE'
                 ? moment().locale('ES').month(el.fechaCancelada.month).year(el.fechaCancelada.year).add(1, 'M').endOf('month').format('MM-DD-YYYY')
-                : moment().locale('ES').month(el.fechaCancelada.month).year(el.fechaCancelada.year).endOf('month').format('MM-DD-YYYY'),
+                : el.ramo === 'IU' ? moment().locale('ES').month(el.fechaCancelada.period === 'Primer Trimestre' ? 'marzo' : el.fechaCancelada.period === 'Segundo Trimestre' ? 'junio' : el.fechaCancelada.period === 'Tercer Trimestre' ? 'septiembre' : (el.fechaCancelada.period === 'Cuarto Trimestre' || el.fechaCancelada.period === 'Anual') ? 'diciembre' : el.fechaCancelada.period).year(el.fechaCancelada.year).endOf('month').format('MM-DD-YYYY') : moment().locale('ES').month(el.fechaCancelada.month).year(el.fechaCancelada.year).endOf('month').format('MM-DD-YYYY'),
               (contributorReference && contributorReference.id_registro_municipal) || null,
             ])
           ).rows[0];
@@ -6208,6 +6263,28 @@ const addMonths = (date: Date, months): Date => {
   }
   return date;
 };
+
+const addPeriods = (startDate: any, index: number, classification: string ) => {
+  let result;
+  const newDate = moment(startDate);
+  switch (classification) {
+    case 'CEMENTERIO':
+      result = ['Anual', moment([newDate.year() + index, 0, 1]).year()];
+      break;
+    case 'MERCADO' || 'QUIOSCO':
+      result = [newDate.add(index, 'months').toDate().toLocaleString('es-ES', {month: 'long'}), newDate.year()];
+      break;
+    default:
+      result = [monthToTrimester(newDate.add(index * 3, 'months').month()), newDate.year()];
+      break;
+  }
+  console.log(result);
+  return result;
+}
+
+const monthToTrimester = (month: number) => {
+  return month < 3 ? 'Primer Trimestre' : month < 6 ? 'Segundo Trimestre' : month < 9 ? 'Tercer Trimestre' : 'Cuarto Trimestre';
+}
 
 interface CertificatePayload {
   gticPool: PoolClient;

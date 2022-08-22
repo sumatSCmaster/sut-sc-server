@@ -162,7 +162,7 @@ const reversePaymentCase = switchcase({
     try {
       const idPago = (await client.query('SELECT id_pago FROM pago WHERE id_procedimiento = $1 AND concepto = $2', [id, 'TRAMITE'])).rows[0]?.id_pago;
       await client.query(queries.ADD_MOVEMENT, [idPago, user.id, 'pago de tramite borrado', 'PAGO']);
-      await client.query(queries.RECORD_NULIFIED_PAYMENT, [id, observations, 'TRAMITE']);
+      await client.query(queries.RECORD_NULLIFIED_PAYMENT, [id, observations, 'TRAMITE']);
       await client.query(queries.DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT, [id, 'TRAMITE']);
       await client.query(queries.UPDATE_STATE, [id, REVERSARPAGO, null, null, null]);
       await client.query(queries.SET_NON_APPROVED_STATE_FOR_PROCEDURE, [id]);
@@ -176,7 +176,7 @@ const reversePaymentCase = switchcase({
     try {
       const idPago = (await client.query('SELECT id_pago FROM pago WHERE id_procedimiento = $1 AND concepto = $2', [id, 'IMPUESTO'])).rows[0]?.id_pago;
       await client.query(queries.ADD_MOVEMENT, [idPago, user.id, 'pago de impuesto borrado', 'PAGO']);
-      await client.query(queries.RECORD_NULIFIED_PAYMENT, [id, observations, 'IMPUESTO']);
+      await client.query(queries.RECORD_NULLIFIED_PAYMENT, [id, observations, 'IMPUESTO']);
       await client.query(queries.DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT, [id, 'IMPUESTO']);
       await client.query(queries.DELETE_FISCAL_CREDIT_BY_APPLICATION_ID, [id]);
       await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [id, REVERSARPAGO]);
@@ -192,7 +192,7 @@ const reversePaymentCase = switchcase({
     try {
       const idPago = (await client.query('SELECT id_pago FROM pago WHERE id_procedimiento = $1 AND concepto = $2', [id, 'RETENCION'])).rows[0]?.id_pago;
       await client.query(queries.ADD_MOVEMENT, [idPago, user.id, 'pago de retencion borrado', 'PAGO']);
-      await client.query(queries.RECORD_NULIFIED_PAYMENT, [id, observations, 'RETENCION']);
+      await client.query(queries.RECORD_NULLIFIED_PAYMENT, [id, observations, 'RETENCION']);
       await client.query(queries.DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT, [id, 'RETENCION']);
       await client.query(queries.DELETE_FISCAL_CREDIT_BY_APPLICATION_ID, [id]);
       await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [id, REVERSARPAGO]);
@@ -208,7 +208,7 @@ const reversePaymentCase = switchcase({
     try {
       const idPago = (await client.query('SELECT id_pago FROM pago WHERE id_procedimiento = $1 AND concepto = $2', [id, 'CONVENIO'])).rows[0]?.id_pago;
       await client.query(queries.ADD_MOVEMENT, [idPago, user.id, 'pago de convenio borrado', 'PAGO']);
-      await client.query(queries.RECORD_NULIFIED_PAYMENT, [id, observations, 'CONVENIO']);
+      await client.query(queries.RECORD_NULLIFIED_PAYMENT, [id, observations, 'CONVENIO']);
       await client.query(queries.DELETE_PAYMENT_REFERENCES_BY_PROCESS_AND_CONCEPT, [id, 'CONVENIO']);
       await client.query(queries.UPDATE_FRACTION_STATE, [id, REVERSARPAGO]);
       await client.query(queries.SET_NON_APPROVED_STATE_FOR_AGREEMENT_FRACTION, [id]);
