@@ -180,16 +180,16 @@ block content
         //-     p #{datos.metodoPago.transferencias.cienPorcientoBanco ? datos.metodoPago.transferencias.cienPorcientoBanco.transacciones : 0}            
         //-   div(style={'-webkit-flex':'3'}).td.center.border-bottom
         //-     p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.transferencias.cienPorcientoBanco ? (datos.metodoPago.transferencias.cienPorcientoBanco.total) : 0)}
-        //- if transferencias.length > 0  
-        //- each item in transferencias
-        //-   .tr.break-page
-        //-     div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
-        //-       p(style={'padding-left':'10px'})
-        //-         b #{item.nombre}
-        //-     div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
-        //-       p #{item.transacciones}            
-        //-     div(style={'-webkit-flex':'3'}).td.center.border-bottom
-        //-       p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.total)}
+        if datos.metodoPago.transferencias.length > 0 && datos.metodoPago.transferencias.length < 8
+        each item in datos.transferencias
+          .tr.break-page
+            div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
+              p(style={'padding-left':'10px'})
+                b #{item.nombre}
+            div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
+              p #{item.transacciones}            
+            div(style={'-webkit-flex':'3'}).td.center.border-bottom
+              p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.total)}
         .tr.break-page
           div(style={'-webkit-flex':'4',}).th.border-right
             p
@@ -200,17 +200,28 @@ block content
             p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.total ? (datos.metodoPago.total):0)}  
 block footer
 
-extends default
-block css
-  link(rel="stylesheet", href="css/sedemat.css")
-block title
-block content
-  div#fecha
-    p 
-      b FECHA:
-      span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
-  div
-    p
-      h2 CIERRE DE CAJA
-  div#planilla(style={'font-size':'13px'})
-block footer
+//- if datos.metodoPago.transferencias.length === 8
+//- extends default
+//- block css
+//-   link(rel="stylesheet", href="css/sedemat.css")
+//- block title
+//- block content
+//-   div#fecha
+//-     p 
+//-       b FECHA:
+//-       span &nbsp; #{moment(fecha).format('DD/MM/YYYY')}
+//-   div
+//-     p
+//-       h2 CIERRE DE CAJA
+//-   div#planilla(style={'font-size':'13px'})
+//-     if datos.metodoPago.transferencias.length > 0
+//-     each item in datos.transferencias
+//-       .tr.break-page
+//-         div(style={'-webkit-flex':'4', 'text-align':'start'}).th.border-bottom.border-right
+//-           p(style={'padding-left':'10px'})
+//-             b #{item.nombre}
+//-         div(style={'-webkit-flex':'3'}).td.center.border-bottom.border-right
+//-           p #{item.transacciones}            
+//-         div(style={'-webkit-flex':'3'}).td.center.border-bottom
+//-           p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.total)}
+//- block footer
