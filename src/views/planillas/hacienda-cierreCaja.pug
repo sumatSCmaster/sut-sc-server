@@ -149,7 +149,7 @@ html
                   div(style={'-webkit-flex':'3'}).td.center
                     p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(datos.metodoPago.total ? (datos.metodoPago.total):0)}  
       include footer.pug
-if datos.metodoPago.transferencias.length === 4
+if datos.metodoPago.transferencias.length > 4
   div#wrapper
     div#header
       div.header-child
