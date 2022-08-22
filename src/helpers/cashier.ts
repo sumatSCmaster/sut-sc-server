@@ -109,7 +109,7 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
     return prev;
   }, []);
   try {
-    console.log('PABLO',cashierTransfersByBank)
+    console.log('PABLO',cashierTransfersByBank,cashierTransfers )
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-cierreCaja.pug`), {
         moment: require('moment'),
