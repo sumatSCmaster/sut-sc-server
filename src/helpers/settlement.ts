@@ -233,7 +233,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
         IU = (
           await Promise.all(
             estates
-              .filter((el) => +el.avaluo_construccion && +el.avaluo_terreno)
+              .filter((el) => +el.avaluo_construccion >= 0 && +el.avaluo_terreno >= 0)
               .map(async (el) => {
                 // let paymentDate: Moment = lastIUPayment;
                 // let interpolation = dateInterpolationIU;
