@@ -145,29 +145,26 @@ export const createMockCertificate = async (procedure) => {
   }
 };
 
-export const createRRICertificate = async (procedure, areaTerreno, areaConstruccion, codigoRRI, ubicadoEn, parroquiaEdificio) => {
+export const createRRICertificate = async (codigoCatastral, metrosTerreno, metrosConstruccion, clasificacion, avaluoTerreno, avaluoconstruccion, direccion, parroquia, tipoInmueble) => {
   const client = await pool.connect();
   try {
+    const inmuebleId = (await client.query('SELECT id_inmueble FROM inmueble_urbano WHERE cod_catastral = $1', [codigoCatastral])).rows[0]?.id_inmueble;
     return new Promise(async (res, rej) => {
-      const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION_MOCK, [procedure])).rows[0];
-      mainLogger.info(tramite.datos, 'tramite.datos');
+      // const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION_MOCK, [procedure])).rows[0];
+      // mainLogger.info(tramite.datos, 'tramite.datos');
       const datosCertificado = {
-        id: tramite.id,
-        fecha: tramite.fechacreacion,
-        codigo: tramite.codigotramite,
-        formato: tramite.formato,
-        tramite: tramite.nombretramitelargo,
-        institucion: tramite.nombrecorto,
+        id: inmuebleId,
         datos: {
-          ...tramite.datos,
-          areaTerreno,
-          areaConstruccion,
-          codigoRRI,
-          ubicadoEn,
-          parroquiaEdificio,
+          metrosTerreno,
+          metrosConstruccion,
+          codigoCatastral,
+          direccion,
+          parroquia,
+          avaluoTerreno,
+          avaluoconstruccion,
+          clasificacion,
+          tipoInmueble
         },
-        estado: 'finalizado',
-        tipoTramite: tramite.tipotramite,
         certificado: 'cpu-solv-RRI',
       };
       mainLogger.info('<-----------datos certificado----------->:', datosCertificado);
@@ -183,7 +180,7 @@ export const createRRICertificate = async (procedure, areaTerreno, areaConstrucc
         } else {
           const bucketParams = {
             Bucket: process.env.BUCKET_NAME as string,
-            Key: `CPU/planillas/${tramite.id}/certificadoRRI.pdf`,
+            Key: `CPU/planillas/${datosCertificado.id}/certificadoRRI.pdf`,
           };
           await S3Client.putObject({
             ...bucketParams,
@@ -191,7 +188,7 @@ export const createRRICertificate = async (procedure, areaTerreno, areaConstrucc
             ACL: 'public-read',
             ContentType: 'application/pdf',
           }).promise();
-          client.query(queries.INSERT_RRI, [codigoRRI, procedure, `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`]);
+          client.query('UPDATE inmueble_urbano SET dir_doc = $1 WHERE id_inmueble = $2', [`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`, inmuebleId]);
           res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
         }
       });
