@@ -151,7 +151,7 @@ export const taxPayerEstatesByRIM = async ({ typeDoc, rif, rim }) => {
           }
           res({
             ...row,
-            avaluos: (await client.query('SELECT avaluo_terreno AS "avaluoTerreno", avaluo_construccion AS "avaluoConstruccion" FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 ORDER BY anio DESC LIMIT 1', [row.id])).rows[0],
+            avaluos: (await client.query('SELECT avaluo_terreno AS "avaluoTerreno", avaluo_construccion AS "avaluoConstruccion" FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 ORDER BY anio DESC LIMIT 1', [row.id])).rows,
             fechaInicio: fecha || null,
           });
         });
@@ -208,7 +208,7 @@ export const taxPayerEstatesByNaturalCont = async ({ typeDoc, doc }) => {
           console.log(liq, fecha, row, 'MASTER INMUEBLE')
           res({
             ...row,
-            avaluos: (await client.query('SELECT avaluo_terreno AS "avaluoTerreno", avaluo_construccion AS "avaluoConstruccion" FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 ORDER BY anio DESC LIMIT 1', [row.id])).rows[0],
+            avaluos: (await client.query('SELECT avaluo_terreno AS "avaluoTerreno", avaluo_construccion AS "avaluoConstruccion" FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 ORDER BY anio DESC LIMIT 1', [row.id])).rows,
             fechaInicio: fecha || null,
           });
         });
@@ -293,7 +293,6 @@ export const getEstateByCod = async ({ codCat }) => {
     inmueble.ambito = (await client.query('SELECT * FROM inmueble.ambito WHERE cod_ambito = $1', [inmueble.codigoCatastral.slice(cod, cod + 3)])).rows[0];
     delete inmueble.idTipoConstruccion;
     delete inmueble.idTipoTierraUrbana;
-    inmueble.avaluos = (await client.query('SELECT avaluo_terreno AS "avaluoTerreno", avaluo_construccion AS "avaluoConstruccion" FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 ORDER BY anio DESC LIMIT 1', [inmueble.id])).rows[0];
     switch(inmueble.clasificacion) {
       case 'EJIDO':
         extraInfo = (await client.query(queries.GET_COMMON_LAND, [inmueble.id])).rows[0];
