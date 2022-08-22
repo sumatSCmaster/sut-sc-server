@@ -50,56 +50,64 @@ export const generateCashierReport = async (user, payload: { day: Date }) => {
   const cashierTransfersByBank = cashierTransfers.reduce((prev, next) => {
     switch (next.id) {
       case 1:
-        prev.bod = {
+        prev.push({
           total: next.monto,
           transacciones: next.transacciones,
-        };
+          nombre: 'bod'
+        });
         break;
       case 2:
-        prev.banesco = {
+        prev.push({
           total: next.monto,
           transacciones: next.transacciones,
-        };
+          nombre: 'banesco'
+        });
         break;
       case 3:
-        prev.bnc = {
+        prev.push({
           total: next.monto,
           transacciones: next.transacciones,
-        };
+          nombre: 'bnc'
+        });
         break;
       case 11:
-        prev.venezuela = {
+        prev.push({
           total: next.monto,
           transacciones: next.transacciones,
-        };
+          nombre: 'venezuela'
+        });
         break;
       case 23:
-        prev.provincial = {
+        prev.push({
           total: next.monto,
           transacciones: next.transacciones,
-        };
+          nombre: 'provincial'
+        });
         break;
       case 36:
-        prev.sofiTasa = {
+        prev.push({
           total: next.monto,
           transacciones: next.transacciones,
-        };
+          nombre: 'sofitasa'
+        });
         break;
       case 12:
-        prev.banCaribe = {
+        prev.push({
           total: next.monto,
           transacciones: next.transacciones,
-        };
+          nombre: 'bancaribe'
+        });
         break;
       case 20:
-        prev.cienPorcientoBanco = {
+        prev.push({
           total: next.monto,
           transacciones: next.transacciones,
-        }
+          nombre: 'cien porciento banco'
+        })
         break;
     }
     return prev;
-  }, {});
+  }, []);
   try {
     console.log('PABLO',cashierTransfers)
     return new Promise(async (res, rej) => {
