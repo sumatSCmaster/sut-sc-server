@@ -205,11 +205,13 @@ export const taxPayerEstatesByNaturalCont = async ({ typeDoc, doc }) => {
           if (liq) {
             fecha = moment(liq.fecha_liquidacion).add(1, 'M');
           }
+          const actualizable = (await client.query(`SELECT * FROM impuesto.liquidacion WHERE id_subramo = 9 AND (datos#>>'{desglose, 0, inmueble}')::INT = $1`, [row.id])).rowCount <= 1;
           console.log(liq, fecha, row, 'MASTER INMUEBLE')
           res({
             ...row,
             avaluos: (await client.query('SELECT avaluo_terreno AS "avaluoTerreno", avaluo_construccion AS "avaluoConstruccion" FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 ORDER BY anio DESC LIMIT 1', [row.id])).rows,
             fechaInicio: fecha || null,
+            actualizable
           });
         });
       })
@@ -464,6 +466,7 @@ export const updateEstateDate = async ({ id, date, rim, taxpayer }) => {
   try {
     await client.query('BEGIN');
     const fromDate = moment(date).subtract(1, 'M');
+    await client.query(`DELETE FROM impuesto.liquidacion WHERE id_subramo = 9 AND (datos#>>'{desglose, 0, inmueble}')::INT = $1`, [id])
     const IUData = (await client.query('SELECT clasificacion FROM inmueble_urbano WHERE id_inmueble = $1', [id])).rows[0]?.clasificacion;
     const fromEndDate = fromDate.clone().endOf('month').format('MM-DD-YYYY');
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [null, taxpayer])).rows[0];
