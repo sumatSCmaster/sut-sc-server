@@ -369,7 +369,8 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
         estate = {...estate, ...mercado};
         break;
       case 'QUIOSCO':
-        const quiosco = (await client.query(queries.INSERT_QUIOSCO , [estate.id, objetoQuiosco, tipoQuiosco, zonaQuiosco, canonArrendamientoQuiosco])).rows[0];
+        const canonQuiosco = (await client.query(`SELECT id_canon FROM inmueble.canon_arrendamiento_quiosco WHERE nombre = $1`, [tipoQuiosco])).rows[0]?.id_canon;
+        const quiosco = (await client.query(queries.INSERT_QUIOSCO , [estate.id, objetoQuiosco, tipoQuiosco, zonaQuiosco, canonQuiosco])).rows[0];
         estate = {...estate, ...quiosco};
         break;
       case 'CEMENTERIO':
