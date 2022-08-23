@@ -145,7 +145,7 @@ export const createMockCertificate = async (procedure) => {
   }
 };
 
-export const createRRICertificate = async (codigoCatastral, metrosTerreno, metrosConstruccion, clasificacion, avaluoTerreno, avaluoconstruccion, direccion, parroquia, tipoInmueble) => {
+export const createRRICertificate = async (codigoCatastral, metrosTerreno, metrosConstruccion, clasificacion, avaluoTerreno, avaluoconstruccion, direccion, parroquia, tipoInmueble, relativo) => {
   const client = await pool.connect();
   try {
     const inmuebleId = (await client.query('SELECT id_inmueble FROM inmueble_urbano WHERE cod_catastral = $1', [codigoCatastral])).rows[0]?.id_inmueble;
@@ -163,7 +163,8 @@ export const createRRICertificate = async (codigoCatastral, metrosTerreno, metro
           avaluoTerreno,
           avaluoconstruccion,
           clasificacion,
-          tipoInmueble
+          tipoInmueble,
+          relativo
         },
         certificado: 'hacienda-cert-IU'
       };

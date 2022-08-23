@@ -2220,7 +2220,7 @@ ORDER BY fecha_liquidacion DESC;
   GET_CURRENT_APPRAISALS_BY_ID: "SELECT anio, avaluo FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 and anio = EXTRACT('year' FROM CURRENT_DATE);",
   INSERT_COMMON_LAND: `INSERT INTO inmueble_ejidos(id_inmueble, uso, clase, tenencia, contrato, fecha_vencimiento) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id_inmueble AS id, uso, clase, tenencia, contrato, fecha_vencimiento AS "fechaVencimiento";`,
   INSERT_GRAVEYARD: `INSERT INTO inmueble_cementerios(id_inmueble, area_servicios, tenencia, sector, area_servicios_indicador) VALUES ($1, $2, $3, $4, $5) RETURNING id_inmueble AS id, area_servicios AS "areaServicios", tenencia, sector, area_servicios_indicador AS "areaServiciosIndicador";`,
-  INSERT_QUIOSCO: `INSERT INTO inmueble_quioscos(id_inmueble, objeto, tipo, zona, canon_arrendamiento) VALUES ($1, $2, $3, $4, $5) RETURNING id_inmueble AS id, objeto AS "objetoQuiosco", tipo AS "tipoQuiosco", zona AS "zonaQuiosco", canon_arrendamiento AS "canonArrendamientoQuiosco";`,
+  INSERT_QUIOSCO: `INSERT INTO inmueble_quioscos(id_inmueble, objeto, tipo, zona, id_canon) VALUES ($1, $2, $3, $4, $5) RETURNING id_inmueble AS id, objeto AS "objetoQuiosco", tipo AS "tipoQuiosco", zona AS "zonaQuiosco", id_canon AS "canonArrendamientoQuiosco";`,
   INSERT_MARKET_ESTATE: `INSERT INTO inmueble_mercados(id_inmueble, mercados, tipo_local, tipo_aeconomica, canon_arrendamiento) VALUES ($1, $2, $3, $4, $5) RETURNING id_inmueble AS id, mercados, tipo_local AS "tipoLocal", tipo_aeconomica AS "tipoAE", canon_arrendamiento AS "canonArrendamientoMercado";`,
   UPDATE_COMMON_LAND: `UPDATE inmueble_ejidos SET uso = $2, clase = $3, tenencia = $4, contrato = $5, fecha_vencimiento = $6 WHERE id_inmueble = $1;`,
   UPDATE_GRAVEYARD: `UPDATE inmueble_cementerios SET area_servicios = $2, tenencia = $3, sector = $4 WHERE id_inmueble = $1;`,
@@ -2230,8 +2230,8 @@ ORDER BY fecha_liquidacion DESC;
   GET_GRAVEYARD: `SELECT id_inmueble AS id, sector, area_servicios AS "areaServicios", tenencia, area_servicios_indicador AS "areaServiciosIndicador" FROM inmueble_cementerios WHERE id_inmueble = $1;`,
   GET_MARKET_ESTATE: `SELECT id_inmueble AS id, mercados, tipo_local AS "tipoLocal", tipo_aeconomica AS "tipoAE", canon_arrendamiento AS "canonArrendamientoMercado" FROM inmueble_mercados WHERE id_inmueble = $1;`,
   GET_QUIOSCO: `SELECT id_inmueble AS id, objeto AS "objetoQuiosco", tipo AS "tipoQuiosco", zona AS "zonaQuiosco", canon_arrendamiento AS "canonArrendamientoQuiosco" FROM inmueble_quioscos WHERE id_inmueble = $1;`,
-  CREATE_BARE_ESTATE: `INSERT INTO inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, tipo_inmueble, dir_doc, clasificacion)
-    VALUES (default, $1, $2, $3, $4, $5, $6, $7, $8) RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
+  CREATE_BARE_ESTATE: `INSERT INTO inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, tipo_inmueble, dir_doc, clasificacion, relativos)
+    VALUES (default, $1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", dir_doc AS "dirDoc", clasificacion`,
   CREATE_BARE_ESTATE_NATURAL: `INSERT INTO inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, tipo_inmueble)
     VALUES (default, $1, $2, $3, $4, $5, 'RESIDENCIAL') RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
@@ -2239,10 +2239,10 @@ ORDER BY fecha_liquidacion DESC;
   CREATE_BARE_ESTATE_COMMERCIAL: `INSERT INTO inmueble_urbano (id_inmueble, cod_catastral, direccion, id_parroquia, metros_construccion, metros_terreno, tipo_inmueble, id_registro_municipal)
     VALUES (default, $1, $2, $3, $4, $5, 'COMERCIAL', (SELECT id_registro_municipal FROM impuesto.registro_municipal WHERE referencia_municipal = $6)) RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
     metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble"`,
-  UPDATE_ESTATE: `UPDATE inmueble_urbano SET direccion = $1, id_parroquia = $2, metros_construccion = $3, metros_terreno = $4, tipo_inmueble = $5, cod_catastral = $6, dir_doc = $8, clasificacion = $9 WHERE id_inmueble = $7 RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
+  UPDATE_ESTATE: `UPDATE inmueble_urbano SET direccion = $1, id_parroquia = $2, metros_construccion = $3, metros_terreno = $4, tipo_inmueble = $5, cod_catastral = $6, dir_doc = $8, clasificacion = $9, relativos = $10 WHERE id_inmueble = $7 RETURNING id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
   metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", dir_doc AS "dirDoc", clasificacion;`,
   GET_ESTATE_BY_CODCAT: `SELECT id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", id_parroquia AS "idParroquia",
-   metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion_contribuyente as relacion ,id_registro_municipal, id_registro_municipal IS NOT NULL as enlazado, dir_doc AS "dirDoc", clasificacion FROM inmueble_urbano WHERE cod_catastral = $1;`,
+   metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion_contribuyente as relacion ,id_registro_municipal, id_registro_municipal IS NOT NULL as enlazado, dir_doc AS "dirDoc", clasificacion, relativos AS relativo FROM inmueble_urbano WHERE cod_catastral = $1;`,
   GET_ESTATE_BY_CODCAT_NAT: `SELECT id_inmueble as id, cod_catastral AS "codigoCatastral", direccion, metros_construccion AS "metrosConstruccion", 
    id_parroquia AS "idParroquia", metros_terreno AS "metrosTerreno", tipo_inmueble AS "tipoInmueble", relacion as relacion, dir_doc AS "dirDoc", clasificacion 
    FROM inmueble_urbano iu LEFT JOIN impuesto.inmueble_contribuyente icn USING (id_inmueble) 
