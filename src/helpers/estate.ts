@@ -354,6 +354,8 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
     await client.query('BEGIN');
     // const codIsApproved = (await client.query(queries.GET_APPROVED_CPU_PROCEDURE, [codigoCpu])).rows[0];
     // if (!codIsApproved) throw new Error('El código ingresado no pertenece a un trámite aprobado de solvencia de inmuebles');
+    const estateAlreadyExists = (await client.query('SELECT EXISTS(SELECT * FROM inmueble_urbano WHERE cod_catastral = $1)', [codCat])).rows[0]?.exists;
+    if (estateAlreadyExists) throw {status: 401, message: 'El codigo catastral registrado en el sistema ya existe'};
     let estate = (await client.query(queries.CREATE_BARE_ESTATE, [codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, dirDoc, clasificacion])).rows[0];
     switch(estate.clasificacion) {
       case 'EJIDO':
