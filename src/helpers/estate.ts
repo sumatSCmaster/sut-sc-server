@@ -23,8 +23,9 @@ export const getEstatesInfo = async () => {
     const dwellingTypes = (await client.query('SELECT * FROM inmueble.tipo_vivienda')).rows;
     const constructionValues = (await client.query('SELECT * FROM inmueble.valor_construccion')).rows;
     const landClasses = (await client.query('SELECT * FROM inmueble.clase_terreno')).rows;
+    const subsectors = (await client.query('SELECT * FROM inmueble.subsector')).rows;
     // return await addOwners(estates, client);
-    return {data: {entities, parishes, ambits, sectors, blocks, urbanLandTypes, buildingTypes, buildingClassifications, constructionTypes, dwellingTypes, constructionValues, landClasses}, status: 200}
+    return {data: {entities, parishes, ambits, sectors, blocks, urbanLandTypes, buildingTypes, buildingClassifications, constructionTypes, dwellingTypes, constructionValues, landClasses, subsectors}, status: 200}
   } catch (e) {
     throw {
       status: 500,
