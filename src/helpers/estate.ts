@@ -470,6 +470,7 @@ export const updateEstateDate = async ({ id, date, rim, taxpayer }) => {
   try {
     await client.query('BEGIN');
     const fromDate = moment(date).subtract(1, 'M');
+    await client.query('UPDATE inmueble_urbano SET id_liquidacion_fecha_inicio = NULL WHERE id_inmueble = $1', [id]);
     await client.query(`DELETE FROM impuesto.liquidacion WHERE id_subramo = 9 AND (datos#>>'{desglose, 0, inmueble}')::INT = $1`, [id])
     const IUData = (await client.query('SELECT clasificacion FROM inmueble_urbano WHERE id_inmueble = $1', [id])).rows[0]?.clasificacion;
     const fromEndDate = fromDate.clone().endOf('month').format('MM-DD-YYYY');
