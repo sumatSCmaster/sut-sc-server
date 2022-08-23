@@ -150,10 +150,12 @@ export const taxPayerEstatesByRIM = async ({ typeDoc, rif, rim }) => {
           if (liq) {
             fecha = moment(liq.fecha_liquidacion).add(1, 'M');
           }
+          const actualizable = (await client.query(`SELECT * FROM impuesto.liquidacion WHERE id_subramo = 9 AND (datos#>>'{desglose, 0, inmueble}')::INT = $1`, [row.id])).rowCount <= 1;
           res({
             ...row,
             avaluos: (await client.query('SELECT avaluo_terreno AS "avaluoTerreno", avaluo_construccion AS "avaluoConstruccion" FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 ORDER BY anio DESC LIMIT 1', [row.id])).rows,
             fechaInicio: fecha || null,
+            actualizable
           });
         });
       })
@@ -555,7 +557,7 @@ export const linkCommercial = async ({ codCat, rim, relacion }) => {
     return {
       status: 200,
       message: 'Inmueble enlazado',
-      inmueble: { ...estate.rows[0], ...extraInfo, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
+      inmueble: { ...estate.rows[0], ...extraInfo, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows, actualizable: (await client.query(`SELECT * FROM impuesto.liquidacion WHERE id_subramo = 9 AND (datos#>>'{desglose, 0, inmueble}')::INT = $1`, [estate.rows[0].id])).rowCount <= 1},
     };
   } catch (e: any) {
     throw {
@@ -633,7 +635,7 @@ export const linkNatural = async ({ codCat, typeDoc, doc, relacion }) => {
     return {
       status: 200,
       message: 'Inmueble enlazado',
-      inmueble: { ...estate.rows[0], ...extraInfo, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows },
+      inmueble: { ...estate.rows[0], ...extraInfo, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.rows[0].id])).rows, actualizable: (await client.query(`SELECT * FROM impuesto.liquidacion WHERE id_subramo = 9 AND (datos#>>'{desglose, 0, inmueble}')::INT = $1`, [estate.rows[0].id])).rowCount <= 1 },
     };
   } catch (e: any) {
     throw {
