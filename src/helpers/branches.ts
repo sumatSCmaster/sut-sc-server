@@ -327,7 +327,10 @@ export const getSupportReport = async ({ reportName = 'reporteTicketsSoporte', f
       return { header: row.name, key: row.name, width: 32 };
     });
 
+    let i = 0;
     for (let row of result.rows) {
+      console.log(i)
+      i++
       sheet.addRow(row, 'i').commit();
     }
 
