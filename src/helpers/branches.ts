@@ -348,7 +348,7 @@ export const getSupportReport = async ({ reportName = 'reporteTicketsSoporte', f
         Key: `/hacienda/reportes/${reportName}.xlsx`,
       };
       await S3Client.upload({ ...bucketParams, Body: transformStream, ACL: 'public-read', ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }).promise();
-
+      console.log(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key} MASTER SUPPORT REPORT`)
       return `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`;
     }
   } catch (error) {
