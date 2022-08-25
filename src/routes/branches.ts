@@ -15,6 +15,13 @@ router.get('/', authenticate('jwt'), async (req: any, res) => {
   if (data) res.status(200).json({ status: 200, data });
 });
 
+router.post('/reportSupport', authenticate('jwt'), async (req, res) => {
+  const { from, to, finished } = req.body;
+  const [error, data] = await fulfill(getSupportReport({ from, to, finished }));
+  if (error) res.status(500).json({ error, status: 500 });
+  if (data) res.status(200).json({ status: 200, data });
+});
+
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
 
@@ -35,13 +42,6 @@ router.post('/:type', authenticate('jwt'), async (req, res) => {
 router.post('/reportTransf', authenticate('jwt'), async (req, res) => {
   const { from, to } = req.body;
   const [error, data] = await fulfill(getTransfersReport({ from, to }));
-  if (error) res.status(500).json({ error, status: 500 });
-  if (data) res.status(200).json({ status: 200, data });
-});
-
-router.post('/reportSupport', authenticate('jwt'), async (req, res) => {
-  const { from, to, finished } = req.body;
-  const [error, data] = await fulfill(getSupportReport({ from, to, finished }));
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
 });
