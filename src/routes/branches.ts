@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
-import { generateBranchesReport, generateBranchesReportById, getBranches, getTransfersReport, getCondoReport, getTransfersReportBank, getCondoReportDisclosed, getTransfersExternalReport } from '@helpers/branches';
+import { generateBranchesReport, generateBranchesReportById, getBranches, getTransfersReport, getCondoReport, getTransfersReportBank, getCondoReportDisclosed, getTransfersExternalReport, getSupportReport } from '@helpers/branches';
 import { authenticate } from 'passport';
 import { mainLogger } from '@utils/logger';
 
@@ -35,6 +35,13 @@ router.post('/:type', authenticate('jwt'), async (req, res) => {
 router.post('/reportTransf', authenticate('jwt'), async (req, res) => {
   const { from, to } = req.body;
   const [error, data] = await fulfill(getTransfersReport({ from, to }));
+  if (error) res.status(500).json({ error, status: 500 });
+  if (data) res.status(200).json({ status: 200, data });
+});
+
+router.post('/reportSupport', authenticate('jwt'), async (req, res) => {
+  const { from, to, finished } = req.body;
+  const [error, data] = await fulfill(getSupportReport({ from, to, finished }));
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
 });
