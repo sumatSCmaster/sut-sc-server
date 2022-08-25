@@ -319,7 +319,7 @@ export const getSupportReport = async ({ reportName = 'reporteTicketsSoporte', f
     ];
 
     const sheet = workbook.addWorksheet(reportName);
-    const result = await client.query(finished ? queries.GET_FINISHED_SUPPORT_TICKETS : queries.GET_UNFINISHED_SUPPORT_TICKETS, [from, to]);
+    const result = await client.query(finished ? 'SELECT 1' : queries.GET_UNFINISHED_SUPPORT_TICKETS, [from, to]);
 
     mainLogger.info(`reporteTicketsSoporte - Got query, rowCount: ${result.rowCount}`);
 
