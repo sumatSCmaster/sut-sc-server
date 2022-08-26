@@ -1,7 +1,7 @@
 import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { PoolClient } from 'pg';
-import { createForm } from '@helpers/formsHelper';
+import { createForm, createQRForm } from '@helpers/formsHelper';
 import { renderFile } from 'pug';
 import { resolve } from 'path';
 import * as pdf from 'html-pdf';
@@ -11,6 +11,7 @@ import { getAllBanks } from '@helpers/banks';
 import { mainLogger } from './logger';
 import S3Client from '@utils/s3';
 import { inspect } from 'util';
+import e from 'express';
 const written = require('written-number');
 
 const pool = Pool.getInstance();
@@ -31,6 +32,16 @@ export const createRequestForm = async (procedure, client: PoolClient): Promise<
   const form = (await createForm(procedureData, client)) as string;
   return form;
 };
+
+export const generateQRAlone = async () => {
+  const client = await pool.connect();
+  try {
+    const qrImage = await createQRForm(client);
+    return qrImage;
+  } catch(e) {
+    throw {status: 500, message: e.message}
+  }
+}
 
 export const createCertificate = async (procedure, client: PoolClient): Promise<string> => {
   const tramite = (await client.query(queries.GET_PROCEDURE_STATE_AND_TYPE_INFORMATION, [procedure.idTramite])).rows[0];

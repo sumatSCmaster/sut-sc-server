@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { fulfill } from '@utils/resolver';
-import { generateBranchesReport, generateBranchesReportById, getBranches, getTransfersReport, getCondoReport, getTransfersReportBank, getCondoReportDisclosed, getTransfersExternalReport } from '@helpers/branches';
+import { generateBranchesReport, generateBranchesReportById, getBranches, getTransfersReport, getCondoReport, getTransfersReportBank, getCondoReportDisclosed, getTransfersExternalReport, getSupportReport } from '@helpers/branches';
 import { authenticate } from 'passport';
 import { mainLogger } from '@utils/logger';
 
@@ -15,19 +15,9 @@ router.get('/', authenticate('jwt'), async (req: any, res) => {
   if (data) res.status(200).json({ status: 200, data });
 });
 
-router.get('/:id', async (req, res) => {
-  const { id } = req.params;
-
-  const [error, data] = await fulfill(generateBranchesReportById(id));
-  mainLogger.info(`${error?.message} ${error?.stack}`);
-  if (error) res.status(500).json({ error, status: 500 });
-  if (data) res.status(200).json({ status: 200, data });
-});
-
-router.post('/:type', authenticate('jwt'), async (req, res) => {
-  const { from, to, alcaldia } = req.body;
-  const {type} = req.params;
-  const [error, data] = await fulfill(generateBranchesReport(req.user, { from, to, alcaldia }, type));
+router.post('/reportSupport', authenticate('jwt'), async (req, res) => {
+  const { from, to, finished } = req.body;
+  const [error, data] = await fulfill(getSupportReport({ from, to, finished }));
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
 });
@@ -64,6 +54,23 @@ router.post('/condoReport', authenticate('jwt'), async (req, res) => {
 router.post('/condoReportDisclosed', authenticate('jwt'), async (req, res) => {
   const { from, to } = req.body;
   const [error, data] = await fulfill(getCondoReportDisclosed({ from, to }));
+  if (error) res.status(500).json({ error, status: 500 });
+  if (data) res.status(200).json({ status: 200, data });
+});
+
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+
+  const [error, data] = await fulfill(generateBranchesReportById(id));
+  mainLogger.info(`${error?.message} ${error?.stack}`);
+  if (error) res.status(500).json({ error, status: 500 });
+  if (data) res.status(200).json({ status: 200, data });
+});
+
+router.post('/:type', authenticate('jwt'), async (req, res) => {
+  const { from, to, alcaldia } = req.body;
+  const {type} = req.params;
+  const [error, data] = await fulfill(generateBranchesReport(req.user, { from, to, alcaldia }, type));
   if (error) res.status(500).json({ error, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
 });
