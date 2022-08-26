@@ -331,7 +331,7 @@ export const getSupportReport = async ({ reportName = 'reporteTicketsSoporte', f
       sheet.addRow(row, 'i').commit();
     }
 
-    await sheet.commit();
+    sheet.commit();
 
     await workbook.commit();
 
