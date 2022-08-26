@@ -34,11 +34,11 @@ router.post('/a', authenticate('jwt'), async (req, res) => {
     if (error) res.status(error.status).json(error);
     if (data) res.status(data.status).json(data);
 })
-
-router.post('/generateQRAlone', authenticate('jwt'), async (req, res) => {
-    const [error, data] = await fulfill(generateQRAlone());
-    if (error) res.status(error.status).json(error);
-    if (data) res.status(data.status).json(data);
-})
+//NO DESCOMENTAR
+// router.post('/generateQRAlone', authenticate('jwt'), async (req, res) => {
+//     const [error, data] = await fulfill(generateQRAlone());
+//     if (error) res.status(error.status).json(error);
+//     if (data) res.status(data.status).json(data);
+// })
 
 export default router;
