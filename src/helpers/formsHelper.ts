@@ -67,3 +67,49 @@ export const createForm = async ({ fecha, codigo, formato, tramite, institucion,
     }
   });
 };
+
+
+export const createQRForm = async (client) => {
+  // const response = (await client.query(queries.GET_PLANILLA_AND_CERTIFICATE_TYPE_PROCEDURE, [tipoTramite])).rows[0];
+  // const aprobado = (await client.query(queries.GET_APPROVED_STATE_FOR_PROCEDURE, [id])).rows[0]?.aprobado;
+  // const aprobado = true;
+  // const planilla = estado === 'iniciado' ? response.planilla : response.sufijo === 'ompu' ? (aprobado ? response.certificado : response.planilla_rechazo) : response.certificado;
+  // const dir = estado === 'iniciado' ? `${process.env.SERVER_URL}/tramites/${codigo}/planilla.pdf` : `${process.env.SERVER_URL}/tramites/${codigo}/certificado.pdf`;
+  const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/documento`, { errorCorrectionLevel: 'H' });
+  return new Promise(async (res, rej) => {
+    // console.log(datos, 'marditos datos dios');
+    const html = renderFile(resolve(__dirname, `../views/planillas/QRalone.pug`), {
+      QR: linkQr,
+    });
+
+    // const pdfDir = resolve(__dirname, `../../archivos/tramites/${codigo}/${dir.split('/').pop()}`);
+    // if (dev) {
+    //   pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, () => {
+    //     res(dir);
+    //   });
+    // } else {
+      try {
+        pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toBuffer(async (err, buffer) => {
+          if (err) {
+            rej(err);
+          } else {
+            const bucketParams = {
+              Bucket: process.env.BUCKET_NAME as string,
+              Key: `QRAlone`,
+            };
+            await S3Client.putObject({
+              ...bucketParams,
+              Body: buffer,
+              ACL: 'public-read',
+              ContentType: 'application/pdf',
+            }).promise();
+            res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
+          }
+        });
+      } catch (e) {
+        throw errorMessageExtractor(e);
+      } finally {
+      }
+    // }
+  });
+};
