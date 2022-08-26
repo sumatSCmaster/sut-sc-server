@@ -324,7 +324,7 @@ export const getSupportReport = async ({ reportName = 'reporteTicketsSoporte', f
     mainLogger.info(`reporteTicketsSoporte - Got query, rowCount: ${result.rowCount}`);
 
     sheet.columns = result.fields.map((row) => {
-      return { header: row.name, key: row.name, width: 32 };
+      return { header: row.name, key: row.name, width: 3200 };
     });
 
     for (let row of result.rows) {
