@@ -286,24 +286,13 @@ export const getTransfersReport = async ({ reportName = 'RPRTransferencias', fro
   }
 };
 
-export const getSupportReport = async ({ reportName = 'reporteTicketsSoporte', from, to, finished }) => {
-  mainLogger.info(`reporteTicketsSoporte - Creating transfers by method of approval from ${from} to ${to}`);
+
+export const getSupportReport = async ({from, to, finished}, reportName = 'ReporteSoporte') => {
   const client = await pool.connect();
   try {
-    const transformStream = new Transform({
-      transform(chunk, encoding, callback) {
-        this.push(chunk);
-        callback();
-      },
-    });
-
-    transformStream.on('finish', () => {
-      mainLogger.info('reporteTicketsSoporte - Stream finished writing');
-    });
-
-    const workbook = new ExcelJs.stream.xlsx.WorkbookWriter({
-      stream: transformStream,
-    });
+    const result = await client.query(finished ? queries.GET_FINISHED_SUPPORT_TICKETS : queries.GET_UNFINISHED_SUPPORT_TICKETS, [from, to]);
+    
+    const workbook = new ExcelJs.Workbook();
     workbook.creator = 'SUT';
     workbook.created = new Date();
     workbook.views = [
@@ -319,45 +308,30 @@ export const getSupportReport = async ({ reportName = 'reporteTicketsSoporte', f
     ];
 
     const sheet = workbook.addWorksheet(reportName);
-    const result = await client.query(finished ? queries.GET_FINISHED_SUPPORT_TICKETS : queries.GET_UNFINISHED_SUPPORT_TICKETS, [from, to]);
-
-    mainLogger.info(`reporteTicketsSoporte - Got query, rowCount: ${result.rowCount}`);
-
     sheet.columns = result.fields.map((row) => {
-      return { header: row.name, key: row.name, width: 3200 };
+      return { header: row.name, key: row.name, width: 32 };
     });
 
-    for (let row of result.rows) {
-      sheet.addRow(row, 'i').commit();
-    }
+    sheet.addRows(result.rows, 'i');
 
-    sheet.commit();
+    const bucketParams = {
+      Bucket: process.env.BUCKET_NAME as string,
+      Key: `/sumat/reportes/${reportName}.xlsx`,
+      Body: await workbook.xlsx.writeBuffer(),
+      ACL: 'public-read',
+      ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    };
 
-    await workbook.commit();
+    await S3Client.putObject(bucketParams).promise();
+    return `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`;
 
-    mainLogger.info(`reporteTicketsSoporte - Committed workbook`);
-    if (dev) {
-      const dir = `../../archivos/${reportName}.xlsx`;
-      const stream = fs.createWriteStream(require('path').resolve(`./archivos/${reportName}.xlsx`));
-      await workbook.xlsx.write(stream);
-      return dir;
-    } else {
-      const bucketParams = {
-        Bucket: process.env.BUCKET_NAME as string,
-
-        Key: `/hacienda/reportes/${reportName}.xlsx`,
-      };
-      await S3Client.upload({ ...bucketParams, Body: transformStream, ACL: 'public-read', ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }).promise();
-      console.log(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key} MASTER SUPPORT REPORT`)
-      return `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`;
-    }
   } catch (error) {
     mainLogger.error(error);
     throw errorMessageExtractor(error);
   } finally {
     client.release();
   }
-};
+}
 
 export const getCondoReport = async (payload) => {
   mainLogger.info(payload, 'condoReport info');
