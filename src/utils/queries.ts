@@ -1236,7 +1236,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
       ON sr.id_ramo = rm.id_ramo
     ORDER BY  fecha_liquidacion;`,
   GET_ALL_SETTLEMENTS_FOR_CONTRIBUTOR: `SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l on s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON \
-  l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE AND s.id_contribuyente = $1\
+  l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_ramo WHERE s.id_contribuyente = $1\
   AND l.id_registro_municipal IS NULL ORDER BY fecha_liquidacion`,
   GET_SETTLEMENTS_FOR_CODE_AND_CONTRIBUTOR:
     'SELECT * FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l on s.id_solicitud = l.id_solicitud INNER JOIN impuesto.subramo sr ON \
