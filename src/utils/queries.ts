@@ -1692,7 +1692,7 @@ ORDER BY razon_social;`,
     FROM pago p
     JOIN banco b ON b.id_banco = p.id_banco_destino 
     JOIN usuario u ON u.id_usuario = p.id_usuario
-    WHERE metodo_pago NOT LIKE 'EFECTIVO%' AND TO_CHAR(fecha_de_aprobacion, 'YYYY/MM/DD') = $1
+    WHERE metodo_pago NOT LIKE 'EFECTIVO%' AND metodo_pago <> 'CREDITO_FISCAL' AND TO_CHAR(fecha_de_aprobacion, 'YYYY/MM/DD') = $1
     AND u.id_tipo_usuario = 3
     GROUP BY  p.metodo_pago`,
   GET_ALL_PAY_DIFF_CASH_TOTAL: `SELECT p.id_banco_destino, b.nombre AS nombre_banco, p.metodo_pago, 
@@ -1700,7 +1700,7 @@ ORDER BY razon_social;`,
     FROM pago p
     JOIN banco b ON b.id_banco = p.id_banco_destino 
     JOIN usuario u ON u.id_usuario = p.id_usuario
-    WHERE metodo_pago NOT LIKE 'EFECTIVO%' AND TO_CHAR(fecha_de_aprobacion, 'YYYY/MM/DD') = $1
+    WHERE metodo_pago NOT LIKE 'EFECTIVO%' AND metodo_pago <> 'CREDITO_FISCAL' AND TO_CHAR(fecha_de_aprobacion, 'YYYY/MM/DD') = $1
     AND u.id_tipo_usuario = 3
     GROUP BY b.nombre, p.id_banco_destino, p.metodo_pago
     ORDER BY p.metodo_pago, p.id_banco_destino`,
