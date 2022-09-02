@@ -3280,7 +3280,8 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
     await client.query(`REFRESH MATERIALIZED VIEW impuesto.solicitud_view`);
     if (user.tipoUsuario !== 4) {
       if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
-      applicationInstance.recibo = await generateReceipt({ application }, client);
+      const idVehSettlements = (await client.query(`SELECT id_liquidacion FROM impuesto.liquidacion WHERE id_solicitud = $1 AND id_subramo = 804 ORDER BY (datos#>>'{fecha, year}')::INT DESC LIMIT 1`, [application])).rows[0]?.id_liquidacion;
+      applicationInstance.recibo = idVehSettlements ? await Promise.all([...(await createCertificateForApplication({idLiquidacion: idVehSettlements, media: 'solvencia', user})).media, generateReceipt({ application }, client)]) : await generateReceipt({ application }, client);
     }
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [applicationInstance.contribuyente?.id]);
     await client.query('COMMIT');
