@@ -59,8 +59,7 @@ export const generateReceipt = async (payload: { application: number }, clientPa
           telefono: referencia?.telefono_celular,
           items: chunk(
             await Promise.all(breakdownData.map(async(row) => {
-              const direccion = row.descripcionRamo === 'PROPIEDAD INMOBILIARIA' ? await client.query('SELECT direccion FROM inmueble_urbano WHERE id_inmueble = $1', [row.datos?.desglose[0]?.inmueble]) : '';
-              console.log(direccion, 'MASTER INMUEBLES RECIBO')
+              const direccion = row.descripcionRamo === 'PROPIEDAD INMOBILIARIA' ? (await client.query('SELECT direccion FROM inmueble_urbano WHERE id_inmueble = $1', [row.datos?.desglose[0]?.inmueble])).rows[0]?.direccion : '';
               return {
                 descripcion: `${row.datos.descripcion ? row.datos.descripcion : `${row.descripcionRamo} - ${row.descripcionSubramo}`} (${row.datos.fecha.month} ${row.datos.fecha.year}) ${direccion}`,
                 fecha: row.fechaLiquidacion,
