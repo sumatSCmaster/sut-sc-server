@@ -357,14 +357,13 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    console.log(sector);
     const areaServiciosIndicador = ((sector) => {
       switch(sector) {
-        case 'A':
+        case 'SECTOR A':
           return 0.01;
-        case 'B':
+        case 'SECTOR B':
           return 0.05;
-        case 'C':
+        case 'SECTOR C':
           return 0.03;
         default:
           return 0;
@@ -417,17 +416,17 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
   }
 };
 
-export const updateEstate = async ({ id, codCat, newCodCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, tipoTierraUrbana, tipoConstruccion, dirDoc, claseTerreno, valorConstruccion, manzana, userId, clasificacion, uso, clase, tenencia, contrato, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, sector, canonArrendamientoQuiosco, canonArrendamientoMercado, relativo}) => {
+export const updateEstate = async ({ id, codCat, newCodCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, tipoTierraUrbana, tipoConstruccion, dirDoc, claseTerreno, valorConstruccion, manzana, userId, clasificacion, uso, clase, tenencia, contrato, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, sector, canonArrendamientoMercado, relativo}) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     const areaServiciosIndicador = ((sector) => {
       switch(sector) {
-        case 'A':
+        case 'SECTOR A':
           return 0.01;
-        case 'B':
+        case 'SECTOR B':
           return 0.05;
-        case 'C':
+        case 'SECTOR C':
           return 0.03;
         default:
           return 0;
@@ -466,7 +465,8 @@ export const updateEstate = async ({ id, codCat, newCodCat, direccion, idParroqu
         estate = {...estate, ...mercado};
         break;
       case 'QUIOSCO':
-        const quiosco = (await client.query(queries.INSERT_QUIOSCO , [estate.id, objetoQuiosco, tipoQuiosco, zonaQuiosco, canonArrendamientoQuiosco])).rows[0];
+        const canonQuiosco = (await client.query(`SELECT id_canon FROM inmueble.canon_arrendamiento_quiosco WHERE nombre = $1`, [tipoQuiosco])).rows[0]?.id_canon;
+        const quiosco = (await client.query(queries.INSERT_QUIOSCO , [estate.id, objetoQuiosco, tipoQuiosco, zonaQuiosco, canonQuiosco])).rows[0];
         estate = {...estate, ...quiosco};
         break;
       case 'CEMENTERIO':
