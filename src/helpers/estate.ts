@@ -387,7 +387,7 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
     // await client.query(queries.ADD_MOVEMENT, [estate.id, userId, 'inmueble_registrado', 'INMUEBLE']);
     await client.query(queries.INSERT_ESTATE_VALUE, [estate.id, (tipoTierraUrbana?.monto || 0) * metrosTerreno, (tipoConstruccion?.monto || 0) * metrosConstruccion ]);
     await client.query('INSERT INTO impuesto.inmueble_tributo (id_inmueble, id_clase_terreno, id_valor_construccion) VALUES ($1, $2, $3)', [estate.id, claseTerreno, valorConstruccion]);
-    await client.query('INSERT INTO inmueble.detalle_codigo (id_inmueble, id_manzana, id_tipo_tierra_urbana, id_tipo_construccion) VALUES($1, $2, $3, $4)', [estate.id, manzana, tipoTierraUrbana.id_tipo_tierra_urbana, tipoConstruccion.id_tipo_construccion])
+    await client.query('INSERT INTO inmueble.detalle_codigo (id_inmueble, id_manzana, id_tipo_tierra_urbana, id_tipo_construccion) VALUES($1, $2, $3, $4)', [estate.id, manzana, tipoTierraUrbana?.id_tipo_tierra_urbana || 1, tipoConstruccion?.id_tipo_construccion || 1])
     await client.query('COMMIT');
 
     return { status: 200, inmueble: { ...estate, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.id])).rows } };
