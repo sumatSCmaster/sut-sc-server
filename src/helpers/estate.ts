@@ -357,6 +357,7 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    console.log(sector);
     const areaServiciosIndicador = ((sector) => {
       switch(sector) {
         case 'A':
