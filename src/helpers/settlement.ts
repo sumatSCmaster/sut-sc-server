@@ -6273,7 +6273,7 @@ const addPeriods = (startDate: any, index: number, classification: string ) => {
     case 'CEMENTERIO':
       result = ['Anual', moment([newDate.year() + index, 0, 1]).year()];
       break;
-    case 'MERCADO' || 'QUIOSCO':
+    case ('MERCADO' || 'QUIOSCO'):
       result = [newDate.add(index, 'months').toDate().toLocaleString('es-ES', {month: 'long'}), newDate.year()];
       break;
     default:
