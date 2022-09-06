@@ -6269,11 +6269,11 @@ const addMonths = (date: Date, months): Date => {
 const addPeriods = (startDate: any, index: number, classification: string ) => {
   let result;
   const newDate = moment(startDate);
-  switch (classification) {
-    case 'CEMENTERIO':
+  switch (true) {
+    case classification === 'CEMENTERIO':
       result = ['Anual', moment([newDate.year() + index, 0, 1]).year()];
       break;
-    case ('MERCADO' || 'QUIOSCO'):
+    case classification === 'MERCADO' || classification === 'QUIOSCO':
       result = [newDate.add(index, 'months').toDate().toLocaleString('es-ES', {month: 'long'}), newDate.year()];
       break;
     default:
