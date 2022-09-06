@@ -246,12 +246,12 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                 const lastMonthPaymentMoment = !!lastMonthPayment ? lastMonthPayment.datos?.fecha ? moment([lastMonthPayment?.datos?.fecha?.year, lastMonthPayment?.datos?.fecha?.month === 'Primer Trimestre' ? 2 : lastMonthPayment?.datos?.fecha?.month === 'Segundo Trimestre' ? 5 : lastMonthPayment?.datos?.fecha?.month === 'Tercer Trimestre' ? 8 : lastMonthPayment?.datos?.fecha?.month === 'Cuarto Trimestre' || lastMonthPayment?.datos?.fecha?.month === 'Anual' ? 11 : Months[lastMonthPayment?.datos?.fecha?.month], 1 ]) : moment(lastMonthPayment.fecha_liquidacion) : moment().startOf('year');
                 // const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month').isSameOrBefore(IUDate) ? moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month') : IUDate) : IUDate;
                 // const paymentDate = el.clasificacion === 'CEMENTERIO' ? moment(lastMonthPayment).startOf('year') : moment(lastMonthPayment).startOf('month');
-                  switch (el.clasificacion) {
-                    case 'MERCADO' || 'QUIOSCO':
+                  switch (true) {
+                    case el.clasificacion === 'MERCADO' || el.clasificacion === 'QUIOSCO':
                       paymentDate = moment([lastMonthPaymentMoment.year(), lastMonthPaymentMoment.month(), 1]);
                       interpolation = Math.floor(now.diff(paymentDate, 'M'));
                       break;
-                    case 'CEMENTERIO':
+                    case el.clasificacion === 'CEMENTERIO':
                       paymentDate = lastMonthPaymentMoment.startOf('year'); 
                       interpolation = Math.floor(now.diff(paymentDate, 'years'));
                       break;
@@ -6269,11 +6269,11 @@ const addMonths = (date: Date, months): Date => {
 const addPeriods = (startDate: any, index: number, classification: string ) => {
   let result;
   const newDate = moment(startDate);
-  switch (classification) {
-    case 'CEMENTERIO':
+  switch (true) {
+    case classification === 'CEMENTERIO':
       result = ['Anual', moment([newDate.year() + index, 0, 1]).year()];
       break;
-    case 'MERCADO' || 'QUIOSCO':
+    case classification === 'MERCADO' || classification === 'QUIOSCO':
       result = [newDate.add(index, 'months').toDate().toLocaleString('es-ES', {month: 'long'}), newDate.year()];
       break;
     default:
