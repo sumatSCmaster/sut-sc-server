@@ -353,10 +353,22 @@ export const parishEstates = async ({ idParroquia }) => {
   }
 };
 
-export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, tipoTierraUrbana, tipoConstruccion, dirDoc, claseTerreno, valorConstruccion, manzana, userId, clasificacion, uso, tenencia, contrato, clase, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, areaServiciosIndicador, sector, canonArrendamientoMercado, relativo }) => {
+export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, tipoTierraUrbana, tipoConstruccion, dirDoc, claseTerreno, valorConstruccion, manzana, userId, clasificacion, uso, tenencia, contrato, clase, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, sector, canonArrendamientoMercado, relativo }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    const areaServiciosIndicador = ((sector) => {
+      switch(sector) {
+        case 'A':
+          return 0.01;
+        case 'B':
+          return 0.05;
+        case 'C':
+          return 0.03;
+        default:
+          return 0;
+      }
+    })(sector);
     // const codIsApproved = (await client.query(queries.GET_APPROVED_CPU_PROCEDURE, [codigoCpu])).rows[0];
     // if (!codIsApproved) throw new Error('El código ingresado no pertenece a un trámite aprobado de solvencia de inmuebles');
     const estateAlreadyExists = (await client.query('SELECT EXISTS(SELECT * FROM inmueble_urbano WHERE cod_catastral = $1)', [codCat])).rows[0]?.exists;
@@ -404,10 +416,22 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
   }
 };
 
-export const updateEstate = async ({ id, codCat, newCodCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, areaServiciosIndicador, tipoTierraUrbana, tipoConstruccion, dirDoc, claseTerreno, valorConstruccion, manzana, userId, clasificacion, uso, clase, tenencia, contrato, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, sector, canonArrendamientoQuiosco, canonArrendamientoMercado, relativo}) => {
+export const updateEstate = async ({ id, codCat, newCodCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, avaluos, tipoTierraUrbana, tipoConstruccion, dirDoc, claseTerreno, valorConstruccion, manzana, userId, clasificacion, uso, clase, tenencia, contrato, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, sector, canonArrendamientoQuiosco, canonArrendamientoMercado, relativo}) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    const areaServiciosIndicador = ((sector) => {
+      switch(sector) {
+        case 'A':
+          return 0.01;
+        case 'B':
+          return 0.05;
+        case 'C':
+          return 0.03;
+        default:
+          return 0;
+      }
+    })(sector);
     let estate = (await client.query(queries.GET_ESTATE_BY_CODCAT, [codCat])).rows[0];
     // const movimiento = await client.query(queries.ADD_MOVEMENT, [id, userId, 'inmueble_modificado', 'INMUEBLE']);
     if (estate.enlazado && tipoInmueble === 'RESIDENCIAL') {
