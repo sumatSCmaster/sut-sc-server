@@ -420,7 +420,7 @@ export const updateEstate = async ({ id, codCat, newCodCat, direccion, idParroqu
       }
     }
     await client.query(`DELETE FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1`, [id]);
-    await client.query(queries.INSERT_ESTATE_VALUE, [id, tipoTierraUrbana.monto * metrosTerreno, tipoConstruccion.monto * metrosConstruccion]);
+    await client.query(queries.INSERT_ESTATE_VALUE, [id, (tipoTierraUrbana?.monto || 0) * metrosTerreno, (tipoConstruccion?.monto || 0) * metrosConstruccion]);
     estate = (await client.query(queries.UPDATE_ESTATE, [direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, newCodCat, id, dirDoc, clasificacion, relativo])).rows[0];
     await client.query('DELETE FROM inmueble_ejidos WHERE id_inmueble = $1', [estate.id]);
     await client.query('DELETE FROM inmueble_mercados WHERE id_inmueble = $1', [estate.id]);
@@ -428,7 +428,7 @@ export const updateEstate = async ({ id, codCat, newCodCat, direccion, idParroqu
     await client.query('DELETE FROM inmueble_quioscos WHERE id_inmueble = $1', [estate.id]);
     await client.query('DELETE FROM impuesto.inmueble_tributo WHERE id_inmueble = $1', [estate.id]);
     await client.query('DELETE FROM inmueble.detalle_codigo WHERE id_inmueble = $1', [estate.id]);
-    await client.query('INSERT INTO inmueble.detalle_codigo (id_inmueble, id_manzana, id_tipo_tierra_urbana, id_tipo_construccion) VALUES($1, $2, $3, $4)', [estate.id, manzana, tipoTierraUrbana.id_tipo_tierra_urbana, tipoConstruccion.id_tipo_construccion])
+    await client.query('INSERT INTO inmueble.detalle_codigo (id_inmueble, id_manzana, id_tipo_tierra_urbana, id_tipo_construccion) VALUES($1, $2, $3, $4)', [estate.id, manzana, tipoTierraUrbana?.id_tipo_tierra_urbana || 1, tipoConstruccion?.id_tipo_construccion || 1])
     await client.query('INSERT INTO impuesto.inmueble_tributo (id_inmueble, id_clase_terreno, id_valor_construccion) VALUES ($1, $2, $3)', [estate.id, claseTerreno, valorConstruccion]);
     console.log(estate, 'MASTER ESTATE');
     switch(estate.clasificacion) {
