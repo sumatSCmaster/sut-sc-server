@@ -234,7 +234,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
         IU = (
           await Promise.all(
             estates
-              .filter((el) => el.clasificacion !== 'CEMENTERIO' && +el.avaluo_construccion >= 0 && +el.avaluo_terreno >= 0)
+              .filter((el) => (el.clasificacion === 'CEMENTERIO' || el.clasificacion === 'QUIOSCO' || el.clasificacion === 'MERCADO') || (+el.avaluo_construccion >= 0 && +el.avaluo_terreno >= 0))
               .map(async (el) => {
                 // let paymentDate: Moment = lastIUPayment;
                 // let interpolation = dateInterpolationIU;
