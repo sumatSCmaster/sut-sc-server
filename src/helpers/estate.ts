@@ -209,7 +209,7 @@ export const taxPayerEstatesByNaturalCont = async ({ typeDoc, doc }) => {
             fecha = moment(liq.fecha_liquidacion).add(1, 'M');
           }
           const actualizable = (await client.query(`SELECT * FROM impuesto.liquidacion WHERE id_subramo = 9 AND (datos#>>'{desglose, 0, inmueble}')::INT = $1`, [row.id])).rowCount <= 1;
-          console.log(liq, fecha, row, 'MASTER INMUEBLE')
+          console.log(liq, 'MASTER INMUEBLE')
           res({
             ...row,
             avaluos: (await client.query('SELECT avaluo_terreno AS "avaluoTerreno", avaluo_construccion AS "avaluoConstruccion" FROM impuesto.avaluo_inmueble WHERE id_inmueble = $1 ORDER BY anio DESC LIMIT 1', [row.id])).rows,
