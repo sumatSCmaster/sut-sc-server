@@ -296,7 +296,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                       const exonerado = false;
                       return { period, year, exonerado, descuento, impuestoInmueble: {terreno: impuestoInmueble[0], construccion: impuestoInmueble[1]}, tipoPeriodo: el.clasificacion === 'MERCADO' || el.clasificacion === 'QUIOSCO' ? 'mensual' : el.clasificacion === 'CEMENTERIO' ? 'anual' : 'trimestral'};
                     })
-                  ))].slice(1),
+                  ))],
                 };
               })
           )
