@@ -231,6 +231,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
         const IUDate = moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
         const dateInterpolationIU = Math.floor(now.diff(IUDate, 'M'));
         // if (dateInterpolationIU > 0) {
+          console.log(estates);
         IU = (
           await Promise.all(
             estates
