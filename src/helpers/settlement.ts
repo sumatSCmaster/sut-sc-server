@@ -254,7 +254,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                       break;
                     case el.clasificacion === 'CEMENTERIO':
                       paymentDate = lastMonthPaymentMoment.startOf('year'); 
-                      console.log(lastMonthPaymentMoment);
+                      console.log(lastMonthPayment);
                       interpolation = Math.floor(now.diff(paymentDate, 'years'));
                       break;
                     default:
