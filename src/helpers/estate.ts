@@ -502,10 +502,10 @@ export const updateEstateDate = async ({ id, date, rim, taxpayer }) => {
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [null, taxpayer])).rows[0];
     const rimData = (await client.query(queries.GET_RIM_DATA, [rim])).rows[0];
     const period = ((fromDate, classification) => {
-      switch(classification) {
-        case 'MERCADO' || 'QUIOSCO':
+      switch(true) {
+        case classification === 'MERCADO' || classification === 'QUIOSCO':
           return fromDate.toDate().toLocaleString('es-ES', { month: 'long' });
-        case 'CEMENTERIO':
+        case classification === 'CEMENTERIO':
           return 'Anual';
         default:
           return fromDate.month() < 3 ? 'Primer Trimestre' : fromDate.month() < 6 ? 'Segundo Trimestre' : fromDate.month() < 9 ? 'Tercer Trimestre' : 'Cuarto Trimestre';  
@@ -525,6 +525,7 @@ export const updateEstateDate = async ({ id, date, rim, taxpayer }) => {
     (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, 'ingresardatos_pi'])).rows[0].state;
     const state = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, 'aprobacioncajero_pi'])).rows[0].state;
     await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [fromDate.format('MM-DD-YYYY'), ghostSettlement.id_liquidacion]);
+    console.log(ghostSettlement, id);
     let updt = await client.query('UPDATE inmueble_urbano SET id_liquidacion_fecha_inicio = $1 WHERE id_inmueble = $2', [ghostSettlement.id_liquidacion, id]);
     await client.query('COMMIT');
     return { status: 200, message: updt.rowCount > 0 ? 'Fecha enlazada' : 'No se actualizo un inmueble' };
