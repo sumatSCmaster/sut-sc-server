@@ -231,7 +231,6 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
         const IUDate = moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
         const dateInterpolationIU = Math.floor(now.diff(IUDate, 'M'));
         // if (dateInterpolationIU > 0) {
-          console.log(estates);
         IU = (
           await Promise.all(
             estates
@@ -248,7 +247,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                 // const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month').isSameOrBefore(IUDate) ? moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month') : IUDate) : IUDate;
                 // const paymentDate = el.clasificacion === 'CEMENTERIO' ? moment(lastMonthPayment).startOf('year') : moment(lastMonthPayment).startOf('month');
                   switch (true) {
-                    case el.clasificacion === 'MERCADO' || el.clasificacion === 'QUIOSCO':
+                    case (el.clasificacion === 'MERCADO' || el.clasificacion === 'QUIOSCO'):
                       paymentDate = moment([lastMonthPaymentMoment.year(), lastMonthPaymentMoment.month(), 1]);
                       interpolation = Math.floor(now.diff(paymentDate, 'M'));
                       break;
