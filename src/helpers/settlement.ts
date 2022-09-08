@@ -25,7 +25,7 @@ import * as fs from 'fs';
 import { initProcedureAnalist, processProcedureAnalist } from './procedures';
 import { generateReceipt } from './receipt';
 import { getCleaningTariffForEstate, getGasTariffForEstate } from './services';
-import { uniqBy, chunk } from 'lodash';
+import { uniqBy, chunk, groupBy } from 'lodash';
 import { isCondominium, isCondoOwner } from './condominium';
 import { mainLogger } from '@utils/logger';
 const written = require('written-number');
@@ -5950,7 +5950,8 @@ export const createAccountStatement = async ({ contributor, reference, typeUser,
       datosLiquidacion: chunk(statement, 20),
       saldoFinal,
     };
-    console.log(datosCertificado.datosLiquidacion)
+    const prueba = groupBy(statement, statement[0].motivo);
+    console.log(prueba);
     const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-EC.pug`), {
       ...datosCertificado,
       cache: false,
