@@ -34,6 +34,7 @@ block content
           p Teléfóno
         div(style={'-webkit-flex':'7'}).td
           p #{datosContribuyente.telefono}
+    - var contador = 0
     each liquidacion in datosLiquidacion
       div(style={'margin-top':'20px'}).table.break-page
         .tr.break-page
@@ -70,6 +71,7 @@ block content
               b MONTO PORCIÓN
         each item in liquidacion.liquidaciones
           .tr
+            - contador = contador + 1
             div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom.break-page
               p #{item.planilla}
             div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom.break-page
@@ -99,7 +101,7 @@ block content
             b MONTO TOTAL
         div(style={'-webkit-flex':'1.7','padding-left' : '8px'}).td.center
           p Bs #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(saldoFinal? (saldoFinal) : 0)}
-    if datosLiquidacion.length >= 20 
+    if contador >= 16 
       div(style={'margin-top':'150px'}).table
         .tr.break-page
           .th.center.border-bottom
