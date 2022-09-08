@@ -108,8 +108,6 @@ block content
             else
               div(style={'-webkit-flex':'1'}).td.center.border-bottom.break-page
                 p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)}   
-            if contador >= 16
-              .table.break-page        
     .table.break-page
       .tr
         div(style={'-webkit-flex':'8'}).th.center.border-right
@@ -117,7 +115,7 @@ block content
             b MONTO TOTAL
         div(style={'-webkit-flex':'1.7','padding-left' : '8px'}).td.center
           p Bs #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(saldoFinal? (saldoFinal) : 0)}
-    if contador >= 16 
+    if datosLiquidacion.length >= 20 
       div(style={'margin-top':'150px'}).table
         .tr.break-page
           .th.center.border-bottom
