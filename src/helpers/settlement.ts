@@ -5944,9 +5944,9 @@ export const createAccountStatement = async ({ contributor, reference, typeUser,
     };
     // const saldoFinal = statement.map((e) => switchcase({ PAGADO: e.montoPorcion, VIGENTE: -e.montoPorcion, VALIDANDO: 0 })(null)(e.estado)).reduce((e, x) => fixatedAmount(e + x), 0);
     const saldoFinal = statement.map((e) => switchcase({ VIGENTE: e.montoPorcion })(null)(e.estado)).reduce((e, x) => fixatedAmount(e + x), 0);
-    const groupByStatments = groupBy(statement, (el) => el.motivo);
-    const gBS = Object.keys(groupByStatments).map(ramo => {
-      return chunk(groupByStatments[ramo], 20)
+    const groupByStatments : any = groupBy(statement, (el) => el.motivo);
+    const gBS = Object.keys(groupByStatments).forEach(ramo => {
+      groupByStatments[ramo] = chunk(groupByStatments[ramo], 20)
     })
     console.log(gBS);
     const datosCertificado = {
