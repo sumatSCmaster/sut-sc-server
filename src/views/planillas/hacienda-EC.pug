@@ -107,7 +107,9 @@ block content
                 p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)} *
             else
               div(style={'-webkit-flex':'1'}).td.center.border-bottom.break-page
-                p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)}            
+                p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)}   
+            if contador >= 16
+              .table.break-page        
     .table.break-page
       .tr
         div(style={'-webkit-flex':'8'}).th.center.border-right
