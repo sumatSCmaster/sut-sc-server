@@ -295,7 +295,7 @@ export const updateContributorActivities = async ({ branchId, activities, branch
         ).rows[0];
       await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [servicioMunicipal.desde, settlement.id_liquidacion]);
     } else if (servicioMunicipal.exonerado) {
-      console.log('Exoneracion SM')
+      await client.query('INSERT INTO impuesto.exoneracion_servicios_municipales (id_registro_municipal) VALUES ($1)', [branchId]);
     }
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [updatedRegistry.id_contribuyente]);
     await client.query('COMMIT');
