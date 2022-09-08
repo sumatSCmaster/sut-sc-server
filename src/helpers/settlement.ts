@@ -5920,7 +5920,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser,
       if (Months[a.datos?.fecha?.month] < Months[b.datos?.fecha?.month]) return -1
       return 0
     })
-    console.log(statement1, 'MASTER');
+    // console.log(statement1, 'MASTER');
     const statement = statement1.map((el) => {
       return {
         planilla: el.id_liquidacion,
@@ -5950,6 +5950,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser,
       datosLiquidacion: chunk(statement, 20),
       saldoFinal,
     };
+    console.log(datosCertificado.datosLiquidacion)
     const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-EC.pug`), {
       ...datosCertificado,
       cache: false,
