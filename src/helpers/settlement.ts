@@ -5954,7 +5954,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser,
     const datosCertificado = {
       actividadesContribuyente: economicActivities,
       datosContribuyente,
-      datosLiquidacion: Object.keys(groupByStatments).map(ramo => {
+      datosLiquidacion: Object.keys(groupByStatments).flatMap(ramo => {
         return groupByStatments[ramo].map(arr => ({ramo, liquidaciones: arr}))
       }),
       saldoFinal,
