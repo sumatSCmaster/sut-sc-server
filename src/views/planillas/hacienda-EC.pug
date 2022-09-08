@@ -35,11 +35,25 @@ block content
         div(style={'-webkit-flex':'7'}).td
           p #{datosContribuyente.telefono}
     each liquidacion in datosLiquidacion
+      - var nombre = ''
+      case liquidacion.ramo
+        when 'VH'
+          - nombre = 'IMPUESTO VEHICULAR'
+        when 'AE'
+          - nombre = 'ACTIVIDADES ECONOMICAS'
+        when 'IU'
+          - nombre = 'INMUEBLES URBANOS'
+        when 'PP'
+          - nombre = 'PUBLICIDAD Y PROPAGANDA'
+        when 'SM'
+          - nombre = 'SERVICIOS MUNICIPALES'
+        default
+          - nombre = liquidacion.ramo
       div(style={'margin-top':'20px'}).table.break-page
         .tr.break-page
           .th.center.border-bottom
             p
-              b ESTADO DE CUENTA DEL CONTRIBUYENTE
+              b ESTADO DE CUENTA DEL CONTRIBUYENTE, RAMO #{nombre}
         .tr.break-page
           div(style={'-webkit-flex':'1.25'}).th.center.border-right.border-bottom
             p
@@ -68,7 +82,7 @@ block content
           div(style={'-webkit-flex':'1'}).th.center.border-bottom
             p
               b MONTO PORCIÓN
-        each item in liquidacion
+        each item in liquidacion.liquidaciones
           .tr
             div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom.break-page
               p #{item.planilla}
@@ -91,7 +105,13 @@ block content
                 p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)} *
             else
               div(style={'-webkit-flex':'1'}).td.center.border-bottom.break-page
-                p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)}            
+                p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)}
+        .tr
+          div(style={'-webkit-flex':'8'}).th.center.border-right
+            p
+              b MONTO TOTAL
+          div(style={'-webkit-flex':'1.7','padding-left' : '8px'}).td.center
+            p Bs #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(liquidacion.total? (liquidacion.total) : 0)}   
     .table.break-page
       .tr
         div(style={'-webkit-flex':'8'}).th.center.border-right

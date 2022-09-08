@@ -25,7 +25,7 @@ import * as fs from 'fs';
 import { initProcedureAnalist, processProcedureAnalist } from './procedures';
 import { generateReceipt } from './receipt';
 import { getCleaningTariffForEstate, getGasTariffForEstate } from './services';
-import { uniqBy, chunk } from 'lodash';
+import { uniqBy, chunk, groupBy } from 'lodash';
 import { isCondominium, isCondoOwner } from './condominium';
 import { mainLogger } from '@utils/logger';
 const written = require('written-number');
@@ -5944,13 +5944,19 @@ export const createAccountStatement = async ({ contributor, reference, typeUser,
     };
     // const saldoFinal = statement.map((e) => switchcase({ PAGADO: e.montoPorcion, VIGENTE: -e.montoPorcion, VALIDANDO: 0 })(null)(e.estado)).reduce((e, x) => fixatedAmount(e + x), 0);
     const saldoFinal = statement.map((e) => switchcase({ VIGENTE: e.montoPorcion })(null)(e.estado)).reduce((e, x) => fixatedAmount(e + x), 0);
-    const datosCertificado: accountStatement = {
+    const groupByStatments : any = groupBy(statement, (el) => el.motivo);
+    Object.keys(groupByStatments).forEach(ramo => {
+      groupByStatments[ramo] = chunk(groupByStatments[ramo], 20)
+    })
+    const datosLiquidacion = Object.keys(groupByStatments).flatMap(ramo => {
+      return groupByStatments[ramo].map(arr => ({ramo, liquidaciones: arr, total: arr.map(e => switchcase({ VIGENTE: e.montoPorcion })(null)(e.estado)).reduce((e, x) => fixatedAmount(e + x), 0)}))
+    })
+    const datosCertificado = {
       actividadesContribuyente: economicActivities,
       datosContribuyente,
-      datosLiquidacion: chunk(statement, 20),
-      saldoFinal,
+      datosLiquidacion,
+      saldoFinal: datosLiquidacion.reduce((a, c) => c.total + a, 0),
     };
-    console.log(datosCertificado.datosLiquidacion)
     const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-EC.pug`), {
       ...datosCertificado,
       cache: false,
