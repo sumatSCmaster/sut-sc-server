@@ -5951,6 +5951,9 @@ export const createAccountStatement = async ({ contributor, reference, typeUser,
       saldoFinal,
     };
     const prueba = groupBy(statement, (el) => el.motivo);
+    Object.keys(prueba).map(ramo => {
+      return {ramo, liquidaciones: prueba[ramo]}
+    })
     console.log(prueba);
     const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-EC.pug`), {
       ...datosCertificado,
