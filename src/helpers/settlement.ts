@@ -5950,7 +5950,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser,
       datosLiquidacion: chunk(statement, 20),
       saldoFinal,
     };
-    const prueba = groupBy(statement, statement[0].motivo);
+    const prueba = groupBy(statement, (el) => el.motivo);
     console.log(prueba);
     const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-EC.pug`), {
       ...datosCertificado,
