@@ -294,7 +294,7 @@ export const updateContributorActivities = async ({ branchId, activities, branch
           ])
         ).rows[0];
       await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [servicioMunicipal.desde, settlement.id_liquidacion]);
-    } else if (servicioMunicipal.exonerado) {
+    } else if (servicioMunicipal?.exonerado) {
       const yaExonerado = (await client.query('SELECT EXISTS(SELECT * FROM impuesto.exoneracion_servicios_municipales WHERE id_registro_municipal = $1)', [branchId])).rows[0].exists;
       if(!yaExonerado) await client.query('INSERT INTO impuesto.exoneracion_servicios_municipales (id_registro_municipal) VALUES ($1)', [branchId]);
     }
