@@ -439,7 +439,8 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     }
     //SM
     mainLogger.info('SM');
-    const SMExonerado = branch && (await client.query('SELECT EXISTS (SELECT * FROM impuesto.exoneracion_servicios_municipales WHERE id_registro_municipal = $1)', [branch.id_registro_municipal])).rows[0].exists
+    const SMExonerado = branch && (await client.query('SELECT EXISTS (SELECT * FROM impuesto.exoneracion_servicios_municipales WHERE id_registro_municipal = $1)', [branch.id_registro_municipal])).rows[0].exists;
+    console.log(SMExonerado, 'MASTER GET SETTLEMENTS')
     const estates = (await client.query(branch ? queries.GET_ESTATES_FOR_JURIDICAL_CONTRIBUTOR : queries.GET_ESTATES_FOR_NATURAL_CONTRIBUTOR, [branch ? branch.id_registro_municipal : contributor.id_contribuyente])).rows;
     if (/*!SMApplicationExists && */!isPartOfCondominium && !SMExonerado) {
       let lastSM = (await client.query(lastSettlementQueryAESM, [codigosRamo.SM, lastSettlementPayload])).rows[0];
