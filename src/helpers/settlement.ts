@@ -5948,16 +5948,14 @@ export const createAccountStatement = async ({ contributor, reference, typeUser,
     Object.keys(groupByStatments).forEach(ramo => {
       groupByStatments[ramo] = chunk(groupByStatments[ramo], 20)
     })
-    console.log(Object.keys(groupByStatments).flatMap(ramo => {
-      return groupByStatments[ramo].map(arr => ({ramo, liquidaciones: arr}))
-    }));
+    const datosLiquidacion = Object.keys(groupByStatments).flatMap(ramo => {
+      return groupByStatments[ramo].map(arr => ({ramo, liquidaciones: arr, total: arr.map(e => switchcase({ VIGENTE: e.montoPorcion })(null)(e.estado)).reduce((e, x) => fixatedAmount(e + x), 0)}))
+    })
     const datosCertificado = {
       actividadesContribuyente: economicActivities,
       datosContribuyente,
-      datosLiquidacion: Object.keys(groupByStatments).flatMap(ramo => {
-        return groupByStatments[ramo].map(arr => ({ramo, liquidaciones: arr}))
-      }),
-      saldoFinal,
+      datosLiquidacion,
+      saldoFinal: datosLiquidacion.reduce((a, c) => c.total + a, 0),
     };
     const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-EC.pug`), {
       ...datosCertificado,

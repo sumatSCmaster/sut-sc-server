@@ -34,7 +34,6 @@ block content
           p Teléfóno
         div(style={'-webkit-flex':'7'}).td
           p #{datosContribuyente.telefono}
-    - var contador = 0
     each liquidacion in datosLiquidacion
       - var nombre = ''
       case liquidacion.ramo
@@ -85,7 +84,6 @@ block content
               b MONTO PORCIÓN
         each item in liquidacion.liquidaciones
           .tr
-            - contador = contador + 1
             div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom.break-page
               p #{item.planilla}
             div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom.break-page
@@ -107,7 +105,13 @@ block content
                 p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)} *
             else
               div(style={'-webkit-flex':'1'}).td.center.border-bottom.break-page
-                p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)}   
+                p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)}
+            .tr
+              div(style={'-webkit-flex':'8'}).th.center.border-right
+                p
+                  b MONTO TOTAL
+              div(style={'-webkit-flex':'1.7','padding-left' : '8px'}).td.center
+                p Bs #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(liquidacion.total? (liquidacion.total) : 0)}   
     .table.break-page
       .tr
         div(style={'-webkit-flex':'8'}).th.center.border-right
