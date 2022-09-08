@@ -48,7 +48,7 @@ block content
           - nombre = 'PUBLICIDAD Y PROPAGANDA'
         when 'SM'
           - nombre = 'SERVICIOS MUNICIPALES'
-        else
+        default
           - nombre = liquidacion.ramo
       div(style={'margin-top':'20px'}).table.break-page
         .tr.break-page
