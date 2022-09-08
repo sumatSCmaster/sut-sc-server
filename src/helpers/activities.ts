@@ -267,7 +267,7 @@ export const updateContributorActivities = async ({ branchId, activities, branch
         );
       }
     }
-    if (servicioMunicipal) {
+    if (servicioMunicipal && !servicioMunicipal.exonerado) {
       await client.query('DELETE FROM impuesto.tarifa_aseo_sucursal WHERE id_registro_municipal = $1', [branchId]);
       await client.query(queries.NULLIFY_APPLICATION_CONSTRAINT_BY_BRANCH_AND_RIM, [codigosRamo.SM, branchId]);
       await client.query(queries.NULLIFY_SETTLEMENT_CONSTRAINT_BY_BRANCH_AND_RIM, [codigosRamo.SM, branchId]);
@@ -294,6 +294,8 @@ export const updateContributorActivities = async ({ branchId, activities, branch
           ])
         ).rows[0];
       await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [servicioMunicipal.desde, settlement.id_liquidacion]);
+    } else if (servicioMunicipal.exonerado) {
+      console.log('Exoneracion SM')
     }
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [updatedRegistry.id_contribuyente]);
     await client.query('COMMIT');
