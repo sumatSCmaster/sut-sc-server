@@ -234,7 +234,7 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
         IU = (
           await Promise.all(
             estates
-              .filter((el) => +el.avaluo_construccion >= 0 && +el.avaluo_terreno >= 0)
+              .filter((el) => (el.clasificacion === 'CEMENTERIO' || el.clasificacion === 'QUIOSCO' || el.clasificacion === 'MERCADO') || (+el.avaluo_construccion >= 0 && +el.avaluo_terreno >= 0))
               .map(async (el) => {
                 // let paymentDate: Moment = lastIUPayment;
                 // let interpolation = dateInterpolationIU;
@@ -247,12 +247,13 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
                 // const paymentDate = !!lastMonthPayment ? (moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month').isSameOrBefore(IUDate) ? moment(lastMonthPayment.fecha_liquidacion).add(1, 'M').startOf('month') : IUDate) : IUDate;
                 // const paymentDate = el.clasificacion === 'CEMENTERIO' ? moment(lastMonthPayment).startOf('year') : moment(lastMonthPayment).startOf('month');
                   switch (true) {
-                    case el.clasificacion === 'MERCADO' || el.clasificacion === 'QUIOSCO':
+                    case (el.clasificacion === 'MERCADO' || el.clasificacion === 'QUIOSCO'):
                       paymentDate = moment([lastMonthPaymentMoment.year(), lastMonthPaymentMoment.month(), 1]);
                       interpolation = Math.floor(now.diff(paymentDate, 'M'));
                       break;
                     case el.clasificacion === 'CEMENTERIO':
                       paymentDate = lastMonthPaymentMoment.startOf('year'); 
+                      console.log(lastMonthPayment);
                       interpolation = Math.floor(now.diff(paymentDate, 'years'));
                       break;
                     default:
@@ -5919,7 +5920,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser,
       if (Months[a.datos?.fecha?.month] < Months[b.datos?.fecha?.month]) return -1
       return 0
     })
-    console.log(statement1, 'MASTER');
+    // console.log(statement1, 'MASTER');
     const statement = statement1.map((el) => {
       return {
         planilla: el.id_liquidacion,
@@ -5949,6 +5950,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser,
       datosLiquidacion: chunk(statement, 20),
       saldoFinal,
     };
+    console.log(datosCertificado.datosLiquidacion)
     const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-EC.pug`), {
       ...datosCertificado,
       cache: false,
