@@ -267,7 +267,7 @@ export const updateContributorActivities = async ({ branchId, activities, branch
         );
       }
     }
-    if (servicioMunicipal) {
+    if (servicioMunicipal && servicioMunicipal.desde) {
       await client.query('DELETE FROM impuesto.tarifa_aseo_sucursal WHERE id_registro_municipal = $1', [branchId]);
       await client.query(queries.NULLIFY_APPLICATION_CONSTRAINT_BY_BRANCH_AND_RIM, [codigosRamo.SM, branchId]);
       await client.query(queries.NULLIFY_SETTLEMENT_CONSTRAINT_BY_BRANCH_AND_RIM, [codigosRamo.SM, branchId]);
@@ -294,12 +294,11 @@ export const updateContributorActivities = async ({ branchId, activities, branch
           ])
         ).rows[0];
       await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [servicioMunicipal.desde, settlement.id_liquidacion]);
-     if (servicioMunicipal.exonerado) {
+      await client.query('DELETE FROM impuesto.exoneracion_servicios_municipales WHERE id_registro_municipal = $1', [branchId]);
+    } else if (servicioMunicipal && servicioMunicipal.exonerado) {
       const yaExonerado = (await client.query('SELECT EXISTS(SELECT * FROM impuesto.exoneracion_servicios_municipales WHERE id_registro_municipal = $1)', [branchId])).rows[0].exists;
       if(!yaExonerado) await client.query('INSERT INTO impuesto.exoneracion_servicios_municipales (id_registro_municipal) VALUES ($1)', [branchId]);
-    } else {
-      await client.query('DELETE FROM impuesto.exoneracion_servicios_municipales WHERE id_registro_municipal = $1', [branchId]);
-    }}
+    }
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [updatedRegistry.id_contribuyente]);
     await client.query('COMMIT');
     return { status: 200, message: 'Actividades ecónomicas y/o estado de licencia actualizado' };
