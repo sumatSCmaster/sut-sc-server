@@ -439,8 +439,9 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     }
     //SM
     mainLogger.info('SM');
+    const SMExonerado = branch && (await client.query('SELECT EXISTS (SELECT * FROM impuesto.exoneracion_servicios_municipales WHERE id_registro_municipal = $1)', [branch.id_registro_municipal])).rows[0].exists
     const estates = (await client.query(branch ? queries.GET_ESTATES_FOR_JURIDICAL_CONTRIBUTOR : queries.GET_ESTATES_FOR_NATURAL_CONTRIBUTOR, [branch ? branch.id_registro_municipal : contributor.id_contribuyente])).rows;
-    if (/*!SMApplicationExists && */!isPartOfCondominium) {
+    if (/*!SMApplicationExists && */!isPartOfCondominium && !SMExonerado) {
       let lastSM = (await client.query(lastSettlementQueryAESM, [codigosRamo.SM, lastSettlementPayload])).rows[0];
       const lastSMPayment = (lastSM && moment([lastSM.datos?.fecha?.year, Months[lastSM.datos?.fecha?.month], 1]).add(1, 'M')) || moment().month(0);
       const pastMonthSM = (lastSM && moment(lastSM.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
