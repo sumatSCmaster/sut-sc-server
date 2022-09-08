@@ -106,12 +106,12 @@ block content
             else
               div(style={'-webkit-flex':'1'}).td.center.border-bottom.break-page
                 p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.montoPorcion)}
-            .tr
-              div(style={'-webkit-flex':'8'}).th.center.border-right
-                p
-                  b MONTO TOTAL
-              div(style={'-webkit-flex':'1.7','padding-left' : '8px'}).td.center
-                p Bs #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(liquidacion.total? (liquidacion.total) : 0)}   
+        .tr
+          div(style={'-webkit-flex':'8'}).th.center.border-right
+            p
+              b MONTO TOTAL
+          div(style={'-webkit-flex':'1.7','padding-left' : '8px'}).td.center
+            p Bs #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(liquidacion.total? (liquidacion.total) : 0)}   
     .table.break-page
       .tr
         div(style={'-webkit-flex':'8'}).th.center.border-right
