@@ -2391,6 +2391,7 @@ export const formatBranch = async (branch, contributor, client) => {
     const PP = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, ['PP', branch.id_registro_municipal])).rows[0];
     const RD0 = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, ['RD0', branch.id_registro_municipal])).rows[0];
     const servicioMunicipal = (await client.query(queries.GET_SM_INFO_BY_BRANCHID, [branch.id_registro_municipal])).rows[0];
+    servicioMunicipal.exonerado = (await client.query('SELECT EXISTS FROM impuesto.exoneracion_servicios_municipales WHERE id_registro_municipal = $1', [branch.id_registro_municipal])).rows[0].exists;
     if (!!SM) SM.desde = moment(SM.desde).format('MM-DD-YYYY');
     if (!!PP) PP.desde = moment(PP.desde).format('MM-DD-YYYY');
     if (!!RD0) RD0.desde = moment(RD0.desde).format('MM-DD-YYYY');
