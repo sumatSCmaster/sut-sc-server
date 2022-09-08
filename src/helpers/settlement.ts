@@ -5948,7 +5948,7 @@ export const createAccountStatement = async ({ contributor, reference, typeUser,
     Object.keys(groupByStatments).forEach(ramo => {
       groupByStatments[ramo] = chunk(groupByStatments[ramo], 20)
     })
-    console.log(Object.keys(groupByStatments).map(ramo => {
+    console.log(Object.keys(groupByStatments).flatMap(ramo => {
       return groupByStatments[ramo].map(arr => ({ramo, liquidaciones: arr}))
     }));
     const datosCertificado = {
