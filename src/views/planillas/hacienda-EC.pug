@@ -39,7 +39,7 @@ block content
         .tr.break-page
           .th.center.border-bottom
             p
-              b ESTADO DE CUENTA DEL CONTRIBUYENTE
+              b ESTADO DE CUENTA DEL CONTRIBUYENTE, RAMO #{liquidacion.ramo}
         .tr.break-page
           div(style={'-webkit-flex':'1.25'}).th.center.border-right.border-bottom
             p
@@ -68,7 +68,7 @@ block content
           div(style={'-webkit-flex':'1'}).th.center.border-bottom
             p
               b MONTO PORCIÓN
-        each item in liquidacion
+        each item in liquidacion.liquidaciones
           .tr
             div(style={'-webkit-flex':'1.25'}).td.center.border-right.border-bottom.break-page
               p #{item.planilla}

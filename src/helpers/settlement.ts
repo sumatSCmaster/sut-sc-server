@@ -5944,17 +5944,15 @@ export const createAccountStatement = async ({ contributor, reference, typeUser,
     };
     // const saldoFinal = statement.map((e) => switchcase({ PAGADO: e.montoPorcion, VIGENTE: -e.montoPorcion, VALIDANDO: 0 })(null)(e.estado)).reduce((e, x) => fixatedAmount(e + x), 0);
     const saldoFinal = statement.map((e) => switchcase({ VIGENTE: e.montoPorcion })(null)(e.estado)).reduce((e, x) => fixatedAmount(e + x), 0);
-    const datosCertificado: accountStatement = {
+    const groupByStatments = groupBy(statement, (el) => el.motivo);
+    const datosCertificado = {
       actividadesContribuyente: economicActivities,
       datosContribuyente,
-      datosLiquidacion: chunk(statement, 20),
+      datosLiquidacion: Object.keys(groupByStatments).map(ramo => {
+        return {ramo, liquidaciones: groupByStatments[ramo]}
+      }),
       saldoFinal,
     };
-    const prueba = groupBy(statement, (el) => el.motivo);
-    const prueba2 = Object.keys(prueba).map(ramo => {
-      return {ramo, liquidaciones: prueba[ramo]}
-    })
-    console.log(prueba2);
     const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-EC.pug`), {
       ...datosCertificado,
       cache: false,
