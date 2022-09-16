@@ -1375,7 +1375,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     ) d
     GROUP BY codigo, descripcion
   )
-  SELECT a.codigo, descripcion, b.monto_total, b.cantidad_total, a.monto_total, a.cantidad_total FROM a JOIN b USING(descripcion);`,
+  SELECT a.codigo, descripcion, b.monto_total AS "totalLiquidado", b.cantidad_total AS "cantidadLiquidado", a.monto_total AS "totalIngresado", a.cantidad_total AS "cantidadIngresado" FROM a JOIN b USING(descripcion);`,
   GET_INGRESS: `SELECT ramo, descripcion, codigo, SUM("cantidadIng") as "cantidadIng", SUM(ingresado) as ingresado FROM ( 
     (SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadIng", SUM(CASE WHEN l.id_subramo = 107 OR l.id_subramo = 108 THEN (CASE WHEN (l.datos->>'IVA')::numeric = 16 THEN (l.monto / 1.16 ) WHEN (l.datos->>'IVA')::numeric = 4 THEN (l.monto / 1.04 ) ELSE (l.monto / 1.16 ) END ) ELSE l.monto END ) as ingresado 
         FROM ((SELECT DISTINCT ON (l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto) l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto, l.datos 
