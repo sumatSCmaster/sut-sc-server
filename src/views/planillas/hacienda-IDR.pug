@@ -6,14 +6,14 @@ block content
   div#fecha
     p 
       b FECHA:
-      span &nbsp; #{moment(fecha).subtract(4,'h').format('DD/MM/YYYY')}
+      span &nbsp; #{moment(f).subtract(4,'h').format('DD/MM/YYYY')}
     -var sub = []
   div#planilla  
     div.table
       .tr
         .th.border-bottom.center
           p
-            b #{datos.type === 'IDR' ? 'IDR ACUMULADO DE INGRESOS' : 'RPR ACUMULADO DE INGRESOS'}
+            b #{'IDR ACUMULADO DE INGRESOS'}
       .tr
         .td
           p #{datos.acumuladoIngresos}
@@ -39,37 +39,19 @@ block content
             p
               b CANT.
         each row in item
-          - sub = row.subRamo
             .tr.break-page.title
               div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
-                p #{row.ramo}
+                p #{row.codigo}
               div(style={'-webkit-flex':'3'}).td.center.border-right.border-bottom
                 p #{row.descripcion}
               div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-                p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2, maximumFractionDigits: 2}).format((row.liquidadoTotal))}
+                p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2, maximumFractionDigits: 2}).format((row.totalLiquidado))}
               div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
-                p #{row.cantidadLiqTotal ? row.cantidadLiqTotal : 0}
+                p #{row.cantidadLiquidado}
               div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-                p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2, maximumFractionDigits: 2}).format((row.ingresadoTotal))}
+                p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2, maximumFractionDigits: 2}).format((row.totalIngresado))}
               div(style={'-webkit-flex':'1'}).td.center.border-bottom
-                p #{row.cantidadIngTotal ? row.cantidadIngTotal : 0}  
-          if sub.length > 1
-            each subRamo in sub
-              if (!subRamo.liquidado) && (!subRamo.ingresado)
-              else
-                div(style={'font-size':'12px'}).tr.break-page.sub-title
-                  div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
-                    p #{subRamo.ramo}
-                  div(style={'-webkit-flex':'3'}).td.center.border-right.border-bottom
-                    p #{subRamo.descripcion}
-                  div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-                    p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2, maximumFractionDigits: 2}).format(subRamo.liquidado ? (subRamo.liquidado) : 0)}
-                  div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
-                    p #{subRamo.cantidadLiq ? subRamo.cantidadLiq : 0}
-                  div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
-                    p #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2, maximumFractionDigits: 2}).format(subRamo.ingresado ? (subRamo.ingresado) : 0)}
-                  div(style={'-webkit-flex':'1'}).td.center.border-bottom
-                    p #{subRamo.cantidadIng ? subRamo.cantidadIng : 0}
+                p #{row.cantidadIngresado}  
     .table.break-page
       .tr.break-page
         div(style={'-webkit-flex':'4'}).th.center
