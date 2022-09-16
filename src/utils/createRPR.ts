@@ -256,8 +256,8 @@ export const createIDR = async (payload: {from: Date, to: Date}) => {
           cantidadIngTotal: data.reduce((a, c) => a + c.cantidadIngresado, 0),
         },
       });
-      const pdfDir = resolve(__dirname, alcaldia ? `../../archivos/hacienda/reportes/RPRA.pdf` : type === 'IDR' ? `../../archivos/hacienda/reportes/IDR.pdf` : `../../archivos/hacienda/reportes/RPR.pdf`);
-      const dir = alcaldia ? `${process.env.SERVER_URL}/hacienda/reportes/RPRA.pdf` : type === 'IDR' ? `${process.env.SERVER_URL}/hacienda/reportes/IDR.pdf` : `${process.env.SERVER_URL}/hacienda/reportes/RPR.pdf`;
+      const pdfDir = resolve(__dirname, `../../archivos/hacienda/reportes/IDR.pdf`);
+      const dir = `${process.env.SERVER_URL}/hacienda/reportes/IDR.pdf`;
       if (dev) {
         pdf.create(html, { format: 'Letter', border: '5mm', header: { height: '0px' }, base: 'file://' + resolve(__dirname, '../views/planillas/') + '/' }).toFile(pdfDir, async () => {
           res(dir);
@@ -270,7 +270,7 @@ export const createIDR = async (payload: {from: Date, to: Date}) => {
             } else {
               const bucketParams = {
                 Bucket: process.env.BUCKET_NAME as string,
-                Key: alcaldia ? 'hacienda/reportes/RPRA.pdf' : type === 'IDR' ? `hacienda/reportes/IDR.pdf` : `hacienda/reportes/RPR.pdf`,
+                Key:`hacienda/reportes/IDR.pdf`,
               };
               await S3Client.putObject({
                 ...bucketParams,
@@ -278,11 +278,7 @@ export const createIDR = async (payload: {from: Date, to: Date}) => {
                 ACL: 'public-read',
                 ContentType: 'application/pdf',
               }).promise();
-              arrayreports.push({
-                id,
-                url: `${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`,
-              });
-              res('resolved');
+              res(`${process.env.AWS_ACCESS_URL}/${bucketParams.Key}`);
             }
           });
         } catch (e) {
