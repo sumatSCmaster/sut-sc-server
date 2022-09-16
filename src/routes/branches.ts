@@ -3,6 +3,7 @@ import { fulfill } from '@utils/resolver';
 import { generateBranchesReport, generateBranchesReportById, getBranches, getTransfersReport, getCondoReport, getTransfersReportBank, getCondoReportDisclosed, getTransfersExternalReport, getSupportReport } from '@helpers/branches';
 import { authenticate } from 'passport';
 import { mainLogger } from '@utils/logger';
+import { createIDR } from '@utils/createRPR';
 
 const router = Router();
 
@@ -12,6 +13,13 @@ router.get('/', authenticate('jwt'), async (req: any, res) => {
   const [error, data] = await fulfill(getBranches(all, id));
   mainLogger.info(`${error?.message} ${error?.stack}`);
   if (error) res.status(500).json({ error, status: 500 });
+  if (data) res.status(200).json({ status: 200, data });
+});
+
+router.post('/IDR', async(req, res) => {
+  const {from, to} = req.body;
+  const [err, data] = await fulfill(createIDR({from, to}));
+  if (err) res.status(500).json({ err, status: 500 });
   if (data) res.status(200).json({ status: 200, data });
 });
 
