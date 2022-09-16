@@ -243,7 +243,7 @@ export const createIDR = async (payload: {from: Date, to: Date}) => {
     const {from, to} = payload;
     const timeStampedDate = to + ' 23:59:59.999999+00';
     const data = (await client.query(queries.GET_IDR_DATA, [from, to, timeStampedDate])).rows;
-    console.log(data);
+    return data;
   } catch(e) {
     let message = 'Error al crear IDR';
     if (e instanceof Error) message = e.message;
