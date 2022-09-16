@@ -45,6 +45,8 @@ const idTiposSolicitud = {
   PP: 97,
 };
 
+const AE_START_YEAR = 2020;
+
 export const codigosRamo = {
   AE: 112,
   SM: 122,
@@ -394,7 +396,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       if (economicActivities.length === 0) throw { status: 404, message: 'El contribuyente no posee aforos asociados' };
       let lastEA = (await client.query(lastSettlementQueryAESM, [codigosRamo.AE, lastSettlementPayload])).rows.find((el) => !el.datos.hasOwnProperty('descripcion'));
 
-      const lastEAPayment = (lastEA && moment([lastEA.datos?.fecha?.year, Months[lastEA.datos?.fecha?.month], 1]).add(1, 'months')) || moment().month(0);
+      const lastEAPayment = (lastEA && moment([lastEA.datos?.fecha?.year, Months[lastEA.datos?.fecha?.month], 1]).add(1, 'months')) || moment([AE_START_YEAR, 0, 1]).month(0);
       // console.log(lastEAPayment.format('YYYY-MM-DD'), 'MASTER');
       const pastMonthEA = (lastEA && moment(lastEA.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
       const EADate = moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
