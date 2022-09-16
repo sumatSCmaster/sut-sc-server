@@ -45,6 +45,8 @@ const idTiposSolicitud = {
   PP: 97,
 };
 
+const AE_START_YEAR = 2020;
+
 export const codigosRamo = {
   AE: 112,
   SM: 122,
@@ -394,7 +396,7 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       if (economicActivities.length === 0) throw { status: 404, message: 'El contribuyente no posee aforos asociados' };
       let lastEA = (await client.query(lastSettlementQueryAESM, [codigosRamo.AE, lastSettlementPayload])).rows.find((el) => !el.datos.hasOwnProperty('descripcion'));
 
-      const lastEAPayment = (lastEA && moment([lastEA.datos?.fecha?.year, Months[lastEA.datos?.fecha?.month], 1]).add(1, 'months')) || moment().month(0);
+      const lastEAPayment = (lastEA && moment([lastEA.datos?.fecha?.year, Months[lastEA.datos?.fecha?.month], 1]).add(1, 'months')) || moment([AE_START_YEAR, 0, 1]).month(0);
       // console.log(lastEAPayment.format('YYYY-MM-DD'), 'MASTER');
       const pastMonthEA = (lastEA && moment(lastEA.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
       const EADate = moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
@@ -439,8 +441,10 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     }
     //SM
     mainLogger.info('SM');
+    const SMExonerado = branch && (await client.query('SELECT EXISTS (SELECT * FROM impuesto.exoneracion_servicios_municipales WHERE id_registro_municipal = $1)', [branch.id_registro_municipal])).rows[0].exists;
+    console.log(SMExonerado, 'MASTER GET SETTLEMENTS')
     const estates = (await client.query(branch ? queries.GET_ESTATES_FOR_JURIDICAL_CONTRIBUTOR : queries.GET_ESTATES_FOR_NATURAL_CONTRIBUTOR, [branch ? branch.id_registro_municipal : contributor.id_contribuyente])).rows;
-    if (/*!SMApplicationExists && */!isPartOfCondominium) {
+    if (/*!SMApplicationExists && */!isPartOfCondominium && !SMExonerado) {
       let lastSM = (await client.query(lastSettlementQueryAESM, [codigosRamo.SM, lastSettlementPayload])).rows[0];
       const lastSMPayment = (lastSM && moment([lastSM.datos?.fecha?.year, Months[lastSM.datos?.fecha?.month], 1]).add(1, 'M')) || moment().month(0);
       const pastMonthSM = (lastSM && moment(lastSM.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
@@ -2391,6 +2395,7 @@ export const formatBranch = async (branch, contributor, client) => {
     const PP = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, ['PP', branch.id_registro_municipal])).rows[0];
     const RD0 = (await client.query(queries.GET_FIRST_SETTLEMENT_FOR_SUBBRANCH_AND_RIM_OPTIMIZED, ['RD0', branch.id_registro_municipal])).rows[0];
     const servicioMunicipal = (await client.query(queries.GET_SM_INFO_BY_BRANCHID, [branch.id_registro_municipal])).rows[0];
+    if(servicioMunicipal) servicioMunicipal.exonerado = (await client.query('SELECT EXISTS (SELECT * FROM impuesto.exoneracion_servicios_municipales WHERE id_registro_municipal = $1)', [branch.id_registro_municipal])).rows[0].exists;
     if (!!SM) SM.desde = moment(SM.desde).format('MM-DD-YYYY');
     if (!!PP) PP.desde = moment(PP.desde).format('MM-DD-YYYY');
     if (!!RD0) RD0.desde = moment(RD0.desde).format('MM-DD-YYYY');
