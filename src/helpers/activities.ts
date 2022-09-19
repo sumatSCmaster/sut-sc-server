@@ -173,7 +173,7 @@ export const updateContributorActivities = async ({ branchId, activities, branch
           .sort((a, b) => (moment(a.desde).isSameOrBefore(moment(b.desde)) ? 1 : -1))
           .map(async (x, index) => {
             const ae = (await client.query(queries.UPDATE_ECONOMIC_ACTIVITIES_FOR_BRANCH, [branchId, x.codigo, x.desde])).rows[0];
-            const aeExists = (await client.query(queries.GET_LAST_AE_SETTLEMENT_BY_AE_ID, [x.id, branchId])).rows[0];
+            const aeExists = (await client.query(queries.GET_LAST_AE_SETTLEMENT_BY_AE_ID_2, [x.id, branchId])).rows[0];
             const settlement =
               // !aeExists &&
               (
@@ -248,7 +248,7 @@ export const updateContributorActivities = async ({ branchId, activities, branch
             .sort((a, b) => (moment(a.desde).isSameOrBefore(moment(b.desde)) ? 1 : -1))
             .map(async (x, index) => {
               const ae = (await client.query(queries.UPDATE_ECONOMIC_ACTIVITIES_FOR_BRANCH, [branchId, x.codigo, x.desde])).rows[0];
-              const aeExists = (await client.query(queries.GET_LAST_AE_SETTLEMENT_BY_AE_ID, [x.id, branchId])).rows[0];
+              const aeExists = (await client.query(queries.GET_LAST_AE_SETTLEMENT_BY_AE_ID_2, [x.id, branchId])).rows[0];
               const settlement =
                 !aeExists &&
                 (
