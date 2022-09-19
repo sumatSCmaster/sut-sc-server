@@ -20,7 +20,7 @@ block content
     each item in datos.ingresos
       div(style={'margin-top':'20px'}).table.break-page
         .tr
-          div(style={'-webkit-flex':'1'}).th.center.border-right.border-bottom
+          div(style={'-webkit-flex':'2'}).th.center.border-right.border-bottom
             p
               b RAMO
           div(style={'-webkit-flex':'3'}).th.center.border-right.border-bottom
@@ -40,7 +40,7 @@ block content
               b CANT.
         each row in item
             .tr.break-page.title
-              div(style={'-webkit-flex':'1'}).td.center.border-right.border-bottom
+              div(style={'-webkit-flex':'2'}).td.center.border-right.border-bottom
                 p #{row.codigo}
               div(style={'-webkit-flex':'3'}).td.center.border-right.border-bottom
                 p #{row.descripcion}
