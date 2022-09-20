@@ -56,6 +56,7 @@ export const codigosRamo = {
   RD0: 915,
   VH: '3.01.02.08.00'
 };
+
 const formatCurrency = (number: number) => new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(number);
 
 /**
