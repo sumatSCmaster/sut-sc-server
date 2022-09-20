@@ -48,13 +48,13 @@ const idTiposSolicitud = {
 const AE_START_YEAR = 2020;
 
 export const codigosRamo = {
-  AE: 112,
-  SM: 122,
-  PP: 114,
+  AE: '3.01.02.07.00',
+  SM: '3.01.03.54.00',
+  PP: '3.01.02.09.00',
   MUL: 501,
-  IU: 111,
+  IU: '3.01.02.05.00',
   RD0: 915,
-  VH: 5000
+  VH: '3.01.02.08.00'
 };
 const formatCurrency = (number: number) => new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(number);
 
