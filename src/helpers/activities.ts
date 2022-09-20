@@ -254,6 +254,7 @@ export const updateContributorActivities = async ({ branchId, activities, branch
             await client.query('UPDATE impuesto.liquidacion SET id_solicitud = $1 WHERE id_liquidacion = ANY($2::int[])', [application.id_solicitud, hasOtherSettlements])
           }
         }))
+        console.log('TEST MASTER')
         await client.query(queries.NULLIFY_APPLICATION_CONSTRAINT_BY_BRANCH_AND_RIM, [codigosRamo.AE, branchId]);
         await client.query(queries.NULLIFY_SETTLEMENT_CONSTRAINT_BY_BRANCH_AND_RIM, [codigosRamo.AE, branchId]);
         await Promise.all(
