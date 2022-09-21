@@ -241,8 +241,7 @@ export const createIDR = async (payload: {from: Date, to: Date}) => {
   const client = await pool.connect();
   try{
     const {from, to} = payload;
-    const timeStampedDate = to + ' 23:59:59.999999+00';
-    const data = (await client.query(queries.GET_IDR_DATA, [from, to, timeStampedDate])).rows;
+    const data = (await client.query(queries.GET_IDR_DATA, [from, to])).rows;
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname,  `../views/planillas/hacienda-IDR.pug`), {
         moment: require('moment'),

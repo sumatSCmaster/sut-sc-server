@@ -243,17 +243,6 @@ export const updateContributorActivities = async ({ branchId, activities, branch
     } else {
       if (activities.length) {
         await client.query('DELETE FROM impuesto.actividad_economica_sucursal WHERE id_registro_municipal = $1', [branchId]);
-        const applicationIds = (await client.query(`WITH ev AS (SELECT id_solicitud, impuesto.solicitud_fsm(event ORDER BY id_evento_solicitud) AS state FROM impuesto.evento_solicitud GROUP BY id_solicitud) SELECT id_solicitud FROM impuesto.liquidacion JOIN ev USING(id_solicitud) WHERE id_registro_municipal = $1 AND id_subramo = 10 AND state = 'ingresardatos'`, [branchId])).rows?.map(elem => elem.id_solicitud);
-        await Promise.all(applicationIds.map(async (id) => {
-          const hasOtherSettlements = (await client.query(`SELECT * FROM impuesto.liquidacion WHERE id_solicitud = $1 AND id_subramo <> 10`, [id])).rows?.map(elem => elem.id_liquidacion);
-          if (hasOtherSettlements.length > 0) {
-            const taxPayerInfo = (await client.query('SELECT id_contribuyente FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [branchId])).rows[0]?.id_contribuyente;
-            const taxPayerUserInfo = (await client.query('SELECT id_usuario, id_contribuyente FROM usuario WHERE id_contribuyente = $1', [taxPayerInfo])).rows[0]?.id_usuario;
-            const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [taxPayerUserInfo, taxPayerInfo])).rows[0];
-            await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, 'ingresardatos_pi']);
-            await client.query('UPDATE impuesto.liquidacion SET id_solicitud = $1 WHERE id_liquidacion = ANY($2::int[])', [application.id_solicitud, hasOtherSettlements])
-          }
-        }))
         await client.query(queries.NULLIFY_APPLICATION_CONSTRAINT_BY_BRANCH_AND_RIM, [codigosRamo.AE, branchId]);
         await client.query(queries.NULLIFY_SETTLEMENT_CONSTRAINT_BY_BRANCH_AND_RIM, [codigosRamo.AE, branchId]);
         await Promise.all(

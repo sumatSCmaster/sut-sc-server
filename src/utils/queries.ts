@@ -1311,7 +1311,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
 
   //REPORTES
   GET_IDR_DATA: `WITH liquidaciones_vigentes AS (
-    SELECT r.codigo, ROUND((monto_petro * (CASE WHEN id_subramo = 10 THEN (l.datos#>>'{valorPetro}')::DECIMAL ELSE (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO') END)), 2) AS monto_en_bs, CASE WHEN (id_subramo BETWEEN 793 AND 798 OR id_subramo = 10) THEN 'ACTIVIDADES ECONOMICAS' WHEN id_subramo IN (823, 824) THEN 'SOLVENCIAS' ELSE r.descripcion END AS descripcion 
+    SELECT CASE WHEN r.codigo = '112' THEN '3.01.02.07.00' WHEN r.codigo = '111' THEN '3.01.02.05.00' WHEN r.codigo = '122' THEN '3.01.03.54.00' WHEN r.codigo = '5000' THEN '3.01.02.08.00' WHEN r.codigo = '114' THEN '3.01.02.09.00' ELSE r.codigo END AS codigo, ROUND((monto_petro * (CASE WHEN id_subramo = 10 THEN (l.datos#>>'{valorPetro}')::DECIMAL ELSE (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO') END)), 2) AS monto_en_bs, CASE WHEN (id_subramo BETWEEN 793 AND 798 OR id_subramo = 10) THEN 'ACTIVIDADES ECONOMICAS' WHEN id_subramo IN (823, 824) THEN 'SOLVENCIAS' ELSE r.descripcion END AS descripcion 
     FROM impuesto.solicitud AS s 
     JOIN impuesto.liquidacion AS l USING (id_solicitud) 
     JOIN impuesto.subramo AS sub USING(id_subramo) 
@@ -1319,7 +1319,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     WHERE s.fecha BETWEEN $1 AND $2 AND (s.aprobado = false OR s.fecha_aprobado > $2) AND s.tipo_solicitud <> 'CONVENIO'
   ),
   convenios_vigentes AS (
-    SELECT DISTINCT ON(fr.id_fraccion) r.codigo, fr.monto_petro * (CASE WHEN id_subramo = 99 THEN (l.datos#>>'{valorPetro}')::DECIMAL ELSE (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO') END) AS monto_en_bs, CASE WHEN (id_subramo BETWEEN 1085 AND 1090 OR id_subramo = 99) THEN 'ACTIVIDADES ECONOMICAS' ELSE r.descripcion END AS descripcion 
+    SELECT DISTINCT ON(fr.id_fraccion) CASE WHEN r.codigo = '112' THEN '3.01.02.07.00' WHEN r.codigo = '111' THEN '3.01.02.05.00' WHEN r.codigo = '122' THEN '3.01.03.54.00' WHEN r.codigo = '5000' THEN '3.01.02.08.00' WHEN r.codigo = '114' THEN '3.01.02.09.00' ELSE r.codigo END AS codigo, fr.monto_petro * (CASE WHEN id_subramo = 99 THEN (l.datos#>>'{valorPetro}')::DECIMAL ELSE (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO') END) AS monto_en_bs, CASE WHEN (id_subramo BETWEEN 1085 AND 1090 OR id_subramo = 99) THEN 'ACTIVIDADES ECONOMICAS' ELSE r.descripcion END AS descripcion 
     FROM impuesto.fraccion AS fr 
     JOIN impuesto.convenio AS c USING(id_convenio) 
     JOIN impuesto.solicitud AS s USING(id_solicitud) 
@@ -1341,7 +1341,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     GROUP BY codigo, descripcion
   ),
   liquidaciones_solventes AS (
-    SELECT r.codigo, l.monto, CASE WHEN (id_subramo BETWEEN 793 AND 798 OR id_subramo = 10) THEN 'ACTIVIDADES ECONOMICAS' WHEN id_subramo IN (823, 824) THEN 'SOLVENCIAS' ELSE r.descripcion END AS descripcion 
+    SELECT CASE WHEN r.codigo = '112' THEN '3.01.02.07.00' WHEN r.codigo = '111' THEN '3.01.02.05.00' WHEN r.codigo = '122' THEN '3.01.03.54.00' WHEN r.codigo = '5000' THEN '3.01.02.08.00' WHEN r.codigo = '114' THEN '3.01.02.09.00' ELSE r.codigo END AS codigo, l.monto, CASE WHEN (id_subramo BETWEEN 793 AND 798 OR id_subramo = 10) THEN 'ACTIVIDADES ECONOMICAS' WHEN id_subramo IN (823, 824) THEN 'SOLVENCIAS' ELSE r.descripcion END AS descripcion 
     FROM impuesto.solicitud AS s 
     JOIN impuesto.liquidacion AS l USING(id_solicitud) 
     JOIN impuesto.subramo AS sub USING(id_subramo) 
@@ -1349,11 +1349,11 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     WHERE s.aprobado = true AND s.fecha BETWEEN $1 AND $2 AND id_solicitud IN (
       SELECT id_procedimiento 
       FROM pago 
-      WHERE fecha_de_aprobacion BETWEEN $1 AND $3
+      WHERE fecha_de_aprobacion BETWEEN $1 AND $2
     )
   ),
   convenios_solventes AS (
-    SELECT DISTINCT ON(fr.id_fraccion) r.codigo, fr.monto, CASE WHEN (id_subramo BETWEEN 1085 AND 1090 OR id_subramo = 99) THEN 'ACTIVIDADES ECONOMICAS' ELSE r.descripcion END AS descripcion 
+    SELECT DISTINCT ON(fr.id_fraccion) CASE WHEN r.codigo = '112' THEN '3.01.02.07.00' WHEN r.codigo = '111' THEN '3.01.02.05.00' WHEN r.codigo = '122' THEN '3.01.03.54.00' WHEN r.codigo = '5000' THEN '3.01.02.08.00' WHEN r.codigo = '114' THEN '3.01.02.09.00' ELSE r.codigo END AS codigo, fr.monto, CASE WHEN (id_subramo BETWEEN 1085 AND 1090 OR id_subramo = 99) THEN 'ACTIVIDADES ECONOMICAS' ELSE r.descripcion END AS descripcion 
     FROM impuesto.fraccion AS fr 
     JOIN impuesto.convenio AS c USING(id_convenio) 
     JOIN impuesto.solicitud AS s USING(id_solicitud) 
@@ -1361,7 +1361,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     LEFT JOIN impuesto.subramo AS sub USING(id_subramo) 
     JOIN impuesto.ramo AS r USING(id_ramo)
     JOIN pago AS p ON p.id_procedimiento = fr.id_fraccion 
-    WHERE s.aprobado = true AND s.fecha BETWEEN $1 AND $2 AND p.fecha_de_aprobacion BETWEEN $1 AND $3
+    WHERE s.aprobado = true AND s.fecha BETWEEN $1 AND $2 AND p.fecha_de_aprobacion BETWEEN $1 AND $2
   ),
   a AS (
     SELECT codigo, SUM(monto_total) AS monto_total, SUM(cantidad_total) AS cantidad_total, descripcion FROM (
@@ -1375,7 +1375,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     ) d
     GROUP BY codigo, descripcion
   )
-  SELECT a.codigo, descripcion, b.monto_total AS "totalLiquidado", b.cantidad_total AS "cantidadLiquidado", a.monto_total AS "totalIngresado", a.cantidad_total AS "cantidadIngresado" FROM a JOIN b USING(descripcion);`,
+  SELECT a.codigo, descripcion, b.monto_total + a.monto_total AS "totalLiquidado", b.cantidad_total + a.cantidad_total AS "cantidadLiquidado", a.monto_total AS "totalIngresado", a.cantidad_total AS "cantidadIngresado" FROM a JOIN b USING(descripcion);`,
   GET_INGRESS: `SELECT ramo, descripcion, codigo, SUM("cantidadIng") as "cantidadIng", SUM(ingresado) as ingresado FROM ( 
     (SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadIng", SUM(CASE WHEN l.id_subramo = 107 OR l.id_subramo = 108 THEN (CASE WHEN (l.datos->>'IVA')::numeric = 16 THEN (l.monto / 1.16 ) WHEN (l.datos->>'IVA')::numeric = 4 THEN (l.monto / 1.04 ) ELSE (l.monto / 1.16 ) END ) ELSE l.monto END ) as ingresado 
         FROM ((SELECT DISTINCT ON (l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto) l.id_liquidacion, l.id_solicitud, l.id_subramo, l.monto, l.datos 
