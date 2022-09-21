@@ -242,7 +242,6 @@ export const createIDR = async (payload: {from: Date, to: Date}) => {
   try{
     const {from, to} = payload;
     const data = (await client.query(queries.GET_IDR_DATA, [from, to])).rows;
-    console.log(data.reduce((a, c) => a + Number(c.cantidadLiquidado), 0), data.reduce((a, c) => a + Number(c.totalLiquidado), 0), data.reduce((a, c) => a + Number(c.totalIngresado), 0), data.reduce((a, c) => a + Number(c.cantidadIngresado), 0))
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname,  `../views/planillas/hacienda-IDR.pug`), {
         moment: require('moment'),
@@ -250,10 +249,10 @@ export const createIDR = async (payload: {from: Date, to: Date}) => {
         datos: {
           ingresos: chunk(data, 8),
           acumuladoIngresos: `CONTENIDO: TODOS LOS RAMOS, DESDE EL ${moment(payload.from).subtract(4, 'h').format('DD/MM/YYYY')} AL ${moment(payload.to).subtract(4, 'h').format('DD/MM/YYYY')}`,
-          cantidadLiqTotal: data.reduce((a, c) => a + c.cantidadLiquidado, 0),
-          liquidadoTotal: data.reduce((a, c) => a + c.totalLiquidado, 0),
-          ingresadoTotal: data.reduce((a, c) => a + c.totalIngresado, 0),
-          cantidadIngTotal: data.reduce((a, c) => a + c.cantidadIngresado, 0),
+          cantidadLiqTotal: data.reduce((a, c) => a + Number(c.cantidadLiquidado), 0),
+          liquidadoTotal: data.reduce((a, c) => a + Number(c.totalLiquidado), 0),
+          ingresadoTotal: data.reduce((a, c) => a + Number(c.totalIngresado), 0),
+          cantidadIngTotal: data.reduce((a, c) => a + Number(c.cantidadIngresado), 0),
         },
       });
       const pdfDir = resolve(__dirname, `../../archivos/hacienda/reportes/IDR.pdf`);
