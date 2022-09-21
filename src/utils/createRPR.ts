@@ -242,6 +242,7 @@ export const createIDR = async (payload: {from: Date, to: Date}) => {
   try{
     const {from, to} = payload;
     const data = (await client.query(queries.GET_IDR_DATA, [from, to])).rows;
+    console.log(data.reduce((a, c) => a + c.cantidadLiquidado, 0), data.reduce((a, c) => a + c.totalLiquidado, 0), data.reduce((a, c) => a + c.totalIngresado, 0), data.reduce((a, c) => a + c.cantidadIngresado, 0))
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname,  `../views/planillas/hacienda-IDR.pug`), {
         moment: require('moment'),
