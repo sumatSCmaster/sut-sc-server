@@ -1349,7 +1349,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     WHERE s.aprobado = true AND s.fecha BETWEEN $1 AND $2 AND id_solicitud IN (
       SELECT id_procedimiento 
       FROM pago 
-      WHERE fecha_de_aprobacion BETWEEN $1 AND $3
+      WHERE fecha_de_aprobacion BETWEEN $1 AND $2
     )
   ),
   convenios_solventes AS (
@@ -1361,7 +1361,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
     LEFT JOIN impuesto.subramo AS sub USING(id_subramo) 
     JOIN impuesto.ramo AS r USING(id_ramo)
     JOIN pago AS p ON p.id_procedimiento = fr.id_fraccion 
-    WHERE s.aprobado = true AND s.fecha BETWEEN $1 AND $2 AND p.fecha_de_aprobacion BETWEEN $1 AND $3
+    WHERE s.aprobado = true AND s.fecha BETWEEN $1 AND $2 AND p.fecha_de_aprobacion BETWEEN $1 AND $2
   ),
   a AS (
     SELECT codigo, SUM(monto_total) AS monto_total, SUM(cantidad_total) AS cantidad_total, descripcion FROM (
