@@ -242,10 +242,11 @@ export const createIDR = async (payload: {from: string, to: string}) => {
   try{
     const {from, to} = payload;
     const isSameDay = from.slice(0, from.split('').findIndex(elem => elem === 'T')) === to.slice(0, to.split('').findIndex(elem => elem === 'T'))
+    const newFrom = isSameDay ? moment(from.slice(0, from.split('').findIndex(elem => elem === 'T'))).subtract(1, 'day').format('YYYY-MM-DD') + 'T23:59:59.999-04:00' : from;
     // const fromMoment = moment(from)
     // const toMoment = moment (to)
     // const isSameDay = moment([fromMoment.year(), fromMoment.month(), fromMoment.day()]).isSame([toMoment.year(), toMoment.month(), toMoment.day()]);
-    const data = (await client.query(queries.GET_IDR_DATA, [from, to])).rows;
+    const data = (await client.query(queries.GET_IDR_DATA, [newFrom, to])).rows;
     console.log(from, to, data, isSameDay)
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname,  `../views/planillas/hacienda-IDR.pug`), {
