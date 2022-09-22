@@ -241,8 +241,9 @@ export const createIDR = async (payload: {from: Date, to: Date}) => {
   const client = await pool.connect();
   try{
     const {from, to} = payload;
+    const isSameDay = moment(from).isSame(moment(to));
     const data = (await client.query(queries.GET_IDR_DATA, [from, to])).rows;
-    console.log(from, to, data)
+    console.log(from, to, data, isSameDay)
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname,  `../views/planillas/hacienda-IDR.pug`), {
         moment: require('moment'),
