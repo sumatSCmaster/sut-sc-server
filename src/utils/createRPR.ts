@@ -247,7 +247,7 @@ export const createIDR = async (payload: {from: string, to: string}) => {
     // const toMoment = moment (to)
     // const isSameDay = moment([fromMoment.year(), fromMoment.month(), fromMoment.day()]).isSame([toMoment.year(), toMoment.month(), toMoment.day()]);
     const data = (await client.query(queries.GET_IDR_DATA, [newFrom, to])).rows;
-    console.log(from, to, data, isSameDay)
+    console.log(newFrom, to, data, isSameDay)
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname,  `../views/planillas/hacienda-IDR.pug`), {
         moment: require('moment'),
