@@ -237,13 +237,14 @@ export const createRPR = async (id: string, payload: { from: Date; to: Date; alc
 };
 
 
-export const createIDR = async (payload: {from: Date, to: Date}) => {
+export const createIDR = async (payload: {from: string, to: string}) => {
   const client = await pool.connect();
   try{
     const {from, to} = payload;
-    const fromMoment = moment(from)
-    const toMoment = moment (to)
-    const isSameDay = moment([fromMoment.year(), fromMoment.month(), fromMoment.day()]).isSame([toMoment.year(), toMoment.month(), toMoment.day()]);
+    const isSameDay = from.slice(0, from.split('').findIndex(elem => elem === 'T')) === to.slice(0, to.split('').findIndex(elem => elem === 'T'))
+    // const fromMoment = moment(from)
+    // const toMoment = moment (to)
+    // const isSameDay = moment([fromMoment.year(), fromMoment.month(), fromMoment.day()]).isSame([toMoment.year(), toMoment.month(), toMoment.day()]);
     const data = (await client.query(queries.GET_IDR_DATA, [from, to])).rows;
     console.log(from, to, data, isSameDay)
     return new Promise(async (res, rej) => {
