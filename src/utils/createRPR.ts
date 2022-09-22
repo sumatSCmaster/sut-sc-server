@@ -237,11 +237,13 @@ export const createRPR = async (id: string, payload: { from: Date; to: Date; alc
 };
 
 
-export const createIDR = async (payload: {from: Date, to: Date}) => {
+export const createIDR = async (payload: {from: string, to: string}) => {
   const client = await pool.connect();
   try{
     const {from, to} = payload;
-    const data = (await client.query(queries.GET_IDR_DATA, [from, to])).rows;
+    const isSameDay = from.slice(0, from.split('').findIndex(elem => elem === 'T')) === to.slice(0, to.split('').findIndex(elem => elem === 'T'))
+    const newFrom = isSameDay ? moment(from.slice(0, from.split('').findIndex(elem => elem === 'T'))).subtract(1, 'day').format('YYYY-MM-DD') + 'T23:59:59.999-04:00' : from;
+    const data = (await client.query(queries.GET_IDR_DATA, [newFrom, to])).rows;
     return new Promise(async (res, rej) => {
       const html = renderFile(resolve(__dirname,  `../views/planillas/hacienda-IDR.pug`), {
         moment: require('moment'),
