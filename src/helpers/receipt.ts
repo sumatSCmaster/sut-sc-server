@@ -387,6 +387,7 @@ export const createOnDemandCertificate = async (type: string, data: any[]): Prom
       IU: 'hacienda-solvencia-IU',
       SM: 'hacienda-solvencia-SM',
       LIC: 'hacienda-cert-EL',
+      SOLA: 'hacienda-solvencia-SOLA'
     };
 
     if (type === 'LIC') {
