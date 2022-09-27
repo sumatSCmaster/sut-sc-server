@@ -429,7 +429,7 @@ export const createCertificateBuffers = async (certInfoArray: any[], pugFileName
       ...certInfo,
     })
   );
-
+    console.log('PRUEBA')
   let buffersArray: any[] = await Promise.all(
     htmlArray.map((html) => {
       return new Promise((res, rej) => {
