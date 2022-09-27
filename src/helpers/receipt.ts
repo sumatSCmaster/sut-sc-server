@@ -387,6 +387,7 @@ export const createOnDemandCertificate = async (type: string, data: any[]): Prom
       IU: 'hacienda-solvencia-IU',
       SM: 'hacienda-solvencia-SM',
       LIC: 'hacienda-cert-EL',
+      SOLA: 'hacienda-solvencia-A'
     };
 
     if (type === 'LIC') {
@@ -420,6 +421,7 @@ export const createOnDemandCertificate = async (type: string, data: any[]): Prom
 
 export const createCertificateBuffers = async (certInfoArray: any[], pugFileName: string, bucketKey: string): Promise<Buffer[]> => {
   const linkQr = await qr.toDataURL(`${process.env.AWS_ACCESS_URL}${bucketKey}`, { errorCorrectionLevel: 'H' });
+  console.log('PRUEBA', certInfoArray);
   let htmlArray = certInfoArray.map((certInfo) =>
     renderFile(resolve(__dirname, `../views/planillas/${pugFileName}.pug`), {
       moment: require('moment'),
@@ -428,7 +430,6 @@ export const createCertificateBuffers = async (certInfoArray: any[], pugFileName
       ...certInfo,
     })
   );
-
   let buffersArray: any[] = await Promise.all(
     htmlArray.map((html) => {
       return new Promise((res, rej) => {
