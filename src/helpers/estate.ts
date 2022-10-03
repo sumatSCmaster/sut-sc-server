@@ -5,6 +5,7 @@ import { PoolClient } from 'pg';
 import { Tramite, Inmueble } from '@root/interfaces/sigt';
 import moment from 'moment';
 import { mainLogger } from '@utils/logger';
+import { createCertificate, createCertificateBuffers } from './receipt';
 
 const pool = Pool.getInstance();
 
@@ -536,6 +537,21 @@ export const updateEstateDate = async ({ id, date, rim, taxpayer }) => {
     client.release();
   }
 };
+
+export const generateCodCat = async (data) => {
+  const client = await pool.connect();
+  try {
+    // const {codCat, datos, datosFisicos, linderos, oldCodCat, perimetro} = data;
+    const property = (await client.query('SELECT id_inmueble AS id, avaluo_construccion AS "totalConstruccion", avaluo_terreno AS "totalTerreno", metros_terreno AS "superficieTerreno", metros_construccion AS "superficieConstruccion" FROM inmueble_urbano JOIN impuesto.avaluo USING id_inmueble WHERE id_inmueble = $1', [data.inmueble])).rows[0];
+    const bucketKey = `//hacienda/CATASTRO/${property.id}/ceritifcado.pdf`;
+    data.property = property;
+    const buffers = await createCertificateBuffers([data], 'catastro', bucketKey);
+    const url = await createCertificate(buffers, bucketKey);
+    return {status: 200, url}
+  } catch(e) {
+    throw {status: 500, message: e.message};
+  }
+}
 
 export const linkCommercial = async ({ codCat, rim, relacion }) => {
   const client = await pool.connect();

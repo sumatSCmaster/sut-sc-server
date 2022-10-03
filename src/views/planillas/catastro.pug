@@ -16,10 +16,10 @@ html
             div 
               p 
                 b CEDULA N°: &nbsp;
-                b #{cedula}
+                b #{datos.nroCedula}
               p 
                 b RECIBO N°: &nbsp; 
-                b #{recibo}
+                b #{datos.nroRecibo}
             img#QR(src='images/qrexample.png', alt='QR')
       div#content
         block title                                                                 
@@ -57,19 +57,19 @@ html
                     b Und
               div.tr
                 div(style={'-webkit-flex': 1.5}).td.center
-                  p #{anterior ? anterior.prr : '0'}
+                  p #{oldCodCat ? oldCodCat.prr : '0'}
                 div(style={'-webkit-flex': 1.5}).td.center
-                  p #{anterior ? anterior.sec : '0'}
+                  p #{oldCodCat ? oldCodCat.sec : '0'}
                 div(style={'-webkit-flex': 1.5}).td.center
-                  p #{anterior ? anterior.man : '0'}
+                  p #{oldCodCat ? oldCodCat.man : '0'}
                 div(style={'-webkit-flex': 1.5}).td.center
-                  p #{anterior ? anterior.par : '0'}
+                  p #{oldCodCat ? oldCodCat.par : '0'}
                 div(style={'-webkit-flex': 1.5}).td.center
-                  p #{anterior ? anterior.sbp : '0'}
+                  p #{oldCodCat ? oldCodCat.sbp : '0'}
                 div(style={'-webkit-flex': 1.5}).td.center
-                  p #{anterior ? anterior.niv : '0'}
+                  p #{oldCodCat ? oldCodCat.niv : '0'}
                 div(style={'-webkit-flex': 1.5}).td.center
-                  p #{anterior ? anterior.und : '0'}
+                  p #{oldCodCat ? oldCodCat.und : '0'}
             div.table(style={'font-size':'14px'})
               div.tr
                 div.td.center
@@ -112,27 +112,27 @@ html
                     b Und
               div.tr
                 div(style={'-webkit-flex': 1}).td.center
-                  p #{actual ? actual.efed : '0'}
+                  p #{codCat ? codCat.efed : '0'}
                 div(style={'-webkit-flex': 1}).td.center
-                  p #{actual ? actual.mun : '0'}
+                  p #{codCat ? codCat.mun : '0'}
                 div(style={'-webkit-flex': 1}).td.center
-                  p #{actual ? actual.prr : '0'}
+                  p #{codCat ? codCat.prr : '0'}
                 div(style={'-webkit-flex': 1}).td.center
-                  p #{actual ? actual.amb : '0'}
+                  p #{codCat ? codCat.amb : '0'}
                 div(style={'-webkit-flex': 1}).td.center
-                  p #{actual ? actual.sec : '0'}
+                  p #{codCat ? codCat.sec : '0'}
                 div(style={'-webkit-flex': 1}).td.center
-                  p #{actual ? actual.ssec : '0'}
+                  p #{codCat ? codCat.ssec : '0'}
                 div(style={'-webkit-flex': 1}).td.center
-                  p #{actual ? actual.man : '0'}
+                  p #{codCat ? codCat.man : '0'}
                 div(style={'-webkit-flex': 1}).td.center
-                  p #{actual ? actual.par : '0'}
+                  p #{codCat ? codCat.par : '0'}
                 div(style={'-webkit-flex': 1}).td.center
-                  p #{actual ? actual.sbp : '0'}
+                  p #{codCat ? codCat.sbp : '0'}
                 div(style={'-webkit-flex': 1}).td.center
-                  p #{actual ? actual.niv : '0'}
+                  p #{codCat ? codCat.niv : '0'}
                 div(style={'-webkit-flex': 1}).td.center
-                  p #{actual ? actual.und : '0'}  
+                  p #{codCat ? codCat.und : '0'}  
             div.table
               div.tr
                 div.td.center
@@ -145,48 +145,47 @@ html
                       b Nombre y Apellidos / Razón Social
                     p
                       b Cedula / Rif:
-                  if propietarios
-                    each item in propietarios
-                      div(style={'display':'flex','justify-content':'space-between'})
-                        p #{item ? item.razonSocial : ''}
-                        p #{item ? item.documento : ''}
+                  if datos
+                    div(style={'display':'flex','justify-content':'space-between'})
+                      p #{datos.representantes ? datos.representantes : ''}
+                      p #{datos.cedulas ? datos.cedulas : ''}
               div.tr
                 div.td
                   p 
                     b Dirección: &nbsp;
-                    | #{direccion}
+                    | #{datos.direccion}
               div.tr
                 div(style={'display':'flex','justify-content':'space-between'}).td
                   p 
                     b Estado: &nbsp;
-                    | #{estado}
+                    | #{'Táchira'}
                   p 
                     b Municipio: &nbsp;
-                    | #{municipio}
+                    | #{'San Cristóbal'}
                   p 
                     b Parroquia: &nbsp;
-                    i #{parroquia}
+                    i #{datos.parroquia}
               div.tr
                 div.td
                   p 
                     | Numero: &nbsp;
-                    | #{numero}
+                    | #{datos.numero}
                 div.td
                   p 
                     | FOLIOS: &nbsp;
-                    | #{folios}
+                    | #{datos.folios || '1'}
                 div.td
                   p 
                     b Tomo: &nbsp;
-                    | #{tomo}
+                    | #{datos.tomo}
                 div.td
                   p 
                     b Protocolo: &nbsp;
-                    | #{protocolo}
+                    | #{datos.protocolo}
                 div.td
                   p 
                     b Fecha: &nbsp;
-                    | #{fecha}
+                    | #{moment().format('YYYY/MM/DD')}
               div.tr
                 div.td.center
                   p 
@@ -196,25 +195,25 @@ html
                   p 
                     b Norte: &nbsp;
                     b 
-                      i #{originales ? originales.norte : ''}
+                      i #{linderos.original ? linderos.original.norte : ''}
               div.tr
                 div.td
                   p 
                     b Sur: &nbsp;
                     b 
-                      i #{originales ? originales.sur : ''}
+                      i #{linderos.original ? linderos.original.sur : ''}
               div.tr
                 div.td
                   p 
                     b Este: &nbsp;
                     b 
-                      i #{originales ? originales.este : ''}
+                      i #{linderos.original ? linderos.original.este : ''}
               div.tr
                 div.td
                   p 
                     b Oeste: &nbsp;
                     b 
-                      i #{originales ? originales.oeste : ''}
+                      i #{linderos.original ? linderos.original.oeste : ''}
               div.tr
                 div.td.center
                   p 
@@ -224,25 +223,25 @@ html
                   p 
                     b Norte: &nbsp;
                     b 
-                      i #{actuales ? actuales.norte : ''}
+                      i #{linderos.actual ? linderos.actual.norte : ''}
               div.tr
                 div.td
                   p 
                     b Sur: &nbsp;
                     b 
-                      i #{actuales ? actuales.sur : ''}
+                      i #{linderos.actual ? linderos.actual.sur : ''}
               div.tr
                 div.td
                   p 
                     b Este: &nbsp;
                     b 
-                      i #{actuales ? actuales.este : ''}
+                      i #{linderos.actual ? linderos.actual.este : ''}
               div.tr
                 div.td
                   p 
                     b Oeste: &nbsp;
                     b 
-                      i #{actuales ? actuales.oeste : ''}
+                      i #{linderos.actual ? linderos.actual.oeste : ''}
               div.tr
                 div(style={'-webkit-flex': 6}).td.center
                   p 
@@ -263,41 +262,41 @@ html
                 div(style={'-webkit-flex': 2.5}).td.center
                   p 
                     b 
-                      i #{tenenciaTerreno}
+                      i #{datosFisicos.terreno}
               div.tr
                 div(style={'-webkit-flex': 2}).td
                   p 
                     b Terreno:
                 div(style={'-webkit-flex': 1.5}).td
                   p 
-                    | #{superficieTerreno}
+                    | #{property.superficieTerreno}
                 div(style={'-webkit-flex': 2.5, 'justify-content':'end'}).td
                   p 
-                    | #{totalTerreno}
+                    | #{property.totalTerreno}
                 div(style={'-webkit-flex': 3.5}).td
                   p 
                     b Tenencia de la Construcción:
                 div(style={'-webkit-flex': 2.5}).td.center
                   p 
                     b 
-                      i #{tenenciaConstruccion}
+                      i #{datosFisicos.construccion}
               div.tr
                 div(style={'-webkit-flex': 2}).td
                   p 
                     b Construcción:
                 div(style={'-webkit-flex': 1.5}).td
                   p 
-                    | #{superficieConstruccion}
+                    | #{property.superficieConstruccion}
                 div(style={'-webkit-flex': 2.5, 'justify-content':'end'}).td
                   p 
-                    | #{totalConstruccion}
+                    | #{property.totalConstruccion}
                 div(style={'-webkit-flex': 3.5}).td
                   p 
                     b Régimen de Propiedad:
                 div(style={'-webkit-flex': 2.5}).td.center
                   p 
                     b 
-                      i #{regimenPropiedad}
+                      i #{datosFisicos.propiedad}
               div.tr
                 div(style={'-webkit-flex': 6}).td
                 div(style={'-webkit-flex': 3.5}).td
@@ -306,7 +305,7 @@ html
                 div(style={'-webkit-flex': 2.5}).td.center
                   p 
                     b 
-                      i #{regimenFamiliar}
+                      i #{datosFisicos.familiar}
               div.tr
                 div.td.center
                   p 
@@ -320,80 +319,80 @@ html
                     | Servicios Públicos
               div.tr
                 div(style={'-webkit-flex': 3, 
-                'background': descripcionUso === 'Comercio al Detal' ? 'gray' : 'white'}).td.center
+                'background': descripcionUso.includes('Comercio al Detal') ? 'gray' : 'white'}).td.center
                   p 
                     b Comercio al Detal
                 div(style={'-webkit-flex': 3, 
-                'background': descripcionUso === 'Agropecuaria' ? 'gray' : 'white'}).td.center
+                'background': descripcionUso.includes('Agropecuaria') ? 'gray' : 'white'}).td.center
                   p 
                     b Agropecuaria
                 div(style={'-webkit-flex': 2, 
-                'background': servicioPublico === 'Acueducto' ? 'gray' : 'white'}).td.center
+                'background': servicioPublico.includes('Acueducto') ? 'gray' : 'white'}).td.center
                   p 
                     b Acueducto
                 div(style={'-webkit-flex': 2, 
-                'background': servicioPublico === 'Acera' ? 'gray' : 'white'}).td.center
+                'background': servicioPublico.includes('Acera') ? 'gray' : 'white'}).td.center
                   p 
                     b Acera
                 div(style={'-webkit-flex': 2, 
-                'background': servicioPublico === 'Teléfono' ? 'gray' : 'white'}).td.center
+                'background': servicioPublico.includes('Telefono') ? 'gray' : 'white'}).td.center
                   p 
                     b Teléfono
               div.tr
                 div(style={'-webkit-flex': 3, 
-                'background': descripcionUso === 'Comercio al Mayor' ? 'gray' : 'white'}).td.center
+                'background': descripcionUso.includes('Comercio al Mayor') ? 'gray' : 'white'}).td.center
                   p 
                     b Comercio al Mayor
                 div(style={'-webkit-flex': 3, 
-                'background': descripcionUso === 'Otro' ? 'gray' : 'white'}).td.center
+                'background': descripcionUso.includes('Otro') ? 'gray' : 'white'}).td.center
                   p 
                     b Otro
                 div(style={'-webkit-flex': 2, 
-                'background': servicioPublico === 'Electricidad' ? 'gray' : 'white'}).td.center
+                'background': servicioPublico.includes('Electricidad') ? 'gray' : 'white'}).td.center
                   p 
                     b Electricidad
                 div(style={'-webkit-flex': 2, 
-                'background': servicioPublico === 'Transporte' ? 'gray' : 'white'}).td.center
+                'background': servicioPublico.includes('Transporte') ? 'gray' : 'white'}).td.center
                   p 
                     b Transporte
                 div(style={'-webkit-flex': 2, 
-                'background': servicioPublico === 'Cable Tv' ? 'gray' : 'white'}).td.center
+                'background': servicioPublico.includes('Cable Tv') ? 'gray' : 'white'}).td.center
                   p 
                     b Cable Tv
               div.tr
                 div(style={'-webkit-flex': 3, 
-                'background': descripcionUso === 'Industrial' ? 'gray' : 'white'}).td.center
+                'background': descripcionUso.includes('Industrial') ? 'gray' : 'white'}).td.center
                   p 
                     b Industrial
                 div(style={'-webkit-flex': 3}).td.center
                 div(style={'-webkit-flex': 2, 
-                'background': servicioPublico === 'Cloacas' ? 'gray' : 'white'}).td.center
+                'background': servicioPublico.includes('Cloacas') ? 'gray' : 'white'}).td.center
                   p 
                     b Cloacas
                 div(style={'-webkit-flex': 2, 
-                'background': servicioPublico === 'Séptico' ? 'gray' : 'white'}).td.center
+                'background': servicioPublico.includes('Séptico') ? 'gray' : 'white'}).td.center
                   p 
                     b Séptico
                 div(style={'-webkit-flex': 2, 
-                'background': servicioPublico === 'Alum. Pub.' ? 'gray' : 'white'}).td.center
+                'background': servicioPublico.includes('Alum. Pub.') ? 'gray' : 'white'}).td.center
                   p 
                     b Alum. Pub.
               div.tr
                 div(style={'-webkit-flex': 3, 
-                'background': descripcionUso === 'Servicio' ? 'gray' : 'white'}).td.center
+                'background': descripcionUso.includes('Servicio') ? 'gray' : 'white'}).td.center
                   p 
                     b Servicio
                 div(style={'-webkit-flex': 3}).td
                 div(style={'-webkit-flex': 2, 
-                'background': servicioPublico === 'Pavimento' ? 'gray' : 'white'}).td.center
+                'background': servicioPublico.includes('Pavimento') ? 'gray' : 'white'}).td.center
                   p 
                     b Pavimento
                 div(style={'-webkit-flex': 2, 
-                'background': servicioPublico === 'Elec Indust.' ? 'gray' : 'white'}).td.center
+                'background': servicioPublico.includes('Elec Indust.') ? 'gray' : 'white'}).td.center
                   p 
                     b Elec Indust.
                 div(style={'-webkit-flex': 2, 
-                'background': servicioPublico === 'Otro' ? 'gray' : 'white'}).td.center
+                'background': servicioPublico.includes('Otro') ? 'gray' : 'white'}).td.center
                   p 
                     b Otro
               div.tr
@@ -407,7 +406,7 @@ html
                     | #{autor}
                   p 
                     b Hora: &nbsp;
-                    | #{hora}
+                    | #{moment().hour()}
                 div(style={'-webkit-flex': 6, 'min-height':'25px'}).td
                   p 
                     b Funcionario Revisor:
@@ -424,11 +423,11 @@ html
                     div(style={'-webkit-flex': 3.2}).td
                       p 
                         b Fecha de Expedición &nbsp;
-                        | #{fecha}
+                        | #{moment().format('YYYY/MM/DD')}
                     div(style={'-webkit-flex': 3.2}).td
                       p 
                         b Fecha de Vencimiento &nbsp;
-                        | #{fechaVencimiento}
+                        | #{moment().add(1, 'years').format('YYYY/MM/DD')}
               div
                 p LA DURACION DE ESTA CEDULA SERA DE UN (1) AÑO A PARTIR DE LA FECHA O HASTA QUE EL INMUEBLE SUFRA MODIFICACIONES QUE ALTEREN SU VALOR 
     div#wrapper.break-before
@@ -440,8 +439,8 @@ html
             img#QR(src='images/AE-logo.png')
             img#logo(src='images/sedemat.png', style={width:'60px !important'})
           div.header-child
-            p CEDULA N°: #{cedula}
-            p RECIBO N°: #{recibo}
+            p CEDULA N°: #{datos.nroCedula}
+            p RECIBO N°: #{datos.nroRecibo}
             img#QR(src='images/qrexample.png', alt='QR')
       div#content
         block title                                                                 
@@ -455,25 +454,25 @@ html
               p
                 b Dirección:
               p
-                b #{direccion} 
+                b #{datos.direccion} 
               div(style={'display':'flex', 'height':'40px', 'align-content':'flex-end', 'margin-top':'5px', 'margin-bottom':'5px'}) 
                 div.table
                   div.tr
                     div(style={'-webkit-flex': 4}).td
                       p
                         b Fecha de Expedición: &nbsp; 
-                        | #{fecha}
+                        | #{moment().format('YYYY/MM/DD')}
                   div.tr
                     div(style={'-webkit-flex': 4}).td
                       p
                         b Fecha de Vencimiento: &nbsp; 
-                        | #{fechaVencimiento}
+                        | #{moment().add(1, 'years').format('YYYY/MM/DD')}
                     div(style={'-webkit-flex': 8}).td
                       p
                         b DIGITALIZADO POR: &nbsp;
                         | #{autor} &nbsp; &nbsp; &nbsp;
                         | Hora: 
-                        | #{hora}
+                        | #{moment().hour()}
               div(style={'display':'flex','justify-content':'flex-end'})  
                 div.table
                   div.tr
@@ -516,27 +515,27 @@ html
                         b Und
                   div.tr
                     div(style={'-webkit-flex': 0.7}).td.center
-                      p #{actual ? actual.efed : '0'}
+                      p #{codCat ? codCat.efed : '0'}
                     div(style={'-webkit-flex': 0.7}).td.center
-                      p #{actual ? actual.mun : '0'}
+                      p #{codCat ? codCat.mun : '0'}
                     div(style={'-webkit-flex': 0.7}).td.center
-                      p #{actual ? actual.prr : '0'}
+                      p #{codCat ? codCat.prr : '0'}
                     div(style={'-webkit-flex': 0.7}).td.center
-                      p #{actual ? actual.amb : '0'}
+                      p #{codCat ? codCat.amb : '0'}
                     div(style={'-webkit-flex': 0.7}).td.center
-                      p #{actual ? actual.sec : '0'}
+                      p #{codCat ? codCat.sec : '0'}
                     div(style={'-webkit-flex': 0.7}).td.center
-                      p #{actual ? actual.ssec : '0'}
+                      p #{codCat ? codCat.ssec : '0'}
                     div(style={'-webkit-flex': 0.7}).td.center
-                      p #{actual ? actual.man : '0'}
+                      p #{codCat ? codCat.man : '0'}
                     div(style={'-webkit-flex': 0.7}).td.center
-                      p #{actual ? actual.par : '0'}
+                      p #{codCat ? codCat.par : '0'}
                     div(style={'-webkit-flex': 0.7}).td.center
-                      p #{actual ? actual.sbp : '0'}
+                      p #{codCat ? codCat.sbp : '0'}
                     div(style={'-webkit-flex': 0.7}).td.center
-                      p #{actual ? actual.niv : '0'}
+                      p #{codCat ? codCat.niv : '0'}
                     div(style={'-webkit-flex': 0.7}).td.center
-                      p #{actual ? actual.und : '0'} 
+                      p #{codCat ? codCat.und : '0'} 
               hr(style={'margin-top':'5px', 'width':'25%', 'color':'gray'})
               p 
                 b Ing. Yelitze Angola de Anderez 

@@ -46,6 +46,10 @@ router.post('/', authenticate('jwt'), async (req, res) => {
   if (data) res.status(data.status).json(data);
 });
 
+router.post('/generateCodCat', authenticate('jwt'), async (req, res) => {
+  const [err, data] = await fulfill(generateCodCat(req.body))
+})
+
 router.get('/sedemat/natural', async (req, res) => {
   const [error, data] = await fulfill(taxPayerEstatesByNaturalCont(req.query));
   mainLogger.info(error);
