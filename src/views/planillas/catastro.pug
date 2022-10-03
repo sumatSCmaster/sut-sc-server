@@ -1,0 +1,537 @@
+html
+  head
+    title Template
+    link(href='css/catastro.css' rel='stylesheet' type='text/css')
+    block css
+  body
+    div#wrapper
+      block header
+        header#header
+          div.header-child
+            img#alcaldia(src='images/gobernacion-logo.png')
+          div.header-child
+            img#alcaldia(src='images/gobernacion-logo.png')
+            img#logo(src='images/gobernacion-logo.png', style={width:'100px !important'})
+          div.header-child
+            p CEDULA N°: #{cedula}
+            p RECIBO N°: #{recibo}
+            img#QR(src=QR, alt='QR')
+      div#content
+        block title                                                                 
+          p CEDULA CATASTRAL DE INMUEBLES
+        block content
+          div(style={'width':'85%', 'height':'95%'})
+            div.table(style={'font-size':'14px'})
+              div.tr
+                div.td.center
+                  p
+                    b Código Catastral Anterior
+            div.table(style={'font-size':'14px'})
+              div.tr
+                div(style={'-webkit-flex': 1.5}).td.center
+                  p
+                    b Prr
+                div(style={'-webkit-flex': 1.5}).td.center
+                  p
+                    b Sec
+                div(style={'-webkit-flex': 1.5}).td.center
+                  p
+                    b Man
+                div(style={'-webkit-flex': 1.5}).td.center
+                  p
+                    b Par
+                div(style={'-webkit-flex': 1.5}).td.center
+                  p
+                    b Sbp
+                div(style={'-webkit-flex': 1.5}).td.center
+                  p
+                    b Niv
+                div(style={'-webkit-flex': 1.5}).td.center
+                  p
+                    b Und
+              div.tr
+                div(style={'-webkit-flex': 1.5}).td.center
+                  p #{anterior.prr}
+                div(style={'-webkit-flex': 1.5}).td.center
+                  p #{anterior.sec}
+                div(style={'-webkit-flex': 1.5}).td.center
+                  p #{anterior.man}
+                div(style={'-webkit-flex': 1.5}).td.center
+                  p #{anterior.par}
+                div(style={'-webkit-flex': 1.5}).td.center
+                  p #{anterior.sbp}
+                div(style={'-webkit-flex': 1.5}).td.center
+                  p #{anterior.niv}
+                div(style={'-webkit-flex': 1.5}).td.center
+                  p #{anterior.und}
+            div.table(style={'font-size':'14px'})
+              div.tr
+                div.td.center
+                  p
+                    b Código Catastral
+            div.table(style={'font-size':'14px'})
+              div.tr
+                div(style={'-webkit-flex': 1}).td.center
+                  p
+                    b EFed
+                div(style={'-webkit-flex': 1}).td.center
+                  p
+                    b Mun
+                div(style={'-webkit-flex': 1}).td.center
+                  p
+                    b Prr
+                div(style={'-webkit-flex': 1}).td.center
+                  p
+                    b Amb
+                div(style={'-webkit-flex': 1}).td.center
+                  p
+                    b Sec
+                div(style={'-webkit-flex': 1}).td.center
+                  p
+                    b SSec
+                div(style={'-webkit-flex': 1}).td.center
+                  p
+                    b Man
+                div(style={'-webkit-flex': 1}).td.center
+                  p
+                    b Par
+                div(style={'-webkit-flex': 1}).td.center
+                  p
+                    b Sbp
+                div(style={'-webkit-flex': 1}).td.center
+                  p
+                    b Niv
+                div(style={'-webkit-flex': 1}).td.center
+                  p
+                    b Und
+              div.tr
+                div(style={'-webkit-flex': 1}).td.center
+                  p #{anterior.efed}
+                div(style={'-webkit-flex': 1}).td.center
+                  p #{anterior.mun}
+                div(style={'-webkit-flex': 1}).td.center
+                  p #{anterior.prr}
+                div(style={'-webkit-flex': 1}).td.center
+                  p #{anterior.amb}
+                div(style={'-webkit-flex': 1}).td.center
+                  p #{anterior.sec}
+                div(style={'-webkit-flex': 1}).td.center
+                  p #{anterior.ssec}
+                div(style={'-webkit-flex': 1}).td.center
+                  p #{anterior.man}
+                div(style={'-webkit-flex': 1}).td.center
+                  p #{anterior.par}
+                div(style={'-webkit-flex': 1}).td.center
+                  p #{anterior.sbp}
+                div(style={'-webkit-flex': 1}).td.center
+                  p #{anterior.niv}
+                div(style={'-webkit-flex': 1}).td.center
+                  p #{anterior.und}  
+            div.table
+              div.tr
+                div.td.center
+                  p
+                    b Datos del Propietario / Rep. Legal
+              div.tr
+                div.td
+                  div(style={'display':'flex','justify-content':'space-between'})
+                    p
+                      b Nombre y Apellidos / Razón Social
+                    p
+                      b Cedula / Rif:
+                  each item in propietarios
+                    div(style={'display':'flex','justify-content':'space-between'})
+                        p #{item.razonSocial}
+                        p #{item.documento}
+              div.tr
+                div.td
+                  p 
+                    b Dirección: &nbsp;
+                    | #{direccion}
+              div.tr
+                div(style={'display':'flex','justify-content':'space-between'}).td
+                  p 
+                    b Estado: &nbsp;
+                    | #{estado}
+                  p 
+                    b Municipio: &nbsp;
+                    | #{municipio}
+                  p 
+                    b Parroquia: &nbsp;
+                    i #{parroquia}
+              div.tr
+                div.td
+                  p 
+                    | Numero: &nbsp;
+                    | #{numero}
+                div.td
+                  p 
+                    | FOLIOS: &nbsp;
+                    | #{folios}
+                div.td
+                  p 
+                    b Tomo: &nbsp;
+                    | #{tomo}
+                div.td
+                  p 
+                    b Protocolo: &nbsp;
+                    | #{protocolo}
+                div.td
+                  p 
+                    b Fecha: &nbsp;
+                    | #{fecha}
+              div.tr
+                div.td.center
+                  p 
+                    b Linderos Originales
+              div.tr
+                div.td
+                  p 
+                    b Norte: &nbsp;
+                    b 
+                      i #{originales.norte}
+              div.tr
+                div.td
+                  p 
+                    b Sur: &nbsp;
+                    b 
+                      i #{originales.sur}
+              div.tr
+                div.td
+                  p 
+                    b Este: &nbsp;
+                    b 
+                      i #{originales.este}
+              div.tr
+                div.td
+                  p 
+                    b Oeste: &nbsp;
+                    b 
+                      i #{originales.oeste}
+              div.tr
+                div.td.center
+                  p 
+                    b Linderos Actuales
+              div.tr
+                div.td
+                  p 
+                    b Norte: &nbsp;
+                    b 
+                      i #{actuales.norte}
+              div.tr
+                div.td
+                  p 
+                    b Sur: &nbsp;
+                    b 
+                      i #{actuales.sur}
+              div.tr
+                div.td
+                  p 
+                    b Este: &nbsp;
+                    b 
+                      i #{actuales.este}
+              div.tr
+                div.td
+                  p 1
+                    b Oeste: &nbsp;
+                    b 
+                      i #{actuales.oeste}
+              div.tr
+                div(style={'-webkit-flex': 6}).td.center
+                  p 
+                    b AVALUO
+                div(style={'-webkit-flex': 6}).td.center
+                  p 
+                    b DATOS FISICOS
+              div.tr
+                div(style={'-webkit-flex': 6, 'display':'flex'}).td
+                  div(style={'-webkit-flex': 3.5, 'justify-content':'end'})
+                    p 
+                      b Superficie(m2)
+                  div(style={'-webkit-flex': 3 , 'justify-content':'end'})
+                    p 
+                      b Total BS.F
+                div(style={'-webkit-flex': 3.5}).td
+                  p 
+                    b Tenencia del Terreno:
+                div(style={'-webkit-flex': 2.5}).td.center
+                  p 
+                    b 
+                      i #{tenenciaTerreno}
+              div.tr
+                div(style={'-webkit-flex': 2}).td
+                  p 
+                    b Terreno:
+                div(style={'-webkit-flex': 1.5}).td
+                  p 
+                    | #{superficieTerreno}
+                div(style={'-webkit-flex': 2.5, 'justify-content':'end'}).td
+                  p 
+                    | #{totalTerreno}
+                div(style={'-webkit-flex': 3.5}).td
+                  p 
+                    b Tenencia de la Construcción:
+                div(style={'-webkit-flex': 2.5}).td.center
+                  p 
+                    b 
+                      i #{tenenciaConstruccion}
+              div.tr
+                div(style={'-webkit-flex': 2}).td
+                  p 
+                    b Construcción:
+                div(style={'-webkit-flex': 1.5}).td
+                  p 
+                    | #{superficieConstruccion}
+                div(style={'-webkit-flex': 2.5, 'justify-content':'end'}).td
+                  p 
+                    | #{totalConstruccion}
+                div(style={'-webkit-flex': 3.5}).td
+                  p 
+                    b Régimen de Propiedad:
+                div(style={'-webkit-flex': 2.5}).td.center
+                  p 
+                    b 
+                      i #{regimenPropiedad}
+              div.tr
+                div(style={'-webkit-flex': 6}).td
+                div(style={'-webkit-flex': 3.5}).td
+                  p 
+                    b Régimen Familiar:
+                div(style={'-webkit-flex': 2.5}).td.center
+                  p 
+                    b 
+                      i #{regimenFamiliar}
+              div.tr
+                div.td.center
+                  p 
+                    b Datos Físicos
+              div.tr
+                div(style={'-webkit-flex': 6}).td.center
+                  p 
+                    | Descripción de Uso
+                div(style={'-webkit-flex': 6}).td.center
+                  p 
+                    | Servicios Públicos
+              div.tr
+                div(style={'-webkit-flex': 3, 
+                'background': descripcionUso === 'Comercio al Detal' ? 'gray' : 'white'}).td.center
+                  p 
+                    b Comercio al Detal
+                div(style={'-webkit-flex': 3, 
+                'background': descripcionUso === 'Agropecuaria' ? 'gray' : 'white'}).td.center
+                  p 
+                    b Agropecuaria
+                div(style={'-webkit-flex': 2, 
+                'background': servicioPublico === 'Acueducto' ? 'gray' : 'white'}).td.center
+                  p 
+                    b Acueducto
+                div(style={'-webkit-flex': 2, 
+                'background': servicioPublico === 'Acera' ? 'gray' : 'white'}).td.center
+                  p 
+                    b Acera
+                div(style={'-webkit-flex': 2, 
+                'background': servicioPublico === 'Teléfono' ? 'gray' : 'white'}).td.center
+                  p 
+                    b Teléfono
+              div.tr
+                div(style={'-webkit-flex': 3, 
+                'background': descripcionUso === 'Comercio al Mayor' ? 'gray' : 'white'}).td.center
+                  p 
+                    b Comercio al Mayor
+                div(style={'-webkit-flex': 3, 
+                'background': descripcionUso === 'Otro' ? 'gray' : 'white'}).td.center
+                  p 
+                    b Otro
+                div(style={'-webkit-flex': 2, 
+                'background': servicioPublico === 'Electricidad' ? 'gray' : 'white'}).td.center
+                  p 
+                    b Electricidad
+                div(style={'-webkit-flex': 2, 
+                'background': servicioPublico === 'Transporte' ? 'gray' : 'white'}).td.center
+                  p 
+                    b Transporte
+                div(style={'-webkit-flex': 2, 
+                'background': servicioPublico === 'Cable Tv' ? 'gray' : 'white'}).td.center
+                  p 
+                    b Cable Tv
+              div.tr
+                div(style={'-webkit-flex': 3, 
+                'background': descripcionUso === 'Industrial' ? 'gray' : 'white'}).td.center
+                  p 
+                    b Industrial
+                div(style={'-webkit-flex': 3}).td.center
+                div(style={'-webkit-flex': 2, 
+                'background': servicioPublico === 'Cloacas' ? 'gray' : 'white'}).td.center
+                  p 
+                    b Cloacas
+                div(style={'-webkit-flex': 2, 
+                'background': servicioPublico === 'Séptico' ? 'gray' : 'white'}).td.center
+                  p 
+                    b Séptico
+                div(style={'-webkit-flex': 2, 
+                'background': servicioPublico === 'Alum. Pub.' ? 'gray' : 'white'}).td.center
+                  p 
+                    b Alum. Pub.
+              div.tr
+                div(style={'-webkit-flex': 3, 
+                'background': descripcionUso === 'Servicio' ? 'gray' : 'white'}).td.center
+                  p 
+                    b Servicio
+                div(style={'-webkit-flex': 3}).td
+                div(style={'-webkit-flex': 2, 
+                'background': servicioPublico === 'Pavimento' ? 'gray' : 'white'}).td.center
+                  p 
+                    b Pavimento
+                div(style={'-webkit-flex': 2, 
+                'background': servicioPublico === 'Elec Indust.' ? 'gray' : 'white'}).td.center
+                  p 
+                    b Elec Indust.
+                div(style={'-webkit-flex': 2, 
+                'background': servicioPublico === 'Otro' ? 'gray' : 'white'}).td.center
+                  p 
+                    b Otro
+              div.tr
+                div(style={'-webkit-flex': 6, 'align-content':'space-between'}).td
+                  p 
+                    b Observaciones:
+                  p 
+                    | "#{observaciones}"
+                  p 
+                    b Elab por: &nbsp;
+                    | #{autor}
+                  p 
+                    b Hora: &nbsp;
+                    | #{hora}
+                div(style={'-webkit-flex': 6, 'min-height':'25px'}).td
+                  p 
+                    b Funcionario Revisor:
+                  hr(style={'margin-top':'15px', 'width':'50%', 'margin-right':'3px', 'color':'gray'})
+            div.keep-together.break-after
+              div(style={'align':'right'})
+                hr(style={'margin-top':'15px', 'width':'15%', 'color':'gray', 'margin-right':'2px'})
+                p
+                  b Ing. Yelitze Angola de Anderez 
+                p 
+                  b Jefe de la División de Catastro
+                div.table
+                  div.tr
+                    div(style={'-webkit-flex': 3.2}).td
+                      p 
+                        b Fecha de Expedición &nbsp;
+                        | #{fecha}
+                    div(style={'-webkit-flex': 3.2}).td
+                      p 
+                        b Fecha de Vencimiento &nbsp;
+                        | #{fechaVencimiento}
+              div
+                p LA DURACION DE ESTA CEDULA SERA DE UN (1) AÑO A PARTIR DE LA FECHA O HASTA QUE EL INMUEBLE SUFRA MODIFICACIONES QUE ALTEREN SU VALOR 
+    div#wrapper
+      block header
+        header#header
+          div.header-child
+            img#alcaldia(src='images/gobernacion-logo.png')
+          div.header-child
+            img#alcaldia(src='images/gobernacion-logo.png')
+            img#logo(src=src, style={width:'100px !important'})
+          div.header-child
+            p CEDULA N°: #{cedula}
+            p RECIBO N°: #{recibo}
+            img#QR(src=QR, alt='QR')
+      div#content
+        block title                                                                 
+          p 
+            b Mapa de Ubicación
+        block content
+          div(style={'width':'85%', 'height':'95%'})
+            div(style={'border':'1px solid gray'})
+              img(src=mapaURL, alt='mapa', width='100%', height='600px')
+            div
+              p
+                b Dirección:
+              p
+                b #{direccion} 
+              div(style={'display':'flex', 'height':'40px', 'align-content':'flex-end'}) 
+                div.table
+                  div.tr
+                    div(style={'-webkit-flex': 4}).td
+                      p
+                        b Fecha de Expedición: &nbsp; 
+                        | #{fecha}
+                    div(style={'-webkit-flex': 4}).td
+                      p
+                        b Fecha de Vencimiento: &nbsp; 
+                        | #{fechaVencimiento}
+                    div(style={'-webkit-flex': 8}).td
+                      p
+                        b DIGITALIZADO POR: &nbsp;
+                        | #{autor} &nbsp; &nbsp; &nbsp;
+                        | Hora: 
+                        | #{hora}
+              div(style={'display':'flex','justify-content':'flex-end'})  
+                div.table
+                  div.tr
+                    div.td.center
+                      p
+                        b Código Catastral
+                  div.tr
+                    div(style={'-webkit-flex': 0.7}).td.center
+                      p
+                        b EFed
+                    div(style={'-webkit-flex': 0.7}).td.center
+                      p
+                        b Mun
+                    div(style={'-webkit-flex': 0.7}).td.center
+                      p
+                        b Prr
+                    div(style={'-webkit-flex': 0.7}).td.center
+                      p
+                        b Amb
+                    div(style={'-webkit-flex': 0.7}).td.center
+                      p
+                        b Sec
+                    div(style={'-webkit-flex': 0.7}).td.center
+                      p
+                        b SSec
+                    div(style={'-webkit-flex': 0.7}).td.center
+                      p
+                        b Man
+                    div(style={'-webkit-flex': 0.7}).td.center
+                      p
+                        b Par
+                    div(style={'-webkit-flex': 0.7}).td.center
+                      p
+                        b Sbp
+                    div(style={'-webkit-flex': 0.7}).td.center
+                      p
+                        b Niv
+                    div(style={'-webkit-flex': 0.7}).td.center
+                      p
+                        b Und
+                  div.tr
+                    div(style={'-webkit-flex': 0.7}).td.center
+                      p #{anterior.efed}
+                    div(style={'-webkit-flex': 0.7}).td.center
+                      p #{anterior.mun}
+                    div(style={'-webkit-flex': 0.7}).td.center
+                      p #{anterior.prr}
+                    div(style={'-webkit-flex': 0.7}).td.center
+                      p #{anterior.amb}
+                    div(style={'-webkit-flex': 0.7}).td.center
+                      p #{anterior.sec}
+                    div(style={'-webkit-flex': 0.7}).td.center
+                      p #{anterior.ssec}
+                    div(style={'-webkit-flex': 0.7}).td.center
+                      p #{anterior.man}
+                    div(style={'-webkit-flex': 0.7}).td.center
+                      p #{anterior.par}
+                    div(style={'-webkit-flex': 0.7}).td.center
+                      p #{anterior.sbp}
+                    div(style={'-webkit-flex': 0.7}).td.center
+                      p #{anterior.niv}
+                    div(style={'-webkit-flex': 0.7}).td.center
+                      p #{anterior.und} 
+              hr(style={'margin-top':'5px', 'width':'25%', 'color':'gray'})
+              p 
+                b Ing. Yelitze Angola de Anderez 
+              p 
+                b Jefe de la División de Catastro
