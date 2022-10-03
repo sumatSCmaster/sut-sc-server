@@ -10,20 +10,26 @@ html
           div.header-child
             img#alcaldia(src='images/gobernacion-logo.png')
           div.header-child
-            img#alcaldia(src='images/gobernacion-logo.png')
-            img#logo(src='images/gobernacion-logo.png', style={width:'100px !important'})
+            img(src='images/sedemat.png', width='70px', height='70px')
+            img(src='images/sedemat.png', width='100px', height='30px')
           div.header-child
-            p CEDULA N°: #{cedula}
-            p RECIBO N°: #{recibo}
-            img#QR(src=QR, alt='QR')
+            div 
+              p 
+                b CEDULA N°: &nbsp;
+                b #{cedula}
+              p 
+                b RECIBO N°: &nbsp; 
+                b #{recibo}
+            img#QR(src='images/qrexample.png', alt='QR')
       div#content
         block title                                                                 
-          p CEDULA CATASTRAL DE INMUEBLES
+          p 
+            b CEDULA CATASTRAL DE INMUEBLES
         block content
           div(style={'width':'85%', 'height':'95%'})
-            div.table(style={'font-size':'14px'})
+            div(style={'font-size':'14px'}).table
               div.tr
-                div.td.center
+                div(style={'text-align':'center'}).td.center
                   p
                     b Código Catastral Anterior
             div.table(style={'font-size':'14px'})
@@ -51,19 +57,19 @@ html
                     b Und
               div.tr
                 div(style={'-webkit-flex': 1.5}).td.center
-                  p #{anterior.prr}
+                  p #{anterior ? anterior.prr : '0'}
                 div(style={'-webkit-flex': 1.5}).td.center
-                  p #{anterior.sec}
+                  p #{anterior ? anterior.sec : '0'}
                 div(style={'-webkit-flex': 1.5}).td.center
-                  p #{anterior.man}
+                  p #{anterior ? anterior.man : '0'}
                 div(style={'-webkit-flex': 1.5}).td.center
-                  p #{anterior.par}
+                  p #{anterior ? anterior.par : '0'}
                 div(style={'-webkit-flex': 1.5}).td.center
-                  p #{anterior.sbp}
+                  p #{anterior ? anterior.sbp : '0'}
                 div(style={'-webkit-flex': 1.5}).td.center
-                  p #{anterior.niv}
+                  p #{anterior ? anterior.niv : '0'}
                 div(style={'-webkit-flex': 1.5}).td.center
-                  p #{anterior.und}
+                  p #{anterior ? anterior.und : '0'}
             div.table(style={'font-size':'14px'})
               div.tr
                 div.td.center
@@ -106,27 +112,27 @@ html
                     b Und
               div.tr
                 div(style={'-webkit-flex': 1}).td.center
-                  p #{anterior.efed}
+                  p #{actual ? actual.efed : '0'}
                 div(style={'-webkit-flex': 1}).td.center
-                  p #{anterior.mun}
+                  p #{actual ? actual.mun : '0'}
                 div(style={'-webkit-flex': 1}).td.center
-                  p #{anterior.prr}
+                  p #{actual ? actual.prr : '0'}
                 div(style={'-webkit-flex': 1}).td.center
-                  p #{anterior.amb}
+                  p #{actual ? actual.amb : '0'}
                 div(style={'-webkit-flex': 1}).td.center
-                  p #{anterior.sec}
+                  p #{actual ? actual.sec : '0'}
                 div(style={'-webkit-flex': 1}).td.center
-                  p #{anterior.ssec}
+                  p #{actual ? actual.ssec : '0'}
                 div(style={'-webkit-flex': 1}).td.center
-                  p #{anterior.man}
+                  p #{actual ? actual.man : '0'}
                 div(style={'-webkit-flex': 1}).td.center
-                  p #{anterior.par}
+                  p #{actual ? actual.par : '0'}
                 div(style={'-webkit-flex': 1}).td.center
-                  p #{anterior.sbp}
+                  p #{actual ? actual.sbp : '0'}
                 div(style={'-webkit-flex': 1}).td.center
-                  p #{anterior.niv}
+                  p #{actual ? actual.niv : '0'}
                 div(style={'-webkit-flex': 1}).td.center
-                  p #{anterior.und}  
+                  p #{actual ? actual.und : '0'}  
             div.table
               div.tr
                 div.td.center
@@ -139,10 +145,11 @@ html
                       b Nombre y Apellidos / Razón Social
                     p
                       b Cedula / Rif:
-                  each item in propietarios
-                    div(style={'display':'flex','justify-content':'space-between'})
-                        p #{item.razonSocial}
-                        p #{item.documento}
+                  if propietarios
+                    each item in propietarios
+                      div(style={'display':'flex','justify-content':'space-between'})
+                        p #{item ? item.razonSocial : ''}
+                        p #{item ? item.documento : ''}
               div.tr
                 div.td
                   p 
@@ -189,25 +196,25 @@ html
                   p 
                     b Norte: &nbsp;
                     b 
-                      i #{originales.norte}
+                      i #{originales ? originales.norte : ''}
               div.tr
                 div.td
                   p 
                     b Sur: &nbsp;
                     b 
-                      i #{originales.sur}
+                      i #{originales ? originales.sur : ''}
               div.tr
                 div.td
                   p 
                     b Este: &nbsp;
                     b 
-                      i #{originales.este}
+                      i #{originales ? originales.este : ''}
               div.tr
                 div.td
                   p 
                     b Oeste: &nbsp;
                     b 
-                      i #{originales.oeste}
+                      i #{originales ? originales.oeste : ''}
               div.tr
                 div.td.center
                   p 
@@ -217,25 +224,25 @@ html
                   p 
                     b Norte: &nbsp;
                     b 
-                      i #{actuales.norte}
+                      i #{actuales ? actuales.norte : ''}
               div.tr
                 div.td
                   p 
                     b Sur: &nbsp;
                     b 
-                      i #{actuales.sur}
+                      i #{actuales ? actuales.sur : ''}
               div.tr
                 div.td
                   p 
                     b Este: &nbsp;
                     b 
-                      i #{actuales.este}
+                      i #{actuales ? actuales.este : ''}
               div.tr
                 div.td
-                  p 1
+                  p 
                     b Oeste: &nbsp;
                     b 
-                      i #{actuales.oeste}
+                      i #{actuales ? actuales.oeste : ''}
               div.tr
                 div(style={'-webkit-flex': 6}).td.center
                   p 
@@ -244,13 +251,12 @@ html
                   p 
                     b DATOS FISICOS
               div.tr
-                div(style={'-webkit-flex': 6, 'display':'flex'}).td
-                  div(style={'-webkit-flex': 3.5, 'justify-content':'end'})
-                    p 
-                      b Superficie(m2)
-                  div(style={'-webkit-flex': 3 , 'justify-content':'end'})
-                    p 
-                      b Total BS.F
+                div(style={'-webkit-flex': 3.5, 'justify-content':'end'}).td
+                  p 
+                    b Superficie(m2)
+                div(style={'-webkit-flex': 2.5 , 'justify-content':'end'}).td
+                  p 
+                    b Total BS.F
                 div(style={'-webkit-flex': 3.5}).td
                   p 
                     b Tenencia del Terreno:
@@ -425,48 +431,49 @@ html
                         | #{fechaVencimiento}
               div
                 p LA DURACION DE ESTA CEDULA SERA DE UN (1) AÑO A PARTIR DE LA FECHA O HASTA QUE EL INMUEBLE SUFRA MODIFICACIONES QUE ALTEREN SU VALOR 
-    div#wrapper
+    div#wrapper.break-before
       block header
         header#header
           div.header-child
             img#alcaldia(src='images/gobernacion-logo.png')
           div.header-child
-            img#alcaldia(src='images/gobernacion-logo.png')
-            img#logo(src=src, style={width:'100px !important'})
+            img#QR(src='images/AE-logo.png')
+            img#logo(src='images/sedemat.png', style={width:'60px !important'})
           div.header-child
             p CEDULA N°: #{cedula}
             p RECIBO N°: #{recibo}
-            img#QR(src=QR, alt='QR')
+            img#QR(src='images/qrexample.png', alt='QR')
       div#content
         block title                                                                 
           p 
             b Mapa de Ubicación
         block content
           div(style={'width':'85%', 'height':'95%'})
-            div(style={'border':'1px solid gray'})
-              img(src=mapaURL, alt='mapa', width='100%', height='600px')
+            div(style={'border':'1px solid gray', 'margin':'5px'})
+              img(src='images/qrexample.png', alt='mapa', width='100%', height='600px')
             div
               p
                 b Dirección:
               p
                 b #{direccion} 
-              div(style={'display':'flex', 'height':'40px', 'align-content':'flex-end'}) 
+              div(style={'display':'flex', 'height':'20px', 'align-content':'flex-end', 'margin-top':'5px', 'margin-bottom':'5px'}) 
                 div.table
                   div.tr
                     div(style={'-webkit-flex': 4}).td
                       p
                         b Fecha de Expedición: &nbsp; 
                         | #{fecha}
+                  div.tr
                     div(style={'-webkit-flex': 4}).td
                       p
                         b Fecha de Vencimiento: &nbsp; 
                         | #{fechaVencimiento}
-                    div(style={'-webkit-flex': 8}).td
-                      p
-                        b DIGITALIZADO POR: &nbsp;
-                        | #{autor} &nbsp; &nbsp; &nbsp;
-                        | Hora: 
-                        | #{hora}
+                div(style={'-webkit-flex': 8})
+                  p
+                    b DIGITALIZADO POR: &nbsp;
+                    | #{autor} &nbsp; &nbsp; &nbsp;
+                    | Hora: 
+                    | #{hora}
               div(style={'display':'flex','justify-content':'flex-end'})  
                 div.table
                   div.tr
@@ -509,27 +516,27 @@ html
                         b Und
                   div.tr
                     div(style={'-webkit-flex': 0.7}).td.center
-                      p #{anterior.efed}
+                      p #{actual ? actual.efed : '0'}
                     div(style={'-webkit-flex': 0.7}).td.center
-                      p #{anterior.mun}
+                      p #{actual ? actual.mun : '0'}
                     div(style={'-webkit-flex': 0.7}).td.center
-                      p #{anterior.prr}
+                      p #{actual ? actual.prr : '0'}
                     div(style={'-webkit-flex': 0.7}).td.center
-                      p #{anterior.amb}
+                      p #{actual ? actual.amb : '0'}
                     div(style={'-webkit-flex': 0.7}).td.center
-                      p #{anterior.sec}
+                      p #{actual ? actual.sec : '0'}
                     div(style={'-webkit-flex': 0.7}).td.center
-                      p #{anterior.ssec}
+                      p #{actual ? actual.ssec : '0'}
                     div(style={'-webkit-flex': 0.7}).td.center
-                      p #{anterior.man}
+                      p #{actual ? actual.man : '0'}
                     div(style={'-webkit-flex': 0.7}).td.center
-                      p #{anterior.par}
+                      p #{actual ? actual.par : '0'}
                     div(style={'-webkit-flex': 0.7}).td.center
-                      p #{anterior.sbp}
+                      p #{actual ? actual.sbp : '0'}
                     div(style={'-webkit-flex': 0.7}).td.center
-                      p #{anterior.niv}
+                      p #{actual ? actual.niv : '0'}
                     div(style={'-webkit-flex': 0.7}).td.center
-                      p #{anterior.und} 
+                      p #{actual ? actual.und : '0'} 
               hr(style={'margin-top':'5px', 'width':'25%', 'color':'gray'})
               p 
                 b Ing. Yelitze Angola de Anderez 
