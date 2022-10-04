@@ -11,13 +11,13 @@ body {
 #header,
 #footer {
   width: 100%;
-  height: 150px;
+  height: 160px;
   display: flex;
   display: -webkit-flex;
 }
 
 .header-child {
-  padding: 10;
+  padding: 2;
   flex: 2;
   -webkit-flex: 2;
   display: flex;
@@ -31,6 +31,11 @@ body {
   -webkit-flex-direction: column;
 }
 
+#alcaldia {
+  width: 200px;
+  height: 100px;
+  object-fit: contain;
+}
 
 
 #content {
@@ -47,6 +52,20 @@ body {
   background-position: center;
   background-size: contain;
   text-align: center;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+#content2 {
+  display: flex;
+  display: -webkit-flex;
+  flex-direction: column;
+  -webkit-flex-direction: column;
+  flex: 1;
+  -webkit-flex: 1;
+  /* background: url('../images/background.png'); */
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
   font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -72,14 +91,28 @@ body {
 }
 
 .table {
-  width: 100%;
   max-height: 95%;
   margin-top: 20px;
-  border: 2px solid #4a4e50;
+  border: 1px solid #4a4e50;
   display: flex;
   display: -webkit-flex;
   flex-direction: column;
   -webkit-flex-direction: column;
+}
+
+.all-border {
+  border: 1px solid #4a4e50;
+}
+
+.border-right {
+  border-right: 1px solid #4a4e50;
+}
+
+.border-bottom {
+  border-bottom: 1px solid #4a4e50;
+}
+.border-top {
+  border-top: 1px solid #4a4e50;
 }
 
 .center > p,
@@ -92,6 +125,26 @@ body {
   -webkit-justify-content: center;
 }
 
+.left > p,
+.left {
+  text-align: left !important;
+  display: -webkit-flex;
+  align-items: left;
+  justify-content: left;
+  -webkit-align-items: left;
+  -webkit-justify-content: left;
+}
+
+.right > p,
+.right {
+  text-align: right !important;
+  display: -webkit-flex;
+  align-items: right;
+  justify-content: right;
+  -webkit-align-items: right;
+  -webkit-justify-content: right;
+}
+
 .tr {
   width: 100%;
   display: flex;
@@ -100,7 +153,6 @@ body {
 
 .td > p {
   margin: 0;
-  text-align: left;
   padding: 1px;
 }
 
@@ -133,7 +185,7 @@ body {
 }
 
 .QR {
-  padding: 2px 0;
+  padding: 2px 2px;
   width: 110px;
   border: 1px solid lightgrey;
   height: 110px;

@@ -11,292 +11,297 @@ html
             img#alcaldia(src='images/gobernacion-logo.png')
           div.header-child
             img(src='images/sedemat.png', width='70px', height='70px')
-            img(src='images/sedemat.png', width='100px', height='30px')
+            img(src='images/sedemat.png', width='120px', height='40px')
           div.header-child
             div 
-              p 
+              p(style={'padding':'1px'})  
                 b CEDULA N°: &nbsp;
                 b #{datos.nroCedula}
-              p 
+              p(style={'padding':'1px'}) 
                 b RECIBO N°: &nbsp; 
                 b #{datos.nroRecibo}
-            img#QR(src='images/qrexample.png', alt='QR')
+            div
+              img#QR(src='images/qrexample.png', alt='QR')
       div#content
         block title                                                                 
           p 
             b CEDULA CATASTRAL DE INMUEBLES
         block content
           div(style={'width':'85%', 'height':'95%'})
-            div(style={'font-size':'14px'}).table
+            div(style={'font-size':'14px', 'width':'100%'}).table
               div.tr
-                div(style={'text-align':'center'}).td.center
+                div(style={'-webkit-flex': 12}).td.center
                   p
                     b Código Catastral Anterior
             div.table(style={'font-size':'14px'})
-              div.tr
-                div(style={'-webkit-flex': 1.5}).td.center
+              div.tr.border-bottom
+                div(style={'-webkit-flex': 1.5, 'padding-bottom':'4px'}).td.center.border-right
                   p
                     b Prr
-                div(style={'-webkit-flex': 1.5}).td.center
+                div(style={'-webkit-flex': 1.5, 'padding-bottom':'4px'}).td.center.border-right
                   p
                     b Sec
-                div(style={'-webkit-flex': 1.5}).td.center
+                div(style={'-webkit-flex': 1.5, 'padding-bottom':'4px'}).td.center.border-right
                   p
                     b Man
-                div(style={'-webkit-flex': 1.5}).td.center
+                div(style={'-webkit-flex': 1.5, 'padding-bottom':'4px'}).td.center.border-right
                   p
                     b Par
-                div(style={'-webkit-flex': 1.5}).td.center
+                div(style={'-webkit-flex': 1.5, 'padding-bottom':'4px'}).td.center.border-right
                   p
                     b Sbp
-                div(style={'-webkit-flex': 1.5}).td.center
+                div(style={'-webkit-flex': 1.5, 'padding-bottom':'4px'}).td.center.border-right
                   p
                     b Niv
-                div(style={'-webkit-flex': 1.5}).td.center
+                div(style={'-webkit-flex': 1.5, 'padding-bottom':'4px'}).td.center.border-right
                   p
                     b Und
               div.tr
-                div(style={'-webkit-flex': 1.5}).td.center
+                div(style={'-webkit-flex': 1.5, 'padding':'4px'}).td.center.border-right
                   p #{oldCodCat ? oldCodCat.prr : '0'}
-                div(style={'-webkit-flex': 1.5}).td.center
+                div(style={'-webkit-flex': 1.5, 'padding':'4px'}).td.center.border-right
                   p #{oldCodCat ? oldCodCat.sec : '0'}
-                div(style={'-webkit-flex': 1.5}).td.center
+                div(style={'-webkit-flex': 1.5, 'padding':'4px'}).td.center.border-right
                   p #{oldCodCat ? oldCodCat.man : '0'}
-                div(style={'-webkit-flex': 1.5}).td.center
+                div(style={'-webkit-flex': 1.5, 'padding':'4px'}).td.center.border-right
                   p #{oldCodCat ? oldCodCat.par : '0'}
-                div(style={'-webkit-flex': 1.5}).td.center
+                div(style={'-webkit-flex': 1.5, 'padding':'4px'}).td.center.border-right
                   p #{oldCodCat ? oldCodCat.sbp : '0'}
-                div(style={'-webkit-flex': 1.5}).td.center
+                div(style={'-webkit-flex': 1.5, 'padding':'4px'}).td.center.border-right
                   p #{oldCodCat ? oldCodCat.niv : '0'}
-                div(style={'-webkit-flex': 1.5}).td.center
+                div(style={'-webkit-flex': 1.5, 'padding':'4px'}).td.center.border-right
                   p #{oldCodCat ? oldCodCat.und : '0'}
             div.table(style={'font-size':'14px'})
               div.tr
-                div.td.center
+                div(style={'-webkit-flex': 12}).td.center
                   p
                     b Código Catastral
             div.table(style={'font-size':'14px'})
-              div.tr
-                div(style={'-webkit-flex': 1}).td.center
+              div.tr.border-bottom
+                div(style={'-webkit-flex': 1}).td.center.border-right
                   p
                     b EFed
-                div(style={'-webkit-flex': 1}).td.center
+                div(style={'-webkit-flex': 1}).td.center.border-right
                   p
                     b Mun
-                div(style={'-webkit-flex': 1}).td.center
+                div(style={'-webkit-flex': 1}).td.center.border-right
                   p
                     b Prr
-                div(style={'-webkit-flex': 1}).td.center
+                div(style={'-webkit-flex': 1}).td.center.border-right
                   p
                     b Amb
-                div(style={'-webkit-flex': 1}).td.center
+                div(style={'-webkit-flex': 1}).td.center.border-right
                   p
                     b Sec
-                div(style={'-webkit-flex': 1}).td.center
+                div(style={'-webkit-flex': 1}).td.center.border-right
                   p
                     b SSec
-                div(style={'-webkit-flex': 1}).td.center
+                div(style={'-webkit-flex': 1}).td.center.border-right
                   p
                     b Man
-                div(style={'-webkit-flex': 1}).td.center
+                div(style={'-webkit-flex': 1}).td.center.border-right
                   p
                     b Par
-                div(style={'-webkit-flex': 1}).td.center
+                div(style={'-webkit-flex': 1}).td.center.border-right
                   p
                     b Sbp
-                div(style={'-webkit-flex': 1}).td.center
+                div(style={'-webkit-flex': 1}).td.center.border-right
                   p
                     b Niv
                 div(style={'-webkit-flex': 1}).td.center
                   p
                     b Und
               div.tr
-                div(style={'-webkit-flex': 1}).td.center
+                div(style={'-webkit-flex': 1, 'padding':'4px'}).td.center.border-right
                   p #{codCat ? codCat.efed : '0'}
-                div(style={'-webkit-flex': 1}).td.center
+                div(style={'-webkit-flex': 1, 'padding':'4px'}).td.center.border-right
                   p #{codCat ? codCat.mun : '0'}
-                div(style={'-webkit-flex': 1}).td.center
+                div(style={'-webkit-flex': 1, 'padding':'4px'}).td.center.border-right
                   p #{codCat ? codCat.prr : '0'}
-                div(style={'-webkit-flex': 1}).td.center
+                div(style={'-webkit-flex': 1, 'padding':'4px'}).td.center.border-right
                   p #{codCat ? codCat.amb : '0'}
-                div(style={'-webkit-flex': 1}).td.center
+                div(style={'-webkit-flex': 1, 'padding':'4px'}).td.center.border-right
                   p #{codCat ? codCat.sec : '0'}
-                div(style={'-webkit-flex': 1}).td.center
+                div(style={'-webkit-flex': 1, 'padding':'4px'}).td.center.border-right
                   p #{codCat ? codCat.ssec : '0'}
-                div(style={'-webkit-flex': 1}).td.center
+                div(style={'-webkit-flex': 1, 'padding':'4px'}).td.center.border-right
                   p #{codCat ? codCat.man : '0'}
-                div(style={'-webkit-flex': 1}).td.center
+                div(style={'-webkit-flex': 1, 'padding':'4px'}).td.center.border-right
                   p #{codCat ? codCat.par : '0'}
-                div(style={'-webkit-flex': 1}).td.center
+                div(style={'-webkit-flex': 1, 'padding':'4px'}).td.center.border-right
                   p #{codCat ? codCat.sbp : '0'}
-                div(style={'-webkit-flex': 1}).td.center
+                div(style={'-webkit-flex': 1, 'padding':'4px'}).td.center.border-right
                   p #{codCat ? codCat.niv : '0'}
-                div(style={'-webkit-flex': 1}).td.center
+                div(style={'-webkit-flex': 1, 'padding':'4px'}).td.center
                   p #{codCat ? codCat.und : '0'}  
             div.table
-              div.tr
-                div.td.center
+              div.tr.border-bottom
+                div(style={'-webkit-flex': 12}).td.center
                   p
                     b Datos del Propietario / Rep. Legal
               div.tr
-                div.td
-                  div(style={'display':'flex','justify-content':'space-between'})
-                    p
-                      b Nombre y Apellidos / Razón Social
-                    p
-                      b Cedula / Rif:
-                  div(style={'display':'flex','justify-content':'space-between'})
+                div(style={'-webkit-flex': 6}).td
+                  p
+                    b Nombre y Apellidos / Razón Social
+                div(style={'-webkit-flex': 6}).td
+                  p
+                    b Cedula / Rif:
+                div.tr
+                  div(style={'-webkit-flex': 6}).td
                     p #{datos.representantes ? datos.representantes : ''}
+                  div(style={'-webkit-flex': 6}).td
                     p #{datos.cedulas ? datos.cedulas : ''}
-              div.tr
+              div.tr.border-bottom.border-top
                 div.td
                   p 
                     b Dirección: &nbsp;
                     | #{datos.direccion}
-              div.tr
-                div(style={'display':'flex','justify-content':'space-between'}).td
+              div.tr.border-bottom
+                div(style={'-webkit-flex': 3}).td
                   p 
                     b Estado: &nbsp;
                     | #{'Táchira'}
+                div(style={'-webkit-flex': 4}).td
                   p 
                     b Municipio: &nbsp;
                     | #{'San Cristóbal'}
+                div(style={'-webkit-flex': 5}).td
                   p 
                     b Parroquia: &nbsp;
                     i #{datos.parroquia}
-              div.tr
-                div.td
+              div.tr.border-bottom
+                div(style={'-webkit-flex': 2}).td.border-right
                   p 
                     | Numero: &nbsp;
                     | #{datos.numero}
-                div.td
+                div(style={'-webkit-flex': 3}).td.border-right
                   p 
                     | FOLIOS: &nbsp;
                     | #{datos.folios || '1'}
-                div.td
+                div(style={'-webkit-flex': 2}).td.border-right
                   p 
                     b Tomo: &nbsp;
                     | #{datos.tomo}
-                div.td
+                div(style={'-webkit-flex': 2}).td.border-right
                   p 
                     b Protocolo: &nbsp;
                     | #{datos.protocolo}
-                div.td
+                div(style={'-webkit-flex': 3}).td
                   p 
                     b Fecha: &nbsp;
                     | #{moment().format('YYYY/MM/DD')}
-              div.tr
-                div.td.center
+              div.tr.border-bottom
+                div(style={'-webkit-flex': 12}).td.center
                   p 
                     b Linderos Originales
-              div.tr
+              div.tr.border-bottom
                 div.td
                   p 
                     b Norte: &nbsp;
                     b 
                       i #{linderos.original ? linderos.original.norte : ''}
-              div.tr
+              div.tr.border-bottom
                 div.td
                   p 
                     b Sur: &nbsp;
                     b 
                       i #{linderos.original ? linderos.original.sur : ''}
-              div.tr
+              div.tr.border-bottom
                 div.td
                   p 
                     b Este: &nbsp;
                     b 
                       i #{linderos.original ? linderos.original.este : ''}
-              div.tr
+              div.tr.border-bottom
                 div.td
                   p 
                     b Oeste: &nbsp;
                     b 
                       i #{linderos.original ? linderos.original.oeste : ''}
-              div.tr
+              div.tr.border-bottom
                 div.td.center
                   p 
                     b Linderos Actuales
-              div.tr
+              div.tr.border-bottom
                 div.td
                   p 
                     b Norte: &nbsp;
                     b 
                       i #{linderos.actual ? linderos.actual.norte : ''}
-              div.tr
+              div.tr.border-bottom
                 div.td
                   p 
                     b Sur: &nbsp;
                     b 
                       i #{linderos.actual ? linderos.actual.sur : ''}
-              div.tr
+              div.tr.border-bottom
                 div.td
                   p 
                     b Este: &nbsp;
                     b 
                       i #{linderos.actual ? linderos.actual.este : ''}
-              div.tr
+              div.tr.border-bottom
                 div.td
                   p 
                     b Oeste: &nbsp;
                     b 
                       i #{linderos.actual ? linderos.actual.oeste : ''}
-              div.tr
-                div(style={'-webkit-flex': 6}).td.center
+              div.tr.border-bottom
+                div(style={'-webkit-flex': 6}).td.center.border-right
                   p 
                     b AVALUO
                 div(style={'-webkit-flex': 6}).td.center
                   p 
                     b DATOS FISICOS
               div.tr
-                div(style={'-webkit-flex': 3.5, 'justify-content':'end'}).td
+                div(style={'-webkit-flex': 3.5, 'justify-content':'end'}).td.left
                   p 
                     b Superficie(m2)
-                div(style={'-webkit-flex': 2.5 , 'justify-content':'end'}).td
+                div(style={'-webkit-flex': 2.5 , 'justify-content':'end'}).td.left.border-right
                   p 
                     b Total BS.F
-                div(style={'-webkit-flex': 3.5}).td
+                div(style={'-webkit-flex': 3.5}).td.left.border-right
                   p 
                     b Tenencia del Terreno:
                 div(style={'-webkit-flex': 2.5}).td.center
                   p 
                     b 
                       i #{datosFisicos.terreno}
-              div.tr
-                div(style={'-webkit-flex': 2}).td
+              div.tr.border-bottom
+                div(style={'-webkit-flex': 2}).td.left.border-right
                   p 
                     b Terreno:
-                div(style={'-webkit-flex': 1.5}).td
+                div(style={'-webkit-flex': 1.5}).td.border-right
                   p 
                     | #{property.superficieTerreno}
-                div(style={'-webkit-flex': 2.5, 'justify-content':'end'}).td
+                div(style={'-webkit-flex': 2.5, 'justify-content':'end'}).td.border-right
                   p 
                     | #{property.totalTerreno}
-                div(style={'-webkit-flex': 3.5}).td
+                div(style={'-webkit-flex': 3.5}).td.border-right
                   p 
                     b Tenencia de la Construcción:
                 div(style={'-webkit-flex': 2.5}).td.center
                   p 
                     b 
                       i #{datosFisicos.construccion}
-              div.tr
-                div(style={'-webkit-flex': 2}).td
+              div.tr.border-bottom
+                div(style={'-webkit-flex': 2}).td.left.border-right
                   p 
                     b Construcción:
-                div(style={'-webkit-flex': 1.5}).td
+                div(style={'-webkit-flex': 1.5}).td.border-right
                   p 
                     | #{property.superficieConstruccion}
-                div(style={'-webkit-flex': 2.5, 'justify-content':'end'}).td
+                div(style={'-webkit-flex': 2.5, 'justify-content':'end'}).td.border-right
                   p 
                     | #{property.totalConstruccion}
-                div(style={'-webkit-flex': 3.5}).td
+                div(style={'-webkit-flex': 3.5}).td.left.border-right
                   p 
                     b Régimen de Propiedad:
                 div(style={'-webkit-flex': 2.5}).td.center
                   p 
                     b 
                       i #{datosFisicos.propiedad}
-              div.tr
+              div.tr.border-bottom
                 div(style={'-webkit-flex': 6}).td
                 div(style={'-webkit-flex': 3.5}).td
                   p 
@@ -305,89 +310,91 @@ html
                   p 
                     b 
                       i #{datosFisicos.familiar}
-              div.tr
-                div.td.center
+              div.tr.border-bottom
+                div(style={'-webkit-flex': 12}).td.center
                   p 
                     b Datos Físicos
-              div.tr
+              div.tr.border-bottom
+                div(style={'-webkit-flex': 6}).td.center.border-right
+                  p Descripción de Uso
                 div(style={'-webkit-flex': 6}).td.center
-                  p 
-                    | Descripción de Uso
-                div(style={'-webkit-flex': 6}).td.center
-                  p 
-                    | Servicios Públicos
-              div.tr
+                  p Servicios Públicos
+              div.tr.border-bottom
                 div(style={'-webkit-flex': 3, 
-                'background': datosFisicos.descripcionUso.includes('Comercio al Detal') ? 'gray' : 'white'}).td.center
+                'background': datosFisicos.descripcionUso.includes('Comercio al Detal') ? 'gray' : 'white'}).td.left.border-right
                   p 
                     b Comercio al Detal
                 div(style={'-webkit-flex': 3, 
-                'background': datosFisicos.descripcionUso.includes('Agropecuaria') ? 'gray' : 'white'}).td.center
+                'background': datosFisicos.descripcionUso.includes('Agropecuaria') ? 'gray' : 'white'}).td.center.border-right
                   p 
                     b Agropecuaria
                 div(style={'-webkit-flex': 2, 
-                'background': datosFisicos.serviciosPublicos.includes('Acueducto') ? 'gray' : 'white'}).td.center
+                'background': datosFisicos.serviciosPublicos.includes('Acueducto') ? 'gray' : 'white'}).td.center.border-right
                   p 
                     b Acueducto
                 div(style={'-webkit-flex': 2, 
-                'background': datosFisicos.serviciosPublicos.includes('Acera') ? 'gray' : 'white'}).td.center
+                'background': datosFisicos.serviciosPublicos.includes('Acera') ? 'gray' : 'white'}).td.center.border-right
                   p 
                     b Acera
                 div(style={'-webkit-flex': 2, 
                 'background': datosFisicos.serviciosPublicos.includes('Telefono') ? 'gray' : 'white'}).td.center
                   p 
                     b Teléfono
-              div.tr
+              div.tr.border-bottom
                 div(style={'-webkit-flex': 3, 
-                'background': datosFisicos.descripcionUso.includes('Comercio al Mayor') ? 'gray' : 'white'}).td.center
+                'background': datosFisicos.descripcionUso.includes('Comercio al Mayor') ? 'gray' : 'white'}).td.left.border-right
                   p 
                     b Comercio al Mayor
                 div(style={'-webkit-flex': 3, 
-                'background': datosFisicos.descripcionUso.includes('Otro') ? 'gray' : 'white'}).td.center
+                'background': datosFisicos.descripcionUso.includes('Otro') ? 'gray' : 'white'}).td.center.border-right
                   p 
                     b Otro
                 div(style={'-webkit-flex': 2, 
-                'background': datosFisicos.serviciosPublicos.includes('Electricidad') ? 'gray' : 'white'}).td.center
+                'background': datosFisicos.serviciosPublicos.includes('Electricidad') ? 'gray' : 'white'}).td.center.border-right
                   p 
                     b Electricidad
                 div(style={'-webkit-flex': 2, 
-                'background': datosFisicos.serviciosPublicos.includes('Transporte') ? 'gray' : 'white'}).td.center
+                'background': datosFisicos.serviciosPublicos.includes('Transporte') ? 'gray' : 'white'}).td.center.border-right
                   p 
                     b Transporte
                 div(style={'-webkit-flex': 2, 
                 'background': datosFisicos.serviciosPublicos.includes('Cable Tv') ? 'gray' : 'white'}).td.center
                   p 
                     b Cable Tv
-              div.tr
+              div.tr.border-bottom
                 div(style={'-webkit-flex': 3, 
-                'background': datosFisicos.descripcionUso.includes('Industrial') ? 'gray' : 'white'}).td.center
+                'background': datosFisicos.descripcionUso.includes('Industrial') ? 'gray' : 'white'}).td.center.left.border-right
                   p 
                     b Industrial
                 div(style={'-webkit-flex': 3}).td.center
                 div(style={'-webkit-flex': 2, 
-                'background': datosFisicos.serviciosPublicos.includes('Cloacas') ? 'gray' : 'white'}).td.center
+                'background': datosFisicos.serviciosPublicos.includes('Cloacas') ? 'gray' : 'white'}).td.center.border-right
                   p 
                     b Cloacas
                 div(style={'-webkit-flex': 2, 
+<<<<<<< HEAD
                 'background': datosFisicos.serviciosPublicos.includes('Septico') ? 'gray' : 'white'}).td.center
+=======
+                'background': datosFisicos.serviciosPublicos.includes('Séptico') ? 'gray' : 'white'}).td.center.border-right
+>>>>>>> 1b8beef936e95f28804261607cb27ec717b2c265
                   p 
                     b Séptico
                 div(style={'-webkit-flex': 2, 
                 'background': datosFisicos.serviciosPublicos.includes('Alum. Pub.') ? 'gray' : 'white'}).td.center
                   p 
                     b Alum. Pub.
-              div.tr
+              div.tr.border-bottom
                 div(style={'-webkit-flex': 3, 
-                'background': datosFisicos.descripcionUso.includes('Servicio') ? 'gray' : 'white'}).td.center
+                'background': datosFisicos.descripcionUso.includes('Servicio') ? 'gray' : 'white'}).td.center.left.border-right
                   p 
                     b Servicio
                 div(style={'-webkit-flex': 3}).td
                 div(style={'-webkit-flex': 2, 
-                'background': datosFisicos.serviciosPublicos.includes('Pavimento') ? 'gray' : 'white'}).td.center
+                'background': datosFisicos.serviciosPublicos.includes('Pavimento') ? 'gray' : 'white'}).td.center.border-right
                   p 
                     b Pavimento
                 div(style={'-webkit-flex': 2, 
-                'background': datosFisicos.serviciosPublicos.includes('Elec Indust.') ? 'gray' : 'white'}).td.center
+                'background': datosFisicos.serviciosPublicos.includes('Elec Indust.') ? 'gray' : 'white'}).td.center.border-right
                   p 
                     b Elec Indust.
                 div(style={'-webkit-flex': 2, 
@@ -395,35 +402,35 @@ html
                   p 
                     b Otro
               div.tr
-                div(style={'-webkit-flex': 6, 'align-content':'space-between'}).td
-                  p 
+                div(style={'-webkit-flex': 6, 'align-content':'space-between', 'min-height':'50px'}).td.border-right
+                  p.left 
                     b Observaciones:
-                  p 
+                  p.left 
                     | "#{observaciones}"
-                  p 
+                  p.left 
                     b Elab por: &nbsp;
                     | #{autor}
-                  p 
+                  p.left 
                     b Hora: &nbsp;
                     | #{moment().hour()}
                 div(style={'-webkit-flex': 6, 'min-height':'25px'}).td
-                  p 
+                  p.left  
                     b Funcionario Revisor:
-                  hr(style={'margin-top':'15px', 'width':'50%', 'margin-right':'3px', 'color':'gray'})
+                  hr(style={'margin-top':'15px', 'width':'50%', 'margin-right':'3px', 'color':'black'})
             div.keep-together.break-after
-              div(style={'align':'right'})
-                hr(style={'margin-top':'15px', 'width':'15%', 'color':'gray', 'margin-right':'2px'})
-                p
+              div(style={'margin-top':'20px'})
+                hr(style={'margin-top':'30px', 'width':'25%', 'color':'black', 'margin-left':'1px'}).left
+                p.left
                   b Ing. Yelitze Angola de Anderez 
-                p 
+                p.left
                   b Jefe de la División de Catastro
                 div.table
                   div.tr
-                    div(style={'-webkit-flex': 3.2}).td
+                    div(style={'-webkit-flex': 3.5}).td.border-right
                       p 
                         b Fecha de Expedición &nbsp;
                         | #{moment().format('YYYY/MM/DD')}
-                    div(style={'-webkit-flex': 3.2}).td
+                    div(style={'-webkit-flex': 3.5}).td
                       p 
                         b Fecha de Vencimiento &nbsp;
                         | #{moment().add(1, 'years').format('YYYY/MM/DD')}
@@ -435,11 +442,12 @@ html
           div.header-child
             img#alcaldia(src='images/gobernacion-logo.png')
           div.header-child
-            img#QR(src='images/AE-logo.png')
-            img#logo(src='images/sedemat.png', style={width:'60px !important'})
+            img(src='images/AE-logo.png', width='70px', height='70px')
+            img(src='images/sedemat.png', width='120px', height='40px')
           div.header-child
-            p CEDULA N°: #{datos.nroCedula}
-            p RECIBO N°: #{datos.nroRecibo}
+            div 
+              p(style={'padding':'2px'}) CEDULA N°: #{datos.nroCedula}
+              p(style={'padding':'2px'}) RECIBO N°: #{datos.nroRecibo}
             img#QR(src='images/qrexample.png', alt='QR')
       div#content
         block title                                                                 
@@ -448,21 +456,22 @@ html
         block content
           div(style={'width':'85%', 'height':'95%'})
             div(style={'border':'1px solid gray', 'margin':'5px'})
-              img(src='images/qrexample.png', alt='mapa', width='100%', height='600px')
+              img(src='images/qrexample.png', alt='mapa', width='100%', height='800px')
             div
-              p
+              p.left
                 b Dirección:
-              p
+              p.left
                 b #{datos.direccion} 
-              div(style={'display':'flex', 'height':'40px', 'align-content':'flex-end', 'margin-top':'5px', 'margin-bottom':'5px'}) 
-                div.table
+              div(style={'display':'flex', 'height':'80px', 'align-content':'flex-end', 'margin-top':'5px', 'margin-bottom':'5px'})
+                div(style={'border': 'none'}).table
                   div.tr
-                    div(style={'-webkit-flex': 4}).td
+                    div(style={'-webkit-flex': 4}).td.all-border
                       p
                         b Fecha de Expedición: &nbsp; 
                         | #{moment().format('YYYY/MM/DD')}
+                    div(style={'-webkit-flex': 8}).td
                   div.tr
-                    div(style={'-webkit-flex': 4}).td
+                    div(style={'-webkit-flex': 4}).td.all-border
                       p
                         b Fecha de Vencimiento: &nbsp; 
                         | #{moment().add(1, 'years').format('YYYY/MM/DD')}
@@ -472,71 +481,71 @@ html
                         | #{autor} &nbsp; &nbsp; &nbsp;
                         | Hora: 
                         | #{moment().hour()}
-              div(style={'display':'flex','justify-content':'flex-end'})  
+              div(style={'display':'flex','justify-content':'flex-end', 'align-self':'flex-end'})   
                 div.table
-                  div.tr
-                    div.td.center
+                  div.tr.border-bottom
+                    div(style={'-webkit-flex': 7.7}).td.center
                       p
                         b Código Catastral
-                  div.tr
-                    div(style={'-webkit-flex': 0.7}).td.center
+                  div.tr.border-bottom
+                    div(style={'-webkit-flex': 0.7}).td.center.border-right
                       p
                         b EFed
-                    div(style={'-webkit-flex': 0.7}).td.center
+                    div(style={'-webkit-flex': 0.7}).td.center.border-right
                       p
                         b Mun
-                    div(style={'-webkit-flex': 0.7}).td.center
+                    div(style={'-webkit-flex': 0.7}).td.center.border-right
                       p
                         b Prr
-                    div(style={'-webkit-flex': 0.7}).td.center
+                    div(style={'-webkit-flex': 0.7}).td.center.border-right
                       p
                         b Amb
-                    div(style={'-webkit-flex': 0.7}).td.center
+                    div(style={'-webkit-flex': 0.7}).td.center.border-right
                       p
                         b Sec
-                    div(style={'-webkit-flex': 0.7}).td.center
+                    div(style={'-webkit-flex': 0.7}).td.center.border-right
                       p
                         b SSec
-                    div(style={'-webkit-flex': 0.7}).td.center
+                    div(style={'-webkit-flex': 0.7}).td.center.border-right
                       p
                         b Man
-                    div(style={'-webkit-flex': 0.7}).td.center
+                    div(style={'-webkit-flex': 0.7}).td.center.border-right
                       p
                         b Par
-                    div(style={'-webkit-flex': 0.7}).td.center
+                    div(style={'-webkit-flex': 0.7}).td.center.border-right
                       p
                         b Sbp
-                    div(style={'-webkit-flex': 0.7}).td.center
+                    div(style={'-webkit-flex': 0.7}).td.center.border-right
                       p
                         b Niv
                     div(style={'-webkit-flex': 0.7}).td.center
                       p
                         b Und
                   div.tr
-                    div(style={'-webkit-flex': 0.7}).td.center
+                    div(style={'-webkit-flex': 0.7}).td.center.border-right
                       p #{codCat ? codCat.efed : '0'}
-                    div(style={'-webkit-flex': 0.7}).td.center
+                    div(style={'-webkit-flex': 0.7}).td.center.border-right
                       p #{codCat ? codCat.mun : '0'}
-                    div(style={'-webkit-flex': 0.7}).td.center
+                    div(style={'-webkit-flex': 0.7}).td.center.border-right
                       p #{codCat ? codCat.prr : '0'}
-                    div(style={'-webkit-flex': 0.7}).td.center
+                    div(style={'-webkit-flex': 0.7}).td.center.border-right
                       p #{codCat ? codCat.amb : '0'}
-                    div(style={'-webkit-flex': 0.7}).td.center
+                    div(style={'-webkit-flex': 0.7}).td.center.border-right
                       p #{codCat ? codCat.sec : '0'}
-                    div(style={'-webkit-flex': 0.7}).td.center
+                    div(style={'-webkit-flex': 0.7}).td.center.border-right
                       p #{codCat ? codCat.ssec : '0'}
-                    div(style={'-webkit-flex': 0.7}).td.center
+                    div(style={'-webkit-flex': 0.7}).td.center.border-right
                       p #{codCat ? codCat.man : '0'}
-                    div(style={'-webkit-flex': 0.7}).td.center
+                    div(style={'-webkit-flex': 0.7}).td.center.border-right
                       p #{codCat ? codCat.par : '0'}
-                    div(style={'-webkit-flex': 0.7}).td.center
+                    div(style={'-webkit-flex': 0.7}).td.center.border-right
                       p #{codCat ? codCat.sbp : '0'}
-                    div(style={'-webkit-flex': 0.7}).td.center
+                    div(style={'-webkit-flex': 0.7}).td.center.border-right
                       p #{codCat ? codCat.niv : '0'}
                     div(style={'-webkit-flex': 0.7}).td.center
                       p #{codCat ? codCat.und : '0'} 
-              hr(style={'margin-top':'5px', 'width':'25%', 'color':'gray'})
-              p 
+              hr(style={'margin-top':'30px', 'width':'25%', 'color':'black', 'margin-left':'1px'}).left
+              p.left 
                 b Ing. Yelitze Angola de Anderez 
-              p 
+              p.left 
                 b Jefe de la División de Catastro
