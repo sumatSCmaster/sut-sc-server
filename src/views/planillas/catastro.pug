@@ -145,10 +145,9 @@ html
                       b Nombre y Apellidos / Razón Social
                     p
                       b Cedula / Rif:
-                  if datos
-                    div(style={'display':'flex','justify-content':'space-between'})
-                      p #{datos.representantes ? datos.representantes : ''}
-                      p #{datos.cedulas ? datos.cedulas : ''}
+                  div(style={'display':'flex','justify-content':'space-between'})
+                    p #{datos.representantes ? datos.representantes : ''}
+                    p #{datos.cedulas ? datos.cedulas : ''}
               div.tr
                 div.td
                   p 

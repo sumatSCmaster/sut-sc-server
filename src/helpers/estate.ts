@@ -545,6 +545,7 @@ export const generateCodCat = async (data) => {
     const property = (await client.query('SELECT id_inmueble AS id, avaluo_construccion AS "totalConstruccion", avaluo_terreno AS "totalTerreno", metros_terreno AS "superficieTerreno", metros_construccion AS "superficieConstruccion" FROM inmueble_urbano JOIN impuesto.avaluo_inmueble USING (id_inmueble) WHERE id_inmueble = $1', [data.inmueble])).rows[0];
     const bucketKey = `//hacienda/CATASTRO/${property.id}/ceritifcado.pdf`;
     data.property = property;
+    console.log(data.datos, 'MASTER GENERATECODCAT');
     const buffers = await createCertificateBuffers([data], 'catastro', bucketKey);
     const url = await createCertificate(buffers, bucketKey);
     return {status: 200, url}
