@@ -48,7 +48,7 @@ router.post('/', authenticate('jwt'), async (req, res) => {
 });
 
 router.post('/generateCodCat', authenticate('jwt'), async (req, res) => {
-  const [err, data] = await fulfill(generateCodCat(req.body))
+  const [err, data] = await fulfill(generateCodCat(req.body, req.user))
   if (err) res.status(500).json(err);
   if (data) res.status(data.status).json(data);
 })
