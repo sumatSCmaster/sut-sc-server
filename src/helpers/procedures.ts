@@ -802,6 +802,8 @@ const finishedProcedure = async (procedure, user, idUser) => {
   } catch (e) {
     client.query('ROLLBACK');
     throw { status: 500, error: errorMessageExtractor(e), message: errorMessageGenerator(e) || 'Error al procesar el trámite' };
+  } finally {
+    client.release();
   }
 };
 export const processProcedure = async (procedure, user: Usuario, idUser) => {

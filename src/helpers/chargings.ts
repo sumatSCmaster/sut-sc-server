@@ -183,7 +183,6 @@ export const getChargingsByWallet = async (id) => {
     return { status: 200, cobranzas: chargings.rows, message: 'Cobranzas obtenidas' };
   } catch (err) {
     throw err;
-  } finally {
   }
 };
 

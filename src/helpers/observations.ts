@@ -10,5 +10,7 @@ export const getObservations = async (idTramite: number): Promise<any> => {
     return response.rows[0];
   } catch (error) {
     throw new Error('Error al obtener observaciones');
+  } finally {
+    client.release();
   }
 };

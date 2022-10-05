@@ -43,6 +43,8 @@ export const getAccountState = async () => {
     return {status: 200, accountState: response}
   } catch (e) {
     throw {status: 500, message: e.message}
+  } finally {
+    client.release();
   }
 }
 
@@ -55,6 +57,8 @@ export const setAccountState = async ({data, bank}) => {
     return {status: 200, message: 'Estado de cuenta subido exitosamente'}
   } catch (e) {
     throw {status: 500, message: e.message}
+  } finally {
+    client.release();
   }
 }
 
@@ -71,7 +75,7 @@ const typeProcess = switchcase({
       return process;
     } catch (e) {
       throw e;
-    }
+    } 
   },
   IMPUESTO: async ({ id, client }: { id: number; client: PoolClient }) => {
     try {

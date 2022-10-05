@@ -4032,6 +4032,8 @@ export const createSolvencyABSettlement = async (datos, tipo, user) => {
   } catch (e) {
     client.query('ROLLBACK');
     throw {status: 500, message: e.message}
+  } finally {
+    client.release();
   }
 }
 
@@ -4314,6 +4316,8 @@ const createVHSolvenciesForApplication = async ({application}) => {
   // return form;
 } catch(e) {
   throw e
+} finally {
+  client.release();
 }
 }
 export const getCertificatesForSettlement = async (idLiquidacion) => {
@@ -4360,6 +4364,8 @@ const createABSolvenciesForApplication = async ({application}) => {
     // return certificados;
 } catch(e) {
   throw e
+} finally {
+  client.release();
 }
 }
 

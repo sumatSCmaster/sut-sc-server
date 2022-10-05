@@ -38,6 +38,8 @@ export const getSMActivities = async () => {
     return {status: 200, smActivities}
   } catch(e) {
     throw {status: 500, message: e.message || 'Error al obteener tabulador de servicios municipales'}
+  } finally {
+    client.release();
   }
 }
 
@@ -379,6 +381,8 @@ export const createLicenseForContributor = async(tipoDocumento, documento, refer
     return {status: 200, message: 'Sucursal registrada satisfactoriamente'}
   } catch(e) {
     throw {status: 500, message: e.message}
+  } finally {
+    client.release();
   }
 }
 
